@@ -1,0 +1,61 @@
+# PANEL BRIEF — the founder's prose fix, and Astra's 3 unanswered questions
+
+## REQUIRED SECTION 1 — The question
+
+Two questions, both narrow.
+
+**Q1. Is the founder's prose design right, and what is the simplest sufficient way to build it?**
+
+His words, recorded 2026-09-10: *"Having the admissibility switch off for prose targets is also questionable, as clearly it should simply mark a purely prose input as 'inadmissible', while still solving any computationally reducible elements within that prose! This is STEM. No one will be using CDSFL to write poetry!"*
+
+The record already accepted the principle and refined one word: `reference_runner_v3.py:1809` predates his point and says NO_SCORE is *"NOT a third grade of admissibility — it is the statement that S_k has no opinion"*, so a correct prose fix is **unscoreable, not defective**. The record then named the buildable form as **per-hunk classification**: score the reducible hunks, NO_SCORE the rest.
+
+**What was actually built is coarser.** `_gateable_source` extracts every fenced listing and CONCATENATES them into one blob, gated together. Demonstrated: a document with `def good(): return 1` and `def bad(: return 2` yields one 41-char blob, so a syntax error in the second condemns the first. Per-hunk was named in September and never built.
+
+Is per-hunk classification the right target? Is there a simpler sufficient fix? What breaks if `A` is computed per-hunk rather than per-file — `compute_rk` consumes a single `sk`, so what does a hunk-wise `A` mean downstream?
+
+**Q2. Astra's 3 questions, answered against the NEW data rather than the archive.**
+
+Astra's independent assessment of 2026-09-21 closed with 3 questions and the note that once resolved, experimental validation would be more valuable than another review cycle. The validation ran — 4 commissioning arms, 124 probe records — and **nobody went back to the questions**. The producer `scripts/scorer_separation_is_circular_2026-09-21.py` still does not read a single commissioning arm.
+
+1. Does the revised specification's §4 already include both observation branches and the tower property? (Astra says yes. A 2026-09-21 panel concluded the appendix's Phase 2 is correct. Are those the same claim, or two different ones both recorded as wins?)
+2. What exactly does the old Phase 2 blend **bound**, and does that bound justify the stopping rule actually used? Astra's counter-example: at R = 0.99, q = 0.3 the exact expected improvement is 0.297 against the blend's 0.004225, a factor of 70.3.
+3. Does the scorer evaluation demonstrate **independent performance**, or merely confirm that the newly incorporated outcome affects its score?
+
+On Q2.3 there is now a measurement Astra did not have, and it is worse than circularity: **13 of 124 probe records are CLOSED, `verified=True`, ADMISSIBLE at sk = 1.0, while their own probe recorded `FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER`** — 10.4839%, Wilson [6.2298%, 17.1128%]. The incorporated signal is averaged away by the weighted mean. Does that answer Astra's Q2.3, and if so, in which direction?
+
+## REQUIRED SECTION 2 — Use the harness
+
+Answer by running what you need to run. **Apply §4 of the schema: do not re-derive what is mechanically verifiable.** The figures above are cited so you can *use* them, not so you can re-check them; check one if it is load-bearing for your answer and leave the rest.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+For Q1 only, if you propose a build: deliver it as a file in your sandbox tree at its real path, with a falsifier you have run, and report the exit code before and after. **If your answer is "do not build this", that is a complete answer and needs no file.**
+
+For Q2, no fix is expected — these are adjudications.
+
+## REQUIRED SECTION 4 — What would refute you
+
+State, per answer, what evidence would overturn it.
+
+## REQUIRED SECTION 5 — Output shape
+
+```
+Q1_VERDICT:      per-hunk | simpler alternative | do not build — and why
+Q1_DESIGN:       the simplest sufficient form, or NONE
+Q1_DOWNSTREAM:   what a hunk-wise A means for compute_rk, which takes one sk
+Q1_FIX:          <path in your sandbox> | NONE
+Q1_FALSIFIER:    <path>  exit before / after | NONE
+Q1_REFUTED_BY:   what would overturn this
+
+Q2_1: answered | still open — and the answer
+Q2_2: answered | still open — and the answer
+Q2_3: answered | still open — and the answer, given the 13 of 124
+ASTRA_STATUS:    are Astra's 3 now closed, and does anything block experimental validation
+REFUTED_BY:      what would overturn your Q2 answers
+DISAGREEMENT:    your strongest disagreement with CC1 or with the other seat
+```
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass yields no finding above the real-world-consequence threshold. **This brief is deliberately narrow: 2 questions. Do not widen it.** If either question is answerable in a paragraph, answer it in a paragraph — §4's depth function governs, and a short correct answer scores exactly as well as a long one.

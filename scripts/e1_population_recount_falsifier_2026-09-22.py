@@ -22,6 +22,13 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+# WIRED 2026-09-22 (CC1). Delivered by a panel seat without it, so `--help`
+# ran the whole measurement. A help flag must ANSWER, never ACT.
+# Placed after the HEADER imports, not the last import: this file has a
+# late import and the call landed after the work on the first attempt.
+from _cli_help import answer_help  # noqa: E402
+answer_help(__doc__, __file__)
+
 REPO = Path(__file__).resolve().parents[1]
 
 tot = Counter()
@@ -43,6 +50,7 @@ n = sum(tot.values())
 k = tot.get("FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER", 0)
 print(f"distinct probe records: {n}; non-curing: {k}")
 from statsmodels.stats.proportion import proportion_confint
+
 lo, hi = proportion_confint(k, n, method="wilson")
 print(f"Wilson: [{100*lo:.4f}%, {100*hi:.4f}%]")
 

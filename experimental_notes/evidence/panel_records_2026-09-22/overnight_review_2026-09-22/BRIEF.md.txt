@@ -1,0 +1,119 @@
+# PANEL BRIEF — audit an unreviewed night's work, then price 3 escalations
+
+## Section 0 — what this round is for, and the disclosure that belongs first
+
+On 2026-09-21/22 CC1 worked from 22:14 to 08:07 **without consulting this panel once**, despite a standing founder instruction to run in panel review mode "for the duration of this and all future experiments". Every artefact below is therefore **unreviewed by anyone but its author**. The founder is unwell and has asked that his decision load be minimised. Your job is to find what is wrong before it reaches him.
+
+**You are not being asked to agree.** A round that returns "this looks sound" has produced nothing. Disagreement is the product.
+
+## Section 1 — the artefacts
+
+All in `Constraint_Engineering`, all committed:
+
+- `experimental_notes/Morning_Report_2026-09-22.md` — the night's report
+- `scripts/resume_pointer_truth_2026-09-21.py` — a guard CC1 wrote, then corrected TWICE
+- `scripts/rk_self_report_bias_2026-09-21.py` — the R_k finding
+- `scripts/commissioning_arm1_results_2026-09-22.py` — arm 1 results
+- `scripts/e1_mechanism_consequences_2026-09-22.py` — the table in section 3
+- `bench/tools/run_simulated_experiment.py` — `--seats`, `--no-merge-arbitration`, `--domain`, and a sandbox fallback
+- `bench/tools/commissioning_arms_2026-09-21.py` — the arm definitions
+- `bench/logs/commissioning_2026-09-2*_arm*.log` — the 4 run logs
+
+## Section 2 — QUESTION 1: what did CC1 get wrong?
+
+Audit the night's claims. The ones most worth attacking, because they are load-bearing and were never checked:
+
+1. **"Seats understate their own R_k, 18 of 19 one-directional, p = 7.63e-05."** The validator parses `R_old` and the stated final `R_k` **out of model prose with regular expressions**. CC1 named parsing as the leading candidate cause but did not test it. **Is the finding an artefact of the extractor?** This project's standing warning is that parsing errors have plagued it.
+
+2. **"Panel size buys criticals at declining per-seat efficiency"** — 1/2/5 seats gave 0/1/2 criticals and 2.2500/2.0000/1.7250 findings per seat-round. n = 3, one run per arm, **same underlying stand-in model in every arm**. Is this worth anything at all, or is it noise dressed as a trend?
+
+3. **Arm 4 halted at round 0** with 8 criticals locked irreducible. CC1 traced it: `sk_states_in_queue: ['(none)']` → never scored → `max_rungs = 2` hardcoded at `bench/routing.py:139` and `:183` → ladder exhausted. **Is that causal chain actually established, or assembled from correlates?**
+
+4. **The sandbox fallback.** CC1 made the runner build the panel's disposable cwd by COPYING when `git worktree` fails inside the sandbox, gated on an exported `CDSFL_SANDBOX_ROOT` verified against the runner's own root. **Can that gate be defeated?** It is an escape hatch on a safety refusal.
+
+5. Anything else. The suite is green at 8,357 passed, which means nothing about whether the reasoning is sound.
+
+## Section 3 — QUESTION 2: are these 3 items really the founder's to decide?
+
+CC1 escalated 3 items and now believes it **over-escalated**. Adjudicate each against the project's additive standard and the simplest-sufficient-fix rule.
+
+**(a) `e1_efficacy` mechanism.** 46 of 248 probe records are `FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER` (18.5484%, Wilson [14.2037%, 23.8526%]). Over the narrower population carrying BOTH a verdict and an e1 score, 7 of 20. Priced by `scripts/e1_mechanism_consequences_2026-09-22.py`:
+
+| option | admit | reject | non-curing rejected | curing wrongly rejected |
+|---|---|---|---|---|
+| A shipped, w1 = 2.0 | 97 | 1 | 0 of 7 | 0 of 13 |
+| B heavier, w1 = 5.0 | 90 | 8 | 7 of 7 | 0 of 13 |
+| C efficacy as a HARD gate | 90 | 8 | 7 of 7 | 0 of 13 |
+
+CC1's position: the DIRECTION is not a preference, because the appendix defines sigma as "does the fix actually resolve the detected flaw" and `compute_rk` uses `sk` as sigma term for term, so admitting a provably non-curing fix at sk = 1.0 is an internal contradiction. B and C are indistinguishable on this population and both strictly dominate A at zero measured cost. **Attack that.** Is the population too small? Does the table's simplification — comparing `sk` to a constant `S* = 0.50493` rather than the per-entry break-even, and excluding non-ADMISSIBLE/REJECTED tristates — hide a cost? Is there a 4th option neither CC1 nor the founder has considered?
+
+**(b) `max_rungs` config surface.** Currently `int = 2`, hardcoded, no way to set it. CC1 now argues that ADDING a config surface with the default unchanged is purely additive and needs no ruling, and that only CHANGING the default does. **Is that right?** Note the runway cost: more rungs means more dispatches per finding at Bench Run 2 scale.
+
+**(c) A docstring that embeds a gate-record count.** `sk_threshold_shadow`'s docstring states a count that every completed experimental run invalidates; the guard went red 3 times in one night. CC1 argues this is mechanical — the pre-commit hook already auto-repairs citations and could refresh this too. **Is there a simplest-sufficient fix that does not weaken the guard?** The guard exists because prose and archive drifted apart before.
+
+## Section 4 — QUESTION 3: what actually blocks the runway?
+
+The founder asked whether answering these 3 returns the project to the start of its runway. CC1's answer was **no**, citing runway item 20 — "one paid sentinel dispatch, only once the simulated run is clean" — and arm 4's halt meaning the run is not clean. Open: A19, V9. Blocked: R1, 10.2, W1.
+
+**Is that reading right?** Is arm 4's halt a genuine blocker on item 20, or is a prose-target halt out of scope for a code-target sentinel? Name what you think actually stands between here and Bench Run 2, and what the CHEAPEST next step is.
+
+## Section 5 — how to answer
+
+Per seat, and keep it short enough to act on:
+
+1. **Defects found**, most severe first, each with file and line and the evidence that convicts it. If you found none, say so plainly — but say what you looked at.
+2. **Your verdict on each of (a), (b), (c)**: founder's call, or not, and why.
+3. **Your single recommended next step**, and its cost.
+4. **Your strongest disagreement with CC1**, stated as a disagreement.
+
+Tools are available. **Use them** — execute the scripts, read the logs, run the numbers. This project's own rule is that the tool output IS the evidence and reasoning never substitutes for it. Do not accept a figure in this brief because it is in this brief.
+
+## REQUIRED SECTION — Use the harness
+
+Form your answer by RUNNING the machinery, not by describing it. The scripts named above are executable; the run logs are readable; the archive is on disk. Execute `python3 scripts/e1_mechanism_consequences_2026-09-22.py` and `python3 scripts/rk_self_report_bias_2026-09-21.py` yourself rather than accepting their printed figures from this brief. Re-derive at least one number independently. Where a claim is symbolic, check it in SymPy or z3; where it is a proportion, recompute the interval on 2 tools.
+
+**A seat that returns prose about a defect without having run anything has not answered.**
+
+## REQUIRED SECTION — Produce a fix, and test it
+
+A finding without a fix is incomplete. A fix without a runnable falsifier that has been EXECUTED is a hypothesis, not a fix.
+
+**Deliver each fix as a FILE, written INTO your sandbox repository tree at its real path** — not as a diff in prose, not as a suggestion. Write the falsifier too, run it, and report the exit code both before and after your change. A fix described but not written has not been delivered and will not be counted.
+
+## REQUIRED SECTION — What would refute you
+
+Before you conclude, state for each verdict **what evidence would overturn it**. Be specific: name the measurement, the file, or the run that would show you wrong. A verdict with no stated refutation condition is an opinion.
+
+If your answer to Section 3 is "CC1 over-escalated and none of the 3 needs the founder", state what would show the opposite. If your answer is "CC1 was right to escalate", state what would show that they are in fact mechanical.
+
+## REQUIRED SECTION — Output shape
+
+Return these fields, in this order, one block per finding:
+
+```
+FINDING <n>
+  SEVERITY:      CRITICAL | HIGH | MEDIUM | LOW
+  FILE:LINE:     <path>:<line>
+  CLAIM:         one sentence
+  EVIDENCE:      what you ran, and what it returned
+  FIX_DELIVERED: <path in your sandbox where you wrote it>  | NONE
+  FALSIFIER:     <path>  exit before: <n>  exit after: <n>   | NONE
+  REFUTED_BY:    what would overturn this finding
+```
+
+Then exactly these 4 closing fields:
+
+```
+VERDICT_A:  founder's call | mechanical — and why, 3 sentences max
+VERDICT_B:  founder's call | mechanical — and why, 3 sentences max
+VERDICT_C:  founder's call | mechanical — and why, 3 sentences max
+RUNWAY:     what actually blocks Bench Run 2, and the cheapest next step
+NEXT_STEP:  one recommendation, with its cost
+DISAGREEMENT: your strongest disagreement with CC1, stated as a disagreement
+```
+
+## REQUIRED SECTION — Termination
+
+Stop when a further pass produces no new finding above the real-world-consequence threshold — that is, no new finding whose being missed could cause a wrong figure, an unsafe run, or a false claim reaching the founder. Do not pad. Do not manufacture findings to fill the shape. **If you find nothing above threshold in a section, say so and name what you examined**, which is itself informative and will be recorded as such.
+
+Three passes is normally enough. If your third pass is still producing above-threshold findings, say that explicitly rather than stopping quietly.

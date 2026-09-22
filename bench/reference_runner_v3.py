@@ -10237,6 +10237,77 @@ def _gateable_source(modified_source: str, source_path: str) -> Tuple[Optional[s
         f"gating {len(blocks)} fenced listing(s) extracted from a non-Python target")
 
 
+def _gateable_hunks(modified_source: str, source_path: str) -> List[str]:
+    """The SAME extraction as `_gateable_source`, WITHOUT the concatenation.
+
+    `_gateable_source` joins every fenced listing into one blob. That is right
+    for asking "does this target's code parse" and wrong for asking "did THIS
+    FIX break it", because the blob-level baseline guard in
+    `_baseline_code_is_parseable` abstains for the WHOLE blob as soon as ANY
+    listing was already broken. One extractor, two shapes, so the two cannot
+    drift: this shares `_MD_PY_FENCE_ANY` and `_strip_listing_prefix`.
+    """
+    if source_path.endswith(".py") or not source_path:
+        return [modified_source] if modified_source else []
+    _normalised = modified_source.replace("\r\n", "\n").replace("\r", "\n")
+    return [_strip_listing_prefix(m.group("body"), m.group("prefix")).rstrip() + "\n"
+            for m in _MD_PY_FENCE_ANY.finditer(_normalised)]
+
+
+def _fix_broke_a_working_hunk(modified_source: str,
+                              original_source,
+                              source_path: str,
+                              check) -> bool:
+    """Did the fix break a listing that parsed BEFORE it? Hunk by hunk.
+
+    THE DEFECT THIS CLOSES IS THE OPPOSITE OF THE ONE ON THE RECORD. The stated
+    concern was that concatenation lets a syntax error in listing 2 CONDEMN
+    listing 1. On the live A19 path it does not: `compute_sk` always passes
+    `original_source` when it scores prose, the baseline guard fires, and the
+    guard abstains for the WHOLE blob. EXECUTED before writing this:
+
+        baseline  listing 1 `def good(): return 1`   (parses)
+                  listing 2 `def bad(:   return 2`   (does not)
+        fix       breaks listing 1 AS WELL
+        shipped   -> g1 = 1, g2 = 1, A = 1, ADMISSIBLE
+
+    A fix that broke working code was ADMITTED. The blob guard is over-broad
+    and the failure direction is over-ADMISSION. That is the residue
+    `_baseline_code_is_parseable` admits in prose ("a fix that breaks a listing
+    DIFFERENTLY from how the baseline was broken is swallowed") and does not
+    close. This closes it.
+
+    STRICTLY ADDITIVE, STRICTLY STRICTER. The return value is only ever used to
+    CONVICT. A False never rescinds a conviction the blob path reaches, so
+    nothing rejected today becomes admitted; the only behaviour that changes is
+    an admission that was never earned. A stays a SCALAR -- there is no
+    per-hunk A, so `compute_rk`'s single-`sk` contract is untouched.
+
+    Pairing is by index and requires equal listing counts: a fix that adds or
+    removes a fence returns False and leaves the blob logic untouched, because
+    a mispaired hunk would convict the wrong listing.
+
+    `check` MUST be the callable the calling gate uses. `ast.parse` accepts
+    `return 0` and `compile` does not; that mismatch already produced one wrong
+    verdict inside the guard written to prevent it.
+    """
+    if original_source is None:
+        return False
+    mod = _gateable_hunks(modified_source, source_path)
+    base = _gateable_hunks(original_source, source_path)
+    if not mod or len(mod) != len(base):
+        return False
+
+    def _parses(text: str) -> bool:
+        try:
+            check(text)
+            return True
+        except (SyntaxError, ValueError):
+            return False
+
+    return any(not _parses(m) and _parses(b) for m, b in zip(mod, base))
+
+
 def _baseline_code_is_parseable(original_source: Optional[str],
                                 source_path: str,
                                 compiler=None) -> Optional[bool]:
@@ -10291,6 +10362,10 @@ def _run_hard_gate_ast(modified_source: str, source_path: str = "",
         ast.parse(src)
         return 1, f"AST parse succeeded ({why})"
     except (SyntaxError, ValueError) as e:
+        if _fix_broke_a_working_hunk(modified_source, original_source,
+                                     source_path, ast.parse):
+            return 0, (f"ParseError, and it is ATTRIBUTABLE: this fix broke a "
+                       f"listing that parsed before it: {e} ({why})")
         if _baseline_code_is_parseable(original_source, source_path) is False:
             return 1, (f"AST parse fails, and it ALSO failed before this fix, so "
                        f"the failure is not attributable to it: {e} ({why})")
@@ -10381,6 +10456,7 @@ def _run_hard_gate_compile(modified_source: str, source_path: str,
     original_parseable = _baseline_code_is_parseable(
         original_source, source_path,
         compiler=lambda t: compile(t, source_path or "<target>", "exec"))
+    _original_for_attribution = modified_source
     modified_source, why = _gateable_source(modified_source, source_path)
     if modified_source is None:
         return 1, f"py_compile not applicable ({why})"
@@ -10402,6 +10478,11 @@ def _run_hard_gate_compile(modified_source: str, source_path: str,
         compile(modified_source, source_path or "<gate>", "exec")
         return 1, "py_compile succeeded"
     except SyntaxError as e:
+        if _fix_broke_a_working_hunk(
+                _original_for_attribution, original_source, source_path,
+                lambda t: compile(t, source_path or "<gate>", "exec")):
+            return 0, (f"CompileError, and it is ATTRIBUTABLE: this fix broke a "
+                       f"listing that compiled before it: {e}")
         if original_parseable is False:
             return 1, (f"py_compile fails, and it ALSO failed before this "
                        f"fix, so the failure is not attributable to it: {e}")

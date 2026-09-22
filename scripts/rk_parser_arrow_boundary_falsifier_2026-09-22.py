@@ -97,4 +97,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # WIRED 2026-09-22 (CC1). Delivered by a panel seat without it, so `--help`
+    # ran the whole measurement. A help flag must ANSWER, never ACT.
+    from _cli_help import answer_help  # noqa: E402
+    answer_help(__doc__, __file__)
     sys.exit(main())

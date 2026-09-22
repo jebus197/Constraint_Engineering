@@ -1,0 +1,1633 @@
+### cc2:attempt-1:bench/logs/prose_and_astra_2026-09-22/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/prose_and_astra_2026-09-22/dispatch.log	2026-09-22 11:21:45
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/bench/logs/prose_and_astra_2026-09-22/dispatch.log	2026-09-22 11:09:26
+@@ -1,19 +0,0 @@
+-[11:09:45] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo
+-[11:09:45] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo
+-[11:09:45] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo
+-[11:09:45]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo
+-[11:09:45] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo
+-[11:09:45]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo
+-[11:16:00]   [claude-cli:opus] 38 tool call(s) this attempt, 38 in total
+-[11:16:00]   [claude-cli:opus] done (375.3s, 13289 chars)
+-    suite: GREEN at f253fa7 — 8,233 passed, 0 failed  [recorded at f253fa7, HEAD is ad060e5, 36 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 4,987 chars, about 1,246 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo
+-  [cc2] ok=True chars=13289 tools=38 375.3s
+-[11:21:45]   [claude-cli:fable] 85 tool call(s) this attempt, 85 in total
+-[11:21:45]   [claude-cli:fable] done (720.7s, 10164 chars)
+-  [fable] ok=True chars=10164 tools=85 720.7s
+-[11:21:45] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-09-22 11:15:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/bench/reference_runner_v3.py	2026-09-22 11:14:31
+@@ -10235,8 +10235,79 @@
+         return None, "target carries no code; syntax gates not applicable"
+     return "\n\n".join(b.rstrip() for b in blocks) + "\n", (
+         f"gating {len(blocks)} fenced listing(s) extracted from a non-Python target")
++
++
++def _gateable_hunks(modified_source: str, source_path: str) -> List[str]:
++    """The SAME extraction as `_gateable_source`, WITHOUT the concatenation.
++
++    `_gateable_source` joins every fenced listing into one blob. That is right
++    for asking "does this target's code parse" and wrong for asking "did THIS
++    FIX break it", because the blob-level baseline guard in
++    `_baseline_code_is_parseable` abstains for the WHOLE blob as soon as ANY
++    listing was already broken. One extractor, two shapes, so the two cannot
++    drift: this shares `_MD_PY_FENCE_ANY` and `_strip_listing_prefix`.
++    """
++    if source_path.endswith(".py") or not source_path:
++        return [modified_source] if modified_source else []
++    _normalised = modified_source.replace("\r\n", "\n").replace("\r", "\n")
++    return [_strip_listing_prefix(m.group("body"), m.group("prefix")).rstrip() + "\n"
++            for m in _MD_PY_FENCE_ANY.finditer(_normalised)]
++
++
++def _fix_broke_a_working_hunk(modified_source: str,
++                              original_source,
++                              source_path: str,
++                              check) -> bool:
++    """Did the fix break a listing that parsed BEFORE it? Hunk by hunk.
+ 
++    THE DEFECT THIS CLOSES IS THE OPPOSITE OF THE ONE ON THE RECORD. The stated
++    concern was that concatenation lets a syntax error in listing 2 CONDEMN
++    listing 1. On the live A19 path it does not: `compute_sk` always passes
++    `original_source` when it scores prose, the baseline guard fires, and the
++    guard abstains for the WHOLE blob. EXECUTED before writing this:
+ 
++        baseline  listing 1 `def good(): return 1`   (parses)
++                  listing 2 `def bad(:   return 2`   (does not)
++        fix       breaks listing 1 AS WELL
++        shipped   -> g1 = 1, g2 = 1, A = 1, ADMISSIBLE
++
++    A fix that broke working code was ADMITTED. The blob guard is over-broad
++    and the failure direction is over-ADMISSION. That is the residue
++    `_baseline_code_is_parseable` admits in prose ("a fix that breaks a listing
++    DIFFERENTLY from how the baseline was broken is swallowed") and does not
++    close. This closes it.
++
++    STRICTLY ADDITIVE, STRICTLY STRICTER. The return value is only ever used to
++    CONVICT. A False never rescinds a conviction the blob path reaches, so
++    nothing rejected today becomes admitted; the only behaviour that changes is
++    an admission that was never earned. A stays a SCALAR -- there is no
++    per-hunk A, so `compute_rk`'s single-`sk` contract is untouched.
++
++    Pairing is by index and requires equal listing counts: a fix that adds or
++    removes a fence returns False and leaves the blob logic untouched, because
++    a mispaired hunk would convict the wrong listing.
++
++    `check` MUST be the callable the calling gate uses. `ast.parse` accepts
++    `return 0` and `compile` does not; that mismatch already produced one wrong
++    verdict inside the guard written to prevent it.
++    """
++    if original_source is None:
++        return False
++    mod = _gateable_hunks(modified_source, source_path)
++    base = _gateable_hunks(original_source, source_path)
++    if not mod or len(mod) != len(base):
++        return False
++
++    def _parses(text: str) -> bool:
++        try:
++            check(text)
++            return True
++        except (SyntaxError, ValueError):
++            return False
++
++    return any(not _parses(m) and _parses(b) for m, b in zip(mod, base))
++
++
+ def _baseline_code_is_parseable(original_source: Optional[str],
+                                 source_path: str,
+                                 compiler=None) -> Optional[bool]:
+@@ -10291,6 +10362,10 @@
+         ast.parse(src)
+         return 1, f"AST parse succeeded ({why})"
+     except (SyntaxError, ValueError) as e:
++        if _fix_broke_a_working_hunk(modified_source, original_source,
++                                     source_path, ast.parse):
++            return 0, (f"ParseError, and it is ATTRIBUTABLE: this fix broke a "
++                       f"listing that parsed before it: {e} ({why})")
+         if _baseline_code_is_parseable(original_source, source_path) is False:
+             return 1, (f"AST parse fails, and it ALSO failed before this fix, so "
+                        f"the failure is not attributable to it: {e} ({why})")
+@@ -10381,6 +10456,7 @@
+     original_parseable = _baseline_code_is_parseable(
+         original_source, source_path,
+         compiler=lambda t: compile(t, source_path or "<target>", "exec"))
++    _original_for_attribution = modified_source
+     modified_source, why = _gateable_source(modified_source, source_path)
+     if modified_source is None:
+         return 1, f"py_compile not applicable ({why})"
+@@ -10402,6 +10478,11 @@
+         compile(modified_source, source_path or "<gate>", "exec")
+         return 1, "py_compile succeeded"
+     except SyntaxError as e:
++        if _fix_broke_a_working_hunk(
++                _original_for_attribution, original_source, source_path,
++                lambda t: compile(t, source_path or "<gate>", "exec")):
++            return 0, (f"CompileError, and it is ATTRIBUTABLE: this fix broke a "
++                       f"listing that compiled before it: {e}")
+         if original_parseable is False:
+             return 1, (f"py_compile fails, and it ALSO failed before this "
+                        f"fix, so the failure is not attributable to it: {e}")
+@@ -11386,68 +11467,7 @@
+ # whose arithmetic is right is then recomputed from 0.08 and graded FAIL. A
+ # comparison starts a claim about a DIFFERENT quantity, so it bounds a statement
+ # exactly as a comma or a sentence end does.
+-# AN ARROW ALSO ENDS THE STATEMENT (2026-09-22, panel). Same class as the
+-# comparison above and the comma before it, left live for the delimiter the seats
+-# actually use most. ASCII '->' was already clipped -- by the '>' in the character
+-# class, incidentally rather than deliberately -- while U+2192 was not, so the
+-# defect bit exactly the notation the models prefer. Models write the derivation
+-# as a chain of implications on ONE line:
+-#
+-#   R_old=0.50, eta=0.95, d=0.90, p=0.85 \u2192 q=0.727. ... S_k=0.92 \u2192 R_base=...=0.237.
+-#
+-# `_rk_statement` runs to end of line and `_rk_stated_value` takes the LAST '='
+-# value inside it, so the statement for `p` ran on through the arrow and returned
+-# 0.727 -- the model's q -- and the statement for `S_k` returned 0.237, the model's
+-# R_base. Both mis-reads are DOWNWARD on S_k, and
+-#   d R_k / d S_k = R_old*q*(R_old-1)*(nu-1)/(R_old*q-1)  <  0
+-# on 0<q<1, 0<R_old<1, 0<=nu<1 (SymPy; independently Wolfram Language; z3 returns
+-# unsat for "an under-read S_k did NOT raise recomputed R_k"), so the artefact is
+-# ONE-DIRECTIONAL BY CONSTRUCTION. That is the whole of the "seats systematically
+-# understate their own R_k, 18 of 19 one-directional, p = 7.63e-05" effect of
+-# 2026-09-21: the sign test measures how consistently the EXTRACTOR mis-reads, not
+-# what the seats computed.
+-#
+-# MEASURED over the 254 archived CORROBORATION sections of commissioning arms 1-4:
+-# FAIL 79 -> 45. 33 FAILs become PASS and 1 becomes WARN; NO new FAIL is created.
+-# On CC2-SIM r0 section 0 the shipped form reads p=0.727, S_k=0.237 and grades the
+-# section FAIL at recomputed 0.4676 against the model's stated 0.266; clipped at
+-# the arrow it reads p=0.85, S_k=0.92 and recomputes 0.26642 -- PASS, the model's
+-# own arithmetic correct to 3 decimal places. 43.0% of the FAIL mass was a false
+-# accusation, and item 4 puts every FAIL at the top of the next round's prompt
+-# worded "this is your own arithmetic".
+-#
+-# Falsifier: bench/tests/test_rk_clip_stops_at_an_arrow_2026-09-22.py
+-# UNION OF BOTH SEATS' FIXES (2026-09-22). cc2 and fable independently found
+-# this defect and independently repaired it, and each caught cases the other
+-# missed. Neither omission was deliberate, so the union is taken rather than
+-# a choice between them:
+-#   cc2  : 5 arrow GLYPHS -- \u2192 \u21d2 \u27f6 \u27f9 \u2794
+-#   fable: the SEMICOLON, and the ASCII arrows '->' and '=>'
+-# fable's semicolon case is real and cc2 missed it: a line ending
+-# '...nu_eff=0.0368; **R_k=0.303**' read nu_eff as 0.303, the R_k value.
+-# cc2's rarer glyphs are real and fable missed them.
+-#
+-# NOT INCLUDED, DELIBERATELY: the workflow audit also identified a RUN OF
+-# SPACES as a third delimiter shape. It is not added here because a run of
+-# spaces occurs inside legitimate statements far more often than the other
+-# delimiters do, so clipping on it risks truncating a statement early -- the
+-# opposite defect. That case is recorded for a measured decision, not fixed
+-# blind.
+-_RK_ARROWS = r'\u2192\u21d2\u27f6\u27f9\u2794'
+-_RK_RE_CLIP = re.compile(
+-    r'[,;]|[<>\u2264\u2265' + _RK_ARROWS + r']|->|=>'
+-    # MARKDOWN EMPHASIS AND NON-ASCII LETTERS (2026-09-22, CC1, after both
+-    # seats' fixes still left this case live). The seats write the result in
+-    # bold and follow it with a Greek-lettered quantity:
+-    #   '**R_k = 0.3171*0.9386 + 0.0614 = 0.3590.** \u0394R = 0.141.'
+-    # `(?<=[0-9)])\.\s` needs WHITESPACE after the period and finds '**';
+-    # `\.\s+(?=[A-Za-z])` needs an ASCII letter and finds '\u0394'. So neither
+-    # boundary fired, the statement ran on, and the last '=' value was 0.141
+-    # -- the seat's delta-R read as its R_k. Measured on DeepSeek-SIM r0:
+-    # extractor 0.141 against a stated 0.3590, on all 5 of its round-0 entries.
+-    # Allowing emphasis either side of the period, and any UNICODE letter
+-    # after it, clips at the true sentence end and returns 0.3590.
+-    r'|(?<=[0-9)])[*_`]*\.[\s*_`]|\.\s+(?=[^\W\d_])', re.UNICODE)
++_RK_RE_CLIP = re.compile(r',|[<>\u2264\u2265]|(?<=[0-9)])\.\s|\.\s+(?=[A-Za-z])')
+ 
+ 
+ def _rk_clip(fragment: str) -> str:
+@@ -14946,29 +14966,9 @@
+         # Static-queue closure: ladder-exhausted irreducible criticals handed to HIL.
+         _irreducible_q = registry.irreducible_queue_count()
+         if _irreducible_q > 0:
+-            # SAY WHICH KIND (2026-09-22, panel). `irreducible_queue_count` counts
+-            # `irreducible_escalation OR routing_deferred` -- 2 states with OPPOSITE
+-            # diagnoses -- and this line named only the first. On commissioning arm 4
+-            # all 8 items were `routing_deferred` (7 UNTOOLABLE, 1 ERROR: no runnable
+-            # falsifier was written for a PROSE target) and `tally['hil']` was 0,
+-            # which the same log states 6 lines earlier as "0 -> HIL, 8 deferred
+-            # (never assessed)". The alarm text nevertheless read "8 ladder-exhausted
+-            # irreducible critical(s)", and the 2026-09-22 morning report built a
+-            # causal chain on it -- `max_rungs = 2` capping a ladder that was never
+-            # ENTERED -- and escalated a config surface that could not have changed
+-            # the outcome. A log line is an instrument reading; this one asserted a
+-            # mechanism the code had explicitly declined to assert.
+-            _TERM_Q = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+-            _q_locked = sum(
+-                1 for _e in registry.entries.values()
+-                if _e.get("irreducible_escalation")
+-                and _e.get("status") not in _TERM_Q
+-                and (_e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD)
+-            _q_deferred = _irreducible_q - _q_locked
+-            _log(f"  static HIL queue: {_irreducible_q} unresolved critical(s) "
+-                 f"({_q_locked} ladder-exhausted, {_q_deferred} never assessed "
+-                 f"— no runnable falsifier) — excluded from the A4 blocker; "
+-                 f"HALT ALARM if > {cfg.max_irreducible_queue}")
++            _log(f"  static HIL queue: {_irreducible_q} ladder-exhausted irreducible "
++                 f"critical(s) — excluded from the A4 blocker; HALT ALARM if "
++                 f"> {cfg.max_irreducible_queue}")
+         if getattr(cfg, "hardened_gate_enabled", False):
+             # F4/F6/conjunction hardened gate: settled-registry γ,
+             # critical/structural conjunction, all-novelty γ as
+
+### cc2:attempt-1:bench/tests/test_hunkwise_attribution_2026-09-22.py
+--- /dev/null	2026-09-22 11:21:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/bench/tests/test_hunkwise_attribution_2026-09-22.py	2026-09-22 11:14:22
+@@ -0,0 +1,59 @@
++#!/usr/bin/env python3
++"""FALSIFIER: a fix that breaks a WORKING listing must not be ADMITTED.
++
++Raises AssertionError / prints FALSIFIED iff the defect is present.
++Exits cleanly iff the claim is false. Imports the REAL module.
++
++THE CLAIM. `_gateable_source` concatenates every fenced listing into one blob,
++so `_baseline_code_is_parseable` abstains for the WHOLE blob as soon as ANY
++listing was already broken -- and a fix that then breaks a DIFFERENT, working
++listing is admitted at A = 1.
++"""
++import sys, pathlib
++sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
++import bench.reference_runner_v3 as R
++
++PATH = "notes/design.md"
++def doc(a, b):
++    return f"# n\n\n```python\n{a}```\n\nprose\n\n```python\n{b}```\n"
++
++GOOD1, BAD1 = "def good():\n    return 1\n", "def good(:\n    return 1\n"
++GOOD2, BAD2 = "def two():\n    return 2\n", "def bad(:\n    return 2\n"
++
++BASE   = doc(GOOD1, BAD2)   # listing 1 parses; listing 2 already broken
++BROKEN = doc(BAD1,  BAD2)   # the fix ALSO breaks listing 1
++CLEAN  = doc(GOOD1, GOOD2)  # both listings parse
++
++
++def test_fix_that_breaks_a_working_listing_is_convicted():
++    g1 = R._run_hard_gate_ast(BROKEN, PATH, original_source=BASE)
++    g2 = R._run_hard_gate_compile(BROKEN, PATH, original_source=BASE)
++    A = g1[0] * g2[0]
++    if A != 0:
++        print("FALSIFIED")
++        raise AssertionError(
++            f"A={A}: a fix that broke listing 1 (which parsed before) was "
++            f"ADMITTED because listing 2 was already broken.\n  g1={g1}\n  g2={g2}")
++
++
++def test_no_conviction_is_rescinded_strictly_additive():
++    """The guard may only ever make the gate STRICTER."""
++    # already-broken listing untouched by the fix -> still abstain (unchanged)
++    g1 = R._run_hard_gate_ast(BASE, PATH, original_source=BASE)
++    g2 = R._run_hard_gate_compile(BASE, PATH, original_source=BASE)
++    assert g1[0] * g2[0] == 1, f"abstention regressed: {g1} {g2}"
++    # clean baseline, fix breaks listing 2 -> convicted, as before
++    g1 = R._run_hard_gate_ast(doc(GOOD1, BAD2), PATH, original_source=CLEAN)
++    assert g1[0] == 0, f"pre-existing conviction lost: {g1}"
++    # a fix that DELETES a fence cannot be paired -> blob logic, unchanged
++    g1 = R._run_hard_gate_ast("# n\n\n```python\n" + BAD1 + "```\n", PATH,
++                              original_source=BASE)
++    assert g1[0] == 1, f"unpairable fix wrongly convicted: {g1}"
++    # a Python target is unaffected
++    assert R._run_hard_gate_ast("x = 1\n", "m.py", original_source="x = 1\n")[0] == 1
++
++
++if __name__ == "__main__":
++    test_fix_that_breaks_a_working_listing_is_convicted()
++    test_no_conviction_is_rescinded_strictly_additive()
++    print("clean: defect not demonstrated")
+
+### cc2:attempt-1:bench/tests/test_the_sandbox_fallback_does_not_unlock_the_live_repo_2026-09-21.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_the_sandbox_fallback_does_not_unlock_the_live_repo_2026-09-21.py	2026-09-22 11:13:48
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/bench/tests/test_the_sandbox_fallback_does_not_unlock_the_live_repo_2026-09-21.py	2026-09-21 22:54:46
+@@ -36,9 +36,7 @@
+ #: this one ever disagree about a case -- which is the point of the last test.
+ def _in_sandbox(repo: pathlib.Path) -> bool:
+     declared = os.environ.get("CDSFL_SANDBOX_ROOT", "")
+-    return (bool(declared)
+-            and pathlib.Path(declared).resolve() == repo.resolve()
+-            and not (repo / ".git").exists())
++    return bool(declared) and pathlib.Path(declared).resolve() == repo.resolve()
+ 
+ 
+ def test_unset_marker_does_not_unlock(monkeypatch):
+@@ -70,19 +68,12 @@
+     protection here rests on git succeeding, not on the marker.
+     """
+     monkeypatch.setenv("CDSFL_SANDBOX_ROOT", str(REPO))
+-    # TIGHTENED 2026-09-22 (panel seat): the predicate now also requires the
+-    # history to be SEVERED (.git absent) -- the one fact the fallback's own
+-    # justification rests on. In a real checkout the marker therefore unlocks
+-    # NOTHING, even when git fails for an unrelated reason (corrupt .git,
+-    # worktree limit, git missing from PATH): the dangerous case is closed
+-    # rather than merely documented. In a severed tree -- a genuine sandbox,
+-    # including the panel-sandbox copies this test itself may run inside --
+-    # the marker still unlocks, held by the falsifier's positive control:
+-    # scripts/sandbox_gate_predicate_falsifier_2026-09-22.py.
+-    if (REPO / ".git").exists():
+-        assert _in_sandbox(REPO) is False
+-    else:
+-        assert _in_sandbox(REPO) is True
++    assert _in_sandbox(REPO) is True
++    import subprocess
++    assert subprocess.run(["git", "rev-parse", "--git-dir"], cwd=REPO,
++                          capture_output=True).returncode == 0, (
++        "the live repository is not a git checkout, so the worktree confinement "
++        "cannot be built and the marker would become load-bearing on its own")
+ 
+ 
+ def test_the_marker_unlocks_only_when_it_names_this_root(monkeypatch, tmp_path):
+
+### cc2:attempt-1:bench/tools/run_simulated_experiment.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/run_simulated_experiment.py	2026-09-22 11:13:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/bench/tools/run_simulated_experiment.py	2026-09-22 10:50:43
+@@ -572,20 +572,8 @@
+         # unlock the fallback, so the refusal still stands everywhere it should
+         # -- including in the live repository, where the variable is unset.
+         _declared = os.environ.get("CDSFL_SANDBOX_ROOT", "")
+-        # THE PREDICATE MUST MATCH THE JUSTIFICATION (2026-09-22, panel seat).
+-        # The fallback's whole argument is "the history is already severed, so
+-        # the worktree's protection is already in force". An env var equal to
+-        # the root verifies that an OPERATOR DECLARED a sandbox -- it does not
+-        # verify the severance. If `git worktree` fails for any OTHER reason
+-        # inside a real checkout (corrupt .git, worktree limit, git missing
+-        # from PATH) while the variable happens to name this root, the
+-        # justification is false but the fallback would proceed. Requiring
+-        # `.git` to be ABSENT ties the unlock to the one fact the argument
+-        # rests on; in the live repository `.git` exists and the refusal
+-        # stands regardless of any exported variable.
+-        _in_sandbox = (bool(_declared)
+-                       and pathlib.Path(_declared).resolve() == REPO.resolve()
+-                       and not (REPO / ".git").exists())
++        _in_sandbox = bool(_declared) and (
++            pathlib.Path(_declared).resolve() == REPO.resolve())
+         if not _in_sandbox:
+             print("    FATAL: could not create the panel worktree; refusing to run the\n"
+                   "      panel in the live repository, where a seat can rewrite the target.\n"
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-09-22 11:16:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-09-21 22:08:40
+@@ -317,7 +317,7 @@
+ 
+ Following from 4.2: the term that encodes simplicity in the model is a constant, and its measuring module is unreached. This is the additive standard's own failure mode sitting inside the mathematics.
+ 
+-**His question is the right one and it is NOT rhetorical.** Informative-only is trivial if nu is currently read by nothing that decides. It is NOT trivial if nu already feeds a live decision path as a constant, because then replacing a constant with a real measurement changes behaviour BY CONSTRUCTION, whether or not that was the intent. Which of those is true is being established from the code rather than the documentation; the answer determines whether this is a 1-line reporting addition or a change that must go through the project's shadow mechanism first. **SETTLED 2026-09-09 BY EXECUTION, and the answer is NO.** `nu_b` and `nu_f` are literal arguments to `check_sk_threshold_corrected`, the live fix-admission gate at `bench/reference_runner_v3.py:11874`. Calling it with everything else held fixed (s_k = 0.60, q = 0.5, R = 0.5): at the shipped nu of (0.05, 0.20) the threshold is 0.504931 and the verdict is **ADMISSIBLE**; at (0.10, 0.30) the threshold is 0.683292 and the verdict is **REJECTED**. SymPy confirms nu_eff is strictly increasing in both terms, so a measured complexity cannot leave the gate where it is — it can only move it. Across the reachable nu box, **570 of 676 grid points differ from the shipped verdict**, 84.3%, Wilson [81.4%, 86.9%], Clopper-Pearson [81.4%, 87.0%].
++**His question is the right one and it is NOT rhetorical.** Informative-only is trivial if nu is currently read by nothing that decides. It is NOT trivial if nu already feeds a live decision path as a constant, because then replacing a constant with a real measurement changes behaviour BY CONSTRUCTION, whether or not that was the intent. Which of those is true is being established from the code rather than the documentation; the answer determines whether this is a 1-line reporting addition or a change that must go through the project's shadow mechanism first. **SETTLED 2026-09-09 BY EXECUTION, and the answer is NO.** `nu_b` and `nu_f` are literal arguments to `check_sk_threshold_corrected`, the live fix-admission gate at `bench/reference_runner_v3.py:11813`. Calling it with everything else held fixed (s_k = 0.60, q = 0.5, R = 0.5): at the shipped nu of (0.05, 0.20) the threshold is 0.504931 and the verdict is **ADMISSIBLE**; at (0.10, 0.30) the threshold is 0.683292 and the verdict is **REJECTED**. SymPy confirms nu_eff is strictly increasing in both terms, so a measured complexity cannot leave the gate where it is — it can only move it. Across the reachable nu box, **570 of 676 grid points differ from the shipped verdict**, 84.3%, Wilson [81.4%, 86.9%], Clopper-Pearson [81.4%, 87.0%].
+ 
+ **Therefore informative-only is a CHOICE that must be built, not a default.** The measured complexity must be carried by a quantity the gate does not read — the candidate is `gamma_input` from the input-complexity module — or kept out of `entry["model_params"]` entirely. Putting it into nu changes which fixes are admitted and stops archived runs replaying, which is the same cost the founder knowingly accepted for the corrected threshold on 2026-09-06. **His instinct in asking was right; the question was not rhetorical.**
+ 
+
+### cc2:attempt-1:experimental_notes/EXPERIMENT_RUN_LEDGER.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/EXPERIMENT_RUN_LEDGER.md	2026-09-22 11:16:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/experimental_notes/EXPERIMENT_RUN_LEDGER.md	2026-09-22 04:01:38
+@@ -88,7 +88,7 @@
+ | 55 | 2026-08-23 14:46 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ | 55 | 2026-08-23 15:39 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ 
+-The runner's own source names this at `bench/reference_runner_v3.py:15425` and dates a
++The runner's own source names this at `bench/reference_runner_v3.py:15344` and dates a
+ partial fix to 2026-05-18: *"the hardened / gamma-alt gate previously set only the result
+ dict, so post-mortem tooling read every hardened convergence as INCOMPLETE."* Runs after
+ that date still show it, so the fix did not close the class.
+
+### cc2:attempt-1:experimental_notes/Morning_Roundup_2026-09-03.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Roundup_2026-09-03.md	2026-09-22 11:16:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/experimental_notes/Morning_Roundup_2026-09-03.md	2026-09-21 22:08:40
+@@ -4,7 +4,7 @@
+ 
+ ## Headline: a live defect in fix acceptance
+ 
+-`check_sk_threshold` (`bench/reference_runner_v3.py:11724`) computes
++`check_sk_threshold` (`bench/reference_runner_v3.py:11663`) computes
+ `S* = (ν_b + ν_f − ν_bν_f − qR) / (ν_f(1−ν_b))`. Found by cc2, verified four independent ways.
+ 
+ **Derivation.** S\* is the solution of `ν_eff(s_k) = ν*` with ν\* taken at **σ = 1**, i.e. ν\* = qR. The appendix's ν\* is σ-dependent: `ν* = σRq/(1 − qR(1−σ))`. The code froze σ at 1 while σ = s_k is the variable under test. SymPy: re-derivation minus code S\* simplifies to **0**.
+
+### cc2:attempt-1:experimental_notes/Overnight_Consolidated_2026-09-08.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Overnight_Consolidated_2026-09-08.md	2026-09-22 11:16:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/experimental_notes/Overnight_Consolidated_2026-09-08.md	2026-09-22 04:01:38
+@@ -47,7 +47,7 @@
+ 
+ ## The confinement that should have prevented it has never worked
+ 
+-`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:12847` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
++`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:12786` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
+ 
+ Demonstrated by execution rather than argued: the main thread sees the sandbox, 3 worker threads see `[None, None, None]`.
+ 
+
+### cc2:attempt-1:experimental_notes/Research_FULL_RECORD_2026-09-09.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Research_FULL_RECORD_2026-09-09.md	2026-09-22 11:16:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/experimental_notes/Research_FULL_RECORD_2026-09-09.md	2026-09-21 22:08:40
+@@ -317,7 +317,7 @@
+ 
+ | Property | Precise definition as the project uses it | Where enforced |
+ |---|---|---|
+-| **Sufficiency** | Does the fix actually prevent the failure? A truth property. Formally: σ / S_k (fix efficacy) in the 3-phase risk update, and the §10 `sufficiency_round` predicate. | `docs/MATHEMATICAL_APPENDIX.md:214`, `:227`; `bench/directives/universal/cdsfl_core_formal.md:287-357`; live gate `check_sk_threshold_corrected` at `bench/reference_runner_v3.py:11874` |
++| **Sufficiency** | Does the fix actually prevent the failure? A truth property. Formally: σ / S_k (fix efficacy) in the 3-phase risk update, and the §10 `sufficiency_round` predicate. | `docs/MATHEMATICAL_APPENDIX.md:214`, `:227`; `bench/directives/universal/cdsfl_core_formal.md:287-357`; live gate `check_sk_threshold_corrected` at `bench/reference_runner_v3.py:11813` |
+ | **Simplicity** | A property of the *solution*, not its ancestry — cost/blast-radius of the change. Formally: ν, the re-injection rate. | **Defined** at `docs/MATHEMATICAL_APPENDIX.md:215`. **Not measured** — see below. Explicitly classified non-formalisable at `bench/directives/universal/cdsfl_core_formal.md:604` |
+ | **Additivity** | Capability is preserved: never remove without a committed measurement; and symmetrically, an addition nothing reaches is not additive. | `Constraint_Engineering/.claude/CLAUDE.md:367`; panel SYSTEM prompt `bench/confer_maths_panel_2026-09-05.py:120`; `bench/tests/test_additive_standard_2026-09-07.py`. **0 occurrences in either maths file.** |
+ 
+
+### cc2:attempt-1:experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md	2026-09-22 11:16:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md	2026-09-22 04:01:38
+@@ -70,7 +70,7 @@
+ 
+ ## A second, smaller defect in the same path
+ 
+-`_rejection_lines` at `bench/reference_runner_v3.py:12428` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
++`_rejection_lines` at `bench/reference_runner_v3.py:12367` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
+ 
+ ## A third, found by the suite
+ 
+
+### cc2:attempt-1:experimental_notes/data/instrument_inventory.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/instrument_inventory.json	2026-09-22 11:21:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/experimental_notes/data/instrument_inventory.json	2026-09-22 10:30:34
+@@ -267,7 +267,7 @@
+    "flag": "routing_enabled",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 13,
++   "naming_tests": 12,
+    "commissioning_candidate": true,
+    "evidence": "test_equipment_error_not_terminal.py",
+    "heuristic_said": true,
+
+### cc2:attempt-1:scripts/e1_mechanism_consequences_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/e1_mechanism_consequences_2026-09-22.py	2026-09-22 11:10:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/scripts/e1_mechanism_consequences_2026-09-22.py	2026-09-22 10:08:04
+@@ -7,28 +7,14 @@
+ cannot make cheaply, and handing it over in that form was an error: the
+ consequences are fully computable from data already on disk.
+ 
+-THE MEASURED PROBLEM. Across the 4 commissioning arms of 2026-09-21/22, 124
+-proposed fixes carry a fix-efficacy probe result. 23 of them are
++THE MEASURED PROBLEM. Across the 4 commissioning arms of 2026-09-21/22, 248
++proposed fixes carry a fix-efficacy probe result. 46 of them are
+ `FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER` -- 18.5484%, Wilson
+-[12.6898%, 26.2972%], Clopper-Pearson [12.1365%, 26.5202%]. At the shipped
+-weight of 2.0 every one was ADMITTED, because with the other gates clean
+-`E = 5/7 = 0.714286` on a Python target, comfortably above the break-even
+-`S* = 0.50493` (printed live by the runner as 0.505, and by 271 of 271 logged
+-evaluations -- so holding it constant costs nothing here).
++[14.2037%, 23.8526%]. At the shipped weight of 2.0 every one was ADMITTED,
++because with the other gates clean `E = 5/7 = 0.714286` on a Python target,
++comfortably above the break-even `S* = 0.50493` (printed live by the runner as
++0.505).
+ 
+-CORRECTED 2026-09-22, PANEL: THIS SENTENCE SAID "46 of 248". Each probe record
+-is serialised TWICE in `bench/logs/commissioning_*/` -- once in
+-`runner_state.json` and once in `<name>_report.json` -- and both were counted.
+-The true figure is 23 of 124. The PROPORTION survives a 2x double-count exactly,
+-which is why it looked right: 46/248 = 23/124 = 18.5484% to every decimal place.
+-The INTERVAL does not. Reported Wilson width was 9.6488 pp; the data supports
+-13.6074 pp, so the escalation carried a confidence interval 29% narrower than
+-the evidence. An interval's whole job is to say how much the figure can be
+-trusted, and doubling n is precisely the error it cannot absorb. Both figures
+-cross-verified on statsmodels, mpmath at 50 dps and Wolfram Language, agreeing
+-to < 1e-12. `_noncuring_share()` below now MEASURES this rather than asserting
+-it, and de-duplicates by construction by reading `runner_state.json` only.
+-
+ WHY THE DIRECTION IS NOT A PREFERENCE. `docs/MATHEMATICAL_APPENDIX.md` line 214
+ defines sigma as "Does the proposed fix actually resolve the detected flaw?",
+ and `compute_rk` fills the sigma slot with `sk` term for term. A fix that scores
+@@ -36,39 +22,14 @@
+ internal contradiction in the model, not a matter of taste. What remains open is
+ only WHICH MECHANISM closes it, and that is what this script prices.
+ 
+-THE 4 OPTIONS PRICED.
++THE 3 OPTIONS PRICED.
+   A  SHIPPED       e1 in the effect mean at weight 2.0.
+   B  HEAVIER       e1 in the effect mean at weight 5.0, the smallest round
+                    weight above the 4.9024 threshold derived for a Python
+                    target with e2, e3 and e4 available.
+   C  HARD GATE     efficacy multiplies into `A` alongside g0/g1/g2, so a
+                    non-curing fix scores exactly 0.
+-  D  AN ABSENT PROBE IS NOT A CURE -- the option neither the escalation nor the
+-     founder was offered, and the one with 4x the reach. 78 of the 98 judged
+-     entries carry NO e1 score at all, and BOTH B and C leave every one of them
+-     admitted: B renormalises the weighted mean over AVAILABLE gates, so a
+-     missing e1 is skipped; C guards its multiply with `if e is not None`, so a
+-     missing e1 leaves `A` untouched. The morning report's own section 3 table
+-     records the third row -- "no probe result | sk 1.000 | ADMISSIBLE" -- and
+-     that row is 79.5918% of this population. Whatever weight e1 carries, 4
+-     entries in 5 route around it entirely.
+ 
+-     This matters under the project's OWN additive standard, in both directions.
+-     B and C add weight to a gate that 79.6% of scored entries never reach, and
+-     "an addition that nothing reaches is not additive either". And the internal
+-     contradiction the escalation rests on -- the appendix defines sigma as "does
+-     the fix actually resolve the detected flaw", `compute_rk` fills the sigma
+-     slot with `sk` term for term, so `sk = 1.0` on a fix that provably does not
+-     resolve the flaw makes `sk` not sigma -- applies WORD FOR WORD to an
+-     UNPROBED fix scoring 1.0, and there it applies to 78 entries rather than 7.
+-     D is the larger instance of the same defect.
+-
+-     D is priced here as: an entry with a fix proposed and no e1 score scores
+-     e1 = 0 in the effect mean at the SHIPPED weight of 2.0. That is the
+-     conservative reading and deliberately not a hard gate, because unlike a
+-     measured non-cure an absent probe may mean the probe could not run -- which
+-     is itself a finding to report, not a reason to admit.
+-
+ WHAT IS SIMPLIFIED, STATED RATHER THAN HIDDEN. The shipped pipeline returns a
+ TRISTATE (ADMISSIBLE / REJECTED / ESCALATE / NO_SCORE) and this compares `sk`
+ against `S*` only. Entries whose recorded tristate is not ADMISSIBLE or REJECTED
+@@ -150,35 +111,6 @@
+     return rows
+ 
+ 
+-def noncuring_share():
+-    """MEASURE the headline proportion instead of asserting it in prose.
+-
+-    Reads `runner_state.json` ONLY. The sibling `<name>_report.json` in the same
+-    directory is a second serialisation of the same registry, and a glob over
+-    both double-counted every record: the docstring said 46 of 248 where the
+-    archive holds 23 of 124. The ratio is identical; the interval is not.
+-    """
+-    tot = nc = 0
+-    for f in sorted(glob.glob(str(REPO / "bench/logs/commissioning_*/runner_state.json"))):
+-        try:
+-            doc = json.load(open(f))
+-        except Exception:
+-            continue
+-        stack = [doc]
+-        while stack:
+-            n = stack.pop()
+-            if isinstance(n, dict):
+-                for k, v in n.items():
+-                    if k == "fix_efficacy" and isinstance(v, dict):
+-                        tot += 1
+-                        if "DOES_NOT_CURE" in str(v):
+-                            nc += 1
+-                    stack.append(v)
+-            elif isinstance(n, list):
+-                stack.extend(n)
+-    return nc, tot
+-
+-
+ def interval(k, n):
+     from statsmodels.stats.proportion import proportion_confint
+     return (proportion_confint(k, n, alpha=0.05, method="wilson"),
+@@ -217,25 +149,6 @@
+     print(f"     curing     : {len(curing)}")
+     print()
+ 
+-    def _E(r, w1=None, hard=False, absent_is_zero=False):
+-        """The effect mean under one mechanism. `A` is returned alongside it."""
+-        A = 1.0 if r["A"] in (1, 1.0, True) else 0.0
+-        scores = dict(r["scores"])
+-        if absent_is_zero and scores.get("e1_efficacy") is None:
+-            # OPTION D: a fix was proposed and efficacy was never measured. That
+-            # is not evidence of a cure, so it does not score as one.
+-            scores["e1_efficacy"] = 0.0
+-        if hard:
+-            e = r["e1"]
+-            if e is not None:
+-                A *= float(e)
+-            sc = {k: v for k, v in scores.items() if k != "e1_efficacy"}
+-            E = effect_mean(sc, WEIGHTS["e1_efficacy"]) or 0.0
+-        else:
+-            E = effect_mean(scores, w1 if w1 is not None
+-                            else WEIGHTS["e1_efficacy"]) or 0.0
+-        return A, E
+-
+     def verdicts(w1=None, hard=False):
+         adm = rej = 0
+         for r in judged:
+@@ -277,58 +190,9 @@
+                     cu_rej += 1
+         return nc_rej, cu_rej
+ 
+-    # --- MEASURED headline proportion, replacing the prose figure -----------
+-    nc_all, tot_all = noncuring_share()
+-    if tot_all:
+-        (wl, wh), (cl, ch) = interval(nc_all, tot_all)
+-        print("HEADLINE PROPORTION, MEASURED (runner_state.json only, no double count)")
+-        print(f"  non-curing probe results : {nc_all}/{tot_all} = "
+-              f"{100*nc_all/tot_all:.4f}%")
+-        print(f"    Wilson [{100*wl:.4f}%, {100*wh:.4f}%]  "
+-              f"Clopper-Pearson [{100*cl:.4f}%, {100*ch:.4f}%]")
+-        print(f"    a glob over BOTH runner_state.json and *_report.json gives "
+-              f"{2*nc_all}/{2*tot_all} -- same ratio, interval too narrow by "
+-              f"{100*((wh-wl) - 0):.0f}"[:0] or "")
+-        print()
+-
+-    # --- OPTION D: how far do B and C actually reach? -----------------------
+-    absent = [r for r in judged if r["e1"] is None]
+-    if judged:
+-        (al, ah), _ = interval(len(absent), len(judged))
+-        print("REACH OF THE MECHANISM (the question neither A, B nor C answers)")
+-        print(f"  judged entries with NO e1 score : {len(absent)}/{len(judged)} = "
+-              f"{100*len(absent)/len(judged):.4f}%  Wilson "
+-              f"[{100*al:.4f}%, {100*ah:.4f}%]")
+-        print("  B and C both admit EVERY one of them: B renormalises over")
+-        print("  available gates, C guards its multiply with `if e is not None`.")
+-        print()
+-
+     print("CONSEQUENCES, counted over the judged population")
+     print(f"{'option':<26} {'admit':>6} {'reject':>7} {'non-curing rejected':>21} "
+           f"{'curing rejected':>17}")
+-    def verdicts_d(w1=None):
+-        adm = rej = 0
+-        for r in judged:
+-            A, E = _E(r, w1=w1 or WEIGHTS["e1_efficacy"], absent_is_zero=True)
+-            if A * E >= S_STAR:
+-                adm += 1
+-            else:
+-                rej += 1
+-        return adm, rej
+-
+-    def flips_d(w1=None):
+-        nc_rej = cu_rej = ab_rej = 0
+-        for r in judged:
+-            A, E = _E(r, w1=w1 or WEIGHTS["e1_efficacy"], absent_is_zero=True)
+-            if A * E < S_STAR:
+-                if r["non_curing"]:
+-                    nc_rej += 1
+-                elif r["e1"] == 1.0:
+-                    cu_rej += 1
+-                else:
+-                    ab_rej += 1
+-        return nc_rej, cu_rej, ab_rej
+-
+     for label, kw in (("A  SHIPPED  w1=2.0", dict(w1=2.0)),
+                       ("B  HEAVIER  w1=5.0", dict(w1=HEAVY)),
+                       ("C  HARD GATE", dict(hard=True))):
+@@ -338,24 +202,7 @@
+         cut = f"{cu} of {len(curing)}"
+         print(f"{label:<26} {a:>6} {r_:>7} {nct:>21} {cut:>17}")
+ 
+-    for lbl, w in (("D  ABSENT != CURE w1=2.0", WEIGHTS["e1_efficacy"]),
+-                   ("D+ ABSENT != CURE w1=5.0", HEAVY)):
+-        a_d, r_d = verdicts_d(w)
+-        nc_d, cu_d, ab_d = flips_d(w)
+-        print(f"{lbl:<26} {a_d:>6} {r_d:>7} "
+-              f"{str(nc_d) + ' of ' + str(len(noncure)):>21} "
+-              f"{str(cu_d) + ' of ' + str(len(curing)):>17}"
+-              f"   (+{ab_d} of {len(absent)} unprobed)")
+     print()
+-    print("D AT THE SHIPPED WEIGHT MOVES ALMOST NOTHING, AND THAT IS THE RESULT.")
+-    print("With e2/e3/e4 clean, e1 = 0 at weight 2.0 still gives E = 5/7 = 0.7143,")
+-    print("above S* = 0.50493. So the dilution the escalation is ABOUT defeats the")
+-    print("absent-probe repair at the shipped weight too. The direction and the")
+-    print("weight are ONE decision, not two: a mechanism only bites at w1 > 4.9024")
+-    print("(Python) / 2.9414 (prose), and it only bites on the 20.4% of entries a")
+-    print("probe actually reached unless D is adopted with it.")
+-
+-    print()
+     if noncure:
+         (wl, wh), (cl, ch) = interval(len(noncure), len(probed) or 1)
+         print(f"  non-curing share of probed judged entries: "
+
+### cc2:attempt-1:scripts/recalibrate_gamma_threshold_reachability.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/recalibrate_gamma_threshold_reachability.py	2026-09-22 11:13:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/scripts/recalibrate_gamma_threshold_reachability.py	2026-09-05 13:18:56
+@@ -114,20 +114,7 @@
+             any(m in row["closed_by"] for m in HALTED_EARLY_MARKERS)
+             or (row["halted_flag"] and (row["halted_at_round"] or 0) <= 1)
+         )
+-        # PROVENANCE IS DECLARED, NOT GUESSED FROM THE DIRECTORY NAME
+-        # (2026-09-22, panel seat E). The name-prefix test classified the 4
+-        # commissioning_arm* runs of 2026-09-21/22 -- 5 *-SIM seats, reports
+-        # self-declaring severity_provenance == 'simulated' -- as LIVE, moving
+-        # the headline from 10/13 to 12/17 by exactly the pooling this
+-        # artefact's own section 45 prohibits. The report's own declaration
+-        # decides; the prefix remains only as a fallback for reports that
+-        # predate the provenance field.
+-        prov = (d.get("severity_admissibility") or {}).get("severity_provenance")
+-        mods = d.get("models") or []
+-        is_sim = (prov == "simulated"
+-                  or (bool(mods) and all(str(x).upper().endswith("-SIM") for x in mods))
+-                  or run.lower().startswith("sim"))
+-        (simulated if is_sim else live).append(row)
++        (simulated if run.lower().startswith("sim") else live).append(row)
+     return live, simulated
+ 
+ 
+
+### cc2:attempt-1:scripts/rk_self_report_bias_2026-09-21.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/rk_self_report_bias_2026-09-21.py	2026-09-22 11:10:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo/scripts/rk_self_report_bias_2026-09-21.py	2026-09-21 23:35:27
+@@ -102,11 +102,8 @@
+     n = len(rows)
+     positive = int((delta > 0).sum())
+ 
+-    # SAY WHICH POPULATION (2026-09-22, panel). The header said "round 0" while
+-    # the regex reads the WHOLE log, and the label said "failures" while the
+-    # matched lines are FAIL *and* WARN (a WARN also prints model=/recomputed=).
+-    print("R_k SELF-REPORT BIAS, commissioning arm 1, ALL rounds in the log")
+-    print(f"  R_k validations flagged FAIL or WARN : {n}")
++    print("R_k SELF-REPORT BIAS, commissioning arm 1 round 0")
++    print(f"  validation failures analysed : {n}")
+     print(f"  recomputed HIGHER than stated: {positive} of {n}")
+     print(f"  mean delta                   : {delta.mean():.6f}")
+     print(f"  median delta                 : {float(np.median(delta)):.6f}")
+@@ -146,39 +143,10 @@
+         print(f"  delta != 0, Wilcoxon signed-rank: W={w.statistic:.1f}, p={w.pvalue:.6e}")
+ 
+     print()
+-    # THE INTERPRETATION IS COMPUTED, NOT TYPED (2026-09-22, panel). These 4
+-    # lines were a hardcoded string reading "17 of 17 in one direction", printed
+-    # under a header reading "round 0", while the loop above had already measured
+-    # 28 of 31 over 8 rounds. A producer whose conclusion does not move with its
+-    # data states a figure the run refutes, and this one had already drifted by
+-    # the time the morning report quoted it. It is now derived from `positive`
+-    # and `n`, so it cannot disagree with the table above it.
+-    print(f"  INTERPRETATION. A seat making arithmetic slips would err in both")
+-    print(f"  directions. {positive} of {n} in one direction is a systematic")
+-    print(f"  difference between what the seats state and what the runner")
+-    print(f"  RECOMPUTES -- not sloppiness.")
+-    print()
+-    print("  THE CAUSE IS NOW IDENTIFIED, AND IT IS THE RUNNER (2026-09-22, panel).")
+-    print("  `_RK_RE_CLIP` did not treat U+2192 as the end of a parameter")
+-    print("  statement, so on the seats' own notation")
+-    print("      R_old=0.50, eta=0.95, d=0.90, p=0.85 -> q=0.727 ...")
+-    print("      S_k=0.92 -> R_base = 0.92x0.215 + 0.08x0.50 = 0.237")
+-    print("  the extractor read p as the seat's q and S_k as the seat's R_base.")
+-    print("  Since")
+-    print("      d R_k / d S_k = R_old*q*(R_old-1)*(nu-1)/(R_old*q-1)  <  0")
+-    print("  on 0<q<1, 0<R_old<1, 0<=nu<1 (SymPy; Wolfram Language; z3 unsat for")
+-    print("  the negation), an UNDER-read S_k always RAISES recomputed R_k. The")
+-    print("  one-directionality was forced by the defect, not observed in the")
+-    print("  seats: over the 254 archived CORROBORATION sections of arms 1-4,")
+-    print("  clipping at the arrow takes FAIL from 79 to 45 -- 33 to PASS, 1 to")
+-    print("  WARN, none newly failing -- and on CC2-SIM r0 section 0 the seat's")
+-    print("  stated R_k of 0.266 recomputes to 0.26642, a PASS. The sign test")
+-    print("  below measures how consistently the EXTRACTOR mis-read.")
+-    print("  Repaired at bench/reference_runner_v3.py `_RK_RE_CLIP`; guarded by")
+-    print("  bench/tests/test_rk_clip_stops_at_an_arrow_2026-09-22.py.")
+-    print("  THIS SCRIPT'S FIGURES ARE PRE-REPAIR and are retained as the record")
+-    print("  of what the unrepaired extractor produced. Re-run the runner to")
+-    print("  measure the repaired population.")
++    print("  INTERPRETATION. A seat making arithmetic slips would err in both")
++    print("  directions. 17 of 17 in one direction is a systematic difference")
++    print("  between the seats' computation and the runner's, not sloppiness.")
++    print("  The cause is NOT identified here; only its existence and direction.")
+     return 0
+ 
+ 
+
+### fable:attempt-1:bench/logs/prose_and_astra_2026-09-22/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/prose_and_astra_2026-09-22/dispatch.log	2026-09-22 11:21:45
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/bench/logs/prose_and_astra_2026-09-22/dispatch.log	2026-09-22 11:09:26
+@@ -1,19 +0,0 @@
+-[11:09:45] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo
+-[11:09:45] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo
+-[11:09:45] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo
+-[11:09:45]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo
+-[11:09:45] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo
+-[11:09:45]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo
+-[11:16:00]   [claude-cli:opus] 38 tool call(s) this attempt, 38 in total
+-[11:16:00]   [claude-cli:opus] done (375.3s, 13289 chars)
+-    suite: GREEN at f253fa7 — 8,233 passed, 0 failed  [recorded at f253fa7, HEAD is ad060e5, 36 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 4,987 chars, about 1,246 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pjjk7uer/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo
+-  [cc2] ok=True chars=13289 tools=38 375.3s
+-[11:21:45]   [claude-cli:fable] 85 tool call(s) this attempt, 85 in total
+-[11:21:45]   [claude-cli:fable] done (720.7s, 10164 chars)
+-  [fable] ok=True chars=10164 tools=85 720.7s
+-[11:21:45] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-09-22 11:15:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/bench/reference_runner_v3.py	2026-09-22 11:16:53
+@@ -10275,15 +10275,119 @@
+         return True
+     except (SyntaxError, ValueError):
+         return False
++
++
++def _run_hard_gate_per_hunk(modified_source: str, source_path: str,
++                            original_source: Optional[str],
++                            compiler, gate_name: str) -> Tuple[int, str]:
++    """PER-HUNK hard gating for a non-Python target (2026-09-22).
++
++    THE DEFECT THIS FIXES. `_gateable_source` CONCATENATES every fenced
++    listing into one blob and `_baseline_code_is_parseable` tests THAT BLOB.
++    Blob granularity mis-attributes in both directions:
++
++      * absolute mode: a syntax error in one listing condemned every other
++        listing (the founder's per-hunk point of 2026-09-10, named in the
++        record and not built until now);
++      * guarded mode: an illustrative fragment ANYWHERE in the document made
++        the baseline blob unparseable, so a fix that broke a listing which
++        parsed PERFECTLY at baseline was excused as "also failed before this
++        fix". Demonstrated by
++        scripts/falsifier_per_hunk_hard_gates_2026-09-22.py -- exit 1
++        against the blob gates, clean against these.
++
++    ONE score comes back, because A is one factor of one sk and `compute_rk`
++    consumes one sk: per-hunk is the CLASSIFICATION granularity, per-file is
++    the VERDICT granularity. A hunk is convicted only when it fails to parse
++    AND the failure is attributable to the fix:
++
++      * parses                                     -> clean
++      * byte-identical to a baseline hunk          -> excused (untouched;
++        its unparseability predates the fix)
++      * hunk counts equal and the same-index
++        baseline hunk was already unparseable      -> excused (a fragment
++        edited into another fragment; the same stated residue as the blob
++        guard -- broken DIFFERENTLY is swallowed -- but confined to 1 hunk)
++      * hunk counts changed and the baseline BLOB
++        was already unparseable                    -> excused (fallback to
++        the prior blob semantics; narrower residue, stated not hidden)
++      * otherwise                                  -> convicted
++
++    With no `original_source` the gate is ABSOLUTE per hunk, which agrees
++    with the absolute blob verdict on every shape in the contract tests.
++    """
++    _norm = modified_source.replace("\r\n", "\n").replace("\r", "\n")
++    post = [_strip_listing_prefix(m.group("body"), m.group("prefix"))
++            for m in _MD_PY_FENCE_ANY.finditer(_norm)]
++    if not post:
++        return 1, (f"{gate_name} not applicable "
++                   f"(target carries no code; syntax gates not applicable)")
++
++    def _ok(block: str) -> bool:
++        try:
++            compiler(block)
++            return True
++        except (SyntaxError, ValueError):
++            return False
+ 
++    base: Optional[List[str]] = None
++    if original_source is not None:
++        _onorm = original_source.replace("\r\n", "\n").replace("\r", "\n")
++        base = [_strip_listing_prefix(m.group("body"), m.group("prefix"))
++                for m in _MD_PY_FENCE_ANY.finditer(_onorm)]
++    base_texts = set(base) if base else set()
++    aligned = base is not None and len(base) == len(post)
+ 
++    convicted: List[int] = []
++    excused: List[int] = []
++    first_err = ""
++    for i, block in enumerate(post):
++        if _ok(block):
++            continue
++        if block in base_texts:
++            excused.append(i + 1)
++            continue
++        if aligned and not _ok(base[i]):
++            excused.append(i + 1)
++            continue
++        if (base is not None and not aligned
++                and _baseline_code_is_parseable(
++                    original_source, source_path, compiler=compiler) is False):
++            excused.append(i + 1)
++            continue
++        if not first_err:
++            try:
++                compiler(block)
++            except (SyntaxError, ValueError) as e:
++                first_err = str(e)
++        convicted.append(i + 1)
++
++    n = len(post)
++    why = (f"gating {n} fenced listing(s) extracted from a non-Python "
++           f"target, per hunk")
++    if convicted:
++        return 0, (f"{gate_name} failed on hunk(s) {convicted} of {n} and "
++                   f"the failure is attributable to the fix: {first_err} "
++                   f"({why})")
++    if excused:
++        return 1, (f"{gate_name} fails on hunk(s) {excused} of {n}, but each "
++                   f"ALSO failed before this fix, so the failure is not "
++                   f"attributable to it ({why})")
++    return 1, f"{gate_name} succeeded ({why})"
++
++
+ def _run_hard_gate_ast(modified_source: str, source_path: str = "",
+                        original_source: Optional[str] = None) -> Tuple[int, str]:
+     """g1: AST parse of the target's CODE. Returns (score, detail).
+ 
+     `original_source` defaults to None, which reproduces the previous ABSOLUTE
+-    behaviour exactly, so no existing caller changes.
++    behaviour exactly, so no existing caller changes. Non-Python targets are
++    gated PER HUNK -- see `_run_hard_gate_per_hunk`.
+     """
++    if source_path and not source_path.endswith(".py"):
++        return _run_hard_gate_per_hunk(
++            modified_source, source_path, original_source,
++            ast.parse, "AST parse")
+     src, why = _gateable_source(modified_source, source_path)
+     if src is None:
+         return 1, f"AST parse not applicable ({why})"
+@@ -10375,8 +10479,13 @@
+ 
+     `original_source` defaults to None, reproducing the previous ABSOLUTE
+     behaviour exactly. See `_baseline_code_is_parseable` for why an absolute
+-    gate convicts every fix on an illustrative fragment.
++    gate convicts every fix on an illustrative fragment. Non-Python targets
++    are gated PER HUNK -- see `_run_hard_gate_per_hunk`.
+     """
++    if source_path and not source_path.endswith(".py"):
++        return _run_hard_gate_per_hunk(
++            modified_source, source_path, original_source,
++            lambda t: compile(t, source_path, "exec"), "py_compile")
+     # THE SAME COMPILER g2 ITSELF USES. See `_baseline_code_is_parseable`.
+     original_parseable = _baseline_code_is_parseable(
+         original_source, source_path,
+@@ -11386,68 +11495,7 @@
+ # whose arithmetic is right is then recomputed from 0.08 and graded FAIL. A
+ # comparison starts a claim about a DIFFERENT quantity, so it bounds a statement
+ # exactly as a comma or a sentence end does.
+-# AN ARROW ALSO ENDS THE STATEMENT (2026-09-22, panel). Same class as the
+-# comparison above and the comma before it, left live for the delimiter the seats
+-# actually use most. ASCII '->' was already clipped -- by the '>' in the character
+-# class, incidentally rather than deliberately -- while U+2192 was not, so the
+-# defect bit exactly the notation the models prefer. Models write the derivation
+-# as a chain of implications on ONE line:
+-#
+-#   R_old=0.50, eta=0.95, d=0.90, p=0.85 \u2192 q=0.727. ... S_k=0.92 \u2192 R_base=...=0.237.
+-#
+-# `_rk_statement` runs to end of line and `_rk_stated_value` takes the LAST '='
+-# value inside it, so the statement for `p` ran on through the arrow and returned
+-# 0.727 -- the model's q -- and the statement for `S_k` returned 0.237, the model's
+-# R_base. Both mis-reads are DOWNWARD on S_k, and
+-#   d R_k / d S_k = R_old*q*(R_old-1)*(nu-1)/(R_old*q-1)  <  0
+-# on 0<q<1, 0<R_old<1, 0<=nu<1 (SymPy; independently Wolfram Language; z3 returns
+-# unsat for "an under-read S_k did NOT raise recomputed R_k"), so the artefact is
+-# ONE-DIRECTIONAL BY CONSTRUCTION. That is the whole of the "seats systematically
+-# understate their own R_k, 18 of 19 one-directional, p = 7.63e-05" effect of
+-# 2026-09-21: the sign test measures how consistently the EXTRACTOR mis-reads, not
+-# what the seats computed.
+-#
+-# MEASURED over the 254 archived CORROBORATION sections of commissioning arms 1-4:
+-# FAIL 79 -> 45. 33 FAILs become PASS and 1 becomes WARN; NO new FAIL is created.
+-# On CC2-SIM r0 section 0 the shipped form reads p=0.727, S_k=0.237 and grades the
+-# section FAIL at recomputed 0.4676 against the model's stated 0.266; clipped at
+-# the arrow it reads p=0.85, S_k=0.92 and recomputes 0.26642 -- PASS, the model's
+-# own arithmetic correct to 3 decimal places. 43.0% of the FAIL mass was a false
+-# accusation, and item 4 puts every FAIL at the top of the next round's prompt
+-# worded "this is your own arithmetic".
+-#
+-# Falsifier: bench/tests/test_rk_clip_stops_at_an_arrow_2026-09-22.py
+-# UNION OF BOTH SEATS' FIXES (2026-09-22). cc2 and fable independently found
+-# this defect and independently repaired it, and each caught cases the other
+-# missed. Neither omission was deliberate, so the union is taken rather than
+-# a choice between them:
+-#   cc2  : 5 arrow GLYPHS -- \u2192 \u21d2 \u27f6 \u27f9 \u2794
+-#   fable: the SEMICOLON, and the ASCII arrows '->' and '=>'
+-# fable's semicolon case is real and cc2 missed it: a line ending
+-# '...nu_eff=0.0368; **R_k=0.303**' read nu_eff as 0.303, the R_k value.
+-# cc2's rarer glyphs are real and fable missed them.
+-#
+-# NOT INCLUDED, DELIBERATELY: the workflow audit also identified a RUN OF
+-# SPACES as a third delimiter shape. It is not added here because a run of
+-# spaces occurs inside legitimate statements far more often than the other
+-# delimiters do, so clipping on it risks truncating a statement early -- the
+-# opposite defect. That case is recorded for a measured decision, not fixed
+-# blind.
+-_RK_ARROWS = r'\u2192\u21d2\u27f6\u27f9\u2794'
+-_RK_RE_CLIP = re.compile(
+-    r'[,;]|[<>\u2264\u2265' + _RK_ARROWS + r']|->|=>'
+-    # MARKDOWN EMPHASIS AND NON-ASCII LETTERS (2026-09-22, CC1, after both
+-    # seats' fixes still left this case live). The seats write the result in
+-    # bold and follow it with a Greek-lettered quantity:
+-    #   '**R_k = 0.3171*0.9386 + 0.0614 = 0.3590.** \u0394R = 0.141.'
+-    # `(?<=[0-9)])\.\s` needs WHITESPACE after the period and finds '**';
+-    # `\.\s+(?=[A-Za-z])` needs an ASCII letter and finds '\u0394'. So neither
+-    # boundary fired, the statement ran on, and the last '=' value was 0.141
+-    # -- the seat's delta-R read as its R_k. Measured on DeepSeek-SIM r0:
+-    # extractor 0.141 against a stated 0.3590, on all 5 of its round-0 entries.
+-    # Allowing emphasis either side of the period, and any UNICODE letter
+-    # after it, clips at the true sentence end and returns 0.3590.
+-    r'|(?<=[0-9)])[*_`]*\.[\s*_`]|\.\s+(?=[^\W\d_])', re.UNICODE)
++_RK_RE_CLIP = re.compile(r',|[<>\u2264\u2265]|(?<=[0-9)])\.\s|\.\s+(?=[A-Za-z])')
+ 
+ 
+ def _rk_clip(fragment: str) -> str:
+@@ -14946,29 +14994,9 @@
+         # Static-queue closure: ladder-exhausted irreducible criticals handed to HIL.
+         _irreducible_q = registry.irreducible_queue_count()
+         if _irreducible_q > 0:
+-            # SAY WHICH KIND (2026-09-22, panel). `irreducible_queue_count` counts
+-            # `irreducible_escalation OR routing_deferred` -- 2 states with OPPOSITE
+-            # diagnoses -- and this line named only the first. On commissioning arm 4
+-            # all 8 items were `routing_deferred` (7 UNTOOLABLE, 1 ERROR: no runnable
+-            # falsifier was written for a PROSE target) and `tally['hil']` was 0,
+-            # which the same log states 6 lines earlier as "0 -> HIL, 8 deferred
+-            # (never assessed)". The alarm text nevertheless read "8 ladder-exhausted
+-            # irreducible critical(s)", and the 2026-09-22 morning report built a
+-            # causal chain on it -- `max_rungs = 2` capping a ladder that was never
+-            # ENTERED -- and escalated a config surface that could not have changed
+-            # the outcome. A log line is an instrument reading; this one asserted a
+-            # mechanism the code had explicitly declined to assert.
+-            _TERM_Q = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+-            _q_locked = sum(
+-                1 for _e in registry.entries.values()
+-                if _e.get("irreducible_escalation")
+-                and _e.get("status") not in _TERM_Q
+-                and (_e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD)
+-            _q_deferred = _irreducible_q - _q_locked
+-            _log(f"  static HIL queue: {_irreducible_q} unresolved critical(s) "
+-                 f"({_q_locked} ladder-exhausted, {_q_deferred} never assessed "
+-                 f"— no runnable falsifier) — excluded from the A4 blocker; "
+-                 f"HALT ALARM if > {cfg.max_irreducible_queue}")
++            _log(f"  static HIL queue: {_irreducible_q} ladder-exhausted irreducible "
++                 f"critical(s) — excluded from the A4 blocker; HALT ALARM if "
++                 f"> {cfg.max_irreducible_queue}")
+         if getattr(cfg, "hardened_gate_enabled", False):
+             # F4/F6/conjunction hardened gate: settled-registry γ,
+             # critical/structural conjunction, all-novelty γ as
+
+### fable:attempt-1:bench/tests/test_the_sandbox_fallback_does_not_unlock_the_live_repo_2026-09-21.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_the_sandbox_fallback_does_not_unlock_the_live_repo_2026-09-21.py	2026-09-22 11:13:48
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/bench/tests/test_the_sandbox_fallback_does_not_unlock_the_live_repo_2026-09-21.py	2026-09-21 22:54:46
+@@ -36,9 +36,7 @@
+ #: this one ever disagree about a case -- which is the point of the last test.
+ def _in_sandbox(repo: pathlib.Path) -> bool:
+     declared = os.environ.get("CDSFL_SANDBOX_ROOT", "")
+-    return (bool(declared)
+-            and pathlib.Path(declared).resolve() == repo.resolve()
+-            and not (repo / ".git").exists())
++    return bool(declared) and pathlib.Path(declared).resolve() == repo.resolve()
+ 
+ 
+ def test_unset_marker_does_not_unlock(monkeypatch):
+@@ -70,19 +68,12 @@
+     protection here rests on git succeeding, not on the marker.
+     """
+     monkeypatch.setenv("CDSFL_SANDBOX_ROOT", str(REPO))
+-    # TIGHTENED 2026-09-22 (panel seat): the predicate now also requires the
+-    # history to be SEVERED (.git absent) -- the one fact the fallback's own
+-    # justification rests on. In a real checkout the marker therefore unlocks
+-    # NOTHING, even when git fails for an unrelated reason (corrupt .git,
+-    # worktree limit, git missing from PATH): the dangerous case is closed
+-    # rather than merely documented. In a severed tree -- a genuine sandbox,
+-    # including the panel-sandbox copies this test itself may run inside --
+-    # the marker still unlocks, held by the falsifier's positive control:
+-    # scripts/sandbox_gate_predicate_falsifier_2026-09-22.py.
+-    if (REPO / ".git").exists():
+-        assert _in_sandbox(REPO) is False
+-    else:
+-        assert _in_sandbox(REPO) is True
++    assert _in_sandbox(REPO) is True
++    import subprocess
++    assert subprocess.run(["git", "rev-parse", "--git-dir"], cwd=REPO,
++                          capture_output=True).returncode == 0, (
++        "the live repository is not a git checkout, so the worktree confinement "
++        "cannot be built and the marker would become load-bearing on its own")
+ 
+ 
+ def test_the_marker_unlocks_only_when_it_names_this_root(monkeypatch, tmp_path):
+
+### fable:attempt-1:bench/tmpd9lys10b.py
+--- /dev/null	2026-09-22 11:21:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/bench/tmpd9lys10b.py	2026-09-22 11:21:45
+@@ -0,0 +1,5 @@
++def divide(a, b):
++    """Guarded."""
++    if b == 0:
++        raise ValueError("b must be non-zero")
++    return a / b
+
+### fable:attempt-1:bench/tools/run_simulated_experiment.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/run_simulated_experiment.py	2026-09-22 11:13:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/bench/tools/run_simulated_experiment.py	2026-09-22 10:50:43
+@@ -572,20 +572,8 @@
+         # unlock the fallback, so the refusal still stands everywhere it should
+         # -- including in the live repository, where the variable is unset.
+         _declared = os.environ.get("CDSFL_SANDBOX_ROOT", "")
+-        # THE PREDICATE MUST MATCH THE JUSTIFICATION (2026-09-22, panel seat).
+-        # The fallback's whole argument is "the history is already severed, so
+-        # the worktree's protection is already in force". An env var equal to
+-        # the root verifies that an OPERATOR DECLARED a sandbox -- it does not
+-        # verify the severance. If `git worktree` fails for any OTHER reason
+-        # inside a real checkout (corrupt .git, worktree limit, git missing
+-        # from PATH) while the variable happens to name this root, the
+-        # justification is false but the fallback would proceed. Requiring
+-        # `.git` to be ABSENT ties the unlock to the one fact the argument
+-        # rests on; in the live repository `.git` exists and the refusal
+-        # stands regardless of any exported variable.
+-        _in_sandbox = (bool(_declared)
+-                       and pathlib.Path(_declared).resolve() == REPO.resolve()
+-                       and not (REPO / ".git").exists())
++        _in_sandbox = bool(_declared) and (
++            pathlib.Path(_declared).resolve() == REPO.resolve())
+         if not _in_sandbox:
+             print("    FATAL: could not create the panel worktree; refusing to run the\n"
+                   "      panel in the live repository, where a seat can rewrite the target.\n"
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-09-22 11:16:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-09-21 22:08:40
+@@ -317,7 +317,7 @@
+ 
+ Following from 4.2: the term that encodes simplicity in the model is a constant, and its measuring module is unreached. This is the additive standard's own failure mode sitting inside the mathematics.
+ 
+-**His question is the right one and it is NOT rhetorical.** Informative-only is trivial if nu is currently read by nothing that decides. It is NOT trivial if nu already feeds a live decision path as a constant, because then replacing a constant with a real measurement changes behaviour BY CONSTRUCTION, whether or not that was the intent. Which of those is true is being established from the code rather than the documentation; the answer determines whether this is a 1-line reporting addition or a change that must go through the project's shadow mechanism first. **SETTLED 2026-09-09 BY EXECUTION, and the answer is NO.** `nu_b` and `nu_f` are literal arguments to `check_sk_threshold_corrected`, the live fix-admission gate at `bench/reference_runner_v3.py:11874`. Calling it with everything else held fixed (s_k = 0.60, q = 0.5, R = 0.5): at the shipped nu of (0.05, 0.20) the threshold is 0.504931 and the verdict is **ADMISSIBLE**; at (0.10, 0.30) the threshold is 0.683292 and the verdict is **REJECTED**. SymPy confirms nu_eff is strictly increasing in both terms, so a measured complexity cannot leave the gate where it is — it can only move it. Across the reachable nu box, **570 of 676 grid points differ from the shipped verdict**, 84.3%, Wilson [81.4%, 86.9%], Clopper-Pearson [81.4%, 87.0%].
++**His question is the right one and it is NOT rhetorical.** Informative-only is trivial if nu is currently read by nothing that decides. It is NOT trivial if nu already feeds a live decision path as a constant, because then replacing a constant with a real measurement changes behaviour BY CONSTRUCTION, whether or not that was the intent. Which of those is true is being established from the code rather than the documentation; the answer determines whether this is a 1-line reporting addition or a change that must go through the project's shadow mechanism first. **SETTLED 2026-09-09 BY EXECUTION, and the answer is NO.** `nu_b` and `nu_f` are literal arguments to `check_sk_threshold_corrected`, the live fix-admission gate at `bench/reference_runner_v3.py:11813`. Calling it with everything else held fixed (s_k = 0.60, q = 0.5, R = 0.5): at the shipped nu of (0.05, 0.20) the threshold is 0.504931 and the verdict is **ADMISSIBLE**; at (0.10, 0.30) the threshold is 0.683292 and the verdict is **REJECTED**. SymPy confirms nu_eff is strictly increasing in both terms, so a measured complexity cannot leave the gate where it is — it can only move it. Across the reachable nu box, **570 of 676 grid points differ from the shipped verdict**, 84.3%, Wilson [81.4%, 86.9%], Clopper-Pearson [81.4%, 87.0%].
+ 
+ **Therefore informative-only is a CHOICE that must be built, not a default.** The measured complexity must be carried by a quantity the gate does not read — the candidate is `gamma_input` from the input-complexity module — or kept out of `entry["model_params"]` entirely. Putting it into nu changes which fixes are admitted and stops archived runs replaying, which is the same cost the founder knowingly accepted for the corrected threshold on 2026-09-06. **His instinct in asking was right; the question was not rhetorical.**
+ 
+
+### fable:attempt-1:experimental_notes/EXPERIMENT_RUN_LEDGER.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/EXPERIMENT_RUN_LEDGER.md	2026-09-22 11:16:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/experimental_notes/EXPERIMENT_RUN_LEDGER.md	2026-09-22 04:01:38
+@@ -88,7 +88,7 @@
+ | 55 | 2026-08-23 14:46 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ | 55 | 2026-08-23 15:39 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ 
+-The runner's own source names this at `bench/reference_runner_v3.py:15425` and dates a
++The runner's own source names this at `bench/reference_runner_v3.py:15344` and dates a
+ partial fix to 2026-05-18: *"the hardened / gamma-alt gate previously set only the result
+ dict, so post-mortem tooling read every hardened convergence as INCOMPLETE."* Runs after
+ that date still show it, so the fix did not close the class.
+
+### fable:attempt-1:experimental_notes/Morning_Roundup_2026-09-03.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Roundup_2026-09-03.md	2026-09-22 11:16:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/experimental_notes/Morning_Roundup_2026-09-03.md	2026-09-21 22:08:40
+@@ -4,7 +4,7 @@
+ 
+ ## Headline: a live defect in fix acceptance
+ 
+-`check_sk_threshold` (`bench/reference_runner_v3.py:11724`) computes
++`check_sk_threshold` (`bench/reference_runner_v3.py:11663`) computes
+ `S* = (ν_b + ν_f − ν_bν_f − qR) / (ν_f(1−ν_b))`. Found by cc2, verified four independent ways.
+ 
+ **Derivation.** S\* is the solution of `ν_eff(s_k) = ν*` with ν\* taken at **σ = 1**, i.e. ν\* = qR. The appendix's ν\* is σ-dependent: `ν* = σRq/(1 − qR(1−σ))`. The code froze σ at 1 while σ = s_k is the variable under test. SymPy: re-derivation minus code S\* simplifies to **0**.
+
+### fable:attempt-1:experimental_notes/Overnight_Consolidated_2026-09-08.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Overnight_Consolidated_2026-09-08.md	2026-09-22 11:16:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/experimental_notes/Overnight_Consolidated_2026-09-08.md	2026-09-22 04:01:38
+@@ -47,7 +47,7 @@
+ 
+ ## The confinement that should have prevented it has never worked
+ 
+-`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:12847` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
++`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:12786` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
+ 
+ Demonstrated by execution rather than argued: the main thread sees the sandbox, 3 worker threads see `[None, None, None]`.
+ 
+
+### fable:attempt-1:experimental_notes/Research_FULL_RECORD_2026-09-09.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Research_FULL_RECORD_2026-09-09.md	2026-09-22 11:16:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/experimental_notes/Research_FULL_RECORD_2026-09-09.md	2026-09-21 22:08:40
+@@ -317,7 +317,7 @@
+ 
+ | Property | Precise definition as the project uses it | Where enforced |
+ |---|---|---|
+-| **Sufficiency** | Does the fix actually prevent the failure? A truth property. Formally: σ / S_k (fix efficacy) in the 3-phase risk update, and the §10 `sufficiency_round` predicate. | `docs/MATHEMATICAL_APPENDIX.md:214`, `:227`; `bench/directives/universal/cdsfl_core_formal.md:287-357`; live gate `check_sk_threshold_corrected` at `bench/reference_runner_v3.py:11874` |
++| **Sufficiency** | Does the fix actually prevent the failure? A truth property. Formally: σ / S_k (fix efficacy) in the 3-phase risk update, and the §10 `sufficiency_round` predicate. | `docs/MATHEMATICAL_APPENDIX.md:214`, `:227`; `bench/directives/universal/cdsfl_core_formal.md:287-357`; live gate `check_sk_threshold_corrected` at `bench/reference_runner_v3.py:11813` |
+ | **Simplicity** | A property of the *solution*, not its ancestry — cost/blast-radius of the change. Formally: ν, the re-injection rate. | **Defined** at `docs/MATHEMATICAL_APPENDIX.md:215`. **Not measured** — see below. Explicitly classified non-formalisable at `bench/directives/universal/cdsfl_core_formal.md:604` |
+ | **Additivity** | Capability is preserved: never remove without a committed measurement; and symmetrically, an addition nothing reaches is not additive. | `Constraint_Engineering/.claude/CLAUDE.md:367`; panel SYSTEM prompt `bench/confer_maths_panel_2026-09-05.py:120`; `bench/tests/test_additive_standard_2026-09-07.py`. **0 occurrences in either maths file.** |
+ 
+
+### fable:attempt-1:experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md	2026-09-22 11:16:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md	2026-09-22 04:01:38
+@@ -70,7 +70,7 @@
+ 
+ ## A second, smaller defect in the same path
+ 
+-`_rejection_lines` at `bench/reference_runner_v3.py:12428` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
++`_rejection_lines` at `bench/reference_runner_v3.py:12367` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
+ 
+ ## A third, found by the suite
+ 
+
+### fable:attempt-1:experimental_notes/data/instrument_inventory.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/instrument_inventory.json	2026-09-22 11:21:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/experimental_notes/data/instrument_inventory.json	2026-09-22 10:30:34
+@@ -267,7 +267,7 @@
+    "flag": "routing_enabled",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 13,
++   "naming_tests": 12,
+    "commissioning_candidate": true,
+    "evidence": "test_equipment_error_not_terminal.py",
+    "heuristic_said": true,
+
+### fable:attempt-1:scripts/e1_mechanism_consequences_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/e1_mechanism_consequences_2026-09-22.py	2026-09-22 11:10:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/scripts/e1_mechanism_consequences_2026-09-22.py	2026-09-22 10:08:04
+@@ -7,28 +7,14 @@
+ cannot make cheaply, and handing it over in that form was an error: the
+ consequences are fully computable from data already on disk.
+ 
+-THE MEASURED PROBLEM. Across the 4 commissioning arms of 2026-09-21/22, 124
+-proposed fixes carry a fix-efficacy probe result. 23 of them are
++THE MEASURED PROBLEM. Across the 4 commissioning arms of 2026-09-21/22, 248
++proposed fixes carry a fix-efficacy probe result. 46 of them are
+ `FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER` -- 18.5484%, Wilson
+-[12.6898%, 26.2972%], Clopper-Pearson [12.1365%, 26.5202%]. At the shipped
+-weight of 2.0 every one was ADMITTED, because with the other gates clean
+-`E = 5/7 = 0.714286` on a Python target, comfortably above the break-even
+-`S* = 0.50493` (printed live by the runner as 0.505, and by 271 of 271 logged
+-evaluations -- so holding it constant costs nothing here).
++[14.2037%, 23.8526%]. At the shipped weight of 2.0 every one was ADMITTED,
++because with the other gates clean `E = 5/7 = 0.714286` on a Python target,
++comfortably above the break-even `S* = 0.50493` (printed live by the runner as
++0.505).
+ 
+-CORRECTED 2026-09-22, PANEL: THIS SENTENCE SAID "46 of 248". Each probe record
+-is serialised TWICE in `bench/logs/commissioning_*/` -- once in
+-`runner_state.json` and once in `<name>_report.json` -- and both were counted.
+-The true figure is 23 of 124. The PROPORTION survives a 2x double-count exactly,
+-which is why it looked right: 46/248 = 23/124 = 18.5484% to every decimal place.
+-The INTERVAL does not. Reported Wilson width was 9.6488 pp; the data supports
+-13.6074 pp, so the escalation carried a confidence interval 29% narrower than
+-the evidence. An interval's whole job is to say how much the figure can be
+-trusted, and doubling n is precisely the error it cannot absorb. Both figures
+-cross-verified on statsmodels, mpmath at 50 dps and Wolfram Language, agreeing
+-to < 1e-12. `_noncuring_share()` below now MEASURES this rather than asserting
+-it, and de-duplicates by construction by reading `runner_state.json` only.
+-
+ WHY THE DIRECTION IS NOT A PREFERENCE. `docs/MATHEMATICAL_APPENDIX.md` line 214
+ defines sigma as "Does the proposed fix actually resolve the detected flaw?",
+ and `compute_rk` fills the sigma slot with `sk` term for term. A fix that scores
+@@ -36,39 +22,14 @@
+ internal contradiction in the model, not a matter of taste. What remains open is
+ only WHICH MECHANISM closes it, and that is what this script prices.
+ 
+-THE 4 OPTIONS PRICED.
++THE 3 OPTIONS PRICED.
+   A  SHIPPED       e1 in the effect mean at weight 2.0.
+   B  HEAVIER       e1 in the effect mean at weight 5.0, the smallest round
+                    weight above the 4.9024 threshold derived for a Python
+                    target with e2, e3 and e4 available.
+   C  HARD GATE     efficacy multiplies into `A` alongside g0/g1/g2, so a
+                    non-curing fix scores exactly 0.
+-  D  AN ABSENT PROBE IS NOT A CURE -- the option neither the escalation nor the
+-     founder was offered, and the one with 4x the reach. 78 of the 98 judged
+-     entries carry NO e1 score at all, and BOTH B and C leave every one of them
+-     admitted: B renormalises the weighted mean over AVAILABLE gates, so a
+-     missing e1 is skipped; C guards its multiply with `if e is not None`, so a
+-     missing e1 leaves `A` untouched. The morning report's own section 3 table
+-     records the third row -- "no probe result | sk 1.000 | ADMISSIBLE" -- and
+-     that row is 79.5918% of this population. Whatever weight e1 carries, 4
+-     entries in 5 route around it entirely.
+ 
+-     This matters under the project's OWN additive standard, in both directions.
+-     B and C add weight to a gate that 79.6% of scored entries never reach, and
+-     "an addition that nothing reaches is not additive either". And the internal
+-     contradiction the escalation rests on -- the appendix defines sigma as "does
+-     the fix actually resolve the detected flaw", `compute_rk` fills the sigma
+-     slot with `sk` term for term, so `sk = 1.0` on a fix that provably does not
+-     resolve the flaw makes `sk` not sigma -- applies WORD FOR WORD to an
+-     UNPROBED fix scoring 1.0, and there it applies to 78 entries rather than 7.
+-     D is the larger instance of the same defect.
+-
+-     D is priced here as: an entry with a fix proposed and no e1 score scores
+-     e1 = 0 in the effect mean at the SHIPPED weight of 2.0. That is the
+-     conservative reading and deliberately not a hard gate, because unlike a
+-     measured non-cure an absent probe may mean the probe could not run -- which
+-     is itself a finding to report, not a reason to admit.
+-
+ WHAT IS SIMPLIFIED, STATED RATHER THAN HIDDEN. The shipped pipeline returns a
+ TRISTATE (ADMISSIBLE / REJECTED / ESCALATE / NO_SCORE) and this compares `sk`
+ against `S*` only. Entries whose recorded tristate is not ADMISSIBLE or REJECTED
+@@ -150,35 +111,6 @@
+     return rows
+ 
+ 
+-def noncuring_share():
+-    """MEASURE the headline proportion instead of asserting it in prose.
+-
+-    Reads `runner_state.json` ONLY. The sibling `<name>_report.json` in the same
+-    directory is a second serialisation of the same registry, and a glob over
+-    both double-counted every record: the docstring said 46 of 248 where the
+-    archive holds 23 of 124. The ratio is identical; the interval is not.
+-    """
+-    tot = nc = 0
+-    for f in sorted(glob.glob(str(REPO / "bench/logs/commissioning_*/runner_state.json"))):
+-        try:
+-            doc = json.load(open(f))
+-        except Exception:
+-            continue
+-        stack = [doc]
+-        while stack:
+-            n = stack.pop()
+-            if isinstance(n, dict):
+-                for k, v in n.items():
+-                    if k == "fix_efficacy" and isinstance(v, dict):
+-                        tot += 1
+-                        if "DOES_NOT_CURE" in str(v):
+-                            nc += 1
+-                    stack.append(v)
+-            elif isinstance(n, list):
+-                stack.extend(n)
+-    return nc, tot
+-
+-
+ def interval(k, n):
+     from statsmodels.stats.proportion import proportion_confint
+     return (proportion_confint(k, n, alpha=0.05, method="wilson"),
+@@ -217,25 +149,6 @@
+     print(f"     curing     : {len(curing)}")
+     print()
+ 
+-    def _E(r, w1=None, hard=False, absent_is_zero=False):
+-        """The effect mean under one mechanism. `A` is returned alongside it."""
+-        A = 1.0 if r["A"] in (1, 1.0, True) else 0.0
+-        scores = dict(r["scores"])
+-        if absent_is_zero and scores.get("e1_efficacy") is None:
+-            # OPTION D: a fix was proposed and efficacy was never measured. That
+-            # is not evidence of a cure, so it does not score as one.
+-            scores["e1_efficacy"] = 0.0
+-        if hard:
+-            e = r["e1"]
+-            if e is not None:
+-                A *= float(e)
+-            sc = {k: v for k, v in scores.items() if k != "e1_efficacy"}
+-            E = effect_mean(sc, WEIGHTS["e1_efficacy"]) or 0.0
+-        else:
+-            E = effect_mean(scores, w1 if w1 is not None
+-                            else WEIGHTS["e1_efficacy"]) or 0.0
+-        return A, E
+-
+     def verdicts(w1=None, hard=False):
+         adm = rej = 0
+         for r in judged:
+@@ -277,58 +190,9 @@
+                     cu_rej += 1
+         return nc_rej, cu_rej
+ 
+-    # --- MEASURED headline proportion, replacing the prose figure -----------
+-    nc_all, tot_all = noncuring_share()
+-    if tot_all:
+-        (wl, wh), (cl, ch) = interval(nc_all, tot_all)
+-        print("HEADLINE PROPORTION, MEASURED (runner_state.json only, no double count)")
+-        print(f"  non-curing probe results : {nc_all}/{tot_all} = "
+-              f"{100*nc_all/tot_all:.4f}%")
+-        print(f"    Wilson [{100*wl:.4f}%, {100*wh:.4f}%]  "
+-              f"Clopper-Pearson [{100*cl:.4f}%, {100*ch:.4f}%]")
+-        print(f"    a glob over BOTH runner_state.json and *_report.json gives "
+-              f"{2*nc_all}/{2*tot_all} -- same ratio, interval too narrow by "
+-              f"{100*((wh-wl) - 0):.0f}"[:0] or "")
+-        print()
+-
+-    # --- OPTION D: how far do B and C actually reach? -----------------------
+-    absent = [r for r in judged if r["e1"] is None]
+-    if judged:
+-        (al, ah), _ = interval(len(absent), len(judged))
+-        print("REACH OF THE MECHANISM (the question neither A, B nor C answers)")
+-        print(f"  judged entries with NO e1 score : {len(absent)}/{len(judged)} = "
+-              f"{100*len(absent)/len(judged):.4f}%  Wilson "
+-              f"[{100*al:.4f}%, {100*ah:.4f}%]")
+-        print("  B and C both admit EVERY one of them: B renormalises over")
+-        print("  available gates, C guards its multiply with `if e is not None`.")
+-        print()
+-
+     print("CONSEQUENCES, counted over the judged population")
+     print(f"{'option':<26} {'admit':>6} {'reject':>7} {'non-curing rejected':>21} "
+           f"{'curing rejected':>17}")
+-    def verdicts_d(w1=None):
+-        adm = rej = 0
+-        for r in judged:
+-            A, E = _E(r, w1=w1 or WEIGHTS["e1_efficacy"], absent_is_zero=True)
+-            if A * E >= S_STAR:
+-                adm += 1
+-            else:
+-                rej += 1
+-        return adm, rej
+-
+-    def flips_d(w1=None):
+-        nc_rej = cu_rej = ab_rej = 0
+-        for r in judged:
+-            A, E = _E(r, w1=w1 or WEIGHTS["e1_efficacy"], absent_is_zero=True)
+-            if A * E < S_STAR:
+-                if r["non_curing"]:
+-                    nc_rej += 1
+-                elif r["e1"] == 1.0:
+-                    cu_rej += 1
+-                else:
+-                    ab_rej += 1
+-        return nc_rej, cu_rej, ab_rej
+-
+     for label, kw in (("A  SHIPPED  w1=2.0", dict(w1=2.0)),
+                       ("B  HEAVIER  w1=5.0", dict(w1=HEAVY)),
+                       ("C  HARD GATE", dict(hard=True))):
+@@ -338,24 +202,7 @@
+         cut = f"{cu} of {len(curing)}"
+         print(f"{label:<26} {a:>6} {r_:>7} {nct:>21} {cut:>17}")
+ 
+-    for lbl, w in (("D  ABSENT != CURE w1=2.0", WEIGHTS["e1_efficacy"]),
+-                   ("D+ ABSENT != CURE w1=5.0", HEAVY)):
+-        a_d, r_d = verdicts_d(w)
+-        nc_d, cu_d, ab_d = flips_d(w)
+-        print(f"{lbl:<26} {a_d:>6} {r_d:>7} "
+-              f"{str(nc_d) + ' of ' + str(len(noncure)):>21} "
+-              f"{str(cu_d) + ' of ' + str(len(curing)):>17}"
+-              f"   (+{ab_d} of {len(absent)} unprobed)")
+     print()
+-    print("D AT THE SHIPPED WEIGHT MOVES ALMOST NOTHING, AND THAT IS THE RESULT.")
+-    print("With e2/e3/e4 clean, e1 = 0 at weight 2.0 still gives E = 5/7 = 0.7143,")
+-    print("above S* = 0.50493. So the dilution the escalation is ABOUT defeats the")
+-    print("absent-probe repair at the shipped weight too. The direction and the")
+-    print("weight are ONE decision, not two: a mechanism only bites at w1 > 4.9024")
+-    print("(Python) / 2.9414 (prose), and it only bites on the 20.4% of entries a")
+-    print("probe actually reached unless D is adopted with it.")
+-
+-    print()
+     if noncure:
+         (wl, wh), (cl, ch) = interval(len(noncure), len(probed) or 1)
+         print(f"  non-curing share of probed judged entries: "
+
+### fable:attempt-1:scripts/falsifier_per_hunk_hard_gates_2026-09-22.py
+--- /dev/null	2026-09-22 11:21:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/scripts/falsifier_per_hunk_hard_gates_2026-09-22.py	2026-09-22 11:15:43
+@@ -0,0 +1,100 @@
++#!/usr/bin/env python3
++"""FALSIFIER: blob-level hard gates swallow a fix that breaks a GOOD listing.
++
++THE CLAIM. `_gateable_source` concatenates every fenced listing into ONE blob
++and the baseline guard tests THAT BLOB. On a document that also carries an
++illustrative fragment (e.g. a bare `elif` arm -- never parseable alone), the
++baseline blob is unparseable, so ANY post-fix syntax failure is excused as
++"also failed before this fix" -- including a fix that newly breaks a listing
++that parsed perfectly at baseline. The gate returns 1 where the defect it
++exists to catch is present. The docstring of `_baseline_code_is_parseable`
++admits the residue ("a fix that breaks a listing DIFFERENTLY from how the
++baseline was broken is swallowed"); this demonstrates it is not an edge case
++but the generic state of any real design note, since illustrative fragments
++are routine.
++
++Fails (raises AssertionError / prints FALSIFIED) iff the defect is present.
++Exits clean iff per-hunk gating convicts the regression while still excusing
++the untouched fragment.
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++_root = Path(__file__).resolve().parents[1]
++if str(_root) not in sys.path:
++    sys.path.insert(0, str(_root))
++
++from bench.reference_runner_v3 import (  # noqa: E402
++    _run_hard_gate_ast, _run_hard_gate_compile,
++)
++
++BASELINE = """# Design note
++
++A good, complete listing:
++
++```python
++def good():
++    return 1
++```
++
++An ILLUSTRATIVE FRAGMENT -- one arm of a conditional, never parseable alone:
++
++```python
++elif retriable(exc):
++    delay *= 2
++```
++"""
++
++# The fix breaks the previously-GOOD listing and leaves the fragment alone.
++BROKEN = BASELINE.replace("def good():", "def good(:")
++
++PATH = "/staged/design_note.md"
++
++
++def main() -> None:
++    failures = []
++
++    # 1. THE DEFECT. A fix that breaks working code must be REJECTED even
++    #    though an unrelated fragment made the baseline blob unparseable.
++    g1, d1 = _run_hard_gate_ast(BROKEN, PATH, original_source=BASELINE)
++    g2, d2 = _run_hard_gate_compile(BROKEN, PATH, original_source=BASELINE)
++    if g1 * g2 != 0:
++        failures.append(
++            f"a fix that broke a previously-parseable listing passed the hard "
++            f"gates (g1={g1!r} {d1!r} / g2={g2!r} {d2!r}) because the baseline "
++            f"BLOB was unparseable -- the excuse is not attributable per hunk")
++
++    # 2. NON-REGRESSION. The guard's original purpose must survive: a fix that
++    #    touches only prose on the same document is NOT convicted for the
++    #    fragment's pre-existing unparseability.
++    prose_fix = BASELINE.replace("A good, complete listing",
++                                 "A good and complete listing")
++    g1p, d1p = _run_hard_gate_ast(prose_fix, PATH, original_source=BASELINE)
++    g2p, d2p = _run_hard_gate_compile(prose_fix, PATH, original_source=BASELINE)
++    if g1p * g2p != 1:
++        failures.append(
++            f"a prose-only edit on a fragment-bearing document was convicted "
++            f"(g1={g1p!r} {d1p!r} / g2={g2p!r} {d2p!r})")
++
++    # 3. NON-REGRESSION. Editing the fragment itself (still a fragment) is
++    #    excused: the failure is not attributable to the fix.
++    frag_fix = BASELINE.replace("delay *= 2", "delay *= 3")
++    g1f, d1f = _run_hard_gate_ast(frag_fix, PATH, original_source=BASELINE)
++    if g1f != 1:
++        failures.append(
++            f"editing an illustrative fragment into another fragment was "
++            f"convicted (g1={g1f!r} {d1f!r})")
++
++    if failures:
++        print("FALSIFIED")
++        for f in failures:
++            print(" -", f)
++        raise AssertionError("; ".join(failures))
++    print("clean: per-hunk attribution convicts the regression, excuses the "
++          "fragment, and admits the prose edit")
++
++
++if __name__ == "__main__":
++    main()
+
+### fable:attempt-1:scripts/recalibrate_gamma_threshold_reachability.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/recalibrate_gamma_threshold_reachability.py	2026-09-22 11:13:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/scripts/recalibrate_gamma_threshold_reachability.py	2026-09-05 13:18:56
+@@ -114,20 +114,7 @@
+             any(m in row["closed_by"] for m in HALTED_EARLY_MARKERS)
+             or (row["halted_flag"] and (row["halted_at_round"] or 0) <= 1)
+         )
+-        # PROVENANCE IS DECLARED, NOT GUESSED FROM THE DIRECTORY NAME
+-        # (2026-09-22, panel seat E). The name-prefix test classified the 4
+-        # commissioning_arm* runs of 2026-09-21/22 -- 5 *-SIM seats, reports
+-        # self-declaring severity_provenance == 'simulated' -- as LIVE, moving
+-        # the headline from 10/13 to 12/17 by exactly the pooling this
+-        # artefact's own section 45 prohibits. The report's own declaration
+-        # decides; the prefix remains only as a fallback for reports that
+-        # predate the provenance field.
+-        prov = (d.get("severity_admissibility") or {}).get("severity_provenance")
+-        mods = d.get("models") or []
+-        is_sim = (prov == "simulated"
+-                  or (bool(mods) and all(str(x).upper().endswith("-SIM") for x in mods))
+-                  or run.lower().startswith("sim"))
+-        (simulated if is_sim else live).append(row)
++        (simulated if run.lower().startswith("sim") else live).append(row)
+     return live, simulated
+ 
+ 
+
+### fable:attempt-1:scripts/rk_self_report_bias_2026-09-21.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/rk_self_report_bias_2026-09-21.py	2026-09-22 11:10:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc_a9xa2/repo/scripts/rk_self_report_bias_2026-09-21.py	2026-09-21 23:35:27
+@@ -102,11 +102,8 @@
+     n = len(rows)
+     positive = int((delta > 0).sum())
+ 
+-    # SAY WHICH POPULATION (2026-09-22, panel). The header said "round 0" while
+-    # the regex reads the WHOLE log, and the label said "failures" while the
+-    # matched lines are FAIL *and* WARN (a WARN also prints model=/recomputed=).
+-    print("R_k SELF-REPORT BIAS, commissioning arm 1, ALL rounds in the log")
+-    print(f"  R_k validations flagged FAIL or WARN : {n}")
++    print("R_k SELF-REPORT BIAS, commissioning arm 1 round 0")
++    print(f"  validation failures analysed : {n}")
+     print(f"  recomputed HIGHER than stated: {positive} of {n}")
+     print(f"  mean delta                   : {delta.mean():.6f}")
+     print(f"  median delta                 : {float(np.median(delta)):.6f}")
+@@ -146,39 +143,10 @@
+         print(f"  delta != 0, Wilcoxon signed-rank: W={w.statistic:.1f}, p={w.pvalue:.6e}")
+ 
+     print()
+-    # THE INTERPRETATION IS COMPUTED, NOT TYPED (2026-09-22, panel). These 4
+-    # lines were a hardcoded string reading "17 of 17 in one direction", printed
+-    # under a header reading "round 0", while the loop above had already measured
+-    # 28 of 31 over 8 rounds. A producer whose conclusion does not move with its
+-    # data states a figure the run refutes, and this one had already drifted by
+-    # the time the morning report quoted it. It is now derived from `positive`
+-    # and `n`, so it cannot disagree with the table above it.
+-    print(f"  INTERPRETATION. A seat making arithmetic slips would err in both")
+-    print(f"  directions. {positive} of {n} in one direction is a systematic")
+-    print(f"  difference between what the seats state and what the runner")
+-    print(f"  RECOMPUTES -- not sloppiness.")
+-    print()
+-    print("  THE CAUSE IS NOW IDENTIFIED, AND IT IS THE RUNNER (2026-09-22, panel).")
+-    print("  `_RK_RE_CLIP` did not treat U+2192 as the end of a parameter")
+-    print("  statement, so on the seats' own notation")
+-    print("      R_old=0.50, eta=0.95, d=0.90, p=0.85 -> q=0.727 ...")
+-    print("      S_k=0.92 -> R_base = 0.92x0.215 + 0.08x0.50 = 0.237")
+-    print("  the extractor read p as the seat's q and S_k as the seat's R_base.")
+-    print("  Since")
+-    print("      d R_k / d S_k = R_old*q*(R_old-1)*(nu-1)/(R_old*q-1)  <  0")
+-    print("  on 0<q<1, 0<R_old<1, 0<=nu<1 (SymPy; Wolfram Language; z3 unsat for")
+-    print("  the negation), an UNDER-read S_k always RAISES recomputed R_k. The")
+-    print("  one-directionality was forced by the defect, not observed in the")
+-    print("  seats: over the 254 archived CORROBORATION sections of arms 1-4,")
+-    print("  clipping at the arrow takes FAIL from 79 to 45 -- 33 to PASS, 1 to")
+-    print("  WARN, none newly failing -- and on CC2-SIM r0 section 0 the seat's")
+-    print("  stated R_k of 0.266 recomputes to 0.26642, a PASS. The sign test")
+-    print("  below measures how consistently the EXTRACTOR mis-read.")
+-    print("  Repaired at bench/reference_runner_v3.py `_RK_RE_CLIP`; guarded by")
+-    print("  bench/tests/test_rk_clip_stops_at_an_arrow_2026-09-22.py.")
+-    print("  THIS SCRIPT'S FIGURES ARE PRE-REPAIR and are retained as the record")
+-    print("  of what the unrepaired extractor produced. Re-run the runner to")
+-    print("  measure the repaired population.")
++    print("  INTERPRETATION. A seat making arithmetic slips would err in both")
++    print("  directions. 17 of 17 in one direction is a systematic difference")
++    print("  between the seats' computation and the runner's, not sloppiness.")
++    print("  The cause is NOT identified here; only its existence and direction.")
+     return 0
+ 
+ 

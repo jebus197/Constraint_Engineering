@@ -204,13 +204,52 @@ quality below which fixes are always rejected regardless of the computed S*.
 
 ## 5. Marginal Gain and Stopping
 
-The per-cycle gain is the difference between your risk before and after:
+**Two different gains live here, and the stopping rule needs the second one.**
+Writing one where the other belongs is how a cycle that would remove most of
+your remaining risk gets abandoned as not worth running.
 
-  ΔR_cycle = R_old − R_k(i)
+**The conditional gain** is the improvement you see ON THE BRANCH WHERE THE
+CYCLE FINDS NOTHING — you looked, nothing turned up, and your risk moved only
+because looking-and-finding-nothing is itself weak evidence:
 
-Continue while the total weighted gain exceeds the consequence threshold:
+  ΔR_cycle = R_old − R_k(i)              [CONDITIONAL on no detection]
 
-  Σ_k w_k · ΔR_cycle,k > θ
+**The expected gain** averages over both branches — the cycle finds the defect
+with probability q, or it does not with probability 1 − q:
+
+  E[R_new] = R_old · (1 − q)
+  E[ΔR]    = R_old · q                   [UNCONDITIONAL]
+
+**The conditional is strictly smaller than the expectation, everywhere.** Their
+difference factors to −R²q(q − 1)/(Rq − 1); on 0 < R < 1 and 0 < q < 1 the
+numerator is positive and the denominator negative, so the difference is
+negative with no equality locus at all. Verified on 4 independent routes:
+SymPy gives the factorisation and an empty solution set for equality, z3
+returns `unsat` for "the conditional is ever at least the expectation" over the
+open unit square, and mpmath and NumPy agree on the magnitude to 5.68e-14.
+
+**How far apart, at a realistic operating point.** At R = 0.99 and q = 0.3 the
+conditional is 0.004224751067 and the expectation is 0.297 — a factor of 70.3.
+Against a consequence threshold θ = 0.05 the two rules give OPPOSITE answers:
+the conditional says stop, the expectation says continue. The cycle being
+abandoned is one that in expectation removes about 30% of the standing risk.
+
+**Therefore: continue while the total weighted EXPECTED gain exceeds the
+consequence threshold.**
+
+  Σ_k w_k · E[ΔR]_k > θ
+
+The conditional form is retained above because it is the right quantity for a
+different question — "how much did this cycle actually buy me, given it found
+nothing" — and it remains a valid conservative BOUND. It is not a stopping
+rule, and it was being used as one.
+
+**Scope, so this is not read as wider than it is.** A sweep of 216 shipped
+runtime files finds 0 that read a ΔR-based terminator, so nothing in the
+running system changes with this correction. The defect was in this directive,
+which every seat reads and reasons from. Raised by Astra; adjudicated
+2026-09-21 by `scripts/panel_adjudication_cc_seat_2026-09-21.py`, sections A2
+and A3.
 
 Stop when:
 - ΔR_total > 0 but below θ: diminishing returns. The gain is real but too

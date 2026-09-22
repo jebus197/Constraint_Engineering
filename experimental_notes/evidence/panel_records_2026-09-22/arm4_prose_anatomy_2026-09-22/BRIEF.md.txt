@@ -1,0 +1,139 @@
+# Panel brief — what UNTOOLABLE means on a prose target
+
+## SECTION 1 — The question
+
+Does `UNTOOLABLE`, as arm 4 assigned it to 6 of 17 findings, mean "there was nothing here to
+compute", or does it mean "the machinery gave up while it still had rungs and still held
+source it had produced"? The artefacts under review are
+`scripts/arm4_untoolable_anatomy_2026-09-22.py` (CC1's measurement, written this morning and
+checked by nobody), the run it reads at
+`bench/logs/commissioning_arm4_prose_20260922T053349Z/commissioning_arm4_prose_report.json`,
+and the code that assigns the verdict in `bench/reference_runner_v3.py`.
+
+Your task is to find what is WRONG with CC1's reading, not to confirm what is right.
+
+Background. That run is the only archived one putting the panel machinery against a WRITTEN
+SPECIFICATION (`bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`) rather than a program: 5 simulated
+seats, 17 findings, 1 round. The founder's design position, stated 2026-09-10 and restated
+2026-09-22: a target that is PURELY prose should be recorded as having nothing to compute,
+while any computationally accessible element INSIDE a prose target should still be solved.
+His concern is that STEM material which happens to contain prose gets written off.
+
+CC1 reports, from that registry: 7 of 17 findings reached CONFIRMED, so the prose path is not
+inert; all 6 UNTOOLABLE entries carry falsifier source in `routing_history.last_falsifier_code`
+while their stored `falsifier_code` is empty; all 11 recorded bodies are EXACTLY 600 characters,
+none ending in a newline and all 11 distinct, so 600 is a recorder ceiling and no claim about
+falsifier size survives it; and all 11 routing episodes report `rungs_tried=2` against
+`rungs_available=5`.
+
+## SECTION 1b — What has been found since this brief was first written
+
+Two paid seats answered an earlier version and both returned PARTIAL. Their refutations are
+already folded into `scripts/arm4_untoolable_anatomy_2026-09-22.py` and you should attack the
+CORRECTED script, not the claims as first stated:
+
+- `cx` refuted "all 11 routing episodes are 2/5": C0014 is 1/5 and CONFIRMED. The pooled count
+  conflated RESOLVED-early (the ladder working) with GAVE-UP-early (a cap). Restated over the
+  episodes that never resolved: 7 of 7 stopped with rungs still available.
+- `ge` refuted the reading that recorded source proves computable content existed. Generated
+  source proves only that a model ATTEMPTED a falsifier. The archive truncates every body at
+  600 characters, so it cannot be executed to settle the question.
+- `cx` also showed the brief's own framing was wrong: S_k is not the adjudicator here.
+
+THE FACT THAT NOW MATTERS MOST, and it is the founder's question. Arm 4's report records:
+
+    "kind": "prose", "reason": "suffix .md",
+    "sk_enabled_requested": true, "sk_enabled_effective": false,
+    "sk_forced_off_by_target_kind": true
+
+`detect_target_kind` (`bench/reference_runner_v3.py:1716`) classifies a `.md` suffix as prose
+UNCONDITIONALLY and S_k is then forced off for the WHOLE target. The classifier's asymmetry is
+deliberate and carries a real safety argument in its own docstring: misreading prose as Python
+once "inverted the fix ranking and admitted a shell-injection fix at sk=1.0", whereas misreading
+Python as prose only forgoes scoring. That argument is not under attack and must not be removed.
+
+But the same run returned 7 CONFIRMED falsifier verdicts on that same prose file. The falsifier
+gate computed on it repeatedly while the scorer refused to score it at all, on the strength of
+its file extension.
+
+The founder's design asks for a THIRD outcome the current binary does not have: a purely prose
+target recorded as having nothing to compute, while computable elements INSIDE a prose target
+are still solved and scored.
+
+CC1's proposal, which you should treat as the thing to falsify rather than the answer: cc2's
+`_gateable_hunks` already extracts fenced listings and gates them individually, so the
+substrate for per-listing treatment exists. CC1 has NOT established that per-listing SCORING
+is sound, and notes that a per-hunk S_k would be the wrong shape because the downstream risk
+update takes a single number.
+
+## SECTION 2 — Use the harness
+
+Form your answer by RUNNING the machinery, not by describing it.
+
+`S_k` is the instrument that decides this question, because the choice between UNTOOLABLE and
+REJECTED is a claim about what enters the score. An unscoreable fix is not a defective one, so
+if UNTOOLABLE feeds S_k the same way a refutation does, the label is doing damage; if it
+withholds from S_k entirely, it is doing nothing and 6 findings left the round unscored. Read
+which it is and report the line.
+
+`gamma` is the second instrument, and it bears on the ladder directly. Stopping at 2 rungs of 5
+is defensible if and only if it is diminishing returns rather than a cap — that is precisely
+what gamma measures. Determine whether the ladder's stop is gamma-governed or constant-governed,
+and say which by reading the code that decides it.
+
+The two-sided gate and the severity model are NOT expected to bear on this; say so if you find
+otherwise.
+
+## SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is half an answer. A fix without a falsifier that you have EXECUTED is
+a hypothesis, not a fix.
+
+Deliver your fix by WRITING IT INTO THE SANDBOX REPOSITORY TREE AT ITS REAL PATH, as a file —
+`scripts/<name>.py`, `bench/tests/test_<name>.py`, or an edit to the module itself. A fix
+described in prose is not delivered. A fix written to scratch space is destroyed at teardown.
+
+<!-- figure: harvest loss | scripts/panel_harvest_loss_2026-09-22.py | 68.5714 -->
+<!-- figure: harvest loss Wilson low | scripts/panel_harvest_loss_2026-09-22.py | 52.0202 -->
+<!-- figure: harvest loss Wilson high | scripts/panel_harvest_loss_2026-09-22.py | 81.4492 -->
+
+Measured against the tree as it stood before recovery: 24 of 35 scripts delivered by seats
+never reached `scripts/`, a loss rate of 68.5714%, Wilson [52.0202%, 81.4492%]. One of the 24
+is the previous round's own falsifier, lost this morning and recovered by hand at 11:31 --
+the defect reproduced inside the session that documented it. Do not let yours be the 25th.
+
+Report the command you ran and the output you saw, verbatim.
+
+Note the standing exception: a STORED falsifier may not call Wolfram, because anyone reproducing
+this project must not be required to install it. You may use Wolfram while reasoning.
+
+## SECTION 4 — What would refute you
+
+Before you conclude, state what evidence would overturn your own answer. A verdict with no
+stated refutation condition is an opinion. If your position is that UNTOOLABLE is correct
+behaviour, name the observation that would show it is not, and go looking for it.
+
+## SECTION 5 — Output shape
+
+Return, field by field:
+
+- `verdict` — one of CONFIRMED / REFUTED / PARTIAL, on CC1's reading as stated in Section 1
+- `reasoning` — how you got there, citing file and line
+- `falsifier_path` — the real repository path you wrote your falsifier to
+- `falsifier_command` — the exact command you ran
+- `falsifier_output` — what it printed, verbatim
+- `fix_path` — the real repository path of your fix, or NONE with the reason
+- `refutation_condition` — what would overturn your answer (Section 4)
+- `strongest_disagreement` — your strongest disagreement with this brief's own framing,
+  including with the way CC1 has posed the question. This field must not be empty; if you
+  agree with everything, that is itself a finding and you should say why it is suspicious.
+- `passes_run` — how many falsification passes you ran (Section 6)
+
+## SECTION 6 — Termination
+
+Stop on diminishing returns: when a further pass produces no new finding above the
+real-world-consequence threshold. A finding is above threshold if missing it could cause a
+wrong decision to ship. Do not manufacture findings to fill the field, and do not nitpick
+style. Report how many passes you ran and what the last one added.
+
+Disagreement with the other seat is information. Do not smooth it away.

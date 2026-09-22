@@ -42,6 +42,30 @@ NOT_PYTEST_MODULES = {
         "which is what the file was called when it was written.",
 }
 
+#: DIAGNOSTIC FALSIFIERS, registered 2026-09-22. These are deliberately outside
+#: the collection root and MUST stay outside it. Each one FIRES -- raises at
+#: import or exits non-zero -- while the defect it describes is live, which is
+#: the opposite of what a suite member does. Collected into `bench/tests/` they
+#: would make the suite red as a matter of design, and the usual response to a
+#: permanently red suite is to stop reading it.
+#:
+#: They are kept because a falsifier that no longer fires is the evidence that a
+#: defect is closed, and that evidence is worth more than the file is worth as a
+#: test. Run them by hand, or through the panel tooling that wrote them.
+_DIAGNOSTIC_FALSIFIERS = {
+    f"scripts/panel_falsifiers/{name}":
+        "a DIAGNOSTIC falsifier: it fires while its defect is live, so it is "
+        "kept out of the collected suite on purpose. See the block above."
+    for name in (
+        "test_reachability_never_pools_simulated_falsifier.py",
+        "test_resume_pointer_guard_refuses_unreadable_repo_falsifier.py",
+        "test_rk_extractor_compact_prose_falsifier.py",
+        "test_sandbox_gate_requires_severed_history_falsifier.py",
+        "test_static_queue_label_tells_the_truth_falsifier.py",
+    )
+}
+NOT_PYTEST_MODULES.update(_DIAGNOSTIC_FALSIFIERS)
+
 
 #: Directories that are not the project: another checkout's worktree, a build
 #: cache, a seat's harvested copy. A test file inside one of these is not a

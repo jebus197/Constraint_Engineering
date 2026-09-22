@@ -16,7 +16,13 @@ Fails (FALSIFIED/AssertionError) iff case (a) unlocks.
 import os
 import pathlib
 import re
+import sys
 import tempfile
+
+# `scripts/` is not on the path for a file one level down, so put it there
+# before importing the shared help helper.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+from _cli_help import answer_help  # noqa: E402
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 SRC = (REPO / "bench" / "tools" / "run_simulated_experiment.py").read_text()
@@ -33,19 +39,29 @@ def gate(root: pathlib.Path, declared: str) -> bool:
           "_declared": declared}
     return bool(eval(compile(gate_expr, "<runner-gate>", "eval"), ns))
 
-with tempfile.TemporaryDirectory() as td:
-    live = pathlib.Path(td) / "live"; (live / ".git").mkdir(parents=True)
-    sand = pathlib.Path(td) / "sand"; sand.mkdir()
+def main() -> None:
+    # RESTRUCTURED 2026-09-22 (CC1). This work ran at MODULE level, so
+    # merely importing the file spawned subprocesses and built trees.
+    # It still fires when RUN, which is how a diagnostic falsifier is
+    # used; it no longer fires when something merely inspects it.
+    with tempfile.TemporaryDirectory() as td:
+        live = pathlib.Path(td) / "live"; (live / ".git").mkdir(parents=True)
+        sand = pathlib.Path(td) / "sand"; sand.mkdir()
 
-    unlocked_in_live = gate(live, str(live))
-    unlocked_in_sandbox = gate(sand, str(sand))
+        unlocked_in_live = gate(live, str(live))
+        unlocked_in_sandbox = gate(sand, str(sand))
 
-    assert unlocked_in_sandbox, \
-        "gate must still unlock inside a genuine severed-history sandbox"
-    if unlocked_in_live:
-        print("FALSIFIED")
-        raise AssertionError(
-            "the fallback gate unlocks in a LIVE checkout (.git present) when "
-            "CDSFL_SANDBOX_ROOT names it; the refusal then rests solely on "
-            "git succeeding")
-print("clean: gate refuses a root that still has .git, unlocks a severed one")
+        assert unlocked_in_sandbox, \
+            "gate must still unlock inside a genuine severed-history sandbox"
+        if unlocked_in_live:
+            print("FALSIFIED")
+            raise AssertionError(
+                "the fallback gate unlocks in a LIVE checkout (.git present) when "
+                "CDSFL_SANDBOX_ROOT names it; the refusal then rests solely on "
+                "git succeeding")
+    print("clean: gate refuses a root that still has .git, unlocks a severed one")
+
+
+if __name__ == "__main__":
+    answer_help(__doc__, __file__)
+    main()
