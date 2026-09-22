@@ -5835,6 +5835,63 @@ def _declared_models(exp_config, cfg):
     return kept
 
 
+def reconcile_routing_verdict(entry: dict, result) -> bool:
+    """Write the LADDER's tool verdict back over a stale pre-routing UNTOOLABLE.
+
+    THE DEFECT THIS REPAIRS (arm 4, commissioning_arm4_prose_20260922T053349Z).
+    ``apply_falsifier_verdicts`` stamps ``UNTOOLABLE`` on a critical that arrives
+    with no attached falsifier (:5364) -- correctly, at that moment: there was
+    nothing to run. Routing then runs, a stronger rung WRITES a falsifier, and
+    ``reverify_falsifier`` EXECUTES it. But ``_apply_routing`` writes
+    ``falsifier_code``/``falsifier_verdict`` back only on ``result.resolved``.
+    When the ladder ran and did not confirm, the entry keeps the stale
+    ``UNTOOLABLE`` and the ladder's real verdict survives only in
+    ``routing_history[-1]["verdict"]``, beside a body truncated to 600 chars.
+
+    MEASURED on that run: 6 of 6 entries reading ``UNTOOLABLE`` carry a ladder
+    verdict of ``ERROR`` with a non-empty body and 2 of 5 rungs tried. So all 6
+    are findings whose falsifier WAS written and DID crash, filed as findings
+    for which nothing was ever written.
+
+    WHY IT IS NOT MERELY COSMETIC. ``_rejection_lines`` branches on this exact
+    field to build the corrective instruction that renders into the next round's
+    registry digest. ``UNTOOLABLE`` tells the panel "nothing runnable was
+    attached", i.e. GO AND WRITE ONE; ``ERROR`` tells it "your test did not run
+    to a verdict ... Re-write it so it runs". Every one of those 6 got the
+    instruction that does not apply, so the round-K+1 feedback channel asked for
+    work already done and said nothing about the crash that is the real obstacle.
+
+    DELIBERATELY NARROW -- ``UNTOOLABLE`` -> ``ERROR`` ONLY.
+    Both are members of ``EQUIPMENT_FAILURE_VERDICTS`` and of
+    ``ROUTABLE_INSTRUMENT_FAULTS``, so this relabel cannot move an entry across
+    any behavioural boundary: demotion, deferral, re-routing eligibility and the
+    A4 fail-safe all treat the two identically. It changes what the artefact
+    REPORTS and what the panel is TOLD, and nothing else. A ladder verdict of
+    ``REFUTED`` is NOT written back here: REFUTED is outside the equipment-failure
+    set, so writing it would change demotion behaviour, and that dominance is
+    unmeasured. It is recorded for a human instead. ``INTEGRITY_VIOLATION`` is
+    likewise left alone -- a machinery fault must not resolve a finding in either
+    direction.
+
+    Returns True iff the entry was relabelled. Pure apart from the mutation.
+    """
+    if entry is None or result is None or getattr(result, "resolved", False):
+        return False
+    if (entry.get("falsifier_verdict") or "").strip().upper() != "UNTOOLABLE":
+        return False
+    ladder = (getattr(result, "verdict", "") or "").strip().upper()
+    body = (getattr(result, "falsifier_code", "") or "").strip()
+    if not body:
+        # No rung produced source: the pre-routing UNTOOLABLE is still true.
+        return False
+    if ladder != "ERROR":
+        entry["routing_verdict_unreconciled"] = ladder
+        return False
+    entry["falsifier_verdict"] = "ERROR"
+    entry["routing_verdict_reconciled"] = "UNTOOLABLE->ERROR"
+    return True
+
+
 def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
     """GATED capability-aware routing for un-confirmed criticals (was _apply_take_up_slack).
 
@@ -6004,6 +6061,17 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             })
         except Exception as _rh_exc:  # noqa: BLE001 — telemetry must not fell a run
             _log(f"  WARNING: routing_history not recorded for {cid} ({_rh_exc})")
+        # RECONCILE THE STALE PRE-ROUTING LABEL (2026-09-22). The ladder just
+        # ran; if it EXECUTED a falsifier and crashed, the entry must stop
+        # saying nothing was ever attached. See reconcile_routing_verdict for
+        # why this is confined to UNTOOLABLE -> ERROR and why that pair is
+        # behaviourally inert. Placed here, not in the branches below, so the
+        # transport-dead and empty-ladder `continue` paths are unaffected --
+        # both carry an empty body and the helper declines them.
+        if reconcile_routing_verdict(e, result):
+            _log(f"  routing verdict reconciled {cid}: UNTOOLABLE -> ERROR "
+                 f"(a falsifier was written and crashed; the panel is now told "
+                 f"to FIX it, not to write one)")
         if e.pop("_error_route_pending", None):
             if len(_routing_attempts) > _n0:
                 e["error_routed"] = True
@@ -13087,7 +13155,32 @@ def run_experiment(
             f"{len(_refusals)} precondition(s) failed for target {target_path} "
             f"(kind={target_kind}): " + " | ".join(_refusals))
     sk_forced_off = False
-    if target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled:
+    if (target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled
+            and getattr(cfg, "sk_score_prose_listings", False)):
+        # TASK A19 REACHABLE THROUGH THE RUNNER (2026-09-22, panel seat on the
+        # arm-4 anatomy). Before this branch existed, the forced-off override
+        # below fired for EVERY non-Python target, and the flag's only call
+        # site (`_evaluate_sk_for_findings`, behind the `cfg.sk_enabled` guard)
+        # therefore never executed with the flag set -- `sk_score_prose_listings`
+        # was an addition nothing reached, demonstrated by execution in
+        # `scripts/falsify_a19_unreachable_2026-09-22.py`.
+        #
+        # KEEPING THE PIPELINE ON HERE IS SAFE ON THE FORCED-OFF BLOCK'S OWN
+        # STATED HAZARDS, both of which post-date its comment:
+        #   * `_capture_baseline` has read `_gateable_source` since 2026-09-11
+        #     (the phantom-2752-ruff-baseline input to the 2026-08-01 inversion
+        #     is measured on the extracted listings now, and a purely prose
+        #     target yields None/None);
+        #   * `compute_sk` itself decides per fix: purely prose -> NO_SCORE
+        #     ("nothing to compute", the founder's first case); reducible fenced
+        #     listings -> scored (his second). This branch changes WHO decides,
+        #     not WHAT is decided.
+        # Default stays byte-identical: the flag is False unless a run turns it
+        # on deliberately, so every existing config takes the branch below.
+        _log("  *** S_k pipeline kept ON for a non-Python target: "
+             "sk_score_prose_listings=true (Task A19). Purely prose fixes "
+             "resolve NO_SCORE inside compute_sk; fenced listings are scored. ***")
+    elif target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled:
         # Not a warning — an override. S_k over prose does not merely fail to
         # help; it inverts. Measured on the 2026-08-01 control: a fix injecting
         # a shell-injection call into a fenced listing scored sk=1.0000

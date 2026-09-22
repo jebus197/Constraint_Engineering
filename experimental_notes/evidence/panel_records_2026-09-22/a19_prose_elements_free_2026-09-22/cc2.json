@@ -1,0 +1,176 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 12431,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /home/ubuntu 2>/dev/null; pwd; ls -la | head -40\", \"description\": \"Locate repo root\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find / -name \\\"reference_runner_v3.py\\\" -path \\\"*bench*\\\" 2>/dev/null | head -5\", \"description\": \"Find reference runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/arm4_untoolable_anatomy_2026-09-22.py && wc -l scripts/arm4_untoolable_anatomy_2026-09-22.py bench/reference_runner_v3.py && ls bench/logs/commissioning_arm4_prose_20260922T053349Z/\", \"description\": \"Check artefacts exist\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"UNTOOLABLE\\\" bench/reference_runner_v3.py | head -60\", \"description\": \"Find UNTOOLABLE sites\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rcgeq6nc/repo/scripts/arm4_untoolable_anatomy_2026-09-22.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1820,1870p;5280,5450p' bench/reference_runner_v3.py\", \"description\": \"Read UNTOOLABLE assignment region\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 scripts/arm4_untoolable_anatomy_2026-09-22.py 2>&1 | tail -60\", \"description\": \"Run CC1 script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"UNTOOLABLE\\\\|def reverify_falsifier\\\\|UNTOOLABLE\\\" bench/falsifier_verify.py | head -40\", \"description\": \"UNTOOLABLE in falsifier_verify\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/arm4_untoolable_anatomy_2026-09-22.py 2>&1 | tail -70\", \"description\": \"Run CC1 script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1156,1215p' bench/falsifier_verify.py\", \"description\": \"Read reverify_falsifier head\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"rungs_tried\\\\|rungs_available\\\\|max_rungs\\\\|last_falsifier_code\\\" bench/*.py bench/dm/*.py 2>/dev/null | head -50\", \"description\": \"Find routing ladder code\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"gamma\\\" bench/reference_runner_v3.py | head -40\", \"description\": \"Find gamma\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,220p' bench/routing.py\", \"description\": \"Read routing.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '5900,6070p' bench/reference_runner_v3.py\", \"description\": \"Read routing call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '6070,6180p' bench/reference_runner_v3.py\", \"description\": \"Read post-routing write-back\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/commissioning_arm4_prose_20260922T053349Z/commissioning_arm4_prose_report.json'))\\nfor cid,e in sorted(d['registry']['entries'].items()):\\n    rh=e.get('routing_history') or []\\n    print(cid, 'verdict=',e.get('falsifier_verdict'),'status=',e.get('status'),'sev=',e.get('severity'),'esc=',e.get('escalated'),'stored_len=',len(e.ge"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '12590,12615p' bench/reference_runner_v3.py; echo ---; sed -n '3059,3100p' bench/reference_runner_v3.py; echo ---GREP-SK---; grep -n \\\"falsifier_verdict\\\" bench/reference_runner_v3.py | sed -n '1,60p'\", \"description\": \"Read UNTOOLABLE consumers and gamma estimator\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1700,1760p' bench/reference_runner_v3.py\", \"description\": \"Read detect_target_kind\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"awk 'NR>=12480 && NR<=12600 && /^def |^    def /' bench/reference_runner_v3.py; echo \\\"---\\\"; grep -n \\\"^def .*feedback\\\\|^def _.*feedback\\\" bench/reference_runner_v3.py | head; echo \\\"--- enclosing:\\\"; awk 'NR<=12594 && /^def /{l=NR\\\": \\\"$0} END{}{}' bench/reference_runner_v3.py; python3 - <<'EOF'\\nimport re\\nsrc=open('bench/reference_runner_v3.py').read().split('\\\\n')\\nfor i in rang"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/commissioning_arm4_prose_20260922T053349Z/commissioning_arm4_prose_report.json'))\\ntk=d.get('target_kind') or {}\\nprint('target_kind block:', json.dumps(tk)[:600])\\nprint('rounds:', d.get('rounds_run'), d.get('round_count'))\\nfor k in d:\\n    if 'sk' in k.lower() or 'gamma' in k.lower(): print(k,'=',str(d[k])[:200])\\n\\\"\", \"descr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_rejection_lines\\\" bench/reference_runner_v3.py; echo ---; sed -n '6495,6530p' bench/reference_runner_v3.py\", \"description\": \"Find _rejection_lines callers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '9298,9330p' bench/reference_runner_v3.py; echo \\\"---CALLSITE---\\\"; sed -n '5988,5996p' bench/reference_runner_v3.py\", \"description\": \"Read feedback builder and route call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2735,2795p' bench/reference_runner_v3.py\", \"description\": \"Confirm _rejection_lines reaches prompt\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rcgeq6nc/repo/scripts/falsifier_untoolable_is_stale_error_2026-09-22.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"FALSIFIER: arm 4's 6 UNTOOLABLE verdicts are STALE. The ladder ran and ERRORed.\\n\\nTHE CLAIM UNDER TEST is the one both the founder's question and CC1's reading\\npresuppose: that `UNTOOLABLE` on arm 4"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/falsifier_untoolable_is_stale_error_2026-09-22.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"FALSIFIER: arm 4's 6 UNTOOLABLE verdicts are STALE. The ladder ran and ERRORed.\\n\\nTHE CLAIM UNDER TEST is the one both the founder's question and CC1's reading\\npresuppose: that `UNTOOLABLE` on arm 4 is a statement about the TARGET -- either\\n\\\"there was nothing here to compute\\\" "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/falsifier_untoolable_is_stale_error_2026-09-22.py 2>&1 | tail -60; echo \\\"EXIT=${pipestatus[1]}\\\"\", \"description\": \"Run falsifier\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nsrc=open('bench/reference_runner_v3.py').read().split('\\\\n')\\nfor i in range(5939,0,-1):\\n    if src[i].startswith('def '):\\n        print('enclosing def at line', i+1, ':', src[i]); break\\nEOF\\necho \\\"---anchor---\\\"; sed -n '6004,6012p' bench/reference_runner_v3.py\", \"description\": \"Find enclosing def and anchor\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rcgeq6nc/repo/bench/reference_runner_v3.py\", \"offset\": 5828, \"limit\": 14}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rcgeq6nc/repo/bench/reference_runner_v3.py\", \"old_string\": \"def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):\\n    \\\"\\\"\\\"GATED capability-aware routing for un-confirmed criticals (was _apply_take_up_slack).\", \"new_string\": \"def reconcile_routing_verdict(entry: dict"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/_patch_rrv3.py <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"bench/reference_runner_v3.py\\\")\\nsrc = p.read_text()\\n\\nHELPER = '''def reconcile_routing_verdict(entry: dict, result) -> bool:\\n    \\\"\\\"\\\"Write the LADDER's tool verdict back over a stale pre-routing UNTOOLABLE.\\n\\n    THE DEFECT THIS REPAIRS (arm 4, commissioning_arm4_prose_20260922T053349Z).\\n    ``apply_fals"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_routing_verdict_reconciliation.py <<'PYEOF'\\n\\\"\\\"\\\"The ladder's tool verdict must overwrite a stale pre-routing UNTOOLABLE.\\n\\nGuards `reconcile_routing_verdict` (bench/reference_runner_v3.py) and its\\nwiring inside `_apply_routing`.\\n\\nTHE DEFECT, measured on commissioning_arm4_prose_20260922T053349Z: 6 of 6\\nentries reading falsifier_verdict=\\\"UNTOOLABLE\\\" car"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests | grep -i \\\"rout\\\\|falsif\\\" | head -20\", \"description\": \"List related tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# PRIMARY (open-source): Wilson re-derived from the closed form with mpmath,\\n# independent of statsmodels, which is the route CC1's script used.\\nfrom mpmath import mp, mpf, sqrt\\nmp.dps = 30\\nfrom scipy.stats import norm\\nz = mpf(str(norm.ppf(0.975)))\\ndef wilson(k, n):\\n    k, n = mpf(k), mpf(n)\\n    p = k/n\\n    d = 1 + z*z/n\\n    c = p + z*z/(2*n)\\n    h = z*sq"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_disc_failure_routing.py bench/tests/test_falsifier_gate.py bench/tests/test_errored_falsifiers_are_not_read_as_verification_2026-09-10.py bench/tests/test_routing_verdict_reconciliation.py -q 2>&1 | tail -15\", \"description\": \"Targeted regression tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests | grep -iE \\\"^test_routing|ladder|rung\\\" | head\", \"description\": \"More routing tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_routing.py bench/tests/test_routing_wiring.py bench/tests/test_routing_cannot_flatten_gamma_2026-09-09.py bench/tests/test_empty_ladder_is_not_a_dead_transport_2026-09-09.py bench/tests/test_routing_prompt_is_target_aware.py -q 2>&1 | tail -15\", \"description\": \"Run all routing tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'N[{#[[1]],#[[2]]}*100,6]&[Block[{z=Quantile[NormalDistribution[0,1],0.975],p=6/6,n=6},{(p+z^2/(2n)-z Sqrt[p(1-p)/n+z^2/(4n^2)])/(1+z^2/n),(p+z^2/(2n)+z Sqrt[p(1-p)/n+z^2/(4n^2)])/(1+z^2/n)}]]' 2>&1 | head -5; echo \\\"WEXIT=$?\\\"\", \"description\": \"Wolfram second falsifier on Wilson 6/6\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport inspect, re\\nimport bench.reference_runner_v3 as R\\nf = R._evaluate_sk_for_findings\\nsrc = inspect.getsource(f)\\nprint(\\\"_evaluate_sk_for_findings at line\\\", inspect.getsourcelines(f)[1], \\\"| lines:\\\", len(src.split('\\\\n')))\\nprint(\\\"reads falsifier_verdict? \\\", \\\"falsifier_verdict\\\" in src)\\nprint(\\\"reads falsifier_code?    \\\", \\\"falsifier_code\\\" in src)\\npr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la scripts/falsifier_untoolable_is_stale_error_2026-09-22.py bench/tests/test_routing_verdict_reconciliation.py && git -C . status --short | head -10\", \"description\": \"Confirm deliverables on disk\"}"
+    }
+  ],
+  "n_tool_calls": 39,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 511.3,
+  "response": "All three artefacts are on disk at real paths. Here is my answer.\n\n---\n\n**`verdict`** \u2014 **PARTIAL** on CC1's reading.\n\nCC1's arithmetic is sound (I re-derived every Wilson interval independently from the closed form with mpmath/scipy \u2014 7/17 \u2192 [21.6111%, 63.9946%], 6/6 \u2192 [60.9666%, 100%], 11/11 \u2192 [74.1167%, 100%], 7/7 \u2192 [64.5670%, 100%], all matching statsmodels to the digit; Wolfram Language, local Wolfram Engine, returned `{60.966571209783474, 100.}` for 6/6 as second falsifier). CC1's item 3 is correct. But CC1's central claim \u2014 item 2 \u2014 is **directionally right and materially wrong about the mechanism**, and the field that settles it was sitting in the dict CC1 iterates, unread.\n\n**`reasoning`**\n\n*Neither option in Section 1 is what happened.* `UNTOOLABLE` has exactly one cause in this codebase: `falsifier_code` empty/whitespace (`bench/falsifier_verify.py:1202`; `bench/reference_runner_v3.py:5361-5364`, additionally gated on `is_critical` \u2014 which is why 3 non-critical entries carry no verdict at all). It never encodes \"nothing to compute\", so the founder's reading is false. But CC1's reading \u2014 \"gave up while it still held source it had produced\" \u2014 understates it. The truth is stronger:\n\nFor all 6 UNTOOLABLE entries, `routing_history[-1]` reads **`verdict: ERROR`, `resolved: False`, `last_falsifier_code`: 600 chars**. The ladder wrote a falsifier and the runner's own decider **executed it and it crashed**.\n\nThat is a derivation, not a reading. In `bench/routing.py:158-171`, `last_code = code` is assigned *before* the emptiness check, so the no-code road to `ERROR` necessarily carries an **empty** body. Therefore `(verdict == ERROR) \u2227 (code \u2260 \"\")` implies `reverify_fn` was called and returned ERROR. Part A of my falsifier demonstrates both roads against the real module.\n\nThis answers `ge`'s refutation. `ge` was right that the 600-char archive cannot be re-executed \u2014 and it does not need to be. The runner already executed the untruncated body and recorded the verdict. CC1 reached for prose caveats about un-executability while the executed tool verdict sat in the adjacent key. In a project whose principle is *tools decide*, CC1's script reads `last_falsifier_code`, `rungs_tried` and `rungs_available` from that dict and skips `verdict`.\n\n*The root cause*: `_apply_routing` writes `falsifier_code`/`falsifier_verdict` back **only** on `result.resolved` (`:6071-6072`). When the ladder ran and did not confirm, the pre-routing `UNTOOLABLE` stands forever.\n\n*Why this is above threshold, and it is not cosmetic.* `_rejection_lines` (`:12594`) branches on exactly this field to build the corrective instruction, rendered into the registry digest at `:2749` and `:2789` \u2014 i.e. into round K+1's prompt for **every seat**. `ERROR` says *\"your test did not run to a verdict \u2026 Re-write it so it runs.\"* `UNTOOLABLE` says *\"nothing runnable was attached.\"* All 6 were told to **write** a falsifier that had already been written and had already crashed, and told nothing about the crash that is the actual obstacle. Verified end-to-end in part C: 6/6 emit the wrong line and none the right one. This is \u00a710 category 4 \u2014 misclassification that ships a wrong decision.\n\n**S_k \u2014 the brief's own instrument question, answered by reading it.** Neither horn of Section 2 holds. `_evaluate_sk_for_findings` (`:12253`, 286 lines) contains **no reference to `falsifier_verdict` or `falsifier_code` at all** (checked by source inspection, printed). S_k scores a proposed **fix**; the falsifier verdict decides the **claim**. They are orthogonal channels, so UNTOOLABLE neither \"feeds S_k like a refutation\" nor \"withholds from S_k\" \u2014 it was never in that circuit. And in arm 4 `sk_enabled_effective: false`, so S_k scored nothing regardless. `cx` was right; this confirms it from source rather than by agreement.\n\n**gamma \u2014 constant-governed, definitively.** `max_rungs` defaults to 2 (`bench/routing.py:139, 183`); the runner's single call site passes six positional args and no override (printed verbatim in part D); `rungs_available = len(models)` = 5 (`:5998`). \"2/5\" is a hardcoded constant against the roster. `_estimate_gamma` returns 0.0 for any run under `min_rounds=3`, and arm 4 ran one round \u2014 its `gamma_history` is `[0.0]`. Gamma is a round-level novelty-decay measure and touches no part of this ladder, so the stop **cannot** be diminishing returns. The two-sided gate and severity model do not bear on this; I found nothing to the contrary.\n\n**`falsifier_path`** \u2014 `scripts/falsifier_untoolable_is_stale_error_2026-09-22.py`\n\n**`falsifier_command`** \u2014 `python3 scripts/falsifier_untoolable_is_stale_error_2026-09-22.py`\n\n**`falsifier_output`** (verbatim, tail):\n\n```\nB. ARCHIVE - the entry field contradicts the ladder's tool verdict\n========================================================================\n  C0002: entry says UNTOOLABLE | ladder says ERROR      ladder_code=600ch stored_code=0ch rungs=2/5\n  C0005: entry says UNTOOLABLE | ladder says ERROR      ladder_code=600ch stored_code=0ch rungs=2/5\n  C0006: entry says UNTOOLABLE | ladder says ERROR      ladder_code=600ch stored_code=0ch rungs=2/5\n  C0011: entry says UNTOOLABLE | ladder says ERROR      ladder_code=600ch stored_code=0ch rungs=2/5\n  C0012: entry says UNTOOLABLE | ladder says ERROR      ladder_code=600ch stored_code=0ch rungs=2/5\n  C0015: entry says UNTOOLABLE | ladder says ERROR      ladder_code=600ch stored_code=0ch rungs=2/5\nC. CONSEQUENCE - the wrong instruction ships to the next round\n  _rejection_lines defined at reference_runner_v3.py:12509\n  C0002: says-'nothing runnable was attached'=True  says-'did not run to a verdict'=False\n  [... C0005, C0006, C0011, C0012, C0015 identical ...]\nD. THE STOP IS CONSTANT-GOVERNED - gamma is not in this circuit\n  resolve_via_routing max_rungs default = 2\n  runner call site: result = route( finding, models, confirmed, resolve_fn, reverify_falsifier, _routing_similarity, )\n  call site overrides max_rungs? False\n  _estimate_gamma([4]) (arm 4 ran 1 round) = 0.0  (min_rounds=3 -> structurally 0.0)\nFALSIFIED: 6 entries labelled UNTOOLABLE whose ladder EXECUTED a falsifier and returned a different verdict: C0002, C0005, C0006, C0011, C0012, C0015\nFALSIFIED: 6 entries are told to ATTACH a falsifier that was written and crashed: C0002, C0005, C0006, C0011, C0012, C0015\nAssertionError: UNTOOLABLE on arm 4 is a stale pre-routing label...\nEXIT=1\n```\n\n**`fix_path`** \u2014 `bench/reference_runner_v3.py:5838` (`reconcile_routing_verdict`, wired at `:6071`), guarded by `bench/tests/test_routing_verdict_reconciliation.py`.\n\nThe helper writes the ladder's verdict back over a stale `UNTOOLABLE`, **confined to `UNTOOLABLE \u2192 ERROR` only**. Both are co-members of `EQUIPMENT_FAILURE_VERDICTS` *and* `ROUTABLE_INSTRUMENT_FAULTS`, so the relabel cannot cross any behavioural boundary \u2014 demotion, deferral, re-routing eligibility and the A4 fail-safe treat them identically. It changes what the artefact *reports* and what the panel is *told*, nothing else. A ladder `REFUTED` is deliberately **not** written back: that would move the entry out of the equipment-failure set and change demotion, and that dominance is unmeasured \u2014 so it is recorded under `routing_verdict_unreconciled` for a human. Nothing is disabled or removed.\n\n```\npython3 -m pytest bench/tests/test_routing_verdict_reconciliation.py -q\n11 passed in 0.43s\n\npython3 -m pytest bench/tests/test_routing.py bench/tests/test_routing_wiring.py \\\n  bench/tests/test_routing_cannot_flatten_gamma_2026-09-09.py \\\n  bench/tests/test_empty_ladder_is_not_a_dead_transport_2026-09-09.py \\\n  bench/tests/test_routing_prompt_is_target_aware.py -q\n42 passed in 0.58s\n\npython3 -m pytest bench/tests/test_disc_failure_routing.py bench/tests/test_falsifier_gate.py \\\n  bench/tests/test_errored_falsifiers_are_not_read_as_verification_2026-09-10.py \\\n  bench/tests/test_routing_verdict_reconciliation.py -q\n33 passed in 2.82s\n```\n\nPer the additive standard, one test asserts the wiring itself (`\"reconcile_routing_verdict(e, result)\" in inspect.getsource(_apply_routing)`) so the addition cannot become one nothing reaches, and one replays the real archive: all 6 flip, exactly `[\"C0002\",\"C0005\",\"C0006\",\"C0011\",\"C0012\",\"C0015\"]`.\n\n**`refutation_condition`** \u2014 Three observations would overturn me, and I went looking for each:\n\n1. **If `resolve_via_routing` could return `ERROR` with a non-empty `falsifier_code` without calling `reverify_fn`**, my whole derivation collapses to `ge`'s position. I tested both roads against the real module (part A): the no-code road yields `code_len=0, reverify_calls=0`. Refuted.\n2. **If something downstream distinguishes `UNTOOLABLE` from `ERROR` behaviourally**, my fix is not inert and needs measurement before shipping. I checked both membership sets and ran 75 routing/falsifier tests. If a reader finds a branch that treats them differently, the fix must be re-scoped to a report-only field.\n3. **If `_rejection_lines` output does not reach the models**, the consequence claim drops below threshold to a pure reporting defect. I traced it to `:2749`/`:2789`, inside the registry digest. Still \u2014 if the feedback channel was disabled in arm 4's config, the *realised* harm on that run is zero and only the forward risk remains. I did not verify arm 4's feedback-channel flag; that is the weakest link in my consequence chain and I flag it rather than assert past it.\n\n**`strongest_disagreement`** \u2014 **The brief and CC1 both treat the 6 UNTOOLABLE as a datum about prose. It is not a datum about prose at all.**\n\nEvery mechanism I traced \u2014 the pre-routing stamp at `:5364`, the resolved-only write-back at `:6071`, the `_rejection_lines` branch at `:12594` \u2014 is target-kind independent. My fix's unit tests reproduce the defect with no prose, no `.md`, and no target. The same stale label would appear on a pure Python target. So \"6 of 17 came back UNTOOLABLE on a prose target\" is not evidence about the prose path; the founder's genuine question about prose targets is a **separate** question that these 6 findings are the wrong instrument for.\n\nWhich means CC1's proposal is aimed at the wrong organ. Per-listing S_k scoring of `_gateable_hunks` addresses the scorer, and the scorer is not implicated in a single one of the 6. CC1 says the third outcome is missing; I say the third outcome already *exists* and is called `ERROR` \u2014 the machinery computed it, recorded it in `routing_history`, and then threw it away. Building a new classification tier on top of a channel that discards the verdict it already has would be an addition nothing reaches, which this project's own record says is its dominant defect class (11 of 11 since 2026-08-01).\n\nSecondary, same defect class, offered as an observation rather than a finding: **C0008** carries `routing_history` verdict `INTEGRITY_VIOLATION` yet final `falsifier_verdict: CONFIRMED, status: CLOSED`. Its close looks legitimate on the merits (it closed on its own 1707-char falsifier via the sweep at `:6510`, not on the violating one), so I am not calling it a defect. But the pattern is identical \u2014 `routing_history` holds the truth and the entry field does not \u2014 and it means an integrity violation is invisible in the field a reader checks. `bench/key_access_forensics.py` is the designed control; I did not run it and I am not claiming it fails.\n\nI also note I agree with `cx` and `ge` on the points they raised. That agreement is *not* smoothing: I reached each from source independently (`_evaluate_sk_for_findings` by inspection, the truncation at `:6003` by reading the line) and each is a fact about code, not a judgement.\n\n**`passes_run`** \u2014 **4.** Pass 1 established `UNTOOLABLE` has exactly one cause (empty code) and that the runner sets it pre-routing. Pass 2 found the routing-history contradiction \u2014 the decisive finding. Pass 3 traced the consequence to the round-K+1 feedback channel, which is what lifts it above threshold, and confirmed gamma is absent from the ladder circuit. Pass 4 answered the brief's S_k question from source (orthogonal channel, never in this circuit) and added the C0008 observation \u2014 below threshold on its own, and it duplicates ground `cx` already covered. Stopping there: a fifth pass has no named mechanism left to examine. The remaining open item is the arm 4 feedback-channel flag, which I have flagged rather than resolved, and which bounds my consequence claim rather than my verdict.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rcgeq6nc/repo",
+      "built": false
+    }
+  ]
+}

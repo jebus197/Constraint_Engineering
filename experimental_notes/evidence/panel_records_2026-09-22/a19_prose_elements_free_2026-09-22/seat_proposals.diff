@@ -1,0 +1,1013 @@
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-09-22 11:50:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rcgeq6nc/repo/bench/reference_runner_v3.py	2026-09-22 12:14:25
+@@ -5833,8 +5833,65 @@
+              f"silently disable routing and the sweep.")
+         return roster
+     return kept
++
++
++def reconcile_routing_verdict(entry: dict, result) -> bool:
++    """Write the LADDER's tool verdict back over a stale pre-routing UNTOOLABLE.
++
++    THE DEFECT THIS REPAIRS (arm 4, commissioning_arm4_prose_20260922T053349Z).
++    ``apply_falsifier_verdicts`` stamps ``UNTOOLABLE`` on a critical that arrives
++    with no attached falsifier (:5364) -- correctly, at that moment: there was
++    nothing to run. Routing then runs, a stronger rung WRITES a falsifier, and
++    ``reverify_falsifier`` EXECUTES it. But ``_apply_routing`` writes
++    ``falsifier_code``/``falsifier_verdict`` back only on ``result.resolved``.
++    When the ladder ran and did not confirm, the entry keeps the stale
++    ``UNTOOLABLE`` and the ladder's real verdict survives only in
++    ``routing_history[-1]["verdict"]``, beside a body truncated to 600 chars.
++
++    MEASURED on that run: 6 of 6 entries reading ``UNTOOLABLE`` carry a ladder
++    verdict of ``ERROR`` with a non-empty body and 2 of 5 rungs tried. So all 6
++    are findings whose falsifier WAS written and DID crash, filed as findings
++    for which nothing was ever written.
++
++    WHY IT IS NOT MERELY COSMETIC. ``_rejection_lines`` branches on this exact
++    field to build the corrective instruction that renders into the next round's
++    registry digest. ``UNTOOLABLE`` tells the panel "nothing runnable was
++    attached", i.e. GO AND WRITE ONE; ``ERROR`` tells it "your test did not run
++    to a verdict ... Re-write it so it runs". Every one of those 6 got the
++    instruction that does not apply, so the round-K+1 feedback channel asked for
++    work already done and said nothing about the crash that is the real obstacle.
++
++    DELIBERATELY NARROW -- ``UNTOOLABLE`` -> ``ERROR`` ONLY.
++    Both are members of ``EQUIPMENT_FAILURE_VERDICTS`` and of
++    ``ROUTABLE_INSTRUMENT_FAULTS``, so this relabel cannot move an entry across
++    any behavioural boundary: demotion, deferral, re-routing eligibility and the
++    A4 fail-safe all treat the two identically. It changes what the artefact
++    REPORTS and what the panel is TOLD, and nothing else. A ladder verdict of
++    ``REFUTED`` is NOT written back here: REFUTED is outside the equipment-failure
++    set, so writing it would change demotion behaviour, and that dominance is
++    unmeasured. It is recorded for a human instead. ``INTEGRITY_VIOLATION`` is
++    likewise left alone -- a machinery fault must not resolve a finding in either
++    direction.
+ 
++    Returns True iff the entry was relabelled. Pure apart from the mutation.
++    """
++    if entry is None or result is None or getattr(result, "resolved", False):
++        return False
++    if (entry.get("falsifier_verdict") or "").strip().upper() != "UNTOOLABLE":
++        return False
++    ladder = (getattr(result, "verdict", "") or "").strip().upper()
++    body = (getattr(result, "falsifier_code", "") or "").strip()
++    if not body:
++        # No rung produced source: the pre-routing UNTOOLABLE is still true.
++        return False
++    if ladder != "ERROR":
++        entry["routing_verdict_unreconciled"] = ladder
++        return False
++    entry["falsifier_verdict"] = "ERROR"
++    entry["routing_verdict_reconciled"] = "UNTOOLABLE->ERROR"
++    return True
+ 
++
+ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
+     """GATED capability-aware routing for un-confirmed criticals (was _apply_take_up_slack).
+ 
+@@ -6004,6 +6061,17 @@
+             })
+         except Exception as _rh_exc:  # noqa: BLE001 — telemetry must not fell a run
+             _log(f"  WARNING: routing_history not recorded for {cid} ({_rh_exc})")
++        # RECONCILE THE STALE PRE-ROUTING LABEL (2026-09-22). The ladder just
++        # ran; if it EXECUTED a falsifier and crashed, the entry must stop
++        # saying nothing was ever attached. See reconcile_routing_verdict for
++        # why this is confined to UNTOOLABLE -> ERROR and why that pair is
++        # behaviourally inert. Placed here, not in the branches below, so the
++        # transport-dead and empty-ladder `continue` paths are unaffected --
++        # both carry an empty body and the helper declines them.
++        if reconcile_routing_verdict(e, result):
++            _log(f"  routing verdict reconciled {cid}: UNTOOLABLE -> ERROR "
++                 f"(a falsifier was written and crashed; the panel is now told "
++                 f"to FIX it, not to write one)")
+         if e.pop("_error_route_pending", None):
+             if len(_routing_attempts) > _n0:
+                 e["error_routed"] = True
+
+### cc2:attempt-1:bench/tests/test_routing_verdict_reconciliation.py
+--- /dev/null	2026-09-22 12:19:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rcgeq6nc/repo/bench/tests/test_routing_verdict_reconciliation.py	2026-09-22 12:14:48
+@@ -0,0 +1,125 @@
++"""The ladder's tool verdict must overwrite a stale pre-routing UNTOOLABLE.
++
++Guards `reconcile_routing_verdict` (bench/reference_runner_v3.py) and its
++wiring inside `_apply_routing`.
++
++THE DEFECT, measured on commissioning_arm4_prose_20260922T053349Z: 6 of 6
++entries reading falsifier_verdict="UNTOOLABLE" carry routing_history verdict
++"ERROR" with a non-empty body. Their falsifier was WRITTEN by a routing rung and
++CRASHED under the runner's own decider -- and the entry still says nothing was
++ever attached. `_rejection_lines` branches on that field to build the corrective
++instruction shipped to every seat in round K+1, so all 6 were told to write a
++falsifier instead of to fix the one that crashed.
++
++An addition nothing reaches is not additive, so the wiring itself is asserted
++here, not only the helper's behaviour.
++"""
++from __future__ import annotations
++
++import inspect
++import json
++from pathlib import Path
++
++import pytest
++
++from bench.reference_runner_v3 import (
++    EQUIPMENT_FAILURE_VERDICTS,
++    ROUTABLE_INSTRUMENT_FAULTS,
++    _apply_routing,
++    _rejection_lines,
++    reconcile_routing_verdict,
++)
++from bench.routing import RoutingResult
++
++REPO = Path(__file__).resolve().parents[2]
++ARM4 = (REPO / "bench" / "logs" / "commissioning_arm4_prose_20260922T053349Z"
++        / "commissioning_arm4_prose_report.json")
++
++
++def _res(verdict, code, resolved=False):
++    return RoutingResult("C0001", verdict, resolved, "Codex", code, rungs_tried=2)
++
++
++def test_executed_and_crashed_is_relabelled_error():
++    e = {"falsifier_verdict": "UNTOOLABLE"}
++    assert reconcile_routing_verdict(e, _res("ERROR", "assert False\n")) is True
++    assert e["falsifier_verdict"] == "ERROR"
++    assert e["routing_verdict_reconciled"] == "UNTOOLABLE->ERROR"
++
++
++def test_relabel_cannot_cross_a_behavioural_boundary():
++    """UNTOOLABLE and ERROR are co-members of both sets the runner branches on,
++    so the relabel changes the report and the feedback and nothing else."""
++    for s in (EQUIPMENT_FAILURE_VERDICTS, ROUTABLE_INSTRUMENT_FAULTS):
++        assert {"UNTOOLABLE", "ERROR"} <= set(s)
++
++
++def test_no_source_leaves_untoolable_standing():
++    """A ladder that produced nothing has not refuted the pre-routing label."""
++    e = {"falsifier_verdict": "UNTOOLABLE"}
++    assert reconcile_routing_verdict(e, _res("ERROR", "")) is False
++    assert e["falsifier_verdict"] == "UNTOOLABLE"
++
++
++@pytest.mark.parametrize("ladder", ["REFUTED", "INTEGRITY_VIOLATION", "DUPLICATE"])
++def test_verdicts_outside_the_equipment_set_are_recorded_not_written(ladder):
++    """Writing REFUTED back would move the entry out of EQUIPMENT_FAILURE_VERDICTS
++    and change demotion behaviour. That dominance is unmeasured, so it is
++    recorded for a human rather than acted on."""
++    e = {"falsifier_verdict": "UNTOOLABLE"}
++    assert reconcile_routing_verdict(e, _res(ladder, "assert False\n")) is False
++    assert e["falsifier_verdict"] == "UNTOOLABLE"
++    assert e["routing_verdict_unreconciled"] == ladder
++
++
++def test_a_resolved_ladder_is_left_to_the_confirmed_path():
++    e = {"falsifier_verdict": "UNTOOLABLE"}
++    assert reconcile_routing_verdict(
++        e, _res("CONFIRMED", "assert False\n", resolved=True)) is False
++    assert e["falsifier_verdict"] == "UNTOOLABLE"
++
++
++def test_a_non_untoolable_entry_is_never_touched():
++    for v in ("CONFIRMED", "REFUTED", "ERROR", "NON_DISCRIMINATING", ""):
++        e = {"falsifier_verdict": v}
++        assert reconcile_routing_verdict(e, _res("ERROR", "x\n")) is False
++        assert e["falsifier_verdict"] == v
++
++
++def test_the_helper_is_actually_wired_into_apply_routing():
++    """An addition nothing calls is not additive."""
++    src = inspect.getsource(_apply_routing)
++    assert "reconcile_routing_verdict(e, result)" in src
++
++
++def test_the_feedback_line_flips_to_the_instruction_that_applies():
++    """The consequence, end to end: the panel stops being told to write a
++    falsifier that was already written and already crashed."""
++    e = {"falsifier_verdict": "UNTOOLABLE"}
++    before = " ".join(_rejection_lines(e))
++    assert "nothing runnable was attached" in before
++    assert "did not run to a verdict" not in before
++
++    reconcile_routing_verdict(e, _res("ERROR", "assert False\n"))
++    after = " ".join(_rejection_lines(e))
++    assert "did not run to a verdict" in after
++    assert "nothing runnable was attached" not in after
++
++
++@pytest.mark.skipif(not ARM4.is_file(), reason="arm 4 archive not present")
++def test_every_arm4_untoolable_would_have_been_relabelled():
++    """Replay the real archive through the helper. All 6 flip."""
++    ents = json.loads(ARM4.read_text())["registry"]["entries"]
++    flipped = []
++    for cid, e in sorted(ents.items()):
++        if (e.get("falsifier_verdict") or "").strip().upper() != "UNTOOLABLE":
++            continue
++        rh = [s for s in (e.get("routing_history") or []) if isinstance(s, dict)]
++        assert rh, f"{cid}: UNTOOLABLE with no routing history"
++        last = rh[-1]
++        replay = dict(e)
++        if reconcile_routing_verdict(
++                replay,
++                _res(last.get("verdict"), last.get("last_falsifier_code") or "")):
++            flipped.append(cid)
++    assert flipped == ["C0002", "C0005", "C0006", "C0011", "C0012", "C0015"], flipped
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-09-22 12:15:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rcgeq6nc/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-09-22 11:16:40
+@@ -494,7 +494,7 @@
+ **Correction 2026-09-17 (panel round 16, verified by execution):** 2 of the entry's claims exceeded its evidence. (1) **I13's 0 of 22 cannot be rebuilt.** `scripts/neighbour_catches_it_2026-09-11.py` has no defaults (a bare run exits with `--module is required`), and neither the module nor the full list of 5 symbols it ran on is recorded in a tracked file or a commit message; the 22 is an operator report, not a reproducible measurement, and I13 is narrowed to: not supported over 1 unrecorded sample of 5 functions. (2) **"Both instruments refuse to run on a dirty tree and revert in a finally" was held by source text.** `TestTheExperimentsRefuseToRunUnsafely` checked that `REFUSING`, `git checkout` and `finally:` appear in each script, and with the first `tree_is_clean()` check disabled in place in both scripts that class still passed (3 passed). It now executes both properties in a scratch git repository per script. `test_a_dirty_tree_is_refused` commits `mod.py` and a test that calls it, adds an uncommitted line, runs a copy of the script and requires exit 2, `REFUSING` and the line intact. `test_the_revert_runs_when_the_mutated_run_raises` makes the test run taken while the target is mutated raise, and requires the target restored. With the refusal disabled both refusal tests fail; with `finally:` changed to `except ValueError:` in both scripts both revert tests fail; restored, all 10 tests in `bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py` pass. **What stands:** the census and its controls; I11's denominator from `tests_reading()`; the 0 of 84 result as recorded in commit `15327d4`, not re-executed because the script mutates a tracked file.
+ **DONE 2026-09-11. BOTH CLASSES MEASURED, AND BOTH CAME BACK BETTER THAN FEARED — one of them only after I had the wrong number in hand.** **I11, the source-text converse of `execute-do-not-grep`.** It is not hypothetical: it fired **4 times on 2026-09-10 and 09-11**, every time on a CORRECT change, twice on guards written the same day they broke, and every instance was a COMMENT GROWING under a window, an index or a body slice. Census: **70 of 5026 test functions assert that a literal appears in the text of a Python source file — 1.3928%, Wilson [1.1039%, 1.7559%]**. Then the experiment, because fragility is a property of behaviour under an IRRELEVANT edit and you have to make one. Against `bench/reference_runner_v3.py` and the **84** test files that name it: an inert comment APPENDED AFTER THE LAST LINE reddens **0 of 84 — 0.0000%, Wilson [0.0000%, 4.3732%]**, so no test in this suite asserts on the runner's raw bytes; an inert comment INSERTED INSIDE A FUNCTION reddens **2 of 84, 2.3810%, Wilson [0.6554%, 8.2714%]** — and **both are legitimate**, because `test_citation_content` and `test_experiment_run_ledger` cite the runner BY LINE NUMBER and noticing that lines moved is exactly their job. After the 4 repairs, the illegitimate fragility in this class is 0. **THE DETECTOR WAS WRONG FIRST AND A POSITIVE CONTROL SAID SO:** built from 3 of the 4 guards that actually broke here, it detected **1 of 3**, because it tracked only names bound DIRECTLY to `read_text()` and missed `window = src[i:i+400]` and `body = src[src.index(...):]` — the 2 commonest shapes there are. `51 of 5026` was a fact about the detector. **I13, a test green because a NEIGHBOUR catches the regression.** Measured by destroying a function outright and asking which files naming it go red. **The first answer was 11 of 37 surviving, 29.7297% — and a 15-minute read of 3 survivors refuted it.** All 3 were CORRECT: `test_fix_complexity` asserts `"compute_rk" not in called`, naming the symbol in order to require it is NOT called; `test_target_complexity_is_reported` AST-scans for CALL SITES, which emptying a function does not move; and `test_instrument_gaps_from_panel`'s own docstring RECORDS a prior mutation study of the same function. **"Names it" is a bad proxy for "claims to cover it".** Refined to files that actually CALL the symbol: **0 of 22 survived — 0.0000%, Wilson [0.0000%, 14.8655%], Clopper-Pearson [0.0000%, 15.4373%]**. **I13 IS NOT SUPPORTED OVER THIS SAMPLE, and the boundary is stated rather than buried: 5 functions in 1 module, upper bound 15% and not 0.** What is settled is that the alarming figure was an artefact of the proxy, and that both instruments refuse to run on a dirty tree and revert in a `finally`.
+ 
+-**A7. Decide what to do about the archived escalated criticals with no falsifier — 22, quoted with its predicate family {20, 22, 34}.** From I17, and it is the archive half of item 2.2. **The entry's original 25 does not reproduce**, and one figure cannot identify the predicate: at the runner-read severity threshold the count is 22, a strict `> 0.7` gives 20, and dropping the severity filter gives 34. The unfiltered member is a count over the archive, so it MOVES when runs are added — it was 32 until the commissioning arms of 2026-09-21/22 were archived. `scripts/escalation_paths_2026-09-11.py` now recomputes all 3 rather than printing them from a typed string, which is how the drift was caught. Across 9 runs; `exp53_control_zero_live` accounts for 10 across its 2 runs and `exp55_v3_control` for 8. Archived runs cannot be retro-fixed, so the actionable half is the falsifier-gate path that let a critical escalate with no runnable check, not the backlog — but the backlog's disposition is still a decision.
++**A7. Decide what to do about 25 archived escalated criticals with no falsifier.** From I17, and it is the archive half of item 2.2. Across 9 runs; `exp53_control_zero_live` accounts for 10 across its 2 runs and `exp55_v3_control` for 8. Archived runs cannot be retro-fixed, so the actionable half is the falsifier-gate path that let a critical escalate with no runnable check, not the backlog — but the backlog's disposition is still a decision.
+ <!-- task: A7 | state: DONE | status: COMMITTED | evidence: bench/tests/test_escalation_paths_2026-09-11.py -->
+ **DONE 2026-09-11, AND THE ENTRY EXPECTED A HOLE THAT IS NOT THERE.** **Neither of the entry's figures reproduces, and establishing that took longer than the repair.** No predicate returns **25**. The closest — severity at or above `CRITICAL_SEVERITY_THRESHOLD` (**0.7**, READ from the runner rather than typed) AND `hil_escalated` AND no `falsifier_code` — returns **22**, and it reproduces the entry's one other checkable family figure exactly, `exp55_v3_control` = **8**, so it is 1 of the predicates that fits. **CORRECTED 2026-09-17: the identification is WITHDRAWN.** `scripts/escalation_paths_2026-09-11.py` reproduces the anchor `exp55_v3_control` = 8 under 3 predicates in the family, with totals of 22 at severity at or above 0.7, 20 at a strict above 0.7, and 32 with no severity filter at all, the family {20, 22, 32}, so 1 family figure cannot identify which predicate was meant; the withdrawal is recorded in `bench/tests/test_panel12_instrument_repairs_2026-09-11.py` and was never written back here. ANONYMOUS is 0 under every candidate, so the conclusion does not move. **`exp53_control_zero_live` contributes 0 and CANNOT contribute any:** its 2 runs hold **no `*_report.json` at all**. Their findings live in `checkpoint.json` under `all_findings`, as a list of per-round LISTS, in a different schema carrying `falsification_present` where the registry carries `falsifier_code`, with no escalation flag set anywhere. Run 1 holds exactly **10** criticals at or above 0.7 — which is where the entry's "10" came from. They are criticals; they are not escalations. **ALL 22 ARE ESCALATED BY A NAMED, DELIBERATE MECHANISM THAT RECORDS ITS REASON: 11 irreducible (the routing ladder ran out, the 2026-08-01 design), 8 MERGE deadlock, 3 stale contested challenge. ANONYMOUS is 0 of 22 — 0.0000%, Wilson [0.0000%, 14.8655%], Clopper-Pearson [0.0000%, 15.4373%].** **What was actually missing is the instrument.** `irreducible_queue_count` counts only the first of those paths — correctly, its docstring scopes it to the ladder running out — so an audit keying on that one flag reports **11 of 22** as unaccounted, and "no falsifier" gets read as "no reason". `scripts/escalation_paths_2026-09-11.py` names the path for every one. **AND ITS COVERAGE CHECK FOUND A SEVENTH PATH ON ITS FIRST EXECUTION**, which no census could have found because it has never fired on a critical without a falsifier: `escalate_stale_contested` has **2** escalating branches and the CONTESTED one was unrecognised. That is the value of comparing the table against the RUNNER rather than against the archive — 2 representations with a comparator. **THE BACKLOG'S DISPOSITION REMAINS THE FOUNDER'S.** Archived runs cannot be retro-fixed; this supplies the decision's factual basis and not the decision. **The recommendation, for when he wants it:** leave the 22 as they stand and rely on the path census, because every one already carries the reason a human needs and no retro-fit can add a falsifier to a run that has finished.
+ 
+
+### cc2:attempt-1:scripts/escalation_paths_2026-09-11.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/escalation_paths_2026-09-11.py	2026-09-22 12:15:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rcgeq6nc/repo/scripts/escalation_paths_2026-09-11.py	2026-09-11 06:34:26
+@@ -206,27 +206,12 @@
+     if not gaps:
+         print("    none. Every escalation site leaves a marker this table reads.")
+ 
+-    # COMPUTED, NOT TYPED (2026-09-22). These 3 figures were written into the
+-    # string above as {20, 22, 32}. The unfiltered member is a COUNT OVER THE
+-    # ARCHIVE, so it moves whenever a run is added -- and it did: the overnight
+-    # commissioning arms of 2026-09-21/22 took it from 32 to 34, leaving the
+-    # typed figure stale and the entry quoting a family that no longer existed.
+-    # `test_a7_predicate_family_is_quoted_2026-09-17.py` CALLS these same 3
+-    # functions and compares, which is why it caught a number that reading the
+-    # file could not. A family figure printed here is now recomputed here.
+-    import math as _math
+-    _thr = critical_threshold()
+-    _at = len(escalated_without_a_falsifier(_thr))
+-    _strict = len(escalated_without_a_falsifier(_math.nextafter(_thr, 2.0)))
+-    _unfiltered = len(escalated_without_a_falsifier(float("-inf")))
+-    _family = sorted({_strict, _at, _unfiltered})
+-    _fam = "{" + ", ".join(str(n) for n in _family) + "}"
+-    print(f"\nTHE PREDICATE IS UNDERDETERMINED BY ITS ANCHOR. Dropping the "
+-          f"severity filter also\nreproduces exp55_v3_control = 8, with a total "
+-          f"of {_unfiltered}; a strict `> {_thr}` gives {_strict}. One\nfamily "
+-          f"figure cannot identify a predicate, so {_at} is quoted with its "
+-          f"family {_fam}.\nANONYMOUS is 0 under every candidate, which is the "
+-          f"half that carries the finding.")
++    print("\nTHE PREDICATE IS UNDERDETERMINED BY ITS ANCHOR. Dropping the "
++          "severity filter also\nreproduces exp55_v3_control = 8, with a total "
++          "of 32; a strict `> 0.7` gives 20. One\nfamily figure cannot identify "
++          "a predicate, so 22 is quoted with its family {20, 22, 32}.\nANONYMOUS "
++          "is 0 under every candidate, which is the half that carries the "
++          "finding.")
+ 
+     print("\nTHE ENTRY'S 25 DOES NOT REPRODUCE and its exp53 attribution cannot: "
+           "that run\nkeeps findings in checkpoint.json under `all_findings`, in a "
+
+### cc2:attempt-1:scripts/falsifier_untoolable_is_stale_error_2026-09-22.py
+--- /dev/null	2026-09-22 12:19:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rcgeq6nc/repo/scripts/falsifier_untoolable_is_stale_error_2026-09-22.py	2026-09-22 12:13:27
+@@ -0,0 +1,215 @@
++#!/usr/bin/env python3
++"""FALSIFIER: arm 4's 6 UNTOOLABLE verdicts are STALE. The ladder ran and ERRORed.
++
++THE CLAIM UNDER TEST is the one both the founder's question and CC1's reading
++presuppose: that `UNTOOLABLE` on arm 4 is a statement about the TARGET -- either
++"there was nothing here to compute" (the founder's reading) or "the machinery
++gave up while it still held source it had produced" (CC1's reading). Both are
++false in the same way. `UNTOOLABLE` on those 6 entries is not a statement about
++the target at all. It is a PRE-ROUTING label that the routing ladder's own tool
++verdict overwrote in `routing_history` and never wrote back to the entry.
++
++WHAT THIS DEMONSTRATES, in four parts, each against the REAL module:
++
++  A. MECHANISM. `bench.routing.resolve_via_routing` returns
++     (verdict="ERROR", falsifier_code=<non-empty>) ONLY when the runner's own
++     decider `reverify_fn` was CALLED on that code and returned ERROR. The other
++     road to "ERROR" -- a rung that produced no code -- necessarily carries an
++     EMPTY `falsifier_code`, because `last_code` is assigned before the emptiness
++     check (bench/routing.py:161-166). So the archived signature
++     (verdict ERROR, code non-empty) is a RECORD OF AN EXECUTION, not of a
++     silence. This matters because `ge` refuted re-execution as a route to the
++     answer: the 600-char archive cannot be run. It does not need to be. The
++     runner already ran the untruncated body and recorded what it decided.
++
++  B. ARCHIVE. Every entry in the arm 4 report carrying falsifier_verdict
++     "UNTOOLABLE" carries routing_history verdict "ERROR" with a non-empty body,
++     while its stored `falsifier_code` is empty. The entry's field and the
++     ladder's field contradict each other, and the ladder's is the tool verdict.
++
++  C. CONSEQUENCE, and this is what puts the finding above threshold.
++     `_rejection_lines` (bench/reference_runner_v3.py:12594) branches on exactly
++     this field to build the corrective instruction shipped to every seat in the
++     next round's registry digest (rendered at :2749 and :2789). On ERROR it says
++     "your test did not run to a verdict ... Re-write it so it runs". On
++     UNTOOLABLE it says "nothing runnable was attached". For these 6 the panel is
++     told to WRITE a falsifier that was already written and already crashed. The
++     stale label does not merely misreport; it ships a wrong instruction.
++
++  D. THE LADDER'S STOP IS CONSTANT-GOVERNED, NOT GAMMA-GOVERNED. `max_rungs`
++     defaults to 2 (bench/routing.py:139,183); the runner's only call site passes
++     no override; `rungs_available` is `len(models)` = 5. "2/5" is the constant
++     against the roster. `_estimate_gamma` returns 0.0 for any run of fewer than
++     `min_rounds=3` rounds, and arm 4 ran 1 -- its gamma_history is [0.0]. Gamma
++     could not have governed this stop even in principle.
++
++FAILS IFF THE DEFECT IS PRESENT: raises AssertionError / prints FALSIFIED when
++the archive's UNTOOLABLE entries are stale relabels of an executed ERROR. Exits
++cleanly if the labels agree with the ladder.
++
++Run:  python3 scripts/falsifier_untoolable_is_stale_error_2026-09-22.py
++"""
++
++from __future__ import annotations
++
++import inspect
++import json
++import sys
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parents[1]
++if str(REPO) not in sys.path:
++    sys.path.insert(0, str(REPO))
++
++REPORT = (REPO / "bench" / "logs" / "commissioning_arm4_prose_20260922T053349Z"
++          / "commissioning_arm4_prose_report.json")
++
++failures: list[str] = []
++
++
++def main() -> int:
++    from bench.routing import resolve_via_routing, route
++    from bench.reference_runner_v3 import (
++        _rejection_lines, _estimate_gamma, EQUIPMENT_FAILURE_VERDICTS,
++    )
++
++    print("=" * 72)
++    print("A. MECHANISM - what (ERROR, non-empty code) can and cannot mean")
++    print("=" * 72)
++
++    calls: list[str] = []
++
++    def reverify_error(code: str) -> str:
++        calls.append(code)
++        return "ERROR"
++
++    body = "import bench.routing\nassert False, 'boom'\n"
++    r_ran = resolve_via_routing(
++        {"id": "X1"}, ["Codex", "CC2"],
++        resolve_fn=lambda m, f: body,
++        reverify_fn=reverify_error,
++        # max_rungs left at its default ON PURPOSE -- part D reads that default.
++    )
++    print(f"  last rung produced code -> verdict={r_ran.verdict!r} "
++          f"code_len={len(r_ran.falsifier_code)} resolved={r_ran.resolved} "
++          f"rungs_tried={r_ran.rungs_tried}  reverify_calls={len(calls)}")
++    assert r_ran.verdict == "ERROR" and r_ran.falsifier_code, (
++        "setup: expected the executed-and-crashed signature")
++    assert len(calls) == 2, (
++        "setup: reverify must have been CALLED for this signature to arise")
++
++    # The ONLY other road to "ERROR" inside resolve_via_routing: a rung that
++    # produced nothing. It cannot wear a non-empty falsifier_code.
++    calls.clear()
++    r_silent = resolve_via_routing(
++        {"id": "X2"}, ["Codex", "CC2"],
++        resolve_fn=lambda m, f: "",
++        reverify_fn=reverify_error,
++    )
++    print(f"  last rung produced NOTHING -> verdict={r_silent.verdict!r} "
++          f"code_len={len(r_silent.falsifier_code)}  reverify_calls={len(calls)}")
++    assert r_silent.verdict == "ERROR" and r_silent.falsifier_code == "" and not calls, (
++        "setup: the no-code road to ERROR must carry an empty body")
++    print("  => (verdict ERROR) AND (code non-empty) IMPLIES reverify_falsifier")
++    print("     EXECUTED the untruncated body and returned ERROR. Derived from")
++    print("     the real module, not asserted.")
++
++    print()
++    print("=" * 72)
++    print("B. ARCHIVE - the entry field contradicts the ladder's tool verdict")
++    print("=" * 72)
++    if not REPORT.is_file():
++        print(f"  no arm 4 report at {REPORT}", file=sys.stderr)
++        return 2
++    ents = json.loads(REPORT.read_text())["registry"]["entries"]
++
++    stale: list[str] = []
++    for cid, e in sorted(ents.items()):
++        if (e.get("falsifier_verdict") or "").strip().upper() != "UNTOOLABLE":
++            continue
++        rh = [s for s in (e.get("routing_history") or []) if isinstance(s, dict)]
++        if not rh:
++            continue
++        last = rh[-1]
++        lv = (last.get("verdict") or "").strip().upper()
++        code_len = len(last.get("last_falsifier_code") or "")
++        stored = len(e.get("falsifier_code") or "")
++        print(f"  {cid}: entry says UNTOOLABLE | ladder says {lv:<10} "
++              f"ladder_code={code_len:3}ch stored_code={stored}ch "
++              f"rungs={last.get('rungs_tried')}/{last.get('rungs_available')}")
++        if lv and lv != "UNTOOLABLE" and code_len > 0:
++            stale.append(cid)
++    if stale:
++        failures.append(
++            f"{len(stale)} entries labelled UNTOOLABLE whose ladder EXECUTED a "
++            f"falsifier and returned a different verdict: {', '.join(stale)}")
++
++    print()
++    print("=" * 72)
++    print("C. CONSEQUENCE - the wrong instruction ships to the next round")
++    print("=" * 72)
++    print(f"  _rejection_lines defined at reference_runner_v3.py:"
++          f"{inspect.getsourcelines(_rejection_lines)[1]}")
++    WRONG = "nothing runnable was attached"
++    RIGHT = "did not run to a verdict"
++    misinstructed: list[str] = []
++    for cid in stale:
++        lines = _rejection_lines(ents[cid])
++        said_wrong = any(WRONG in ln for ln in lines)
++        said_right = any(RIGHT in ln for ln in lines)
++        print(f"  {cid}: says-'{WRONG}'={said_wrong}  says-'{RIGHT}'={said_right}")
++        if said_wrong and not said_right:
++            misinstructed.append(cid)
++    if misinstructed:
++        failures.append(
++            f"{len(misinstructed)} entries are told to ATTACH a falsifier that "
++            f"was written and crashed: {', '.join(misinstructed)}")
++    print("  (these lines render into the registry digest at :2749 and :2789,")
++    print("   i.e. into round K+1's prompt for every seat)")
++
++    print()
++    print("=" * 72)
++    print("D. THE STOP IS CONSTANT-GOVERNED - gamma is not in this circuit")
++    print("=" * 72)
++    d_rvr = inspect.signature(resolve_via_routing).parameters["max_rungs"].default
++    d_route = inspect.signature(route).parameters["max_rungs"].default
++    print(f"  resolve_via_routing max_rungs default = {d_rvr}")
++    print(f"  route               max_rungs default = {d_route}")
++    assert d_rvr == 2 and d_route == 2
++
++    src = (REPO / "bench" / "reference_runner_v3.py").read_text()
++    i = src.find("result = route(")
++    call = src[i:src.find(")", i) + 1]
++    print(f"  runner call site: {' '.join(call.split())}")
++    overrides = "max_rungs" in call
++    print(f"  call site overrides max_rungs? {overrides}")
++    assert not overrides, "call site DOES override; part D's premise is wrong"
++
++    g1 = _estimate_gamma([4])
++    print(f"  _estimate_gamma([4]) (arm 4 ran 1 round) = {g1}  "
++          f"(min_rounds=3 -> structurally 0.0)")
++    assert g1 == 0.0
++    print("  => the ladder stopped at 2 of 5 because 2 is a hardcoded default,")
++    print("     not because returns were diminishing. Gamma is a ROUND-level")
++    print("     novelty-decay measure and touches no part of this ladder.")
++    print(f"  (for reference, EQUIPMENT_FAILURE_VERDICTS = "
++          f"{sorted(EQUIPMENT_FAILURE_VERDICTS)} - UNTOOLABLE and ERROR are")
++    print("   co-members, so this relabel changes the REPORT and the FEEDBACK,")
++    print("   not the routing or demotion behaviour.)")
++
++    print()
++    print("=" * 72)
++    if failures:
++        for f in failures:
++            print("FALSIFIED: " + f)
++        print("=" * 72)
++        raise AssertionError(
++            "UNTOOLABLE on arm 4 is a stale pre-routing label: the ladder "
++            "executed a falsifier and returned ERROR, and that verdict was "
++            "never written back to the entry.")
++    print("NOT FALSIFIED - entry verdicts agree with their ladder's verdicts.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-09-22 11:50:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/reference_runner_v3.py	2026-09-22 12:18:15
+@@ -13087,7 +13087,32 @@
+             f"{len(_refusals)} precondition(s) failed for target {target_path} "
+             f"(kind={target_kind}): " + " | ".join(_refusals))
+     sk_forced_off = False
+-    if target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled:
++    if (target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled
++            and getattr(cfg, "sk_score_prose_listings", False)):
++        # TASK A19 REACHABLE THROUGH THE RUNNER (2026-09-22, panel seat on the
++        # arm-4 anatomy). Before this branch existed, the forced-off override
++        # below fired for EVERY non-Python target, and the flag's only call
++        # site (`_evaluate_sk_for_findings`, behind the `cfg.sk_enabled` guard)
++        # therefore never executed with the flag set -- `sk_score_prose_listings`
++        # was an addition nothing reached, demonstrated by execution in
++        # `scripts/falsify_a19_unreachable_2026-09-22.py`.
++        #
++        # KEEPING THE PIPELINE ON HERE IS SAFE ON THE FORCED-OFF BLOCK'S OWN
++        # STATED HAZARDS, both of which post-date its comment:
++        #   * `_capture_baseline` has read `_gateable_source` since 2026-09-11
++        #     (the phantom-2752-ruff-baseline input to the 2026-08-01 inversion
++        #     is measured on the extracted listings now, and a purely prose
++        #     target yields None/None);
++        #   * `compute_sk` itself decides per fix: purely prose -> NO_SCORE
++        #     ("nothing to compute", the founder's first case); reducible fenced
++        #     listings -> scored (his second). This branch changes WHO decides,
++        #     not WHAT is decided.
++        # Default stays byte-identical: the flag is False unless a run turns it
++        # on deliberately, so every existing config takes the branch below.
++        _log("  *** S_k pipeline kept ON for a non-Python target: "
++             "sk_score_prose_listings=true (Task A19). Purely prose fixes "
++             "resolve NO_SCORE inside compute_sk; fenced listings are scored. ***")
++    elif target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled:
+         # Not a warning — an override. S_k over prose does not merely fail to
+         # help; it inverts. Measured on the 2026-08-01 control: a fix injecting
+         # a shell-injection call into a fenced listing scored sk=1.0000
+
+### fable:attempt-1:bench/tests/test_a19_reachable_through_runner_2026-09-22.py
+--- /dev/null	2026-09-22 12:19:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/tests/test_a19_reachable_through_runner_2026-09-22.py	2026-09-22 12:15:25
+@@ -0,0 +1,93 @@
++#!/usr/bin/env python3
++"""Task A19's flag must be REACHABLE: the prose forced-off gate consults it.
++
++THE DEFECT THIS PINS. `RunnerConfig.sk_score_prose_listings` (the founder's
++third outcome: purely prose -> NO_SCORE, fenced listings inside prose ->
++scored) was wired end to end -- config field, call-site kwarg, compute_sk
++branch -- yet unreachable through the runner: `run_experiment` forced
++`sk_enabled=False` for every non-Python target BEFORE the flag's only call
++site (`if cfg.sk_enabled:`), so no configuration could ever execute the A19
++branch. An addition nothing reaches, the additive standard's most-confirmed
++defect class (11 since 2026-08-01). Demonstrated by execution in
++`scripts/falsify_a19_unreachable_2026-09-22.py` before the repair; this test
++keeps it repaired.
++
++INVARIANTS PINNED, each executed:
++  1. The if-chain that sets `sk_forced_off = True` consults
++     `sk_score_prose_listings` (AST, not substring-in-file, so a comment
++     cannot satisfy it).
++  2. With the flag OFF (every existing config), the forced-off override is
++     still present with its original guard -- the safety default is unchanged.
++  3. Downstream, `compute_sk` still honours the flag on the real arm-4
++     target: NO_SCORE with it off, not-NO_SCORE with it on.
++
++Run:  python3 -m pytest bench/tests/test_a19_reachable_through_runner_2026-09-22.py -q
++"""
++from __future__ import annotations
++
++import ast
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO))
++
++from bench.reference_runner_v3 import (  # noqa: E402
++    SK_NO_SCORE, RunnerConfig, compute_sk, _capture_baseline,
++)
++
++RUNNER = REPO / "bench" / "reference_runner_v3.py"
++TARGET = REPO / "bench" / "BUILD_BOT_TEST_BENCH_FIX_SPEC.md"
++
++
++def _forced_off_if_chain() -> list:
++    tree = ast.parse(RUNNER.read_text(encoding="utf-8"))
++    hits: list = []
++
++    class Finder(ast.NodeVisitor):
++        def __init__(self) -> None:
++            self._stack: list = []
++
++        def visit_If(self, node) -> None:
++            self._stack.append(node)
++            self.generic_visit(node)
++            self._stack.pop()
++
++        def visit_Assign(self, node) -> None:
++            for t in node.targets:
++                if (isinstance(t, ast.Name) and t.id == "sk_forced_off"
++                        and isinstance(node.value, ast.Constant)
++                        and node.value.value is True and self._stack):
++                    hits.extend(self._stack)
++            self.generic_visit(node)
++
++    Finder().visit(tree)
++    assert hits, "sk_forced_off = True vanished; re-derive this test"
++    return hits
++
++
++def test_gate_consults_the_a19_flag():
++    chain = "\n".join(ast.unparse(i) for i in _forced_off_if_chain())
++    assert "sk_score_prose_listings" in chain, (
++        "the forced-off if-chain never consults sk_score_prose_listings: "
++        "the A19 flag is unreachable through the runner again")
++
++
++def test_default_off_keeps_the_forced_off_override():
++    """The safety override survives for every config that does not opt in."""
++    assert RunnerConfig.__dataclass_fields__[
++        "sk_score_prose_listings"].default is False
++    chain = "\n".join(ast.unparse(i.test) for i in _forced_off_if_chain())
++    assert "target_kind != TARGET_KIND_PYTHON" in chain
++    assert "cfg.sk_enabled" in chain
++
++
++def test_compute_sk_still_honours_the_flag_downstream():
++    source = TARGET.read_text(encoding="utf-8")
++    baseline = _capture_baseline(source, source_path=str(TARGET))
++    off = compute_sk("no blocks", source, str(TARGET), baseline=baseline,
++                     score_prose_listings=False)
++    on = compute_sk("no blocks", source, str(TARGET), baseline=baseline,
++                    score_prose_listings=True)
++    assert off.tristate == SK_NO_SCORE
++    assert on.tristate != SK_NO_SCORE
+
+### fable:attempt-1:bench/tests/test_hil_queue_says_which_kind_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_hil_queue_says_which_kind_2026-09-22.py	2026-09-22 11:10:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/tests/test_hil_queue_says_which_kind_2026-09-22.py	2026-09-22 12:17:11
+@@ -19,10 +19,18 @@
+ 
+ WHAT IT COST. The 2026-09-22 morning report took the label at face value and
+ derived: ladder capped at 2 rungs -> 8 criticals exhausted it -> never scored ->
+-locked irreducible -> halt. The first link is false -- the ladder was never
+-entered -- so `max_rungs` cannot be the cause, and a config surface for it was
+-escalated to the founder on that reasoning. With 1 distinct underlying model
+-behind 5 `-SIM` labels, ladder DEPTH is causally inert in this arm regardless.
++locked irreducible -> halt. CORRECTED SAME DAY against the registry (panel seat,
++`scripts/falsify_arm4_ladder_was_entered_2026-09-22.py`, executed): the ladder
++WAS entered -- every deferred entry records a routing step with rungs_tried in
++{1,2} of rungs_available=5 and error_routed=True -- and it stopped at the
++`max_rungs=2` constant (bench/routing.py:139) with 3 rungs untried. What stays
++true: "ladder-exhausted" is still the wrong label for a DEFERRED item, because
++deferral says the CLAIM never got a demonstrated verdict, not that no rung ran;
++and with 1 distinct underlying model behind 5 `-SIM` labels, ladder DEPTH is
++causally weak in this arm regardless. This file's first version asserted
++"the ladder was never entered / rungs_tried == 0 by construction", which the
++archive refutes 8 of 8 -- rungs_tried==0 deferral exists only on the
++empty-ladder branch (reference_runner_v3.py:6039), which arm 4 never took.
+ 
+ This test pins the counted-by-state decomposition against the real report, so a
+ future reader cannot be told a mechanism the code declined to assert.
+@@ -95,16 +103,21 @@
+     assert alarm.get("items_without_falsifier") == 7
+ 
+ 
+-def test_max_rungs_cannot_be_the_arm4_cause_because_the_ladder_was_never_entered():
+-    """A rung is only reached when routing runs; deferral happens before that.
++def test_deferral_does_not_mean_the_ladder_was_skipped():
++    """Deferred means the CLAIM never got a demonstrated verdict -- the ladder ran.
+ 
+-    `_apply_routing` sets `routing_deferred` on the equipment-failure branch and
+-    `irreducible_escalation` on the exhausted branch. They are mutually
+-    exclusive, so a deferred item has `rungs_tried == 0` by construction and
+-    raising `max_rungs` cannot move it.
++    This test's first version asserted the opposite ("a deferred item has
++    `rungs_tried == 0` by construction"); the archive refutes that 8 of 8.
++    `_apply_routing` appends the routing step AFTER `route()` returns
++    (reference_runner_v3.py:5992) and stamps `routing_deferred` on the
++    equipment-failure branch after that (:6158), so a deferred entry records
++    a genuinely-entered ladder: rungs_tried in {1,2} of 5, stopped by the
++    `max_rungs=2` DEFAULT CONSTANT (bench/routing.py:139; the runner's call
++    site passes no override and no config surface exists). rungs_tried == 0
++    deferral exists only on the empty-ladder branch (:6039), not taken here.
+     """
+     text = RUNNER.read_text(encoding="utf-8")
+-    # The two branches are exclusive: one `if`, one `else`.
++    # The two stamps both exist; deferral and irreducible are distinct states.
+     assert 'e["routing_deferred"] = True' in text
+     assert 'e["irreducible_escalation"] = True' in text
+     if not ARM4.is_file():
+@@ -115,3 +128,15 @@
+     assert len(report["models"]) == 5, report["models"]
+     assert report.get("halted") is True
+     assert report.get("halted_at_round") == 0
++    deferred = {c: e for c, e in report["registry"]["entries"].items()
++                if e.get("routing_deferred")}
++    assert deferred, "arm 4 must carry deferred entries for this pin to bite"
++    for cid, e in deferred.items():
++        steps = [s for s in (e.get("routing_history") or [])
++                 if isinstance(s, dict) and s.get("rungs_available") is not None]
++        assert steps, f"{cid}: deferred with no recorded routing step"
++        for s in steps:
++            assert (s.get("rungs_tried") or 0) > 0, (
++                f"{cid}: rungs_tried == 0 -- if this ever fails the empty-"
++                f"ladder branch was taken and this pin must be re-derived")
++            assert s["rungs_available"] == 5, (cid, s["rungs_available"])
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-09-22 12:15:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-09-22 11:16:40
+@@ -494,7 +494,7 @@
+ **Correction 2026-09-17 (panel round 16, verified by execution):** 2 of the entry's claims exceeded its evidence. (1) **I13's 0 of 22 cannot be rebuilt.** `scripts/neighbour_catches_it_2026-09-11.py` has no defaults (a bare run exits with `--module is required`), and neither the module nor the full list of 5 symbols it ran on is recorded in a tracked file or a commit message; the 22 is an operator report, not a reproducible measurement, and I13 is narrowed to: not supported over 1 unrecorded sample of 5 functions. (2) **"Both instruments refuse to run on a dirty tree and revert in a finally" was held by source text.** `TestTheExperimentsRefuseToRunUnsafely` checked that `REFUSING`, `git checkout` and `finally:` appear in each script, and with the first `tree_is_clean()` check disabled in place in both scripts that class still passed (3 passed). It now executes both properties in a scratch git repository per script. `test_a_dirty_tree_is_refused` commits `mod.py` and a test that calls it, adds an uncommitted line, runs a copy of the script and requires exit 2, `REFUSING` and the line intact. `test_the_revert_runs_when_the_mutated_run_raises` makes the test run taken while the target is mutated raise, and requires the target restored. With the refusal disabled both refusal tests fail; with `finally:` changed to `except ValueError:` in both scripts both revert tests fail; restored, all 10 tests in `bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py` pass. **What stands:** the census and its controls; I11's denominator from `tests_reading()`; the 0 of 84 result as recorded in commit `15327d4`, not re-executed because the script mutates a tracked file.
+ **DONE 2026-09-11. BOTH CLASSES MEASURED, AND BOTH CAME BACK BETTER THAN FEARED — one of them only after I had the wrong number in hand.** **I11, the source-text converse of `execute-do-not-grep`.** It is not hypothetical: it fired **4 times on 2026-09-10 and 09-11**, every time on a CORRECT change, twice on guards written the same day they broke, and every instance was a COMMENT GROWING under a window, an index or a body slice. Census: **70 of 5026 test functions assert that a literal appears in the text of a Python source file — 1.3928%, Wilson [1.1039%, 1.7559%]**. Then the experiment, because fragility is a property of behaviour under an IRRELEVANT edit and you have to make one. Against `bench/reference_runner_v3.py` and the **84** test files that name it: an inert comment APPENDED AFTER THE LAST LINE reddens **0 of 84 — 0.0000%, Wilson [0.0000%, 4.3732%]**, so no test in this suite asserts on the runner's raw bytes; an inert comment INSERTED INSIDE A FUNCTION reddens **2 of 84, 2.3810%, Wilson [0.6554%, 8.2714%]** — and **both are legitimate**, because `test_citation_content` and `test_experiment_run_ledger` cite the runner BY LINE NUMBER and noticing that lines moved is exactly their job. After the 4 repairs, the illegitimate fragility in this class is 0. **THE DETECTOR WAS WRONG FIRST AND A POSITIVE CONTROL SAID SO:** built from 3 of the 4 guards that actually broke here, it detected **1 of 3**, because it tracked only names bound DIRECTLY to `read_text()` and missed `window = src[i:i+400]` and `body = src[src.index(...):]` — the 2 commonest shapes there are. `51 of 5026` was a fact about the detector. **I13, a test green because a NEIGHBOUR catches the regression.** Measured by destroying a function outright and asking which files naming it go red. **The first answer was 11 of 37 surviving, 29.7297% — and a 15-minute read of 3 survivors refuted it.** All 3 were CORRECT: `test_fix_complexity` asserts `"compute_rk" not in called`, naming the symbol in order to require it is NOT called; `test_target_complexity_is_reported` AST-scans for CALL SITES, which emptying a function does not move; and `test_instrument_gaps_from_panel`'s own docstring RECORDS a prior mutation study of the same function. **"Names it" is a bad proxy for "claims to cover it".** Refined to files that actually CALL the symbol: **0 of 22 survived — 0.0000%, Wilson [0.0000%, 14.8655%], Clopper-Pearson [0.0000%, 15.4373%]**. **I13 IS NOT SUPPORTED OVER THIS SAMPLE, and the boundary is stated rather than buried: 5 functions in 1 module, upper bound 15% and not 0.** What is settled is that the alarming figure was an artefact of the proxy, and that both instruments refuse to run on a dirty tree and revert in a `finally`.
+ 
+-**A7. Decide what to do about the archived escalated criticals with no falsifier — 22, quoted with its predicate family {20, 22, 34}.** From I17, and it is the archive half of item 2.2. **The entry's original 25 does not reproduce**, and one figure cannot identify the predicate: at the runner-read severity threshold the count is 22, a strict `> 0.7` gives 20, and dropping the severity filter gives 34. The unfiltered member is a count over the archive, so it MOVES when runs are added — it was 32 until the commissioning arms of 2026-09-21/22 were archived. `scripts/escalation_paths_2026-09-11.py` now recomputes all 3 rather than printing them from a typed string, which is how the drift was caught. Across 9 runs; `exp53_control_zero_live` accounts for 10 across its 2 runs and `exp55_v3_control` for 8. Archived runs cannot be retro-fixed, so the actionable half is the falsifier-gate path that let a critical escalate with no runnable check, not the backlog — but the backlog's disposition is still a decision.
++**A7. Decide what to do about 25 archived escalated criticals with no falsifier.** From I17, and it is the archive half of item 2.2. Across 9 runs; `exp53_control_zero_live` accounts for 10 across its 2 runs and `exp55_v3_control` for 8. Archived runs cannot be retro-fixed, so the actionable half is the falsifier-gate path that let a critical escalate with no runnable check, not the backlog — but the backlog's disposition is still a decision.
+ <!-- task: A7 | state: DONE | status: COMMITTED | evidence: bench/tests/test_escalation_paths_2026-09-11.py -->
+ **DONE 2026-09-11, AND THE ENTRY EXPECTED A HOLE THAT IS NOT THERE.** **Neither of the entry's figures reproduces, and establishing that took longer than the repair.** No predicate returns **25**. The closest — severity at or above `CRITICAL_SEVERITY_THRESHOLD` (**0.7**, READ from the runner rather than typed) AND `hil_escalated` AND no `falsifier_code` — returns **22**, and it reproduces the entry's one other checkable family figure exactly, `exp55_v3_control` = **8**, so it is 1 of the predicates that fits. **CORRECTED 2026-09-17: the identification is WITHDRAWN.** `scripts/escalation_paths_2026-09-11.py` reproduces the anchor `exp55_v3_control` = 8 under 3 predicates in the family, with totals of 22 at severity at or above 0.7, 20 at a strict above 0.7, and 32 with no severity filter at all, the family {20, 22, 32}, so 1 family figure cannot identify which predicate was meant; the withdrawal is recorded in `bench/tests/test_panel12_instrument_repairs_2026-09-11.py` and was never written back here. ANONYMOUS is 0 under every candidate, so the conclusion does not move. **`exp53_control_zero_live` contributes 0 and CANNOT contribute any:** its 2 runs hold **no `*_report.json` at all**. Their findings live in `checkpoint.json` under `all_findings`, as a list of per-round LISTS, in a different schema carrying `falsification_present` where the registry carries `falsifier_code`, with no escalation flag set anywhere. Run 1 holds exactly **10** criticals at or above 0.7 — which is where the entry's "10" came from. They are criticals; they are not escalations. **ALL 22 ARE ESCALATED BY A NAMED, DELIBERATE MECHANISM THAT RECORDS ITS REASON: 11 irreducible (the routing ladder ran out, the 2026-08-01 design), 8 MERGE deadlock, 3 stale contested challenge. ANONYMOUS is 0 of 22 — 0.0000%, Wilson [0.0000%, 14.8655%], Clopper-Pearson [0.0000%, 15.4373%].** **What was actually missing is the instrument.** `irreducible_queue_count` counts only the first of those paths — correctly, its docstring scopes it to the ladder running out — so an audit keying on that one flag reports **11 of 22** as unaccounted, and "no falsifier" gets read as "no reason". `scripts/escalation_paths_2026-09-11.py` names the path for every one. **AND ITS COVERAGE CHECK FOUND A SEVENTH PATH ON ITS FIRST EXECUTION**, which no census could have found because it has never fired on a critical without a falsifier: `escalate_stale_contested` has **2** escalating branches and the CONTESTED one was unrecognised. That is the value of comparing the table against the RUNNER rather than against the archive — 2 representations with a comparator. **THE BACKLOG'S DISPOSITION REMAINS THE FOUNDER'S.** Archived runs cannot be retro-fixed; this supplies the decision's factual basis and not the decision. **The recommendation, for when he wants it:** leave the 22 as they stand and rely on the path census, because every one already carries the reason a human needs and no retro-fit can add a falsifier to a run that has finished.
+ 
+
+### fable:attempt-1:scripts/arm4_untoolable_anatomy_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/arm4_untoolable_anatomy_2026-09-22.py	2026-09-22 11:46:31
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/scripts/arm4_untoolable_anatomy_2026-09-22.py	2026-09-22 12:17:11
+@@ -110,17 +110,19 @@
+         rh = e.get("routing_history") or []
+         last = ""
+         tried = avail = None
++        step_verdict = "(none)"
+         for s in rh:
+             if isinstance(s, dict):
+                 last = s.get("last_falsifier_code") or last
+                 tried = s.get("rungs_tried", tried)
+                 avail = s.get("rungs_available", avail)
++                step_verdict = (s.get("verdict") or step_verdict)
+         stored = len(e.get("falsifier_code") or "")
+         if last.strip():
+             had_source += 1
+         trunc = "TRUNCATED@600" if len(last) == 600 and not last.endswith("\n") else f"{len(last)}ch"
+         print(f"    {cid}: stored_code={stored:5}  source_in_record={trunc:>13}  "
+-              f"rungs {tried}/{avail}")
++              f"rungs {tried}/{avail}  executed_step_verdict={step_verdict}")
+     print()
+     pct(had_source, len(unt), "UNTOOLABLE entries with falsifier source in the record")
+     if had_source:
+@@ -128,10 +130,18 @@
+         print("         NARROWED 2026-09-22 after the paid seat `ge` refuted the")
+         print("         stronger reading. Generated source proves only that the model")
+         print("         ATTEMPTED a falsifier; a model can emit plausible code for a")
+-        print("         claim that is not computable at all. So this establishes that")
+-        print("         an attempt was made and discarded -- NOT that the target held")
+-        print("         computable content. Settling that would mean EXECUTING the")
+-        print("         source, which this archive forbids: it is truncated at 600.")
++        print("         claim that is not computable at all.")
++        print("         CORRECTED 2026-09-22 (panel seat, falsify_arm4_ladder_was_")
++        print("         entered): the earlier text said settling this would mean")
++        print("         executing source the archive truncates. WRONG -- the runner")
++        print("         ALREADY executed the untruncated source at run time and the")
++        print("         routing step records its verdict (ERROR for all 6 UNTOOLABLE")
++        print("         entries, printed above). So the record settles it: the")
++        print("         attempts RAN and demonstrated nothing. Not a mechanical")
++        print("         loss -- an executed, failed attempt whose adoption onto the")
++        print("         entry is withheld by design unless it resolves (runner:6002).")
++        print("         The stale entry-level UNTOOLABLE label (never updated after")
++        print("         routing, runner:5364 vs :6158) is what reads as loss.")
+     # the truncation, stated as a measurement rather than a caveat
+     allc = [s.get("last_falsifier_code") or ""
+             for e in ents.values() for s in (e.get("routing_history") or [])
+
+### fable:attempt-1:scripts/escalation_paths_2026-09-11.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/escalation_paths_2026-09-11.py	2026-09-22 12:15:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/scripts/escalation_paths_2026-09-11.py	2026-09-11 06:34:26
+@@ -206,27 +206,12 @@
+     if not gaps:
+         print("    none. Every escalation site leaves a marker this table reads.")
+ 
+-    # COMPUTED, NOT TYPED (2026-09-22). These 3 figures were written into the
+-    # string above as {20, 22, 32}. The unfiltered member is a COUNT OVER THE
+-    # ARCHIVE, so it moves whenever a run is added -- and it did: the overnight
+-    # commissioning arms of 2026-09-21/22 took it from 32 to 34, leaving the
+-    # typed figure stale and the entry quoting a family that no longer existed.
+-    # `test_a7_predicate_family_is_quoted_2026-09-17.py` CALLS these same 3
+-    # functions and compares, which is why it caught a number that reading the
+-    # file could not. A family figure printed here is now recomputed here.
+-    import math as _math
+-    _thr = critical_threshold()
+-    _at = len(escalated_without_a_falsifier(_thr))
+-    _strict = len(escalated_without_a_falsifier(_math.nextafter(_thr, 2.0)))
+-    _unfiltered = len(escalated_without_a_falsifier(float("-inf")))
+-    _family = sorted({_strict, _at, _unfiltered})
+-    _fam = "{" + ", ".join(str(n) for n in _family) + "}"
+-    print(f"\nTHE PREDICATE IS UNDERDETERMINED BY ITS ANCHOR. Dropping the "
+-          f"severity filter also\nreproduces exp55_v3_control = 8, with a total "
+-          f"of {_unfiltered}; a strict `> {_thr}` gives {_strict}. One\nfamily "
+-          f"figure cannot identify a predicate, so {_at} is quoted with its "
+-          f"family {_fam}.\nANONYMOUS is 0 under every candidate, which is the "
+-          f"half that carries the finding.")
++    print("\nTHE PREDICATE IS UNDERDETERMINED BY ITS ANCHOR. Dropping the "
++          "severity filter also\nreproduces exp55_v3_control = 8, with a total "
++          "of 32; a strict `> 0.7` gives 20. One\nfamily figure cannot identify "
++          "a predicate, so 22 is quoted with its family {20, 22, 32}.\nANONYMOUS "
++          "is 0 under every candidate, which is the half that carries the "
++          "finding.")
+ 
+     print("\nTHE ENTRY'S 25 DOES NOT REPRODUCE and its exp53 attribution cannot: "
+           "that run\nkeeps findings in checkpoint.json under `all_findings`, in a "
+
+### fable:attempt-1:scripts/falsify_a19_unreachable_2026-09-22.py
+--- /dev/null	2026-09-22 12:19:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/scripts/falsify_a19_unreachable_2026-09-22.py	2026-09-22 12:14:28
+@@ -0,0 +1,121 @@
++#!/usr/bin/env python3
++"""FALSIFIER: the A19 flag `sk_score_prose_listings` is unreachable through the runner.
++
++THE CLAIM UNDER TEST. Task A19 is the founder's third outcome: a purely prose
++target records NO_SCORE ("nothing to compute") while reducible fenced listings
++INSIDE a prose target are still scored. The flag exists (`RunnerConfig.
++sk_score_prose_listings`, reference_runner_v3.py:1492), is threaded to
++`compute_sk` (10881), and `compute_sk` honours it (10938). But
++`run_experiment` forces `sk_enabled=False` for EVERY non-Python target
++(13090-13102) BEFORE the only call site that reads the flag (14731,
++`if cfg.sk_enabled:`), so through the runner the flag can never take effect:
++
++  * kind == python  -> `_scoring_prose` requires kind != python  -> flag inert;
++  * kind != python  -> sk pipeline forced off -> evaluator never called.
++
++That is the "addition nothing reaches" defect class of the additive standard
++(11 confirmed since 2026-08-01). Arm 4's own report records the force:
++`"sk_enabled_requested": true, "sk_enabled_effective": false,
++"sk_forced_off_by_target_kind": true`.
++
++TWO CHECKS, both executed:
++
++  1. DOWNSTREAM WORKS. `compute_sk` on the real arm-4 target with
++     score_prose_listings=True does NOT return NO_SCORE (and does with False)
++     -- so the only blocker is the call-site gate.
++  2. THE GATE NEVER CONSULTS THE FLAG. AST-walk the runner, find the
++     `sk_forced_off = True` assignment, and test whether
++     `sk_score_prose_listings` is consulted anywhere in the guarding
++     if-chain. If it is not, the flag is dead through the runner: print
++     FALSIFIED.
++
++Fails (prints FALSIFIED, exit 1) iff the defect is present; exits cleanly
++once the forced-off gate consults the flag.
++
++Run:  python3 scripts/falsify_a19_unreachable_2026-09-22.py
++"""
++from __future__ import annotations
++
++import ast
++import sys
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO))
++
++from bench.reference_runner_v3 import (  # noqa: E402
++    SK_NO_SCORE, compute_sk, _capture_baseline,
++)
++
++TARGET = REPO / "bench" / "BUILD_BOT_TEST_BENCH_FIX_SPEC.md"
++RUNNER = REPO / "bench" / "reference_runner_v3.py"
++
++
++def check_downstream_works() -> None:
++    """compute_sk honours the flag when it is actually handed to it."""
++    source = TARGET.read_text(encoding="utf-8")
++    baseline = _capture_baseline(source, source_path=str(TARGET))
++    fix = "no blocks here"
++    off = compute_sk(fix, source, str(TARGET), baseline=baseline,
++                     score_prose_listings=False)
++    on = compute_sk(fix, source, str(TARGET), baseline=baseline,
++                    score_prose_listings=True)
++    assert off.tristate == SK_NO_SCORE, (
++        f"expected NO_SCORE with the flag off, got {off.tristate}")
++    assert on.tristate != SK_NO_SCORE, (
++        "compute_sk ignored score_prose_listings=True on a listing-bearing "
++        "prose target -- the downstream is broken, not just the call site")
++    print(f"  downstream: flag off -> {off.tristate}; flag on -> {on.tristate} "
++          f"(short-circuit bypassed) -- compute_sk honours the flag")
++
++
++def gate_consults_flag() -> bool:
++    """Does the code path that sets sk_forced_off consult the A19 flag?"""
++    tree = ast.parse(RUNNER.read_text(encoding="utf-8"))
++
++    class Finder(ast.NodeVisitor):
++        def __init__(self) -> None:
++            self.hit_ifs = []
++            self._stack = []
++
++        def visit_If(self, node):
++            self._stack.append(node)
++            self.generic_visit(node)
++            self._stack.pop()
++
++        def visit_Assign(self, node):
++            for t in node.targets:
++                if isinstance(t, ast.Name) and t.id == "sk_forced_off":
++                    if (isinstance(node.value, ast.Constant)
++                            and node.value.value is True and self._stack):
++                        self.hit_ifs.extend(self._stack)
++            self.generic_visit(node)
++
++    f = Finder()
++    f.visit(tree)
++    assert f.hit_ifs, ("`sk_forced_off = True` no longer exists under an if -- "
++                       "this falsifier is stale, re-derive it")
++    guard_src = "\n".join(ast.unparse(i.test) for i in f.hit_ifs)
++    chain_src = "\n".join(ast.unparse(i) for i in f.hit_ifs)
++    consulted = "sk_score_prose_listings" in chain_src
++    print(f"  gate guard(s): {guard_src}")
++    print(f"  gate consults sk_score_prose_listings: {consulted}")
++    return consulted
++
++
++def main() -> int:
++    check_downstream_works()
++    if not gate_consults_flag():
++        print("FALSIFIED: run_experiment forces sk_enabled=False for every "
++              "non-Python target without consulting sk_score_prose_listings, "
++              "and the flag's only call site sits behind `if cfg.sk_enabled:` "
++              "(reference_runner_v3.py:14731). The A19 flag is unreachable "
++              "through the runner -- an addition nothing reaches.")
++        return 1
++    print("OK: the forced-off gate consults the A19 flag; the third outcome "
++          "is reachable through the runner.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:scripts/falsify_arm4_ladder_was_entered_2026-09-22.py
+--- /dev/null	2026-09-22 12:19:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/scripts/falsify_arm4_ladder_was_entered_2026-09-22.py	2026-09-22 12:16:20
+@@ -0,0 +1,87 @@
++#!/usr/bin/env python3
++"""FALSIFIER: two same-day claims about arm 4's deferred criticals, against the archive.
++
++CLAIM A (bench/tests/test_hil_queue_says_which_kind_2026-09-22.py, module
++docstring and test 4): "the ladder was never entered" on arm 4's deferred
++criticals, and "a deferred item has `rungs_tried == 0` by construction".
++
++CLAIM B (scripts/arm4_untoolable_anatomy_2026-09-22.py, section 2): settling
++whether the routing-generated source would have run "would mean EXECUTING the
++source, which this archive forbids: it is truncated at 600".
++
++BOTH ARE REFUTED BY THE SAME REGISTRY FIELD. `_apply_routing` appends a
++routing_history step AFTER `route()` returns (reference_runner_v3.py:5992)
++and sets `routing_deferred` on the equipment-failure branch AFTER that
++(:6158) -- so a deferred entry records what the ladder actually did. In the
++arm-4 archive every deferred entry carries rungs_tried in {1,2} with
++rungs_available=5 and error_routed=True (a model was genuinely reached): the
++ladder WAS entered and stopped at the max_rungs=2 constant
++(bench/routing.py:139) with 3 rungs untried. And each step carries `verdict`
++-- the runner's own re-execution result for the UNTRUNCATED source of the
++last rung (ERROR for all 6 UNTOOLABLE entries, INTEGRITY_VIOLATION for
++C0008): the archive does not forbid execution, it RECORDS one.
++
++`rungs_tried == 0` deferral exists only on the empty-ladder branch
++(reference_runner_v3.py:6039), which arm 4 never took.
++
++Prints FALSIFIED (exit 1) iff the archive contradicts the claims -- i.e. iff
++any deferred entry carries rungs_tried > 0 or an executed step verdict.
++Exits cleanly only if every deferred entry really shows rungs_tried == 0 and
++no executed verdict, which is what the claims assert.
++
++Run:  python3 scripts/falsify_arm4_ladder_was_entered_2026-09-22.py
++"""
++from __future__ import annotations
++
++import json
++import sys
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parents[1]
++ARM4 = (REPO / "bench" / "logs" / "commissioning_arm4_prose_20260922T053349Z"
++        / "commissioning_arm4_prose_report.json")
++
++
++def main() -> int:
++    if not ARM4.is_file():
++        print(f"archive absent: {ARM4}", file=sys.stderr)
++        return 2
++    ents = json.loads(ARM4.read_text(encoding="utf-8"))["registry"]["entries"]
++    deferred = {c: e for c, e in ents.items() if e.get("routing_deferred")}
++    assert deferred, "no deferred entries; this falsifier is aimed at nothing"
++
++    entered, executed = [], []
++    for cid, e in sorted(deferred.items()):
++        for s in (e.get("routing_history") or []):
++            if not isinstance(s, dict):
++                continue
++            tried = s.get("rungs_tried") or 0
++            if tried > 0:
++                entered.append((cid, tried, s.get("rungs_available")))
++            v = (s.get("verdict") or "").strip()
++            if v and v != "UNTOOLABLE" and (s.get("last_falsifier_code") or "").strip():
++                executed.append((cid, v))
++
++    print(f"  deferred entries          : {len(deferred)}")
++    print(f"  ...with rungs_tried > 0   : {len(entered)}  {entered}")
++    print(f"  ...with an EXECUTED step verdict on recorded source: "
++          f"{len(executed)}  {executed}")
++
++    if entered or executed:
++        print("FALSIFIED:")
++        if entered:
++            print("  * 'the ladder was never entered / deferred implies "
++                  "rungs_tried==0 by construction' is contradicted by "
++                  f"{len(entered)} of {len(deferred)} deferred entries.")
++        if executed:
++            print("  * 'the archive forbids executing the routed source' is "
++                  "contradicted: the runner executed the untruncated source at "
++                  "run time and recorded the verdict on the routing step.")
++        return 1
++    print("OK: every deferred entry shows rungs_tried == 0 and no executed "
++          "verdict; the claims stand.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())

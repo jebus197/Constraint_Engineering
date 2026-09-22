@@ -1,0 +1,196 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 10162,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level files\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"scripts/arm4_untoolable_anatomy*\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/logs/commissioning_arm4_prose_20260922T053349Z/*\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/scripts/arm4_untoolable_anatomy_2026-09-22.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -c bench/logs/commissioning_arm4_prose_20260922T053349Z/commissioning_arm4_prose_report.json bench/reference_runner_v3.py && python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/commissioning_arm4_prose_20260922T053349Z/commissioning_arm4_prose_report.json'))\\nprint(list(d.keys()))\\nprint(json.dumps({k:v for k,v in d.items() if k not in ('registry','rounds')}, indent=1)[:3000])"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nd=json.load(open('bench/logs/commissioning_arm4_prose_20260922T053349Z/commissioning_arm4_prose_report.json'))\\nents=d['registry']['entries']\\nprint(\\\"n entries:\\\", len(ents))\\nfor cid,e in sorted(ents.items()):\\n    rh=e.get('routing_history') or []\\n    tried=avail=None; last=''\\n    for s in rh:\\n        if isinstance(s,dict):\\n            last=s.get"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"UNTOOLABLE\\\" bench/reference_runner_v3.py | head -50\", \"description\": \"Locate UNTOOLABLE in runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"max_rungs\\\\|rungs_tried\\\\|rungs_available\\\" bench/reference_runner_v3.py | head -40\", \"description\": \"Locate rung ladder logic in runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"detect_target_kind\\\\|sk_forced_off\\\\|sk_enabled_effective\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Locate target-kind and sk gating logic\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/reference_runner_v3.py\", \"offset\": 1700, \"limit\": 110}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/reference_runner_v3.py\", \"offset\": 5280, \"limit\": 160}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/reference_runner_v3.py\", \"offset\": 12540, \"limit\": 120}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"max_rungs\\\" bench/*.py bench/**/*.py scripts/*.py 2>/dev/null | grep -v logs | head -20\", \"description\": \"Find max_rungs definition across bench\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/routing.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/tests/test_hil_queue_says_which_kind_2026-09-22.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/reference_runner_v3.py\", \"offset\": 5860, \"limit\": 310}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nd=json.load(open('bench/logs/commissioning_arm4_prose_20260922T053349Z/commissioning_arm4_prose_report.json'))\\nents=d['registry']['entries']\\nfor cid,e in sorted(ents.items()):\\n    rh=e.get('routing_history') or []\\n    if not rh: continue\\n    print(cid, 'entry_verdict=',repr(e.get('falsifier_verdict')),\\n          'routing_deferred=',e.get('routing_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_evaluate_sk_for_findings\\\\|def _evaluate_sk\\\" bench/reference_runner_v3.py | head\", \"description\": \"Locate S_k evaluation entry point\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"gamma\\\" bench/routing.py bench/build_experiment_run.py | head; grep -n \\\"routing_enabled\\\\|max_rungs\\\" bench/reference_runner_v3.py | head\", \"description\": \"Check gamma in routing and max_rungs config surface\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/reference_runner_v3.py\", \"offset\": 13080, \"limit\": 40}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/reference_runner_v3.py\", \"offset\": 12185, \"limit\": 130}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/reference_runner_v3.py\", \"offset\": 14700, \"limit\": 70}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"score_prose_listings\\\\|_gateable_hunks\\\" bench/*.py | grep -v logs | head -30\", \"description\": \"Trace score_prose_listings and _gateable_hunks wiring\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/reference_runner_v3.py\", \"offset\": 10875, \"limit\": 110}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"sk_score_prose_listings\\\" bench/tests/ scripts/ configs/ 2>/dev/null; echo ---; grep -rn \\\"sk_score_prose_listings\\\" bench/tests/*.py 2>/dev/null | head\", \"description\": \"Find tests/configs referencing the A19 flag\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"sk_baseline\\\\s*=\\\\|def capture_sk_baseline\\\\|def _capture\\\" bench/reference_runner_v3.py | head; grep -n \\\"capture_sk_baseline\\\" bench/reference_runner_v3.py | head\", \"description\": \"Find sk baseline capture\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Structural proof: is score_prose_listings reachable through the runner?\\nimport ast, sys\\nsrc = open('bench/reference_runner_v3.py').read()\\ntree = ast.parse(src)\\n# find the forced-off block line and the call-site guard\\nimport re\\nm = re.search(r'^\\\\s*sk_forced_off = False\\\\n(.*?)_log\\\\(\\\"  \\\\*\\\\*\\\\* S_k pipeline FORCED OFF', src, re.S|re.M)\\nprint(\\\"forced-off "
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/reference_runner_v3.py\", \"offset\": 10769, \"limit\": 80}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '13510,13530p' bench/reference_runner_v3.py\", \"description\": \"Show baseline capture call site context\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md && grep -c '```' bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md; grep -n \\\"def _gateable_source\\\" bench/reference_runner_v3.py\", \"description\": \"Check spec target and gateable source helper\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/scripts/falsify_a19_unreachable_2026-09-22.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"FALSIFIER: the A19 flag `sk_score_prose_listings` is unreachable through the runner.\\n\\nTHE CLAIM UNDER TEST. Task A19 is the founder's third outcome: a purely prose\\ntarget records NO_SCORE (\\\"nothing to compute"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p scripts && cat > scripts/falsify_a19_unreachable_2026-09-22.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"FALSIFIER: the A19 flag `sk_score_prose_listings` is unreachable through the runner.\\n\\nTHE CLAIM UNDER TEST. Task A19 is the founder's third outcome: a purely prose\\ntarget records NO_SCORE (\\\"nothing to compute\\\") while reducible fenced listings\\nINSIDE a prose target are"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/reference_runner_v3.py\", \"offset\": 13089, \"limit\": 20}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo/bench/reference_runner_v3.py\", \"old_string\": \"    sk_forced_off = False\\n    if target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled:\\n        # Not a warning \\u2014 an override. S_k over prose does not merely fail to\\n        # help; it inverts. Measured on the 2026-08-01 contro"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom pathlib import Path\\np = Path('bench/reference_runner_v3.py')\\nsrc = p.read_text(encoding='utf-8')\\nold = '''    sk_forced_off = False\\n    if target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled:\\n'''\\nnew = '''    sk_forced_off = False\\n    if (target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled\\n            and getattr(cfg, \\\"sk_score_prose_listings\\\", Fals"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_a19_reachable_through_runner_2026-09-22.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Task A19's flag must be REACHABLE: the prose forced-off gate consults it.\\n\\nTHE DEFECT THIS PINS. `RunnerConfig.sk_score_prose_listings` (the founder's\\nthird outcome: purely prose -> NO_SCORE, fenced listings inside prose ->\\nscored) was wired end to end -- config field, call-s"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/falsify_arm4_ladder_was_entered_2026-09-22.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"FALSIFIER: two same-day claims about arm 4's deferred criticals, against the archive.\\n\\nCLAIM A (bench/tests/test_hil_queue_says_which_kind_2026-09-22.py, module\\ndocstring and test 4): \\\"the ladder was never entered\\\" on arm 4's deferred\\ncriticals, and \\\"a deferred item has `rungs_t"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom pathlib import Path\\n\\n# \\u2500\\u2500 1. Correct the test's false mechanism claim, keep its sound assertions \\u2500\\u2500\\np = Path('bench/tests/test_hil_queue_says_which_kind_2026-09-22.py')\\nsrc = p.read_text(encoding='utf-8')\\n\\nold_doc = '''WHAT IT COST. The 2026-09-22 morning report took the label at face value and\\nderived: ladder capped at 2 rungs -> 8 c"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | grep -iE \\\"sk|prose|target_kind|routing\\\" | head -20\", \"description\": \"List S_k/prose/routing test files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_prose_acceptance_stem.py bench/tests/test_prose_listings_are_scoreable_2026-09-11.py bench/tests/test_prose_prompt_and_falsifier.py bench/tests/test_prose_target_tool_bypass.py bench/tests/test_routing.py bench/tests/test_routing_wiring.py \\\"bench/tests/test_routing_cannot_flatten_gamma_2026-09-09.py\\\" bench/tests/test_routing_prompt_is_target_aware."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '360,420p' bench/tests/test_target_kind_and_no_score.py\", \"description\": \"Read the failing test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom pathlib import Path\\np = Path('bench/reference_runner_v3.py')\\nsrc = p.read_text(encoding='utf-8')\\nold = '''        # site (`_evaluate_sk_for_findings`, behind `if cfg.sk_enabled:`)\\n        # therefore never executed with the flag set -- `sk_score_prose_listings`'''\\nnew = '''        # site (`_evaluate_sk_for_findings`, behind the `cfg.sk_enabled` guard)\\n   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'z = Quantile[NormalDistribution[], 0.975]; N[1/(1 + z^2/6), 6]' 2>&1; echo \\\"exit=$?\\\"\", \"description\": \"Wolfram check of Wilson lower bound k=n=6\", \"timeout\": 120000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la scripts/falsify_a19_unreachable_2026-09-22.py scripts/falsify_arm4_ladder_was_entered_2026-09-22.py bench/tests/test_a19_reachable_through_runner_2026-09-22.py && python3 -m pytest bench/tests/test_a19_reachable_through_runner_2026-09-22.py \\\"bench/tests/test_hil_queue_says_which_kind_2026-09-22.py\\\" -q 2>&1 | tail -1\", \"description\": \"Confirm delivered files and final test sta"
+    }
+  ],
+  "n_tool_calls": 44,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 689.0,
+  "response": "# Panel Return\n\n## verdict\n**PARTIAL** \u2014 CC1's corrected numbers are right; two of its central interpretive claims are refuted by the archive it reads, and its proposal misses that the founder's third outcome already exists in code and is dead.\n\n## reasoning\n\n**What survives.** 7/17 CONFIRMED on a prose target (registry, verified); 600-char recorder ceiling on `routing_history.last_falsifier_code` (`reference_runner_v3.py:6003`, `[:600]` literal); 7/7 unresolved episodes stopped with rungs remaining; the classifier asymmetry (`detect_target_kind`, :1716\u20131773) and its safety argument are sound and untouched.\n\n**Refuted claim 1 \u2014 \"settling would mean EXECUTING the source, which this archive forbids.\"** The archive *records an execution*. `resolve_via_routing` (`bench/routing.py:158\u2013169`) reverifies every non-empty rung falsifier, and `_apply_routing` stores the verdict on the routing step (:5992\u20136004). All 6 UNTOOLABLE entries carry `verdict: \"ERROR\"` on 600-char source \u2014 the runner ran the *untruncated* source at run time and it crashed. C0008's rung came back `INTEGRITY_VIOLATION`. So UNTOOLABLE here means: the seat attached nothing (stamped pre-routing at :5364), then the ladder attempted, the attempts *ran and demonstrated nothing*, and the entry-level verdict was never updated (failure path :6113\u20136158 reads the old verdict, never writes it). Not \"nothing to compute\", not \"unexecuted source discarded\" \u2014 an executed, failed attempt behind a **stale label**. CC1's script never read the step's `verdict` field.\n\n**Refuted claim 2 \u2014 the same-day counter-artefact.** `bench/tests/test_hil_queue_says_which_kind_2026-09-22.py` asserted \"the ladder was never entered\" and \"a deferred item has `rungs_tried == 0` by construction.\" The registry refutes this 8/8: every deferred entry carries `rungs_tried` \u2208 {1,2} of 5 with `error_routed=True`. `rungs_tried==0` deferral exists only on the empty-ladder branch (:6039), never taken in arm 4. CC1's A6 corroboration (cap real, rung 3 never entered) was *correct* against that test's counterclaim.\n\n**Instrument 1, S_k.** UNTOOLABLE **withholds from S_k entirely**, on three independent lines: (a) :13090\u201313102 forces `sk_enabled=False` for any non-Python target before the only call site (:14731 `if cfg.sk_enabled:`) \u2014 so in arm 4 **all 17** findings left unscored, not 6; (b) even when S_k runs, `_evaluate_sk_for_findings` selects on `status \u2208 {OPEN, CONFIRMED, CONTESTED}` + a SEARCH/REPLACE fix (:12229\u201312234) \u2014 `falsifier_verdict` never enters, and UNTOOLABLE criticals are demoted to UNCONFIRMED (:5370\u20135372), outside that set; (c) NO_SCORE pins R_k at R_old (:12288\u201312298). The label's real teeth are elsewhere: `routing_deferred` \u2192 irreducible queue count 8 > bound 2 \u2192 **run halted at round 0**. The damage is a halt, not a score.\n\n**Instrument 2, gamma.** The ladder stop is **constant-governed**: `max_rungs: int = 2` default (`bench/routing.py:139`, applied :158), runner call site :5975\u20135978 passes no override, no config surface exists. Gamma governs convergence gating only; the report's own `target_complexity` block says `\"informative_only\": true, \"not an input to any gate\"` (founder ruling 2026-09-09). Stopping at 2/5 is a cap, not diminishing returns.\n\n**Severity model DOES bear** (contrary to brief): only criticals get stamped UNTOOLABLE on a missing falsifier (:5359\u20135364); sub-criticals get no verdict at all (C0003/C0007/C0016, verdict `''`). The 6-of-17 count is severity-shaped. Two-sided gate: no bearing found \u2014 agree with brief.\n\n**Against CC1's proposal.** Per-listing scoring machinery already exists *and is dead*: `sk_score_prose_listings` (Task A19, `RunnerConfig:1492`) is threaded to `compute_sk` (:10881) which honours it (:10938), but the forced-off gate killed `sk_enabled` for every non-Python target before the flag's only call site. Kind=python \u2192 prose branch unreachable; kind\u2260python \u2192 evaluator never called. **An addition nothing reached** \u2014 the additive standard's most-confirmed defect class. Demonstrated by execution, then fixed. The forced-off block's stated hazards are stale: `_capture_baseline` has been `_gateable_source`-aware since 2026-09-11 (:10796\u201310799), so the phantom-2752-ruff-baseline input no longer exists.\n\n## falsifier_path\n- `scripts/falsify_a19_unreachable_2026-09-22.py`\n- `scripts/falsify_arm4_ladder_was_entered_2026-09-22.py`\n\n## falsifier_command\n```\npython3 scripts/falsify_a19_unreachable_2026-09-22.py\npython3 scripts/falsify_arm4_ladder_was_entered_2026-09-22.py\n```\n\n## falsifier_output\nFalsifier 1, pre-fix (verbatim):\n```\n  downstream: flag off -> NO_SCORE; flag on -> ESCALATE (short-circuit bypassed) -- compute_sk honours the flag\n  gate guard(s): target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled\n  gate consults sk_score_prose_listings: False\nFALSIFIED: run_experiment forces sk_enabled=False for every non-Python target without consulting sk_score_prose_listings, and the flag's only call site sits behind `if cfg.sk_enabled:` (reference_runner_v3.py:14731). The A19 flag is unreachable through the runner -- an addition nothing reaches.\nexit=1\n```\nPost-fix: `OK: the forced-off gate consults the A19 flag; the third outcome is reachable through the runner.` / `exit=0`.\n\nFalsifier 2 (verbatim, fires by design \u2014 it demonstrates the refuted claims against the archive):\n```\n  deferred entries          : 8\n  ...with rungs_tried > 0   : 8  [('C0001', 2, 5), ('C0002', 2, 5), ('C0005', 2, 5), ('C0006', 2, 5), ('C0008', 2, 5), ('C0011', 2, 5), ('C0012', 2, 5), ('C0015', 2, 5)]\n  ...with an EXECUTED step verdict on recorded source: 8  [('C0001', 'ERROR'), ('C0002', 'ERROR'), ('C0005', 'ERROR'), ('C0006', 'ERROR'), ('C0008', 'INTEGRITY_VIOLATION'), ('C0011', 'ERROR'), ('C0012', 'ERROR'), ('C0015', 'ERROR')]\nFALSIFIED:\n  * 'the ladder was never entered / deferred implies rungs_tried==0 by construction' is contradicted by 8 of 8 deferred entries.\n  * 'the archive forbids executing the routed source' is contradicted: the runner executed the untruncated source at run time and recorded the verdict on the routing step.\nexit=1\n```\n\nWolfram second route on the one closed-form statistic relied on: Wilson lower bound at k=n=6 is 1/(1+z\u00b2/6); `wolframscript` returned **0.6096657120978347**, matching statsmodels' 60.9666% (computed with Wolfram Language, local Wolfram Engine).\n\n## fix_path\n1. `bench/reference_runner_v3.py` \u2014 the forced-off gate now consults `sk_score_prose_listings`: flag on + non-Python target keeps the pipeline on, and `compute_sk` decides per fix (purely prose \u2192 NO_SCORE = \"nothing to compute\"; fenced listings \u2192 scored). **This is the founder's third outcome, made reachable.** Default byte-identical (flag defaults False; a dropped key degrades to the safe forced-off side, preserving the enforcement property `test_target_kind_and_no_score` pins).\n2. `bench/tests/test_a19_reachable_through_runner_2026-09-22.py` \u2014 pins reachability by AST (not substring), the safe default, and the downstream contract. \n3. `bench/tests/test_hil_queue_says_which_kind_2026-09-22.py` \u2014 corrected the false \"never entered / rungs_tried==0\" mechanism; added an archive assertion that deferred entries carry `rungs_tried > 0`. Its four sound assertions kept.\n4. `scripts/arm4_untoolable_anatomy_2026-09-22.py` \u2014 section 2 now reads and prints the executed step verdict, and the \"archive forbids execution\" text is corrected in place.\n\nTest evidence: `54 passed` on the target-kind/A19/prose files; full targeted sweep `382 passed` across S_k/prose/routing tests (one failure during the sweep was my own comment tripping a substring heuristic in `test_target_kind_and_no_score.py:404`; reworded, all green: `7 passed` on the two 2026-09-22 files).\n\n## refutation_condition\nMy answer is overturned if any of: (a) a code path exists where `sk_score_prose_listings` took effect through the runner **before** my edit (e.g. a launcher that bypasses the :13089 block) \u2014 I searched call sites and found only :14731 behind `cfg.sk_enabled`; (b) the routing-step `verdict` field is written by something other than `reverify_falsifier`'s re-execution (I traced it to `resolve_via_routing:166\u2013171`; if the -SIM transport fakes verdicts without executing, my \"the source RAN\" claim weakens to \"the decider returned a verdict\"); (c) an archived arm-4 deferred entry with `rungs_tried == 0` exists that I missed \u2014 falsifier 2 checks all 8, so this would require the report being regenerated. Go looking: I did, for (a) and (c), by grep and by execution.\n\n## strongest_disagreement\nThe brief names S_k \"the instrument that decides this question\" and says gamma \"bears on the ladder directly.\" **Both framings are wrong.** S_k decided nothing in arm 4 \u2014 it was globally off for the target before any finding existed, so the UNTOOLABLE/REJECTED distinction never touched a score; the machinery that actually acted was status demotion plus the irreducible-queue **halt at round 0**, which the brief never mentions and which is the real consequence of the 6 labels. And gamma is documented in the run's own report as \"not an input to any gate\" \u2014 the ladder stop is a bare constant. Second disagreement: the brief says the severity model is \"NOT expected to bear,\" but severity is precisely what decides who receives the UNTOOLABLE stamp at all (:5359\u20135364) \u2014 the 6-of-17 denominator is a severity artefact. Third: Section 1's binary (\"nothing to compute\" vs \"gave up holding source\") omits the true state \u2014 the machinery *executed* the source it held, recorded the failure, and then displayed a stale pre-routing label.\n\n## passes_run\n**6.** (1) CC1 script vs registry \u2014 found the unread executed-verdict field; (2) routing/ladder code trace \u2014 constant-governed stop, same-day test contradiction; (3) S_k trace \u2014 withholds on three lines, halt is the real damage; (4) A19 reachability \u2014 dead flag, falsifier executed, fixed; (5) baseline-capture safety check \u2014 forced-off hazards stale since 2026-09-11; (6) post-fix verification sweep \u2014 382 tests, which caught one collateral defect in my own comment (fixed). The sixth pass added nothing material beyond that self-correction \u2014 diminishing returns; stopped there.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4e1ma_9v/repo",
+      "built": false
+    }
+  ]
+}
