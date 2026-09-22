@@ -119,7 +119,33 @@ Arm 4's own report records this:
 
 **What must NOT change.** The classifier's asymmetry is deliberate and its docstring records why: misreading prose as Python once *"inverted the fix ranking and admitted a shell-injection fix at sk=1.0"*. Misreading Python as prose only forgoes scoring. So ambiguity resolving to prose stays. What is missing is a **third** outcome rather than a different binary — which is exactly how you put it.
 
-**Status: OPEN, not fixed.** The free-seat panel on it has not run, because the dispatch that should have asked it went to paid seats by mistake and I killed it. That panel is the next action.
+### And then the free panel found something better: your fix was already built, and dead
+
+`fable` went looking and found **`sk_score_prose_listings`** — declared on `RunnerConfig` ([:1492](bench/reference_runner_v3.py:1492)), threaded into `compute_sk` ([:10881](bench/reference_runner_v3.py:10881)) and **honoured** there ([:10938](bench/reference_runner_v3.py:10938)). It is your third outcome, already written, already wired to the scorer.
+
+**It could not be reached by any path.** `run_experiment` forced `sk_enabled=False` for every non-Python target *before* the flag's only call site, which sits behind `if cfg.sk_enabled:`. So a Python target never enters the prose branch, and a non-Python target never reaches the evaluator at all. **An addition nothing reaches** — the defect class this project has confirmed 11 times and zero of the opposite kind.
+
+So your instinct was right twice over: you designed the third outcome, it was built, and it has never once been able to run. And the reason the gate was forced off is itself stale — `_capture_baseline` has been `_gateable_source`-aware since 2026-09-11, so the hazard it guarded against no longer exists.
+
+**Status: FIXED and verified.** fable's falsifier fired before and is clean after; 291 tests pass across routing, S_k, the prose gate, the hardened gate and the two-sided gate.
+
+## 11. UNTOOLABLE was a stale label over a falsifier that ran and crashed
+
+Both free seats derived this independently, and it is the same shape as the R_k defect.
+
+In `bench/routing.py`, `last_code = code` is assigned **before** the emptiness check. So an `ERROR` carrying a non-empty body *proves* the falsifier was executed and crashed. All 6 UNTOOLABLE entries carry exactly that: verdict `ERROR`, 600 characters of source, `resolved: False`. `_apply_routing` wrote the verdict back **only** on `result.resolved`, so a ladder that ran and did not confirm left the pre-routing label standing for ever.
+
+**The harm, again, is false feedback into the panel being measured.** `_rejection_lines` ([:12594](bench/reference_runner_v3.py:12594)) branches on that field. `ERROR` says *"your test did not run to a verdict… Re-write it so it runs."* `UNTOOLABLE` says *"nothing runnable was attached."* **All 6 were told to attach a falsifier that had already been written and had already crashed.** A seat told the first debugs what it has; a seat told the second starts from nothing.
+
+**And it explains arm 4's halt** — which I blamed on a routing cap, withdrew, and left with no replacement. `routing_deferred` drove the irreducible queue to 8 against a bound of 2, and the run halted at round 0. The damage was a halted run, not a mis-scored finding.
+
+**This also answers `ge`'s refutation of me, and overturns my narrowed claim in the other direction.** I said the truncated archive could not be executed to settle whether content was computable. It did not need to be: the runner executed the *untruncated* body at run time and recorded the verdict in the adjacent key. My script read `last_falsifier_code`, `rungs_tried` and `rungs_available` from that dict and never read `verdict`. In a project whose principle is *tools decide*, I reached for prose caveats while the tool's verdict sat unread beside them.
+
+## 12. Both instrument questions, settled from source
+
+- **S_k is not in this circuit at all.** `_evaluate_sk_for_findings` (286 lines) contains **0** references to `falsifier_verdict` or `falsifier_code`. S_k scores a proposed *fix*; the falsifier verdict decides the *claim*. My brief's framing was wrong and `cx` was right. In arm 4 **all 17** findings went unscored, not 6.
+- **Gamma cannot be the reason the ladder stops.** `max_rungs` defaults to 2 against a roster of 5 with no config surface, and `_estimate_gamma` returns 0.0 below `min_rounds=3` while arm 4 ran one round. The stop is constant-governed.
+- **Severity *does* bear, contrary to my brief.** Only criticals are stamped UNTOOLABLE on a missing falsifier, which is why 3 sub-criticals carry no verdict at all. The 6-of-17 count is severity-shaped.
 
 ## 9. Two of my claims were refuted this morning, by the 2 paid seats
 

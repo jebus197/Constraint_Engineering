@@ -8,7 +8,7 @@ This note exists to satisfy the standing directive that panel output is preserve
 
 ## Round `overnight_review_2026-09-22`
 
-Brief: 1553 words, reproduced in the repository at `bench/logs/overnight_review_2026-09-22/BRIEF.md` and mirrored under `experimental_notes/evidence/`.
+Brief: 1553 words, at `bench/logs/overnight_review_2026-09-22/BRIEF.md`, mirrored under `experimental_notes/evidence/`.
 
 Seats that returned a reply: cc2, fable.
 
@@ -591,7 +591,7 @@ DISAGREEMENT: CC1 reported "seats understate their own R_k" as the run's first r
 
 ## Round `prose_and_astra_2026-09-22`
 
-Brief: 801 words, reproduced in the repository at `bench/logs/prose_and_astra_2026-09-22/BRIEF.md` and mirrored under `experimental_notes/evidence/`.
+Brief: 801 words, at `bench/logs/prose_and_astra_2026-09-22/BRIEF.md`, mirrored under `experimental_notes/evidence/`.
 
 Seats that returned a reply: cc2, fable.
 
@@ -913,7 +913,7 @@ DISAGREEMENT: with CC1/the brief's own diagnosis of the 13: "the incorporated
 
 ## Round `arm4_prose_anatomy_2026-09-22`
 
-Brief: 1278 words, reproduced in the repository at `bench/logs/arm4_prose_anatomy_2026-09-22/BRIEF.md` and mirrored under `experimental_notes/evidence/`.
+Brief: 1278 words, at `bench/logs/arm4_prose_anatomy_2026-09-22/BRIEF.md`, mirrored under `experimental_notes/evidence/`.
 
 Seats that returned a reply: cx, ge.
 
@@ -1014,10 +1014,194 @@ Seats that returned a reply: cx, ge.
 
 ---
 
+## Round `a19_prose_elements_free_2026-09-22`
+
+Brief: 1278 words, at `bench/logs/a19_prose_elements_free_2026-09-22/BRIEF.md`, mirrored under `experimental_notes/evidence/`.
+
+Seats that returned a reply: cc2, fable.
+
+### `cc2` — model `cc2`, 39 tool calls, 12431 characters
+
+```text
+All three artefacts are on disk at real paths. Here is my answer.
+
+---
+
+**`verdict`** — **PARTIAL** on CC1's reading.
+
+CC1's arithmetic is sound (I re-derived every Wilson interval independently from the closed form with mpmath/scipy — 7/17 → [21.6111%, 63.9946%], 6/6 → [60.9666%, 100%], 11/11 → [74.1167%, 100%], 7/7 → [64.5670%, 100%], all matching statsmodels to the digit; Wolfram Language, local Wolfram Engine, returned `{60.966571209783474, 100.}` for 6/6 as second falsifier). CC1's item 3 is correct. But CC1's central claim — item 2 — is **directionally right and materially wrong about the mechanism**, and the field that settles it was sitting in the dict CC1 iterates, unread.
+
+**`reasoning`**
+
+*Neither option in Section 1 is what happened.* `UNTOOLABLE` has exactly one cause in this codebase: `falsifier_code` empty/whitespace (`bench/falsifier_verify.py:1202`; `bench/reference_runner_v3.py:5361-5364`, additionally gated on `is_critical` — which is why 3 non-critical entries carry no verdict at all). It never encodes "nothing to compute", so the founder's reading is false. But CC1's reading — "gave up while it still held source it had produced" — understates it. The truth is stronger:
+
+For all 6 UNTOOLABLE entries, `routing_history[-1]` reads **`verdict: ERROR`, `resolved: False`, `last_falsifier_code`: 600 chars**. The ladder wrote a falsifier and the runner's own decider **executed it and it crashed**.
+
+That is a derivation, not a reading. In `bench/routing.py:158-171`, `last_code = code` is assigned *before* the emptiness check, so the no-code road to `ERROR` necessarily carries an **empty** body. Therefore `(verdict == ERROR) ∧ (code ≠ "")` implies `reverify_fn` was called and returned ERROR. Part A of my falsifier demonstrates both roads against the real module.
+
+This answers `ge`'s refutation. `ge` was right that the 600-char archive cannot be re-executed — and it does not need to be. The runner already executed the untruncated body and recorded the verdict. CC1 reached for prose caveats about un-executability while the executed tool verdict sat in the adjacent key. In a project whose principle is *tools decide*, CC1's script reads `last_falsifier_code`, `rungs_tried` and `rungs_available` from that dict and skips `verdict`.
+
+*The root cause*: `_apply_routing` writes `falsifier_code`/`falsifier_verdict` back **only** on `result.resolved` (`:6071-6072`). When the ladder ran and did not confirm, the pre-routing `UNTOOLABLE` stands forever.
+
+*Why this is above threshold, and it is not cosmetic.* `_rejection_lines` (`:12594`) branches on exactly this field to build the corrective instruction, rendered into the registry digest at `:2749` and `:2789` — i.e. into round K+1's prompt for **every seat**. `ERROR` says *"your test did not run to a verdict … Re-write it so it runs."* `UNTOOLABLE` says *"nothing runnable was attached."* All 6 were told to **write** a falsifier that had already been written and had already crashed, and told nothing about the crash that is the actual obstacle. Verified end-to-end in part C: 6/6 emit the wrong line and none the right one. This is §10 category 4 — misclassification that ships a wrong decision.
+
+**S_k — the brief's own instrument question, answered by reading it.** Neither horn of Section 2 holds. `_evaluate_sk_for_findings` (`:12253`, 286 lines) contains **no reference to `falsifier_verdict` or `falsifier_code` at all** (checked by source inspection, printed). S_k scores a proposed **fix**; the falsifier verdict decides the **claim**. They are orthogonal channels, so UNTOOLABLE neither "feeds S_k like a refutation" nor "withholds from S_k" — it was never in that circuit. And in arm 4 `sk_enabled_effective: false`, so S_k scored nothing regardless. `cx` was right; this confirms it from source rather than by agreement.
+
+**gamma — constant-governed, definitively.** `max_rungs` defaults to 2 (`bench/routing.py:139, 183`); the runner's single call site passes six positional args and no override (printed verbatim in part D); `rungs_available = len(models)` = 5 (`:5998`). "2/5" is a hardcoded constant against the roster. `_estimate_gamma` returns 0.0 for any run under `min_rounds=3`, and arm 4 ran one round — its `gamma_history` is `[0.0]`. Gamma is a round-level novelty-decay measure and touches no part of this ladder, so the stop **cannot** be diminishing returns. The two-sided gate and severity model do not bear on this; I found nothing to the contrary.
+
+**`falsifier_path`** — `scripts/falsifier_untoolable_is_stale_error_2026-09-22.py`
+
+**`falsifier_command`** — `python3 scripts/falsifier_untoolable_is_stale_error_2026-09-22.py`
+
+**`falsifier_output`** (verbatim, tail):
+
+```
+B. ARCHIVE - the entry field contradicts the ladder's tool verdict
+========================================================================
+  C0002: entry says UNTOOLABLE | ladder says ERROR      ladder_code=600ch stored_code=0ch rungs=2/5
+  C0005: entry says UNTOOLABLE | ladder says ERROR      ladder_code=600ch stored_code=0ch rungs=2/5
+  C0006: entry says UNTOOLABLE | ladder says ERROR      ladder_code=600ch stored_code=0ch rungs=2/5
+  C0011: entry says UNTOOLABLE | ladder says ERROR      ladder_code=600ch stored_code=0ch rungs=2/5
+  C0012: entry says UNTOOLABLE | ladder says ERROR      ladder_code=600ch stored_code=0ch rungs=2/5
+  C0015: entry says UNTOOLABLE | ladder says ERROR      ladder_code=600ch stored_code=0ch rungs=2/5
+C. CONSEQUENCE - the wrong instruction ships to the next round
+  _rejection_lines defined at reference_runner_v3.py:12509
+  C0002: says-'nothing runnable was attached'=True  says-'did not run to a verdict'=False
+  [... C0005, C0006, C0011, C0012, C0015 identical ...]
+D. THE STOP IS CONSTANT-GOVERNED - gamma is not in this circuit
+  resolve_via_routing max_rungs default = 2
+  runner call site: result = route( finding, models, confirmed, resolve_fn, reverify_falsifier, _routing_similarity, )
+  call site overrides max_rungs? False
+  _estimate_gamma([4]) (arm 4 ran 1 round) = 0.0  (min_rounds=3 -> structurally 0.0)
+FALSIFIED: 6 entries labelled UNTOOLABLE whose ladder EXECUTED a falsifier and returned a different verdict: C0002, C0005, C0006, C0011, C0012, C0015
+FALSIFIED: 6 entries are told to ATTACH a falsifier that was written and crashed: C0002, C0005, C0006, C0011, C0012, C0015
+AssertionError: UNTOOLABLE on arm 4 is a stale pre-routing label...
+EXIT=1
+```
+
+**`fix_path`** — `bench/reference_runner_v3.py:5838` (`reconcile_routing_verdict`, wired at `:6071`), guarded by `bench/tests/test_routing_verdict_reconciliation.py`.
+
+The helper writes the ladder's verdict back over a stale `UNTOOLABLE`, **confined to `UNTOOLABLE → ERROR` only**. Both are co-members of `EQUIPMENT_FAILURE_VERDICTS` *and* `ROUTABLE_INSTRUMENT_FAULTS`, so the relabel cannot cross any behavioural boundary — demotion, deferral, re-routing eligibility and the A4 fail-safe treat them identically. It changes what the artefact *reports* and what the panel is *told*, nothing else. A ladder `REFUTED` is deliberately **not** written back: that would move the entry out of the equipment-failure set and change demotion, and that dominance is unmeasured — so it is recorded under `routing_verdict_unreconciled` for a human. Nothing is disabled or removed.
+
+```
+python3 -m pytest bench/tests/test_routing_verdict_reconciliation.py -q
+11 passed in 0.43s
+
+python3 -m pytest bench/tests/test_routing.py bench/tests/test_routing_wiring.py \
+  bench/tests/test_routing_cannot_flatten_gamma_2026-09-09.py \
+  bench/tests/test_empty_ladder_is_not_a_dead_transport_2026-09-09.py \
+  bench/tests/test_routing_prompt_is_target_aware.py -q
+42 passed in 0.58s
+
+python3 -m pytest bench/tests/test_disc_failure_routing.py bench/tests/test_falsifier_gate.py \
+  bench/tests/test_errored_falsifiers_are_not_read_as_verification_2026-09-10.py \
+  bench/tests/test_routing_verdict_reconciliation.py -q
+33 passed in 2.82s
+```
+
+Per the additive standard, one test asserts the wiring itself (`"reconcile_routing_verdict(e, result)" in inspect.getsource(_apply_routing)`) so the addition cannot become one nothing reaches, and one replays the real archive: all 6 flip, exactly `["C0002","C0005","C0006","C0011","C0012","C0015"]`.
+
+**`refutation_condition`** — Three observations would overturn me, and I went looking for each:
+
+1. **If `resolve_via_routing` could return `ERROR` with a non-empty `falsifier_code` without calling `reverify_fn`**, my whole derivation collapses to `ge`'s position. I tested both roads against the real module (part A): the no-code road yields `code_len=0, reverify_calls=0`. Refuted.
+2. **If something downstream distinguishes `UNTOOLABLE` from `ERROR` behaviourally**, my fix is not inert and needs measurement before shipping. I checked both membership sets and ran 75 routing/falsifier tests. If a reader finds a branch that treats them differently, the fix must be re-scoped to a report-only field.
+3. **If `_rejection_lines` output does not reach the models**, the consequence claim drops below threshold to a pure reporting defect. I traced it to `:2749`/`:2789`, inside the registry digest. Still — if the feedback channel was disabled in arm 4's config, the *realised* harm on that run is zero and only the forward risk remains. I did not verify arm 4's feedback-channel flag; that is the weakest link in my consequence chain and I flag it rather than assert past it.
+
+**`strongest_disagreement`** — **The brief and CC1 both treat the 6 UNTOOLABLE as a datum about prose. It is not a datum about prose at all.**
+
+Every mechanism I traced — the pre-routing stamp at `:5364`, the resolved-only write-back at `:6071`, the `_rejection_lines` branch at `:12594` — is target-kind independent. My fix's unit tests reproduce the defect with no prose, no `.md`, and no target. The same stale label would appear on a pure Python target. So "6 of 17 came back UNTOOLABLE on a prose target" is not evidence about the prose path; the founder's genuine question about prose targets is a **separate** question that these 6 findings are the wrong instrument for.
+
+Which means CC1's proposal is aimed at the wrong organ. Per-listing S_k scoring of `_gateable_hunks` addresses the scorer, and the scorer is not implicated in a single one of the 6. CC1 says the third outcome is missing; I say the third outcome already *exists* and is called `ERROR` — the machinery computed it, recorded it in `routing_history`, and then threw it away. Building a new classification tier on top of a channel that discards the verdict it already has would be an addition nothing reaches, which this project's own record says is its dominant defect class (11 of 11 since 2026-08-01).
+
+Secondary, same defect class, offered as an observation rather than a finding: **C0008** carries `routing_history` verdict `INTEGRITY_VIOLATION` yet final `falsifier_verdict: CONFIRMED, status: CLOSED`. Its close looks legitimate on the merits (it closed on its own 1707-char falsifier via the sweep at `:6510`, not on the violating one), so I am not calling it a defect. But the pattern is identical — `routing_history` holds the truth and the entry field does not — and it means an integrity violation is invisible in the field a reader checks. `bench/key_access_forensics.py` is the designed control; I did not run it and I am not claiming it fails.
+
+I also note I agree with `cx` and `ge` on the points they raised. That agreement is *not* smoothing: I reached each from source independently (`_evaluate_sk_for_findings` by inspection, the truncation at `:6003` by reading the line) and each is a fact about code, not a judgement.
+
+**`passes_run`** — **4.** Pass 1 established `UNTOOLABLE` has exactly one cause (empty code) and that the runner sets it pre-routing. Pass 2 found the routing-history contradiction — the decisive finding. Pass 3 traced the consequence to the round-K+1 feedback channel, which is what lifts it above threshold, and confirmed gamma is absent from the ladder circuit. Pass 4 answered the brief's S_k question from source (orthogonal channel, never in this circuit) and added the C0008 observation — below threshold on its own, and it duplicates ground `cx` already covered. Stopping there: a fifth pass has no named mechanism left to examine. The remaining open item is the arm 4 feedback-channel flag, which I have flagged rather than resolved, and which bounds my consequence claim rather than my verdict.
+```
+
+### `fable` — model `fable`, 44 tool calls, 10162 characters
+
+```text
+# Panel Return
+
+## verdict
+**PARTIAL** — CC1's corrected numbers are right; two of its central interpretive claims are refuted by the archive it reads, and its proposal misses that the founder's third outcome already exists in code and is dead.
+
+## reasoning
+
+**What survives.** 7/17 CONFIRMED on a prose target (registry, verified); 600-char recorder ceiling on `routing_history.last_falsifier_code` (`reference_runner_v3.py:6003`, `[:600]` literal); 7/7 unresolved episodes stopped with rungs remaining; the classifier asymmetry (`detect_target_kind`, :1716–1773) and its safety argument are sound and untouched.
+
+**Refuted claim 1 — "settling would mean EXECUTING the source, which this archive forbids."** The archive *records an execution*. `resolve_via_routing` (`bench/routing.py:158–169`) reverifies every non-empty rung falsifier, and `_apply_routing` stores the verdict on the routing step (:5992–6004). All 6 UNTOOLABLE entries carry `verdict: "ERROR"` on 600-char source — the runner ran the *untruncated* source at run time and it crashed. C0008's rung came back `INTEGRITY_VIOLATION`. So UNTOOLABLE here means: the seat attached nothing (stamped pre-routing at :5364), then the ladder attempted, the attempts *ran and demonstrated nothing*, and the entry-level verdict was never updated (failure path :6113–6158 reads the old verdict, never writes it). Not "nothing to compute", not "unexecuted source discarded" — an executed, failed attempt behind a **stale label**. CC1's script never read the step's `verdict` field.
+
+**Refuted claim 2 — the same-day counter-artefact.** `bench/tests/test_hil_queue_says_which_kind_2026-09-22.py` asserted "the ladder was never entered" and "a deferred item has `rungs_tried == 0` by construction." The registry refutes this 8/8: every deferred entry carries `rungs_tried` ∈ {1,2} of 5 with `error_routed=True`. `rungs_tried==0` deferral exists only on the empty-ladder branch (:6039), never taken in arm 4. CC1's A6 corroboration (cap real, rung 3 never entered) was *correct* against that test's counterclaim.
+
+**Instrument 1, S_k.** UNTOOLABLE **withholds from S_k entirely**, on three independent lines: (a) :13090–13102 forces `sk_enabled=False` for any non-Python target before the only call site (:14731 `if cfg.sk_enabled:`) — so in arm 4 **all 17** findings left unscored, not 6; (b) even when S_k runs, `_evaluate_sk_for_findings` selects on `status ∈ {OPEN, CONFIRMED, CONTESTED}` + a SEARCH/REPLACE fix (:12229–12234) — `falsifier_verdict` never enters, and UNTOOLABLE criticals are demoted to UNCONFIRMED (:5370–5372), outside that set; (c) NO_SCORE pins R_k at R_old (:12288–12298). The label's real teeth are elsewhere: `routing_deferred` → irreducible queue count 8 > bound 2 → **run halted at round 0**. The damage is a halt, not a score.
+
+**Instrument 2, gamma.** The ladder stop is **constant-governed**: `max_rungs: int = 2` default (`bench/routing.py:139`, applied :158), runner call site :5975–5978 passes no override, no config surface exists. Gamma governs convergence gating only; the report's own `target_complexity` block says `"informative_only": true, "not an input to any gate"` (founder ruling 2026-09-09). Stopping at 2/5 is a cap, not diminishing returns.
+
+**Severity model DOES bear** (contrary to brief): only criticals get stamped UNTOOLABLE on a missing falsifier (:5359–5364); sub-criticals get no verdict at all (C0003/C0007/C0016, verdict `''`). The 6-of-17 count is severity-shaped. Two-sided gate: no bearing found — agree with brief.
+
+**Against CC1's proposal.** Per-listing scoring machinery already exists *and is dead*: `sk_score_prose_listings` (Task A19, `RunnerConfig:1492`) is threaded to `compute_sk` (:10881) which honours it (:10938), but the forced-off gate killed `sk_enabled` for every non-Python target before the flag's only call site. Kind=python → prose branch unreachable; kind≠python → evaluator never called. **An addition nothing reached** — the additive standard's most-confirmed defect class. Demonstrated by execution, then fixed. The forced-off block's stated hazards are stale: `_capture_baseline` has been `_gateable_source`-aware since 2026-09-11 (:10796–10799), so the phantom-2752-ruff-baseline input no longer exists.
+
+## falsifier_path
+- `scripts/falsify_a19_unreachable_2026-09-22.py`
+- `scripts/falsify_arm4_ladder_was_entered_2026-09-22.py`
+
+## falsifier_command
+```
+python3 scripts/falsify_a19_unreachable_2026-09-22.py
+python3 scripts/falsify_arm4_ladder_was_entered_2026-09-22.py
+```
+
+## falsifier_output
+Falsifier 1, pre-fix (verbatim):
+```
+  downstream: flag off -> NO_SCORE; flag on -> ESCALATE (short-circuit bypassed) -- compute_sk honours the flag
+  gate guard(s): target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled
+  gate consults sk_score_prose_listings: False
+FALSIFIED: run_experiment forces sk_enabled=False for every non-Python target without consulting sk_score_prose_listings, and the flag's only call site sits behind `if cfg.sk_enabled:` (reference_runner_v3.py:14731). The A19 flag is unreachable through the runner -- an addition nothing reaches.
+exit=1
+```
+Post-fix: `OK: the forced-off gate consults the A19 flag; the third outcome is reachable through the runner.` / `exit=0`.
+
+Falsifier 2 (verbatim, fires by design — it demonstrates the refuted claims against the archive):
+```
+  deferred entries          : 8
+  ...with rungs_tried > 0   : 8  [('C0001', 2, 5), ('C0002', 2, 5), ('C0005', 2, 5), ('C0006', 2, 5), ('C0008', 2, 5), ('C0011', 2, 5), ('C0012', 2, 5), ('C0015', 2, 5)]
+  ...with an EXECUTED step verdict on recorded source: 8  [('C0001', 'ERROR'), ('C0002', 'ERROR'), ('C0005', 'ERROR'), ('C0006', 'ERROR'), ('C0008', 'INTEGRITY_VIOLATION'), ('C0011', 'ERROR'), ('C0012', 'ERROR'), ('C0015', 'ERROR')]
+FALSIFIED:
+  * 'the ladder was never entered / deferred implies rungs_tried==0 by construction' is contradicted by 8 of 8 deferred entries.
+  * 'the archive forbids executing the routed source' is contradicted: the runner executed the untruncated source at run time and recorded the verdict on the routing step.
+exit=1
+```
+
+Wolfram second route on the one closed-form statistic relied on: Wilson lower bound at k=n=6 is 1/(1+z²/6); `wolframscript` returned **0.6096657120978347**, matching statsmodels' 60.9666% (computed with Wolfram Language, local Wolfram Engine).
+
+## fix_path
+1. `bench/reference_runner_v3.py` — the forced-off gate now consults `sk_score_prose_listings`: flag on + non-Python target keeps the pipeline on, and `compute_sk` decides per fix (purely prose → NO_SCORE = "nothing to compute"; fenced listings → scored). **This is the founder's third outcome, made reachable.** Default byte-identical (flag defaults False; a dropped key degrades to the safe forced-off side, preserving the enforcement property `test_target_kind_and_no_score` pins).
+2. `bench/tests/test_a19_reachable_through_runner_2026-09-22.py` — pins reachability by AST (not substring), the safe default, and the downstream contract. 
+3. `bench/tests/test_hil_queue_says_which_kind_2026-09-22.py` — corrected the false "never entered / rungs_tried==0" mechanism; added an archive assertion that deferred entries carry `rungs_tried > 0`. Its four sound assertions kept.
+4. `scripts/arm4_untoolable_anatomy_2026-09-22.py` — section 2 now reads and prints the executed step verdict, and the "archive forbids execution" text is corrected in place.
+
+Test evidence: `54 passed` on the target-kind/A19/prose files; full targeted sweep `382 passed` across S_k/prose/routing tests (one failure during the sweep was my own comment tripping a substring heuristic in `test_target_kind_and_no_score.py:404`; reworded, all green: `7 passed` on the two 2026-09-22 files).
+
+## refutation_condition
+My answer is overturned if any of: (a) a code path exists where `sk_score_prose_listings` took effect through the runner **before** my edit (e.g. a launcher that bypasses the :13089 block) — I searched call sites and found only :14731 behind `cfg.sk_enabled`; (b) the routing-step `verdict` field is written by something other than `reverify_falsifier`'s re-execution (I traced it to `resolve_via_routing:166–171`; if the -SIM transport fakes verdicts without executing, my "the source RAN" claim weakens to "the decider returned a verdict"); (c) an archived arm-4 deferred entry with `rungs_tried == 0` exists that I missed — falsifier 2 checks all 8, so this would require the report being regenerated. Go looking: I did, for (a) and (c), by grep and by execution.
+
+## strongest_disagreement
+The brief names S_k "the instrument that decides this question" and says gamma "bears on the ladder directly." **Both framings are wrong.** S_k decided nothing in arm 4 — it was globally off for the target before any finding existed, so the UNTOOLABLE/REJECTED distinction never touched a score; the machinery that actually acted was status demotion plus the irreducible-queue **halt at round 0**, which the brief never mentions and which is the real consequence of the 6 labels. And gamma is documented in the run's own report as "not an input to any gate" — the ladder stop is a bare constant. Second disagreement: the brief says the severity model is "NOT expected to bear," but severity is precisely what decides who receives the UNTOOLABLE stamp at all (:5359–5364) — the 6-of-17 denominator is a severity artefact. Third: Section 1's binary ("nothing to compute" vs "gave up holding source") omits the true state — the machinery *executed* the source it held, recorded the failure, and then displayed a stale pre-routing label.
+
+## passes_run
+**6.** (1) CC1 script vs registry — found the unread executed-verdict field; (2) routing/ladder code trace — constant-governed stop, same-day test contradiction; (3) S_k trace — withholds on three lines, halt is the real damage; (4) A19 reachability — dead flag, falsifier executed, fixed; (5) baseline-capture safety check — forced-off hazards stale since 2026-09-11; (6) post-fix verification sweep — 382 tests, which caught one collateral defect in my own comment (fixed). The sixth pass added nothing material beyond that self-correction — diminishing returns; stopped there.
+```
+
+---
+
 ## Provenance and cost
 
-The rounds `overnight_review_2026-09-22` and `prose_and_astra_2026-09-22` were dispatched to the free seats only, `cc2` and `fable`, both on the Max subscription.
+`overnight_review_2026-09-22`, `prose_and_astra_2026-09-22` and `a19_prose_elements_free_2026-09-22` were dispatched to the free seats only, `cc2` and `fable`, both on the Max subscription. The last of these carried `PANEL_ONLY=cc2,fable` explicitly.
 
-The round `arm4_prose_anatomy_2026-09-22` was dispatched at 11:41:59 BST WITHOUT the free-seat restriction, so it reached 5 paid seats. It was terminated at 11:44:38, about 2 minutes and 39 seconds in. `ge` and `cx` completed and their replies appear above; `cgpt`, `ds` and `kimi` were cut off before writing output and are partially billed. No cost field is recorded anywhere in the run, so the spend cannot be measured from the archive and no figure is offered for it. That round is NOT named in `bench/directives/universal/paid_dispatch_authorisations.json`, because the founder did not authorise it; the guard `TestNoPaidSeatWasDispatched` is red for that reason and is correct to be.
+`arm4_prose_anatomy_2026-09-22` was dispatched at 11:41:59 BST WITHOUT that restriction, so it reached 5 paid seats. It was terminated at 11:44:38, about 2 minutes and 39 seconds in. `ge` and `cx` completed and their replies appear above; `cgpt`, `ds` and `kimi` were cut off before writing output and are partially billed. No cost field is recorded anywhere in the run, so the spend cannot be measured from the archive and no figure is offered for it. That round is NOT named in `bench/directives/universal/paid_dispatch_authorisations.json`, because the founder did not authorise it; the guard `TestNoPaidSeatWasDispatched` is red for that reason and is correct to be.
 
 Written under CDSFL note standard v1.7 (26 August 2026).
