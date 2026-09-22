@@ -11885,8 +11885,8 @@ def sk_threshold_shadow(
 
     Pure. Changes nothing. Exists because a gate that has passed every fix it
     ever saw is a mechanical failure that no artefact currently names. `s_star`
-    is zero in 3859 of 3859 gate records in `bench/logs`, Wilson
-    [99.90%, 100.00%], Clopper-Pearson [99.90%, 100.00%] -- the figure over the
+    is zero in 4020 of 4020 gate records in `bench/logs`, Wilson
+    [99.90%, 100.00%], Clopper-Pearson [99.91%, 100.00%] -- the figure over the
     GIT-TRACKED archive, which is the only one a reader who clones this
     repository can recompute.
 
@@ -11920,8 +11920,8 @@ def sk_threshold_shadow(
     refused the commit: "THE PROSE AND THE ARCHIVE DISAGREE ... states 3507 ...
     gives 3555". That is the blast radius of adding evidence to git, and it was
     not anticipated when the files were staged. On the
-    maintainer's disk the coercing count is 4446 of 4446, Wilson
-    [99.91%, 100.00%], Clopper-Pearson [99.92%, 100.00%]. Both are real; only
+    maintainer's disk the coercing count is 4607 of 4607, Wilson
+    [99.92%, 100.00%], Clopper-Pearson [99.92%, 100.00%]. Both are real; only
     the first is reproducible.
 
     RE-MEASURED AGAIN 2026-09-22, AND THE SAME BLAST RADIUS FIRED A SECOND TIME.
@@ -11930,7 +11930,7 @@ def sk_threshold_shadow(
     single file moved the tracked corpus 3555 -> 3818 and the on-disk corpus
     4142 -> 4405, and the guard refused the commit before a reader could meet
     the stale prose. ARM 2 THEN MOVED THEM AGAIN THE SAME NIGHT, 3818 -> 3859
-    and 4405 -> 4446, and the guard refused a second time.
+    and 4405 -> 4446, and the guard refused a second time. ARM 3 MADE IT A THIRD, 3859 -> 4020 and 4446 -> 4607.
 
     THAT RECURRENCE IS A DESIGN QUESTION, NOT JUST AN ERRAND, AND IT IS FLAGGED
     RATHER THAN ANSWERED HERE. Every completed experimental run appends gate

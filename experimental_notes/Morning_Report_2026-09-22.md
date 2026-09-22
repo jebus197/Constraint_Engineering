@@ -252,6 +252,28 @@ Novel-criticals per round were `[1, 1, 0, 0, 0, 0, 0, 0]` for arm 1 and `[0, 0, 
 
 ---
 
+## 6d. ARM 3 COMPLETED — and 3 arms make a trend
+
+Arm 3, the seat contrast (`Codex-SIM` + `ChatGPT-SIM`) that **could not be requested at all before tonight**, finished 06:33: **8 rounds, no convergence, 32 findings, 155.0 minutes**, exit code 0, live target unmodified. Like arm 1 it exhausted the round cap with material outstanding — its last gate failed on `novel=4, contested=2`, and the residual sweep cleared 26.
+
+### The 3 completed arms
+
+| arm | seats | rounds | findings | **criticals** | findings per seat-round | outcome |
+|---|---|---|---|---|---|---|
+| **2** | 1 | 4 | 9 | **0** | **2.2500** | vacuous convergence at round 3 |
+| **3** | 2 | 8 | 32 | **1** | **2.0000** | no convergence, round cap |
+| **1** | 5 | 8 | 69 | **2** | **1.7250** | no convergence, round cap |
+
+**Both trends are monotone across all 3 arms, in opposite directions.** Criticals rise with panel size (slope 0.4615, r = 0.9608). Findings per seat-round fall (slope −0.1221, r = −0.9680). Read together: **panel size buys criticals at declining per-seat efficiency.** Five seats produced 7.6667× the findings of one seat while costing 10× the seat-rounds; what they bought that the single seat never produced at all was criticals.
+
+**With n = 3 the p-values are meaningless and are not quoted as significant.** Three points will fit a line whatever they do. What is worth keeping is that both orderings are strict and neither has an exception: 0 < 1 < 2 criticals, and 2.2500 > 2.0000 > 1.7250 per seat-round.
+
+**The confounds remain exactly as stated before.** All arms ran the same underlying stand-in model under different labels — the runner reports "5 seats, 1 distinct models" itself. No canary catalogue, so there is no ground truth on whether those criticals were real or whether the smaller panels missed real ones. And the arms did not run equal rounds, because arm 2 stopped at 3. **The single-seat arm's convergence was vacuous**, so its efficiency advantage is partly an artefact of stopping early on an empty curve.
+
+Arm 4, the prose arm that commissions A19, launched 06:33.
+
+---
+
 ## 7. What the commissioning run cannot conclude, stated in advance
 
 **No canary catalogue is available, so no ground-truth defects are seeded.** A `CRITICAL_QUIESCENCE` convergence therefore cannot distinguish "the target is genuinely clean" from "the panel is dead". The sandboxed launcher's own note records exactly that happening on 2026-09-01, with a vacuous curve and zero critical findings across a whole run.
