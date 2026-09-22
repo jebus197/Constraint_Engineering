@@ -65,6 +65,29 @@ The signal needed is already at the call site — `run_is_simulated(cfg)` sits i
 
 ---
 
+**★ RESUME POINTER (2026-09-22 08:07 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `3381910`, main, **CLEAN**, level with `origin/main`.
+
+**ALL 4 LAUNCHABLE ARMS ARE COMPLETE.** Full account with producers: `experimental_notes/Morning_Report_2026-09-22.md`.
+
+| arm | seats | rounds | findings | criticals | outcome |
+|---|---|---|---|---|---|
+| 2 | 1 | 4 | 9 | 0 | **VACUOUS** convergence at round 3 |
+| 3 | 2 | 8 | 32 | 1 | no convergence, round cap |
+| 1 | 5 | 8 | 69 | 2 | no convergence, round cap |
+| 4 | 5, **prose** | **1** | 17 | **8 irreducible** | **HALTED_IRREDUCIBLE_QUEUE_ALARM** |
+
+**THE HEADLINE RESULT IS ARM 4.** The prose arm halted at round 0 with 8 criticals locked irreducible against a bound of 2. Traced: `sk_states_in_queue: ['(none)']` — they were never scored — because the routing ladder is capped at `max_rungs: int = 2`, hardcoded at `bench/routing.py:139` and `:183` with **no config surface**. Ladder exhausts → never scored → irreducible → halt. **This links measurement 9 and A19 into one mechanism that neither predicted alone.** `sk_score_prose_listings` was ON and did not prevent it, because the failure is UPSTREAM of scoring. **Do NOT raise `max_irreducible_queue` to clear the alarm — the alarm itself says that is how it was suppressed twice.**
+
+**MEASUREMENT 9 COMMISSIONED.** 19 routing records declare `rungs_available: 5`; **3 distinct models reached** (CC2-SIM, ChatGPT-SIM, Codex-SIM); Gemini-SIM and DeepSeek-SIM never. 3 of 5 = 60.0000%, Wilson [23.0724%, 88.2379%].
+
+**THE 3 CODE ARMS TREND, MONOTONE AND OPPOSITE.** Criticals rise with seats (0, 1, 2); findings per seat-round fall (2.2500, 2.0000, 1.7250). Panel size buys criticals at declining per-seat efficiency. **n = 3, same stand-in model throughout, no canaries — suggestive, not established.**
+
+**LIVE REPO NEVER TOUCHED across all 4 arms**, verified byte-identical each time, though a seat rewrote the target INSIDE arm 1's sandbox at round 4.
+
+**NEXT.** Arm 5 (paired baseline) needs a checkout of `a2a0197` and `--models 5`. A canary-seeded re-run needs cc2 and fable as independent generators — `detection_rate` refuses a single-generator set.
+
+**OPEN FOR A RULING.** (1) `e1_efficacy` weight that lets it reject alone: **4.9024** Python, **2.9414** prose; or move efficacy into the hard-gate product `A`. (2) Whether `max_rungs` should have a config surface at all. (3) Whether `sk_threshold_shadow`'s docstring should embed a count that every completed arm invalidates — it went red 3 times last night.
+
 **★ RESUME POINTER (2026-09-22 03:06 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `af2c244`, main, working tree **CLEAN**, **level with `origin/main`**.
 
 **ARM 1 IS COMPLETE. ARM 2 IS RUNNING.** Arm 1: 8 rounds, 245.5 min, **69 findings**, `converged_at: None` — round exhaustion, a legitimate stop. Exit code 0. Run dir `bench/logs/commissioning_arm1_panel_20260921T215405Z`; log `bench/logs/commissioning_2026-09-21_arm1.log`. Arm 2 (single seat `CC2-SIM`) launched 03:01:21, log `bench/logs/commissioning_2026-09-22_arm2.log`. **Arms 3 and 4 still to run**: `python3 bench/tools/commissioning_arms_2026-09-21.py --run --only arm3` (then `arm4`). **Arm 5 needs a checkout of `a2a0197`** and predates `--seats`, so it selects with `--models 5`.
