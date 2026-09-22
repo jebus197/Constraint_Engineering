@@ -65,6 +65,18 @@ The signal needed is already at the call site — `run_is_simulated(cfg)` sits i
 
 ---
 
+**★ RESUME POINTER (2026-09-22 03:06 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `af2c244`, main, working tree **CLEAN**, **level with `origin/main`**.
+
+**ARM 1 IS COMPLETE. ARM 2 IS RUNNING.** Arm 1: 8 rounds, 245.5 min, **69 findings**, `converged_at: None` — round exhaustion, a legitimate stop. Exit code 0. Run dir `bench/logs/commissioning_arm1_panel_20260921T215405Z`; log `bench/logs/commissioning_2026-09-21_arm1.log`. Arm 2 (single seat `CC2-SIM`) launched 03:01:21, log `bench/logs/commissioning_2026-09-22_arm2.log`. **Arms 3 and 4 still to run**: `python3 bench/tools/commissioning_arms_2026-09-21.py --run --only arm3` (then `arm4`). **Arm 5 needs a checkout of `a2a0197`** and predates `--seats`, so it selects with `--models 5`.
+
+**WHAT ARM 1 ESTABLISHED, all in `experimental_notes/Morning_Report_2026-09-22.md` with producers.** (1) **The sandbox held and the panel confinement did not** — a seat rewrote the target at round 4 (21,265 → 22,069 bytes); the LIVE repo was untouched, verified byte-identical; 4 of 5 seats had a dispatch window containing the mtime. Known, documented, unfixed, now reproduced with attribution. (2) **The severity sweep's demotion half never fired** — 10 latent-tagged, 0 demoted, confirming the 2026-09-07 prediction verbatim. (3) **The falsifier gate refuted nothing**, 0 of 45, Wilson [0.0000%, 7.8652%] — same shape as the 2026-08-05 audit's 71/60/0. (4) **Seats understate their own R_k**, 18 of 19 one-directional, p = 7.63e-05; `severity_is_proven` holds for 11 of 34. (5) The old 900s seat cap would have killed **2 of 67** dispatches; the slowest was 1264s.
+
+**SUITE GREEN at `2b936f9`**, frozen tree, no commits during the run: **8,357 passed, 5 skipped, 0 failed, 1559.08 s.** A suite result is only a measurement of a commit if the commit holds still.
+
+**OPEN FOR A RULING.** Whether `e1_efficacy` should carry a weight that lets it reject alone (**4.9024** on a Python target, **2.9414** on prose), or whether efficacy belongs in the hard-gate product `A` rather than the effect mean `E`. Both move admission on every target ever run.
+
+**BEWARE.** Committing while a suite runs invalidates it, and arm evidence (`*report*.json`, `runner_state.json`) is un-ignored BY DESIGN, so each completed arm moves the gate-record corpus and makes `sk_threshold_shadow`'s stated counts stale. Update the stated figures (3818 tracked, 4405 on disk as of 2026-09-22) AND both intervals together.
+
 **★ RESUME POINTER (2026-09-21 23:03 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `c1f6f00`, main, working tree **CLEAN**, **level with `origin/main`**. `rs` ran at 22:14 with `--full` (**exit code 0**) and `--record-restore` (**exit code 0**).
 
 **THE COMMISSIONING STUDY IS RUNNING.** Arm 1 launched 22:54:07 through `bench/tools/run_simulated_experiment_sandboxed.sh`: 5 seats (`CC2-SIM`, `Codex-SIM`, `Gemini-SIM`, `DeepSeek-SIM`, `ChatGPT-SIM`) against `bench/cdsfl_registry/engine.py`, max 8 rounds, in round 0 (blind baseline) at the time of writing. Log: `bench/logs/commissioning_2026-09-21_arm1.log`. Arms 2, 3 and 4 follow sequentially via `python3 bench/tools/commissioning_arms_2026-09-21.py --run --only <key>`; **arm 5 is NOT launchable from here** — it needs a checkout of `a2a0197`.
