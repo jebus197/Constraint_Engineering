@@ -59,8 +59,19 @@ def test_routes_own_default_is_unchanged():
     assert inspect.signature(RT.route).parameters["max_rungs"].default == 2
 
 
-def test_the_configured_value_is_what_route_receives(monkeypatch):
-    """THE WHOLE POINT, and it is read off a recorder rather than off the source."""
+class _MC:
+    label = "CC2"
+
+
+class _Exp:
+    models = [_MC()]
+
+
+def _drive_real_apply_routing(monkeypatch, **cfg_kw) -> dict:
+    """Run the REAL `_apply_routing` over a minimal escalated critical, with
+    `bench.routing.route` replaced by a recorder, and return the kwargs that
+    actually arrived. `_apply_routing` imports route from the module at call
+    time, so patching the module attribute intercepts the genuine call site."""
     seen: dict = {}
 
     def recorder(*a, **kw):
@@ -68,12 +79,36 @@ def test_the_configured_value_is_what_route_receives(monkeypatch):
         return _Res()
 
     monkeypatch.setattr(RT, "route", recorder)
-    cfg = R.RunnerConfig(routing_max_rungs=5)
-    rungs = int(getattr(cfg, "routing_max_rungs", 2) or 2)
-    kw = {} if rungs == 2 else {"max_rungs": rungs}
-    recorder(None, None, None, None, None, None, **kw)
+    reg = R.FindingRegistry()
+    reg.entries["C0001"] = {
+        "description": "x", "severity": 0.9, "escalated": True,
+        "falsifier_verdict": "ERROR", "source_model": "M1", "status": "OPEN",
+    }
+    cfg = R.RunnerConfig(routing_enabled=True, models=["CC2"], **cfg_kw)
+    R._apply_routing(reg, 1, _Exp(), cfg=cfg, repo_root=str(REPO))
+    return seen
+
+
+def test_the_configured_value_is_what_route_receives(monkeypatch):
+    """THE WHOLE POINT, and it is read off a recorder rather than off the source.
+
+    REWRITTEN 2026-09-24 (panel). The first version monkeypatched RT.route and
+    then called ITS OWN recorder with a kw dict IT built from a copy of the
+    call-site expression -- `_apply_routing` never ran, so the test asserted
+    that the test agrees with the test. Two representations of one truth with
+    no comparator, the exact `source_text_assertions` shape. This version
+    executes the real `_apply_routing`."""
+    seen = _drive_real_apply_routing(monkeypatch, routing_max_rungs=5)
     assert seen.get("max_rungs") == 5, (
         f"a configured value of 5 did not arrive at route(): {seen!r}")
+
+
+def test_at_the_default_the_real_call_site_passes_no_keyword(monkeypatch):
+    """The other half, also executed: default 2 must keep the call
+    byte-identical, or the 8 narrow fake_route stubs break."""
+    seen = _drive_real_apply_routing(monkeypatch)
+    assert "max_rungs" not in seen, (
+        f"routing_max_rungs=2 leaked the keyword into route(): {seen!r}")
 
 
 def test_at_the_default_no_keyword_is_passed_at_all():

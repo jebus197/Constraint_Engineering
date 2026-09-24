@@ -141,3 +141,166 @@ def test_a_real_code_change_with_no_failable_run_is_still_refused(tmp_path):
 # `!= "transient"` and so counted "other" anyway. A fix verified only at the layer
 # it edited is not verified. That is why `classify_path` now returns a distinct
 # "unresolved" and why the consumers exclude it by name.
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ADDED 2026-09-24 (panel seat): the two halves the file above records as owed.
+#
+# 1. RESOLUTION, NOT GUESSING. The "unresolved" class closed the false refusal
+#    by opening a silent evasion: `$REPO/bench/runner.py` could neither accuse
+#    nor excuse. `resolve_shell_vars` closes the evasion by RESOLVING the
+#    variable from the command's own assignment text, or from the inherited
+#    environment, before classification. Only the residue -- knowable from
+#    neither -- stays excluded, and a residual variable does not persist into
+#    the write's own shell in this harness either, so no real write is lost.
+#
+# 2. THE SYNTHETIC END-TO-END FIXTURE the comment block above records as OWED.
+#    The two deleted tests were vacuous because their hand-built transcripts
+#    never produced a turn: `is_human_prompt` requires `origin.kind == "human"`,
+#    which they did not set, so `fa.audit` was handed nothing. Every fixture
+#    below FIRST proves, through `fa.scan` directly, that the turn it builds is
+#    actually seen (mutations recorded, tools counted), and only then asserts on
+#    the gate subprocess's exit code. A fixture that stops being parsed fails
+#    the visibility assertion rather than passing the exit-code one.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def _fa():
+    sys.path.insert(0, str(HOOKS))
+    import ffafp_audit
+    return ffafp_audit
+
+
+def test_a_variable_assigned_in_the_same_command_resolves_to_transient():
+    """The first bounce's exact shape, now EXCUSED BY EVIDENCE, not by guess."""
+    fa = _fa()
+    muts = fa.bash_mutations("SP=/tmp/claude/scratchpad; echo hi > $SP/gate_in.json")
+    assert muts == ["/tmp/claude/scratchpad/gate_in.json"]
+    assert fa.classify_path(muts[0]) == "transient"
+
+
+def test_the_dollar_repo_evasion_form_now_counts_as_code():
+    """Evasion form 1 of the 2026-09-24 brief, closed: resolved, then judged."""
+    fa = _fa()
+    muts = fa.bash_mutations(
+        "REPO=/Users/x/proj; echo hi > $REPO/bench/reference_runner_v3.py")
+    assert muts == ["/Users/x/proj/bench/reference_runner_v3.py"]
+    assert fa.classify_path(muts[0]) == "code"
+
+
+def test_the_braced_home_evasion_form_resolves_from_the_environment():
+    """Evasion form 2: `${HOME}` is in the hook's own inherited environment."""
+    fa = _fa()
+    home = os.environ["HOME"]
+    muts = fa.bash_mutations("echo hi > ${HOME}/proj/bench/runner.py")
+    assert muts == [f"{home}/proj/bench/runner.py"]
+    assert fa.classify_path(muts[0]) == "code"
+
+
+def test_a_command_substitution_value_is_never_half_resolved():
+    """`SP=$(mktemp -d)` is not knowable without executing; the path must stay
+    'unresolved' rather than become a wrong guess. (Its true target is a fresh
+    temp dir -- transient -- so exclusion is also the correct verdict.)"""
+    fa = _fa()
+    muts = fa.bash_mutations("SP=$(mktemp -d); echo hi > $SP/x.py")
+    assert muts == ["$SP/x.py"]
+    assert fa.classify_path(muts[0]) == "unresolved"
+
+
+def test_the_residual_unresolved_class_still_exists():
+    fa = _fa()
+    assert fa.classify_path("$NEVER_SET_ANYWHERE_XYZ/file.py") == "unresolved"
+
+
+# ── the synthetic end-to-end fixture, owed above, now built ──────────────────
+
+def _human(uuid="t1"):
+    return {"type": "user", "origin": {"kind": "human"}, "uuid": uuid,
+            "timestamp": "2026-09-24T02:00:00Z", "message": {"content": "go"}}
+
+
+def _assistant(*tool_uses):
+    return {"type": "assistant",
+            "message": {"content": [
+                {"type": "tool_use", "name": n, "input": i} for n, i in tool_uses]}}
+
+
+def _write_transcript(tmp_path, entries):
+    f = tmp_path / "session.jsonl"
+    f.write_text("\n".join(json.dumps(e) for e in entries) + "\n")
+    return f
+
+
+def _prove_seen(fa, f, expect_mutations):
+    """ANTI-VACUITY, the assertion the 2 deleted tests lacked: scan() must hand
+    audit() a real open turn with exactly the expected mutation set."""
+    state = {"offset": 0, "open": None, "seq": 0, "reads": {}}
+    with f.open() as fh:
+        fa.scan(fh, state)
+    assert state["open"] is not None, "the fixture produced NO turn; the test would be vacuous"
+    assert state["open"]["mutations"] == expect_mutations
+    return fa.audit(state["open"], fa.prior_read_paths(state))
+
+
+def test_e2e_a_code_edit_with_no_failable_run_is_refused(tmp_path):
+    fa = _fa()
+    f = _write_transcript(tmp_path, [
+        _human(),
+        _assistant(("Edit", {"file_path": "bench/foo.py",
+                             "old_string": "a", "new_string": "b"})),
+    ])
+    v = _prove_seen(fa, f, ["bench/foo.py"])
+    assert v["code"] and "P-PASS" in v["missing"]
+    r = run_gate({"session_id": "s", "transcript_path": str(f)}, tmp_path)
+    assert r.returncode == 2, f"gate allowed an unverified code edit: {r.stderr}"
+    assert "bench/foo.py" in r.stderr and "P-PASS" in r.stderr
+
+
+def test_e2e_a_scratchpad_only_turn_is_not_refused(tmp_path):
+    """The first bounce, replayed end to end: $SP writes, zero code changes."""
+    fa = _fa()
+    f = _write_transcript(tmp_path, [
+        _human(),
+        _assistant(("Bash", {"command":
+            "SP=/tmp/claude/scratchpad; mkdir -p $SP; echo '{}' > $SP/gate_in.json"})),
+    ])
+    # Seen, resolved, and rightly excluded: the resolved path is transient.
+    state = {"offset": 0, "open": None, "seq": 0, "reads": {}}
+    with f.open() as fh:
+        fa.scan(fh, state)
+    assert state["open"] is not None and state["open"]["n_tools"] == 1, (
+        "the fixture produced no turn; a passing exit code would be vacuous")
+    assert state["open"]["mutations"] == [], (
+        "the scratchpad write leaked into the mutation set")
+    r = run_gate({"session_id": "s", "transcript_path": str(f)}, tmp_path)
+    assert r.returncode == 0, f"the 01:47 false refusal is back: {r.stderr}"
+
+
+def test_e2e_a_code_edit_with_the_trace_present_is_released(tmp_path):
+    """The gate must stand down when the owed check actually ran."""
+    fa = _fa()
+    f = _write_transcript(tmp_path, [
+        _human(),
+        _assistant(("Edit", {"file_path": "bench/foo.py",
+                             "old_string": "a", "new_string": "b"})),
+        _assistant(("Bash", {"command": "python3 -m pytest bench/tests/test_foo.py -q"})),
+    ])
+    v = _prove_seen(fa, f, ["bench/foo.py"])
+    assert v["analysed"] and v["verified_after"]
+    r = run_gate({"session_id": "s", "transcript_path": str(f)}, tmp_path)
+    assert r.returncode == 0, f"gate refused a turn that ran its check: {r.stderr}"
+
+
+def test_e2e_an_evasion_shaped_write_is_now_refused(tmp_path):
+    """The brief's evasion, end to end: a $REPO-spelled write to real code with
+    nothing failable after it must be caught, not excluded."""
+    fa = _fa()
+    f = _write_transcript(tmp_path, [
+        _human(),
+        _assistant(("Bash", {"command":
+            "REPO=/Users/x/proj; echo pass > $REPO/bench/reference_runner_v3.py"})),
+    ])
+    v = _prove_seen(fa, f, ["/Users/x/proj/bench/reference_runner_v3.py"])
+    assert v["code"]
+    r = run_gate({"session_id": "s", "transcript_path": str(f)}, tmp_path)
+    assert r.returncode == 2, "the $REPO evasion is open again"

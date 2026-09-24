@@ -211,6 +211,60 @@ _PATH_SHAPED = re.compile(r"^[\w.~$/@+-]*(?:/[\w.~$@+-]+|\.[A-Za-z][\w]{0,5})[\w
 #: Explicit in-place mutations that carry no redirect at all.
 _INPLACE = re.compile(r"(?:\bsed\s+-i\b|\|\s*tee\b|\btee\s+[-\w./~$]|\bgit\s+apply\b|\bpatch\s+-p\d)")
 
+#: A plain shell assignment (`SP=/tmp/x`, `export REPO="/Users/x/proj"`), visible
+#: in the command's own text. Values carrying `$` or a backtick are NOT taken:
+#: `SP=$(mktemp -d)` cannot be resolved without executing, and substituting a
+#: half-resolved value would turn "unknown" into "wrong", which is worse.
+_ASSIGN = re.compile(
+    r"(?:^|[;\s&|({])(?:export\s+)?([A-Za-z_]\w*)="
+    r"(\"[^\"$`]*\"|'[^'$`]*'|[^\s;|&<>\"'$`]+)", re.M)
+
+_VAR = re.compile(r"\$\{(\w+)\}|\$([A-Za-z_]\w*)")
+
+
+def shell_assignments(cmd: str) -> dict:
+    """VAR=value assignments in this command's own shell text, heredoc bodies excluded.
+
+    RESOLVE, DO NOT GUESS (2026-09-24, panel). The gate's first real bounce
+    accused `$SP/gate_in.json` -- a scratchpad file -- because the classifier saw
+    the path BEFORE expansion. The first repair excluded every unresolved path,
+    which closed the false refusal by opening a silent evasion: a write spelled
+    `$REPO/bench/runner.py` could neither accuse nor excuse. But in this harness
+    shell state does not persist between Bash calls, so a variable a command
+    uses is almost always ASSIGNED in that same command text -- `$SP` was, on
+    the bounce itself. The value is therefore knowable without executing
+    anything, and knowing beats both guessing and abstaining. Later assignment
+    wins, matching top-to-bottom shell execution closely enough for paths.
+    """
+    bodies = heredoc_spans(cmd)
+    out = {}
+    for m in _ASSIGN.finditer(cmd):
+        if any(a <= m.start(1) < b for a, b in bodies):
+            continue
+        out[m.group(1)] = m.group(2).strip().strip("\"'")
+    return out
+
+
+def resolve_shell_vars(path: str, assigns: dict) -> str:
+    """Expand `$VAR`/`${VAR}` in a path from same-command assignments, then from
+    this hook's own environment.
+
+    The environment fallback is sound because profile-exported variables (HOME
+    above all) reach every Bash tool call and this hook alike -- both are
+    children of the same harness. A name found in neither, or whose value still
+    carries `$`, is left in place, so `classify_path` returns "unresolved" and
+    the path stays out of the mutation set: a variable assigned only in an
+    EARLIER turn does not persist into the write's own shell either, so the
+    write it names never landed where a guess would have put it.
+    """
+    def _sub(m):
+        name = m.group(1) or m.group(2)
+        v = assigns.get(name)
+        if v is None:
+            v = os.environ.get(name)
+        return v if v and "$" not in v else m.group(0)
+    return _VAR.sub(_sub, path or "")
+
 #: STEM tools, credited only in an EXECUTION context -- an import, or on a python command
 #: line. A bare mention would credit `grep -rn "sympy"`, which is a search, not an analysis.
 _STEM_NAMES = r"sympy|z3|scipy|statsmodels|mpmath|uncertainties|numpy|wolframalpha|wolfram|sage|networkx|pint"
@@ -299,6 +353,39 @@ def _is_test_path(path: str) -> bool:
             or base.endswith("_test.py"))
 
 
+#: NAMING ALIAS, 2026-09-24. The 2 seats named the same thing differently:
+#: `shell_assignments` here, `shell_bindings` in the other seat's tests. An alias
+#: costs nothing and lets both test suites run against one implementation, which
+#: is worth more than either name.
+def shell_bindings(cmd: str) -> dict:
+    """Alias for `shell_assignments`. See the note above."""
+    return shell_assignments(cmd)
+
+
+def classify_write(path: str, cmd: str = "") -> str:
+    """Classify a write target, RESOLVING shell variables from `cmd` first.
+
+    A THIN COMPOSITION of `shell_assignments` + `resolve_shell_vars` +
+    `classify_path`, added 2026-09-24 so that BOTH free seats' work survives one
+    implementation. The 2 seats reached the same conclusion -- resolve, do not
+    guess -- and wrote it behind different names: one exposed this single
+    entry point, the other the 2 pieces. The pieces are the implementation that
+    was kept, on the measured ground that it also closed 4 other findings; this
+    adapter exists so the other seat's 11 tests and its corpus producer RUN
+    against it rather than sitting red on a naming difference.
+
+    It is additive in the strict sense: it is reached by
+    `bench/tests/test_ffafp_unresolved_evasion_2026-09-24.py` and by
+    `scripts/ffafp_unresolved_evasion_2026-09-24.py`, and it adds no behaviour
+    that `classify_path(resolve_shell_vars(...))` did not already have.
+
+    `cmd` is optional because a write may be known only by its path, in which
+    case resolution falls back to the hook's inherited environment exactly as
+    `resolve_shell_vars` does with an empty assignment map.
+    """
+    return classify_path(resolve_shell_vars(path, shell_assignments(cmd or "")))
+
+
 def classify_path(path: str) -> str:
     """One of 'code', 'doc', 'transient', 'unresolved', 'other'.
 
@@ -310,6 +397,13 @@ def classify_path(path: str) -> str:
     -- returning 'other' -- proved INSUFFICIENT: the consumers test
     `!= "transient"`, so 'other' still counted and the gate refused a turn
     whose only writes were scratchpad files named through `$SP`.
+
+    Since 2026-09-24 the Bash path RESOLVES `$VAR`/`${VAR}` from the command's
+    own assignments and the inherited environment BEFORE classification (see
+    `resolve_shell_vars`), so 'unresolved' is now the RESIDUAL class -- a
+    variable knowable from neither source -- not the common case. A residual
+    variable also does not persist into the write's own shell in this harness,
+    so the write it names did not land on any path a suffix-guess would accuse.
 
     'transient' exists so that capturing a run's stdout to /tmp is not mistaken for
     changing the system. Measured: /tmp logs were the single most common redirect target
@@ -331,6 +425,28 @@ def classify_path(path: str) -> str:
     # this gate earns a false refusal on correct work -- the exact failure that
     # got the previous Stop hook parked within a day on 2026-09-11.
     if re.search(r"\$\{?\w+", p):
+        # GIVE UP ONLY WHERE IT CHANGES THE ANSWER (2026-09-24, the other seat's
+        # insight, and it closes a RESIDUAL EVASION in this one). A variable in
+        # the BASENAME cannot change the classification when the directory and
+        # the extension are both literal: `bench/targets/exp$n.py` is a Python
+        # file under a known directory whatever `$n` is, and returning
+        # "unresolved" for it meant a write could be hidden simply by putting a
+        # variable in the file's name. Measured before this clause: that path
+        # classified "unresolved" and was therefore excluded from the mutation
+        # set entirely.
+        # Generalised: classify on the LITERAL LEADING PREFIX plus the LITERAL
+        # EXTENSION. Transience is decided by where a path starts, and kind by
+        # how it ends; a variable in between changes neither. So
+        # `bench/logs/run_$STAMP/BRIEF.md` is a document under a known tree
+        # whatever $STAMP is. Only a path whose FIRST component is a variable is
+        # genuinely undecidable, because then transience itself is unknown --
+        # and that case is left "unresolved" deliberately, since counting it
+        # would mean guessing a directory, which is the defect this function
+        # exists to prevent.
+        _head = p.split("$", 1)[0]
+        _ext = os.path.splitext(p)[1].lower()
+        if "/" in _head and _ext and "$" not in _ext:
+            return classify_path(_head.rstrip("/") + "/x" + _ext)
         return "unresolved"
     ext = os.path.splitext(base)[1]
     if ext in (".log", ".pid", ".tmp", ".lock", ".out", ".err"):
@@ -377,8 +493,14 @@ def bash_mutations(cmd: str):
     """
     out = []
     bodies = heredoc_spans(cmd)
+    # RESOLVE BEFORE JUDGING (2026-09-24). `$SP/x.json` used to reach the
+    # classifier unexpanded and `${HOME}/x.py` never reached it at all (the
+    # brace fails the path-shape test). Both are resolvable from the command's
+    # own assignments or the inherited environment, and a resolved path is
+    # judged on what it actually names.
+    assigns = shell_assignments(cmd)
     for m in _REDIRECT.finditer(cmd):
-        target = m.group("target").strip().strip("\"'")
+        target = resolve_shell_vars(m.group("target").strip().strip("\"'"), assigns)
         if redirect_verdict(target, m.start(), bodies) == "write":
             out.append(target)
     if _INPLACE.search(cmd):
@@ -822,9 +944,13 @@ def survey(paths) -> dict:
         cmd = str((inp or {}).get("command") or "")
         st["bash"] += 1
         bodies = heredoc_spans(cmd)
+        assigns = shell_assignments(cmd)
         for m in _REDIRECT.finditer(cmd):
             st["naive_redirects"] += 1
-            verdict = redirect_verdict(m.group("target"), m.start(), bodies)
+            # The same resolution the detector applies, so the survey cannot
+            # disagree with the hook on what a redirect target names.
+            verdict = redirect_verdict(
+                resolve_shell_vars(m.group("target"), assigns), m.start(), bodies)
             st[{"heredoc": "rej_heredoc", "devnull": "rej_devnull",
                 "shape": "rej_shape", "write": "kept_redirects"}[verdict]] += 1
 
