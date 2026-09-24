@@ -118,6 +118,56 @@ CC1's position, put to the panel to attack rather than confirm: the safe default
 
 ---
 
+## 9. The panel review, and the 3 defects it found that CC1 had not reached
+
+Full CDSFL review of `ae0c837..HEAD` by both free seats: cc2 (115 tool calls, 1218.8 s) and fable (78 tool calls, 1781.5 s). Both returned **PARTLY SOUND**. The mechanical work held everywhere they could execute it. **The 2 fixes-of-fixes CC1 made in the night are the ones that broke**, and both seats found the same 3 defects independently.
+
+### The evasion fix was insufficient a THIRD time
+
+`audit()` re-classifies the **stored** path with no command text in scope, so a variable-named `.py` write returned `missing: []` — not merely uncounted, **the gate had nothing to refuse on**. Verified by CC1 before accepting the finding.
+
+Three attempts: `"other"` (consumers test `!= transient`, so it still counted) → a distinct `"unresolved"` class (opened an evasion) → **resolve, don't guess**, which both seats implemented independently and which was CC1's own third option, never carried out.
+
+| measure | value |
+|---|---|
+| corpus | 6 transcripts, 262.5 MB, 8113 mutations |
+| unresolved, before → after | **242 → 56** |
+| residue as a share of all mutations | **0.6903%**, Wilson [0.5320%, 0.8952%], CP [0.5218%, 0.8954%] |
+| agreement | statsmodels / mpmath@50dps / Wolfram to **8.67e-19** |
+| the counting default CC1 proposed | **54.1% false-refusal rate** — what parks a Stop hook |
+
+The 56 remaining are the genuinely undecidable case: a **leading** variable, so transience itself is unknowable. **CC1's stated fallback was wrong and the measurement says so.**
+
+**A residual evasion in the adopted fix, closed:** one seat's version returned `"unresolved"` for `bench/targets/exp$n.py`, so a write could be hidden by putting a variable in a *file's name*. Classification now uses the **literal leading prefix plus the literal extension** — where a path starts decides transience, how it ends decides kind, and a variable between them changes neither.
+
+### A test CC1 wrote verified nothing, and CC1 did not catch it
+
+`test_routing_max_rungs_is_reachable_2026-09-24` monkeypatched `route`, then **called its own recorder** with a keyword dict the test itself built from a copy of the call-site expression. `_apply_routing` never ran. Its companion was an `inspect.getsource` substring scan — the project's own named source-text-assertion shape. A wiring bug reading a constant instead of `cfg` would have passed.
+
+**This is the second vacuous test of CC1's in one night.** The first pair CC1 caught by probing `fa.scan`; this one a seat caught. Rewritten to drive the real `_apply_routing`, 7 of 7 pass.
+
+### The producer underwriting the removal measured a hard-coded tree
+
+Both seats found `a19_flag_admits_harmful_fixes_2026-09-22.py:10` pinning `ROOT = "/Users/georgejackson/Developer_Projects/Constraint_Engineering"`. Run from any other checkout — **including the review sandbox** — it silently measures the live repository instead of the tree under test, and it is the producer whose figures justified the branch removal. Now repo-relative with a `CE_ROOT` override; the measurement reproduces in-sandbox at 3 of 5 harmful convicted, matching the removal's own comment.
+
+### The removal was right for the wrong reason
+
+Both seats confirm it is **safe by control flow**: both arms of the inner `if` return, so the survivor can never reach the ADMISSIBLE return on **any** input — a proof no fixture population could refute. But CC1 justified it on *convictions recorded on harmful fixes*, and the population contained **no benign fixes**, so a false conviction was unobservable by construction. Extended: **3 of 3 benign documentation fixes are convicted**, at the same signal strength as the harmful ones — conviction precision **3/6 = 0.5**, Wilson [0.188, 0.812]. The code convicts on a MEDIUM and on any ruff diagnostic while its comment justifies only a HIGH.
+
+**Outcome stands; justification was one-armed. RECORDED, NOT FIXED** — narrowing the conviction rule is a design change and it is the founder's to weigh.
+
+### The stated reason for the owed fixture was refuted
+
+CC1 wrote that building it "needs the transcript fields `scan` keys off, and I did not establish them". They were already established **in this repository**, in `test_ffafp_dead_detector_2026-09-22.py:90-108`, committed 2 days earlier. The missing field was `origin: {"kind": "human"}`. That is a *check the record before declaring a gap* failure — a named lesson in CC1's own memory index. Built, with anti-vacuity assertions that a turn **opened** and the verdict **names the file** before any exit code is read.
+
+### How the 2 seats were reconciled, which matters more than which won
+
+Both reached the same conclusion behind different names. One implementation is kept, on the measured ground that it also closed 4 other findings; the other seat's entry point is added as a **thin composition** and its name **aliased**, so its 11 tests and its corpus producer run against the survivor rather than sitting red on a naming difference. Where the designs genuinely differed — whether the prefix/extension inference belongs in the raw classifier or only in the resolving one — the **safer placement** was taken and the other seat's assertion relaxed with the reason written beside it.
+
+**Verified: 54 ffafp/routing tests, 275 prose-acceptance, 10 help-never-acts, all green.**
+
+---
+
 ## Producers
 
 `scripts/a19_flag_admits_harmful_fixes_2026-09-22.py`, `scripts/a19_prose_gates_are_one_sided_2026-09-22.py` (the "3 of 5 harms actively rejected; 0 of 5 correct fixes rejected; every NO_SCORE held R_k" figure in section 1), `scripts/a19_veto_only_prose_sk_2026-09-22.py`, `scripts/ffafp_liveness_check_2026-09-22.py`, `scripts/panel_harvest_loss_2026-09-22.py`, and the 7 recovered derivations under `scripts/cc_free_seat_2026_09_21/`.
