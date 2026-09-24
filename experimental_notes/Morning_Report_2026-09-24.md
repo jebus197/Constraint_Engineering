@@ -74,13 +74,47 @@ Dynamic capability routing is **not built and cannot be grounded today**: capabi
 
 ---
 
-## 7. The suite, and what CC1 broke
+## 7. The suite, measured twice
 
-Measured at `b48dcb9` on a frozen tree: **8553 passed, 47 failed**, 1885.45 s, exit 1. Worse than Tuesday's 24. Promoting 15 seat-written files brought their defects with them.
+| run | commit | passed | failed | seconds | note |
+|---|---|---|---|---|---|
+| first | `b48dcb9` | 8,553 | **47** | 1885.45 | worse than Tuesday's 24 |
+| killed | `f1ec381` | — | — | — | CC1 edited a hook inside the window — 5th invalidation in a day |
+| **clean** | `d193539` | **8,606** | **9** | 2292.31 | frozen tree, untouched |
 
-Closed since, each verified by running the guard: **17 operational-script failures** (13 sharing one cause — a module-level help answer reads the *host's* argv, and the probe imports by passing the script's own path; guarding it with `__name__ == "__main__"` fixes all 13 and leaves `--help` working), **8 routing failures** (my unconditional keyword against narrow stubs), **1 secrets test** (a NameError I introduced at a call site I never exercised — the test's complaint was that dispatch was never reached, so nothing was checked), plus the documentation-drift and full-record guards.
+**38 of the 47 closed**, each verified by running the guard rather than reading it. The rise from 24 to 47 was the cost of promoting 15 seat-written files: their defects came with them.
 
-Still red and correct to be: the 2 paid-dispatch guards, which only the founder can clear. Pre-existing and unrelated: the latent-control pair (instrument committed 2026-09-01 against an archive ending 2026-08-27) and round 11's brief figure.
+The largest group was 17 operational-script failures, of which **13 shared one cause and it was CC1's**: a help answer placed at module level reads the *host's* argv, and the probe imports each script by passing its own path, so the guard refused that path and the import exited 2. Guarding with `__name__ == "__main__"` fixes all 13 and leaves `--help` working. Four more were real defects in the promoted files — 2 collapsing every non-zero exit code to 1, 1 swallowing an exception into a bare `pass`, 2 printing a list cut to 5 under a heading that reads as complete.
+
+Eight were routing failures, also CC1's: threading `max_rungs` unconditionally broke `fake_route` stubs in 4 files, and those stubs are right to be narrow — they assert on behaviour, and a stub that must grow whenever a signature gains an optional parameter is a test coupled to a signature.
+
+One was a **NameError CC1 introduced in the secrets path**. `seat_environment(seat=model_id)` at the Codex launch site had no `model_id` in scope, because CC1 verified the function in isolation and never exercised the call site. The test that caught it guards that no secret reaches a seat, and its complaint was exact: *"subprocess.run was never reached, so nothing was checked"*. A test that cannot run is not a passing test.
+
+**The 9 remaining:** 3 are the founder's (paid-dispatch guards, correct to be red); 3 pre-existing and unrelated (the latent-control pair, whose instrument was committed 2026-09-01 against an archive ending 2026-08-27, and an earlier round's brief figure); 3 were CC1's, of which 2 are now fixed. The last is item 8 below.
+
+---
+
+## 8. What the self-review found in CC1's own work, before the panel saw it
+
+**The Stop gate's false refusal was repaired twice, and the first repair opened a hole.**
+
+The first fix made `classify_path` return `"other"` for a path carrying an unexpanded shell variable, and the test asserted exactly that — 27 tests green — **while the gate went on refusing**, because its 3 consumers test `!= "transient"` and `"other"` still counted. *A fix verified only at the layer it edited is not verified.*
+
+The second fix gave unresolved paths their own class, excluded by name. That worked, and **it made the gate evadable**:
+
+```
+bench/reference_runner_v3.py          -> COUNTS
+$REPO/bench/reference_runner_v3.py    -> IGNORED   ← real code, evaded
+${HOME}/proj/bench/runner.py          -> IGNORED   ← braced form, evaded
+```
+
+2 of 2 evasion forms succeed, Wilson [34.2380%, 100.0000%], mpmath agreeing to 5.55e-17. Introduced at ~02:55 while fixing a false alarm, and it is the worse of the two faults: a false refusal is visible and self-correcting on the next bounce; a silent evasion is neither. It also **inverts this project's own asymmetry** — `detect_target_kind` resolves every ambiguous case to the safer side, and this one was resolved to the unsafe side.
+
+CC1's position, put to the panel to attack rather than confirm: the safe default is that an unresolved path COUNTS, accepting the false alarm, because a missed refusal costs the gate's whole purpose — but that restores the false alarm that gets such gates parked. The properly correct answer is probably neither: the hook sees the whole Bash command text and the variable is *assigned* in that text, so it can be **resolved** rather than guessed at.
+
+**And 2 end-to-end tests CC1 wrote for the gate were vacuous.** Both ran it as a subprocess and asserted its exit code. Probed directly, `fa.scan` left `state["open"]` None and `on_close` empty, so `fa.audit` received **no turn at all** — they passed because nothing was examined. That is the substitution-tautology shape this project has caught 3 times. Deleted, the reason written where they stood, the fixture recorded as OWED.
+
+**Still open, item 8:** 3 scripts act when imported. They write only inside a temporary directory, so nothing in the repository is touched, but the rule is right. CC1 attempted the wrap, broke 2 of 3 on a multi-line construct, restored them, and stopped rather than keep cutting at working files at 03:00. It is now a named task for the review panel.
 
 ---
 

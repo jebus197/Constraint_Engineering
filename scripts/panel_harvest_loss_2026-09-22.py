@@ -142,7 +142,12 @@ def interval(k: int, n: int):
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(add_help=False)
+    # add_help=True (2026-09-24): argparse OWNS `-h` here, because this script
+    # has a real flag (`--ref`) and argparse's own usage lists it. The shared
+    # `answer_help` helper is for scripts with NO parser; using both meant the
+    # helper answered first and argparse's flag list was never shown, which
+    # `test_no_script_uses_both` names exactly.
+    ap = argparse.ArgumentParser(add_help=True, description=__doc__.strip().splitlines()[0])
     ap.add_argument("--ref", default=PRE_RECOVERY_REF)
     # parse_args, NOT parse_known_args (corrected 2026-09-24). The lenient form
     # SILENTLY DISCARDED an unrecognised flag, so `--rev HEAD` (a typo for --ref)
@@ -198,10 +203,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    from _cli_help import answer_help
-    # takes_no_arguments=False, or the guard refuses `--ref` before main() runs.
-    # Measured 2026-09-23: the flag was documented at the top of this file and
-    # parsed in main(), and `--ref HEAD` still exited 2 -- an addition nothing
-    # reaches, inside the script written to measure that very defect class.
-    answer_help(__doc__, __file__, takes_no_arguments=False)
     sys.exit(main())
