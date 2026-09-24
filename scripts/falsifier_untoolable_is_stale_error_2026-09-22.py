@@ -28,7 +28,7 @@ WHAT THIS DEMONSTRATES, in four parts, each against the REAL module:
      ladder's field contradict each other, and the ladder's is the tool verdict.
 
   C. CONSEQUENCE, and this is what puts the finding above threshold.
-     `_rejection_lines` (bench/reference_runner_v3.py:12737) branches on exactly
+     `_rejection_lines` (bench/reference_runner_v3.py:12745) branches on exactly
      this field to build the corrective instruction shipped to every seat in the
      next round's registry digest (rendered at :2749 and :2789). On ERROR it says
      "your test did not run to a verdict ... Re-write it so it runs". On

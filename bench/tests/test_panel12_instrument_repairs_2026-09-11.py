@@ -50,6 +50,7 @@ import sys
 import tempfile
 
 import pytest
+import math
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
@@ -251,5 +252,30 @@ class TestTheA7IdentificationIsQuotedWithItsFamily:
             cwd=ROOT, capture_output=True, text=True, timeout=900)
         assert r.returncode == 0, r.stderr[-300:]
         assert "UNDERDETERMINED" in r.stdout
-        assert "{20, 22, 32}" in r.stdout, (
-            "the family is no longer quoted, so 22 reads as identified again")
+        # DERIVED, NOT HARDCODED (2026-09-24). This asserted the literal
+        # "{20, 22, 32}". The unfiltered member of that family is a COUNT OVER
+        # THE ARCHIVE, so it MOVES when a run is archived -- and it did: the
+        # commissioning arms of 2026-09-21/22 took it from 32 to 34, and this
+        # test then failed for the one reason a test must never fail, because
+        # the world changed in a way the subject correctly reported. The
+        # producer now computes all 3 members; so does this test, by CALLING
+        # the producer's own functions rather than trusting either its output
+        # or a number typed here. `execute-do-not-grep`, applied to a seam it
+        # had not been applied to.
+        import importlib.util as _ilu
+        _spec = _ilu.spec_from_file_location(
+            "_esc_fam", ROOT / "scripts" / "escalation_paths_2026-09-11.py")
+        _m = _ilu.module_from_spec(_spec)
+        sys.modules["_esc_fam"] = _m
+        _spec.loader.exec_module(_m)
+        _thr = _m.critical_threshold()
+        _fam = sorted({
+            len(_m.escalated_without_a_falsifier(math.nextafter(_thr, 2.0))),
+            len(_m.escalated_without_a_falsifier(_thr)),
+            len(_m.escalated_without_a_falsifier(float("-inf"))),
+        })
+        assert len(_fam) == 3, f"the candidates collapsed to {_fam}; the quote would be stale the other way"
+        _quoted = "{" + ", ".join(str(n) for n in _fam) + "}"
+        assert _quoted in r.stdout, (
+            f"the family is no longer quoted, so {_fam[1]} reads as identified "
+            f"again; expected {_quoted}")
