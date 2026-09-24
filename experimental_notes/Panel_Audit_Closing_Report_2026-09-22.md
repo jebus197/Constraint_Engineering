@@ -121,7 +121,7 @@ Arm 4's own report records this:
 
 ### And then the free panel found something better: your fix was already built, and dead
 
-`fable` went looking and found **`sk_score_prose_listings`** — declared on `RunnerConfig` ([:1492](bench/reference_runner_v3.py:1492)), threaded into `compute_sk` ([:10881](bench/reference_runner_v3.py:10881)) and **honoured** there ([:10938](bench/reference_runner_v3.py:10938)). It is your third outcome, already written, already wired to the scorer.
+`fable` went looking and found **`sk_score_prose_listings`** — declared on `RunnerConfig` ([:1492](bench/reference_runner_v3.py:1492)), threaded into `compute_sk` ([:10881](bench/reference_runner_v3.py:10942)) and **honoured** there ([:10938](bench/reference_runner_v3.py:10942)). It is your third outcome, already written, already wired to the scorer.
 
 **It could not be reached by any path.** `run_experiment` forced `sk_enabled=False` for every non-Python target *before* the flag's only call site, which sits behind `if cfg.sk_enabled:`. So a Python target never enters the prose branch, and a non-Python target never reaches the evaluator at all. **An addition nothing reaches** — the defect class this project has confirmed 11 times and zero of the opposite kind.
 

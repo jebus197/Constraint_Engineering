@@ -177,6 +177,13 @@ READ_PATH_CAP = 400
 #: or habitual. Bounded so the state file cannot grow without limit.
 HISTORY_LIMIT = 40
 
+#: Consecutive invocations during which the offset may fail to advance while the
+#: transcript grows, before the detector declares ITSELF broken and re-arms. 1 is too
+#: tight: a prompt can land between the harness writing the line and the flush, and a
+#: single replayed read is normal. 2 consecutive stalls is not a race, it is a ratchet
+#: -- the 2026-09-20 KeyError stalled every invocation for 2 days without exception.
+STALL_LIMIT = 2
+
 #: Above this size, start from the tail rather than the beginning on first sight of a
 #: session. A cold pass of a 46.2 MB transcript measured 2.29 s wall, so this is insurance
 #: against a pathological file, not a routine path.
@@ -736,6 +743,19 @@ def render(verdict: dict, history: list) -> str:
         for code in verdict["missing"]:
             k = sum(1 for h in recent if code in (h.get("missing") or []))
             lines.append(f"  {code} missing in {k} of the last {n} work turns.")
+    # WOLFRAM IS THE SECOND FALSIFIER (founder ruling 2026-09-17), and it binds CC1
+    # exactly as it binds the seats. ADDED HERE 2026-09-24: every mechanism built
+    # for that ruling was wired to seats through the dispatcher's SYSTEM prompt and
+    # NONE was wired to CC1 -- measured on 2026-09-22, the seats used Wolfram in 6
+    # of 6 dispatches while CC1 made 1 call in a whole day, and that one landed only
+    # after being challenged. Fires only when the WHOLE recent window is
+    # Wolfram-free, so it cannot become wallpaper and cannot be vacuous.
+    if len(recent) >= 4 and sum(1 for h in recent if "wolfram" in (h.get("stem") or [])) == 0:
+        lines.append(f"  Wolfram in 0 of the last {len(recent)} work turns. Where a result can "
+                     "be checked in Wolfram, check it there as the SECOND falsifier "
+                     "(wolframscript -code '...'); the open-source tools stay PRIMARY. If it "
+                     "cannot run (absent, kernel busy, licence), say so and continue -- that "
+                     "is compliance; silence is not.")
     lines.append("  This detects MISSING TRACES, not missing rigour. A check you run in THIS "
                  "turn for last turn's edit is invisible to it, and a note needs no test. If "
                  "the trace is genuinely owed, produce it now rather than asserting it was done.")
@@ -857,6 +877,36 @@ def find_transcript(session_id: str):
     return None
 
 
+def migrate_turn(turn):
+    """Backfill keys a persisted turn predates, returning it in the CURRENT shape.
+
+    THE DEFECT THIS EXISTS FOR, found by execution on 2026-09-22. `state["open"]` is a
+    turn dict serialised to JSON and reloaded on the next prompt. `new_turn()` gained a
+    `"scans"` key on 2026-09-20 16:42; a turn serialised at 15:33 that day has no such
+    key. `record_tool` then evaluates `turn["scans"]` and raises KeyError on the FIRST
+    tool line of the next scan. `scan()` assigns `state["offset"] = fh.tell()` on its
+    LAST line, so the abort leaves the offset unchanged, `main()`'s bare `except`
+    swallows the traceback, and the state is rewritten with the SAME offset. Every
+    later prompt replays the same bytes and dies in the same place. The detector
+    consumed nothing and recorded nothing for 2 days while reporting no error at all.
+
+    Verbatim, from the replay that established it:
+        File "ffafp_audit.py", line 496, in record_tool
+          if _TREE_SCAN.search(cmd) and len(turn["scans"]) < SEARCH_CAP:
+        KeyError: 'scans'
+
+    All 67 tests in the suite pass, and every one of them builds turns through
+    `new_turn()`. None loads a turn persisted by an OLDER build, which is the only
+    input that triggers this. That is the coverage gap.
+    """
+    if not isinstance(turn, dict):
+        return None
+    for k, v in new_turn().items():
+        if k not in turn:
+            turn[k] = list(v) if isinstance(v, list) else v
+    return turn
+
+
 def load_state(sf: pathlib.Path) -> dict:
     st = {"offset": 0, "open": None, "seq": 0, "reads": {}, "last_work": None,
           "reported": None, "history": []}
@@ -865,6 +915,8 @@ def load_state(sf: pathlib.Path) -> dict:
             st.update(json.loads(sf.read_text()))
     except Exception:                                        # noqa: BLE001
         pass
+    st["open"] = migrate_turn(st.get("open"))
+    st["last_work"] = migrate_turn(st.get("last_work"))
     return st
 
 
@@ -902,6 +954,8 @@ def main() -> None:
     if state.get("offset", 0) == 0 and size > COLD_START_MAX_FILE:
         state["offset"] = size - COLD_START_TAIL_BYTES
 
+    before_offset = int(state.get("offset", 0) or 0)
+    scan_error = ""
     try:
         with tpath.open("r", errors="ignore") as fh:
             if state.get("offset", 0) > 0 and not state.get("aligned"):
@@ -914,8 +968,43 @@ def main() -> None:
                 state["offset"] = fh.tell()
             scan(fh, state)
         state["aligned"] = True
-    except Exception:                                        # noqa: BLE001
-        pass
+    except Exception as exc:                                 # noqa: BLE001
+        scan_error = "%s: %s" % (type(exc).__name__, exc)
+
+    # ------------------------------------------------------------------------------
+    # LIVENESS SELF-CHECK. A detector reporting "nothing missing" because it is DEAD is
+    # indistinguishable downstream from one reporting "nothing missing" because nothing
+    # was missing. This project has paid for that confusion once already -- 16 of 17
+    # panel tool calls errored and were read as results. The two silences differ in ONE
+    # mechanically checkable way: a live detector's byte offset ADVANCES when the
+    # transcript grows. So that, and not the verdict, is what is asserted here.
+    #
+    # Recovery is bounded rather than absent. An abort inside scan() leaves the offset
+    # where it was, so the next prompt replays the same bytes and dies identically: the
+    # failure is a RATCHET, not a blip, and 2 days of silence is what that costs. After
+    # STALL_LIMIT consecutive stalls the ONLY per-turn structure a bad line can poison
+    # -- the open turn -- is dropped and the offset is moved to the current end of file.
+    # That forfeits the turns already lost. It cannot forfeit future ones. Losing one
+    # turn beats losing two days, and the forfeit is REPORTED, never silent.
+    # ------------------------------------------------------------------------------
+    now_offset = int(state.get("offset", 0) or 0)
+    stalled = bool(scan_error) or (size > before_offset and now_offset <= before_offset)
+    state["stall"] = (int(state.get("stall", 0) or 0) + 1) if stalled else 0
+    state["last_error"] = scan_error
+    alarm = ""
+    if state["stall"] >= STALL_LIMIT:
+        state["open"] = None
+        state["reads"] = {}          # a lookback cache, and poisonable in the same way
+        state["offset"] = size
+        state["aligned"] = True
+        state["stall"] = 0
+        state["recovered"] = int(state.get("recovered", 0) or 0) + 1
+        alarm = ("[ffafp] THE DETECTOR ITSELF WAS DEAD and has been re-armed at the end of "
+                 "the transcript. It consumed %d bytes without recording a verdict; those "
+                 "turns are FORFEIT and their FFAFP traces were never checked. Cause: %s. "
+                 "Treat this session's clean FFAFP history as ABSENT EVIDENCE, not as "
+                 "evidence of absence." % (max(0, size - before_offset), scan_error or
+                                           "offset did not advance while the transcript grew"))
 
     # The turn that just finished is the OPEN one if this prompt's line is not yet written,
     # and the last CLOSED work turn otherwise. Both orders occur, so take whichever is real
@@ -932,7 +1021,11 @@ def main() -> None:
         hist = state.get("history") or []
         if not already:
             hist.append({"id": verdict["id"], "ts": verdict["ts"], "work": verdict["is_work"],
-                         "missing": verdict["missing"]})
+                         "missing": verdict["missing"],
+                         # ADDED 2026-09-24 (CC1): the Wolfram window below reads
+                         # this. Without it the window is blind and the nudge
+                         # could never fire -- an addition nothing reaches.
+                         "stem": verdict.get("stem") or []})
             state["history"] = hist[-HISTORY_LIMIT:]
             state["reported"] = verdict.get("id")
         msg = "" if already else render(verdict, state.get("history") or [])
@@ -944,13 +1037,18 @@ def main() -> None:
     except Exception:                                        # noqa: BLE001
         pass
 
+    if alarm:
+        msg = alarm + ("\n" + msg if msg else "")
+
     if not msg:
         return
     # Suppressed from the transcript by default: the notice is addressed to the assistant,
     # and a visible block on every work turn becomes wallpaper. FFAFP_AUDIT_VISIBLE=1 surfaces
     # it for the founder when he wants to watch the hook working.
     print(json.dumps({
-        "suppressOutput": os.environ.get("FFAFP_AUDIT_VISIBLE", "") != "1",
+        # An alarm is NEVER suppressed. The suppression exists so a routine notice does
+        # not become wallpaper; a dead instrument is not routine.
+        "suppressOutput": (not alarm) and os.environ.get("FFAFP_AUDIT_VISIBLE", "") != "1",
         "hookSpecificOutput": {"hookEventName": event, "additionalContext": msg},
     }))
 

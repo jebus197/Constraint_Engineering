@@ -52,8 +52,83 @@ def tracked_scripts(ref: str) -> set[str]:
     return {Path(p).name for p in out.stdout.split() if p.endswith(".py")}
 
 
+#: The THREE directories a launcher may harvest into. Measured 2026-09-23 by a
+#: panel critic: this script originally globbed only the first, so it reached 1
+#: destination of 3 and 1 directory level. `bench/confer_maths_panel_2026-09-05.py`
+#: writes `sandbox_harvest`; `bench/confer_convergence_panel_2026-08-23.py` and
+#: `bench/build_experiment_run.py` write `worktree_harvest`; and
+#: `bench/tools/run_simulated_experiment.py` writes `panel_worktree_harvest` --
+#: which is where all 4 of the 2026-09-21/22 commissioning arms put their files.
+#: An instrument blind to a destination reports 0 loss there however bad it is.
+HARVEST_DIRS = ("sandbox_harvest", "worktree_harvest", "panel_worktree_harvest")
+
+#: Delivered paths that must NEVER be promoted, with the reason. Kept explicit
+#: and narrow: a broad pattern here would silently excuse real losses.
+NEVER_PROMOTE = (
+    "__pycache__/",      # build artefact
+    ".scratch/",         # a seat's own scratch space, by its own naming
+)
+
+
+def _is_throwaway(rel: str) -> bool:
+    """A seat's temporary file, recognised by name rather than by judgement."""
+    name = Path(rel).name
+    return name.startswith("tmp") and name.endswith(".py")
+
+
+def harvested_files(suffix: str = ".py") -> dict[str, list[str]]:
+    """Every seat-delivered path, at FULL DEPTH, across ALL harvest destinations.
+
+    Returns {repo-relative delivered path: [archive paths]}. The key is the path
+    the seat MEANT, so `scripts/cc_free_seat_2026_09_21/f1.py` is distinct from
+    `scripts/f1.py` -- the original keyed on BASENAME ONLY and one level deep,
+    which is exactly how 7 nested files went unnoticed.
+    """
+    found: dict[str, list[str]] = {}
+    for d in HARVEST_DIRS:
+        for p in sorted(LOGS.glob(f"*/{d}/*/attempt-*/files/**/*{suffix}")):
+            if not p.is_file():
+                continue
+            parts = p.parts
+            rel = str(Path(*parts[parts.index("files") + 1:]))
+            if any(skip in rel for skip in NEVER_PROMOTE) or _is_throwaway(rel):
+                continue
+            found.setdefault(rel, []).append(str(p.relative_to(REPO)))
+    return found
+
+
+def _sha(path: Path) -> str:
+    import hashlib
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def tree_content_index() -> dict[str, str]:
+    """sha256 -> first tree path, over the live tree's .py files.
+
+    CONTENT-ADDRESSED, and that is not a preference. Path-addressed checking
+    reported 5 false losses on 2026-09-23, because a CORRECT promotion had
+    relocated those files to `scripts/panel_falsifiers/` on purpose. A file that
+    is present under another name is not lost; a file whose bytes are nowhere is.
+    """
+    idx: dict[str, str] = {}
+    for sub in ("scripts", "bench", "hooks"):
+        for p in (REPO / sub).rglob("*.py"):
+            if "logs" in p.parts or "__pycache__" in p.parts:
+                continue
+            try:
+                idx.setdefault(_sha(p), str(p.relative_to(REPO)))
+            except OSError:
+                continue
+    return idx
+
+
 def harvested_scripts() -> dict[str, str]:
-    """Distinct seat-written scripts/*.py in the harvest -> first archive path."""
+    """RETAINED for the original caller: basename -> first archive path.
+
+    Kept rather than deleted because `main()` below still reports the pinned
+    historical rate through it and the 2 forms answer different questions. The
+    wider measurement is `harvested_files()`.
+    """
     found: dict[str, str] = {}
     for p in sorted(LOGS.glob("*/sandbox_harvest/*/attempt-*/files/scripts/*.py")):
         found.setdefault(p.name, str(p.relative_to(REPO)))
@@ -119,5 +194,9 @@ def main() -> int:
 
 if __name__ == "__main__":
     from _cli_help import answer_help
-    answer_help(__doc__, __file__)
+    # takes_no_arguments=False, or the guard refuses `--ref` before main() runs.
+    # Measured 2026-09-23: the flag was documented at the top of this file and
+    # parsed in main(), and `--ref HEAD` still exited 2 -- an addition nothing
+    # reaches, inside the script written to measure that very defect class.
+    answer_help(__doc__, __file__, takes_no_arguments=False)
     sys.exit(main())

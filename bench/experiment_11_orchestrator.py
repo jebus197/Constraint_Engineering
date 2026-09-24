@@ -1048,7 +1048,8 @@ _SECRET_NAME = _re.compile(
 
 
 def seat_environment(base: "dict[str, str] | None" = None,
-                     keep: "tuple[str, ...]" = ()) -> "dict[str, str]":
+                     keep: "tuple[str, ...]" = (),
+                     seat: "str | None" = None) -> "dict[str, str]":
     """The environment a model seat is started with: the parent's, minus secrets,
     with the Wolfram policy's gate first on PATH (`serial` by default: the
     queue, not a refusal).
@@ -1070,8 +1071,17 @@ def seat_environment(base: "dict[str, str] | None" = None,
     else survives: Codex falls back to OPENAI_API_KEY when it is not logged in.
     """
     env = dict(os.environ if base is None else base)
-    return _wolfram_gated_path(
+    out = _wolfram_gated_path(
         {k: v for k, v in env.items() if k in keep or not _SECRET_NAME.search(k)})
+    # CDSFL_SEAT, WIRED 2026-09-24. `bench/wolfram_standard.py:420` has always
+    # READ this ("seat or CDSFL_SEAT or CDSFL_AGENT or 'unknown'") and NOTHING
+    # ever set it, so every row in the Wolfram gate log recorded "unknown" and no
+    # per-seat Wolfram rate could be reproduced from the log -- only from a
+    # 196 MB transcript. A read with no writer is the same addition-nothing-
+    # reaches defect as a writer with no reader; this is its mirror image.
+    if seat:
+        out["CDSFL_SEAT"] = str(seat)
+    return out
 
 
 def call_claude_cli(
@@ -1254,7 +1264,7 @@ def call_claude_cli(
                 text=True,
                 timeout=timeout,
                 cwd=_cwd,
-                env=seat_environment(),
+                env=seat_environment(seat=model_id),
             )
             elapsed = time.monotonic() - t0
             text = result.stdout.strip()
@@ -1395,7 +1405,7 @@ def call_codex(
                 cwd=_get_panel_cwd_raw(),
                 # Codex authenticates with OPENAI_API_KEY when it is not logged
                 # in, so this route keeps that 1 key and nothing else.
-                env=seat_environment(keep=("OPENAI_API_KEY",)),
+                env=seat_environment(keep=("OPENAI_API_KEY",), seat=model_id),
             )
             elapsed = time.monotonic() - t0
             text = result.stdout.strip()

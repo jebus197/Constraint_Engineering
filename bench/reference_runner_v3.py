@@ -1408,6 +1408,29 @@ class RunnerConfig:
     # Requires falsifier_gate_enabled. Default-off => byte-identical. The legacy config key
     # ``take_up_slack_enabled`` is still accepted (launcher_core back-compat alias).
     routing_enabled: bool = False
+    #: How many rungs of the falsification ladder may be tried per unresolved
+    #: critical. ADDED 2026-09-24, and the DEFAULT IS DELIBERATELY UNCHANGED.
+    #:
+    #: `bench/routing.py:183` has always defaulted to 2 and the runner's single
+    #: `route(...)` call site passed no override, so there was NO config surface
+    #: at all: rungs 3 and beyond were unreachable BY CONSTRUCTION in every run
+    #: ever archived, and "what does rung 3 buy" is therefore unmeasured rather
+    #: than known to be nothing. The founder asked whether a 2-rung cap is
+    #: arbitrary. It is not arbitrary in the sense of being random, but it IS
+    #: untested, and those are different things.
+    #:
+    #: Leaving the default at 2 keeps all 23 routing-enabled configs
+    #: byte-identical, which is this project's convention for a gated feature:
+    #: reachable, off by default, and opted into by ONE forward config so the
+    #: comparison is measured rather than argued. The founder's larger proposal
+    #: -- route by proven capability rather than a fixed count -- is NOT built
+    #: here, because the data to ground it does not exist yet: the harness's
+    #: capability fingerprinting measures context capacity, not falsification
+    #: competence, and on the competence data that does exist 0 of 10 model
+    #: pairs separate (all Fisher p >= 0.306). The named trigger for revisiting
+    #: it is provenance-clean cells across 3 or more LIVE runs with at least 1
+    #: pair separating at alpha 0.05.
+    routing_max_rungs: int = 2
     # Code-location novelty series (2026-06-08). Computes a per-round critical-novelty
     # series keyed by target-file code location (the verified fix for the cross-round
     # dedup failure) alongside the ID-proxy count, logging both.
@@ -6032,6 +6055,9 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
         result = route(
             finding, models, confirmed, resolve_fn, reverify_falsifier,
             _routing_similarity,
+            # THREADED 2026-09-24. Without this keyword the field above is a
+            # config option no caller reads -- an addition nothing reaches.
+            max_rungs=int(getattr(cfg, "routing_max_rungs", 2) or 2),
         )
         # RECORD WHAT THE LADDER ACTUALLY DID. Detective only; no behaviour here.
         #
@@ -10763,6 +10789,40 @@ def _run_effect_fix_efficacy(
     )
 
 
+_NEW_RUFF_RE = re.compile(r"(\d+)\s+new\b")
+_NEW_BANDIT_RE = re.compile(r"new:\s*(\d+)H/(\d+)M")
+
+
+def _gates_introduced_new_defects(details: Dict[str, Any]) -> List[str]:
+    """Which effect gates recorded a defect the FIX introduced, not one it found.
+
+    Reads the detail strings the gates already write, so it adds no new
+    measurement and cannot disagree with what the archive records. The
+    distinction that matters is NEW vs TOTAL: a listing that was already
+    lint-dirty must not condemn a fix that left it exactly as dirty. Both
+    regexes therefore key on the gates' own "new" fields:
+
+        e3_ruff   "2 total, 0 new (baseline: 2)"        -> 0 new, clean
+        e4_bandit "1 HIGH/1 MEDIUM (baseline: 0H/0M, new: 1H/1M)" -> 1H, dirty
+
+    A detail string that does not match returns nothing for that gate: an
+    unreadable detail is silence, not an accusation. Returns the human-readable
+    reasons, empty when the fix introduced nothing.
+    """
+    reasons: List[str] = []
+    ruff = (details.get("e3_ruff") or {}).get("detail") or ""
+    m = _NEW_RUFF_RE.search(ruff)
+    if m and int(m.group(1)) > 0:
+        reasons.append(f"ruff: {m.group(1)} new diagnostic(s)")
+    bandit = (details.get("e4_bandit") or {}).get("detail") or ""
+    m = _NEW_BANDIT_RE.search(bandit)
+    if m:
+        high, med = int(m.group(1)), int(m.group(2))
+        if high or med:
+            reasons.append(f"bandit: {high} new HIGH, {med} new MEDIUM")
+    return reasons
+
+
 def _run_effect_bandit(
     modified_source: str, baseline_findings: Optional[Dict[str, int]],
     source_path: str = "",
@@ -11213,6 +11273,106 @@ def compute_sk(
 
     sk = A * E
     tristate = SK_ADMISSIBLE if sk > 0 else SK_REJECTED
+
+    # -- ON A PROSE TARGET THE EFFECT GATES ARE ONE-SIDED (2026-09-22) --------
+    #
+    # THE DEFECT, measured through `_evaluate_sk_for_findings` with
+    # `sk_score_prose_listings=True` on the five adversarial fixtures of
+    # `bench/tests/test_prose_acceptance_stem.py`: all 5 HARMFUL fixes came back
+    # ADMISSIBLE (sk = 0.5333 / 0.8333 / 1.0000 / 1.0000 / 0.7333) and every one
+    # pulled R_k down from 0.5000. That is Property 1 ("a harmful fix is never
+    # admitted", :317) failing 5 of 5 and Property 2 ("an unmeasured fix may not
+    # move R_k", :429) failing 10 of 10.
+    #
+    # THE CAUSE IS NOT BLIND GATES -- they fired on 3 of the 5 harms:
+    #     structural  e4 = 0.3  new 1 HIGH / 1 MEDIUM   (the shell injection)
+    #     statistics  e3 = 0.9  new 1 ruff;  e4 = 0.8  new 1 MEDIUM
+    #     numerical   e4 = 0.6  new 2 MEDIUM
+    # The cause is the aggregation above dissolving a hard negative into a
+    # weighted mean, plus `tristate = ADMISSIBLE if sk > 0` having no threshold
+    # at all. Derived in closed form and executed: with e1/e2 unavailable on
+    # prose the weights are e3 = 1, e4 = 2, so
+    #     E = (1/3)*e3 + (2/3)*e4,  and  inf over e4 of E given e3 = 1  =  1/3.
+    # A lint-clean fix introducing ANY number of new HIGH-severity findings is
+    # therefore ADMISSIBLE. EXECUTED: 1, 2, 5 and 20 new bandit HIGHs scored
+    # 0.6333 / 0.3000 / 0.3000 / 0.3000, every one ADMISSIBLE. e4 alone can
+    # never reject; only >= 10 simultaneous new ruff diagnostics drive sk to 0.
+    #
+    # THE RULE, and it is the comment above taken at its word ("if a gate is
+    # genuinely non-negotiable, it belongs in the hard gates"): on prose the
+    # effect gates may REJECT but may never ADMIT. They are necessary-condition
+    # checks. FAILING one is sound evidence the fix introduced harm -- a new
+    # HIGH inside a fenced listing is harmful whatever the surrounding English
+    # says. PASSING them is NOT evidence of correctness, because the harm class
+    # on a prose target is semantic: the `metrology` and `algorithms` fixtures
+    # corrupt measured evidence and destroy the function while improving the
+    # metric under review, with zero static signal (both scored a clean
+    # e3 = e4 = 1.0). No gate in this family can see them, so a clean sweep
+    # carries no information and must not be paid out as though it did.
+    #
+    # NO_SCORE, not ADMISSIBLE, is exactly the founder's first case -- "an
+    # unscoreable fix is not a defective one" -- and it holds R_k, which is
+    # Property 2. This does NOT touch the Python path: `_scoring_prose` is False
+    # for every `.py` target, so every archived verdict and every Python run is
+    # byte-identical.
+    if _scoring_prose and tristate == SK_ADMISSIBLE:
+        introduced = _gates_introduced_new_defects(details)
+        if introduced:
+            details["_prose_one_sided"] = {
+                "outcome": SK_REJECTED,
+                "detail": ("fix introduced new defects into the fenced "
+                           "listings: " + "; ".join(introduced)),
+            }
+            return SkResult(
+                sk=0.0, A=A, E=round(E, 4), tristate=SK_REJECTED,
+                gate_details=details,
+                blocks_parsed=len(blocks), blocks_applied=applied,
+            )
+        details["_prose_one_sided"] = {
+            "outcome": SK_NO_SCORE,
+            # ADDED 2026-09-24 (CC1), adjudicating 2 seats' fixes. The other
+            # seat's version of this branch carried the computed value as a
+            # NUMBER so a human reviewer could see what the gates would have
+            # said. That requirement is right and is kept here; its duplicate
+            # branch is removed below because this one reaches first.
+            "computed_sk": round(sk, 4),
+            "detail": (
+                f"no gate registered a new defect (sk would have been "
+                f"{round(sk, 4)}), but a clean static sweep is not evidence a "
+                "prose fix is correct -- the harm class here is semantic. "
+                "Unscored: neither admitted nor rejected, R_k unmoved. "
+                "Resolution runs through the falsifier path."),
+        }
+        return SkResult(
+            sk=0.0, A=A, E=round(E, 4), tristate=SK_NO_SCORE,
+            gate_details=details,
+            blocks_parsed=len(blocks), blocks_applied=applied,
+        )
+
+    # THE SECOND SEAT'S DUPLICATE VETO BRANCH WAS REMOVED HERE, 2026-09-24, AND
+    # THE REMOVAL IS MEASURED RATHER THAN PREFERRED.
+    #
+    # Both free seats independently reached the same rule -- never admit on a
+    # prose target -- and both wrote a branch guarded by exactly
+    # `_scoring_prose and tristate == SK_ADMISSIBLE`. Applied together, the block
+    # ABOVE reaches first and returns, so the second was unreachable: an
+    # addition nothing reaches, which this project has confirmed 11 times as its
+    # most common defect class and which the additive standard forbids as
+    # firmly as it forbids removing a working feature.
+    #
+    # The removal clause requires a COMMITTED MEASUREMENT showing the survivor
+    # dominates on a NAMED property. The property is CONVICTIONS RECORDED ON
+    # HARMFUL FIXES, and the producer is
+    # scripts/a19_flag_admits_harmful_fixes_2026-09-22.py:
+    #     block above (survivor) : 3 of 5 harmful fixes REJECTED, 2 NO_SCORE
+    #     block removed          : 0 of 5 REJECTED, 5 NO_SCORE
+    # Both satisfy "never admitted" (0 of 20 admitted either way). Only the
+    # survivor also convicts, so it dominates and the other is redundant.
+    #
+    # What the removed branch asked for IS KEPT: it required the computed gate
+    # outcome to travel in `gate_details` rather than be silently discarded, so
+    # a human can see what the gates would have said. That is now
+    # `_prose_one_sided["computed_sk"]` above.
 
     return SkResult(
         sk=round(sk, 4), A=A, E=round(E, 4), tristate=tristate,
@@ -13165,21 +13325,32 @@ def run_experiment(
         # was an addition nothing reached, demonstrated by execution in
         # `scripts/falsify_a19_unreachable_2026-09-22.py`.
         #
-        # KEEPING THE PIPELINE ON HERE IS SAFE ON THE FORCED-OFF BLOCK'S OWN
-        # STATED HAZARDS, both of which post-date its comment:
-        #   * `_capture_baseline` has read `_gateable_source` since 2026-09-11
-        #     (the phantom-2752-ruff-baseline input to the 2026-08-01 inversion
-        #     is measured on the extracted listings now, and a purely prose
-        #     target yields None/None);
-        #   * `compute_sk` itself decides per fix: purely prose -> NO_SCORE
-        #     ("nothing to compute", the founder's first case); reducible fenced
-        #     listings -> scored (his second). This branch changes WHO decides,
-        #     not WHAT is decided.
+        # WHAT THE FLAG NOW MEANS (corrected 2026-09-22, panel seat). The
+        # comment that stood here argued the branch was safe because
+        # "compute_sk itself decides per fix: purely prose -> NO_SCORE ...
+        # This branch changes WHO decides, not WHAT is decided." MEASURED
+        # FALSE on both halves: `_scoring_prose` is computed from the TARGET
+        # (one fenced listing anywhere puts every fix on the scored path,
+        # including fixes that touch only prose), and with scoring live the
+        # acceptance suite's five harmful fixes ALL scored ADMISSIBLE above
+        # break-even and moved R_k down -- Property 1 failed 5/5, Property 2
+        # failed 10/10. Producer:
+        # scripts/a19_flag_admits_harmful_fixes_2026-09-22.py.
+        #
+        # `compute_sk` is therefore VETO-ONLY on a non-Python target: gates
+        # run over the fenced listings and may REJECT (a fix that breaks a
+        # working listing, deletes every listing, or zeroes E), but a clean
+        # gate run returns NO_SCORE and holds R_k. Nothing is ever admitted;
+        # resolution stays on the falsifier path. Executed in
+        # scripts/a19_veto_only_prose_sk_2026-09-22.py and pinned by
+        # TestTheFlagCanConvictButNeverAdmit in
+        # bench/tests/test_prose_acceptance_stem.py.
         # Default stays byte-identical: the flag is False unless a run turns it
         # on deliberately, so every existing config takes the branch below.
         _log("  *** S_k pipeline kept ON for a non-Python target: "
-             "sk_score_prose_listings=true (Task A19). Purely prose fixes "
-             "resolve NO_SCORE inside compute_sk; fenced listings are scored. ***")
+             "sk_score_prose_listings=true (Task A19). Gates are VETO-ONLY on "
+             "prose: they may REJECT a fix that damages a fenced listing, "
+             "never admit one; clean gate runs resolve NO_SCORE. ***")
     elif target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled:
         # Not a warning — an override. S_k over prose does not merely fail to
         # help; it inverts. Measured on the 2026-08-01 control: a fix injecting

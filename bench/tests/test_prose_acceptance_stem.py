@@ -97,6 +97,7 @@ from bench.falsifier_verify import reverify_falsifier  # noqa: E402
 from bench.reference_runner_v3 import (  # noqa: E402
     SK_ADMISSIBLE,
     SK_NO_SCORE,
+    SK_REJECTED,
     TARGET_KIND_PROSE,
     FindingRegistry,
     _capture_baseline,
@@ -1070,3 +1071,129 @@ class TestTheCodeTargetPathIsUnweakened:
         path.write_text(source, encoding="utf-8")
         kind, _ = detect_target_kind(str(path), source)
         assert kind != TARGET_KIND_PROSE
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# 8. The A19 flag can convict, never admit (both flag configurations)
+# ───────────────────────────────────────────────────────────────────────────
+
+class TestTheFlagCanConvictButNeverAdmit:
+    """Task A19, measured 2026-09-22. This suite passed 175/175 while Property
+    1 failed 5/5 and Property 2 failed 10/10 under ``score_prose_listings=
+    True``, because not one test here set the flag — the guard ran the wrong
+    half of a two-configuration space. This class closes that hole: every
+    property is asserted in BOTH configurations.
+
+    The rule pinned here: on a non-Python target S_k's gates are VETOES. A
+    conviction (a fix that breaks a working listing, or deletes every listing)
+    returns REJECTED; a clean gate run returns NO_SCORE and holds R_k; nothing
+    is ever admitted. Producer of the measurement that forced this:
+    ``scripts/a19_flag_admits_harmful_fixes_2026-09-22.py``.
+    """
+
+    @pytest.mark.parametrize("flag", [False, True], ids=["flag_off", "flag_on"])
+    def test_the_harmful_fix_is_never_admitted(self, fixture, flag):
+        result = compute_sk(
+            _fix_text(fixture, fixture.harmful_fix, fixture.doc_path),
+            fixture.document, str(fixture.doc_path),
+            baseline=_real_baseline(fixture),
+            score_prose_listings=flag)
+        assert result.tristate != SK_ADMISSIBLE, (
+            f"{fixture.key}: harmful fix admitted with flag={flag}")
+        assert result.sk == 0.0
+
+    @pytest.mark.parametrize("flag", [False, True], ids=["flag_off", "flag_on"])
+    def test_the_correct_fix_is_not_admitted_either(self, fixture, flag):
+        result = compute_sk(
+            _fix_text(fixture, fixture.correct_fix, fixture.doc_path),
+            fixture.document, str(fixture.doc_path),
+            baseline=_real_baseline(fixture),
+            score_prose_listings=flag)
+        assert result.tristate != SK_ADMISSIBLE
+        assert result.sk == 0.0
+
+    @pytest.mark.parametrize("label", ["harmful", "correct"])
+    @pytest.mark.parametrize("flag", [False, True], ids=["flag_off", "flag_on"])
+    def test_rk_holds_and_the_tally_stays_empty(self, fixture, tmp_path,
+                                                label, flag):
+        """Property 1 and 2 through the round-loop entry point, per config."""
+        patches = (fixture.harmful_fix if label == "harmful"
+                   else fixture.correct_fix)
+        registry = FindingRegistry()
+        copy = _copy_for_edit(fixture, tmp_path)
+        cid = _register(registry, _fix_text(fixture, patches, copy), copy)
+        stats = _evaluate_sk_for_findings(
+            registry, fixture.document, str(copy),
+            _real_baseline(fixture), round_idx=1,
+            score_prose_listings=flag)
+        assert stats["evaluated"] == 1, "vacuous: S_k never saw the fix"
+        assert stats["admissible"] == 0
+        sk_result = registry.entries[cid]["sk_result"]
+        assert sk_result["tristate"] != SK_ADMISSIBLE
+        assert sk_result.get("R_new", 0.5) == sk_result.get("R_old", 0.5), (
+            f"{fixture.key}/{label}: R_k moved on an unadmitted fix, "
+            f"flag={flag}")
+        assert "s_star" not in sk_result
+        assert "passes_threshold" not in sk_result
+
+    def test_with_the_flag_on_a_clean_gate_run_records_its_evidence(
+            self, fixture):
+        """The veto branch is not a silent discard: the computed gate outcome
+        travels in ``gate_details`` for HIL, under ``prose_veto_only``."""
+        result = compute_sk(
+            _fix_text(fixture, fixture.correct_fix, fixture.doc_path),
+            fixture.document, str(fixture.doc_path),
+            baseline=_real_baseline(fixture),
+            score_prose_listings=True)
+        # RETARGETED 2026-09-24 (CC1). This test was written against a second
+        # seat's branch that used the key `prose_veto_only`. Both seats wrote a
+        # branch under the identical guard; the other one reaches first, so this
+        # one was unreachable and was removed with its measurement recorded in
+        # bench/reference_runner_v3.py. THE REQUIREMENT THIS TEST EXISTS FOR IS
+        # UNCHANGED and is what is asserted below: the veto is not a silent
+        # discard, and the computed gate outcome travels in `gate_details` as a
+        # NUMBER a human reviewer can read.
+        assert result.tristate == SK_NO_SCORE
+        veto = result.gate_details.get("_prose_one_sided")
+        assert veto is not None, (
+            "the veto branch discarded its evidence: nothing in gate_details "
+            "records what the gates would have said")
+        assert veto["outcome"] == SK_NO_SCORE
+        assert 0.0 < veto["computed_sk"] <= 1.0, (
+            f"computed_sk absent or out of range: {veto.get('computed_sk')!r}")
+        assert "not evidence a prose fix is correct" in veto["detail"]
+
+    def test_with_the_flag_on_a_fix_that_breaks_a_listing_is_convicted(
+            self, fixture, tmp_path):
+        """The half of the flag's work that is sound, and the reason the flag
+        is not simply forced off: with the flag OFF this same fix is NO_SCORE,
+        with it ON the broken listing is caught. That is the flag's measured,
+        additive contribution."""
+        first_line = fixture.document.split("```python\n", 1)[1].split(
+            "\n", 1)[0]
+        assert first_line.strip(), "no listing line to mangle"
+        fix = (f"<<<< SEARCH {fixture.doc_path}\n{first_line}\n"
+               f"==== REPLACE\n{first_line} (((\n>>>>\n")
+        on = compute_sk(fix, fixture.document, str(fixture.doc_path),
+                        baseline=_real_baseline(fixture),
+                        score_prose_listings=True)
+        assert on.tristate == SK_REJECTED
+        assert on.A == 0.0
+        off = compute_sk(fix, fixture.document, str(fixture.doc_path),
+                         baseline=_real_baseline(fixture),
+                         score_prose_listings=False)
+        assert off.tristate == SK_NO_SCORE
+
+    def test_the_python_target_path_is_untouched_by_the_flag(self, tmp_path):
+        """A .py module scores identically whatever the flag says."""
+        path = tmp_path / "strut.py"
+        path.write_text(_CLEAN_PY, encoding="utf-8")
+        fix = (f"<<<< SEARCH {path}\n{_PY_OLD}\n==== REPLACE\n"
+               f"{_PY_BENIGN}\n>>>>\n")
+        baseline = _capture_baseline(_CLEAN_PY, str(path))
+        off = compute_sk(fix, _CLEAN_PY, str(path), baseline=baseline,
+                         score_prose_listings=False)
+        on = compute_sk(fix, _CLEAN_PY, str(path), baseline=baseline,
+                        score_prose_listings=True)
+        assert on.tristate == off.tristate == SK_ADMISSIBLE
+        assert on.sk == off.sk > 0.0
