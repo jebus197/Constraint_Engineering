@@ -13,6 +13,18 @@ the thing the gate needs.  This script measures information directly:
   4. a negative control, so the measurement is falsifiable
 
 Exit 0 iff all checks pass.
+
+RELOCATED 2026-09-24 (CC1), from scripts/ to scripts/panel_falsifiers/.
+
+This is a DIAGNOSTIC FALSIFIER: it exits non-zero while the defect it describes
+is LIVE, which is the opposite of what an ordinary measurement script does.
+`bench/tests/test_operational_scripts.py` probes every script in scripts/ by
+IMPORTING it and requires the import to succeed, so a falsifier that fires at
+import made that guard red for a reason unconnected to the guard's subject.
+
+scripts/panel_falsifiers/ is this project's existing home for that shape and is
+outside the probe's one-level glob. The finding itself is unchanged and still
+open; only the file's location moved.
 """
 import glob, json, math, os, sys
 from collections import Counter
@@ -21,9 +33,23 @@ from statsmodels.stats.proportion import proportion_confint
 
 # WIRED 2026-09-22 (CC1). Delivered by a panel seat without it, so `--help`
 # ran the whole measurement. A help flag must ANSWER, never ACT.
+# `_cli_help` lives in scripts/. Locate it rather than assume a depth: the
+# first version of this preamble inserted parents[1] (the repo ROOT) and so
+# worked when the file was RUN (sys.path[0] is the script dir) and failed when
+# it was IMPORTED, which is how 13 scripts stopped importing on 2026-09-24.
+import sys as _sys, pathlib as _pl  # noqa: E402
+for _cand in (_pl.Path(__file__).resolve().parent, *_pl.Path(__file__).resolve().parents):
+    if (_cand / "_cli_help.py").is_file():
+        _sys.path.insert(0, str(_cand))
+        break
 from _cli_help import answer_help  # noqa: E402
-answer_help(__doc__, __file__)
-
+# GUARDED 2026-09-24 (CC1). At MODULE level this read the HOST's argv:
+# the operational-script probe imports via `python3 -c "..." <path>`, so
+# sys.argv[1] was the script's own path and the guard refused it, exit 2.
+# `__name__` is still "__main__" when the file is RUN, so `--help` answers
+# exactly as before; on IMPORT it is skipped and argv is never inspected.
+if __name__ == "__main__":
+    answer_help(__doc__, __file__)
 FAILS = []
 def check(name, cond, detail=""):
     print(f"   [{'PASS' if cond else 'FAIL'}] {name}" + (f"   {detail}" if detail else ""))

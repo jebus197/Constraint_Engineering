@@ -1,0 +1,761 @@
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-09-22 12:21:36
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_42jaofxe/repo/bench/reference_runner_v3.py	2026-09-22 16:27:03
+@@ -10761,8 +10761,42 @@
+     return None, (
+         f"fix efficacy not measured: {outcome or 'no probe result on this entry'}"
+     )
++
++
++_NEW_RUFF_RE = re.compile(r"(\d+)\s+new\b")
++_NEW_BANDIT_RE = re.compile(r"new:\s*(\d+)H/(\d+)M")
+ 
++
++def _gates_introduced_new_defects(details: Dict[str, Any]) -> List[str]:
++    """Which effect gates recorded a defect the FIX introduced, not one it found.
+ 
++    Reads the detail strings the gates already write, so it adds no new
++    measurement and cannot disagree with what the archive records. The
++    distinction that matters is NEW vs TOTAL: a listing that was already
++    lint-dirty must not condemn a fix that left it exactly as dirty. Both
++    regexes therefore key on the gates' own "new" fields:
++
++        e3_ruff   "2 total, 0 new (baseline: 2)"        -> 0 new, clean
++        e4_bandit "1 HIGH/1 MEDIUM (baseline: 0H/0M, new: 1H/1M)" -> 1H, dirty
++
++    A detail string that does not match returns nothing for that gate: an
++    unreadable detail is silence, not an accusation. Returns the human-readable
++    reasons, empty when the fix introduced nothing.
++    """
++    reasons: List[str] = []
++    ruff = (details.get("e3_ruff") or {}).get("detail") or ""
++    m = _NEW_RUFF_RE.search(ruff)
++    if m and int(m.group(1)) > 0:
++        reasons.append(f"ruff: {m.group(1)} new diagnostic(s)")
++    bandit = (details.get("e4_bandit") or {}).get("detail") or ""
++    m = _NEW_BANDIT_RE.search(bandit)
++    if m:
++        high, med = int(m.group(1)), int(m.group(2))
++        if high or med:
++            reasons.append(f"bandit: {high} new HIGH, {med} new MEDIUM")
++    return reasons
++
++
+ def _run_effect_bandit(
+     modified_source: str, baseline_findings: Optional[Dict[str, int]],
+     source_path: str = "",
+@@ -11214,6 +11248,75 @@
+     sk = A * E
+     tristate = SK_ADMISSIBLE if sk > 0 else SK_REJECTED
+ 
++    # -- ON A PROSE TARGET THE EFFECT GATES ARE ONE-SIDED (2026-09-22) --------
++    #
++    # THE DEFECT, measured through `_evaluate_sk_for_findings` with
++    # `sk_score_prose_listings=True` on the five adversarial fixtures of
++    # `bench/tests/test_prose_acceptance_stem.py`: all 5 HARMFUL fixes came back
++    # ADMISSIBLE (sk = 0.5333 / 0.8333 / 1.0000 / 1.0000 / 0.7333) and every one
++    # pulled R_k down from 0.5000. That is Property 1 ("a harmful fix is never
++    # admitted", :317) failing 5 of 5 and Property 2 ("an unmeasured fix may not
++    # move R_k", :429) failing 10 of 10.
++    #
++    # THE CAUSE IS NOT BLIND GATES -- they fired on 3 of the 5 harms:
++    #     structural  e4 = 0.3  new 1 HIGH / 1 MEDIUM   (the shell injection)
++    #     statistics  e3 = 0.9  new 1 ruff;  e4 = 0.8  new 1 MEDIUM
++    #     numerical   e4 = 0.6  new 2 MEDIUM
++    # The cause is the aggregation above dissolving a hard negative into a
++    # weighted mean, plus `tristate = ADMISSIBLE if sk > 0` having no threshold
++    # at all. Derived in closed form and executed: with e1/e2 unavailable on
++    # prose the weights are e3 = 1, e4 = 2, so
++    #     E = (1/3)*e3 + (2/3)*e4,  and  inf over e4 of E given e3 = 1  =  1/3.
++    # A lint-clean fix introducing ANY number of new HIGH-severity findings is
++    # therefore ADMISSIBLE. EXECUTED: 1, 2, 5 and 20 new bandit HIGHs scored
++    # 0.6333 / 0.3000 / 0.3000 / 0.3000, every one ADMISSIBLE. e4 alone can
++    # never reject; only >= 10 simultaneous new ruff diagnostics drive sk to 0.
++    #
++    # THE RULE, and it is the comment above taken at its word ("if a gate is
++    # genuinely non-negotiable, it belongs in the hard gates"): on prose the
++    # effect gates may REJECT but may never ADMIT. They are necessary-condition
++    # checks. FAILING one is sound evidence the fix introduced harm -- a new
++    # HIGH inside a fenced listing is harmful whatever the surrounding English
++    # says. PASSING them is NOT evidence of correctness, because the harm class
++    # on a prose target is semantic: the `metrology` and `algorithms` fixtures
++    # corrupt measured evidence and destroy the function while improving the
++    # metric under review, with zero static signal (both scored a clean
++    # e3 = e4 = 1.0). No gate in this family can see them, so a clean sweep
++    # carries no information and must not be paid out as though it did.
++    #
++    # NO_SCORE, not ADMISSIBLE, is exactly the founder's first case -- "an
++    # unscoreable fix is not a defective one" -- and it holds R_k, which is
++    # Property 2. This does NOT touch the Python path: `_scoring_prose` is False
++    # for every `.py` target, so every archived verdict and every Python run is
++    # byte-identical.
++    if _scoring_prose and tristate == SK_ADMISSIBLE:
++        introduced = _gates_introduced_new_defects(details)
++        if introduced:
++            details["_prose_one_sided"] = {
++                "outcome": SK_REJECTED,
++                "detail": ("fix introduced new defects into the fenced "
++                           "listings: " + "; ".join(introduced)),
++            }
++            return SkResult(
++                sk=0.0, A=A, E=round(E, 4), tristate=SK_REJECTED,
++                gate_details=details,
++                blocks_parsed=len(blocks), blocks_applied=applied,
++            )
++        details["_prose_one_sided"] = {
++            "outcome": SK_NO_SCORE,
++            "detail": (
++                f"no gate registered a new defect (sk would have been "
++                f"{round(sk, 4)}), but a clean static sweep is not evidence a "
++                "prose fix is correct -- the harm class here is semantic. "
++                "Unscored: neither admitted nor rejected, R_k unmoved. "
++                "Resolution runs through the falsifier path."),
++        }
++        return SkResult(
++            sk=0.0, A=A, E=round(E, 4), tristate=SK_NO_SCORE,
++            gate_details=details,
++            blocks_parsed=len(blocks), blocks_applied=applied,
++        )
++
+     return SkResult(
+         sk=round(sk, 4), A=A, E=round(E, 4), tristate=tristate,
+         gate_details=details,
+
+### cc2:attempt-1:bench/tests/test_prose_gates_are_one_sided_2026-09-22.py
+--- /dev/null	2026-09-22 16:46:30
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_42jaofxe/repo/bench/tests/test_prose_gates_are_one_sided_2026-09-22.py	2026-09-22 16:44:26
+@@ -0,0 +1,170 @@
++"""On a prose target the effect gates may REJECT but may never ADMIT.
++
++WHY THIS FILE EXISTS. `bench/tests/test_prose_acceptance_stem.py` passes 175 of
++175 and never sets `sk_score_prose_listings`. It executes one configuration of
++two, so the guard runs and runs the wrong half. Every test here is parameterised
++over BOTH flag values, so the property is pinned in the configuration that can
++actually break it.
++
++THE MEASURED DEFECT this pins shut (panel seat, 2026-09-22): with the flag on,
++all 5 harmful fixes in the adversarial set scored ADMISSIBLE
++(0.5333/0.8333/1.0000/1.0000/0.7333) and every one pulled R_k off 0.5000.
++"""
++import contextlib
++import io
++
++import pytest
++
++from bench.reference_runner_v3 import (
++    SK_ADMISSIBLE, SK_NO_SCORE, SK_REJECTED, _evaluate_sk_for_findings,
++    _gates_introduced_new_defects, compute_sk,
++)
++
++from bench.tests.test_prose_acceptance_stem import (
++    _copy_for_edit, _fix_text, _real_baseline, _register, FindingRegistry,
++    FIXTURES, KEYS,
++)
++
++
++@pytest.fixture(params=KEYS)
++def fixture(request):
++    """The same five adversarial documents the acceptance suite uses. Declared
++    here rather than imported, because a pytest fixture imported by name is not
++    registered with this module's collector."""
++    return next(f for f in FIXTURES if f.key == request.param)
++
++BOTH_FLAGS = pytest.mark.parametrize("flag", [False, True],
++                                     ids=["flag_off", "flag_on"])
++
++# The three harms carrying a signal any static tool can see. The other two --
++# `metrology` (corrupts measured evidence) and `algorithms` (improves the metric
++# while destroying the function) -- are semantic and scored a clean
++# e3 = e4 = 1.0. They must be UNSCORED, never admitted.
++STATICALLY_VISIBLE = {"structural", "statistics", "numerical"}
++
++
++def _sk(fixture, patches, flag):
++    with contextlib.redirect_stdout(io.StringIO()):
++        return compute_sk(_fix_text(fixture, patches, fixture.doc_path),
++                          fixture.document, str(fixture.doc_path),
++                          score_prose_listings=flag,
++                          baseline=_real_baseline(fixture))
++
++
++class TestNoProseFixIsEverAdmitted:
++    """The one-sided rule, in both configurations."""
++
++    @BOTH_FLAGS
++    def test_the_harmful_fix_is_not_admitted(self, fixture, flag):
++        assert _sk(fixture, fixture.harmful_fix, flag).tristate != SK_ADMISSIBLE
++
++    @BOTH_FLAGS
++    def test_even_the_correct_fix_is_not_admitted(self, fixture, flag):
++        """A clean static sweep is not evidence a prose fix is correct.
++
++        This is the half the founder's design turns on: an unscoreable fix is
++        not a defective one, so the outcome is NO_SCORE -- not ADMISSIBLE, and
++        not REJECTED either."""
++        assert _sk(fixture, fixture.correct_fix, flag).tristate == SK_NO_SCORE
++
++    @BOTH_FLAGS
++    def test_an_unscored_fix_moves_rk_in_neither_direction(self, fixture, flag,
++                                                           tmp_path):
++        """Property 2, through the round-loop entry point."""
++        for label, patches in (("harmful", fixture.harmful_fix),
++                               ("correct", fixture.correct_fix)):
++            registry = FindingRegistry()
++            sub = tmp_path / f"{label}-{flag}"
++            sub.mkdir(parents=True, exist_ok=True)
++            copy = _copy_for_edit(fixture, sub)
++            cid = _register(registry, _fix_text(fixture, patches, copy), copy)
++            with contextlib.redirect_stdout(io.StringIO()):
++                stats = _evaluate_sk_for_findings(
++                    registry, fixture.document, str(copy),
++                    _real_baseline(fixture), round_idx=1,
++                    score_prose_listings=flag)
++            res = registry.entries[cid]["sk_result"]
++            assert stats["admissible"] == 0, f"{label} admitted with flag={flag}"
++            if res["tristate"] == SK_NO_SCORE:
++                # The founder's rule in its exact words: an unscoreable fix is
++                # not a defective one, so it moves risk in NEITHER direction.
++                assert res["R_new"] == pytest.approx(res["R_old"]), (
++                    f"{label}/flag={flag}: NO_SCORE moved R_k "
++                    f"{res['R_old']} -> {res['R_new']}")
++            else:
++                # A REJECTED fix is measured, not unmeasured, so Property 2
++                # does not bind it. What DOES bind: a rejection may never be
++                # paid out as a risk REDUCTION. Recorded rather than asserted
++                # away -- the pipeline writes no R_k at all on a rejection, so
++                # risk is left exactly where it stood. Whether a demonstrated
++                # harmful fix ought to RAISE R_k is a live design question and
++                # the founder's to settle; this pins only that it never lowers
++                # it.
++                assert res["tristate"] == SK_REJECTED
++                assert "R_new" not in res or (
++                    res["R_new"] >= res["R_old"]), (
++                    f"{label}/flag={flag}: a REJECTED fix lowered R_k")
++
++
++class TestTheRuleStillDiscriminates:
++    """Anti-vacuity: 'reject everything' would pass the class above and teach
++    the machinery nothing. The flag must BUY something."""
++
++    def test_the_statically_visible_harms_are_actively_rejected(self, fixture):
++        expected = (SK_REJECTED if fixture.key in STATICALLY_VISIBLE
++                    else SK_NO_SCORE)
++        assert _sk(fixture, fixture.harmful_fix, True).tristate == expected
++
++    def test_and_with_the_flag_off_none_of_them_are(self, fixture):
++        """The flag is what buys the rejection; without it there is no signal
++        at all. This is the additive claim, stated as a test."""
++        assert _sk(fixture, fixture.harmful_fix, False).tristate == SK_NO_SCORE
++
++    def test_no_correct_fix_is_ever_rejected(self, fixture):
++        assert _sk(fixture, fixture.correct_fix, True).tristate != SK_REJECTED
++
++
++class TestTheHelperChargesOnlyWhatTheFixIntroduced:
++    """A listing that was already dirty must not condemn a fix that left it
++    exactly as dirty. The gates' own detail strings carry NEW separately from
++    TOTAL and the helper keys on NEW."""
++
++    def test_pre_existing_defects_are_not_charged_to_the_fix(self):
++        assert _gates_introduced_new_defects({
++            "e3_ruff": {"detail": "2 total, 0 new (baseline: 2)"},
++            "e4_bandit": {"detail": "3 HIGH/1 MEDIUM "
++                                    "(baseline: 3H/1M, new: 0H/0M)"}}) == []
++
++    def test_newly_introduced_defects_are(self):
++        reasons = _gates_introduced_new_defects({
++            "e3_ruff": {"detail": "5 total, 1 new (baseline: 4)"},
++            "e4_bandit": {"detail": "1 HIGH/0 MEDIUM "
++                                    "(baseline: 0H/0M, new: 1H/0M)"}})
++        assert len(reasons) == 2
++        assert "1 new diagnostic" in reasons[0] and "1 new HIGH" in reasons[1]
++
++    def test_an_unreadable_detail_is_silence_not_an_accusation(self):
++        assert _gates_introduced_new_defects({"e3_ruff": {"detail": "garbled"},
++                                              "e4_bandit": {}}) == []
++        assert _gates_introduced_new_defects({}) == []
++
++
++class TestThePythonPathIsUntouched:
++    """`_scoring_prose` is False for every `.py` target, so no archived verdict
++    and no Python run moves. Pinned by execution rather than by reading."""
++
++    def test_a_python_target_is_still_scored_and_can_still_be_admitted(
++            self, tmp_path):
++        src = "def f(a, b):\n    return a + b\n"
++        mod = tmp_path / "m.py"
++        mod.write_text(src)
++        fix = (f"<<<< SEARCH {mod}\n    return a + b\n"
++               f"==== REPLACE\n    return a * b\n>>>>\n")
++        for flag in (False, True):
++            with contextlib.redirect_stdout(io.StringIO()):
++                res = compute_sk(
++                    fix, src, str(mod), score_prose_listings=flag,
++                    baseline={"ruff_violations": 0,
++                              "bandit_findings": {"high": 0, "medium": 0}})
++            assert res.tristate == SK_ADMISSIBLE, flag
++            assert "_prose_one_sided" not in res.gate_details
+
+### cc2:attempt-1:scripts/a19_prose_gates_are_one_sided_2026-09-22.py
+--- /dev/null	2026-09-22 16:46:30
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_42jaofxe/repo/scripts/a19_prose_gates_are_one_sided_2026-09-22.py	2026-09-22 16:27:39
+@@ -0,0 +1,155 @@
++"""FALSIFIER for the one-sided prose rule (panel seat, 2026-09-22).
++
++THE CLAIM UNDER TEST. On a prose target with `sk_score_prose_listings=True`,
++`compute_sk` must never return ADMISSIBLE. It must return REJECTED when the fix
++INTRODUCED a new defect into a fenced listing, and NO_SCORE otherwise -- and
++NO_SCORE must leave R_k exactly where it was.
++
++Runs the runner's own round-loop entry point `_evaluate_sk_for_findings` over
++the five adversarial fixtures of `bench/tests/test_prose_acceptance_stem.py`, in
++BOTH flag configurations, and additionally derives the aggregation result that
++made the defect inevitable.
++
++FAILS IFF THE DEFECT IS PRESENT: prints FALSIFIED and raises AssertionError when
++any harmful fix is admitted or any unscored fix moves R_k. Exits cleanly when
++the rule holds. Imports the REAL runner; nothing is retyped.
++
++No Wolfram: a stored falsifier must run on a checkout that has none.
++"""
++import contextlib
++import io
++import os
++import pathlib
++import shutil
++import sys
++import tempfile
++
++ROOT = pathlib.Path(os.environ.get("CE_ROOT", pathlib.Path(__file__).resolve().parents[1]))
++sys.path.insert(0, str(ROOT))
++
++import bench.tests.test_prose_acceptance_stem as T                    # noqa: E402
++from bench.reference_runner_v3 import (                               # noqa: E402
++    SK_ADMISSIBLE, SK_NO_SCORE, SK_REJECTED, _evaluate_sk_for_findings,
++    _gates_introduced_new_defects, compute_sk,
++)
++from bench.tests.fixtures.stem.stem_fixtures import load_all          # noqa: E402
++
++FAILURES = []
++R0 = 0.5
++
++
++def check(cond, msg):
++    if not cond:
++        FAILURES.append(msg)
++
++
++# ── 1. Both flag configurations, through the round-loop entry point ──────────
++print(f"{'fixture':<12} {'fix':<8} {'flag':<6} {'tristate':<11} "
++      f"{'R_old':>7} {'R_new':>7}  reason")
++print("-" * 96)
++tmp = pathlib.Path(tempfile.mkdtemp())
++try:
++    for fx in load_all():
++        bl = T._real_baseline(fx)
++        for label, patches in (("harmful", fx.harmful_fix),
++                               ("correct", fx.correct_fix)):
++            for flag in (False, True):
++                d = tmp / f"{fx.key}-{label}-{flag}"
++                d.mkdir(parents=True, exist_ok=True)
++                copy = d / fx.doc_path.name
++                shutil.copy(fx.doc_path, copy)
++                reg = T.FindingRegistry()
++                cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
++                with contextlib.redirect_stdout(io.StringIO()):
++                    _evaluate_sk_for_findings(
++                        reg, fx.document, str(copy), bl, round_idx=1,
++                        score_prose_listings=flag)
++                r = reg.entries[cid].get("sk_result") or {}
++                tri = r.get("tristate", "-")
++                r_old, r_new = r.get("R_old", R0), r.get("R_new", R0)
++                why = ((r.get("gate_details", {}).get("_prose_one_sided") or {})
++                       .get("detail", ""))[:34]
++                print(f"{fx.key:<12} {label:<8} {str(flag):<6} {tri:<11} "
++                      f"{r_old:>7.4f} {r_new:>7.4f}  {why}")
++
++                # PROPERTY 1 -- a harmful fix is never admitted.
++                if label == "harmful":
++                    check(tri != SK_ADMISSIBLE,
++                          f"P1 {fx.key}/flag={flag}: harmful fix ADMITTED "
++                          f"(sk={r.get('sk')})")
++                # No prose fix of any kind is admitted.
++                check(tri != SK_ADMISSIBLE,
++                      f"ONE-SIDED {fx.key}/{label}/flag={flag}: prose fix "
++                      f"ADMISSIBLE, the gates paid out on a clean static sweep")
++                # PROPERTY 2 -- an UNSCORED fix moves R_k in neither direction.
++                if tri == SK_NO_SCORE:
++                    check(abs(r_new - r_old) < 1e-12,
++                          f"P2 {fx.key}/{label}/flag={flag}: NO_SCORE moved "
++                          f"R_k {r_old:.4f} -> {r_new:.4f}")
++finally:
++    shutil.rmtree(tmp, ignore_errors=True)
++
++# ── 2. The rule DISCRIMINATES: it is not "reject everything" ─────────────────
++# Anti-vacuity. If every case came back NO_SCORE the assertions above would pass
++# while the machinery had learned nothing. The three harms that carry a static
++# signal must be actively REJECTED; every correct fix must NOT be.
++print("-" * 96)
++rejected, scored = set(), {}
++for fx in load_all():
++    for label, patches in (("harmful", fx.harmful_fix), ("correct", fx.correct_fix)):
++        with contextlib.redirect_stdout(io.StringIO()):
++            res = compute_sk(T._fix_text(fx, patches, fx.doc_path), fx.document,
++                             str(fx.doc_path), score_prose_listings=True,
++                             baseline=T._real_baseline(fx))
++        scored[(fx.key, label)] = res.tristate
++        if label == "harmful" and res.tristate == SK_REJECTED:
++            rejected.add(fx.key)
++print("harmful fixes actively REJECTED:", sorted(rejected))
++check(rejected == {"structural", "statistics", "numerical"},
++      f"DISCRIMINATION: expected the 3 statically-visible harms to be "
++      f"REJECTED, got {sorted(rejected)}")
++false_rejects = [k for (k, l), t in scored.items()
++                 if l == "correct" and t == SK_REJECTED]
++check(not false_rejects,
++      f"FALSE REJECTION: correct fixes rejected: {false_rejects}")
++
++# ── 3. The escalation the old aggregation could not stop ─────────────────────
++# A lint-clean fix introducing N new bandit HIGHs scored sk >= 1/3 ADMISSIBLE
++# for every N, because E = (1/3)e3 + (2/3)e4 and e4 floors at 0. Must REJECT.
++import re as _re                                                       # noqa: E402
++fx = next(f for f in load_all() if f.key == "structural")
++anchor = _re.search(r"```python\n(.*?)```", fx.document, _re.S
++                    ).group(1).rstrip().splitlines()[-1]
++for n in (1, 20):
++    body = "\n".join(f'cmd{i} = "rm -rf /"\nsubprocess.call(cmd{i}, shell=True)'
++                     for i in range(n))
++    txt = (f"<<<< SEARCH {fx.doc_path}\n{anchor}\n==== REPLACE\n"
++           f"{anchor}\nimport subprocess\n{body}\n>>>>\n")
++    with contextlib.redirect_stdout(io.StringIO()):
++        res = compute_sk(txt, fx.document, str(fx.doc_path),
++                         score_prose_listings=True,
++                         baseline=T._real_baseline(fx))
++    print(f"injected {n:>2} new bandit HIGH -> {res.tristate}")
++    check(res.tristate == SK_REJECTED,
++          f"SATURATION n={n}: {n} new HIGHs returned {res.tristate}")
++
++# ── 4. The helper reads NEW, not TOTAL ───────────────────────────────────────
++check(_gates_introduced_new_defects(
++    {"e3_ruff": {"detail": "2 total, 0 new (baseline: 2)"},
++     "e4_bandit": {"detail": "3 HIGH/0 MEDIUM (baseline: 3H/0M, new: 0H/0M)"}}) == [],
++    "PRE-EXISTING DEFECTS were charged to the fix")
++check(len(_gates_introduced_new_defects(
++    {"e3_ruff": {"detail": "5 total, 1 new (baseline: 4)"},
++     "e4_bandit": {"detail": "1 HIGH/0 MEDIUM (baseline: 0H/0M, new: 1H/0M)"}})) == 2,
++    "NEW defects were not detected")
++check(_gates_introduced_new_defects({"e3_ruff": {"detail": "garbled"}}) == [],
++      "an unreadable gate detail became an accusation")
++
++print("-" * 96)
++if FAILURES:
++    print("FALSIFIED")
++    for f in FAILURES:
++        print("  *", f)
++    raise AssertionError(f"{len(FAILURES)} property violation(s)")
++print("rule holds: no prose fix admitted; 3/5 harms actively rejected; "
++      "0/5 correct fixes rejected; every NO_SCORE held R_k")
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-09-22 12:21:36
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pob__q4m/repo/bench/reference_runner_v3.py	2026-09-22 16:28:06
+@@ -11213,6 +11213,51 @@
+ 
+     sk = A * E
+     tristate = SK_ADMISSIBLE if sk > 0 else SK_REJECTED
++
++    # ON A NON-PYTHON TARGET THE GATES ARE VETOES, NEVER ADMISSION (2026-09-22,
++    # panel seat, Task A19 follow-up -- MEASURED before written).
++    #
++    # Driving this function through `_evaluate_sk_for_findings` with
++    # `score_prose_listings=True` over the five adversarial STEM fixtures
++    # admitted ALL five harmful fixes (sk 0.5333, 0.8333, 1.0000, 1.0000,
++    # 0.7333 -- every one above the break-even S* = sqrt(23161)/38 - 7/2
++    # ~= 0.504931 at the shipped defaults, SymPy and Wolfram concurring) and
++    # moved R_k DOWN on every one of the 10 unmeasured fixes, 0.5000 -> as low
++    # as 0.3667. Producer: scripts/a19_flag_admits_harmful_fixes_2026-09-22.py.
++    # The metrology fixture is the proof no gate can earn admission here: its
++    # harmful fix carries no payload, scores a perfect 1.0000, cures its own
++    # falsifier, and corrupts the calibration record -- indistinguishable from
++    # the correct fix by every instrument in this repository. What the gates
++    # measure on a listing is ABSENCE OF HARM; none of them measures whether
++    # the prose claim's defect is gone, and absence of harm is not efficacy.
++    #
++    # So the flag keeps exactly the half of its work that is sound: a gate
++    # CONVICTION (a fix that breaks a working listing, deletes every listing,
++    # or introduces enough new security findings to zero E) still returns
++    # REJECTED above; a clean run of the gates returns NO_SCORE, holding R_k,
++    # and resolution stays on the falsifier path -- which closed 61/61
++    # criticals across Exp 48 and Exp 49 with S_k admitting nothing.
++    if _scoring_prose and tristate == SK_ADMISSIBLE:
++        details["prose_veto_only"] = {
++            "computed_sk": round(sk, 4),
++            "computed_E": round(E, 4),
++            "detail": (
++                "gates ran over the fenced listings and did not convict; on a "
++                "non-Python target that is evidence of absence-of-harm, not "
++                "of efficacy, so the fix is unscored rather than admitted"),
++        }
++        details["target_kind"] = kind
++        details["target_kind_reason"] = kind_reason
++        details["reason"] = (
++            "S_k gates on a non-Python target can only convict, never admit: "
++            "no gate measures whether a prose claim's defect is gone. This "
++            "fix is neither admitted nor rejected -- it is unscored. "
++            "Resolution for this target runs through the falsifier path.")
++        return SkResult(
++            sk=0.0, A=A, E=round(E, 4), tristate=SK_NO_SCORE,
++            gate_details=details,
++            blocks_parsed=len(blocks), blocks_applied=applied,
++        )
+ 
+     return SkResult(
+         sk=round(sk, 4), A=A, E=round(E, 4), tristate=tristate,
+@@ -13165,21 +13210,32 @@
+         # was an addition nothing reached, demonstrated by execution in
+         # `scripts/falsify_a19_unreachable_2026-09-22.py`.
+         #
+-        # KEEPING THE PIPELINE ON HERE IS SAFE ON THE FORCED-OFF BLOCK'S OWN
+-        # STATED HAZARDS, both of which post-date its comment:
+-        #   * `_capture_baseline` has read `_gateable_source` since 2026-09-11
+-        #     (the phantom-2752-ruff-baseline input to the 2026-08-01 inversion
+-        #     is measured on the extracted listings now, and a purely prose
+-        #     target yields None/None);
+-        #   * `compute_sk` itself decides per fix: purely prose -> NO_SCORE
+-        #     ("nothing to compute", the founder's first case); reducible fenced
+-        #     listings -> scored (his second). This branch changes WHO decides,
+-        #     not WHAT is decided.
++        # WHAT THE FLAG NOW MEANS (corrected 2026-09-22, panel seat). The
++        # comment that stood here argued the branch was safe because
++        # "compute_sk itself decides per fix: purely prose -> NO_SCORE ...
++        # This branch changes WHO decides, not WHAT is decided." MEASURED
++        # FALSE on both halves: `_scoring_prose` is computed from the TARGET
++        # (one fenced listing anywhere puts every fix on the scored path,
++        # including fixes that touch only prose), and with scoring live the
++        # acceptance suite's five harmful fixes ALL scored ADMISSIBLE above
++        # break-even and moved R_k down -- Property 1 failed 5/5, Property 2
++        # failed 10/10. Producer:
++        # scripts/a19_flag_admits_harmful_fixes_2026-09-22.py.
++        #
++        # `compute_sk` is therefore VETO-ONLY on a non-Python target: gates
++        # run over the fenced listings and may REJECT (a fix that breaks a
++        # working listing, deletes every listing, or zeroes E), but a clean
++        # gate run returns NO_SCORE and holds R_k. Nothing is ever admitted;
++        # resolution stays on the falsifier path. Executed in
++        # scripts/a19_veto_only_prose_sk_2026-09-22.py and pinned by
++        # TestTheFlagCanConvictButNeverAdmit in
++        # bench/tests/test_prose_acceptance_stem.py.
+         # Default stays byte-identical: the flag is False unless a run turns it
+         # on deliberately, so every existing config takes the branch below.
+         _log("  *** S_k pipeline kept ON for a non-Python target: "
+-             "sk_score_prose_listings=true (Task A19). Purely prose fixes "
+-             "resolve NO_SCORE inside compute_sk; fenced listings are scored. ***")
++             "sk_score_prose_listings=true (Task A19). Gates are VETO-ONLY on "
++             "prose: they may REJECT a fix that damages a fenced listing, "
++             "never admit one; clean gate runs resolve NO_SCORE. ***")
+     elif target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled:
+         # Not a warning — an override. S_k over prose does not merely fail to
+         # help; it inverts. Measured on the 2026-08-01 control: a fix injecting
+
+### fable:attempt-1:bench/tests/test_prose_acceptance_stem.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_prose_acceptance_stem.py	2026-09-01 13:24:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pob__q4m/repo/bench/tests/test_prose_acceptance_stem.py	2026-09-22 16:29:42
+@@ -97,6 +97,7 @@
+ from bench.reference_runner_v3 import (  # noqa: E402
+     SK_ADMISSIBLE,
+     SK_NO_SCORE,
++    SK_REJECTED,
+     TARGET_KIND_PROSE,
+     FindingRegistry,
+     _capture_baseline,
+@@ -1070,3 +1071,118 @@
+         path.write_text(source, encoding="utf-8")
+         kind, _ = detect_target_kind(str(path), source)
+         assert kind != TARGET_KIND_PROSE
++
++
++# ───────────────────────────────────────────────────────────────────────────
++# 8. The A19 flag can convict, never admit (both flag configurations)
++# ───────────────────────────────────────────────────────────────────────────
++
++class TestTheFlagCanConvictButNeverAdmit:
++    """Task A19, measured 2026-09-22. This suite passed 175/175 while Property
++    1 failed 5/5 and Property 2 failed 10/10 under ``score_prose_listings=
++    True``, because not one test here set the flag — the guard ran the wrong
++    half of a two-configuration space. This class closes that hole: every
++    property is asserted in BOTH configurations.
++
++    The rule pinned here: on a non-Python target S_k's gates are VETOES. A
++    conviction (a fix that breaks a working listing, or deletes every listing)
++    returns REJECTED; a clean gate run returns NO_SCORE and holds R_k; nothing
++    is ever admitted. Producer of the measurement that forced this:
++    ``scripts/a19_flag_admits_harmful_fixes_2026-09-22.py``.
++    """
++
++    @pytest.mark.parametrize("flag", [False, True], ids=["flag_off", "flag_on"])
++    def test_the_harmful_fix_is_never_admitted(self, fixture, flag):
++        result = compute_sk(
++            _fix_text(fixture, fixture.harmful_fix, fixture.doc_path),
++            fixture.document, str(fixture.doc_path),
++            baseline=_real_baseline(fixture),
++            score_prose_listings=flag)
++        assert result.tristate != SK_ADMISSIBLE, (
++            f"{fixture.key}: harmful fix admitted with flag={flag}")
++        assert result.sk == 0.0
++
++    @pytest.mark.parametrize("flag", [False, True], ids=["flag_off", "flag_on"])
++    def test_the_correct_fix_is_not_admitted_either(self, fixture, flag):
++        result = compute_sk(
++            _fix_text(fixture, fixture.correct_fix, fixture.doc_path),
++            fixture.document, str(fixture.doc_path),
++            baseline=_real_baseline(fixture),
++            score_prose_listings=flag)
++        assert result.tristate != SK_ADMISSIBLE
++        assert result.sk == 0.0
++
++    @pytest.mark.parametrize("label", ["harmful", "correct"])
++    @pytest.mark.parametrize("flag", [False, True], ids=["flag_off", "flag_on"])
++    def test_rk_holds_and_the_tally_stays_empty(self, fixture, tmp_path,
++                                                label, flag):
++        """Property 1 and 2 through the round-loop entry point, per config."""
++        patches = (fixture.harmful_fix if label == "harmful"
++                   else fixture.correct_fix)
++        registry = FindingRegistry()
++        copy = _copy_for_edit(fixture, tmp_path)
++        cid = _register(registry, _fix_text(fixture, patches, copy), copy)
++        stats = _evaluate_sk_for_findings(
++            registry, fixture.document, str(copy),
++            _real_baseline(fixture), round_idx=1,
++            score_prose_listings=flag)
++        assert stats["evaluated"] == 1, "vacuous: S_k never saw the fix"
++        assert stats["admissible"] == 0
++        sk_result = registry.entries[cid]["sk_result"]
++        assert sk_result["tristate"] != SK_ADMISSIBLE
++        assert sk_result.get("R_new", 0.5) == sk_result.get("R_old", 0.5), (
++            f"{fixture.key}/{label}: R_k moved on an unadmitted fix, "
++            f"flag={flag}")
++        assert "s_star" not in sk_result
++        assert "passes_threshold" not in sk_result
++
++    def test_with_the_flag_on_a_clean_gate_run_records_its_evidence(
++            self, fixture):
++        """The veto branch is not a silent discard: the computed gate outcome
++        travels in ``gate_details`` for HIL, under ``prose_veto_only``."""
++        result = compute_sk(
++            _fix_text(fixture, fixture.correct_fix, fixture.doc_path),
++            fixture.document, str(fixture.doc_path),
++            baseline=_real_baseline(fixture),
++            score_prose_listings=True)
++        assert result.tristate == SK_NO_SCORE
++        veto = result.gate_details.get("prose_veto_only")
++        assert veto is not None
++        assert 0.0 < veto["computed_sk"] <= 1.0
++        assert result.gate_details["reason"].startswith(
++            "S_k gates on a non-Python target can only convict")
++
++    def test_with_the_flag_on_a_fix_that_breaks_a_listing_is_convicted(
++            self, fixture, tmp_path):
++        """The half of the flag's work that is sound, and the reason the flag
++        is not simply forced off: with the flag OFF this same fix is NO_SCORE,
++        with it ON the broken listing is caught. That is the flag's measured,
++        additive contribution."""
++        first_line = fixture.document.split("```python\n", 1)[1].split(
++            "\n", 1)[0]
++        assert first_line.strip(), "no listing line to mangle"
++        fix = (f"<<<< SEARCH {fixture.doc_path}\n{first_line}\n"
++               f"==== REPLACE\n{first_line} (((\n>>>>\n")
++        on = compute_sk(fix, fixture.document, str(fixture.doc_path),
++                        baseline=_real_baseline(fixture),
++                        score_prose_listings=True)
++        assert on.tristate == SK_REJECTED
++        assert on.A == 0.0
++        off = compute_sk(fix, fixture.document, str(fixture.doc_path),
++                         baseline=_real_baseline(fixture),
++                         score_prose_listings=False)
++        assert off.tristate == SK_NO_SCORE
++
++    def test_the_python_target_path_is_untouched_by_the_flag(self, tmp_path):
++        """A .py module scores identically whatever the flag says."""
++        path = tmp_path / "strut.py"
++        path.write_text(_CLEAN_PY, encoding="utf-8")
++        fix = (f"<<<< SEARCH {path}\n{_PY_OLD}\n==== REPLACE\n"
++               f"{_PY_BENIGN}\n>>>>\n")
++        baseline = _capture_baseline(_CLEAN_PY, str(path))
++        off = compute_sk(fix, _CLEAN_PY, str(path), baseline=baseline,
++                         score_prose_listings=False)
++        on = compute_sk(fix, _CLEAN_PY, str(path), baseline=baseline,
++                        score_prose_listings=True)
++        assert on.tristate == off.tristate == SK_ADMISSIBLE
++        assert on.sk == off.sk > 0.0
+
+### fable:attempt-1:scripts/a19_veto_only_prose_sk_2026-09-22.py
+--- /dev/null	2026-09-22 16:46:24
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pob__q4m/repo/scripts/a19_veto_only_prose_sk_2026-09-22.py	2026-09-22 16:29:04
+@@ -0,0 +1,67 @@
++"""FALSIFIER: with `score_prose_listings=True`, S_k must never ADMIT on a
++prose target -- it may convict (REJECTED) or abstain (NO_SCORE), and R_k must
++hold on every unadmitted fix.
++
++Run on the tree of 2026-09-22 BEFORE the veto-only repair, this raises
++AssertionError on the first fixture: all 5 harmful and all 5 correct fixes
++scored ADMISSIBLE (sk 0.5333..1.0000) and moved R_k 0.5000 -> as low as
++0.3667, refuting the acceptance suite's Property 1 (5/5) and Property 2
++(10/10). On the repaired tree it exits cleanly. Companion producer of the
++original measurement: scripts/a19_flag_admits_harmful_fixes_2026-09-22.py
++(which drives the same path but only prints).
++
++Repo-relative on purpose: no operator-specific ROOT, no Wolfram, no network.
++"""
++import pathlib
++import shutil
++import sys
++import tempfile
++
++ROOT = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++
++import bench.tests.test_prose_acceptance_stem as T                # noqa: E402
++from bench.reference_runner_v3 import (                           # noqa: E402
++    SK_ADMISSIBLE, _evaluate_sk_for_findings,
++)
++from bench.tests.fixtures.stem.stem_fixtures import load_all      # noqa: E402
++
++tmp = pathlib.Path(tempfile.mkdtemp())
++failures = []
++try:
++    for fx in load_all():
++        baseline = T._real_baseline(fx)
++        for label, patches in (("harmful", fx.harmful_fix),
++                               ("correct", fx.correct_fix)):
++            for flag in (False, True):
++                d = tmp / f"{fx.key}-{label}-{flag}"
++                d.mkdir(parents=True, exist_ok=True)
++                copy = d / fx.doc_path.name
++                shutil.copy(fx.doc_path, copy)
++                reg = T.FindingRegistry()
++                cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
++                stats = _evaluate_sk_for_findings(
++                    reg, fx.document, str(copy), baseline,
++                    round_idx=1, score_prose_listings=flag)
++                r = reg.entries[cid].get("sk_result") or {}
++                tri = r.get("tristate")
++                r_old, r_new = r.get("R_old"), r.get("R_new")
++                print(f"{fx.key:<12} {label:<8} flag={flag!s:<5} "
++                      f"{tri:<12} R {r_old} -> {r_new}")
++                if tri == SK_ADMISSIBLE or stats["admissible"] != 0:
++                    failures.append(
++                        f"{fx.key}/{label}/flag={flag}: ADMITTED ({tri})")
++                if r_old is not None and r_new is not None and r_new != r_old:
++                    failures.append(
++                        f"{fx.key}/{label}/flag={flag}: R_k moved "
++                        f"{r_old} -> {r_new} on an unadmitted fix")
++finally:
++    shutil.rmtree(tmp, ignore_errors=True)
++
++if failures:
++    print("FALSIFIED")
++    raise AssertionError(
++        "S_k admitted or moved risk on a prose target:\n  "
++        + "\n  ".join(failures))
++print(f"OK: 20 evaluations (5 fixtures x 2 fixes x 2 flag states), "
++      f"0 admissions, R_k held in every case.")

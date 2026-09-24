@@ -13,8 +13,23 @@ import inspect
 
 # WIRED 2026-09-22 (CC1). Delivered by a panel seat without it, so `--help`
 # ran the whole measurement. A help flag must ANSWER, never ACT.
+# `_cli_help` lives in scripts/. Locate it rather than assume a depth: the
+# first version of this preamble inserted parents[1] (the repo ROOT) and so
+# worked when the file was RUN (sys.path[0] is the script dir) and failed when
+# it was IMPORTED, which is how 13 scripts stopped importing on 2026-09-24.
+import sys as _sys, pathlib as _pl  # noqa: E402
+for _cand in (_pl.Path(__file__).resolve().parent, *_pl.Path(__file__).resolve().parents):
+    if (_cand / "_cli_help.py").is_file():
+        _sys.path.insert(0, str(_cand))
+        break
 from _cli_help import answer_help  # noqa: E402
-answer_help(__doc__, __file__)
+# GUARDED 2026-09-24 (CC1). At MODULE level this read the HOST's argv:
+# the operational-script probe imports via `python3 -c "..." <path>`, so
+# sys.argv[1] was the script's own path and the guard refused it, exit 2.
+# `__name__` is still "__main__" when the file is RUN, so `--help` answers
+# exactly as before; on IMPORT it is skipped and argv is never inspected.
+if __name__ == "__main__":
+    answer_help(__doc__, __file__)
 src = inspect.getsource(rr3.compute_sk)
 # strip comments first -- a comment MENTIONING the old guard is not the guard
 code = "\n".join(l for l in src.splitlines()

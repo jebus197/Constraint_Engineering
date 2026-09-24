@@ -1,0 +1,140 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 10009,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la ~/.claude/hooks/ ~/.claude/.ffafp_audit/ 2>&1; echo ---; wc -l ~/.claude/hooks/ffafp_audit.py ~/.claude/hooks/mc_commands.py 2>&1; echo ---; pwd\", \"description\": \"List hook and state directories, check sizes\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\np='$HOME/.claude/.ffafp_audit/a07b3790-0a2a-4978-aedb-bd842c0493d3'\\nd=json.load(open(p))\\nprint('keys:', list(d.keys()))\\nprint('offset:', d.get('offset'))\\nh=d.get('history',[])\\nprint('history len:', len(h))\\nfor e in h[-4:]: print(json.dumps(e)[:300])\\n\\\"\", \"description\": \"Inspect FFAFP audit state file\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/Users/georgejackson/.claude/hooks/ffafp_audit.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls ~/.claude/projects/*/a07b3790-0a2a-4978-aedb-bd842c0493d3.jsonl 2>/dev/null; ls -la ~/.claude/projects/*/a07b3790*.jsonl 2>/dev/null | head\", \"description\": \"Locate live transcript for the session\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"diff <(cat bench/logs/maths_panel_2026-09-20_r4/sandbox_harvest/cc2/attempt-1/files/hooks/ffafp_audit.py) ~/.claude/hooks/ffafp_audit.py | head -120; echo \\\"EXIT $?\\\"\", \"description\": \"Diff harvested pre-edit hook against live hook\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, sys, pathlib, traceback\\nsys.path.insert(0, str(pathlib.Path.home()/'.claude'/'hooks'))\\nimport ffafp_audit as fa\\n\\nsf = pathlib.Path.home()/'.claude'/'.ffafp_audit'/'a07b3790-0a2a-4978-aedb-bd842c0493d3'\\nstate = fa.load_state(sf)\\nprint(\\\"offset:\\\", state[\\\"offset\\\"], \\\"aligned:\\\", state.get(\\\"aligned\\\"))\\nop = state.get(\\\"open\\\")\\nprint(\\\"open turn k"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,pathlib\\ns=json.load(open(pathlib.Path.home()/'.claude'/'settings.json'))\\nprint(json.dumps(s.get('hooks',{}),indent=1)[:2500])\\\"\", \"description\": \"Show hook wiring in settings.json\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls; echo ---; ls hooks/ scripts/ 2>/dev/null | head -40; echo ---; ls tests/ 2>/dev/null | head; ls bench/tests 2>/dev/null | head -5; echo ---; ls scripts/panel_harvest_loss_2026-09-22.py 2>&1\", \"description\": \"Repo layout, check harvest-loss script exists\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -60 ~/.claude/hooks/mc_commands.py; echo =====; sed -n '1,60p' hooks/work_not_narrate.py\", \"description\": \"Read mc_commands and repo work_not_narrate headers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"diff hooks/ffafp_audit.py ~/.claude/hooks/ffafp_audit.py >/dev/null && echo IDENTICAL || echo DIFFERS; wc -l hooks/ffafp_audit.py; ls tests/ | grep -i ffafp; grep -c \\\"def test\\\" tests/test_ffafp*.py 2>/dev/null\", \"description\": \"Compare repo hook with installed hook, find its tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 ~/.claude/hooks/ffafp_audit.py --survey ~/.claude/projects/-Users-georgejackson-Developer-Projects/a07b3790-0a2a-4978-aedb-bd842c0493d3.jsonl\", \"description\": \"Run FFAFP survey on the live transcript\", \"timeout\": 120000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests | grep -i -E \\\"ffafp|hook\\\" ; grep -rl \\\"ffafp\\\" bench/tests scripts 2>/dev/null | head; echo ---; grep -c \\\"def test\\\" bench/tests/test_ffafp_audit.py 2>/dev/null\", \"description\": \"Locate FFAFP tests in bench/tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -c \\\"def test\\\" bench/tests/test_ffafp_audit_hook_2026-09-05.py bench/tests/test_ffafp_all_five_steps_2026-09-20.py bench/tests/test_ffafp_cycle_gate_2026-09-10.py; echo ---; grep -n \\\"load_state\\\\|main(\\\\|setdefault\\\\|scans\\\" bench/tests/test_ffafp_all_five_steps_2026-09-20.py | head -20; grep -n \\\"load_state\\\\|def test.*state\\\\|main()\\\" bench/tests/test_ffafp_audit_hook_2026-09"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"decision\\\\|stop_hook_active\\\\|block\\\\|exit\\\" hooks/work_not_narrate.py | head -30\", \"description\": \"See how work_not_narrate refuses a stop\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '330,395p' hooks/work_not_narrate.py\", \"description\": \"Read work_not_narrate stop-block output contract\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp && python3 - <<'PY'\\n# PRE-FIX DEMONSTRATION through main(), exactly as the hook runs in production.\\nimport json, os, pathlib, subprocess, tempfile\\ntmp = tempfile.mkdtemp(prefix=\\\"ffafp_repro_\\\")\\nstate_dir = pathlib.Path(tmp)/\\\"state\\\"; state_dir.mkdir()\\n# Old-schema (pre-2026-09-20) open turn: NO 'scans' key. Has a mutation so it is work.\\nold_turn = {\\\"id\\\":\\\"turn-old\\\","
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,45p' bench/tests/hook_fixture.py; echo =====; grep -n \\\"import\\\\|HOOK\\\\|hook_fixture\\\" bench/tests/test_ffafp_audit_hook_2026-09-05.py | head -15\", \"description\": \"See hook test import pattern\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,40p' bench/tests/test_ffafp_all_five_steps_2026-09-20.py\", \"description\": \"Check newest FFAFP test's import pattern\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '40,80p' bench/tests/test_ffafp_all_five_steps_2026-09-20.py\", \"description\": \"See how the test resolves repo vs live hook\"}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isd305tt/repo/hooks/ffafp_audit.py\", \"old_string\": \"def load_state(sf: pathlib.Path) -> dict:\\n    st = {\\\"offset\\\": 0, \\\"open\\\": None, \\\"seq\\\": 0, \\\"reads\\\": {}, \\\"last_work\\\": None,\\n          \\\"reported\\\": None, \\\"history\\\": []}\\n    try:\\n        if sf.exists():\\n            st.update(json"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isd305tt/repo/hooks/ffafp_audit.py\", \"old_string\": \"    try:\\n        with tpath.open(\\\"r\\\", errors=\\\"ignore\\\") as fh:\\n            if state.get(\\\"offset\\\", 0) > 0 and not state.get(\\\"aligned\\\"):\\n                # A cold start from the tail lands mid-line. Discard the partial line and\\n      "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"hooks/ffafp_audit.py\\\")\\ns = p.read_text()\\n\\nold1 = '''def load_state(sf: pathlib.Path) -> dict:\\n    st = {\\\"offset\\\": 0, \\\"open\\\": None, \\\"seq\\\": 0, \\\"reads\\\": {}, \\\"last_work\\\": None,\\n          \\\"reported\\\": None, \\\"history\\\": []}\\n    try:\\n        if sf.exists():\\n            st.update(json.loads(sf.read_text()))\\n    except "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > hooks/ffafp_stop_gate.py <<'EOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Stop hook: refuse ONE stop when the turn changed code and left no ANALYSE or\\nP-PASS trace. This is the narrow BLOCK the founder asked for, shaped to survive\\nhis own false-positive objection.\\n\\nWHAT THE FOUNDER ASKED AND WHAT THIS DOES ABOUT IT\\n==================================================\\n2026-09-22: \\\"All"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_ffafp_dead_detector_2026-09-22.py <<'EOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The FFAFP detector must survive its own schema evolution, and must fail LOUD.\\n\\nWHAT HAPPENED (established by execution, panel 2026-09-22). The 2026-09-20\\n16:42 edit added a `scans` key to `new_turn()` and two direct `turn[\\\"scans\\\"]`\\naccesses to `record_tool` (lines 468 and 496). The li"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_ffafp_audit_hook_2026-09-05.py bench/tests/test_ffafp_all_five_steps_2026-09-20.py bench/tests/test_ffafp_cycle_gate_2026-09-10.py -q 2>&1 | tail -8\", \"description\": \"Run existing FFAFP suites for regressions\", \"timeout\": 240000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, os, pathlib, shutil, subprocess, tempfile\\nhome = pathlib.Path.home()\\nreal_state = home/'.claude'/'.ffafp_audit'/'a07b3790-0a2a-4978-aedb-bd842c0493d3'\\nt = home/'.claude'/'projects'/'-Users-georgejackson-Developer-Projects'/'a07b3790-0a2a-4978-aedb-bd842c0493d3.jsonl'\\ntmp = pathlib.Path(tempfile.mkdtemp(prefix='ffafp_revive_'))\\nshutil.copy2(real_stat"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nfrom statsmodels.stats.proportion import proportion_confint\\nlo, hi = proportion_confint(115, 168, alpha=0.05, method='wilson')\\nprint(f'statsmodels wilson 115/168: p={115/168:.4f} [{lo:.4f}, {hi:.4f}]')\\nlo2, hi2 = proportion_confint(20, 269, alpha=0.05, method='wilson')\\nprint(f'statsmodels wilson  20/269: p={20/269:.4f} [{lo2:.4f}, {hi2:.4f}]')\\\"\", \"description\": \"Cr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'n=168; k=115; z=Quantile[NormalDistribution[],0.975]; p=k/n; c=(p+z^2/(2n))/(1+z^2/n); h=(z/(1+z^2/n))*Sqrt[p(1-p)/n+z^2/(4 n^2)]; N[{p, c-h, c+h},6]' 2>&1\", \"description\": \"Wolfram second-falsifier check of Wilson interval 115/168\", \"timeout\": 120000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"\\\\.claude/hooks\\\" scripts/*.py docs/*.md 2>/dev/null | grep -i -E \\\"install|copy|cp |deploy\\\" | head -5; ls scripts | grep -i -E \\\"install|deploy|hook\\\" | head\", \"description\": \"Look for a hook installer script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"TMPH=$(mktemp -d); mkdir -p $TMPH/.claude/hooks; cp hooks/ffafp_audit.py $TMPH/.claude/hooks/; HOME=$TMPH python3 -m pytest bench/tests/test_ffafp_audit_hook_2026-09-05.py bench/tests/test_ffafp_all_five_steps_2026-09-20.py bench/tests/test_ffafp_cycle_gate_2026-09-10.py -q 2>&1 | tail -4\", \"description\": \"Run existing FFAFP suites against the patched hook via temp HOME\", \"timeout\": 2"
+    }
+  ],
+  "n_tool_calls": 30,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 620.5,
+  "response": "All green: 66 existing tests pass against the patched hook, 11 new tests pass, and the falsifier fails against the un-repaired live copy. Three passes run; the last added nothing material. Final report.\n\n---\n\n## verdict \u2014 **HYBRID**\n\nThe trace detector stays REPORT-only but becomes **fail-loud**; a **narrow Stop gate blocks** \u2014 at most once per turn \u2014 on the two signals whose false-positive cost is one bounced stop: ANALYSE missing (the `sy` skip, verbatim) and P-PASS missing (code changed, nothing failable ran after). Reason: this project's own record settles both pure options. Pure REPORT is refuted by measurement \u2014 `mc_commands.py` injected the obligation into every prompt since 2026-08-30 and a STEM tool still appeared in only 180 of 269 work turns (66.9% [61.1%, 72.3%], my own survey run) \u2014 and by the detector being dead for 2 days with nobody noticing. Pure BLOCK is refuted by this setup's own history: the only blocking hook ever wired (`work_not_narrate.py`, Stop) was **parked within ~1 day** (`_PARKED_Stop_2026-09-11` in settings.json; `.work_not_narrate_PARKED` dated Sep 11 23:59), exactly fulfilling the ffafp docstring's prediction (\"switched off within a day\", ffafp_audit.py:89). The gate's design converts the detector's *dominant false positive* \u2014 \"the check runs next turn\" (ffafp_audit.py:119-122) \u2014 into \"the check runs now\", which is the founder's stated outcome, at the bounded cost of one extra bounce (`stop_hook_active` \u21d2 immediate exit 0).\n\n## reasoning\n\nThe founder's real requirement is \"never skipped\", not any particular mechanism. The instrument built for this was dead, and its death was *silent* \u2014 the prerequisite for anything (block or report) is an instrument whose silence is trustworthy. Hence three fixes: revive it, make its failures loud, and add the narrow block where blocking is safe. Files/lines cited throughout below.\n\n## root_cause \u2014 established by execution\n\nThe 2026-09-20 **16:42** edit added `\"scans\"` to `new_turn()` (line 438) and two direct `turn[\"scans\"]` accesses in `record_tool` (lines 468, 496). The persisted `open` turn in the live state file (id `96443704\u2026`, ts `2026-09-20T15:33:07` \u2014 exactly the last history entry) was written by the **pre-edit** schema and has no `scans` key. Replaying `scan()` from the stored state against the live transcript raised:\n\n```\nFile \".../ffafp_audit.py\", line 496, in record_tool\n    if _TREE_SCAN.search(cmd) and len(turn[\"scans\"]) < SEARCH_CAP:\nKeyError: 'scans'\n```\n\n`main()`'s `except Exception: pass` (old line 917) swallowed it; `state[\"offset\"]` is assigned only at scan's **end** (line 667), so it froze at **170431649** while the transcript grew to 196,407,992 bytes. `reported` already equalled the stale turn's id, so output was total silence, exit 0, every prompt. **Correction to the brief:** the offset did *not* advance today \u2014 only the state file's mtime did; the offset has been frozen since 2026-09-20 \u224816:42, 26 MB behind EOF. On the sigma question: the silence was **broken-instrument**, not clean-instrument, and only execution could tell them apart. A sufficient self-check must assert: scan completed without exception **and** `offset == file size` after scan. My fix asserts both operationally and reports violation in-band. Confirmed: `S_k` and the two-sided gate do not bear here \u2014 this is instrument integrity, not fix-efficacy accounting.\n\n## falsifier\n\n- **falsifier_path**: `bench/tests/test_ffafp_dead_detector_2026-09-22.py` (11 tests; no Wolfram dependency)\n- **falsifier_command**: `python3 -m pytest bench/tests/test_ffafp_dead_detector_2026-09-22.py -q`\n- **falsifier_output** (against repaired repo copy): `11 passed in 0.52s`\n- Against the **un-repaired live hook**, the same end-to-end scenario run first: `exit: 0 \u2026 offset after run: 0 (transcript size: 261) \u2026 AssertionError: FALSIFIED: offset frozen -- scan died, silently` \u2014 exit 0 *and a plausible notice still emitted* while the scan was dead.\n- Revival proof on the **real** state (copy) + real 196 MB transcript: `exit 0  wall 0.74s / offset: 196407992 == size? True / scan_failures: 0 / newest history ts: 2026-09-22T14:32:33.208Z`\n- Regression: existing suites vs patched hook (temp HOME): `66 passed, 1 skipped in 2.13s`; vs live hook: `1 failed` \u2014 only `test_the_versioned_copy_is_the_one_that_actually_runs`, the suite's designed red light until installation.\n\n## fix_path\n\n1. `hooks/ffafp_audit.py` \u2014 (a) `_migrate_turn()`: persisted turns migrated against `new_turn()`'s *own* key set (one-source rule, same as `hook_fixture.py`'s glob), so the next schema addition cannot re-create the crash; (b) fail-loud: scan exception \u21d2 `[ffafp SELF-CHECK FAILED] scan() raised <exc> (failure N in a row; offset stuck at X of Y bytes)\u2026` in `additionalContext`, `scan_failures` counter persisted, reset on success; exit stays 0; (c) history entries now carry `stem`, and `render()` adds one non-vacuous line when Wolfram appears in 0 of the recent work-turn window.\n2. `hooks/ffafp_stop_gate.py` \u2014 new Stop hook, exit-2 + stderr contract identical to `work_not_narrate.py:360-370`; refuses at most one stop per turn; gates only ANALYSE/P-PASS on code-touching turns; **fails open and says so** \u2014 the gate may break, it may not break quietly.\n3. `bench/tests/test_ffafp_dead_detector_2026-09-22.py` \u2014 as above.\n\n## install_instruction\n\n```\ncp hooks/ffafp_audit.py ~/.claude/hooks/ffafp_audit.py\ncp hooks/ffafp_stop_gate.py ~/.claude/hooks/ffafp_stop_gate.py\n# then in ~/.claude/settings.json add under \"hooks\":\n#   \"Stop\": [{\"hooks\": [{\"type\": \"command\",\n#             \"command\": \"python3 ~/.claude/hooks/ffafp_stop_gate.py\", \"timeout\": 20}]}]\n```\nNo installer script exists (verified); the sync test `test_the_versioned_copy_is_the_one_that_actually_runs` stays red until the first `cp` runs, which is the correct pressure. **No state-file surgery needed**: migration handles the stale turn in place; measured catch-up of the frozen 26 MB was 0.74 s, inside the wired 20 s timeout.\n\n## wolfram_wiring\n\nTwo channels, matching the founder's own asymmetry: (1) REPORT \u2014 the revived detector already credits `wolframscript -code/-file/-script` and MCP Wolfram tools (lines 213-216, 475-478); the new `render()` line fires whenever the recent work-turn window contains zero Wolfram, quoting the 2026-09-17 ruling and its escape hatch (\"if it cannot run, say so and continue \u2014 that is compliance, silence is not\"). Tested non-vacuous in both directions. (2) Wolfram is deliberately **not** in the Stop gate: the founder's own standing rule says an unrunnable Wolfram call is not a blocker, so blocking on its absence would manufacture the false positive that gets gates parked. `sy` in general **is** gated (ANALYSE).\n\n## additive_check\n\nNothing removed; every addition reached and executed: `_migrate_turn` is called by `load_state`, which the already-wired UserPromptSubmit entry calls every prompt (settings.json, timeout 20) \u2014 executed by `test_persisted_pre_scans_state_cannot_kill_the_scan` and by the real-state revival run; the fail-loud path by `test_scan_failure_is_loud_not_silent`/`..._resets...`; the Wolfram line by the two window tests; the stop gate by five subprocess tests through its real `main()`. The gate's *production* caller is the settings.json Stop entry \u2014 that wiring is the install step and is the one thing tests cannot do from a sandbox; until it is added, the gate is delivered-but-unwired, and I say so rather than claim otherwise.\n\n## refutation_condition\n\nMy root cause is refuted if a pre-2026-09-20-16:42 transcript slice, replayed through the *pre-edit* hook with the same state, also freezes the offset (it will not \u2014 the crash site did not exist). My HYBRID verdict is refuted if, \u22651 week after installing the Stop gate, either (a) the gate is parked like `work_not_narrate` \u2014 evidence my \"narrow enough\" judgement was wrong \u2014 or (b) the survey's ANALYSE-missing and P-PASS-missing rates over new turns are statistically unchanged (overlapping Wilson intervals vs today's 7.4% [4.9, 11.2] and 68.5% [61.1, 75.0]) \u2014 evidence one bounced stop still doesn't produce the artefact. The named false-positive for blocking: a code edit the founder verifies by eye or by a running experiment's own output (ffafp docstring FP-3); the design answers it with a one-line stated waiver on the single bounce, never a trap.\n\n## strongest_disagreement\n\nThree, with the brief and the founder. (1) The founder's \"block\" instruction, taken literally, is refuted by his own project's record twice over: the parked `work_not_narrate` (blocking hook, dead in ~1 day) and the ffafp docstring's costed argument. What he *wants* \u2014 never skipped \u2014 is served by blocking only the two hard-edged signals and reporting the rest; blanket blocking would end with the gate parked and nothing enforced. (2) The brief's claim that the state's \"offset advanced today\" is false by execution \u2014 it froze on 2026-09-20; the file's mtime advanced. The distinction matters because it changes the failure class from \"partially working\" to \"completely dead since the edit\". (3) The brief's \"P-PASS missing on a substantial minority\" understates my own survey run: **115 of 168 code-touching turns, 68.5% [61.1%, 75.0%]** \u2014 a substantial *majority* (per-turn measurement; next-turn checks inflate it, but not by a factor of two). Also minor: I count 57 test functions in the 3 FFAFP files (66 collected with parametrisation), not 71.\n\n## passes_run\n\n3. Pass 1: root-cause reproduction, fix, new falsifier suite (11/11). Pass 2: real-state revival, regression suites (66 pass patched; the one live-copy failure is the designed install signal), boundary trace to settings.json wiring. Pass 3: two-tool + Wolfram cross-verification of all quoted rates (statsmodels \u2194 hook's closed-form Wilson \u2194 Wolfram Language, local Wolfram Engine: `{0.684524, 0.610796, 0.750001}` \u2014 agree to 6 s.f.). Pass 3 added no new finding above threshold \u2014 converged, and the CONVERGED declaration is itself refutable by the conditions above.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isd305tt/repo",
+      "built": false
+    }
+  ]
+}

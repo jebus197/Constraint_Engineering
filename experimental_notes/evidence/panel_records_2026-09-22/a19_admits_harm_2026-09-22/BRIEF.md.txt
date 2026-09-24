@@ -1,0 +1,130 @@
+# Panel brief — the prose-scoring flag admits harmful fixes; what is the sufficient rule?
+
+## SECTION 1 — The question
+
+**Does the founder's prose design achieve its objective — discerning ADMISSIBLE from
+INADMISSIBLE content on a prose-heavy target — and if not, what is the simplest sufficient
+rule that does?**
+
+His design, in his words: a target that is PURELY prose should be recorded as having nothing to
+compute (no opinion, NOT rejected, because an unscoreable fix is not a defective one), while any
+computationally accessible element INSIDE a prose target should still be solved. His scenario: a
+researcher poses a prose-heavy problem and writes a brief computable proof, and asks the system
+to solve it.
+
+Earlier today CC1 made that design reachable for the first time. `sk_score_prose_listings` is
+declared on `RunnerConfig` (`bench/reference_runner_v3.py:1492`), threaded into `compute_sk` and
+honoured there; the runner had been forcing `sk_enabled=False` for every non-Python target
+before the flag's only call site, so it had never been reachable by any path. The gate now
+consults it (`bench/reference_runner_v3.py:13157-13183`).
+
+**A review then measured what happens when the flag is turned on, and it is bad.**
+
+## SECTION 1b — What is already established, so you do not re-derive it
+
+<!-- figure: harmful fix admitted under the flag | scripts/a19_flag_admits_harmful_fixes_2026-09-22.py | 0.5333 -->
+<!-- figure: sk under the flag 0.5000 | scripts/a19_flag_admits_harmful_fixes_2026-09-22.py | 0.5000 -->
+<!-- figure: sk under the flag 0.8333 | scripts/a19_flag_admits_harmful_fixes_2026-09-22.py | 0.8333 -->
+<!-- figure: sk under the flag 1.0000 | scripts/a19_flag_admits_harmful_fixes_2026-09-22.py | 1.0000 -->
+<!-- figure: sk under the flag 0.7333 | scripts/a19_flag_admits_harmful_fixes_2026-09-22.py | 0.7333 -->
+<!-- figure: sk under the flag 0.3667 | scripts/a19_flag_admits_harmful_fixes_2026-09-22.py | 0.3667 -->
+<!-- figure: sk under the flag 0.4928 | scripts/a19_flag_admits_harmful_fixes_2026-09-22.py | 0.4928 -->
+
+`scripts/a19_flag_admits_harmful_fixes_2026-09-22.py` drives `_evaluate_sk_for_findings` through
+the runner's own entry point, using the adversarial fixtures, harmful and correct patches and
+real baselines that `bench/tests/test_prose_acceptance_stem.py` already holds. Run it. With the
+flag OFF every one of the 10 cases returns NO_SCORE and R_k holds at 0.5000. With the flag ON
+every one of the 10 returns ADMISSIBLE and R_k falls, INCLUDING all 5 fixes that suite
+classifies as HARMFUL, at sk values of 0.5333, 0.8333, 1.0000, 1.0000 and 0.7333, every one
+clearing the break-even threshold.
+
+That suite's Property 1 is "a harmful fix is never admitted"
+(`bench/tests/test_prose_acceptance_stem.py:317-330`). It fails 5 of 5 with the flag on.
+Property 2 is "an unmeasured fix may not move R_k in either direction" (:429-484). It fails 10
+of 10.
+
+**The suite nevertheless passes 175 of 175, because not one of its tests sets the flag.** It
+executes one configuration of two. This is the project's own `execute-do-not-grep` shape one
+level up: the guard runs, and it runs the wrong half.
+
+**The gate's own justifying comment states a property the code does not have.**
+`bench/reference_runner_v3.py:13175-13177` argues the change is safe because "compute_sk itself
+decides per fix: purely prose -> NO_SCORE ... This branch changes WHO decides, not WHAT is
+decided." It is not per fix: `_scoring_prose` at :11006 is computed from `_reducible`, a
+property of the TARGET, so once a target carries 1 fenced listing, EVERY fix against it is
+scored, including a fix that touches only prose.
+
+**One proposed repair is already measured INSUFFICIENT.** Returning NO_SCORE when
+`_gateable_hunks` is unchanged by the fix still admits 4 of the 5 harmful fixes, because 4 of 5
+harms land inside a fenced listing. The suite names that split itself at :238.
+
+**And the extractor is narrower than the founder's scenario.** Executed over constructed
+documents, the machinery sees Python inside a python-tagged fence. A proof written as LaTeX, as
+plain-text equations or as a numbered derivation is invisible to it.
+
+## SECTION 2 — Use the harness
+
+Form your answer by RUNNING the machinery.
+
+`S_k` is the instrument under examination, and the question is whether it is the right
+instrument AT ALL for this job. One reviewer's position is that it is not: that on a prose
+target the sufficient rule is the one the acceptance suite already states — admit nothing — and
+that the founder's second case, solving the computable element, belongs on the FALSIFIER path
+rather than in S_k. Weigh that seriously. The falsifier path has a record: routing resolved 41
+of 41 on `exp48_chemistry_exam_live_20260729T044134Z` and
+`exp49_engineering_exam_live_20260729T062320Z`, recomputable from those archives.
+
+`R_k` bears directly: the founder's rule is that an unscoreable fix must not move risk. Check
+what each candidate rule does to R_k, not only to the verdict.
+
+Gamma and the two-sided gate do not bear here; say so if you find otherwise.
+
+## SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is half an answer; a fix without an EXECUTED falsifier is a hypothesis.
+
+Deliver every fix by WRITING IT INTO THE SANDBOX REPOSITORY TREE AT ITS REAL PATH. A fix in
+prose is not delivered; a fix in scratch space is destroyed at teardown.
+
+<!-- figure: harvest loss | scripts/panel_harvest_loss_2026-09-22.py | 70.0000 -->
+
+70.0000% of scripts delivered by seats never reached `scripts/`. Do not let yours join them.
+
+A STORED falsifier may not call Wolfram — anyone reproducing this project must not be required
+to install it. You SHOULD use Wolfram while reasoning: it is the project's chief secondary
+falsifier and every primary tool must also be used.
+
+Report the command you ran and the output you saw, verbatim.
+
+## SECTION 4 — What would refute you
+
+State, before you conclude, what evidence would overturn your answer. If you propose "on a prose
+target admit nothing", name what the founder loses by it and say whether the falsifier path
+genuinely recovers that loss, with evidence rather than assertion. If you propose a per-fix
+rule, name the harmful case that would still get through.
+
+## SECTION 5 — Output shape
+
+- `verdict` — ACHIEVES / PARTLY ACHIEVES / DOES NOT ACHIEVE, on the founder's design as built
+- `reasoning` — citing file and line
+- `sufficient_rule` — the simplest rule that admits correct fixes and refuses harmful ones on a
+  prose target, stated precisely enough to implement
+- `where_it_belongs` — S_k, the falsifier path, or both, with the reason
+- `latex_and_plain_maths` — whether the founder's scenario needs the extractor widened beyond
+  fenced Python, and if so the simplest sufficient widening
+- `falsifier_path`, `falsifier_command`, `falsifier_output` — verbatim
+- `fix_path` — real repository paths, or NONE with the reason
+- `additive_check` — what caller reaches your change and what test executes it, in BOTH flag
+  configurations
+- `refutation_condition`
+- `strongest_disagreement` — with this brief's framing and with the founder's design. Must not
+  be empty.
+- `passes_run`
+
+## SECTION 6 — Termination
+
+Stop on diminishing returns: when a further pass adds no finding above the
+real-world-consequence threshold. Report how many passes you ran and what the last one added.
+Do not manufacture findings; do not nitpick style.
+
+Disagreement with the other seat is information. Do not smooth it away.

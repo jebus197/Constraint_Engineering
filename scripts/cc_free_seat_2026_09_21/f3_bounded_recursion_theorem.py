@@ -5,7 +5,13 @@ import sympy as sp
 import sys as _s, pathlib as _p
 _s.path.insert(0, str(_p.Path(__file__).resolve().parents[1]))
 from _cli_help import answer_help  # noqa: E402
-answer_help(__doc__, __file__)
+# GUARDED 2026-09-24 (CC1). At MODULE level this read the HOST's argv:
+# the operational-script probe imports via `python3 -c "..." <path>`, so
+# sys.argv[1] was the script's own path and the guard refused it, exit 2.
+# `__name__` is still "__main__" when the file is RUN, so `--help` answers
+# exactly as before; on IMPORT it is skipped and argv is never inspected.
+if __name__ == "__main__":
+    answer_help(__doc__, __file__)
 R, q, s, nu = sp.symbols('R q sigma nu', positive=True)
 
 f = ((s*(R*(1-q)/(1-q*R)) + (1-s)*R))*(1-nu) + nu      # full appendix cycle

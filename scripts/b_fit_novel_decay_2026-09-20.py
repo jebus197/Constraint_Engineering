@@ -139,9 +139,14 @@ def main() -> int:
               f"max={bs[-1]:.3f}")
     print()
     print("Second instrument, tail mean of last 4 rounds (steady-state detections = b):")
-    for name, s in sorted(long_runs, key=lambda x: -len(x[1]))[:5]:
+    # STATE THE REMAINDER (2026-09-24). A list cut to 5 under a heading that reads
+    # as complete is a silent falsehood: a reader cannot tell 5 runs from 50.
+    _ranked = sorted(long_runs, key=lambda x: -len(x[1]))
+    for name, s in _ranked[:5]:
         tail = s[-4:]
         print(f"  {name:46s} T={len(s):3d} tail={tail} mean={np.mean(tail):.2f}")
+    if len(_ranked) > 5:
+        print(f"  ... and {len(_ranked) - 5} further run(s) not shown, of {len(_ranked)} total")
     print()
     verdict = "ESTIMABLE" if sig else "NOT SEPARABLE ON THIS ARCHIVE"
     print(f"VERDICT at detectable scope: {verdict}")

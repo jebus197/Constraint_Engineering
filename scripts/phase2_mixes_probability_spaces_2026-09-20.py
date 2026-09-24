@@ -153,4 +153,8 @@ if __name__ == "__main__":
     # ran the whole measurement. A help flag must ANSWER, never ACT.
     from _cli_help import answer_help  # noqa: E402
     answer_help(__doc__, __file__)
-    sys.exit(0 if main() == 0 else 1)
+    # CORRECTED 2026-09-24 (CC1): was `sys.exit(0 if main() == 0 else 1)`,
+    # which collapses EVERY non-zero status to 1 and throws away the code
+    # main() computed. A caller distinguishing 2 (refused to measure) from
+    # 1 (measured and failed) could not.
+    sys.exit(main())

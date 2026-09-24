@@ -144,7 +144,12 @@ def interval(k: int, n: int):
 def main() -> int:
     ap = argparse.ArgumentParser(add_help=False)
     ap.add_argument("--ref", default=PRE_RECOVERY_REF)
-    args, _ = ap.parse_known_args()
+    # parse_args, NOT parse_known_args (corrected 2026-09-24). The lenient form
+    # SILENTLY DISCARDED an unrecognised flag, so `--rev HEAD` (a typo for --ref)
+    # measured the pinned commit and reported it as though the flag had been
+    # honoured. That is the "accepts a flag and does nothing with it" defect this
+    # repo names as the 118-day no-op. argparse exits 2 on an unknown flag.
+    args = ap.parse_args()
 
     harvest = harvested_scripts()
     tracked = tracked_scripts(args.ref)

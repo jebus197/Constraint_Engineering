@@ -1405,7 +1405,12 @@ def call_codex(
                 cwd=_get_panel_cwd_raw(),
                 # Codex authenticates with OPENAI_API_KEY when it is not logged
                 # in, so this route keeps that 1 key and nothing else.
-                env=seat_environment(keep=("OPENAI_API_KEY",), seat=model_id),
+                # seat="codex": `call_codex` has NO model_id in scope, and passing one
+                # raised NameError at dispatch on 2026-09-24 -- caught by
+                # test_seat_environment_carries_no_secrets, which reported that
+                # subprocess.run was never reached. "codex" is the label this route
+                # already uses in its own log lines.
+                env=seat_environment(keep=("OPENAI_API_KEY",), seat="codex"),
             )
             elapsed = time.monotonic() - t0
             text = result.stdout.strip()

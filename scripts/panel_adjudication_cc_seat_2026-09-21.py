@@ -158,8 +158,11 @@ def a3_no_live_consumer() -> None:
                              capture_output=True, text=True).stdout
         hits += [l for l in out.splitlines() if l.strip()]
     print(f"   grep over bench/ for a dR-based terminator: {len(hits)} hit(s)")
+    # STATE THE REMAINDER (2026-09-24), same reason as above.
     for h in hits[:5]:
         print("     " + h[:110])
+    if len(hits) > 5:
+        print(f"     ... and {len(hits) - 5} further hit(s) not shown, of {len(hits)} total")
     assert not hits, "FALSIFIED: a dR-based terminator exists in bench/"
 
     # The one decision built on the conditional map IS the S* gate. Measure it.

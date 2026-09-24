@@ -291,12 +291,18 @@ def f4_stopping_rule_test_is_not_runnable() -> None:
     print("F4  CAN THE FOUNDER'S STOPPING-RULE TEST BE RUN ON THIS ARCHIVE?")
     src = (ROOT / "bench/reference_runner_v3.py").read_text(errors="ignore")
 
+    _skipped: list[str] = []   # see the handler below
+
     state_keys = set()
     for f in sorted(glob.glob(str(ROOT / "bench/logs/*/runner_state.json"))):
         try:
             state_keys |= set(json.loads(open(f, errors="ignore").read()).keys())
-        except Exception:
-            pass
+        except Exception as _e:
+            # NAMED 2026-09-24 (CC1): was a bare `pass`. A swallowed failure that
+            # leaves no trace is indistinguishable from a file that simply had
+            # nothing to contribute, which is the defect class that cost this
+            # project 2 days in the FFAFP detector on 2026-09-20.
+            _skipped.append(repr(_e))
     print(f"   union of runner_state.json top-level keys: {sorted(state_keys)}")
     ck("runner_state.json persists NO rounds-executed count",
        not any(k in state_keys for k in ("rounds_executed", "n_rounds", "round_count")))

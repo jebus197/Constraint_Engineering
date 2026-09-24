@@ -1,0 +1,176 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 13724,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd ~ && ls -la ~/.claude/hooks/ 2>&1 | head -40; echo \\\"---SETTINGS---\\\"; python3 -c \\\"\\nimport json\\nd=json.load(open('/home/jebus/.claude/settings.json'))\\nprint(json.dumps(d.get('hooks',{}),indent=1)[:3000])\\n\\\" 2>&1\", \"description\": \"List hooks and settings\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /home/jebus 2>/dev/null; pwd; ls; echo \\\"---REPO---\\\"; ls ~/ | head -30\", \"description\": \"Locate repository root\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la ~/.claude/settings.json && python3 -c \\\"\\nimport json;d=json.load(open('/Users/georgejackson/.claude/settings.json'))\\nprint(json.dumps(d.get('hooks',{}),indent=1)[:4000])\\\"\", \"description\": \"Read settings.json hooks\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la ~/.claude/.ffafp_audit/ 2>&1; echo \\\"---STATE---\\\"; python3 -c \\\"\\nimport json,os,datetime\\np='/Users/georgejackson/.claude/.ffafp_audit/a07b3790-0a2a-4978-aedb-bd842c0493d3'\\nprint('exists',os.path.exists(p))\\nd=json.load(open(p))\\nprint('keys',list(d.keys()))\\nfor k,v in d.items():\\n    if k!='history': print(k,repr(v)[:200])\\nh=d.get('history',[])\\nprint('history len',len(h)"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l ~/.claude/hooks/ffafp_audit.py; echo \\\"---\\\"; grep -n \\\"history\\\\|open\\\\|offset\\\\|def \\\\|aligned\\\\|reported\\\\|seq\\\" ~/.claude/hooks/ffafp_audit.py | head -120\", \"description\": \"Map hook structure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | head -50; echo \\\"---HOOKS---\\\"; ls hooks/; echo \\\"---WOLFRAM---\\\"; ls bench/tools/wolfram_gate/ 2>&1; ls bench/wolfram_standard.py\", \"description\": \"Survey repo scripts and hooks\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '619,700p' ~/.claude/hooks/ffafp_audit.py\", \"description\": \"Read scan/close_turn\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '840,963p' ~/.claude/hooks/ffafp_audit.py\", \"description\": \"Read main()\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la ~/.claude/projects/*/a07b3790-0a2a-4978-aedb-bd842c0493d3.jsonl 2>&1; echo \\\"---ALL RECENT---\\\"; ls -laS ~/.claude/projects/*/*.jsonl 2>/dev/null | head -8\", \"description\": \"Locate transcript\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"diff hooks/ffafp_audit.py ~/.claude/hooks/ffafp_audit.py && echo IDENTICAL; ls bench/tests/ | grep -i ffafp\", \"description\": \"Diff repo hook vs installed\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,collections\\np='/Users/georgejackson/.claude/projects/-Users-georgejackson-Developer-Projects/a07b3790-0a2a-4978-aedb-bd842c0493d3.jsonl'\\nOFF=170431649\\nc=collections.Counter(); last_h=None; first_ts=None; nlines=0\\nsidechain=0\\nwith open(p,'r',errors='ignore') as fh:\\n    fh.seek(100_000_000)   # well after Sep 20 15:33\\n    fh.readline()\\n    for line "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,os\\np='/Users/georgejackson/.claude/projects/-Users-georgejackson-Developer-Projects/a07b3790-0a2a-4978-aedb-bd842c0493d3.jsonl'\\nOFF=170431649\\nprint('size',os.path.getsize(p))\\nwith open(p,'r',errors='ignore') as fh:\\n    fh.seek(OFF); fh.readline()\\n    for _ in range(3):\\n        l=fh.readline()\\n        try:\\n            d=json.loads(l); print('AT OF"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd ~/.claude/hooks && python3 - <<'PY'\\nimport importlib.util,json,time,traceback,sys,resource\\nspec=importlib.util.spec_from_file_location(\\\"ffafp\\\",\\\"/Users/georgejackson/.claude/hooks/ffafp_audit.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\np='/Users/georgejackson/.claude/projects/-Users-georgejackson-Developer-Projects/a07b3790-0a2a-4978-aedb-bd842c0"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '434,441p' hooks/ffafp_audit.py; echo \\\"---persisted open keys---\\\"; python3 -c \\\"\\nimport json;d=json.load(open('/Users/georgejackson/.claude/.ffafp_audit/a07b3790-0a2a-4978-aedb-bd842c0493d3'))\\nprint('ON DISK :',sorted(d['open'].keys()))\\\"; echo \\\"---git---\\\"; git log --oneline -6 -- hooks/ffafp_audit.py\", \"description\": \"Confirm schema drift\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 900 python3 ~/.claude/hooks/ffafp_audit.py --survey /Users/georgejackson/.claude/projects/-Users-georgejackson-Developer-Projects/a07b3790-0a2a-4978-aedb-bd842c0493d3.jsonl 2>&1 | tail -30\", \"description\": \"Run survey on live transcript\", \"timeout\": 900000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd ~ && time python3 ~/.claude/hooks/ffafp_audit.py --survey /Users/georgejackson/.claude/projects/-Users-georgejackson-Developer-Projects/a07b3790-0a2a-4978-aedb-bd842c0493d3.jsonl 2>&1 | tail -32\", \"description\": \"Run FFAFP survey on live transcript\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"def sigma\\\\|sigma_\\\" bench/dm/ bench/*.py 2>/dev/null | head; echo \\\"---SIGMA DOC---\\\"; grep -rn \\\"sigma\\\" docs/MATHEMATICAL_APPENDIX.md 2>/dev/null | head -8; echo \\\"---WOLFRAM STD---\\\"; sed -n '1,45p' bench/wolfram_standard.py\", \"description\": \"Locate sigma instrument and wolfram standard\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,40p' bench/tests/test_ffafp_audit_hook_2026-09-05.py; echo \\\"=== COUNT ===\\\"; python3 -m pytest bench/tests/test_ffafp_audit_hook_2026-09-05.py bench/tests/test_ffafp_all_five_steps_2026-09-20.py bench/tests/test_ffafp_cycle_gate_2026-09-10.py -q 2>&1 | tail -5\", \"description\": \"Run the 71 FFAFP tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,60p' hooks/work_not_narrate.py; echo \\\"===DECISION===\\\"; grep -n \\\"decision\\\\|exit(2)\\\\|sys.exit\\\\|block\\\" hooks/work_not_narrate.py | head -20\", \"description\": \"Read work_not_narrate stop hook\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"STATE_DIR\\\\|HISTORY_LIMIT\\\\|COLD_START\\\\|^import\\\\|^STATE\\\\|^#:\\\" hooks/ffafp_audit.py | sed -n '1,40p'; echo \\\"---render---\\\"; sed -n '720,760p' hooks/ffafp_audit.py\", \"description\": \"Read constants and render\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h528s6gz/repo/hooks/ffafp_audit.py\", \"offset\": 856, \"limit\": 25}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h528s6gz/repo/hooks/ffafp_audit.py\", \"old_string\": \"def load_state(sf: pathlib.Path) -> dict:\\n    st = {\\\"offset\\\": 0, \\\"open\\\": None, \\\"seq\\\": 0, \\\"reads\\\": {}, \\\"last_work\\\": None,\\n          \\\"reported\\\": None, \\\"history\\\": []}\\n    try:\\n        if sf.exists():\\n            st.update(json"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nopen('scripts/_perm_probe.tmp','w').write('x')\\\" && echo \\\"WRITE OK\\\" && rm scripts/_perm_probe.tmp && ls -ld hooks bench/tests scripts\", \"description\": \"Probe sandbox write permission\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path('hooks/ffafp_audit.py'); s=p.read_text()\\n\\nOLD_LOAD = '''def load_state(sf: pathlib.Path) -> dict:\\n    st = {\\\"offset\\\": 0, \\\"open\\\": None, \\\"seq\\\": 0, \\\"reads\\\": {}, \\\"last_work\\\": None,\\n          \\\"reported\\\": None, \\\"history\\\": []}\\n    try:\\n        if sf.exists():\\n            st.update(json.loads(sf.read_text()))\\n    except Ex"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path('hooks/ffafp_audit.py'); s=p.read_text()\\n\\nOLD = '''    try:\\n        with tpath.open(\\\"r\\\", errors=\\\"ignore\\\") as fh:\\n            if state.get(\\\"offset\\\", 0) > 0 and not state.get(\\\"aligned\\\"):\\n'''\\nNEW = '''    before_offset = int(state.get(\\\"offset\\\", 0) or 0)\\n    scan_error = \\\"\\\"\\n    try:\\n        with tpath.open(\\\"r\\\", errors"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path('hooks/ffafp_audit.py'); s=p.read_text()\\nOLD='''        state[\\\"open\\\"] = None\\n        state[\\\"offset\\\"] = size\\n        state[\\\"aligned\\\"] = True'''\\nNEW='''        state[\\\"open\\\"] = None\\n        state[\\\"reads\\\"] = {}          # a lookback cache, and poisonable in the same way\\n        state[\\\"offset\\\"] = size\\n        state[\\\"align"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path('bench/tests/test_ffafp_state_migration_2026-09-22.py'); s=p.read_text()\\nOLD='''    poisoned = {\\\"offset\\\": 0, \\\"open\\\": mod.new_turn(\\\"u0\\\", \\\"2026-09-20T15:33:07Z\\\", \\\"p\\\"),\\n                \\\"seq\\\": 1, \\\"reads\\\": [], \\\"last_work\\\": None, \\\"reported\\\": None,\\n                \\\"history\\\": [], \\\"aligned\\\": True}'''\\nNEW='''    open_tur"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport importlib.util,json,tempfile,pathlib,subprocess,sys,traceback\\nUNPATCHED='/Users/georgejackson/.claude/hooks/ffafp_audit.py'\\nspec=importlib.util.spec_from_file_location(\\\"old\\\",UNPATCHED)\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nprint(\\\"has migrate_turn:\\\",hasattr(m,'migrate_turn'))\\nLEGACY=[\\\"failable_idx\\\",\\\"first_mut\\\",\\\"id\\\",\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"set -e\\nFAKE=$(mktemp -d); mkdir -p \\\"$FAKE/.claude/hooks\\\"\\ncp hooks/ffafp_audit.py \\\"$FAKE/.claude/hooks/ffafp_audit.py\\\"\\necho \\\"regression: 67 existing tests against the PATCHED hook (HOME=$FAKE)\\\"\\nHOME=\\\"$FAKE\\\" python3 -m pytest bench/tests/test_ffafp_audit_hook_2026-09-05.py bench/tests/test_ffafp_all_five_steps_2026-09-20.py bench/tests/test_ffafp_cycle_gate_2026-09-10.py -q "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '205,232p' hooks/ffafp_audit.py\", \"description\": \"Check STEM regex for wolfram\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,tempfile,pathlib,subprocess,sys,importlib.util\\nUNPATCHED='/Users/georgejackson/.claude/hooks/ffafp_audit.py'\\nPATCHED='hooks/ffafp_audit.py'\\nspec=importlib.util.spec_from_file_location(\\\"o\\\",UNPATCHED); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nLEGACY=[\\\"failable_idx\\\",\\\"first_mut\\\",\\\"id\\\",\\\"last_mut\\\",\\\"mutations\\\",\\\"n_tools\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/ffafp_liveness_check_2026-09-22.py <<'PY'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Is the FFAFP detector ALIVE, and what is it measuring? A committed answer to both.\\n\\nWHY THIS EXISTS. On 2026-09-22 the detector was found to have recorded nothing since\\n2026-09-20 while exiting 0 on every invocation. Its `--survey` mode looked perfectly\\nhealthy throughout, because `survey()` wal"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '764,840p' hooks/ffafp_audit.py | grep -n \\\"st\\\\[\\\\|st\\\\.get\\\\|_print_survey\\\\|for key\\\\|label\\\" | head -40; echo \\\"=== printer ===\\\"; sed -n '826,856p' hooks/ffafp_audit.py\", \"description\": \"Get survey dict keys\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path('scripts/ffafp_liveness_check_2026-09-22.py'); s=p.read_text()\\ns=s.replace('''    for key in (\\\"ppass_missing\\\", \\\"stem\\\", \\\"follow_missing\\\", \\\"analyse_missing\\\"):\\n        k = st.get(key, 0)\\n        n = st.get(\\\"code\\\", 0) if key == \\\"ppass_missing\\\" else st.get(\\\"work\\\", 0)\\n        p, lo, hi = mod.wilson(k, n)\\n        out[key] = "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport math\\nk,n,z=115,168,1.959963984540054\\np=k/n; d=1+z*z/n\\nc=(p+z*z/(2*n))/d; h=(z/d)*math.sqrt(p*(1-p)/n+z*z/(4*n*n))\\nprint(\\\"closed form   : %.6f  [%.6f, %.6f]\\\"%(p,c-h,c+h))\\ntry:\\n    from statsmodels.stats.proportion import proportion_confint\\n    print(\\\"statsmodels   : %s\\\"%(tuple(round(x,6) for x in proportion_confint(k,n,method='wilson')),))\\nexcept Ex"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript >/dev/null 2>&1 && wolframscript -code 'p=115/168; z=1.959963984540054; n=168; d=1+z^2/n; c=(p+z^2/(2n))/d; h=(z/d)*Sqrt[p(1-p)/n+z^2/(4n^2)]; N[{c-h,c+h},8]' 2>&1 || echo \\\"WOLFRAM NOT ON PATH in this sandbox\\\"\", \"description\": \"Wolfram second falsifier on Wilson bounds\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat >> bench/tests/test_ffafp_state_migration_2026-09-22.py <<'PY'\\n\\n\\ndef test_end_to_end_the_unfixed_hook_freezes_and_the_fixed_one_does_not(tmp_path):\\n    \\\"\\\"\\\"The defect and the fix in one comparison, driven as the harness drives it.\\n\\n    The ordering matters and is the real one: the open turn's tool calls stream BEFORE\\n    the next human prompt, so `record_tool` reaches the"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_ffafp_state_migration_2026-09-22.py -v -rs 2>&1 | sed -n '1,20p'\", \"description\": \"Confirm no silent skips\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"sigma\\\" bench/dm/_types.py | head -8; echo \\\"--- S_k ---\\\"; grep -n \\\"S_k\\\\|def .*S_k\\\\|shrink\\\" bench/dm/_fsm.py | head -6; echo \\\"=== DELIVERED ===\\\"; ls -l hooks/ffafp_audit.py bench/tests/test_ffafp_state_migration_2026-09-22.py scripts/ffafp_liveness_check_2026-09-22.py\", \"description\": \"Check sigma/S_k and confirm deliverables\"}"
+    }
+  ],
+  "n_tool_calls": 39,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 532.9,
+  "response": "All three deliverables are at real repository paths. Writing up.\n\n---\n\n## verdict\n\n**HYBRID \u2014 and the block/report axis is not where the failure was.** The FFAFP detector has not been \"report-only but working\" for two days; it has been **dead**, exiting 0 on every invocation while consuming nothing. Switching a dead detector from REPORT to BLOCK changes nothing, because it has no verdict to block on.\n\nSplit by what is being asserted:\n\n- **FFAFP trace content \u2192 REPORT.** Measured below at 68.5% P-PASS-missing on code-touching turns. A block firing on two-thirds of code turns is the false-positive case that gets it switched off in a day \u2014 the hook's own docstring predicted exactly this, and my measurement makes the prediction quantitative rather than rhetorical.\n- **Detector liveness \u2192 BLOCK-equivalent (loud, unsuppressible, self-re-arming).** This predicate has a **zero false-positive rate by construction**: \"did my byte offset advance while the transcript grew\" is a mechanical fact about the instrument, not a heuristic about CC1's work. This is the only place a hard assertion is safe, and it is where I put one.\n\n## reasoning\n\n`~/.claude/settings.json` wires `ffafp_audit.py` as a **UserPromptSubmit** hook. `hooks/work_not_narrate.py:20-26` already records the project's own finding on that wiring: the pre-existing hooks are *\"UserPromptSubmit context injectors: they make 0 subprocess calls, emit 0 blocking decisions, and always exit 0\"*, and *\"An instruction arriving BEFORE a turn competes with everything else in that turn. A Stop hook arrives at the only moment that matters \u2014 when the turn tries to end \u2014 and can refuse.\"*\n\n`ffafp_audit.py` was built as a **fifth** such injector. UserPromptSubmit fires *before* CC1 acts; blocking there refuses **the founder's prompt**, not CC1's skipping. So \"make FFAFP unskippable at this hook\" is structurally impossible on either setting of the block/report switch.\n\n## root_cause\n\nEstablished by execution, not reading. Replaying `scan()` against the live state file:\n\n```\nFile \"ffafp_audit.py\", line 666, in scan\n    record_tool(state[\"open\"], name, inp)\nFile \"ffafp_audit.py\", line 496, in record_tool\n    if _TREE_SCAN.search(cmd) and len(turn[\"scans\"]) < SEARCH_CAP:\nKeyError: 'scans'\nSCAN RAISED after 0.00s\noffset before 170431649 after 170431649\n```\n\n`new_turn()` gained a `\"scans\"` key when the hook was rewritten (mtime **2026-09-20 16:42**). The state file's `open` turn was serialised at **15:33** that day and has 12 keys, not 13 \u2014 confirmed on disk, `scans` absent. `record_tool` then raises on the first tool line. Because `scan()` assigns `state[\"offset\"] = fh.tell()` on its **last** line (667), the abort leaves the offset unchanged; `main()`'s bare `except: pass` swallows the traceback; the state is rewritten with the **same** offset. Every later prompt replays the same bytes and dies identically. **A ratchet, not a blip.**\n\nTwo brief claims I **falsify**:\n- *\"its `offset` advanced today\"* \u2014 **false.** Byte 170431649 sits at `2026-09-20T15:38`. The state file's mtime advances because `main()` rewrites it unconditionally; the offset has not moved in two days. 26.0 MB unconsumed.\n- The **timeout** hypothesis is also dead: the full 196.4 MB parses in **6.40 s** against a 20 s budget.\n\n**Why 67 tests passed through this:** every one builds turns via `new_turn()`. None loads a turn persisted by an *older build* \u2014 the only input that triggers it. The gap was in the **input space**, not the assertions.\n\n## On sigma, and the two silences\n\n`sigma` in this repo (`bench/dm/_types.py:462-466`) is the termination-reason enum: `sigma_complete / sigma_converged / sigma_diminished / sigma_max / sigma_fail_critical`. It exists precisely to say *why* a run went quiet. The FFAFP detector had **no such state** \u2014 it emitted the silence of `sigma_converged` while actually occupying an unmodelled sixth state, *instrument dead*. That is the same false-negative shape as 16-of-17 panel tool calls erroring and being read as results.\n\n`--survey` could not see it: `survey()` walks from a **fresh** state dict, so it always has `scans`. The hook walks from the **persisted** state. Only the persisted path carries the poison \u2014 the instrument's self-report is blind to the instrument's own death by construction.\n\n**What a self-check must assert to tell the two apart:** not the verdict \u2014 the verdict is identical. Only *\"did my offset advance while the transcript grew, and did history gain an entry.\"* That is what I implemented.\n\n**`S_k` does not bear** \u2014 I checked; it is the Stage-5 shrinking-surface term over rounds, absent from `_fsm.py`, and unrelated to liveness. The two-sided gate does not bear either.\n\n## falsifier_path / falsifier_command / falsifier_output\n\n`bench/tests/test_ffafp_state_migration_2026-09-22.py`\n\n```\n$ python3 -m pytest bench/tests/test_ffafp_state_migration_2026-09-22.py -v -rs\ntest_the_legacy_turn_really_is_the_poison PASSED                        [ 14%]\ntest_migrate_turn_backfills_every_current_key_and_keeps_recorded_data PASSED [ 28%]\ntest_scan_over_a_legacy_state_advances_the_offset PASSED                [ 42%]\ntest_liveness_alarms_and_rearms_on_a_poison_migration_cannot_foresee PASSED [ 57%]\ntest_liveness_is_silent_when_the_detector_is_healthy PASSED             [ 71%]\ntest_end_to_end_the_unfixed_hook_freezes_and_the_fixed_one_does_not PASSED [ 85%]\ntest_the_liveness_script_runs_and_reports_stale_for_a_stale_state PASSED [100%]\n7 passed\n```\n\nThe disagreement that makes it non-vacuous, driven as the harness drives it (real ordering: tool calls stream before the next human prompt):\n\n```\nUNPATCHED inv 1 -> exit 0  offset   0/421  history 0  alarm -\nUNPATCHED inv 2 -> exit 0  offset   0/421  history 0  alarm -\nUNPATCHED inv 3 -> exit 0  offset   0/421  history 0  alarm -\nPATCHED   inv 1 -> exit 0  offset 421/421  history 1  stall 0\nPATCHED   inv 2 -> exit 0  offset 421/421  history 1  stall 0\n```\n\nRegression, existing suite against the **patched** hook: `66 passed, 1 skipped`. No Wolfram in any stored falsifier.\n\n## My own survey figure\n\n```\n$ python3 scripts/ffafp_liveness_check_2026-09-22.py a07b3790-0a2a-4978-aedb-bd842c0493d3\noffset     : 170431649 of 196407992  (lag 26.0 MB)\nhistory    : 40 entries, last 2026-09-20T15:33:07.152Z\nLIVENESS   : STALE -- verdicts are ABSENT EVIDENCE, not evidence of absence\n  P-PASS missing  : 115 of 168 = 68.5%  95% Wilson [61.1%, 75.0%]\n  STEM tool used  : 180 of 269 = 66.9%  95% Wilson [61.1%, 72.3%]\nEXIT=1\n```\n\n**I disagree with the brief's \"substantial minority\": it is a majority, 68.5%.** Interval cross-verified four ways open-source (closed form, statsmodels, SymPy exact, and as roots of the Wilson quadratic `(p\u2212x)\u00b2 = z\u00b2x(1\u2212x)/n`), all agreeing to 6 dp: `[0.610796, 0.750001]`. Second falsifier: `{0.610796200639883, 0.750001481278618}` \u2014 computed with **Wolfram Language** (local Wolfram Engine via `wolframscript`, exit 0, no `Name::tag`, no `$Failed`).\n\n*(First draft of that script printed `P-PASS missing: 0 of 168` from a typo'd `st.get(key, 0)` \u2014 a silent zero from a missing key, the same failure class as the defect itself. The lookup is now strict and carries the `<-- VACUOUS` flag.)*\n\n## fix_path\n\n- `hooks/ffafp_audit.py` \u2014 `migrate_turn()` + applied in `load_state()`; `STALL_LIMIT`; liveness self-check with bounded self-re-arm; alarm never suppressed.\n- `bench/tests/test_ffafp_state_migration_2026-09-22.py` \u2014 7 tests (new).\n- `scripts/ffafp_liveness_check_2026-09-22.py` \u2014 committed, so no figure need be quoted from an uncommitted script (new).\n\nNothing disabled or removed. Recovery forfeits only turns **already** lost, and reports the forfeit: *\"Treat this session's clean FFAFP history as ABSENT EVIDENCE, not as evidence of absence.\"*\n\n## install_instruction\n\n`~/.claude/hooks/` is outside the repo and I did not write there. The repo copy was **byte-identical** to the installed one before my patch (`diff` \u2192 IDENTICAL), so it is the source of truth:\n\n```\ncp hooks/ffafp_audit.py ~/.claude/hooks/ffafp_audit.py\nrm ~/.claude/.ffafp_audit/a07b3790-0a2a-4978-aedb-bd842c0493d3   # optional; migration handles it\npython3 scripts/ffafp_liveness_check_2026-09-22.py   # must print ALIVE and exit 0\n```\n\nNo `settings.json` change. Run the liveness script after any hook edit \u2014 that is the class of change that caused this.\n\n## wolfram_wiring\n\n**The mechanism already existed and was already wired to CC1.** `_STEM` group `c` matches `wolframscript -(code|file|script)` (added 2026-09-17, with the comment that *\"a turn whose only analysis was Wolfram was reported as having no STEM trace\"*). CC1's Wolfram use was invisible for the same single reason everything else was: **the hook was dead.** Restoring it restores Wolfram accounting at no extra cost \u2014 STEM-tool rate is now measurable at 66.9% [61.1%, 72.3%].\n\nTo make it **non-optional** rather than merely measured, the enforcement point must be **Stop**, per `work_not_narrate.py:20-26`. That hook exists, has a self-test, and is **parked** (`_PARKED_Stop_2026-09-11`, plus a `.work_not_narrate_PARKED` sentinel). **I did not unpark it and I recommend against doing so in the same change as this fix** \u2014 you would be unable to attribute the resulting behaviour to either. Sequence: install the fix, confirm `ALIVE`, collect one week of *real* history, then decide the Stop predicate against data rather than against my 68.5% from a dead instrument's replay.\n\n## additive_check\n\n| Addition | Caller | Test |\n|---|---|---|\n| `migrate_turn()` | `load_state()`, every invocation | `test_the_legacy_turn_really_is_the_poison` (asserts the two forms **disagree**) |\n| `STALL_LIMIT`, `stall`, `last_error`, `recovered` | `main()`, every invocation | `test_liveness_alarms_and_rearms_...` **and** `test_liveness_is_silent_when_healthy` \u2014 both halves, so an unconditional alarm cannot pass |\n| `scripts/ffafp_liveness_check_2026-09-22.py` | operator + test | `test_the_liveness_script_runs_and_reports_stale_...` |\n\nNo flag without a caller. No caller without a test.\n\n## refutation_condition\n\n1. **Install the fix; if `--survey`'s figures come apart from the live hook's accumulating `history` over a week, my \"the survey was blind, the rates are sound\" claim is wrong** and the 68.5% must be re-derived from recorded verdicts.\n2. If P-PASS-missing on *live recorded* turns lands below ~20%, my REPORT-for-content verdict loses its basis and a content block becomes affordable.\n3. If `recovered` ever increments on a healthy session, my \"zero false-positive by construction\" claim for liveness is false and `STALL_LIMIT` must rise.\n4. If any of the 67 existing tests fails in-place after install (they passed here under a synthetic `HOME`), the migration touches something I did not model.\n\n**The false-positive case for the part I did block:** a transcript that legitimately does not grow between prompts. My guard requires `size > before_offset` **and** two *consecutive* stalls; a single replay is tolerated as a flush race.\n\n## strongest_disagreement\n\n**The brief asks the wrong question, and so did the founder's \"block rather than report\" \u2014 through no fault of his, since he said plainly he did not know what block meant.**\n\nNeither setting of that switch would have produced a single additional FFAFP trace, because the detector emitted no verdicts to act on. Two days of \"report-only isn't working\" was two days of an instrument that was not running. **Debating the strictness of a dead detector is the failure this project names as its own:** *\"The failure was never the absence of a rule or a checker; it was never running the checker.\"* Here it was worse \u2014 the checker existed, was wired, had 67 passing tests, and was **silently not running**, with its own self-report attesting health.\n\nI also disagree with the brief's framing that reminding \"did not work.\" The evidence does not support that conclusion **or its negative**: `mc_commands.py` injected the obligation from 2026-08-30 into a window in which the *measuring instrument* was intact until 2026-09-20 and dead thereafter. The under-a-third STEM figure quoted in the brief is not reproduced by my run \u2014 I measure **66.9%**. Until the detector runs for a week, \"reminding failed\" is an unfalsified hypothesis, not a measurement, and building a blocking gate on it would be building on a number that its own instrument cannot currently produce.\n\nAnd the finding with the longest reach: **this defect was caused by a schema migration with no version field and two bare `except: pass` handlers.** Every hook in `~/.claude/hooks/` persists JSON state and ends `except Exception: pass; sys.exit(0)`. I fixed one. **The other four have the same shape and I did not audit them** \u2014 that is the next pass, and it is above the consequence threshold.\n\n## passes_run\n\n**5.** P1 read the artefacts and settings. P2 falsified \"the offset advanced today\" by locating byte 170431649 in the transcript. P3 replayed `scan()` and obtained `KeyError: 'scans'` \u2014 root cause. P4 built and executed the fix, the falsifier, and the regression. P5 cross-verified the Wilson interval four ways plus Wolfram, and caught my own liveness script printing a silent `0 of 168` from a typo'd key.\n\n**The last pass added a real finding** (the vacuous-zero in my own script, now strict) so termination here is on budget discipline, not on convergence. The named open mechanism \u2014 **the four unaudited sibling hooks sharing the `except: pass` + unversioned-state shape** \u2014 is specific, plausible, high-value and not adequately examined. Per \u00a7Objective Guard 2, that is grounds to continue, and I am stopping only because this is a one-shot dispatch. **Residual falsification debt is non-zero and I am not declaring convergence.**",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h528s6gz/repo",
+      "built": false
+    }
+  ]
+}

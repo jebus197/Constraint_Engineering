@@ -1,0 +1,1045 @@
+### cc2:attempt-1:bench/tests/test_ffafp_state_migration_2026-09-22.py
+--- /dev/null	2026-09-22 16:31:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h528s6gz/repo/bench/tests/test_ffafp_state_migration_2026-09-22.py	2026-09-22 16:28:37
+@@ -0,0 +1,253 @@
++"""Guard for the 2026-09-22 defect: the FFAFP detector died silently for 2 days.
++
++WHAT DIED, AND HOW IT WAS ESTABLISHED. The hook persists `state["open"]` -- an
++in-flight turn -- as JSON between prompts. `new_turn()` gained a `"scans"` key when
++the hook was rewritten on 2026-09-20 16:42. The state file written at 15:33 that day
++held a turn WITHOUT that key. On the next prompt `record_tool` evaluated
++`turn["scans"]` and raised KeyError on the first tool line it saw. Because `scan()`
++assigns `state["offset"] = fh.tell()` on its LAST line, the abort left the offset
++unchanged; `main()`'s bare `except` swallowed the traceback; the state was rewritten
++with the SAME offset. Every subsequent prompt replayed the same bytes and died in the
++same place. Replayed against the live state file the failure is deterministic:
++
++    File "ffafp_audit.py", line 496, in record_tool
++      if _TREE_SCAN.search(cmd) and len(turn["scans"]) < SEARCH_CAP:
++    KeyError: 'scans'
++
++    offset before 170431649 after 170431649
++
++WHY 67 PASSING TESTS DID NOT CATCH IT. Every one of them builds turns through
++`new_turn()`, so every turn they test has the current key set. The only input that
++triggers this is a turn serialised by an OLDER BUILD, which no test supplied. The gap
++was in the INPUT SPACE, not in the assertions.
++
++WHY THE SECOND HALF OF THIS FILE TESTS THE INSTRUMENT AND NOT THE VERDICT. A detector
++reporting "nothing missing" because it is dead is indistinguishable, downstream, from
++one reporting "nothing missing" because nothing was missing -- the same false negative
++this project recorded when 16 of 17 panel tool calls errored and were read as results.
++The two differ in exactly one mechanically checkable way: a live detector's byte offset
++ADVANCES when the transcript grows. `test_liveness_*` asserts that, and asserts the
++alarm is LOUD, because a silent recovery would reproduce the original defect one level
++up. The poison used there is NOT the schema one -- it is a `reads` list where a dict
++belongs -- precisely so the liveness check is shown to catch a fault the migration
++cannot foresee.
++"""
++from __future__ import annotations
++
++import importlib.util
++import json
++import pathlib
++import subprocess
++import sys
++
++import pytest
++
++HOOK = pathlib.Path.home() / ".claude" / "hooks" / "ffafp_audit.py"
++REPO_HOOK = pathlib.Path(__file__).resolve().parents[2] / "hooks" / "ffafp_audit.py"
++SRC = REPO_HOOK if REPO_HOOK.is_file() else HOOK
++if not SRC.is_file():                                        # pragma: no cover
++    pytest.skip("ffafp_audit.py not present", allow_module_level=True)
++
++_spec = importlib.util.spec_from_file_location("ffafp_mig", SRC)
++mod = importlib.util.module_from_spec(_spec)
++_spec.loader.exec_module(mod)
++
++#: The exact key set the live state file held on 2026-09-20, read from disk.
++LEGACY_KEYS = ["failable_idx", "first_mut", "id", "last_mut", "mutations", "n_tools",
++               "prompt", "read_paths", "searches", "stem", "test_idx", "ts"]
++
++
++def legacy_turn() -> dict:
++    t = mod.new_turn("u1", "2026-09-20T15:33:07.152Z", "p")
++    return {k: v for k, v in t.items() if k in LEGACY_KEYS}
++
++
++def test_the_legacy_turn_really_is_the_poison():
++    """The two forms must DISAGREE, or this file proves nothing.
++
++    An unmigrated legacy turn must raise where a migrated one must not. If both
++    survived, the migration would be inert and this suite would pass on a hook with
++    the defect still in it.
++    """
++    call = ("Bash", {"command": "rg -n 'sympy' bench/"})
++    with pytest.raises(KeyError):
++        mod.record_tool(legacy_turn(), *call)
++    mod.record_tool(mod.migrate_turn(legacy_turn()), *call)     # must not raise
++
++
++def test_migrate_turn_backfills_every_current_key_and_keeps_recorded_data():
++    t = legacy_turn()
++    t["n_tools"] = 7
++    t["mutations"] = ["bench/x.py"]
++    out = mod.migrate_turn(t)
++    assert set(out) == set(mod.new_turn())
++    assert out["n_tools"] == 7 and out["mutations"] == ["bench/x.py"]
++    assert mod.migrate_turn(None) is None
++
++
++def test_scan_over_a_legacy_state_advances_the_offset(tmp_path):
++    """The whole defect in one assertion: the offset must MOVE."""
++    tr = tmp_path / "t.jsonl"
++    tr.write_text("\n".join([
++        json.dumps({"type": "assistant", "message": {"content": [
++            {"type": "tool_use", "name": "Bash",
++             "input": {"command": "rg -n 'sympy' bench/"}}]}}),
++        json.dumps({"type": "user", "origin": {"kind": "human"}, "uuid": "u2",
++                    "timestamp": "2026-09-22T10:00:00.000Z",
++                    "message": {"content": "next"}}),
++    ]) + "\n")
++    state = {"offset": 0, "open": mod.migrate_turn(legacy_turn()), "seq": 1,
++             "reads": {}, "last_work": None, "reported": None, "history": []}
++    with tr.open("r", errors="ignore") as fh:
++        mod.scan(fh, state)
++    assert state["offset"] == tr.stat().st_size
++
++
++def _run_hook(tmp_path, transcript, state, env_extra=None):
++    sdir = tmp_path / "state"
++    sdir.mkdir(exist_ok=True)
++    (sdir / "sess").write_text(json.dumps(state))
++    env = {"FFAFP_AUDIT_STATE_DIR": str(sdir), "PATH": "/usr/bin:/bin",
++           "HOME": str(pathlib.Path.home())}
++    env.update(env_extra or {})
++    proc = subprocess.run(
++        [sys.executable, str(SRC)],
++        input=json.dumps({"session_id": "sess", "transcript_path": str(transcript),
++                          "hook_event_name": "UserPromptSubmit"}),
++        capture_output=True, text=True, env=env, timeout=60)
++    return proc, json.loads((sdir / "sess").read_text()), sdir
++
++
++def _transcript(tmp_path) -> pathlib.Path:
++    tr = tmp_path / "live.jsonl"
++    tr.write_text("\n".join([
++        json.dumps({"type": "user", "origin": {"kind": "human"}, "uuid": "u9",
++                    "timestamp": "2026-09-22T11:00:00.000Z",
++                    "message": {"content": "do the thing"}}),
++        json.dumps({"type": "assistant", "message": {"content": [
++            {"type": "tool_use", "name": "Edit",
++             "input": {"file_path": "bench/x.py", "old_string": "a",
++                       "new_string": "b"}}]}}),
++    ]) + "\n")
++    return tr
++
++
++def test_liveness_alarms_and_rearms_on_a_poison_migration_cannot_foresee(tmp_path):
++    """`reads` as a list breaks close_turn with TypeError -- nothing to do with schema.
++
++    Invocation 1 stalls quietly (a single replay can be a flush race). Invocation 2
++    must declare the detector dead, re-arm at end of file, and SAY SO on stdout.
++    """
++    tr = _transcript(tmp_path)
++    open_turn = mod.new_turn("u0", "2026-09-20T15:33:07Z", "p")
++    open_turn["read_paths"] = ["bench/x.py"]     # close_turn folds these INTO `reads`
++    poisoned = {"offset": 0, "open": open_turn,
++                "seq": 1, "reads": [], "last_work": None, "reported": None,
++                "history": [], "aligned": True}
++
++    proc1, st1, sdir = _run_hook(tmp_path, tr, poisoned)
++    assert proc1.returncode == 0
++    assert st1["offset"] == 0, "the stall must be real, or the test is vacuous"
++    assert st1["stall"] == 1 and "TypeError" in st1["last_error"]
++    assert "DETECTOR ITSELF WAS DEAD" not in proc1.stdout, "one stall is not a ratchet"
++
++    proc2, st2, _ = _run_hook(tmp_path, tr, st1)
++    assert proc2.returncode == 0
++    assert st2["offset"] == tr.stat().st_size, "must re-arm at end of file"
++    assert st2["recovered"] == 1 and st2["stall"] == 0
++    assert "DETECTOR ITSELF WAS DEAD" in proc2.stdout
++    assert json.loads(proc2.stdout)["suppressOutput"] is False, "an alarm is never silent"
++
++
++def test_liveness_is_silent_when_the_detector_is_healthy(tmp_path):
++    """The other half of the false-negative pair: a HEALTHY run must not alarm.
++
++    Without this, an alarm that fired unconditionally would pass the test above.
++    """
++    tr = _transcript(tmp_path)
++    clean = {"offset": 0, "open": None, "seq": 0, "reads": {}, "last_work": None,
++             "reported": None, "history": [], "aligned": True}
++    proc, st, _ = _run_hook(tmp_path, tr, clean)
++    assert proc.returncode == 0
++    assert st["offset"] == tr.stat().st_size
++    assert st.get("stall", 0) == 0 and not st.get("last_error")
++    assert st.get("recovered", 0) == 0
++    assert "DETECTOR ITSELF WAS DEAD" not in proc.stdout
++
++
++def test_end_to_end_the_unfixed_hook_freezes_and_the_fixed_one_does_not(tmp_path):
++    """The defect and the fix in one comparison, driven as the harness drives it.
++
++    The ordering matters and is the real one: the open turn's tool calls stream BEFORE
++    the next human prompt, so `record_tool` reaches the legacy turn first. Measured on
++    the live state file, the unfixed hook held offset 170431649 across 2 days; measured
++    here it holds offset 0 across 3 invocations, exit 0 every time, history empty. The
++    test is skipped rather than failed when no unfixed copy is around to compare with,
++    because its value is the DISAGREEMENT and an absent baseline proves nothing.
++    """
++    installed = HOOK
++    if not installed.is_file() or installed.resolve() == SRC.resolve():
++        pytest.skip("no separate installed copy to compare against")
++    legacy = legacy_turn()
++    tr = tmp_path / "e2e.jsonl"
++    tr.write_text("\n".join([
++        json.dumps({"type": "assistant", "message": {"content": [
++            {"type": "tool_use", "name": "Bash",
++             "input": {"command": "rg -n 'sympy' bench/"}}]}}),
++        json.dumps({"type": "assistant", "message": {"content": [
++            {"type": "tool_use", "name": "Edit",
++             "input": {"file_path": "bench/x.py", "old_string": "a",
++                       "new_string": "b"}}]}}),
++        json.dumps({"type": "user", "origin": {"kind": "human"}, "uuid": "u9",
++                    "timestamp": "2026-09-22T11:00:00.000Z",
++                    "message": {"content": "go"}}),
++    ]) + "\n")
++
++    def drive(hook_path, tag):
++        sdir = tmp_path / ("sd_" + tag)
++        sdir.mkdir()
++        st = json.loads(json.dumps(
++            {"offset": 0, "open": legacy, "seq": 1, "reads": {}, "last_work": None,
++             "reported": None, "history": [], "aligned": True}))
++        for _ in range(3):
++            (sdir / "sess").write_text(json.dumps(st))
++            proc = subprocess.run(
++                [sys.executable, str(hook_path)],
++                input=json.dumps({"session_id": "sess", "transcript_path": str(tr),
++                                  "hook_event_name": "UserPromptSubmit"}),
++                capture_output=True, text=True, timeout=60,
++                env={"FFAFP_AUDIT_STATE_DIR": str(sdir), "PATH": "/usr/bin:/bin",
++                     "HOME": str(pathlib.Path.home())})
++            assert proc.returncode == 0, "the hook must never fail the prompt"
++            st = json.loads((sdir / "sess").read_text())
++        return st
++
++    if not hasattr(_load(installed), "migrate_turn"):
++        old = drive(installed, "old")
++        assert old["offset"] == 0, "baseline must actually be frozen"
++        assert old["history"] == []
++    new = drive(SRC, "new")
++    assert new["offset"] == tr.stat().st_size
++    assert len(new["history"]) == 1
++
++
++def _load(path):
++    spec = importlib.util.spec_from_file_location("ffafp_probe_" + path.stem, path)
++    m = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(m)
++    return m
++
++
++def test_the_liveness_script_runs_and_reports_stale_for_a_stale_state(tmp_path):
++    """The ADDITIVE check: the new script has a caller, and this is it.
++
++    A script nothing reaches is not an addition. This executes it end to end and
++    asserts both branches of its exit code exist as behaviour, not as prose.
++    """
++    script = pathlib.Path(__file__).resolve().parents[2] / "scripts" / \
++        "ffafp_liveness_check_2026-09-22.py"
++    assert script.is_file(), "the fix must be delivered at its real repository path"
++    proc = subprocess.run([sys.executable, str(script), "no-such-session"],
++                          capture_output=True, text=True, timeout=120)
++    assert proc.returncode == 1
++    assert "no transcript found" in proc.stdout
+
+### cc2:attempt-1:hooks/ffafp_audit.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/ffafp_audit.py	2026-09-20 16:42:15
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h528s6gz/repo/hooks/ffafp_audit.py	2026-09-22 16:25:53
+@@ -176,6 +176,13 @@
+ #: Verdicts kept in the state file, so the notice can say whether a shortfall is isolated
+ #: or habitual. Bounded so the state file cannot grow without limit.
+ HISTORY_LIMIT = 40
++
++#: Consecutive invocations during which the offset may fail to advance while the
++#: transcript grows, before the detector declares ITSELF broken and re-arms. 1 is too
++#: tight: a prompt can land between the harness writing the line and the flush, and a
++#: single replayed read is normal. 2 consecutive stalls is not a race, it is a ratchet
++#: -- the 2026-09-20 KeyError stalled every invocation for 2 days without exception.
++STALL_LIMIT = 2
+ 
+ #: Above this size, start from the tail rather than the beginning on first sight of a
+ #: session. A cold pass of a 46.2 MB transcript measured 2.29 s wall, so this is insurance
+@@ -855,8 +862,38 @@
+     except Exception:                                        # noqa: BLE001
+         pass
+     return None
++
+ 
++def migrate_turn(turn):
++    """Backfill keys a persisted turn predates, returning it in the CURRENT shape.
+ 
++    THE DEFECT THIS EXISTS FOR, found by execution on 2026-09-22. `state["open"]` is a
++    turn dict serialised to JSON and reloaded on the next prompt. `new_turn()` gained a
++    `"scans"` key on 2026-09-20 16:42; a turn serialised at 15:33 that day has no such
++    key. `record_tool` then evaluates `turn["scans"]` and raises KeyError on the FIRST
++    tool line of the next scan. `scan()` assigns `state["offset"] = fh.tell()` on its
++    LAST line, so the abort leaves the offset unchanged, `main()`'s bare `except`
++    swallows the traceback, and the state is rewritten with the SAME offset. Every
++    later prompt replays the same bytes and dies in the same place. The detector
++    consumed nothing and recorded nothing for 2 days while reporting no error at all.
++
++    Verbatim, from the replay that established it:
++        File "ffafp_audit.py", line 496, in record_tool
++          if _TREE_SCAN.search(cmd) and len(turn["scans"]) < SEARCH_CAP:
++        KeyError: 'scans'
++
++    All 67 tests in the suite pass, and every one of them builds turns through
++    `new_turn()`. None loads a turn persisted by an OLDER build, which is the only
++    input that triggers this. That is the coverage gap.
++    """
++    if not isinstance(turn, dict):
++        return None
++    for k, v in new_turn().items():
++        if k not in turn:
++            turn[k] = list(v) if isinstance(v, list) else v
++    return turn
++
++
+ def load_state(sf: pathlib.Path) -> dict:
+     st = {"offset": 0, "open": None, "seq": 0, "reads": {}, "last_work": None,
+           "reported": None, "history": []}
+@@ -865,6 +902,8 @@
+             st.update(json.loads(sf.read_text()))
+     except Exception:                                        # noqa: BLE001
+         pass
++    st["open"] = migrate_turn(st.get("open"))
++    st["last_work"] = migrate_turn(st.get("last_work"))
+     return st
+ 
+ 
+@@ -902,6 +941,8 @@
+     if state.get("offset", 0) == 0 and size > COLD_START_MAX_FILE:
+         state["offset"] = size - COLD_START_TAIL_BYTES
+ 
++    before_offset = int(state.get("offset", 0) or 0)
++    scan_error = ""
+     try:
+         with tpath.open("r", errors="ignore") as fh:
+             if state.get("offset", 0) > 0 and not state.get("aligned"):
+@@ -914,9 +955,44 @@
+                 state["offset"] = fh.tell()
+             scan(fh, state)
+         state["aligned"] = True
+-    except Exception:                                        # noqa: BLE001
+-        pass
++    except Exception as exc:                                 # noqa: BLE001
++        scan_error = "%s: %s" % (type(exc).__name__, exc)
+ 
++    # ------------------------------------------------------------------------------
++    # LIVENESS SELF-CHECK. A detector reporting "nothing missing" because it is DEAD is
++    # indistinguishable downstream from one reporting "nothing missing" because nothing
++    # was missing. This project has paid for that confusion once already -- 16 of 17
++    # panel tool calls errored and were read as results. The two silences differ in ONE
++    # mechanically checkable way: a live detector's byte offset ADVANCES when the
++    # transcript grows. So that, and not the verdict, is what is asserted here.
++    #
++    # Recovery is bounded rather than absent. An abort inside scan() leaves the offset
++    # where it was, so the next prompt replays the same bytes and dies identically: the
++    # failure is a RATCHET, not a blip, and 2 days of silence is what that costs. After
++    # STALL_LIMIT consecutive stalls the ONLY per-turn structure a bad line can poison
++    # -- the open turn -- is dropped and the offset is moved to the current end of file.
++    # That forfeits the turns already lost. It cannot forfeit future ones. Losing one
++    # turn beats losing two days, and the forfeit is REPORTED, never silent.
++    # ------------------------------------------------------------------------------
++    now_offset = int(state.get("offset", 0) or 0)
++    stalled = bool(scan_error) or (size > before_offset and now_offset <= before_offset)
++    state["stall"] = (int(state.get("stall", 0) or 0) + 1) if stalled else 0
++    state["last_error"] = scan_error
++    alarm = ""
++    if state["stall"] >= STALL_LIMIT:
++        state["open"] = None
++        state["reads"] = {}          # a lookback cache, and poisonable in the same way
++        state["offset"] = size
++        state["aligned"] = True
++        state["stall"] = 0
++        state["recovered"] = int(state.get("recovered", 0) or 0) + 1
++        alarm = ("[ffafp] THE DETECTOR ITSELF WAS DEAD and has been re-armed at the end of "
++                 "the transcript. It consumed %d bytes without recording a verdict; those "
++                 "turns are FORFEIT and their FFAFP traces were never checked. Cause: %s. "
++                 "Treat this session's clean FFAFP history as ABSENT EVIDENCE, not as "
++                 "evidence of absence." % (max(0, size - before_offset), scan_error or
++                                           "offset did not advance while the transcript grew"))
++
+     # The turn that just finished is the OPEN one if this prompt's line is not yet written,
+     # and the last CLOSED work turn otherwise. Both orders occur, so take whichever is real
+     # and de-duplicate on the turn's uuid so the same turn is never reported twice.
+@@ -944,13 +1020,18 @@
+     except Exception:                                        # noqa: BLE001
+         pass
+ 
++    if alarm:
++        msg = alarm + ("\n" + msg if msg else "")
++
+     if not msg:
+         return
+     # Suppressed from the transcript by default: the notice is addressed to the assistant,
+     # and a visible block on every work turn becomes wallpaper. FFAFP_AUDIT_VISIBLE=1 surfaces
+     # it for the founder when he wants to watch the hook working.
+     print(json.dumps({
+-        "suppressOutput": os.environ.get("FFAFP_AUDIT_VISIBLE", "") != "1",
++        # An alarm is NEVER suppressed. The suppression exists so a routine notice does
++        # not become wallpaper; a dead instrument is not routine.
++        "suppressOutput": (not alarm) and os.environ.get("FFAFP_AUDIT_VISIBLE", "") != "1",
+         "hookSpecificOutput": {"hookEventName": event, "additionalContext": msg},
+     }))
+ 
+
+### cc2:attempt-1:scripts/ffafp_liveness_check_2026-09-22.py
+--- /dev/null	2026-09-22 16:31:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_h528s6gz/repo/scripts/ffafp_liveness_check_2026-09-22.py	2026-09-22 16:27:51
+@@ -0,0 +1,141 @@
++#!/usr/bin/env python3
++"""Is the FFAFP detector ALIVE, and what is it measuring? A committed answer to both.
++
++WHY THIS EXISTS. On 2026-09-22 the detector was found to have recorded nothing since
++2026-09-20 while exiting 0 on every invocation. Its `--survey` mode looked perfectly
++healthy throughout, because `survey()` walks a transcript from a FRESH state dict
++(`{"offset": 0, "open": None, ...}`) while the hook walks it from the state PERSISTED
++on disk. Only the persisted path could carry the poison, so the instrument's own
++self-report could not see the instrument's own death. That is the false-negative shape
++this project recorded when 16 of 17 panel tool calls errored and were read as results.
++
++WHAT DISTINGUISHES THE TWO SILENCES. "Nothing missing because healthy" and "nothing
++missing because dead" are identical in the verdict and differ in exactly one
++mechanically checkable fact: a live detector's byte offset ADVANCES as the transcript
++grows, and its history gains entries. This script asserts that against the live state
++file, and reports the FFAFP trace rates alongside, so no figure in any panel reply has
++to be quoted from an uncommitted script.
++
++    python3 scripts/ffafp_liveness_check_2026-09-22.py            # newest session
++    python3 scripts/ffafp_liveness_check_2026-09-22.py <session-id>
++
++Exit 0 = alive. Exit 1 = STALE: the detector is not recording and its verdicts, clean
++or otherwise, are ABSENT EVIDENCE rather than evidence of absence.
++"""
++from __future__ import annotations
++
++import datetime as _dt
++import json
++import pathlib
++import sys
++
++STATE_DIR = pathlib.Path.home() / ".claude" / ".ffafp_audit"
++PROJECTS = pathlib.Path.home() / ".claude" / "projects"
++
++#: Bytes of unconsumed transcript above which the detector is declared STALE. A live
++#: hook consumes to EOF on every prompt, so the healthy value is a few kB at most --
++#: whatever the harness wrote between the scan and the stat. The frozen detector was
++#: 26.0 MB behind when it was found. 1 MB sits far above the former and far below the
++#: latter, and the run that found the defect measured 6.40 s to parse 196.4 MB, so a
++#: backlog is never explained by the hook being slow.
++LAG_LIMIT = 1 << 20
++
++
++def _ts(entry):
++    return (entry or {}).get("ts") or ""
++
++
++def newest_session():
++    best, best_m = None, -1.0
++    for p in PROJECTS.glob("*/*.jsonl"):
++        try:
++            m = p.stat().st_mtime
++        except OSError:
++            continue
++        if m > best_m:
++            best, best_m = p, m
++    return best
++
++
++def transcript_for(sid: str):
++    for p in PROJECTS.glob("*/%s.jsonl" % sid):
++        return p
++    return None
++
++
++def survey_rates(tpath: pathlib.Path) -> dict:
++    """Trace rates, taken from the HOOK'S OWN walk rather than a second copy of it.
++
++    A survey that re-implemented the scan could agree with itself while disagreeing
++    with the hook; this project has found 4 defects of exactly that shape.
++    """
++    import importlib.util
++    hook = pathlib.Path.home() / ".claude" / "hooks" / "ffafp_audit.py"
++    repo = pathlib.Path(__file__).resolve().parents[1] / "hooks" / "ffafp_audit.py"
++    src = repo if repo.is_file() else hook
++    spec = importlib.util.spec_from_file_location("ffafp_live", src)
++    mod = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(mod)
++    st = mod.survey([str(tpath)])
++    out = {"source": str(src), "work": st.get("work", 0), "code": st.get("code", 0)}
++    # Key names are taken from `survey()` itself. An earlier draft of this script
++    # invented them and printed "P-PASS missing: 0 of 168 = 0.0%" against the hook's
++    # own 115 of 168, because `st.get(key, 0)` returns 0 for a key that is not there.
++    # A silent 0 from a typo'd lookup is the same failure this whole file is about, so
++    # the lookup is now strict and a missing key raises.
++    for key in ("miss_ppass", "stem", "miss_follow", "miss_analyse"):
++        k = st[key]
++        n = st["code"] if key == "miss_ppass" else st["work"]
++        p, lo, hi = mod.wilson(k, n)
++        out[key] = {"k": k, "n": n, "p": p, "lo": lo, "hi": hi,
++                    "vacuous": k in (0, n)}
++    return out
++
++
++def main() -> int:
++    sid = sys.argv[1] if len(sys.argv) > 1 else None
++    tpath = transcript_for(sid) if sid else newest_session()
++    if tpath is None:
++        print("no transcript found")
++        return 1
++    sid = tpath.stem
++    sf = STATE_DIR / sid
++    print("session    : %s" % sid)
++    print("transcript : %s (%.1f MB)" % (tpath, tpath.stat().st_size / 1e6))
++
++    if not sf.is_file():
++        print("LIVENESS   : STALE -- no state file. The hook has never run for this session.")
++        return 1
++    st = json.loads(sf.read_text())
++    size = tpath.stat().st_size
++    lag = size - int(st.get("offset", 0) or 0)
++    hist = st.get("history") or []
++    last = _ts(hist[-1]) if hist else ""
++    print("offset     : %d of %d  (lag %.1f MB)" % (st.get("offset", 0), size, lag / 1e6))
++    print("history    : %d entries, last %s" % (len(hist), last or "NEVER"))
++    print("open turn  : %s" % (_ts(st.get("open")) or "none"))
++    if st.get("last_error"):
++        print("last error : %s" % st["last_error"])
++    if st.get("recovered"):
++        print("recovered  : %d time(s) -- turns before each recovery were FORFEIT"
++              % st["recovered"])
++
++    stale = lag > LAG_LIMIT
++    print("LIVENESS   : %s" % ("STALE -- verdicts are ABSENT EVIDENCE, not evidence of "
++                               "absence" if stale else "ALIVE"))
++
++    r = survey_rates(tpath)
++    print("survey via : %s" % r.pop("source"))
++    print("work turns : %d   code-touching: %d" % (r.pop("work"), r.pop("code")))
++    for key, lab in (("miss_ppass", "P-PASS missing"), ("stem", "STEM tool used"),
++                     ("miss_follow", "FOLLOW missing"),
++                     ("miss_analyse", "ANALYSE missing")):
++        d = r[key]
++        print("  %-16s: %d of %d = %.1f%%  95%% Wilson [%.1f%%, %.1f%%]%s"
++              % (lab, d["k"], d["n"], 100 * d["p"], 100 * d["lo"], 100 * d["hi"],
++                 "  <-- VACUOUS" if d["vacuous"] else ""))
++    return 1 if stale else 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:bench/tests/test_ffafp_dead_detector_2026-09-22.py
+--- /dev/null	2026-09-22 16:31:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isd305tt/repo/bench/tests/test_ffafp_dead_detector_2026-09-22.py	2026-09-22 16:28:49
+@@ -0,0 +1,245 @@
++#!/usr/bin/env python3
++"""The FFAFP detector must survive its own schema evolution, and must fail LOUD.
++
++WHAT HAPPENED (established by execution, panel 2026-09-22). The 2026-09-20
++16:42 edit added a `scans` key to `new_turn()` and two direct `turn["scans"]`
++accesses to `record_tool` (lines 468 and 496). The live session's state file
++held an `open` turn persisted by the PREVIOUS version -- no `scans` key. From
++the next prompt onward every scan raised KeyError('scans'), `main()`'s blanket
++`except Exception: pass` swallowed it, and `state["offset"]` -- assigned only
++at scan's END -- froze at 170431649 while the transcript grew to 196 MB. The
++`history` list ended at 2026-09-20T15:33 and the detector reported nothing for
++2 days, exiting 0 every time. Run against the real state file:
++
++    KeyError: 'scans'  at ffafp_audit.py:496, record_tool
++
++Driven end-to-end through main() with an old-schema state and a 261-byte
++transcript, the un-repaired hook exited 0, emitted a plausible notice, and
++left offset at 0 of 261. A detector that is broken was indistinguishable,
++downstream, from a detector with nothing to report -- the same false-negative
++shape as the 16-of-17 errored panel tool calls once read as results.
++
++TWO REPAIRS, EACH TESTED HERE AGAINST THE VERSIONED COPY:
++  1. `_migrate_turn`: persisted turns are migrated against `new_turn()`'s own
++     schema at load, so the NEXT schema addition cannot re-create the crash.
++  2. Fail loud: a scan exception now produces a [ffafp SELF-CHECK FAILED]
++     notice naming the exception, with a consecutive-failure counter, instead
++     of silence. Exit stays 0 -- the prompt must go through.
++
++Plus the narrow Stop gate (`ffafp_stop_gate.py`): refuses at most ONE stop per
++turn when code changed and ANALYSE or P-PASS left no trace; fails OPEN.
++
++These tests drive the real functions and the real entry points as subprocesses.
++No test reads source text to decide a verdict.
++"""
++from __future__ import annotations
++
++import importlib.util
++import json
++import os
++import pathlib
++import subprocess
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++HOOK = REPO / "hooks" / "ffafp_audit.py"
++GATE = REPO / "hooks" / "ffafp_stop_gate.py"
++
++
++def _load(path: pathlib.Path, name: str):
++    spec = importlib.util.spec_from_file_location(name, path)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules[name] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++@pytest.fixture(scope="module")
++def fa():
++    return _load(HOOK, "ffafp_versioned_under_test")
++
++
++#: The open-turn schema as the pre-2026-09-20 version persisted it: no `scans`.
++def old_schema_turn(**over):
++    t = {"id": "turn-old", "ts": "2026-09-20T15:33:07.152Z", "prompt": "x",
++         "n_tools": 3, "mutations": ["bench/foo.py"], "first_mut": 1, "last_mut": 1,
++         "stem": [], "test_idx": [], "failable_idx": [], "searches": [],
++         "read_paths": []}
++    t.update(over)
++    return t
++
++
++def entry_human(uuid="u", ts="2026-09-22T10:00:00Z", text="next"):
++    return {"type": "user", "origin": {"kind": "human"}, "uuid": uuid,
++            "timestamp": ts, "message": {"content": text}}
++
++
++def entry_tool(name, inp):
++    return {"type": "assistant",
++            "message": {"content": [{"type": "tool_use", "name": name, "input": inp}]}}
++
++
++def write_jsonl(path, entries):
++    path.write_text("\n".join(json.dumps(e) for e in entries) + "\n")
++
++
++def run_hook(state_dir, transcript, session="sess1"):
++    env = dict(os.environ, FFAFP_AUDIT_STATE_DIR=str(state_dir))
++    payload = json.dumps({"session_id": session, "transcript_path": str(transcript)})
++    return subprocess.run([sys.executable, str(HOOK)], input=payload,
++                          capture_output=True, text=True, env=env, timeout=60)
++
++
++# ── 1. the crash that killed the detector, end-to-end ───────────────────────
++
++def test_persisted_pre_scans_state_cannot_kill_the_scan(tmp_path):
++    """FALSIFIER for the 2026-09-20 defect. Against the un-repaired hook this
++    fails exactly as production failed: offset frozen, exit still 0."""
++    state_dir = tmp_path / "state"
++    state_dir.mkdir()
++    (state_dir / "sess1").write_text(json.dumps(
++        {"offset": 0, "open": old_schema_turn(), "seq": 5, "reads": {},
++         "last_work": None, "reported": None, "history": [], "aligned": True}))
++    t = tmp_path / "t.jsonl"
++    write_jsonl(t, [
++        # A Grep lands in the STALE open turn: the pre-repair crash site.
++        entry_tool("Grep", {"pattern": "foo", "path": "bench"}),
++        entry_human(),
++    ])
++    r = run_hook(state_dir, t)
++    assert r.returncode == 0
++    st = json.loads((state_dir / "sess1").read_text())
++    assert st["offset"] == t.stat().st_size, (
++        "offset froze below EOF: scan died on the old-schema turn, silently")
++    assert len(st.get("history") or []) == 1, "the closed work turn never reached history"
++    assert "SELF-CHECK FAILED" not in r.stdout, "a migrated state must scan cleanly"
++
++
++def test_migration_tracks_new_turn_schema_by_construction(fa):
++    """The migrated key set IS new_turn()'s key set -- read out, not typed."""
++    migrated = fa._migrate_turn(dict(old_schema_turn()))
++    assert set(migrated) >= set(fa.new_turn()), "a schema key escaped migration"
++    # and record_tool's crash sites are exercised directly on a migrated turn
++    fa.record_tool(migrated, "Grep", {"pattern": "foo", "path": "bench"})
++    fa.record_tool(migrated, "Bash", {"command": "grep -rn foo bench/"})
++    assert len(migrated["scans"]) == 2
++
++
++# ── 2. a broken scan is loud, and recovery is visible ───────────────────────
++
++def corrupt_state(state_dir):
++    """n_tools=None makes record_tool raise TypeError through the REAL path --
++    a data-induced stand-in for the next unforeseen schema break."""
++    (state_dir / "sess1").write_text(json.dumps(
++        {"offset": 0, "open": old_schema_turn(n_tools=None), "seq": 5, "reads": {},
++         "last_work": None, "reported": None, "history": [], "aligned": True}))
++
++
++def test_scan_failure_is_loud_not_silent(tmp_path):
++    state_dir = tmp_path / "state"
++    state_dir.mkdir()
++    corrupt_state(state_dir)
++    t = tmp_path / "t.jsonl"
++    write_jsonl(t, [entry_tool("Grep", {"pattern": "foo", "path": "bench"}), entry_human()])
++    r = run_hook(state_dir, t)
++    assert r.returncode == 0, "the prompt must still go through"
++    out = json.loads(r.stdout)
++    ctx = out["hookSpecificOutput"]["additionalContext"]
++    assert "SELF-CHECK FAILED" in ctx and "TypeError" in ctx
++    st = json.loads((state_dir / "sess1").read_text())
++    assert st.get("scan_failures") == 1
++
++
++def test_scan_failure_counter_resets_when_the_scan_recovers(tmp_path):
++    state_dir = tmp_path / "state"
++    state_dir.mkdir()
++    corrupt_state(state_dir)
++    t = tmp_path / "t.jsonl"
++    write_jsonl(t, [entry_tool("Grep", {"pattern": "foo", "path": "bench"}), entry_human()])
++    run_hook(state_dir, t)
++    # repair the state the way an operator would, then the next run is clean
++    st = json.loads((state_dir / "sess1").read_text())
++    st["open"]["n_tools"] = 3
++    (state_dir / "sess1").write_text(json.dumps(st))
++    r2 = run_hook(state_dir, t)
++    st2 = json.loads((state_dir / "sess1").read_text())
++    assert st2.get("scan_failures") == 0
++    assert st2["offset"] == t.stat().st_size
++    assert "SELF-CHECK FAILED" not in r2.stdout
++
++
++# ── 3. the Wolfram window line fires iff the window is Wolfram-free ─────────
++
++def _hist(n, stem):
++    return [{"id": f"h{i}", "ts": "2026-09-22T00:00:00Z", "work": True,
++             "missing": ["P-PASS"], "stem": stem} for i in range(n)]
++
++
++def test_wolfram_window_line_fires_on_a_wolfram_free_window(fa):
++    verdict = {"missing": ["P-PASS"], "ts": "2026-09-22T00:00:00Z",
++               "files": ["bench/foo.py"], "n_files": 1, "stem": []}
++    msg = fa.render(verdict, _hist(5, []))
++    assert "Wolfram in 0 of the last" in msg
++
++
++def test_wolfram_window_line_is_not_vacuous(fa):
++    """One Wolfram-bearing turn in the window silences the line."""
++    hist = _hist(4, []) + _hist(1, ["wolfram"])
++    verdict = {"missing": ["P-PASS"], "ts": "2026-09-22T00:00:00Z",
++               "files": ["bench/foo.py"], "n_files": 1, "stem": []}
++    assert "Wolfram in 0 of the last" not in fa.render(verdict, hist)
++    # legacy history entries without a `stem` key must not crash the render
++    legacy = [{"id": "h", "ts": "t", "work": True, "missing": []}] * 5
++    assert fa.render(verdict, legacy)
++
++
++# ── 4. the Stop gate: blocks the sy/P-PASS skip once, never traps ───────────
++
++def run_gate(transcript, stop_hook_active=False):
++    payload = json.dumps({"transcript_path": str(transcript),
++                          "stop_hook_active": stop_hook_active})
++    return subprocess.run([sys.executable, str(GATE)], input=payload,
++                          capture_output=True, text=True, timeout=60)
++
++
++def test_gate_refuses_a_stop_after_untested_code_change(tmp_path):
++    t = tmp_path / "t.jsonl"
++    write_jsonl(t, [entry_human(),
++                    entry_tool("Edit", {"file_path": "bench/foo.py",
++                                        "old_string": "a", "new_string": "b"})])
++    r = run_gate(t)
++    assert r.returncode == 2
++    assert "ANALYSE" in r.stderr and "P-PASS" in r.stderr
++
++
++def test_gate_never_refuses_twice_per_turn(tmp_path):
++    t = tmp_path / "t.jsonl"
++    write_jsonl(t, [entry_human(), entry_tool("Edit", {"file_path": "bench/foo.py"})])
++    assert run_gate(t, stop_hook_active=True).returncode == 0
++
++
++def test_gate_allows_a_stop_when_the_check_ran(tmp_path):
++    t = tmp_path / "t.jsonl"
++    write_jsonl(t, [entry_human(),
++                    entry_tool("Edit", {"file_path": "bench/foo.py"}),
++                    entry_tool("Bash", {"command": "python3 -m pytest bench/tests -q"})])
++    assert run_gate(t).returncode == 0
++
++
++def test_gate_ignores_doc_only_turns(tmp_path):
++    t = tmp_path / "t.jsonl"
++    write_jsonl(t, [entry_human(), entry_tool("Edit", {"file_path": "docs/README.md"})])
++    assert run_gate(t).returncode == 0
++
++
++def test_gate_fails_open_on_garbage(tmp_path):
++    r = subprocess.run([sys.executable, str(GATE)], input="not json",
++                       capture_output=True, text=True, timeout=60)
++    assert r.returncode == 0
++    missing = tmp_path / "no_such.jsonl"
++    payload = json.dumps({"transcript_path": str(missing)})
++    r2 = subprocess.run([sys.executable, str(GATE)], input=payload,
++                        capture_output=True, text=True, timeout=60)
++    assert r2.returncode == 0
+
+### fable:attempt-1:hooks/ffafp_audit.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/ffafp_audit.py	2026-09-20 16:42:15
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isd305tt/repo/hooks/ffafp_audit.py	2026-09-22 16:27:02
+@@ -736,6 +736,19 @@
+         for code in verdict["missing"]:
+             k = sum(1 for h in recent if code in (h.get("missing") or []))
+             lines.append(f"  {code} missing in {k} of the last {n} work turns.")
++        # WOLFRAM IS THE SECOND FALSIFIER (founder ruling 2026-09-17), for CC1
++        # exactly as for the seats. Every seat mechanism was wired through the
++        # dispatcher's system prompt; nothing was wired to CC1, and the seats
++        # used Wolfram in 6 of 6 dispatches while CC1 made 1 call all day.
++        # One line, only when the whole recent window is Wolfram-free, so it
++        # cannot become wallpaper and cannot be vacuous.
++        wolf = sum(1 for h in recent if "wolfram" in (h.get("stem") or []))
++        if wolf == 0:
++            lines.append(f"  Wolfram in 0 of the last {n} work turns. Where a result "
++                         "can be checked in Wolfram, check it there as the SECOND "
++                         "falsifier (wolframscript -code '...'). If it cannot run "
++                         "(absent, kernel busy, licence), say so and continue with "
++                         "the open-source tools -- that is compliance, silence is not.")
+     lines.append("  This detects MISSING TRACES, not missing rigour. A check you run in THIS "
+                  "turn for last turn's edit is invisible to it, and a note needs no test. If "
+                  "the trace is genuinely owed, produce it now rather than asserting it was done.")
+@@ -855,6 +868,29 @@
+     except Exception:                                        # noqa: BLE001
+         pass
+     return None
++
++
++def _migrate_turn(t):
++    """Give a PERSISTED turn every key the current `new_turn()` schema has.
++
++    WHY THIS EXISTS (2026-09-22, panel). The 2026-09-20 16:42 edit added a
++    `scans` key to `new_turn()` and two direct `turn["scans"]` accesses to
++    `record_tool`. The state file for the live session held an `open` turn
++    written by the PREVIOUS version -- no `scans` key -- so the very next
++    scan raised KeyError('scans') at the first tree-scan tool call,
++    `main()`'s blanket except swallowed it, `state["offset"]` (assigned only
++    at scan's END) froze at 170431649, and the detector recorded NOTHING for
++    2 days while exiting 0 on every prompt. Reproduced by execution against
++    the real state file before this repair.
++
++    The keys are read out of `new_turn()` itself, not typed here, so the
++    NEXT schema addition is migrated automatically -- the same one-source
++    rule as `hook_fixture.py`'s glob.
++    """
++    if isinstance(t, dict):
++        for k, v in new_turn().items():
++            t.setdefault(k, v)
++    return t
+ 
+ 
+ def load_state(sf: pathlib.Path) -> dict:
+@@ -865,6 +901,9 @@
+             st.update(json.loads(sf.read_text()))
+     except Exception:                                        # noqa: BLE001
+         pass
++    for key in ("open", "last_work"):
++        if st.get(key):
++            _migrate_turn(st[key])
+     return st
+ 
+ 
+@@ -902,6 +941,7 @@
+     if state.get("offset", 0) == 0 and size > COLD_START_MAX_FILE:
+         state["offset"] = size - COLD_START_TAIL_BYTES
+ 
++    scan_error = ""
+     try:
+         with tpath.open("r", errors="ignore") as fh:
+             if state.get("offset", 0) > 0 and not state.get("aligned"):
+@@ -914,8 +954,19 @@
+                 state["offset"] = fh.tell()
+             scan(fh, state)
+         state["aligned"] = True
+-    except Exception:                                        # noqa: BLE001
+-        pass
++        state["scan_failures"] = 0
++    except Exception as e:                                   # noqa: BLE001
++        # FAIL LOUD, NEVER SILENT (2026-09-22). This except used to be `pass`,
++        # and that `pass` cost 2 days: a KeyError from a schema edit crashed
++        # every scan from 2026-09-20 16:42 onward, the offset froze at the
++        # last successful position, and the hook's silence was downstream-
++        # indistinguishable from "no traces missing" -- the same false-negative
++        # shape as the 16-of-17 errored tool calls once read as results. A
++        # detector may fail; it may not fail quietly. The prompt still goes
++        # through (exit stays 0): the notice reports the breakage instead of
++        # pretending health.
++        state["scan_failures"] = int(state.get("scan_failures") or 0) + 1
++        scan_error = f"{type(e).__name__}: {e}"
+ 
+     # The turn that just finished is the OPEN one if this prompt's line is not yet written,
+     # and the last CLOSED work turn otherwise. Both orders occur, so take whichever is real
+@@ -932,13 +983,22 @@
+         hist = state.get("history") or []
+         if not already:
+             hist.append({"id": verdict["id"], "ts": verdict["ts"], "work": verdict["is_work"],
+-                         "missing": verdict["missing"]})
++                         "missing": verdict["missing"], "stem": verdict.get("stem") or []})
+             state["history"] = hist[-HISTORY_LIMIT:]
+             state["reported"] = verdict.get("id")
+         msg = "" if already else render(verdict, state.get("history") or [])
+     else:
+         msg = ""
+ 
++    if scan_error:
++        msg = (f"[ffafp SELF-CHECK FAILED] scan() raised {scan_error} "
++               f"(failure {state.get('scan_failures')} in a row; offset stuck at "
++               f"{state.get('offset', 0)} of {size} bytes). The detector is BROKEN, "
++               "not clean: without this notice its silence would read as 'no traces "
++               "missing'. Repair ~/.claude/hooks/ffafp_audit.py or its state file "
++               "now; this notice repeats on every prompt until a scan completes."
++               + ("\n" + msg if msg else ""))
++
+     try:
+         sf.write_text(json.dumps(state))
+     except Exception:                                        # noqa: BLE001
+
+### fable:attempt-1:hooks/ffafp_stop_gate.py
+--- /dev/null	2026-09-22 16:31:31
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isd305tt/repo/hooks/ffafp_stop_gate.py	2026-09-22 16:27:36
+@@ -0,0 +1,127 @@
++#!/usr/bin/env python3
++"""Stop hook: refuse ONE stop when the turn changed code and left no ANALYSE or
++P-PASS trace. This is the narrow BLOCK the founder asked for, shaped to survive
++his own false-positive objection.
++
++WHAT THE FOUNDER ASKED AND WHAT THIS DOES ABOUT IT
++==================================================
++2026-09-22: "All I want is for you never to skip the full 'f' (5 step protocol),
++or to skip sy, on any element of your output that might be accessible to this."
++Asked BLOCK or REPORT he said "Block rather than report", then that he does not
++know what block means and wants only that the protocol is never skipped.
++
++The ex-ante reminder (`mc_commands.py`, every prompt since 2026-08-30) measurably
++did not close the gap. The ex-post reporter (`ffafp_audit.py`) is one-sided and
++report-only BY DESIGN, and its docstring's objection to blocking is correct: a
++hook that blocked on a heuristic that soft would be switched off within a day.
++So this file blocks ONLY on the two signals whose false-positive cost is one
++bounced stop, not a trapped session:
++
++  * ANALYSE missing -- code changed and NO STEM tool and NO test ran in the
++    entire turn. That is the `sy` skip, verbatim.
++  * P-PASS missing  -- code changed and nothing failable ran after the last
++    edit. A fix never tried against failure is a hypothesis.
++
++THE DOMINANT FALSE POSITIVE of the trace detector -- "the check runs next turn"
++-- is exactly what this gate converts into "the check runs NOW", which is the
++outcome the founder asked for. The cost of a wrong refusal is bounded: Claude
++Code sets `stop_hook_active` after one refusal and this exits 0 immediately, so
++the gate interrupts at most ONE stop per turn. On the bounce the model either
++produces the owed trace or states in one line why none is owed, then stops.
++
++FOLLOW and FIND are NOT gated: their false positives (investigate on turn N,
++edit on N+1) are legitimate practice, and blocking on them is how a gate gets
++parked. Wolfram is NOT gated either: the founder's 2026-09-17 ruling says a
++Wolfram call that cannot run is not a blocker, so Wolfram stays on the REPORT
++side (see the window line in ffafp_audit.render).
++
++A BROKEN GATE FAILS OPEN AND SAYS SO. The trace detector's blanket `except:
++pass` cost 2 days of silence indistinguishable from health (2026-09-20 KeyError,
++frozen offset). Here every failure path allows the stop AND prints why to
++stderr, so breakage is visible the moment it happens.
++
++Exit contract (same as work_not_narrate.py): exit 2 + reason on stderr refuses
++the stop; exit 0 allows it.
++
++INSTALL: copy beside ffafp_audit.py in ~/.claude/hooks/ and wire in
++~/.claude/settings.json under "Stop":
++    {"type": "command", "command": "python3 ~/.claude/hooks/ffafp_stop_gate.py",
++     "timeout": 20}
++"""
++from __future__ import annotations
++
++import json
++import os
++import pathlib
++import sys
++
++sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
++import ffafp_audit as fa  # noqa: E402  the ONE copy of the trace rules
++
++#: The Stop event needs only the CURRENT turn, so scan a bounded tail rather
++#: than 196 MB. 8 MB held every turn in the surveyed corpus (largest turn
++#: serialised to 135 kB; the margin is x60). A turn larger than the tail
++#: under-counts mutations and can only UNDER-block, which is the safe side.
++TAIL_BYTES = 8 * 1024 * 1024
++
++#: The 2 signals hard enough to block on. See module docstring for why the
++#: other 3 stay report-only.
++GATED = ("ANALYSE", "P-PASS")
++
++
++def last_turn_verdict(tpath: pathlib.Path):
++    """Audit the turn now ending, from a fresh bounded scan of the transcript."""
++    size = tpath.stat().st_size
++    state = {"offset": 0, "open": None, "seq": 0, "reads": {}}
++    closed = []
++    with tpath.open("r", errors="ignore") as fh:
++        if size > TAIL_BYTES:
++            fh.seek(size - TAIL_BYTES)
++            fh.readline()                      # discard the partial line
++            state["offset"] = fh.tell()
++        fa.scan(fh, state, on_close=closed.append)
++    if state.get("open"):                      # the turn being stopped is open
++        return fa.audit(state["open"], fa.prior_read_paths(state))
++    return closed[-1] if closed else None
++
++
++def main() -> int:
++    try:
++        payload = json.load(sys.stdin)
++    except Exception:                          # noqa: BLE001
++        return 0                               # bad payload: never trap a session
++    if payload.get("stop_hook_active"):
++        return 0                               # already refused once; never loop
++    t = str(payload.get("transcript_path") or "")
++    tpath = pathlib.Path(os.path.expanduser(t))
++    if not tpath.is_file():
++        return 0
++    try:
++        v = last_turn_verdict(tpath)
++    except Exception as e:                     # noqa: BLE001
++        print(f"[ffafp-gate SELF-CHECK] scan failed ({type(e).__name__}: {e}); "
++              f"failing OPEN and allowing the stop. The gate is broken, not the work.",
++              file=sys.stderr)
++        return 0
++    if not v or not v.get("code"):
++        return 0
++    owed = [m for m in (v.get("missing") or []) if m in GATED]
++    if not owed:
++        return 0
++    files = ", ".join(v.get("files") or []) or "unnamed files"
++    why = {m: fa._WHY[m] for m in owed}
++    print(
++        f"[ffafp-gate] This turn changed code ({files}) and left NO OBSERVABLE "
++        f"TRACE of: {', '.join(owed)}.\n"
++        + "".join(f"  {m}: {w}\n" for m, w in why.items())
++        + "Before stopping, either RUN the owed check now (a failable test or a "
++          "STEM-tool computation on the changed code), or state in one line why "
++          "none is owed (doc-only reasoning, founder-verified, check deferred to a "
++          "named next step). This gate refuses at most one stop per turn.",
++        file=sys.stderr,
++    )
++    return 2
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

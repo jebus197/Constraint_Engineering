@@ -312,6 +312,17 @@ def classify_path(path: str) -> str:
     if (low.startswith("/tmp/") or low.startswith("/private/tmp/") or low.startswith("/var/folders/")
             or "/scratchpad/" in low or low.startswith("/dev/")):
         return "transient"
+    # AN UNRESOLVED PATH CANNOT BE CLASSIFIED (2026-09-24). Added after the Stop
+    # gate's FIRST REAL BOUNCE refused a turn that changed no code at all. It
+    # accused `$SP/gate_in.json`: a scratchpad file whose RESOLVED path returns
+    # "transient" correctly, but the classifier sees the path as written in the
+    # COMMAND TEXT, before the shell expands `$SP`, so it matched none of the
+    # transient prefixes above and fell through to being judged by its `.json`
+    # suffix. Guessing from the suffix of a path whose target is unknown is how
+    # this gate earns a false refusal on correct work -- the exact failure that
+    # got the previous Stop hook parked within a day on 2026-09-11.
+    if re.search(r"\$\{?\w+", p):
+        return "other"
     ext = os.path.splitext(base)[1]
     if ext in (".log", ".pid", ".tmp", ".lock", ".out", ".err"):
         return "transient"

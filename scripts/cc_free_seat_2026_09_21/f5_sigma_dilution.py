@@ -21,8 +21,13 @@ from bench.reference_runner_v3 import FIX_EFFICACY_GATE_WEIGHT, compute_rk
 import sys as _s, pathlib as _p
 _s.path.insert(0, str(_p.Path(__file__).resolve().parents[1]))
 from _cli_help import answer_help  # noqa: E402
-answer_help(__doc__, __file__)
-
+# GUARDED 2026-09-24 (CC1). At MODULE level this read the HOST's argv:
+# the operational-script probe imports via `python3 -c "..." <path>`, so
+# sys.argv[1] was the script's own path and the guard refused it, exit 2.
+# `__name__` is still "__main__" when the file is RUN, so `--help` answers
+# exactly as before; on IMPORT it is skipped and argv is never inspected.
+if __name__ == "__main__":
+    answer_help(__doc__, __file__)
 W = {"e1_efficacy": FIX_EFFICACY_GATE_WEIGHT, "e2_regression": 2.0,
      "e3_ruff": 1.0, "e4_bandit": 2.0}
 

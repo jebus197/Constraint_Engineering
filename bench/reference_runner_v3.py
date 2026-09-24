@@ -6052,12 +6052,20 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             "source_model": e.get("source_model"), "severity": e.get("severity"),
         }
         _n0 = len(_routing_attempts)
+        # THREADED 2026-09-24, and passed ONLY when it differs from route()'s own
+        # default. Passing it unconditionally broke 8 tests across 4 files whose
+        # `fake_route` stubs take no such keyword -- and those stubs are right to
+        # be narrow: they assert on BEHAVIOUR, and a stub that must grow whenever
+        # the real signature gains an optional parameter is a test coupled to a
+        # signature. Omitting the keyword at the default keeps every archived path
+        # byte-identical, which is the point of a gated feature, and the opt-in
+        # path is exercised by
+        # bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py.
+        _rungs = int(getattr(cfg, "routing_max_rungs", 2) or 2)
+        _route_kw = {} if _rungs == 2 else {"max_rungs": _rungs}
         result = route(
             finding, models, confirmed, resolve_fn, reverify_falsifier,
-            _routing_similarity,
-            # THREADED 2026-09-24. Without this keyword the field above is a
-            # config option no caller reads -- an addition nothing reaches.
-            max_rungs=int(getattr(cfg, "routing_max_rungs", 2) or 2),
+            _routing_similarity, **_route_kw,
         )
         # RECORD WHAT THE LADDER ACTUALLY DID. Detective only; no behaviour here.
         #

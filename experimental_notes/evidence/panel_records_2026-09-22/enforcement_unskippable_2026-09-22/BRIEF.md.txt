@@ -1,0 +1,112 @@
+# Panel brief — make FFAFP, sy and Wolfram unskippable for CC1
+
+## SECTION 1 — The question
+
+The founder's instruction, verbatim: *"All I want is for you never to skip the full 'f' (5 step
+protocol), or to skip sy, on any element of your output that might be accessible to this. CDSFL
+as a whole demands tool use (in this case including Wolfram). We demand this of all our other
+models. You should be no exception."*
+
+Asked to choose between a hook that BLOCKS and one that REPORTS, he answered "Block rather than
+report", then said plainly that he does not know what block means and that the outcome he wants
+is simply that the protocol is never skipped. So the question is NOT "block or report". It is:
+
+**What is the simplest sufficient mechanism that actually prevents CC1 skipping FFAFP, sy and
+Wolfram — given that the mechanism built for exactly this purpose already exists, is wired, is
+covered by 71 passing tests, and has been silently dead for about 2 days?**
+
+The artefacts under review:
+- `~/.claude/hooks/ffafp_audit.py` — the FFAFP trace detector, 809 lines, wired in
+  `~/.claude/settings.json` as a UserPromptSubmit hook. NOT in this repository; read it at the
+  absolute path, and also at `bench/logs/maths_panel_2026-09-20_r4/sandbox_harvest/cc2/attempt-1/files/hooks/ffafp_audit.py`.
+- `~/.claude/.ffafp_audit/a07b3790-0a2a-4978-aedb-bd842c0493d3` — its own state file. Its
+  `history` list ENDS at the afternoon of 2026-09-20 while its `offset` advanced today. It is
+  consuming the transcript and recording nothing.
+- `bench/wolfram_standard.py` and `bench/tools/wolfram_gate/serial` — the Wolfram serial gate.
+- `~/.claude/hooks/mc_commands.py` — the existing ex-ante reminder.
+- `hooks/work_not_narrate.py` in this repository — the ONLY hook here that can refuse a stop.
+
+## SECTION 1b — What is already established, so you do not re-derive it
+
+An independent analyst established, and CC1 verified against the hook's own state file:
+
+- The FFAFP detector's `history` has 40 entries, the last at the afternoon of 2026-09-20. It has
+  appended nothing since while still advancing its byte offset.
+- The detector is DELIBERATELY report-only. Its docstring: *"A hook that blocked on a heuristic
+  this soft would be switched off within a day, and a false block on correct work costs more
+  than a missed reminder."* Exit status is always 0 and no `decision` field is emitted.
+- Its own measurement, from its `--survey` mode, is that reminding did not work: `mc_commands.py`
+  has injected the sy obligation into EVERY prompt since 2026-08-30, and a STEM tool still
+  appeared in under a third of work turns over the corpus it measured.
+- On today's transcript its survey reports P-PASS traces MISSING on a substantial minority of
+  code-touching turns — CC1 changed a code file and ran nothing that could fail. Run --survey
+  yourself and quote your own figure with its interval; do not quote one from this brief,
+  because no committed script in this repository produces it.
+- On Wolfram: every mechanism built for the founder's 2026-09-17 ruling was wired to SEATS
+  through the dispatcher's SYSTEM prompt. NONE of it is wired to CC1. The seats used Wolfram in
+  6 of 6 dispatches; CC1 made 1 Wolfram call all day and it landed only after being challenged.
+
+## SECTION 2 — Use the harness
+
+Form your answer by RUNNING things, not by describing them.
+
+`sigma` is the instrument that bears here, because this is a question about whether an
+instrument's own reported state can be trusted. A detector that returns "nothing missing" when
+it is broken is indistinguishable, downstream, from one that returns "nothing missing" because
+nothing was missing — the same false-negative shape the project recorded when 16 of 17 panel
+tool calls errored and were read as results. Establish which of those two the silence is, by
+execution, and say what a self-check would have to assert to tell them apart.
+
+`S_k` does NOT bear on this and the two-sided gate does not either; say so if you find otherwise.
+
+Run `--survey` yourself against the live transcript before quoting any rate from it.
+
+## SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is half an answer. A fix without a falsifier you have EXECUTED is a
+hypothesis.
+
+Deliver every fix by WRITING IT INTO THE SANDBOX REPOSITORY TREE AT ITS REAL PATH. A fix
+described in prose is not delivered. A fix written to scratch space is destroyed at teardown.
+
+<!-- figure: harvest loss | scripts/panel_harvest_loss_2026-09-22.py | 70.0000 -->
+
+Measured: 70.0000% of scripts delivered by seats never reached `scripts/`. Do not let yours
+join them. Note that `~/.claude/hooks/` is OUTSIDE this repository, so a fix to the hook cannot
+be delivered by writing there from a sandbox — deliver it as a file inside the repo tree, with
+an explicit statement of where it must be installed and what installs it.
+
+Report the command you ran and the output you saw, verbatim.
+
+A STORED falsifier may not call Wolfram: anyone reproducing this project must not be required
+to install it. You may use Wolfram while reasoning, and you should.
+
+## SECTION 4 — What would refute you
+
+State what evidence would overturn your own answer before you conclude. If you propose blocking,
+name the false-positive case that would make CC1 or the founder switch it off, and say what your
+design does about that case. If you propose reporting, name the evidence that reporting works,
+given the measurement above that reminding did not.
+
+## SECTION 5 — Output shape
+
+- `verdict` — BLOCK / REPORT / HYBRID, on the enforcement question, with the reason
+- `reasoning` — citing file and line
+- `root_cause` — why the detector stopped recording on 2026-09-20, established by execution
+- `falsifier_path`, `falsifier_command`, `falsifier_output` — verbatim
+- `fix_path` — real repository paths, or NONE with the reason
+- `install_instruction` — for anything that must live outside the repository
+- `wolfram_wiring` — how CC1's own Wolfram use becomes non-optional, concretely
+- `additive_check` — what caller reaches your addition, and what test executes it
+- `refutation_condition`
+- `strongest_disagreement` — with this brief's framing, including with the founder's "block"
+  instruction if you think it is wrong. Must not be empty.
+- `passes_run`
+
+## SECTION 6 — Termination
+
+Stop on diminishing returns: when a further pass adds no finding above the real-world-consequence
+threshold. Report how many passes you ran and what the last one added. Do not manufacture
+findings. Do not nitpick style.
+
+Disagreement with the other seat is information. Do not smooth it away.
