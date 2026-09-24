@@ -107,3 +107,37 @@ def test_a_real_code_change_with_no_failable_run_is_still_refused(tmp_path):
     assert fa.classify_path("bench/reference_runner_v3.py") == "code", (
         "an ordinary tracked Python file must still count as code, or the gate "
         "can never fire and the repair has gone too far")
+
+# ── WHY THERE IS NO SYNTHETIC END-TO-END TEST HERE, AND WHAT STANDS IN ITS PLACE ──
+#
+# 2 tests were written here on 2026-09-24 that ran the gate as a subprocess over a
+# hand-built transcript and asserted its EXIT CODE: one that a turn whose only
+# writes are unresolved paths is NOT refused, one that a real edit with no
+# failable run still IS. They were DELETED rather than committed, because both
+# were VACUOUS. Probed directly, `fa.scan` over either fixture left `state["open"]`
+# None and `on_close` empty, so `fa.audit` was handed NO TURN AT ALL: the
+# "passing" test passed because nothing was examined, which is the exact shape
+# this project has caught 3 times as a substitution tautology. Shipping it would
+# have been worse than shipping no test, because it would have read as coverage.
+#
+# Reproducing a real turn needs the transcript fields `scan` keys off, and I did
+# not establish them. THE SYNTHETIC FIXTURE IS OWED and is named here so it is not
+# mistaken for done.
+#
+# WHAT IS ESTABLISHED, on the live transcript rather than a fixture, and it is the
+# stronger evidence for the repair itself:
+#
+#   BEFORE  the gate refused naming 6 paths, of which 3 were `$SP/...`
+#   AFTER   the gate's list no longer contains ANY `$SP/...` entry
+#
+# and the refusal that remains names `bench/reference_runner_v3.py` and
+# `bench/experiment_11_orchestrator.py`, both of which were genuinely edited, so
+# the gate is now accusing only real changes. That transition is what the repair
+# claimed and it is what was observed.
+#
+# THE LESSON THAT COST TWO ATTEMPTS. The first repair returned "other" for an
+# unresolved path and THIS FILE asserted exactly that -- `classify_path != "code"`
+# -- and passed, while the gate went on refusing, because its 3 consumers test
+# `!= "transient"` and so counted "other" anyway. A fix verified only at the layer
+# it edited is not verified. That is why `classify_path` now returns a distinct
+# "unresolved" and why the consumers exclude it by name.

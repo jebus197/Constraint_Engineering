@@ -300,7 +300,16 @@ def _is_test_path(path: str) -> bool:
 
 
 def classify_path(path: str) -> str:
-    """One of 'code', 'doc', 'transient', 'other'.
+    """One of 'code', 'doc', 'transient', 'unresolved', 'other'.
+
+    'unresolved' is a path carrying an unexpanded shell variable. It is NOT
+    'other': a real file with an unrecognised extension IS a change worth
+    noting, whereas a path whose target cannot be known supports no claim at
+    all. The 3 consumers below therefore exclude it from the mutation set, so
+    it can neither accuse nor excuse. Added 2026-09-24 after the first repair
+    -- returning 'other' -- proved INSUFFICIENT: the consumers test
+    `!= "transient"`, so 'other' still counted and the gate refused a turn
+    whose only writes were scratchpad files named through `$SP`.
 
     'transient' exists so that capturing a run's stdout to /tmp is not mistaken for
     changing the system. Measured: /tmp logs were the single most common redirect target
@@ -322,7 +331,7 @@ def classify_path(path: str) -> str:
     # this gate earns a false refusal on correct work -- the exact failure that
     # got the previous Stop hook parked within a day on 2026-09-11.
     if re.search(r"\$\{?\w+", p):
-        return "other"
+        return "unresolved"
     ext = os.path.splitext(base)[1]
     if ext in (".log", ".pid", ".tmp", ".lock", ".out", ".err"):
         return "transient"
@@ -464,7 +473,7 @@ def record_tool(turn: dict, name: str, inp: dict) -> None:
 
     if name in _EDIT_TOOLS:
         p = str(inp.get(_EDIT_TOOLS[name]) or "")
-        if classify_path(p) != "transient":
+        if classify_path(p) not in ("transient", "unresolved"):
             turn["mutations"].append(p)
             turn["first_mut"] = idx if turn["first_mut"] is None else turn["first_mut"]
             turn["last_mut"] = idx
@@ -515,7 +524,7 @@ def record_tool(turn: dict, name: str, inp: dict) -> None:
                 turn["scans"].append([idx, cmd[:400]])
             _add_read_paths(turn, _paths_in(cmd))
         for p in sig["mutations"]:
-            if classify_path(p) != "transient":
+            if classify_path(p) not in ("transient", "unresolved"):
                 turn["mutations"].append(p)
                 turn["first_mut"] = idx if turn["first_mut"] is None else turn["first_mut"]
                 turn["last_mut"] = idx
@@ -530,7 +539,7 @@ def audit(turn: dict, prior_reads=None) -> dict:
     """
     prior_reads = prior_reads or set()
     muts = [m for m in turn.get("mutations") or []]
-    kinds = {classify_path(m) for m in muts}
+    kinds = {classify_path(m) for m in muts} - {"unresolved"}
     is_work = bool(muts)
     code_touched = "code" in kinds
     doc_only = bool(muts) and kinds <= {"doc"}
