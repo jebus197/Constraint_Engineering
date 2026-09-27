@@ -1,11 +1,25 @@
 # CDSFL Project Onboarding
 
-Last updated: 21 September 2026 21:30 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 27 September 2026 19:29 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
 
-## CURRENT STATE — 2026-09-20 01:10 BST
+## CURRENT STATE — 2026-09-27 19:29 BST
+
+**HEAD `c3ad127` before this save, main; this `sv` pushes 12 commits.** The full suite at `d193539` under `python3 -m pytest bench/tests/ -q --netguard-strict -p no:cacheprovider --timeout=1800`: **8,606 passed, 9 failed, 2292.31 s, exit 1** — 38 of a peak 47 closed in one night. Of the 9, **3 need the founder** (the paid-seat authorisation guards), 3 are pre-existing and unrelated, and 3 were CC1's and are now fixed.
+
+**The founder's prose-scoring question is answered, and as built the answer was NO.** Making the A19 flag reachable opened a hole: with it on, all 5 adversarial harmful fixes were ADMISSIBLE and risk fell on all 10 cases, while the acceptance suite passed 175 of 175 because none of its tests set the flag. It now admits nothing — 3 harmful REJECTED, 2 NO_SCORE with risk held — and the suite runs 275 tests across both configurations. **The known limit:** the extractor sees Python inside a fenced block, so mathematics written as prose is still invisible, and widening it is separate unstarted work.
+
+**A blocking Stop gate is armed on the founder's instruction and is reversible in one edit** (rename `Stop` to `_PARKED_Stop` in `~/.claude/settings.json`). It refuses only on a missing tool trace or a missing falsification trace, is bounded to 1 refusal per turn, and fails open. The trace detector behind it had been **dead for 2 days while exiting cleanly every time**, and is now repaired and self-re-arming, declaring any window it lost as forfeit rather than clean.
+
+**Wolfram is now wired to CC1, not only to the seats.** Every mechanism built for the 2026-09-17 ruling had reached seats through the dispatcher's system prompt and none reached CC1, which made 1 call in a day against the seats' 6 of 6.
+
+**The honest headline about method, which matters more than any single fix.** Three attempts were needed for one repair and 2 of CC1's own tests verified nothing, one caught by CC1 and one by a panel seat. Every instance was the same fault: **verifying at the layer edited rather than the layer that decides.** A classifier returned the right value while the gate stayed broken; a recorder recorded what it was handed while the runner never ran. This is why the panel should check CC1's work by default rather than on request.
+
+**Next: the runway.** Only 2 things need the founder — the paid-seat guards, and whether to narrow a conviction rule that currently convicts 3 of 3 benign documentation fixes as well as the harmful ones.
+
+## CURRENT STATE — 2026-09-20 01:10 BST (SUPERSEDED by the block above)
 
 **HEAD `e5db47d` before this save, main; this `sv` pushes 41 commits.** The full suite at `e5db47d` under `python3 -m pytest bench/tests/ -q --netguard-strict`: 8,029 passed, 5 failed, 1692.80 s, exit 1 — 4 of the 5 caused by this document being edited during the run and since verified green, the 5th the closure guard. The last clean measurement remains 8,011 passed, 0 failed at `7345a2c`.
 

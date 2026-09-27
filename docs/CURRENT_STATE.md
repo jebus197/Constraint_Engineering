@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 21 September 2026 21:30 BST (2026-09-21T21:30:36+01:00)
+Generated: 27 September 2026 19:29 BST (2026-09-27T19:29:18+01:00)
 
 ---
 
@@ -18,19 +18,20 @@ Generated: 21 September 2026 21:30 BST (2026-09-21T21:30:36+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** main
-- **Last commit (the PARENT of the commit containing this file):** `7f7a443` Commission the 5 safe flags, record the 3 harmful ones as study items with reasons
-- **Committed:** 2026-09-21 20:40:23 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/main
+- **Last commit (the PARENT of the commit containing this file):** `c3ad127` Report pair updated with the panel review: 3 defects I had not reached
+- **Committed:** 2026-09-24 04:21:34 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/main by 12
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
+- `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**8287 tests collected** at 21 September 2026 21:30 BST, HEAD `7f7a443` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**8644 tests collected** at 27 September 2026 19:29 BST, HEAD `c3ad127` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -60,13 +61,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `7f7a443 Commission the 5 safe flags, record the 3 harmful ones as study items with reasons`
-- `e61a83c Astra landed 3 correct hits; 1 of my claims is withdrawn and 1 of my figures had no producer`
-- `0a4a491 Mark the 7.12 confound the founder ruled on, and correct my own first draft of it`
-- `b509a44 I attacked the maths model's Phase 2 and lost; 3 corrections landed, 0 equations changed`
-- `f802512 The fix score was measuring absence of harm; the appendix defines it as presence of repair`
-- `775c81c Runway: the founder's ordered sequence, NOW-1 to NOW-7, written down rather than held in context`
-- `f7d04b4 sv: 6-round review synthesised — the degeneracy was ours, 3 CC1 claims withdrawn, the scorer is the live finding`
-- `e8f5641 sv: 6-round paid panel — the degeneracy was ours (appendix 7.12), 191-claim withdrawn, containment repaired, optimal round count derived`
-- `f253fa7 Round 3 brief: the definitive way forward, under a new hard constraint`
-- `0c4f3e5 A review seat could write to the repository it was reviewing, and I opened that hole this morning`
+- `c3ad127 Report pair updated with the panel review: 3 defects I had not reached`
+- `4c0caa3 The panel found 3 defects I had not reached, including a test of mine that verified nothing`
+- `e9c28e1 Clean suite: 9 failed, 8606 passed -- 38 of the 47 closed; and the gate I armed is evadable`
+- `d193539 The classifier repair was insufficient, and my test for it was vacuous`
+- `f1ec381 Citations drifted +8 because I inserted 69 lines; a test hardcoded a family the archive had moved`
+- `c4ecac7 Closed 27 of the 47 suite failures; 13 shared one cause and it was mine`
+- `b48dcb9 The prose flag admitted 5 of 5 harmful fixes; the FFAFP detector was dead for 2 days`
+- `43af0e6 Recovery: A19 was built and unreachable, now fixed; the 2 red guards are the founder's`
+- `981e38d Reports carry the A19 finding; full record covers all 4 rounds`
+- `6e5e22a The founder's prose fix was ALREADY BUILT and had never been reachable`
