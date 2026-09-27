@@ -152,9 +152,9 @@ Both seats found `a19_flag_admits_harmful_fixes_2026-09-22.py:10` pinning `ROOT 
 
 ### The removal was right for the wrong reason
 
-Both seats confirm it is **safe by control flow**: both arms of the inner `if` return, so the survivor can never reach the ADMISSIBLE return on **any** input — a proof no fixture population could refute. But CC1 justified it on *convictions recorded on harmful fixes*, and the population contained **no benign fixes**, so a false conviction was unobservable by construction. Extended: **3 of 3 benign documentation fixes are convicted**, at the same signal strength as the harmful ones — conviction precision **3/6 = 0.5**, Wilson [0.188, 0.812]. The code convicts on a MEDIUM and on any ruff diagnostic while its comment justifies only a HIGH.
+Both seats confirm it is **safe by control flow**: both arms of the inner `if` return, so the survivor can never reach the ADMISSIBLE return on **any** input — a proof no fixture population could refute. But CC1 justified it on *convictions recorded on harmful fixes*, and the population contained **no benign fixes**, so a false conviction was unobservable by construction. Extended: **3 of 3 benign documentation fixes are convicted**, at the same signal strength as the harmful ones — **3 of the 6 rejections were of benign fixes**, Wilson [0.188, 0.812]. The code convicts on a MEDIUM and on any ruff diagnostic while its comment justifies only a HIGH.
 
-**Outcome stands; justification was one-armed. RECORDED, NOT FIXED** — narrowing the conviction rule is a design change and it is the founder's to weigh.
+**Outcome stands; the justification measured only the harmful half. RECORDED, NOT FIXED** — requiring a HIGH severity finding, rather than rejecting on a MEDIUM or on any ruff diagnostic, is a design change and it is the founder's to weigh.
 
 ### The stated reason for the owed fixture was refuted
 

@@ -65,6 +65,20 @@ The signal needed is already at the call site — `run_is_simulated(cfg)` sits i
 
 ---
 
+**★ RESUME POINTER (2026-09-27 19:56 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `f8e6011`, main, working tree **CLEAN**, **level with `origin/main`**. `rs` ran at 19:46 with `--full` (**exit code 0**); Open Brain session-context **exit code 0**.
+
+**SUITE: 8,606 passed, 9 failed at `d193539`** under `python3 -m pytest bench/tests/ -q --netguard-strict -p no:cacheprovider --timeout=1800`. **38 of a peak 47 closed.** Of the 9: **3 are the founder's** (paid-seat authorisation guards, red since the unauthorised dispatch of 2026-09-22), 3 are pre-existing and unrelated, 3 were CC1's and all 3 are now fixed.
+
+**★ THE `max_rungs` FINDING BELOW IS NOW HALF STALE AND THE CORRECTION MATTERS.** The pointer below says the ladder is "hardcoded at `bench/routing.py:139` and `:183` with **no config surface**". The hardcoding is still true of `bench/routing.py`; the "no config surface" half is FALSE since 2026-09-24. `routing_max_rungs` now exists on `RunnerConfig` and is threaded to the runner's single `route()` call site, passed ONLY when it differs from the default of 2 so all 23 routing-enabled configs stay byte-identical. **Rungs 3 and beyond are reachable for the first time**, which makes "what does rung 3 buy" answerable by running ONE forward config rather than by argument. Guarded by `bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py` — note that CC1's FIRST version of that test was VACUOUS (it called its own recorder and never drove `_apply_routing`) and was rewritten by a panel seat.
+
+**★ AND THE ARM 4 ACCOUNT BELOW NEEDS ONE PRECISION.** It says `sk_score_prose_listings` "was ON and did not prevent it". Requested, yes; EFFECTIVE, no. Arm 4's own report records `sk_enabled_requested: true`, `sk_enabled_effective: false`, `sk_forced_off_by_target_kind: true`. The flag could not be reached by any path at that time, which is the A19 finding, so it never had the chance to prevent anything. The pointer below is not wrong about the halt's cause; it is imprecise about the flag's state.
+
+**★ A19 IS ANSWERED AND THE ANSWER WAS NO AS BUILT.** Making the flag reachable OPENED a hole: with it on, all 5 adversarial harmful fixes were ADMISSIBLE and risk fell on all 10 cases, while the acceptance suite passed 175 of 175 because **0 of its tests set the flag**. Now 0 of 20 admitted — 3 harmful REJECTED, 2 NO_SCORE with risk held — and the suite runs 275 tests across BOTH flag configurations. Producer: `scripts/a19_flag_admits_harmful_fixes_2026-09-22.py`.
+
+**★ OPEN FOR THE FOUNDER, AND NOTHING ELSE IS BLOCKING.** (1) The paid-seat guards. (2) Whether a rejection on a prose target should require a HIGH severity finding: as it stands it rejects on a MEDIUM or on any ruff diagnostic, which convicts 3 of 3 benign documentation fixes as well as the harmful ones. (3) **The Wolfram licence expires 2026-10-08** — read from the kernel's own `$LicenseExpirationDate`, 11 days from this pointer, and it did NOT auto-renew at its previous expiry, so treat renewal as manual.
+
+**★ THE METHOD FINDING, which is the most transferable thing in this window.** 3 attempts were needed for 1 repair and 2 of CC1's own tests verified nothing. Every instance was the same fault: **verifying at the layer edited rather than the layer that decides.** Recorded as `feedback_verify_the_deciding_layer` in project memory.
+
 **★ RESUME POINTER (2026-09-22 08:07 BST). SUPERSEDES EVERY POINTER BELOW.** HEAD `3381910`, main, **CLEAN**, level with `origin/main`.
 
 **ALL 4 LAUNCHABLE ARMS ARE COMPLETE.** Full account with producers: `experimental_notes/Morning_Report_2026-09-22.md`.
