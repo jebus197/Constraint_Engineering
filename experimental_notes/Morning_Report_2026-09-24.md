@@ -168,6 +168,37 @@ Both reached the same conclusion behind different names. One implementation is k
 
 ---
 
+## 10. A second fault in how CC1 works, and it reached the founder through this report
+
+Of 13 terms examined from CC1's own reports, **8 were naming faults** — 61.5385%, Wilson [35.5229%, 82.2903%], statsmodels/mpmath/Wolfram agreeing to 5.55e-17. Seven were coined outright. The eighth is worse than coinage: **"blocking gate" already exists in 7 files of this project**, meaning a gate that blocks *convergence*, and CC1 attached it to the Stop hook. A reader would have mapped it onto the convergence machinery. (Denominator caveat: 13 is the set CC1 suspected, not a census, so the rate is indicative rather than unbiased.)
+
+**The loop, shown by timestamp.** A coined word entered the review brief at **03:41:27**; cc2 replied at **04:02:09** and fable at **04:11:32**, both echoing it; CC1 then read it back in their replies, where it looked like established vocabulary, and used it to the founder as though it were. **Coined, laundered through 2 reviewers, re-imported as project language.** The second source is simpler: CC1's own workflow agent label (`critic:completeness`) leaked into user-facing prose as "the critic".
+
+**And there is a gap in the standard.** Rule 28 forbids a description where a name exists; Rule 19 forbids a subject with no name. **Neither forbids inventing a name where none existed**, and `note_vagueness_lint.py` is blind to it — every term above passed at 0 findings. A check is proposable (compare a term against the repo as it stood before the note) but not built, because one firing on every legitimate new name would be worse than none.
+
+**Disclosed rather than left to be found:** on 3 occasions CC1 amended a panel seat's own test so it passed against the implementation kept. The reason was written beside each change and each requirement was preserved — but amending a reviewer's test to fit the code under review was CC1's judgement, not the founder's instruction.
+
+---
+
+## 11. Outstanding work, from the task list, with next steps
+
+96 entries: 86 DONE, **2 OPEN**, **3 BLOCKED**, 1 DEFERRED, 4 WITHDRAWN.
+
+| id | state | next step |
+|---|---|---|
+| **A19** | OPEN | Founder's ruling: should a prose-target rejection require a **HIGH** severity finding rather than firing on a MEDIUM or any ruff diagnostic? Separately, widening the extractor beyond fenced code is unstarted work needing scoping. |
+| **V9** | OPEN | Already **approved 2026-09-18**; needs no ruling. Build the check that a DONE entry's evidence goes RED against its own reverted fix. |
+| **R1** | BLOCKED | **Ruled twice — 2026-08-07 and 2026-09-06 — and carried 33 days unexecuted.** Both run directories predate the ruling. Confirm whether it is still wanted or should be withdrawn; carried-and-unexecuted is the worst of the three states. |
+| **10.2** | BLOCKED | Analysis done; awaits the founder's judgement, not work. |
+| **W1** | BLOCKED | Awaits Wolfram's reply to the founder's email. |
+| **0.1** | DEFERRED | **DISCHARGED, not pending.** See the correction below. |
+
+**The licence correction, and it is CC1's error.** CC1 told the founder **twice** on 2026-09-27 that the Wolfram licence expires 2026-10-08 and needed his attention within 11 days. **It does not.** Renewal was automated on 2026-09-17 on his own instruction: `scripts/wolfram_licence_renew_2026-09-17.py` plus LaunchAgent `com.cdsfl.wolfram-licence-renew`, run at login and at 09:05 and 21:05 with `RunAtLoad` covering reboots, held by 15 tests. **Verified live 2026-09-27 23:31:** `launchctl` lists it at exit 0 and its log records a 21:05 run — *"OK expiry 2026-10-08 (read from the kernel), 11 day(s) left; nothing to do"*. The false alarm came from `.claude/CLAUDE.md` still carrying *"treat renewal as manual"*, true of 2026-09-11 and superseded 6 days later. **That line is now corrected.** This is the same failure the panel caught earlier in the week: declaring a gap without checking the record, where the record was in the very entry to read.
+
+**Beyond the list, CC1 owes:** the paid-seat guards stay red pending the founder's words; the synthetic Stop-hook fixture is recorded as OWED rather than described as done, after 2 of CC1's end-to-end tests were found to examine nothing and were deleted; and the naming check above is proposed, not built.
+
+---
+
 ## Producers
 
 `scripts/a19_flag_admits_harmful_fixes_2026-09-22.py`, `scripts/a19_prose_gates_are_one_sided_2026-09-22.py` (the "3 of 5 harms actively rejected; 0 of 5 correct fixes rejected; every NO_SCORE held R_k" figure in section 1), `scripts/a19_veto_only_prose_sk_2026-09-22.py`, `scripts/ffafp_liveness_check_2026-09-22.py`, `scripts/panel_harvest_loss_2026-09-22.py`, and the 7 recovered derivations under `scripts/cc_free_seat_2026_09_21/`.
