@@ -72,11 +72,27 @@ def test_code_and_paths_are_not_scanned_for_names(nc):
 
 
 def test_repo_hits_excludes_the_note_being_checked(nc, tmp_path):
-    """A note must not vouch for its own coinage."""
+    """A note must not vouch for its own coinage.
+
+    THE SENTINEL IS ASSEMBLED AT RUN TIME, AND THE FIRST VERSION WAS NOT. It wrote
+    the absent phrase as a literal, which passed while the file was uncommitted and
+    failed the moment it was committed, because `git grep` then found the phrase in
+    THIS FILE and returned 1 where 0 was asserted.
+
+    That is not an incidental slip: it is the retrospective blind spot documented in
+    the script's own header, demonstrated by the test on itself. A phrase becomes
+    invisible to a novelty check the instant anything in the repository contains it,
+    including the check's own tests. Joining the parts here means the whole phrase
+    exists nowhere on disk, so `git grep -F` cannot match it.
+    """
     hits_all = nc.repo_hits("additive standard", exclude=None)
     assert hits_all > 0, "expected a known project term to appear in the repo"
-    missing = nc.repo_hits("zzqx nonexistent gate", exclude=None)
-    assert missing == 0
+    sentinel = " ".join(["zzqx" + "vvbb", "nonexistent" + "qqq", "gate" + "xyz"])
+    missing = nc.repo_hits(sentinel, exclude=None)
+    assert missing == 0, (
+        f"{sentinel!r} was found in the repo; if a test now writes it as a "
+        "literal, assemble it at run time instead"
+    )
 
 
 def test_a_verb_before_the_head_means_the_match_crossed_a_clause(nc):
