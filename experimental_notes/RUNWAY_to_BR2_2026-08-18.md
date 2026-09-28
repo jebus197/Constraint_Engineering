@@ -817,3 +817,15 @@ Caveat that survives regardless: calibration buys **deltas**, never **levels** (
 | FW.6 | **Harvested historical revisions as a recall target.** One reviewer argues these *dominate* seeded targets: a seeded target measures the intersection of real defect-space with the author's imagination, whereas the 676-commit branch carries defects that actually occurred, with ground truth already attached — archived findings plus their executed falsifiers | The other reviewer favours seeding; unresolved, and the branch must be secured first (0C.18) |
 | FW.7 | **Severity is a vote, not a tool.** A reviewer's observation, and the sharpest of the arc: the convergence gate depends on a model-assigned float in a framework whose founding principle is that votes do not decide. The real/sim gap is a symptom; the model-priced float gating convergence is the condition | **RULED AND BUILT 2026-09-06/07.** Not structural and not awaiting a decision: the founder rejected removal and the rubric swap and ordered WORKED PROOFS. The rubric was measured against the number at kappa = -0.0227, Fisher p = 0.78, no better than chance. `bench/dm/_rk_proof.py` routes a finding back to its author when its severity carries no worked proof; enforcement is one-directional, so an unproven severity can never loosen the gate. Pinned by `bench/tests/test_severity_proof_2026-09-07.py`. |
 
+
+---
+
+## FINAL RELEASE STEPS — recorded 2026-09-29
+
+These sit AFTER Bench Run 2 and after the scientific record is closed. They are listed here so the runway ends where the project goes public, rather than stopping at the last experiment. **Listed, not expanded:** the founder's instruction was to record the plan as a release step, not to restate it.
+
+| # | Item | Source | Status |
+|---|---|---|---|
+| **RL.1** | **The essay release schedule.** A staged publication plan for the PoC/MVP release and its companion essays: one flagship origin-to-release narrative, a short claims/status brief, several companion essays, an evidence-led post-review essay, provisional question-led companions, and later conditional pieces whose publication depends on evidence that does not yet exist. Its own framing: *"The release is the evidence. The flagship essay is the story. The companion essays are the implications. The technical record is the receipts."* | `CDSFL_Essay_Release_Schedule_2026-09-24_v4.docx`, the founder's working editorial plan, revised 2026-09-24 (v4), 6,525 words | **PLANNED.** Not started, and deliberately so — the plan's own Day 0 depends on a release that has not happened. The document is the founder's and lives outside the repository. |
+
+**Why this is 1 row and not a work breakdown.** The plan is editorial and it is the founder's own. Expanding it into runway tasks would convert his judgement about what to publish, in what order, into project work items — which is the wrong direction, because the sequencing question is his and the evidence it depends on does not exist yet. The row exists so that a reader reaching the end of this runway knows the release is planned and where the plan lives.

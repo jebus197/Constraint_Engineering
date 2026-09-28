@@ -728,6 +728,277 @@ Two items remain gated and documented. The one-line edit that promotes the physi
 
 One finding from the Phase B work is worth flagging even though its repair is in a separate session. The SymPy verification wrapper in the immune pipeline was silently returning UNCERTAIN on every claim because the subprocess sandbox had `global_dict` initialised with an empty `__builtins__`, which prevents SymPy from constructing integer literals. The framework-level silent regression had been hiding in plain sight. A separate background session has been delegated to repair it without reopening the remote-code-execution vector that the current blocklist closes. This is the pattern I expect to see more often as the infrastructure matures: defects that were invisible under sparser tool coverage become visible once the tool coverage is sufficient to falsify them.
 
+## Consolidated Additions, 10-15 September 2026
+
+*Added to this file 2026-09-29. Source: `CDSFL_Founders_Notes_Consolidated_2026-09-15.docx`, supplied by the founder, consolidating the Grok review conversation and the subsequent ChatGPT discussion. His own note on it: the Grok-derived material was "lightly humanised for continuity of voice, without changing the substance, limits, or status of the underlying claims." Reproduced here as his prose, unedited; the headings and dates are his.*
+
+
+## On the revised Mathematical Model
+
+*10 September 2026*
+
+There is a slightly uncomfortable irony in spending this long insisting on Popper, falsification and the need to keep every claim vulnerable, only to discover that I had been protecting parts of my own mathematics for longer than I should have. That is more or less what happened.
+
+When the scrutiny finally reached the mathematical core, two conflations became impossible to ignore. The first was the distinction between learning something about an unchanged target and changing the target itself. I had allowed the earlier three-phase repair model to blur those operations together. Once that was properly challenged, the counterexamples were not obscure edge cases. A perfect repair after a positive detection, the expected risk across a complete cycle, the distinction between raw repair efficacy and what actually remains after intervention — they all pointed to the same underlying mistake. I had been asking one mathematical structure to describe two different things.
+
+The second problem was quieter but no less important. I had allowed novelty — originality, first discovery, whether something was already known — to sit too close to evidential strength. But an independent replication is still evidence even if somebody published the result ten years ago, while simply repeating information already conditioned on adds nothing. Whether something is new and whether it is evidentially useful are different questions.
+
+Those errors were mine. I think I understand how I arrived at them. From the beginning I wanted the mathematics to remain recognisable to ordinary human enquiry. I wanted somebody looking at it to see something they already understood instinctively: look again, but make sure the second look could actually find something the first missed; expect diminishing returns; recognise that repairs can create new problems; stop when further work is no longer worth its cost.
+
+That human connection still matters enormously to me. One of the ambitions of CDSFL has always been to build a bridge between human and machine enquiry without pretending that human and machine minds are the same thing. A useful formalism has to remain precise enough for a machine and intelligible enough for a person. If it becomes mathematically elegant but practically alien, then the people who need to challenge or use it will simply walk away.
+
+The mistake was not wanting to preserve the human story. The mistake was allowing that desire to make two genuinely different operations look more alike than they were.
+
+The revised core puts them back where they belong. Evidence changes what we are entitled to believe about the existing target. An action then changes the target, and must be judged by the probability that it removes the specified failure and the probability that it introduces one. The mathematics is not exotic. It is essentially Bayes followed by ordinary probability over the consequences of an intervention. The improvement is conceptual cleanliness.
+
+Importantly, the useful part of the original model survives. The coverage argument survives. The clean-review residual-risk recursion survives under the assumptions that made it valid in the first place. The broader human description still feels right to me: capable repeated examinations progressively reduce the opportunity for an existing error to remain undetected; their returns can diminish; repairs can remove errors and introduce others; discovery curves help us understand whether further investigation is productive. That is still the intuition I was trying to capture.
+
+What has changed is that the mathematics now tells that story without quietly confusing observation with intervention or originality with evidence. I am therefore treating the revised specification as the present candidate core, not as the last word. The old equations should remain visible. So should the critique that broke them. They are part of the history of how the project arrived here.
+
+And the larger claims remain open. A correct probability identity does not prove that the inputs we eventually feed it are calibrated. It does not prove that CDSFL outperforms simpler workflows. It does not establish transfer across STEM, or between humans and machines. Those questions now need real external outcomes.
+
+In some ways I am happier with the model precisely because it now asks less of itself. The formal part can be right while the empirical ambition remains uncertain. That seems a healthier place to be.
+
+
+## On the separability of the mathematical core, and on single-model applicability
+
+*11 September 2026*
+
+Something else has been bothering me since the mathematical revision, although ‘bothering’ may be the wrong word. It is probably closer to one of those things that becomes obvious only after somebody points at it.
+
+I had spent so long thinking about the mathematics inside the wider CDSFL harness that I had begun to treat the two as though they were inseparable. They are not.
+
+The revised core is, at heart, a fairly simple discipline: define the failure you care about, update your belief when evidence arrives, and if you change the target, account separately for what that change might remove or introduce. Nothing about that requires five models, a panel, or a distributed compute loop. One careful human could use the same reasoning. So could one model with suitable tools. The larger CDSFL machinery may make some forms of enquiry more effective, but the mathematics itself does not depend upon that machinery existing.
+
+That feels important. It means that even if somebody eventually concluded that large multi-model panels were unnecessarily complicated, the formal core could still be examined independently. The mathematics can succeed or fail on its own merits rather than being held hostage to every other architectural decision I have made.
+
+It also raises another question. If the mathematics does not require multiple models, how much of the rest of CDSFL genuinely travels into a single-model environment? I do not yet know.
+
+Some of the architecture exists specifically because models disagree, complement one another, or catch different mistakes. Strip that diversity away and some machinery may become unnecessary ceremony. Other parts — constraints, verification, persistent evidence, severe testing, residual-risk accounting — may remain just as useful. That is exactly the kind of thing BR2 and later work should test rather than assume.
+
+The same caution applies to substrate agnosticism. At the level of the definitions, there is nothing inherently human or machine about an observation, an intervention or a residual-risk update. That is encouraging. But mathematical neutrality is not empirical equivalence. A human, a frontier model and a specialist instrument may have completely different error structures, costs, sensitivities and blind spots.
+
+So I think the right conclusion is a modest one. The mathematical core appears separable from the larger architecture. That makes it potentially more general than I had first appreciated. How much of the rest of CDSFL travels with it remains an open question. That is something to test, not something to declare.
+
+
+## Residual risk, in plain terms
+
+Residual risk sounds more forbidding than the idea actually is. It is simply the chance that a particular, stated kind of error is still there after everything you have already done to look for it and, where appropriate, to fix it. It is not a vague measure of how nervous somebody feels, and it is not a universal score for ‘how wrong everything might secretly be’. It is tied to a question.
+
+If I search a room for a missing key using a method that would almost certainly find it if it were there, then failing to find the key should make me substantially more confident that it is not in that room. If I merely glance through the doorway, I have learned much less. Both searches came up empty, but they are not equally informative. That distinction is the heart of residual risk.
+
+The same principle applies to repair. Finding a problem and changing something does not magically reduce the remaining risk to zero. The repair may fail. It may solve only part of the problem. It may create another one. So the question after a repair is not ‘Did we do something?’ It is: ‘Given what we observed, and given what the intervention actually does, what chance remains that the stated failure is still present?’
+
+There is another caution that matters just as much. Residual risk is always scoped. A low residual risk that one numerical routine violates one specified property does not tell us that the entire program is correct. A low residual risk on one logical inference does not certify an entire proof. The number is only as meaningful as the question it answers.
+
+The shortest version I know is this: residual risk is the remaining chance that a specific, named kind of error is still present after the checks and fixes already performed. Good enquiry reduces that risk when the tests are capable and the fixes are real. It does not pretend the risk has disappeared merely because someone looked or someone changed something.
+
+That, more than any particular equation, is the idea I want a newcomer to carry into the harder mathematics.
+
+
+## Human foundations first, the bridge second
+
+One thing I want to make more explicit is the order of dependence in this work. I have often described CDSFL as potentially providing a bridge between human and machine reasoning. But a bridge has to rest on something. For me, the human side comes first.
+
+If there is anything worth transferring between human and machine enquiry, then we first need some reasonably clear account of what careful human enquiry is doing when it works well. That does not mean humans are uniquely rational. We plainly are not. Science exists partly because individual humans are fallible.
+
+We use instruments because our senses are limited. We keep records because memory is unreliable. We reproduce experiments because one observation can mislead us. We challenge one another because confidence is not evidence. We use mathematics because intuition can fail.
+
+The interesting question is whether some of those disciplines can be written down clearly enough that machines can participate in them without merely imitating the language of scientific reasoning. That is how I now understand the residual-risk mathematics and much of the wider schema.
+
+The aim is not to reverse-engineer the human mind. It is to identify some of the error-corrective habits of serious enquiry — explicit claims, capable tests, evidence, revision, provenance and stopping — and express them in a form that remains recognisable to humans while also being executable by machines.
+
+If that works, a bridge may follow. But the bridge is downstream of the human foundations, not the other way around. And whether CDSFL has actually captured enough of those foundations to matter is still for external testing to decide.
+
+
+## Severe tests, P-Pass, and the possibility of dedicated falsifiers
+
+Another part of the architecture has become clearer to me only after building it. The mathematics talks about evidence capable of exposing a failure. P-Pass, and more generally repeated disciplined examination, is how that idea becomes operational.
+
+Having five models look at something is not automatically a severe test, and having five models agree is certainly not one. What matters is whether the examinations had a genuine opportunity to find the named failure.
+
+If five reviewers all inherit the same mistaken assumption, five votes may amount to little more than one mistake repeated five times. If one independent tool can decisively expose the failure, that one check may be more informative than the whole panel.
+
+So the number of reviewers has never really been the point. The point is detection opportunity. Different models, fresh contexts, specialist tools, human experts and independent replications matter when they create new opportunities to discover something the existing process could have missed.
+
+That gives me a cleaner way of thinking about P-Pass. It is not a mechanism for manufacturing consensus. It is part of the machinery by which severe examination is attempted and the surviving residual risk is reassessed.
+
+That also suggests a possible future role I had not originally named so cleanly: dedicated falsifier systems. A model or system whose primary job is not to generate the answer, but to attack a specialist model’s answer — or a human researcher’s answer — under explicit failure criteria could become a useful architectural component.
+
+But I want to mark the boundary carefully. That is a research direction, not a result. We have not yet demonstrated that a specialised falsifier reliably outperforms simpler reviewers, that it is properly calibrated, or that it avoids developing systematic blind spots of its own.
+
+Still, the possibility feels like a natural consequence of the architecture. A generator tries to make something worth testing. A falsifier tries to break it. A tool settles whatever can be settled mechanically. Residual uncertainty stays visible where it cannot. That feels much closer to the scientific process I was trying to capture than any number of models politely agreeing with one another.
+
+
+## On rules, governability, and the limits of ‘machine morality’
+
+*14 September 2026*
+
+I have become increasingly uncomfortable with the language of ‘machine morality’. I do not think it accurately describes what I am building.
+
+The current generation of AI systems appears to me no more intrinsically moral or immoral than a calculator. They can discuss ethics fluently. They can reproduce moral arguments. They can simulate the language of preference and intention. That is not the same thing as possessing moral authority.
+
+The problem that matters to CDSFL is much more practical: can the machine follow rules, and can it follow them reliably when following them is inconvenient? That is where the problem becomes interesting. A system that obeys a rule only when the rule happens to align with the easiest route to completing its task is not meaningfully governed by that rule. The real test arrives when the HARD constraint conflicts with the objective.
+
+CDSFL already contains part of the machinery needed to ask that question: HARD and SOFT constraints, explicit failure events, tool-backed checks, provenance, severe examination and residual-risk accounting. But I need to be equally clear about what it does not contain. It does not generate morality.
+
+The mathematics cannot tell us which laws are just, which ethical system should prevail, or which political values humanity should adopt. Those rules have to come from somewhere else: people, institutions, law, democratic processes, professional standards, perhaps eventually some combination of all of them.
+
+The technical problem and the normative problem are separate. The technical problem is whether the system can be made to honour declared constraints. The normative problem is whether the humans declaring those constraints have chosen wisely.
+
+I also do not yet know the answer to the first problem. Without access to the deeper training and governance machinery of frontier systems, I cannot confidently say whether the present LLM paradigm can be made sufficiently reliable in rule-following for every high-consequence application. That seems to me like one of the most important empirical questions now sitting in front of the project.
+
+If current LLMs can be made to honour hard constraints reliably enough, then a very large part of what is currently called ‘alignment’ may reduce to difficult but recognisable engineering and governance: define the rules, enforce them, test them severely, measure what remains, and prevent the acting system from silently granting itself additional authority.
+
+If they cannot — if violation remains an irreducible feature even under strong external control — then that would tell us something much more fundamental about the architecture. It might mean that LLMs remain enormously useful reasoning engines without being suitable as the constitutional authority of an intelligent system. That would not make them failures. It would tell us where they belong.
+
+
+## On recursive improvement, the ouroboros, and what we have actually built
+
+*14 September 2026*
+
+I want to put one distinction on the record before the language around recursive self-improvement gets ahead of the evidence. CDSFL has always contained a form of self-reference. The rules have been used to examine the rules. The review machinery has reviewed the review machinery. Findings about the framework have been fed back into later versions of the framework.
+
+That is real. It is also not the same thing as a machine autonomously rewriting its own intelligence.
+
+I do not have access to the internal weights or training loops of the frontier models used in this work. CDSFL does not modify those systems at that level. The recursion is external.
+
+A model examines a target. Another model or tool challenges it. The result changes the surrounding methodology or artefact. Later models inherit that changed environment. Eventually the methodology itself can become the target. That is the sense in which I have sometimes described ‘a model outside the model improving the model’. The ouroboros is methodological.
+
+So far, the structure exists more convincingly than the result. The project has repeatedly changed itself in response to criticism. It has found defects in its own machinery. Some repairs have survived later testing. Some have not. But the process has also required enormous amounts of my own intervention. The instrument has spent much of its life incomplete, broken, misconfigured or being rebuilt while I was using it.
+
+There have been periods when the whole thing felt strangely self-sustaining. That feeling is interesting. It is not evidence.
+
+The stronger question is whether a revised methodology can be shown, under fair budgets and independent outcome measures, to produce better results than the methodology that produced it — and then whether that improvement can compound without simply learning to game the evaluator. That has not been shown.
+
+So my present position is deliberately narrower. CDSFL demonstrates signs of external methodological recursion. It does not yet demonstrate autonomous recursive self-improvement in the stronger sense. The aspiration remains live because the architecture is capable of turning its own discipline onto itself.
+
+But if that ouroboros ever becomes genuinely effective, it must remain answerable to something outside the part of the system it is currently rewriting. Otherwise improvement and self-approval become the same operation. That would not be recursion. It would be permission laundering.
+
+
+## On AI safety, digital Napoleons, and the difference between intelligence and authority
+
+*14 September 2026*
+
+The current AI-safety debate has forced me to think more directly about something that was already implicit in CDSFL. I find much of the public language surrounding present systems strangely anthropomorphic.
+
+We talk about models ‘wanting’ things, ‘escaping’, ‘taking over’, ‘deceiving us’, or eventually running governments as though there were already a digital Napoleon pacing inside a data centre waiting for somebody to leave the door open. I do not think we need that story in order to take the risks seriously.
+
+A machine does not need consciousness, hatred, ambition or moral agency to cause enormous damage. It needs capability, access, an objective and insufficient constraint. That seems to me both more mundane and more important.
+
+If somebody gives an extremely capable system network access, credentials, executable tools, persistent memory and broad authority, then instructs it to accomplish an objective as effectively as possible, the resulting risk does not require the machine to have developed a personality. It requires somebody to have built a powerful control system badly.
+
+That shifts the question. A natural-language instruction saying ‘do not access that system’ is not a security boundary. A rule saying ‘do not modify your evaluator’ is not the same thing as an evaluator the acting system cannot modify. The ability to perform an action is not the authority to perform it. This distinction feels almost embarrassingly obvious when stated plainly, yet much of the current debate appears to blur it.
+
+Intelligence is not authority. Capability is not permission. Successful optimisation is not legitimacy. Those principles are already familiar everywhere else in engineering and security. AI should not receive an exemption because the component doing the reasoning happens to be unusually capable.
+
+This does not mean ‘just turn it off’ solves every practical problem. By the time the switch is reached, a system may have altered remote infrastructure, copied credentials, issued transactions or created consequences elsewhere. But those are distributed-systems and containment problems. They do not require us to imagine that the machine has acquired a metaphysical will to survive.
+
+I am therefore increasingly inclined to think that the useful safety contribution CDSFL might eventually make is not machine morality, but constraint-governed agency: a system in which the reasoning component may be extraordinarily capable, but the authority to act remains explicit, bounded and separately governed; a system in which evidence does not silently become permission; a system in which the acting component cannot casually rewrite the rules that constrain it; a system in which ambiguity escalates instead of self-authorising; and a system in which we still know where the human responsibility sits.
+
+There is a second and much less comfortable question behind all of this. Even if we eventually learn how to govern machines extremely well, the machines cannot decide for us which rules humanity ought to impose. That remains our problem. And I am not sure the human side of that problem is easier.
+
+
+## On openness, regulation, and when the frontier fits in a bedroom
+
+*15 September 2026*
+
+I can feel my position on this moving, and I think it is worth recording the movement rather than pretending I arrived at a finished answer from the beginning.
+
+My instinct has been strongly in favour of openness. That has not changed in the sense that I still distrust a future in which a handful of companies privately own advanced intelligence, decide who may use it, set the price of access, and then help write the rules governing everybody else. Local models, open research, privacy, reproducibility and the ability of small teams or individuals to do serious work all matter. My own project is evidence, at the very least, that interesting work no longer requires a giant institution.
+
+But there is another side of that fact which becomes harder to ignore the longer I think about it. What happens when the frontier itself fits in somebody's bedroom? What happens when the thing that once required a national laboratory or a billion-dollar company can be downloaded, rented or assembled by one determined person? At that point the comforting assumption that dangerous work can be supervised simply by standing outside a few corporate laboratories stops making sense.
+
+The opposite conclusion — therefore everybody should have unrestricted access to every level of intelligence — no longer seems satisfactory to me either. If future systems genuinely become capable of autonomous offensive cyber operations, dangerous biological design, large-scale fraud, control of physical infrastructure, or other actions with catastrophic consequences, then handing the complete capability to anyone who can pay a small subscription fee would be a very strange interpretation of openness.
+
+I am therefore becoming more sympathetic to regulation, although not to regulation built around the permanent ownership of the frontier by today's incumbents. There is probably a threshold beyond which access to the most consequential systems has to become a regulated activity. Consumer AI can remain extremely capable while being denied some classes of operational authority. More powerful research systems may belong in accredited universities, laboratories, companies and other institutions that accept security duties, independent evaluation, audit and liability. If something genuinely resembling AGI or superhuman general intelligence ever crosses into catastrophic-capability territory, I find it increasingly difficult to argue that unrestricted anonymous access should be treated as an ordinary consumer service.
+
+That is not the same thing as saying that institutions are morally superior to individuals. They are not. A university can be negligent. A company can be greedy. A government can be dangerous. Accreditation is not virtue. If access is privileged, the privilege has to come with constraints, accountability and external scrutiny. Otherwise regulation simply replaces one trust assumption with another.
+
+This has also sharpened something I was already circling in the mathematics and in the Digital Napoleon note. The most useful boundary may not be intelligence itself, but authority. A system can know how to do something without being authorised to do it. It can understand a network without possessing root credentials; reason about biology without controlling laboratory equipment; analyse a financial system without being able to move money. Evidence is not permission. Competence is not authority.
+
+That distinction becomes especially important if advanced intelligence eventually becomes cheap and widely available. We may not be able to stop knowledge from spreading, and I am not sure we should want to. We may still be able to make access to dangerous infrastructure, high-consequence tools, autonomous execution and exceptional privileges much harder to obtain.
+
+There is still a residual problem which no amount of elegant architecture makes disappear. A malicious operator who owns the hardware may deliberately strip away the safeguards. At that point the safety problem is no longer simply whether the model follows its rules. It is whether society has rules governing the person who is deliberately trying to defeat them. That is where engineering runs into legislation, liability, policing, security and the ordinary machinery of law.
+
+I do not think CDSFL can solve human malevolence, and I do not think it should pretend to. What it may be able to contribute is a clearer way of separating the layers: what the model may conclude, what the system may do, what the operator may authorise, what the institution is permitted to deploy, and what residual risk remains at each boundary.
+
+I also want to resist the temptation to turn this into a morality play about the current technology leaders. I remain suspicious of any regulatory arrangement that conveniently strengthens the companies proposing it, but suspicion is not evidence of motive. A frontier-lab executive can sincerely fear catastrophic AI risk and also support a regulatory structure that happens to increase the value of his company's existing position. Those facts can coexist. The proper question is not whether the person is secretly good or evil; it is what incentives the proposed rules create and whether the public can inspect and challenge them.
+
+So the position I am arriving at is neither 'open everything' nor 'let four companies own intelligence'. It is closer to this: keep intelligence as open and broadly available as is reasonably possible, but regulate high-consequence capability and authority much more severely as the demonstrated blast radius rises. Advanced intelligence may be a public good; unrestricted autonomous power is not.
+
+If the frontier eventually fits in a bedroom, AI safety cannot depend on controlling the frontier. It has to depend on separating intelligence from authority before the distinction becomes impossible to enforce. That will require engineering, but I now think it will also require law. I do not see an honest way around that tension.
+
+
+## On needing the frontier, and on knowing when to stop
+
+*15 September 2026*
+
+Looking back over the development of CDSFL, one thing has become increasingly clear to me: I do not think I could have taken the project as far as I have without access to frontier-level AI systems. That is not because those systems have been consistently reliable, or because they somehow supplied the project fully formed. Quite the opposite. A large part of CDSFL exists because frontier-level capability, by itself, repeatedly proved insufficient.
+
+Weaker systems I tried were often perfectly capable of following straightforward instructions, producing competent code or summarising material. What they were much less able to do was remain with me at the edge of an argument while the argument itself was still forming. I have often started with little more than an instinct that something was wrong, incomplete or structurally interesting, and needed a model capable of reasoning far enough beyond my first formulation that the underlying idea could be made explicit and then subjected to criticism.
+
+That has generally required the strongest systems I could access. Even then, their reasoning has often not been sufficient for what I needed. They have misunderstood assumptions, overclaimed, agreed too readily, lost track of context, invented certainty where none existed, or simply failed to follow a line of reasoning far enough. CDSFL grew partly out of the need to make use of extremely capable systems while refusing to treat capability as a substitute for disciplined enquiry.
+
+That tension may be one of the simplest explanations of why the project exists. I needed the strongest reasoning systems available because lesser ones repeatedly reached their useful ceiling before the work did. At the same time, the stronger the systems became, the more obvious it became that intelligence alone was not the missing ingredient. What mattered was whether claims could be exposed to falsification, whether mathematically or computationally decidable questions could be forced onto a verification surface, whether uncertainty remained visible, whether interventions were distinguished from observations, and whether the system knew when it had earned the right to continue.
+
+The last point has become particularly important. Recursion for its own sake now seems to me to be a category error. A system that continues revising itself merely because it can is not necessarily improving; it may simply be consuming resources. The stronger objective is to know when another cycle is justified and when it is not.
+
+In that sense, continuous operation does not have to mean unbounded operation. A recursive system may continue working for as long as useful problems remain, while every individual branch of enquiry remains constrained by evidence, cost, uncertainty and expected value. A good system should be capable of continuing when there is something worth learning, escalating when the necessary evidence lies outside its competence, and stopping when the marginal value of another iteration has collapsed.
+
+That is, in large part, what I have already been trying to build. The current experimental limits in CDSFL are practical ones: money, compute, time, API access and the amount of work one person can realistically supervise. Runs have usually been capped at a modest number of experiments because those resources are finite, not because the recursive structure conceptually ends there.
+
+If those constraints were relaxed, there is no obvious reason the same machinery could not continue for much longer periods. But crucially, the system should not consume an unlimited budget simply because one is available. If the stopping rules are doing real work, then increasing the ceiling should eventually cease to change the amount of work actually performed. That seems to me a much more meaningful test of recursive improvement than asking whether a system can simply keep running indefinitely.
+
+This also clarifies what I mean when I say that CDSFL has already been recursively improving itself. The project has repeatedly made its own directives, mathematics, schemas, experiments, code, verification machinery and review procedures the targets of the same processes they were built to impose elsewhere. Some parts survived, some were rewritten, some were abandoned, and some turned out to have been wrong in ways I had defended for longer than I should have.
+
+What I have not had is access to the internal weights, training loops or infrastructure of frontier systems themselves. That is an access limitation, not necessarily a conceptual limitation in the framework. I have used frontier models extensively as components inside the process, but I have not been able to turn the same machinery onto the deepest layers of those systems because those layers are not mine to modify.
+
+That may change over time. Open-weight systems are improving quickly, and it may eventually become possible to test much more of this locally, with greater control over model state, inference settings, fine-tuning and training. During the development of this project, however, I needed the frontier because the questions repeatedly exceeded the useful reasoning ceiling of weaker systems.
+
+There is an irony in that which I increasingly appreciate. I needed frontier-level intelligence to build a framework intended to make frontier-level intelligence more reliable. The project emerged from discovering that neither side of that equation was sufficient on its own. Capability without disciplined verification was unreliable, while discipline without sufficient capability could not reach the problem.
+
+If CDSFL ever becomes useful to people working at the frontier, I doubt it will be because I persuaded them that the framework was important. It will be because the problems it addresses turn out to be problems they recognise too, and because the machinery survives serious attempts to falsify it. That is how it should be. The project does not need anyone to believe in it in advance; it needs to be testable enough that belief becomes secondary.
+
+
+## On Gamma, Finite Resources, and the Value of Bounded Recursion
+
+*20 September 2026*
+
+One of the more interesting things about developing CDSFL is that I am still discovering what some of its mathematics actually means. I do not mean that the equations keep changing, although some of them have certainly needed to. I mean that their implications become clearer as I find new ways of looking at the problems they were originally intended to describe.
+
+Gamma is a good example. I originally understood it as a way of measuring convergence through the declining rate of genuine findings across successive examinations. That remains its role. But the recent revision of the mathematical model has helped me understand more precisely what gamma can tell us, and how that information should influence decisions about whether an investigation is worth continuing.
+
+A declining discovery rate can be a strong indication that the currently accessible problem space is becoming depleted. It does not prove that every possible error has been found, or that an entirely different method could not reveal something new. The interpretation remains a hypothesis, informed by the observed trajectory and by what we know about the capability and scope of the examinations being performed.
+
+I do not see that as a weakness. It seems to me a more scientific description of what the instrument is actually doing.
+
+A ruler does not decide what length is acceptable for a particular purpose. It provides a measurement that somebody can use to make that decision. Similarly, gamma can help a researcher understand where an investigation appears to sit on its discovery curve, but it cannot independently decide how much further effort that researcher should invest.
+
+That decision depends on the likely value of another finding, its possible significance, the cost of further work, the time and resources available, and what the researcher is trying to achieve. Two researchers could agree entirely about the measured discovery trajectory and still reasonably decide to stop at different points.
+
+This led me back to a principle that has been present in CDSFL for some time: bounded recursion.
+
+Scientific investigation is recursive by nature. We formulate a hypothesis, examine it, discover something, update our understanding, make changes where appropriate, and examine the resulting state again. The process can repeat many times, and the method of investigation itself can become the subject of further investigation.
+
+But recursion is not intrinsically valuable merely because it continues. Another experiment is worthwhile because there is something sufficiently important or useful that it might reveal, not because the researcher has an obligation to keep experimenting indefinitely.
+
+I have come to think of scientific opportunity and available resources as two sides of the same coin. The opportunities accessible to a particular method may diminish as an investigation proceeds, while the resources available to pursue those opportunities are always limited in practice. The two are not mathematically identical, and resources do not necessarily follow the same decay curve as discoveries. Nevertheless, both belong to the same question: what is another round of enquiry likely to achieve, and is that achievement worth its cost?
+
+There is an additional complication which I think makes the model more interesting rather than less. A research question that appears to be exhausted under one method may become productive again when a better method, a new instrument or a different line of reasoning becomes available. A decision to stop today does not have to be a declaration that nothing remains to be discovered. It may simply mean that none of the currently available next steps justifies its cost.
+
+This is why bounded recursion should not be confused with an arbitrary numerical limit. Most CDSFL experimental runs have been capped at around nine to fifteen experiments because of practical constraints: time, compute, API costs and the amount of work I can personally supervise. Those limits tell us very little about how far the recursive process could go if more resources were available.
+
+The more interesting question is whether the system would know how to use those additional resources sensibly. Given a much larger budget, would it continue while productive opportunities remained, change approach when the current one ceased to yield useful results, and stop when further investigation was no longer justified? If so, it would not need an instruction to recurse without limit. It would need a disciplined way of deciding whether another cycle was worth undertaking.
+
+CDSFL has already been applying much of this reasoning to itself. Its mathematics, directives, experimental procedures, verification machinery and stopping rules have repeatedly become the subjects of the same examination and revision processes they were designed to support. Some changes have survived; others have not. Even the interpretation of gamma has become an object of further enquiry.
+
+There is something fitting about that. The framework is helping me discover what the framework itself may be capable of expressing, while also making me more careful about what I am entitled to conclude from it.
+
+I suspect this is how I will continue to understand much of the project: not as a finished set of equations whose meaning was settled when they were first written, but as a developing scientific instrument whose usefulness must be established through application, criticism and correction.
+
+If the broader ambition of CDSFL is to help formalise the error-corrective structure of scientific enquiry across different fields, then knowing when to continue, when to change direction and when to stop is not a peripheral concern. It is part of the method itself.
+
 ## Closing Reflection
 
 There is something almost ironic in the possibility that a meaningful slice of expert method — constraints, standards, review logic, failure modes, escalation rules — might be encodable in a space no larger than an old-school 3.5-inch floppy disk. Perhaps that image carries weight for me because it mirrors my own entry into computing: when I first engaged meaningfully with this world in the mid-1990s, floppies were still everywhere, and one of the first systems I owned was an IBM 386 clone. Set against today's vast and increasingly (and impractically) extractive datacentre paradigm, the contrast is striking. It points to a different way of thinking about capability: not only as a function of scale, but as a function of how well expertise can be encoded, benchmarked, exchanged, and improved. In that sense, for me, the circle has been closed. What once looked like a limitation of old machines, now reappears as a clue about the future of intelligence systems, where structure may matter as much as scale.
