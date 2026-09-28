@@ -284,7 +284,7 @@ lock makes it fail.
 **HOW WOLFRAM IS WIRED (settled 2026-08-02 22:15 after a failed restart).**
 Two routes, and the split is forced by a measured constraint, not preference:
 
-  * **`WolframCloud` MCP server — DISABLED 2026-09-10 BECAUSE IT IS DEAD, NOT
+  * **`WolframCloud` MCP server — DISABLED 2026-09-10 BECAUSE ITS TRANSPORT WAS DEAD, NOT
     BECAUSE IT IS UNWANTED.** It was `npx -y mcp-remote https://agenttools.wolfram.com/mcp`,
     and the entry was removed from the desktop application's config on the
     founder's explicit instruction, he being away from the machine. **The local
@@ -312,6 +312,22 @@ Two routes, and the split is forced by a measured constraint, not preference:
     The property is availability. Script:
     `scripts/wolfram_route_health_2026-09-10.py`, which reads the desktop
     application's own logs and never writes to them.
+
+    **RESCOPED 2026-09-28, ON THE FOUNDER'S OWN CONNECTOR LISTING. THE HOST WAS NEVER
+    DEAD; THE `npx mcp-remote` BRIDGE WAS.** The official Wolfram connector — made by
+    Wolfram Research, verified, published in Anthropic's marketplace, sign-in not
+    required — carries the SAME `agenttools.wolfram.com` host, and it answered
+    correctly throughout 2026-09-28. The figures below are SOUND for what they
+    measure and the inference drawn from them was not: `scripts/wolfram_route_health_2026-09-10.py:44-45`
+    keys SUCCESS and FAILURE on the literal string `WolframCloud`, the NAME of the
+    removed stdio-shim entry, so it counted whether the desktop application could
+    attach to that bridge. It never probed the host. Disabling the entry remains
+    justified — 97.6744% attach failure is reason enough — and the capability
+    recorded below as a NAMED LOSS was never actually lost, being reachable by the
+    connector throughout. **Bounded honestly: the host is established as "answered on
+    every date probed", not as continuously available.** `experimental_notes/CDSFL_MASTER_TASK_LIST.md:659`
+    was more careful than this block and kept "a transport fault" open as 1 of 3
+    explanations; today's evidence settles it in favour of the transport.
 
     **It did not always fail; it died on a date.** Across 34 log files, 64
     connection attempts: **before 2026-09-04, 1 failed of 21, 4.7619%**, Wilson

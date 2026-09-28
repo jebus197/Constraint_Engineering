@@ -1,0 +1,2017 @@
+### cc2:attempt-1:bench/logs/fresh_clone_last_run.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/fresh_clone_last_run.txt	2026-09-24 03:45:14
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_eid8wm7c/repo/bench/logs/fresh_clone_last_run.txt	2026-09-24 03:38:51
+@@ -1,2 +1,2 @@
+ .....                                                                    [100%]
+-5 passed in 0.29s
++5 passed in 0.28s
+
+### cc2:attempt-1:bench/tests/test_ffafp_unresolved_evasion_2026-09-24.py
+--- /dev/null	2026-09-24 04:11:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_eid8wm7c/repo/bench/tests/test_ffafp_unresolved_evasion_2026-09-24.py	2026-09-24 03:53:10
+@@ -0,0 +1,207 @@
++"""The 'unresolved' class was an EVASION HOLE, and the repair is RESOLUTION.
++
++WHAT WENT WRONG (2026-09-24, ~02:55). `classify_path` gained an 'unresolved' class
++while repairing a FALSE POSITIVE: the Stop gate had refused a turn whose only write
++was `$SP/gate_in.json`, a scratchpad file the classifier judged by its `.json` suffix
++because it sees the path BEFORE the shell expands `$SP`. The repair made all 3
++consumers drop unresolved paths from the mutation set entirely, so such a path could
++neither accuse nor excuse. Executed against the live predicate, that silently excused
++real code:
++
++    bench/reference_runner_v3.py          -> COUNTS
++    $REPO/bench/reference_runner_v3.py    -> IGNORED   <-- real code, evaded
++    ${HOME}/proj/bench/runner.py          -> IGNORED   <-- braced form, evaded
++
++It also inverted the project's own asymmetry. `detect_target_kind` resolves every
++ambiguous case to the SAFER side; this resolved it to the unsafe side, trading a
++visible, self-correcting false refusal for a silent miss, which is none of those.
++
++THE REPAIR IS NEITHER OBVIOUS OPTION. Counting every unresolved path restores the
++false positive that gets a Stop hook parked (measured: 131 of 242, 54.1% of the class,
++are genuinely transient). Ignoring them is the hole. The hook holds the WHOLE command
++text and the variable is usually ASSIGNED in it, so `classify_write` RESOLVES rather
++than guesses. See its docstring for the corpus figures.
++
++WHAT THESE TESTS ASSERT, AND WHY EACH IS NOT VACUOUS. Both halves of the 2026-09-24
++debt are discharged here:
++
++  * the unit half pins the 3-tier ladder, INCLUDING tier 3 -- the residue that is
++    still evaded -- so the hole's remaining size stays visible instead of being
++    quietly believed closed;
++  * the end-to-end half hands a real synthetic transcript to the real gate as a
++    SUBPROCESS and asserts its exit code. The 2 tests deleted on 2026-09-24 were
++    vacuous because `fa.scan` was handed entries lacking `origin: {"kind": "human"}`,
++    so no turn ever opened and `fa.audit` examined NOTHING. Every end-to-end test
++    below therefore asserts FIRST that a turn actually opened and that the verdict
++    names the file -- the anti-vacuity assertion the deleted pair lacked.
++"""
++from __future__ import annotations
++
++import json
++import os
++import pathlib
++import subprocess
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++HOOKS = REPO / "hooks"
++GATE = HOOKS / "ffafp_stop_gate.py"
++sys.path.insert(0, str(HOOKS))
++import ffafp_audit as fa  # noqa: E402  the ONE copy of the trace rules
++
++
++# ---------------------------------------------------------------------------
++# Synthetic transcript. The field set is the one `fa.scan` actually keys off:
++# `origin.kind == "human"` opens a turn (its absence is what made the deleted
++# tests vacuous), and a tool call must be a `tool_use` block on an `assistant`
++# entry. Every line must contain the literal `"type"` or `scan` skips it unparsed.
++# ---------------------------------------------------------------------------
++def entry_human(uuid="u1", ts="2026-09-24T03:00:00Z", text="do the thing"):
++    return {"type": "user", "origin": {"kind": "human"}, "uuid": uuid,
++            "timestamp": ts, "message": {"content": text}}
++
++
++def entry_tool(name, inp):
++    return {"type": "assistant",
++            "message": {"content": [{"type": "tool_use", "name": name, "input": inp}]}}
++
++
++def write_jsonl(path, entries):
++    path.write_text("\n".join(json.dumps(e) for e in entries) + "\n")
++    return path
++
++
++def run_gate(transcript, stop_hook_active=False):
++    payload = json.dumps({"transcript_path": str(transcript),
++                          "stop_hook_active": stop_hook_active})
++    return subprocess.run([sys.executable, str(GATE)], input=payload,
++                          capture_output=True, text=True, timeout=60)
++
++
++def verdict_of(transcript):
++    """The verdict the gate will act on, obtained through the gate's OWN path."""
++    state = {"offset": 0, "open": None, "seq": 0, "reads": {}}
++    with transcript.open("r", errors="ignore") as fh:
++        closed = []
++        fa.scan(fh, state, on_close=closed.append)
++    if state.get("open"):
++        return fa.audit(state["open"], fa.prior_read_paths(state))
++    return closed[-1] if closed else None
++
++
++# ---------------------------------------------------------------------------
++# Tier 1: RESOLVE. A binding in the same command text decides the path.
++# ---------------------------------------------------------------------------
++def test_a_bound_variable_is_resolved_not_guessed():
++    cmd = 'SP=/tmp/scratch.$$; echo hi > $SP/gate_in.json'
++    assert fa.classify_write("$SP/gate_in.json", cmd) == "transient"
++    # ...and the same path with a REPO binding is code, from the same machinery.
++    cmd2 = 'SP=bench; python3 - > $SP/runner.py'
++    assert fa.classify_write("$SP/runner.py", cmd2) == "code"
++
++
++def test_environment_resolves_the_braced_evasion_form():
++    """`${HOME}/...` was evasion form 2 of 2 and is closed unconditionally."""
++    assert fa.classify_path("${HOME}/proj/bench/runner.py") == "unresolved"
++    assert fa.classify_write("${HOME}/proj/bench/runner.py") == "code"
++
++
++def test_a_loop_variable_is_a_binding():
++    cmd = 'for n in 48 49; do cat > "bench/targets/exp$n.py" <<EOF\nx\nEOF\ndone'
++    assert fa.classify_write("bench/targets/exp$n.py", cmd) == "code"
++
++
++def test_a_command_substitution_value_is_refused_not_half_expanded():
++    """`WT=$(mktemp -d)/repo` captures only `$(mktemp`. Substituting that fragment
++    manufactures a path that was never written, so the binding is DROPPED."""
++    assert "WT" not in fa.shell_bindings('WT=$(mktemp -d)/repo; echo > $WT/a.py')
++
++
++# ---------------------------------------------------------------------------
++# Tier 2: the directory is known even though the basename is not.
++# ---------------------------------------------------------------------------
++def test_a_known_directory_counts_even_with_an_unresolved_basename():
++    assert fa.classify_path("bench/logs/run_$STAMP/BRIEF.md") == "unresolved"
++    assert fa.classify_write("bench/logs/run_$STAMP/BRIEF.md") == "doc"
++    assert fa.classify_write("bench/dm/$MOD.py") == "code"
++
++
++# ---------------------------------------------------------------------------
++# Tier 3: the honest residue. This test EXISTS TO KEEP THE HOLE VISIBLE.
++# ---------------------------------------------------------------------------
++def test_a_leading_variable_is_still_unresolved_and_that_is_deliberate():
++    """If the LEADING component is a variable the directory is genuinely unknown,
++    and judging `$SP/gate_in.json` by its `.json` suffix is the exact guess that
++    produced the 2026-09-24 false refusal. Counting these would cost 131 false
++    refusals per corpus. This asserts the REMAINING hole, not its closure."""
++    assert fa.classify_write("$SP/gate_in.json", "echo hi > $SP/gate_in.json") == "unresolved"
++    assert fa.classify_write("$REPO/bench/reference_runner_v3.py") == "unresolved"
++
++
++# ---------------------------------------------------------------------------
++# END-TO-END. The owed fixture: a real transcript through the real gate.
++# ---------------------------------------------------------------------------
++def test_the_synthetic_transcript_actually_opens_a_turn(tmp_path):
++    """ANTI-VACUITY, asserted before anything else in this file's e2e half.
++
++    The 2 tests deleted on 2026-09-24 passed because `fa.audit` was handed NO TURN.
++    If this assertion ever fails, every exit-code assertion below is meaningless.
++    """
++    t = write_jsonl(tmp_path / "t.jsonl",
++                    [entry_human(), entry_tool("Edit", {"file_path": "bench/dm/_convergence.py",
++                                                        "old_string": "a", "new_string": "b"})])
++    v = verdict_of(t)
++    assert v is not None, "no turn opened: the fixture is vacuous"
++    assert v["is_work"] and v["code"], v
++    assert "bench/dm/_convergence.py" in (v.get("files") or []), v
++
++
++def test_gate_refuses_an_untested_code_change_named_through_a_variable(tmp_path):
++    """THE REGRESSION THIS FILE EXISTS FOR. Before `classify_write`, the write below
++    was dropped, the turn read as no-work, and the gate allowed the stop in silence."""
++    cmd = 'D=bench/dm; cat > $D/_convergence.py <<EOF\nprint(1)\nEOF'
++    t = write_jsonl(tmp_path / "t.jsonl", [entry_human(), entry_tool("Bash", {"command": cmd})])
++    v = verdict_of(t)
++    assert v is not None and v["is_work"], "turn did not open or recorded no work"
++    assert v["code"], f"the variable-named code write was evaded: {v}"
++    r = run_gate(t)
++    assert r.returncode == 2, (r.returncode, r.stderr)
++    assert "ANALYSE" in r.stderr and "P-PASS" in r.stderr, r.stderr
++
++
++def test_gate_does_not_refuse_a_scratchpad_only_turn(tmp_path):
++    """The false positive that prompted the whole 2026-09-24 change must STAY fixed.
++    This is the anti-regression on the other side, and it is why the repair had to be
++    resolution rather than counting."""
++    cmd = 'SP=/tmp/sp.$$; mkdir -p $SP; echo "{}" > $SP/gate_in.json'
++    t = write_jsonl(tmp_path / "t.jsonl", [entry_human(), entry_tool("Bash", {"command": cmd})])
++    v = verdict_of(t)
++    assert v is not None, "no turn opened: the fixture is vacuous"
++    assert not v["code"], f"scratchpad write was treated as code: {v}"
++    assert run_gate(t).returncode == 0
++
++
++def test_gate_allows_a_code_change_that_did_leave_traces(tmp_path):
++    """ANTI-VACUITY for the refusal test: the gate must be capable of BOTH answers on
++    a turn that changed code, or `returncode == 2` above proves nothing."""
++    t = write_jsonl(tmp_path / "t.jsonl", [
++        entry_human(),
++        entry_tool("Grep", {"pattern": "_convergence", "path": "bench"}),
++        entry_tool("Edit", {"file_path": "bench/dm/_convergence.py",
++                            "old_string": "a", "new_string": "b"}),
++        entry_tool("Bash", {"command": "python3 -m pytest bench/tests/test_convergence.py -q"}),
++    ])
++    v = verdict_of(t)
++    assert v is not None and v["code"], v
++    r = run_gate(t)
++    assert r.returncode == 0, (r.returncode, r.stderr)
++
++
++def test_gate_never_traps_a_session(tmp_path):
++    """Fail-open is load-bearing: a broken gate must not make a session unstoppable."""
++    assert run_gate(tmp_path / "missing.jsonl").returncode == 0
++    t = write_jsonl(tmp_path / "t.jsonl",
++                    [entry_human(), entry_tool("Edit", {"file_path": "bench/dm/_convergence.py"})])
++    assert run_gate(t, stop_hook_active=True).returncode == 0
+
+### cc2:attempt-1:experimental_notes/Morning_Report_2026-09-24.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-09-24.md	2026-09-24 03:43:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_eid8wm7c/repo/experimental_notes/Morning_Report_2026-09-24.md	2026-09-24 02:42:24
+@@ -74,50 +74,16 @@
+ 
+ ---
+ 
+-## 7. The suite, measured twice
++## 7. The suite, and what CC1 broke
+ 
+-| run | commit | passed | failed | seconds | note |
+-|---|---|---|---|---|---|
+-| first | `b48dcb9` | 8,553 | **47** | 1885.45 | worse than Tuesday's 24 |
+-| killed | `f1ec381` | — | — | — | CC1 edited a hook inside the window — 5th invalidation in a day |
+-| **clean** | `d193539` | **8,606** | **9** | 2292.31 | frozen tree, untouched |
++Measured at `b48dcb9` on a frozen tree: **8553 passed, 47 failed**, 1885.45 s, exit 1. Worse than Tuesday's 24. Promoting 15 seat-written files brought their defects with them.
+ 
+-**38 of the 47 closed**, each verified by running the guard rather than reading it. The rise from 24 to 47 was the cost of promoting 15 seat-written files: their defects came with them.
++Closed since, each verified by running the guard: **17 operational-script failures** (13 sharing one cause — a module-level help answer reads the *host's* argv, and the probe imports by passing the script's own path; guarding it with `__name__ == "__main__"` fixes all 13 and leaves `--help` working), **8 routing failures** (my unconditional keyword against narrow stubs), **1 secrets test** (a NameError I introduced at a call site I never exercised — the test's complaint was that dispatch was never reached, so nothing was checked), plus the documentation-drift and full-record guards.
+ 
+-The largest group was 17 operational-script failures, of which **13 shared one cause and it was CC1's**: a help answer placed at module level reads the *host's* argv, and the probe imports each script by passing its own path, so the guard refused that path and the import exited 2. Guarding with `__name__ == "__main__"` fixes all 13 and leaves `--help` working. Four more were real defects in the promoted files — 2 collapsing every non-zero exit code to 1, 1 swallowing an exception into a bare `pass`, 2 printing a list cut to 5 under a heading that reads as complete.
++Still red and correct to be: the 2 paid-dispatch guards, which only the founder can clear. Pre-existing and unrelated: the latent-control pair (instrument committed 2026-09-01 against an archive ending 2026-08-27) and round 11's brief figure.
+ 
+-Eight were routing failures, also CC1's: threading `max_rungs` unconditionally broke `fake_route` stubs in 4 files, and those stubs are right to be narrow — they assert on behaviour, and a stub that must grow whenever a signature gains an optional parameter is a test coupled to a signature.
+-
+-One was a **NameError CC1 introduced in the secrets path**. `seat_environment(seat=model_id)` at the Codex launch site had no `model_id` in scope, because CC1 verified the function in isolation and never exercised the call site. The test that caught it guards that no secret reaches a seat, and its complaint was exact: *"subprocess.run was never reached, so nothing was checked"*. A test that cannot run is not a passing test.
+-
+-**The 9 remaining:** 3 are the founder's (paid-dispatch guards, correct to be red); 3 pre-existing and unrelated (the latent-control pair, whose instrument was committed 2026-09-01 against an archive ending 2026-08-27, and an earlier round's brief figure); 3 were CC1's, of which 2 are now fixed. The last is item 8 below.
+-
+ ---
+ 
+-## 8. What the self-review found in CC1's own work, before the panel saw it
+-
+-**The Stop gate's false refusal was repaired twice, and the first repair opened a hole.**
+-
+-The first fix made `classify_path` return `"other"` for a path carrying an unexpanded shell variable, and the test asserted exactly that — 27 tests green — **while the gate went on refusing**, because its 3 consumers test `!= "transient"` and `"other"` still counted. *A fix verified only at the layer it edited is not verified.*
+-
+-The second fix gave unresolved paths their own class, excluded by name. That worked, and **it made the gate evadable**:
+-
+-```
+-bench/reference_runner_v3.py          -> COUNTS
+-$REPO/bench/reference_runner_v3.py    -> IGNORED   ← real code, evaded
+-${HOME}/proj/bench/runner.py          -> IGNORED   ← braced form, evaded
+-```
+-
+-2 of 2 evasion forms succeed, Wilson [34.2380%, 100.0000%], mpmath agreeing to 5.55e-17. Introduced at ~02:55 while fixing a false alarm, and it is the worse of the two faults: a false refusal is visible and self-correcting on the next bounce; a silent evasion is neither. It also **inverts this project's own asymmetry** — `detect_target_kind` resolves every ambiguous case to the safer side, and this one was resolved to the unsafe side.
+-
+-CC1's position, put to the panel to attack rather than confirm: the safe default is that an unresolved path COUNTS, accepting the false alarm, because a missed refusal costs the gate's whole purpose — but that restores the false alarm that gets such gates parked. The properly correct answer is probably neither: the hook sees the whole Bash command text and the variable is *assigned* in that text, so it can be **resolved** rather than guessed at.
+-
+-**And 2 end-to-end tests CC1 wrote for the gate were vacuous.** Both ran it as a subprocess and asserted its exit code. Probed directly, `fa.scan` left `state["open"]` None and `on_close` empty, so `fa.audit` received **no turn at all** — they passed because nothing was examined. That is the substitution-tautology shape this project has caught 3 times. Deleted, the reason written where they stood, the fixture recorded as OWED.
+-
+-**Still open, item 8:** 3 scripts act when imported. They write only inside a temporary directory, so nothing in the repository is touched, but the rule is right. CC1 attempted the wrap, broke 2 of 3 on a multi-line construct, restored them, and stopped rather than keep cutting at working files at 03:00. It is now a named task for the review panel.
+-
+----
+-
+ ## Producers
+ 
+ `scripts/a19_flag_admits_harmful_fixes_2026-09-22.py`, `scripts/a19_prose_gates_are_one_sided_2026-09-22.py` (the "3 of 5 harms actively rejected; 0 of 5 correct fixes rejected; every NO_SCORE held R_k" figure in section 1), `scripts/a19_veto_only_prose_sk_2026-09-22.py`, `scripts/ffafp_liveness_check_2026-09-22.py`, `scripts/panel_harvest_loss_2026-09-22.py`, and the 7 recovered derivations under `scripts/cc_free_seat_2026_09_21/`.
+
+### cc2:attempt-1:hooks/ffafp_audit.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/ffafp_audit.py	2026-09-24 02:55:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_eid8wm7c/repo/hooks/ffafp_audit.py	2026-09-24 03:53:38
+@@ -340,8 +340,120 @@
+     if ext in _CODE_EXT:
+         return "code"
+     return "other"
++
++
++#: A shell variable reference, `$NAME` or `${NAME}`. Deliberately does NOT match `$(`:
++#: command substitution is a different construct and is handled as unresolvable below.
++_VAR_REF = re.compile(r"\$\{(\w+)\}|\$(\w+)")
++#: `NAME=value`, at a command boundary or after `export`. The value stops at the first
++#: whitespace or shell metacharacter, which is why a value containing `$(` is rejected
++#: outright rather than substituted: `WT=$(mktemp -d)/repo` captures only `$(mktemp`,
++#: and substituting that fragment manufactures a path that was never written.
++_ASSIGN = re.compile(r"(?:^|[;&|\n(`]|\bexport\s+)\s*([A-Za-z_]\w*)=([^\s;&|)`]+)")
++#: `for NAME in a b c; do` -- a loop variable is a binding like any other.
++_FORLOOP = re.compile(r"\bfor\s+([A-Za-z_]\w*)\s+in\s+([^\n;]+?)\s*;?\s*do\b")
++
++
++def shell_bindings(cmd: str) -> dict:
++    """Variable -> literal value, for every binding visible in ONE command's text.
++
++    RESOLVE, DO NOT GUESS. A binding whose value is not a literal -- it contains a
++    command substitution or a backtick -- is OMITTED rather than half-expanded, because
++    a truncated fragment classifies as confidently as a real path and is wrong.
++    """
++    m = {}
++    for k, v in _ASSIGN.findall(cmd or ""):
++        v = v.strip().strip("\"\'")
++        if "$(" in v or "`" in v:
++            continue
++        m.setdefault(k, v)
++    for k, vals in _FORLOOP.findall(cmd or ""):
++        toks = [t for t in vals.split() if "$" not in t and "*" not in t]
++        if toks:
++            m.setdefault(k, toks[0])
++    return m
++
+ 
++def resolve_shell_vars(path: str, cmd: str = "", env=None) -> str:
++    """Expand `$VAR` in `path` from bindings in the SAME command text, then the
++    environment. Unknown variables are left standing so the caller can see the residue.
++    """
++    env = os.environ if env is None else env
++    m = shell_bindings(cmd)
++    cur = path or ""
++    for _ in range(6):                               # bounded: `A=$B` chains terminate
++        if "$" not in cur:
++            break
++        nxt = _VAR_REF.sub(
++            lambda mo: m.get(mo.group(1) or mo.group(2),
++                             env.get(mo.group(1) or mo.group(2), mo.group(0))), cur)
++        if nxt == cur:
++            break
++        cur = nxt
++    return os.path.expanduser(cur)
+ 
++
++def classify_write(path: str, cmd: str = "", env=None) -> str:
++    """`classify_path`, after RESOLVING the path rather than guessing at it.
++
++    THE HOLE THIS CLOSES (2026-09-24, panel). `classify_path` returning \'unresolved\'
++    made the 3 consumers drop the write ENTIRELY, so a path carrying a variable could
++    neither accuse nor excuse. Executed against the live predicate, `$REPO/bench/x.py`
++    and `${HOME}/proj/bench/runner.py` were both IGNORED: real code, evaded. That
++    inverts the project\'s own asymmetry -- `detect_target_kind` resolves every
++    ambiguous case to the SAFER side -- and it trades a visible, self-correcting false
++    refusal for a silent miss, which is none of those things.
++
++    The repair is neither of the two obvious options. Counting every unresolved path
++    restores the false positive that parks a Stop hook; ignoring them is the present
++    hole. The hook holds the WHOLE command text, and the variable is usually ASSIGNED
++    in it, so it can be RESOLVED instead of guessed. A 3-tier ladder, each tier
++    measured over the 242 unresolved mutations in the 262 MB live corpus
++    (~/.claude/projects/-Users-georgejackson-Developer-Projects, 7986 mutations total,
++    walked through `scan`\'s own `on_tool` hook so this shares the detector\'s loop):
++
++      1. RESOLVE from same-command bindings + environment.
++      2. Residue whose LEADING component is known (`bench/logs/$X/BRIEF.md`): the
++         directory is not in doubt, so the write COUNTS and is classified on the
++         non-variable remainder.
++      3. Residue whose LEADING component is itself a variable (`$SP/gate_in.json`):
++         the directory is genuinely unknown and judging it by its `.json` suffix is
++         exactly the guess that produced the 2026-09-24 false refusal. These stay
++         'unresolved' and stay ignored.
++
++    MEASURED by running THIS function over the whole corpus -- the figures are the
++    shipped function's, not a prototype's. Reproduce with
++    scripts/ffafp_unresolved_evasion_2026-09-24.py:
++
++        unresolved before .... 242        after ....  52   (tier 3 residue, 21.5%)
++        RECOVERED ............ 190 of 242 (78.5%): 131 transient, 49 doc, 7 other, 3 code
++
++    So 59 real writes that the previous code dropped in SILENCE are now counted as
++    work, and 131 more are ignored for the RIGHT reason instead of by accident. ZERO
++    new false refusals: every newly counted path either resolved to a real
++    non-transient location or sits in a known repository directory, and none resolved
++    under /tmp. Only 'code' can make the Stop gate refuse, and the newly counted code
++    is 3 paths, every one a real `.py` file. The count-everything alternative -- CC1's
++    stated fallback -- would have counted all 131 transient paths as work, a 54.1%
++    false-refusal rate on this class, which is what parks a Stop hook.
++
++    What it still cannot resolve, stated rather than buried: a variable exported in an
++    EARLIER turn, one inherited from a parent shell this hook never saw, and any value
++    built by command substitution. All three land in tier 3 and are ignored, so the
++    hole is NARROWED, not closed. `$REPO/bench/x.py` with REPO unbound is STILL evaded,
++    and that is a deliberate, measured choice rather than an oversight: counting it
++    means guessing a directory, which is the defect this function exists to stop.
++    """
++    resolved = resolve_shell_vars(path, cmd, env)
++    kind = classify_path(resolved)
++    if kind != "unresolved":
++        return kind
++    stripped = resolved.strip().strip("\"\'")
++    if _VAR_REF.match(stripped) or stripped.startswith("$("):
++        return "unresolved"                            # tier 3: directory unknown
++    return classify_path(_VAR_REF.sub("X", resolved))  # tier 2: directory known
++
++
+ def redirect_verdict(target: str, at: int, bodies) -> str:
+     """Why one `>` match is, or is not, a file write: 'heredoc', 'devnull', 'shape', 'write'.
+ 
+@@ -473,8 +585,8 @@
+ 
+     if name in _EDIT_TOOLS:
+         p = str(inp.get(_EDIT_TOOLS[name]) or "")
+-        if classify_path(p) not in ("transient", "unresolved"):
+-            turn["mutations"].append(p)
++        if classify_write(p) not in ("transient", "unresolved"):
++            turn["mutations"].append(resolve_shell_vars(p))
+             turn["first_mut"] = idx if turn["first_mut"] is None else turn["first_mut"]
+             turn["last_mut"] = idx
+         return
+@@ -524,8 +636,15 @@
+                 turn["scans"].append([idx, cmd[:400]])
+             _add_read_paths(turn, _paths_in(cmd))
+         for p in sig["mutations"]:
+-            if classify_path(p) not in ("transient", "unresolved"):
+-                turn["mutations"].append(p)
++            # THE RESOLVED FORM IS WHAT GETS STORED (2026-09-24, panel). `audit` runs
++            # later, from a turn dict that does NOT carry the command text, so a raw
++            # `$D/_convergence.py` would classify as 'unresolved' there however well
++            # it resolved here -- the mutation would be recorded and its KIND lost,
++            # leaving `code_touched` False and the Stop gate silent on a real code
++            # change. Caught by execution, not by reading:
++            # test_gate_refuses_an_untested_code_change_named_through_a_variable.
++            if classify_write(p, cmd) not in ("transient", "unresolved"):
++                turn["mutations"].append(resolve_shell_vars(p, cmd))
+                 turn["first_mut"] = idx if turn["first_mut"] is None else turn["first_mut"]
+                 turn["last_mut"] = idx
+         return
+@@ -539,7 +658,7 @@
+     """
+     prior_reads = prior_reads or set()
+     muts = [m for m in turn.get("mutations") or []]
+-    kinds = {classify_path(m) for m in muts} - {"unresolved"}
++    kinds = {classify_write(m) for m in muts} - {"unresolved"}
+     is_work = bool(muts)
+     code_touched = "code" in kinds
+     doc_only = bool(muts) and kinds <= {"doc"}
+
+### cc2:attempt-1:scripts/a19_flag_admits_harmful_fixes_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/a19_flag_admits_harmful_fixes_2026-09-22.py	2026-09-24 02:18:05
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_eid8wm7c/repo/scripts/a19_flag_admits_harmful_fixes_2026-09-22.py	2026-09-24 03:57:56
+@@ -32,28 +32,35 @@
+ # exactly as before; on IMPORT it is skipped and argv is never inspected.
+ if __name__ == "__main__":
+     answer_help(__doc__, __file__)
+-tmp = pathlib.Path(tempfile.mkdtemp())
+-print(f"{'fixture':<24} {'fix':<8} {'flag':<5} {'tristate':<12} {'sk':>7} {'R_old':>7} {'R_new':>7} {'admitted'}")
+-print("-" * 92)
+-for fx in load_all():
+-    bl = T._real_baseline(fx)
+-    for label, patches in (("harmful", fx.harmful_fix), ("correct", fx.correct_fix)):
+-        for flag in (False, True):
+-            d = tmp / f"{fx.key}-{label}-{flag}"
+-            d.mkdir(parents=True, exist_ok=True)
+-            copy = d / fx.doc_path.name
+-            shutil.copy(fx.doc_path, copy)
+-            reg = T.FindingRegistry()
+-            cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
+-            stats = _evaluate_sk_for_findings(reg, fx.document, str(copy), bl,
+-                                              round_idx=1,
+-                                              score_prose_listings=flag)
+-            e = reg.entries[cid]
+-            r = e.get("sk_result") or {}
+-            print(f"{fx.doc_path.name:<24} {label:<8} {str(flag):<5} "
+-                  f"{r.get('tristate','-'):<12} {r.get('sk',0):>7.4f} "
+-                  f"{r.get('R_old',float('nan')):>7.4f} {r.get('R_new',float('nan')):>7.4f} "
+-                  f"{stats.get('admissible', stats.get('admitted','?'))}")
+-print("-" * 92)
+-print("stats keys:", sorted(stats.keys()))
+-shutil.rmtree(tmp, ignore_errors=True)
++
++
++def main():
++    tmp = pathlib.Path(tempfile.mkdtemp())
++    print(f"{'fixture':<24} {'fix':<8} {'flag':<5} {'tristate':<12} {'sk':>7} {'R_old':>7} {'R_new':>7} {'admitted'}")
++    print("-" * 92)
++    for fx in load_all():
++        bl = T._real_baseline(fx)
++        for label, patches in (("harmful", fx.harmful_fix), ("correct", fx.correct_fix)):
++            for flag in (False, True):
++                d = tmp / f"{fx.key}-{label}-{flag}"
++                d.mkdir(parents=True, exist_ok=True)
++                copy = d / fx.doc_path.name
++                shutil.copy(fx.doc_path, copy)
++                reg = T.FindingRegistry()
++                cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
++                stats = _evaluate_sk_for_findings(reg, fx.document, str(copy), bl,
++                                                  round_idx=1,
++                                                  score_prose_listings=flag)
++                e = reg.entries[cid]
++                r = e.get("sk_result") or {}
++                print(f"{fx.doc_path.name:<24} {label:<8} {str(flag):<5} "
++                      f"{r.get('tristate','-'):<12} {r.get('sk',0):>7.4f} "
++                      f"{r.get('R_old',float('nan')):>7.4f} {r.get('R_new',float('nan')):>7.4f} "
++                      f"{stats.get('admissible', stats.get('admitted','?'))}")
++    print("-" * 92)
++    print("stats keys:", sorted(stats.keys()))
++    shutil.rmtree(tmp, ignore_errors=True)
++
++
++if __name__ == "__main__":
++    main()
+
+### cc2:attempt-1:scripts/a19_prose_gates_are_one_sided_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/a19_prose_gates_are_one_sided_2026-09-22.py	2026-09-24 02:53:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_eid8wm7c/repo/scripts/a19_prose_gates_are_one_sided_2026-09-22.py	2026-09-24 03:58:44
+@@ -51,125 +51,132 @@
+ )
+ from bench.tests.fixtures.stem.stem_fixtures import load_all          # noqa: E402
+ 
+-FAILURES = []
+-R0 = 0.5
+ 
+ 
+-def check(cond, msg):
+-    if not cond:
+-        FAILURES.append(msg)
++def main():
++    FAILURES = []
++    R0 = 0.5
+ 
+ 
+-# ── 1. Both flag configurations, through the round-loop entry point ──────────
+-print(f"{'fixture':<12} {'fix':<8} {'flag':<6} {'tristate':<11} "
+-      f"{'R_old':>7} {'R_new':>7}  reason")
+-print("-" * 96)
+-tmp = pathlib.Path(tempfile.mkdtemp())
+-try:
+-    for fx in load_all():
+-        bl = T._real_baseline(fx)
+-        for label, patches in (("harmful", fx.harmful_fix),
+-                               ("correct", fx.correct_fix)):
+-            for flag in (False, True):
+-                d = tmp / f"{fx.key}-{label}-{flag}"
+-                d.mkdir(parents=True, exist_ok=True)
+-                copy = d / fx.doc_path.name
+-                shutil.copy(fx.doc_path, copy)
+-                reg = T.FindingRegistry()
+-                cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
+-                with contextlib.redirect_stdout(io.StringIO()):
+-                    _evaluate_sk_for_findings(
+-                        reg, fx.document, str(copy), bl, round_idx=1,
+-                        score_prose_listings=flag)
+-                r = reg.entries[cid].get("sk_result") or {}
+-                tri = r.get("tristate", "-")
+-                r_old, r_new = r.get("R_old", R0), r.get("R_new", R0)
+-                why = ((r.get("gate_details", {}).get("_prose_one_sided") or {})
+-                       .get("detail", ""))[:34]
+-                print(f"{fx.key:<12} {label:<8} {str(flag):<6} {tri:<11} "
+-                      f"{r_old:>7.4f} {r_new:>7.4f}  {why}")
++    def check(cond, msg):
++        if not cond:
++            FAILURES.append(msg)
+ 
+-                # PROPERTY 1 -- a harmful fix is never admitted.
+-                if label == "harmful":
++
++    # ── 1. Both flag configurations, through the round-loop entry point ──────────
++    print(f"{'fixture':<12} {'fix':<8} {'flag':<6} {'tristate':<11} "
++          f"{'R_old':>7} {'R_new':>7}  reason")
++    print("-" * 96)
++    tmp = pathlib.Path(tempfile.mkdtemp())
++    try:
++        for fx in load_all():
++            bl = T._real_baseline(fx)
++            for label, patches in (("harmful", fx.harmful_fix),
++                                   ("correct", fx.correct_fix)):
++                for flag in (False, True):
++                    d = tmp / f"{fx.key}-{label}-{flag}"
++                    d.mkdir(parents=True, exist_ok=True)
++                    copy = d / fx.doc_path.name
++                    shutil.copy(fx.doc_path, copy)
++                    reg = T.FindingRegistry()
++                    cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
++                    with contextlib.redirect_stdout(io.StringIO()):
++                        _evaluate_sk_for_findings(
++                            reg, fx.document, str(copy), bl, round_idx=1,
++                            score_prose_listings=flag)
++                    r = reg.entries[cid].get("sk_result") or {}
++                    tri = r.get("tristate", "-")
++                    r_old, r_new = r.get("R_old", R0), r.get("R_new", R0)
++                    why = ((r.get("gate_details", {}).get("_prose_one_sided") or {})
++                           .get("detail", ""))[:34]
++                    print(f"{fx.key:<12} {label:<8} {str(flag):<6} {tri:<11} "
++                          f"{r_old:>7.4f} {r_new:>7.4f}  {why}")
++
++                    # PROPERTY 1 -- a harmful fix is never admitted.
++                    if label == "harmful":
++                        check(tri != SK_ADMISSIBLE,
++                              f"P1 {fx.key}/flag={flag}: harmful fix ADMITTED "
++                              f"(sk={r.get('sk')})")
++                    # No prose fix of any kind is admitted.
+                     check(tri != SK_ADMISSIBLE,
+-                          f"P1 {fx.key}/flag={flag}: harmful fix ADMITTED "
+-                          f"(sk={r.get('sk')})")
+-                # No prose fix of any kind is admitted.
+-                check(tri != SK_ADMISSIBLE,
+-                      f"ONE-SIDED {fx.key}/{label}/flag={flag}: prose fix "
+-                      f"ADMISSIBLE, the gates paid out on a clean static sweep")
+-                # PROPERTY 2 -- an UNSCORED fix moves R_k in neither direction.
+-                if tri == SK_NO_SCORE:
+-                    check(abs(r_new - r_old) < 1e-12,
+-                          f"P2 {fx.key}/{label}/flag={flag}: NO_SCORE moved "
+-                          f"R_k {r_old:.4f} -> {r_new:.4f}")
+-finally:
+-    shutil.rmtree(tmp, ignore_errors=True)
++                          f"ONE-SIDED {fx.key}/{label}/flag={flag}: prose fix "
++                          f"ADMISSIBLE, the gates paid out on a clean static sweep")
++                    # PROPERTY 2 -- an UNSCORED fix moves R_k in neither direction.
++                    if tri == SK_NO_SCORE:
++                        check(abs(r_new - r_old) < 1e-12,
++                              f"P2 {fx.key}/{label}/flag={flag}: NO_SCORE moved "
++                              f"R_k {r_old:.4f} -> {r_new:.4f}")
++    finally:
++        shutil.rmtree(tmp, ignore_errors=True)
+ 
+-# ── 2. The rule DISCRIMINATES: it is not "reject everything" ─────────────────
+-# Anti-vacuity. If every case came back NO_SCORE the assertions above would pass
+-# while the machinery had learned nothing. The three harms that carry a static
+-# signal must be actively REJECTED; every correct fix must NOT be.
+-print("-" * 96)
+-rejected, scored = set(), {}
+-for fx in load_all():
+-    for label, patches in (("harmful", fx.harmful_fix), ("correct", fx.correct_fix)):
++    # ── 2. The rule DISCRIMINATES: it is not "reject everything" ─────────────────
++    # Anti-vacuity. If every case came back NO_SCORE the assertions above would pass
++    # while the machinery had learned nothing. The three harms that carry a static
++    # signal must be actively REJECTED; every correct fix must NOT be.
++    print("-" * 96)
++    rejected, scored = set(), {}
++    for fx in load_all():
++        for label, patches in (("harmful", fx.harmful_fix), ("correct", fx.correct_fix)):
++            with contextlib.redirect_stdout(io.StringIO()):
++                res = compute_sk(T._fix_text(fx, patches, fx.doc_path), fx.document,
++                                 str(fx.doc_path), score_prose_listings=True,
++                                 baseline=T._real_baseline(fx))
++            scored[(fx.key, label)] = res.tristate
++            if label == "harmful" and res.tristate == SK_REJECTED:
++                rejected.add(fx.key)
++    print("harmful fixes actively REJECTED:", sorted(rejected))
++    check(rejected == {"structural", "statistics", "numerical"},
++          f"DISCRIMINATION: expected the 3 statically-visible harms to be "
++          f"REJECTED, got {sorted(rejected)}")
++    false_rejects = [k for (k, l), t in scored.items()
++                     if l == "correct" and t == SK_REJECTED]
++    check(not false_rejects,
++          f"FALSE REJECTION: correct fixes rejected: {false_rejects}")
++
++    # ── 3. The escalation the old aggregation could not stop ─────────────────────
++    # A lint-clean fix introducing N new bandit HIGHs scored sk >= 1/3 ADMISSIBLE
++    # for every N, because E = (1/3)e3 + (2/3)e4 and e4 floors at 0. Must REJECT.
++    import re as _re                                                       # noqa: E402
++
++    # WIRED 2026-09-24 (CC1). This file works at MODULE level, so there is no
++    # main() for a help flag to intercept. Answered here, before any work.
++    fx = next(f for f in load_all() if f.key == "structural")
++    anchor = _re.search(r"```python\n(.*?)```", fx.document, _re.S
++                        ).group(1).rstrip().splitlines()[-1]
++    for n in (1, 20):
++        body = "\n".join(f'cmd{i} = "rm -rf /"\nsubprocess.call(cmd{i}, shell=True)'
++                         for i in range(n))
++        txt = (f"<<<< SEARCH {fx.doc_path}\n{anchor}\n==== REPLACE\n"
++               f"{anchor}\nimport subprocess\n{body}\n>>>>\n")
+         with contextlib.redirect_stdout(io.StringIO()):
+-            res = compute_sk(T._fix_text(fx, patches, fx.doc_path), fx.document,
+-                             str(fx.doc_path), score_prose_listings=True,
++            res = compute_sk(txt, fx.document, str(fx.doc_path),
++                             score_prose_listings=True,
+                              baseline=T._real_baseline(fx))
+-        scored[(fx.key, label)] = res.tristate
+-        if label == "harmful" and res.tristate == SK_REJECTED:
+-            rejected.add(fx.key)
+-print("harmful fixes actively REJECTED:", sorted(rejected))
+-check(rejected == {"structural", "statistics", "numerical"},
+-      f"DISCRIMINATION: expected the 3 statically-visible harms to be "
+-      f"REJECTED, got {sorted(rejected)}")
+-false_rejects = [k for (k, l), t in scored.items()
+-                 if l == "correct" and t == SK_REJECTED]
+-check(not false_rejects,
+-      f"FALSE REJECTION: correct fixes rejected: {false_rejects}")
++        print(f"injected {n:>2} new bandit HIGH -> {res.tristate}")
++        check(res.tristate == SK_REJECTED,
++              f"SATURATION n={n}: {n} new HIGHs returned {res.tristate}")
+ 
+-# ── 3. The escalation the old aggregation could not stop ─────────────────────
+-# A lint-clean fix introducing N new bandit HIGHs scored sk >= 1/3 ADMISSIBLE
+-# for every N, because E = (1/3)e3 + (2/3)e4 and e4 floors at 0. Must REJECT.
+-import re as _re                                                       # noqa: E402
++    # ── 4. The helper reads NEW, not TOTAL ───────────────────────────────────────
++    check(_gates_introduced_new_defects(
++        {"e3_ruff": {"detail": "2 total, 0 new (baseline: 2)"},
++         "e4_bandit": {"detail": "3 HIGH/0 MEDIUM (baseline: 3H/0M, new: 0H/0M)"}}) == [],
++        "PRE-EXISTING DEFECTS were charged to the fix")
++    check(len(_gates_introduced_new_defects(
++        {"e3_ruff": {"detail": "5 total, 1 new (baseline: 4)"},
++         "e4_bandit": {"detail": "1 HIGH/0 MEDIUM (baseline: 0H/0M, new: 1H/0M)"}})) == 2,
++        "NEW defects were not detected")
++    check(_gates_introduced_new_defects({"e3_ruff": {"detail": "garbled"}}) == [],
++          "an unreadable gate detail became an accusation")
+ 
+-# WIRED 2026-09-24 (CC1). This file works at MODULE level, so there is no
+-# main() for a help flag to intercept. Answered here, before any work.
+-fx = next(f for f in load_all() if f.key == "structural")
+-anchor = _re.search(r"```python\n(.*?)```", fx.document, _re.S
+-                    ).group(1).rstrip().splitlines()[-1]
+-for n in (1, 20):
+-    body = "\n".join(f'cmd{i} = "rm -rf /"\nsubprocess.call(cmd{i}, shell=True)'
+-                     for i in range(n))
+-    txt = (f"<<<< SEARCH {fx.doc_path}\n{anchor}\n==== REPLACE\n"
+-           f"{anchor}\nimport subprocess\n{body}\n>>>>\n")
+-    with contextlib.redirect_stdout(io.StringIO()):
+-        res = compute_sk(txt, fx.document, str(fx.doc_path),
+-                         score_prose_listings=True,
+-                         baseline=T._real_baseline(fx))
+-    print(f"injected {n:>2} new bandit HIGH -> {res.tristate}")
+-    check(res.tristate == SK_REJECTED,
+-          f"SATURATION n={n}: {n} new HIGHs returned {res.tristate}")
++    print("-" * 96)
++    if FAILURES:
++        print("FALSIFIED")
++        for f in FAILURES:
++            print("  *", f)
++        raise AssertionError(f"{len(FAILURES)} property violation(s)")
++    print("rule holds: no prose fix admitted; 3/5 harms actively rejected; "
++          "0/5 correct fixes rejected; every NO_SCORE held R_k")
+ 
+-# ── 4. The helper reads NEW, not TOTAL ───────────────────────────────────────
+-check(_gates_introduced_new_defects(
+-    {"e3_ruff": {"detail": "2 total, 0 new (baseline: 2)"},
+-     "e4_bandit": {"detail": "3 HIGH/0 MEDIUM (baseline: 3H/0M, new: 0H/0M)"}}) == [],
+-    "PRE-EXISTING DEFECTS were charged to the fix")
+-check(len(_gates_introduced_new_defects(
+-    {"e3_ruff": {"detail": "5 total, 1 new (baseline: 4)"},
+-     "e4_bandit": {"detail": "1 HIGH/0 MEDIUM (baseline: 0H/0M, new: 1H/0M)"}})) == 2,
+-    "NEW defects were not detected")
+-check(_gates_introduced_new_defects({"e3_ruff": {"detail": "garbled"}}) == [],
+-      "an unreadable gate detail became an accusation")
+ 
+-print("-" * 96)
+-if FAILURES:
+-    print("FALSIFIED")
+-    for f in FAILURES:
+-        print("  *", f)
+-    raise AssertionError(f"{len(FAILURES)} property violation(s)")
+-print("rule holds: no prose fix admitted; 3/5 harms actively rejected; "
+-      "0/5 correct fixes rejected; every NO_SCORE held R_k")
++if __name__ == "__main__":
++    main()
+
+### cc2:attempt-1:scripts/a19_veto_only_prose_sk_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/a19_veto_only_prose_sk_2026-09-22.py	2026-09-24 02:18:05
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_eid8wm7c/repo/scripts/a19_veto_only_prose_sk_2026-09-22.py	2026-09-24 03:57:56
+@@ -45,42 +45,49 @@
+ # exactly as before; on IMPORT it is skipped and argv is never inspected.
+ if __name__ == "__main__":
+     answer_help(__doc__, __file__)
+-tmp = pathlib.Path(tempfile.mkdtemp())
+-failures = []
+-try:
+-    for fx in load_all():
+-        baseline = T._real_baseline(fx)
+-        for label, patches in (("harmful", fx.harmful_fix),
+-                               ("correct", fx.correct_fix)):
+-            for flag in (False, True):
+-                d = tmp / f"{fx.key}-{label}-{flag}"
+-                d.mkdir(parents=True, exist_ok=True)
+-                copy = d / fx.doc_path.name
+-                shutil.copy(fx.doc_path, copy)
+-                reg = T.FindingRegistry()
+-                cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
+-                stats = _evaluate_sk_for_findings(
+-                    reg, fx.document, str(copy), baseline,
+-                    round_idx=1, score_prose_listings=flag)
+-                r = reg.entries[cid].get("sk_result") or {}
+-                tri = r.get("tristate")
+-                r_old, r_new = r.get("R_old"), r.get("R_new")
+-                print(f"{fx.key:<12} {label:<8} flag={flag!s:<5} "
+-                      f"{tri:<12} R {r_old} -> {r_new}")
+-                if tri == SK_ADMISSIBLE or stats["admissible"] != 0:
+-                    failures.append(
+-                        f"{fx.key}/{label}/flag={flag}: ADMITTED ({tri})")
+-                if r_old is not None and r_new is not None and r_new != r_old:
+-                    failures.append(
+-                        f"{fx.key}/{label}/flag={flag}: R_k moved "
+-                        f"{r_old} -> {r_new} on an unadmitted fix")
+-finally:
+-    shutil.rmtree(tmp, ignore_errors=True)
+ 
+-if failures:
+-    print("FALSIFIED")
+-    raise AssertionError(
+-        "S_k admitted or moved risk on a prose target:\n  "
+-        + "\n  ".join(failures))
+-print(f"OK: 20 evaluations (5 fixtures x 2 fixes x 2 flag states), "
+-      f"0 admissions, R_k held in every case.")
++
++def main():
++    tmp = pathlib.Path(tempfile.mkdtemp())
++    failures = []
++    try:
++        for fx in load_all():
++            baseline = T._real_baseline(fx)
++            for label, patches in (("harmful", fx.harmful_fix),
++                                   ("correct", fx.correct_fix)):
++                for flag in (False, True):
++                    d = tmp / f"{fx.key}-{label}-{flag}"
++                    d.mkdir(parents=True, exist_ok=True)
++                    copy = d / fx.doc_path.name
++                    shutil.copy(fx.doc_path, copy)
++                    reg = T.FindingRegistry()
++                    cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
++                    stats = _evaluate_sk_for_findings(
++                        reg, fx.document, str(copy), baseline,
++                        round_idx=1, score_prose_listings=flag)
++                    r = reg.entries[cid].get("sk_result") or {}
++                    tri = r.get("tristate")
++                    r_old, r_new = r.get("R_old"), r.get("R_new")
++                    print(f"{fx.key:<12} {label:<8} flag={flag!s:<5} "
++                          f"{tri:<12} R {r_old} -> {r_new}")
++                    if tri == SK_ADMISSIBLE or stats["admissible"] != 0:
++                        failures.append(
++                            f"{fx.key}/{label}/flag={flag}: ADMITTED ({tri})")
++                    if r_old is not None and r_new is not None and r_new != r_old:
++                        failures.append(
++                            f"{fx.key}/{label}/flag={flag}: R_k moved "
++                            f"{r_old} -> {r_new} on an unadmitted fix")
++    finally:
++        shutil.rmtree(tmp, ignore_errors=True)
++
++    if failures:
++        print("FALSIFIED")
++        raise AssertionError(
++            "S_k admitted or moved risk on a prose target:\n  "
++            + "\n  ".join(failures))
++    print(f"OK: 20 evaluations (5 fixtures x 2 fixes x 2 flag states), "
++          f"0 admissions, R_k held in every case.")
++
++
++if __name__ == "__main__":
++    main()
+
+### cc2:attempt-1:scripts/ffafp_unresolved_evasion_2026-09-24.py
+--- /dev/null	2026-09-24 04:11:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_eid8wm7c/repo/scripts/ffafp_unresolved_evasion_2026-09-24.py	2026-09-24 03:59:35
+@@ -0,0 +1,87 @@
++"""Measure the 'unresolved' evasion hole and the resolver that closes it.
++
++Walks every transcript in the live corpus through `scan`'s OWN `on_tool` hook -- not a
++second copy of the loop -- and compares `classify_path` (which drops a path carrying a
++shell variable, so it can neither accuse nor excuse) against `classify_write` (which
++RESOLVES the variable from the same command's bindings, then the environment, before
++classifying). Prints the per-class before/after table and the recovery breakdown quoted
++in `classify_write`'s docstring, so that figure is reproducible rather than asserted.
++
++Takes no arguments. Reads only transcripts; writes nothing.
++"""
++import collections
++import pathlib
++import sys
++
++for _cand in (pathlib.Path(__file__).resolve().parent, *pathlib.Path(__file__).resolve().parents):
++    if (_cand / "_cli_help.py").is_file():
++        sys.path.insert(0, str(_cand)); break
++from _cli_help import answer_help  # noqa: E402
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO / "hooks"))
++import ffafp_audit as fa  # noqa: E402
++
++CORPUS = pathlib.Path.home() / ".claude" / "projects" / "-Users-georgejackson-Developer-Projects"
++
++
++def measure(corpus: pathlib.Path):
++    before, after, recovered = collections.Counter(), collections.Counter(), collections.Counter()
++    examples = []
++
++    def on_tool(name, inp):
++        if name in fa._EDIT_TOOLS:
++            muts, cmd = [str(inp.get(fa._EDIT_TOOLS[name]) or "")], ""
++        elif name == "Bash":
++            cmd = str(inp.get("command") or ""); muts = fa.bash_mutations(cmd)
++        else:
++            return
++        for path in muts:
++            old = fa.classify_path(path); before[old] += 1
++            new = fa.classify_write(path, cmd); after[new] += 1
++            if old == "unresolved" and new != "unresolved":
++                recovered[new] += 1
++                if new != "transient" and len(examples) < 12:
++                    examples.append((new, path))
++
++    files = sorted(corpus.glob("*.jsonl"))
++    for f in files:
++        state = {"offset": 0, "open": None, "seq": 0, "reads": {},
++                 "last_work": None, "reported": None, "history": []}
++        with open(f, errors="replace") as fh:
++            fa.scan(fh, state, on_close=lambda v: None, on_tool=on_tool)
++    return files, before, after, recovered, examples
++
++
++def main():
++    if not CORPUS.is_dir():
++        print(f"corpus not present on this machine: {CORPUS}")
++        print("Nothing measured. This is an ABSENT MEASUREMENT, not a clean result.")
++        return 1
++    files, before, after, recovered, examples = measure(CORPUS)
++    total = sum(before.values())
++    mb = sum(f.stat().st_size for f in files) / 1e6
++    print(f"corpus: {len(files)} transcripts, {mb:.1f} MB, {total} mutations\n")
++    print(f"{'class':<12}{'classify_path':>16}{'classify_write':>16}")
++    for k in ("code", "doc", "other", "transient", "unresolved"):
++        print(f"  {k:<10}{before[k]:>16}{after[k]:>16}")
++    u = before["unresolved"]
++    n = sum(recovered.values())
++    print(f"\nRECOVERED from the evasion: {n} of {u} ({100 * n / u:.1f}%)" if u else "\nno unresolved paths")
++    for k, v in sorted(recovered.items(), key=lambda x: -x[1]):
++        print(f"  -> {k:<10}{v:>5}")
++    work = sum(v for k, v in recovered.items() if k != "transient")
++    print(f"\n{work} real writes previously dropped in SILENCE are now counted as work.")
++    print(f"{recovered['transient']} more are ignored for the RIGHT reason rather than by accident;")
++    print(f"counting them instead -- the count-everything alternative -- would be "
++          f"{100 * recovered['transient'] / u:.1f}% false refusals on this class.")
++    print(f"{after['unresolved']} remain tier-3 residue: leading variable, directory unknowable.")
++    print("\nsample real writes recovered:")
++    for k, p in examples:
++        print(f"  {k:<6}{p[:74]}")
++    return 0
++
++
++if __name__ == "__main__":
++    answer_help(__doc__, __file__)
++    raise SystemExit(main())
+
+### fable:attempt-1:bench/logs/fresh_clone_last_run.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/fresh_clone_last_run.txt	2026-09-24 03:45:14
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zjh_ml41/repo/bench/logs/fresh_clone_last_run.txt	2026-09-24 03:38:51
+@@ -1,2 +1,2 @@
+ .....                                                                    [100%]
+-5 passed in 0.29s
++5 passed in 0.28s
+
+### fable:attempt-1:bench/tests/test_ffafp_stop_gate_2026-09-24.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_ffafp_stop_gate_2026-09-24.py	2026-09-24 02:58:13
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zjh_ml41/repo/bench/tests/test_ffafp_stop_gate_2026-09-24.py	2026-09-24 03:56:15
+@@ -141,3 +141,166 @@
+ # `!= "transient"` and so counted "other" anyway. A fix verified only at the layer
+ # it edited is not verified. That is why `classify_path` now returns a distinct
+ # "unresolved" and why the consumers exclude it by name.
++
++
++# ═══════════════════════════════════════════════════════════════════════════════
++# ADDED 2026-09-24 (panel seat): the two halves the file above records as owed.
++#
++# 1. RESOLUTION, NOT GUESSING. The "unresolved" class closed the false refusal
++#    by opening a silent evasion: `$REPO/bench/runner.py` could neither accuse
++#    nor excuse. `resolve_shell_vars` closes the evasion by RESOLVING the
++#    variable from the command's own assignment text, or from the inherited
++#    environment, before classification. Only the residue -- knowable from
++#    neither -- stays excluded, and a residual variable does not persist into
++#    the write's own shell in this harness either, so no real write is lost.
++#
++# 2. THE SYNTHETIC END-TO-END FIXTURE the comment block above records as OWED.
++#    The two deleted tests were vacuous because their hand-built transcripts
++#    never produced a turn: `is_human_prompt` requires `origin.kind == "human"`,
++#    which they did not set, so `fa.audit` was handed nothing. Every fixture
++#    below FIRST proves, through `fa.scan` directly, that the turn it builds is
++#    actually seen (mutations recorded, tools counted), and only then asserts on
++#    the gate subprocess's exit code. A fixture that stops being parsed fails
++#    the visibility assertion rather than passing the exit-code one.
++# ═══════════════════════════════════════════════════════════════════════════════
++
++
++def _fa():
++    sys.path.insert(0, str(HOOKS))
++    import ffafp_audit
++    return ffafp_audit
++
++
++def test_a_variable_assigned_in_the_same_command_resolves_to_transient():
++    """The first bounce's exact shape, now EXCUSED BY EVIDENCE, not by guess."""
++    fa = _fa()
++    muts = fa.bash_mutations("SP=/tmp/claude/scratchpad; echo hi > $SP/gate_in.json")
++    assert muts == ["/tmp/claude/scratchpad/gate_in.json"]
++    assert fa.classify_path(muts[0]) == "transient"
++
++
++def test_the_dollar_repo_evasion_form_now_counts_as_code():
++    """Evasion form 1 of the 2026-09-24 brief, closed: resolved, then judged."""
++    fa = _fa()
++    muts = fa.bash_mutations(
++        "REPO=/Users/x/proj; echo hi > $REPO/bench/reference_runner_v3.py")
++    assert muts == ["/Users/x/proj/bench/reference_runner_v3.py"]
++    assert fa.classify_path(muts[0]) == "code"
++
++
++def test_the_braced_home_evasion_form_resolves_from_the_environment():
++    """Evasion form 2: `${HOME}` is in the hook's own inherited environment."""
++    fa = _fa()
++    home = os.environ["HOME"]
++    muts = fa.bash_mutations("echo hi > ${HOME}/proj/bench/runner.py")
++    assert muts == [f"{home}/proj/bench/runner.py"]
++    assert fa.classify_path(muts[0]) == "code"
++
++
++def test_a_command_substitution_value_is_never_half_resolved():
++    """`SP=$(mktemp -d)` is not knowable without executing; the path must stay
++    'unresolved' rather than become a wrong guess. (Its true target is a fresh
++    temp dir -- transient -- so exclusion is also the correct verdict.)"""
++    fa = _fa()
++    muts = fa.bash_mutations("SP=$(mktemp -d); echo hi > $SP/x.py")
++    assert muts == ["$SP/x.py"]
++    assert fa.classify_path(muts[0]) == "unresolved"
++
++
++def test_the_residual_unresolved_class_still_exists():
++    fa = _fa()
++    assert fa.classify_path("$NEVER_SET_ANYWHERE_XYZ/file.py") == "unresolved"
++
++
++# ── the synthetic end-to-end fixture, owed above, now built ──────────────────
++
++def _human(uuid="t1"):
++    return {"type": "user", "origin": {"kind": "human"}, "uuid": uuid,
++            "timestamp": "2026-09-24T02:00:00Z", "message": {"content": "go"}}
++
++
++def _assistant(*tool_uses):
++    return {"type": "assistant",
++            "message": {"content": [
++                {"type": "tool_use", "name": n, "input": i} for n, i in tool_uses]}}
++
++
++def _write_transcript(tmp_path, entries):
++    f = tmp_path / "session.jsonl"
++    f.write_text("\n".join(json.dumps(e) for e in entries) + "\n")
++    return f
++
++
++def _prove_seen(fa, f, expect_mutations):
++    """ANTI-VACUITY, the assertion the 2 deleted tests lacked: scan() must hand
++    audit() a real open turn with exactly the expected mutation set."""
++    state = {"offset": 0, "open": None, "seq": 0, "reads": {}}
++    with f.open() as fh:
++        fa.scan(fh, state)
++    assert state["open"] is not None, "the fixture produced NO turn; the test would be vacuous"
++    assert state["open"]["mutations"] == expect_mutations
++    return fa.audit(state["open"], fa.prior_read_paths(state))
++
++
++def test_e2e_a_code_edit_with_no_failable_run_is_refused(tmp_path):
++    fa = _fa()
++    f = _write_transcript(tmp_path, [
++        _human(),
++        _assistant(("Edit", {"file_path": "bench/foo.py",
++                             "old_string": "a", "new_string": "b"})),
++    ])
++    v = _prove_seen(fa, f, ["bench/foo.py"])
++    assert v["code"] and "P-PASS" in v["missing"]
++    r = run_gate({"session_id": "s", "transcript_path": str(f)}, tmp_path)
++    assert r.returncode == 2, f"gate allowed an unverified code edit: {r.stderr}"
++    assert "bench/foo.py" in r.stderr and "P-PASS" in r.stderr
++
++
++def test_e2e_a_scratchpad_only_turn_is_not_refused(tmp_path):
++    """The first bounce, replayed end to end: $SP writes, zero code changes."""
++    fa = _fa()
++    f = _write_transcript(tmp_path, [
++        _human(),
++        _assistant(("Bash", {"command":
++            "SP=/tmp/claude/scratchpad; mkdir -p $SP; echo '{}' > $SP/gate_in.json"})),
++    ])
++    # Seen, resolved, and rightly excluded: the resolved path is transient.
++    state = {"offset": 0, "open": None, "seq": 0, "reads": {}}
++    with f.open() as fh:
++        fa.scan(fh, state)
++    assert state["open"] is not None and state["open"]["n_tools"] == 1, (
++        "the fixture produced no turn; a passing exit code would be vacuous")
++    assert state["open"]["mutations"] == [], (
++        "the scratchpad write leaked into the mutation set")
++    r = run_gate({"session_id": "s", "transcript_path": str(f)}, tmp_path)
++    assert r.returncode == 0, f"the 01:47 false refusal is back: {r.stderr}"
++
++
++def test_e2e_a_code_edit_with_the_trace_present_is_released(tmp_path):
++    """The gate must stand down when the owed check actually ran."""
++    fa = _fa()
++    f = _write_transcript(tmp_path, [
++        _human(),
++        _assistant(("Edit", {"file_path": "bench/foo.py",
++                             "old_string": "a", "new_string": "b"})),
++        _assistant(("Bash", {"command": "python3 -m pytest bench/tests/test_foo.py -q"})),
++    ])
++    v = _prove_seen(fa, f, ["bench/foo.py"])
++    assert v["analysed"] and v["verified_after"]
++    r = run_gate({"session_id": "s", "transcript_path": str(f)}, tmp_path)
++    assert r.returncode == 0, f"gate refused a turn that ran its check: {r.stderr}"
++
++
++def test_e2e_an_evasion_shaped_write_is_now_refused(tmp_path):
++    """The brief's evasion, end to end: a $REPO-spelled write to real code with
++    nothing failable after it must be caught, not excluded."""
++    fa = _fa()
++    f = _write_transcript(tmp_path, [
++        _human(),
++        _assistant(("Bash", {"command":
++            "REPO=/Users/x/proj; echo pass > $REPO/bench/reference_runner_v3.py"})),
++    ])
++    v = _prove_seen(fa, f, ["/Users/x/proj/bench/reference_runner_v3.py"])
++    assert v["code"]
++    r = run_gate({"session_id": "s", "transcript_path": str(f)}, tmp_path)
++    assert r.returncode == 2, "the $REPO evasion is open again"
+
+### fable:attempt-1:bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py	2026-09-24 02:36:06
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zjh_ml41/repo/bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py	2026-09-24 04:06:06
+@@ -59,8 +59,19 @@
+     assert inspect.signature(RT.route).parameters["max_rungs"].default == 2
+ 
+ 
+-def test_the_configured_value_is_what_route_receives(monkeypatch):
+-    """THE WHOLE POINT, and it is read off a recorder rather than off the source."""
++class _MC:
++    label = "CC2"
++
++
++class _Exp:
++    models = [_MC()]
++
++
++def _drive_real_apply_routing(monkeypatch, **cfg_kw) -> dict:
++    """Run the REAL `_apply_routing` over a minimal escalated critical, with
++    `bench.routing.route` replaced by a recorder, and return the kwargs that
++    actually arrived. `_apply_routing` imports route from the module at call
++    time, so patching the module attribute intercepts the genuine call site."""
+     seen: dict = {}
+ 
+     def recorder(*a, **kw):
+@@ -68,14 +79,38 @@
+         return _Res()
+ 
+     monkeypatch.setattr(RT, "route", recorder)
+-    cfg = R.RunnerConfig(routing_max_rungs=5)
+-    rungs = int(getattr(cfg, "routing_max_rungs", 2) or 2)
+-    kw = {} if rungs == 2 else {"max_rungs": rungs}
+-    recorder(None, None, None, None, None, None, **kw)
++    reg = R.FindingRegistry()
++    reg.entries["C0001"] = {
++        "description": "x", "severity": 0.9, "escalated": True,
++        "falsifier_verdict": "ERROR", "source_model": "M1", "status": "OPEN",
++    }
++    cfg = R.RunnerConfig(routing_enabled=True, models=["CC2"], **cfg_kw)
++    R._apply_routing(reg, 1, _Exp(), cfg=cfg, repo_root=str(REPO))
++    return seen
++
++
++def test_the_configured_value_is_what_route_receives(monkeypatch):
++    """THE WHOLE POINT, and it is read off a recorder rather than off the source.
++
++    REWRITTEN 2026-09-24 (panel). The first version monkeypatched RT.route and
++    then called ITS OWN recorder with a kw dict IT built from a copy of the
++    call-site expression -- `_apply_routing` never ran, so the test asserted
++    that the test agrees with the test. Two representations of one truth with
++    no comparator, the exact `source_text_assertions` shape. This version
++    executes the real `_apply_routing`."""
++    seen = _drive_real_apply_routing(monkeypatch, routing_max_rungs=5)
+     assert seen.get("max_rungs") == 5, (
+         f"a configured value of 5 did not arrive at route(): {seen!r}")
+ 
+ 
++def test_at_the_default_the_real_call_site_passes_no_keyword(monkeypatch):
++    """The other half, also executed: default 2 must keep the call
++    byte-identical, or the 8 narrow fake_route stubs break."""
++    seen = _drive_real_apply_routing(monkeypatch)
++    assert "max_rungs" not in seen, (
++        f"routing_max_rungs=2 leaked the keyword into route(): {seen!r}")
++
++
+ def test_at_the_default_no_keyword_is_passed_at_all():
+     """The narrow stubs in 4 other test files depend on this, and so does the
+     claim that archived behaviour is untouched."""
+
+### fable:attempt-1:experimental_notes/Morning_Report_2026-09-24.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-09-24.md	2026-09-24 03:43:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zjh_ml41/repo/experimental_notes/Morning_Report_2026-09-24.md	2026-09-24 02:42:24
+@@ -74,50 +74,16 @@
+ 
+ ---
+ 
+-## 7. The suite, measured twice
++## 7. The suite, and what CC1 broke
+ 
+-| run | commit | passed | failed | seconds | note |
+-|---|---|---|---|---|---|
+-| first | `b48dcb9` | 8,553 | **47** | 1885.45 | worse than Tuesday's 24 |
+-| killed | `f1ec381` | — | — | — | CC1 edited a hook inside the window — 5th invalidation in a day |
+-| **clean** | `d193539` | **8,606** | **9** | 2292.31 | frozen tree, untouched |
++Measured at `b48dcb9` on a frozen tree: **8553 passed, 47 failed**, 1885.45 s, exit 1. Worse than Tuesday's 24. Promoting 15 seat-written files brought their defects with them.
+ 
+-**38 of the 47 closed**, each verified by running the guard rather than reading it. The rise from 24 to 47 was the cost of promoting 15 seat-written files: their defects came with them.
++Closed since, each verified by running the guard: **17 operational-script failures** (13 sharing one cause — a module-level help answer reads the *host's* argv, and the probe imports by passing the script's own path; guarding it with `__name__ == "__main__"` fixes all 13 and leaves `--help` working), **8 routing failures** (my unconditional keyword against narrow stubs), **1 secrets test** (a NameError I introduced at a call site I never exercised — the test's complaint was that dispatch was never reached, so nothing was checked), plus the documentation-drift and full-record guards.
+ 
+-The largest group was 17 operational-script failures, of which **13 shared one cause and it was CC1's**: a help answer placed at module level reads the *host's* argv, and the probe imports each script by passing its own path, so the guard refused that path and the import exited 2. Guarding with `__name__ == "__main__"` fixes all 13 and leaves `--help` working. Four more were real defects in the promoted files — 2 collapsing every non-zero exit code to 1, 1 swallowing an exception into a bare `pass`, 2 printing a list cut to 5 under a heading that reads as complete.
++Still red and correct to be: the 2 paid-dispatch guards, which only the founder can clear. Pre-existing and unrelated: the latent-control pair (instrument committed 2026-09-01 against an archive ending 2026-08-27) and round 11's brief figure.
+ 
+-Eight were routing failures, also CC1's: threading `max_rungs` unconditionally broke `fake_route` stubs in 4 files, and those stubs are right to be narrow — they assert on behaviour, and a stub that must grow whenever a signature gains an optional parameter is a test coupled to a signature.
+-
+-One was a **NameError CC1 introduced in the secrets path**. `seat_environment(seat=model_id)` at the Codex launch site had no `model_id` in scope, because CC1 verified the function in isolation and never exercised the call site. The test that caught it guards that no secret reaches a seat, and its complaint was exact: *"subprocess.run was never reached, so nothing was checked"*. A test that cannot run is not a passing test.
+-
+-**The 9 remaining:** 3 are the founder's (paid-dispatch guards, correct to be red); 3 pre-existing and unrelated (the latent-control pair, whose instrument was committed 2026-09-01 against an archive ending 2026-08-27, and an earlier round's brief figure); 3 were CC1's, of which 2 are now fixed. The last is item 8 below.
+-
+ ---
+ 
+-## 8. What the self-review found in CC1's own work, before the panel saw it
+-
+-**The Stop gate's false refusal was repaired twice, and the first repair opened a hole.**
+-
+-The first fix made `classify_path` return `"other"` for a path carrying an unexpanded shell variable, and the test asserted exactly that — 27 tests green — **while the gate went on refusing**, because its 3 consumers test `!= "transient"` and `"other"` still counted. *A fix verified only at the layer it edited is not verified.*
+-
+-The second fix gave unresolved paths their own class, excluded by name. That worked, and **it made the gate evadable**:
+-
+-```
+-bench/reference_runner_v3.py          -> COUNTS
+-$REPO/bench/reference_runner_v3.py    -> IGNORED   ← real code, evaded
+-${HOME}/proj/bench/runner.py          -> IGNORED   ← braced form, evaded
+-```
+-
+-2 of 2 evasion forms succeed, Wilson [34.2380%, 100.0000%], mpmath agreeing to 5.55e-17. Introduced at ~02:55 while fixing a false alarm, and it is the worse of the two faults: a false refusal is visible and self-correcting on the next bounce; a silent evasion is neither. It also **inverts this project's own asymmetry** — `detect_target_kind` resolves every ambiguous case to the safer side, and this one was resolved to the unsafe side.
+-
+-CC1's position, put to the panel to attack rather than confirm: the safe default is that an unresolved path COUNTS, accepting the false alarm, because a missed refusal costs the gate's whole purpose — but that restores the false alarm that gets such gates parked. The properly correct answer is probably neither: the hook sees the whole Bash command text and the variable is *assigned* in that text, so it can be **resolved** rather than guessed at.
+-
+-**And 2 end-to-end tests CC1 wrote for the gate were vacuous.** Both ran it as a subprocess and asserted its exit code. Probed directly, `fa.scan` left `state["open"]` None and `on_close` empty, so `fa.audit` received **no turn at all** — they passed because nothing was examined. That is the substitution-tautology shape this project has caught 3 times. Deleted, the reason written where they stood, the fixture recorded as OWED.
+-
+-**Still open, item 8:** 3 scripts act when imported. They write only inside a temporary directory, so nothing in the repository is touched, but the rule is right. CC1 attempted the wrap, broke 2 of 3 on a multi-line construct, restored them, and stopped rather than keep cutting at working files at 03:00. It is now a named task for the review panel.
+-
+----
+-
+ ## Producers
+ 
+ `scripts/a19_flag_admits_harmful_fixes_2026-09-22.py`, `scripts/a19_prose_gates_are_one_sided_2026-09-22.py` (the "3 of 5 harms actively rejected; 0 of 5 correct fixes rejected; every NO_SCORE held R_k" figure in section 1), `scripts/a19_veto_only_prose_sk_2026-09-22.py`, `scripts/ffafp_liveness_check_2026-09-22.py`, `scripts/panel_harvest_loss_2026-09-22.py`, and the 7 recovered derivations under `scripts/cc_free_seat_2026_09_21/`.
+
+### fable:attempt-1:hooks/ffafp_audit.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/ffafp_audit.py	2026-09-24 02:55:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zjh_ml41/repo/hooks/ffafp_audit.py	2026-09-24 03:54:36
+@@ -211,6 +211,60 @@
+ #: Explicit in-place mutations that carry no redirect at all.
+ _INPLACE = re.compile(r"(?:\bsed\s+-i\b|\|\s*tee\b|\btee\s+[-\w./~$]|\bgit\s+apply\b|\bpatch\s+-p\d)")
+ 
++#: A plain shell assignment (`SP=/tmp/x`, `export REPO="/Users/x/proj"`), visible
++#: in the command's own text. Values carrying `$` or a backtick are NOT taken:
++#: `SP=$(mktemp -d)` cannot be resolved without executing, and substituting a
++#: half-resolved value would turn "unknown" into "wrong", which is worse.
++_ASSIGN = re.compile(
++    r"(?:^|[;\s&|({])(?:export\s+)?([A-Za-z_]\w*)="
++    r"(\"[^\"$`]*\"|'[^'$`]*'|[^\s;|&<>\"'$`]+)", re.M)
++
++_VAR = re.compile(r"\$\{(\w+)\}|\$([A-Za-z_]\w*)")
++
++
++def shell_assignments(cmd: str) -> dict:
++    """VAR=value assignments in this command's own shell text, heredoc bodies excluded.
++
++    RESOLVE, DO NOT GUESS (2026-09-24, panel). The gate's first real bounce
++    accused `$SP/gate_in.json` -- a scratchpad file -- because the classifier saw
++    the path BEFORE expansion. The first repair excluded every unresolved path,
++    which closed the false refusal by opening a silent evasion: a write spelled
++    `$REPO/bench/runner.py` could neither accuse nor excuse. But in this harness
++    shell state does not persist between Bash calls, so a variable a command
++    uses is almost always ASSIGNED in that same command text -- `$SP` was, on
++    the bounce itself. The value is therefore knowable without executing
++    anything, and knowing beats both guessing and abstaining. Later assignment
++    wins, matching top-to-bottom shell execution closely enough for paths.
++    """
++    bodies = heredoc_spans(cmd)
++    out = {}
++    for m in _ASSIGN.finditer(cmd):
++        if any(a <= m.start(1) < b for a, b in bodies):
++            continue
++        out[m.group(1)] = m.group(2).strip().strip("\"'")
++    return out
++
++
++def resolve_shell_vars(path: str, assigns: dict) -> str:
++    """Expand `$VAR`/`${VAR}` in a path from same-command assignments, then from
++    this hook's own environment.
++
++    The environment fallback is sound because profile-exported variables (HOME
++    above all) reach every Bash tool call and this hook alike -- both are
++    children of the same harness. A name found in neither, or whose value still
++    carries `$`, is left in place, so `classify_path` returns "unresolved" and
++    the path stays out of the mutation set: a variable assigned only in an
++    EARLIER turn does not persist into the write's own shell either, so the
++    write it names never landed where a guess would have put it.
++    """
++    def _sub(m):
++        name = m.group(1) or m.group(2)
++        v = assigns.get(name)
++        if v is None:
++            v = os.environ.get(name)
++        return v if v and "$" not in v else m.group(0)
++    return _VAR.sub(_sub, path or "")
++
+ #: STEM tools, credited only in an EXECUTION context -- an import, or on a python command
+ #: line. A bare mention would credit `grep -rn "sympy"`, which is a search, not an analysis.
+ _STEM_NAMES = r"sympy|z3|scipy|statsmodels|mpmath|uncertainties|numpy|wolframalpha|wolfram|sage|networkx|pint"
+@@ -311,6 +365,13 @@
+     `!= "transient"`, so 'other' still counted and the gate refused a turn
+     whose only writes were scratchpad files named through `$SP`.
+ 
++    Since 2026-09-24 the Bash path RESOLVES `$VAR`/`${VAR}` from the command's
++    own assignments and the inherited environment BEFORE classification (see
++    `resolve_shell_vars`), so 'unresolved' is now the RESIDUAL class -- a
++    variable knowable from neither source -- not the common case. A residual
++    variable also does not persist into the write's own shell in this harness,
++    so the write it names did not land on any path a suffix-guess would accuse.
++
+     'transient' exists so that capturing a run's stdout to /tmp is not mistaken for
+     changing the system. Measured: /tmp logs were the single most common redirect target
+     in both transcripts surveyed, and none of them was a code change.
+@@ -377,8 +438,14 @@
+     """
+     out = []
+     bodies = heredoc_spans(cmd)
++    # RESOLVE BEFORE JUDGING (2026-09-24). `$SP/x.json` used to reach the
++    # classifier unexpanded and `${HOME}/x.py` never reached it at all (the
++    # brace fails the path-shape test). Both are resolvable from the command's
++    # own assignments or the inherited environment, and a resolved path is
++    # judged on what it actually names.
++    assigns = shell_assignments(cmd)
+     for m in _REDIRECT.finditer(cmd):
+-        target = m.group("target").strip().strip("\"'")
++        target = resolve_shell_vars(m.group("target").strip().strip("\"'"), assigns)
+         if redirect_verdict(target, m.start(), bodies) == "write":
+             out.append(target)
+     if _INPLACE.search(cmd):
+@@ -822,9 +889,13 @@
+         cmd = str((inp or {}).get("command") or "")
+         st["bash"] += 1
+         bodies = heredoc_spans(cmd)
++        assigns = shell_assignments(cmd)
+         for m in _REDIRECT.finditer(cmd):
+             st["naive_redirects"] += 1
+-            verdict = redirect_verdict(m.group("target"), m.start(), bodies)
++            # The same resolution the detector applies, so the survey cannot
++            # disagree with the hook on what a redirect target names.
++            verdict = redirect_verdict(
++                resolve_shell_vars(m.group("target"), assigns), m.start(), bodies)
+             st[{"heredoc": "rej_heredoc", "devnull": "rej_devnull",
+                 "shape": "rej_shape", "write": "kept_redirects"}[verdict]] += 1
+ 
+
+### fable:attempt-1:scripts/a19_flag_admits_harmful_fixes_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/a19_flag_admits_harmful_fixes_2026-09-22.py	2026-09-24 02:18:05
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zjh_ml41/repo/scripts/a19_flag_admits_harmful_fixes_2026-09-22.py	2026-09-24 03:57:18
+@@ -6,54 +6,77 @@
+ admitted, and never closes a finding."
+ Property 2: "an unmeasured fix may not move R_k in either direction."
+ """
+-import sys, pathlib, tempfile, shutil
+-ROOT = pathlib.Path("/Users/georgejackson/Developer_Projects/Constraint_Engineering")
+-sys.path.insert(0, str(ROOT))
+-import bench.tests.test_prose_acceptance_stem as T           # noqa: E402
+-from bench.reference_runner_v3 import _evaluate_sk_for_findings  # noqa: E402
+-from bench.tests.fixtures.stem.stem_fixtures import load_all     # noqa: E402
++import os
++import pathlib
++import shutil
++import sys
++import tempfile
+ 
+-# WIRED 2026-09-24 (CC1). This file works at MODULE level, so there is no
+-# main() for a help flag to intercept. Answered here, before any work.
+ # `_cli_help` lives in scripts/. Locate it rather than assume a depth: the
+ # first version of this preamble inserted parents[1] (the repo ROOT) and so
+ # worked when the file was RUN (sys.path[0] is the script dir) and failed when
+ # it was IMPORTED, which is how 13 scripts stopped importing on 2026-09-24.
+-import sys as _sys, pathlib as _pl  # noqa: E402
+-for _cand in (_pl.Path(__file__).resolve().parent, *_pl.Path(__file__).resolve().parents):
++for _cand in (pathlib.Path(__file__).resolve().parent,
++              *pathlib.Path(__file__).resolve().parents):
+     if (_cand / "_cli_help.py").is_file():
+-        _sys.path.insert(0, str(_cand))
++        sys.path.insert(0, str(_cand))
+         break
+ from _cli_help import answer_help  # noqa: E402
+-# GUARDED 2026-09-24 (CC1). At MODULE level this read the HOST's argv:
+-# the operational-script probe imports via `python3 -c "..." <path>`, so
+-# sys.argv[1] was the script's own path and the guard refused it, exit 2.
+-# `__name__` is still "__main__" when the file is RUN, so `--help` answers
+-# exactly as before; on IMPORT it is skipped and argv is never inspected.
++
++# REPO-RELATIVE, 2026-09-24 (panel). This file carried an ABSOLUTE path to the
++# maintainer's checkout, so run from any other tree -- including the very
++# sandbox reviewing a change to compute_sk -- it silently measured the LIVE
++# repository instead of the tree under test, and on any other machine it
++# crashed. Its own sibling (a19_veto_only_prose_sk) states the rule this file
++# broke: "Repo-relative on purpose: no operator-specific ROOT."
++ROOT = pathlib.Path(os.environ.get("CE_ROOT",
++                                   pathlib.Path(__file__).resolve().parents[1]))
++sys.path.insert(0, str(ROOT))
++
++import bench.tests.test_prose_acceptance_stem as T                # noqa: E402
++from bench.reference_runner_v3 import _evaluate_sk_for_findings   # noqa: E402
++from bench.tests.fixtures.stem.stem_fixtures import load_all      # noqa: E402
++
++
++def main() -> None:
++    # MOVED INTO main(), 2026-09-24 (panel). This work ran at MODULE level, so
++    # any tool that merely imported the file built fixture trees and spawned
++    # ruff and bandit -- RED on test_no_tracked_script_writes_at_import. Two
++    # mechanical wrap attempts broke on the mid-file guard; this is the proper
++    # form: imports stay importable, work runs only when the file is run.
++    tmp = pathlib.Path(tempfile.mkdtemp())
++    stats = {}
++    print(f"{'fixture':<24} {'fix':<8} {'flag':<5} {'tristate':<12} "
++          f"{'sk':>7} {'R_old':>7} {'R_new':>7} {'admitted'}")
++    print("-" * 92)
++    try:
++        for fx in load_all():
++            bl = T._real_baseline(fx)
++            for label, patches in (("harmful", fx.harmful_fix),
++                                   ("correct", fx.correct_fix)):
++                for flag in (False, True):
++                    d = tmp / f"{fx.key}-{label}-{flag}"
++                    d.mkdir(parents=True, exist_ok=True)
++                    copy = d / fx.doc_path.name
++                    shutil.copy(fx.doc_path, copy)
++                    reg = T.FindingRegistry()
++                    cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
++                    stats = _evaluate_sk_for_findings(
++                        reg, fx.document, str(copy), bl,
++                        round_idx=1, score_prose_listings=flag)
++                    e = reg.entries[cid]
++                    r = e.get("sk_result") or {}
++                    print(f"{fx.doc_path.name:<24} {label:<8} {str(flag):<5} "
++                          f"{r.get('tristate','-'):<12} {r.get('sk',0):>7.4f} "
++                          f"{r.get('R_old',float('nan')):>7.4f} "
++                          f"{r.get('R_new',float('nan')):>7.4f} "
++                          f"{stats.get('admissible', stats.get('admitted','?'))}")
++        print("-" * 92)
++        print("stats keys:", sorted(stats.keys()))
++    finally:
++        shutil.rmtree(tmp, ignore_errors=True)
++
++
+ if __name__ == "__main__":
+     answer_help(__doc__, __file__)
+-tmp = pathlib.Path(tempfile.mkdtemp())
+-print(f"{'fixture':<24} {'fix':<8} {'flag':<5} {'tristate':<12} {'sk':>7} {'R_old':>7} {'R_new':>7} {'admitted'}")
+-print("-" * 92)
+-for fx in load_all():
+-    bl = T._real_baseline(fx)
+-    for label, patches in (("harmful", fx.harmful_fix), ("correct", fx.correct_fix)):
+-        for flag in (False, True):
+-            d = tmp / f"{fx.key}-{label}-{flag}"
+-            d.mkdir(parents=True, exist_ok=True)
+-            copy = d / fx.doc_path.name
+-            shutil.copy(fx.doc_path, copy)
+-            reg = T.FindingRegistry()
+-            cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
+-            stats = _evaluate_sk_for_findings(reg, fx.document, str(copy), bl,
+-                                              round_idx=1,
+-                                              score_prose_listings=flag)
+-            e = reg.entries[cid]
+-            r = e.get("sk_result") or {}
+-            print(f"{fx.doc_path.name:<24} {label:<8} {str(flag):<5} "
+-                  f"{r.get('tristate','-'):<12} {r.get('sk',0):>7.4f} "
+-                  f"{r.get('R_old',float('nan')):>7.4f} {r.get('R_new',float('nan')):>7.4f} "
+-                  f"{stats.get('admissible', stats.get('admitted','?'))}")
+-print("-" * 92)
+-print("stats keys:", sorted(stats.keys()))
+-shutil.rmtree(tmp, ignore_errors=True)
++    main()
+
+### fable:attempt-1:scripts/a19_prose_gates_are_one_sided_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/a19_prose_gates_are_one_sided_2026-09-22.py	2026-09-24 02:53:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zjh_ml41/repo/scripts/a19_prose_gates_are_one_sided_2026-09-22.py	2026-09-24 03:58:52
+@@ -34,13 +34,6 @@
+         _sys.path.insert(0, str(_cand))
+         break
+ from _cli_help import answer_help  # noqa: E402
+-# GUARDED 2026-09-24 (CC1). At MODULE level this read the HOST's argv:
+-# the operational-script probe imports via `python3 -c "..." <path>`, so
+-# sys.argv[1] was the script's own path and the guard refused it, exit 2.
+-# `__name__` is still "__main__" when the file is RUN, so `--help` answers
+-# exactly as before; on IMPORT it is skipped and argv is never inspected.
+-if __name__ == "__main__":
+-    answer_help(__doc__, __file__)
+ ROOT = pathlib.Path(os.environ.get("CE_ROOT", pathlib.Path(__file__).resolve().parents[1]))
+ sys.path.insert(0, str(ROOT))
+ 
+@@ -51,125 +44,133 @@
+ )
+ from bench.tests.fixtures.stem.stem_fixtures import load_all          # noqa: E402
+ 
+-FAILURES = []
+-R0 = 0.5
++def main() -> None:
++    # MOVED INTO main(), 2026-09-24 (panel): this work ran at module level,
++    # so importing the file built trees and spawned ruff and bandit.
++    FAILURES = []
++    R0 = 0.5
+ 
+ 
+-def check(cond, msg):
+-    if not cond:
+-        FAILURES.append(msg)
++    def check(cond, msg):
++        if not cond:
++            FAILURES.append(msg)
+ 
+ 
+-# ── 1. Both flag configurations, through the round-loop entry point ──────────
+-print(f"{'fixture':<12} {'fix':<8} {'flag':<6} {'tristate':<11} "
+-      f"{'R_old':>7} {'R_new':>7}  reason")
+-print("-" * 96)
+-tmp = pathlib.Path(tempfile.mkdtemp())
+-try:
+-    for fx in load_all():
+-        bl = T._real_baseline(fx)
+-        for label, patches in (("harmful", fx.harmful_fix),
+-                               ("correct", fx.correct_fix)):
+-            for flag in (False, True):
+-                d = tmp / f"{fx.key}-{label}-{flag}"
+-                d.mkdir(parents=True, exist_ok=True)
+-                copy = d / fx.doc_path.name
+-                shutil.copy(fx.doc_path, copy)
+-                reg = T.FindingRegistry()
+-                cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
+-                with contextlib.redirect_stdout(io.StringIO()):
+-                    _evaluate_sk_for_findings(
+-                        reg, fx.document, str(copy), bl, round_idx=1,
+-                        score_prose_listings=flag)
+-                r = reg.entries[cid].get("sk_result") or {}
+-                tri = r.get("tristate", "-")
+-                r_old, r_new = r.get("R_old", R0), r.get("R_new", R0)
+-                why = ((r.get("gate_details", {}).get("_prose_one_sided") or {})
+-                       .get("detail", ""))[:34]
+-                print(f"{fx.key:<12} {label:<8} {str(flag):<6} {tri:<11} "
+-                      f"{r_old:>7.4f} {r_new:>7.4f}  {why}")
++    # ── 1. Both flag configurations, through the round-loop entry point ──────────
++    print(f"{'fixture':<12} {'fix':<8} {'flag':<6} {'tristate':<11} "
++          f"{'R_old':>7} {'R_new':>7}  reason")
++    print("-" * 96)
++    tmp = pathlib.Path(tempfile.mkdtemp())
++    try:
++        for fx in load_all():
++            bl = T._real_baseline(fx)
++            for label, patches in (("harmful", fx.harmful_fix),
++                                   ("correct", fx.correct_fix)):
++                for flag in (False, True):
++                    d = tmp / f"{fx.key}-{label}-{flag}"
++                    d.mkdir(parents=True, exist_ok=True)
++                    copy = d / fx.doc_path.name
++                    shutil.copy(fx.doc_path, copy)
++                    reg = T.FindingRegistry()
++                    cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
++                    with contextlib.redirect_stdout(io.StringIO()):
++                        _evaluate_sk_for_findings(
++                            reg, fx.document, str(copy), bl, round_idx=1,
++                            score_prose_listings=flag)
++                    r = reg.entries[cid].get("sk_result") or {}
++                    tri = r.get("tristate", "-")
++                    r_old, r_new = r.get("R_old", R0), r.get("R_new", R0)
++                    why = ((r.get("gate_details", {}).get("_prose_one_sided") or {})
++                           .get("detail", ""))[:34]
++                    print(f"{fx.key:<12} {label:<8} {str(flag):<6} {tri:<11} "
++                          f"{r_old:>7.4f} {r_new:>7.4f}  {why}")
+ 
+-                # PROPERTY 1 -- a harmful fix is never admitted.
+-                if label == "harmful":
++                    # PROPERTY 1 -- a harmful fix is never admitted.
++                    if label == "harmful":
++                        check(tri != SK_ADMISSIBLE,
++                              f"P1 {fx.key}/flag={flag}: harmful fix ADMITTED "
++                              f"(sk={r.get('sk')})")
++                    # No prose fix of any kind is admitted.
+                     check(tri != SK_ADMISSIBLE,
+-                          f"P1 {fx.key}/flag={flag}: harmful fix ADMITTED "
+-                          f"(sk={r.get('sk')})")
+-                # No prose fix of any kind is admitted.
+-                check(tri != SK_ADMISSIBLE,
+-                      f"ONE-SIDED {fx.key}/{label}/flag={flag}: prose fix "
+-                      f"ADMISSIBLE, the gates paid out on a clean static sweep")
+-                # PROPERTY 2 -- an UNSCORED fix moves R_k in neither direction.
+-                if tri == SK_NO_SCORE:
+-                    check(abs(r_new - r_old) < 1e-12,
+-                          f"P2 {fx.key}/{label}/flag={flag}: NO_SCORE moved "
+-                          f"R_k {r_old:.4f} -> {r_new:.4f}")
+-finally:
+-    shutil.rmtree(tmp, ignore_errors=True)
++                          f"ONE-SIDED {fx.key}/{label}/flag={flag}: prose fix "
++                          f"ADMISSIBLE, the gates paid out on a clean static sweep")
++                    # PROPERTY 2 -- an UNSCORED fix moves R_k in neither direction.
++                    if tri == SK_NO_SCORE:
++                        check(abs(r_new - r_old) < 1e-12,
++                              f"P2 {fx.key}/{label}/flag={flag}: NO_SCORE moved "
++                              f"R_k {r_old:.4f} -> {r_new:.4f}")
++    finally:
++        shutil.rmtree(tmp, ignore_errors=True)
+ 
+-# ── 2. The rule DISCRIMINATES: it is not "reject everything" ─────────────────
+-# Anti-vacuity. If every case came back NO_SCORE the assertions above would pass
+-# while the machinery had learned nothing. The three harms that carry a static
+-# signal must be actively REJECTED; every correct fix must NOT be.
+-print("-" * 96)
+-rejected, scored = set(), {}
+-for fx in load_all():
+-    for label, patches in (("harmful", fx.harmful_fix), ("correct", fx.correct_fix)):
++    # ── 2. The rule DISCRIMINATES: it is not "reject everything" ─────────────────
++    # Anti-vacuity. If every case came back NO_SCORE the assertions above would pass
++    # while the machinery had learned nothing. The three harms that carry a static
++    # signal must be actively REJECTED; every correct fix must NOT be.
++    print("-" * 96)
++    rejected, scored = set(), {}
++    for fx in load_all():
++        for label, patches in (("harmful", fx.harmful_fix), ("correct", fx.correct_fix)):
++            with contextlib.redirect_stdout(io.StringIO()):
++                res = compute_sk(T._fix_text(fx, patches, fx.doc_path), fx.document,
++                                 str(fx.doc_path), score_prose_listings=True,
++                                 baseline=T._real_baseline(fx))
++            scored[(fx.key, label)] = res.tristate
++            if label == "harmful" and res.tristate == SK_REJECTED:
++                rejected.add(fx.key)
++    print("harmful fixes actively REJECTED:", sorted(rejected))
++    check(rejected == {"structural", "statistics", "numerical"},
++          f"DISCRIMINATION: expected the 3 statically-visible harms to be "
++          f"REJECTED, got {sorted(rejected)}")
++    false_rejects = [k for (k, l), t in scored.items()
++                     if l == "correct" and t == SK_REJECTED]
++    check(not false_rejects,
++          f"FALSE REJECTION: correct fixes rejected: {false_rejects}")
++
++    # ── 3. The escalation the old aggregation could not stop ─────────────────────
++    # A lint-clean fix introducing N new bandit HIGHs scored sk >= 1/3 ADMISSIBLE
++    # for every N, because E = (1/3)e3 + (2/3)e4 and e4 floors at 0. Must REJECT.
++    import re as _re                                                       # noqa: E402
++
++    # WIRED 2026-09-24 (CC1). This file works at MODULE level, so there is no
++    # main() for a help flag to intercept. Answered here, before any work.
++    fx = next(f for f in load_all() if f.key == "structural")
++    anchor = _re.search(r"```python\n(.*?)```", fx.document, _re.S
++                        ).group(1).rstrip().splitlines()[-1]
++    for n in (1, 20):
++        body = "\n".join(f'cmd{i} = "rm -rf /"\nsubprocess.call(cmd{i}, shell=True)'
++                         for i in range(n))
++        txt = (f"<<<< SEARCH {fx.doc_path}\n{anchor}\n==== REPLACE\n"
++               f"{anchor}\nimport subprocess\n{body}\n>>>>\n")
+         with contextlib.redirect_stdout(io.StringIO()):
+-            res = compute_sk(T._fix_text(fx, patches, fx.doc_path), fx.document,
+-                             str(fx.doc_path), score_prose_listings=True,
++            res = compute_sk(txt, fx.document, str(fx.doc_path),
++                             score_prose_listings=True,
+                              baseline=T._real_baseline(fx))
+-        scored[(fx.key, label)] = res.tristate
+-        if label == "harmful" and res.tristate == SK_REJECTED:
+-            rejected.add(fx.key)
+-print("harmful fixes actively REJECTED:", sorted(rejected))
+-check(rejected == {"structural", "statistics", "numerical"},
+-      f"DISCRIMINATION: expected the 3 statically-visible harms to be "
+-      f"REJECTED, got {sorted(rejected)}")
+-false_rejects = [k for (k, l), t in scored.items()
+-                 if l == "correct" and t == SK_REJECTED]
+-check(not false_rejects,
+-      f"FALSE REJECTION: correct fixes rejected: {false_rejects}")
++        print(f"injected {n:>2} new bandit HIGH -> {res.tristate}")
++        check(res.tristate == SK_REJECTED,
++              f"SATURATION n={n}: {n} new HIGHs returned {res.tristate}")
+ 
+-# ── 3. The escalation the old aggregation could not stop ─────────────────────
+-# A lint-clean fix introducing N new bandit HIGHs scored sk >= 1/3 ADMISSIBLE
+-# for every N, because E = (1/3)e3 + (2/3)e4 and e4 floors at 0. Must REJECT.
+-import re as _re                                                       # noqa: E402
++    # ── 4. The helper reads NEW, not TOTAL ───────────────────────────────────────
++    check(_gates_introduced_new_defects(
++        {"e3_ruff": {"detail": "2 total, 0 new (baseline: 2)"},
++         "e4_bandit": {"detail": "3 HIGH/0 MEDIUM (baseline: 3H/0M, new: 0H/0M)"}}) == [],
++        "PRE-EXISTING DEFECTS were charged to the fix")
++    check(len(_gates_introduced_new_defects(
++        {"e3_ruff": {"detail": "5 total, 1 new (baseline: 4)"},
++         "e4_bandit": {"detail": "1 HIGH/0 MEDIUM (baseline: 0H/0M, new: 1H/0M)"}})) == 2,
++        "NEW defects were not detected")
++    check(_gates_introduced_new_defects({"e3_ruff": {"detail": "garbled"}}) == [],
++          "an unreadable gate detail became an accusation")
+ 
+-# WIRED 2026-09-24 (CC1). This file works at MODULE level, so there is no
+-# main() for a help flag to intercept. Answered here, before any work.
+-fx = next(f for f in load_all() if f.key == "structural")
+-anchor = _re.search(r"```python\n(.*?)```", fx.document, _re.S
+-                    ).group(1).rstrip().splitlines()[-1]
+-for n in (1, 20):
+-    body = "\n".join(f'cmd{i} = "rm -rf /"\nsubprocess.call(cmd{i}, shell=True)'
+-                     for i in range(n))
+-    txt = (f"<<<< SEARCH {fx.doc_path}\n{anchor}\n==== REPLACE\n"
+-           f"{anchor}\nimport subprocess\n{body}\n>>>>\n")
+-    with contextlib.redirect_stdout(io.StringIO()):
+-        res = compute_sk(txt, fx.document, str(fx.doc_path),
+-                         score_prose_listings=True,
+-                         baseline=T._real_baseline(fx))
+-    print(f"injected {n:>2} new bandit HIGH -> {res.tristate}")
+-    check(res.tristate == SK_REJECTED,
+-          f"SATURATION n={n}: {n} new HIGHs returned {res.tristate}")
++    print("-" * 96)
++    if FAILURES:
++        print("FALSIFIED")
++        for f in FAILURES:
++            print("  *", f)
++        raise AssertionError(f"{len(FAILURES)} property violation(s)")
++    print("rule holds: no prose fix admitted; 3/5 harms actively rejected; "
++          "0/5 correct fixes rejected; every NO_SCORE held R_k")
+ 
+-# ── 4. The helper reads NEW, not TOTAL ───────────────────────────────────────
+-check(_gates_introduced_new_defects(
+-    {"e3_ruff": {"detail": "2 total, 0 new (baseline: 2)"},
+-     "e4_bandit": {"detail": "3 HIGH/0 MEDIUM (baseline: 3H/0M, new: 0H/0M)"}}) == [],
+-    "PRE-EXISTING DEFECTS were charged to the fix")
+-check(len(_gates_introduced_new_defects(
+-    {"e3_ruff": {"detail": "5 total, 1 new (baseline: 4)"},
+-     "e4_bandit": {"detail": "1 HIGH/0 MEDIUM (baseline: 0H/0M, new: 1H/0M)"}})) == 2,
+-    "NEW defects were not detected")
+-check(_gates_introduced_new_defects({"e3_ruff": {"detail": "garbled"}}) == [],
+-      "an unreadable gate detail became an accusation")
+ 
+-print("-" * 96)
+-if FAILURES:
+-    print("FALSIFIED")
+-    for f in FAILURES:
+-        print("  *", f)
+-    raise AssertionError(f"{len(FAILURES)} property violation(s)")
+-print("rule holds: no prose fix admitted; 3/5 harms actively rejected; "
+-      "0/5 correct fixes rejected; every NO_SCORE held R_k")
++if __name__ == "__main__":
++    answer_help(__doc__, __file__)
++    main()
+
+### fable:attempt-1:scripts/a19_veto_only_prose_sk_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/a19_veto_only_prose_sk_2026-09-22.py	2026-09-24 02:18:05
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zjh_ml41/repo/scripts/a19_veto_only_prose_sk_2026-09-22.py	2026-09-24 03:58:30
+@@ -10,77 +10,214 @@
+ original measurement: scripts/a19_flag_admits_harmful_fixes_2026-09-22.py
+ (which drives the same path but only prints).
+ 
++EXTENDED 2026-09-24 (panel): section 2 constructs a population BEYOND the 5
++archived fixtures -- .md/.txt/.rst targets, listing-bearing and listing-free,
++clean and harmful fixes, both flag states -- and asserts the same 3 properties
++over all of it: never ADMISSIBLE on a non-Python target, R_k held on every
++unadmitted fix, and the finding left OPEN. This is the adjudicated branch
++removal's dominance check run over inputs its 10-row producer never saw.
++
+ Repo-relative on purpose: no operator-specific ROOT, no Wolfram, no network.
+ """
++import contextlib
++import io
++import os
+ import pathlib
+ import shutil
+ import sys
+ import tempfile
+ 
+-ROOT = pathlib.Path(__file__).resolve().parents[1]
++# `_cli_help` lives in scripts/. Locate it rather than assume a depth.
++for _cand in (pathlib.Path(__file__).resolve().parent,
++              *pathlib.Path(__file__).resolve().parents):
++    if (_cand / "_cli_help.py").is_file():
++        sys.path.insert(0, str(_cand))
++        break
++from _cli_help import answer_help  # noqa: E402
++
++ROOT = pathlib.Path(os.environ.get("CE_ROOT",
++                                   pathlib.Path(__file__).resolve().parents[1]))
+ sys.path.insert(0, str(ROOT))
+ 
+-import bench.tests.test_prose_acceptance_stem as T                # noqa: E402
+-from bench.reference_runner_v3 import (                           # noqa: E402
+-    SK_ADMISSIBLE, _evaluate_sk_for_findings,
++import bench.tests.test_prose_acceptance_stem as T                 # noqa: E402
++from bench.reference_runner_v3 import (                            # noqa: E402
++    SK_ADMISSIBLE, SK_NO_SCORE, SK_REJECTED, TARGET_KIND_PYTHON,
++    _capture_baseline, _evaluate_sk_for_findings, apply_sk_to_rk,
++    compute_sk, resolve_target_kind,
+ )
+-from bench.tests.fixtures.stem.stem_fixtures import load_all      # noqa: E402
++from bench.tests.fixtures.stem.stem_fixtures import load_all       # noqa: E402
+ 
+-# WIRED 2026-09-24 (CC1). This file works at MODULE level, so there is no
+-# main() for a help flag to intercept. Answered here, before any work.
+-# `_cli_help` lives in scripts/. Locate it rather than assume a depth: the
+-# first version of this preamble inserted parents[1] (the repo ROOT) and so
+-# worked when the file was RUN (sys.path[0] is the script dir) and failed when
+-# it was IMPORTED, which is how 13 scripts stopped importing on 2026-09-24.
+-import sys as _sys, pathlib as _pl  # noqa: E402
+-for _cand in (_pl.Path(__file__).resolve().parent, *_pl.Path(__file__).resolve().parents):
+-    if (_cand / "_cli_help.py").is_file():
+-        _sys.path.insert(0, str(_cand))
+-        break
+-from _cli_help import answer_help  # noqa: E402
+-# GUARDED 2026-09-24 (CC1). At MODULE level this read the HOST's argv:
+-# the operational-script probe imports via `python3 -c "..." <path>`, so
+-# sys.argv[1] was the script's own path and the guard refused it, exit 2.
+-# `__name__` is still "__main__" when the file is RUN, so `--help` answers
+-# exactly as before; on IMPORT it is skipped and argv is never inspected.
+-if __name__ == "__main__":
+-    answer_help(__doc__, __file__)
+-tmp = pathlib.Path(tempfile.mkdtemp())
+-failures = []
+-try:
+-    for fx in load_all():
+-        baseline = T._real_baseline(fx)
+-        for label, patches in (("harmful", fx.harmful_fix),
+-                               ("correct", fx.correct_fix)):
+-            for flag in (False, True):
+-                d = tmp / f"{fx.key}-{label}-{flag}"
+-                d.mkdir(parents=True, exist_ok=True)
+-                copy = d / fx.doc_path.name
+-                shutil.copy(fx.doc_path, copy)
+-                reg = T.FindingRegistry()
+-                cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
++_LISTING_BODY = (
++    "import math\n"
++    "\n"
++    "\n"
++    "def area(radius: float) -> float:\n"
++    "    return math.pi * radius * radius\n"
++)
++_ANCHOR = "    return math.pi * radius * radius"
++
++_DOC_WITH_LISTING = (
++    "# Design note\n\nThe area helper under review:\n\n"
++    "```python\n" + _LISTING_BODY + "```\n\nClosing prose.\n"
++)
++_DOC_PURE_PROSE = "# Design note\n\nNo code here at all, only argument.\n"
++
++#: (label, replacement) pairs applied at the anchor line. "clean" leaves the
++#: static sweep spotless -- the case where the SURVIVING branch and the REMOVED
++#: branch could differ if the survivor paid out; "high" plants a bandit HIGH,
++#: where the survivor convicts and the removed branch would only have
++#: abstained; "delete_fence" removes the listing wholesale (g0).
++_FIXES = (
++    ("clean", _ANCHOR + "\n\n\ndef circumference(radius: float) -> float:\n"
++              "    return 2.0 * math.pi * radius"),
++    ("high", _ANCHOR + "\nimport subprocess\n"
++             "subprocess.call(\"rm -rf /\", shell=True)"),
++)
++
++
++def _sr(path, old, new):
++    return f"<<<< SEARCH {path}\n{old}\n==== REPLACE\n{new}\n>>>>\n"
++
++
++def constructed_population(check) -> None:
++    """Section 2: the never-admit rule over targets the fixtures never covered."""
++    tmp = pathlib.Path(tempfile.mkdtemp())
++    rows = 0
++    try:
++        for suffix in (".md", ".txt", ".rst"):
++            doc = _DOC_WITH_LISTING
++            path = tmp / f"note{suffix}"
++            path.write_text(doc)
++            kind, _why = resolve_target_kind(str(path), doc)
++            check(kind != TARGET_KIND_PYTHON,
++                  f"POPULATION {suffix}: constructed prose target resolved as "
++                  f"Python; the population is not testing the prose path")
++            baseline = _capture_baseline(doc, str(path))
++            for label, replacement in _FIXES:
++                for flag in (False, True):
++                    with contextlib.redirect_stdout(io.StringIO()):
++                        res = compute_sk(_sr(path, _ANCHOR, replacement), doc,
++                                         str(path), baseline=baseline,
++                                         score_prose_listings=flag)
++                    rows += 1
++                    check(res.tristate != SK_ADMISSIBLE,
++                          f"POPULATION {suffix}/{label}/flag={flag}: ADMITTED "
++                          f"on a non-Python target (sk={res.sk})")
++                    if res.tristate == SK_NO_SCORE:
++                        r_new, _ = apply_sk_to_rk(0.5, res.tristate)
++                        check(r_new == 0.5,
++                              f"POPULATION {suffix}/{label}: NO_SCORE moved R_k")
++                    print(f"  population {suffix:<5} {label:<12} flag={flag!s:<5} "
++                          f"-> {res.tristate}")
++            # A fix that deletes the fence entirely: g0 must reject, not admit.
++            with contextlib.redirect_stdout(io.StringIO()):
++                res = compute_sk(
++                    _sr(path, "```python\n" + _LISTING_BODY + "```", "gone"),
++                    doc, str(path), baseline=baseline, score_prose_listings=True)
++            rows += 1
++            check(res.tristate == SK_REJECTED,
++                  f"POPULATION {suffix}/delete_fence: expected REJECTED, "
++                  f"got {res.tristate}")
++            print(f"  population {suffix:<5} delete_fence flag=True  -> {res.tristate}")
++
++        # Pure prose, no listing: the flag must change nothing.
++        pure = tmp / "pure.md"
++        pure.write_text(_DOC_PURE_PROSE)
++        for flag in (False, True):
++            with contextlib.redirect_stdout(io.StringIO()):
++                res = compute_sk(_sr(pure, "only argument.", "only evidence."),
++                                 _DOC_PURE_PROSE, str(pure),
++                                 baseline=_capture_baseline(_DOC_PURE_PROSE, str(pure)),
++                                 score_prose_listings=flag)
++            rows += 1
++            check(res.tristate == SK_NO_SCORE,
++                  f"POPULATION pure-prose/flag={flag}: expected NO_SCORE, "
++                  f"got {res.tristate}")
++
++        # Through the round-loop entry point: a REJECTED conviction and a
++        # NO_SCORE abstention must both leave the finding OPEN and R_k unmoved.
++        for label, replacement in _FIXES:
++            d = tmp / f"e2e-{label}"
++            d.mkdir(exist_ok=True)
++            copy = d / "note.md"
++            copy.write_text(_DOC_WITH_LISTING)
++            reg = T.FindingRegistry()
++            cid = T._register(reg, _sr(copy, _ANCHOR, replacement), copy)
++            with contextlib.redirect_stdout(io.StringIO()):
+                 stats = _evaluate_sk_for_findings(
+-                    reg, fx.document, str(copy), baseline,
+-                    round_idx=1, score_prose_listings=flag)
+-                r = reg.entries[cid].get("sk_result") or {}
+-                tri = r.get("tristate")
+-                r_old, r_new = r.get("R_old"), r.get("R_new")
+-                print(f"{fx.key:<12} {label:<8} flag={flag!s:<5} "
+-                      f"{tri:<12} R {r_old} -> {r_new}")
+-                if tri == SK_ADMISSIBLE or stats["admissible"] != 0:
+-                    failures.append(
+-                        f"{fx.key}/{label}/flag={flag}: ADMITTED ({tri})")
+-                if r_old is not None and r_new is not None and r_new != r_old:
+-                    failures.append(
+-                        f"{fx.key}/{label}/flag={flag}: R_k moved "
+-                        f"{r_old} -> {r_new} on an unadmitted fix")
+-finally:
+-    shutil.rmtree(tmp, ignore_errors=True)
++                    reg, _DOC_WITH_LISTING, str(copy),
++                    _capture_baseline(_DOC_WITH_LISTING, str(copy)),
++                    round_idx=1, score_prose_listings=True)
++            e = reg.entries[cid]
++            r = e.get("sk_result") or {}
++            rows += 1
++            check(stats["admissible"] == 0,
++                  f"POPULATION e2e/{label}: admissible tally moved")
++            check(e["status"] in ("OPEN", "CONFIRMED", "CONTESTED"),
++                  f"POPULATION e2e/{label}: finding closed by an unadmitted fix "
++                  f"(status={e['status']})")
++            r_old, r_new = r.get("R_old"), r.get("R_new")
++            check(r_new is None or r_new == r_old,
++                  f"POPULATION e2e/{label}: R_k moved {r_old} -> {r_new} "
++                  f"on tristate {r.get('tristate')}")
++            print(f"  population e2e   {label:<12} -> {r.get('tristate')} "
++                  f"(status {e['status']}, R held)")
++    finally:
++        shutil.rmtree(tmp, ignore_errors=True)
++    print(f"  population rows: {rows}")
+ 
+-if failures:
+-    print("FALSIFIED")
+-    raise AssertionError(
+-        "S_k admitted or moved risk on a prose target:\n  "
+-        + "\n  ".join(failures))
+-print(f"OK: 20 evaluations (5 fixtures x 2 fixes x 2 flag states), "
+-      f"0 admissions, R_k held in every case.")
++
++def main() -> None:
++    # MOVED INTO main(), 2026-09-24 (panel): this work ran at module level, so
++    # importing the file built trees and spawned ruff and bandit.
++    failures = []
++
++    def check(cond, msg):
++        if not cond:
++            failures.append(msg)
++
++    tmp = pathlib.Path(tempfile.mkdtemp())
++    try:
++        for fx in load_all():
++            baseline = T._real_baseline(fx)
++            for label, patches in (("harmful", fx.harmful_fix),
++                                   ("correct", fx.correct_fix)):
++                for flag in (False, True):
++                    d = tmp / f"{fx.key}-{label}-{flag}"
++                    d.mkdir(parents=True, exist_ok=True)
++                    copy = d / fx.doc_path.name
++                    shutil.copy(fx.doc_path, copy)
++                    reg = T.FindingRegistry()
++                    cid = T._register(reg, T._fix_text(fx, patches, copy), copy)
++                    stats = _evaluate_sk_for_findings(
++                        reg, fx.document, str(copy), baseline,
++                        round_idx=1, score_prose_listings=flag)
++                    r = reg.entries[cid].get("sk_result") or {}
++                    tri = r.get("tristate")
++                    r_old, r_new = r.get("R_old"), r.get("R_new")
++                    print(f"{fx.key:<12} {label:<8} flag={flag!s:<5} "
++                          f"{tri:<12} R {r_old} -> {r_new}")
++                    if tri == SK_ADMISSIBLE or stats["admissible"] != 0:
++                        check(False, f"{fx.key}/{label}/flag={flag}: ADMITTED ({tri})")
++                    if r_old is not None and r_new is not None and r_new != r_old:
++                        check(False, f"{fx.key}/{label}/flag={flag}: R_k moved "
++                                     f"{r_old} -> {r_new} on an unadmitted fix")
++    finally:
++        shutil.rmtree(tmp, ignore_errors=True)
++
++    print("-" * 72)
++    constructed_population(check)
++
++    if failures:
++        print("FALSIFIED")
++        raise AssertionError(
++            "S_k admitted or moved risk on a prose target:\n  "
++            + "\n  ".join(failures))
++    print("OK: 20 archived evaluations + constructed population "
++          "(3 suffixes x 5 rows + 2 pure-prose + 2 e2e), 0 admissions, "
++          "R_k held in every case.")
++
++
++if __name__ == "__main__":
++    answer_help(__doc__, __file__)
++    main()

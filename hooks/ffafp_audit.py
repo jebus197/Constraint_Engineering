@@ -41,6 +41,13 @@ Measured 2026-09-05 05:50 BST over all 5 transcripts in
 221 changed at least 1 non-transient file). The corpus is LIVE and grows as sessions run, so
 re-running moves the denominators by a few turns; the shape holds, the last digits do not.
 
+ALSO MEASURED UNDER AN OLDER CLASSIFIER (noted 2026-09-28). The figures in this section were
+taken before `classify_path` stopped excusing writes that escape a scratch prefix, so a
+re-run today differs for two reasons, not one: the corpus has grown, AND the rule has
+changed. Measured directly by running `--survey` over the same 6 transcripts with each
+classifier: work turns 471 either way, code-touching 282 -> 283, doc-only 135 -> 134,
+P-PASS missing 191 of 282 -> 192 of 283. The shape is unmoved; the last digits moved by 1.
+
   * 38 of the 110 code-touching turns -- 34.5%, 95% Wilson [26.3%, 43.8%] -- changed a code
     file and then ran NOTHING that could have failed. No pytest, no unittest, no assert, at
     any point after the last edit. That is the P-pass step leaving no trace at all, and it
@@ -386,6 +393,46 @@ def classify_write(path: str, cmd: str = "") -> str:
     return classify_path(resolve_shell_vars(path, shell_assignments(cmd or "")))
 
 
+#: THE SCRATCH LOCATIONS, NAMED SO A TEST CAN READ THEM RATHER THAN RE-LIST THEM
+#: (2026-09-28). Five defects shipped earlier today shared one shape: a test that
+#: RE-DERIVED a value the module owns. A guard for this classifier has to enumerate
+#: the scratch locations to construct an escape from each, so the choice is between
+#: a second list that can drift and a named one it can read. This is the named one.
+#: An entry ending in `/` and beginning with `/` is matched as a leading prefix;
+#: `/scratchpad/` is matched anywhere, because a scratchpad sits under $TMPDIR or a
+#: session directory whose own prefix is not fixed.
+#: ONE tuple, read by the rule AND by the guard, so there is no second list to
+#: drift. A first draft kept `SCRATCH_MARKERS` as an alias over two private
+#: tuples; mutating the alias to drop 3 entries left the rule untouched and the
+#: guard still green, which is the same shape as the defects being repaired here.
+#: The flag says how the marker is matched: False = leading prefix, True = matched
+#: anywhere in the path.
+SCRATCH_MARKERS = (
+    ("/tmp/", False),
+    ("/private/tmp/", False),
+    ("/var/folders/", False),
+    ("/dev/", False),
+    ("/scratchpad/", True),
+)
+
+
+def _transient_prefix(low: str) -> bool:
+    """Whether a LOWERCASED path sits, as written, under a scratch location.
+
+    ONE definition, called TWICE by `classify_path`: once on the path as
+    written and once on its NORMALISED form. It reads `SCRATCH_MARKERS`, which a
+    test reads too, so the guard cannot enumerate a stale set. The panel seat's first repair of
+    the traversal escape tested the raw prefix and then string-matched `/../`,
+    which are two rules, and they disagreed: `/tmp/a/../b.py` was accused as
+    "code" although the write lands on /private/tmp/b.py -- measured
+    2026-09-28 by executing `echo X > /tmp/a/../b.py` and reading back
+    os.path.realpath. `redirect_verdict` below carries the same lesson from
+    2026-09-05: a rule written out twice is a rule whose copies disagree.
+    """
+    return any(mk in low if anywhere else low.startswith(mk)
+               for mk, anywhere in SCRATCH_MARKERS)
+
+
 def classify_path(path: str) -> str:
     """One of 'code', 'doc', 'transient', 'unresolved', 'other'.
 
@@ -401,9 +448,16 @@ def classify_path(path: str) -> str:
     Since 2026-09-24 the Bash path RESOLVES `$VAR`/`${VAR}` from the command's
     own assignments and the inherited environment BEFORE classification (see
     `resolve_shell_vars`), so 'unresolved' is now the RESIDUAL class -- a
-    variable knowable from neither source -- not the common case. A residual
-    variable also does not persist into the write's own shell in this harness,
-    so the write it names did not land on any path a suffix-guess would accuse.
+    variable knowable from neither source -- not the common case.
+
+    WITHDRAWN 2026-09-28. This docstring used to add that a residual variable
+    "does not persist into the write's own shell in this harness, so the write
+    it names did not land on any path a suffix-guess would accuse". That is
+    FALSE for an UNSET variable, which the shell expands to the empty string:
+    `echo INJECTED > victim.py$NOPE_VAR` creates `victim.py` (executed
+    2026-09-28). The residual clause below therefore classifies the literal
+    prefix instead of declining, and a dynamic remainder under a transient head
+    is 'unresolved' rather than 'transient'.
 
     'transient' exists so that capturing a run's stdout to /tmp is not mistaken for
     changing the system. Measured: /tmp logs were the single most common redirect target
@@ -412,9 +466,58 @@ def classify_path(path: str) -> str:
     p = (path or "").strip().strip("\"'")
     low = p.lower()
     base = os.path.basename(low)
-    if (low.startswith("/tmp/") or low.startswith("/private/tmp/") or low.startswith("/var/folders/")
-            or "/scratchpad/" in low or low.startswith("/dev/")):
-        return "transient"
+    if _transient_prefix(low):
+        # A TRANSIENT HEAD IS NOT A VERDICT WHEN THE REMAINDER CAN ESCAPE IT
+        # (panel seat B, 2026-09-28, reviewing the unreviewed 2026-09-24
+        # changes). The 2026-09-24 rule "transience is decided by where a path
+        # STARTS" is unsound, because the start does not bind where the write
+        # LANDS. Measured against this module before this clause, all four of
+        # `/tmp/../<repo>/hooks/evil.py`, `/tmp/${V:-../../repo}/hooks/evil.py`,
+        # `/tmp/$V/hooks/evil.py` and `/tmp/$(echo ..)/repo/evil.py` returned
+        # "transient" -- the ONE verdict that EXCUSES a write -- and the first
+        # was demonstrated to land inside a repository tree by executing bash.
+        # `${V:-default}` is the sharp case: the default is attacker-chosen in
+        # the SAME command, is not an assignment so `shell_assignments` cannot
+        # see it, and is honoured by the real shell, so the landing point is
+        # deterministic for the writer and unknowable to the parser.
+        #
+        # DYNAMIC REMAINDER -> "unresolved", NEVER "transient". An unquoted
+        # expansion's value may itself contain `/` and `..`, so no dynamic
+        # element anywhere after a transient head can be shown harmless. Note
+        # the wider pattern here than the residual clause below: `$(` and a
+        # backtick never matched `\$\{?\w+` at all. Widening is confined to
+        # THIS branch on purpose -- outside a transient head an unmatched
+        # dynamic element falls through to the extension rules and OVER-counts,
+        # which is the safe direction for a mutation guard.
+        if re.search(r"\$\{?\w+|\$\(|`", p):
+            return "unresolved"
+        # LITERAL REMAINDER -> decide on the NORMALISED path, not on the
+        # presence of `..`. Normalising is exact where a `/../` string test
+        # over-accuses: `/tmp/a/../b.py` normalises back INTO /tmp and is
+        # genuinely scratch (measured: it lands on /private/tmp/b.py), whereas
+        # `/tmp/../repo/hooks/evil.py` normalises out of it. A false accusation
+        # is not the harmless direction here -- it is what parked the previous
+        # Stop hook within a day on 2026-09-11 and what produced this gate's
+        # first real bounce on 2026-09-24. `normpath` is deliberate and
+        # `realpath` is deliberately NOT used: a hook must not touch the
+        # filesystem to classify a string, and the symlink /tmp -> private/tmp
+        # changes the notional landing point without changing the verdict.
+        if _transient_prefix(os.path.normpath(low)):
+            return "transient"
+        # A literal traversal that LEAVES the scratch tree is judged by its
+        # extension like any other path, which accuses honestly.
+        #
+        # RESIDUAL, NAMED RATHER THAN LEFT SILENT (2026-09-28, measured). A
+        # SYMLINK inside a scratch directory still escapes: executed on
+        # 2026-09-28, `ln -s <dir-outside-tmp> /tmp/probe` then
+        # `echo PWNED > /tmp/probe/hooks/evil.py` landed the write outside /tmp
+        # while this function returned "transient". `normpath` cannot see it and
+        # `realpath` is not used on purpose -- it would make a hook that runs on
+        # EVERY prompt touch the filesystem on arbitrary text, and resolve
+        # against a tree that has moved on since the write. Closing it is a
+        # design decision for the operator, not a classifier tweak, and it is
+        # out of scope here. The boundary is stated so the next reader does not
+        # take the two clauses above for completeness.
     # AN UNRESOLVED PATH CANNOT BE CLASSIFIED (2026-09-24). Added after the Stop
     # gate's FIRST REAL BOUNCE refused a turn that changed no code at all. It
     # accused `$SP/gate_in.json`: a scratchpad file whose RESOLVED path returns
@@ -447,6 +550,21 @@ def classify_path(path: str) -> str:
         _ext = os.path.splitext(p)[1].lower()
         if "/" in _head and _ext and "$" not in _ext:
             return classify_path(_head.rstrip("/") + "/x" + _ext)
+        # A VARIABLE AT OR AFTER THE EXTENSION STILL HID A WRITE (panel seat B,
+        # 2026-09-28). `> bench/panel_sandbox.py$NOPE` fell to "unresolved"
+        # under the clause above, because the `$` lands INSIDE what `splitext`
+        # returns (`.py$nope`), so the clause declined -- and every consumer
+        # excludes "unresolved" from the mutation set. An UNSET variable expands
+        # to the EMPTY STRING, so the write lands EXACTLY on the literal prefix:
+        # executed 2026-09-28, `echo INJECTED > victim.py$NOPE_VAR` creates
+        # `victim.py`. So classify the LITERAL PREFIX whenever it carries a
+        # directory. Exact for the unset case; if the variable expands non-empty
+        # the real target shares the prefix's directory, so transience is
+        # unchanged and the worst case is over-counting. A prefix with no
+        # directory at all stays "unresolved", since then the location is
+        # genuinely unknown.
+        if "/" in _head and _head.rstrip("/") != "":
+            return classify_path(_head)
         return "unresolved"
     ext = os.path.splitext(base)[1]
     if ext in (".log", ".pid", ".tmp", ".lock", ".out", ".err"):

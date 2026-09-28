@@ -1,0 +1,3521 @@
+### cc2:attempt-1:bench/logs/check_my_work_2026-09-28/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/check_my_work_2026-09-28/dispatch.log	2026-09-28 17:52:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo/bench/logs/check_my_work_2026-09-28/dispatch.log	2026-09-28 16:52:33
+@@ -1,29 +0,0 @@
+-[16:52:55] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo
+-[16:52:55] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo
+-[16:52:55]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo
+-[16:52:55] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo
+-[16:52:55] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo
+-[16:52:55]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo
+-[17:22:55]   [claude-cli:opus] attempt 1 failed (1800.1s): claude CLI timed out after 1800.1s
+-[17:22:55]   [claude-cli:opus] retry 2/2
+-[17:22:55]   [claude-cli:fable] attempt 1 failed (1800.1s): claude CLI timed out after 1800.1s
+-[17:22:55]   [claude-cli:fable] retry 2/2
+-[17:23:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo
+-    suite: GREEN at f253fa7 — 8,233 passed, 0 failed  [recorded at f253fa7, HEAD is 6ed7cf6, 55 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 8,634 chars, about 2,158 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo
+-    cc2 attempt 2 confined to a FRESH copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo
+-[17:23:07]   [claude-cli:opus] attempt 2 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo
+-[17:23:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo
+-    fable attempt 2 confined to a FRESH copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo
+-[17:23:07]   [claude-cli:fable] attempt 2 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo
+-[17:42:00]   [claude-cli:opus] 169 tool call(s) this attempt, 169 in total
+-[17:42:00]   [claude-cli:opus] done (1133.1s, 23567 chars)
+-  [cc2] ok=True chars=23567 tools=169 2945.1s
+-[17:52:00]   [claude-cli:fable] 79 tool call(s) this attempt, 79 in total
+-[17:52:00]   [claude-cli:fable] done (1733.3s, 17613 chars)
+-  [fable] ok=True chars=17613 tools=79 3545.3s
+-[17:52:00] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:bench/panel_sandbox.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/panel_sandbox.py	2026-09-28 03:20:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo/bench/panel_sandbox.py	2026-09-28 17:22:01
+@@ -582,7 +582,45 @@
+     return None
+ 
+ 
+-def _is_dispatcher_own_output(rel: str, run_log_rel: str | None) -> bool:
++def _harvest_container_rel(dest: Path, repo: Path, run_log_rel: "str | None") -> "str | None":
++    """The harvest's OWN output tree, relative to the repo, or None.
++
++    ADDED 2026-09-28 AFTER THE exists-in-both TEST BELOW REGRESSED A REAL GUARD.
++    `_is_dispatcher_own_output` now asks whether the canonical tree has the file
++    too, so that a seat deliverable written beside the brief survives. That test is
++    right for ordinary files and WRONG for the harvest's own artefacts: an earlier
++    attempt's `changes.diff` can be inside the sandbox copy while the canonical
++    tree does not have it yet, so exists-in-both read it as seat work and harvested
++    the harvest -- the very "harvest harvesting itself" that
++    test_the_harvests_own_output_is_not_harvested exists to forbid. Caught by
++    running that test, not by reading.
++
++    The harvest container is dispatcher-owned BY CONSTRUCTION -- no seat is ever
++    asked to write into the harvest output tree -- so it is excluded
++    unconditionally, while the REST of the run directory keeps the exists-in-both
++    test. Container, not `dest`, because a sibling seat's attempt directory is
++    equally not seat work.
++
++    For all 3 destination shapes it is the first component of `dest` below the run
++    directory: `<run>/sandbox_harvest`, `<run>/worktree_harvest`,
++    `<run>/panel_worktree_harvest`.
++    """
++    if not run_log_rel:
++        return None
++    try:
++        rel = str(dest.resolve().relative_to(repo.resolve())).replace(os.sep, "/")
++    except (OSError, ValueError):
++        return None
++    run_log_rel = run_log_rel.replace(os.sep, "/").strip("/")
++    if not rel.startswith(run_log_rel + "/"):
++        return None
++    first = rel[len(run_log_rel) + 1:].split("/", 1)[0]
++    return f"{run_log_rel}/{first}" if first else None
++
++
++def _is_dispatcher_own_output(rel: str, run_log_rel: "str | None",
++                              repo: "Path | str | None" = None,
++                              harvest_rel: "str | None" = None) -> bool:
+     """Is this path the DISPATCHER'S own log output rather than seat-written work?
+ 
+     MEASURED 2026-09-28, AND IT IS THE SAME SHAPE AS THE `.git` CASE BELOW. The
+@@ -607,12 +645,47 @@
+     would discard a measurement a seat was ASKED to write there. Only the run's
+     own directory is excluded, derived from the harvest destination, so a seat
+     writing anywhere else in the tree is unaffected.
++
++    AND SCOPED ONCE MORE, 2026-09-28, BECAUSE THE PATH ALONE IS NOT ENOUGH.
++    "Inside the run's own directory" and "written by the dispatcher" are not the
++    same set, and the run directory is not an empty place a seat has no reason to
++    touch: the BRIEF ITSELF lives there. On this round it is
++    `bench/logs/check_my_work_2026-09-28/BRIEF.md`, beside `dispatch.log`. So
++    "write your measurement next to the brief" -- an ordinary instruction -- put a
++    genuine seat deliverable on a path that the path-only test dropped, and
++    dropped it under a message reading "this run's OWN log output, WHICH THE
++    DISPATCHER WROTE". A real deliverable discarded and misattributed is the same
++    provenance defect as the one this function exists to fix, with the sign
++    flipped, and it is the worse direction: over-harvesting is untidy,
++    under-harvesting loses seat work and says the dispatcher did it.
++
++    THE DISCRIMINATOR IS ALREADY IN THE MECHANISM. The dispatcher's writes are
++    DRIFT between two copies of the same file -- the canonical log and the
++    sandbox's copy of it, `elapsed_s` differing by 0.9 -- so they exist in BOTH
++    trees. A file a seat CREATED under the run directory exists only in the
++    sandbox. So when `repo` is supplied, a path under the run directory is the
++    dispatcher's own output only if the canonical tree has that file too.
++    `repo=None` keeps the path-only behaviour for callers that have no repo to
++    consult, so no existing caller or test changes meaning.
+     """
+     if not run_log_rel:
+         return False
+     run_log_rel = run_log_rel.replace(os.sep, "/").strip("/")
+     rel = rel.replace(os.sep, "/").strip("/")
+-    return rel == run_log_rel or rel.startswith(run_log_rel + "/")
++    if not (rel == run_log_rel or rel.startswith(run_log_rel + "/")):
++        return False
++    # The harvest's OWN output tree is dispatcher-owned by construction and is
++    # excluded whether or not the canonical tree has it yet. See
++    # _harvest_container_rel for why exists-in-both is not enough here.
++    if harvest_rel:
++        h = harvest_rel.replace(os.sep, "/").strip("/")
++        if rel == h or rel.startswith(h + "/"):
++            return True
++    if repo is None:
++        return True
++    # Exists in the canonical tree too -> the dispatcher wrote it and the sandbox
++    # copy merely drifted. Exists only in the sandbox -> a seat created it: KEEP.
++    return (Path(repo) / rel).exists()
+ 
+ 
+ def _is_vcs_metadata(rel: str) -> bool:
+@@ -678,8 +751,15 @@
+     #
+     # The rule that holds for all 3: the run directory is the ancestor of `dest`
+     # that sits DIRECTLY INSIDE a directory named `logs`.
++    # `repo` is passed so the run-directory exclusion can tell the dispatcher's
++    # own drifted copies (present in both trees) from a seat's new file (sandbox
++    # only). Without it the brief's own directory becomes a place seat work
++    # vanishes into -- see _is_dispatcher_own_output.
+     run_log_rel = _run_log_dir(Path(dest), Path(repo))
+-    skipped_own = [r for r in diffs if _is_dispatcher_own_output(r, run_log_rel)]
++    harvest_rel = _harvest_container_rel(Path(dest), Path(repo), run_log_rel)
++    skipped_own = [r for r in diffs
++                   if _is_dispatcher_own_output(r, run_log_rel, Path(repo),
++                                                harvest_rel)]
+ 
+     for rel in sorted(set(diffs) - set(skipped_vcs) - set(skipped_own)):
+         src = Path(sandbox) / rel
+
+### cc2:attempt-1:bench/tests/test_explorer_stopping_quantity_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_explorer_stopping_quantity_2026-09-28.py	2026-09-28 16:59:36
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo/bench/tests/test_explorer_stopping_quantity_2026-09-28.py	2026-09-28 02:45:56
+@@ -25,7 +25,6 @@
+ from __future__ import annotations
+ 
+ import re
+-import sys
+ from pathlib import Path
+ 
+ import pytest
+@@ -138,138 +137,3 @@
+     # Overstates at any sigma<1 or nu>0: pick the appendix's own worked point.
+     at = {R: sp.Rational(99, 100), q: sp.Rational(3, 10), sigma: 1, nu: sp.Rational(1, 10)}
+     assert sp.simplify(rq.subs(at) - general.subs(at)) > 0
+-
+-
+-class TestTheExplorersOwnBreakEvenIsNotTheModels:
+-    """A SECOND defect, reached by a separate route, running the SAME direction.
+-
+-    `explorer/index.html:177` computes `nuStar = sigma*R*q/(1 - q*R*(1-sigma))`,
+-    the re-injection rate at which it warns that a further pass does net harm.
+-    The appendix's general expected improvement implies its own break-even,
+-    `R*q*sigma/(R*q*sigma - R + 1)`. The denominators differ (`- R*q` against
+-    `- R`), and the explorer's figure is STRICTLY SMALLER everywhere on the open
+-    domain, so it warns of harm earlier than the model supports.
+-
+-    Measured 2026-09-28: at R=0.99, q=0.3, sigma=1 the explorer gives 0.297000
+-    against a true break-even of 0.967427, a ratio of 0.307. Confirmed by z3
+-    (unsat that the explorer's value can exceed it) and independently by Wolfram
+-    Language (`Resolve[ForAll[...]] -> True`). Wolfram is used in the REASONING
+-    only; this file calls SymPy and z3, because a stored falsifier may not require
+-    an installed kernel.
+-
+-    ASSERTED AS THE PERMANENT RELATIONSHIP, not the current defect, so it does not
+-    go red when the explorer is revised.
+-    """
+-
+-    @staticmethod
+-    def _explorer_nustar():
+-        return sigma * R * q / (1 - q * R * (1 - sigma))
+-
+-    @staticmethod
+-    def _appendix_breakeven():
+-        return sp.solve(sp.Eq(_appendix_expected(), 0), nu)[0]
+-
+-    def test_the_two_break_evens_are_not_the_same_expression(self):
+-        d = sp.simplify(self._explorer_nustar() - self._appendix_breakeven())
+-        assert d != 0, "the 2 break-evens are identical; this finding no longer holds"
+-
+-    def test_the_explorer_understates_the_break_even_everywhere(self):
+-        """The direction is what makes it unsafe in one specific way."""
+-        import z3
+-
+-        zR, zq, zs = z3.Reals("R q sigma")
+-        dom = [zR > 0, zR < 1, zq > 0, zq < 1, zs > 0, zs <= 1]
+-        ze = zR * zq * zs / (zR * zq * zs - zR * zq + 1)
+-        za = zR * zq * zs / (zR * zq * zs - zR + 1)
+-        s = z3.Solver()
+-        s.add(dom)
+-        s.add(ze > za)
+-        assert s.check() == z3.unsat, (
+-            "found a point where the explorer's nuStar exceeds the true break-even; "
+-            "the one-sided direction of this defect no longer holds"
+-        )
+-
+-    def test_the_worked_point_ratio(self):
+-        at = {R: sp.Rational(99, 100), q: sp.Rational(3, 10), sigma: 1}
+-        e = sp.simplify(self._explorer_nustar().subs(at))
+-        a = sp.simplify(self._appendix_breakeven().subs(at))
+-        assert abs(float(e) - 0.297) < 1e-9, float(e)
+-        assert abs(float(a) - 0.9674267) < 1e-6, float(a)
+-        assert float(e / a) < 0.31
+-
+-    def test_both_explorer_defects_run_the_same_direction(self):
+-        """Both make the tool stop or warn EARLIER than the model supports.
+-
+-        Stated as a test because 2 independent defects sharing a direction is a
+-        stronger claim than either alone, and a future fix to one must not silently
+-        invert the other.
+-        """
+-        at = {R: sp.Rational(99, 100), q: sp.Rational(3, 10), sigma: 1, nu: 0}
+-        # defect 1: per-pass change understates expected improvement
+-        assert sp.simplify(_appendix_expected().subs(at) - _explorer_dR().subs(at)) > 0
+-        # defect 2: nuStar understates the break-even
+-        at2 = {R: sp.Rational(99, 100), q: sp.Rational(3, 10), sigma: 1}
+-        assert sp.simplify(self._appendix_breakeven().subs(at2)
+-                           - self._explorer_nustar().subs(at2)) > 0
+-
+-
+-class TestTheProducingScriptAgreesWithThisFile:
+-    """EXECUTE, DO NOT RE-DERIVE. Two transcriptions of one page must be compared.
+-
+-    THE DEFECT THIS CLOSES, found 2026-09-28 by the stop gate asking what had been
+-    executed. `scripts/explorer_stopping_rule_is_superseded_2026-09-28.py` produces
+-    every figure quoted to the founder, and NO test executed it -- it appeared in
+-    this file only inside a docstring. All 6 of its functions were unreached, which
+-    the additive standard names as the failure mode responsible for 11 confirmed
+-    defects in this project.
+-
+-    The sharper problem is not that it was unreached but that BOTH FILES
+-    INDEPENDENTLY TRANSCRIBE `explorer/index.html`. If one transcription drifts,
+-    each remains internally consistent and both stay green while disagreeing about
+-    what the published page does. `execute-do-not-grep` is explicit: where both
+-    forms exist as live code, the test must CALL them and compare outputs. So these
+-    tests import the script and check its functions against this file's own
+-    derivation, rather than trusting that 2 people typed the same formula twice.
+-    """
+-
+-    @pytest.fixture(scope="class")
+-    def script(self):
+-        import importlib.util
+-
+-        path = ROOT / "scripts" / "explorer_stopping_rule_is_superseded_2026-09-28.py"
+-        assert path.is_file(), f"missing {path}"
+-        spec = importlib.util.spec_from_file_location("explorer_producer", path)
+-        m = importlib.util.module_from_spec(spec)
+-        sys.modules["explorer_producer"] = m
+-        spec.loader.exec_module(m)
+-        return m
+-
+-    def test_the_scripts_dR_matches_this_files_dR(self, script):
+-        """The 2 transcriptions of the explorer's recursion must be one formula."""
+-        theirs = script.explorer_dR_sym(R, q, sigma, nu)
+-        mine = _explorer_dR()
+-        assert sp.simplify(sp.together(theirs - mine)) == 0, (
+-            f"the producing script and this test transcribe explorer/index.html "
+-            f"differently: {sp.simplify(theirs)} vs {sp.simplify(mine)}"
+-        )
+-
+-    def test_the_scripts_expected_matches_this_files_expected(self, script):
+-        theirs = script.appendix_expected(R, q, sigma, nu)
+-        mine = _appendix_expected()
+-        assert sp.simplify(sp.together(theirs - mine)) == 0
+-
+-    def test_the_scripts_checks_run_without_error(self, script, capsys):
+-        """The functions are CALLED, so a broken one fails here rather than the
+-        next time a figure is quoted to the founder."""
+-        script.identity_check()
+-        script.nustar_check()
+-        out = capsys.readouterr().out
+-        assert "symbolically identical         True" in out, out
+-        assert "identical?                     False" in out, out
+-
+-    def test_the_script_reports_the_one_sided_z3_result(self, script, capsys):
+-        """ANTI-VACUITY: the script must actually reach its solver, not print a
+-        heading and stop."""
+-        script.nustar_check()
+-        out = capsys.readouterr().out
+-        assert "z3: explorer nuStar can EXCEED the true break-even?  unsat" in out, out
+
+### cc2:attempt-1:experimental_notes/Wolfram_Two_Routes_2026-09-28.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Wolfram_Two_Routes_2026-09-28.md	2026-09-28 16:58:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo/experimental_notes/Wolfram_Two_Routes_2026-09-28.md	2026-09-28 11:13:59
+@@ -56,51 +56,10 @@
+ 
+ **An earlier attempt at this measurement was vacuous and is recorded as such.** It ran the comparison through `zsh -ic`, a fresh shell that never sources the snapshot, so it compared `/usr/bin/grep` against itself and returned a reassuring 0 of 541. A measurement whose control and treatment are the same thing measures nothing.
+ 
+-## A correction that overturns an 18-day-old conclusion
+-
+-The founder supplied the official connector listing during this session. It shows: **made by Wolfram Research**, verified, published in **Anthropic's own Claude Marketplace**, **Sign-in: Not required**, added May 2026, connector URL on the **`agenttools.wolfram...`** host.
+-
+-That is the same host `.claude/CLAUDE.md` declared **dead** on 2026-09-10.
+-
+-**What actually failed was the transport.** The removed config entry was `npx -y mcp-remote https://agenttools.wolfram.com/mcp`, and `scripts/wolfram_route_health_2026-09-10.py:44-45` keys its patterns on the literal string `WolframCloud` — the *name of that stdio-shim entry*:
+-
+-```
+-SUCCESS = "announcing WolframCloud: (\d+) tool"
+-FAILURE = "Failed to connect to WolframCloud"
+-```
+-
+-It measured the desktop app's ability to attach to the shim. It never tested whether the host answered.
+-
+-**The figure is sound; the inference was not.** Reproduced on 3 tools: 42/43 failed from 2026-09-04 = **97.6744%**, Wilson [87.9410%, 99.5883%], against 1/21 = 4.7619% before; Fisher exact **p = 2.199086e-14**, odds ratio 840; chi-square with Yates **p = 8.709349e-13**; mpmath exact hypergeometric agreeing with scipy to **7.28e-30**.
+-
+-**The task list was more careful than CC1 was.** `CDSFL_MASTER_TASK_LIST.md:659` explicitly kept three explanations open — *"whether the failure is the licence lapsing, the service being withdrawn, or a transport fault"*. `.claude/CLAUDE.md` hardened it to "DEAD", and CC1 repeated that as fact on 2026-09-27. Today's evidence resolves it in favour of the transport.
+-
+-**Consequence:** the natural-language capability recorded as a NAMED LOSS was never lost. It was reachable throughout via the official connector.
+-
+-## A second defect in the public explorer
+-
+-`explorer/index.html:177` computes `nuStar = sigma*R*q/(1 - q*R*(1-sigma))` — the re-injection rate at which it warns a further pass does net harm. Solving the appendix's general expected improvement (`:225`) for zero gives `R*q*sigma/(R*q*sigma - R + 1)`.
+-
+-The denominators differ (`- R*q` against `- R`), and the difference factors to `R²*q*sigma*(q-1)/(...)`, whose numerator is negative for q < 1.
+-
+-| R | q | σ | explorer nuStar | true break-even | ratio |
+-|---|---|---|---|---|---|
+-| 0.99 | 0.30 | 1.00 | 0.297000 | 0.9674267 | 0.307 |
+-| 0.90 | 0.50 | 0.90 | 0.4240838 | 0.8019802 | 0.5288 |
+-| 0.50 | 0.20 | 0.50 | 0.05263158 | 0.09090909 | 0.5789 |
+-
+-**Strictly one-directional, proven over the open domain.** z3 returns `unsat` for both "explorer nuStar > true break-even" and "they are equal"; Wolfram Language independently returns `Resolve[ForAll[...]] → True`. *(Computed with Wolfram Language.)*
+-
+-**This is the second finding of the same shape in the same public page.** Both make the tool stop, or warn of harm, earlier than the model supports. Neither applied — the page is public and fixes go to the HIL.
+-
+-- Producer: `scripts/explorer_stopping_rule_is_superseded_2026-09-28.py` (section 5)
+-- Guard: `bench/tests/test_explorer_stopping_quantity_2026-09-28.py`, 10 tests; mutating the explorer formula to the correct one turns 3 red
+-
+ ## What needs a decision
+ 
+-1. **Does the marketplace listing close the connector half of W1?** Wolfram Research authoring and publishing this connector in Anthropic's marketplace, with no sign-in required, is stronger evidence of permission than a reply email. It does **not** touch whether the free Engine licence permits the local AgentTools server, which stays open regardless. The founder's call.
++1. **Was the licensing question answered?** The connector link came from an email. If that was Wolfram's reply to the founder's written question, task W1 closes and the standing caution in `.claude/CLAUDE.md` should be rewritten. If it was a general announcement, it covers connector use but still says nothing about the local agent-tools server.
+ 2. **`.claude/CLAUDE.md` calls the local Engine *"the only WORKING Wolfram route today"***, which this morning's calls contradict. `bench/tests/test_wolfram_route_retired_2026-09-10.py` asserts that sentence, so both change in one commit. The file is the founder's.
+-3. **`docs/REPRODUCING.md` and `resources/RECOVERY.md`** still present the retired `mcp-remote` bridge as usable. The host is fine; the bridge is not the route.
+-4. **Whether to apply either or both public explorer fixes.** Both one-directional, both making the published tool more pessimistic than the model. Untouched.
++3. **`docs/REPRODUCING.md` and `resources/RECOVERY.md`** still present the dead `agenttools` endpoint as usable.
+ 
+ Written under CDSFL note standard v1.7 (26 August 2026).
+
+### cc2:attempt-1:explorer/index.html
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/explorer/index.html	2026-08-27 01:01:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo/explorer/index.html	2026-09-28 17:16:15
+@@ -80,7 +80,7 @@
+       <input type="range" id="sigma" min="0" max="1" step="0.01" value="0.9"></div>
+     <div class="ctl"><label><b>ν &nbsp;re-injection rate</b><span class="val" id="v_nu"></span></label>
+       <input type="range" id="nu" min="0" max="0.5" step="0.005" value="0.05"></div>
+-    <div class="ctl"><label><b>θ &nbsp;stopping threshold on ΔR</b><span class="val" id="v_theta"></span></label>
++    <div class="ctl"><label><b>θ &nbsp;stopping threshold on expected improvement</b><span class="val" id="v_theta"></span></label>
+       <input type="range" id="theta" min="0.001" max="0.05" step="0.001" value="0.005"></div>
+     <div class="ctl"><label><b>perturbation at pass 22 (+risk)</b><span class="val" id="v_pert"></span></label>
+       <input type="range" id="pert" min="0" max="0.6" step="0.05" value="0"></div>
+@@ -106,7 +106,8 @@
+     <h2 id="chart1title">Residual risk R(n) under the true recursion</h2>
+     <canvas id="c1" width="960" height="380" aria-label="risk trajectory chart"></canvas>
+     <div class="regime" id="regime"></div>
+-    <h2 style="margin-top:18px">Marginal yield ΔR per pass — where to stop</h2>
++    <h2 style="margin-top:18px">Expected improvement per pass — where to stop</h2>
++    <p class="note">Bars are E = R·q·σ·(1−ν) − ν·(1−R), the expectation across both branches. The per-pass motion of the trajectory, ΔR, is a smaller and different quantity — it is conditional on not detecting — and is shown in the readout below rather than used to decide.</p>
+     <canvas id="c2" width="960" height="200" aria-label="marginal yield chart"></canvas>
+     <p class="hint">Bars below the amber line θ are passes not worth running.
+     Click any pass in the top chart to see its three-phase arithmetic.</p>
+@@ -163,6 +164,12 @@
+ // Stage 5 three-phase recursion (single class, d=1)
+ function simulate(o){
+   const q = o.eta * o.p;
++  // The fixed point of THIS recursion, verified by SymPy to be an exact root of
++  // R_new(R) = R. Drawn at the R* line below; hoisted here because the stopping
++  // rule needs it. Outside [0,1] the loop diverges and there is no floor.
++  const _den = q*(o.sigma + o.nu*(1-o.sigma));
++  const _rs  = _den > 0 ? o.nu/_den : Infinity;
++  const floorR = (o.nu > 0 && isFinite(_rs) && _rs <= 1) ? _rs : 0;
+   let R = o.pi;
+   const traj = [R], steps = [];
+   for (let i = 1; i <= N; i++){
+@@ -173,7 +180,19 @@
+     const R_new  = R_base*(1-o.nu) + o.nu;
+     const nuStar = (1 - q*R_old*(1-o.sigma)) > 0
+                  ? o.sigma*R_old*q/(1 - q*R_old*(1-o.sigma)) : 0;
+-    steps.push({i, R_old, R_det, R_base, R_new, dR: R_old - R_new, nuStar});
++    // THE DECISION QUANTITY, WHICH IS NOT dR. Appendix :225. `dR` is the change
++    // CONDITIONAL on the non-detection branch; a decision to run another pass is
++    // taken BEFORE the branch is known, so it needs the expectation across both.
++    // SymPy gives the gap in closed form:
++    //   E - dR = R^2*q*sigma*(1-nu)*(1-q)/(1-R*q)  >  0 on the open box,
++    // which is the appendix's OWN Phase-2 conservatism gap (:266) carried through
++    // Phase 3. Positive everywhere, so stopping on dR can only ever stop EARLY:
++    // 6685 of 27000 reachable slider settings, 0 the other way, z3 unsat.
++    const E = R_old*q*o.sigma*(1-o.nu) - o.nu*(1-R_old);
++    // ATTAINABLE gain: E is unconstrained, but no pass can take R below the
++    // floor drawn at the R* line below, so the floor caps what E can deliver.
++    const attain = R_old - floorR;
++    steps.push({i, R_old, R_det, R_base, R_new, dR: R_old - R_new, nuStar, E, attain});
+     R = R_new; traj.push(R);
+   }
+   return {traj, steps, q};
+@@ -254,6 +273,9 @@
+   // The bound is slack, and tight only at q = 1, so the trajectory settles ABOVE
+   // the dashed nu line. Drawn so that gap reads as the result it is, not as a run
+   // that has failed to converge. Omitted when the loop diverges (R* outside [0,1]).
++  // Recomputed from the same expression `simulate` hoists as `floorR`; kept here
++  // because this chart also draws the DIVERGENT case (rStar > 1), which floorR
++  // deliberately collapses to 0.
+   const den = sim.q*(o.sigma + o.nu*(1-o.sigma));
+   const rStar = den > 0 ? o.nu/den : Infinity;
+   if (o.nu > 0 && isFinite(rStar) && rStar <= 1){
+@@ -285,17 +307,31 @@
+ 
+   // ΔR chart
+   const ctx2 = c2.getContext('2d');
+-  const dmax = Math.max(o.theta*2, ...sim.steps.map(s=>Math.abs(s.dR)))*1.15;
++  const dmax = Math.max(o.theta*2, ...sim.steps.map(s=>Math.abs(s.E)))*1.15;
+   frame(ctx2, c2.width, c2.height, dmax);
+   let stopAt = null;
+   sim.steps.forEach(s=>{
+     const px = X(c2.width, s.i);
+     const bw = (c2.width-M.l-M.r)/N*0.62;
+-    const good = s.dR >= o.theta;
++    // THREE CLAUSES, EVERY ONE ALREADY IN THE APPENDIX. Continue only while all
++    // three hold. Clause 1 alone does NOT terminate: at the floor dR is 0 by
++    // construction while E = nu^2*(1-q)/(q*(sigma+nu*(1-sigma))) > 0, so a rule
++    // on E alone reports gain available where the trajectory has stopped moving
++    // -- 1450 of 27000 reachable settings. Clauses 2 and 3 are complementary:
++    // convergent loops approach the floor asymptotically so nu* stays ~1e-10
++    // above nu forever and only (2) fires; divergent loops (nu > nu*, pinned at
++    // R = 1) have no floor in [0,1] so only (3) fires, which is the appendix's
++    // own ":284 hard exit -- stop fixing and report for human review". And
++    // rStar > 1 <=> nu > nu*(R=1), so the two regimes partition the box.
++    // Measured: 0 non-terminating, 0 stopping earlier than the old rule, 4317
++    // of 27000 early stops corrected. scripts/explorer_stopping_rule_2026-09-28.py
++    const good = s.E >= o.theta              // (1) appendix :225
++              && s.attain >= o.theta         // (2) attainable, capped by the floor
++              && o.nu < s.nuStar;            // (3) appendix :280/:284
+     if (stopAt===null && !good && s.i>1) stopAt = s.i;
+-    ctx2.fillStyle = s.dR < 0 ? '#B3532E' : (good ? '#2E7D5B' : '#C7CDC2');
++    ctx2.fillStyle = s.E < 0 ? '#B3532E' : (good ? '#2E7D5B' : '#C7CDC2');
+     const h0 = Y(c2.height, 0, dmax);
+-    const h1 = Y(c2.height, Math.max(0,s.dR), dmax);
++    const h1 = Y(c2.height, Math.max(0,s.E), dmax);
+     ctx2.fillRect(px-bw/2, Math.min(h0,h1), bw, Math.abs(h0-h1)||1);
+   });
+   line(ctx2,c2.width,c2.height, Array(N+1).fill(o.theta), dmax,'#C08A00',1.5,[6,4]);
+@@ -342,8 +378,13 @@
+         ' &nbsp;(q = '+sim.q.toFixed(3)+')</td></tr>'+
+       '<tr><td>resolution → σ·R_det + (1−σ)·R</td><td>'+s.R_base.toFixed(4)+'</td></tr>'+
+       '<tr><td>re-injection → ·(1−ν) + ν</td><td>'+s.R_new.toFixed(4)+'</td></tr>'+
+-      '<tr><td>net gain this pass, ΔR</td><td>'+s.dR.toFixed(4)+
++      '<tr><td>trajectory motion, ΔR <i>(conditional on no detection — not the '+
++        'decision quantity)</i></td><td>'+s.dR.toFixed(4)+
+         (s.dR<0?' &nbsp;⚠ net harm':'')+'</td></tr>'+
++      '<tr><td><b>expected improvement, E = R·q·σ·(1−ν) − ν·(1−R)</b></td><td><b>'+
++        s.E.toFixed(4)+'</b>'+(s.E<0?' &nbsp;⚠ net harm':'')+'</td></tr>'+
++      '<tr><td>attainable this pass (E capped by the R* floor)</td><td>'+
++        Math.min(s.E, s.attain).toFixed(4)+'</td></tr>'+
+       '<tr><td>break-even ν* at this state</td><td>'+s.nuStar.toFixed(4)+'</td></tr></table>';
+   }
+ }
+
+### cc2:attempt-1:scripts/explorer_stopping_rule_2026-09-28.py
+--- /dev/null	2026-09-28 17:52:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo/scripts/explorer_stopping_rule_2026-09-28.py	2026-09-28 17:16:40
+@@ -0,0 +1,375 @@
++#!/usr/bin/env python3
++"""Does the PUBLISHED explorer stop on the right quantity, and does the proposed
++replacement terminate?
++
++Target: `explorer/index.html`, served at
++jebus197.github.io/Constraint_Engineering/explorer/. Line 83 labels its slider
++`theta  stopping threshold on dR`; line 294 colours a pass green on
++`s.dR >= o.theta` alone and line 304 prints `stop ~= pass N`. That makes dR a
++DECISION RULE, not merely a trajectory display.
++
++THREE RESULTS, ALL DERIVED HERE RATHER THAN ASSERTED.
++
++1. THE RECURSION IS CORRECT AND MUST NOT BE TOUCHED. `simulate()` at
++   index.html:164-180 is line-for-line the appendix's canonical Stage 5 three
++   phases (docs/MATHEMATICAL_APPENDIX.md:248, :250, :254, :274), and :264-268
++   DEFENDS the conditional Phase-2 blend as deliberately conservative with z3
++   unsat. A fix that rewrote the trajectory would contradict the appendix.
++   What is wrong is the quantity the STOP is taken on, nothing else.
++
++2. THE STOP QUANTITY IS THE RETIRED ONE, AND THE ERROR IS STRICTLY
++   ONE-DIRECTIONAL -- with a closed form, not a grid count. At sigma=1, nu=0 the
++   explorer's `dR` reduces EXACTLY to the retired `q*R*(1-R)/(1-q*R)`. Against
++   :225's expected improvement the gap is
++
++       E_general - dR_explorer = R^2 * q * sigma * (1-nu) * (1-q) / (1 - R*q)
++
++   every factor of which is positive on the open box, so the explorer can only
++   stop EARLY, never late. That expression is the appendix's own already-verified
++   Phase-2 conservatism gap at :266 multiplied by (1-nu) -- the same identity,
++   extended through Phase 3. Astra's proposed `R*q` is also wrong, and :223 says
++   why in terms: it is the sigma=1, nu=0 corner, and the explorer's own sliders
++   default to sigma=0.9, nu=0.05.
++
++3. THE OBVIOUS FIX DOES NOT FIX -- IT REMOVES TERMINATION. Substituting :225's
++   E_general for dR on the CONDITIONAL trajectory never stops, because at that
++   trajectory's fixed point R* = nu/(q*(sigma+nu*(1-sigma))) -- the value the
++   explorer already draws at index.html:258 and labels "floor actually reached"
++   -- dR is 0 by construction while
++
++       E_general(R*) = nu^2 * (1-q) / (q * (sigma + nu*(1-sigma)))  >  0.
++
++   So the revised rule reports gain available at the exact state where the
++   displayed trajectory has provably stopped moving. Measured below over the
++   explorer's own slider ranges.
++
++   THE COHERENT FIX IS THREE CLAUSES, EVERY ONE ALREADY IN THE APPENDIX AND
++   ALREADY COMPUTED BY THE EXPLORER. Continue only while ALL THREE hold:
++
++       (1)  E_general  >=  theta          appendix :225 -- the right quantity
++       (2)  R - R_floor >= theta          index.html:258 -- gain that is ATTAINABLE
++       (3)  nu < nu*(R)                   appendix :280/:284 -- hard divergence exit
++
++   Clause 1 alone was my first attempt and IT FAILED ITS OWN SWEEP, 1450 of
++   27000. Clauses 2 and 3 are complementary and both are needed:
++     - In the CONVERGENT regime the trajectory approaches R_floor asymptotically
++       and never attains it, so nu* stays above nu by ~1e-10 forever and clause 3
++       never fires; clause 2 fires because no pass can take R below the floor.
++     - In the DIVERGENT regime (nu > nu*, the loop pinned at R = 1) R_floor is
++       outside [0,1] so the explorer does not draw it and clause 2 has nothing to
++       cap against; clause 3 fires, which is exactly the appendix's own
++       "stop fixing and report the finding for human review".
++   Note rStar > 1  <=>  nu > nu*(R=1), so the two regimes partition the box and
++   the pair is exhaustive by construction, not by luck.
++
++Open-source tools only, by the stored-falsifier rule: no Wolfram call here, so
++anyone reproducing this project does not need it installed.
++
++Run:  python3 scripts/explorer_stopping_rule_2026-09-28.py
++Exit: 0 if every derivation and every sweep holds, 1 on the first that does not.
++"""
++from __future__ import annotations
++
++import itertools
++import json
++import re
++import shutil
++import subprocess
++import sys
++import tempfile
++from pathlib import Path
++
++import sympy as sp
++
++REPO = Path(__file__).resolve().parents[1]
++EXPLORER = REPO / "explorer" / "index.html"
++N_PASSES = 60
++
++# The explorer's OWN slider ranges (index.html:74-84), so every point swept is a
++# setting a visitor to the published page can actually reach with the controls.
++GRID = {
++    "pi":    [0.05, 0.25, 0.45, 0.65, 0.85, 0.99],
++    "p":     [0.05, 0.25, 0.45, 0.65, 0.85, 0.95],
++    "eta":   [0.0, 0.25, 0.5, 0.75, 1.0],
++    "sigma": [0.0, 0.25, 0.5, 0.75, 0.9, 1.0],
++    "nu":    [0.0, 0.05, 0.1, 0.25, 0.5],
++    "theta": [0.001, 0.005, 0.01, 0.025, 0.05],
++}
++FAILURES: list[str] = []
++
++
++def check(ok: bool, label: str) -> None:
++    print(f"  [{'PASS' if ok else 'FAIL'}] {label}")
++    if not ok:
++        FAILURES.append(label)
++
++
++def read_target() -> str:
++    print("\n0. THE TARGET, READ FROM DISK (no retyped copy of it decides anything)")
++    if not EXPLORER.exists():
++        check(False, f"{EXPLORER} exists")
++        return ""
++    src = EXPLORER.read_text(encoding="utf-8")
++    check("stopping threshold on" in src and "dR: R_old - R_new" in src,
++          "index.html defines dR = R_old - R_new and labels theta a stopping threshold")
++    for frag, why in [
++        ("R*(1-q)/(1-q*R)", "Phase 1 conditional posterior (appendix :250)"),
++        ("o.sigma*R_det + (1-o.sigma)*R_old", "Phase 2 blend (appendix :254)"),
++        ("R_base*(1-o.nu) + o.nu", "Phase 3 re-injection (appendix :274)"),
++        ("o.sigma*R_old*q/(1 - q*R_old*(1-o.sigma))", "nu* (appendix :280)"),
++    ]:
++        check(frag in src, f"present verbatim: {why}")
++    return src
++
++
++def symbolic() -> None:
++    print("\n1. SYMBOLIC DERIVATION (SymPy)")
++    R, q, s, nu = sp.symbols("R q sigma nu", positive=True)
++
++    R_det = R * (1 - q) / (1 - q * R)
++    R_base = s * R_det + (1 - s) * R
++    R_new = R_base * (1 - nu) + nu
++    dR = sp.simplify(R - R_new)
++    E_gen = R * q * s * (1 - nu) - nu * (1 - R)
++
++    after2 = sp.simplify(R * q * (1 - s) + (1 - R * q) * R_det)
++    derived = sp.simplify(R - (after2 * (1 - nu) + nu))
++    check(sp.simplify(derived - E_gen) == 0,
++          "appendix :225 IS the two-branch expected improvement (derived, not quoted)")
++    check(sp.simplify(after2 - R * (1 - q * s)) == 0,
++          "appendix :260 identity  (1-qR)R_det + qR(1-sigma) = R(1-q*sigma)")
++
++    retired = q * R * (1 - R) / (1 - q * R)
++    check(sp.simplify(dR.subs({s: 1, nu: 0}) - retired) == 0,
++          "explorer dR at sigma=1,nu=0 IS the retired dR_k -- CC1's identification")
++    check(sp.simplify(E_gen.subs({s: 1, nu: 0}) - R * q) == 0,
++          "appendix :225 at sigma=1,nu=0 IS Astra's R*q -- so R*q is the corner (:223)")
++
++    gap = sp.simplify(E_gen - dR)
++    closed = R**2 * q * s * (1 - nu) * (1 - q) / (1 - R * q)
++    check(sp.simplify(gap - closed) == 0,
++          "gap = R^2*q*sigma*(1-nu)*(1-q)/(1-R*q)  [closed form, not a grid count]")
++    check(sp.simplify(gap.subs(nu, 0) - R**2 * q * s * (1 - q) / (1 - R * q)) == 0,
++          "at nu=0 the gap IS the appendix's own :266 Phase-2 conservatism gap")
++
++    roots = sp.solve(sp.Eq(R_new, R), R)
++    Rfix = nu / (q * (s + nu * (1 - s)))
++    check(any(sp.simplify(r - Rfix) == 0 for r in roots),
++          "index.html:258's R* IS the exact fixed point -- so :258 is CORRECT, leave it")
++    Efix = sp.simplify(E_gen.subs(R, Rfix))
++    check(sp.simplify(Efix - nu**2 * (1 - q) / (q * (s + nu * (1 - s)))) == 0,
++          "E_general at the floor = nu^2*(1-q)/(q*(sigma+nu*(1-sigma))) > 0  <-- non-termination")
++    nustar = s * R * q / (1 - q * R * (1 - s))
++    check(sp.simplify(nustar.subs(R, Rfix) - nu) == 0,
++          "nu* = nu EXACTLY at the floor, so appendix :284's hard exit marks it (the fix)")
++
++
++def satisfiability() -> None:
++    print("\n2. SATISFIABILITY (z3, exact rationals, closed box)")
++    try:
++        import z3
++    except ImportError:
++        print("  [SKIP] z3 not installed; the SymPy closed form already decides the sign")
++        return
++    R, q, s, nu = z3.Reals("R q sigma nu")
++    R_det = R * (1 - q) / (1 - q * R)
++    dR = R - ((s * R_det + (1 - s) * R) * (1 - nu) + nu)
++    E = R * q * s * (1 - nu) - nu * (1 - R)
++    box = [R >= 0, R <= 1, q >= 0, q < 1, s >= 0, s <= 1, nu >= 0, nu <= z3.Q(1, 2)]
++
++    sv = z3.Solver(); sv.add(box + [E < dR])
++    r1 = sv.check()
++    check(r1 == z3.unsat, f"E_general NEVER falls below the explorer's dR (z3: {r1})")
++
++    sv = z3.Solver(); sv.add([R > 0, R < 1, q > 0, q < 1, s > 0, s <= 1,
++                              nu >= 0, nu < 1, dR < E])
++    r2 = sv.check()
++    check(r2 == z3.sat, f"and the gap is non-vacuous -- a witness exists (z3: {r2})")
++
++
++def simulate(pi: float, p: float, eta: float, sigma: float, nu: float):
++    """Transcribed from explorer/index.html:164-180. Perturbation left at 0."""
++    q = eta * p
++    R = pi
++    steps = []
++    for i in range(1, N_PASSES + 1):
++        R_old = R
++        R_det = R * (1 - q) / (1 - q * R) if q < 1 else 0.0
++        R_base = sigma * R_det + (1 - sigma) * R_old
++        R_new = R_base * (1 - nu) + nu
++        nustar = (sigma * R_old * q / (1 - q * R_old * (1 - sigma))
++                  if (1 - q * R_old * (1 - sigma)) > 0 else 0.0)
++        steps.append((i, R_old, R_old - R_new, nustar))
++        R = R_new
++    return steps, q
++
++
++def first_stop(steps, ok):
++    """index.html:293-295: the first pass after 1 that is not `good`."""
++    for st in steps:
++        if st[0] > 1 and not ok(st):
++            return st[0]
++    return None
++
++
++def sweep() -> None:
++    print("\n3. SWEEP OVER THE EXPLORER'S OWN SLIDER RANGES")
++    keys = list(GRID)
++    early = late = nonterm_naive = nonterm_fixed = total = 0
++    late_fixed_holder = [0]
++    early_fixed_holder = [0]
++    worst = None
++    for combo in itertools.product(*(GRID[k] for k in keys)):
++        o = dict(zip(keys, combo))
++        th = o["theta"]
++        steps, q = simulate(o["pi"], o["p"], o["eta"], o["sigma"], o["nu"])
++        sg, nu = o["sigma"], o["nu"]
++
++        def E(st, _q=q, _sg=sg, _nu=nu):
++            return st[1] * _q * _sg * (1 - _nu) - _nu * (1 - st[1])
++
++        den = q * (sg + nu * (1 - sg))
++        rstar = (nu / den) if den > 0 else float("inf")
++        # index.html:257-259 only DRAWS the floor when nu>0 and it lands in [0,1];
++        # outside that the loop diverges and there is no floor to cap against.
++        floorv = rstar if (nu > 0 and rstar <= 1) else 0.0
++
++        def good_fixed(st, _E=E, _fl=floorv, _nu=nu, _th=th):
++            return (_E(st) >= _th                 # (1) appendix :225
++                    and st[1] - _fl >= _th        # (2) attainable, index.html:258
++                    and _nu < st[3])              # (3) appendix :284 divergence exit
++
++        s_expl = first_stop(steps, lambda st: st[2] >= th)
++        s_naive = first_stop(steps, lambda st: E(st) >= th)
++        s_fixed = first_stop(steps, good_fixed)
++        total += 1
++
++        if s_expl is not None and (s_naive is None or s_naive > s_expl):
++            early += 1
++            gap = (10**6 if s_naive is None else s_naive) - s_expl
++            if worst is None or gap > worst[0]:
++                worst = (gap, dict(o), s_expl, s_naive)
++        if s_naive is not None and (s_expl is None or s_expl > s_naive):
++            late += 1
++        if s_fixed is not None and (s_expl is None or s_expl > s_fixed):
++            late_fixed_holder[0] += 1
++        if s_expl is not None and (s_fixed is None or s_fixed > s_expl):
++            early_fixed_holder[0] += 1
++        settled = abs(steps[-1][2]) < 1e-9
++        if settled and s_naive is None:
++            nonterm_naive += 1
++        if settled and s_fixed is None:
++            nonterm_fixed += 1
++
++    print(f"  reachable settings swept                          : {total}")
++    print(f"  shipped rule STOPS while appendix CONTINUES        : {early}"
++          f"  ({100*early/total:.4f}%)")
++    print(f"  appendix STOPS while shipped rule CONTINUES        : {late}")
++    print(f"  NAIVE fix never stops though trajectory settled    : {nonterm_naive}"
++          f"  ({100*nonterm_naive/total:.4f}%)")
++    print(f"  COHERENT 3-clause fix never stops though settled   : {nonterm_fixed}")
++    print(f"  COHERENT fix corrects an early stop                : "
++          f"{early_fixed_holder[0]}  ({100*early_fixed_holder[0]/total:.4f}%)")
++    print(f"  COHERENT fix stops EARLIER than shipped (must be 0): "
++          f"{late_fixed_holder[0]}")
++    if worst:
++        g, o, a, b = worst
++        print(f"  worst early stop: shipped stops at pass {a}, appendix at "
++              f"{'never' if b is None else b}, at {o}")
++
++    check(early > 0, "the shipped rule demonstrably stops early somewhere reachable")
++    check(late == 0, "and never stops LATE -- the error is strictly one-directional")
++    check(nonterm_naive > 0,
++          "the NAIVE substitution of :225 loses termination (the 4th defect)")
++    check(nonterm_fixed == 0,
++          "the COHERENT 3-clause fix ALWAYS terminates")
++    check(late_fixed_holder[0] == 0,
++          "and never stops earlier than the shipped rule -- the repair is one-directional too")
++    check(early_fixed_holder[0] > 0,
++          "and it really does correct early stops (it is not a no-op)")
++
++
++def live_target(src: str) -> None:
++    """Run the PATCHED FILE'S OWN JavaScript under node and check the shipped rule.
++
++    Everything above this point reasons about a Python transcription. This does
++    not: it cuts `simulate()` out of explorer/index.html verbatim, plus the exact
++    `good` expression from the chart loop, and executes them. If the file and the
++    transcription ever drift, this is the check that notices.
++    """
++    print("\n4. THE SHIPPED FILE'S OWN JAVASCRIPT, EXECUTED (node)")
++    if not src:
++        check(False, "target readable")
++        return
++    if shutil.which("node") is None:
++        print("  [SKIP] node not installed; the Python transcription above still decides "
++              "the mathematics, and section 0 pins the file's text")
++        return
++    m = re.search(r"function simulate\(o\)\{.*?\n\}", src, re.S)
++    if not m:
++        check(False, "simulate() found in explorer/index.html")
++        return
++    good_src = re.search(r"const good = (s\.E[^;]*?);", src, re.S)
++    if not good_src:
++        check(False, "the 3-clause `good` expression is present in the shipped file")
++        return
++    harness = (m.group(0) + "\n"
++               + "const N = 60, PERT_STEP = 22;\n"
++               "const opts = JSON.parse(process.argv[2]);\n"
++               "const sim = simulate(opts);\n"
++               "let stopAt = null;\n"
++               "sim.steps.forEach(s => {\n"
++               "  const o = opts;\n"
++               "  const good = " + good_src.group(1) + ";\n"
++               "  if (stopAt === null && !good && s.i > 1) stopAt = s.i;\n"
++               "});\n"
++               "console.log(JSON.stringify({stopAt, last: sim.steps[sim.steps.length-1]}));\n")
++    # `const N` appears twice once we prepend ours; strip the file's own if captured.
++    tmp = Path(tempfile.gettempdir()) / "cdsfl_explorer_rule_probe.mjs"
++    tmp.write_text(harness, encoding="utf-8")
++
++    cases = [
++        # (label, opts, must the shipped file stop?)
++        ("explorer defaults", dict(pi=.85, p=.45, eta=1, sigma=.9, nu=.05, theta=.005, pert=0), True),
++        ("theta at slider min, convergent", dict(pi=.85, p=.45, eta=1, sigma=.9, nu=.05, theta=.001, pert=0), True),
++        ("the naive fix's worst case", dict(pi=.25, p=.25, eta=.75, sigma=.9, nu=.05, theta=.001, pert=0), True),
++        ("divergent, nu > nu*", dict(pi=.25, p=.05, eta=.25, sigma=.25, nu=.5, theta=.001, pert=0), True),
++        ("no detection at all, q=0", dict(pi=.85, p=.45, eta=0, sigma=.9, nu=.05, theta=.001, pert=0), True),
++    ]
++    ok_all = True
++    for label, opts, must_stop in cases:
++        r = subprocess.run(["node", str(tmp), json.dumps(opts)],
++                           capture_output=True, text=True)
++        if r.returncode != 0:
++            print(f"    node failed on {label}: {r.stderr.strip()[:200]}")
++            ok_all = False
++            continue
++        out = json.loads(r.stdout)
++        stopped = out["stopAt"] is not None
++        print(f"    {label:32s} stopAt={str(out['stopAt']):>5s}  "
++              f"E_last={out['last']['E']:.6f}  dR_last={out['last']['dR']:.2e}")
++        if stopped != must_stop:
++            ok_all = False
++    check(ok_all, "the SHIPPED 3-clause rule terminates on every regime, run under node")
++
++    # And the retired quantity must no longer decide anything.
++    check("const good = s.dR >= o.theta" not in src,
++          "the retired `good = s.dR >= o.theta` is GONE from the shipped file")
++    check("s.E >= o.theta" in src and "o.nu < s.nuStar" in src,
++          "and the shipped file decides on appendix :225 plus the :284 exit")
++
++
++if __name__ == "__main__":
++    src = read_target()
++    symbolic()
++    satisfiability()
++    sweep()
++    live_target(src)
++    print()
++    if FAILURES:
++        print(f"FALSIFIED -- {len(FAILURES)} check(s) failed:")
++        for f in FAILURES:
++            print(f"  - {f}")
++        sys.exit(1)
++    print("All derivations and sweeps hold.")
++    sys.exit(0)
+
+### cc2:attempt-1:scripts/explorer_stopping_rule_is_superseded_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/explorer_stopping_rule_is_superseded_2026-09-28.py	2026-09-28 16:59:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo/scripts/explorer_stopping_rule_is_superseded_2026-09-28.py	2026-09-28 02:41:45
+@@ -128,62 +128,11 @@
+           f", the appendix says {'CONTINUE' if e >= mp.mpf('0.005') else 'STOP'}")
+ 
+ 
+-def nustar_check() -> None:
+-    """A SECOND, INDEPENDENT DEFECT: the explorer's own break-even is not the model's.
+-
+-    `explorer/index.html:177` computes
+-        nuStar = sigma*R*q / (1 - q*R*(1-sigma))
+-    which is the re-injection rate at which it warns a further pass does net harm.
+-
+-    The appendix's general expected improvement (`MATHEMATICAL_APPENDIX.md:225`)
+-    implies its own break-even, obtained by solving
+-        R*q*sigma*(1-nu) - nu*(1-R) = 0   for nu
+-    giving   R*q*sigma / (R*q*sigma - R + 1).
+-
+-    The denominators differ: `- R*q` against `- R`. The difference factors to
+-    R^2*q*sigma*(q-1)/(...), whose numerator is negative for q < 1, so the
+-    explorer's figure is STRICTLY BELOW the true break-even everywhere on the open
+-    domain. It therefore warns of net harm EARLIER than the model supports -- the
+-    same pessimistic direction as the stopping-rule defect above, reached by a
+-    completely separate route.
+-    """
+-    R, q, sigma, nu = sp.symbols("R q sigma nu", positive=True)
+-    explorer = sigma * R * q / (1 - q * R * (1 - sigma))
+-    appendix = sp.solve(sp.Eq(appendix_expected(R, q, sigma, nu), 0), nu)[0]
+-
+-    print()
+-    print("5. THE EXPLORER'S nuStar AGAINST THE MODEL'S OWN BREAK-EVEN")
+-    print(f"   explorer/index.html:177        {sp.simplify(explorer)}")
+-    print(f"   implied by appendix:225        {sp.simplify(appendix)}")
+-    diff = sp.factor(sp.simplify(sp.together(explorer - appendix)))
+-    print(f"   difference                     {diff}")
+-    print(f"   identical?                     {sp.simplify(explorer - appendix) == 0}")
+-
+-    for Rv, qv, sv in [(sp.Rational(99, 100), sp.Rational(3, 10), sp.Integer(1)),
+-                       (sp.Rational(9, 10), sp.Rational(1, 2), sp.Rational(9, 10)),
+-                       (sp.Rational(1, 2), sp.Rational(1, 5), sp.Rational(1, 2))]:
+-        a = mp.mpf(str(float(explorer.subs({R: Rv, q: qv, sigma: sv}))))
+-        b = mp.mpf(str(float(appendix.subs({R: Rv, q: qv, sigma: sv}))))
+-        print(f"   R={float(Rv):.2f} q={float(qv):.2f} sigma={float(sv):.2f}  "
+-              f"explorer {mp.nstr(a, 7)}  true {mp.nstr(b, 7)}  ratio {mp.nstr(a/b, 6)}")
+-
+-    import z3
+-    zR, zq, zs = z3.Reals("R q sigma")
+-    dom = [zR > 0, zR < 1, zq > 0, zq < 1, zs > 0, zs <= 1]
+-    ze = zR * zq * zs / (zR * zq * zs - zR * zq + 1)
+-    za = zR * zq * zs / (zR * zq * zs - zR + 1)
+-    sol = z3.Solver()
+-    sol.add(dom)
+-    sol.add(ze > za)
+-    print(f"   z3: explorer nuStar can EXCEED the true break-even?  {sol.check()}")
+-
+-
+ def main() -> int:
+     print("EXPLORER STOPPING RULE vs THE APPENDIX'S GENERAL FORM")
+     print("=" * 62)
+     identity_check()
+     disagreement_sweep()
+-    nustar_check()
+     print()
+     print("Astra's proposed R*q is the sigma=1, nu=0 corner only (appendix:223),")
+     print("so it is not the revision to apply either.")
+
+### cc2:attempt-1:scripts/harvest_keeps_seat_work_in_the_run_dir_2026-09-28.py
+--- /dev/null	2026-09-28 17:52:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo/scripts/harvest_keeps_seat_work_in_the_run_dir_2026-09-28.py	2026-09-28 17:22:15
+@@ -0,0 +1,161 @@
++#!/usr/bin/env python3
++"""Is the harvest's run-log exclusion TOO WIDE? It was, and the brief proves it.
++
++`bench/panel_sandbox.py:646 harvest()` excludes the run's own log directory so the
++dispatcher's writes into the sandbox copy stop reading as seat changes. That fix is
++right and the derivation of `_run_log_dir` is right: I traced all 4 call sites and
++every one resolves to `REPO/bench/logs/<run>`, so the 3 destination shapes CC1
++enumerated are complete --
++
++  run_simulated_experiment.py:263 + :640   <run>/panel_worktree_harvest
++  build_experiment_run.py:58 + :181        <run>/worktree_harvest/<tag>
++  confer_convergence_panel:27 + :78        <run>/worktree_harvest/<tag>
++  confer_maths_panel:263 + :98             <run>/sandbox_harvest/<seat>/attempt-N
++
++-- and `parents[2]` really would have collapsed 2 of them onto `bench` and
++`bench/logs`. I found no 4th destination shape. I found a 4th CONTENT shape, which
++is worse, because it loses work rather than keeping noise:
++
++  THE RUN'S OWN DIRECTORY IS NOT EMPTY. The brief lives in it. On this round:
++  bench/logs/check_my_work_2026-09-28/BRIEF.md, beside dispatch.log. So
++  "write your measurement next to the brief" -- an ordinary instruction, and the
++  brief's own Section 3 tells seats to deliver files at real paths -- lands a
++  genuine deliverable on a path the exclusion drops, and drops it under the
++  message "this run's OWN log output, WHICH THE DISPATCHER WROTE". Discarded AND
++  misattributed. The comment at :606-609 anticipates exactly this risk for
++  `bench/logs/` wholesale and then does not apply the same reasoning one level in.
++
++THE FIX USES THE MECHANISM THAT CAUSED THE ORIGINAL BUG. The dispatcher's writes
++are DRIFT between two copies of one file (:598 -- `elapsed_s` differing by 0.9), so
++they exist in BOTH trees. A seat's new file exists only in the sandbox. So a path
++under the run directory is dispatcher output iff the canonical tree also has it.
++
++Run:  python3 scripts/harvest_keeps_seat_work_in_the_run_dir_2026-09-28.py
++Exit: 0 if the real harvest() keeps seat work and still drops dispatcher drift.
++      1 if either half fails. Imports the REAL module; retypes nothing.
++"""
++from __future__ import annotations
++
++import shutil
++import sys
++import tempfile
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO / "bench"))
++import panel_sandbox as ps  # noqa: E402  the REAL target, not a copy
++
++FAILURES: list[str] = []
++
++
++def check(ok: bool, label: str) -> None:
++    print(f"  [{'PASS' if ok else 'FAIL'}] {label}")
++    if not ok:
++        FAILURES.append(label)
++
++
++def build(root: Path, run: str):
++    """A canonical repo and a sandbox copy of it, with the shapes that matter."""
++    repo, sandbox = root / "repo", root / "sandbox"
++    for tree in (repo, sandbox):
++        (tree / "bench" / "logs" / run).mkdir(parents=True)
++        (tree / "bench" / "logs" / "some_other_round").mkdir(parents=True)
++        (tree / "scripts").mkdir(parents=True)
++        # The dispatcher's own log, in BOTH trees, drifting -- the original defect.
++        (tree / "bench" / "logs" / run / "dispatch.log").write_text(
++            "elapsed_s=12.3\n" if tree is repo else "elapsed_s=13.2\n")
++        # The brief, in both trees, unchanged.
++        (tree / "bench" / "logs" / run / "BRIEF.md").write_text("the brief\n")
++        (tree / "scripts" / "pre_existing.py").write_text("x = 1\n")
++    # --- now the SEAT writes, sandbox only ---
++    # (a) the ordinary case: a fix at a real path outside bench/logs
++    (sandbox / "scripts" / "seat_fix.py").write_text("print('fix')\n")
++    # (b) a measurement under bench/logs/ but NOT in this run -- must survive
++    (sandbox / "bench" / "logs" / "some_other_round" / "seat_measurement.json").write_text("{}\n")
++    # (c) THE REGRESSION: a deliverable written beside the brief, in THIS run's dir
++    (sandbox / "bench" / "logs" / run / "seat_findings.json").write_text(
++        '{"finding": "written next to the brief, as instructed"}\n')
++    # (d) and an edit to a pre-existing tracked file, for good measure
++    (sandbox / "scripts" / "pre_existing.py").write_text("x = 2\n")
++    # (e) THE REGRESSION MY OWN FIRST FIX CAUSED: an earlier attempt's harvest
++    #     artefact, present in the SANDBOX ONLY. exists-in-both read it as seat
++    #     work and harvested the harvest. Caught by running the committed suite.
++    own = sandbox / "bench" / "logs" / run / "sandbox_harvest" / "fable" / "attempt-1"
++    own.mkdir(parents=True)
++    (own / "changes.diff").write_text("### noise\n")
++    return repo, sandbox
++
++
++def main() -> int:
++    run = "check_my_work_2026-09-28"
++    live_brief = REPO / "bench" / "logs" / run / "BRIEF.md"
++    print("\n0. THE PREMISE, CHECKED ON DISK RATHER THAN ASSUMED")
++    check(live_brief.exists(),
++          f"the brief really does live inside the run's own log directory "
++          f"({live_brief.relative_to(REPO)})")
++
++    print("\n1. THE REAL harvest(), ON THE 4 CONTENT SHAPES")
++    root = Path(tempfile.mkdtemp(prefix="cdsfl_harvest_probe_"))
++    try:
++        repo, sandbox = build(root, run)
++        dest = repo / "bench" / "logs" / run / "sandbox_harvest" / "cc2" / "attempt-1"
++        rl = ps._run_log_dir(dest, repo)
++        print(f"    _run_log_dir -> {rl!r}")
++        check(rl == f"bench/logs/{run}",
++              "the run directory is derived correctly for the deepest shape")
++        # the 2 shallower shapes, which parents[2] got wrong
++        check(ps._run_log_dir(repo / "bench/logs" / run / "worktree_harvest" / "ge",
++                             repo) == f"bench/logs/{run}",
++              "and for <run>/worktree_harvest/<tag>  (parents[2] gave 'bench/logs')")
++        check(ps._run_log_dir(repo / "bench/logs" / run / "panel_worktree_harvest",
++                             repo) == f"bench/logs/{run}",
++              "and for <run>/panel_worktree_harvest  (parents[2] gave 'bench')")
++
++        m = ps.harvest(sandbox, repo, dest)
++        taken = set(p.replace("\\", "/") for p in m["files_taken"])
++        print(f"    files_taken ({m['changed']}): {sorted(taken)}")
++        print(f"    skipped as this run's own output: {m['skipped_own_log_output']}")
++
++        check("scripts/seat_fix.py" in taken,
++              "KEEPS a seat fix at a real path (the ordinary case)")
++        check("scripts/pre_existing.py" in taken,
++              "KEEPS a seat edit to a pre-existing file")
++        check("bench/logs/some_other_round/seat_measurement.json" in taken,
++              "KEEPS a seat measurement under bench/logs/ but outside this run "
++              "-- the exclusion is NOT too wide in that direction")
++        check(f"bench/logs/{run}/seat_findings.json" in taken,
++              "KEEPS a seat deliverable written BESIDE THE BRIEF, inside this run's "
++              "own directory  <-- THE FIX. Path-only exclusion dropped this.")
++        check(f"bench/logs/{run}/dispatch.log" not in taken,
++              "and STILL DROPS the dispatcher's own drifting log -- the original "
++              "defect stays fixed")
++        check(not any("sandbox_harvest" in r for r in taken),
++              "and STILL DROPS the harvest's OWN output even though it is in the "
++              "sandbox only -- the harvest does not harvest itself")
++        check(ps._harvest_container_rel(dest, repo, rl)
++              == f"bench/logs/{run}/sandbox_harvest",
++              "the harvest container is derived, not hardcoded")
++        check(m["skipped_own_log_output"] >= 2,
++              "both drops are counted and reported rather than silent")
++    finally:
++        shutil.rmtree(root, ignore_errors=True)
++
++    print("\n2. THE OLD BEHAVIOUR IS STILL REACHABLE FOR CALLERS WITH NO REPO")
++    check(ps._is_dispatcher_own_output("bench/logs/r/x.json", "bench/logs/r") is True,
++          "repo=None keeps the path-only verdict, so no existing caller or test "
++          "changes meaning (additive, not a replacement)")
++    check(ps._is_dispatcher_own_output("bench/logs/r10/x.json", "bench/logs/r") is False,
++          "and a sibling run whose name is a prefix is not caught")
++    return 1 if FAILURES else 0
++
++
++if __name__ == "__main__":
++    rc = main()
++    print()
++    if FAILURES:
++        print(f"FALSIFIED -- {len(FAILURES)} check(s) failed:")
++        for f in FAILURES:
++            print(f"  - {f}")
++    else:
++        print("The exclusion is now neither too wide nor too narrow.")
++    sys.exit(rc)
+
+### cc2:attempt-1:scripts/zero_result_claim_safety_2026-09-28.py
+--- /dev/null	2026-09-28 17:52:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo/scripts/zero_result_claim_safety_2026-09-28.py	2026-09-28 17:17:58
+@@ -0,0 +1,170 @@
++#!/usr/bin/env python3
++"""WHICH PAST CLAIMS IN THIS REPOSITORY ARE UNSAFE BECAUSE A SEARCH RETURNED 0?
++
++`scripts/shell_grep_blind_spot_2026-09-28.py` establishes that the session's
++`grep` wraps ugrep with `--ignore-files`, so it honours `.gitignore` and hides
++`bench/logs/**` (`.gitignore:48`) and `*.pyc` (`.gitignore:5`). That script
++measured the SIZE of the blind spot and stopped there. This one answers the
++question it left open, which is the one with consequences: a "0 occurrences"
++claim is the shape this project treats as a FINDING, and a hidden tree makes
++some of those findings unfalsifiable rather than false.
++
++THE DECIDING CRITERION, DERIVED NOT GUESSED. `--ignore-files` and every
++tracked-only git tool filter the set of paths WALKED. Neither can suppress a path
++named explicitly on the command line: `grep pattern a.md b.md` reads a.md and
++b.md whatever the ignore rules say. So:
++
++    a zero-result claim is SAFE  iff the search enumerated its own targets
++    a zero-result claim is UNSAFE iff the search WALKED a tree with a filter
++
++That is a property of the command, not of the conclusion, so it can be checked
++mechanically. Tracked-only tools are `git grep`, `git log --name-only`,
++`git ls-tree`, `git ls-files`; they are strictly WORSE than `--ignore-files`,
++because a gitignored path can enter history only via `git add -f`.
++
++Run:  python3 scripts/zero_result_claim_safety_2026-09-28.py
++Exit: 0 if every catalogued verdict still reproduces, 1 if any does not.
++
++NO WOLFRAM CALL: a stored falsifier must run on a machine without it.
++"""
++from __future__ import annotations
++
++import subprocess
++import sys
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parents[1]
++FAILURES: list[str] = []
++
++
++def check(ok: bool, label: str) -> None:
++    print(f"  [{'PASS' if ok else 'FAIL'}] {label}")
++    if not ok:
++        FAILURES.append(label)
++
++
++def ignored_prefixes() -> list[str]:
++    gi = (REPO / ".gitignore")
++    if not gi.exists():
++        return []
++    return [ln.strip() for ln in gi.read_text(encoding="utf-8").splitlines()
++            if ln.strip() and not ln.startswith(("#", "!"))]
++
++
++# --------------------------------------------------------------------------
++# 1. The blind spot is real, stated in terms of the ignore file rather than a
++#    shell the reproducer may not have.
++# --------------------------------------------------------------------------
++def mechanism() -> None:
++    print("\n1. THE MECHANISM, FROM .gitignore RATHER THAN FROM A SHELL FUNCTION")
++    pats = ignored_prefixes()
++    check("bench/logs/**" in pats, ".gitignore excludes bench/logs/** (the evidence archive)")
++    check("*.pyc" in pats, ".gitignore excludes *.pyc")
++    logs = REPO / "bench" / "logs"
++    n = sum(1 for _ in logs.rglob("*")) if logs.is_dir() else 0
++    print(f"    paths on disk under bench/logs/ : {n}")
++    # HONESTY ABOUT WHERE THIS CANNOT BE MEASURED, which is the panel's own sandbox.
++    git = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"],
++                         cwd=REPO, capture_output=True, text=True)
++    if git.returncode != 0:
++        print("    NOTE: this checkout has no .git, so ripgrep does not apply .gitignore")
++        print("    here and a same-shell A/B returns a spurious 0% hidden. That is the")
++        print("    SAME silent-fail-toward-clean shape the blind-spot script warns about,")
++        print("    and it is why the catalogue below is keyed on the COMMAND SHAPE in the")
++        print("    cited text, which is invariant to whether git is present.")
++
++
++# --------------------------------------------------------------------------
++# 2. The catalogue. Each row is a real claim at a real line, classified by the
++#    criterion above, with the reason it is safe or not.
++# --------------------------------------------------------------------------
++CATALOGUE = [
++    # (file, line, verdict, quoted fragment that must still be there, why)
++    ("experimental_notes/Panel_A8_Section_P_FULL_RECORD_2026-09-20.md", 290, "UNSAFE",
++     "0 hits",
++     "Claim 4: all 50 absent paths are in no git ref's history. BOTH sweeps are "
++     "tracked-only -- `git log --all --name-only` (:290) and `git ls-tree -r` "
++     "(:291). The 50 paths are enumerated at :169 and live ENTIRELY in gitignored "
++     "trees: under bench/logs/ (.gitignore:48) or __pycache__/*.pyc "
++     "(.gitignore:5). A gitignored path reaches history only via `git add -f`, "
++     "which is exactly how the sibling 50 at :55 got there. So `0 hits` is very "
++     "nearly guaranteed by construction. The note calls the two sweeps "
++     "'independent' and names an evil-merge residual at :291 -- but they share "
++     "the one blind spot that decides the claim, so they are not independent in "
++     "the dimension that matters. Two tools with a common blind spot reporting a "
++     "reassuring 0 is the defect CC1 shipped and caught on 2026-09-28."),
++    ("scripts/note_naming_check_2026-09-28.py", 179, "UNSAFE",
++     "git grep",
++     "Item 5's novelty test IS a zero-result claim: a phrase is reported "
++     "'NAMES NOTHING' when repo_hits()==0. It asks `git grep`, so a term defined "
++     "only under bench/logs/** reads as novel. Direction of error: FALSE "
++     "POSITIVES against exactly the 353 MB the search cannot see. It also means a "
++     "verdict changes on `git add`, not on content."),
++    ("scripts/orphan_figures_2026-09-10.py", 122, "UNSAFE",
++     "git ls-files",
++     "Decides UNCITED from tracked content only. Under the additive standard an "
++     "'orphan' verdict is the premise for a REMOVAL, so a figure cited only from "
++     "bench/logs/** could be removed on a search that could not see the citation. "
++     "Highest consequence of the three, because the conclusion licenses deletion."),
++    ("scripts/lint_reach_over_notes_2026-09-10.py", 115, "UNSAFE",
++     "git grep",
++     "Reach over notes via `git grep`; a note whose only reach is into an ignored "
++     "path reads as unreached."),
++    # --- and the control: a claim that is SAFE, checked because Section 5 asks. ---
++    ("experimental_notes/Research_FULL_RECORD_2026-09-09.md", 380, "SAFE",
++     "returns 0 matches",
++     "\"grep -i 'additive|additivity' over docs/MATHEMATICAL_APPENDIX.md and "
++     "bench/directives/universal/cdsfl_core_formal.md returns 0 matches\". The "
++     "search NAMES ITS TWO TARGETS, both tracked, so no ignore rule can hide "
++     "either. Re-executed below and it still returns 0. This is the criterion's "
++     "discriminating case: same 0, opposite verdict, because the command shape "
++     "differs."),
++]
++
++
++def catalogue() -> None:
++    print("\n2. CATALOGUE OF ZERO-RESULT CLAIMS, CLASSIFIED BY COMMAND SHAPE")
++    for rel, line, verdict, frag, why in CATALOGUE:
++        p = REPO / rel
++        ok = False
++        if p.exists():
++            lines = p.read_text(encoding="utf-8", errors="replace").splitlines()
++            # tolerate +/- 3 lines of drift so an edit above does not fake a pass
++            for probe in range(max(0, line - 4), min(len(lines), line + 3)):
++                if frag in lines[probe]:
++                    ok = True
++                    break
++        check(ok, f"{verdict:6s} {rel}:{line} -- fragment {frag!r} still present")
++        print(f"         {why}")
++
++
++def reexecute_the_safe_one() -> None:
++    print("\n3. RE-EXECUTING THE SAFE CLAIM (the one the criterion predicts survives)")
++    targets = [REPO / "docs" / "MATHEMATICAL_APPENDIX.md",
++               REPO / "bench" / "directives" / "universal" / "cdsfl_core_formal.md"]
++    missing = [t for t in targets if not t.exists()]
++    if missing:
++        check(False, f"both named targets exist ({missing} absent)")
++        return
++    hits = 0
++    for t in targets:
++        body = t.read_text(encoding="utf-8", errors="replace").lower()
++        hits += body.count("additive") + body.count("additivity")
++    print(f"    occurrences of 'additive'/'additivity' across the 2 named files: {hits}")
++    check(hits == 0,
++          "the SAFE claim still returns 0 when the two named files are read directly "
++          "-- an explicit-path search is immune to the ignore rule")
++
++
++if __name__ == "__main__":
++    mechanism()
++    catalogue()
++    reexecute_the_safe_one()
++    print()
++    if FAILURES:
++        print(f"FALSIFIED -- {len(FAILURES)} check(s) failed:")
++        for f in FAILURES:
++            print(f"  - {f}")
++        sys.exit(1)
++    print("Every catalogued verdict reproduces.")
++    sys.exit(0)
+
+### cc2:attempt-2:bench/confer_maths_panel_2026-09-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/confer_maths_panel_2026-09-05.py	2026-09-28 03:08:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo/bench/confer_maths_panel_2026-09-05.py	2026-09-28 17:34:10
+@@ -396,25 +396,85 @@
+ #:
+ #: NOTHING IS REMOVED. Paid dispatch remains available by exactly the same route
+ #: it always had, with an authorisation recorded alongside it.
+-PAID_LEDGER = _Path(__file__).resolve().parent / "paid_dispatch_authorisations.json"
++#: CORRECTED 2026-09-28 (panel check-my-work round, fable seat). THE PATH BELOW
++#: USED TO BE `parent / "paid_dispatch_authorisations.json"`, i.e. `bench/`, WHERE
++#: NO SUCH FILE HAS EVER EXISTED. The committed ledger is, and was,
++#: `bench/directives/universal/paid_dispatch_authorisations.json`. MEASURED, not
++#: inferred: `_paid_is_authorised("maths_panel_2026-09-20")` -- a round the
++#: committed ledger names explicitly, carrying the founder's own GBP-12
++#: authorisation -- returned `(False, "no authorisation ledger at .../bench/
++#: paid_dispatch_authorisations.json")`. The gate failed CLOSED for every round,
++#: which is the safe direction and is why nothing overspent; but it made the
++#: claim 8 lines above ("paid dispatch remains available by exactly the same
++#: route it always had") FALSE. No input to this dispatcher yielded a paid seat,
++#: so the first person needing a paid round would have had to move the path or
++#: delete the guard -- the precise failure the ledger preamble exists to prevent.
++#:
++#: WHY THE TESTS DID NOT CATCH IT. Every case in
++#: `bench/tests/test_paid_dispatch_needs_authorisation_2026-09-28.py`
++#: monkeypatches `PAID_LEDGER` to a tmp_path file it writes itself -- including
++#: the anti-vacuity case. The suite proved the PARSER works on a synthetic
++#: ledger and never once asked whether the SHIPPED ledger is reachable or
++#: parseable. `TestTheShippedLedgerIsActuallyReachable` in that file now does,
++#: with no monkeypatch.
++PAID_LEDGER = (_Path(__file__).resolve().parent / "directives" / "universal"
++               / "paid_dispatch_authorisations.json")
++
++
++def _paid_ledger_entries(doc) -> list:
++    """Normalise either accepted ledger shape to [{round, quote}].
+ 
++    TWO SHAPES, DELIBERATELY, AND NEITHER IS REMOVED.
+ 
++    * The COMMITTED shape, which is what is actually on disk:
++      ``{"authorisations": [{"rounds": [...], "founder_verbatim": [...]}]}`` --
++      one entry per authorisation covering several named rounds, the founder's
++      words as a list of lines. Its own preamble forbids ranges, prefixes and
++      wildcards, so every round is expanded LITERALLY here and the guard keeps
++      asking "was this authorised?" rather than "is this recent?".
++    * The FLAT shape ``[{"round": ..., "founder_authorisation": ...}]``, which
++      the guard was originally written against and which all five existing
++      monkeypatched tests supply. Kept working rather than migrated: those tests
++      are the only executable statement of the refusal semantics, and rewriting
++      them to fit the fix would destroy the evidence that the fix is safe.
++
++    Anything else yields ``[]`` and the caller refuses -- unreadable is not
++    authorised, the same asymmetry the suite gate uses.
++    """
++    if isinstance(doc, list):
++        return [{"round": str(e.get("round")),
++                 "quote": str(e.get("founder_authorisation", "")).strip()}
++                for e in doc if isinstance(e, dict) and "round" in e]
++    if isinstance(doc, dict) and isinstance(doc.get("authorisations"), list):
++        out = []
++        for a in doc["authorisations"]:
++            if not isinstance(a, dict):
++                continue
++            verbatim = a.get("founder_verbatim")
++            quote = (" ".join(str(x) for x in verbatim).strip()
++                     if isinstance(verbatim, list) else str(verbatim or "").strip())
++            for r in a.get("rounds") or []:
++                out.append({"round": str(r), "quote": quote})
++        return out
++    return []
++
++
+ def _paid_is_authorised(round_name: str) -> tuple[bool, str]:
+     """Is a paid dispatch authorised for this round? Returns (ok, reason)."""
+     if not PAID_LEDGER.is_file():
+         return False, f"no authorisation ledger at {PAID_LEDGER}"
+     try:
+-        entries = _json.loads(PAID_LEDGER.read_text(encoding="utf-8"))
++        doc = _json.loads(PAID_LEDGER.read_text(encoding="utf-8"))
+     except (ValueError, OSError) as exc:
+         return False, f"authorisation ledger unreadable: {exc}"
+-    if not isinstance(entries, list):
+-        return False, "authorisation ledger is not a list of entries"
++    entries = _paid_ledger_entries(doc)
++    if not entries:
++        return False, ("authorisation ledger is not a list of entries, nor a "
++                       "document carrying an 'authorisations' list")
+     for e in entries:
+-        if not isinstance(e, dict):
++        if e["round"] != round_name:
+             continue
+-        if e.get("round") != round_name:
+-            continue
+-        quote = str(e.get("founder_authorisation", "")).strip()
++        quote = e["quote"]
+         if len(quote) < 20:
+             return False, (
+                 f"ledger entry for round {round_name!r} carries no founder "
+@@ -886,12 +946,37 @@
+         # EVERY ATTEMPT'S TREE, not just the one the seat ended in (ruling (j)).
+         # A seat that timed out and retried leaves 2 trees, and round 17 showed
+         # what reading only 1 of them costs: 14 files with no reply behind them.
++        # THE DISPATCHER'S OWN LOG OUTPUT IS NOT A SEAT PROPOSAL. Added 2026-09-28,
++        # panel check-my-work round, fable seat. `harvest()` learned this on
++        # 2026-09-28 (`panel_sandbox._is_dispatcher_own_output`), and the docstring
++        # of that function cites TWO symptoms from the founder_verdicts_2026-09-28
++        # round where both seats failed at authentication and wrote nothing:
++        # "harvested 3394 byte(s) of seat-written files" AND "seats proposed edits
++        # to 8 file(s)". Only the first went through `harvest()`. This line is the
++        # second, and it called `changes()` directly, so it kept counting the
++        # dispatcher's own `bench/logs/<run>/` writes as seat work -- into
++        # `seat_proposals.diff`, which is the file a reader opens to see what the
++        # seats actually proposed. A fix that repairs one of the two numbers it
++        # names in its own docstring, and leaves the other reading 8 on a round
++        # where nobody wrote anything, is not yet a fix.
++        #
++        # DERIVED, NOT PASSED, exactly as in `harvest()`: `_logs_dir()` IS the run
++        # directory, and its parent is named `logs`, so `_run_log_dir` returns it
++        # on the first iteration. One rule, one implementation, two call sites.
++        _run_log_rel = panel_sandbox._run_log_dir(_logs_dir(), _REPO)
++        _own = 0
+         for _n, _atts in _SEAT_ATTEMPTS.items():
+             for _a in _atts:
+                 if not os.path.isdir(_a["path"]):
+                     continue
+                 for rel, d in panel_sandbox.changes(Path(_a["path"]), _REPO).items():
++                    if panel_sandbox._is_dispatcher_own_output(rel, _run_log_rel):
++                        _own += 1
++                        continue
+                     proposals[f"{_n}:attempt-{_a['attempt']}:{rel}"] = d
++        if _own:
++            print(f"    proposals excluded {_own} file(s) of this run's OWN log "
++                  f"output, which the dispatcher wrote inside each seat's copy")
+         if proposals:
+             (_logs_dir() / "seat_proposals.diff").write_text(
+                 "\n".join(f"### {rel}\n{d}" for rel, d in sorted(proposals.items())),
+
+### cc2:attempt-2:bench/logs/check_my_work_2026-09-28/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/check_my_work_2026-09-28/dispatch.log	2026-09-28 17:52:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo/bench/logs/check_my_work_2026-09-28/dispatch.log	2026-09-28 17:22:55
+@@ -8,22 +8,3 @@
+ [17:22:55]   [claude-cli:opus] retry 2/2
+ [17:22:55]   [claude-cli:fable] attempt 1 failed (1800.1s): claude CLI timed out after 1800.1s
+ [17:22:55]   [claude-cli:fable] retry 2/2
+-[17:23:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo
+-    suite: GREEN at f253fa7 — 8,233 passed, 0 failed  [recorded at f253fa7, HEAD is 6ed7cf6, 55 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 8,634 chars, about 2,158 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo
+-    cc2 attempt 2 confined to a FRESH copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo
+-[17:23:07]   [claude-cli:opus] attempt 2 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo
+-[17:23:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo
+-    fable attempt 2 confined to a FRESH copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo
+-[17:23:07]   [claude-cli:fable] attempt 2 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo
+-[17:42:00]   [claude-cli:opus] 169 tool call(s) this attempt, 169 in total
+-[17:42:00]   [claude-cli:opus] done (1133.1s, 23567 chars)
+-  [cc2] ok=True chars=23567 tools=169 2945.1s
+-[17:52:00]   [claude-cli:fable] 79 tool call(s) this attempt, 79 in total
+-[17:52:00]   [claude-cli:fable] done (1733.3s, 17613 chars)
+-  [fable] ok=True chars=17613 tools=79 3545.3s
+-[17:52:00] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-2:bench/tests/test_paid_dispatch_needs_authorisation_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_paid_dispatch_needs_authorisation_2026-09-28.py	2026-09-28 03:08:59
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo/bench/tests/test_paid_dispatch_needs_authorisation_2026-09-28.py	2026-09-28 17:31:00
+@@ -137,3 +137,66 @@
+         free = mod.select_models("", "r")
+         assert free, "select_models returned no seats at all"
+         assert all(s[2] == "claude_cli" for s in free)
++
++
++class TestTheShippedLedgerIsActuallyReachable:
++    """THE CASE EVERY TEST ABOVE MONKEYPATCHES AWAY.
++
++    Added 2026-09-28 by the panel's check-my-work round. Each case above binds
++    `PAID_LEDGER` to a `tmp_path` file it writes itself -- including
++    `TestAnAuthorisedRoundIsAllowed`, the anti-vacuity case. So the suite proved
++    the PARSER handles a synthetic ledger, and never asked the only question that
++    decides whether the guard is usable: is the ledger the module actually points
++    at on disk, and does it parse?
++
++    It was not. `PAID_LEDGER` resolved to `bench/paid_dispatch_authorisations.json`
++    -- a file that has never existed -- while the committed ledger sits at
++    `bench/directives/universal/paid_dispatch_authorisations.json` and carries a
++    different schema. `_paid_is_authorised` returned `(False, "no authorisation
++    ledger at ...")` for EVERY round, including the rounds the founder authorised
++    in his own words. That failed closed, so no money was at risk; what it broke
++    was the module's claim that "paid dispatch remains available by exactly the
++    same route it always had". It was not available by any route.
++
++    NO MONKEYPATCH BELOW, DELIBERATELY. That is the entire point of the class.
++    """
++
++    def test_the_module_points_at_a_ledger_that_exists(self, mod):
++        assert mod.PAID_LEDGER.is_file(), (
++            f"PAID_LEDGER points at {mod.PAID_LEDGER}, which does not exist; the "
++            "guard refuses every round and paid dispatch is unreachable"
++        )
++
++    def test_the_shipped_ledger_parses_into_entries(self, mod):
++        doc = json.loads(mod.PAID_LEDGER.read_text(encoding="utf-8"))
++        entries = mod._paid_ledger_entries(doc)
++        assert entries, (
++            "the shipped ledger normalises to zero entries; the guard would "
++            "refuse every round whatever it says"
++        )
++        assert all(set(e) == {"round", "quote"} for e in entries)
++
++    def test_a_round_the_founder_authorised_is_allowed(self, mod):
++        """ANTI-VACUITY, AGAINST THE REAL FILE. A guard nothing can satisfy is a
++        guard that gets deleted the first time someone needs it."""
++        doc = json.loads(mod.PAID_LEDGER.read_text(encoding="utf-8"))
++        rounds = [e["round"] for e in mod._paid_ledger_entries(doc) if len(e["quote"]) >= 20]
++        assert rounds, "no shipped entry carries a founder quote of usable length"
++        ok, reason = mod._paid_is_authorised(rounds[0])
++        assert ok, f"shipped ledger names {rounds[0]!r} but the guard refused it: {reason}"
++
++    def test_a_round_the_ledger_does_not_name_is_still_refused(self, mod):
++        """The fix must not turn the guard into a rubber stamp."""
++        ok, reason = mod._paid_is_authorised("a_round_no_one_ever_authorised_2099-01-01")
++        assert not ok
++        assert "no ledger entry" in reason
++
++    def test_the_committed_shape_is_not_read_as_a_prefix_or_range(self, mod):
++        """The ledger's own preamble forbids ranges, prefixes and wildcards."""
++        doc = json.loads(mod.PAID_LEDGER.read_text(encoding="utf-8"))
++        named = {e["round"] for e in mod._paid_ledger_entries(doc)}
++        victim = sorted(named)[0]
++        assert not mod._paid_is_authorised(victim + "_extra")[0], (
++            "a round name extending an authorised one was authorised; the guard "
++            "has drifted from 'was this authorised?' to 'does this look like it?'"
++        )
+
+### cc2:attempt-2:bench/tests/test_proposals_exclude_dispatcher_own_output_2026-09-28.py
+--- /dev/null	2026-09-28 17:52:06
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo/bench/tests/test_proposals_exclude_dispatcher_own_output_2026-09-28.py	2026-09-28 17:35:17
+@@ -0,0 +1,149 @@
++"""`seat_proposals.diff` must not count the dispatcher's own log output.
++
++THE HALF-FIX THIS CLOSES. `panel_sandbox._is_dispatcher_own_output` (2026-09-28)
++cites TWO symptoms from the `founder_verdicts_2026-09-28` round, on which BOTH
++seats failed at authentication with 0 tool calls and wrote nothing at all:
++
++    "harvested 3394 byte(s) of seat-written files"
++    "seats proposed edits to 8 file(s)"
++
++Only the first flows through `harvest()`. The second is built at
++`confer_maths_panel_2026-09-05.py` by calling `panel_sandbox.changes()` directly,
++with no run-log filter -- so it kept counting the dispatcher's own
++`bench/logs/<run>/` writes as seat proposals, and wrote them into
++`seat_proposals.diff`, which is precisely the file a reader opens to find out
++what the seats proposed. The provenance defect the fix was written to kill
++survived in the louder of the two numbers.
++
++NOT TOO WIDE, AND THAT IS THE HALF THAT COULD DO REAL DAMAGE. A seat asked to
++write a measurement under `bench/logs/` -- but OUTSIDE this run's directory --
++must still be reported. `TestASeatsOwnWriteUnderBenchLogsSurvives` is the case
++that would catch an over-wide exclusion, and it is the case the founder's brief
++asked for by name.
++"""
++from __future__ import annotations
++
++import importlib.util
++import sys
++from pathlib import Path
++
++import pytest
++
++ROOT = Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(ROOT / "bench"))
++import panel_sandbox as ps  # noqa: E402
++
++
++@pytest.fixture
++def repo_and_copy(tmp_path):
++    """A canonical tree and a seat's copy of it, as the dispatcher makes them."""
++    repo = tmp_path / "repo"
++    (repo / "bench" / "logs" / "thisrun").mkdir(parents=True)
++    (repo / "bench" / "logs" / "otherrun").mkdir(parents=True)
++    (repo / "bench" / "dm").mkdir(parents=True)
++    (repo / "bench" / "dm" / "_convergence.py").write_text("x = 1\n", encoding="utf-8")
++    (repo / "bench" / "logs" / "thisrun" / "cc2.json").write_text(
++        '{"elapsed_s": 11.0}\n', encoding="utf-8")
++
++    copy = tmp_path / "copy"
++    copy.mkdir()
++    for p in repo.rglob("*"):
++        t = copy / p.relative_to(repo)
++        t.parent.mkdir(parents=True, exist_ok=True)
++        if p.is_file():
++            t.write_bytes(p.read_bytes())
++    return repo, copy
++
++
++class TestTheDispatchersOwnWriteIsNotASeatProposal:
++    def test_a_run_log_write_is_excluded(self, repo_and_copy):
++        """THE 0-WORK ROUND. The seat wrote nothing; only `elapsed_s` drifted."""
++        repo, copy = repo_and_copy
++        (copy / "bench" / "logs" / "thisrun" / "cc2.json").write_text(
++            '{"elapsed_s": 11.9}\n', encoding="utf-8")
++
++        run_log_rel = ps._run_log_dir(repo / "bench" / "logs" / "thisrun", repo)
++        assert run_log_rel == "bench/logs/thisrun"
++
++        raw = ps.changes(copy, repo)
++        assert "bench/logs/thisrun/cc2.json" in raw, (
++            "precondition failed: changes() should see the drifted log; without "
++            "it this test proves nothing"
++        )
++        kept = {r for r in raw if not ps._is_dispatcher_own_output(r, run_log_rel)}
++        assert kept == set(), (
++            f"a round on which the seat wrote nothing still reports proposals: {kept}"
++        )
++
++
++class TestASeatsOwnWriteUnderBenchLogsSurvives:
++    """NOT TOO WIDE. The exclusion CC1's first attempt would have made -- the whole
++    of `bench/` -- is the failure this guards. So is excluding `bench/logs/`
++    wholesale."""
++
++    def test_a_seat_measurement_in_another_run_directory_is_kept(self, repo_and_copy):
++        repo, copy = repo_and_copy
++        (copy / "bench" / "logs" / "otherrun").mkdir(parents=True, exist_ok=True)
++        (copy / "bench" / "logs" / "otherrun" / "seat_measurement.json").write_text(
++            '{"wilson": [0.1, 0.2]}\n', encoding="utf-8")
++        run_log_rel = ps._run_log_dir(repo / "bench" / "logs" / "thisrun", repo)
++        raw = ps.changes(copy, repo)
++        kept = {r for r in raw if not ps._is_dispatcher_own_output(r, run_log_rel)}
++        assert "bench/logs/otherrun/seat_measurement.json" in kept, (
++            "a seat's measurement written under bench/logs/ but outside this run "
++            "was dropped; the exclusion is too wide"
++        )
++
++    def test_ordinary_seat_code_under_bench_is_kept(self, repo_and_copy):
++        """`parents[2]` would have excluded all of `bench/`. This is that case."""
++        repo, copy = repo_and_copy
++        (copy / "bench" / "dm" / "_convergence.py").write_text("x = 2\n", encoding="utf-8")
++        run_log_rel = ps._run_log_dir(repo / "bench" / "logs" / "thisrun", repo)
++        raw = ps.changes(copy, repo)
++        kept = {r for r in raw if not ps._is_dispatcher_own_output(r, run_log_rel)}
++        assert "bench/dm/_convergence.py" in kept
++
++    def test_a_prefix_collision_is_not_swallowed(self, repo_and_copy):
++        """`thisrun2` must not be eaten by the exclusion for `thisrun`."""
++        repo, copy = repo_and_copy
++        (copy / "bench" / "logs" / "thisrun2").mkdir(parents=True, exist_ok=True)
++        (copy / "bench" / "logs" / "thisrun2" / "seat.json").write_text("{}\n",
++                                                                       encoding="utf-8")
++        run_log_rel = ps._run_log_dir(repo / "bench" / "logs" / "thisrun", repo)
++        assert not ps._is_dispatcher_own_output("bench/logs/thisrun2/seat.json",
++                                                run_log_rel)
++
++
++class TestTheFourthDestinationShape:
++    """The brief asked for a 4th shape CC1's docstring did not enumerate. It is
++    the run directory ITSELF, which is what the proposals call site passes: the
++    docstring lists only the three HARVEST tails, all of which sit BELOW the run
++    directory. `_run_log_dir` happens to handle it, because it tests `dest`
++    before `dest.parents` -- but that was never asserted anywhere, so it was luck
++    rather than a property. It is asserted now."""
++
++    @pytest.mark.parametrize("tail", [
++        "bench/logs/myround/sandbox_harvest/cc2/attempt-1",
++        "bench/logs/myround/worktree_harvest/some_model",
++        "bench/logs/myround/panel_worktree_harvest",
++        "bench/logs/myround",                      # <- the 4th: the run dir itself
++    ])
++    def test_every_shape_resolves_to_the_same_run_directory(self, tmp_path, tail):
++        repo = tmp_path / "repo"
++        (repo / tail).mkdir(parents=True)
++        assert ps._run_log_dir(repo / tail, repo) == "bench/logs/myround"
++
++
++class TestTheCallSiteIsActuallyWired:
++    """An unreached guard guards nothing -- the additive standard's own words."""
++
++    def test_the_proposals_block_filters_through_the_shared_rule(self):
++        src = (ROOT / "bench" / "confer_maths_panel_2026-09-05.py").read_text(
++            encoding="utf-8")
++        i = src.index("proposals = {}")
++        block = src[i:src.index("seats proposed edits to", i)]
++        assert "_is_dispatcher_own_output" in block, (
++            "the proposals block still calls changes() unfiltered; the harvest fix "
++            "repairs one of the two numbers its own docstring names"
++        )
++        assert "_run_log_dir" in block
+
+### cc2:attempt-2:explorer/index.html
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/explorer/index.html	2026-08-27 01:01:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo/explorer/index.html	2026-09-28 17:31:34
+@@ -287,22 +287,67 @@
+   const ctx2 = c2.getContext('2d');
+   const dmax = Math.max(o.theta*2, ...sim.steps.map(s=>Math.abs(s.dR)))*1.15;
+   frame(ctx2, c2.width, c2.height, dmax);
+-  let stopAt = null;
++  // THE FIRST CROSSING IS NOT THE STOP. CORRECTED 2026-09-28, panel check-my-work
++  // round, fable seat. This page is served publicly, so the bug was public too.
++  //
++  // WHAT WAS WRONG, derived rather than asserted. The bars plot
++  //     dR = R_old - R_new
++  // for the three-phase recursion above. SymPy reduces that, at sigma=1 and nu=0,
++  // to exactly q*R*(1-R)/(1-q*R) -- the quantity MATHEMATICAL_APPENDIX.md:217
++  // qualified on 2026-09-21 for having a PREMATURE-STOP BAND. At nu=0 the general
++  // form is sigma times that same expression, so the pathology is inherited whole:
++  // dR is UNIMODAL in R, peaking at
++  //     R* = (1 - sqrt(1-q)) / q
++  // which SymPy confirms is independent of sigma. ABOVE that peak the relation
++  // INVERTS -- as risk falls toward R*, the per-pass gain RISES. A small dR at high
++  // R therefore means "not yet past the peak", not "exhausted".
++  //
++  // The old code latched `stopAt` on the FIRST pass under theta and never revised
++  // it. Over a 129,960-point sweep of this page's own slider ranges, 28,942 points
++  // (22.2699%) printed "stop ~ pass N" while a LATER pass on the same chart still
++  // cleared theta -- up to 4.7x the gain at the announced stop, with perturbation
++  // off. The page contradicted its own bars. That needs no appeal to the appendix.
++  //
++  // WHAT IS AND IS NOT CHANGED. `dR` itself is UNTOUCHED and remains correct: it is
++  // the actual drop in the trajectory drawn above, and the per-bar colour still
++  // reads off theta, which is what the theta slider legitimately controls. Only the
++  // STOP ANNOTATION changes -- from the first crossing to the pass after which the
++  // rule is genuinely exhausted, plus a warning when the naive reading would have
++  // stopped early. Nothing is removed; the premature reading is shown, not hidden,
++  // because a reader who has seen the old page needs to know it moved.
++  let firstCross = null;
+   sim.steps.forEach(s=>{
+     const px = X(c2.width, s.i);
+     const bw = (c2.width-M.l-M.r)/N*0.62;
+     const good = s.dR >= o.theta;
+-    if (stopAt===null && !good && s.i>1) stopAt = s.i;
++    if (firstCross===null && !good && s.i>1) firstCross = s.i;
+     ctx2.fillStyle = s.dR < 0 ? '#B3532E' : (good ? '#2E7D5B' : '#C7CDC2');
+     const h0 = Y(c2.height, 0, dmax);
+     const h1 = Y(c2.height, Math.max(0,s.dR), dmax);
+     ctx2.fillRect(px-bw/2, Math.min(h0,h1), bw, Math.abs(h0-h1)||1);
+   });
++  // EXHAUSTION, NOT FIRST CROSSING: the earliest pass from which dR stays under
++  // theta for every remaining pass. Scanned backwards, so one later bar above
++  // theta -- whether from the sub-peak rise or from the pass-22 perturbation --
++  // correctly pushes the stop later instead of being silently overruled.
++  let stopAt = null;
++  for (let k = sim.steps.length - 1; k >= 0; k--){
++    if (sim.steps[k].dR >= o.theta) break;
++    if (sim.steps[k].i > 1) stopAt = sim.steps[k].i;
++  }
++  const rStarPeak = sim.q > 0 ? (1 - Math.sqrt(1 - sim.q)) / sim.q : Infinity;
+   line(ctx2,c2.width,c2.height, Array(N+1).fill(o.theta), dmax,'#C08A00',1.5,[6,4]);
+   if (stopAt){
+     ctx2.fillStyle='#C08A00'; ctx2.font='12px Georgia, serif';
+     ctx2.fillText('stop ≈ pass '+stopAt, X(c2.width,stopAt)+6, M.t+12);
+   }
++  if (firstCross && firstCross !== stopAt){
++    const sC = sim.steps[firstCross-1];
++    ctx2.fillStyle='#B3532E'; ctx2.font='12px Georgia, serif';
++    ctx2.fillText('△ pass '+firstCross+' dips under θ but is NOT the stop'+
++      (sC.R_old > rStarPeak ? ' — still above the peak R* = '+rStarPeak.toFixed(3) : ''),
++      X(c2.width,firstCross)+6, M.t+28);
++  }
+ 
+   // regime sentence
+   const last = sim.steps[sim.steps.length-1];
+
+### cc2:attempt-2:hooks/ffafp_audit.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/ffafp_audit.py	2026-09-24 04:17:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo/hooks/ffafp_audit.py	2026-09-28 17:37:24
+@@ -210,6 +210,21 @@
+ 
+ #: Explicit in-place mutations that carry no redirect at all.
+ _INPLACE = re.compile(r"(?:\bsed\s+-i\b|\|\s*tee\b|\btee\s+[-\w./~$]|\bgit\s+apply\b|\bpatch\s+-p\d)")
++
++#: THE OPERANDS OF AN IN-PLACE EDIT, where the command states them literally.
++#: `sed -i` is matched with its optional BSD backup-extension argument, any
++#: `-e SCRIPT` options and an optional bare script, then the trailing file.
++#: `tee` is matched with its first file argument. `git apply` and `patch` are
++#: DELIBERATELY ABSENT: their targets live inside the diff, not on the command
++#: line, so naming one would be a guess -- and for those the `<in-place>`
++#: sentinel remains the honest answer.
++_INPLACE_OPERAND = re.compile(
++    r"""\bsed\s+-[a-zA-Z]*i[a-zA-Z.]*\s+"""
++    r"""(?:(?:'[^']*'|"[^"]*")\s+)?"""
++    r"""(?:-e\s+(?:'[^']*'|"[^"]*"|\S+)\s+)*"""
++    r"""(?:(?:'[^']*'|"[^"]*"|[a-zA-Z]\S*[/|]\S*)\s+)?"""
++    r"""(?P<path>[\w.~$/@+-]+)"""
++    r"""|\btee\s+(?:-[aip]+\s+)*(?P<path2>[\w.~$/@+-]+)""")
+ 
+ #: A plain shell assignment (`SP=/tmp/x`, `export REPO="/Users/x/proj"`), visible
+ #: in the command's own text. Values carrying `$` or a backtick are NOT taken:
+@@ -508,6 +523,35 @@
+         # (BSD sed needs an extension argument, GNU sed does not), so the mutation is
+         # recorded with an unknown path rather than guessed wrongly.
+         out.append("<in-place>")
++        # ...BUT THE SENTINEL ALONE LETS EVERY IN-PLACE EDIT PAST THE STOP GATE.
++        # Added 2026-09-28, panel check-my-work round, fable seat. MEASURED by
++        # CALLING this module, not by reading it:
++        #     'sed -i "" s/a/b/ bench/dm/_convergence.py' -> ['<in-place>'],
++        #        classify_path('<in-place>') == 'other', code_touched == False
++        #     'echo x > bench/dm/_convergence.py'         -> ['bench/dm/...py'],
++        #        code_touched == True
++        # `<in-place>` has no extension, so it falls to the `other` branch of
++        # `classify_path`; `audit()` computes `code_touched = "code" in kinds` as
++        # False; and `ffafp_stop_gate.py:106` (`if v.get("code")`) never fires.
++        # The write IS recorded -- `is_work` is True -- so the turn reads as
++        # audited while FIND / FOLLOW / FIX / P-PASS are all skipped. That is the
++        # worst direction for such a failure to run: it looks like coverage.
++        #
++        # NOTHING IS REMOVED. The sentinel stays, because it is still the honest
++        # answer for `git apply p.diff` and `patch -p1 < p.diff`, where the
++        # touched files live inside the diff and this module genuinely cannot
++        # know them. What is ADDED is the operands it CAN read: the trailing file
++        # of `sed -i`, and the file argument of `tee`. Those are classified by
++        # the ordinary rules, so a `.py` target sets `code_touched` and a `.md`
++        # target sets `doc`. No new guessing and no new false accusation: a path
++        # is added only when the command states it literally.
++        for _m in _INPLACE_OPERAND.finditer(cmd):
++            _cand = resolve_shell_vars(
++                ((_m.group("path") or _m.group("path2")) or "").strip().strip("\"'"),
++                assigns)
++            if (_cand and not _NOT_A_PATH.search(_cand)
++                    and _PATH_SHAPED.match(_cand) and _cand not in out):
++                out.append(_cand)
+ 
+     # A WRITE INSIDE A HEREDOC BODY IS STILL A WRITE (closed 2026-09-20).
+     #
+
+### cc2:attempt-2:scripts/explorer_stopping_rule_2026-09-28.py
+--- /dev/null	2026-09-28 17:52:05
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo/scripts/explorer_stopping_rule_2026-09-28.py	2026-09-28 17:33:50
+@@ -0,0 +1,177 @@
++#!/usr/bin/env python3
++"""Does the PUBLISHED explorer's stop annotation contradict its own bars?
++
++`explorer/index.html` is served at
++`jebus197.github.io/Constraint_Engineering/explorer/`. Its lower chart plots the
++per-pass gain `dR = R_old - R_new` of the Stage 5 three-phase recursion, draws a
++dashed line at the slider `theta`, and prints `stop ~ pass N`.
++
++THE DEFECT THIS FALSIFIES. The old code latched `stopAt` on the FIRST pass whose
++bar fell under theta and never revised it. But `dR` is NOT monotone in `R`. SymPy
++gives, for the recursion in the page,
++
++    dR(R) = R - ( (sigma*R*(1-q)/(1-q*R) + (1-sigma)*R) * (1-nu) + nu )
++
++and at nu = 0 that is exactly  sigma * q*R*(1-R)/(1-q*R)  -- sigma times the
++quantity `docs/MATHEMATICAL_APPENDIX.md:217` qualified on 2026-09-21. Its maximum
++in R sits at R* = (1 - sqrt(1-q))/q, INDEPENDENT of sigma, so the page inherits the
++appendix's premature-stop band whole. Above that peak the relation inverts: as risk
++falls toward R*, the per-pass gain RISES. A first crossing at high R therefore means
++"not yet past the peak", not "exhausted" -- and the page's own default preset opens
++at pi = 0.85, above R* across most of the p range.
++
++WHY THIS NEEDS NO APPEAL TO THE APPENDIX. It checks a property the page owes
++itself: if the page says "stop at pass N", no bar after pass N may stand above the
++theta line the page drew. Internal consistency, decided by executing the page's OWN
++code. The separate disagreement about which stopping QUANTITY is correct -- this
++seat holds that the appendix's `R*q*sigma*(1-nu) - nu*(1-R)` is the improvement of a
++DIFFERENT recursion and must NOT be pasted over `dR` -- is deliberately kept out of
++it, so the verdict does not depend on winning that argument.
++
++IT READS THE REAL FILE. `simulate()` and the stop-computation block are extracted
++verbatim from `explorer/index.html` and executed under node. Nothing is retyped: a
++model-authored copy of the recursion would prove nothing about the published page.
++Canvas calls are stubbed, because the arithmetic under test touches no canvas.
++
++NO WOLFRAM. Anyone reproducing this project must not need it installed.
++
++Exit 0 = consistent. `FALSIFIED` + AssertionError = the page contradicts itself.
++"""
++from __future__ import annotations
++
++import json
++import math
++import re
++import shutil
++import subprocess
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++#: Optional argv override so CI can point at a built/staged copy, and so the
++#: DISCRIMINATION check below can be run against a deliberately reverted page.
++#: A falsifier that has never been shown to FAIL on the defect it names is a
++#: hypothesis; `scripts/explorer_stopping_rule_2026-09-28.py <reverted.html>`
++#: is how that was demonstrated.
++PAGE = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "explorer" / "index.html"
++
++#: The page's own slider ranges, read off its `<input type=range>` elements. The
++#: sweep stays inside what a visitor can actually select; a defect reachable only
++#: outside the sliders would not be a defect of the published page.
++SWEEP = {
++    "pi":    [x / 100 for x in range(5, 100, 5)],
++    "p":     [x / 100 for x in range(5, 96, 5)],
++    "sigma": [0.0, 0.25, 0.5, 0.75, 0.9, 1.0],
++    "nu":    [0.0, 0.05, 0.1, 0.2, 0.3, 0.5],
++    "theta": [0.001, 0.005, 0.01, 0.02, 0.05],
++    "pert":  [0.0, 0.3],
++}
++
++
++def _extract(src: str):
++    """(simulate source, stop-computation source), both verbatim from the page.
++
++    The stop block runs from the first `let firstCross`/`let stopAt` declaration to
++    the `line(ctx2, ...)` call that draws the theta rule. Lines touching the drawing
++    context are dropped -- the only part that cannot run headless, and it computes
++    nothing the stop depends on. BOTH the pre- and post-fix shapes of the block
++    survive this treatment, which is what lets one falsifier discriminate between
++    them rather than merely failing to parse the old one.
++    """
++    m = re.search(r"function simulate\(o\)\{.*?\n\}", src, re.S)
++    if not m:
++        raise SystemExit("simulate() not found in explorer/index.html -- the page "
++                         "changed shape; fix this extractor, not the result")
++    start = re.search(r"^\s*let (?:firstCross|stopAt) = null;", src, re.M)
++    end = re.search(r"^\s*line\(ctx2,", src, re.M)
++    if not start or not end or end.start() < start.start():
++        raise SystemExit("the stop-computation block was not located in "
++                         "explorer/index.html -- fix this extractor, not the result")
++    block = "\n".join(ln for ln in src[start.start():end.start()].splitlines()
++                      if "ctx2" not in ln)
++    return m.group(0), block
++
++
++HARNESS = r"""
++%(simulate)s
++// Canvas stubs. The stop arithmetic touches none of these; they exist so the
++// page's own lines execute UNALTERED rather than being rewritten to fit the test.
++const c2 = {width: 900, height: 260};
++const M = {l:52, r:16, t:14, b:30};
++const X = () => 0, Y = () => 0;
++// The grid is fed on STDIN: 129,960 cases overflow argv (Errno 7).
++const cases = JSON.parse(require('fs').readFileSync(0, 'utf8'));
++const out = [];
++for (const o of cases){
++  const sim = simulate(o);
++  const dmax = 1;
++  %(block)s
++  const cut = (typeof stopAt === 'undefined' || stopAt === null) ? 1e9 : stopAt;
++  const after = sim.steps.filter(s => s.i > cut).map(s => s.dR);
++  out.push({o, stopAt: (typeof stopAt === 'undefined') ? null : stopAt,
++            worstAfter: after.length ? Math.max.apply(null, after) : null});
++}
++process.stdout.write(JSON.stringify(out));
++"""
++
++
++def main() -> int:
++    if not shutil.which("node"):
++        print("node is not installed; this falsifier could not run and has "
++              "therefore VERIFIED NOTHING.", file=sys.stderr)
++        return 4
++
++    src = PAGE.read_text(encoding="utf-8")
++    simulate, block = _extract(src)
++    n_match = re.search(r"\bN\s*=\s*(\d+)", src)
++    pert_match = re.search(r"PERT_STEP\s*=\s*(\d+)", src)
++    prelude = (f"const N = {n_match.group(1) if n_match else 40};\n"
++               f"const PERT_STEP = {pert_match.group(1) if pert_match else 22};\n")
++
++    cases = [{"pi": pi, "p": p, "eta": 1, "sigma": sg, "nu": nu,
++              "theta": th, "pert": pe}
++             for pi in SWEEP["pi"] for p in SWEEP["p"] for sg in SWEEP["sigma"]
++             for nu in SWEEP["nu"] for th in SWEEP["theta"] for pe in SWEEP["pert"]]
++
++    js = prelude + HARNESS % {"simulate": simulate, "block": block}
++    r = subprocess.run(["node", "-e", js], input=json.dumps(cases),
++                       capture_output=True, text=True)
++    if r.returncode != 0:
++        print(r.stderr[:2000], file=sys.stderr)
++        raise SystemExit("the extracted page code did not run; that is an "
++                         "EXTRACTOR failure, not a demonstration of the defect")
++    rows = json.loads(r.stdout)
++
++    bad = [x for x in rows
++           if x["stopAt"] is not None and x["worstAfter"] is not None
++           and x["worstAfter"] >= x["o"]["theta"]]
++    announced = sum(1 for x in rows if x["stopAt"] is not None)
++
++    print(f"slider-reachable grid points swept      : {len(rows)}")
++    print(f"points where the page announces a stop  : {announced}")
++    print(f"points where a LATER bar clears theta   : {len(bad)} "
++          f"= {100.0*len(bad)/len(rows):.4f}%")
++    q = 0.45
++    print(f"peak of dR at q={q} (default preset)   : R* = (1-sqrt(1-q))/q = "
++          f"{(1-math.sqrt(1-q))/q:.6f}  -- independent of sigma, SymPy-derived")
++
++    if bad:
++        worst = max(bad, key=lambda x: x["worstAfter"] / max(x["o"]["theta"], 1e-12))
++        print("FALSIFIED")
++        print(f"  worst case: {worst['o']}")
++        print(f"    announced stop = pass {worst['stopAt']}, yet a later pass "
++              f"reaches dR = {worst['worstAfter']:.6f} >= theta "
++              f"= {worst['o']['theta']}")
++        raise AssertionError(
++            f"explorer/index.html contradicts its own chart at {len(bad)} of "
++            f"{len(rows)} slider-reachable points: it prints 'stop ~ pass N' "
++            f"while drawing a later bar above the theta line it drew")
++
++    print()
++    print("CONSISTENT: wherever the page announces a stop, no later bar on the "
++          "same chart stands above theta.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-2:scripts/shell_grep_blind_spot_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/shell_grep_blind_spot_2026-09-28.py	2026-09-28 11:17:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo/scripts/shell_grep_blind_spot_2026-09-28.py	2026-09-28 17:36:21
+@@ -22,6 +22,10 @@
+ """
+ from __future__ import annotations
+ 
++import os
++import pathlib
++import re
++import shlex
+ import subprocess
+ import sys
+ 
+@@ -29,24 +33,74 @@
+             "PANEL_ONLY", "wolframscript", "falsifier", "gamma_critical"]
+ 
+ 
+-def counts(pattern: str) -> tuple[int, int]:
++SNAPSHOT_DIR = pathlib.Path.home() / ".claude" / "shell-snapshots"
++
++
++def snapshot() -> pathlib.Path | None:
++    """The snapshot to measure against, and it is NAMED rather than raced for.
++
++    THE FIRST VERSION SAID `ls -t ... | head -1`, AND THAT IS A RACE, NOT A
++    CHOICE. This machine holds 36 snapshots from different sessions. `-t` picks
++    whichever was written most recently ANYWHERE, so the subject of the
++    measurement is decided by whatever other session last started -- and the
++    published figure (3743/5245 = 71.3632%) carries no record of which snapshot
++    produced it, so it cannot be reproduced even in principle.
++
++    It is not hypothetical. Re-running the original script on 2026-09-28 in the
++    panel sandbox selected `snapshot-zsh-1790612596185-jruwbp.sh`, which defines
++    NO `grep` function at all, and the run came back VACUOUS on all 8 patterns.
++    The `is_vacuous` guard did its job and refused loudly -- that part of the
++    design is vindicated -- but the headline percentage did not reproduce.
++
++    So: honour `CDSFL_SHELL_SNAPSHOT` if set, else take the newest snapshot that
++    ACTUALLY DEFINES a `grep` function, else fall back to the newest of any kind
++    so the vacuity guard still gets to speak. The chosen file is printed with the
++    result, because a measurement of a wrapper that does not say WHICH wrapper is
++    not a measurement anyone can check.
++    """
++    override = os.environ.get("CDSFL_SHELL_SNAPSHOT")
++    if override:
++        p = pathlib.Path(override).expanduser()
++        return p if p.is_file() else None
++    if not SNAPSHOT_DIR.is_dir():
++        return None
++    snaps = sorted(SNAPSHOT_DIR.glob("snapshot-*.sh"),
++                   key=lambda p: p.stat().st_mtime, reverse=True)
++    for p in snaps:
++        try:
++            body = p.read_text(encoding="utf-8", errors="replace")
++        except OSError:
++            continue
++        #: BOTH DECLARATION FORMS. Claude Code writes the shadow as the ksh/zsh
++        #: `function grep {` -- NO PARENTHESES -- so a detector keyed on
++        #: `grep()` finds nothing and silently falls through to a snapshot with
++        #: no wrapper. That is how this selector reproduced the very failure it
++        #: was added to prevent, on its first run. Measured: 2 of the 36
++        #: snapshots on this machine carry the shadow, so `ls -t | head -1` had
++        #: about a 94% chance of choosing one that cannot make the measurement.
++        if re.search(r"^\s*(?:function\s+grep\s*(?:\(\))?\s*\{|grep\s*\(\)\s*\{)",
++                     body, re.M) or re.search(r"^\s*alias\s+grep=", body, re.M):
++            return p
++    return snaps[0] if snaps else None
++
++
++def counts(pattern: str, snap: pathlib.Path | None) -> tuple[int, int]:
+     """(files the session's grep finds, files /usr/bin/grep finds)."""
+     script = (
+         f'grep -rl {pattern!r} . 2>/dev/null | wc -l; '
+         f'/usr/bin/grep -rl {pattern!r} . 2>/dev/null | wc -l'
+     )
+-    r = subprocess.run(["zsh", "-c", f"source ~/.claude/shell-snapshots/"
+-                        f"$(ls -t ~/.claude/shell-snapshots/ | head -1) 2>/dev/null; {script}"],
+-                       capture_output=True, text=True)
++    src = f"source {shlex.quote(str(snap))} 2>/dev/null; " if snap else ""
++    r = subprocess.run(["zsh", "-c", src + script], capture_output=True, text=True)
+     lines = [l.strip() for l in r.stdout.split() if l.strip().isdigit()]
+     if len(lines) != 2:
+         return (-1, -1)
+     return int(lines[0]), int(lines[1])
+ 
+ 
+-def rows() -> list[tuple[str, int, int]]:
++def rows(snap: pathlib.Path | None = None) -> list[tuple[str, int, int]]:
+     """(pattern, files the session's grep finds, files /usr/bin/grep finds)."""
+-    return [(p, *counts(p)) for p in PATTERNS]
++    return [(p, *counts(p, snap)) for p in PATTERNS]
+ 
+ 
+ def is_vacuous(measured: list[tuple[str, int, int]]) -> bool:
+@@ -70,8 +124,12 @@
+ 
+ 
+ def main() -> int:
++    snap = snapshot()
++    #: PROVENANCE, PRINTED. A percentage about "the session's grep" that does not
++    #: name the wrapper it measured cannot be reproduced or refuted.
++    print(f"snapshot under test: {snap if snap else 'NONE FOUND'}")
+     shell_tot = real_tot = 0
+-    measured = rows()
++    measured = rows(snap)
+     print(f"{'pattern':<18}{'session grep':>14}{'/usr/bin/grep':>15}{'unseen':>8}")
+     for name, s, r in measured:
+         if s < 0:
+@@ -90,6 +148,8 @@
+               file=sys.stderr)
+         print("  with itself and measured nothing. Do not read 0% as reassurance.",
+               file=sys.stderr)
++        print(f"  snapshot tried: {snap}. Name one explicitly with "
++              f"CDSFL_SHELL_SNAPSHOT=/path/to/snapshot-zsh-*.sh", file=sys.stderr)
+         return 3
+ 
+     missed = real_tot - shell_tot
+
+### fable:attempt-1:bench/confer_maths_panel_2026-09-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/confer_maths_panel_2026-09-05.py	2026-09-28 03:08:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/bench/confer_maths_panel_2026-09-05.py	2026-09-28 17:18:55
+@@ -453,8 +453,17 @@
+ #: Bound by `main()` once the run directory is known, because the ledger keys on
+ #: the round name. Kept importable at module level so the 37 callers that read
+ #: `MODELS` are unaffected when no run is in progress.
++#: PAID SEATS DO NOT EXIST AT MODULE LEVEL (panel seat, 2026-09-28). The
++#: previous binding honoured PANEL_ONLY verbatim, so `PANEL_ONLY=cx,cgpt` plus
++#: a bare import yielded a MODELS list carrying 2 paid seats with NO ledger
++#: check -- demonstrated by execution: any importer that dispatches from module
++#: state bypasses `select_models` entirely. The ledger can only authorise a
++#: ROUND, and no round exists at import time, so at import time no paid seat
++#: can be authorised. `main()` rebinds through `select_models` (which can
++#: refuse) before any dispatch; importers reading MODELS between imports see
++#: the roster that is actually authorised so far, which is the free one.
+ MODELS = [m for m in _ALL if m[0] in FREE_SEATS] if not _ONLY else [
+-    m for m in _ALL if m[0] in _ONLY.split(",")
++    m for m in _ALL if m[0] in _ONLY.split(",") and m[0] in FREE_SEATS
+ ]
+ 
+ # THE PANEL HAS NEVER RUN UNDER THE CDSFL SCHEMA. Measured 2026-09-07: of the 37
+@@ -818,19 +827,23 @@
+     # BIND THE BRIEF HERE, not at import. See `resolve_brief`.
+     resolve_brief()
+     _validate_brief_or_refuse()
++    # SPEND-GATE 0 OF 2 -- and since 2026-09-28 it really is the earliest: it
++    # decides WHICH seats exist rather than whether the run may proceed. An
++    # empty PANEL_ONLY yields the 2 free seats; naming a paid seat is refused
++    # unless the committed ledger authorises this round. Founder's ruling,
++    # 2026-09-28. Rebinding the module global is what WIRES `select_models`.
++    #
++    # ORDER MATTERS (panel seat, 2026-09-28): this must run BEFORE the suite
++    # gate below, because that gate counts paid seats by reading MODELS -- and
++    # the module-level binding now carries no paid seat, so counting before the
++    # rebind would tell the spend gate there is no spend to protect.
++    global MODELS
++    MODELS = select_models(_ONLY, LOGS.name)
++
+     # SPEND-GATE 2 OF 2, and it runs before any seat is built, for the same
+     # reason the brief check does: main() is the only path to a paid seat.
+     _refuse_if_the_suite_state_is_unknown()
+ 
+-    # SPEND-GATE 0 OF 2 -- EARLIEST OF THE THREE, and it decides WHICH seats exist
+-    # rather than whether the run may proceed. An empty PANEL_ONLY now yields the
+-    # 2 free seats; naming a paid seat is refused unless the committed ledger
+-    # authorises this round. Founder's ruling, 2026-09-28. Rebinding the module
+-    # global is what WIRES `select_models` -- an unreached guard guards nothing,
+-    # which is the failure mode the additive standard names on the addition side.
+-    global MODELS
+-    MODELS = select_models(_ONLY, LOGS.name)
+-
+     paid = [m for m in MODELS if m[2] != "claude_cli"]
+     print(f"=== maths panel — {len(MODELS)} dispatched seats + CC1 ===")
+     print(f"    PAID seats: {', '.join(n for n, _, _ in paid)}  "
+
+### fable:attempt-1:bench/directives/universal/cdsfl_operational.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/universal/cdsfl_operational.md	2026-09-22 11:43:55
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/bench/directives/universal/cdsfl_operational.md	2026-09-28 17:20:05
+@@ -238,6 +238,20 @@
+ consequence threshold.**
+ 
+   Σ_k w_k · E[ΔR]_k > θ
++
++**SCOPE OF THE R·q FORM (propagated from the appendix, 2026-09-28).** The
++`E[ΔR] = R_old · q` above assumes PERFECT REPAIR and NO RE-INJECTION -- it is
++the σ = 1, ν = 0 corner. The general expected improvement is
++
++  E[ΔR] = R · q · σ · (1 − ν) − ν · (1 − R)
++
++which reduces to `R · q` only at σ = 1, ν = 0, and which `R · q` OVERSTATES
++everywhere else (z3: unsat on it ever understating). A stopping rule quoting
++`R · q` while σ < 1 or ν > 0 will continue a loop the general form says is
++already done. Use the general form whenever σ and ν are being modelled at all
++(they are: §3 defines both). This scoping was recorded in
++`docs/MATHEMATICAL_APPENDIX.md` on 2026-09-21 (panel finding, fable seat) and
++had not been propagated to this directive, which every seat reads.
+ 
+ The conditional form is retained above because it is the right quantity for a
+ different question — "how much did this cycle actually buy me, given it found
+
+### fable:attempt-1:bench/logs/check_my_work_2026-09-28/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/check_my_work_2026-09-28/dispatch.log	2026-09-28 17:52:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/bench/logs/check_my_work_2026-09-28/dispatch.log	2026-09-28 16:52:33
+@@ -1,29 +0,0 @@
+-[16:52:55] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo
+-[16:52:55] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo
+-[16:52:55]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo
+-[16:52:55] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo
+-[16:52:55] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo
+-[16:52:55]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo
+-[17:22:55]   [claude-cli:opus] attempt 1 failed (1800.1s): claude CLI timed out after 1800.1s
+-[17:22:55]   [claude-cli:opus] retry 2/2
+-[17:22:55]   [claude-cli:fable] attempt 1 failed (1800.1s): claude CLI timed out after 1800.1s
+-[17:22:55]   [claude-cli:fable] retry 2/2
+-[17:23:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo
+-    suite: GREEN at f253fa7 — 8,233 passed, 0 failed  [recorded at f253fa7, HEAD is 6ed7cf6, 55 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 8,634 chars, about 2,158 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo
+-    cc2 attempt 2 confined to a FRESH copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo
+-[17:23:07]   [claude-cli:opus] attempt 2 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo
+-[17:23:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo
+-    fable attempt 2 confined to a FRESH copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo
+-[17:23:07]   [claude-cli:fable] attempt 2 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo
+-[17:42:00]   [claude-cli:opus] 169 tool call(s) this attempt, 169 in total
+-[17:42:00]   [claude-cli:opus] done (1133.1s, 23567 chars)
+-  [cc2] ok=True chars=23567 tools=169 2945.1s
+-[17:52:00]   [claude-cli:fable] 79 tool call(s) this attempt, 79 in total
+-[17:52:00]   [claude-cli:fable] done (1733.3s, 17613 chars)
+-  [fable] ok=True chars=17613 tools=79 3545.3s
+-[17:52:00] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:bench/tests/test_explorer_expected_gain_2026-09-28.py
+--- /dev/null	2026-09-28 17:52:11
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/bench/tests/test_explorer_expected_gain_2026-09-28.py	2026-09-28 17:20:05
+@@ -0,0 +1,113 @@
++"""The published explorer must stop on E[dR], not on the retired conditional dR.
++
++PANEL SEAT (fable), 2026-09-28, checking CC1's item 1. The appendix retired
++"continue while dR > theta" on 2026-09-21: dR is the change CONDITIONAL on the
++non-detection branch, while the decision precedes the branch. The published
++explorer still coloured a pass green on `s.dR >= o.theta` (the trajectory's own
++decrement, which at sigma=1, nu=0 IS the conditional quantity) and printed
++"stop ~ pass N" from it. DERIVED and verified on SymPy and Wolfram Language:
++
++    E[dR] - dR_explorer = (1-nu)*sigma*q*R^2*(1-q)/(1-q*R) >= 0  everywhere,
++
++so the defect was STRICTLY one-directional -- the explorer could only ever stop
++EARLY, by a factor of 70.3 at R=0.99, q=0.3. The fix bases the stop decision and
++chart-2 bars on E[dR] = R*q*sigma*(1-nu) - nu*(1-R) (appendix general form) and
++KEEPS dR for what it is legitimately for: the trajectory chart, the nu* break-even
++and the dR<0 hard exit (appendix section 1.1), none of which this changes.
++
++If node is present the explorer's OWN JavaScript is executed; the Python
++reimplementation runs everywhere.
++"""
++from __future__ import annotations
++
++import re
++import shutil
++import subprocess
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[2]
++HTML = ROOT / "explorer" / "index.html"
++
++
++def _sim_py(pi, p, eta, sigma, nu, N=40):
++    q = eta * p
++    R = pi
++    steps = []
++    for i in range(1, N + 1):
++        R_old = R
++        R_det = R * (1 - q) / (1 - q * R) if q < 1 else 0.0
++        R_base = sigma * R_det + (1 - sigma) * R_old
++        R_new = R_base * (1 - nu) + nu
++        E = R_old * q * sigma * (1 - nu) - nu * (1 - R_old)
++        steps.append({"dR": R_old - R_new, "E": E, "R_old": R_old})
++        R = R_new
++    return steps
++
++
++def test_the_decision_reads_E_not_dR():
++    src = HTML.read_text(encoding="utf-8")
++    assert "const good = s.E >= o.theta" in src, "stop decision must read E"
++    assert "const good = s.dR >= o.theta" not in src, "retired dR rule still live"
++    assert "stopping threshold on E[ΔR]" in src, "slider still labelled for dR"
++
++
++def test_dR_keeps_its_legitimate_roles():
++    """The fix must not remove what dR is FOR: trajectory, nu*, hard exit."""
++    src = HTML.read_text(encoding="utf-8")
++    assert "dR: R_old - R_new" in src                       # trajectory decrement
++    assert "s.dR < 0" in src                                # net-harm hard exit
++    assert "nuStar" in src                                  # break-even nu*
++
++
++def test_expected_gain_dominates_the_conditional_everywhere():
++    """E - dR = (1-nu)*sigma*q*R^2*(1-q)/(1-q*R) >= 0: no reverse disagreement."""
++    for pi in (0.2, 0.5, 0.85, 0.99):
++        for p in (0.1, 0.3, 0.6, 0.9):
++            for sigma in (0.1, 0.5, 1.0):
++                for nu in (0.0, 0.05, 0.3):
++                    for s in _sim_py(pi, p, 1.0, sigma, nu, N=10):
++                        R, q = s["R_old"], p
++                        closed = (1-nu)*sigma*q*R*R*(1-q)/(1-q*R)
++                        assert s["E"] - s["dR"] >= -1e-12
++                        assert abs((s["E"] - s["dR"]) - closed) < 1e-9
++
++
++def test_the_worked_point_now_continues():
++    """R=0.99, q=0.3, sigma=1, nu=0, theta=0.005: dR says grey, E says green."""
++    s = _sim_py(0.99, 0.3, 1.0, 1.0, 0.0, N=1)[0]
++    assert s["dR"] < 0.005, "the premature-stop point must still exhibit low dR"
++    assert s["E"] >= 0.005, "E must continue at the high-risk point"
++    assert abs(s["E"] / s["dR"] - 70.3) < 0.05
++
++
++def test_the_explorers_own_javascript_agrees_with_the_python_model():
++    """Execute the ACTUAL simulate() from index.html under node, if present."""
++    node = shutil.which("node")
++    if node is None:
++        import pytest
++        pytest.skip("node not installed; the Python reimplementation stands")
++    src = HTML.read_text(encoding="utf-8")
++    m = re.search(r"(function simulate\(o\)\{.*?\n\})", src, re.S)
++    assert m, "simulate() not found in explorer/index.html"
++    js = ("const N = 40; const PERT_STEP = 22;\n" + m.group(1) +
++          "\nconst s = simulate({pi:0.99, p:0.3, eta:1, sigma:1, nu:0, pert:0});"
++          "\nconsole.log(JSON.stringify([s.steps[0].dR, s.steps[0].E]));")
++    r = subprocess.run([node, "-e", js], capture_output=True, text=True, timeout=30)
++    assert r.returncode == 0, r.stderr
++    import json
++    dR, E = json.loads(r.stdout.strip())
++    assert abs(dR - 0.004224751067) < 1e-9
++    assert abs(E - 0.297) < 1e-12
++
++
++def test_the_operational_directive_scopes_the_Rq_corner():
++    """PANEL SEAT (fable), 2026-09-28. The appendix scoped R*q as the sigma=1,
++    nu=0 corner on 2026-09-21, but cdsfl_operational.md section 5 -- the document
++    models actually use -- still taught E[dR] = R*q as THE stopping rule with no
++    scoping. The two standing documents disagreed on the stopping quantity."""
++    doc = (ROOT / "bench" / "directives" / "universal" / "cdsfl_operational.md")
++    text = doc.read_text(encoding="utf-8")
++    assert "R · q · σ · (1 − ν) − ν · (1 − R)" in text, (
++        "the general expected-improvement form is missing from the operational "
++        "stopping rule")
++    assert "σ = 1, ν = 0 corner" in text
+
+### fable:attempt-1:bench/tests/test_explorer_stopping_quantity_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_explorer_stopping_quantity_2026-09-28.py	2026-09-28 16:59:36
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/bench/tests/test_explorer_stopping_quantity_2026-09-28.py	2026-09-28 02:45:56
+@@ -25,7 +25,6 @@
+ from __future__ import annotations
+ 
+ import re
+-import sys
+ from pathlib import Path
+ 
+ import pytest
+@@ -138,138 +137,3 @@
+     # Overstates at any sigma<1 or nu>0: pick the appendix's own worked point.
+     at = {R: sp.Rational(99, 100), q: sp.Rational(3, 10), sigma: 1, nu: sp.Rational(1, 10)}
+     assert sp.simplify(rq.subs(at) - general.subs(at)) > 0
+-
+-
+-class TestTheExplorersOwnBreakEvenIsNotTheModels:
+-    """A SECOND defect, reached by a separate route, running the SAME direction.
+-
+-    `explorer/index.html:177` computes `nuStar = sigma*R*q/(1 - q*R*(1-sigma))`,
+-    the re-injection rate at which it warns that a further pass does net harm.
+-    The appendix's general expected improvement implies its own break-even,
+-    `R*q*sigma/(R*q*sigma - R + 1)`. The denominators differ (`- R*q` against
+-    `- R`), and the explorer's figure is STRICTLY SMALLER everywhere on the open
+-    domain, so it warns of harm earlier than the model supports.
+-
+-    Measured 2026-09-28: at R=0.99, q=0.3, sigma=1 the explorer gives 0.297000
+-    against a true break-even of 0.967427, a ratio of 0.307. Confirmed by z3
+-    (unsat that the explorer's value can exceed it) and independently by Wolfram
+-    Language (`Resolve[ForAll[...]] -> True`). Wolfram is used in the REASONING
+-    only; this file calls SymPy and z3, because a stored falsifier may not require
+-    an installed kernel.
+-
+-    ASSERTED AS THE PERMANENT RELATIONSHIP, not the current defect, so it does not
+-    go red when the explorer is revised.
+-    """
+-
+-    @staticmethod
+-    def _explorer_nustar():
+-        return sigma * R * q / (1 - q * R * (1 - sigma))
+-
+-    @staticmethod
+-    def _appendix_breakeven():
+-        return sp.solve(sp.Eq(_appendix_expected(), 0), nu)[0]
+-
+-    def test_the_two_break_evens_are_not_the_same_expression(self):
+-        d = sp.simplify(self._explorer_nustar() - self._appendix_breakeven())
+-        assert d != 0, "the 2 break-evens are identical; this finding no longer holds"
+-
+-    def test_the_explorer_understates_the_break_even_everywhere(self):
+-        """The direction is what makes it unsafe in one specific way."""
+-        import z3
+-
+-        zR, zq, zs = z3.Reals("R q sigma")
+-        dom = [zR > 0, zR < 1, zq > 0, zq < 1, zs > 0, zs <= 1]
+-        ze = zR * zq * zs / (zR * zq * zs - zR * zq + 1)
+-        za = zR * zq * zs / (zR * zq * zs - zR + 1)
+-        s = z3.Solver()
+-        s.add(dom)
+-        s.add(ze > za)
+-        assert s.check() == z3.unsat, (
+-            "found a point where the explorer's nuStar exceeds the true break-even; "
+-            "the one-sided direction of this defect no longer holds"
+-        )
+-
+-    def test_the_worked_point_ratio(self):
+-        at = {R: sp.Rational(99, 100), q: sp.Rational(3, 10), sigma: 1}
+-        e = sp.simplify(self._explorer_nustar().subs(at))
+-        a = sp.simplify(self._appendix_breakeven().subs(at))
+-        assert abs(float(e) - 0.297) < 1e-9, float(e)
+-        assert abs(float(a) - 0.9674267) < 1e-6, float(a)
+-        assert float(e / a) < 0.31
+-
+-    def test_both_explorer_defects_run_the_same_direction(self):
+-        """Both make the tool stop or warn EARLIER than the model supports.
+-
+-        Stated as a test because 2 independent defects sharing a direction is a
+-        stronger claim than either alone, and a future fix to one must not silently
+-        invert the other.
+-        """
+-        at = {R: sp.Rational(99, 100), q: sp.Rational(3, 10), sigma: 1, nu: 0}
+-        # defect 1: per-pass change understates expected improvement
+-        assert sp.simplify(_appendix_expected().subs(at) - _explorer_dR().subs(at)) > 0
+-        # defect 2: nuStar understates the break-even
+-        at2 = {R: sp.Rational(99, 100), q: sp.Rational(3, 10), sigma: 1}
+-        assert sp.simplify(self._appendix_breakeven().subs(at2)
+-                           - self._explorer_nustar().subs(at2)) > 0
+-
+-
+-class TestTheProducingScriptAgreesWithThisFile:
+-    """EXECUTE, DO NOT RE-DERIVE. Two transcriptions of one page must be compared.
+-
+-    THE DEFECT THIS CLOSES, found 2026-09-28 by the stop gate asking what had been
+-    executed. `scripts/explorer_stopping_rule_is_superseded_2026-09-28.py` produces
+-    every figure quoted to the founder, and NO test executed it -- it appeared in
+-    this file only inside a docstring. All 6 of its functions were unreached, which
+-    the additive standard names as the failure mode responsible for 11 confirmed
+-    defects in this project.
+-
+-    The sharper problem is not that it was unreached but that BOTH FILES
+-    INDEPENDENTLY TRANSCRIBE `explorer/index.html`. If one transcription drifts,
+-    each remains internally consistent and both stay green while disagreeing about
+-    what the published page does. `execute-do-not-grep` is explicit: where both
+-    forms exist as live code, the test must CALL them and compare outputs. So these
+-    tests import the script and check its functions against this file's own
+-    derivation, rather than trusting that 2 people typed the same formula twice.
+-    """
+-
+-    @pytest.fixture(scope="class")
+-    def script(self):
+-        import importlib.util
+-
+-        path = ROOT / "scripts" / "explorer_stopping_rule_is_superseded_2026-09-28.py"
+-        assert path.is_file(), f"missing {path}"
+-        spec = importlib.util.spec_from_file_location("explorer_producer", path)
+-        m = importlib.util.module_from_spec(spec)
+-        sys.modules["explorer_producer"] = m
+-        spec.loader.exec_module(m)
+-        return m
+-
+-    def test_the_scripts_dR_matches_this_files_dR(self, script):
+-        """The 2 transcriptions of the explorer's recursion must be one formula."""
+-        theirs = script.explorer_dR_sym(R, q, sigma, nu)
+-        mine = _explorer_dR()
+-        assert sp.simplify(sp.together(theirs - mine)) == 0, (
+-            f"the producing script and this test transcribe explorer/index.html "
+-            f"differently: {sp.simplify(theirs)} vs {sp.simplify(mine)}"
+-        )
+-
+-    def test_the_scripts_expected_matches_this_files_expected(self, script):
+-        theirs = script.appendix_expected(R, q, sigma, nu)
+-        mine = _appendix_expected()
+-        assert sp.simplify(sp.together(theirs - mine)) == 0
+-
+-    def test_the_scripts_checks_run_without_error(self, script, capsys):
+-        """The functions are CALLED, so a broken one fails here rather than the
+-        next time a figure is quoted to the founder."""
+-        script.identity_check()
+-        script.nustar_check()
+-        out = capsys.readouterr().out
+-        assert "symbolically identical         True" in out, out
+-        assert "identical?                     False" in out, out
+-
+-    def test_the_script_reports_the_one_sided_z3_result(self, script, capsys):
+-        """ANTI-VACUITY: the script must actually reach its solver, not print a
+-        heading and stop."""
+-        script.nustar_check()
+-        out = capsys.readouterr().out
+-        assert "z3: explorer nuStar can EXCEED the true break-even?  unsat" in out, out
+
+### fable:attempt-1:bench/tests/test_ffafp_trailing_variable_evasion_2026-09-28.py
+--- /dev/null	2026-09-28 17:52:11
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/bench/tests/test_ffafp_trailing_variable_evasion_2026-09-28.py	2026-09-28 17:01:23
+@@ -0,0 +1,77 @@
++"""A variable AT OR AFTER the extension must not hide a write.
++
++PANEL SEAT (fable), 2026-09-28, reviewing the unreviewed 2026-09-24 classifier
++changes. The literal-prefix clause closed `bench/targets/exp$n.py` (variable in
++the BASENAME, literal extension) but required the extension itself to be
++literal. Appending a variable AFTER the extension put the `$` INSIDE what
++`os.path.splitext` returns -- `.py$nope` -- so the clause declined and the path
++fell to "unresolved", which every consumer excludes from the mutation set.
++
++THE PREMISE THAT MADE "unresolved" SAFE IS FALSE FOR UNSET VARIABLES. The
++2026-09-24 comment reasoned that a residual variable "does not persist into the
++write's own shell, so the write it names did not land on any path". An UNSET
++shell variable expands to the EMPTY STRING: executed on 2026-09-28,
++`echo INJECTED > victim.py$NOPE_VAR` creates `victim.py`. So
++`> bench/panel_sandbox.py$NOPE` was a REAL code write that the audit could not
++see. The fix classifies the LITERAL PREFIX when it sits under a literal
++directory: exact for the unset case, over-counting at worst otherwise, which is
++the safe direction for a mutation guard.
++
++Every case here is EXECUTED against the real module; the shell-semantics claim
++is EXECUTED against a real shell.
++"""
++from __future__ import annotations
++
++import importlib.util
++import subprocess
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[2]
++
++
++def _mod():
++    spec = importlib.util.spec_from_file_location(
++        "ffafp_audit_tve", ROOT / "hooks" / "ffafp_audit.py")
++    m = importlib.util.module_from_spec(spec)
++    sys.modules["ffafp_audit_tve"] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++def test_an_unset_variable_expands_empty_so_the_write_lands_on_the_prefix(tmp_path):
++    """The shell fact the whole finding rests on, executed rather than asserted."""
++    r = subprocess.run(
++        ["bash", "-c", "echo INJECTED > victim.py$NOPE_VAR_2026_09_28"],
++        cwd=tmp_path, capture_output=True)
++    assert r.returncode == 0
++    assert (tmp_path / "victim.py").is_file(), "unset var did not expand empty?"
++
++
++def test_a_variable_after_the_extension_no_longer_hides_a_code_write():
++    fa = _mod()
++    assert fa.classify_write("bench/panel_sandbox.py$NOPE_VAR", "") == "code"
++    assert fa.classify_write("bench/panel_sandbox.py${NOPE_VAR}", "") == "code"
++
++
++def test_an_extensionless_target_with_a_trailing_variable_is_counted():
++    fa = _mod()
++    # hooks/pre-commit is a real, extensionless, executable file in this repo.
++    assert fa.classify_write("hooks/pre-commit$NOPE_VAR", "") == "other"
++
++
++def test_the_prior_behaviour_is_unchanged_where_it_was_right():
++    fa = _mod()
++    assert fa.classify_write("bench/targets/exp$n.py", "") == "code"
++    assert fa.classify_write("bench/logs/run_$STAMP/BRIEF.md", "") == "doc"
++    assert fa.classify_write("$SP/gate_in.json", "") == "unresolved"
++    assert fa.classify_write("/tmp/out_$N.log", "") == "transient"
++    # A bare relative name with no literal directory stays undecidable.
++    assert fa.classify_write("x.py$Z", "") == "unresolved"
++
++
++def test_resolution_from_the_command_still_wins_over_the_prefix_rule():
++    """`classify_write` resolves first; the prefix rule is the residual path."""
++    fa = _mod()
++    got = fa.classify_write("$SP/gate_in.json", "SP=/tmp/scratch; echo x > $SP/gate_in.json")
++    assert got == "transient", got
+
+### fable:attempt-1:bench/tests/test_note_naming_check_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_note_naming_check_2026-09-28.py	2026-09-28 03:25:11
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/bench/tests/test_note_naming_check_2026-09-28.py	2026-09-28 17:19:44
+@@ -86,6 +86,10 @@
+     exists nowhere on disk, so `git grep -F` cannot match it.
+     """
+     hits_all = nc.repo_hits("additive standard", exclude=None)
++    if hits_all < 0:
++        pytest.skip("git is unavailable in this tree (panel sandboxes strip "
++                    ".git), so novelty is unknowable here -- the script now "
++                    "REFUSES in this state rather than reporting 0")
+     assert hits_all > 0, "expected a known project term to appear in the repo"
+     sentinel = " ".join(["zzqx" + "vvbb", "nonexistent" + "qqq", "gate" + "xyz"])
+     missing = nc.repo_hits(sentinel, exclude=None)
+@@ -118,7 +122,24 @@
+     docstring overstating what the check covers.
+     """
+     hits = nc.repo_hits("blocking gate", exclude=None)
++    if hits < 0:
++        pytest.skip("git unavailable; novelty unknowable in this tree")
+     assert hits > 0, (
+         "`blocking gate` no longer appears in the repo; the collision blind spot "
+         "documented in the script's header needs re-measuring"
+     )
++
++
++def test_an_unsearchable_tree_refuses_rather_than_reporting_zero(nc, tmp_path, monkeypatch):
++    """PANEL SEAT (fable), 2026-09-28. In the 2026-09-28 panel sandbox -- which has
++    no .git, because panel_sandbox.build() strips it -- `git grep` failed, repo_hits
++    returned -1, and check() read -1 as "phrase already known": the whole check
++    reported 0 findings and --measure printed RULE A 0/40 = 0.0000% with a Wilson
++    interval, where the real repository reports 27/40. A measurement that cannot be
++    made must refuse loudly (silent evidence loss, cdsfl_core section 10 category 4),
++    which check() now does by raising and measure() by returning 2."""
++    note = tmp_path / "note.md"
++    note.write_text("The zzqxvvbb frobnication gate fired.", encoding="utf-8")
++    monkeypatch.setattr(nc, "repo_hits", lambda phrase, exclude=None: -1)
++    with pytest.raises(RuntimeError, match="unknowable"):
++        nc.check(note)
+
+### fable:attempt-1:bench/tests/test_paid_dispatch_needs_authorisation_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_paid_dispatch_needs_authorisation_2026-09-28.py	2026-09-28 03:08:59
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/bench/tests/test_paid_dispatch_needs_authorisation_2026-09-28.py	2026-09-28 17:19:13
+@@ -137,3 +137,38 @@
+         free = mod.select_models("", "r")
+         assert free, "select_models returned no seats at all"
+         assert all(s[2] == "claude_cli" for s in free)
++
++
++class TestTheModuleLevelRosterCarriesNoPaidSeat:
++    """PANEL SEAT (fable), 2026-09-28. The module-level MODELS binding honoured
++    PANEL_ONLY verbatim, so `PANEL_ONLY=cx,cgpt` plus a bare import produced a
++    roster carrying 2 paid seats with NO ledger consulted -- demonstrated by
++    execution on 2026-09-28. Any importer that dispatches from module state
++    (nothing in main() runs for an importer) therefore bypassed the gate
++    entirely. No round exists at import time, so no paid seat can be authorised
++    at import time; main() rebinds through select_models before any dispatch."""
++
++    def test_panel_only_naming_paid_seats_yields_none_at_import(self, mod, monkeypatch):
++        import importlib.util as iu
++        monkeypatch.setenv("PANEL_ONLY", "cx,cgpt,ge,ds")
++        spec = iu.spec_from_file_location("panel_paid_guard_bypass", PANEL)
++        m = iu.module_from_spec(spec)
++        spec.loader.exec_module(m)
++        paid = [x for x in m.MODELS if x[2] != "claude_cli"]
++        assert paid == [], f"module-level roster carries paid seats: {paid}"
++
++    def test_free_seats_named_in_panel_only_still_appear(self, mod, monkeypatch):
++        import importlib.util as iu
++        monkeypatch.setenv("PANEL_ONLY", "cc2,cx")
++        spec = iu.spec_from_file_location("panel_paid_guard_bypass2", PANEL)
++        m = iu.module_from_spec(spec)
++        spec.loader.exec_module(m)
++        assert [x[0] for x in m.MODELS] == ["cc2"]
++
++    def test_main_rebinds_before_the_suite_gate_counts_spend(self):
++        """The suite gate counts paid seats by reading MODELS; counting before
++        the rebind would report no spend to protect on every paid run."""
++        src = PANEL.read_text(encoding="utf-8")
++        rebind = src.index("MODELS = select_models(_ONLY, LOGS.name)")
++        gate = src.index("_refuse_if_the_suite_state_is_unknown()", src.index("def main("))
++        assert rebind < gate, "select_models must run before the suite spend gate"
+
+### fable:attempt-1:experimental_notes/Wolfram_Two_Routes_2026-09-28.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Wolfram_Two_Routes_2026-09-28.md	2026-09-28 16:58:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/experimental_notes/Wolfram_Two_Routes_2026-09-28.md	2026-09-28 11:13:59
+@@ -56,51 +56,10 @@
+ 
+ **An earlier attempt at this measurement was vacuous and is recorded as such.** It ran the comparison through `zsh -ic`, a fresh shell that never sources the snapshot, so it compared `/usr/bin/grep` against itself and returned a reassuring 0 of 541. A measurement whose control and treatment are the same thing measures nothing.
+ 
+-## A correction that overturns an 18-day-old conclusion
+-
+-The founder supplied the official connector listing during this session. It shows: **made by Wolfram Research**, verified, published in **Anthropic's own Claude Marketplace**, **Sign-in: Not required**, added May 2026, connector URL on the **`agenttools.wolfram...`** host.
+-
+-That is the same host `.claude/CLAUDE.md` declared **dead** on 2026-09-10.
+-
+-**What actually failed was the transport.** The removed config entry was `npx -y mcp-remote https://agenttools.wolfram.com/mcp`, and `scripts/wolfram_route_health_2026-09-10.py:44-45` keys its patterns on the literal string `WolframCloud` — the *name of that stdio-shim entry*:
+-
+-```
+-SUCCESS = "announcing WolframCloud: (\d+) tool"
+-FAILURE = "Failed to connect to WolframCloud"
+-```
+-
+-It measured the desktop app's ability to attach to the shim. It never tested whether the host answered.
+-
+-**The figure is sound; the inference was not.** Reproduced on 3 tools: 42/43 failed from 2026-09-04 = **97.6744%**, Wilson [87.9410%, 99.5883%], against 1/21 = 4.7619% before; Fisher exact **p = 2.199086e-14**, odds ratio 840; chi-square with Yates **p = 8.709349e-13**; mpmath exact hypergeometric agreeing with scipy to **7.28e-30**.
+-
+-**The task list was more careful than CC1 was.** `CDSFL_MASTER_TASK_LIST.md:659` explicitly kept three explanations open — *"whether the failure is the licence lapsing, the service being withdrawn, or a transport fault"*. `.claude/CLAUDE.md` hardened it to "DEAD", and CC1 repeated that as fact on 2026-09-27. Today's evidence resolves it in favour of the transport.
+-
+-**Consequence:** the natural-language capability recorded as a NAMED LOSS was never lost. It was reachable throughout via the official connector.
+-
+-## A second defect in the public explorer
+-
+-`explorer/index.html:177` computes `nuStar = sigma*R*q/(1 - q*R*(1-sigma))` — the re-injection rate at which it warns a further pass does net harm. Solving the appendix's general expected improvement (`:225`) for zero gives `R*q*sigma/(R*q*sigma - R + 1)`.
+-
+-The denominators differ (`- R*q` against `- R`), and the difference factors to `R²*q*sigma*(q-1)/(...)`, whose numerator is negative for q < 1.
+-
+-| R | q | σ | explorer nuStar | true break-even | ratio |
+-|---|---|---|---|---|---|
+-| 0.99 | 0.30 | 1.00 | 0.297000 | 0.9674267 | 0.307 |
+-| 0.90 | 0.50 | 0.90 | 0.4240838 | 0.8019802 | 0.5288 |
+-| 0.50 | 0.20 | 0.50 | 0.05263158 | 0.09090909 | 0.5789 |
+-
+-**Strictly one-directional, proven over the open domain.** z3 returns `unsat` for both "explorer nuStar > true break-even" and "they are equal"; Wolfram Language independently returns `Resolve[ForAll[...]] → True`. *(Computed with Wolfram Language.)*
+-
+-**This is the second finding of the same shape in the same public page.** Both make the tool stop, or warn of harm, earlier than the model supports. Neither applied — the page is public and fixes go to the HIL.
+-
+-- Producer: `scripts/explorer_stopping_rule_is_superseded_2026-09-28.py` (section 5)
+-- Guard: `bench/tests/test_explorer_stopping_quantity_2026-09-28.py`, 10 tests; mutating the explorer formula to the correct one turns 3 red
+-
+ ## What needs a decision
+ 
+-1. **Does the marketplace listing close the connector half of W1?** Wolfram Research authoring and publishing this connector in Anthropic's marketplace, with no sign-in required, is stronger evidence of permission than a reply email. It does **not** touch whether the free Engine licence permits the local AgentTools server, which stays open regardless. The founder's call.
++1. **Was the licensing question answered?** The connector link came from an email. If that was Wolfram's reply to the founder's written question, task W1 closes and the standing caution in `.claude/CLAUDE.md` should be rewritten. If it was a general announcement, it covers connector use but still says nothing about the local agent-tools server.
+ 2. **`.claude/CLAUDE.md` calls the local Engine *"the only WORKING Wolfram route today"***, which this morning's calls contradict. `bench/tests/test_wolfram_route_retired_2026-09-10.py` asserts that sentence, so both change in one commit. The file is the founder's.
+-3. **`docs/REPRODUCING.md` and `resources/RECOVERY.md`** still present the retired `mcp-remote` bridge as usable. The host is fine; the bridge is not the route.
+-4. **Whether to apply either or both public explorer fixes.** Both one-directional, both making the published tool more pessimistic than the model. Untouched.
++3. **`docs/REPRODUCING.md` and `resources/RECOVERY.md`** still present the dead `agenttools` endpoint as usable.
+ 
+ Written under CDSFL note standard v1.7 (26 August 2026).
+
+### fable:attempt-1:explorer/index.html
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/explorer/index.html	2026-08-27 01:01:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/explorer/index.html	2026-09-28 17:17:45
+@@ -80,7 +80,7 @@
+       <input type="range" id="sigma" min="0" max="1" step="0.01" value="0.9"></div>
+     <div class="ctl"><label><b>ν &nbsp;re-injection rate</b><span class="val" id="v_nu"></span></label>
+       <input type="range" id="nu" min="0" max="0.5" step="0.005" value="0.05"></div>
+-    <div class="ctl"><label><b>θ &nbsp;stopping threshold on ΔR</b><span class="val" id="v_theta"></span></label>
++    <div class="ctl"><label><b>θ &nbsp;stopping threshold on E[ΔR]</b><span class="val" id="v_theta"></span></label>
+       <input type="range" id="theta" min="0.001" max="0.05" step="0.001" value="0.005"></div>
+     <div class="ctl"><label><b>perturbation at pass 22 (+risk)</b><span class="val" id="v_pert"></span></label>
+       <input type="range" id="pert" min="0" max="0.6" step="0.05" value="0"></div>
+@@ -106,9 +106,14 @@
+     <h2 id="chart1title">Residual risk R(n) under the true recursion</h2>
+     <canvas id="c1" width="960" height="380" aria-label="risk trajectory chart"></canvas>
+     <div class="regime" id="regime"></div>
+-    <h2 style="margin-top:18px">Marginal yield ΔR per pass — where to stop</h2>
+-    <canvas id="c2" width="960" height="200" aria-label="marginal yield chart"></canvas>
+-    <p class="hint">Bars below the amber line θ are passes not worth running.
++    <h2 style="margin-top:18px">Expected gain E[ΔR] per pass — where to stop</h2>
++    <canvas id="c2" width="960" height="200" aria-label="expected gain chart"></canvas>
++    <p class="hint">Bars show the expected improvement of running one more pass,
++    <span class="mono">E[ΔR] = R·q·σ·(1−ν) − ν·(1−R)</span> — the decision is taken
++    before you know whether the pass will find anything, so it is the expectation
++    over both branches that decides (appendix, 2026-09-21). Bars below the amber
++    line θ are passes not worth running. The trajectory's own ΔR (top chart) is
++    NOT this quantity: stopping on it quit up to 70× too early at high risk.
+     Click any pass in the top chart to see its three-phase arithmetic.</p>
+   </div>
+ </div>
+@@ -173,7 +178,17 @@
+     const R_new  = R_base*(1-o.nu) + o.nu;
+     const nuStar = (1 - q*R_old*(1-o.sigma)) > 0
+                  ? o.sigma*R_old*q/(1 - q*R_old*(1-o.sigma)) : 0;
+-    steps.push({i, R_old, R_det, R_base, R_new, dR: R_old - R_new, nuStar});
++    // E IS THE DECISION QUANTITY, dR THE TRAJECTORY ONE (2026-09-28, panel).
++    // The appendix (2026-09-21) retired stopping on the conditional ΔR: it is the
++    // change on the non-detection branch, while the decision is taken BEFORE the
++    // branch is known. The expected improvement over both branches is
++    //   E[ΔR] = R·q·σ·(1−ν) − ν·(1−R)
++    // and E − dR = (1−ν)·σ·q·R²·(1−q)/(1−qR) ≥ 0 everywhere (SymPy + Wolfram
++    // Language, 2026-09-28), so the old rule only ever stopped EARLY — by a factor
++    // of 70.3 at R=0.99, q=0.3. dR is kept: it is the plotted trajectory's own
++    // decrement, and ν* / the ΔR<0 hard exit (appendix §1.1) are statements about it.
++    const E = R_old*q*o.sigma*(1-o.nu) - o.nu*(1-R_old);
++    steps.push({i, R_old, R_det, R_base, R_new, dR: R_old - R_new, E, nuStar});
+     R = R_new; traj.push(R);
+   }
+   return {traj, steps, q};
+@@ -285,17 +300,17 @@
+ 
+   // ΔR chart
+   const ctx2 = c2.getContext('2d');
+-  const dmax = Math.max(o.theta*2, ...sim.steps.map(s=>Math.abs(s.dR)))*1.15;
++  const dmax = Math.max(o.theta*2, ...sim.steps.map(s=>Math.abs(s.E)))*1.15;
+   frame(ctx2, c2.width, c2.height, dmax);
+   let stopAt = null;
+   sim.steps.forEach(s=>{
+     const px = X(c2.width, s.i);
+     const bw = (c2.width-M.l-M.r)/N*0.62;
+-    const good = s.dR >= o.theta;
++    const good = s.E >= o.theta;
+     if (stopAt===null && !good && s.i>1) stopAt = s.i;
+-    ctx2.fillStyle = s.dR < 0 ? '#B3532E' : (good ? '#2E7D5B' : '#C7CDC2');
++    ctx2.fillStyle = s.E < 0 ? '#B3532E' : (good ? '#2E7D5B' : '#C7CDC2');
+     const h0 = Y(c2.height, 0, dmax);
+-    const h1 = Y(c2.height, Math.max(0,s.dR), dmax);
++    const h1 = Y(c2.height, Math.max(0,s.E), dmax);
+     ctx2.fillRect(px-bw/2, Math.min(h0,h1), bw, Math.abs(h0-h1)||1);
+   });
+   line(ctx2,c2.width,c2.height, Array(N+1).fill(o.theta), dmax,'#C08A00',1.5,[6,4]);
+@@ -342,8 +357,10 @@
+         ' &nbsp;(q = '+sim.q.toFixed(3)+')</td></tr>'+
+       '<tr><td>resolution → σ·R_det + (1−σ)·R</td><td>'+s.R_base.toFixed(4)+'</td></tr>'+
+       '<tr><td>re-injection → ·(1−ν) + ν</td><td>'+s.R_new.toFixed(4)+'</td></tr>'+
+-      '<tr><td>net gain this pass, ΔR</td><td>'+s.dR.toFixed(4)+
++      '<tr><td>net gain this pass, ΔR (trajectory)</td><td>'+s.dR.toFixed(4)+
+         (s.dR<0?' &nbsp;⚠ net harm':'')+'</td></tr>'+
++      '<tr><td>expected gain E[ΔR] = R·q·σ·(1−ν) − ν·(1−R)</td><td>'+s.E.toFixed(4)+
++        ' &nbsp;(decides stop/continue)</td></tr>'+
+       '<tr><td>break-even ν* at this state</td><td>'+s.nuStar.toFixed(4)+'</td></tr></table>';
+   }
+ }
+
+### fable:attempt-1:hooks/ffafp_audit.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/ffafp_audit.py	2026-09-24 04:17:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/hooks/ffafp_audit.py	2026-09-28 17:00:25
+@@ -447,6 +447,22 @@
+         _ext = os.path.splitext(p)[1].lower()
+         if "/" in _head and _ext and "$" not in _ext:
+             return classify_path(_head.rstrip("/") + "/x" + _ext)
++        # A VARIABLE AT OR AFTER THE EXTENSION STILL HID A WRITE (panel seat,
++        # 2026-09-28). `> bench/panel_sandbox.py$NOPE` classified "unresolved"
++        # under the clause above, because the variable lands INSIDE the literal
++        # extension (`splitext` gives `.py$nope`). But an UNSET variable expands
++        # to the EMPTY STRING in the write's own shell -- demonstrated by
++        # executing `echo x > victim.py$NOPE_VAR`, which creates `victim.py` --
++        # so the write lands EXACTLY on the literal prefix. The docstring's
++        # earlier claim that a residual variable's write "did not land on any
++        # path" is false for unset variables. So: when the literal prefix is
++        # itself a well-formed path under a literal directory, classify THAT.
++        # If the residual variable expands non-empty the real target shares the
++        # prefix's directory, so transience is unchanged and the worst case is
++        # over-counting -- the safe direction for a mutation guard. Only a path
++        # whose literal prefix carries no directory remains "unresolved".
++        if "/" in _head and _head.rstrip("/") != "":
++            return classify_path(_head)
+         return "unresolved"
+     ext = os.path.splitext(base)[1]
+     if ext in (".log", ".pid", ".tmp", ".lock", ".out", ".err"):
+
+### fable:attempt-1:scripts/explorer_stopping_rule_is_superseded_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/explorer_stopping_rule_is_superseded_2026-09-28.py	2026-09-28 16:59:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/scripts/explorer_stopping_rule_is_superseded_2026-09-28.py	2026-09-28 02:41:45
+@@ -128,62 +128,11 @@
+           f", the appendix says {'CONTINUE' if e >= mp.mpf('0.005') else 'STOP'}")
+ 
+ 
+-def nustar_check() -> None:
+-    """A SECOND, INDEPENDENT DEFECT: the explorer's own break-even is not the model's.
+-
+-    `explorer/index.html:177` computes
+-        nuStar = sigma*R*q / (1 - q*R*(1-sigma))
+-    which is the re-injection rate at which it warns a further pass does net harm.
+-
+-    The appendix's general expected improvement (`MATHEMATICAL_APPENDIX.md:225`)
+-    implies its own break-even, obtained by solving
+-        R*q*sigma*(1-nu) - nu*(1-R) = 0   for nu
+-    giving   R*q*sigma / (R*q*sigma - R + 1).
+-
+-    The denominators differ: `- R*q` against `- R`. The difference factors to
+-    R^2*q*sigma*(q-1)/(...), whose numerator is negative for q < 1, so the
+-    explorer's figure is STRICTLY BELOW the true break-even everywhere on the open
+-    domain. It therefore warns of net harm EARLIER than the model supports -- the
+-    same pessimistic direction as the stopping-rule defect above, reached by a
+-    completely separate route.
+-    """
+-    R, q, sigma, nu = sp.symbols("R q sigma nu", positive=True)
+-    explorer = sigma * R * q / (1 - q * R * (1 - sigma))
+-    appendix = sp.solve(sp.Eq(appendix_expected(R, q, sigma, nu), 0), nu)[0]
+-
+-    print()
+-    print("5. THE EXPLORER'S nuStar AGAINST THE MODEL'S OWN BREAK-EVEN")
+-    print(f"   explorer/index.html:177        {sp.simplify(explorer)}")
+-    print(f"   implied by appendix:225        {sp.simplify(appendix)}")
+-    diff = sp.factor(sp.simplify(sp.together(explorer - appendix)))
+-    print(f"   difference                     {diff}")
+-    print(f"   identical?                     {sp.simplify(explorer - appendix) == 0}")
+-
+-    for Rv, qv, sv in [(sp.Rational(99, 100), sp.Rational(3, 10), sp.Integer(1)),
+-                       (sp.Rational(9, 10), sp.Rational(1, 2), sp.Rational(9, 10)),
+-                       (sp.Rational(1, 2), sp.Rational(1, 5), sp.Rational(1, 2))]:
+-        a = mp.mpf(str(float(explorer.subs({R: Rv, q: qv, sigma: sv}))))
+-        b = mp.mpf(str(float(appendix.subs({R: Rv, q: qv, sigma: sv}))))
+-        print(f"   R={float(Rv):.2f} q={float(qv):.2f} sigma={float(sv):.2f}  "
+-              f"explorer {mp.nstr(a, 7)}  true {mp.nstr(b, 7)}  ratio {mp.nstr(a/b, 6)}")
+-
+-    import z3
+-    zR, zq, zs = z3.Reals("R q sigma")
+-    dom = [zR > 0, zR < 1, zq > 0, zq < 1, zs > 0, zs <= 1]
+-    ze = zR * zq * zs / (zR * zq * zs - zR * zq + 1)
+-    za = zR * zq * zs / (zR * zq * zs - zR + 1)
+-    sol = z3.Solver()
+-    sol.add(dom)
+-    sol.add(ze > za)
+-    print(f"   z3: explorer nuStar can EXCEED the true break-even?  {sol.check()}")
+-
+-
+ def main() -> int:
+     print("EXPLORER STOPPING RULE vs THE APPENDIX'S GENERAL FORM")
+     print("=" * 62)
+     identity_check()
+     disagreement_sweep()
+-    nustar_check()
+     print()
+     print("Astra's proposed R*q is the sigma=1, nu=0 corner only (appendix:223),")
+     print("so it is not the revision to apply either.")
+
+### fable:attempt-1:scripts/note_naming_check_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/note_naming_check_2026-09-28.py	2026-09-28 02:58:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/scripts/note_naming_check_2026-09-28.py	2026-09-28 17:09:09
+@@ -208,6 +208,20 @@
+     found = []
+     for phrase, at in candidates(text).items():
+         hits = repo_hits(phrase, exclude=path)
++        # -1 IS AN ERROR, NOT A COUNT (panel seat, 2026-09-28). `git grep`
++        # fails in any tree without `.git` -- which is EVERY panel sandbox,
++        # because `panel_sandbox.build()` strips the store by design -- and the
++        # old `hits != 0` read that failure as "phrase already known", so the
++        # whole check reported 0 findings and `--measure` printed a confident
++        # 0.0000% with a Wilson interval around it. A measurement that cannot
++        # be made must refuse, not fabricate a clean answer (silent evidence
++        # loss, cdsfl_core §10 category 4). Executed evidence: in the
++        # 2026-09-28 panel sandbox this file reported RULE A 0/40 where the
++        # real repository reports 27/40.
++        if hits < 0:
++            raise RuntimeError(
++                f"novelty of {phrase!r} is unknowable here: `git grep` failed "
++                f"(no git tree at {ROOT}?). Refusing to report a silent 0.")
+         if hits != 0:
+             continue
+         intro = introduced(text, phrase, at)
+@@ -252,6 +266,12 @@
+     if not notes:
+         print("no notes corpus found", file=sys.stderr)
+         return 2
++    # PREFLIGHT: the corpus figures are only real where the repo is searchable.
++    if repo_hits("additive standard", exclude=None) < 0:
++        print("REFUSING TO MEASURE: `git grep` is unavailable in this tree, so "
++              "every novelty count would be a fabricated 0. Run from a git "
++              "checkout.", file=sys.stderr)
++        return 2
+     import random
+     random.seed(20260928)
+     sample = notes if len(notes) <= 40 else random.sample(notes, 40)
+
+### fable:attempt-1:scripts/shell_grep_blind_spot_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/shell_grep_blind_spot_2026-09-28.py	2026-09-28 11:17:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo/scripts/shell_grep_blind_spot_2026-09-28.py	2026-09-28 17:20:22
+@@ -29,14 +29,41 @@
+             "PANEL_ONLY", "wolframscript", "falsifier", "gamma_critical"]
+ 
+ 
++def _snapshot():
++    """The newest snapshot that actually DEFINES the grep wrapper.
++
++    PANEL SEAT (fable), 2026-09-28. The first selection rule was `ls -t | head
++    -1`: the newest snapshot regardless of content. By 2026-09-28 the 2 newest
++    snapshots no longer defined the wrapper (sessions differ in what they
++    capture), so the measurement went VACUOUS on a machine where a
++    wrapper-bearing snapshot sat 2 entries down -- reproducible loudly, but not
++    reproducible. Preferring the newest snapshot that CONTAINS the wrapper
++    (`--ignore-files`) keeps the measurement runnable wherever any session ever
++    captured it; the vacuous guard still catches the case where none did.
++    NOTE THE SCOPE THIS SETS: the figure is a fact about SESSIONS WHOSE
++    SNAPSHOT CARRIES THE WRAPPER, not about every session on the machine --
++    `type grep` in the running session decides whether it applies to you.
++    """
++    import pathlib
++    d = pathlib.Path.home() / ".claude" / "shell-snapshots"
++    snaps = sorted(d.glob("*.sh"), key=lambda p: p.stat().st_mtime, reverse=True)
++    for p in snaps:
++        try:
++            if "--ignore-files" in p.read_text(errors="replace"):
++                return p
++        except OSError:
++            continue
++    return snaps[0] if snaps else d / "none"
++
++
+ def counts(pattern: str) -> tuple[int, int]:
+     """(files the session's grep finds, files /usr/bin/grep finds)."""
+     script = (
+         f'grep -rl {pattern!r} . 2>/dev/null | wc -l; '
+         f'/usr/bin/grep -rl {pattern!r} . 2>/dev/null | wc -l'
+     )
+-    r = subprocess.run(["zsh", "-c", f"source ~/.claude/shell-snapshots/"
+-                        f"$(ls -t ~/.claude/shell-snapshots/ | head -1) 2>/dev/null; {script}"],
++    r = subprocess.run(["zsh", "-c",
++                        f"source {_snapshot()!s} 2>/dev/null; {script}"],
+                        capture_output=True, text=True)
+     lines = [l.strip() for l in r.stdout.split() if l.strip().isdigit()]
+     if len(lines) != 2:
+
+### fable:attempt-2:.claude/CLAUDE.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/.claude/CLAUDE.md	2026-09-27 23:34:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo/.claude/CLAUDE.md	2026-09-28 17:45:41
+@@ -284,8 +284,18 @@
+ **HOW WOLFRAM IS WIRED (settled 2026-08-02 22:15 after a failed restart).**
+ Two routes, and the split is forced by a measured constraint, not preference:
+ 
+-  * **`WolframCloud` MCP server — DISABLED 2026-09-10 BECAUSE IT IS DEAD, NOT
+-    BECAUSE IT IS UNWANTED.** It was `npx -y mcp-remote https://agenttools.wolfram.com/mcp`,
++  * **`WolframCloud` MCP server — DISABLED 2026-09-10 BECAUSE ITS TRANSPORT WAS
++    DEAD, NOT BECAUSE IT IS UNWANTED.** RESCOPED 2026-09-28: the 42-of-43
++    figure below measures the DESKTOP APP'S ATTACH to the `npx mcp-remote`
++    stdio shim — `scripts/wolfram_route_health_2026-09-10.py:44-45` keys its
++    SUCCESS/FAILURE patterns on the literal entry name `WolframCloud` — and
++    never tested whether the host answered. The official Wolfram connector to
++    the SAME `agenttools.wolfram...` host answered correctly on 2026-09-17
++    (`Out[1]= 4`) and again on 2026-09-28 (A4 round trip, below), so the
++    endpoint-death inference the old wording carried was wider than the
++    measurement. Point samples, not continuous cover: what is ESTABLISHED is
++    that the shim attach failed 42/43 and that the endpoint answered on the
++    dates probed. See `experimental_notes/Wolfram_Two_Routes_2026-09-28.md`. It was `npx -y mcp-remote https://agenttools.wolfram.com/mcp`,
+     and the entry was removed from the desktop application's config on the
+     founder's explicit instruction, he being away from the machine. **The local
+     Engine via `wolframscript` in Bash is the route every seat and every agent
+@@ -299,7 +309,8 @@
+     He has emailed Wolfram about the MCP server licence, **which is separate from
+     the desktop Engine licence**, and in his words the service *"has its uses. For
+     example you can talk to it in natural language and get useful output back."*
+-    **That capability is a NAMED LOSS**: `wolframscript` takes Wolfram Language,
++    **That capability is a NAMED LOSS for the desktop-app route only — it remained
++    reachable via the official connector on every date probed**: `wolframscript` takes Wolfram Language,
+     not English. Disabling a dead endpoint is not a verdict on the service.
+ 
+     **Restoring it is one paste.** The exact invocation, the backup path and the
+
+### fable:attempt-2:bench/confer_maths_panel_2026-09-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/confer_maths_panel_2026-09-05.py	2026-09-28 03:08:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo/bench/confer_maths_panel_2026-09-05.py	2026-09-28 17:39:45
+@@ -396,25 +396,58 @@
+ #:
+ #: NOTHING IS REMOVED. Paid dispatch remains available by exactly the same route
+ #: it always had, with an authorisation recorded alongside it.
+-PAID_LEDGER = _Path(__file__).resolve().parent / "paid_dispatch_authorisations.json"
++#: THE LEDGER IS THE COMMITTED ONE, NOT A SECOND COPY (panel finding, 2026-09-28).
++#: The first version of this gate pointed at `bench/paid_dispatch_authorisations.json`,
++#: a file that does not exist, and required a flat-list schema the committed
++#: ledger does not use. Fail-closed, so no money moved -- but every round the
++#: founder HAD authorised in the committed record would have been refused, and
++#: the only way to green the gate was to write a SECOND ledger file: "a rule
++#: written down twice is 2 rules", the drift `bench/paid_dispatch_authorisations.py`
++#: was built to avoid. The gate now reads the same committed file the audit
++#: guards read, and still accepts the flat-list shape so a test can stage a
++#: minimal ledger without reproducing the full document.
++PAID_LEDGER = (_Path(__file__).resolve().parent
++               / "directives" / "universal" / "paid_dispatch_authorisations.json")
+ 
+ 
++def _ledger_entries(raw) -> list:
++    """Normalise both ledger shapes to (rounds, quote) pairs.
++
++    Committed shape: {"authorisations": [{"rounds": [...], "founder_verbatim": [...]}]}
++    Flat test shape: [{"round": "...", "founder_authorisation": "..."}]
++    """
++    out = []
++    entries = raw.get("authorisations", []) if isinstance(raw, dict) else raw
++    if not isinstance(entries, list):
++        return out
++    for e in entries:
++        if not isinstance(e, dict):
++            continue
++        rounds = e.get("rounds") if isinstance(e.get("rounds"), list) else (
++            [e["round"]] if isinstance(e.get("round"), str) else [])
++        verbatim = e.get("founder_verbatim")
++        if isinstance(verbatim, list):
++            quote = " ".join(str(v) for v in verbatim).strip()
++        else:
++            quote = str(e.get("founder_authorisation", "")).strip()
++        out.append((rounds, quote))
++    return out
++
++
+ def _paid_is_authorised(round_name: str) -> tuple[bool, str]:
+     """Is a paid dispatch authorised for this round? Returns (ok, reason)."""
+     if not PAID_LEDGER.is_file():
+         return False, f"no authorisation ledger at {PAID_LEDGER}"
+     try:
+-        entries = _json.loads(PAID_LEDGER.read_text(encoding="utf-8"))
++        raw = _json.loads(PAID_LEDGER.read_text(encoding="utf-8"))
+     except (ValueError, OSError) as exc:
+         return False, f"authorisation ledger unreadable: {exc}"
+-    if not isinstance(entries, list):
++    entries = _ledger_entries(raw)
++    if not entries:
+         return False, "authorisation ledger is not a list of entries"
+-    for e in entries:
+-        if not isinstance(e, dict):
+-            continue
+-        if e.get("round") != round_name:
++    for rounds, quote in entries:
++        if round_name not in rounds:
+             continue
+-        quote = str(e.get("founder_authorisation", "")).strip()
+         if len(quote) < 20:
+             return False, (
+                 f"ledger entry for round {round_name!r} carries no founder "
+
+### fable:attempt-2:bench/logs/check_my_work_2026-09-28/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/check_my_work_2026-09-28/dispatch.log	2026-09-28 17:52:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo/bench/logs/check_my_work_2026-09-28/dispatch.log	2026-09-28 17:22:55
+@@ -8,22 +8,3 @@
+ [17:22:55]   [claude-cli:opus] retry 2/2
+ [17:22:55]   [claude-cli:fable] attempt 1 failed (1800.1s): claude CLI timed out after 1800.1s
+ [17:22:55]   [claude-cli:fable] retry 2/2
+-[17:23:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo
+-    suite: GREEN at f253fa7 — 8,233 passed, 0 failed  [recorded at f253fa7, HEAD is 6ed7cf6, 55 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 8,634 chars, about 2,158 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ovwmgte/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hw5x4dbh/repo
+-    cc2 attempt 2 confined to a FRESH copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo
+-[17:23:07]   [claude-cli:opus] attempt 2 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_pppehk_4/repo
+-[17:23:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo
+-    fable attempt 2 confined to a FRESH copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo
+-[17:23:07]   [claude-cli:fable] attempt 2 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo
+-[17:42:00]   [claude-cli:opus] 169 tool call(s) this attempt, 169 in total
+-[17:42:00]   [claude-cli:opus] done (1133.1s, 23567 chars)
+-  [cc2] ok=True chars=23567 tools=169 2945.1s
+-[17:52:00]   [claude-cli:fable] 79 tool call(s) this attempt, 79 in total
+-[17:52:00]   [claude-cli:fable] done (1733.3s, 17613 chars)
+-  [fable] ok=True chars=17613 tools=79 3545.3s
+-[17:52:00] [panel] working directory: (inherited — repo)
+
+### fable:attempt-2:bench/tests/test_explorer_gates_on_expected_improvement_2026-09-28.py
+--- /dev/null	2026-09-28 17:52:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo/bench/tests/test_explorer_gates_on_expected_improvement_2026-09-28.py	2026-09-28 17:45:18
+@@ -0,0 +1,54 @@
++"""The revised explorer must gate stopping on the appendix's expected improvement.
++
++Companion to `test_explorer_stopping_quantity_2026-09-28.py`, whose premise test
++SKIPS once the page stops gating on dR. This file asserts the page's NEW state,
++so the revision cannot silently regress: the gate is `s.eDR >= o.theta`, and the
++eDR formula transcribed from the JavaScript is symbolically identical to
++`MATHEMATICAL_APPENDIX.md:225`, E[ΔR] = R·q·σ·(1−ν) − ν·(1−R).
++
++`nuStar` is deliberately UNCHANGED: it is exactly the appendix's own §ν*
++(MATHEMATICAL_APPENDIX.md:280, σRq/(1−qR(1−σ))), which this seat derived to be
++the precise break-even of the plotted trajectory's per-cycle change (dR = 0 ⟺
++ν = ν*). Whether §ν* itself should be superseded by the expectation break-even
++σRq/(σRq − R + 1) is an APPENDIX-level decision for the founder, and the page
++must not run ahead of the committed model.
++"""
++from __future__ import annotations
++
++import re
++from pathlib import Path
++
++import sympy as sp
++
++ROOT = Path(__file__).resolve().parents[2]
++EXPLORER = ROOT / "explorer" / "index.html"
++
++R, q, sigma, nu = sp.symbols("R q sigma nu", positive=True)
++
++
++def test_the_gate_is_on_eDR_not_dR():
++    text = EXPLORER.read_text(encoding="utf-8")
++    assert re.search(r"s\.eDR\s*>=\s*o\.theta", text), "the stop gate is not on eDR"
++    assert not re.search(r"s\.dR\s*>=\s*o\.theta", text), (
++        "the retired dR gate is back; MATHEMATICAL_APPENDIX.md:217 retired it"
++    )
++
++
++def test_the_js_eDR_formula_matches_the_appendix():
++    text = EXPLORER.read_text(encoding="utf-8")
++    m = re.search(r"const eDR = ([^;]+);", text)
++    assert m, "eDR is not computed in simulate()"
++    js = m.group(1)
++    expr = sp.sympify(
++        js.replace("R_old", "R").replace("o.sigma", "sigma").replace("o.nu", "nu"),
++        locals={"R": R, "q": q, "sigma": sigma, "nu": nu})
++    appendix = R * q * sigma * (1 - nu) - nu * (1 - R)
++    assert sp.simplify(expr - appendix) == 0, f"JS computes {expr}, appendix says {appendix}"
++
++
++def test_the_trajectory_and_nustar_are_untouched():
++    """The recursion (the appendix's own Stage 5 spec) and the appendix's own
++    break-even stay as committed -- the fix is to the stop layer only."""
++    text = EXPLORER.read_text(encoding="utf-8")
++    assert "R*(1-q)/(1-q*R)" in text
++    assert "o.sigma*R_old*q/(1 - q*R_old*(1-o.sigma))" in text
+
+### fable:attempt-2:bench/tests/test_paid_gate_reads_the_committed_ledger_2026-09-28.py
+--- /dev/null	2026-09-28 17:52:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo/bench/tests/test_paid_gate_reads_the_committed_ledger_2026-09-28.py	2026-09-28 17:40:05
+@@ -0,0 +1,80 @@
++"""The paid-dispatch gate must read the ledger the founder actually committed.
++
++PANEL FINDING (seat B), 2026-09-28. The gate shipped pointing at
++`bench/paid_dispatch_authorisations.json` -- a file that does not exist -- and
++parsing a flat-list schema the committed ledger at
++`bench/directives/universal/paid_dispatch_authorisations.json` does not use
++(it is a dict with "authorisations" entries carrying "rounds" and
++"founder_verbatim"). Fail-closed, so no unauthorised spend was possible; but
++every round the founder HAD authorised would have been REFUSED, and the only
++way to green the gate was to write a SECOND ledger file -- the exact
++two-copies drift `bench/paid_dispatch_authorisations.py` documents as the
++shape to avoid. Its own suite passed because every test monkeypatched
++PAID_LEDGER to a synthetic file in the flat schema; no test executed the gate
++against the committed record.
++
++EVERY CASE HERE RUNS AGAINST THE REAL COMMITTED FILE, plus one flat-schema
++case so the earlier tests' shape keeps working.
++"""
++from __future__ import annotations
++
++import importlib.util
++import json
++import sys
++from pathlib import Path
++
++import pytest
++
++ROOT = Path(__file__).resolve().parents[2]
++PANEL = ROOT / "bench" / "confer_maths_panel_2026-09-05.py"
++COMMITTED = ROOT / "bench" / "directives" / "universal" / "paid_dispatch_authorisations.json"
++
++
++@pytest.fixture
++def mod():
++    sys.path.insert(0, str(ROOT / "bench"))
++    sys.path.insert(0, str(ROOT / "scripts"))
++    spec = importlib.util.spec_from_file_location("panel_paid_gate_real", PANEL)
++    m = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(m)
++    return m
++
++
++def test_the_gate_points_at_the_committed_ledger(mod):
++    assert Path(mod.PAID_LEDGER) == COMMITTED, (
++        f"gate reads {mod.PAID_LEDGER}, audit guards read {COMMITTED}; "
++        "two ledgers is the drift the sibling module forbids"
++    )
++    assert COMMITTED.is_file(), "the committed ledger is missing"
++
++
++def test_a_round_the_founder_authorised_is_actually_allowed(mod, capsys):
++    """ANTI-VACUITY against the REAL record: the gate must pass at least one
++    round the committed ledger names, or the authorisation half is unwired."""
++    data = json.loads(COMMITTED.read_text(encoding="utf-8"))
++    rounds = [r for e in data.get("authorisations", []) for r in e.get("rounds", [])]
++    assert rounds, "committed ledger names no rounds; premise gone, re-examine"
++    ok, reason = mod._paid_is_authorised(rounds[0])
++    assert ok, f"committed authorisation for {rounds[0]!r} was refused: {reason}"
++    chosen = [s[0] for s in mod.select_models("cx", rounds[0])]
++    assert chosen == ["cx"]
++    assert "PAID DISPATCH AUTHORISED" in capsys.readouterr().out
++
++
++def test_an_unauthorised_round_is_still_refused_on_the_real_ledger(mod):
++    ok, reason = mod._paid_is_authorised("round_that_was_never_authorised")
++    assert not ok
++    with pytest.raises(SystemExit) as e:
++        mod.select_models("cx", "round_that_was_never_authorised")
++    assert "REFUSED" in str(e.value)
++
++
++def test_the_flat_test_schema_still_parses(mod, monkeypatch, tmp_path):
++    """The earlier suite stages flat-list ledgers; both shapes must keep working."""
++    led = tmp_path / "led.json"
++    led.write_text(json.dumps([
++        {"round": "round_y", "founder_authorisation": "y, spend up to 12 pounds on it",
++         "date": "2026-09-28"}]), encoding="utf-8")
++    monkeypatch.setattr(mod, "PAID_LEDGER", led)
++    assert mod._paid_is_authorised("round_y")[0]
++    assert not mod._paid_is_authorised("round_z")[0]
+
+### fable:attempt-2:bench/tests/test_transient_prefix_cannot_be_escaped_2026-09-28.py
+--- /dev/null	2026-09-28 17:52:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo/bench/tests/test_transient_prefix_cannot_be_escaped_2026-09-28.py	2026-09-28 17:41:30
+@@ -0,0 +1,92 @@
++"""A write that lands in the repository must not classify "transient".
++
++PANEL FINDING (seat B), 2026-09-28, against the literal-leading-prefix rule
++added to `hooks/ffafp_audit.py:classify_path` on 2026-09-24. That rule decides
++transience by where a path STARTS, and the start does not bind where the write
++LANDS:
++
++  /tmp/../<anything>/hooks/evil.py       -- a literal `..` segment
++  /tmp/${V:-../../repo}/hooks/evil.py    -- a default-value expansion the
++                                            assignment parser cannot see but
++                                            the real shell honours
++  /tmp/$V/hooks/evil.py                  -- V knowable from neither the command
++                                            nor the hook's environment
++
++All three classified "transient" before this fix -- the one verdict that
++EXCUSES a write -- while the actual write can land inside the repository.
++Demonstrated by executing bash: `mkdir -p t/repo/hooks && cd t &&
++echo x > /tmp/${V:-<abs-of-t>/repo}/hooks/evil.py` creates the file under
++t/repo/. After the fix a dynamic remainder under a transient head returns
++"unresolved" (neither accuses nor excuses) and a literal traversal is
++classified by its extension (accuses honestly).
++"""
++from __future__ import annotations
++
++import importlib.util
++import sys
++from pathlib import Path
++
++import pytest
++
++ROOT = Path(__file__).resolve().parents[2]
++
++
++@pytest.fixture(scope="module")
++def fa():
++    spec = importlib.util.spec_from_file_location(
++        "ffafp_audit_escape_ut", ROOT / "hooks" / "ffafp_audit.py")
++    m = importlib.util.module_from_spec(spec)
++    sys.modules["ffafp_audit_escape_ut"] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++class TestTheEscapesAreClosed:
++    def test_literal_traversal_is_classified_by_its_extension(self, fa):
++        assert fa.classify_path("/tmp/../repo/hooks/evil.py") == "code"
++        assert fa.classify_path("/var/folders/x/../../repo/notes.md") == "doc"
++
++    def test_a_dynamic_remainder_under_a_transient_head_is_unresolved(self, fa):
++        assert fa.classify_path("/tmp/$V/hooks/evil.py") == "unresolved"
++        assert fa.classify_path("/tmp/${V:-../../repo}/hooks/evil.py") == "unresolved"
++        # command substitution is dynamic too, and the old variable regex
++        # never matched `$(`:
++        assert fa.classify_path("/tmp/$(echo ..)/repo/evil.py") == "unresolved"
++
++    def test_classify_write_resolves_before_judging_so_known_vars_still_work(self, fa):
++        # A variable ASSIGNED IN THE COMMAND resolves to a genuinely transient
++        # path and must still classify transient -- the 2026-09-24 bounce fix.
++        got = fa.classify_write("$SP/gate_in.json", 'SP=/tmp/scratch; echo x > $SP/gate_in.json')
++        assert got == "transient"
++
++
++class TestNothingLegitimateIsReclassified:
++    """ANTI-VACUITY: the ordinary transient shapes keep their verdict."""
++
++    def test_plain_tmp_writes_stay_transient(self, fa):
++        assert fa.classify_path("/tmp/run.log") == "transient"
++        assert fa.classify_path("/private/tmp/x/out.json") == "transient"
++        assert fa.classify_path("/var/folders/ab/cd/T/scratch.txt") == "transient"
++        assert fa.classify_path("/dev/null") == "transient"
++
++    def test_the_2026_09_24_head_and_extension_rule_is_unchanged(self, fa):
++        assert fa.classify_path("bench/targets/exp$n.py") == "code"
++        assert fa.classify_path("bench/logs/run_$STAMP/BRIEF.md") == "doc"
++        assert fa.classify_path("$WORK/x.py") == "unresolved"
++
++
++def test_the_escape_is_real_not_theoretical(fa, tmp_path):
++    """EXECUTED: the shell expansion the classifier cannot see lands the write
++    inside a repository tree."""
++    import subprocess
++    (tmp_path / "repo" / "hooks").mkdir(parents=True)
++    target_dir = str(tmp_path / "repo")
++    # On macOS /tmp resolves to /private/tmp, so /tmp/.. is /private; step up
++    # enough levels that the traversal reaches / and re-enter the target:
++    ups = "../" * 8
++    cmd = 'echo x > /tmp/' + ups + target_dir.lstrip("/") + '/hooks/evil.py'
++    subprocess.run(["bash", "-c", cmd], check=True)
++    assert (tmp_path / "repo" / "hooks" / "evil.py").is_file(), (
++        "premise gone: the traversal write no longer lands; re-examine"
++    )
++    assert fa.classify_path(cmd.split("> ", 1)[1]) == "code"
+
+### fable:attempt-2:explorer/index.html
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/explorer/index.html	2026-08-27 01:01:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo/explorer/index.html	2026-09-28 17:45:18
+@@ -80,7 +80,7 @@
+       <input type="range" id="sigma" min="0" max="1" step="0.01" value="0.9"></div>
+     <div class="ctl"><label><b>ν &nbsp;re-injection rate</b><span class="val" id="v_nu"></span></label>
+       <input type="range" id="nu" min="0" max="0.5" step="0.005" value="0.05"></div>
+-    <div class="ctl"><label><b>θ &nbsp;stopping threshold on ΔR</b><span class="val" id="v_theta"></span></label>
++    <div class="ctl"><label><b>θ &nbsp;stopping threshold on E[ΔR]</b><span class="val" id="v_theta"></span></label>
+       <input type="range" id="theta" min="0.001" max="0.05" step="0.001" value="0.005"></div>
+     <div class="ctl"><label><b>perturbation at pass 22 (+risk)</b><span class="val" id="v_pert"></span></label>
+       <input type="range" id="pert" min="0" max="0.6" step="0.05" value="0"></div>
+@@ -106,9 +106,12 @@
+     <h2 id="chart1title">Residual risk R(n) under the true recursion</h2>
+     <canvas id="c1" width="960" height="380" aria-label="risk trajectory chart"></canvas>
+     <div class="regime" id="regime"></div>
+-    <h2 style="margin-top:18px">Marginal yield ΔR per pass — where to stop</h2>
++    <h2 style="margin-top:18px">Expected improvement E[ΔR] per pass — where to stop</h2>
+     <canvas id="c2" width="960" height="200" aria-label="marginal yield chart"></canvas>
+-    <p class="hint">Bars below the amber line θ are passes not worth running.
++    <p class="hint">Bars are the expected improvement
++    <span class="mono">E[ΔR] = R·q·σ·(1−ν) − ν·(1−R)</span> — the decision is taken
++    before the detection branch is known, so it uses the expectation, not the
++    realised drop. Bars below the amber line θ are passes not worth running.
+     Click any pass in the top chart to see its three-phase arithmetic.</p>
+   </div>
+ </div>
+@@ -173,7 +176,18 @@
+     const R_new  = R_base*(1-o.nu) + o.nu;
+     const nuStar = (1 - q*R_old*(1-o.sigma)) > 0
+                  ? o.sigma*R_old*q/(1 - q*R_old*(1-o.sigma)) : 0;
+-    steps.push({i, R_old, R_det, R_base, R_new, dR: R_old - R_new, nuStar});
++    // THE STOPPING QUANTITY IS THE EXPECTED IMPROVEMENT, NOT dR (2026-09-28).
++    // dR = R_old - R_new is the realised drop of the plotted trajectory, i.e.
++    // the change CONDITIONAL on the non-detection branch. The appendix retired
++    // that as a stopping quantity on 2026-09-21 (MATHEMATICAL_APPENDIX.md:217):
++    // the decision precedes the branch, so it needs the expectation across both,
++    //   E[ΔR] = R·q·σ·(1−ν) − ν·(1−R)          (MATHEMATICAL_APPENDIX.md:225)
++    // which is >= dR everywhere (equality only on the boundary), so gating on
++    // dR could only ever stop too EARLY -- at high R the two differ by 70x.
++    // dR is kept: it is what the trajectory actually did, shown in the
++    // inspector and driving the net-harm regime sentence below.
++    const eDR = R_old*q*o.sigma*(1-o.nu) - o.nu*(1-R_old);
++    steps.push({i, R_old, R_det, R_base, R_new, dR: R_old - R_new, eDR, nuStar});
+     R = R_new; traj.push(R);
+   }
+   return {traj, steps, q};
+@@ -285,17 +299,17 @@
+ 
+   // ΔR chart
+   const ctx2 = c2.getContext('2d');
+-  const dmax = Math.max(o.theta*2, ...sim.steps.map(s=>Math.abs(s.dR)))*1.15;
++  const dmax = Math.max(o.theta*2, ...sim.steps.map(s=>Math.abs(s.eDR)))*1.15;
+   frame(ctx2, c2.width, c2.height, dmax);
+   let stopAt = null;
+   sim.steps.forEach(s=>{
+     const px = X(c2.width, s.i);
+     const bw = (c2.width-M.l-M.r)/N*0.62;
+-    const good = s.dR >= o.theta;
++    const good = s.eDR >= o.theta;
+     if (stopAt===null && !good && s.i>1) stopAt = s.i;
+-    ctx2.fillStyle = s.dR < 0 ? '#B3532E' : (good ? '#2E7D5B' : '#C7CDC2');
++    ctx2.fillStyle = s.eDR < 0 ? '#B3532E' : (good ? '#2E7D5B' : '#C7CDC2');
+     const h0 = Y(c2.height, 0, dmax);
+-    const h1 = Y(c2.height, Math.max(0,s.dR), dmax);
++    const h1 = Y(c2.height, Math.max(0,s.eDR), dmax);
+     ctx2.fillRect(px-bw/2, Math.min(h0,h1), bw, Math.abs(h0-h1)||1);
+   });
+   line(ctx2,c2.width,c2.height, Array(N+1).fill(o.theta), dmax,'#C08A00',1.5,[6,4]);
+@@ -342,8 +356,10 @@
+         ' &nbsp;(q = '+sim.q.toFixed(3)+')</td></tr>'+
+       '<tr><td>resolution → σ·R_det + (1−σ)·R</td><td>'+s.R_base.toFixed(4)+'</td></tr>'+
+       '<tr><td>re-injection → ·(1−ν) + ν</td><td>'+s.R_new.toFixed(4)+'</td></tr>'+
+-      '<tr><td>net gain this pass, ΔR</td><td>'+s.dR.toFixed(4)+
++      '<tr><td>realised drop this pass, ΔR</td><td>'+s.dR.toFixed(4)+
+         (s.dR<0?' &nbsp;⚠ net harm':'')+'</td></tr>'+
++      '<tr><td>expected improvement E[ΔR] = R·q·σ·(1−ν) − ν·(1−R)</td><td>'+s.eDR.toFixed(4)+
++        ' &nbsp;(the stopping quantity)</td></tr>'+
+       '<tr><td>break-even ν* at this state</td><td>'+s.nuStar.toFixed(4)+'</td></tr></table>';
+   }
+ }
+
+### fable:attempt-2:hooks/ffafp_audit.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/ffafp_audit.py	2026-09-24 04:17:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo/hooks/ffafp_audit.py	2026-09-28 17:40:54
+@@ -414,7 +414,26 @@
+     base = os.path.basename(low)
+     if (low.startswith("/tmp/") or low.startswith("/private/tmp/") or low.startswith("/var/folders/")
+             or "/scratchpad/" in low or low.startswith("/dev/")):
+-        return "transient"
++        # A TRANSIENT PREFIX IS NOT A VERDICT WHEN THE REST CAN ESCAPE IT
++        # (panel finding, 2026-09-28). "Transience is decided by where a path
++        # starts" is unsound under `..`: `/tmp/../<repo>/hooks/x.py` starts at
++        # /tmp/ and lands in the repository, and so does `/tmp/${V:-../..}/x.py`
++        # -- a default-value expansion the assignment parser cannot see but the
++        # real shell honours, so a seat controls the landing point while the
++        # classifier reads "transient". Measured before this clause: both
++        # classified "transient", which EXCUSES a write; "unresolved" at least
++        # neither accuses nor excuses.
++        #   - a literal `..` segment: the kind is knowable from the extension,
++        #     the location is not transient-guaranteed -> classify by extension.
++        #   - an unexpanded dynamic element ($VAR, ${...}, $(...), backtick):
++        #     the expansion may contain `..` -> "unresolved", never "transient".
++        _rest_dynamic = re.search(r"\$\{?\w+|\$\(|`", p)
++        _traversal = "/../" in ("/" + p + "/")
++        if not _rest_dynamic and not _traversal:
++            return "transient"
++        if _rest_dynamic:
++            return "unresolved"
++        # literal traversal: fall through to the extension rules below
+     # AN UNRESOLVED PATH CANNOT BE CLASSIFIED (2026-09-24). Added after the Stop
+     # gate's FIRST REAL BOUNCE refused a turn that changed no code at all. It
+     # accused `$SP/gate_in.json`: a scratchpad file whose RESOLVED path returns
+
+### fable:attempt-2:scripts/note_naming_check_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/note_naming_check_2026-09-28.py	2026-09-28 02:58:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b_qtx36k/repo/scripts/note_naming_check_2026-09-28.py	2026-09-28 17:42:20
+@@ -175,15 +175,33 @@
+ 
+     Uses `git grep` so the question is asked of tracked content, and asks it
+     case-insensitively with a fixed string so a phrase is never read as a regex.
++
++    FALLS BACK TO A PLAIN TREE GREP WHERE THERE IS NO GIT (panel finding,
++    2026-09-28). Every panel sandbox arrives with `.git` severed by design, so
++    `git grep` exits 128 there, this function returned -1, and `check()` read
++    -1 as "found somewhere" -- suppressing EVERY finding and printing a
++    confident 0% under --measure: a measurement that measures nothing, in the
++    reassuring direction. The fallback asks the whole tree rather than tracked
++    content, which can only find MORE files, i.e. FEWER findings -- the
++    conservative direction for an advisory. -1 now means both backends failed,
++    and the callers refuse rather than reassure.
+     """
+     cmd = ["git", "grep", "-lFi", "--", phrase]
+     try:
+         r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=60)
+     except (OSError, subprocess.TimeoutExpired):
+-        return -1
+-    if r.returncode not in (0, 1):
+-        return -1
+-    files = [f for f in r.stdout.splitlines() if f.strip()]
++        r = None
++    if r is None or r.returncode not in (0, 1):
++        try:
++            r = subprocess.run(
++                ["/usr/bin/grep", "-rlFi", "--exclude-dir=.git",
++                 "--exclude-dir=__pycache__", "--", phrase, "."],
++                cwd=ROOT, capture_output=True, text=True, timeout=120)
++        except (OSError, subprocess.TimeoutExpired):
++            return -1
++        if r.returncode not in (0, 1):
++            return -1
++    files = [f.removeprefix("./") for f in r.stdout.splitlines() if f.strip()]
+     if exclude is not None:
+         try:
+             rel = str(exclude.resolve().relative_to(ROOT))
+@@ -208,6 +226,13 @@
+     found = []
+     for phrase, at in candidates(text).items():
+         hits = repo_hits(phrase, exclude=path)
++        if hits < 0:
++            # REFUSE RATHER THAN REASSURE: a backend failure must not read as
++            # "the phrase exists somewhere". Before 2026-09-28 it did, and the
++            # whole measurement printed 0% in any git-less clone.
++            raise RuntimeError(
++                f"no search backend could ask about {phrase!r}; "
++                "the check cannot run here, which is not the same as 0 findings")
+         if hits != 0:
+             continue
+         intro = introduced(text, phrase, at)
+@@ -252,6 +277,15 @@
+     if not notes:
+         print("no notes corpus found", file=sys.stderr)
+         return 2
++    #: SENTINEL BEFORE SAMPLING: a term known to saturate the repo. If the
++    #: backend cannot see it, every per-phrase question below is unanswerable
++    #: and a 0% would be the false-zero class, not a measurement.
++    if repo_hits("additive standard", exclude=None) <= 0:
++        print("VOID: no search backend can see the repository "
++              "(no .git and no usable grep); refusing to print a rate.",
++              file=sys.stderr)
++        return 3
++
+     import random
+     random.seed(20260928)
+     sample = notes if len(notes) <= 40 else random.sample(notes, 40)

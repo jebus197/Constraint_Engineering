@@ -1,0 +1,181 @@
+# Panel brief — review EVERY change CC1 made on 2026-09-23/24
+
+## SECTION 1 — The question
+
+**Is any of the night's work wrong, insufficient, or an addition nothing reaches?**
+
+Seven commits, `ae0c837..HEAD`. Read them with `git log --oneline ae0c837..HEAD` and
+`git diff ae0c837..HEAD`. CC1 wrote all of it, largely between 01:20 and 03:00, and
+none of it has been checked by anyone else. Two of the fixes below were themselves
+repairs of CC1's earlier fixes from the same night, so the base rate of error in
+this changeset is known to be non-zero before you start.
+
+What changed, each with the claim CC1 attached to it:
+
+1. **The prose-scoring flag no longer admits harmful fixes.** Two seats' fixes were
+   adjudicated, ONE BRANCH WAS REMOVED as unreachable, and the removal is justified
+   by a measurement. `bench/reference_runner_v3.py`, the block above
+   `# THE SECOND SEAT'S DUPLICATE VETO BRANCH WAS REMOVED HERE`.
+2. **The FFAFP trace detector, dead 2 days, is repaired and self-re-arms.**
+   `hooks/ffafp_audit.py`: `migrate_turn()`, the stall counter, the forfeit notice.
+3. **A Stop gate is ARMED** in `~/.claude/settings.json` under the key `Stop`:
+   `hooks/ffafp_stop_gate.py`. It can REFUSE a turn.
+4. **`classify_path` gained an "unresolved" class** and its 3 consumers exclude it.
+5. **`CDSFL_SEAT` is now set** at both launch sites in
+   `bench/experiment_11_orchestrator.py`.
+6. **`routing_max_rungs`** on `RunnerConfig`, threaded only when it differs from 2.
+7. **The harvest instrument** covers 3 destinations at full depth, content-addressed.
+8. **30 suite failures closed**, including 20 module-level help calls guarded with
+   `if __name__ == "__main__":`.
+
+## SECTION 1b — The 4 things CC1 most expects to be wrong
+
+Attack these first. CC1 believes each is a real risk and has not resolved any of them.
+
+**(a) THE "unresolved" CLASS IS AN EVASION HOLE, CONFIRMED BY CC1 BEFORE SENDING
+THIS. Do not spend a pass re-finding it; attack the FIX.** A path carrying an
+unexpanded shell variable is excluded from the mutation set entirely, so it can
+neither accuse nor excuse. Executed against the live predicate
+`classify_path(p) not in ("transient", "unresolved")`:
+
+    bench/reference_runner_v3.py          -> COUNTS
+    $REPO/bench/reference_runner_v3.py    -> IGNORED   <-- real code, evaded
+    ${HOME}/proj/bench/runner.py          -> IGNORED   <-- braced form, evaded
+
+2 of 2 evasion forms succeed. CC1 introduced this at about 02:55 while repairing a
+FALSE POSITIVE, and it is the worse trade of the two: a false refusal is visible,
+annoying and self-correcting on the next bounce, whereas a silent evasion is none
+of those. It also inverts this project's own stated asymmetry — `detect_target_kind`
+resolves every ambiguous case to the SAFER side, and CC1 resolved this one to the
+unsafe side.
+
+**CC1's position, offered so you can attack it rather than guess at it:** the safe
+default is that an unresolved path COUNTS, accepting the false refusal, because the
+cost of a missed refusal is the whole purpose of the gate. But that restores the
+original false positive on scratchpad writes, which is what gets a Stop hook parked.
+The properly correct answer is probably neither: the hook sees the whole Bash
+command text, and `$SP` is ASSIGNED in that text (`SP=/tmp/...`), so the variable
+can be RESOLVED within the turn rather than guessed at. Resolve, do not guess. Say
+whether that is achievable against the real transcript, what it costs, and what it
+still cannot resolve (a variable exported in an earlier turn, or from the
+environment). If you propose the counting default instead, give the measured
+false-refusal rate it implies.
+
+**(b) THE REMOVAL MAY BE WRONG.** Both seats wrote a branch under the identical
+guard `_scoring_prose and tristate == SK_ADMISSIBLE`. CC1 kept the branch that
+CONVICTS on new gate defects and removed the branch that always returned NO_SCORE,
+on the named property "convictions recorded on harmful fixes", 3 of 5 against 0 of
+5. Was that the right property? The removed branch was strictly more conservative.
+Does the survivor admit anything the removed one would have refused, on ANY input,
+not only the 5 fixtures? `scripts/a19_flag_admits_harmful_fixes_2026-09-22.py` is
+the producer; extend its population rather than trusting its 10 rows.
+
+**(c) 20 HELP CALLS WERE GUARDED IN ONE MECHANICAL PASS.** Each became
+`if __name__ == "__main__": answer_help(...)`. Verify by EXECUTION that no script's
+real behaviour changed: that each still answers `--help`, still refuses an unknown
+flag where it did before, and still does its work. A mechanical edit applied 20
+times is 20 chances to have broken something quietly.
+
+**(d) THE SYNTHETIC END-TO-END FIXTURE FOR THE STOP GATE IS MISSING AND OWED.** CC1
+wrote 2 such tests, found them VACUOUS by probing `fa.scan` directly (no turn was
+ever handed to `fa.audit`), deleted them, and recorded the debt in
+`bench/tests/test_ffafp_stop_gate_2026-09-24.py`. Build the fixture that actually
+works, or establish that it cannot be built and say why.
+
+**(e) 3 SCRIPTS ACT WHEN IMPORTED, AND CC1 FAILED TO FIX IT TWICE.**
+`test_help_never_acts_2026-09-11.py::test_no_tracked_script_writes_at_import` is RED
+on `scripts/a19_flag_admits_harmful_fixes_2026-09-22.py`,
+`scripts/a19_veto_only_prose_sk_2026-09-22.py` and
+`scripts/a19_prose_gates_are_one_sided_2026-09-22.py`. All 3 do their work at module
+level, so importing them builds trees and spawns ruff and bandit. They write ONLY
+inside a temporary directory, so nothing in the repository is touched, but the rule
+is right: a tool that inspects a script must not make it act.
+
+CC1 attempted the wrap mechanically, broke 2 of the 3 on the indentation of a
+multi-line construct, restored them from git, and stopped rather than keep cutting
+at working files at 03:00. The obstacle is that each file INTERLEAVES imports with
+work, and the `if __name__ == "__main__"` guard sits MID-FILE (line 33 of the first),
+so a naive "indent everything after the imports" is wrong.
+
+Do this properly: move each file's work into `main()`, keep every import resolvable,
+keep the `--help` answer reachable, and verify by EXECUTION that each still answers
+`--help`, still does its work when run, and now does NOTHING when imported. The
+guard named above is the acceptance test. This is the least interesting item here
+and the most likely to be got wrong quietly, which is why it is stated precisely.
+
+## SECTION 2 — Use the harness
+
+Form your answer by RUNNING the machinery, not by describing it.
+
+`S_k` is the instrument for item (b): the question is whether the surviving branch
+can ever return ADMISSIBLE on a non-Python target. Prove or refute it over a
+population you construct, not the 5 archived fixtures. Report what `R_k` does in
+each case, because the founder's rule is that an unscoreable fix must not move risk.
+
+`sigma` bears on items (a) and (d): both are questions about whether an instrument's
+silence is evidence. A detector that cannot see a class of write, and a test that
+examines nothing, are the same failure — silence indistinguishable from health. Say
+what each would have to assert to tell those apart.
+
+`gamma` and the two-sided gate do NOT bear on this changeset; say so if you find
+otherwise. `routing_max_rungs` touches the ladder but not gamma: `_estimate_gamma`
+short-circuits below `min_rounds=3`, so a single-round run cannot be gamma-governed;
+verify that by calling it rather than taking it from this brief.
+
+## SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is half an answer. A fix without a falsifier you have
+EXECUTED is a hypothesis.
+
+Deliver every fix by WRITING IT INTO THE SANDBOX REPOSITORY TREE AT ITS REAL PATH.
+A fix described in prose is not delivered. A fix written to scratch space is
+destroyed at teardown.
+
+<!-- figure: harvest loss | scripts/panel_harvest_loss_2026-09-22.py | 72.0930 -->
+
+72.0930% of scripts delivered by seats never reached `scripts/` measured against the
+pinned pre-recovery commit.
+Do not let yours join them. Note that `hooks/ffafp_audit.py` and
+`hooks/ffafp_stop_gate.py` also live OUTSIDE the repository at `~/.claude/hooks/`;
+deliver a fix to the repository copy and state what installs it.
+
+A STORED falsifier may not call Wolfram: anyone reproducing this project must not
+need it installed. You SHOULD use Wolfram while reasoning — it is the chief
+secondary falsifier and the open-source tools remain primary.
+
+Report the command you ran and the output you saw, verbatim.
+
+## SECTION 4 — What would refute you
+
+State, before concluding, what evidence would overturn your own answer. If you
+report the evasion in (a) as real, say what a correct fix costs in false positives,
+because the previous Stop hook was parked within a day for firing too often. If you
+report the removal in (b) as correct, name the input class you searched and did not
+find a counterexample in.
+
+## SECTION 5 — Output shape
+
+- `verdict` — SOUND / PARTLY SOUND / UNSOUND, on the changeset as a whole
+- `reasoning` — citing file and line
+- `findings` — one entry per defect, each with: what, where, how you executed it,
+  and whether it is above the real-world-consequence threshold
+- `evasion_a`, `removal_b`, `help_guards_c`, `fixture_d` — your verdict on each of
+  the 4 named risks, with the evidence
+- `falsifier_path`, `falsifier_command`, `falsifier_output` — verbatim
+- `fix_path` — real repository paths, or NONE with the reason
+- `additive_check` — for each fix you propose: what caller reaches it, what test
+  executes it
+- `refutation_condition`
+- `strongest_disagreement` — with this brief's framing, including with CC1's
+  adjudication in (b). Must not be empty; if you agree with everything, say why
+  that is suspicious.
+- `passes_run`
+
+## SECTION 6 — Termination
+
+Stop on diminishing returns: when a further pass adds no finding above the
+real-world-consequence threshold. Report how many passes you ran and what the last
+one added. Do not manufacture findings and do not nitpick style — CC1's prose is not
+the subject, its correctness is.
+
+Disagreement with the other seat is information. Do not smooth it away.

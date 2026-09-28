@@ -74,7 +74,8 @@ an `export ` prefix). No `source` step is required before a run.
 **Wolfram needs no key**, and never did need one to reproduce a run. Wolfram retired
 the paid MCP Service and previously generated keys stopped functioning after
 2026-07-31. Where a cross-check is wanted, use either the free hosted MCP server
-(`npx -y mcp-remote https://agenttools.wolfram.com/mcp`) or a local Wolfram Engine
+(the official Wolfram connector, added from claude.com/connectors/wolfram — the
+`npx -y mcp-remote` bridge is RETIRED and must not be used) or a local Wolfram Engine
 under its free licence, called via `wolframscript`. Wolfram is a cross-verification
 tool only; no experiment depends on it.
 

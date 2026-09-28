@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 27 September 2026 19:29 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 29 September 2026 00:11 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -1197,7 +1197,8 @@ stopped functioning after 2026-07-31**. The old bridge still answered on 2 Augus
   Constraints: **effectively single-kernel** (3 concurrent `wolframscript` calls →
   1 OK, 2 "Connection closed by WolframKernel") and `$LicenseExpirationDate`
   **2026-09-11**.
-- `WolframCloud` → `agenttools.wolfram.com/mcp`, no credential. Identical
+- `WolframCloud` (RETIRED 2026-09-10 — the stdio BRIDGE, not the host; use the
+  official connector instead) → `agenttools.wolfram.com/mcp`, no credential. Identical
   computation, but STATELESS and a hard **~30 s wall / ~26 s compute** gateway
   ceiling. The ceiling is capability-inverted: it removes precisely the hard
   closed-form integrals that justify Wolfram over SymPy.

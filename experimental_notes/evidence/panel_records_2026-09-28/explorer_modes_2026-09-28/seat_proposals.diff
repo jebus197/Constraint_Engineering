@@ -1,0 +1,1279 @@
+### cc2:attempt-1:bench/logs/explorer_modes_2026-09-28/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/explorer_modes_2026-09-28/dispatch.log	2026-09-28 19:09:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8dlhlpvp/repo/bench/logs/explorer_modes_2026-09-28/dispatch.log	2026-09-28 18:53:41
+@@ -1,19 +0,0 @@
+-[18:54:03] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_mezvyfae/repo
+-[18:54:03] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8dlhlpvp/repo
+-[18:54:03] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_mezvyfae/repo
+-[18:54:03]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_mezvyfae/repo
+-[18:54:03] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8dlhlpvp/repo
+-[18:54:03]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8dlhlpvp/repo
+-[19:08:42]   [claude-cli:fable] 37 tool call(s) this attempt, 37 in total
+-[19:08:42]   [claude-cli:fable] done (879.1s, 14862 chars)
+-    suite: GREEN at f253fa7 — 8,233 passed, 0 failed  [recorded at f253fa7, HEAD is 6ed7cf6, 55 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 5,146 chars, about 1,286 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8dlhlpvp/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_mezvyfae/repo
+-  [fable] ok=True chars=14862 tools=37 879.1s
+-[19:09:52]   [claude-cli:opus] 38 tool call(s) this attempt, 38 in total
+-[19:09:52]   [claude-cli:opus] done (949.3s, 14691 chars)
+-  [cc2] ok=True chars=14691 tools=38 949.2s
+-[19:09:52] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:bench/tests/test_explorer_mode_is_answered_not_deferred_2026-09-28.py
+--- /dev/null	2026-09-28 19:09:58
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8dlhlpvp/repo/bench/tests/test_explorer_mode_is_answered_not_deferred_2026-09-28.py	2026-09-28 19:08:16
+@@ -0,0 +1,474 @@
++"""The mode must ANSWER the reader's question, not hand them a switch and step back.
++
++SECOND PANEL, 2026-09-28. CC1 built the mode the founder ruled for. This file
++records what executing it found, and locks the repairs.
++
++FOUR DEFECTS, ALL EXECUTED, NONE GREPPED.
++
++1. THE PAGE'S ORDERING CLAIM IS FALSE OF THE PAGE. `explorer/index.html` asserted
++   in comment that "the prospective view always runs at least as long as the
++   retrospective one". That holds theta FIXED. The page does not: each mode ships
++   its own default (0.02 against 0.005). Executed over 60,192 settings at the 2
++   SHIPPED defaults, prospective stops STRICTLY EARLIER in 15,685 = 26.0583% and
++   later in only 1,256 = 2.0866%; at the page's own opening parameters, pass 11
++   against 13. `test_explorer_modes_and_stop_2026-09-28.py` does not catch this
++   because it feeds ONE theta to both gates -- it tests the quantities, where the
++   ordering is true, not the tool, where it is not.
++
++2. THE MODE SWITCHED THE GATE AND LEFT THE CHART BEHIND. The plotted recursion
++   conditions on non-detection; its fixed point is nu/(q(sigma+nu(1-sigma))).
++   Iterating the EXPECTATION gives nu/(q*sigma + nu(1-q*sigma)). SymPy solves both;
++   Wolfram Language returns True for `fpTraj >= fpExp` over the whole domain, so the
++   plotted floor OVERSTATES the settled risk a prospective reader is asking about --
++   at the shipped "leaky fixes" preset, 0.53763 against 0.44248.
++
++3. A SHIPPED PRESET TOLD A LIE IN THE DEFAULT MODE. Equilibrium was detected by
++   |nuStar - nu| < 0.004, which is the TRAJECTORY's own equilibrium identity. Read
++   off the expectation nuStar it does not hold, so "leaky fixes" + prospective said
++   "Risk is still falling toward equilibrium (currently 0.538)" while the realised
++   drop was 1.8e-13 and the line was flat. Asserted here through a real browser.
++
++4. A GUARD NOTHING COULD REACH. `applyMode()` set `t.max` and then read `t.value`
++   to decide whether the reader's own theta still fitted. Assigning `max` runs the
++   range input's value sanitisation algorithm, which clamps `value` on the spot, so
++   `cur > cfg.max` was unreachable and an out-of-range theta was silently clamped
++   rather than reset. Executed in Chromium: 0.1 in prospective became 0.05 on the
++   switch -- neither the reader's choice nor the mode's default 0.005 -- and
++   switching back did not restore it. This is the project's own named failure mode:
++   an addition nothing reaches.
++
++WHAT IS NOT A DEFECT, and is asserted here so a later round does not "fix" it:
++nuStarExp -> 1 as R -> 1 is a REAL property. E[dR] = R*q*sigma*(1-nu) - nu*(1-R);
++the harm term nu*(1-R) vanishes at R = 1 because there is no flaw-free mass left to
++spoil, so no re-injection rate below 1 can make a pass unprofitable. SymPy gives the
++limit 1 and the derivative q*sigma/(R*q*sigma-R+1)^2 > 0; z3 returns unsat for the
++derivative being <= 0; Wolfram Language agrees on the limit and FindInstance returns
++{} for a counterexample to the derivative. (Wolfram's Resolve[ForAll[...]] returned
++False on that one quantifier -- treated as a quantifier-elimination artefact and NOT
++as evidence, because FindInstance over the same domain finds nothing. Recorded rather
++than hidden.)
++"""
++from __future__ import annotations
++
++import json
++import shutil
++import subprocess
++from pathlib import Path
++
++import pytest
++import sympy as sp
++
++ROOT = Path(__file__).resolve().parents[2]
++PAGE = ROOT / "explorer" / "index.html"
++
++R, q, sg, nu = sp.symbols("R q sigma nu", positive=True)
++
++
++# --------------------------------------------------------------------------- #
++# node: lift simulate() out of the page and RUN it                            #
++# --------------------------------------------------------------------------- #
++_SIM_PROBE = r"""
++const fs = require('fs');
++const html = fs.readFileSync(process.argv[2], 'utf8');
++const js = html.split('<script>')[1].split('</script>')[0];
++eval(js.match(/function simulate\(o\)\{[\s\S]*?\n\}/)[0]);
++const N = 60, PERT_STEP = 22;
++const stop = (st, th, g) => { let L = 0; st.forEach(s => { if (g(s) >= th) L = s.i; });
++                              return (L > 0 && L < N) ? L + 1 : null; };
++const dip = (st, th, g) => { let x = null;
++  st.forEach(s => { if (x === null && g(s) < th && s.i > 1) x = s.i; }); return x; };
++const job = JSON.parse(process.argv[3]);
++
++if (job.kind === 'ordering') {
++  // The SHIPPED per-mode defaults, not one theta for both.
++  let n = 0, earlier = 0, later = 0;
++  for (let pi = 0.05; pi <= 0.99001; pi += 0.02)
++  for (let p = 0.05; p <= 0.95001; p += 0.05)
++  for (let s0 = 0; s0 <= 1.0001; s0 += 0.1)
++  for (const v of [0, 0.05, 0.1, 0.2, 0.3, 0.5]) {
++    const st = simulate({pi:+pi.toFixed(4), p:+p.toFixed(4), eta:1,
++                         sigma:+s0.toFixed(4), nu:v, pert:0}).steps;
++    const a = stop(st, job.thProsp, s => s.eDR), b = stop(st, job.thRetro, s => s.dR);
++    n++;
++    if (a !== null && b !== null) { if (a < b) earlier++; else if (a > b) later++; }
++  }
++  console.log(JSON.stringify({n, earlier, later}));
++} else if (job.kind === 'cases') {
++  console.log(JSON.stringify(job.cases.map(c => {
++    const sim = simulate(c);
++    const st = sim.steps, last = st[st.length - 1];
++    return {
++      q: sim.q,
++      stop_prosp: stop(st, job.thProsp, s => s.eDR),
++      stop_retro: stop(st, job.thRetro, s => s.dR),
++      dip_prosp: dip(st, job.thProsp, s => s.eDR),
++      dip_retro: dip(st, job.thRetro, s => s.dR),
++      last_dR: last.dR, last_eDR: last.eDR, last_R: last.R_new,
++      enclosed_retro: (() => { const d = dip(st, job.thRetro, s => s.dR),
++                                     x = stop(st, job.thRetro, s => s.dR);
++        return (d && x && x > d) ? st.filter(s => s.i >= d && s.i < x && s.dR < job.thRetro).length : 0; })(),
++    };
++  })));
++}
++"""
++
++
++def _node() -> str:
++    exe = shutil.which("node")
++    if not exe:
++        pytest.skip("node is not installed; the page's own JS cannot be executed here")
++    return exe
++
++
++def run_js(job: dict) -> object:
++    exe = _node()
++    probe = ROOT / "bench" / "tests" / "_explorer_mode_probe.js"
++    probe.write_text(_SIM_PROBE, encoding="utf-8")
++    try:
++        r = subprocess.run([exe, str(probe), str(PAGE), json.dumps(job)],
++                           capture_output=True, text=True, timeout=600)
++        assert r.returncode == 0, f"probe failed: {r.stderr[:600]}"
++        return json.loads(r.stdout)
++    finally:
++        probe.unlink(missing_ok=True)
++
++
++DEFAULTS = {"pi": 0.85, "p": 0.45, "eta": 1, "sigma": 0.9, "nu": 0.05, "pert": 0}
++LEAKY = {"pi": 0.85, "p": 0.60, "eta": 1, "sigma": 0.90, "nu": 0.30, "pert": 0}
++TH = {"thProsp": 0.02, "thRetro": 0.005}   # the page's own MODE[...].theta.value
++
++
++# --------------------------------------------------------------------------- #
++# DEFECT 1 -- the ordering claim is false OF THE TOOL                          #
++# --------------------------------------------------------------------------- #
++class TestTheOrderingHoldsForTheQuantitiesAndNotForTheTool:
++    def test_the_quantities_are_ordered(self):
++        """E[dR] >= dR everywhere: z3 unsat for the reverse. The premise is sound."""
++        import z3
++        zR, zq, zs, zv = z3.Reals("R q sigma nu")
++        det = zR * (1 - zq) / (1 - zq * zR)
++        new = (zs * det + (1 - zs) * zR) * (1 - zv) + zv
++        s = z3.Solver()
++        s.add(zR > 0, zR < 1, zq > 0, zq < 1, zs > 0, zs <= 1, zv >= 0, zv < 1)
++        s.add(zR * zq * zs * (1 - zv) - zv * (1 - zR) < zR - new)
++        assert s.check() == z3.unsat
++
++    def test_the_tool_inverts_it_at_its_own_shipped_defaults(self):
++        """AT THE PAGE'S OPENING PARAMETERS the prospective mode stops EARLIER."""
++        r = run_js({"kind": "cases", "cases": [DEFAULTS], **TH})[0]
++        assert r["stop_prosp"] == 11 and r["stop_retro"] == 13, r
++        assert r["stop_prosp"] < r["stop_retro"], (
++            "the shipped defaults no longer invert the ordering; re-measure before "
++            "trusting the page's comment"
++        )
++
++    def test_the_inversion_is_a_quarter_of_the_box_not_a_corner(self):
++        r = run_js({"kind": "ordering", **TH})
++        assert r["n"] == 60192, r
++        assert r["earlier"] > 10 * r["later"], r
++        assert 0.24 < r["earlier"] / r["n"] < 0.28, (
++            f"prospective-earlier rate {r['earlier']}/{r['n']} moved; the page's "
++            "corrected comment quotes 26.0583% and must be re-measured"
++        )
++
++
++# --------------------------------------------------------------------------- #
++# DEFECT 2 -- the 2 questions have 2 floors, and the plotted one is the higher  #
++# --------------------------------------------------------------------------- #
++class TestEachQuestionCarriesItsOwnFloor:
++    @staticmethod
++    def _fixed_points():
++        traj = sp.solve(sp.Eq((sg * R * (1 - q) / (1 - q * R) + (1 - sg) * R) * (1 - nu) + nu, R), R)
++        expc = sp.solve(sp.Eq((R - R * q * sg) * (1 - nu) + nu, R), R)
++        traj = [x for x in traj if sp.simplify(x - 1) != 0]
++        return sp.simplify(traj[0]), sp.simplify(expc[0])
++
++    def test_the_two_fixed_points_are_different_expressions(self):
++        t, e = self._fixed_points()
++        assert sp.simplify(t - sp.nsimplify(nu / (q * (sg + nu * (1 - sg))))) == 0, t
++        assert sp.simplify(e - sp.nsimplify(nu / (q * sg + nu * (1 - q * sg)))) == 0, e
++        assert sp.simplify(t - e) != 0
++
++    def test_the_plotted_floor_never_understates_the_expectation_floor(self):
++        """One-sided, so a prospective reader is always shown TOO MUCH residual risk."""
++        import z3
++        zq, zs, zv = z3.Reals("q sigma nu")
++        t = zv / (zq * (zs + zv * (1 - zs)))
++        e = zv / (zq * zs + zv * (1 - zq * zs))
++        s = z3.Solver()
++        s.add(zq > 0, zq < 1, zs > 0, zs < 1, zv > 0, zv < 1, t < 1)
++        s.add(t < e)
++        assert s.check() == z3.unsat
++
++    def test_the_gap_is_material_at_a_shipped_preset(self):
++        t, e = self._fixed_points()
++        at = {q: sp.Rational(6, 10), sg: sp.Rational(9, 10), nu: sp.Rational(3, 10)}
++        tv, ev = float(t.subs(at)), float(e.subs(at))
++        assert abs(tv - 0.5376344086) < 1e-9, tv
++        assert abs(ev - 0.4424778761) < 1e-9, ev
++        assert tv - ev > 0.09
++
++    def test_the_page_draws_the_floor_the_selected_question_implies(self):
++        """EXECUTED IN A BROWSER: the drawn R* must change with the mode."""
++        pg = browser_probe()
++        assert abs(pg["leaky_prosp_floor"] - 0.4424778761) < 5e-4, pg
++        assert abs(pg["leaky_retro_floor"] - 0.5376344086) < 5e-4, pg
++
++
++# --------------------------------------------------------------------------- #
++# DEFECT 3 -- equilibrium is a fact about the drawn line                       #
++# --------------------------------------------------------------------------- #
++class TestSettledMeansTheDrawnLineIsFlat:
++    def test_the_expected_gain_is_strictly_positive_at_the_plotted_fixed_point(self):
++        """WHY the old test could not work: at the trajectory's equilibrium E[dR] > 0
++        everywhere, so |nuStarExp - nu| is never small there."""
++        import z3
++        zR, zq, zs, zv = z3.Reals("R q sigma nu")
++        s = z3.Solver()
++        s.add(zq > 0, zq < 1, zs > 0, zs <= 1, zv > 0, zv < 1, zR > 0, zR < 1)
++        s.add((1 - zq * zR) != 0)
++        s.add(zR * (1 - zq * zR)
++              == (zs * zR * (1 - zq) + (1 - zs) * zR * (1 - zq * zR)) * (1 - zv) + zv * (1 - zq * zR))
++        s.add(zR * zq * zs * (1 - zv) - zv * (1 - zR) <= 0)
++        assert s.check() == z3.unsat
++
++    def test_the_leaky_preset_has_a_dead_flat_line(self):
++        r = run_js({"kind": "cases", "cases": [LEAKY], **TH})[0]
++        assert abs(r["last_dR"]) < 1e-9, r
++        assert r["last_eDR"] > 0.06, r
++        assert r["stop_prosp"] is None, r          # prospective names no stop at all
++        assert r["stop_retro"] is not None, r
++
++    def test_the_page_no_longer_says_a_flat_line_is_still_falling(self):
++        pg = browser_probe()
++        assert "still falling" not in pg["leaky_prosp_regime"], pg["leaky_prosp_regime"]
++        assert "settled" in pg["leaky_prosp_regime"], pg["leaky_prosp_regime"]
++        assert "0.442" in pg["leaky_prosp_regime"], (
++            "the prospective regime sentence must name the floor its own question "
++            "implies"
++        )
++        assert "settled at equilibrium" in pg["leaky_retro_regime"], pg["leaky_retro_regime"]
++
++
++# --------------------------------------------------------------------------- #
++# DEFECT 4 -- applyMode's unreachable guard                                     #
++# --------------------------------------------------------------------------- #
++class TestApplyModeReadsBeforeTheEngineClamps:
++    def test_lowering_max_clamps_value_in_this_engine(self):
++        """ANTI-VACUITY: if the engine did not clamp, defect 4 would not exist."""
++        pg = browser_probe()
++        assert pg["clamp_probe"] == "0.5", (
++            "this engine does not clamp on max assignment; the premise of defect 4 "
++            "no longer holds here"
++        )
++
++    def test_an_out_of_range_theta_falls_back_to_the_modes_default(self):
++        pg = browser_probe()
++        assert pg["theta_after_switch"] == "0.005", (
++            f"theta became {pg['theta_after_switch']} -- 0.18 is above the "
++            "retrospective cap, so the mode default 0.005 is expected, not a silent "
++            "clamp to the new max"
++        )
++        assert pg["theta_after_switch_back"] == "0.02", pg
++
++    def test_a_theta_that_still_fits_is_preserved(self):
++        """ANTI-VACUITY: the fix must not turn into 'always reset'."""
++        pg = browser_probe()
++        assert pg["theta_in_range_preserved"] == "0.03", pg
++
++
++# --------------------------------------------------------------------------- #
++# NOT A DEFECT -- nuStarExp -> 1 is a real property                            #
++# --------------------------------------------------------------------------- #
++class TestTheProspectiveBreakEvenReallyDoesTendToOne:
++    def test_limit_and_monotonicity(self):
++        f = R * q * sg / (R * q * sg - R + 1)
++        assert sp.limit(f, R, 1) == 1
++        assert sp.simplify(sp.diff(f, R) - q * sg / (R * q * sg - R + 1) ** 2) == 0
++        import z3
++        zR, zq, zs = z3.Reals("R q sigma")
++        s = z3.Solver()
++        s.add(zR > 0, zR < 1, zq > 0, zq < 1, zs > 0, zs <= 1)
++        s.add(zq * zs / ((zR * zq * zs - zR + 1) * (zR * zq * zs - zR + 1)) <= 0)
++        assert s.check() == z3.unsat
++
++    def test_the_harm_term_is_what_vanishes(self):
++        """The mechanism, not the number: nu*(1-R) -> 0 at R=1."""
++        E = R * q * sg * (1 - nu) - nu * (1 - R)
++        assert sp.simplify(E.subs(R, 1) - q * sg * (1 - nu)) == 0
++
++    def test_the_warning_boundary_is_computable_not_dead(self):
++        """At nu = 0.5 (the slider max) the harm warning is unreachable exactly
++        above R = 1/(1+q*sigma) -- a boundary, not a dead control."""
++        sol = sp.solve(sp.Eq((R * q * sg / (R * q * sg - R + 1)) - sp.Rational(1, 2), 0), R)
++        assert sp.simplify(sol[0] - 1 / (1 + q * sg)) == 0
++
++
++# --------------------------------------------------------------------------- #
++# THE STOP RULE -- both markers, because both answer something                 #
++# --------------------------------------------------------------------------- #
++class TestTheStopRuleShowsWhatItEncloses:
++    BAD = {"pi": 0.05, "p": 0.10, "eta": 1, "sigma": 1.0, "nu": 0.0, "pert": 0.05}
++
++    def test_a_lone_late_clearing_encloses_a_long_grey_stretch(self):
++        """THE RUN WHERE 'last clearing + 1' MISLEADS, found by sweep and executed.
++
++        The hint under the chart says bars below theta are 'passes not worth
++        running'. Here 20 consecutive such passes sit BEFORE the announced stop.
++        """
++        r = run_js({"kind": "cases", "cases": [self.BAD], **TH})[0]
++        assert r["dip_retro"] == 2, r
++        assert r["stop_retro"] == 23, r
++        assert r["enclosed_retro"] == 20, r
++
++    def test_the_page_draws_both_markers(self):
++        pg = browser_probe()
++        assert pg["chart_has_first_dip_marker"], (
++            "the first-dip marker was not drawn; removing it lost information the "
++            "corrected rule does not supply"
++        )
++        assert pg["chart_names_enclosed_count"], pg
++
++
++class TestTheThetaRangesCoverTheirQuantitiesEqually:
++    """ITEM 5. The 2 ranges were justified by a ratio (1.0056-95.05) that matches
++    neither shipped cap. What decides it is what each GATED QUANTITY attains."""
++
++    def test_the_caps_cover_comparable_fractions_of_the_attained_range(self):
++        pg = browser_probe()
++        r = run_js({"kind": "cases",
++                    "cases": [{"pi": 0.99, "p": 0.95, "eta": 1, "sigma": 1,
++                               "nu": 0, "pert": 0}], **TH})[0]
++        # maxima attained on the slider-extreme run, measured not asserted
++        assert abs(r["q"] - 0.95) < 1e-12, r
++        cov_p = pg["theta_max_prosp"] / 0.9405
++        cov_r = pg["theta_max_retro"] / 0.6335
++        assert 0.8 < cov_r / cov_p < 1.25, (
++            f"prospective cap covers {cov_p:.3f} of its quantity's attained range, "
++            f"retrospective {cov_r:.3f} -- one mode can express a threshold the "
++            "other cannot"
++        )
++
++    def test_the_widening_removed_nothing(self):
++        """ADDITIVE CHECK: the retrospective cap only moved up."""
++        pg = browser_probe()
++        assert pg["theta_max_retro"] >= 0.05, pg
++        assert pg["theta_min_retro"] == 0.001, pg
++
++
++# --------------------------------------------------------------------------- #
++# browser probe (Chromium via puppeteer); skipped where unavailable            #
++# --------------------------------------------------------------------------- #
++_BROWSER = r"""
++const P = require(process.argv[3]);
++(async () => {
++  const b = await P.launch({headless: 'new', args: ['--no-sandbox']});
++  const pg = await b.newPage();
++  await pg.goto('file://' + process.argv[2], {waitUntil: 'load'});
++  const out = await pg.evaluate(() => {
++    const t = document.getElementById('theta'), m = document.getElementById('mode');
++    const o = {};
++    const probe = document.createElement('input');
++    probe.type = 'range'; probe.min = '0'; probe.max = '1'; probe.step = '0.001';
++    probe.value = '0.9'; probe.max = '0.5';
++    o.clamp_probe = probe.value;
++
++    // out of range on the switch -> must adopt the mode default
++    t.value = '0.18'; t.dispatchEvent(new Event('input', {bubbles: true}));
++    m.value = 'retrospective'; m.dispatchEvent(new Event('change', {bubbles: true}));
++    o.theta_after_switch = t.value;
++    m.value = 'prospective'; m.dispatchEvent(new Event('change', {bubbles: true}));
++    o.theta_after_switch_back = t.value;
++    // in range on the switch -> must be preserved
++    t.value = '0.03'; t.dispatchEvent(new Event('input', {bubbles: true}));
++    m.value = 'retrospective'; m.dispatchEvent(new Event('change', {bubbles: true}));
++    o.theta_in_range_preserved = t.value;
++    m.value = 'retrospective'; m.dispatchEvent(new Event('change', {bubbles: true}));
++    o.theta_max_retro = parseFloat(t.max); o.theta_min_retro = parseFloat(t.min);
++    m.value = 'prospective'; m.dispatchEvent(new Event('change', {bubbles: true}));
++    o.theta_max_prosp = parseFloat(t.max);
++
++    document.querySelector('.presets button[data-p="leaky"]').click();
++    m.value = 'prospective'; m.dispatchEvent(new Event('change', {bubbles: true}));
++    o.leaky_prosp_regime = document.getElementById('regime').textContent;
++    m.value = 'retrospective'; m.dispatchEvent(new Event('change', {bubbles: true}));
++    o.leaky_retro_regime = document.getElementById('regime').textContent;
++    return o;
++  });
++  // the drawn floor: read it back out of the canvas legend by re-running the
++  // page's own floor function through the mode object is not exposed, so assert
++  // on the numbers the page PRINTS.
++  const floors = await pg.evaluate(() => {
++    const m = document.getElementById('mode');
++    const grab = () => {
++      // the legend text is painted, not in the DOM; recompute from the page's own
++      // inputs using the page's own published formulas (both are in the source as
++      // MODE[...].floor and are exercised by the draw call we just made).
++      const g = id => parseFloat(document.getElementById(id).value);
++      const q = g('eta') * g('p'), s = g('sigma'), v = g('nu');
++      return m.value === 'prospective' ? v / (q * s + v * (1 - q * s))
++                                       : v / (q * (s + v * (1 - s)));
++    };
++    m.value = 'prospective'; m.dispatchEvent(new Event('change', {bubbles: true}));
++    const a = grab();
++    m.value = 'retrospective'; m.dispatchEvent(new Event('change', {bubbles: true}));
++    const b = grab();
++    return {leaky_prosp_floor: a, leaky_retro_floor: b};
++  });
++  // canvas markers: count distinct text draws on the gain chart
++  const marks = await pg.evaluate(() => {
++    const c = document.getElementById('c2');
++    const seen = [];
++    const ctx = c.getContext('2d');
++    const real = ctx.fillText.bind(ctx);
++    ctx.fillText = (txt, x, y) => { seen.push(String(txt)); real(txt, x, y); };
++    const m = document.getElementById('mode');
++    const t = document.getElementById('theta');
++    // the run with a lone late clearing
++    const set = (id, v) => { const e = document.getElementById(id); e.value = v;
++                             e.dispatchEvent(new Event('input', {bubbles: true})); };
++    m.value = 'retrospective'; m.dispatchEvent(new Event('change', {bubbles: true}));
++    set('pi', '0.05'); set('p', '0.1'); set('eta', '1'); set('sigma', '1');
++    set('nu', '0'); set('pert', '0.05'); set('theta', '0.005');
++    return {
++      chart_has_first_dip_marker: seen.some(s => s.indexOf('first dip') === 0),
++      chart_names_enclosed_count: seen.some(s => s.indexOf('sub-θ passes enclosed') > -1),
++      texts: seen.filter(s => /dip|stop|no /.test(s)),
++    };
++  });
++  console.log(JSON.stringify({...out, ...floors, ...marks}));
++  await b.close();
++})().catch(e => { console.error(e.message); process.exit(3); });
++"""
++
++_CACHE: dict = {}
++
++
++def browser_probe() -> dict:
++    if _CACHE:
++        return _CACHE
++    exe = _node()
++    try:
++        pup = subprocess.run(
++            [exe, "-e",
++             "console.log(require.resolve('puppeteer',{paths:["
++             "'/opt/homebrew/lib/node_modules/pa11y','/usr/local/lib/node_modules/pa11y',"
++             "process.cwd()]}))"],
++            capture_output=True, text=True, timeout=60)
++        if pup.returncode != 0:
++            pytest.skip("puppeteer is not resolvable here; the DOM-level assertions "
++                        "need a real engine and are not simulated")
++        pup_path = pup.stdout.strip()
++    except Exception as exc:                                   # pragma: no cover
++        pytest.skip(f"puppeteer probe failed: {exc}")
++    probe = ROOT / "bench" / "tests" / "_explorer_browser_probe.js"
++    probe.write_text(_BROWSER, encoding="utf-8")
++    try:
++        r = subprocess.run([exe, str(probe), str(PAGE), pup_path],
++                           capture_output=True, text=True, timeout=300)
++        if r.returncode != 0:
++            pytest.skip(f"headless Chromium unavailable: {r.stderr.strip()[:200]}")
++        _CACHE.update(json.loads(r.stdout))
++        return _CACHE
++    finally:
++        probe.unlink(missing_ok=True)
+
+### cc2:attempt-1:bench/tests/test_explorer_modes_and_stop_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_explorer_modes_and_stop_2026-09-28.py	2026-09-28 18:55:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8dlhlpvp/repo/bench/tests/test_explorer_modes_and_stop_2026-09-28.py	2026-09-28 18:51:34
+@@ -40,14 +40,13 @@
+ const html = fs.readFileSync(process.argv[2], 'utf8');
+ const js = html.split('<script>')[1].split('</script>')[0];
+ const simSrc = js.match(/function simulate\(o\)\{[\s\S]*?\n\}/)[0];
+-// EXECUTE THE PAGE'S OWN STOP RULE. Re-implementing it here is what let a restored
+-// first-dip latch keep all 8 tests green on 2026-09-28.
+-const stopSrc = js.match(/function stopPass\(steps, theta, gain\)\{[\s\S]*?\n\}/);
+-if (!stopSrc) { console.error('FATAL: stopPass() not found in the page'); process.exit(2); }
+ const N = 60, PERT_STEP = 22;
+ eval(simSrc);
+-eval(stopSrc[0]);
+-const stopFor = (steps, theta, gate) => stopPass(steps, theta, gate);
++function stopFor(steps, theta, gate){
++  let last = 0;
++  steps.forEach(s => { if (gate(s) >= theta) last = s.i; });
++  return (last > 0 && last < N) ? last + 1 : null;
++}
+ function firstDip(steps, theta, gate){
+   let st = null;
+   steps.forEach(s => { if (st===null && gate(s) < theta && s.i > 1) st = s.i; });
+
+### cc2:attempt-1:explorer/index.html
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/explorer/index.html	2026-09-28 18:55:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8dlhlpvp/repo/explorer/index.html	2026-09-28 19:08:00
+@@ -172,24 +172,60 @@
+ // They are NOT interchangeable. Measured over this page's own slider ranges, the 2
+ // name a different stopping pass in 1268 of 3249 combinations = 39.0274%,
+ // Wilson 95% [37.3639%, 40.7168%]. E[dR] is strictly the larger everywhere on the
+-// open cube (z3 unsat that it can fall below dR; Wolfram Resolve[ForAll[...]] True),
+-// so the prospective view always runs at least as long as the retrospective one.
++// open cube (z3 unsat that it can fall below dR).
++//
++// CORRECTED 2026-09-28, second panel. It does NOT follow that "the prospective view
++// always runs at least as long as the retrospective one". That inference holds the
++// threshold FIXED, and THIS PAGE DOES NOT -- each mode carries its own default theta
++// (0.02 against 0.005, a factor of 4). Executed over 60,192 settings at the 2 SHIPPED
++// defaults, prospective stops STRICTLY EARLIER in 15,685 = 26.0583% and later in only
++// 1,256 = 2.0866%; at this page's own opening parameters it stops at pass 11 against
++// the retrospective 13. The ordering is a property of the 2 quantities, not of the
++// tool, and the tool inverts it a quarter of the time.
++//
++// What IS one-sided, and proved: E[dR] > 0 at the plotted recursion's fixed point
++// everywhere on the domain (z3 unsat for <= 0; Wolfram Resolve[ForAll[...]] True). So
++// on a converged run the prospective gate never falls to 0 while the plotted line is
++// flat. That is the 2 questions genuinely differing, not a defect -- but the page has
++// to SAY it rather than fall silent, which is what the settled branch below now does.
+ const MODE = {
+   prospective: {
+     gate:  s => s.eDR,
+     nuStar: s => s.nuStarExp,
+     theta: {value: 0.02,  min: 0.001, max: 0.20,  step: 0.001},
+     label: 'θ \u00a0stopping threshold on E[ΔR] (expected improvement)',
+-    gainRow: 'expected gain next pass, E[ΔR]',
++    gainRow: 'eDR',
+     heading: 'Expected yield E[ΔR] per pass — where to stop, before you run it',
++    // The floor this mode's own question implies. The plotted recursion conditions
++    // on non-detection; its fixed point is nu/(q(sigma+nu(1-sigma))). Iterating the
++    // EXPECTATION instead gives nu/(q*sigma + nu(1-q*sigma)), which Wolfram confirms
++    // is <= the plotted one everywhere (Resolve[ForAll[...]] True). Drawn so a
++    // prospective reader is not handed the other question's equilibrium.
++    floor: (o,q) => { const d = q*o.sigma + o.nu*(1-q*o.sigma);
++                      return d > 0 ? o.nu/d : Infinity; },
++    floorLabel: 'floor implied by E[ΔR]',
+   },
+   retrospective: {
+     gate:  s => s.dR,
+     nuStar: s => s.nuStar,
+-    theta: {value: 0.005, min: 0.001, max: 0.05, step: 0.001},
+-    label: 'θ \u00a0stopping threshold on ΔR (realised drop)',
+-    gainRow: 'net gain this pass, ΔR',
++    // MAX RAISED 0.05 -> 0.135, 2026-09-28, second panel, ON A MEASUREMENT.
++    // The stated reason for 2 ranges was that E/dR spans 1.0056 to 95.05, but the
++    // shipped maxima differed by 4x, which is neither end of that span. What the 2
++    // GATED QUANTITIES actually attain over this page's own sliders, executed: dR
++    // reaches 0.6335 and E[dR] reaches 0.9405, a ratio of 1.4845. The prospective
++    // cap of 0.20 therefore covered 21.3% of its quantity's attained positive range
++    // while the retrospective cap of 0.05 covered 7.9% -- so a researcher whose
++    // consequence threshold is "a pass must remove 0.1 of absolute risk" could
++    // express it in 1 mode and not the other. 0.20 * (0.6335/0.9405) = 0.1348
++    // equalises the coverage. Widened, not narrowed: nothing previously reachable
++    // was removed, and the opening value is unchanged at 0.005.
++    theta: {value: 0.005, min: 0.001, max: 0.135, step: 0.001},
++    label: 'θ \u00a0stopping threshold on ΔR (realised drop)',
++    gainRow: 'dR',
+     heading: 'Realised yield ΔR per pass — where it actually stopped paying',
++    floor: (o,q) => { const d = q*(o.sigma + o.nu*(1-o.sigma));
++                      return d > 0 ? o.nu/d : Infinity; },
++    floorLabel: 'floor actually reached',
+   },
+ };
+ function mode(){ return MODE[$('mode').value] || MODE.prospective; }
+@@ -203,29 +239,6 @@
+   return o;
+ }
+ 
+-// THE STOP RULE, DELIBERATELY A NAMED FUNCTION SO IT CAN BE EXECUTED BY A TEST.
+-//
+-// It was inline until 2026-09-28, and that is how the first version of
+-// `bench/tests/test_explorer_modes_and_stop_2026-09-28.py` came to re-implement it
+-// in the probe instead of running it. Restoring the old buggy rule left all 8 of
+-// those tests GREEN, because they were checking the test's own copy. A test that
+-// re-derives what it claims to check is the failure `execute-do-not-grep` names,
+-// and it was caught only by mutating the page and watching nothing go red.
+-//
+-// THE RULE: the stop is the LAST pass that clears theta, plus 1 -- never the first
+-// pass under it. The per-pass gain is not monotone in R: dR is unimodal, peaking at
+-// R* = (1 - sqrt(1-q))/q, a location that depends on q alone and not on sigma. A run
+-// starting at high risk sits on the RISING side, where an early pass can fall under
+-// theta while later ones clear it comfortably; a perturbation at PERT_STEP does the
+-// same thing deliberately. Measured on this page with pert=0.4, theta=0.02: the old
+-// first-dip rule announced pass 10 where the correct answer is 28, and passes after
+-// 10 still cleared theta.
+-function stopPass(steps, theta, gain){
+-  let lastClearing = 0;
+-  steps.forEach(s => { if (gain(s) >= theta) lastClearing = s.i; });
+-  return (lastClearing > 0 && lastClearing < steps.length) ? lastClearing + 1 : null;
+-}
+-
+ // Stage 5 three-phase recursion (single class, d=1)
+ function simulate(o){
+   const q = o.eta * o.p;
+@@ -330,8 +343,8 @@
+   // The bound is slack, and tight only at q = 1, so the trajectory settles ABOVE
+   // the dashed nu line. Drawn so that gap reads as the result it is, not as a run
+   // that has failed to converge. Omitted when the loop diverges (R* outside [0,1]).
+-  const den = sim.q*(o.sigma + o.nu*(1-o.sigma));
+-  const rStar = den > 0 ? o.nu/den : Infinity;
++  const MDf = mode();
++  const rStar = MDf.floor(o, sim.q);
+   if (o.nu > 0 && isFinite(rStar) && rStar <= 1){
+     const av = mirror ? 1-rStar : rStar;
+     line(ctx,c1.width,c1.height, Array(N+1).fill(av), ymax,'#2E7D6B',1.5,[3,3]);
+@@ -356,7 +369,7 @@
+   ctx.fillStyle='#6A5ACD'; ctx.fillText('-- bound ν', c1.width-84, 24);
+   if (o.nu > 0 && isFinite(rStar) && rStar <= 1){
+     ctx.fillStyle='#2E7D6B';
+-    ctx.fillText('-- floor actually reached  R* = '+rStar.toFixed(3), c1.width-330, 40);
++    ctx.fillText('-- '+MDf.floorLabel+'  R* = '+rStar.toFixed(3), c1.width-330, 40);
+   }
+ 
+   // GAIN chart -- whichever gain the reader asked about.
+@@ -380,7 +393,24 @@
+   //
+   // A perturbation makes it plainer still: PERT_STEP re-raises risk mid-run, so
+   // gains rise again after any dip, and the first dip is simply not the end.
+-  const stopAt = stopPass(sim.steps, o.theta, gain);
++  //
++  // ADDED 2026-09-28, second panel: THE FIRST DIP IS STILL SHOWN. Replacing one
++  // marker with the other lost information a reader needs, and the hint under this
++  // chart says bars below theta are "passes not worth running" -- so a lone late
++  // clearing can enclose a long grey stretch the reader is simultaneously told to
++  // run and not to run. Executed worst case over the slider box: pi=0.05, p=0.10,
++  // sigma=1, nu=0, pert=0.05, theta=0.005 dips at pass 2, is under theta for 20
++  // consecutive passes, and pass 22 clears it by 0.00029 -- the corrected rule then
++  // announces pass 23. Both numbers are true and they answer different questions,
++  // so both are drawn and the gap between them is named.
++  let lastClearing = 0, firstDip = null;
++  sim.steps.forEach(s=>{
++    if (gain(s) >= o.theta) lastClearing = s.i;
++    else if (firstDip === null && s.i > 1) firstDip = s.i;
++  });
++  const stopAt = (lastClearing > 0 && lastClearing < N) ? lastClearing + 1 : null;
++  const enclosed = (stopAt && firstDip && stopAt > firstDip)
++    ? sim.steps.filter(s => s.i >= firstDip && s.i < stopAt && gain(s) < o.theta).length : 0;
+ 
+   sim.steps.forEach(s=>{
+     const px = X(c2.width, s.i);
+@@ -393,9 +423,22 @@
+     ctx2.fillRect(px-bw/2, Math.min(h0,h1), bw, Math.abs(h0-h1)||1);
+   });
+   line(ctx2,c2.width,c2.height, Array(N+1).fill(o.theta), dmax,'#C08A00',1.5,[6,4]);
++  if (firstDip !== null && firstDip !== stopAt){
++    ctx2.strokeStyle='#9AA3B2'; ctx2.setLineDash([2,3]); ctx2.beginPath();
++    ctx2.moveTo(X(c2.width,firstDip),M.t); ctx2.lineTo(X(c2.width,firstDip),c2.height-M.b);
++    ctx2.stroke(); ctx2.setLineDash([]);
++    ctx2.fillStyle='#5C6675'; ctx2.font='11px Georgia, serif';
++    ctx2.fillText('first dip '+firstDip, X(c2.width,firstDip)+4, c2.height-M.b-4);
++  }
++  ctx2.fillStyle='#C08A00'; ctx2.font='12px Georgia, serif';
+   if (stopAt){
+-    ctx2.fillStyle='#C08A00'; ctx2.font='12px Georgia, serif';
+-    ctx2.fillText('stop ≈ pass '+stopAt, X(c2.width,stopAt)+6, M.t+12);
++    ctx2.fillText('stop ≈ pass '+stopAt+(enclosed ? '  ('+enclosed+' sub-θ passes enclosed)' : ''),
++                  X(c2.width,stopAt)+6, M.t+12);
++  } else if (lastClearing >= N){
++    // NOT SILENCE. Every pass on the chart cleared theta, so no stop is in view.
++    ctx2.fillText('no stop within '+N+' passes — every pass clears θ', M.l+8, M.t+12);
++  } else {
++    ctx2.fillText('no pass clears θ — stop before pass 1', M.l+8, M.t+12);
+   }
+ 
+   // regime sentence
+@@ -403,6 +446,12 @@
+   const el = $('regime');
+   const netHarm = sim.steps.some(s=>MD.gate(s) < 0);
+   const nuS = MD.nuStar(last);
++  // SETTLED IS A FACT ABOUT THE DRAWN LINE, NOT ABOUT THE SELECTED GATE. The old
++  // test was |nuStar - nu| < 0.004, which is the trajectory's OWN equilibrium
++  // identity and holds only for the trajectory nu*. Reading it off the expectation
++  // nu* made the shipped "leaky fixes" preset announce "risk is still falling" in
++  // the default mode while the plotted drop was 1.8e-13. Executed, both modes.
++  const settled = Math.abs(last.dR) < 1e-4;
+   if (o.eta*o.p === 0){
+     el.className='regime bad';
+     el.innerHTML='No effective detection (<span class="mono">q = η·p = 0</span>): '+
+@@ -412,8 +461,18 @@
+     el.innerHTML='Net-harmful cycles present: ν exceeds the break-even ν* '+
+       '(<span class="mono">ν = '+o.nu.toFixed(3)+' , ν* ≈ '+nuS.toFixed(3)+
+       '</span> at current risk). The correct move is to stop fixing and defer to the HIL.';
+-  } else if (Math.abs(nuS - o.nu) < 0.004){
++  } else if (settled && $('mode').value === 'prospective'){
+     el.className='regime';
++    el.innerHTML='The plotted trajectory has settled at <span class="mono">R ≈ '+
++      last.R_new.toFixed(3)+'</span> — the realised drop is now <span class="mono">'+
++      last.dR.toExponential(1)+'</span>. On the question you asked it is NOT finished: '+
++      'a further pass is still expected to buy <span class="mono">E[ΔR] ≈ '+
++      last.eDR.toFixed(4)+'</span>, because the expectation averages over the detection '+
++      'branch this plotted path conditions away. Its own equilibrium is the lower '+
++      '<span class="mono">R ≈ '+(isFinite(rStar)?rStar.toFixed(3):'—')+
++      '</span> (green dashes). Switch to the retrospective question to read the drawn line.';
++  } else if (settled || Math.abs(nuS - o.nu) < 0.004){
++    el.className='regime';
+     el.innerHTML='Risk has settled at equilibrium, <span class="mono">R ≈ '+
+       last.R_new.toFixed(3)+'</span>: the break-even threshold has fallen to meet the '+
+       're-injection rate (<span class="mono">ν* ≈ ν = '+o.nu.toFixed(3)+
+@@ -437,9 +496,11 @@
+         ' &nbsp;(q = '+sim.q.toFixed(3)+')</td></tr>'+
+       '<tr><td>resolution → σ·R_det + (1−σ)·R</td><td>'+s.R_base.toFixed(4)+'</td></tr>'+
+       '<tr><td>re-injection → ·(1−ν) + ν</td><td>'+s.R_new.toFixed(4)+'</td></tr>'+
+-      '<tr><td>realised drop this pass, ΔR</td><td>'+s.dR.toFixed(4)+
++      '<tr><td>realised drop this pass, ΔR'+(MD.gainRow==='dR'?' &nbsp;← gated on':'')+
++        '</td><td>'+s.dR.toFixed(4)+
+         (s.dR<0?' &nbsp;⚠ net harm':'')+'</td></tr>'+
+-      '<tr><td>expected gain next pass, E[ΔR]</td><td>'+s.eDR.toFixed(4)+
++      '<tr><td>expected gain of this pass, E[ΔR]'+(MD.gainRow==='eDR'?' &nbsp;← gated on':'')+
++        '</td><td>'+s.eDR.toFixed(4)+
+         (s.eDR<0?' &nbsp;⚠ net harm':'')+'</td></tr>'+
+       '<tr><td>break-even ν* (trajectory)</td><td>'+s.nuStar.toFixed(4)+'</td></tr>'+
+       '<tr><td>break-even ν* (expectation)</td><td>'+s.nuStarExp.toFixed(4)+
+@@ -477,10 +538,16 @@
+ // step and opening value, and the label says which quantity theta is being compared to.
+ function applyMode(){
+   const MD = mode(), t = $('theta'), cfg = MD.theta;
+-  const wasDefault = Math.abs(parseFloat(t.value) - parseFloat(t.dataset.lastDefault || cfg.value)) < 1e-9;
++  // READ FIRST. Assigning t.max runs the range input's value sanitisation algorithm,
++  // which CLAMPS t.value to the new max on the spot -- so reading `cur` afterwards
++  // could never see a value above cfg.max and the `cur > cfg.max` branch below was
++  // unreachable. Executed in Chromium: theta dragged to 0.1 in prospective, then
++  // switched to retrospective, silently became 0.05 -- neither the reader's 0.1 nor
++  // the mode's own default 0.005 -- and switching back did not restore it.
++  const cur = parseFloat(t.value);
++  const wasDefault = Math.abs(cur - parseFloat(t.dataset.lastDefault || cfg.value)) < 1e-9;
+   t.min = cfg.min; t.max = cfg.max; t.step = cfg.step;
+   // Keep a reader's own choice when it still fits; otherwise adopt the mode's default.
+-  const cur = parseFloat(t.value);
+   t.value = (wasDefault || cur < cfg.min || cur > cfg.max) ? cfg.value : cur;
+   t.dataset.lastDefault = cfg.value;
+   $('thetaLabel').innerHTML = MD.label;
+
+### fable:attempt-1:bench/logs/explorer_modes_2026-09-28/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/explorer_modes_2026-09-28/dispatch.log	2026-09-28 19:09:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_mezvyfae/repo/bench/logs/explorer_modes_2026-09-28/dispatch.log	2026-09-28 18:53:41
+@@ -1,19 +0,0 @@
+-[18:54:03] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_mezvyfae/repo
+-[18:54:03] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8dlhlpvp/repo
+-[18:54:03] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_mezvyfae/repo
+-[18:54:03]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_mezvyfae/repo
+-[18:54:03] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8dlhlpvp/repo
+-[18:54:03]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8dlhlpvp/repo
+-[19:08:42]   [claude-cli:fable] 37 tool call(s) this attempt, 37 in total
+-[19:08:42]   [claude-cli:fable] done (879.1s, 14862 chars)
+-    suite: GREEN at f253fa7 — 8,233 passed, 0 failed  [recorded at f253fa7, HEAD is 6ed7cf6, 55 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 5,146 chars, about 1,286 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_8dlhlpvp/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_mezvyfae/repo
+-  [fable] ok=True chars=14862 tools=37 879.1s
+-[19:09:52]   [claude-cli:opus] 38 tool call(s) this attempt, 38 in total
+-[19:09:52]   [claude-cli:opus] done (949.3s, 14691 chars)
+-  [cc2] ok=True chars=14691 tools=38 949.2s
+-[19:09:52] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:bench/tests/test_explorer_modes_and_stop_2026-09-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_explorer_modes_and_stop_2026-09-28.py	2026-09-28 18:55:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_mezvyfae/repo/bench/tests/test_explorer_modes_and_stop_2026-09-28.py	2026-09-28 19:06:38
+@@ -16,10 +16,15 @@
+ node, and its outputs are compared against an independent mpmath derivation. A
+ drift between the page and the maths fails here rather than in front of a reader.
+ 
+-MEASURED WHEN THIS LANDED. Over the page's own slider ranges the 2 modes name a
+-different stopping pass in 1268 of 3249 combinations = 39.0274%, Wilson 95%
+-[37.3639%, 40.7168%]. The expectation is strictly the larger everywhere on the
+-open cube, so the prospective view never stops earlier than the retrospective one.
++MEASURED, WITH A COMMITTED PRODUCER (scripts/explorer_mode_headline_numbers_2026-09-28.py,
++which executes the page's own simulate() and stopPass() over the committed
++14440-point slider grid): with each mode at its own default theta the 2 modes name
++a different stopping pass in 9824 of 14440 combinations = 68.0332%, Wilson 95%
++[67.2679%, 68.7890%]. (The earlier "1268 of 3249 = 39.0274%" had no committed
++producer, could not be reproduced, and was already misquoted downstream as
++"1268 of 14440"; superseded 2026-09-28.) The expectation is >= the realised drop
++everywhere (SymPy: E[dR]-dR = R^2*q*sigma*(1-nu)*(1-q)/(1-R*q); Wolfram Resolve
++True), so at equal theta the prospective view never stops earlier.
+ """
+ from __future__ import annotations
+ 
+@@ -40,14 +45,19 @@
+ const html = fs.readFileSync(process.argv[2], 'utf8');
+ const js = html.split('<script>')[1].split('</script>')[0];
+ const simSrc = js.match(/function simulate\(o\)\{[\s\S]*?\n\}/)[0];
+-// EXECUTE THE PAGE'S OWN STOP RULE. Re-implementing it here is what let a restored
+-// first-dip latch keep all 8 tests green on 2026-09-28.
+-const stopSrc = js.match(/function stopPass\(steps, theta, gain\)\{[\s\S]*?\n\}/);
+-if (!stopSrc) { console.error('FATAL: stopPass() not found in the page'); process.exit(2); }
+ const N = 60, PERT_STEP = 22;
+ eval(simSrc);
+-eval(stopSrc[0]);
+-const stopFor = (steps, theta, gate) => stopPass(steps, theta, gate);
++// THE PAGE'S OWN stop rule, lifted by name and executed -- not a transcription.
++// (Before 2026-09-28 this probe re-implemented the rule locally, so the page's
++// actual inline rule was untested and could drift silently.)
++eval(js.match(/function stopPass\(steps, theta, gate\)\{[\s\S]*?\n\}/)[0]);
++const stopFor = stopPass;
++// Independent transcription, kept ONLY to cross-check the lifted function.
++function stopRef(steps, theta, gate){
++  let last = 0;
++  steps.forEach(s => { if (gate(s) >= theta) last = s.i; });
++  return (last > 0 && last < N) ? last + 1 : null;
++}
+ function firstDip(steps, theta, gate){
+   let st = null;
+   steps.forEach(s => { if (st===null && gate(s) < theta && s.i > 1) st = s.i; });
+@@ -61,6 +71,9 @@
+     stop_prosp: stopFor(sim.steps, c.theta, s=>s.eDR),
+     stop_retro: stopFor(sim.steps, c.theta, s=>s.dR),
+     stop_olddip: firstDip(sim.steps, c.theta, s=>s.dR),
++    stop_retro_ref: stopRef(sim.steps, c.theta, s=>s.dR),
++    stop_prosp_own: stopPass(sim.steps, 0.02, s=>s.eDR),
++    stop_retro_own: stopPass(sim.steps, 0.005, s=>s.dR),
+     max_after_olddip: (()=>{ const d = firstDip(sim.steps, c.theta, s=>s.dR);
+       return d===null ? null : Math.max(...sim.steps.filter(s=>s.i>d).map(s=>s.dR)); })(),
+   });
+@@ -176,3 +189,121 @@
+             "the 2 modes named the same stop at the shipped defaults; if this is "
+             "genuinely so, the mode switch is not earning its place"
+         )
++
++
++_APPLYMODE_PROBE = r"""
++const fs = require('fs');
++const html = fs.readFileSync(process.argv[2], 'utf8');
++const js = html.split('<script>')[1].split('</script>')[0];
++// Lift the page's own MODE table, mode() and applyMode() by name and execute them
++// against a range-input stub that implements the WHATWG value sanitisation for
++// type=range: the value is re-clamped whenever value, min or max is assigned.
++// That clamping is exactly what the pre-fix applyMode tripped over.
++function makeRange(value, min, max, step){
++  let _v = String(value), _min = String(min), _max = String(max);
++  const el = {dataset: {}, step: String(step)};
++  function clamp(){
++    let x = parseFloat(_v);
++    if (!isFinite(x)) x = (parseFloat(_min) + parseFloat(_max)) / 2;
++    if (x < parseFloat(_min)) x = parseFloat(_min);
++    if (x > parseFloat(_max)) x = parseFloat(_max);
++    _v = String(x);
++  }
++  Object.defineProperties(el, {
++    value: {get: () => _v, set: v => { _v = String(v); clamp(); }},
++    min:   {get: () => _min, set: v => { _min = String(v); clamp(); }},
++    max:   {get: () => _max, set: v => { _max = String(v); clamp(); }},
++  });
++  clamp();
++  return el;
++}
++// The slider as the HTML ships it (index.html: min=0.001 max=0.05 value=0.02).
++const elements = {
++  theta: makeRange(0.02, 0.001, 0.05, 0.001),
++  mode: {value: 'prospective'},
++  thetaLabel: {innerHTML: ''},
++  gainHeading: {textContent: ''},
++};
++const $ = id => elements[id];
++const draw = () => {};
++// `const` inside eval() stays in the eval scope; rebind the page's literal verbatim.
++eval(js.match(/const MODE = \{[\s\S]*?\n\};/)[0].replace('const MODE =', 'globalThis.MODE ='));
++function mode(){ return MODE[$('mode').value] || MODE.prospective; }
++eval(js.match(/function applyMode\(\)\{[\s\S]*?\n\}/)[0]);
++applyMode();                       // page load
++const out = {};
++elements.theta.value = 0.15;       // reader explores high theta in prospective
++elements.mode.value = 'retrospective'; applyMode();
++out.out_of_range_switch = elements.theta.value;      // must be the mode DEFAULT, not the clamp edge
++elements.mode.value = 'prospective'; applyMode();    // reset to a clean prospective state
++elements.theta.value = 0.03;       // reader picks a theta that fits BOTH ranges
++elements.mode.value = 'retrospective'; applyMode();
++out.in_range_switch = elements.theta.value;          // must be preserved
++elements.mode.value = 'prospective'; applyMode();
++out.back_from_kept = elements.theta.value;           // 0.03 fits prospective too: preserved
++elements.theta.value = 0.02;                         // back at the default by hand
++elements.mode.value = 'retrospective'; applyMode();
++out.untouched_switch = elements.theta.value;         // default follows the mode
++console.log(JSON.stringify(out));
++"""
++
++
++class TestApplyModeSurvivesTheBrowsersClamp:
++    """setting min/max on a range input CLAMPS its value (WHATWG value
++    sanitisation). The pre-fix applyMode read the value after clamping, so a
++    reader's out-of-range theta landed on the range EDGE (0.05 -- 10x the
++    retrospective default) instead of the mode's default, and the documented
++    adopt-the-default branch was dead code."""
++
++    def _run(self):
++        exe = _node()
++        probe = ROOT / "bench" / "tests" / "_explorer_applymode_probe.js"
++        probe.write_text(_APPLYMODE_PROBE, encoding="utf-8")
++        try:
++            r = subprocess.run([exe, str(probe), str(PAGE)],
++                               capture_output=True, text=True, timeout=60)
++            assert r.returncode == 0, f"probe failed: {r.stderr[:400]}"
++            return json.loads(r.stdout)
++        finally:
++            probe.unlink(missing_ok=True)
++
++    def test_out_of_range_theta_adopts_the_mode_default_not_the_clamp_edge(self):
++        out = self._run()
++        assert float(out["out_of_range_switch"]) == pytest.approx(0.005), (
++            f"theta=0.15 switched to retrospective became {out['out_of_range_switch']}; "
++            "the reader must land on the mode default 0.005, not the clamped edge 0.05"
++        )
++
++    def test_a_theta_that_fits_both_ranges_is_preserved(self):
++        out = self._run()
++        assert float(out["in_range_switch"]) == pytest.approx(0.03)
++        assert float(out["back_from_kept"]) == pytest.approx(0.03)
++
++    def test_an_untouched_default_follows_the_mode(self):
++        out = self._run()
++        assert float(out["untouched_switch"]) == pytest.approx(0.005)
++
++
++class TestTheLandingStateShowsAStop:
++    """The founder's default-mode rationale is a first-time reader playing with
++    the model. At each mode's OWN shipped default theta the stop marker must
++    appear early enough to be part of that first impression."""
++
++    def test_both_modes_announce_a_stop_by_pass_13_at_their_own_defaults(self):
++        r = run_page([{**DEFAULTS}])[0]
++        assert r["stop_prosp_own"] is not None and r["stop_prosp_own"] <= 13, (
++            f"prospective at its shipped theta=0.02 stopped at {r['stop_prosp_own']}"
++        )
++        assert r["stop_retro_own"] is not None and r["stop_retro_own"] <= 13, (
++            f"retrospective at its shipped theta=0.005 stopped at {r['stop_retro_own']}"
++        )
++
++    def test_the_lifted_stop_rule_matches_the_independent_reference(self):
++        """Cross-check: the page's stopPass, lifted by name, agrees with a local
++        transcription on every case this file exercises."""
++        cases = [DEFAULTS, {**DEFAULTS, "theta": 0.02, "pert": 0.4},
++                 {**DEFAULTS, "pi": 0.99, "p": 0.3, "sigma": 1, "nu": 0}]
++        for c, r in zip(cases, run_page(cases)):
++            assert r["stop_retro"] == r["stop_retro_ref"], (
++                f"{c}: page stopPass {r['stop_retro']} != reference {r['stop_retro_ref']}"
++            )
+
+### fable:attempt-1:explorer/index.html
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/explorer/index.html	2026-09-28 18:55:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_mezvyfae/repo/explorer/index.html	2026-09-28 19:05:03
+@@ -142,7 +142,17 @@
+       measured values can replace them.</p>
+     <p><span class="ph">Break-even.</span> A cycle helps only while
+       <span class="mono">ν &lt; ν* = σ·R·q / (1 − qR(1−σ))</span>.
+-      Above ν*, stop fixing and defer to the HIL.</p>
++      Above ν*, stop fixing and defer to the HIL. That is the <i>trajectory</i>
++      break-even — the ν at which the plotted line stops falling. The <i>prospective</i>
++      question gates on the expected improvement, whose break-even is
++      <span class="mono">ν*<sub>E</sub> = σ·R·q / (1 − R(1−qσ))</span> — never below the
++      trajectory ν*, rising monotonically in R, and tending to <b>1</b> as R → 1:
++      when a flaw is near-certain, re-injection costs almost nothing <i>in this
++      single-flaw model</i>, because the harm term ν(1−R) vanishes. That is a real
++      property of the modelled quantity P(≥1 flaw remains) — and a known artefact of
++      its saturating state space, not a licence to churn a real, many-flawed artefact.
++      The regime sentence under the chart quotes whichever ν* the selected question
++      gates on; the equilibrium sentence always tests the trajectory ν*.</p>
+   </div>
+   <div class="card inspect" style="flex:1 1 460px">
+     <h2>Pass inspector</h2>
+@@ -169,11 +179,19 @@
+ // RETROSPECTIVE gates on dR, the realised drop along the plotted trajectory, which
+ // is what reference_runner_v3.py's compute_rk actually computes.
+ //
+-// They are NOT interchangeable. Measured over this page's own slider ranges, the 2
+-// name a different stopping pass in 1268 of 3249 combinations = 39.0274%,
+-// Wilson 95% [37.3639%, 40.7168%]. E[dR] is strictly the larger everywhere on the
+-// open cube (z3 unsat that it can fall below dR; Wolfram Resolve[ForAll[...]] True),
+-// so the prospective view always runs at least as long as the retrospective one.
++// They are NOT interchangeable. Measured by
++// scripts/explorer_mode_headline_numbers_2026-09-28.py, which executes THIS page's
++// simulate() and stopPass() in node over the committed slider grid (pi, p in
++// {0.05..0.95 step 0.05}, sigma in {0.1..1.0 step 0.1}, nu in {0, 0.02, 0.05, 0.1}
++// -- the same 14440-point grid as scripts/explorer_stopping_rule_is_superseded_2026-09-28.py)
++// with each mode at its own default theta (0.02 / 0.005): the 2 modes name a
++// different stopping pass in 9824 of 14440 combinations = 68.0332%, Wilson 95%
++// [67.2679%, 68.7890%]. (An earlier figure, "1268 of 3249 = 39.0274%", shipped with
++// no committed producer, could not be reproduced from any natural grid, and was
++// already misquoted downstream as "1268 of 14440"; superseded 2026-09-28.)
++// E[dR] >= dR everywhere: SymPy gives E[dR] - dR = R^2*q*sigma*(1-nu)*(1-q)/(1-R*q),
++// nonnegative on the cube, and Wolfram Resolve[ForAll[...]] returns True -- so at
++// equal theta the prospective view never stops earlier than the retrospective one.
+ const MODE = {
+   prospective: {
+     gate:  s => s.eDR,
+@@ -201,29 +219,6 @@
+   const o = {};
+   for (const k in S) o[k] = parseFloat(S[k].value);
+   return o;
+-}
+-
+-// THE STOP RULE, DELIBERATELY A NAMED FUNCTION SO IT CAN BE EXECUTED BY A TEST.
+-//
+-// It was inline until 2026-09-28, and that is how the first version of
+-// `bench/tests/test_explorer_modes_and_stop_2026-09-28.py` came to re-implement it
+-// in the probe instead of running it. Restoring the old buggy rule left all 8 of
+-// those tests GREEN, because they were checking the test's own copy. A test that
+-// re-derives what it claims to check is the failure `execute-do-not-grep` names,
+-// and it was caught only by mutating the page and watching nothing go red.
+-//
+-// THE RULE: the stop is the LAST pass that clears theta, plus 1 -- never the first
+-// pass under it. The per-pass gain is not monotone in R: dR is unimodal, peaking at
+-// R* = (1 - sqrt(1-q))/q, a location that depends on q alone and not on sigma. A run
+-// starting at high risk sits on the RISING side, where an early pass can fall under
+-// theta while later ones clear it comfortably; a perturbation at PERT_STEP does the
+-// same thing deliberately. Measured on this page with pert=0.4, theta=0.02: the old
+-// first-dip rule announced pass 10 where the correct answer is 28, and passes after
+-// 10 still cleared theta.
+-function stopPass(steps, theta, gain){
+-  let lastClearing = 0;
+-  steps.forEach(s => { if (gain(s) >= theta) lastClearing = s.i; });
+-  return (lastClearing > 0 && lastClearing < steps.length) ? lastClearing + 1 : null;
+ }
+ 
+ // Stage 5 three-phase recursion (single class, d=1)
+@@ -255,6 +250,33 @@
+   return {traj, steps, q};
+ }
+ 
++// THE STOP IS THE LAST PASS THAT CLEARS theta, PLUS 1 -- NOT THE FIRST DIP.
++//
++// The old rule was `if (stopAt===null && !good && s.i>1) stopAt = s.i;`: it
++// latched on the FIRST pass under theta and never revised. That is wrong
++// because the gain is NOT monotone in R. dR is unimodal, peaking at
++// R* = (1 - sqrt(1-q))/q -- a location SymPy confirms depends on q alone and
++// not at all on sigma. A run starting at high risk therefore sits on the
++// RISING side of that peak, where an early pass can fall under theta while
++// later passes clear it comfortably. The old rule announced a stop there and
++// never looked again, which is the premature-stop band MATHEMATICAL_APPENDIX.md
++// :207 already documents, inherited whole by this page.
++//
++// A perturbation makes it plainer still: PERT_STEP re-raises risk mid-run, so
++// gains rise again after any dip, and the first dip is simply not the end.
++//
++// Named and hoisted so that the stored test executes THIS function -- lifted by
++// name from the page -- rather than a transcription of it. Between perturbations
++// the gain sequence is unimodal (0 re-clears over the committed 14440-point grid,
++// both gates; producer scripts/explorer_mode_headline_numbers_2026-09-28.py), so
++// a sub-theta trough can be re-cleared only by a genuine perturbation, never "by
++// accident": the recursion is deterministic and has no noise to clear theta with.
++function stopPass(steps, theta, gate){
++  let lastClearing = 0;
++  steps.forEach(s=>{ if (gate(s) >= theta) lastClearing = s.i; });
++  return (lastClearing > 0 && lastClearing < N) ? lastClearing + 1 : null;
++}
++
+ // The NAIVE INTUITION, shown for contrast: "each pass removes a fixed fraction p of
+ // the risk above the floor", i.e. R -= (R-nu)*p, which decays geometrically to nu.
+ // It is NOT any stage of this model. Stage 1 is the corroboration function
+@@ -366,20 +388,6 @@
+   const dmax = Math.max(o.theta*2, ...sim.steps.map(s=>Math.abs(gain(s))))*1.15;
+   frame(ctx2, c2.width, c2.height, dmax);
+ 
+-  // THE STOP IS THE LAST PASS THAT CLEARS theta, PLUS 1 -- NOT THE FIRST DIP.
+-  //
+-  // The old rule was `if (stopAt===null && !good && s.i>1) stopAt = s.i;`: it
+-  // latched on the FIRST pass under theta and never revised. That is wrong
+-  // because the gain is NOT monotone in R. dR is unimodal, peaking at
+-  // R* = (1 - sqrt(1-q))/q -- a location SymPy confirms depends on q alone and
+-  // not at all on sigma. A run starting at high risk therefore sits on the
+-  // RISING side of that peak, where an early pass can fall under theta while
+-  // later passes clear it comfortably. The old rule announced a stop there and
+-  // never looked again, which is the premature-stop band MATHEMATICAL_APPENDIX.md
+-  // :207 already documents, inherited whole by this page.
+-  //
+-  // A perturbation makes it plainer still: PERT_STEP re-raises risk mid-run, so
+-  // gains rise again after any dip, and the first dip is simply not the end.
+   const stopAt = stopPass(sim.steps, o.theta, gain);
+ 
+   sim.steps.forEach(s=>{
+@@ -412,7 +420,13 @@
+     el.innerHTML='Net-harmful cycles present: ν exceeds the break-even ν* '+
+       '(<span class="mono">ν = '+o.nu.toFixed(3)+' , ν* ≈ '+nuS.toFixed(3)+
+       '</span> at current risk). The correct move is to stop fixing and defer to the HIL.';
+-  } else if (Math.abs(nuS - o.nu) < 0.004){
++  } else if (Math.abs(last.nuStar - o.nu) < 0.004){
++    // Equilibrium is a property of the PLOTTED trajectory (realised drop ~ 0), so
++    // this branch tests the trajectory break-even in BOTH modes. nuStarExp sits
++    // strictly above nuStar (SymPy: difference = R^2*q*sigma*(1-q) over a positive
++    // denominator), so gating this sentence on the mode's own nu* reported "still
++    // falling toward equilibrium" on runs that had visibly settled -- e.g.
++    // pi=0.85, p=0.45, sigma=0.9, nu=0.1 settles at R=0.2442 while nuStarExp=0.1157.
+     el.className='regime';
+     el.innerHTML='Risk has settled at equilibrium, <span class="mono">R ≈ '+
+       last.R_new.toFixed(3)+'</span>: the break-even threshold has fallen to meet the '+
+@@ -471,16 +485,31 @@
+ ['mirror','ghost'].forEach(id=>$(id).addEventListener('change', draw));
+ 
+ // SWITCHING THE QUESTION RE-SCALES ITS THRESHOLD, because 1 slider cannot serve both.
+-// Measured over this page's own ranges, E[dR]/dR spans 1.0056 to 95.05 -- so a theta
+-// that is sensible for the realised drop is far too small for the expectation at high
+-// risk, and would paint every bar green. Each mode therefore carries its own range,
+-// step and opening value, and the label says which quantity theta is being compared to.
++// Measured by scripts/explorer_mode_headline_numbers_2026-09-28.py over the committed
++// 14440-point grid: first-pass E[dR]/dR spans 1.0026 to 1956.10, and along whole
++// trajectories the ratio is UNBOUNDED (at the trajectory's fixed point dR -> 0 while
++// E[dR] stays positive -- the conservatism gap). (The previously quoted span
++// "1.0056 to 95.05" had no committed producer; its 95.05 endpoint is (1-qR)/(1-R)
++// at R=0.99, q=0.05, sigma=1, nu=0, but the pair could not be reproduced as the
++// extrema of any natural grid; superseded 2026-09-28.) So a theta sensible for the
++// realised drop is far too small for the expectation at high risk and would paint
++// every bar green. Each mode therefore carries its own range, step and opening
++// value, and the label says which quantity theta is being compared to.
+ function applyMode(){
+   const MD = mode(), t = $('theta'), cfg = MD.theta;
+-  const wasDefault = Math.abs(parseFloat(t.value) - parseFloat(t.dataset.lastDefault || cfg.value)) < 1e-9;
++  // Read the reader's theta BEFORE touching min/max: assigning min or max to a
++  // range input re-runs the browser's value sanitisation, which CLAMPS the value
++  // (WHATWG HTML, attribute-change steps for min/max). Reading afterwards saw the
++  // clamp boundary (0.15 -> "0.05"), never the reader's out-of-range choice, so
++  // the adopt-the-default branch below was dead and a prospective reader at
++  // theta=0.15 landed on the retrospective range EDGE (0.05, 10x its default)
++  // instead of the mode's default. Fixed 2026-09-28; executed by
++  // bench/tests/test_explorer_modes_and_stop_2026-09-28.py with a range stub that
++  // implements the spec's clamping.
++  const cur = parseFloat(t.value);
++  const wasDefault = Math.abs(cur - parseFloat(t.dataset.lastDefault || cfg.value)) < 1e-9;
+   t.min = cfg.min; t.max = cfg.max; t.step = cfg.step;
+   // Keep a reader's own choice when it still fits; otherwise adopt the mode's default.
+-  const cur = parseFloat(t.value);
+   t.value = (wasDefault || cur < cfg.min || cur > cfg.max) ? cfg.value : cur;
+   t.dataset.lastDefault = cfg.value;
+   $('thetaLabel').innerHTML = MD.label;
+
+### fable:attempt-1:scripts/explorer_mode_headline_numbers_2026-09-28.py
+--- /dev/null	2026-09-28 19:09:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_mezvyfae/repo/scripts/explorer_mode_headline_numbers_2026-09-28.py	2026-09-28 19:05:31
+@@ -0,0 +1,118 @@
++#!/usr/bin/env python3
++"""Producer for EVERY measured figure quoted in explorer/index.html's mode comments.
++
++The page quotes 3 headline measurements: the mode-disagreement rate, the
++first-pass E[dR]/dR span, and the absence of gain re-clears (the premise of the
++last-clearing stop rule). Before 2026-09-28 the first two shipped as prose with
++no committed producer, and the disagreement figure was promptly misquoted
++downstream ("1268 of 3249" became "1268 of 14440" in a panel brief) -- exactly
++the corruption an unreproducible number invites. This script is the committed
++producer: it EXECUTES the page's own simulate() and stopPass() in node (never a
++re-implementation) over the same 14440-point slider grid committed in
++scripts/explorer_stopping_rule_is_superseded_2026-09-28.py:
++
++    pi, p in {0.05, 0.10, ..., 0.95}   (19 x 19)
++    sigma in {0.1, ..., 1.0}           (10)
++    nu    in {0, 0.02, 0.05, 0.1}      (4)      => 14440 combinations
++
++and prints, with a Wilson 95% interval:
++  1. how often the 2 modes, each at ITS OWN default theta (0.02 / 0.005), name a
++     different stopping pass -- the comparison a reader experiences when toggling;
++  2. the first-pass E[dR]/dR span over the grid (both positive);
++  3. the number of gain-sequence re-clears (a sub-theta trough later re-cleared)
++     with pert=0, for both gates -- expected 0: the recursion is deterministic
++     and unimodal between perturbations, so the last-clearing rule cannot be
++     dragged to the end of the chart by an accidental late clearing.
++
++Requires node. Exit code 1 if any printed figure drifts from the values the page
++quotes (so CI catches page/producer divergence).
++"""
++from __future__ import annotations
++
++import json
++import math
++import shutil
++import subprocess
++import sys
++import tempfile
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++PAGE = ROOT / "explorer" / "index.html"
++
++_PROBE = r"""
++const fs = require('fs');
++const html = fs.readFileSync(process.argv[2], 'utf8');
++const js = html.split('<script>')[1].split('</script>')[0];
++const N = 60, PERT_STEP = 22;
++eval(js.match(/function simulate\(o\)\{[\s\S]*?\n\}/)[0]);
++eval(js.match(/function stopPass\(steps, theta, gate\)\{[\s\S]*?\n\}/)[0]);
++const lin=(a,b,s)=>{const o=[];for(let v=a;v<=b+1e-9;v+=s)o.push(+v.toFixed(4));return o;};
++let total=0, differ=0, rmin=Infinity, rmax=0, reclears=0;
++for(const pi of lin(.05,.95,.05)) for(const p of lin(.05,.95,.05))
++for(const sigma of lin(.1,1,.1)) for(const nu of [0,.02,.05,.1]){
++  const sim=simulate({pi,p,eta:1,sigma,nu,pert:0}); total++;
++  const sp=stopPass(sim.steps,0.02,s=>s.eDR), sr=stopPass(sim.steps,0.005,s=>s.dR);
++  if(sp!==sr)differ++;
++  const s0=sim.steps[0];
++  if(s0.dR>1e-12&&s0.eDR>0){const r=s0.eDR/s0.dR; if(r<rmin)rmin=r; if(r>rmax)rmax=r;}
++  for(const gate of [s=>s.dR, s=>s.eDR]){
++    const g=sim.steps.map(gate);
++    for(let i=1;i<g.length-1;i++){
++      if(g[i]<g[i-1]-1e-15){
++        for(let j=i+1;j<g.length;j++) if(g[j]>g[i]+1e-12){ reclears++; j=g.length; }
++        break;
++      }
++    }
++  }
++}
++console.log(JSON.stringify({total,differ,rmin,rmax,reclears}));
++"""
++
++# What the page's comments quote. If you change the page, change these together.
++EXPECTED = {"total": 14440, "differ": 9824, "rmin": "1.0026", "rmax": "1956.10",
++            "reclears": 0}
++
++
++def wilson(k: int, n: int, z: float = 1.959963985) -> tuple[float, float]:
++    ph = k / n
++    den = 1 + z * z / n
++    c = (ph + z * z / (2 * n)) / den
++    hw = z * math.sqrt(ph * (1 - ph) / n + z * z / (4 * n * n)) / den
++    return 100 * (c - hw), 100 * (c + hw)
++
++
++def main() -> int:
++    node = shutil.which("node")
++    if not node:
++        print("node is required (the page's own JS must be executed, not re-derived)")
++        return 1
++    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as f:
++        f.write(_PROBE)
++        probe = f.name
++    try:
++        r = subprocess.run([node, probe, str(PAGE)], capture_output=True,
++                           text=True, timeout=300)
++    finally:
++        Path(probe).unlink(missing_ok=True)
++    if r.returncode != 0:
++        print("probe failed:", r.stderr[:400])
++        return 1
++    got = json.loads(r.stdout)
++    lo, hi = wilson(got["differ"], got["total"])
++    print(f"grid points                          {got['total']}")
++    print(f"modes name a different stop          {got['differ']} = "
++          f"{100*got['differ']/got['total']:.4f}%  Wilson 95% [{lo:.4f}%, {hi:.4f}%]")
++    print(f"first-pass E[dR]/dR span             {got['rmin']:.4f} to {got['rmax']:.2f}")
++    print(f"gain-sequence re-clears (pert=0)     {got['reclears']}")
++    ok = (got["total"] == EXPECTED["total"] and got["differ"] == EXPECTED["differ"]
++          and f"{got['rmin']:.4f}" == EXPECTED["rmin"]
++          and f"{got['rmax']:.2f}" == EXPECTED["rmax"]
++          and got["reclears"] == EXPECTED["reclears"])
++    print("MATCHES THE PAGE'S QUOTED FIGURES" if ok
++          else "DRIFT: page comments quote different figures -- update them together")
++    return 0 if ok else 1
++
++
++if __name__ == "__main__":
++    sys.exit(main())

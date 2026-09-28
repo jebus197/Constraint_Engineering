@@ -546,3 +546,32 @@ Stated as open rather than smoothed. Each would change or sharpen something abov
 9. **Not read end to end:** `bench/dm/_role_assignment.py`, `_load_balancer.py`, `_failure_handler.py`, `_fsm.py`, `_validation.py`, `_events.py`, `_sk_format.py`, `_directive_sections.py` (grepped for dedup and novelty vocabulary, nothing above noise), and `PAPER.md` (targeted grep only).
 
 10. **The "roughly nine actual bugs" figure for Exp 36** is a note claim, not verified here. Verifying it means adjudicating 217 entries and is the right work if the 17:1 mislabel at D.9 bears on a decision.
+
+---
+
+> **CORRECTION, 2026-09-28. The claim above that `GAMMA_SRC` appears nowhere outside its own module and test is FALSE as worded.**
+>
+> It was made with the session's `grep`, which is a shell function wrapping ugrep with
+> `--ignore-files`. That honours `.gitignore`, and `.gitignore` excludes `bench/logs/**`
+> — 353 MB across 5,840 files, where this project's evidence lives. The search reported
+> 0 occurrences for a term that occurs in the archive, and reported it **silently**.
+> Measured by `scripts/shell_grep_blind_spot_2026-09-28.py`: 3743 of 5245 matching files
+> are never shown, 71.3632%, Wilson 95% [70.1245%, 72.5706%].
+>
+> Re-run with `/usr/bin/grep` on 2026-09-28, `GAMMA_SRC` appears in 44 tracked
+> location(s):
+>   - `.mypy_cache/3.13/cache.db`
+>   - `bench/dm/_shadow_stage6.py`
+>   - `bench/logs/confer_stage6_full/codex_20260414T111854Z.json`
+>   - `bench/logs/confer_stage6_full/combined_20260414T111854Z.json`
+>   - `bench/logs/exp46_stage6_locationkey_live_20260728T103151Z/r0_chatgpt_20260728T103548Z.json`
+>   - `bench/logs/exp46_stage6_locationkey_live_20260728T103151Z/r0_codex_20260728T103731Z.json`
+>   - `bench/logs/exp46_stage6_locationkey_live_20260728T103151Z/r1_chatgpt_20260728T105907Z.json`
+>   - `bench/logs/exp46_stage6_locationkey_live_20260728T103151Z/r1_codex_20260728T110021Z.json`
+>
+> **WHAT SURVIVES AND WHAT DOES NOT.** The conclusion this note drew from the claim is
+> unaffected — the occurrences are archived records and generated logs, not live callers,
+> so nothing downstream depended on the term being genuinely absent. What fails is the
+> UNIVERSAL QUANTIFIER: "nowhere" was asserted on the strength of a search that could not
+> see where. Found by the fable seat, 2026-09-28. Remedy: use `/usr/bin/grep` for any
+> search whose answer might be zero.

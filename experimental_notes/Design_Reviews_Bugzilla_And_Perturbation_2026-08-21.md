@@ -528,3 +528,32 @@ Everything above rests on an **unmeasured supply rate**: no live run has ever pr
 Done: brief's measurements reproduced (one premise corrected), one new dead-flag defect reported, recommendation committed with its falsification stated. Next step is yours: rule on the offline validation and the one-line `_ask` wire.
 
 ---
+
+---
+
+> **CORRECTION, 2026-09-28. The claim above that `cc2_verification_step` appears nowhere in the repo except inside its own docstring is FALSE as worded.**
+>
+> It was made with the session's `grep`, which is a shell function wrapping ugrep with
+> `--ignore-files`. That honours `.gitignore`, and `.gitignore` excludes `bench/logs/**`
+> — 353 MB across 5,840 files, where this project's evidence lives. The search reported
+> 0 occurrences for a term that occurs in the archive, and reported it **silently**.
+> Measured by `scripts/shell_grep_blind_spot_2026-09-28.py`: 3743 of 5245 matching files
+> are never shown, 71.3632%, Wilson 95% [70.1245%, 72.5706%].
+>
+> Re-run with `/usr/bin/grep` on 2026-09-28, `cc2_verification_step` appears in 9 tracked
+> location(s):
+>   - `bench/cc2_manager.py`
+>   - `bench/logs/bugzilla_design_review_2026-08-21/cc2.json`
+>   - `bench/logs/confer_dc_fix_cx_20260410T215131Z.txt`
+>   - `bench/logs/exp38_ouroboros_20260410T104416Z/r0_gemini_20260410T104825Z.json`
+>   - `bench/logs/exp38_ouroboros_20260410T104416Z/round0_codex_20260410T104544Z.json`
+>   - `bench/logs/exp38_ouroboros_20260410T104416Z/round_00.json`
+>   - `experimental_notes/Design_Reviews_Bugzilla_And_Perturbation_2026-08-21.md`
+>   - `experimental_notes/Wolfram_Two_Routes_2026-09-28.md`
+>
+> **WHAT SURVIVES AND WHAT DOES NOT.** The conclusion this note drew from the claim is
+> unaffected — the occurrences are archived records and generated logs, not live callers,
+> so nothing downstream depended on the term being genuinely absent. What fails is the
+> UNIVERSAL QUANTIFIER: "nowhere" was asserted on the strength of a search that could not
+> see where. Found by the fable seat, 2026-09-28. Remedy: use `/usr/bin/grep` for any
+> search whose answer might be zero.

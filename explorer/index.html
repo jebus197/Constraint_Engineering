@@ -46,6 +46,24 @@
               font-family:ui-monospace,Menlo,monospace;font-size:12.5px;}
   .inspect td:first-child{font-family:Georgia,serif;font-size:13.5px;width:40%;}
   .hint{color:var(--muted);font-size:13px;margin-top:6px;}
+  .questionCard{border:1px solid var(--grid);border-radius:8px;padding:14px 16px 12px;
+                margin:0 0 18px;background:#FCFCFA;}
+  .questionHead{font-size:13px;letter-spacing:.04em;text-transform:uppercase;
+                color:#6B7268;margin-bottom:10px;}
+  .modePick{display:flex;gap:10px;flex-wrap:wrap;}
+  .modePick label{flex:1 1 240px;display:flex;gap:9px;align-items:flex-start;
+                  border:1px solid var(--grid);border-radius:6px;padding:10px 12px;
+                  cursor:pointer;background:#fff;transition:border-color .12s,background .12s;}
+  .modePick label:hover{border-color:#B9BFB2;}
+  .modePick input{margin-top:3px;flex:0 0 auto;}
+  .modePick span{display:flex;flex-direction:column;gap:2px;line-height:1.35;}
+  .modePick b{font-weight:600;font-size:14px;}
+  .modePick small{color:#5F665C;font-size:12.5px;}
+  .modePick label:has(input:checked){border-color:var(--risk);background:#FDF6F2;}
+  .modeWhy{margin:12px 2px 0;font-size:13.5px;line-height:1.55;color:#3D423B;}
+  .modeWhy em{font-style:normal;color:var(--risk);}
+  .srOnly{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);
+          white-space:nowrap;border:0;padding:0;margin:-1px;}
   .toggleRow{display:flex;gap:16px;align-items:center;margin-top:10px;
              font-size:13.5px;flex-wrap:wrap;}
   .toggleRow label{display:flex;gap:6px;align-items:center;cursor:pointer;}
@@ -80,8 +98,8 @@
       <input type="range" id="sigma" min="0" max="1" step="0.01" value="0.9"></div>
     <div class="ctl"><label><b>ν &nbsp;re-injection rate</b><span class="val" id="v_nu"></span></label>
       <input type="range" id="nu" min="0" max="0.5" step="0.005" value="0.05"></div>
-    <div class="ctl"><label><b>θ &nbsp;stopping threshold on ΔR</b><span class="val" id="v_theta"></span></label>
-      <input type="range" id="theta" min="0.001" max="0.05" step="0.001" value="0.005"></div>
+    <div class="ctl"><label><b id="thetaLabel">θ &nbsp;stopping threshold</b><span class="val" id="v_theta"></span></label>
+      <input type="range" id="theta" min="0.001" max="0.05" step="0.001" value="0.02"></div>
     <div class="ctl"><label><b>perturbation at pass 22 (+risk)</b><span class="val" id="v_pert"></span></label>
       <input type="range" id="pert" min="0" max="0.6" step="0.05" value="0"></div>
 
@@ -103,10 +121,25 @@
   </div>
 
   <div class="card charts">
+    <div class="questionCard">
+      <div class="questionHead">Which question are you asking?</div>
+      <div class="modePick">
+        <label><input type="radio" name="modeR" value="prospective" checked>
+          <span><b>Before running</b><small>what is another pass likely to buy?</small></span></label>
+        <label><input type="radio" name="modeR" value="retrospective">
+          <span><b>After running</b><small>what did each pass actually buy?</small></span></label>
+      </div>
+      <p class="modeWhy" id="modeWhy"></p>
+      <select id="mode" class="srOnly" tabindex="-1" aria-hidden="true">
+        <option value="prospective" selected>before running</option>
+        <option value="retrospective">after running</option>
+      </select>
+    </div>
+
     <h2 id="chart1title">Residual risk R(n) under the true recursion</h2>
     <canvas id="c1" width="960" height="380" aria-label="risk trajectory chart"></canvas>
     <div class="regime" id="regime"></div>
-    <h2 style="margin-top:18px">Marginal yield ΔR per pass — where to stop</h2>
+    <h2 style="margin-top:18px" id="gainHeading">Marginal yield per pass — where to stop</h2>
     <canvas id="c2" width="960" height="200" aria-label="marginal yield chart"></canvas>
     <p class="hint">Bars below the amber line θ are passes not worth running.
     Click any pass in the top chart to see its three-phase arithmetic.</p>
@@ -128,13 +161,40 @@
       actually reached, <span class="mono">R* = ν / (q(σ + ν(1−σ)))</span>, which is
       <span class="mono">ν/q</span> when σ = 1. Detection quality <i>multiplies</i> the floor, so the
       trajectory settles <i>above</i> the dashed ν line rather than on it — at the default settings,
-      2.46× above. The bound is tight only at q = 1. Both lines are drawn.</p>
+      2.46× above. The bound is tight only at q = 1.
+      <b>Each question has its own floor, and the page draws the one you asked for.</b>
+      The plotted line conditions on the detection branch, so it settles at
+      <span class="mono">R*<sub>ΔR</sub> = ν / (q(σ + ν(1−σ)))</span>. Iterating the
+      <i>expectation</i> instead gives the lower
+      <span class="mono">R*<sub>E</sub> = ν / (qσ + ν(1−qσ))</span>, because averaging over
+      detection credits the branch the drawn path conditions away. SymPy gives the gap in
+      closed form, <span class="mono">R*<sub>ΔR</sub> − R*<sub>E</sub> = ν²(1−q) / D</span> with
+      <span class="mono">D &gt; 0</span> on the open cube — so the trajectory floor is never the
+      lower of the two, and they coincide only at <span class="mono">ν = 0</span> or
+      <span class="mono">q = 1</span>. Drawing the trajectory floor to a prospective reader
+      overstates the floor their own question implies by 21.51% on the
+      “leaky fixes” preset. The ν bound and the selected question’s floor are both drawn.</p>
     <p><span class="ph">Scope.</span> A bifurcation diagram, not a data plot — a property of the
       equations, not an observation of any process. Parameters are indicative; the tool exists so that
       measured values can replace them.</p>
-    <p><span class="ph">Break-even.</span> A cycle helps only while
-      <span class="mono">ν &lt; ν* = σ·R·q / (1 − qR(1−σ))</span>.
-      Above ν*, stop fixing and defer to the HIL.</p>
+    <p><span class="ph">Break-even.</span> A cycle helps only while <span class="mono">ν &lt; ν*</span>
+      — and <b>ν* is also two numbers, one per question.</b> For the <i>plotted</i> line it is
+      <span class="mono">ν*<sub>ΔR</sub> = σ·R·q / (1 − qR(1−σ))</span>, the ν at which the
+      drawn curve stops falling. For the <i>prospective</i> question, which is what this page gates
+      on by default, it is <span class="mono">ν*<sub>E</sub> = σ·R·q / (1 − R(1−qσ))</span>
+      — never below <span class="mono">ν*<sub>ΔR</sub></span>, rising in R, and tending to
+      <b>1</b> as R → 1: when a flaw is near-certain the harm term ν(1−R) vanishes, so
+      re-injection costs almost nothing <i>in this single-flaw model</i>. That is a real property
+      of the modelled quantity P(≥ 1 flaw remains) and an artefact of its saturating state space,
+      not a licence to churn a real, many-flawed artefact. Above ν*, stop fixing and defer to the
+      HIL. <b>The regime sentence under the chart quotes whichever ν* the selected question gates
+      on, so cross-check it against the matching formula here</b> — the two are genuinely
+      different numbers at the same risk. On the “leaky fixes” preset the pass inspector reports
+      <span class="mono">ν*<sub>ΔR</sub> = 0.3000</span> for the drawn line and
+      <span class="mono">ν*<sub>E</sub> = 0.3857</span> for the default question at the final
+      pass. Reading one formula against the other question’s sentence was how this page came to
+      print a ν* its own printed formula could not produce; both are now listed for every pass,
+      and the row the selected question gates on is marked there.</p>
   </div>
   <div class="card inspect" style="flex:1 1 460px">
     <h2>Pass inspector</h2>
@@ -150,6 +210,99 @@ const N = 60, PERT_STEP = 22;
 const $ = id => document.getElementById(id);
 const S = {pi:$('pi'), p:$('p'), eta:$('eta'), sigma:$('sigma'),
            nu:$('nu'), theta:$('theta'), pert:$('pert')};
+// THE 2 QUESTIONS THIS PAGE CAN ANSWER, and they are not the same question.
+// Founder's ruling, 2026-09-28: *"What does the researcher want? Do they want to
+// look at how an experiment behaved in retrospect, or do they want to check how it
+// would be likely to behave before running it? Surely that should be up to them?"*
+//
+// PROSPECTIVE (default) gates on E[dR], the expected improvement of a pass whose
+// outcome is not yet known -- MATHEMATICAL_APPENDIX.md:225. It is the question a
+// first-time reader arrives with, because they have not run anything to look back on.
+// RETROSPECTIVE gates on dR, the realised drop along the plotted trajectory, which
+// is what reference_runner_v3.py's compute_rk actually computes.
+//
+// They are NOT interchangeable, and the 2 claims that matter pull opposite ways.
+//
+// ON THE QUANTITIES, AT A FIXED theta: E[dR] is strictly the larger everywhere on
+// the open cube -- z3 returns unsat that it can fall below dR, and Wolfram Language
+// returns True on Resolve[ForAll[...]]. So at equal theta the prospective view
+// always runs at least as long.
+//
+// ON THE TOOL, AS IT SHIPS: THAT ORDERING DOES NOT HOLD, because the 2 modes do NOT
+// share a theta. Prospective opens at 0.02 and retrospective at 0.005 -- a factor of
+// 4 -- precisely because E[dR]/dR spans widely and 1 slider cannot serve both.
+//
+// THE FIGURE AND ITS PROTOCOL TRAVEL TOGETHER, produced by
+// `scripts/explorer_mode_disagreement_2026-09-28.py`, which executes THIS page over
+// the committed 14,440-point grid with each mode at its own shipped theta: the 2
+// modes name a DIFFERENT stopping pass in 8,634 of the 8,904 settings where both
+// name one at all = 96.9677%, Wilson 95% [96.5907%, 97.3041%]; prospective is the
+// earlier one in 8,293 of those.
+//
+// QUOTE IT ONLY WITH ITS PROTOCOL. Four parties measured this quantity and got 26%,
+// 68%, 89% and 96.97% -- none of them wrong, all of them using a different grid or a
+// different denominator (all grid points, or only the comparable ones). A rate whose
+// protocol does not travel with it mutates in transmission, which is what the 2
+// unproducible figures this comment replaces actually demonstrated.
+
+// 2 EARLIER VERSIONS OF THIS COMMENT WERE DEFECTIVE, recorded rather than deleted.
+// The first asserted the fixed-theta ordering as a property of the page: false, since
+// a theorem about 2 quantities is not a statement about a tool that scales them
+// differently. The second replaced it with a rate computed in an uncommitted shell
+// heredoc -- the same defect as the `1268 of 3249` it replaced, which no seat could
+// reproduce from any of ~10 natural grids. Both were caught by panel seats on
+// 2026-09-28. A public page is the last place a number should appear without its
+// producer.
+const MODE = {
+  prospective: {
+    gate:  s => s.eDR,
+    nuStar: s => s.nuStarExp,
+    theta: {value: 0.02,  min: 0.001, max: 0.20,  step: 0.001},
+    label: 'θ \u00a0stopping threshold on E[ΔR] (expected improvement)',
+    gainRow: 'expected gain of this pass, E[ΔR]',
+    heading: 'Expected yield E[ΔR] per pass — where to stop, before you run it',
+    why: 'You have not run the loop yet. This view answers <em>is another pass worth '
+       + 'it?</em> — the gain you can expect on average, taken before you know whether '
+       + 'the next pass finds anything. Bars above the amber line are passes worth '
+       + 'running. It is the honest quantity for a decision, because the decision is '
+       + 'made before the outcome is known.',
+    // THE FLOOR THIS MODE'S OWN QUESTION IMPLIES. Added 2026-09-28: the page drew
+    // ONE floor -- the trajectory's -- in BOTH modes, so a prospective reader was
+    // handed the other question's equilibrium and a floor that overstates the risk
+    // their own question implies. The expectation's fixed point solves E[dR] = 0:
+    //   nu/(q*sigma + nu*(1 - q*sigma))
+    // SymPy solves both fixed points from the recursion and gives their difference
+    // in closed form as nu^2*(1-q)/D with D > 0 on the open cube, so this one is
+    // never the larger; z3 returns unsat for the reverse and Wolfram Language
+    // returns True on Resolve[ForAll[...]]. Executed on the shipped "leaky fixes"
+    // preset the trajectory floor is 0.537634 against this 0.442478 -- 21.5054%
+    // high. Producer: bench/tests/test_explorer_floor_and_regime_2026-09-28.py.
+    floor: (o, q) => { const d = q*o.sigma + o.nu*(1 - q*o.sigma);
+                       return d > 0 ? o.nu/d : Infinity; },
+    floorLabel: 'floor implied by E[ΔR]',
+  },
+  retrospective: {
+    gate:  s => s.dR,
+    nuStar: s => s.nuStar,
+    theta: {value: 0.005, min: 0.001, max: 0.05, step: 0.001},
+    label: 'θ \u00a0stopping threshold on ΔR (realised drop)',
+    gainRow: 'realised drop this pass, ΔR',
+    heading: 'Realised yield ΔR per pass — where it actually stopped paying',
+    why: 'The loop has already run. This view answers <em>what did each pass actually '
+       + 'buy?</em> — the drop the curve above really made, pass by pass. It is what '
+       + 'the reference runner computes, so it is the view to use when auditing a '
+       + 'finished run. It is always the smaller of the two, so judging a <em>future</em> '
+       + 'pass by it will stop you earlier than the model warrants.',
+    // The PLOTTED line's own fixed point -- the value the drawn curve settles on.
+    // Unchanged in substance; it was inline in draw() until 2026-09-28 and is moved
+    // here so the 2 questions' floors sit side by side and neither can be drawn to
+    // the other's reader by accident.
+    floor: (o, q) => { const d = q*(o.sigma + o.nu*(1 - o.sigma));
+                       return d > 0 ? o.nu/d : Infinity; },
+    floorLabel: 'floor actually reached',
+  },
+};
+function mode(){ return MODE[$('mode').value] || MODE.prospective; }
 const V = {pi:$('v_pi'), p:$('v_p'), eta:$('v_eta'), sigma:$('v_sigma'),
            nu:$('v_nu'), theta:$('v_theta'), pert:$('v_pert')};
 let selected = null;
@@ -158,6 +311,99 @@ function params(){
   const o = {};
   for (const k in S) o[k] = parseFloat(S[k].value);
   return o;
+}
+
+// THE STOP RULE, DELIBERATELY A NAMED FUNCTION SO IT CAN BE EXECUTED BY A TEST.
+//
+// It was inline until 2026-09-28, and that is how the first version of
+// `bench/tests/test_explorer_modes_and_stop_2026-09-28.py` came to re-implement it
+// in the probe instead of running it. Restoring the old buggy rule left all 8 of
+// those tests GREEN, because they were checking the test's own copy. A test that
+// re-derives what it claims to check is the failure `execute-do-not-grep` names,
+// and it was caught only by mutating the page and watching nothing go red.
+//
+// THE RULE: the stop is the LAST pass that clears theta, plus 1 -- never the first
+// pass under it. The per-pass gain is not monotone in R: dR is unimodal, peaking at
+// R* = (1 - sqrt(1-q))/q, a location that depends on q alone and not on sigma. A run
+// starting at high risk sits on the RISING side, where an early pass can fall under
+// theta while later ones clear it comfortably; a perturbation at PERT_STEP does the
+// same thing deliberately. Measured on this page with pert=0.4, theta=0.02: the old
+// first-dip rule announced pass 10 where the correct answer is 28, and passes after
+// 10 still cleared theta.
+function stopPass(steps, theta, gain){
+  let lastClearing = 0;
+  steps.forEach(s => { if (gain(s) >= theta) lastClearing = s.i; });
+  return (lastClearing > 0 && lastClearing < steps.length) ? lastClearing + 1 : null;
+}
+
+// SETTLED IS A FACT ABOUT THE DRAWN LINE. Named so a test EXTRACTS it rather than
+// re-deriving it; 5 defects shipped on 2026-09-28 were probes that re-derived a
+// constant the code owns.
+const SETTLED_EPS = 1e-4;
+
+// WHICH SENTENCE THE READER GETS, AS A PURE FUNCTION SO A TEST CAN EXECUTE IT.
+//
+// Hoisted for exactly the reason stopPass() was: this decision lived inline in
+// draw(), so the only way to check it was to read it, and reading it is what let
+// the following ship on a PUBLIC page.
+//
+// THE DEFECT, EXECUTED. The settled test was `|nuStar - nu| < 0.004`, which is the
+// TRAJECTORY's own equilibrium identity -- at equilibrium the trajectory break-even
+// falls to meet nu, so that test is exact for the trajectory and means nothing for
+// the expectation. In the DEFAULT (prospective) mode the sentence read the
+// EXPECTATION's nu* instead, which sits strictly above nu at equilibrium, so the
+// test never fired. On the shipped "leaky fixes" preset the page therefore said
+// "Risk is still falling toward equilibrium (currently 0.538)" while the realised
+// drop was 1.816770e-13 and the equilibrium it named was 0.537634 -- the value it
+// had already reached. The retrospective mode, on the IDENTICAL drawn line, said
+// "Risk has settled at equilibrium". 2 contradictory sentences for 1 line.
+//
+// SO: settlement is decided from the DRAWN LINE (|dR| < SETTLED_EPS) in both modes.
+// The old nu*-identity test is KEPT as an additional sufficient condition, not
+// replaced -- it is correct where it fires, and dropping it would narrow the page.
+//
+// THE PROSPECTIVE BRANCH IS GUARDED ON THE READER'S OWN THRESHOLD. A settled line
+// whose expectation still clears theta is the 2 questions genuinely disagreeing, and
+// the page should say so rather than fall silent. But at nu = 0 (the shipped "ideal"
+// preset) the line settles at R -> 0 and E[dR] -> 0 with it, so an unguarded branch
+// announces "a further pass is still expected to buy E[dR] = 0.0000", which
+// contradicts itself. The seat's version omitted this guard; `last.eDR >= o.theta`
+// makes the sentence true by construction, and the ideal preset falls through to
+// the plain settled sentence instead. Executed over all 4 presets x both modes.
+function regimeKind(o, sim, modeName){
+  const MD = MODE[modeName] || MODE.prospective;
+  const last = sim.steps[sim.steps.length-1];
+  const nuS = MD.nuStar(last);
+  const settled = Math.abs(last.dR) < SETTLED_EPS;
+  if (sim.q === 0)                                    return {kind:'no-detection', nuS, settled};
+  // QUOTE THE OFFENDING PASS, NOT THE LAST ONE. The sentence claims "nu exceeds the
+  // break-even nu*", but it printed nu* at the FINAL pass while net harm may have been
+  // triggered by an early one -- so at pi=0.05, p=0.05, sigma=0.1, nu=0.2 the page
+  // rendered "nu exceeds the break-even nu* (nu = 0.200 , nu* = 1.000)", which asserts
+  // 0.2 > 1.0. The numbers could not produce the claim. Found 2026-09-28 while
+  // falsifying this file's own floor fix.
+  const harm = sim.steps.find(st => MD.gate(st) < 0);
+  if (harm) return {kind:'net-harm', nuS: MD.nuStar(harm), settled, harmPass: harm.i};
+  if (settled && modeName === 'prospective' && last.eDR >= o.theta)
+                                                      return {kind:'settled-expects-more', nuS, settled};
+  // THE EQUILIBRIUM IDENTITY IS A SEPARATE CLAIM FROM "THE LINE STOPPED MOVING",
+  // and only the first licenses the sentence "the break-even has fallen to meet nu".
+  //
+  // FOUND BY FALSIFYING THIS VERY FIX, not by review. Widening the settled test from
+  // |nuStar - nu| < 0.004 to "the drawn line stopped moving" made 4,998 grid settings
+  // reach a sentence asserting nu* ~ nu where the selected mode's nu* was 0.9995
+  // against nu = 0.200 -- a FALSE sentence, newly reachable. HEAD was not right there
+  // either: it announced "still falling" while |dR| was 4.73e-07. Both readings were
+  // wrong, so the sentence is split rather than the test loosened.
+  //
+  // These are DIVERGENT loops: at q = 0.0025, sigma = 0.1, nu = 0.2 the trajectory
+  // fixed point is 285, outside [0,1], so the line saturates at R -> 1. It has indeed
+  // stopped moving, and calling that "the precise point where continuing stops
+  // paying" invites a reader to stop at certain risk.
+  const identity = Math.abs(nuS - o.nu) < 0.004;
+  if (settled || identity)
+    return {kind: identity ? 'settled-at-breakeven' : 'settled-no-breakeven', nuS, settled};
+  return {kind:'falling', nuS, settled};
 }
 
 // Stage 5 three-phase recursion (single class, d=1)
@@ -171,9 +417,19 @@ function simulate(o){
     const R_det  = q < 1 ? R*(1-q)/(1-q*R) : 0;
     const R_base = o.sigma*R_det + (1-o.sigma)*R_old;
     const R_new  = R_base*(1-o.nu) + o.nu;
+    // Break-even for the TRAJECTORY: the nu at which R_new == R_old. Unchanged,
+    // and correct -- it is the appendix's own committed nu* (:280).
     const nuStar = (1 - q*R_old*(1-o.sigma)) > 0
                  ? o.sigma*R_old*q/(1 - q*R_old*(1-o.sigma)) : 0;
-    steps.push({i, R_old, R_det, R_base, R_new, dR: R_old - R_new, nuStar});
+    // EXPECTED improvement, taken before the detection branch is known (:225),
+    // and the break-even implied by IT, which is a different quantity: it solves
+    // R*q*sigma*(1-nu) - nu*(1-R) = 0. At R -> 1 it tends to 1, so the prospective
+    // harm line flattens near certainty rather than meeting nu early.
+    const eDR = R_old*q*o.sigma*(1-o.nu) - o.nu*(1-R_old);
+    const denomExp = R_old*q*o.sigma - R_old + 1;
+    const nuStarExp = denomExp > 0 ? R_old*q*o.sigma/denomExp : 1;
+    steps.push({i, R_old, R_det, R_base, R_new, dR: R_old - R_new,
+                eDR, nuStar, nuStarExp});
     R = R_new; traj.push(R);
   }
   return {traj, steps, q};
@@ -248,14 +504,20 @@ function draw(){
   }
   const floorVal = mirror ? 1-o.nu : o.nu;
   line(ctx,c1.width,c1.height, Array(N+1).fill(floorVal), ymax,'#6A5ACD',1.5,[6,4]);
-  // The ACHIEVED floor. The appendix states the bound lim R >= nu; solving the
-  // recursion for its fixed point gives the value actually reached:
-  //   R* = nu / (q*(sigma + nu*(1-sigma)))     -> nu/q when sigma = 1
-  // The bound is slack, and tight only at q = 1, so the trajectory settles ABOVE
-  // the dashed nu line. Drawn so that gap reads as the result it is, not as a run
-  // that has failed to converge. Omitted when the loop diverges (R* outside [0,1]).
-  const den = sim.q*(o.sigma + o.nu*(1-o.sigma));
-  const rStar = den > 0 ? o.nu/den : Infinity;
+  // THE ACHIEVED FLOOR OF WHICHEVER QUESTION THE READER ASKED. The appendix states
+  // the bound lim R >= nu; solving for a fixed point gives the value actually
+  // reached, and there are TWO because there are 2 questions:
+  //   trajectory   R* = nu / (q*(sigma + nu*(1-sigma)))     -> nu/q when sigma = 1
+  //   expectation  R* = nu / (q*sigma + nu*(1-q*sigma))
+  // Both come from MODE[...].floor so neither can be drawn to the other's reader.
+  // Until 2026-09-28 only the trajectory's was drawn, in BOTH modes: on the shipped
+  // "leaky fixes" preset that showed a prospective reader 0.537634 where their own
+  // question implies 0.442478, overstating their floor by 21.5054%.
+  // The bound is slack, tight only at q = 1, so the line settles ABOVE the dashed nu
+  // line. Drawn so that gap reads as the result it is, not as a run that has failed
+  // to converge. Omitted when the loop diverges (R* outside [0,1]).
+  const MDfloor = mode();
+  const rStar = MDfloor.floor(o, sim.q);
   if (o.nu > 0 && isFinite(rStar) && rStar <= 1){
     const av = mirror ? 1-rStar : rStar;
     line(ctx,c1.width,c1.height, Array(N+1).fill(av), ymax,'#2E7D6B',1.5,[3,3]);
@@ -280,22 +542,40 @@ function draw(){
   ctx.fillStyle='#6A5ACD'; ctx.fillText('-- bound ν', c1.width-84, 24);
   if (o.nu > 0 && isFinite(rStar) && rStar <= 1){
     ctx.fillStyle='#2E7D6B';
-    ctx.fillText('-- floor actually reached  R* = '+rStar.toFixed(3), c1.width-330, 40);
+    ctx.fillText('-- '+MDfloor.floorLabel+'  R* = '+rStar.toFixed(3), c1.width-330, 40);
   }
 
-  // ΔR chart
+  // GAIN chart -- whichever gain the reader asked about.
+  const MD = mode();
+  const gain = s => MD.gate(s);
   const ctx2 = c2.getContext('2d');
-  const dmax = Math.max(o.theta*2, ...sim.steps.map(s=>Math.abs(s.dR)))*1.15;
+  const dmax = Math.max(o.theta*2, ...sim.steps.map(s=>Math.abs(gain(s))))*1.15;
   frame(ctx2, c2.width, c2.height, dmax);
-  let stopAt = null;
+
+  // THE STOP IS THE LAST PASS THAT CLEARS theta, PLUS 1 -- NOT THE FIRST DIP.
+  //
+  // The old rule was `if (stopAt===null && !good && s.i>1) stopAt = s.i;`: it
+  // latched on the FIRST pass under theta and never revised. That is wrong
+  // because the gain is NOT monotone in R. dR is unimodal, peaking at
+  // R* = (1 - sqrt(1-q))/q -- a location SymPy confirms depends on q alone and
+  // not at all on sigma. A run starting at high risk therefore sits on the
+  // RISING side of that peak, where an early pass can fall under theta while
+  // later passes clear it comfortably. The old rule announced a stop there and
+  // never looked again, which is the premature-stop band MATHEMATICAL_APPENDIX.md
+  // :207 already documents, inherited whole by this page.
+  //
+  // A perturbation makes it plainer still: PERT_STEP re-raises risk mid-run, so
+  // gains rise again after any dip, and the first dip is simply not the end.
+  const stopAt = stopPass(sim.steps, o.theta, gain);
+
   sim.steps.forEach(s=>{
     const px = X(c2.width, s.i);
     const bw = (c2.width-M.l-M.r)/N*0.62;
-    const good = s.dR >= o.theta;
-    if (stopAt===null && !good && s.i>1) stopAt = s.i;
-    ctx2.fillStyle = s.dR < 0 ? '#B3532E' : (good ? '#2E7D5B' : '#C7CDC2');
+    const g = gain(s);
+    const good = g >= o.theta;
+    ctx2.fillStyle = g < 0 ? '#B3532E' : (good ? '#2E7D5B' : '#C7CDC2');
     const h0 = Y(c2.height, 0, dmax);
-    const h1 = Y(c2.height, Math.max(0,s.dR), dmax);
+    const h1 = Y(c2.height, Math.max(0,g), dmax);
     ctx2.fillRect(px-bw/2, Math.min(h0,h1), bw, Math.abs(h0-h1)||1);
   });
   line(ctx2,c2.width,c2.height, Array(N+1).fill(o.theta), dmax,'#C08A00',1.5,[6,4]);
@@ -307,17 +587,53 @@ function draw(){
   // regime sentence
   const last = sim.steps[sim.steps.length-1];
   const el = $('regime');
-  const netHarm = sim.steps.some(s=>s.dR < 0);
-  if (o.eta*o.p === 0){
+  const RG = regimeKind(o, sim, $('mode').value);
+  const nuS = RG.nuS;
+  if (RG.kind === 'no-detection'){
     el.className='regime bad';
     el.innerHTML='No effective detection (<span class="mono">q = η·p = 0</span>): '+
       'ritual without teeth. Risk never falls — the mathematical form of “empty review earns nothing”.';
-  } else if (netHarm){
+  } else if (RG.kind === 'net-harm'){
     el.className='regime bad';
-    el.innerHTML='Net-harmful cycles present: ν exceeds the break-even ν* '+
-      '(<span class="mono">ν = '+o.nu.toFixed(3)+' , ν* ≈ '+last.nuStar.toFixed(3)+
-      '</span> at current risk). The correct move is to stop fixing and defer to the HIL.';
-  } else if (Math.abs(last.nuStar - o.nu) < 0.004){
+    // "REACHES OR EXECEEDS", not "exceeds": at the exact break-even the gate is
+    // negative by ~1e-18 of float error, and 1 of 13,196 net-harm settings on the
+    // executed grid has nu* equal to nu to that precision. Both then render as
+    // "0.010", so "exceeds" would print a strict inequality between 2 identical
+    // displayed numbers. The warning itself is NOT weakened -- the test stays a
+    // strict gate(s) < 0, which fails safe toward warning.
+    el.innerHTML='Net-harmful cycles present: from <b>pass '+RG.harmPass+'</b> onward ν '+
+      'reaches or exceeds the break-even ν* (<span class="mono">ν = '+o.nu.toFixed(3)+
+      ' ≥ ν* ≈ '+nuS.toFixed(3)+'</span> at that pass’s risk). '+
+      'The correct move is to stop fixing and defer to the HIL.';
+  } else if (RG.kind === 'settled-expects-more'){
+    // THE 2 QUESTIONS GENUINELY DISAGREE HERE, so say which is which rather than
+    // reporting one question's verdict in the other's words.
+    el.className='regime';
+    el.innerHTML='The plotted trajectory has <b>settled</b> at <span class="mono">R ≈ '+
+      last.R_new.toFixed(3)+'</span> — the realised drop is now <span class="mono">'+
+      last.dR.toExponential(1)+'</span>. On the question you asked it is <b>not</b> finished: '+
+      'another pass is still expected to buy <span class="mono">E[ΔR] ≈ '+
+      last.eDR.toFixed(4)+'</span> against your <span class="mono">θ = '+o.theta+
+      '</span>, because the expectation averages over the detection branch that this '+
+      'plotted path conditions away. Its own equilibrium is the lower <span class="mono">R ≈ '+
+      (isFinite(rStar)?rStar.toFixed(3):'—')+'</span> (green dashes). Switch to the '+
+      'retrospective question to read the drawn line on its own terms.';
+  } else if (RG.kind === 'settled-no-breakeven'){
+    // The line stopped moving, but the break-even has NOT come down to meet nu, so
+    // print the actual nu* instead of asserting an identity that does not hold.
+    el.className = (last.R_new > 0.5 || !isFinite(rStar) || rStar > 1) ? 'regime bad' : 'regime';
+    el.innerHTML='The plotted trajectory has stopped moving at <span class="mono">R ≈ '+
+      last.R_new.toFixed(3)+'</span> (realised drop <span class="mono">'+
+      last.dR.toExponential(1)+'</span>), but this is <b>not</b> the break-even point: '+
+      '<span class="mono">ν* ≈ '+nuS.toFixed(3)+'</span> against '+
+      '<span class="mono">ν = '+o.nu.toFixed(3)+'</span>.'+
+      ((!isFinite(rStar) || rStar > 1)
+        ? ' The recursion’s fixed point lies outside <span class="mono">[0,1]</span>, so this '+
+          'loop does not converge to a usable floor — risk is <b>saturating</b>, not settling. '+
+          'Detection is too weak, or re-injection too strong, for the cycle to pay at all.'
+        : ' Risk is level here because the loop has reached its own floor, not because '+
+          'the next pass would break even.');
+  } else if (RG.kind === 'settled-at-breakeven'){
     el.className='regime';
     el.innerHTML='Risk has settled at equilibrium, <span class="mono">R ≈ '+
       last.R_new.toFixed(3)+'</span>: the break-even threshold has fallen to meet the '+
@@ -327,7 +643,7 @@ function draw(){
   } else {
     el.className='regime';
     el.innerHTML='Fixes are net-beneficial: <span class="mono">ν = '+o.nu.toFixed(3)+
-      ' &lt; ν* ≈ '+last.nuStar.toFixed(3)+'</span>. Risk is still falling toward '+
+      ' &lt; ν* ≈ '+nuS.toFixed(3)+'</span>. Risk is still falling toward '+
       'equilibrium (currently <span class="mono">'+last.R_new.toFixed(3)+
       '</span>), above the floor ν = '+o.nu.toFixed(3)+'.';
   }
@@ -335,6 +651,12 @@ function draw(){
   // inspector
   if (selected !== null && selected >= 1){
     const s = sim.steps[selected-1];
+    const GAINROWS = [['realised drop this pass, ΔR', s.dR],
+                      ['expected gain of this pass, E[ΔR]', s.eDR]];
+    // FAIL LOUDLY rather than silently dropping the marker: if a MODE's gainRow stops
+    // matching a row label, the marker would just vanish and nothing would notice.
+    if (!GAINROWS.some(([l]) => l === MD.gainRow))
+      console.error('gainRow '+JSON.stringify(MD.gainRow)+' matches no inspector row');
     $('inspectBody').innerHTML =
       '<table><tr><td>pass</td><td>'+s.i+'</td></tr>'+
       '<tr><td>risk entering, R</td><td>'+s.R_old.toFixed(4)+'</td></tr>'+
@@ -342,9 +664,19 @@ function draw(){
         ' &nbsp;(q = '+sim.q.toFixed(3)+')</td></tr>'+
       '<tr><td>resolution → σ·R_det + (1−σ)·R</td><td>'+s.R_base.toFixed(4)+'</td></tr>'+
       '<tr><td>re-injection → ·(1−ν) + ν</td><td>'+s.R_new.toFixed(4)+'</td></tr>'+
-      '<tr><td>net gain this pass, ΔR</td><td>'+s.dR.toFixed(4)+
-        (s.dR<0?' &nbsp;⚠ net harm':'')+'</td></tr>'+
-      '<tr><td>break-even ν* at this state</td><td>'+s.nuStar.toFixed(4)+'</td></tr></table>';
+      // gainRow NAMES THE ROW THIS MODE GATES ON. It was defined in both MODE
+      // entries and read by nothing until 2026-09-28 -- an addition no caller
+      // reached. Wired here so each label has 1 source of truth and so the reader
+      // cross-checking the regime sentence can see WHICH quantity decided it.
+      GAINROWS.map(([label, val]) =>
+        '<tr><td>'+label+(label === MD.gainRow ? ' &nbsp;← gated on' : '')+
+        '</td><td>'+val.toFixed(4)+(val<0?' &nbsp;⚠ net harm':'')+'</td></tr>'
+      ).join('')+
+      '<tr><td>break-even ν*<sub>ΔR</sub> (trajectory — the drawn line)</td><td>'+
+        s.nuStar.toFixed(4)+'</td></tr>'+
+      '<tr><td>break-even ν*<sub>E</sub> (expectation — the default question)</td><td>'+
+        s.nuStarExp.toFixed(4)+
+        '</td></tr></table>';
   }
 }
 
@@ -370,7 +702,49 @@ document.querySelectorAll('.presets button').forEach(b=>{
 });
 Object.values(S).forEach(el=>el.addEventListener('input', draw));
 ['mirror','ghost'].forEach(id=>$(id).addEventListener('change', draw));
-draw();
+
+// SWITCHING THE QUESTION RE-SCALES ITS THRESHOLD, because 1 slider cannot serve both.
+// Measured over this page's own ranges, E[dR]/dR spans 1.0056 to 95.05 -- so a theta
+// that is sensible for the realised drop is far too small for the expectation at high
+// risk, and would paint every bar green. Each mode therefore carries its own range,
+// step and opening value, and the label says which quantity theta is being compared to.
+function applyMode(){
+  const MD = mode(), t = $('theta'), cfg = MD.theta;
+  // READ THE READER'S theta BEFORE TOUCHING min/max. Assigning either re-runs the
+  // range input's value sanitisation (WHATWG, attribute-change steps), which CLAMPS
+  // value on the spot -- so `cur`, read afterwards, could never exceed cfg.max and
+  // the `cur > cfg.max` branch below was UNREACHABLE. Executed: theta dragged to
+  // 0.15 in prospective (legal, max 0.20), then switched to retrospective, silently
+  // became 0.05 -- the range EDGE, 10x the mode's own default and neither the
+  // reader's choice nor the default the dead branch was there to supply. Found
+  // independently by 2 panel seats on 2026-09-28; guarded by an executing test with
+  // a range stub that implements the spec's clamping.
+  const cur = parseFloat(t.value);
+  const wasDefault = Math.abs(cur - parseFloat(t.dataset.lastDefault || cfg.value)) < 1e-9;
+  t.min = cfg.min; t.max = cfg.max; t.step = cfg.step;
+  // Keep a reader's own choice when it still fits; otherwise adopt the mode's default.
+  t.value = (wasDefault || cur < cfg.min || cur > cfg.max) ? cfg.value : cur;
+  t.dataset.lastDefault = cfg.value;
+  $('thetaLabel').innerHTML = MD.label;
+  $('gainHeading').textContent = MD.heading;
+  // COSMETIC, SO IT DEGRADES RATHER THAN TAKING THE PAGE DOWN. The explanatory
+  // paragraph is prose for a first-time reader; the charts are the tool. An
+  // unguarded write here threw `Cannot set properties of null` and killed draw()
+  // entirely, losing both charts to a missing <p>. Functional lookups below are
+  // deliberately NOT guarded: if theta or the canvases are gone, failing loudly is
+  // correct.
+  const why = $('modeWhy');
+  if (why) why.innerHTML = MD.why;
+  draw();
+}
+$('mode').addEventListener('change', applyMode);
+document.querySelectorAll('input[name="modeR"]').forEach(r =>
+  r.addEventListener('change', () => {
+    if (!r.checked) return;
+    $('mode').value = r.value;
+    applyMode();
+  }));
+applyMode();
 })();
 </script>
 </body>

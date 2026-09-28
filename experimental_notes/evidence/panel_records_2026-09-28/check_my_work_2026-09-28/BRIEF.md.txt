@@ -1,0 +1,137 @@
+# Panel brief — check CC1's work of 2026-09-28
+
+## SECTION 1 — The question
+
+The founder's instruction, verbatim: *"The panel review completion should mostly be just
+to check your work."* So this is not a design round. **The single question is whether the
+7 pieces of work CC1 landed in the last 18 hours are CORRECT, and whether any of them is
+a fix that does not fix, a measurement that measures nothing, or a claim wider than its
+evidence.**
+
+He also set the standard for how your answers are treated, verbatim: *"Your role is not
+simply to dispatch seats and take them blindly at their word. You need to check they
+actually make sense, when ran against the existing code."* CC1 will adjudicate what you
+return against the code. Return things that survive that.
+
+**The prior is that some of this IS wrong.** In the same 18 hours CC1 shipped 3 defects
+into its own fixes and caught them only by executing: a naming check whose first design
+returned 24 findings that were nearly all sentence fragments while MISSING the faults it
+was built for; a harvest fix whose first version would have excluded the ENTIRE `bench/`
+tree from every simulated run; and a blind-spot measurement that compared a tool with
+itself and reported a reassuring 0%. Assume there is a 4th.
+
+## SECTION 2 — Use the harness
+
+Form every answer by RUNNING the machinery, not by describing it.
+
+`S_k` bears on items 6 and 7, both of which concern what may be admitted or rejected on a
+target that is not a program. **`nu_star` and the break-even bear on item 1**, which is a
+question about a PUBLISHED tool's stopping rule. `gamma` and the two-sided gate bear on
+none of this; say so if you find otherwise rather than reaching for them.
+
+## SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is half an answer. A fix without a falsifier you have EXECUTED is
+a hypothesis. Deliver every fix by WRITING IT INTO THE SANDBOX REPOSITORY TREE AT ITS REAL
+PATH; a fix in prose is not delivered and a fix in scratch space dies at teardown.
+
+<!-- figure: harvest loss | scripts/panel_harvest_loss_2026-09-22.py | 73.3333 -->
+
+73.3333% of scripts delivered by seats have historically never reached `scripts/`, 33 of
+45, Wilson 95% [58.9612%, 84.0351%]. Do not let yours join them.
+
+A STORED falsifier may not call Wolfram; anyone reproducing this project must not need it
+installed. You SHOULD use Wolfram while reasoning, with the open-source tools primary.
+
+## SECTION 4 — The 7 things to check, and 4 questions left open
+
+**1. THE PUBLISHED EXPLORER'S STOPPING RULE — highest stakes, because it is public.**
+`explorer/index.html` is served at `jebus197.github.io/Constraint_Engineering/explorer/`.
+Line 83 labels its slider `theta  stopping threshold on ΔR`; line 294 colours a pass green
+on `s.dR >= o.theta` alone. CC1 claims this is the quantity
+`docs/MATHEMATICAL_APPENDIX.md:217` RETIRED on 2026-09-21, that the correct quantity is
+`:225`'s `R*q*sigma*(1-nu) - nu*(1-R)`, and that the error is STRICTLY one-directional —
+1309 of 14440 grid points where the explorer stops and the appendix continues, 0 the
+reverse, with z3 returning unsat on the general form ever falling below the explorer's dR.
+**Attack all 3 claims.** Is the explorer's recursion actually wrong for its own stated
+model, or is CC1 reading a trajectory display as a decision rule? Does the proposed
+revision preserve what `dR` is legitimately for? And CC1 asserts Astra's proposed `R*q` is
+ALSO wrong, being the sigma=1, nu=0 corner — check that against `:223`.
+
+**2. THE HARVEST PROVENANCE FIX.** On a round where BOTH seats failed at authentication
+with 0 tool calls and wrote nothing, the dispatcher printed "seats proposed edits to 8
+file(s)" and "harvested 3394 byte(s) of seat-written files". CC1's diagnosis: the sandbox
+is a copy of the repo, the dispatcher writes its log INTO the copy, and those writes read
+as seat changes. Its fix excludes the run's own log directory, identified as the ancestor
+of the harvest destination sitting directly inside a directory named `logs`.
+**Check the exclusion is not too wide** — a seat asked to write a measurement under
+`bench/logs/` must still be harvested — **and not too narrow.** The first version used
+`dest.parents[2]` and would have excluded all of `bench/`; confirm the replacement is
+right for all 3 destination shapes, and look for a 4th shape CC1 did not enumerate.
+
+**3. THE PAID-DISPATCH LEDGER.** The founder's ruling: no paid dispatch without his
+express authorisation. CC1 made the free seats the default and gated paid seats on a
+committed ledger quoting his authorisation. **Find the bypass.** CC1 states in the code
+that the enforcement is auditability rather than impossibility — test whether even that
+holds, and whether the 4 launch sites that skip the policy layer can reach a paid route.
+
+**4. THE 3 UNREVIEWED CLASSIFIER CHANGES** in `hooks/ffafp_audit.py`: a `classify_write`
+adapter, a `shell_bindings` alias, and classification on the LITERAL LEADING PREFIX plus
+LITERAL EXTENSION so a variable in a filename no longer hides a write. No seat has seen
+these. **Find the evasion that still gets through.**
+
+**5. THE NAMING CHECK, whose own hypothesis CC1 reports as REFUTED.**
+`scripts/note_naming_check_2026-09-28.py`. Requiring a term to be used WITHOUT
+introduction removes only 8.9744% of findings over 40 of 427 notes, so it cannot block;
+density 1.7750 per note makes it an advisory only. CC1 documents 2 structural blind spots:
+it cannot see a COLLISION, and it goes blind retrospectively. **Check the measurement
+reproduces, and check the blind spots are the only ones.**
+
+**6. THE SESSION'S OWN `grep` HIDES MOST FILES.** `scripts/shell_grep_blind_spot_2026-09-28.py`
+reports 3743 of 5245 matching files never shown = 71.3632%, Wilson [70.1245%, 72.5706%],
+because the shell function wraps ugrep with `--ignore-files` and `.gitignore` excludes
+`bench/logs/**`. **Reproduce it.** Then answer the question CC1 did not: WHICH PAST CLAIMS
+IN THIS REPOSITORY ARE UNSAFE because they rest on a search that returned 0? Name specific
+files and lines. This is the item most likely to have consequences beyond its own fix.
+
+**7. THE WOLFRAM ROUTE WAS NEVER DEAD, and a standing document says it was.**
+`.claude/CLAUDE.md` records the hosted route DISABLED 2026-09-10 "BECAUSE IT IS DEAD",
+citing 42 of 43 connection failures from 2026-09-04, Fisher exact p = 2.199086e-14. CC1
+now claims that figure measures the `npx mcp-remote` STDIO SHIM's attach success — the
+health script's patterns key on the literal string `WolframCloud`, the removed entry's
+NAME — and not the endpoint's reachability; and that the official Wolfram connector to the
+SAME host answers correctly today. **Check whether the figure supports the inference that
+was drawn from it**, and whether re-scoping it is the right correction or an
+over-correction in the opposite direction.
+
+**LEFT OPEN, and secondary to the 7 above.** (8) HOW to widen the extractor beyond a
+fenced code block to any computable STEM element, and what must NEVER be claimed
+computable. (9) Whether a prose-target rejection should require a HIGH severity finding —
+the founder's worry is a HIL queue growing unmanageably, so answer with counts. (10) A
+guard against editing the tree during a measurement; CC1 invalidated a full suite run 5
+times in one day this way, and the obvious guard could deadlock a session. (11) The owed
+Stop-gate fixture, whose 2 predecessors examined nothing because `fa.scan` handed
+`fa.audit` no turn.
+
+## SECTION 5 — What would refute you
+
+For each item, state before concluding what evidence would overturn your answer. On item 1
+name what would show the explorer correct as it stands. On item 2 name the seat file your
+exclusion would wrongly drop. On item 6 name a claim you checked that turned out SAFE.
+
+## SECTION 6 — Output shape
+
+Per item: `id`, `verdict`, `reasoning` with file and line, `fix_path` or NONE with the
+reason, `falsifier_path`, `falsifier_command`, `falsifier_output` verbatim,
+`additive_check` naming the caller that reaches your change and the test that executes it,
+and `refutation_condition`. Then overall: `strongest_disagreement` with this brief's
+framing, which must not be empty, and `passes_run`.
+
+## SECTION 7 — Termination
+
+Stop on diminishing returns: when a further pass adds no finding above the
+real-world-consequence threshold. Say how many passes you ran and what the last one added.
+Do not manufacture findings and do not nitpick style. **If you cannot finish all 11, do
+fewer properly and say which you did not reach.**
+
+Disagreement with the other seat is information. Do not smooth it away.

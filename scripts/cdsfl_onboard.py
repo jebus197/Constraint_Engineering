@@ -141,7 +141,9 @@ UNCREDENTIALED_ROUTES = [
     "Wolfram — local `wolframscript` on the Wolfram Engine, plus the hosted Wolfram "
     "connector authorised in the assistant's own session; no API key (the "
     "key-authenticated bridge was retired 2026-08-03, and the WolframCloud MCP "
-    "entry was removed on 2026-09-10 because it had stopped connecting).",
+    "entry was removed on 2026-09-10 because that npx bridge had stopped "
+    "connecting — the HOST was never down, and the official connector reaches "
+    "it today).",
 ]
 
 SYSTEM_TOOLS = [

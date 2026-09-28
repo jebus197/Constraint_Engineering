@@ -267,7 +267,11 @@ def resolve_brief(argv=None) -> None:
         raise SystemExit(2)
     PROMPT = BRIEF.read_text(encoding="utf-8")
 
-import json as _json
+# `import json as _json` STOOD HERE and is removed rather than left dead: the
+# gate below was its only consumer, and it no longer parses the ledger itself.
+# Measured before removing: 0 references to `_json` anywhere in this file and 0
+# modules importing it from here. `json` is already imported plainly on line 24
+# for anything that needs it, so no capability is lost.
 import os as _os
 from pathlib import Path as _Path
 _ONLY = _os.environ.get("PANEL_ONLY", "")
@@ -396,32 +400,89 @@ FREE_SEATS = frozenset({"cc2", "fable"})
 #:
 #: NOTHING IS REMOVED. Paid dispatch remains available by exactly the same route
 #: it always had, with an authorisation recorded alongside it.
-PAID_LEDGER = _Path(__file__).resolve().parent / "paid_dispatch_authorisations.json"
+#: THE PATH IS EXTRACTED FROM THE CANONICAL READER, NEVER SPELT AGAIN HERE.
+#: THE DEFECT THIS REPLACES, measured 2026-09-28 by execution. This line used to
+#: read `_Path(__file__).resolve().parent / "paid_dispatch_authorisations.json"`,
+#: a SECOND spelling of a path the reader module already owns -- and the wrong
+#: one. `bench/paid_dispatch_authorisations.json` does not exist; the committed
+#: ledger is `bench/directives/universal/paid_dispatch_authorisations.json`, so
+#: `is_file()` returned False and all 7 authorised rounds were refused. Repointing
+#: the path alone did not help either: the real file is a MAPPING with
+#: `authorisations[].rounds[]` and `founder_verbatim[]`, and the parser below
+#: demanded a flat list, so it answered "not a list of entries" for all 7.
+#:
+#: WHY DELEGATE RATHER THAN PARSE AGAIN. `bench/paid_dispatch_authorisations.py`
+#: is the reader, and its own docstring gives the reason: "The authorisation list
+#: is a money constraint; 2 copies that could drift is exactly the shape to
+#: avoid." This gate WAS the second copy. It now calls that module, so there is 1
+#: parser and 1 path, and a schema change cannot green one while breaking the
+#: other. 3 test files already read the ledger through the same module.
+import paid_dispatch_authorisations as _paid_ledger  # noqa: E402  (bench is on sys.path, line 27)
+
+#: Bound at import for the callers and messages that reference it. `_ledger_path()`
+#: is the LIVE lookup, so the gate and the reader can never disagree about which
+#: file is being consulted.
+PAID_LEDGER = _paid_ledger.AUTHORISATIONS
+
+#: Minimum length of the founder's own words an entry must carry. An entry that
+#: merely names a round authorises nothing.
+_MIN_QUOTE_CHARS = 20
+
+
+def _ledger_path() -> _Path:
+    """Where the authorisation ledger lives, asked of the reader every time."""
+    return _paid_ledger.AUTHORISATIONS
+
+
+def _founder_quote(entry: dict) -> str:
+    """The founder's own words from a ledger entry, longest first.
+
+    The committed schema records them as `founder_verbatim`, a LIST of his
+    quotations. `founder_authorisation` is accepted as a single-string spelling of
+    the same field so that no existing entry stops being readable.
+    """
+    words = entry.get("founder_verbatim") or entry.get("founder_authorisation") or ""
+    if isinstance(words, str):
+        quotes = [words]
+    elif isinstance(words, (list, tuple)):
+        quotes = [str(w) for w in words]
+    else:
+        quotes = []
+    quotes = [q.strip() for q in quotes if str(q).strip()]
+    return max(quotes, key=len) if quotes else ""
 
 
 def _paid_is_authorised(round_name: str) -> tuple[bool, str]:
-    """Is a paid dispatch authorised for this round? Returns (ok, reason)."""
-    if not PAID_LEDGER.is_file():
-        return False, f"no authorisation ledger at {PAID_LEDGER}"
+    """Is a paid dispatch authorised for this round? Returns (ok, reason).
+
+    EVERY FAILURE IS A REFUSAL. Missing file, unreadable file, wrong schema,
+    unnamed round and an entry without the founder's words all return False. A
+    guard that degrades to no guard is the defect this project keeps recording.
+    """
+    ledger = _ledger_path()
+    if not ledger.is_file():
+        return False, f"no authorisation ledger at {ledger}"
     try:
-        entries = _json.loads(PAID_LEDGER.read_text(encoding="utf-8"))
+        entry = _paid_ledger.authorisation_for(round_name)
     except (ValueError, OSError) as exc:
         return False, f"authorisation ledger unreadable: {exc}"
-    if not isinstance(entries, list):
-        return False, "authorisation ledger is not a list of entries"
-    for e in entries:
-        if not isinstance(e, dict):
-            continue
-        if e.get("round") != round_name:
-            continue
-        quote = str(e.get("founder_authorisation", "")).strip()
-        if len(quote) < 20:
-            return False, (
-                f"ledger entry for round {round_name!r} carries no founder "
-                "authorisation quote (at least 20 characters required)"
-            )
-        return True, f"authorised for round {round_name!r}: {quote[:80]}"
-    return False, f"no ledger entry for round {round_name!r}"
+    except (AttributeError, TypeError) as exc:
+        # The reader expects a mapping with an `authorisations` list. Anything
+        # else -- a bare list, a string, a number -- lands here and REFUSES
+        # rather than raising through into a dispatch.
+        return False, (
+            f"authorisation ledger is not a mapping with an 'authorisations' "
+            f"list ({type(exc).__name__}: {exc})"
+        )
+    if entry is None:
+        return False, f"no ledger entry for round {round_name!r}"
+    quote = _founder_quote(entry)
+    if len(quote) < _MIN_QUOTE_CHARS:
+        return False, (
+            f"ledger entry for round {round_name!r} carries no founder "
+            f"authorisation quote (at least {_MIN_QUOTE_CHARS} characters required)"
+        )
+    return True, f"authorised for round {round_name!r}: {quote[:80]}"
 
 
 def select_models(only: str, round_name: str) -> list[tuple[str, str, str]]:
@@ -441,9 +502,12 @@ def select_models(only: str, round_name: str) -> list[tuple[str, str, str]]:
     if not ok:
         raise SystemExit(
             f"REFUSED: PANEL_ONLY names paid seat(s) {', '.join(paid)} and {reason}.\n"
-            f"  Paid dispatch needs an entry in {PAID_LEDGER} of the form\n"
-            '    [{"round": "<log-dir-name>", "founder_authorisation": "<his words>", '
-            '"date": "YYYY-MM-DD"}]\n'
+            f"  Paid dispatch needs an entry in {_ledger_path()} whose\n"
+            f"  'authorisations' list carries an object with this round in its\n"
+            f"  'rounds' list and the founder's words in 'founder_verbatim', e.g.\n"
+            '    {"authorisations": [{"id": "...", "date": "YYYY-MM-DD",\n'
+            '       "rounds": ["<log-dir-name>"],\n'
+            '       "founder_verbatim": ["<his words, 20+ characters>"]}]}\n'
             "  This is the founder's ruling of 2026-09-28, not a transport limit."
         )
     print(f"    PAID DISPATCH AUTHORISED -- {reason}")
@@ -453,8 +517,17 @@ def select_models(only: str, round_name: str) -> list[tuple[str, str, str]]:
 #: Bound by `main()` once the run directory is known, because the ledger keys on
 #: the round name. Kept importable at module level so the 37 callers that read
 #: `MODELS` are unaffected when no run is in progress.
+#: PAID SEATS DO NOT EXIST AT MODULE LEVEL (panel seat's finding, 2026-09-28,
+#: reproduced here by execution). The previous binding honoured `PANEL_ONLY`
+#: verbatim, so `PANEL_ONLY=cx,cgpt` plus a bare `import` yielded a MODELS list
+#: carrying 2 paid seats that NO ledger check had seen -- `select_models` is only
+#: reached through `main()`, so any importer dispatching from module state walked
+#: straight past the gate. The ledger can only authorise a ROUND, and at import
+#: time no round exists, so at import time no paid seat can be authorised.
+#: `main()` rebinds through `select_models` (which can refuse) before any
+#: dispatch, so nothing a real run may legitimately do is removed.
 MODELS = [m for m in _ALL if m[0] in FREE_SEATS] if not _ONLY else [
-    m for m in _ALL if m[0] in _ONLY.split(",")
+    m for m in _ALL if m[0] in _ONLY.split(",") and m[0] in FREE_SEATS
 ]
 
 # THE PANEL HAS NEVER RUN UNDER THE CDSFL SCHEMA. Measured 2026-09-07: of the 37
@@ -818,18 +891,34 @@ def main() -> int:
     # BIND THE BRIEF HERE, not at import. See `resolve_brief`.
     resolve_brief()
     _validate_brief_or_refuse()
-    # SPEND-GATE 2 OF 2, and it runs before any seat is built, for the same
-    # reason the brief check does: main() is the only path to a paid seat.
-    _refuse_if_the_suite_state_is_unknown()
-
     # SPEND-GATE 0 OF 2 -- EARLIEST OF THE THREE, and it decides WHICH seats exist
     # rather than whether the run may proceed. An empty PANEL_ONLY now yields the
     # 2 free seats; naming a paid seat is refused unless the committed ledger
     # authorises this round. Founder's ruling, 2026-09-28. Rebinding the module
     # global is what WIRES `select_models` -- an unreached guard guards nothing,
     # which is the failure mode the additive standard names on the addition side.
+    #
+    # ORDER IS LOAD-BEARING (panel seat's finding, 2026-09-28, confirmed by
+    # execution). This must run BEFORE the suite gate below, because that gate
+    # counts paid seats by reading MODELS and `suite_record.gate` RETURNS without
+    # refusing when `paid_seats` is 0. Measured against a red record: paid_seats=0
+    # proceeds, paid_seats=2 exits 2. Since the module-level binding above now
+    # carries no paid seat, counting before this rebind would tell the spend gate
+    # there is no spend to protect and a red suite would stop blocking paid
+    # rounds. The 2 changes are 1 fix; applying either alone regresses the other.
+    #
+    # `_logs_dir()` RATHER THAN A BARE `LOGS`, which is what A22 built it for. An
+    # unresolved brief makes `LOGS` None, and `LOGS.name` then raises
+    # "AttributeError: 'NoneType' object has no attribute 'name'" -- the exact
+    # illegible shape A22's docstring records as the price of moving the binding
+    # out of import time. `_logs_dir()` says to call `resolve_brief()` instead.
+    # A real run is unaffected: `resolve_brief()` above always binds it.
     global MODELS
-    MODELS = select_models(_ONLY, LOGS.name)
+    MODELS = select_models(_ONLY, _logs_dir().name)
+
+    # SPEND-GATE 2 OF 2, and it runs before any seat is built, for the same
+    # reason the brief check does: main() is the only path to a paid seat.
+    _refuse_if_the_suite_state_is_unknown()
 
     paid = [m for m in MODELS if m[2] != "claude_cli"]
     print(f"=== maths panel — {len(MODELS)} dispatched seats + CC1 ===")

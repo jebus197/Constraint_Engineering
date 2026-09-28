@@ -128,11 +128,75 @@ def disagreement_sweep(theta: float = 0.005) -> None:
           f", the appendix says {'CONTINUE' if e >= mp.mpf('0.005') else 'STOP'}")
 
 
-def main() -> int:
+def nustar_check() -> None:
+    """A SECOND, INDEPENDENT DEFECT: the explorer's own break-even is not the model's.
+
+    `explorer/index.html:177` computes
+        nuStar = sigma*R*q / (1 - q*R*(1-sigma))
+    which is the re-injection rate at which it warns a further pass does net harm.
+
+    The appendix's general expected improvement (`MATHEMATICAL_APPENDIX.md:225`)
+    implies its own break-even, obtained by solving
+        R*q*sigma*(1-nu) - nu*(1-R) = 0   for nu
+    giving   R*q*sigma / (R*q*sigma - R + 1).
+
+    The denominators differ: `- R*q` against `- R`. The difference factors to
+    R^2*q*sigma*(q-1)/(...), whose numerator is negative for q < 1, so the
+    explorer's figure is STRICTLY BELOW the true break-even everywhere on the open
+    domain. It therefore warns of net harm EARLIER than the model supports -- the
+    same pessimistic direction as the stopping-rule defect above, reached by a
+    completely separate route.
+    """
+    R, q, sigma, nu = sp.symbols("R q sigma nu", positive=True)
+    explorer = sigma * R * q / (1 - q * R * (1 - sigma))
+    appendix = sp.solve(sp.Eq(appendix_expected(R, q, sigma, nu), 0), nu)[0]
+
+    print()
+    print("5. THE EXPLORER'S nuStar AGAINST THE MODEL'S OWN BREAK-EVEN")
+    print(f"   explorer/index.html:177        {sp.simplify(explorer)}")
+    print(f"   implied by appendix:225        {sp.simplify(appendix)}")
+    diff = sp.factor(sp.simplify(sp.together(explorer - appendix)))
+    print(f"   difference                     {diff}")
+    print(f"   identical?                     {sp.simplify(explorer - appendix) == 0}")
+
+    for Rv, qv, sv in [(sp.Rational(99, 100), sp.Rational(3, 10), sp.Integer(1)),
+                       (sp.Rational(9, 10), sp.Rational(1, 2), sp.Rational(9, 10)),
+                       (sp.Rational(1, 2), sp.Rational(1, 5), sp.Rational(1, 2))]:
+        a = mp.mpf(str(float(explorer.subs({R: Rv, q: qv, sigma: sv}))))
+        b = mp.mpf(str(float(appendix.subs({R: Rv, q: qv, sigma: sv}))))
+        print(f"   R={float(Rv):.2f} q={float(qv):.2f} sigma={float(sv):.2f}  "
+              f"explorer {mp.nstr(a, 7)}  true {mp.nstr(b, 7)}  ratio {mp.nstr(a/b, 6)}")
+
+    import z3
+    zR, zq, zs = z3.Reals("R q sigma")
+    dom = [zR > 0, zR < 1, zq > 0, zq < 1, zs > 0, zs <= 1]
+    ze = zR * zq * zs / (zR * zq * zs - zR * zq + 1)
+    za = zR * zq * zs / (zR * zq * zs - zR + 1)
+    sol = z3.Solver()
+    sol.add(dom)
+    sol.add(ze > za)
+    print(f"   z3: explorer nuStar can EXCEED the true break-even?  {sol.check()}")
+
+
+def main(argv=None) -> int:
+    # A `--help` MUST NEVER RUN THE MEASUREMENT. This script ignored the flag and
+    # executed its full sweep, which the project's own rule forbids: 15 of 17
+    # runners once billed a live dispatch on an unrecognised argument. Nothing here
+    # costs money, but the rule is about the SHAPE of the mistake, not the bill —
+    # a flag silently treated as data is how that class begins.
+    import argparse
+
+    ap = argparse.ArgumentParser(
+        description="Compare the published explorer's stopping quantity with the "
+                    "appendix's general expected improvement. Read-only; runs no "
+                    "experiment, spends nothing, and calls no model.")
+    ap.parse_args(argv)
+
     print("EXPLORER STOPPING RULE vs THE APPENDIX'S GENERAL FORM")
     print("=" * 62)
     identity_check()
     disagreement_sweep()
+    nustar_check()
     print()
     print("Astra's proposed R*q is the sigma=1, nu=0 corner only (appendix:223),")
     print("so it is not the revision to apply either.")

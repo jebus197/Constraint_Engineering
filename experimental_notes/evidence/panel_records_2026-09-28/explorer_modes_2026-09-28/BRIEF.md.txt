@@ -1,0 +1,97 @@
+# Panel brief — the explorer now answers 2 questions. Attack that.
+
+## SECTION 1 — The question
+
+**You 2 disagreed about the published explorer, and the founder ruled that the
+disagreement was a false choice.** His words, verbatim: *"What does the researcher
+want? Do they want to look at how an experiment behaved in retrospect, or do they
+want to check how it would be likely to behave before running it? Surely that
+should be up to them? AKA again a not directly binary choice?"* And: *"At the end
+of the day we want a working explorer that does exactly what you would expect such
+a tool to do."*
+
+Seat A kept the realised drop `dR` and fixed the stop rule, arguing the page must
+stay faithful to `reference_runner_v3.py`'s `compute_rk`. Seat B switched the gate
+to `E[ΔR]` per `MATHEMATICAL_APPENDIX.md:225`, arguing the page carries decision
+semantics. **Neither built a mode.** CC1 has now built one.
+
+**The question: does the mode actually resolve your disagreement, or does it hide
+it?** A toggle that lets a reader pick the wrong answer for their question is worse
+than a page that picks one answer and explains it.
+
+## SECTION 2 — Use the harness
+
+`S_k` does not bear on this. **`nu_star` and the break-even bear directly**: each
+mode now carries its own, and one of them tends to 1 as R tends to 1. `gamma` and
+the two-sided gate bear on none of it; say so if you find otherwise.
+
+## SECTION 3 — Produce a fix, and test it
+
+Deliver every fix by WRITING IT INTO THE SANDBOX TREE AT ITS REAL PATH.
+
+<!-- figure: harvest loss | scripts/panel_harvest_loss_2026-09-22.py | 76.4706 -->
+
+76.4706% of seat-delivered scripts have historically never reached `scripts/`.
+
+A STORED falsifier may not call Wolfram. **The page is JavaScript: a test that
+asserts on its SOURCE TEXT proves only that the file describes itself
+consistently. Execute it** — `bench/tests/test_explorer_modes_and_stop_2026-09-28.py`
+lifts `simulate()` out of the HTML and runs it in node; extend that, do not grep.
+
+## SECTION 4 — What to attack
+
+**1. THE MODE ITSELF.** Prospective (`E[ΔR]`, appendix `:225`) is the DEFAULT;
+retrospective (`dR`, the runner's own recursion) is one click away. Labels, chart
+heading, threshold range and break-even all switch with it. **Is this right, or is
+it an abdication?** If a reader cannot tell which question they are asking, the
+toggle has made the page worse. Name the reader who picks wrongly.
+
+**2. THE DEFAULT.** The founder's reasoning: *"researchers encountering it for the
+first time will probably want to play with it so they can get to grips with the
+models it predicts"*. Measured: the 2 modes name a different stop in 1268 of 14440
+... **re-derive that yourself**, and say whether prospective is the right landing
+state. Note that at the shipped defaults NEITHER mode stops within the first 12 of
+60 passes, so a casual visitor may never see the stopping behaviour at all.
+
+**3. THE STOP RULE.** The old rule latched on the FIRST pass under θ. It is now
+"the last pass that clears θ, plus 1". Executed: with `pert=0.4, θ=0.02` the old
+rule announced pass 10 where the corrected rule gives 28, and passes after 10 still
+cleared θ. **Find the run where the new rule is wrong** — a gain that clears θ once
+late by accident would push the stop to the end of the chart.
+
+**4. THE 2 BREAK-EVENS.** Trajectory: `R·q·σ/(R·q·σ − R·q + 1)`. Expectation:
+`R·q·σ/(R·q·σ − R + 1)`, which tends to **1** as R tends to 1. The regime sentence
+and the net-harm colouring now follow the selected mode. **Is a harm line that
+approaches 1 at high risk informative or useless?** CC1 reads it as a real property
+(at near-certain risk you would have to re-inject nearly everything before a pass
+stopped paying) rather than a defect. Attack that reading.
+
+**5. THE θ RANGES.** Prospective [0.001, 0.2] default 0.02; retrospective
+[0.001, 0.05] default 0.005. Justification: `E/dR` spans 1.0056 to 95.05 over the
+page's own ranges, so 1 slider cannot serve both. **Check those bounds admit the
+interesting regimes and exclude nothing a researcher needs.**
+
+**6. ANYTHING ELSE CC1 BROKE.** The page went from 17,933 to ~23,000 bytes. The
+inspector now shows all 4 quantities. `applyMode()` preserves a reader's own θ
+across a switch when it still fits. **Find the 5th defect.**
+
+## SECTION 5 — What would refute you
+
+Per item, state before concluding what evidence would overturn your answer. On
+item 1 name the reader the toggle confuses. On item 3 name the run where the new
+stop rule is wrong.
+
+## SECTION 6 — Output shape
+
+Per item: `id`, `verdict`, `reasoning` with file and line, `fix_path` or NONE with
+the reason, `falsifier_path`, `falsifier_command`, `falsifier_output` verbatim,
+`additive_check`, `refutation_condition`. Then `strongest_disagreement` with this
+brief, which must not be empty, and `passes_run`.
+
+## SECTION 7 — Termination
+
+Stop on diminishing returns. Say how many passes you ran and what the last added.
+If you cannot finish all 6, do fewer properly and say which you did not reach.
+
+**You 2 disagreed last round and both were partly right. Disagree again if the
+evidence says so. Do not converge to be agreeable.**
