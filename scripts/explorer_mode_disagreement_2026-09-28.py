@@ -68,7 +68,21 @@ console.log(JSON.stringify({theta_prospective:TP,theta_retrospective:TR,
 """
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    # A `--help` MUST NEVER ACT. This script WRITES a probe file beside itself, so
+    # the flag was performing a file write and a 14,440-point sweep. Caught by
+    # `test_help_never_acts_2026-09-11.py` on the first full suite run after it
+    # landed -- the same defect class it was written to measure, in the script that
+    # measures it.
+    import argparse
+
+    ap = argparse.ArgumentParser(
+        description="Measure how often the explorer's 2 modes name a different "
+                    "stopping pass, executing the page's own simulate() and "
+                    "stopPass() at each mode's shipped theta. Writes a temporary "
+                    "probe file beside this script and removes it again.")
+    ap.parse_args(argv)
+
     node = shutil.which("node")
     if not node:
         print("node is not installed; the page's own JS cannot be executed", file=sys.stderr)
