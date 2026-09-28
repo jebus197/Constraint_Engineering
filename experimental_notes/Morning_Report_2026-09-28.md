@@ -72,6 +72,29 @@ His ruling: *"There should be no paid dispatches without my express authorisatio
 
 - Guard: `bench/tests/test_paid_dispatch_needs_authorisation_2026-09-28.py`, 11 tests, passing
 
+## The harvest did not work properly, which was the point of asking
+
+His instruction: *"You can test the harvest mechanism in the above panel review and make sure it works properly."* The failed round became the test, and it failed the test.
+
+**What the round reported.** Both seats died at authentication with 0 tool calls and wrote nothing. The dispatcher still printed *"seats proposed edits to 8 file(s)"* and *"harvested 3394 byte(s) of seat-written files"*.
+
+**What was actually captured.** All 9 paths were dispatcher or harvest artefacts: `cc2.json`, `fable.json`, `dispatch.log`, `seat_proposals.diff`, and — the harvest harvesting itself — `sandbox_harvest/cc2/attempt-1/changes.diff`. The sandbox is a copy of the repo, and the dispatcher writes its run log into `bench/logs/<run>/`, which exists inside that copy too. The sole difference in the diff was `elapsed_s` varying by 0.9 between the canonical log and the copy's.
+
+**Why that is a provenance defect, not untidiness.** A reader of that log concludes 2 seats did work on a round where neither ran. On a round where seats do work, real deliverables arrive mixed with this noise. The project's record already holds the same shape once: on 2026-09-20 the harvest copied 112 MB of `.git` objects out as seat-written work, which is why `_is_vcs_metadata` exists. This is that defect recurring through a different directory.
+
+**Fixed, scoped deliberately.** Only the current run's log directory is excluded — excluding `bench/logs/` wholesale would discard a measurement a seat was asked to write there. The diff and the reported count exclude them too, since the false 8-file claim came from the diff.
+
+**A bug in my own fix, found by tracing callers rather than by the tests.** The first version derived the run directory as `dest.parents[2]`, correct only for the dispatcher's deepest destination. The other 2 callers are shallower: the same expression resolved to `bench/logs` for `worktree_harvest` and to `bench` for `panel_worktree_harvest` — which would have excluded the **entire bench tree** from every simulated run's harvest, and silently, because a harvest that takes less prints a smaller number rather than an error. The rule is now structural: the run directory is the ancestor of the destination sitting directly inside a directory named `logs`, which holds for all 3 shapes.
+
+**Falsified both ways.** Reverting the exclusion fails 6 of 16 tests; reinstating the depth assumption fails 4, including the one asserting no shape ever resolves to the whole bench tree. 202 tests pass across everything touching `panel_sandbox`, with 1 skip and no regressions.
+
+- Fix: `bench/panel_sandbox.py`, `_run_log_dir` and `_is_dispatcher_own_output`
+- Guard: `bench/tests/test_harvest_excludes_its_own_output_2026-09-28.py`, 16 tests, passing
+
+## The 3 scripts that acted when imported
+
+Confirmed closed. `bench/tests/test_help_never_acts_2026-09-11.py` passes 10 of 10 across 206 scripts.
+
 ## A second finding, real but not load-bearing
 
 The CLI also reports `Ignoring 19 permissions.allow entries from .claude/settings.json: this workspace has not been trusted`. Confirmed: `~/.claude.json` carries `hasTrustDialogAccepted: False` for this workspace.
@@ -88,7 +111,7 @@ No longer in the founder's alerts. Renewal automation verified live 2026-09-27 2
 
 ## What is owed
 
-The 11-item panel review, once the login is restored. 8 items were written for the panel and are unstarted: whether the A19 repair gives the whole answer; widening the extractor beyond fenced code; the severity threshold for prose-target convictions; verification of 3 unreviewed `hooks/ffafp_audit.py` changes; confirmation of the 3 import-time writers; a guard against editing the tree during a measurement; the owed Stop-gate fixture; and a test that the harvest mechanism reaches all 3 destinations.
+The 11-item panel review, once the login is restored. 6 items were written for the panel and are unstarted: whether the A19 repair gives the whole answer; widening the extractor beyond fenced code; the severity threshold for prose-target convictions; verification of 3 unreviewed `hooks/ffafp_audit.py` changes; a guard against editing the tree during a measurement; and the owed Stop-gate fixture.
 
 Open from before: **W1** — whether the Wolfram licence question was answered in writing, or only the route restored. `mcpServers` remains empty.
 

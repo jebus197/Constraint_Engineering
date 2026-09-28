@@ -557,6 +557,64 @@ _VCS_DIRS = (".git", ".hg", ".svn", ".pytest_cache", "__pycache__",
              ".mypy_cache", ".ruff_cache")
 
 
+def _run_log_dir(dest: Path, repo: Path) -> str | None:
+    """The run's own log directory, relative to the repo, or None.
+
+    Identified as the ancestor of `dest` sitting directly inside a directory named
+    `logs`, which holds for every harvest destination this project uses:
+      <run>/sandbox_harvest/<seat>/attempt-N   (confer_maths_panel)
+      <run>/worktree_harvest/<tag>             (confer_convergence_panel, build_experiment_run)
+      <run>/panel_worktree_harvest             (run_simulated_experiment)
+    Returning None means "exclude nothing", which is the old behaviour and the
+    safe direction: over-harvesting is untidy, under-harvesting loses seat work.
+    """
+    try:
+        d = dest.resolve()
+        root = repo.resolve()
+    except OSError:
+        return None
+    for anc in [d, *d.parents]:
+        if anc.parent.name == "logs":
+            try:
+                return str(anc.relative_to(root))
+            except ValueError:
+                return None
+    return None
+
+
+def _is_dispatcher_own_output(rel: str, run_log_rel: str | None) -> bool:
+    """Is this path the DISPATCHER'S own log output rather than seat-written work?
+
+    MEASURED 2026-09-28, AND IT IS THE SAME SHAPE AS THE `.git` CASE BELOW. The
+    sandbox is a copy of the repository, and the dispatcher writes its run log
+    INTO `bench/logs/<run>/` -- which exists inside that copy too. Every one of
+    those writes then read as a CHANGED FILE, so the harvest copied the
+    dispatcher's own output back out and announced it as seat work.
+
+    On the founder_verdicts_2026-09-28 round BOTH seats failed at authentication
+    with 0 tool calls and wrote nothing at all, and the run still printed "seats
+    proposed edits to 8 file(s)" and "harvested 3394 byte(s) of seat-written
+    files". All 9 captured paths were dispatcher or harvest artefacts, the only
+    "change" in the diff was `elapsed_s` differing by 0.9 between the canonical
+    log and the copy's, and `sandbox_harvest/cc2/attempt-1/changes.diff` appears
+    INSIDE the harvested files -- the harvest harvesting itself.
+
+    THAT IS A PROVENANCE DEFECT, not untidiness. A reader of that log would
+    conclude 2 seats did work on a round where neither ran, and on a round where
+    seats DO work their real deliverables arrive mixed with this noise.
+
+    SCOPED TO THE CURRENT RUN, DELIBERATELY. Excluding `bench/logs/` wholesale
+    would discard a measurement a seat was ASKED to write there. Only the run's
+    own directory is excluded, derived from the harvest destination, so a seat
+    writing anywhere else in the tree is unaffected.
+    """
+    if not run_log_rel:
+        return False
+    run_log_rel = run_log_rel.replace(os.sep, "/").strip("/")
+    rel = rel.replace(os.sep, "/").strip("/")
+    return rel == run_log_rel or rel.startswith(run_log_rel + "/")
+
+
 def _is_vcs_metadata(rel: str) -> bool:
     """Is this path inside a version-control store rather than seat-written work?
 
@@ -606,7 +664,24 @@ def harvest(sandbox: Path, repo: Path, dest: Path) -> dict:
     # include_scratch=True: the harvest is the place nothing is discarded.
     diffs = changes(Path(sandbox), Path(repo), include_scratch=True)
     skipped_vcs = [r for r in diffs if _is_vcs_metadata(r)]
-    for rel in sorted(set(diffs) - set(skipped_vcs)):
+
+    # THE RUN'S OWN LOG DIRECTORY, derived rather than passed, so all 3 harvest
+    # call sites get the fix without changing 3 signatures.
+    #
+    # DERIVED STRUCTURALLY, NOT BY DEPTH, and the first version of this was WRONG.
+    # It used `parents[2]`, which is right only for the dispatcher's
+    # `<run>/sandbox_harvest/<seat>/attempt-N`. The other 2 callers are shallower:
+    # `<run>/worktree_harvest/<tag>` would have resolved to `bench/logs` and
+    # `<run>/panel_worktree_harvest` to `bench` -- excluding the ENTIRE bench tree
+    # from every simulated run's harvest. Found by tracing the call sites rather
+    # than by the tests, which only ever exercised the deepest shape.
+    #
+    # The rule that holds for all 3: the run directory is the ancestor of `dest`
+    # that sits DIRECTLY INSIDE a directory named `logs`.
+    run_log_rel = _run_log_dir(Path(dest), Path(repo))
+    skipped_own = [r for r in diffs if _is_dispatcher_own_output(r, run_log_rel)]
+
+    for rel in sorted(set(diffs) - set(skipped_vcs) - set(skipped_own)):
         src = Path(sandbox) / rel
         try:
             target = files_dir / rel
@@ -620,11 +695,20 @@ def harvest(sandbox: Path, repo: Path, dest: Path) -> dict:
     if skipped_vcs:
         print(f"    harvest skipped {len(skipped_vcs)} version-control file(s) "
               f"the seat cloned rather than wrote", flush=True)
-    if diffs:
+    if skipped_own:
+        print(f"    harvest skipped {len(skipped_own)} file(s) of this run's OWN "
+              f"log output, which the dispatcher wrote inside the copy", flush=True)
+    # The diff excludes them too. A changes.diff listing the dispatcher's own
+    # `elapsed_s` drift is what made a 0-work round look like an 8-file round.
+    seat_diffs = {rel: d for rel, d in diffs.items()
+                  if rel not in set(skipped_vcs) | set(skipped_own)}
+    if seat_diffs:
         (dest / "changes.diff").write_text(
-            "\n".join(f"### {rel}\n{d}" for rel, d in sorted(diffs.items())),
+            "\n".join(f"### {rel}\n{d}" for rel, d in sorted(seat_diffs.items())),
             encoding="utf-8")
-    return {"sandbox": str(sandbox), "dest": str(dest), "changed": len(diffs),
+    return {"sandbox": str(sandbox), "dest": str(dest), "changed": len(seat_diffs),
+            "changed_including_excluded": len(diffs),
+            "skipped_own_log_output": len(skipped_own),
             "files_taken": taken, "bytes": bytes_taken, "failed": failed,
             "harvested": not failed}
 
