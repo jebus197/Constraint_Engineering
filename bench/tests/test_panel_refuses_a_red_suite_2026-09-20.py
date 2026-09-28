@@ -59,6 +59,24 @@ def panel(monkeypatch, tmp_path):
     import suite_record
     monkeypatch.setattr(suite_record, "RECORD", tmp_path / "suite_record.json")
     monkeypatch.delenv("PANEL_SUITE_UNCHECKED", raising=False)
+
+    #: THE PREMISE, NOW STATED INSTEAD OF INHERITED (2026-09-28). This gate
+    #: protects a SPEND, and its own refusal message says so: with 0 paid seats it
+    #: prints "there is no spend to protect. Proceeding." These tests used to get a
+    #: paid roster for free, because the module's default was ALL 6 SEATS, 5 of them
+    #: paid -- the very default the founder's 2026-09-28 ruling removed, since it
+    #: made the expensive path the one you got by forgetting an environment
+    #: variable. When the default became the 2 free seats, every refusal case here
+    #: stopped raising: correctly, because nothing was at risk.
+    #:
+    #: So the roster is pinned EXPLICITLY. Nothing asserted below is weakened --
+    #: the gate is still driven with a real record file and a real spend at stake.
+    #: `TestTheGateIsAnUnconditionalNoOpWithoutSpend` guards the other half.
+    monkeypatch.setattr(mod, "MODELS", [
+        ("cx",    "openai/gpt-5.3-codex", "openrouter"),  # PAID -- the spend at risk
+        ("cc2",   "opus",                 "claude_cli"),
+        ("fable", "fable",                "claude_cli"),
+    ])
     return mod, suite_record
 
 
@@ -321,3 +339,65 @@ class TestAFreePanelRoundIsNotGated:
         assert any(k.arg == "paid_seats" for c in calls for k in c.keywords), (
             "the panel calls the gate without paid_seats, so every free round "
             "is gated as though it spent money")
+
+
+class TestTheGateIsAnUnconditionalNoOpWithoutSpend:
+    """A free round proceeds on a red or missing record, and says why.
+
+    ADDED 2026-09-28, alongside the ruling that made free-only the default. This
+    is the path nearly every round now takes, so it is the path most in need of a
+    guard: before today it was reached only by remembering `PANEL_ONLY`.
+
+    It is NOT a licence to ignore a red suite. It is the statement that this
+    particular gate exists to protect money, and that a round risking none of it
+    is not the thing this gate was built to stop.
+    """
+
+    @pytest.fixture
+    def free_panel(self, monkeypatch, tmp_path):
+        sys.path.insert(0, str(ROOT / "bench"))
+        sys.path.insert(0, str(ROOT / "scripts"))
+        spec = importlib.util.spec_from_file_location("panel_free", PANEL)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        import suite_record
+        monkeypatch.setattr(suite_record, "RECORD", tmp_path / "suite_record.json")
+        monkeypatch.delenv("PANEL_SUITE_UNCHECKED", raising=False)
+        monkeypatch.setattr(mod, "MODELS", [
+            ("cc2", "opus", "claude_cli"), ("fable", "fable", "claude_cli"),
+        ])
+        return mod, suite_record
+
+    def test_the_shipped_default_roster_carries_no_paid_seat(self):
+        """The ruling, asserted on the module as shipped rather than on a patch."""
+        spec = importlib.util.spec_from_file_location("panel_default", PANEL)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        paid = [m[0] for m in mod.MODELS if m[2] != "claude_cli"]
+        assert paid == [], f"the default roster dispatches paid seat(s) {paid}"
+        assert {m[0] for m in mod.MODELS} == set(mod.FREE_SEATS)
+
+    def test_red_record_does_not_stop_a_free_round(self, free_panel, capsys):
+        mod, rec = free_panel
+        _write(rec, RED)
+        mod._refuse_if_the_suite_state_is_unknown()
+        err = capsys.readouterr().err
+        assert "no spend to protect" in err, err
+
+    def test_missing_record_does_not_stop_a_free_round(self, free_panel, capsys):
+        mod, rec = free_panel
+        assert not rec.RECORD.exists()
+        mod._refuse_if_the_suite_state_is_unknown()
+        assert "no spend to protect" in capsys.readouterr().err
+
+    def test_but_one_paid_seat_restores_the_refusal(self, free_panel, monkeypatch):
+        """ANTI-VACUITY for this class: the no-op is conditional on there being
+        no spend, not on the gate having been disabled."""
+        mod, rec = free_panel
+        _write(rec, RED)
+        monkeypatch.setattr(mod, "MODELS", [
+            ("cx", "openai/gpt-5.3-codex", "openrouter"),
+            ("cc2", "opus", "claude_cli"),
+        ])
+        with pytest.raises(SystemExit):
+            mod._refuse_if_the_suite_state_is_unknown()

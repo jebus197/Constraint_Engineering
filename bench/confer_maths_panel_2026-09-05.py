@@ -267,7 +267,9 @@ def resolve_brief(argv=None) -> None:
         raise SystemExit(2)
     PROMPT = BRIEF.read_text(encoding="utf-8")
 
+import json as _json
 import os as _os
+from pathlib import Path as _Path
 _ONLY = _os.environ.get("PANEL_ONLY", "")
 # 6 SEATS, AND GEMINI IS BACK (founder ruling, 2026-09-20). Verbatim: *"There is
 # no reason why you shouldn't include Gemini! Gemini has traditionally been
@@ -365,7 +367,95 @@ QUARANTINED_SEATS = {"kimi"}
 PANEL_TOOL_ITERATIONS = 16
 # PANEL_ONLY re-dispatches a SUBSET, so a briefing defect that broke 2 seats does
 # not cost a second full paid round for the 3 that worked.
-MODELS = [m for m in _ALL if not _ONLY or m[0] in _ONLY.split(",")]
+
+#: THE FREE SEATS. Both ride the founder's Max subscription, so a round using only
+#: these 2 costs nothing however many turns it takes.
+FREE_SEATS = frozenset({"cc2", "fable"})
+
+#: WHY THE DEFAULT CHANGED, and it is the founder's ruling rather than a
+#: preference. Verbatim, 2026-09-28: *"There should be no paid dispatches without
+#: my express authorisation. You should make sure this is the case going forward.
+#: If the answers are useful however we should use them."*
+#:
+#: THE DEFECT THIS REPLACES. With `PANEL_ONLY` unset this line selected ALL 6
+#: seats, 5 of them paid, so the SAFE path required remembering an environment
+#: variable and the EXPENSIVE path was the default. On 2026-09-22 that omission
+#: dispatched 5 paid seats on a round the founder had asked to be free; they were
+#: killed 2m39s in, after the spend had begun. The existing guard
+#: `TestNoPaidSeatWasDispatched` detects that AFTERWARDS, which is a receipt and
+#: not a brake.
+#:
+#: WHY A LEDGER RATHER THAN ANOTHER ENVIRONMENT VARIABLE. An env var is something
+#: this assistant can set for itself, so a guard resting on one guards nothing it
+#: is meant to guard against. The ledger is a COMMITTED file: spending money
+#: requires an entry naming the round and quoting the founder's authorisation, so
+#: an unauthorised dispatch requires forging his words in a file that appears in
+#: `git diff` and in review. The enforcement is auditability, not cleverness, and
+#: this comment states the limit plainly rather than implying the guard is
+#: unbypassable.
+#:
+#: NOTHING IS REMOVED. Paid dispatch remains available by exactly the same route
+#: it always had, with an authorisation recorded alongside it.
+PAID_LEDGER = _Path(__file__).resolve().parent / "paid_dispatch_authorisations.json"
+
+
+def _paid_is_authorised(round_name: str) -> tuple[bool, str]:
+    """Is a paid dispatch authorised for this round? Returns (ok, reason)."""
+    if not PAID_LEDGER.is_file():
+        return False, f"no authorisation ledger at {PAID_LEDGER}"
+    try:
+        entries = _json.loads(PAID_LEDGER.read_text(encoding="utf-8"))
+    except (ValueError, OSError) as exc:
+        return False, f"authorisation ledger unreadable: {exc}"
+    if not isinstance(entries, list):
+        return False, "authorisation ledger is not a list of entries"
+    for e in entries:
+        if not isinstance(e, dict):
+            continue
+        if e.get("round") != round_name:
+            continue
+        quote = str(e.get("founder_authorisation", "")).strip()
+        if len(quote) < 20:
+            return False, (
+                f"ledger entry for round {round_name!r} carries no founder "
+                "authorisation quote (at least 20 characters required)"
+            )
+        return True, f"authorised for round {round_name!r}: {quote[:80]}"
+    return False, f"no ledger entry for round {round_name!r}"
+
+
+def select_models(only: str, round_name: str) -> list[tuple[str, str, str]]:
+    """The seats this run may dispatch.
+
+    An empty `only` selects the FREE seats, never the whole panel. A request that
+    names a paid seat is refused unless the ledger authorises this round.
+    """
+    if not only:
+        return [m for m in _ALL if m[0] in FREE_SEATS]
+    wanted = [w.strip() for w in only.split(",") if w.strip()]
+    chosen = [m for m in _ALL if m[0] in wanted]
+    paid = [m[0] for m in chosen if m[0] not in FREE_SEATS]
+    if not paid:
+        return chosen
+    ok, reason = _paid_is_authorised(round_name)
+    if not ok:
+        raise SystemExit(
+            f"REFUSED: PANEL_ONLY names paid seat(s) {', '.join(paid)} and {reason}.\n"
+            f"  Paid dispatch needs an entry in {PAID_LEDGER} of the form\n"
+            '    [{"round": "<log-dir-name>", "founder_authorisation": "<his words>", '
+            '"date": "YYYY-MM-DD"}]\n'
+            "  This is the founder's ruling of 2026-09-28, not a transport limit."
+        )
+    print(f"    PAID DISPATCH AUTHORISED -- {reason}")
+    return chosen
+
+
+#: Bound by `main()` once the run directory is known, because the ledger keys on
+#: the round name. Kept importable at module level so the 37 callers that read
+#: `MODELS` are unaffected when no run is in progress.
+MODELS = [m for m in _ALL if m[0] in FREE_SEATS] if not _ONLY else [
+    m for m in _ALL if m[0] in _ONLY.split(",")
+]
 
 # THE PANEL HAS NEVER RUN UNDER THE CDSFL SCHEMA. Measured 2026-09-07: of the 37
 # dispatchers that call `call_claude_cli`, **0** call the registry composer, and
@@ -731,6 +821,16 @@ def main() -> int:
     # SPEND-GATE 2 OF 2, and it runs before any seat is built, for the same
     # reason the brief check does: main() is the only path to a paid seat.
     _refuse_if_the_suite_state_is_unknown()
+
+    # SPEND-GATE 0 OF 2 -- EARLIEST OF THE THREE, and it decides WHICH seats exist
+    # rather than whether the run may proceed. An empty PANEL_ONLY now yields the
+    # 2 free seats; naming a paid seat is refused unless the committed ledger
+    # authorises this round. Founder's ruling, 2026-09-28. Rebinding the module
+    # global is what WIRES `select_models` -- an unreached guard guards nothing,
+    # which is the failure mode the additive standard names on the addition side.
+    global MODELS
+    MODELS = select_models(_ONLY, LOGS.name)
+
     paid = [m for m in MODELS if m[2] != "claude_cli"]
     print(f"=== maths panel — {len(MODELS)} dispatched seats + CC1 ===")
     print(f"    PAID seats: {', '.join(n for n, _, _ in paid)}  "

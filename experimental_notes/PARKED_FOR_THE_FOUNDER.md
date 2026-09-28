@@ -30,11 +30,11 @@ A new script defining scan() returning a tuple caused supersession_check.py:149 
 
 The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_redesigned_2026-09-10.json and bench/exp51_configs/51_biology_exam_live_redesigned_2026-09-10.json. Running them is money. Nothing on the task list waits on the result, so it is not blocking.
 
-## The 2 Wolfram items, neither of which blocks the task list
+## The 2 Wolfram items — 0.1 IS CLOSED AND OFF HIS ALERTS (2026-09-28); W1 needs 1 word from him
 
-**0.1, the desktop Engine licence — DATE-GATED, not blocked.** His ruling stands: leave it to auto-renew, and it cannot be renewed before it expires. The status is OBSERVE ON THE DAY and the day is **2026-09-11**. Nothing can be done on 2026-09-10, and nothing else on the list waits on it. It stays OPEN because the observation is genuinely still owed, not because work stalled.
+**0.1, the desktop Engine licence — CLOSED, AND REMOVED FROM HIS ALERTS ON HIS INSTRUCTION, 2026-09-28.** Verbatim: *"The Wolfram thing is becoming annoying. If the script/automation to autoupdate it is live and armed remove it from my alerts going forward."* It is live and armed: `launchctl` lists `com.cdsfl.wolfram-licence-renew` at exit 0 and its log shows a 2026-09-27 21:05 run reading *"11 day(s) left; nothing to do"*. The ruling recorded above — leave it to auto-renew — was FALSIFIED on 2026-09-14 when the kernel refused to start, and superseded on 2026-09-17 by the automation he then ordered. **Nothing is owed on 2026-10-08 and this item raises no further alert.** CC1 nonetheless raised it to him as urgent TWICE on 2026-09-27; that was a false alarm from stale wording in `.claude/CLAUDE.md`, now corrected.
 
-**W1, the MCP server licence — BLOCKED ON AN EXTERNAL PARTY.** He emailed Wolfram and awaits a reply. That reply is not in this project's gift and no amount of work here produces it. The entry is correctly marked BLOCKED.
+**W1, the MCP server licence — HE SAYS ADDRESSED; ONE POINT NEEDS HIS WORD.** Verbatim, 2026-09-28: *"Already addressed – and implemented with the assistance of Gemini Web. (Not Gemini via Open Router.)"* Measured here before recording it as closed: the desktop configuration's `mcpServers` map is EMPTY, so the Wolfram MCP route is not restored on this machine. Both readings can be true — the licence QUESTION may be answered while the ROUTE stays deliberately off — so the entry is left as it is rather than marked on an assumption. **What is needed from him is one word: was the licence question answered, or was the route restored somewhere this project cannot see?**
 
 **Neither is a blocker under his own criterion,** which is whether an item prevents further progress on the task list. 36 other entries remained open when these were triaged and work continued straight past them. Recorded here rather than raised, exactly as he asked: *"If not, then append to the closing/final report."*
 
@@ -217,3 +217,17 @@ So A8 — whose own committed text ends *"**NEEDS A POLICY RULING**: track them,
 **CORRECTION 23:59 BST, and it was a false claim to him.** Renaming the key is correct on disk and did NOTHING to the running session: Claude Code reads its hook configuration once, at session start, so the hook went on firing for 40 minutes after he was told it was parked. Parking is now effective immediately, by a sentinel file at `~/.claude/hooks/.work_not_narrate_PARKED` that the hook checks on every invocation. Deleting that file un-parks it. The check fails TOWARD firing, so an unreadable home directory cannot silently disable a guard.
 
 **His suspicion is supported.** The hook refused 11 consecutive stops after he said *"Pause all activity"*, because its own output was written into the transcript as a user message and it then read its own words where his had been. Both defects are fixed and tested (`fdaadc7`, `c112dc1`). It is parked anyway, because the founder asked for it and because a mechanism whose purpose is to keep the assistant working is the wrong thing to have armed while the scope of the work is itself in question.
+
+## BLOCKER — the Claude CLI login has expired (added 2026-09-28T03:11:03+01:00)
+
+**This is a blocker under the founder's own criterion**: it prevents further progress on the panel-dependent half of the task list, and it cannot be resolved without him.
+
+`claude` (`/opt/homebrew/bin/claude`) returns: **`Failed to authenticate: OAuth session expired and could not be refreshed`**. Exit 1, no stderr beyond that line.
+
+**What it stops.** Both free seats, `cc2` and `fable`, dispatch through that CLI. Both failed in under 2 seconds with 0 chars and 0 tool calls after 2 attempts each. The 11-item panel review at `bench/logs/founder_verdicts_2026-09-28/` did not run. 8 of its 11 items remain unstarted.
+
+**Why it was not worked around.** Re-authentication is a browser OAuth flow using his credentials, which this assistant never enters. The 5 paid seats would work, and dispatching them would breach his ruling of the same day — *"There should be no paid dispatches without my express authorisation"* — so that route was refused rather than taken. **0 paid seats were dispatched and nothing was spent.**
+
+**What he does.** Run `claude` interactively once and complete the login. The brief is already written and validates against all 8 required sections, so the round re-dispatches with `PANEL_ONLY=cc2,fable python3 bench/confer_maths_panel_2026-09-05.py founder_verdicts_2026-09-28`.
+
+**A separate, smaller item in the same output, needing no action unless he wants it gone.** The CLI also reports `Ignoring 19 permissions.allow entries from .claude/settings.json: this workspace has not been trusted`, and `~/.claude.json` does carry `hasTrustDialogAccepted: False` for this workspace. It is **not load-bearing**: the dispatcher passes seats their tool list via the `--allowedTools` command-line flag (`bench/experiment_11_orchestrator.py:1190`), which the trust state does not touch, and earlier rounds recorded 16 to 37 tool calls per seat. Accepting the trust dialog on that same interactive run would clear it.
