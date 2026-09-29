@@ -31,20 +31,38 @@ DERIVED BELOW, not asserted:
   2. B_minus is the POSTERIOR GIVEN THE NEGATIVE BRANCH, by Bayes:
          P(flaw | not detected) = R(1-q)/(1-qR) = B_minus.
 
-  3. A(R) is a sigma-mixture of that negative-branch posterior with the prior.
-     At sigma=1 it IS B_minus, so A is a CONDITIONAL quantity: it answers
-     "the pass reported nothing -- what is left?"
+  3. A(R) is a sigma-mixture of that negative-branch posterior with the prior:
+         A = R + sigma*(B_minus - R),  exactly linear in sigma (d2A/dsigma2 = 0).
+     At sigma=1 it IS B_minus and at sigma=0 it IS R.
+
+     CORRECTED 2026-09-29, ON AN EXTERNAL REVIEW, AND THE ORIGINAL WORDING WAS
+     WRONG. This paragraph used to conclude "so A is a CONDITIONAL quantity".
+     That does not follow from an endpoint: a mixture that coincides with a
+     posterior at one end of its range is not that posterior in between. The
+     reviewer's counterexample, R=1/2, q=4/5, sigma=1/2, gives 4 DISTINCT values:
+         B_minus (risk | negative) = 1/6
+         M       (pre-pass expectation) = 3/10
+         A       (the shipped blend) = 1/3
+         M / P(negative) = 1/2
+     A is none of the other three. SymPy and Wolfram Language both return
+     sigma == 1 as the ONLY solution of A == B_minus on the open domain.
+     A is therefore a RETAINED BLEND, not a calibrated conditional probability,
+     and it is kept for gate compatibility rather than because it is one.
 
   4. A - M = sigma*q*R^2*(1-q)/(1-qR) >= 0 on [0,1]^3, so the shipped form is
      never below the expectation. Switching the runner from A to M can only
      LOWER reported residual risk, i.e. only ever make a convergence gate
      EASIER to pass. That asymmetry, not the algebra, is the decision.
 
-  5. The identity that pins the interpretation: at sigma=1,
+  5. The identity that pins the interpretation, AND ITS SCOPE, which the
+     original text of this docstring omitted: at sigma=1, and ONLY there,
          A = M / P(not detected).
-     A is the joint divided by the branch probability -- a conditional. M is
-     the joint. Neither is "more accurate" than the other; they are quotient
-     and numerator of the same fraction.
+     There A is the joint divided by the branch probability -- a conditional --
+     and M is the joint, so they are quotient and numerator of one fraction.
+     AWAY FROM sigma=1 THE QUOTIENT IS FALSE: at R=1/2, q=4/5, sigma=1/2 it
+     gives 1/2 while A is 1/3. Wolfram Language returns sigma == 1 as the only
+     solution on the open domain. What survives for ALL sigma is claim 4's
+     inequality and the branch average q*R*(1-sigma) + (1-q*R)*B_minus == M.
 
 Every claim above is checked with SymPy (primary), and claim 4's closed form was
 independently confirmed with Wolfram Language (local Wolfram Engine, via
@@ -76,7 +94,7 @@ def main(argv=None) -> int:
 
     argparse.ArgumentParser(
         description="Derive and verify the 2 branch forms of the risk update: "
-                    "the negative-branch conditional A(R) and the pre-pass "
+                    "the retained negative-branch blend A(R) and the pre-pass "
                     "expectation M(R). Read-only; spends nothing, calls no model."
     ).parse_args(argv)
     R, q, s = sp.symbols("R q sigma", nonnegative=True)
@@ -166,10 +184,29 @@ def main(argv=None) -> int:
                 assert abs(got - want_a) < 1e-12, (Rv, qv, sv, got, want_a)
                 checked += 1
     print(f"   compute_rk (nu off) == A(R) on {checked}/{checked} triples "
-          f"-- the SHIPPED code is the conditional form, VERIFIED")
+          f"-- the SHIPPED code is the blend form A, VERIFIED")
 
-    print("\nFALSIFIER-CLEAN: all 5 derivations hold; A is a negative-branch "
-          "conditional,\n  M is the pre-pass expectation, and A >= M always.")
+    # --- 6. THE COUNTEREXAMPLE THAT BOUNDS CLAIM 3 -------------------------
+    # Added 2026-09-29 on an external review. Without this the file proved an
+    # ENDPOINT and asserted a GENERAL interpretation, which is the shape of
+    # error this project calls "a universal asserted after checking one member".
+    Rv, qv, sv_ = sp.Rational(1, 2), sp.Rational(4, 5), sp.Rational(1, 2)
+    sub = {R: Rv, q: qv, s: sv_}
+    vals = {"B_minus (risk | negative)": B_minus.subs(sub),
+            "M (pre-pass expectation)": (R * (1 - q * s)).subs(sub),
+            "A (the shipped blend)": (s * B_minus + (1 - s) * R).subs(sub),
+            "M / P(negative)": (R * (1 - q * s) / (1 - q * R)).subs(sub)}
+    assert len(set(vals.values())) == 4, vals
+    print("\n6. AT sigma=1/2 THE 4 QUANTITIES ARE DISTINCT -- A is none of the others:")
+    for k, v in vals.items():
+        print(f"     {k:<28} = {v}")
+    only = sp.solve(sp.Eq(sp.simplify(s * B_minus + (1 - s) * R - B_minus), 0), s)
+    assert only == [1], only
+    print(f"   A == B_minus only at sigma = {only[0]}          -- endpoint, not identity, VERIFIED")
+
+    print("\nFALSIFIER-CLEAN: all 6 derivations hold. A is a RETAINED BLEND that "
+          "equals\n  the negative-branch posterior only at sigma=1; M is the pre-pass "
+          "expectation;\n  A >= M always; and the quotient identity is an endpoint result.")
     return 0
 
 

@@ -9,6 +9,7 @@ the tool got wrong, and the one refutation the tool exists to make mechanical.
 """
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -32,12 +33,45 @@ REGISTRY_KEY_FIRST_COMMIT = 1776397305
 SCRIPT = REPO / "scripts" / "latent_control_audit.py"
 
 
+def _recorded_date_from_path(fp) -> int:
+    """This file's OWN reading of a run's recorded date, 0 if it has none.
+
+    DELIBERATELY NOT `latent_control_audit._provenance_time`, and deliberately not
+    a copy of its regexes either: it tries `datetime.strptime` against the path
+    components instead. Two independent readings that agree are evidence; one
+    reading imported twice is a tautology.
+    """
+    import datetime as _d
+    for part in [fp.name] + [a.name for a in list(fp.parents)[:5]]:
+        for chunk in re.findall(r"\d{8}|\d{4}-\d{2}-\d{2}", part):
+            for fmt in ("%Y%m%d", "%Y-%m-%d"):
+                try:
+                    d = _d.datetime.strptime(chunk, fmt).replace(tzinfo=_d.timezone.utc)
+                except ValueError:
+                    continue
+                if 1900 <= d.year <= 2100:
+                    return int(d.timestamp())
+    return 0
+
+
 def _newest_archive_mtime() -> int:
-    """Newest mtime among archived run reports -- the audit's own age baseline.
+    """Newest RECORDED date among archived run reports -- the audit's age baseline.
 
     Mirrors scripts/latent_control_audit.py:_archive(). Kept here rather than
     imported because the test must be able to detect the audit drifting away
     from the rule it claims to apply.
+
+    CHANGED 2026-09-29, BECAUSE THE RULE IT MIRRORS CHANGED. It used to take the
+    newest filesystem mtime. An external assessment showed that made the age
+    classification of an unchanged historical record depend on when the files
+    were last copied: touching one report with 0 bytes changed moved the baseline
+    58.0 days and flipped a TOO_NEW verdict. The audit now reads a RECORDED date
+    from the run's own path, and this mirror had to follow or it would compare
+    two different rules -- which is exactly what it went red for on the day the
+    audit was corrected, doing its job.
+
+    The name is kept so every existing reader still resolves; the quantity is a
+    recorded date, not an mtime.
     """
     newest = 0
     for fp in (REPO / "bench" / "logs").glob("**/*.json"):
@@ -61,7 +95,7 @@ def _newest_archive_mtime() -> int:
             continue
         if isinstance(d, dict) and ("registry" in d or "converged_at" in d
                                     or "runner_version" in d):
-            newest = max(newest, int(fp.stat().st_mtime))
+            newest = max(newest, _recorded_date_from_path(fp))
     return newest
 
 

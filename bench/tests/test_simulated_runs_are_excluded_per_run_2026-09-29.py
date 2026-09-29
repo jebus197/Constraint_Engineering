@@ -85,7 +85,12 @@ class TestTheLeakClassExistsAndIsClosed:
                     if _is_report(d) and not lca._is_simulated(d, fp)
                     and fp.parent not in sim_dirs]
         assert len(reports) == len(admitted), (len(reports), len(admitted))
-        assert newest == max(int(fp.stat().st_mtime) for fp in admitted)
+        # UPDATED 2026-09-29: the baseline is a RECORDED date, not an mtime. This
+        # assertion's purpose is the ADMITTED SET -- that the baseline is computed over
+        # the admitted reports and no others -- so it follows the audit's time source
+        # rather than pinning a source the audit no longer uses. The date parser has its
+        # own dedicated tests in test_archive_age_is_provenance_not_mtime_2026-09-29.py.
+        assert newest == max((lca._provenance_time(fp) or 0) for fp in admitted)
         assert all(fp.parent not in sim_dirs for fp in admitted)
 
     def test_the_baseline_really_moved_earlier(self, lca, parsed):

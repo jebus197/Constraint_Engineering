@@ -113,6 +113,9 @@ CASES = [
     {"pi": .50, "p": .80, "eta": 1.0, "sigma": 1.00, "nu": .00, "pert": 0},   # appendix example
     {"pi": .30, "p": .60, "eta": 1.0, "sigma": 0.00, "nu": .10, "pert": 0},   # sigma = 0 edge
     {"pi": .99, "p": .30, "eta": 1.0, "sigma": .50, "nu": .02, "pert": 0},   # near certainty
+    # THE EXTERNAL REVIEWER'S COUNTEREXAMPLE, 2026-09-29: R=1/2, q=4/5, sigma=1/2.
+    # It is the case that refutes calling A "the conditional risk" in general.
+    {"pi": .50, "p": .80, "eta": 1.0, "sigma": .50, "nu": .00, "pert": 0},
 ]
 
 
@@ -248,3 +251,45 @@ class TestTheGuardDoesNotMaskAMissingCard:
         assert "$('branchBody').innerHTML" not in js, (
             "an UNGUARDED branchBody write is back in the page; it kills draw() "
             "entirely under any probe that does not stub that id")
+
+
+class TestTheReviewersCounterexample:
+    """R=1/2, q=4/5, sigma=1/2 -- where A is none of the other three quantities.
+
+    Raised 2026-09-29 by an external assessment against the claim that A is the
+    negative-branch conditional risk. It is not, except at sigma=1. This class pins
+    the exact rational values so the page cannot drift back to the stronger reading.
+    """
+
+    @staticmethod
+    def _case(rows):
+        for c, r in zip(CASES, rows):
+            if (c["pi"], c["p"], c["eta"], c["sigma"]) == (.50, .80, 1.0, .50):
+                return r
+        raise AssertionError("the counterexample case is missing from CASES")
+
+    def test_all_four_quantities_are_distinct(self, rows):
+        r = self._case(rows)["first"]
+        Bm, M, A = mp.mpf(r["R_det"]), mp.mpf(r["M_uncond"]), mp.mpf(r["R_base"])
+        quot = M / mp.mpf(r["pNo"])
+        want = {"B-": mp.mpf(1)/6, "M": mp.mpf(3)/10, "A": mp.mpf(1)/3, "quot": mp.mpf(1)/2}
+        got = {"B-": Bm, "M": M, "A": A, "quot": quot}
+        for k in want:
+            assert abs(got[k] - want[k]) < mp.mpf("1e-12"), (k, got[k], want[k])
+        vals = sorted(float(v) for v in got.values())
+        for x, y in zip(vals, vals[1:]):
+            assert y - x > 1e-9, f"two of the four coincide: {got}"
+
+    def test_A_is_not_the_conditional_risk_here(self, rows):
+        r = self._case(rows)["first"]
+        assert abs(mp.mpf(r["R_base"]) - mp.mpf(r["R_det"])) > mp.mpf("0.15"), (
+            "A and B_- coincide at sigma=1/2, which would make the correction wrong")
+
+    def test_the_page_DENIES_the_quotient_at_this_point(self, rows):
+        assert "not</em> A" in self._case(rows)["html"]
+
+    def test_the_page_no_longer_calls_A_a_conditional(self):
+        js = PAGE.read_text(encoding="utf-8").split("<script>")[1].split("</script>")[0]
+        assert "model\u2019s conditional update" not in js
+        assert "conditional update" not in js, (
+            "the page still describes A as a conditional update; it is a retained blend")

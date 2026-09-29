@@ -62,6 +62,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import datetime as _dt
 import json
 import pathlib
 import re
@@ -232,8 +233,79 @@ def _simulated_run_dirs() -> set:
     return sim
 
 
+#: Date formats that appear in this archive's run directory names. Measured
+#: 2026-09-29: 221 of 287 run directories (77.0035%, Wilson [71.7975%, 81.4962%])
+#: carry one, and 75 of the 77 ADMITTED reports do (97.4026%, Wilson
+#: [91.0154%, 99.2848%]) -- statsmodels and a direct Wilson closed form agreeing
+#: to 1.11e-16.
+_PROV_PATTERNS = (
+    (re.compile(r"(\d{4})(\d{2})(\d{2})T\d{6}Z"), (1, 2, 3)),   # 20260921T222021Z
+    (re.compile(r"(\d{4})-(\d{2})-(\d{2})"),        (1, 2, 3)),   # 2026-09-22
+    (re.compile(r"(\d{4})(\d{2})(\d{2})_\d{6}"),    (1, 2, 3)),   # 20260921_222021
+    # A BARE 8-DIGIT DATE, shape-constrained so an arbitrary 8-digit run id
+    # cannot masquerade as one: century 19/20, month 01-12, day 01-31. This
+    # pattern is LAST so the more specific forms win. It recovers the 2 admitted
+    # reports that had no provenance under the first 3 patterns
+    # (`baseline_confer_run10_20260403`, `..._run11_20260404`).
+    (re.compile(r"((?:19|20)\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])(?!\d)"), (1, 2, 3)),
+)
+
+
+#: How many ancestor directories a run's recorded date may hide in.
+_PROV_MAX_DEPTH = 5
+
+#: Admitted reports whose path carries no date. Reported, never guessed at.
+_NO_PROVENANCE: list = []
+
+
+def _provenance_time(fp: "Path") -> "int | None":
+    """A run's RECORDED date, read from its own path, or None.
+
+    WHY THIS EXISTS, AND WHY mtime IS NOT ACCEPTABLE HERE. The age baseline used
+    to come from `fp.stat().st_mtime`, so the age classification of an unchanged
+    historical record was decided by filesystem metadata. Reproduced 2026-09-29
+    against these very functions: touching one report with 0 bytes changed and an
+    identical sha256 moved the baseline 58.0 days and flipped the TOO_NEW verdict
+    for a control first committed 2026-09-01 from True to False. `cp`, `rsync`, a
+    fresh checkout and a restore from backup all rewrite mtime, so the previous
+    rule made a conclusion about history depend on when the files were last copied.
+
+    Raised by an external assessment, 2026-09-29, whose minimal closure this
+    implements: use recorded run provenance, and return an EXPLICIT UNKNOWN when
+    it is unavailable rather than inventing a date. A file with no date in its
+    path contributes NOTHING to the baseline; it is counted and reported.
+    """
+    # Bounded search depth, NAMED rather than a bare slice. A magic `[:5]` inside a
+    # comprehension is what `test_operational_scripts.py` flags as an undisclosed cap,
+    # and it is right to: a reader cannot tell a deliberate depth bound from a silently
+    # truncated listing. This walks the file name and at most `_PROV_MAX_DEPTH`
+    # ancestors, which covers `bench/logs/<run>/<sub>/report.json` with room to spare;
+    # anything deeper returns None and is reported as UNKNOWN rather than guessed.
+    parts = [fp.name]
+    for depth, ancestor in enumerate(fp.parents):
+        if depth >= _PROV_MAX_DEPTH:
+            break
+        parts.append(ancestor.name)
+    for part in parts:
+        for pat, groups in _PROV_PATTERNS:
+            m = pat.search(part)
+            if m:
+                y, mo, dy = (int(m.group(g)) for g in groups)
+                try:
+                    return int(_dt.datetime(y, mo, dy, tzinfo=_dt.timezone.utc).timestamp())
+                except ValueError:
+                    continue
+    return None
+
+
 def _archive() -> tuple[list, int]:
-    """(report dicts, newest run mtime). Reports only -- not every json."""
+    """(report dicts, newest RECORDED run date). Reports only -- not every json.
+
+    The second element is derived from recorded provenance, never from filesystem
+    metadata; see `_provenance_time`. It is 0 when no admitted report carries a
+    date, which callers must treat as UNKNOWN rather than as "very old".
+    """
+    _NO_PROVENANCE.clear()
     reports, newest = [], 0
     # Run-level provenance, resolved BEFORE admitting anything. See
     # `_simulated_run_dirs` for the 4 files this closes and what they cost.
@@ -263,7 +335,14 @@ def _archive() -> tuple[list, int]:
         if isinstance(d, dict) and ("registry" in d or "converged_at" in d
                                     or "runner_version" in d):
             reports.append(d)
-            newest = max(newest, int(fp.stat().st_mtime))
+            # RECORDED PROVENANCE ONLY. mtime is deliberately NOT a fallback: a
+            # fallback would restore exactly the behaviour this closes, because
+            # the undated files are the ones a copy would silently re-date.
+            ts = _provenance_time(fp)
+            if ts is None:
+                _NO_PROVENANCE.append(str(fp.relative_to(LOGS.parent.parent)))
+            else:
+                newest = max(newest, ts)
     return reports, newest
 
 
@@ -385,7 +464,13 @@ def audit(quiet: bool = False, newest_override: int | None = None) -> dict:
         print("  Only AMBIGUOUS is actionable. Give the guard an unconditional")
         print("  'I ran' counter beside its alarm and it becomes decidable.")
     return {"reports": len(reports), "rows": rows,
+            # `baseline_mtime` keeps its name for every existing reader, but since
+            # 2026-09-29 it holds a RECORDED date, not a filesystem mtime.
             "baseline_mtime": newest,
+            "age_source": ("override" if newest_override is not None
+                           else "recorded_provenance" if newest else "UNKNOWN"),
+            "reports_without_provenance": list(_NO_PROVENANCE),
+            "age_conclusions_available": bool(newest) or newest_override is not None,
             "audited_object": "report keys written by the runner "
                               "(NOT config flags -- those have legacy "
                               "aliases and need their own audit)"}

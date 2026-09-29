@@ -232,7 +232,7 @@ The gap between them is not marginal. At `R = 0.99`, `q = 0.3` the conditional `
 
 > A = σ·R_det + (1 − σ)·R  where R_det = R(1 − q)/(1 − qR)
 
-for the model's Phase-2 update — the risk **conditional** on the cycle having detected nothing — and
+for the model's Phase-2 update — a **σ-weighted blend** of the negative-branch posterior with the prior, exactly linear in σ (`A = R + σ(B₋ − R)`, so `d²A/dσ² = 0`) — and
 
 > M = R(1 − qσ)
 
@@ -243,6 +243,17 @@ for the risk **expected before the branch is known**. `M` is not a separate mode
 | detected (a flaw was present, and was found) | qR | 1 − σ |
 | not detected | 1 − qR | R(1 − q)/(1 − qR) |
 | **expectation across both** | **1** | **M = R(1 − qσ)** |
+
+**WHAT `A` IS NOT, CORRECTED 2026-09-29 ON AN EXTERNAL REVIEW.** An earlier version of this section called `A` *"the risk conditional on the cycle having detected nothing"*. **That is true only at σ = 1 and false everywhere else**, and it is the shape of error this project calls a universal asserted after checking one member: a mixture that coincides with a posterior at one endpoint is not that posterior in between. At `R = 1/2, q = 4/5, σ = 1/2` **four quantities are all distinct**:
+
+| quantity | value |
+|---|---:|
+| `B₋`, the risk given a negative result | 1/6 |
+| `M`, the pre-pass expectation | 3/10 |
+| `A`, the retained blend | 1/3 |
+| `M ÷ P(negative)` | 1/2 |
+
+`A` is none of the other three. SymPy and Wolfram Language both return `σ == 1` as the *only* solution of `A == B₋` on the open domain (`Reduce` → `0 < R < 1 && 0 < q < 1 && s == 1`). **`A` is therefore a retained blend kept for gate compatibility, not a calibrated conditional probability**, and results must not be described using the stronger reading. What survives for every σ is the branch average below and the inequality `A ≥ M`. *Computed with Wolfram Language.* Held by `scripts/branch_form_semantics_2026-09-29.py`, which now executes this counterexample.
 
 The averaging is exact for every σ: `qR(1 − σ) + (1 − qR)·R_det` simplifies to `R(1 − qσ)` identically. **The two quantities are numerator and quotient of one fraction.** At σ = 1 the detected branch contributes nothing, all of `M`'s mass sits in the other branch, and
 
