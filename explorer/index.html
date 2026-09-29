@@ -46,6 +46,18 @@
               font-family:ui-monospace,Menlo,monospace;font-size:12.5px;}
   .inspect td:first-child{font-family:Georgia,serif;font-size:13.5px;width:40%;}
   .hint{color:var(--muted);font-size:13px;margin-top:6px;}
+  .branch{font-size:13.5px;}
+  .branch table{border-collapse:collapse;width:100%;margin:8px 0 4px;}
+  .branch th{font-family:Georgia,serif;font-size:12px;text-align:left;font-weight:normal;
+             color:var(--muted);padding:0 8px 5px;border-bottom:1px solid var(--grid);}
+  .branch th:not(:first-child),.branch td:not(:first-child){text-align:right;}
+  .branch td{padding:5px 8px;border-top:1px solid var(--grid);
+             font-family:ui-monospace,Menlo,monospace;font-size:12.5px;}
+  .branch td:first-child{font-family:Georgia,serif;font-size:13.5px;}
+  .branch tr.expect td{border-top:2px solid var(--ink);font-weight:600;}
+  .branch .ident{margin:8px 0 0;padding:8px 10px;background:var(--paper);
+                 border-left:3px solid var(--grid);border-radius:0 5px 5px 0;font-size:13px;}
+  .branch .ident.live{border-left-color:var(--accent,#3C6E4F);}
   .questionCard{border:1px solid var(--grid);border-radius:8px;padding:14px 16px 12px;
                 margin:0 0 18px;background:#FCFCFA;}
   .questionHead{font-size:13px;letter-spacing:.04em;text-transform:uppercase;
@@ -199,6 +211,14 @@
   <div class="card inspect" style="flex:1 1 460px">
     <h2>Pass inspector</h2>
     <div id="inspectBody"><p class="hint">Click a point on the risk chart.</p></div>
+    <div class="branch" id="branchCard">
+      <p style="margin:16px 0 0;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#6B7268;">
+        Both outcomes of that pass</p>
+      <p style="margin:6px 0 0;">Every figure in the table above is <strong>conditional</strong> on the pass
+      finding nothing. Before you run it you do not know which branch you are in, so the quantity that should
+      decide whether to run it is the expectation across both.</p>
+      <div id="branchBody"></div>
+    </div>
   </div>
 </div>
 </main>
@@ -428,8 +448,20 @@ function simulate(o){
     const eDR = R_old*q*o.sigma*(1-o.nu) - o.nu*(1-R_old);
     const denomExp = R_old*q*o.sigma - R_old + 1;
     const nuStarExp = denomExp > 0 ? R_old*q*o.sigma/denomExp : 1;
+    // THE TWO BRANCHES, and the expectation ACROSS them. Added 2026-09-29 on the
+    // founder's ruling ("Yes update the explorer as you suggest") after he asked
+    // whether the A-versus-M distinction needed stating here. It did: every number
+    // above is CONDITIONAL on the pass finding nothing, and the quantity that should
+    // decide whether to RUN the pass is the expectation over both outcomes.
+    //   detected:      probability q*R, risk afterwards 1-sigma (detection implies a flaw)
+    //   not detected:  probability 1-q*R, risk afterwards R_det
+    // Verified by SymPy and independently by Wolfram Language, 2026-09-29:
+    //   q*R*(1-sigma) + (1-q*R)*R_det  ==  R*(1-q*sigma)  identically, for all sigma.
+    const pDet = q*R_old, pNo = 1 - q*R_old;
+    const rDet = 1 - o.sigma;
+    const M_uncond = R_old*(1 - q*o.sigma);
     steps.push({i, R_old, R_det, R_base, R_new, dR: R_old - R_new,
-                eDR, nuStar, nuStarExp});
+                eDR, nuStar, nuStarExp, pDet, pNo, rDet, M_uncond});
     R = R_new; traj.push(R);
   }
   return {traj, steps, q};
@@ -677,7 +709,63 @@ function draw(){
       '<tr><td>break-even ν*<sub>E</sub> (expectation — the default question)</td><td>'+
         s.nuStarExp.toFixed(4)+
         '</td></tr></table>';
+    renderBranches(s, sim.q, o.sigma);
+  } else {
+    // GUARDED, for the same reason the modeWhy write above is guarded, and
+    // REINTRODUCING THAT EXACT DEFECT IS HOW THIS LINE GOT ITS COMMENT: on
+    // 2026-09-29 an unguarded write here threw `Cannot set properties of null`
+    // under every existing probe whose hand-built DOM does not stub this id,
+    // taking down 18 tests that have nothing to do with the branch card. The
+    // card is COSMETIC; the charts are not. Functional lookups stay unguarded.
+    const bb = $('branchBody');
+    if (bb) bb.innerHTML = '';
   }
+}
+
+// ASTRA'S BRANCH TABLE, built 2026-09-29 on the founder's verdict "Yes do it".
+// It answers his question -- "does this mean our explorer, or our docs also need work
+// to reflect this? Even if it is just stated? Is stating it enough?" -- by showing the
+// two quantities SIDE BY SIDE with live numbers, which stating alone cannot do.
+//
+// A is the model's conditional update, sigma*R_det + (1-sigma)*R: what the chart plots.
+// M is the unconditional expectation, R*(1-q*sigma): what decides whether to run a pass.
+// They are numerator and quotient of one fraction. At sigma = 1 exactly:
+//     A = M / P(no detection),
+// because the detected branch then contributes 0 and all of M's mass sits in the other
+// branch. Away from sigma = 1 that quotient does NOT hold and the card says so rather
+// than printing an identity that is false -- the gap is always A - M = R^2*q*sigma*(1-q)/(1-q*R),
+// which is >= 0 on the whole domain (Wolfram `Resolve[ForAll[...]]` -> True; `Reduce` for
+// the strict negation -> False; SymPy agrees to an exact 0).
+function renderBranches(s, q, sigma){
+  const host = $('branchBody');
+  if (!host) return;              // cosmetic card absent; see the note in draw()
+  const f = x => x.toFixed(4);
+  const gap = s.R_base - s.M_uncond;
+  const closed = s.R_old*s.R_old*q*sigma*(1-q)/(1-q*s.R_old);
+  // Quotient identity holds only at sigma = 1. Compare to the value, never to a flag.
+  const exact = Math.abs(sigma - 1) < 1e-12;
+  const quotient = s.pNo > 0 ? s.M_uncond/s.pNo : NaN;
+  const ident = exact
+    ? '<p class="ident live"><strong>A = M ÷ P(no detection)</strong> — exactly, because at '+
+      'σ = 1 the detected branch contributes nothing and all of M sits in the other branch: '+
+      '<span class="mono">'+f(s.M_uncond)+' ÷ '+f(s.pNo)+' = '+f(quotient)+'</span>, which is A. '+
+      'One fraction, two readings: M is its numerator, A is its value.</p>'
+    : '<p class="ident">At σ = '+sigma.toFixed(2)+' the quotient <span class="mono">M ÷ P(no detection) '+
+      '= '+f(quotient)+'</span> is <em>not</em> A — that identity holds only at σ = 1, because a '+
+      'detected-and-imperfectly-repaired flaw leaves risk <span class="mono">'+f(s.rDet)+'</span> '+
+      'behind in the other branch. What always holds is the gap below.</p>';
+  host.innerHTML =
+    '<table><tr><th>outcome of the pass</th><th>probability</th><th>risk afterwards</th></tr>'+
+    '<tr><td>detected (a flaw was there, and was found)</td><td>'+f(s.pDet)+'</td><td>'+f(s.rDet)+'</td></tr>'+
+    '<tr><td>not detected</td><td>'+f(s.pNo)+'</td><td>'+f(s.R_det)+'</td></tr>'+
+    '<tr class="expect"><td>expectation across both — M = R(1−qσ)</td><td>'+f(s.pDet+s.pNo)+
+      '</td><td>'+f(s.M_uncond)+'</td></tr></table>'+
+    '<p class="hint">Plotted on the chart: <span class="mono">A = σ·R_det + (1−σ)·R = '+f(s.R_base)+
+    '</span>, the model\u2019s conditional update. Expected before the branch is known: '+
+    '<span class="mono">M = '+f(s.M_uncond)+'</span>. Gap <span class="mono">A − M = '+f(gap)+
+    '</span>, which equals the closed form <span class="mono">R²qσ(1−q)/(1−qR) = '+f(closed)+
+    '</span> and is never negative. <strong>A always reads worse than M</strong>, so judging a pass '+
+    'by A alone understates what running it is worth.</p>'+ident;
 }
 
 c1.addEventListener('click', e=>{

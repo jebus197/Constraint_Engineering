@@ -82,7 +82,7 @@ The base programme's 7 stand. These are added.
 
 **3. `hil_review`: nothing to commission.** Unanimous across cc2, cx, ds and fable — an operator stepping mode that does not change the stopping condition.
 
-**4. Wolfram in panel reviews: denial stands.** Unanimous.
+**4. Wolfram in panel reviews: denial stands.** Unanimous. **[CORRECTED 2026-09-29 — THE PANEL'S POSITION WAS WRONG AND CC1 CARRIED IT AS A FOUNDER RULING.** The founder: *"There is no 'denial rule' for Wolfram. That is clearly an invention by you."* Measured the same day: `DEFAULT_POLICY` is `serial`, the live seat arguments are `('--strict-mcp-config',)` with **no** `--disallowedTools`, the serial gate sits first on every seat's `PATH`, and nothing in the repository sets `CDSFL_WOLFRAM_POLICY=deny`. **Wolfram has been enabled for command-line seats since his 2026-09-17 ruling.** A panel opinion is not a rule (`feedback_no_model_voting`); this line records what the seats said, not what is in force.]**
 
 **5. I31 save/restore: do not land it mid-commissioning.** cc2's reason: *"enabling persistence mid-commissioning changes the instrument being commissioned."* ge: not until a committed measurement shows drift actually occurs.
 
@@ -97,7 +97,7 @@ The base programme's 7 stand. These are added.
 1. ~~`discrimination_control_blocks`~~ — **RESOLVED by the panel, no ruling needed.** The conflict was a stale premise; both readings already hold. See above.
 2. **The seat contrast arm** (base programme item 12c) — its file marks launch as blocked on the Codex paid route; in a simulated run both seats are the same stand-in, so it is the weak form by construction.
 3. **I31 drift detector** (item 12b) — released by the maths review completing; the choice is whether the PROPOSED save/restore changes land before the run.
-4. **Wolfram in panel reviews** (item 12d) — denial is the default in force.
+4. **Wolfram in panel reviews** (item 12d) — **NEEDS NOTHING, AND NOT FOR THE REASON THIS LINE USED TO GIVE. Wolfram is ENABLED for command-line seats and has been since 2026-09-17; the "denial" was CC1's invention, retracted 2026-09-29.** The API seats cannot reach a shell, so his own fallback clause governs them: *"where they cannot, then they should default to equivalent Open Source tools"* — they have SymPy and z3 and use them.
 
 ## A caution that bears on the whole exercise
 

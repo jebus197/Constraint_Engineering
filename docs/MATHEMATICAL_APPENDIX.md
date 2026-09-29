@@ -228,6 +228,34 @@ which SymPy confirms is the exact difference between `R_k` and the two-branch mi
 
 The gap between them is not marginal. At `R = 0.99`, `q = 0.3` the conditional `ΔR` is 0.004225 while the exact expected improvement is 0.297000 — a factor of **70.30**. Under a threshold θ = 0.05 the 2 rules disagree outright: the conditional says STOP at `R = 0.99` and at `R = 0.95`, the expectation says CONTINUE at both. z3 confirms a non-empty region where they disagree, returning a witness at `R = 1/2, q = 1/8`.
 
+**THE SAME DISTINCTION AT THE LEVEL OF THE STATE, NOT THE GAIN (added 2026-09-29, on the founder's ruling).** Everything above concerns the *improvement* a cycle delivers. The identical split exists one level down, in the *risk* itself, and the explorer plots one of the two without previously saying which. Write
+
+> A = σ·R_det + (1 − σ)·R  where R_det = R(1 − q)/(1 − qR)
+
+for the model's Phase-2 update — the risk **conditional** on the cycle having detected nothing — and
+
+> M = R(1 − qσ)
+
+for the risk **expected before the branch is known**. `M` is not a separate model: it is the average of the two branches the cycle can produce, and the table is small enough to give in full.
+
+| outcome of the cycle | probability | risk afterwards |
+|---|---|---|
+| detected (a flaw was present, and was found) | qR | 1 − σ |
+| not detected | 1 − qR | R(1 − q)/(1 − qR) |
+| **expectation across both** | **1** | **M = R(1 − qσ)** |
+
+The averaging is exact for every σ: `qR(1 − σ) + (1 − qR)·R_det` simplifies to `R(1 − qσ)` identically. **The two quantities are numerator and quotient of one fraction.** At σ = 1 the detected branch contributes nothing, all of `M`'s mass sits in the other branch, and
+
+> A = M ÷ P(no detection) = M/(1 − qR)   [σ = 1 only]
+
+At σ < 1 that quotient is **false**, because an imperfectly repaired flaw leaves risk `1 − σ` behind in the detected branch; what holds everywhere is the gap
+
+> A − M = R²qσ(1 − q)/(1 − qR) ≥ 0
+
+which is 0 exactly when σ = 0, q = 0 or q = 1. **The direction is the point, and it is one-way: `A` never reads better than `M`.** A practitioner judging a cycle by the conditional risk alone therefore *understates* what running it is worth — the same error the ΔR entry above diagnoses, wearing a different variable. At `R = 1/2, q = 4/5, σ = 1` the worked figures are `A = 1/6`, `M = 1/10`, `P(no detection) = 3/5`, and `(1/10) ÷ (3/5) = 1/6`.
+
+**Verified on two independent engines.** SymPy reduces each of the three identities (the branch average, the σ = 1 quotient, and the closed form of the gap) to an exact 0. As the secondary cross-verification falsifier, Wolfram Language returned `0`, `0` and `0` for the same three differences, `Resolve[ForAll[{R,q,σ}, 0<R<1 && 0<q<1 && 0<σ≤1, A − M ≥ 0], Reals]` → `True`, and `Reduce` on the strict negation → `False`; the worked example returned `{1/6, 1/10, 3/5, 1/6}` exactly. *Computed with Wolfram Language.* Held by `bench/tests/test_explorer_branch_table_2026-09-29.py`, which executes the explorer's own renderer rather than re-deriving it, and whose cases straddle σ = 1 because the quotient clause is true there and false everywhere else. [DERIVED, cross-checked with SymPy and Wolfram Language]
+
 **Found by an external review on 2026-09-21 and confirmed here by execution.** It also bounds the conservatism result recorded under Phase 2: that Phase 2 never understates risk is true, and it does **not** follow that a stopping rule built on it is therefore safe. A bound that moves little can still be a bound on the wrong thing. [DERIVED, cross-checked with SymPy and z3] The formula above is unchanged and correct; only the sentence attached to it needed the qualification. [DERIVED, with the band located by exhaustive search]
 
 
