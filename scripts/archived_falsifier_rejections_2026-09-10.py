@@ -35,11 +35,15 @@ project name but points at nothing here, stays a real rejection.
 """
 from __future__ import annotations
 
+import argparse
+import calendar
 import collections
 import json
 import os
 import pathlib
+import re
 import sys
+import time
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
@@ -76,10 +80,37 @@ MIN_SUFFIX_PARTS = 2
 #: falls back to the checkout directory, saying which answered.
 
 
-def archived_sources() -> dict[str, set[tuple[str, str]]]:
-    """Every distinct falsifier source in the archive, and where it is held."""
+#: Run directories are stamped `..._YYYYMMDDTHHMMSSZ` (UTC). `--as-of` uses the
+#: stamp where it parses and the file mtime where it does not, so an undated
+#: directory is still datable and nothing silently drops out of the corpus.
+_RUN_STAMP = re.compile(r"(20\d{6}T\d{6})Z")
+
+
+def _report_epoch(rep: pathlib.Path) -> float:
+    m = _RUN_STAMP.search(rep.parent.name)
+    if m:
+        return calendar.timegm(time.strptime(m.group(1), "%Y%m%dT%H%M%S"))
+    return rep.stat().st_mtime
+
+
+def archived_sources(as_of: float | None = None) -> dict[str, set[tuple[str, str]]]:
+    """Every distinct falsifier source in the archive, and where it is held.
+
+    AS-OF ADDED 2026-09-29 (panel, green-board item 1). A rate over this
+    archive is a claim about the archive AS OF a date: the round-11 brief of
+    2026-09-11 declared `2/640 = 0.3125%`, the 4 commissioning rehearsals of
+    2026-09-21/22 then grew the corpus to 716, and the declared figure stopped
+    re-executing -- with the NUMERATOR unchanged. The brief was not wrong when
+    sent; the corpus moved. `as_of` (epoch seconds) restricts the scan to runs
+    dated at or before it, so a dated historical figure is DECIDABLE by
+    re-execution instead of exempted from it. Executed: as-of 2026-09-11 this
+    reproduces 2/640 = 0.3125% exactly, and the only excluded directories are
+    the 4 commissioning rehearsals.
+    """
     out: dict[str, set[tuple[str, str]]] = collections.defaultdict(set)
     for rep in sorted((REPO / "bench" / "logs").rglob("*_report.json")):
+        if as_of is not None and _report_epoch(rep) > as_of:
+            continue
         try:
             data = json.loads(rep.read_text(encoding="utf-8", errors="replace"))
         except (ValueError, OSError):
@@ -183,8 +214,8 @@ def _names_this_checkout(raw: str) -> bool:
     return False
 
 
-def survey():
-    sources = archived_sources()
+def survey(as_of: float | None = None):
+    sources = archived_sources(as_of)
     real, artefact = {}, {}
     for code, where in sources.items():
         v = scan_falsifier_source(code)
@@ -195,8 +226,25 @@ def survey():
 
 
 def main() -> int:
-    sources, real, artefact = survey()
+    ap = argparse.ArgumentParser(
+        description="Classify archived falsifier rejections: real vs "
+                    "location artefact.")
+    ap.add_argument(
+        "--as-of", metavar="YYYY-MM-DD",
+        help="restrict the corpus to runs dated at or before this UTC date, "
+             "so a historical figure re-executes against the archive as it "
+             "stood (added 2026-09-29; see archived_sources)")
+    a = ap.parse_args()
+    as_of = None
+    if a.as_of:
+        try:
+            as_of = calendar.timegm(time.strptime(a.as_of, "%Y-%m-%d")) + 86399
+        except ValueError:
+            ap.error(f"--as-of {a.as_of!r} is not a YYYY-MM-DD date")
+    sources, real, artefact = survey(as_of)
     print(f"checkout under test : {REPO}")
+    if as_of is not None:
+        print(f"corpus restricted   : runs dated on or before {a.as_of} (UTC)")
     print(f"project identity    : {sorted(_PROJECT_NAMES)} (from the "
           f"{_NAME_SOURCE})")
     print(f"distinct archived falsifier sources: {len(sources)}")

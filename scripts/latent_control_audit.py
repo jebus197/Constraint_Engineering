@@ -193,9 +193,51 @@ def _is_simulated(doc: dict, fp: pathlib.Path) -> bool:
     return name.startswith("sim") or "_sim" in name or "simulated" in name
 
 
+def _simulated_run_dirs() -> set:
+    """Run directories holding at least 1 document that proves simulation.
+
+    SIMULATION IS A PROPERTY OF THE RUN, NOT OF THE FILE (added 2026-09-29,
+    panel item 2). `_is_simulated` reads 3 provenance keys plus the directory
+    name, and the runner writes those keys into the run REPORT only. A simulated
+    run also drops a `runner_state.json` beside it, which carries
+    `runner_version` -- so `_archive` counted it as a report -- and carries none
+    of the provenance keys, and whose directory is named `commissioning_arm*`
+    rather than `sim*`. Measured on this archive: 4 files leak in that way,
+
+        commissioning_arm{1,2,3,4}_*/runner_state.json
+
+    and they were the NEWEST admitted "reports", so they set the age baseline.
+    The consequence is not cosmetic: the baseline moved from 2026-08-27 to
+    2026-09-22, 26.3 days later, which silently disables the TOO_NEW quarantine
+    for every control key committed in that window. `critical_boundary_census`,
+    first committed 2026-09-01, scored SILENT_BUT_RAN when the rule says TOO_NEW
+    -- a control reported as exercised-but-quiet when in truth the archive is
+    older than the control is.
+
+    This is the SAME failure the docstring on `_archive` records from
+    2026-09-01, arriving through a file the earlier fix never covered: the
+    witness set accepting the runner's own rehearsal as field evidence.
+
+    Nothing is removed. Every per-file signal still applies; a run directory is
+    additionally simulated when ANY document in it proves the run was simulated.
+    """
+    sim: set = set()
+    for fp in LOGS.glob("**/*.json"):
+        try:
+            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
+        except Exception:                                 # noqa: BLE001
+            continue
+        if isinstance(d, dict) and _is_simulated(d, fp):
+            sim.add(fp.parent)
+    return sim
+
+
 def _archive() -> tuple[list, int]:
     """(report dicts, newest run mtime). Reports only -- not every json."""
     reports, newest = [], 0
+    # Run-level provenance, resolved BEFORE admitting anything. See
+    # `_simulated_run_dirs` for the 4 files this closes and what they cost.
+    sim_dirs = _simulated_run_dirs()
     for fp in LOGS.glob("**/*.json"):
         # EXCLUDE SIMULATED RUNS FROM THE WITNESS SET.
         #
@@ -216,7 +258,7 @@ def _archive() -> tuple[list, int]:
             continue
         if not isinstance(d, dict):
             continue
-        if _is_simulated(d, fp):
+        if _is_simulated(d, fp) or fp.parent in sim_dirs:
             continue
         if isinstance(d, dict) and ("registry" in d or "converged_at" in d
                                     or "runner_version" in d):

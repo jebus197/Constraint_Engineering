@@ -11486,6 +11486,80 @@ def compute_rk(
     return max(0.0, min(1.0, R_k))
 
 
+def _rk_finite(value: float, *, worst: float) -> float:
+    """Clamp to [0,1]; a non-finite or unparseable input resolves to `worst`.
+
+    The same fail-safe rule `compute_rk` applies inline, extracted so the
+    expectation companion below cannot drift from it. `compute_rk` is NOT edited:
+    it is the gate-bearing path and is left byte-identical, and
+    `test_rk_expectation_companion_2026-09-29.py` executes both functions on the
+    same non-finite inputs and requires them to agree, so the duplication is a
+    CHECKED invariant rather than a second source of truth.
+    """
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return worst
+    return worst if not math.isfinite(v) else max(0.0, min(1.0, v))
+
+
+def compute_rk_expectation(
+    R_old: float, q: float, sk: float,
+    nu_b: float = 0.05, nu_f: float = 0.20,
+) -> float:
+    """The BRANCH-WEIGHTED EXPECTATION of residual risk. REPORTED, NEVER GATED.
+
+    THE TWO FORMS ANSWER DIFFERENT QUESTIONS, and that -- not which formula is
+    "right" -- is the whole of the 2026-09-29 panel item. Derived in
+    `scripts/branch_form_semantics_2026-09-29.py`, checked with SymPy and z3 and
+    cross-checked with Wolfram Language:
+
+      * `compute_rk` phases 1-2 give `A = sigma*B_minus + (1-sigma)*R` where
+        `B_minus = R(1-q)/(1-qR)` is, by Bayes, exactly `P(flaw | NOT detected)`.
+        A is therefore a CONDITIONAL on the negative branch: it answers "the pass
+        reported nothing -- what is left?" At sigma=1 it IS B_minus.
+      * This function gives `M = R*(1 - q*sigma)`, which is the UNCONDITIONAL
+        survival probability `R*[(1-q) + q*(1-sigma)]` -- the pre-pass
+        expectation, averaged over both branches. That is the quantity an
+        explorer needs BEFORE a run, when the branch is not yet known.
+
+    They are quotient and numerator of one fraction: at sigma=1,
+    `A = M / P(not detected)`. At R=1/2, q=4/5, sigma=1, A = 1/6 and M = 1/10.
+
+    WHY THE GATE KEEPS A AND THIS IS ONLY REPORTED.
+    `A - M = sigma*q*R^2*(1-q)/(1-qR) >= 0` on the whole unit cube (z3: the
+    negation is unsat), so M is never above A. Across 386 archived (R, q, sigma)
+    triples every single one moves and all move the same way. Feeding M to a
+    convergence gate calibrated on A would therefore lower reported residual risk
+    everywhere and make every threshold EASIER to pass -- a silent loosening of
+    every gate in the project, which is not a measurement improvement. So the
+    expectation is written alongside `R_new` as `R_new_expectation` and no gate
+    reads it. Whether the gate should ever consume it is a threshold
+    recalibration, with its own committed measurement, and not this change.
+
+    Phase 3 re-injection is applied identically to `compute_rk`, so the 2 numbers
+    are comparable term for term.
+    """
+    R_old = _rk_finite(R_old, worst=1.0)   # unknown risk is maximum risk
+    q = _rk_finite(q, worst=0.0)           # unknown detection detects nothing
+    sk = _rk_finite(sk, worst=0.0)         # unknown efficacy fixes nothing
+    nu_b = _rk_finite(nu_b, worst=1.0)
+    nu_f = _rk_finite(nu_f, worst=1.0)
+    if nu_b + nu_f > 1.0:
+        scale = 1.0 / (nu_b + nu_f)
+        nu_b *= scale
+        nu_f *= scale
+
+    # Phases 1-2, branch-weighted: the marginal survival probability.
+    R_base = R_old * (1.0 - q * sk)
+
+    # Phase 3: re-injection, identical to compute_rk.
+    nu_eff = 1.0 - (1.0 - nu_b) * (1.0 - (1.0 - sk) * nu_f)
+    R_k = R_base * (1.0 - nu_eff) + nu_eff
+
+    return max(0.0, min(1.0, R_k))
+
+
 def apply_sk_to_rk(
     R_old: float, tristate: str, updated: Optional[float] = None,
 ) -> Tuple[float, str]:
@@ -12667,6 +12741,18 @@ def _evaluate_sk_for_findings(
                     )
                 entry["sk_result"]["R_old"] = R_old
                 entry["sk_result"]["R_new"] = R_new
+                # THE PRE-ROUND EXPECTATION, RECORDED BESIDE THE GATED NUMBER
+                # (2026-09-29, panel item 4). `R_new` is a negative-branch
+                # conditional; this is the branch-weighted expectation of the
+                # same update. Nothing gates on it -- see
+                # `compute_rk_expectation` for why introducing it to a gate would
+                # loosen every threshold in the project. q_eff matches the
+                # channel composition above so the 2 numbers are comparable.
+                _q_eff = q * (1.0 - c_ext * (1.0 - _nu_k))
+                entry["sk_result"]["R_new_expectation"] = compute_rk_expectation(
+                    R_old=R_old, q=_q_eff, sk=sk_result.sk,
+                    nu_b=nu_b, nu_f=nu_f,
+                )
                 # Provenance of R_k(0), written ONLY when memory supplied it,
                 # so the consumption-off report is byte-identical to before.
                 if rk0_source == "memory":

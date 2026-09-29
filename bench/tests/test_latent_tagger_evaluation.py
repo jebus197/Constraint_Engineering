@@ -145,6 +145,31 @@ def _decision_state(entries):
 # ── The archive: what enabling the pair would actually have done ────────────
 
 
+PINNED_2026_09_08 = [
+    "exp33_endocrine_20260405T110345Z/C0010",
+    "exp35_pe_20260406T152126Z/C0017",
+    "exp40_gate_20260514T020550Z/C0295",
+    "exp40_slice_collision_20260518T130744Z/C0002",
+    "exp46_stage6_locationkey_live_20260728T103151Z/C0002",
+    # one run, two directories -- 3 findings, listed twice. See the docstring.
+    "sim45_memory_20260908T033008Z/C0024",
+    "sim45_memory_20260908T033008Z/C0026",
+    "sim45_memory_20260908T033008Z/C0040",
+    "sim45_memory_20260908T033012Z/C0024",
+    "sim45_memory_20260908T033012Z/C0026",
+    "sim45_memory_20260908T033012Z/C0040",
+]
+
+#: Re-measured 2026-09-29: the 11 above, none lost, plus 5 from the 4
+#: commissioning runs of 2026-09-21/22. See the docstring below.
+PINNED_PROSE_TAGGED = sorted(PINNED_2026_09_08 + [
+    "commissioning_arm1_panel_20260921T215405Z/C0038",
+    "commissioning_arm1_panel_20260921T215405Z/C0054",
+    "commissioning_arm1_panel_20260921T215405Z/C0060",
+    "commissioning_arm4_prose_20260922T053349Z/C0003",
+    "commissioning_arm4_prose_20260922T053349Z/C0016",
+])
+
 @_needs_archive
 class TestArchiveExposure:
     """Measured 2026-08-12 over every archived run, not a six-run slice."""
@@ -217,6 +242,33 @@ class TestArchiveExposure:
         that order -- the tripwire is only safe to move once the thing it watches is
         shown not to have moved.
 
+        UPDATED 2026-09-29: 11 -> 16, and the order of verification is now EXECUTED
+        rather than recorded in prose. The 5 new entries are
+
+            commissioning_arm1_panel_20260921T215405Z/{C0038,C0054,C0060}
+            commissioning_arm4_prose_20260922T053349Z/{C0003,C0016}
+
+        from 4 commissioning runs that landed 2026-09-21/22, 14 days after the pin was
+        last re-measured. NOTHING WAS LOST: all 11 previously pinned entries are still
+        tagged, which is the mechanical form of "the marker set has not been loosened"
+        -- a loosened marker set ADDS tags, a broken one DROPS them, and only the
+        second is a regression this pin can detect. That no-loss invariant is now its
+        own assertion (`test_no_previously_tagged_entry_stopped_being_tagged`) so a
+        future archive growth cannot hide a dropped tag inside an equality diff, which
+        is how this assertion reads today: the 3 names in the reported failure included
+        `exp33_endocrine_20260405`, which never moved and appeared only because list
+        equality reports the first positional difference.
+
+        Each new tag has an auditable marker hit, all `latent_source="prose"`:
+        C0038 `explicit_latent` ("the worst shape a latent defect can take"); C0054,
+        C0060, C0003, C0016 `no_caller` ("no production consumer exists", "no file, no
+        command, and no invocation"). All 5 remain demotion-ineligible --
+        `test_nothing_in_the_archive_is_demotion_eligible` is unaffected and green.
+
+        THE EQUALITY IS KEPT ON PURPOSE. A containment assertion would survive every
+        future growth and would also survive a marker set loosened until it tags half
+        the archive, which is the thing this pin exists to catch.
+
         THE 6 NEW ENTRIES ARE 3 FINDINGS COUNTED TWICE. `sim45_memory_20260908T033008Z`
         and `...033012Z` are ONE run: the runner writes a second directory 4 seconds
         after the first, the earlier holding `sim45_memory_report.json` and the later
@@ -234,20 +286,28 @@ class TestArchiveExposure:
             for cid, e in data["registry"]["entries"].items()
             if tag_entry(dict(e))
         )
-        assert tagged == [
-            "exp33_endocrine_20260405T110345Z/C0010",
-            "exp35_pe_20260406T152126Z/C0017",
-            "exp40_gate_20260514T020550Z/C0295",
-            "exp40_slice_collision_20260518T130744Z/C0002",
-            "exp46_stage6_locationkey_live_20260728T103151Z/C0002",
-            # one run, two directories -- 3 findings, listed twice. See the docstring.
-            "sim45_memory_20260908T033008Z/C0024",
-            "sim45_memory_20260908T033008Z/C0026",
-            "sim45_memory_20260908T033008Z/C0040",
-            "sim45_memory_20260908T033012Z/C0024",
-            "sim45_memory_20260908T033012Z/C0026",
-            "sim45_memory_20260908T033012Z/C0040",
-        ], tagged
+        assert tagged == PINNED_PROSE_TAGGED, tagged
+
+    def test_no_previously_tagged_entry_stopped_being_tagged(self):
+        """THE REGRESSION HALF OF THE PIN, immune to archive growth.
+
+        The equality above moves whenever a run lands. This does not: every entry
+        the tagger has EVER been measured to tag must still be tagged. A dropped
+        tag is a marker-set regression; an added tag is either growth or a
+        loosening, and the equality above is what catches the loosening. Split so
+        that the 2 failures are distinguishable at a glance instead of arriving as
+        one positional diff.
+        """
+        tagged = {
+            f"{name}/{cid}"
+            for name, data in _RUNS
+            for cid, e in data["registry"]["entries"].items()
+            if tag_entry(dict(e))
+        }
+        lost = [x for x in PINNED_2026_09_08 if x not in tagged]
+        assert lost == [], (
+            f"the tagger stopped tagging {lost}; a marker that used to fire and "
+            f"no longer does is a regression, not archive growth")
 
 
 # ── The never-demote interlock ──────────────────────────────────────────────

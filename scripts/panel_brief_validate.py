@@ -32,9 +32,11 @@ no validator should pretend to make, and the template exists to carry that.
 from __future__ import annotations
 
 import argparse
+import calendar
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -219,8 +221,72 @@ def _figure_token_found(want: str, haystack: str) -> bool:
     return False
 
 
+#: A brief may be validated long after dispatch, against an archive that has
+#: grown. The historical path below only opens when the brief demonstrably
+#: EXISTED at the date it claims: its mtime must sit within this slack of that
+#: date's end. A brief written today that carries only past dates fails this
+#: gate and is refused exactly as before -- the dodge is closed by evidence,
+#: not by trust.
+_HISTORICAL_MTIME_SLACK = 48 * 3600
+
+_DATE_RE = re.compile(r"20\d\d-\d\d-\d\d")
+
+
+def _historical_reproduction(want: str, script: Path, brief_path,
+                             text: str, repo: Path, timeout: int):
+    """The as-of date iff `want` re-executes against the archive AS OF the
+    brief's own date, else None.
+
+    ADDED 2026-09-29 (panel, green-board item 1). The subject of this guard's
+    REFUSAL is a brief about to be DISPATCHED: 4 of 6 seats are paid, and a
+    wrong number in a dispatched brief costs a round. An ARCHIVED brief is a
+    record of what the seats were given, and a declared figure in it is a
+    claim about evidence AS OF its date. The round-11 brief's
+    `2/640 = 0.3125%` was true on 2026-09-11; the archive then grew to 716
+    with the numerator unchanged. Editing the brief falsifies the record;
+    exempting archived briefs un-checks them. This does neither: the figure is
+    STILL RE-EXECUTED, against the corpus its date names, via the producer's
+    own `--as-of`. Nothing is trusted and nothing is exempt:
+
+      * At dispatch the brief's latest date is the dispatch date, and as-of
+        that date is today's corpus -- so this path cannot pass a figure the
+        strict check would refuse. Not weakened, measured: the dodge test in
+        bench/tests/test_declared_figure_as_of_2026-09-29.py writes a brief
+        TODAY carrying only past dates and it is refused on the mtime gate.
+      * A producer without `--as-of` exits non-zero and the refusal stands
+        unchanged (fail closed).
+      * A figure that never was true fails as-of its date too, and refuses.
+    """
+    if brief_path is None:
+        return None
+    brief_path = Path(brief_path)
+    if not brief_path.is_file():
+        return None
+    dates = _DATE_RE.findall(text)
+    if not dates:
+        return None
+    as_of = max(dates)
+    try:
+        eod = calendar.timegm(time.strptime(as_of, "%Y-%m-%d")) + 86399
+    except ValueError:
+        return None
+    if brief_path.stat().st_mtime > eod + _HISTORICAL_MTIME_SLACK:
+        return None                    # written after the date it claims
+    try:
+        r = subprocess.run([sys.executable, str(script), "--as-of", as_of],
+                           cwd=repo, capture_output=True, text=True,
+                           timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return None
+    if r.returncode != 0:
+        return None                    # no --as-of support: refusal stands
+    if _figure_token_found(want, r.stdout + "\n" + r.stderr):
+        return as_of
+    return None
+
+
 def check_declared_figures(text: str, repo: Path = REPO,
-                           timeout: int = 600) -> list[str]:
+                           timeout: int = 600, brief_path=None) -> list[str]:
     """Re-execute every declared figure. Empty list means all reproduced.
 
     A brief that declares NOTHING passes -- the mechanism is opt-in, because
@@ -329,6 +395,19 @@ def check_declared_figures(text: str, repo: Path = REPO,
         # `rate = 0.29`. A figure must be found in output that was actually
         # emitted, not in the seam between two streams.
         if not _figure_token_found(want, r.stdout + "\n" + r.stderr):
+            hist = _historical_reproduction(want, script, brief_path, text,
+                                            repo, timeout)
+            if hist is not None:
+                # LOUD BY DESIGN, and never silenced by --quiet: a quiet
+                # historical acceptance is how an exemption rots into a hole.
+                print(f"panel-brief: HISTORICAL FIGURE — {label!r}: {want!r} "
+                      f"does not re-execute against today's archive, but DOES "
+                      f"re-execute with --as-of {hist}, the latest date this "
+                      f"brief carries, and the brief's mtime is consistent "
+                      f"with that date. The record stands as a claim about "
+                      f"evidence as of {hist}; re-run {rel} before REUSING "
+                      f"this figure.", file=sys.stderr)
+                continue
             problems.append(
                 f"declared figure {label!r}: the brief says {want!r} and {rel} "
                 f"does not print it. A number typed into a brief is a claim "
@@ -515,7 +594,7 @@ def main() -> int:
                   file=sys.stderr)
     problems = validate(text)
     # Declared figures are RE-EXECUTED, not trusted. See check_declared_figures.
-    problems += check_declared_figures(text)
+    problems += check_declared_figures(text, brief_path=a.brief)
     if problems:
         print(f"panel-brief: REFUSED — {a.brief} fails {len(problems)} required check(s):",
               file=sys.stderr)

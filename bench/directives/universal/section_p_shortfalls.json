@@ -111,6 +111,98 @@
       ],
       "fixed": false,
       "fix": "OUTSTANDING. The actionable item is the instrumentation, not a guess at the failure: the moonshot and deepseek branch must record a stopped_reason so that a 0-character paid reply is diagnosable at all. Deliberately not attempted on 2026-09-21, because validating a change to a paid dispatch path requires a paid dispatch, and the founder was asleep. It does not block the commissioning study, which is simulated and spends nothing."
+    },
+    {
+      "condition": "P3",
+      "round": "founder_verdicts_2026-09-28",
+      "seat": "cc2",
+      "what": "The seat recorded 0 tool calls and returned 0 characters.",
+      "cause": [
+        "NOT A HARNESS DEFECT AND NOT THE SEAT'S DOING: the CLI could not",
+        "authenticate. `claude auth status` returned {\"loggedIn\": false,",
+        "\"authMethod\": \"none\"} and a direct probe printed `Failed to",
+        "authenticate: OAuth session expired and could not be refreshed`,",
+        "exit 1. Both free seats ride that CLI, so both failed identically",
+        "in under 2 seconds after 2 attempts each, before any tool could be",
+        "offered. P3 asks whether the seat USED the harness; on this round",
+        "the seat never started.",
+        "",
+        "MEASURED, NOT INFERRED: the same brief re-dispatched as",
+        "check_my_work_2026-09-28 once the founder re-authenticated, and the",
+        "same 2 seats then recorded 169 and 79 tool calls. The harness was",
+        "never the variable."
+      ],
+      "fixed": true,
+      "fix": "The founder re-authenticated with `claude auth login --claudeai` on 2026-09-28 at 09:40; `claude auth status` then reported loggedIn true. This is a CREDENTIAL expiry, not a code defect, so there is no patch to point at. What the project changed in response is the PANEL DEFAULT: bench/confer_maths_panel_2026-09-05.py now selects the free seats when PANEL_ONLY is unset and refuses a paid seat whose round is not named in bench/directives/universal/paid_dispatch_authorisations.json, so an authentication failure can no longer be worked around by spending.",
+      "held_by": "bench/tests/test_paid_dispatch_gate_reads_the_real_ledger_2026-09-28.py"
+    },
+    {
+      "condition": "P3",
+      "round": "founder_verdicts_2026-09-28",
+      "seat": "fable",
+      "what": "The seat recorded 0 tool calls and returned 0 characters.",
+      "cause": [
+        "NOT A HARNESS DEFECT AND NOT THE SEAT'S DOING: the CLI could not",
+        "authenticate. `claude auth status` returned {\"loggedIn\": false,",
+        "\"authMethod\": \"none\"} and a direct probe printed `Failed to",
+        "authenticate: OAuth session expired and could not be refreshed`,",
+        "exit 1. Both free seats ride that CLI, so both failed identically",
+        "in under 2 seconds after 2 attempts each, before any tool could be",
+        "offered. P3 asks whether the seat USED the harness; on this round",
+        "the seat never started.",
+        "",
+        "MEASURED, NOT INFERRED: the same brief re-dispatched as",
+        "check_my_work_2026-09-28 once the founder re-authenticated, and the",
+        "same 2 seats then recorded 169 and 79 tool calls. The harness was",
+        "never the variable."
+      ],
+      "fixed": true,
+      "fix": "The founder re-authenticated with `claude auth login --claudeai` on 2026-09-28 at 09:40; `claude auth status` then reported loggedIn true. This is a CREDENTIAL expiry, not a code defect, so there is no patch to point at. What the project changed in response is the PANEL DEFAULT: bench/confer_maths_panel_2026-09-05.py now selects the free seats when PANEL_ONLY is unset and refuses a paid seat whose round is not named in bench/directives/universal/paid_dispatch_authorisations.json, so an authentication failure can no longer be worked around by spending.",
+      "held_by": "bench/tests/test_paid_dispatch_gate_reads_the_real_ledger_2026-09-28.py"
+    },
+    {
+      "condition": "P5",
+      "round": "founder_verdicts_2026-09-28",
+      "seat": "cc2",
+      "what": "The round preserved no disagreement between seats.",
+      "cause": [
+        "THE SAME CAUSE AS THIS ROUND'S P3 ENTRIES, AND IT IS ARITHMETIC",
+        "RATHER THAN A DEFECT IN THE CONDITION: a round in which 0 seats",
+        "replied has no 2 positions to disagree. `claude auth status`",
+        "returned loggedIn false and both seats failed to authenticate in",
+        "under 2 seconds, so the round produced 0 characters from either.",
+        "",
+        "P5 IS NOT WEAKENED BY THIS ENTRY. The condition asks that where",
+        "seats DID disagree, the disagreement survived into the record. It",
+        "cannot be tested on a round with no replies, and recording that",
+        "here is the project's own convention for a shortfall whose cause is",
+        "understood -- not an exemption for rounds that merely converged."
+      ],
+      "fixed": true,
+      "fix": "The same brief re-dispatched as check_my_work_2026-09-28 after the founder re-authenticated, and that round DID preserve disagreement: the 2 seats reached opposite conclusions on the published explorer and both positions are recorded in experimental_notes/Panel_FULL_RECORD_Check_My_Work_2026-09-28.md rather than resolved by vote, per feedback_no_model_voting.",
+      "held_by": "bench/tests/test_panel_conditions_are_met_2026-09-10.py"
+    },
+    {
+      "condition": "P5",
+      "round": "founder_verdicts_2026-09-28",
+      "seat": "fable",
+      "what": "The round preserved no disagreement between seats.",
+      "cause": [
+        "THE SAME CAUSE AS THIS ROUND'S P3 ENTRIES, AND IT IS ARITHMETIC",
+        "RATHER THAN A DEFECT IN THE CONDITION: a round in which 0 seats",
+        "replied has no 2 positions to disagree. `claude auth status`",
+        "returned loggedIn false and both seats failed to authenticate in",
+        "under 2 seconds, so the round produced 0 characters from either.",
+        "",
+        "P5 IS NOT WEAKENED BY THIS ENTRY. The condition asks that where",
+        "seats DID disagree, the disagreement survived into the record. It",
+        "cannot be tested on a round with no replies, and recording that",
+        "here is the project's own convention for a shortfall whose cause is",
+        "understood -- not an exemption for rounds that merely converged."
+      ],
+      "fixed": true,
+      "fix": "The same brief re-dispatched as check_my_work_2026-09-28 after the founder re-authenticated, and that round DID preserve disagreement: the 2 seats reached opposite conclusions on the published explorer and both positions are recorded in experimental_notes/Panel_FULL_RECORD_Check_My_Work_2026-09-28.md rather than resolved by vote, per feedback_no_model_voting.",
+      "held_by": "bench/tests/test_panel_conditions_are_met_2026-09-10.py"
     }
   ]
 }
