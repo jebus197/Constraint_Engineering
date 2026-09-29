@@ -1,3 +1,30 @@
+
+## RESUME POINTER — 2026-09-29 09:55 BST, written against an imminent compaction
+
+**THE NEXT ACTION IS THE SIMULATED SHAKEDOWN RUN. It is NOT blocked.** The founder's own framing of its purpose, verbatim: *"In a simulated run, all models normally present in a paid run are instead represented by agents. The aim is to be able to know with some confidence in a fully paid run that the runner will behave as expected, rather than burning money in failed paid runs and finding out (at real cost) that way."*
+
+**THE PROGRAMME OF STUDY IS `experimental_notes/CDSFL_Programme_of_Study_Full_Scope_2026-09-21.md`** — mirrored into the repository on 2026-09-29, having previously existed only on the founder's Desktop. 5 arms, 11 measurements. Its window figures were refreshed 2026-09-29: 421 commits, 239 touching runtime (56.7696%, Wilson [51.9973%, 61.4195%]).
+
+**THE 3 ITEMS IT LISTS AS "NEEDING A RULING BEFORE THE RUN" DO NOT BLOCK IT.** Verified by execution 2026-09-29, and this is the single most important thing for a post-compaction session not to re-derive:
+- **Seat contrast arm**: `bench/tools/commissioning_arms_2026-09-21.py:107-108` already self-describes as *"WEAK BY CONSTRUCTION in simulation ... and reported as weak"*. Safe to run. Only its value is in question, not its safety.
+- **I31 drift detector**: `immune_memory_enabled=False` in all 3 of `bench/exp56_configs/d9_multi_model_panel.json`, `d9_single_model_with_agents.json`, `d11_seat_contrast_diversity_arm.json`, with `immune_memory_consume_rk0` absent. Unreachable. And it cannot fire regardless — z3 proves 1-2 same-direction updates cannot cross 2.0, production makes 1 per flaw class per run, 0 fires over 48 replayed cases.
+- **Wolfram in panel reviews**: denial is the standing default; nothing proposed, nothing waiting.
+
+**THE 36.9048% "OVERCLAIM" FIGURE IS A DOCUMENTATION MEASURE, NOT UNFINISHED ENGINEERING.** The founder read it as *"31 issues/fixes remain to be addressed"* and that reading is wrong — as was CC1's presentation of it, which put it in a morning report as though it gated the run. Measured from the committed audit evidence on 2026-09-29: **33 PARTIAL** (the work stands; the sentence describing it overstates), **2 UNSUPPORTED**, **7 NOT_FOUND** (entry ids that do not exist). Both UNSUPPORTED entries are themselves documentation defects: R5's own adjudication says *"The underlying fact is true when checked directly ... but the cited evidence does not establish it, because the single test cannot fail"* — verified, the pending string occurs 0 times; 8.1's cited evidence is about a different subject while the change itself was made, with 1 residual mention in `resources/SHORTCUTS.md`. **NOTHING IN THE 31 BLOCKS THE RUN.**
+
+**HIS STANDING WARNING, ISSUED 2026-09-29 AND EARNED:** *"Beware that you have a terrible habit of presenting me with work over which I have already presented rulings. Sometimes multiple times."* The overclaim item above is an instance: it was put to him as a blocker when it needed no ruling at all.
+
+**VERDICTS GIVEN 2026-09-29, BOTH APPROVED, NEITHER YET BUILT:**
+- **Astra's branch table for the explorer — "Verdict: Yes do it."** A table showing both detection outcomes with their probabilities and the expected risk across them, from the candidate at `03_earlier_complete_handoff/reviewed_revision/explorer/` in his handoff package. It serves the A-versus-M distinction directly.
+- **The commit-gate cost — "this is fine."** On the gate growing 11 s to 24 s: *"CDSFL is about accuracy of AI output. It is unlikely to be a speed demon ... So 12 seconds here or there is not a significant factor at this time."*
+
+**ONE QUESTION HE ASKED THAT IS ANSWERED BUT NOT ACTIONED:** whether the explorer and docs should state the A-versus-M distinction explicitly. CC1's answer is yes, as a short addition rather than a rewrite. `d` was in force; nothing was implemented.
+
+**PLAIN-ENGLISH DEFINITIONS HE HAD TO ASK FOR, recorded so they are not re-vagued.** He wrote *"too vague"* 3 times in one report:
+- **Seat contrast arm** — one of the 5 run configurations; in a PAID run it compares 2 different companies' models on the same work, and in a SIMULATED run both are the same stand-in program under 2 name tags, so it exercises the runner end to end but can say nothing about real model differences.
+- **Drift detector** — watches whether the immune memory at `bench/state/immune_memory.json` slides steadily in one direction across runs, a slow corruption that would otherwise pass unnoticed.
+- **"Denial is the standing default"** — panel seats may not call Wolfram; that rule has been in force since he set it and no change is proposed.
+
 # CDSFL Agent Operational Plan
 
 > **Runner renamed 2026-09-01.** `reference_runner_v2.py` is now `bench/reference_runner_v3.py`; the file already carried `RUNNER_VERSION = "v3.2"` internally. This plan's 12 line-numbered citations had their line numbers **removed**, not rewritten: carrying a v2 line number onto a v3 filename is what made four citations in the runway look freshly checked while pointing at unrelated code. Search the file for the named symbol instead.
