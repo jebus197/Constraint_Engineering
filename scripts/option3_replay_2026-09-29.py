@@ -236,6 +236,46 @@ def main() -> int:
         print(f"  rho option 3 : {[round(r[5],4) for r in rows]}")
     print()
 
+    # ---- THE OTHER HALF OF THE SAME QUESTION: does the mechanism get a CHANCE? --
+    #
+    # Everything above measures what option 3 does WHEN corroboration exists.
+    # Added 2026-09-29 after the free between-rounds panel, whose fable seat put it
+    # plainly: option 3 fixed the COUNTER, not the SUPPLY. A repair that can only
+    # act on a signal the run rarely produces is a repair whose effect is bounded
+    # by that signal's rate, and quoting the first without the second overstates it.
+    print("=" * 78)
+    print("CORROBORATION SUPPLY — how often the mechanism is given anything to do")
+    print("=" * 78)
+    runs = with_corr = tot_ent = tot_corr = 0
+    for path in paths:
+        try:
+            st = json.loads(Path(path).read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        ents = (st.get("registry") or {}).get("entries")
+        if not isinstance(ents, dict) or not ents:
+            continue
+        runs += 1
+        n = sum(len(e.get("codiscovery") or [])
+                for e in ents.values() if isinstance(e, dict))
+        tot_ent += len(ents)
+        tot_corr += n
+        if n:
+            with_corr += 1
+    report_proportion("RUNS CARRYING ANY CORROBORATION AT ALL", with_corr, runs)
+    print()
+    report_proportion("CANONICALS CARRYING A CORROBORATION RECORD",
+                      tot_corr, tot_ent)
+    print()
+    print("    Option 3 repaired the COUNTER. These 2 rates are the SUPPLY, and")
+    print("    they bound its effect: rho can now fall, and will rarely be given")
+    print("    the chance. That is what panel question 3 addresses -- lower the")
+    print("    candidate threshold, or let a falsifier firing on both a pair's")
+    print("    locations serve as the tool verdict that authorises a merge. Both")
+    print("    panel seats recommended the falsifier route first. Quote the")
+    print("    replay figures above WITH these, never alone.")
+    print()
+
     if affected == 0:
         print("NOTHING WAS REPLAYED. Option 3 is unverified by this script.")
         return 1
