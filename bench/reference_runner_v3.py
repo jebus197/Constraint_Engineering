@@ -153,6 +153,38 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 # Path setup
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+#: Seconds allowed for `bench/vault_keys.sh status` before the exam-run guard
+#: refuses. NOT a round number picked by feel -- it is pinned to the scan's
+#: MEASURED cost by `bench/tests/test_vault_guard_timeout_has_headroom_2026-09-29.py`,
+#: which executes the scan and fails if this constant stops leaving real margin.
+#:
+#: THE DEFECT THIS REPLACES, and it is a constant that drifted out from under the
+#: thing it guards. The cap was set to 120 on 2026-09-01 (ce08914), when `status`
+#: cost about 2.15 s -- 55.8x headroom. On 2026-09-08 (2230744) the stray scan
+#: deliberately became an UNBOUNDED walk of $HOME, because a depth ceiling had
+#: made it blind to the repository itself, which is where the Exp 48 leak came
+#: from. That change is correct and must not be undone. It also took `status`
+#: from 2.15 s to about 10 s, a 4.7x rise -- and NOTHING connected the two files,
+#: so the margin silently fell to 12x and nobody looked again.
+#:
+#: MEASURED 2026-09-29, idle machine, n=7: mean 13.164 s, sd 2.544 s (numpy and
+#: statistics agreeing exactly). Inside a live simulated run, instrumented by a
+#: `sitecustomize` probe that modified nothing in the repository: 30.77 s, about
+#: 2.3x the idle mean, because the launcher copies ~20,800 files at the same
+#: moment. 2 of 3 in-run attempts exceeded 120 s outright and the shakedown
+#: refused to start, twice, with the keys correctly vaulted the whole time.
+#:
+#: WHY THE FIX IS THE CAP AND NOT THE SCAN. The scan's cost is the price of it
+#: not being blind, bought deliberately and recorded in `vault_keys.sh` with its
+#: own measurement. Making it cheaper means making it narrower, which is the
+#: failure it was rewritten to end. The cap is the part that was never revisited.
+#:
+#: This does NOT weaken the control. The guard still requires output beginning
+#: with `VAULTED` and still fails closed; a longer cap only stops it refusing
+#: because it ran out of time to ask the question.
+VAULT_STATUS_TIMEOUT_S = 600
+
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "bench"))
 
@@ -13356,7 +13388,8 @@ def run_experiment(
         if _vault.exists():
             try:
                 _vs = subprocess.run(["bash", str(_vault), "status"],
-                                     capture_output=True, text=True, timeout=120)
+                                     capture_output=True, text=True,
+                                     timeout=VAULT_STATUS_TIMEOUT_S)
                 _out = (_vs.stdout or "") + (_vs.stderr or "")
             except Exception as _e:  # noqa: BLE001
                 raise RuntimeError(

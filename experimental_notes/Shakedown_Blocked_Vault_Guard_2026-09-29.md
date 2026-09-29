@@ -1,3 +1,13 @@
+# The Vault Guard's Timeout Is MARGINAL, Not Impassable — CORRECTED 2026-09-29 15:13
+
+> **CORRECTION, 15:13 BST, and it overturns this note's headline.** When written, this note reported the guard failing **2 of 2** in-run with no in-run success observed, and concluded the shakedown was hard-blocked. **A third attempt PASSED.** A non-invasive `sitecustomize` probe on `PYTHONPATH` — which modifies nothing in the repository — timed the guard's own subprocess inside a live run at **30.77s, rc=0**, against ~11s standalone and a 120s cap. **Arm 1 is now running.**
+>
+> **What this changes.** The guard is not impassable; its cost inside a run is ELEVATED (roughly 3x) and VARIABLE, and on 2 of 3 attempts that variance carried it past 120s. So this is a **flaky guard with a marginal timeout**, not a false refusal that always fires. In-run record: **1 pass of 3**. Standalone: **9 passes of 9**, 11.0 to 12.4s.
+>
+> **What this does NOT change.** The keys are vaulted, the guard still fails closed, and the root cause of the 3x in-run elevation is still unidentified. The recommendation below is now better supported, not worse: a marginal timeout on a fail-closed guard is exactly the case a bounded retry exists for. The ruling is less urgent, because the run can sometimes proceed unaided.
+>
+> **The original text follows unchanged**, because a note that quietly rewrites its own conclusion destroys the record of how the conclusion moved.
+
 # The Shakedown Is Blocked By A False Refusal In The Vault Guard, And The Cause Is Unidentified
 
 **2026-09-29, 14:50 BST.** [BLOCKING] — needs the founder's ruling. Plain-English companion at `~/Desktop/CDSFL_tts/Shakedown_Blocked_Vault_Guard_2026-09-29.txt`.

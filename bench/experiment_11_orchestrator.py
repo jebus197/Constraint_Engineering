@@ -1042,6 +1042,41 @@ except ImportError:  # imported as bench.experiment_11_orchestrator
 #: value, case-insensitively, and on a secret word ANYWHERE between underscores:
 #: the first version anchored at the end of the name and let
 #: AWS_SECRET_ACCESS_KEY through, which its own test caught.
+#: THE PARENT SESSION'S OWN IDENTITY, which a seat must never inherit.
+#:
+#: FOUND 2026-09-29, and it is why a simulated run launched from inside a Claude
+#: Code session behaves differently from the same run launched from a terminal.
+#: `seat_environment` stripped SECRET-named variables only, so 28 of 29 parent
+#: markers reached every seat. The combination is incoherent BY CONSTRUCTION:
+#:
+#:   CLAUDE_CODE_SESSION_ID / CLAUDE_CODE_CHILD_SESSION  "you are a child session"
+#:   CLAUDE_CODE_SDK_HAS_HOST_AUTH_REFRESH=1             "your HOST refreshes your auth"
+#:   CLAUDE_CODE_MESSAGING_SOCKET                        "...over this socket"
+#:   CLAUDE_CODE_MESSAGING_TOKEN                         STRIPPED -- it matches /TOKEN/
+#:   ANTHROPIC_BASE_URL=https://api.anthropic.com        and route to the METERED API
+#:
+#: So each seat is told to obtain auth from a host it has been denied the token to
+#: talk to, while pointed at the metered endpoint. A short dispatch never notices,
+#: because it finishes before any refresh is due -- measured 2026-09-29, 5 concurrent
+#: PINGs succeeded 5 of 5 either way. A 600 s seat does notice, and the simulated
+#: shakedown's seats run about 725 s (observed mean, n=7).
+#:
+#: A SEAT IS AN INDEPENDENT PROCESS AND MUST AUTHENTICATE INDEPENDENTLY, through the
+#: keychain, exactly as the ANTHROPIC_API_KEY rule below already intends. This
+#: extends that rule from the key to the whole route and identity. It also removes
+#: the parent's MCP configuration, which a confined seat has no business inheriting.
+_PARENT_SESSION_NAME = _re.compile(
+    r"^(?:CLAUDECODE$"
+    r"|CLAUDE_CODE_"
+    r"|CLAUDE_AGENT_SDK_"
+    r"|CLAUDE_PID$"
+    r"|CLAUDE_EFFORT$"
+    r"|CLAUDE_PREVIEW_"
+    r"|ANTHROPIC_BASE_URL$"
+    r"|ANTHROPIC_AUTH_"
+    r"|MCP_)"
+)
+
 _SECRET_NAME = _re.compile(
     r"(?:^|_)(?:API_?KEY|ACCESS_?KEY|PRIVATE_?KEY|SECRET(?:_?KEY)?|TOKEN|PASSWORD|PASSWD|CREDENTIALS?)(?:_|$)",
     _re.IGNORECASE)
@@ -1072,7 +1107,8 @@ def seat_environment(base: "dict[str, str] | None" = None,
     """
     env = dict(os.environ if base is None else base)
     out = _wolfram_gated_path(
-        {k: v for k, v in env.items() if k in keep or not _SECRET_NAME.search(k)})
+        {k: v for k, v in env.items()
+         if k in keep or not (_SECRET_NAME.search(k) or _PARENT_SESSION_NAME.match(k))})
     # CDSFL_SEAT, WIRED 2026-09-24. `bench/wolfram_standard.py:420` has always
     # READ this ("seat or CDSFL_SEAT or CDSFL_AGENT or 'unknown'") and NOTHING
     # ever set it, so every row in the Wolfram gate log recorded "unknown" and no
