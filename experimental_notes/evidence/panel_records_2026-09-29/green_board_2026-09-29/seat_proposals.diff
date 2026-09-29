@@ -1,0 +1,2046 @@
+### cc2:attempt-1:bench/logs/green_board_2026-09-29/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/green_board_2026-09-29/dispatch.log	2026-09-29 01:49:45
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo/bench/logs/green_board_2026-09-29/dispatch.log	2026-09-29 01:23:41
+@@ -1,19 +1 @@
+ panel (0 of 2 seats paid): the suite record is NOT green (exit code 1, 8 failed), but this round has 0 paid seats, so there is no spend to protect. Proceeding.
+-[01:24:02] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo
+-[01:24:02] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo
+-[01:24:02] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo
+-[01:24:02]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo
+-[01:24:02] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo
+-[01:24:02]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo
+-[01:45:33]   [claude-cli:fable] 62 tool call(s) this attempt, 62 in total
+-[01:45:33]   [claude-cli:fable] done (1291.0s, 13656 chars)
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 6,160 chars, about 1,540 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo
+-  [fable] ok=True chars=13656 tools=62 1291.0s
+-[01:49:45]   [claude-cli:opus] 106 tool call(s) this attempt, 106 in total
+-[01:49:45]   [claude-cli:opus] done (1542.7s, 20753 chars)
+-  [cc2] ok=True chars=20753 tools=106 1542.7s
+-[01:49:45] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:bench/logs/panel_round11_2026-09-11/FIGURE_DRIFT.md
+--- /dev/null	2026-09-29 01:49:55
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo/bench/logs/panel_round11_2026-09-11/FIGURE_DRIFT.md	2026-09-29 01:31:50
+@@ -0,0 +1,25 @@
++# Figure drift — panel round 11, brief dated 2026-09-11
++
++`BRIEF.md` IN THIS DIRECTORY IS UNEDITED AND MUST STAY THAT WAY. It is the record
++of what 2 seats were actually given on 2026-09-11, and a figure inside it is
++evidence about the dispatch, not a live readout.
++
++One of its 2 declared figures no longer reproduces:
++
++| | |
++|---|---|
++| declared in BRIEF.md, 2026-09-11 | `real-rejection rate : 2/640 = 0.3125%` |
++| printed by the same script, 2026-09-29 | `real-rejection rate : 2/716 = 0.2793%` |
++
++**THE NUMERATOR DID NOT MOVE.** Both figures count the same 2 real rejections —
++`exp48_chemistry_exam_live_20260729T044134Z` findings `C0012` and `C0015`. What
++moved is the denominator: the corpus of distinct archived falsifier sources grew
++from 640 to 716 as runs landed. The brief was correct when it was sent, and the
++rate it quoted is the rate as of its own date.
++
++`scripts/panel_brief_validate.py` re-executes the record below and requires the
++named script to print it TODAY, so this file cannot make a refusal go away by
++assertion. See `FIGURE_SUPERSEDED` in that module for what the mechanism
++deliberately cannot see.
++
++<!-- figure-superseded: 2026-09-29 | archived falsifier rejections that are NOT location artefacts | scripts/archived_falsifier_rejections_2026-09-10.py | real-rejection rate : 2/716 = 0.2793% -->
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-09-24 02:35:31
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo/bench/reference_runner_v3.py	2026-09-29 01:38:28
+@@ -11480,6 +11480,80 @@
+     R_base = sk * R_det + (1.0 - sk) * R_old
+ 
+     # Phase 3: Re-injection (bounded form)
++    nu_eff = 1.0 - (1.0 - nu_b) * (1.0 - (1.0 - sk) * nu_f)
++    R_k = R_base * (1.0 - nu_eff) + nu_eff
++
++    return max(0.0, min(1.0, R_k))
++
++
++def _rk_finite(value: float, *, worst: float) -> float:
++    """Clamp to [0,1]; a non-finite or unparseable input resolves to `worst`.
++
++    The same fail-safe rule `compute_rk` applies inline, extracted so the
++    expectation companion below cannot drift from it. `compute_rk` is NOT edited:
++    it is the gate-bearing path and is left byte-identical, and
++    `test_rk_expectation_companion_2026-09-29.py` executes both functions on the
++    same non-finite inputs and requires them to agree, so the duplication is a
++    CHECKED invariant rather than a second source of truth.
++    """
++    try:
++        v = float(value)
++    except (TypeError, ValueError):
++        return worst
++    return worst if not math.isfinite(v) else max(0.0, min(1.0, v))
++
++
++def compute_rk_expectation(
++    R_old: float, q: float, sk: float,
++    nu_b: float = 0.05, nu_f: float = 0.20,
++) -> float:
++    """The BRANCH-WEIGHTED EXPECTATION of residual risk. REPORTED, NEVER GATED.
++
++    THE TWO FORMS ANSWER DIFFERENT QUESTIONS, and that -- not which formula is
++    "right" -- is the whole of the 2026-09-29 panel item. Derived in
++    `scripts/branch_form_semantics_2026-09-29.py`, checked with SymPy and z3 and
++    cross-checked with Wolfram Language:
++
++      * `compute_rk` phases 1-2 give `A = sigma*B_minus + (1-sigma)*R` where
++        `B_minus = R(1-q)/(1-qR)` is, by Bayes, exactly `P(flaw | NOT detected)`.
++        A is therefore a CONDITIONAL on the negative branch: it answers "the pass
++        reported nothing -- what is left?" At sigma=1 it IS B_minus.
++      * This function gives `M = R*(1 - q*sigma)`, which is the UNCONDITIONAL
++        survival probability `R*[(1-q) + q*(1-sigma)]` -- the pre-pass
++        expectation, averaged over both branches. That is the quantity an
++        explorer needs BEFORE a run, when the branch is not yet known.
++
++    They are quotient and numerator of one fraction: at sigma=1,
++    `A = M / P(not detected)`. At R=1/2, q=4/5, sigma=1, A = 1/6 and M = 1/10.
++
++    WHY THE GATE KEEPS A AND THIS IS ONLY REPORTED.
++    `A - M = sigma*q*R^2*(1-q)/(1-qR) >= 0` on the whole unit cube (z3: the
++    negation is unsat), so M is never above A. Across 386 archived (R, q, sigma)
++    triples every single one moves and all move the same way. Feeding M to a
++    convergence gate calibrated on A would therefore lower reported residual risk
++    everywhere and make every threshold EASIER to pass -- a silent loosening of
++    every gate in the project, which is not a measurement improvement. So the
++    expectation is written alongside `R_new` as `R_new_expectation` and no gate
++    reads it. Whether the gate should ever consume it is a threshold
++    recalibration, with its own committed measurement, and not this change.
++
++    Phase 3 re-injection is applied identically to `compute_rk`, so the 2 numbers
++    are comparable term for term.
++    """
++    R_old = _rk_finite(R_old, worst=1.0)   # unknown risk is maximum risk
++    q = _rk_finite(q, worst=0.0)           # unknown detection detects nothing
++    sk = _rk_finite(sk, worst=0.0)         # unknown efficacy fixes nothing
++    nu_b = _rk_finite(nu_b, worst=1.0)
++    nu_f = _rk_finite(nu_f, worst=1.0)
++    if nu_b + nu_f > 1.0:
++        scale = 1.0 / (nu_b + nu_f)
++        nu_b *= scale
++        nu_f *= scale
++
++    # Phases 1-2, branch-weighted: the marginal survival probability.
++    R_base = R_old * (1.0 - q * sk)
++
++    # Phase 3: re-injection, identical to compute_rk.
+     nu_eff = 1.0 - (1.0 - nu_b) * (1.0 - (1.0 - sk) * nu_f)
+     R_k = R_base * (1.0 - nu_eff) + nu_eff
+ 
+@@ -12667,6 +12741,18 @@
+                     )
+                 entry["sk_result"]["R_old"] = R_old
+                 entry["sk_result"]["R_new"] = R_new
++                # THE PRE-ROUND EXPECTATION, RECORDED BESIDE THE GATED NUMBER
++                # (2026-09-29, panel item 4). `R_new` is a negative-branch
++                # conditional; this is the branch-weighted expectation of the
++                # same update. Nothing gates on it -- see
++                # `compute_rk_expectation` for why introducing it to a gate would
++                # loosen every threshold in the project. q_eff matches the
++                # channel composition above so the 2 numbers are comparable.
++                _q_eff = q * (1.0 - c_ext * (1.0 - _nu_k))
++                entry["sk_result"]["R_new_expectation"] = compute_rk_expectation(
++                    R_old=R_old, q=_q_eff, sk=sk_result.sk,
++                    nu_b=nu_b, nu_f=nu_f,
++                )
+                 # Provenance of R_k(0), written ONLY when memory supplied it,
+                 # so the consumption-off report is byte-identical to before.
+                 if rk0_source == "memory":
+
+### cc2:attempt-1:bench/tests/test_declared_figure_supersession_2026-09-29.py
+--- /dev/null	2026-09-29 01:49:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo/bench/tests/test_declared_figure_supersession_2026-09-29.py	2026-09-29 01:32:39
+@@ -0,0 +1,185 @@
++"""An archived brief's figure drifts when the corpus grows, and the guard must
++neither refuse the record nor stop checking it (panel item 1, 2026-09-29).
++
++WHAT WENT RED AND WHY IT WAS NOT A CODE DEFECT. `bench/logs/panel_round11_
++2026-09-11/BRIEF.md` declares `real-rejection rate : 2/640 = 0.3125%`. The
++producer, `scripts/archived_falsifier_rejections_2026-09-10.py`, now prints
++`2/716 = 0.2793%`. The SAME 2 real rejections; 76 more archived sources under
++them. The brief was correct on 2026-09-11 and
++`test_brief_figure_coverage_2026-09-11.py::test_it_does_not_refuse` went red
++because the artefact pair (brief, growing archive) moved, not because the
++validator broke.
++
++THE 2 OBVIOUS REPAIRS ARE BOTH FORBIDDEN. Editing BRIEF.md falsifies the record
++of what 2 seats were given. Exempting archived briefs deletes the check for every
++brief that has ever been dispatched.
++
++WHAT IS TESTED HERE is the third option: a `FIGURE_DRIFT.md` sidecar beside the
++brief whose superseding value is RE-EXECUTED with the same predicate. Every test
++below is an EXECUTION of `check_declared_figures`, never an assertion about the
++validator's source text. The 5 refusal tests are what stop this from being an
++exemption: each one is a way someone could try to silence the guard, and each is
++still refused.
++"""
++from __future__ import annotations
++
++import importlib.util
++import subprocess
++import sys
++from pathlib import Path
++
++import pytest
++
++ROOT = Path(__file__).resolve().parents[2]
++VALIDATE = ROOT / "scripts" / "panel_brief_validate.py"
++ROUND11 = ROOT / "bench" / "logs" / "panel_round11_2026-09-11"
++
++
++@pytest.fixture(scope="module")
++def mod():
++    spec = importlib.util.spec_from_file_location("pbv_supersede", VALIDATE)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules["pbv_supersede"] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++@pytest.fixture
++def bed(tmp_path):
++    """A miniature repo: 1 script printing 1 figure, 1 dated brief directory."""
++    repo = tmp_path / "repo"
++    (repo / "scripts").mkdir(parents=True)
++    (repo / "scripts" / "producer.py").write_text(
++        "print('rate : 2/716 = 0.2793%')\n")
++    bdir = repo / "bench" / "logs" / "panel_roundZ_2026-01-01"
++    bdir.mkdir(parents=True)
++    brief = bdir / "BRIEF.md"
++    brief.write_text(
++        "<!-- figure: the rate | scripts/producer.py | rate : 2/640 = 0.3125% -->\n")
++    return {"repo": repo, "brief": brief, "dir": bdir,
++            "text": brief.read_text()}
++
++
++def _sidecar(bed, body):
++    (bed["dir"] / "FIGURE_DRIFT.md").write_text(body)
++
++
++class TestTheGuardStillRefuses:
++    """5 ways to try to silence it. All 5 still refuse."""
++
++    def test_with_no_sidecar_a_drifted_figure_is_refused(self, mod, bed):
++        problems = mod.check_declared_figures(
++            bed["text"], repo=bed["repo"], brief_path=bed["brief"])
++        assert len(problems) == 1, problems
++        assert "does not print it" in problems[0], problems[0]
++
++    def test_a_caller_that_passes_no_brief_path_keeps_the_old_strictness(
++            self, mod, bed):
++        """The parameter is opt-in, so no existing caller was loosened."""
++        _sidecar(bed, "<!-- figure-superseded: 2026-09-29 | the rate | "
++                      "scripts/producer.py | rate : 2/716 = 0.2793% -->\n")
++        problems = mod.check_declared_figures(bed["text"], repo=bed["repo"])
++        assert len(problems) == 1, problems
++        assert "does not print it" in problems[0]
++
++    def test_a_supersession_the_script_does_not_print_is_refused(self, mod, bed):
++        """THE TEETH. A sidecar cannot assert a number into existence."""
++        _sidecar(bed, "<!-- figure-superseded: 2026-09-29 | the rate | "
++                      "scripts/producer.py | rate : 2/999 = 0.2002% -->\n")
++        problems = mod.check_declared_figures(
++            bed["text"], repo=bed["repo"], brief_path=bed["brief"])
++        assert len(problems) == 1, problems
++        assert "prints NEITHER" in problems[0], problems[0]
++
++    @pytest.mark.parametrize("when", ["2026-01-01", "2025-12-31"])
++    def test_a_supersession_that_does_not_postdate_the_brief_is_refused(
++            self, mod, bed, when):
++        """A brief being validated the day it is written -- the guard's real
++        subject -- has no reconciliation available."""
++        _sidecar(bed, f"<!-- figure-superseded: {when} | the rate | "
++                      f"scripts/producer.py | rate : 2/716 = 0.2793% -->\n")
++        problems = mod.check_declared_figures(
++            bed["text"], repo=bed["repo"], brief_path=bed["brief"])
++        assert len(problems) == 1, problems
++        assert "does not postdate the brief" in problems[0], problems[0]
++
++    def test_a_malformed_record_refuses_instead_of_vanishing(self, mod, bed):
++        """The FIGURE_OPENER lesson, applied to the new grammar."""
++        _sidecar(bed, "<!-- figure-superseded: 2026-09-29 | the rate -->\n")
++        problems = mod.check_declared_figures(
++            bed["text"], repo=bed["repo"], brief_path=bed["brief"])
++        assert any("do not parse" in p for p in problems), problems
++
++    def test_two_records_for_one_figure_refuse(self, mod, bed):
++        _sidecar(bed, "<!-- figure-superseded: 2026-09-29 | the rate | "
++                      "scripts/producer.py | rate : 2/716 = 0.2793% -->\n"
++                      "<!-- figure-superseded: 2026-09-30 | the rate | "
++                      "scripts/producer.py | rate : 2/716 = 0.2793% -->\n")
++        problems = mod.check_declared_figures(
++            bed["text"], repo=bed["repo"], brief_path=bed["brief"])
++        assert any("2 supersession records" in p for p in problems), problems
++
++    def test_an_unspecific_supersession_is_refused(self, mod, bed):
++        """The 3-significant-character rule reaches the new value too."""
++        (bed["repo"] / "scripts" / "producer.py").write_text("print('pass 2:')\n")
++        _sidecar(bed, "<!-- figure-superseded: 2026-09-29 | the rate | "
++                      "scripts/producer.py | 2 -->\n")
++        problems = mod.check_declared_figures(
++            bed["text"], repo=bed["repo"], brief_path=bed["brief"])
++        assert any("fewer than 3 significant characters" in p for p in problems), \
++            problems
++
++
++class TestTheGuardReconciles:
++    def test_a_re_executed_supersession_clears_the_refusal_and_is_reported(
++            self, mod, bed):
++        _sidecar(bed, "<!-- figure-superseded: 2026-09-29 | the rate | "
++                      "scripts/producer.py | rate : 2/716 = 0.2793% -->\n")
++        notes: list[str] = []
++        problems = mod.check_declared_figures(
++            bed["text"], repo=bed["repo"], brief_path=bed["brief"], notes=notes)
++        assert problems == [], problems
++        assert len(notes) == 1, notes
++        assert "2/640" in notes[0] and "2/716" in notes[0], notes[0]
++
++    def test_a_figure_that_still_reproduces_needs_no_sidecar(self, mod, bed):
++        text = ("<!-- figure: the rate | scripts/producer.py | "
++                "rate : 2/716 = 0.2793% -->\n")
++        notes: list[str] = []
++        assert mod.check_declared_figures(
++            text, repo=bed["repo"], brief_path=bed["brief"], notes=notes) == []
++        assert notes == [], notes
++
++
++class TestItIsWiredToTheRealBrief:
++    """Executed against the repository's own round-11 brief, end to end."""
++
++    def test_the_round_eleven_figure_really_has_drifted(self, mod):
++        """ANTI-VACUITY. Without the sidecar the declaration still fails, so the
++        mechanism below is load-bearing rather than decorative."""
++        brief = ROUND11 / "BRIEF.md"
++        if not brief.is_file():
++            pytest.skip("round 11's brief is not in this checkout")
++        problems = mod.check_declared_figures(brief.read_text())
++        assert len(problems) == 1, problems
++        assert "2/640 = 0.3125%" in problems[0], problems[0]
++
++    def test_the_sidecar_exists_and_the_brief_is_not_edited(self):
++        brief = ROUND11 / "BRIEF.md"
++        if not brief.is_file():
++            pytest.skip("round 11's brief is not in this checkout")
++        assert (ROUND11 / "FIGURE_DRIFT.md").is_file()
++        assert "2/640 = 0.3125%" in brief.read_text(), (
++            "the archived brief was edited; it is the record of what the seats "
++            "were given and the drift belongs in the sidecar")
++
++    def test_the_validator_exits_zero_and_names_both_numbers(self):
++        brief = ROUND11 / "BRIEF.md"
++        if not brief.is_file():
++            pytest.skip("round 11's brief is not in this checkout")
++        r = subprocess.run([sys.executable, str(VALIDATE), str(brief)],
++                           cwd=ROOT, capture_output=True, text=True, timeout=900)
++        out = r.stdout + r.stderr
++        assert r.returncode == 0, out[-800:]
++        assert "FIGURE DRIFT" in out, out[-800:]
++        assert "2/640 = 0.3125%" in out and "2/716 = 0.2793%" in out, out[-800:]
+
+### cc2:attempt-1:bench/tests/test_latent_tagger_evaluation.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_latent_tagger_evaluation.py	2026-09-08 10:00:25
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo/bench/tests/test_latent_tagger_evaluation.py	2026-09-29 01:36:47
+@@ -145,6 +145,31 @@
+ # ── The archive: what enabling the pair would actually have done ────────────
+ 
+ 
++PINNED_2026_09_08 = [
++    "exp33_endocrine_20260405T110345Z/C0010",
++    "exp35_pe_20260406T152126Z/C0017",
++    "exp40_gate_20260514T020550Z/C0295",
++    "exp40_slice_collision_20260518T130744Z/C0002",
++    "exp46_stage6_locationkey_live_20260728T103151Z/C0002",
++    # one run, two directories -- 3 findings, listed twice. See the docstring.
++    "sim45_memory_20260908T033008Z/C0024",
++    "sim45_memory_20260908T033008Z/C0026",
++    "sim45_memory_20260908T033008Z/C0040",
++    "sim45_memory_20260908T033012Z/C0024",
++    "sim45_memory_20260908T033012Z/C0026",
++    "sim45_memory_20260908T033012Z/C0040",
++]
++
++#: Re-measured 2026-09-29: the 11 above, none lost, plus 5 from the 4
++#: commissioning runs of 2026-09-21/22. See the docstring below.
++PINNED_PROSE_TAGGED = sorted(PINNED_2026_09_08 + [
++    "commissioning_arm1_panel_20260921T215405Z/C0038",
++    "commissioning_arm1_panel_20260921T215405Z/C0054",
++    "commissioning_arm1_panel_20260921T215405Z/C0060",
++    "commissioning_arm4_prose_20260922T053349Z/C0003",
++    "commissioning_arm4_prose_20260922T053349Z/C0016",
++])
++
+ @_needs_archive
+ class TestArchiveExposure:
+     """Measured 2026-08-12 over every archived run, not a six-run slice."""
+@@ -216,7 +241,34 @@
+         growth and not the loosened marker set the pin exists to catch. Verified in
+         that order -- the tripwire is only safe to move once the thing it watches is
+         shown not to have moved.
++
++        UPDATED 2026-09-29: 11 -> 16, and the order of verification is now EXECUTED
++        rather than recorded in prose. The 5 new entries are
++
++            commissioning_arm1_panel_20260921T215405Z/{C0038,C0054,C0060}
++            commissioning_arm4_prose_20260922T053349Z/{C0003,C0016}
++
++        from 4 commissioning runs that landed 2026-09-21/22, 14 days after the pin was
++        last re-measured. NOTHING WAS LOST: all 11 previously pinned entries are still
++        tagged, which is the mechanical form of "the marker set has not been loosened"
++        -- a loosened marker set ADDS tags, a broken one DROPS them, and only the
++        second is a regression this pin can detect. That no-loss invariant is now its
++        own assertion (`test_no_previously_tagged_entry_stopped_being_tagged`) so a
++        future archive growth cannot hide a dropped tag inside an equality diff, which
++        is how this assertion reads today: the 3 names in the reported failure included
++        `exp33_endocrine_20260405`, which never moved and appeared only because list
++        equality reports the first positional difference.
++
++        Each new tag has an auditable marker hit, all `latent_source="prose"`:
++        C0038 `explicit_latent` ("the worst shape a latent defect can take"); C0054,
++        C0060, C0003, C0016 `no_caller` ("no production consumer exists", "no file, no
++        command, and no invocation"). All 5 remain demotion-ineligible --
++        `test_nothing_in_the_archive_is_demotion_eligible` is unaffected and green.
+ 
++        THE EQUALITY IS KEPT ON PURPOSE. A containment assertion would survive every
++        future growth and would also survive a marker set loosened until it tags half
++        the archive, which is the thing this pin exists to catch.
++
+         THE 6 NEW ENTRIES ARE 3 FINDINGS COUNTED TWICE. `sim45_memory_20260908T033008Z`
+         and `...033012Z` are ONE run: the runner writes a second directory 4 seconds
+         after the first, the earlier holding `sim45_memory_report.json` and the later
+@@ -234,22 +286,30 @@
+             for cid, e in data["registry"]["entries"].items()
+             if tag_entry(dict(e))
+         )
+-        assert tagged == [
+-            "exp33_endocrine_20260405T110345Z/C0010",
+-            "exp35_pe_20260406T152126Z/C0017",
+-            "exp40_gate_20260514T020550Z/C0295",
+-            "exp40_slice_collision_20260518T130744Z/C0002",
+-            "exp46_stage6_locationkey_live_20260728T103151Z/C0002",
+-            # one run, two directories -- 3 findings, listed twice. See the docstring.
+-            "sim45_memory_20260908T033008Z/C0024",
+-            "sim45_memory_20260908T033008Z/C0026",
+-            "sim45_memory_20260908T033008Z/C0040",
+-            "sim45_memory_20260908T033012Z/C0024",
+-            "sim45_memory_20260908T033012Z/C0026",
+-            "sim45_memory_20260908T033012Z/C0040",
+-        ], tagged
++        assert tagged == PINNED_PROSE_TAGGED, tagged
+ 
++    def test_no_previously_tagged_entry_stopped_being_tagged(self):
++        """THE REGRESSION HALF OF THE PIN, immune to archive growth.
+ 
++        The equality above moves whenever a run lands. This does not: every entry
++        the tagger has EVER been measured to tag must still be tagged. A dropped
++        tag is a marker-set regression; an added tag is either growth or a
++        loosening, and the equality above is what catches the loosening. Split so
++        that the 2 failures are distinguishable at a glance instead of arriving as
++        one positional diff.
++        """
++        tagged = {
++            f"{name}/{cid}"
++            for name, data in _RUNS
++            for cid, e in data["registry"]["entries"].items()
++            if tag_entry(dict(e))
++        }
++        lost = [x for x in PINNED_2026_09_08 if x not in tagged]
++        assert lost == [], (
++            f"the tagger stopped tagging {lost}; a marker that used to fire and "
++            f"no longer does is a regression, not archive growth")
++
++
+ # ── The never-demote interlock ──────────────────────────────────────────────
+ 
+ 
+
+### cc2:attempt-1:bench/tests/test_rk_expectation_companion_2026-09-29.py
+--- /dev/null	2026-09-29 01:49:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo/bench/tests/test_rk_expectation_companion_2026-09-29.py	2026-09-29 01:47:49
+@@ -0,0 +1,198 @@
++"""Both use cases, and the gate keeps the conservative one (item 4, 2026-09-29).
++
++THE QUESTION. The shipped recursion tracks the NON-DETECTION branch:
++`A = sigma*B_minus + (1-sigma)*R` with `B_minus = R(1-q)/(1-qR)`. Astra proposed
++the branch-weighted expectation `M = R(1-q*sigma)`. The founder's answer is that
++BOTH matter -- measurement of an expended run, and prediction before one.
++
++THE ANSWER, DERIVED IN `scripts/branch_form_semantics_2026-09-29.py` (SymPy + z3,
++cross-checked with Wolfram Language): they are not rival estimators of one
++quantity. `B_minus` IS `P(flaw | not detected)` by Bayes, so A is a CONDITIONAL;
++`M` is the unconditional survival probability, so M is the pre-pass EXPECTATION.
++At sigma=1, `A = M / P(not detected)`.
++
++WHY THE GATE IS NOT CHANGED. `A - M = sigma*q*R^2*(1-q)/(1-qR) >= 0` everywhere on
++the unit cube, so swapping M in lowers reported residual risk on every archived
++triple and makes every convergence threshold easier to pass. A measurement change
++that can only loosen gates is not additive. So M is written beside `R_new` as
++`R_new_expectation` and no gate reads it.
++
++Every test below EXECUTES the runner. The wiring test drives the real evaluator,
++because a keyword typo would grep green.
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++import pytest
++
++BENCH = Path(__file__).resolve().parents[1]
++if str(BENCH) not in sys.path:
++    sys.path.insert(0, str(BENCH))
++
++import reference_runner_v3 as R  # noqa: E402
++
++TARGET = "bench/_sk_efficacy_probe_target.py"
++SOURCE = 'def divide(a, b):\n    """BUG: no zero check."""\n    return a / b\n'
++GOOD_FIX = (
++    "<<<< SEARCH\n"
++    'def divide(a, b):\n    """BUG: no zero check."""\n    return a / b\n'
++    "====\n"
++    'def divide(a, b):\n    """Guarded."""\n    if b == 0:\n'
++    '        raise ZeroDivisionError("b must not be 0")\n    return a / b\n'
++    ">>>> REPLACE\n"
++)
++
++GRID = [i / 8 for i in range(1, 8)]
++
++
++class TestItIsTheExpectationForm:
++    def test_it_is_the_marginal_survival_probability(self):
++        """M = R[(1-q) + q(1-sigma)], with re-injection off."""
++        for r0 in GRID:
++            for qq in GRID:
++                for ss in GRID:
++                    want = r0 * ((1 - qq) + qq * (1 - ss))
++                    got = R.compute_rk_expectation(r0, qq, ss,
++                                                   nu_b=0.0, nu_f=0.0)
++                    assert got == pytest.approx(want, abs=1e-12), (r0, qq, ss)
++
++    def test_the_brief_s_worked_pair(self):
++        assert R.compute_rk(0.5, 0.8, 1.0, nu_b=0.0, nu_f=0.0) == \
++            pytest.approx(1 / 6, abs=1e-12)
++        assert R.compute_rk_expectation(0.5, 0.8, 1.0, nu_b=0.0, nu_f=0.0) == \
++            pytest.approx(1 / 10, abs=1e-12)
++
++    def test_the_expectation_is_never_above_the_shipped_form(self):
++        """The direction that decides the gate question. Strict wherever every
++        factor of A - M = sigma*q*R^2*(1-q)/(1-qR) is positive."""
++        strict = 0
++        for r0 in GRID:
++            for qq in GRID:
++                for ss in GRID:
++                    a = R.compute_rk(r0, qq, ss, nu_b=0.0, nu_f=0.0)
++                    m = R.compute_rk_expectation(r0, qq, ss, nu_b=0.0, nu_f=0.0)
++                    assert m <= a + 1e-15, (r0, qq, ss, a, m)
++                    if m < a - 1e-15:
++                        strict += 1
++        assert strict == len(GRID) ** 3, strict
++
++    def test_re_injection_is_applied_identically(self):
++        """At sigma=0 and q=0 the 2 forms must coincide exactly, re-injection and
++        all -- the only way to show phase 3 was not re-derived differently."""
++        for nb, nf in ((0.05, 0.20), (0.0, 0.0), (0.6, 0.7)):
++            for r0 in GRID:
++                assert R.compute_rk(r0, 0.0, 0.5, nu_b=nb, nu_f=nf) == \
++                    pytest.approx(R.compute_rk_expectation(
++                        r0, 0.0, 0.5, nu_b=nb, nu_f=nf), abs=1e-15)
++                assert R.compute_rk(r0, 0.7, 0.0, nu_b=nb, nu_f=nf) == \
++                    pytest.approx(R.compute_rk_expectation(
++                        r0, 0.7, 0.0, nu_b=nb, nu_f=nf), abs=1e-15)
++
++    @pytest.mark.parametrize("bad", [float("nan"), float("inf"),
++                                     float("-inf"), "not a number", None])
++    def test_non_finite_inputs_resolve_to_the_conservative_end(self, bad):
++        """`_rk_finite` duplicates `compute_rk`'s inline clamp, so the clamp is
++        EXECUTED rather than assumed. Each slot must resolve to its documented
++        worst case -- unknown risk to MAXIMUM, unknown detection and efficacy to
++        ZERO -- which can only make the number stricter."""
++        worst = [1.0, 0.0, 0.0, 1.0, 1.0]
++        finite = [0.5, 0.5, 0.5, 0.05, 0.20]
++        for slot in range(5):
++            bad_args = list(finite); bad_args[slot] = bad
++            worst_args = list(finite); worst_args[slot] = worst[slot]
++            got = R.compute_rk_expectation(*bad_args)
++            assert got == pytest.approx(
++                R.compute_rk_expectation(*worst_args), abs=1e-12), (slot, bad)
++            assert got >= R.compute_rk_expectation(*finite) - 1e-12, (slot, bad)
++
++    @pytest.mark.parametrize("bad", [float("nan"), float("inf"), None])
++    def test_a_corrupt_q_or_efficacy_collapses_both_forms_together(self, bad):
++        """Where the 2 forms MUST coincide: at q=0 or sigma=0 no detection branch
++        exists, so conditional and expectation are the same number. A clamp that
++        drifted between the 2 functions would break this."""
++        for slot in (1, 2):
++            args = [0.5, 0.5, 0.5, 0.05, 0.20]
++            args[slot] = bad
++            assert R.compute_rk(*args) == pytest.approx(
++                R.compute_rk_expectation(*args), abs=1e-12), (slot, bad)
++
++
++class TestItIsWired:
++    def test_the_evaluator_records_the_expectation_beside_the_gated_number(self):
++        """THE WIRING, CALLED not grepped. An addition nothing reaches is not
++        additive."""
++        registry = R.FindingRegistry()
++        registry.entries["C-EXP"] = {
++            "status": "OPEN",
++            "proposed_fix": GOOD_FIX,
++            "severity": "critical",
++            "model": "SIM-A",
++            "round": 0,
++        }
++        baseline = R._capture_baseline(SOURCE, source_path=TARGET)
++        R._evaluate_sk_for_findings(
++            registry, SOURCE, TARGET, baseline, round_idx=0, test_cmd=None,
++        )
++        res = registry.entries["C-EXP"]["sk_result"]
++        assert "R_new" in res, res
++        assert "R_new_expectation" in res, (
++            "the expectation is not reaching the report; the call site is not "
++            f"wired: {sorted(res)}")
++        assert res["R_new_expectation"] <= res["R_new"] + 1e-12, res
++
++    def test_both_fields_come_from_the_2_forms_at_the_SAME_q(self):
++        """The gated number is still the CONDITIONAL form, and the companion is
++        the expectation of the same update.
++
++        `q` is not in the record, so it is recovered by bisection (compute_rk is
++        monotone decreasing in q) from `R_new`, and the recovered value must then
++        reproduce `R_new_expectation` through the OTHER function. Nothing here is
++        read from source text, and the 2 fields cannot both satisfy this if either
++        formula moved.
++        """
++        registry = R.FindingRegistry()
++        registry.entries["C-EXP"] = {
++            "status": "OPEN",
++            "proposed_fix": GOOD_FIX,
++            "severity": "critical",
++            "model": "SIM-A",
++            "round": 0,
++        }
++        baseline = R._capture_baseline(SOURCE, source_path=TARGET)
++        R._evaluate_sk_for_findings(
++            registry, SOURCE, TARGET, baseline, round_idx=0, test_cmd=None,
++        )
++        res = registry.entries["C-EXP"]["sk_result"]
++        R_old, sk = res["R_old"], res["sk"]
++        lo, hi = 0.0, 1.0
++        for _ in range(200):
++            mid = (lo + hi) / 2
++            if R.compute_rk(R_old, mid, sk) > res["R_new"]:
++                lo = mid
++            else:
++                hi = mid
++        q = (lo + hi) / 2
++        assert R.compute_rk(R_old, q, sk) == pytest.approx(res["R_new"], abs=1e-9), q
++        assert R.compute_rk_expectation(R_old, q, sk) == pytest.approx(
++            res["R_new_expectation"], abs=1e-9), (q, res)
++        assert res["R_new_expectation"] < res["R_new"], (
++            "the 2 fields are equal, so either q or sigma collapsed and the "
++            "companion is not exercising the branch weighting")
++
++
++class TestTheDerivationIsReachedBySuite:
++    def test_the_stored_derivation_runs_clean(self):
++        """The falsifier behind this item is EXECUTED by the suite, not archived
++        beside it. An addition nothing reaches is not additive, and that applies
++        to a stored derivation as much as to a flag."""
++        import subprocess
++        script = BENCH.parent / "scripts" / "branch_form_semantics_2026-09-29.py"
++        assert script.is_file(), script
++        r = subprocess.run([sys.executable, str(script)], cwd=BENCH.parent,
++                           capture_output=True, text=True, timeout=600)
++        out = r.stdout + r.stderr
++        assert r.returncode == 0, out[-1500:]
++        assert "FALSIFIER-CLEAN" in out, out[-1500:]
++        assert "A >= M proved" in out, out[-1500:]
+
+### cc2:attempt-1:bench/tests/test_simulated_runs_are_excluded_per_run_2026-09-29.py
+--- /dev/null	2026-09-29 01:49:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo/bench/tests/test_simulated_runs_are_excluded_per_run_2026-09-29.py	2026-09-29 01:46:54
+@@ -0,0 +1,178 @@
++"""A simulated run's STATE DUMP is not field evidence either (item 2, 2026-09-29).
++
++WHAT WENT RED. `test_latent_control_audit_2026-09-01.py::TestAgeControl::
++test_the_quarantine_rule_holds_for_every_row` reported
++
++    critical_boundary_census: verdict SILENT_BUT_RAN but first_committed=
++    1788252544 against newest archive mtime 1787788906
++
++The rule is right, the archive's dates are real, and the verdict was wrong.
++`scripts/latent_control_audit.py::_is_simulated` reads 3 provenance keys plus the
++directory name, and the runner writes those keys into the run REPORT only. A
++simulated run also drops `runner_state.json`, which carries `runner_version` --
++so it was admitted as a report -- carries none of the provenance keys, and lives
++in a directory named `commissioning_arm*`, not `sim*`. 4 such files were admitted
++as field sightings, they were the NEWEST admitted files, and so they set the age
++baseline: 2026-08-27 became 2026-09-22, 26.3 days later, which silently disables
++the TOO_NEW quarantine for every key committed in that window.
++
++NO ROW WAS EXCLUDED TO MAKE THIS GREEN. The fix classifies simulation per RUN
++DIRECTORY, and `test_the_fix_loses_no_sighting` below executes the old admission
++rule alongside the new one and asserts the set of control keys witnessed is
++IDENTICAL. The only thing the 4 files ever contributed was the baseline.
++
++Every test here EXECUTES `_archive`. None reads the module's source text.
++"""
++from __future__ import annotations
++
++import importlib.util
++import json
++import sys
++from pathlib import Path
++
++import pytest
++
++ROOT = Path(__file__).resolve().parents[2]
++AUDIT = ROOT / "scripts" / "latent_control_audit.py"
++
++
++@pytest.fixture(scope="module")
++def lca():
++    spec = importlib.util.spec_from_file_location("lca_perrun", AUDIT)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules["lca_perrun"] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++@pytest.fixture(scope="module")
++def parsed(lca):
++    out = []
++    for fp in lca.LOGS.glob("**/*.json"):
++        try:
++            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++        except Exception:                                 # noqa: BLE001
++            continue
++        if isinstance(d, dict):
++            out.append((fp, d))
++    return out
++
++
++def _is_report(d):
++    return "registry" in d or "converged_at" in d or "runner_version" in d
++
++
++class TestTheLeakClassExistsAndIsClosed:
++    def test_the_leak_class_is_not_empty(self, lca, parsed):
++        """ANTI-VACUITY. If no file were classified real-by-itself inside a
++        simulated run, the invariant below would hold on an empty set and prove
++        nothing."""
++        sim_dirs = lca._simulated_run_dirs()
++        assert sim_dirs, "no simulated run in the archive at all"
++        leak = [fp for fp, d in parsed
++                if _is_report(d) and not lca._is_simulated(d, fp)
++                and fp.parent in sim_dirs]
++        assert leak, ("no report-like file is admitted by the per-file rule "
++                      "inside a simulated run; this guard is vacuous here")
++        assert any(fp.name == "runner_state.json" for fp in leak), \
++            [str(f) for f in leak]
++
++    def test_no_admitted_report_comes_from_a_simulated_run(self, lca, parsed):
++        """THE INVARIANT, and it is corpus-size independent."""
++        sim_dirs = lca._simulated_run_dirs()
++        reports, newest = lca._archive()
++        admitted = [fp for fp, d in parsed
++                    if _is_report(d) and not lca._is_simulated(d, fp)
++                    and fp.parent not in sim_dirs]
++        assert len(reports) == len(admitted), (len(reports), len(admitted))
++        assert newest == max(int(fp.stat().st_mtime) for fp in admitted)
++        assert all(fp.parent not in sim_dirs for fp in admitted)
++
++    def test_the_baseline_really_moved_earlier(self, lca, parsed):
++        """The consequence, measured. A baseline that is too NEW makes the age
++        control unfalsifiable, so the corrected baseline must be older."""
++        sim_dirs = lca._simulated_run_dirs()
++        per_file = max(int(fp.stat().st_mtime) for fp, d in parsed
++                       if _is_report(d) and not lca._is_simulated(d, fp))
++        _, per_run = lca._archive()
++        assert per_run <= per_file
++        assert per_run < per_file, (
++            "the leak class is non-empty but the baseline did not move; either "
++            "the leaked files are no longer the newest, or the fix is inert")
++
++    def test_the_fix_loses_no_sighting(self, lca, parsed):
++        """THE ADDITIVE CHECK, EXECUTED, using the audit's OWN presence rule.
++
++        Excluding the 4 state dumps must not take a single control key from
++        seen>0 to seen==0. A key witnessed only by a rehearsal was never
++        witnessed, but if one existed this assertion would say so out loud
++        instead of losing it silently.
++        """
++        sim_dirs = lca._simulated_run_dirs()
++        writes = lca._report_key_writes(lca.RUNNER.read_text(encoding="utf-8"))
++        leaked = [d for fp, d in parsed
++                  if _is_report(d) and not lca._is_simulated(d, fp)
++                  and fp.parent in sim_dirs]
++        kept = [d for fp, d in parsed
++                if _is_report(d) and not lca._is_simulated(d, fp)
++                and fp.parent not in sim_dirs]
++        assert leaked, "the fix excluded nothing; it is inert"
++
++        def _present(key, obj):
++            if isinstance(obj, dict):
++                return key in obj or any(_present(key, v) for v in obj.values())
++            if isinstance(obj, list):
++                return any(_present(key, v) for v in obj)
++            return False
++
++        in_leaked = {k for k in writes if any(_present(k, d) for d in leaked)}
++        assert in_leaked, "the leaked docs carry no report key at all"
++        lost = {k for k in in_leaked if not any(_present(k, d) for d in kept)}
++        assert lost == set(), (
++            f"excluding the rehearsal state dumps would remove the ONLY "
++            f"sighting of {sorted(lost)}. That is evidence loss, not a fix")
++
++
++class TestTheQuarantineConsequence:
++    def test_a_key_committed_after_the_corrected_baseline_is_too_new(self, lca):
++        """The row from the failure report, with the baseline PINNED rather than
++        taken from live state -- so this asserts the RULE, not the archive.
++
++        1788252544 is `critical_boundary_census`'s first commit (2026-09-01);
++        the corrected baseline is 2026-08-27. A control cannot have been
++        witnessed by an archive written before it existed.
++        """
++        _, newest = lca._archive()
++        first_committed = 1788252544           # 2026-09-01 08:49:04 UTC
++        assert first_committed > newest, (first_committed, newest)
++
++    def test_the_reported_verdict_flips_under_the_corrected_baseline(self, lca):
++        """THE FAILURE REPORT, REPRODUCED AND THEN RESOLVED, in one test.
++
++        This checkout has no `.git`, so `_key_first_committed` returns None for
++        every key and the quarantine rule holds VACUOUSLY here -- which is why
++        the reported red does not reproduce in a panel sandbox. The commit date
++        is therefore injected, and the audit run twice:
++
++          * with the LEAKED baseline (1790060648, 2026-09-22, set by
++            commissioning_arm*/runner_state.json) the verdict is SILENT_BUT_RAN
++            -- the reported failure, exactly;
++          * with the corrected baseline the verdict is TOO_NEW, which is what the
++            rule at test_latent_control_audit_2026-09-01.py:123-130 demands.
++        """
++        first = 1788252544                     # 2026-09-01 08:49:04 UTC
++        real = lca._key_first_committed
++        lca._key_first_committed = (
++            lambda k: first if k == "critical_boundary_census" else real(k))
++        try:
++            fixed = lca.audit(quiet=True)
++            leaked = lca.audit(quiet=True, newest_override=1790060648)
++        finally:
++            lca._key_first_committed = real
++        row = [r for r in fixed["rows"]
++               if r["key"] == "critical_boundary_census"][0]
++        was = [r for r in leaked["rows"]
++               if r["key"] == "critical_boundary_census"][0]
++        assert fixed["baseline_mtime"] < 1790060648, fixed["baseline_mtime"]
++        assert was["verdict"] == "SILENT_BUT_RAN", was
++        assert row["verdict"] == "TOO_NEW", row
+
+### cc2:attempt-1:scripts/branch_form_semantics_2026-09-29.py
+--- /dev/null	2026-09-29 01:49:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo/scripts/branch_form_semantics_2026-09-29.py	2026-09-29 01:30:07
+@@ -0,0 +1,165 @@
++#!/usr/bin/env python3
++"""What the 2 branch forms MEAN, derived rather than asserted (item 4, 2026-09-29).
++
++The shipped runner (`bench/reference_runner_v3.py::compute_rk`, phases 1-2) uses
++
++    A(R) = sigma * B_minus + (1 - sigma) * R,    B_minus = R(1-q)/(1-qR)
++
++Astra proposes the branch-weighted expectation
++
++    M(R) = R * (1 - q*sigma)
++
++The panel brief treats this as a choice between two candidate formulas. It is
++not a choice between rival estimators of one quantity: the two are answers to
++DIFFERENT questions, and this script derives which question each answers, from
++the probability model alone.
++
++MODEL. One latent flaw is present with prior probability R. A pass detects it
++with probability q (no false positives: an absent flaw is never "detected").
++When detected, the repair removes it with probability sigma.
++
++    P(flaw & detected)     = R*q
++    P(flaw & not detected) = R*(1-q)
++    P(not detected)        = R*(1-q) + (1-R) = 1 - q*R
++
++DERIVED BELOW, not asserted:
++
++  1. M(R) is the UNCONDITIONAL (marginal) survival probability -- the pre-pass
++     expectation, averaged over both branches:
++         P(flaw survives) = R*[(1-q) + q*(1-sigma)] = R*(1-q*sigma) = M(R).
++
++  2. B_minus is the POSTERIOR GIVEN THE NEGATIVE BRANCH, by Bayes:
++         P(flaw | not detected) = R(1-q)/(1-qR) = B_minus.
++
++  3. A(R) is a sigma-mixture of that negative-branch posterior with the prior.
++     At sigma=1 it IS B_minus, so A is a CONDITIONAL quantity: it answers
++     "the pass reported nothing -- what is left?"
++
++  4. A - M = sigma*q*R^2*(1-q)/(1-qR) >= 0 on [0,1]^3, so the shipped form is
++     never below the expectation. Switching the runner from A to M can only
++     LOWER reported residual risk, i.e. only ever make a convergence gate
++     EASIER to pass. That asymmetry, not the algebra, is the decision.
++
++  5. The identity that pins the interpretation: at sigma=1,
++         A = M / P(not detected).
++     A is the joint divided by the branch probability -- a conditional. M is
++     the joint. Neither is "more accurate" than the other; they are quotient
++     and numerator of the same fraction.
++
++Every claim above is checked with SymPy (primary), and claim 4's closed form was
++independently confirmed with Wolfram Language (local Wolfram Engine, via
++wolframscript) during the 2026-09-29 panel round. This STORED falsifier does not
++call Wolfram, per the brief's rule.
++
++Exit 0 and print FALSIFIER-CLEAN when every derivation holds; AssertionError
++otherwise.
++"""
++from __future__ import annotations
++
++import importlib.util
++import sys
++from fractions import Fraction
++from pathlib import Path
++
++import sympy as sp
++
++REPO = Path(__file__).resolve().parents[1]
++
++
++def main() -> int:
++    R, q, s = sp.symbols("R q sigma", nonnegative=True)
++
++    B_minus = R * (1 - q) / (1 - q * R)
++    A = s * B_minus + (1 - s) * R
++    M = R * (1 - q * s)
++
++    # --- 1. M is the marginal survival probability -------------------------
++    marginal = R * ((1 - q) + q * (1 - s))
++    assert sp.simplify(marginal - M) == 0, sp.simplify(marginal - M)
++    print("1. M(R) = R[(1-q) + q(1-sigma)] = R(1-q*sigma)      -- marginal, VERIFIED")
++
++    # --- 2. B_minus is the Bayes posterior on the negative branch ----------
++    joint_not_detected = R * (1 - q)
++    p_not_detected = R * (1 - q) + (1 - R)
++    bayes = joint_not_detected / p_not_detected
++    assert sp.simplify(bayes - B_minus) == 0, sp.simplify(bayes - B_minus)
++    print("2. P(flaw | not detected) = R(1-q)/(1-qR) = B_minus -- Bayes,    VERIFIED")
++
++    # --- 3. A is conditional: at sigma=1 it is exactly B_minus -------------
++    assert sp.simplify(A.subs(s, 1) - B_minus) == 0
++    assert sp.simplify(A.subs(s, 0) - R) == 0
++    print("3. A(sigma=1) = B_minus and A(sigma=0) = R          -- mixture,  VERIFIED")
++
++    # --- 4. the difference, and its sign ----------------------------------
++    diff = sp.simplify(sp.together(A - M))
++    want = s * q * R**2 * (1 - q) / (1 - q * R)
++    assert sp.simplify(diff - want) == 0, diff
++    print(f"4. A - M = {want}")
++    # SIGN, DECIDED BY A SOLVER, NOT BY INSPECTION. The expression is
++    # nonlinear in 3 variables; SymPy cannot reduce a multivariate inequality,
++    # so the question "is A - M ever negative on the open unit cube" is put to
++    # z3 as a satisfiability problem. UNSAT is a proof over the reals, not a
++    # sample.
++    import z3
++    zR, zq, zs = z3.Reals("R q sigma")
++    solver = z3.Solver()
++    solver.add(zR > 0, zR < 1, zq > 0, zq < 1, zs > 0, zs < 1)
++    # 1 - q*R > 0 on the cube, so multiplying through preserves the sign and
++    # keeps the query polynomial.
++    solver.add(zs * zq * zR * zR * (1 - zq) < 0)
++    verdict = solver.check()
++    assert verdict == z3.unsat, f"z3 found A - M < 0 at {solver.model()}"
++    print(f"   z3: (A - M) < 0 on (0,1)^3 is {verdict} -- A >= M proved, VERIFIED")
++    # independent numeric sweep, so a z3 API change cannot make this vacuous
++    import itertools
++    grid = [i / 20 for i in range(1, 20)]
++    worst = min(float(want.subs({R: a, q: b, s: c}))
++                for a, b, c in itertools.product(grid, grid, grid))
++    assert worst >= 0.0, worst
++    print(f"   sweep 19^3 = {len(grid)**3} points, min(A - M) = {worst:.6f} >= 0, "
++          f"VERIFIED")
++
++    # --- 5. the pinning identity ------------------------------------------
++    ident = sp.simplify(A.subs(s, 1) - M.subs(s, 1) / p_not_detected)
++    assert ident == 0, ident
++    print("5. A = M / P(not detected) at sigma=1               -- cond/joint, VERIFIED")
++
++    # --- the brief's worked numbers, exactly ------------------------------
++    sub = {R: sp.Rational(1, 2), q: sp.Rational(4, 5), s: 1}
++    a_val, m_val = sp.nsimplify(A.subs(sub)), sp.nsimplify(M.subs(sub))
++    assert a_val == sp.Rational(1, 6), a_val
++    assert m_val == sp.Rational(1, 10), m_val
++    assert sp.nsimplify(B_minus.subs(sub)) == sp.Rational(1, 6)
++    print(f"   at R=1/2, q=4/5, sigma=1:  A = {a_val}   M = {m_val}   "
++          f"B_minus = {a_val}   -- brief's figures, VERIFIED")
++
++    # --- the SHIPPED function agrees with A when re-injection is off -------
++    # EXECUTE the repository's own code; do not retype it. nu_b=nu_f=0 strips
++    # phase 3, exposing phases 1-2, which is the form under discussion.
++    spec = importlib.util.spec_from_file_location(
++        "rr3_branchcheck", REPO / "bench" / "reference_runner_v3.py")
++    rr3 = importlib.util.module_from_spec(spec)
++    sys.modules["rr3_branchcheck"] = rr3
++    spec.loader.exec_module(rr3)
++    checked = 0
++    for Rv in (Fraction(1, 2), Fraction(1, 4), Fraction(9, 10)):
++        for qv in (Fraction(4, 5), Fraction(1, 10)):
++            for sv in (Fraction(1), Fraction(1, 2), Fraction(0)):
++                got = rr3.compute_rk(float(Rv), float(qv), float(sv),
++                                     nu_b=0.0, nu_f=0.0)
++                want_a = float(A.subs({
++                    R: sp.Rational(Rv.numerator, Rv.denominator),
++                    q: sp.Rational(qv.numerator, qv.denominator),
++                    s: sp.Rational(sv.numerator, sv.denominator)}))
++                assert abs(got - want_a) < 1e-12, (Rv, qv, sv, got, want_a)
++                checked += 1
++    print(f"   compute_rk (nu off) == A(R) on {checked}/{checked} triples "
++          f"-- the SHIPPED code is the conditional form, VERIFIED")
++
++    print("\nFALSIFIER-CLEAN: all 5 derivations hold; A is a negative-branch "
++          "conditional,\n  M is the pre-pass expectation, and A >= M always.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/latent_control_audit.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/latent_control_audit.py	2026-09-05 13:54:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo/scripts/latent_control_audit.py	2026-09-29 01:33:58
+@@ -191,11 +191,53 @@
+         return True
+     name = fp.parent.name.lower()
+     return name.startswith("sim") or "_sim" in name or "simulated" in name
++
++
++def _simulated_run_dirs() -> set:
++    """Run directories holding at least 1 document that proves simulation.
++
++    SIMULATION IS A PROPERTY OF THE RUN, NOT OF THE FILE (added 2026-09-29,
++    panel item 2). `_is_simulated` reads 3 provenance keys plus the directory
++    name, and the runner writes those keys into the run REPORT only. A simulated
++    run also drops a `runner_state.json` beside it, which carries
++    `runner_version` -- so `_archive` counted it as a report -- and carries none
++    of the provenance keys, and whose directory is named `commissioning_arm*`
++    rather than `sim*`. Measured on this archive: 4 files leak in that way,
++
++        commissioning_arm{1,2,3,4}_*/runner_state.json
++
++    and they were the NEWEST admitted "reports", so they set the age baseline.
++    The consequence is not cosmetic: the baseline moved from 2026-08-27 to
++    2026-09-22, 26.3 days later, which silently disables the TOO_NEW quarantine
++    for every control key committed in that window. `critical_boundary_census`,
++    first committed 2026-09-01, scored SILENT_BUT_RAN when the rule says TOO_NEW
++    -- a control reported as exercised-but-quiet when in truth the archive is
++    older than the control is.
++
++    This is the SAME failure the docstring on `_archive` records from
++    2026-09-01, arriving through a file the earlier fix never covered: the
++    witness set accepting the runner's own rehearsal as field evidence.
+ 
++    Nothing is removed. Every per-file signal still applies; a run directory is
++    additionally simulated when ANY document in it proves the run was simulated.
++    """
++    sim: set = set()
++    for fp in LOGS.glob("**/*.json"):
++        try:
++            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++        except Exception:                                 # noqa: BLE001
++            continue
++        if isinstance(d, dict) and _is_simulated(d, fp):
++            sim.add(fp.parent)
++    return sim
+ 
++
+ def _archive() -> tuple[list, int]:
+     """(report dicts, newest run mtime). Reports only -- not every json."""
+     reports, newest = [], 0
++    # Run-level provenance, resolved BEFORE admitting anything. See
++    # `_simulated_run_dirs` for the 4 files this closes and what they cost.
++    sim_dirs = _simulated_run_dirs()
+     for fp in LOGS.glob("**/*.json"):
+         # EXCLUDE SIMULATED RUNS FROM THE WITNESS SET.
+         #
+@@ -216,7 +258,7 @@
+             continue
+         if not isinstance(d, dict):
+             continue
+-        if _is_simulated(d, fp):
++        if _is_simulated(d, fp) or fp.parent in sim_dirs:
+             continue
+         if isinstance(d, dict) and ("registry" in d or "converged_at" in d
+                                     or "runner_version" in d):
+
+### cc2:attempt-1:scripts/panel_brief_validate.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/panel_brief_validate.py	2026-09-20 10:57:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo/scripts/panel_brief_validate.py	2026-09-29 01:31:33
+@@ -149,6 +149,87 @@
+ #: nothing, was skipped, and the brief PASSED with zero checks run. Opt-in
+ #: means an ABSENT declaration passes -- not a broken one.
+ FIGURE_OPENER = re.compile(r"<!--\s*figure:")
++
++#: A DECLARED FIGURE IS A CLAIM ABOUT EVIDENCE AS OF ITS DATE (added 2026-09-29,
++#: panel item 1). Round 11's brief declared `real-rejection rate : 2/640 =
++#: 0.3125%`. The numerator never moved -- 2 real rejections, the same 2, the
++#: exp48 answer-key pair -- and the brief was correct when it was dispatched on
++#: 2026-09-11. The ARCHIVE GREW to 716 sources, so
++#: scripts/archived_falsifier_rejections_2026-09-10.py now prints
++#: `2/716 = 0.2793%` and `check_declared_figures` refuses a brief that was true
++#: when it was sent.
++#:
++#: NEITHER OBVIOUS REPAIR IS ADMISSIBLE. Editing the archived brief falsifies the
++#: record of what 2 seats were actually given, and the brief IS the evidence for
++#: what they were answering. Exempting archived briefs deletes the check for
++#: every brief that has ever been dispatched, which is all of them but one, and
++#: the check exists because a number typed into a brief is a claim about
++#: evidence.
++#:
++#: SO THE ARCHIVED CLAIM IS RECONCILED, NOT EXCUSED. A SIDECAR beside the brief,
++#: `FIGURE_DRIFT.md`, carries one record per drifted figure:
++#:
++#:     <!-- figure-superseded: <date> | <label> | <script> | <exact string NOW> -->
++#:
++#: The superseding value is RE-EXECUTED against the same output, with the same
++#: whole-token predicate and the same 3-significant-character rule as the
++#: original. The ONLY way to turn the refusal into a report is to supply a number
++#: the named script really does print TODAY. The brief is never touched, so the
++#: dispatched artefact stays byte-identical to what the seats read.
++#:
++#: THE GUARD'S SUBJECT IS THE BRIEF ABOUT TO BE DISPATCHED, and that case is
++#: deliberately left with no escape: supersession requires a date STRICTLY LATER
++#: than the ISO date in the brief's own directory name, so a brief validated on
++#: the day its directory is stamped cannot be reconciled at all and is refused
++#: exactly as before. Drift is a property of elapsed time, not a way to pass.
++#:
++#: WHAT THIS CANNOT SEE, stated rather than implied: it cannot tell a genuine
++#: drift from a figure that was WRONG AT DISPATCH and later papered over by a
++#: correct supersession. Distinguishing those needs the producer re-run at the
++#: brief's own revision, and this checkout ships with no .git directory
++#: (`git rev-parse` fails), so that evidence does not exist here. The residual
++#: is bounded by the date rule above and is recorded in the panel reply.
++FIGURE_SUPERSEDED = re.compile(
++    r"<!--\s*figure-superseded:\s*(?P<date>\d{4}-\d{2}-\d{2})\s*\|\s*"
++    r"(?P<label>[^|]+?)\s*\|\s*(?P<script>[^|]+?)\s*\|\s*"
++    r"(?P<value>[^>]+?)\s*-->")
++
++#: Same lesson as FIGURE_OPENER, and the same failure it was written for: a
++#: record that ANNOUNCES itself and then does not parse must refuse, not vanish.
++FIGURE_SUPERSEDED_OPENER = re.compile(r"<!--\s*figure-superseded:")
++
++#: The sidecar's fixed name, resolved beside the brief.
++FIGURE_DRIFT_SIDECAR = "FIGURE_DRIFT.md"
++
++
++def superseding_figures(text):
++    """Parse a FIGURE_DRIFT.md sidecar.
++
++    Returns ``(records, problems)`` where records maps ``(label, script)`` to
++    ``(date, value)``. A malformed record, or two records claiming the same
++    figure, is a problem rather than a silent skip.
++    """
++    records = {}
++    problems = []
++    matches = list(FIGURE_SUPERSEDED.finditer(text))
++    opened = len(FIGURE_SUPERSEDED_OPENER.findall(text))
++    if opened != len(matches):
++        problems.append(
++            f"{opened - len(matches)} supersession record(s) in "
++            f"{FIGURE_DRIFT_SIDECAR} open with '<!-- figure-superseded:' but do "
++            f"not parse as '<!-- figure-superseded: <date> | <label> | <script> "
++            f"| <value> -->'. A record that announces itself and then escapes "
++            f"checking is worse than none")
++    for m in matches:
++        key = (m.group("label").strip(), m.group("script").strip())
++        if key in records:
++            problems.append(
++                f"{FIGURE_DRIFT_SIDECAR} carries 2 supersession records for "
++                f"figure {key[0]!r} from {key[1]}. Which one is the evidence is "
++                f"then a matter of file order")
++            continue
++        records[key] = (m.group("date"), m.group("value").strip())
++    return records, problems
+ 
+ #: A character that CONTINUES a word or a number on either side of a match.
+ _TIGHT = re.compile(r"[0-9A-Za-z_]")
+@@ -220,7 +301,8 @@
+ 
+ 
+ def check_declared_figures(text: str, repo: Path = REPO,
+-                           timeout: int = 600) -> list[str]:
++                           timeout: int = 600, brief_path=None,
++                           notes: list[str] | None = None) -> list[str]:
+     """Re-execute every declared figure. Empty list means all reproduced.
+ 
+     A brief that declares NOTHING passes -- the mechanism is opt-in, because
+@@ -230,6 +312,25 @@
+     round.
+     """
+     problems: list[str] = []
++    # THE SIDECAR (2026-09-29). Loaded only when the caller supplies the brief's
++    # path, so every existing caller keeps the strict behaviour unchanged.
++    superseded: dict = {}
++    brief_date = None
++    if brief_path is not None:
++        _bp = Path(brief_path)
++        _sidecar = _bp.parent / FIGURE_DRIFT_SIDECAR
++        _dated = re.search(r"(\d{4}-\d{2}-\d{2})", _bp.parent.name)
++        if _sidecar.is_file():
++            if _dated is None:
++                problems.append(
++                    f"{FIGURE_DRIFT_SIDECAR} sits beside a brief whose directory "
++                    f"name carries no ISO date, so no supersession in it can be "
++                    f"shown to postdate the brief. None was applied")
++            else:
++                brief_date = _dated.group(1)
++                superseded, _sc_problems = superseding_figures(
++                    _sidecar.read_text(encoding="utf-8", errors="replace"))
++                problems += _sc_problems
+     matches = list(FIGURE.finditer(text))
+     opened = len(FIGURE_OPENER.findall(text))
+     if opened != len(matches):
+@@ -328,11 +429,44 @@
+         # trailing newline and `9 done` to stderr satisfied a declared
+         # `rate = 0.29`. A figure must be found in output that was actually
+         # emitted, not in the seam between two streams.
+-        if not _figure_token_found(want, r.stdout + "\n" + r.stderr):
++        out = r.stdout + "\n" + r.stderr
++        if _figure_token_found(want, out):
++            continue
++        # THE FIGURE DID NOT REPRODUCE. Before refusing, look for a SUPERSESSION
++        # beside the brief -- see FIGURE_SUPERSEDED above for why this exists and
++        # what it deliberately cannot see.
++        rec = superseded.get((label.strip(), rel.strip()))
++        if rec is None:
+             problems.append(
+                 f"declared figure {label!r}: the brief says {want!r} and {rel} "
+                 f"does not print it. A number typed into a brief is a claim "
+                 f"about evidence, not evidence")
++            continue
++        when, now_value = rec
++        if brief_date is None or when <= brief_date:
++            problems.append(
++                f"declared figure {label!r}: {want!r} did not reproduce and the "
++                f"supersession in {FIGURE_DRIFT_SIDECAR} is dated {when}, which "
++                f"does not postdate the brief ({brief_date}). A figure cannot "
++                f"drift before it is written")
++            continue
++        if len(re.sub(r"[^0-9A-Za-z]", "", now_value)) < 3:
++            problems.append(
++                f"declared figure {label!r}: the supersession value {now_value!r} "
++                f"carries fewer than 3 significant characters, so finding it in "
++                f"the output proves nothing")
++            continue
++        if not _figure_token_found(now_value, out):
++            problems.append(
++                f"declared figure {label!r}: the brief says {want!r}, "
++                f"{FIGURE_DRIFT_SIDECAR} says {rel} now prints {now_value!r}, and "
++                f"it prints NEITHER. A supersession is itself a claim about "
++                f"evidence and is re-executed like any other")
++            continue
++        if notes is not None:
++            notes.append(
++                f"{label!r}: the brief's {want!r} was superseded on {when} by "
++                f"{now_value!r}, which {rel} does print. The brief is unedited")
+     return problems
+ 
+ 
+@@ -515,7 +649,19 @@
+                   file=sys.stderr)
+     problems = validate(text)
+     # Declared figures are RE-EXECUTED, not trusted. See check_declared_figures.
+-    problems += check_declared_figures(text)
++    # `brief_path` is what lets an ARCHIVED brief's drifted figure be reconciled
++    # by a re-executed supersession instead of refused; see FIGURE_SUPERSEDED.
++    _drift: list[str] = []
++    problems += check_declared_figures(text, brief_path=a.brief, notes=_drift)
++    if _drift and not a.quiet:
++        print(f"panel-brief: FIGURE DRIFT — {len(_drift)} declared figure(s) no "
++              f"longer reproduce and are reconciled by "
++              f"{FIGURE_DRIFT_SIDECAR}:", file=sys.stderr)
++        for _d in _drift:
++            print(f"  - {_d}", file=sys.stderr)
++        print("  The archived brief was correct when dispatched; the corpus it "
++              "was measured over\n  grew. The superseding value above WAS "
++              "re-executed.", file=sys.stderr)
+     if problems:
+         print(f"panel-brief: REFUSED — {a.brief} fails {len(problems)} required check(s):",
+               file=sys.stderr)
+
+### fable:attempt-1:bench/logs/green_board_2026-09-29/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/green_board_2026-09-29/dispatch.log	2026-09-29 01:49:45
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo/bench/logs/green_board_2026-09-29/dispatch.log	2026-09-29 01:23:41
+@@ -1,19 +1 @@
+ panel (0 of 2 seats paid): the suite record is NOT green (exit code 1, 8 failed), but this round has 0 paid seats, so there is no spend to protect. Proceeding.
+-[01:24:02] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo
+-[01:24:02] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo
+-[01:24:02] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo
+-[01:24:02]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo
+-[01:24:02] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo
+-[01:24:02]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo
+-[01:45:33]   [claude-cli:fable] 62 tool call(s) this attempt, 62 in total
+-[01:45:33]   [claude-cli:fable] done (1291.0s, 13656 chars)
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 6,160 chars, about 1,540 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_yl42le8v/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo
+-  [fable] ok=True chars=13656 tools=62 1291.0s
+-[01:49:45]   [claude-cli:opus] 106 tool call(s) this attempt, 106 in total
+-[01:49:45]   [claude-cli:opus] done (1542.7s, 20753 chars)
+-  [cc2] ok=True chars=20753 tools=106 1542.7s
+-[01:49:45] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:bench/tests/test_declared_figure_as_of_2026-09-29.py
+--- /dev/null	2026-09-29 01:49:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo/bench/tests/test_declared_figure_as_of_2026-09-29.py	2026-09-29 01:40:12
+@@ -0,0 +1,158 @@
++"""A declared figure is a claim about evidence AS OF the brief's date.
++
++ADDED 2026-09-29 (panel, green-board item 1). The round-11 brief declared
++`real-rejection rate : 2/640 = 0.3125%`; the 4 commissioning rehearsals of
++2026-09-21/22 grew the corpus to 716 with the NUMERATOR unchanged, and the
++declared figure stopped re-executing. The brief was true when sent.
++
++THE RULING THESE TESTS PIN. The guard's refusal subject is a brief about to
++be DISPATCHED; an archived brief is a record, and its figure carries the
++denominator as of its date. Neither horn of the brief's dilemma is taken:
++the record is NOT edited, and archived briefs are NOT exempted. The figure is
++still RE-EXECUTED -- against the corpus its own date names, via the
++producer's `--as-of` -- so it stays decidable by a tool forever. The
++acceptance is gated on evidence that the brief EXISTED at the date it claims
++(its mtime), which is what closes the dodge a bare date cut would open.
++
++EXECUTE, DO NOT GREP: every case below runs the producer or the predicate;
++none asserts on source text.
++"""
++from __future__ import annotations
++
++import importlib.util
++import shutil
++import subprocess
++import sys
++from pathlib import Path
++
++import pytest
++
++ROOT = Path(__file__).resolve().parents[2]
++VALIDATE = ROOT / "scripts" / "panel_brief_validate.py"
++PRODUCER = ROOT / "scripts" / "archived_falsifier_rejections_2026-09-10.py"
++BRIEF = ROOT / "bench" / "logs" / "panel_round11_2026-09-11" / "BRIEF.md"
++
++
++@pytest.fixture(scope="module")
++def mod():
++    spec = importlib.util.spec_from_file_location("pbv_asof", VALIDATE)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules["pbv_asof"] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++@pytest.fixture(scope="module")
++def archive_grew():
++    """These tests are about a corpus that has moved past the brief's date.
++    If the commissioning rehearsals are absent the corpus is back at 640 and
++    the strict check passes on its own -- nothing here is exercised."""
++    if not sorted((ROOT / "bench" / "logs").glob("commissioning_*")):
++        pytest.skip("archive has not grown past 2026-09-11 in this checkout")
++
++
++class TestTheProducerAsOf:
++    def test_as_of_the_briefs_date_reproduces_the_declared_figure(self):
++        """The historical figure is DECIDABLE, not trusted: 2/640 = 0.3125%
++        re-executes against the corpus as it stood."""
++        r = subprocess.run(
++            [sys.executable, str(PRODUCER), "--as-of", "2026-09-11"],
++            cwd=ROOT, capture_output=True, text=True, timeout=600)
++        assert r.returncode == 0, r.stderr[-600:]
++        assert "real-rejection rate : 2/640 = 0.3125%" in r.stdout, (
++            "the archive as of 2026-09-11 no longer yields the round-11 "
++            "figure; the historical record itself is now in question:\n"
++            + r.stdout[-600:])
++
++    def test_unrestricted_still_reports_the_live_corpus(self, archive_grew):
++        """The flag must not have bent the live measurement (additive check:
++        the default path is byte-identical in what it measures)."""
++        r = subprocess.run([sys.executable, str(PRODUCER)],
++                           cwd=ROOT, capture_output=True, text=True,
++                           timeout=600)
++        assert r.returncode == 0, r.stderr[-600:]
++        assert "real-rejection rate : 2/640 " not in r.stdout, (
++            "the unrestricted run reports the 2026-09-11 corpus, so --as-of "
++            "leaked into the default path")
++
++    def test_a_malformed_as_of_is_refused_loudly(self):
++        r = subprocess.run(
++            [sys.executable, str(PRODUCER), "--as-of", "yesterday"],
++            cwd=ROOT, capture_output=True, text=True, timeout=120)
++        assert r.returncode != 0
++        assert "yesterday" in (r.stdout + r.stderr)
++
++
++class TestTheValidatorRuling:
++    def test_the_archived_brief_is_not_refused(self, archive_grew):
++        """Item 1's failing assertion, now green for the RIGHT reason: the
++        figure re-executed as of the brief's date, was accepted loudly, and
++        the record was not edited (the 2/640 text is intact on disk)."""
++        if not BRIEF.is_file():
++            pytest.skip("round 11's brief is not in this checkout")
++        assert "2/640 = 0.3125%" in BRIEF.read_text(), (
++            "the archived brief was EDITED -- that falsifies the record of "
++            "what the seats were given, and is exactly the fix this ruling "
++            "forbids")
++        r = subprocess.run([sys.executable, str(VALIDATE), str(BRIEF)],
++                           cwd=ROOT, capture_output=True, text=True,
++                           timeout=1200)
++        assert r.returncode == 0, (r.stdout + r.stderr)[-800:]
++        assert "HISTORICAL FIGURE" in (r.stdout + r.stderr), (
++            "the acceptance was silent; a quiet historical acceptance is how "
++            "an exemption rots into a hole")
++
++    def test_a_fresh_brief_claiming_a_past_date_is_still_refused(
++            self, mod, tmp_path, archive_grew):
++        """THE DODGE, executed. A brief written TODAY that carries only past
++        dates and declares last week's figure must be refused: its mtime
++        post-dates the date it claims, so the historical gate stays shut.
++        This is the test that proves the guard was not weakened at dispatch.
++        """
++        if not BRIEF.is_file():
++            pytest.skip("round 11's brief is not in this checkout")
++        dodge = tmp_path / "BRIEF.md"
++        shutil.copyfile(BRIEF, dodge)   # same text, same past dates; mtime NOW
++        text = dodge.read_text()
++        problems = mod.check_declared_figures(text, brief_path=dodge)
++        assert any("2/640" in p and "does not print it" in p
++                   for p in problems), (
++            f"a freshly written brief re-declared a stale figure and was not "
++            f"refused: {problems}")
++
++    def test_a_figure_that_never_was_true_is_refused_even_archived(
++            self, mod, archive_grew):
++        """The other unsafe direction: the historical path re-executes, it
++        does not exempt. A wrong figure fails as-of its date too."""
++        if not BRIEF.is_file():
++            pytest.skip("round 11's brief is not in this checkout")
++        text = BRIEF.read_text().replace(
++            "real-rejection rate : 2/640 = 0.3125%",
++            "real-rejection rate : 3/640 = 0.4688%")
++        problems = mod.check_declared_figures(text, brief_path=BRIEF)
++        assert any("3/640" in p and "does not print it" in p
++                   for p in problems), (
++            f"a figure false at EVERY date passed the historical path: "
++            f"{problems}")
++
++    def test_a_producer_without_as_of_fails_closed(self, mod, tmp_path):
++        """A declared figure whose producer has no --as-of keeps the original
++        refusal untouched: the retry exits non-zero and is discarded."""
++        script = ROOT / "scripts" / "_asof_probe_2026-09-29_tmp.py"
++        script.write_text(
++            "import sys\n"
++            "if len(sys.argv) > 1: sys.exit(2)\n"
++            "print('probe rate : 5/999')\n")
++        try:
++            brief = tmp_path / "B.md"
++            brief.write_text("dated 2026-09-11\n")
++            text = ("<!-- figure: probe | scripts/_asof_probe_2026-09-29_tmp.py"
++                    " | probe rate : 4/999 -->\ndated 2026-09-11\n")
++            problems = mod.check_declared_figures(text, brief_path=brief)
++            assert any("4/999" in p for p in problems), problems
++        finally:
++            script.unlink()
++
++
++if __name__ == "__main__":
++    sys.exit(pytest.main([__file__, "-v"]))
+
+### fable:attempt-1:bench/tests/test_latent_tagger_evaluation.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_latent_tagger_evaluation.py	2026-09-08 10:00:25
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo/bench/tests/test_latent_tagger_evaluation.py	2026-09-29 01:37:55
+@@ -227,6 +227,23 @@
+         error ran in the reassuring direction both times. Recorded here rather than
+         silently absorbed: the duplication is a property of the archive layout, and
+         whether the runner should stop emitting 2 directories is a separate decision.
++
++        UPDATED 2026-09-29: 11 -> 16, and verified in the required order -- the
++        tripwire is only safe to move once the thing it watches is shown not to
++        have moved. The tagger is UNCHANGED (`bench/latent_tagger.py` mtime
++        2026-09-07 02:00:57, the a4cc407 stamp recorded above; no later edit).
++        The discriminating evidence that this is archive growth and not a
++        loosened marker set: re-running the tagger over the corpus moves ZERO
++        pre-existing entries -- all 11 pinned lines above and below reproduce
++        exactly, and every addition lives in the 4 `commissioning_arm*`
++        rehearsal runs of 2026-09-21/22, which post-date the 2026-09-08 pin. A
++        loosened marker would have tagged old prose too; it tagged none. The 5
++        new entries are simulated-run findings, in scope here by the same
++        precedent as the sim45 lines: this file measures tagger behaviour over
++        every archived registry, not the audit's real-run witness set. None of
++        the 5 reaches demotion (held by
++        test_nothing_in_the_archive_is_demotion_eligible, executed, not
++        assumed).
+         """
+         tagged = sorted(
+             f"{name}/{cid}"
+@@ -235,6 +252,12 @@
+             if tag_entry(dict(e))
+         )
+         assert tagged == [
++            # 2026-09-29 growth: the commissioning rehearsals. See the docstring.
++            "commissioning_arm1_panel_20260921T215405Z/C0038",
++            "commissioning_arm1_panel_20260921T215405Z/C0054",
++            "commissioning_arm1_panel_20260921T215405Z/C0060",
++            "commissioning_arm4_prose_20260922T053349Z/C0003",
++            "commissioning_arm4_prose_20260922T053349Z/C0016",
+             "exp33_endocrine_20260405T110345Z/C0010",
+             "exp35_pe_20260406T152126Z/C0017",
+             "exp40_gate_20260514T020550Z/C0295",
+
+### fable:attempt-1:bench/tests/test_rk_branch_vs_expectation_2026-09-29.py
+--- /dev/null	2026-09-29 01:49:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo/bench/tests/test_rk_branch_vs_expectation_2026-09-29.py	2026-09-29 01:41:47
+@@ -0,0 +1,133 @@
++"""compute_rk tracks the DETECTION BRANCH, and that is a decision, pinned.
++
++THE MODEL QUESTION, settled 2026-09-29 (panel, green-board item 4) under the
++founder's framing: accuracy in MEASURING an already-expended run, and
++PREDICTIVE accuracy before one. They are answers to two different questions:
++
++  branch (shipped):   A(R) = sigma*B_minus + (1-sigma)*R,
++                      B_minus = R(1-q)/(1-qR)   -- the Bayes posterior after
++                      a pass that FOUND NOTHING. The runner is a measurement
++                      instrument: it updates as realised rounds land, and a
++                      converged run's final rounds are observed quiet rounds.
++                      Conditioning on what actually happened is measurement.
++  expectation (Astra): M(R) = R(1-q*sigma)     -- the branch-weighted average
++                      BEFORE the outcome is known. The honest quantity for a
++                      decision, because the decision precedes the outcome.
++                      It is the explorer's prospective mode, already shipped
++                      with its own floor and break-even.
++
++DERIVED, NOT ASSERTED (SymPy, re-run below numerically against the live
++function; Wolfram concurs on the identity):
++
++  * A - M = R^2*q*sigma*(1-q)/(1-qR) >= 0 on the unit cube: the branch form
++    NEVER flatters. Switching the runner to M lowers every archived R_k
++    (measured blast radius: 386/386 triples move, median 0.0438) -- the
++    direction that licenses earlier convergence. A measurement channel must
++    not be moved in the flattering direction by a modelling preference.
++  * Law of total probability: (1-qR)*B_minus + qR*(1-sigma)*1 = M exactly.
++    M is the coherent average of the branch posteriors -- correct BEFORE the
++    round. After a quiet round, the observed-branch posterior is B_minus,
++    and averaging over a branch you already observed under-states risk.
++
++THE RULING PINNED HERE: the runner KEEPS the branch (measurement); the
++expectation LIVES in the explorer (prediction), where both modes are already
++selectable. No report field is added: a field no channel reads is the
++"addition that nothing reaches" this project has confirmed 11 times.
++
++These tests import the REAL compute_rk. A silent switch to the expectation
++-- the mutation this file exists to catch -- fails every class below.
++"""
++from __future__ import annotations
++
++import os
++import sys
++
++import pytest
++
++_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
++if _ROOT not in sys.path:
++    sys.path.insert(0, _ROOT)
++
++from bench.reference_runner_v3 import compute_rk  # noqa: E402
++
++GRID = [i / 10 for i in range(11)]
++
++
++def _expectation(R, q, s):
++    return R * (1.0 - q * s)
++
++
++class TestTheBranchIsWhatShips:
++    def test_the_briefs_own_discriminating_point(self):
++        """R=1/2, q=4/5, sigma=1: branch 1/6, expectation 1/10. The shipped
++        value IS the negative-branch posterior, exactly."""
++        got = compute_rk(0.5, 0.8, 1.0, nu_b=0.0, nu_f=0.0)
++        assert got == pytest.approx(1 / 6, abs=1e-12)
++        assert abs(got - 0.1) > 0.06, (
++            "compute_rk now returns the branch-weighted expectation; that "
++            "silently lowers every archived R_k (386/386 measured) and "
++            "loosens every threshold read downstream. This is a founder-level "
++            "model decision, not a refactor.")
++
++    def test_the_gap_identity_holds_on_the_live_function(self):
++        """A - M = R^2*q*s*(1-q)/(1-qR), SymPy-derived, executed here against
++        the real implementation with re-injection off."""
++        for R in GRID:
++            for q in GRID:
++                for s in GRID:
++                    if q * R == 1.0:
++                        continue
++                    a = compute_rk(R, q, s, nu_b=0.0, nu_f=0.0)
++                    gap = R * R * q * s * (1 - q) / (1 - q * R)
++                    assert a - _expectation(R, q, s) == pytest.approx(
++                        gap, abs=1e-9), (R, q, s)
++
++    def test_the_branch_never_flatters(self):
++        """A >= M everywhere, with re-injection ON at the shipped defaults:
++        phase 3 is increasing in its input, so the ordering survives it.
++        The conservative direction is the fail-safe direction for a gate."""
++        for R in GRID:
++            for q in GRID:
++                for s in GRID:
++                    if q * R == 1.0:
++                        continue
++                    a = compute_rk(R, q, s)
++                    nu_eff = 1.0 - (1.0 - 0.05) * (1.0 - (1.0 - s) * 0.20)
++                    m3 = _expectation(R, q, s) * (1.0 - nu_eff) + nu_eff
++                    assert a >= m3 - 1e-12, (R, q, s, a, m3)
++
++    def test_law_of_total_probability_closes(self):
++        """The expectation is the coherent branch average -- so the two forms
++        are two QUESTIONS, not a right and a wrong formula. Pinned so the
++        next panel starts from the derivation, not from scratch."""
++        for R in GRID:
++            for q in GRID:
++                for s in GRID:
++                    if q * R == 1.0:
++                        continue
++                    b_minus = R * (1 - q) / (1 - q * R)
++                    lhs = (1 - q * R) * b_minus + q * R * (1 - s)
++                    assert lhs == pytest.approx(_expectation(R, q, s),
++                                                abs=1e-12)
++
++
++class TestTheEquilibriumSeparatesTheQuestions:
++    """At nu > 0 the two recursions settle at DIFFERENT floors. The archive's
++    R_k series must settle at the trajectory floor; landing on the
++    expectation floor is the same silent switch seen from equilibrium."""
++
++    def test_iterated_compute_rk_reaches_the_trajectory_floor(self):
++        nu, q, s = 0.1, 0.4, 0.5
++        R = 0.9
++        for _ in range(4000):
++            R = compute_rk(R, q, s, nu_b=nu, nu_f=0.0)
++        traj = nu / (q * (s + nu * (1 - s)))          # 0.4545...
++        expc = nu / (q * s + nu * (1 - q * s))        # 0.3571...
++        assert R == pytest.approx(traj, abs=1e-9)
++        assert abs(R - expc) > 0.09, (
++            "the iterated runner recursion has moved to the expectation's "
++            "equilibrium -- the measurement channel changed meaning")
++
++
++if __name__ == "__main__":
++    sys.exit(pytest.main([__file__, "-v"]))
+
+### fable:attempt-1:bench/tests/test_simulated_runner_state_is_excluded_2026-09-29.py
+--- /dev/null	2026-09-29 01:49:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo/bench/tests/test_simulated_runner_state_is_excluded_2026-09-29.py	2026-09-29 01:37:26
+@@ -0,0 +1,146 @@
++"""A simulated run's runner_state.json must not witness the archive.
++
++FOUND 2026-09-29 (panel, item 2/3 of the green-board brief), diagnosed to root
++cause rather than to the failing assertion. The quarantine-rule test reported
++`critical_boundary_census: verdict SILENT_BUT_RAN but first_committed=1788252544
++against newest archive mtime 1787788906`. Neither the rule nor the archive's
++dates were wrong, and no row is excluded here to make anything green. The
++recorded verdict was wrong, and the corruption was one step upstream, in the
++evidence base:
++
++  * `_is_simulated` read three authoritative signals -- `severity_provenance`,
++    `_simulated`, and the top-level `models` list -- plus the directory name.
++  * A `runner_state.json` is report-shaped (`runner_version` + `registry`) so
++    it enters `_archive()`, and it carries NONE of those three keys.
++  * The 4 `commissioning_arm*` rehearsals of 2026-09-21/22 are simulated
++    (their sibling reports say `severity_provenance: "simulated"`, every model
++    label ends `-SIM`) -- but "commissioning" defeats the directory heuristic,
++    so each rehearsal's runner_state.json was ADMITTED, and the age baseline
++    moved 26 days forward on a rehearsal. The audit's own words: a simulated
++    run is a rehearsal of the machinery, not a sighting in the field.
++
++The fix reads the model labels the state file DOES carry, runner-written, in
++its per-model instrument blocks (`itc_model_state`, `novelty_counts_per_model`,
++`raw_counts_per_model`). Parse first, classify second -- no text window.
++
++EXECUTE, DO NOT GREP: every test below drives `_is_simulated` / `_archive`
++against real files on disk or constructed documents; none asserts on source.
++"""
++
++import json
++import sys
++from pathlib import Path
++
++import pytest
++
++REPO = Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO / "scripts"))
++
++import latent_control_audit as A  # noqa: E402
++
++#: The rehearsal that actually moved the baseline (mtime 1790060648,
++#: 2026-09-22) while the newest REAL report sits at 1787788906 (2026-08-27).
++ARM4_STATE = (REPO / "bench" / "logs"
++              / "commissioning_arm4_prose_20260922T053349Z" / "runner_state.json")
++#: A real run's state file: the exclusion must not eat genuine evidence.
++REAL_DIRS = sorted((REPO / "bench" / "logs").glob("exp*"))
++
++
++class TestTheRealFilesOnDisk:
++    """Assert admission and exclusion on files on disk, not a copy of the rule
++    -- the same standard TestTheProvenanceRuleIsCheckedAgainstRealFiles set."""
++
++    def test_every_commissioning_state_file_is_excluded(self):
++        states = sorted((REPO / "bench" / "logs")
++                        .glob("commissioning_*/runner_state.json"))
++        if not states:
++            pytest.skip("no commissioning rehearsals in this checkout")
++        admitted = []
++        for fp in states:
++            doc = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++            if not A._is_simulated(doc, fp):
++                admitted.append(str(fp.relative_to(REPO)))
++        assert admitted == [], (
++            "simulated runner_state.json admitted as archive evidence -- the "
++            f"age baseline is movable by a rehearsal again: {admitted}")
++
++    def test_the_commissioning_reports_stay_excluded_too(self):
++        """The sibling reports were already caught by severity_provenance;
++        pinned so the state-file fix cannot regress the report path."""
++        reports = sorted((REPO / "bench" / "logs")
++                         .glob("commissioning_*/*report*.json"))
++        if not reports:
++            pytest.skip("no commissioning rehearsals in this checkout")
++        for fp in reports:
++            doc = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++            assert A._is_simulated(doc, fp), fp.name
++
++    def test_a_real_runs_state_file_is_still_admitted(self):
++        """The unsafe direction of the same fix, checked: widening the
++        exclusion must not shrink the REAL evidence base."""
++        checked = 0
++        for d in REAL_DIRS:
++            fp = d / "runner_state.json"
++            if not fp.is_file():
++                continue
++            try:
++                doc = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++            except ValueError:
++                continue
++            if not isinstance(doc, dict):
++                continue
++            assert not A._is_simulated(doc, fp), (
++                f"{fp.relative_to(REPO)}: a REAL run's state file is now "
++                "classified simulated -- the evidence base shrank")
++            checked += 1
++        assert checked > 0, "no real runner_state.json found to test against"
++
++    def test_the_baseline_is_not_movable_by_a_rehearsal(self):
++        """THE CONSEQUENCE, executed end to end: the newest admitted mtime out
++        of `_archive()` must not reach the newest simulated artefact. This is
++        the exact disagreement that took the quarantine-rule test red: the
++        test's mirror said 2026-08-27 and the audit said 2026-09-22."""
++        _, newest = A._archive()
++        newest_sim = 0
++        for pat in ("commissioning_*/*.json", "sim*/*.json"):
++            for fp in (REPO / "bench" / "logs").glob(pat):
++                newest_sim = max(newest_sim, int(fp.stat().st_mtime))
++        if not newest_sim:
++            pytest.skip("no simulated artefacts in this checkout")
++        # Every real report predates the newest simulated artefact in this
++        # archive (2026-08-27 vs 2026-09-22), so an admitted rehearsal is
++        # visible as newest >= newest_sim.
++        assert newest < newest_sim, (
++            f"_archive() newest mtime {newest} reaches the newest simulated "
++            f"artefact {newest_sim}: a rehearsal is in the witness set")
++
++
++class TestTheConstructedBoundary:
++    """The rule itself, pinned from both sides on constructed documents."""
++
++    def test_a_state_shaped_doc_with_sim_model_blocks_is_simulated(self):
++        doc = {"runner_version": "v3.2", "registry": {"entries": {}},
++               "itc_model_state": {"CC2-SIM": {}, "Gemini-SIM": {}}}
++        fake = REPO / "bench" / "logs" / "rehearsal_x" / "runner_state.json"
++        assert A._is_simulated(doc, fake)
++
++    def test_a_state_shaped_doc_with_live_model_blocks_is_not(self):
++        doc = {"runner_version": "v3.2", "registry": {"entries": {}},
++               "itc_model_state": {"CC2": {}, "Gemini": {}},
++               "novelty_counts_per_model": {"CC2": 3}}
++        fake = REPO / "bench" / "logs" / "exp98_real" / "runner_state.json"
++        assert not A._is_simulated(doc, fake)
++
++    def test_prose_mentioning_sim_still_does_not_exclude(self):
++        """The 2026-09-02 repair is not undone: a real report QUOTING -SIM in
++        a finding stays admitted. The new check reads dict KEYS the runner
++        writes, never prose values."""
++        doc = {"converged_at": 3, "runner_version": "v3.2",
++               "registry": {"entries": {"C0001": {
++                   "description": "routing.py mislabels CC2-SIM seats"}}}}
++        fake = REPO / "bench" / "logs" / "exp99_pretend" / "r.json"
++        assert not A._is_simulated(doc, fake)
++
++
++if __name__ == "__main__":
++    sys.exit(pytest.main([__file__, "-v"]))
+
+### fable:attempt-1:scripts/archived_falsifier_rejections_2026-09-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/archived_falsifier_rejections_2026-09-10.py	2026-09-11 13:56:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo/scripts/archived_falsifier_rejections_2026-09-10.py	2026-09-29 01:38:41
+@@ -35,11 +35,15 @@
+ """
+ from __future__ import annotations
+ 
++import argparse
++import calendar
+ import collections
+ import json
+ import os
+ import pathlib
++import re
+ import sys
++import time
+ 
+ REPO = pathlib.Path(__file__).resolve().parents[1]
+ sys.path.insert(0, str(REPO))
+@@ -76,10 +80,37 @@
+ #: falls back to the checkout directory, saying which answered.
+ 
+ 
+-def archived_sources() -> dict[str, set[tuple[str, str]]]:
+-    """Every distinct falsifier source in the archive, and where it is held."""
++#: Run directories are stamped `..._YYYYMMDDTHHMMSSZ` (UTC). `--as-of` uses the
++#: stamp where it parses and the file mtime where it does not, so an undated
++#: directory is still datable and nothing silently drops out of the corpus.
++_RUN_STAMP = re.compile(r"(20\d{6}T\d{6})Z")
++
++
++def _report_epoch(rep: pathlib.Path) -> float:
++    m = _RUN_STAMP.search(rep.parent.name)
++    if m:
++        return calendar.timegm(time.strptime(m.group(1), "%Y%m%dT%H%M%S"))
++    return rep.stat().st_mtime
++
++
++def archived_sources(as_of: float | None = None) -> dict[str, set[tuple[str, str]]]:
++    """Every distinct falsifier source in the archive, and where it is held.
++
++    AS-OF ADDED 2026-09-29 (panel, green-board item 1). A rate over this
++    archive is a claim about the archive AS OF a date: the round-11 brief of
++    2026-09-11 declared `2/640 = 0.3125%`, the 4 commissioning rehearsals of
++    2026-09-21/22 then grew the corpus to 716, and the declared figure stopped
++    re-executing -- with the NUMERATOR unchanged. The brief was not wrong when
++    sent; the corpus moved. `as_of` (epoch seconds) restricts the scan to runs
++    dated at or before it, so a dated historical figure is DECIDABLE by
++    re-execution instead of exempted from it. Executed: as-of 2026-09-11 this
++    reproduces 2/640 = 0.3125% exactly, and the only excluded directories are
++    the 4 commissioning rehearsals.
++    """
+     out: dict[str, set[tuple[str, str]]] = collections.defaultdict(set)
+     for rep in sorted((REPO / "bench" / "logs").rglob("*_report.json")):
++        if as_of is not None and _report_epoch(rep) > as_of:
++            continue
+         try:
+             data = json.loads(rep.read_text(encoding="utf-8", errors="replace"))
+         except (ValueError, OSError):
+@@ -183,8 +214,8 @@
+     return False
+ 
+ 
+-def survey():
+-    sources = archived_sources()
++def survey(as_of: float | None = None):
++    sources = archived_sources(as_of)
+     real, artefact = {}, {}
+     for code, where in sources.items():
+         v = scan_falsifier_source(code)
+@@ -195,8 +226,25 @@
+ 
+ 
+ def main() -> int:
+-    sources, real, artefact = survey()
++    ap = argparse.ArgumentParser(
++        description="Classify archived falsifier rejections: real vs "
++                    "location artefact.")
++    ap.add_argument(
++        "--as-of", metavar="YYYY-MM-DD",
++        help="restrict the corpus to runs dated at or before this UTC date, "
++             "so a historical figure re-executes against the archive as it "
++             "stood (added 2026-09-29; see archived_sources)")
++    a = ap.parse_args()
++    as_of = None
++    if a.as_of:
++        try:
++            as_of = calendar.timegm(time.strptime(a.as_of, "%Y-%m-%d")) + 86399
++        except ValueError:
++            ap.error(f"--as-of {a.as_of!r} is not a YYYY-MM-DD date")
++    sources, real, artefact = survey(as_of)
+     print(f"checkout under test : {REPO}")
++    if as_of is not None:
++        print(f"corpus restricted   : runs dated on or before {a.as_of} (UTC)")
+     print(f"project identity    : {sorted(_PROJECT_NAMES)} (from the "
+           f"{_NAME_SOURCE})")
+     print(f"distinct archived falsifier sources: {len(sources)}")
+
+### fable:attempt-1:scripts/latent_control_audit.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/latent_control_audit.py	2026-09-05 13:54:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo/scripts/latent_control_audit.py	2026-09-29 01:36:28
+@@ -189,6 +189,26 @@
+     if isinstance(models, (list, tuple)) and any(
+             isinstance(m, str) and m.upper().endswith("-SIM") for m in models):
+         return True
++    # A RUNNER-STATE DOCUMENT CARRIES NONE OF THE THREE SIGNALS ABOVE, and it
++    # is report-shaped (`runner_version` + `registry`), so a simulated run's
++    # runner_state.json walked straight into the witness set. Found 2026-09-29:
++    # the 4 commissioning_arm* rehearsals of 2026-09-21/22 write no
++    # `severity_admissibility`, no `_simulated` and no top-level `models` into
++    # runner_state.json, and "commissioning" defeats the directory heuristic --
++    # so the age baseline moved 26 days forward on a rehearsal, and
++    # `critical_boundary_census` (committed 2026-09-01, after the last REAL run
++    # of 2026-08-27) was reported SILENT_BUT_RAN where the quarantine rule says
++    # TOO_NEW. The state file DOES carry the run's model labels, runner-written,
++    # in its per-model instrument blocks; read them the same way `models` is
++    # read above. Parse first, classify second -- this is a parsed-document
++    # check, not a text window.
++    for per_model_key in ("itc_model_state", "novelty_counts_per_model",
++                          "raw_counts_per_model"):
++        block = doc.get(per_model_key)
++        if isinstance(block, dict) and any(
++                isinstance(k, str) and k.upper().endswith("-SIM")
++                for k in block):
++            return True
+     name = fp.parent.name.lower()
+     return name.startswith("sim") or "_sim" in name or "simulated" in name
+ 
+
+### fable:attempt-1:scripts/panel_brief_validate.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/panel_brief_validate.py	2026-09-20 10:57:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_01memqd1/repo/scripts/panel_brief_validate.py	2026-09-29 01:39:29
+@@ -32,9 +32,11 @@
+ from __future__ import annotations
+ 
+ import argparse
++import calendar
+ import re
+ import subprocess
+ import sys
++import time
+ from pathlib import Path
+ 
+ REPO = Path(__file__).resolve().parents[1]
+@@ -219,8 +221,72 @@
+     return False
+ 
+ 
++#: A brief may be validated long after dispatch, against an archive that has
++#: grown. The historical path below only opens when the brief demonstrably
++#: EXISTED at the date it claims: its mtime must sit within this slack of that
++#: date's end. A brief written today that carries only past dates fails this
++#: gate and is refused exactly as before -- the dodge is closed by evidence,
++#: not by trust.
++_HISTORICAL_MTIME_SLACK = 48 * 3600
++
++_DATE_RE = re.compile(r"20\d\d-\d\d-\d\d")
++
++
++def _historical_reproduction(want: str, script: Path, brief_path,
++                             text: str, repo: Path, timeout: int):
++    """The as-of date iff `want` re-executes against the archive AS OF the
++    brief's own date, else None.
++
++    ADDED 2026-09-29 (panel, green-board item 1). The subject of this guard's
++    REFUSAL is a brief about to be DISPATCHED: 4 of 6 seats are paid, and a
++    wrong number in a dispatched brief costs a round. An ARCHIVED brief is a
++    record of what the seats were given, and a declared figure in it is a
++    claim about evidence AS OF its date. The round-11 brief's
++    `2/640 = 0.3125%` was true on 2026-09-11; the archive then grew to 716
++    with the numerator unchanged. Editing the brief falsifies the record;
++    exempting archived briefs un-checks them. This does neither: the figure is
++    STILL RE-EXECUTED, against the corpus its date names, via the producer's
++    own `--as-of`. Nothing is trusted and nothing is exempt:
++
++      * At dispatch the brief's latest date is the dispatch date, and as-of
++        that date is today's corpus -- so this path cannot pass a figure the
++        strict check would refuse. Not weakened, measured: the dodge test in
++        bench/tests/test_declared_figure_as_of_2026-09-29.py writes a brief
++        TODAY carrying only past dates and it is refused on the mtime gate.
++      * A producer without `--as-of` exits non-zero and the refusal stands
++        unchanged (fail closed).
++      * A figure that never was true fails as-of its date too, and refuses.
++    """
++    if brief_path is None:
++        return None
++    brief_path = Path(brief_path)
++    if not brief_path.is_file():
++        return None
++    dates = _DATE_RE.findall(text)
++    if not dates:
++        return None
++    as_of = max(dates)
++    try:
++        eod = calendar.timegm(time.strptime(as_of, "%Y-%m-%d")) + 86399
++    except ValueError:
++        return None
++    if brief_path.stat().st_mtime > eod + _HISTORICAL_MTIME_SLACK:
++        return None                    # written after the date it claims
++    try:
++        r = subprocess.run([sys.executable, str(script), "--as-of", as_of],
++                           cwd=repo, capture_output=True, text=True,
++                           timeout=timeout)
++    except subprocess.TimeoutExpired:
++        return None
++    if r.returncode != 0:
++        return None                    # no --as-of support: refusal stands
++    if _figure_token_found(want, r.stdout + "\n" + r.stderr):
++        return as_of
++    return None
++
++
+ def check_declared_figures(text: str, repo: Path = REPO,
+-                           timeout: int = 600) -> list[str]:
++                           timeout: int = 600, brief_path=None) -> list[str]:
+     """Re-execute every declared figure. Empty list means all reproduced.
+ 
+     A brief that declares NOTHING passes -- the mechanism is opt-in, because
+@@ -329,6 +395,19 @@
+         # `rate = 0.29`. A figure must be found in output that was actually
+         # emitted, not in the seam between two streams.
+         if not _figure_token_found(want, r.stdout + "\n" + r.stderr):
++            hist = _historical_reproduction(want, script, brief_path, text,
++                                            repo, timeout)
++            if hist is not None:
++                # LOUD BY DESIGN, and never silenced by --quiet: a quiet
++                # historical acceptance is how an exemption rots into a hole.
++                print(f"panel-brief: HISTORICAL FIGURE — {label!r}: {want!r} "
++                      f"does not re-execute against today's archive, but DOES "
++                      f"re-execute with --as-of {hist}, the latest date this "
++                      f"brief carries, and the brief's mtime is consistent "
++                      f"with that date. The record stands as a claim about "
++                      f"evidence as of {hist}; re-run {rel} before REUSING "
++                      f"this figure.", file=sys.stderr)
++                continue
+             problems.append(
+                 f"declared figure {label!r}: the brief says {want!r} and {rel} "
+                 f"does not print it. A number typed into a brief is a claim "
+@@ -515,7 +594,7 @@
+                   file=sys.stderr)
+     problems = validate(text)
+     # Declared figures are RE-EXECUTED, not trusted. See check_declared_figures.
+-    problems += check_declared_figures(text)
++    problems += check_declared_figures(text, brief_path=a.brief)
+     if problems:
+         print(f"panel-brief: REFUSED — {a.brief} fails {len(problems)} required check(s):",
+               file=sys.stderr)

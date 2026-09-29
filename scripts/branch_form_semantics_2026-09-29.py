@@ -66,7 +66,19 @@ import sympy as sp
 REPO = Path(__file__).resolve().parents[1]
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    # A `--help` MUST NEVER RUN THE MEASUREMENT. Added by CC1 on adoption:
+    # this script arrived from a panel seat without an argument parser, and
+    # `test_help_is_answered_2026-09-11.py` caught it on the first full suite
+    # run after it landed. The seat was not asked for one and the omission is
+    # CC1's for adopting the file without checking the project's own rule.
+    import argparse
+
+    argparse.ArgumentParser(
+        description="Derive and verify the 2 branch forms of the risk update: "
+                    "the negative-branch conditional A(R) and the pre-pass "
+                    "expectation M(R). Read-only; spends nothing, calls no model."
+    ).parse_args(argv)
     R, q, s = sp.symbols("R q sigma", nonnegative=True)
 
     B_minus = R * (1 - q) / (1 - q * R)
