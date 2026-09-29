@@ -1,6 +1,6 @@
 # Morning Report — 2026-09-29
 
-2026-09-29, 02:37 BST (updated 03:20 with the confirming run)
+2026-09-29, 02:37 BST (updated 08:45 with the shakedown check)
 
 
 ## The Short Version
@@ -82,8 +82,31 @@ Three guards now run at commit time instead. The cost was measured rather than g
 Both classes were then deliberately reintroduced to confirm the gate catches them. It does, in 21 seconds rather than 33 minutes.
 
 
+## The Shakedown Run Is Not Blocked, And The Plan Says Otherwise
+
+You asked whether the study should cover the week beginning when you were first in a hotel, and whether that should be measured before fixing the itinerary. It was measured, and the answer is that your marker and the plan's existing starting point cannot be told apart.
+
+The record places you at a hotel on 7 September, driving home at 22:03 that evening to seal the archive. The study plan's pre-window baseline is dated 6 September. Measuring the window from 6, 7 and 8 September gives 421, 384 and 368 commits, of which 56.8, 57.3 and 57.3 percent touch running code. The three confidence intervals overlap across nearly their whole range, so no starting point in that span changes what the study measures. The existing baseline is kept because the comparison arm needs a starting commit already proven runnable, and that one is.
+
+The plan's own figures had aged by 8 days. They are refreshed in place: 345 commits and 194 touching code has become 421 and 239. A test for whether the mix had changed gives a probability of 0.88 that the difference is chance alone, so the 345 and 194 became 421 and 239 while the argument they support did not move at all.
+
+Now the part that corrects the plan rather than confirming it.
+
+The plan lists three things as needing your ruling before the run. Checked against the actual code and configuration, none of them blocks it.
+
+The seat contrast arm already declares itself weak. Its own description in the launcher says it is weak by construction in simulation, because both seats are the same stand-in wearing different labels, and that it reports itself as weak. So it is safe to run and honest about what it cannot show. The only question left is whether it is worth the time, which is a judgement about value rather than a blocker.
+
+The drift detector cannot run in any arm. All three arm configurations have the memory it depends on switched off, verified by reading them. And even where it is wired it cannot fire: a constraint solver shows that one or two moves in the same direction cannot cross its threshold and only three can, while production makes one move per flaw class per run. Replayed over 48 real cases it fired zero times. So the choice of whether to keep it or revert it is housekeeping, not a gate on the run.
+
+Wolfram in panel reviews needs nothing. Denial is the standing default and no one has proposed changing it.
+
+So the shakedown can begin whenever you want it to. What you actually have to decide is smaller than the plan implies: only whether the weak contrast arm earns its place.
+
+One caution from the plan worth repeating, because it shapes how the results should be read. Of 84 entries marked done, 31 claim more than their evidence shows, which is 36.9 percent. Several of the entries this run leans on are among them. The study therefore reads what actually fires during the run, never what a marker claims about it.
+
+
 ## What Comes Next
 
-The next runway item is the one you named: the simulated experiment, and the study of every fix made over the last three weeks. That work is now unblocked. We have not run an experiment in some time, and the honest position is that the harness's current health is asserted by 8,800 passing tests rather than demonstrated by a completed run.
+The next runway item is the one you named: the simulated experiment, and the study of every fix made over the window above. That work is now unblocked, and the check above shows it is less blocked than the plan claimed. We have not run an experiment in some time, and the honest position is that the harness's current health is asserted by 8,800 passing tests rather than demonstrated by a completed run.
 
 Written under CDSFL note standard v1.7 (26 August 2026).
