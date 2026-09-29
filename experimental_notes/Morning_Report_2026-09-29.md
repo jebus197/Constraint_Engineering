@@ -1,11 +1,11 @@
 # Morning Report — 2026-09-29
 
-2026-09-29, 02:37 BST
+2026-09-29, 02:37 BST (updated 03:20 with the confirming run)
 
 
 ## The Short Version
 
-The board is clear. Six failing tests are fixed, none by weakening a check, and the ten pound paid panel was not needed. The two free seats resolved everything between them. A full confirmation run is finishing as this is written and its result is recorded at the end.
+The board is green. The confirming run finished at 03:15 with 8,878 tests passing, none failing, and 6 skipped, under the strict network guard. Twelve failing tests were fixed in total, none by weakening a check, and the ten pound paid panel was not needed. The two free seats resolved everything between them.
 
 The runway item you named is unblocked. Nothing now stands between the project and the simulated experiment plus the study of the last three weeks of fixes.
 
@@ -69,6 +69,17 @@ Everything else is done and committed.
 Across this stretch of work, several checks written to guard something turned out unable to fail if that thing broke. Every one was found by deliberately breaking the code and watching whether anything went red, and none by reading. The pattern was always the same: a test that re-derived a value the code already owns instead of reading it from the code.
 
 The most instructive instance happened last night in my own favour. While testing one of the seats' fixes I edited an archived review brief, which changed its modification time. The validator immediately refused it, because that seat had built a guard against exactly that manoeuvre. The guard caught me performing the dodge it exists to prevent. I restored the file and it passed.
+
+
+## One Change To The Commit Gate, For Your Ruling
+
+A change was made to the commit-time gate and it should be reversed if you disagree, because it is yours and it costs time on every commit.
+
+Six of the twelve failures fixed overnight were not defects in any work. They were housekeeping the project already requires: a script added without the standard help behaviour, and a review round left unmirrored and without its full record. Each was discovered roughly half an hour after the commit that caused it, because only the full test run catches them.
+
+Three guards now run at commit time instead. The cost was measured rather than guessed: 12.8 seconds added, taking the gate from about 11 seconds to about 24. A fourth candidate was measured at 48 seconds on its own and deliberately left out, because it catches the same class as a guard costing a fifth as much. The gate's own header records the principle this respects: a gate expensive enough to be bypassed is not a gate.
+
+Both classes were then deliberately reintroduced to confirm the gate catches them. It does, in 21 seconds rather than 33 minutes.
 
 
 ## What Comes Next

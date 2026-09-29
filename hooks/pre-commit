@@ -71,7 +71,37 @@ bench/tests/test_memory_index_limits_match_the_loader_2026-09-01.py
 bench/tests/test_line_citations_resolve_2026-09-01.py
 bench/tests/test_done_markers_carry_evidence_2026-09-10.py
 bench/tests/test_task_list_markers_2026-09-09.py
-bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py"
+bench/tests/test_stated_gate_count_matches_measurement_2026-09-07.py
+bench/tests/test_help_is_answered_2026-09-11.py
+bench/tests/test_panel_records_are_preserved_2026-09-11.py
+bench/tests/test_panel_rounds_have_a_full_record_2026-09-11.py"
+
+# THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
+# recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite
+# was run 5 times to discover 2 classes of defect that a commit-time check catches
+# in seconds:
+#
+#   * a script added to `scripts/` that does not answer `--help`, so the flag runs
+#     the measurement. Caught twice in 24 hours, once on a script CC1 wrote and
+#     once on a script CC1 adopted from a panel seat without checking.
+#   * a panel round dispatched and then left unmirrored and without a FULL RECORD
+#     note. Caught on 5 rounds across 2 days.
+#
+# Neither is a defect in the work. Both are HOUSEKEEPING THE PROJECT ALREADY
+# REQUIRES, discovered 30 minutes after the commit instead of 20 seconds before it.
+# The cost was measured, not estimated, on 2026-09-29:
+#
+#   test_help_is_answered_2026-09-11.py               9261 ms
+#   test_panel_records_are_preserved_2026-09-11.py    2592 ms
+#   test_panel_rounds_have_a_full_record_2026-09-11.py 942 ms
+#
+# about 12.8 s on top of the existing gate. `test_measurement_survey_is_safe_2026-09-11.py`
+# was measured at 48230 ms and DELIBERATELY LEFT OUT: it costs 4x the other 3
+# together and catches the same `--help` class the 9.3 s guard already catches. The
+# header above records the ruling this respects -- "a per-commit gate costing 11
+# minutes would be bypassed within a day, and a guard that gets bypassed is not a
+# guard". A gate that roughly doubles from 11 s to 24 s is still a gate anyone will
+# keep; one that ran for a minute might not be.
 
 # STAGE 0 -- REFRESH THE FOUNDER'S DESKTOP COPIES. NON-BLOCKING BY DESIGN.
 #
