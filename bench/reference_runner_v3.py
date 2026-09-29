@@ -12369,8 +12369,8 @@ def sk_threshold_shadow(
 
     Pure. Changes nothing. Exists because a gate that has passed every fix it
     ever saw is a mechanical failure that no artefact currently names. `s_star`
-    is zero in 4020 of 4020 gate records in `bench/logs`, Wilson
-    [99.90%, 100.00%], Clopper-Pearson [99.91%, 100.00%] -- the figure over the
+    is zero in 4056 of 4056 gate records in `bench/logs`, Wilson
+    [99.91%, 100.00%], Clopper-Pearson [99.91%, 100.00%] -- the figure over the
     GIT-TRACKED archive, which is the only one a reader who clones this
     repository can recompute.
 
@@ -12404,7 +12404,7 @@ def sk_threshold_shadow(
     refused the commit: "THE PROSE AND THE ARCHIVE DISAGREE ... states 3507 ...
     gives 3555". That is the blast radius of adding evidence to git, and it was
     not anticipated when the files were staged. On the
-    maintainer's disk the coercing count is 4607 of 4607, Wilson
+    maintainer's disk the coercing count is 4643 of 4643, Wilson
     [99.92%, 100.00%], Clopper-Pearson [99.92%, 100.00%]. Both are real; only
     the first is reproducible.
 
@@ -12415,6 +12415,10 @@ def sk_threshold_shadow(
     4142 -> 4405, and the guard refused the commit before a reader could meet
     the stale prose. ARM 2 THEN MOVED THEM AGAIN THE SAME NIGHT, 3818 -> 3859
     and 4405 -> 4446, and the guard refused a second time. ARM 3 MADE IT A THIRD, 3859 -> 4020 and 4446 -> 4607.
+    A FOURTH, 2026-09-29: harvesting the interrupted shakedown's 50 evidence files out of a
+    torn-down sandbox moved them 4020 -> 4056 and 4607 -> 4643, and the guard refused again.
+    So the trigger is not 'a run completes' -- it is ANY act that adds run evidence to the
+    tracked tree, harvest included. 4 recurrences now, each caught, none prevented.
 
     THAT RECURRENCE IS A DESIGN QUESTION, NOT JUST AN ERRAND, AND IT IS FLAGGED
     RATHER THAN ANSWERED HERE. Every completed experimental run appends gate
