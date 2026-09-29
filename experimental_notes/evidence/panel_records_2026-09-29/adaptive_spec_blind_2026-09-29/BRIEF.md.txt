@@ -1,0 +1,80 @@
+# BLIND REVIEW: the adaptive distributed-compute design specification
+
+## SECTION 1 — The question
+
+**Is the adaptive distributed-compute design specification sound enough to place on this project's runway, and where are its defects?**
+
+Artefact under review, by path:
+
+> `/Users/georgejackson/Developer_Projects/Responses/Codex, ChatGPT & Grok resources/adaptive_distributed_compute_design_spec.md`
+
+624 lines, dated **2026-09-14**. It proposes an allocation and topology layer above CDSFL's canonical model: a task is compiled into a graph of bounded work units, and a scheduler decides which model configuration to dispatch to which unit, scoring candidates by predicted reduction in residual risk per unit of constrained resource. It explicitly claims to CONSUME the canonical mathematics without redefining it.
+
+The founder is deciding whether it is viable, where it belongs on the runway, and whether it earns a paid experiment of its own.
+
+**This is a BLIND round.** You are not being shown anyone else's analysis and you are not being asked whether you agree with anything. Under this project's standing rule, findings are confirmed by programs or by the founder, never by models agreeing with one another. Find what is wrong. If something that looked suspect turns out sound, say that too — a round that returns only complaints has been obliging, not sceptical.
+
+## SECTION 2 — Use the harness
+
+Form your answer by RUNNING the machinery, not by describing it.
+
+**`sigma` and `nu` are the instruments that bear hardest on this question.** The specification's §6.1 writes its own transcription of the three-phase update in terms of `sigma` (fix efficacy) and `nu` (re-injection). The live implementation is `bench/reference_runner_v3.py:compute_rk`. **Call that function and call the specification's §6.1 form on the same inputs, and compare the outputs.** Reading both formulas and judging them similar is not the check; two transcriptions can each be internally consistent and still disagree. What `sigma` and `nu` should tell you is whether the specification's predicted state is the state this project's runner actually produces, across the range of both parameters and not only at their endpoints.
+
+**`S_k` bears on §6.1's closing claim** that a candidate which cannot satisfy an applicable verification gate receives zero verified-risk-reduction credit. `compute_sk` is live. Check whether that claim is consistent with how `S_k = A·E` actually behaves.
+
+**Wilson** governs every proportion you report. Any rate needs an interval, and any computational claim needs two independent tools agreeing.
+
+Also available and expected where they can decide something: SymPy, z3, mpmath, SciPy, statsmodels, NumPy as PRIMARY, with Wolfram through the gate on your PATH as a secondary cross-verification falsifier. Where Wolfram is unavailable to you, fall back to the open-source set.
+
+**Check the dates.** `docs/MATHEMATICAL_APPENDIX.md` was revised after 2026-09-14. `git log` on it is available to you and is evidence.
+
+## SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is half an answer. A fix without a falsifier you have EXECUTED is a hypothesis.
+
+Report the exact command you ran and the output you saw.
+
+**Deliver every fix as a file, written INTO the sandbox repository tree at a real path.** A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down.
+
+- A defect in **this project's own code or documents** — fix it at its real path (`docs/MATHEMATICAL_APPENDIX.md`, `bench/...`, `scripts/...`).
+- A defect in **the specification** — the specification lives outside the repository, so deliver the corrected passage to `experimental_notes/panel_fixes_adaptive_spec_2026-09-29/<your-seat-name>.md`, quoting the original text and giving the replacement, with the section number.
+- A falsifier you write goes to `scripts/` with a dated name and must run.
+
+## SECTION 4 — What would refute you
+
+Before you conclude, state for each finding what evidence would overturn it. A verdict with no stated refutation condition is an opinion.
+
+This applies to your own measurements. **If you measure a rate by sampling a parameter space, the number is a property of your sampling distribution as much as of the thing measured.** State the distribution you sampled from, and say whether the operationally relevant distribution is known. If it is not, say so rather than letting an assumed prior stand in for it.
+
+## SECTION 5 — Output shape
+
+Per finding:
+
+- **claim** — stated so it could be wrong;
+- **section** — where in the specification it bites;
+- **evidence** — the command run and its output, verbatim;
+- **verdict** — HOLDS, PARTIAL or REFUTED;
+- **fix** — the path you wrote it to;
+- **falsifier** — the command, and its executed result;
+- **what would refute me**.
+
+Then, once:
+
+- **what I did NOT check**, named explicitly;
+- **where I could not decide**, and why;
+- **my strongest disagreement with this brief's own framing.**
+
+## SECTION 6 — Termination
+
+Stop on diminishing returns: when a further pass produces no new finding above the threshold of real-world consequence. **State how many passes you ran.**
+
+Four areas are UNEXAMINED by any prior assessment — not cleared, unexamined — and are the most likely place for a new finding:
+
+1. **The cost, latency and human-burden model** (§6.4): `λ_t`, `λ_h`, `β`, and the exploration term `e_mu = sqrt(log(1+N_u)/(1+n_mu))`. Is it well-posed? Are the units coherent? What happens at `N_u = 0`?
+2. **Whether the task compiler is buildable** (§4.1, §7.1 step 2): it must produce a work graph, validate acyclicity, prove coverage of HARD constraints and assign interface ownership. Specification, or wish?
+3. **Sample-size adequacy** (§9.3): a staged curve at 1, 2, 4, 8, 16, 32 workers, "at least three independently seeded runs per condition", six control conditions. What power does that design actually have?
+4. **Whether the promotion gates are checkable** (§9.4): Library → Shadow → Controlled live → Operational. Could a program evaluate each gate's criterion, or does it need a judgement the document never specifies?
+
+## Constraints
+
+You are in a sandbox copy. Do not attempt to modify the canonical tree. Spend nothing. Dispatch no models.

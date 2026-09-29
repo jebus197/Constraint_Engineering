@@ -1,0 +1,148 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 14343,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls /Users/georgejackson/Developer_Projects/Responses/ 2>/dev/null | head -50; echo \\\"---PWD---\\\"; pwd; echo \\\"---GITROOT---\\\"; git rev-parse --show-toplevel 2>/dev/null\", \"description\": \"Locate sandbox tree and artefact\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l \\\"/Users/georgejackson/Developer_Projects/Responses/Codex, ChatGPT & Grok resources/adaptive_distributed_compute_design_spec.md\\\" 2>&1\", \"description\": \"Confirm artefact exists\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/Users/georgejackson/Developer_Projects/Responses/Codex, ChatGPT & Grok resources/adaptive_distributed_compute_design_spec.md\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls && echo \\\"---\\\" && ls bench/ | head -60\", \"description\": \"List sandbox repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def compute_rk\\\" -A 90 bench/reference_runner_v3.py\", \"description\": \"Read compute_rk\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def compute_sk\\\" -A 60 bench/reference_runner_v3.py\", \"description\": \"Read compute_sk\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --format='%h %ad %s' --date=short -- docs/MATHEMATICAL_APPENDIX.md | head -25\", \"description\": \"git log on appendix\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nimport importlib.util\\nspec=importlib.util.spec_from_file_location('rr','bench/reference_runner_v3.py')\\nprint('loading...')\\n\\\" ; grep -n \\\"SK_NO_SCORE\\\\|SK_ADMISSIBLE\\\\|SK_REJECT\\\" bench/reference_runner_v3.py | head -10\", \"description\": \"Check Sk tristate constants\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/georgejackson/Developer_Projects 2>/dev/null; for d in CDSFL cdsfl Responses .; do :; done; ls -d /Users/georgejackson/Developer_Projects/*/.git 2>/dev/null | head\", \"description\": \"Find canonical git repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"apply_sk_to_rk\\\\|compute_rk(\\\" bench/*.py bench/dm/*.py scripts/*.py 2>/dev/null | grep -v \\\"^bench/reference_runner_v3.py:11[0-6]\\\" | head -40\", \"description\": \"Find compute_rk call sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 12580,12620p bench/reference_runner_v3.py; echo \\\"=== 12690-12760 ===\\\"; sed -n 12690,12760p bench/reference_runner_v3.py\", \"description\": \"Read live R_k update call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls docs/ | head -40; echo \\\"---\\\"; grep -n \\\"2026-09-1[5-9]\\\\|2026-09-2[0-9]\\\\|Revised\\\\|Last revised\\\\|revision\\\" docs/MATHEMATICAL_APPENDIX.md | head -30\", \"description\": \"Appendix revision dates\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'bench')\\nfrom reference_runner_v3 import compute_rk, compute_rk_expectation, apply_sk_to_rk, SK_REJECTED, SK_NO_SCORE\\nprint('ok', compute_rk(0.5,0.3,1.0))\\nprint('sk=0 ->', compute_rk(0.5,0.3,0.0))\\nprint('expect', compute_rk_expectation(0.5,0.3,1.0))\\nprint('rej', apply_sk_to_rk(0.5, SK_REJECTED, None))\\nimport sympy, z3, mpmath, scipy, "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && echo PRESENT || echo ABSENT\", \"description\": \"Check wolframscript\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9ezvm38f/repo/scripts/adaptive_spec_falsifiers_2026-09-29.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Falsifiers for the adaptive distributed-compute design spec (2026-09-14).\\n\\nTarget: `adaptive_distributed_compute_design_spec.md`, \\u00a76.1, \\u00a76.4, \\u00a76.5, \\u00a79.3.\\n\\nEvery check imports the REAL run"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"touch scripts/_permtest.txt && echo WRITABLE && rm scripts/_permtest.txt\", \"description\": \"Test write permission in sandbox scripts dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/adaptive_spec_falsifiers_2026-09-29.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Falsifiers for the adaptive distributed-compute design spec (2026-09-14).\\n\\nTarget: `adaptive_distributed_compute_design_spec.md`, SS6.1, 6.4, 6.5, 9.3.\\n\\nEvery check imports the REAL runner functions. Nothing is retyped.\\nEach check prints FALSIFIED when the claimed defect is present.\\n\\nR"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/georgejackson/Developer_Projects/Constraint_Engineering && git log --format='%h %ad %s' --date=short -- docs/MATHEMATICAL_APPENDIX.md | head -20; echo \\\"=== commits AFTER 2026-09-14 ===\\\"; git log --since=2026-09-14 --format='%h %ad %s' --date=short -- docs/MATHEMATICAL_APPENDIX.md | wc -l\", \"description\": \"git log appendix in canonical tree\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/wolfram_gate/serial && timeout 300 ./wolframscript -code '\\nRd = R (1-q)/(1-q R);\\ngsig0 = Simplify[R - ((0*Rd + 1*R)(1-nu) + nu)];\\nPrint[\\\"g at sigma=0 : \\\", gsig0];\\nPrint[\\\"g>=0 anywhere: \\\", Reduce[0<R<1 && 0<q<1 && 0<nu<1 && gsig0 >= 0, {R,q,nu}, Reals]];\\nT[r_,x_] := r(1-x)/(1-x r);\\ngap = Simplify[(R"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/wolfram_gate/serial && ./wolframscript -code '\\nRd = R (1-q)/(1-q R);\\ngsig0 = Simplify[R - ((0*Rd + 1*R)(1-nu) + nu)];\\nPrint[\\\"g at sigma=0 : \\\", gsig0];\\nPrint[\\\"g>=0 anywhere: \\\", Reduce[0<R<1 && 0<q<1 && 0<nu<1 && gsig0 >= 0, {R,q,nu}, Reals]];\\nT[r_,x_] := r(1-x)/(1-x r);\\ngap = Simplify[(R - T[R,q1]) "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"RK0_PI_BASE\\\\s*=\\\" bench/reference_runner_v3.py; grep -n \\\"RK0_PI_BASE\\\" -A4 bench/reference_runner_v3.py | head -12\", \"description\": \"Find default prior R_k(0)\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/wolfram_gate/serial && ./wolframscript -code '\\nT[r_,x_] := r(1-x)/(1-x r);\\ngap = Simplify[(R - T[R,q1]) + (R - T[R,q2]) - (R - T[R, 1-(1-q1)(1-q2)])];\\nPrint[\\\"gap>0 for all R<=1/2 : \\\", Resolve[ForAll[{R,q1,q2}, 0<R<=1/2 && 0<q1<1 && 0<q2<1, gap > 0], Reals]];\\nPrint[\\\"sign condition Reduce: \\\", Reduce[ga"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch4.py <<'PYEOF'\\nimport re, io\\np = \\\"scripts/adaptive_spec_falsifiers_2026-09-29.py\\\"\\nsrc = open(p).read()\\n\\nnew4 = '''# ---------------------------------------------------------------- CHECK 4\\ndef check4_objective_additive_bias():\\n    \\\"\\\"\\\"SS6.5 maximises sum_u sum_m x_mu g_mu, adding the gains of two\\n    configurations dispatched to the SAME unit. SS6.7.1 forbi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/adaptive_spec_falsifiers_2026-09-29.py 2>&1 | sed -n '/CHECK 4/,/CHECK 6/p'\", \"description\": \"Run patched checks 4 and 5\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/Users/georgejackson/Developer_Projects/Responses/Codex, ChatGPT & Grok resources\\\" && for t in entail \\\"coverage of HARD\\\" \\\"covers\\\" \\\"decidab\\\" \\\"identity mechanism\\\" \\\"matched-budget improvement\\\" \\\"threshold\\\" \\\"pre-registered\\\" \\\"auditab\\\" \\\"rollback\\\" \\\"acyclic\\\"; do printf \\\"%-28s %s\\\\n\\\" \\\"$t\\\" \\\"$(grep -ci \\\"$t\\\" adaptive_distributed_compute_design_spec.md)\\\"; done\", \"d"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/Users/georgejackson/Developer_Projects/Responses/Codex, ChatGPT & Grok resources\\\" && grep -n \\\"threshold\\\\|pre-registered\\\\|matched-budget\\\\|auditab\\\\|rollback\\\" adaptive_distributed_compute_design_spec.md | sed 's/^\\\\([0-9]*\\\\):\\\\s*/\\\\1| /' | cut -c1-170\", \"description\": \"Locate every threshold mention\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np = \\\"scripts/adaptive_spec_falsifiers_2026-09-29.py\\\"\\nsrc = open(p).read()\\nsrc = src.replace(\\n    '''    print(\\\"      i.e. a %.0f-fold window of beta -- so the flip is NOT universal,\\\")\\n    print(\\\"      it is a %.0f-fold band whose location depends on the currency\\\")\\n    print(\\\"      unit. The spec says beta 'must be fixed before a comparative\\\")\\n    pri"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls experimental_notes/ | grep -i \\\"panel_fix\\\\|panel-fix\\\" | head; echo \\\"---\\\"; ls experimental_notes/panel_fixes_adaptive_spec_2026-09-29/ 2>/dev/null || echo \\\"dir absent\\\"\", \"description\": \"Check naming convention for panel fix dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p experimental_notes/panel_fixes_adaptive_spec_2026-09-29 && cat > experimental_notes/panel_fixes_adaptive_spec_2026-09-29/opus-blind-seat.md <<'EOF'\\n# Panel fixes \\u2014 adaptive distributed-compute design spec (2026-09-14)\\n\\n**Seat:** opus-blind-seat \\u00b7 **Round:** blind \\u00b7 **Date:** 2026-09-29\\n**Target:** `adaptive_distributed_compute_design_spec.md` (624 lines, ou"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '256,272p' docs/MATHEMATICAL_APPENDIX.md | cut -c1-200\", \"description\": \"Read appendix insertion point\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np = \\\"docs/MATHEMATICAL_APPENDIX.md\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\nanchor = \\\"**Found by an external review on 2026-09-21 and confirmed here by execution.** It also bounds the conservatism result recorded under Phase 2:\\\"\\nassert src.count(anchor) == 1, src.count(anchor)\\n\\naddition = \\\"\\\"\\\"**AND THE SAME GAP BREAKS A *RANKING*, NOT ONLY A LEVEL (add"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/adaptive_spec_falsifiers_2026-09-29.py 2>&1 | tail -8; echo \\\"=== EXIT=$? ===\\\"; echo \\\"--- targeted regression: R_k companion + branch table ---\\\"; python3 -m pytest bench/tests/test_rk_expectation_companion_2026-09-29.py bench/tests/test_explorer_branch_table_2026-09-29.py -q 2>&1 | tail -6\", \"description\": \"Final run plus targeted regression tests\"}"
+    }
+  ],
+  "n_tool_calls": 32,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 887.6,
+  "response": "## VERDICT\n\n**The specification is sound enough for the runway, at Phase B.** Its mathematical discipline is real: it refuses to redefine the canonical model, pre-registers genuinely disconfirming rules (\u00a712), and correctly shelves `_load_balancer.py`. Six defects bite; five are in \u00a76. Two are load-bearing. None is fatal. **It earns a paid experiment \u2014 Phase D, not Phase E.**\n\n**4 passes run.** Pass 3 refuted one of my own claims (below). Pass 5 produced nothing above threshold.\n\nProducer for every number: `scripts/adaptive_spec_falsifiers_2026-09-29.py` \u2014 9 checks, all executed, check 7 a control that HELD.\n\n---\n\n### F1 \u2014 \u00a76.1 writes `\u03bd\u0302` as a free parameter; `compute_rk` derives it from `\u03c3`\n\n**claim** No constant `\u03bd\u0302` reproduces the live runner across `\u03c3`, because `nu_eff = 1-(1-nu_b)(1-(1-sk)nu_f)` is a *function of* `sk` \u2014 and `sk` is the same slot as `\u03c3` (runner's comment: *\"Phase 2: Resolution (S_k replaces sigma)\"*).\n\n**evidence**\n```\n sigma  runner compute_rk  nu_eff implied\n  0.00           0.620000        0.240000\n  1.00           0.441176        0.050000\nnu_eff spread over sigma in [0,1]: 0.190000\nbest constant nu_hat = 0.1375, sup|spec-runner| = 0.051471\n```\n**verdict HOLDS.** The spec's parameter space is larger than the reachable set, and it drops the coupling that makes a weak fix doubly penalised \u2014 so it **over-rewards low-`\u03c3\u0302` candidates**.\n**fix** `experimental_notes/panel_fixes_adaptive_spec_2026-09-29/opus-blind-seat.md` FIX 1.\n**what would refute me** A caller that passes `nu_b`, `nu_f` per configuration rather than as policy constants; or a ruling that `\u03bd\u0302` is a *forecast of* `nu_eff` rather than an independent estimate.\n\n---\n\n### F2 \u2014 \u00a76.1's \"zero verified-risk-reduction credit\" is **negative** credit in its own formula\n\n**claim** Substituting `\u03c3=0` into \u00a76.1's own `R_next` gives `g = \u03bd(R\u22121) < 0` \u2014 a penalty, not zero.\n\n**evidence** SymPy \u2192 `nu*(R - 1)`. z3 on `g \u2265 0` anywhere in `(0,1)\u00b3` \u2192 **unsat**. Wolfram `Reduce` \u2192 **False** (*computed with Wolfram Language*).\n```\nrunner compute_rk(0.5, 0.30, sk=0.0) = 0.620000   g = -0.120000\nlive REJECTED  apply_sk_to_rk        = 0.500000  <- R_k unchanged\nlive NO_SCORE  apply_sk_to_rk        = 0.500000  <- \"zero MOVEMENT, not a zero SCORE\"\n```\n**verdict HOLDS.** The runner avoids the penalty only by **never calling `compute_rk`** on a non-admissible outcome. The spec conflates three states the runner keeps distinct, and \u2014 worse \u2014 never links `\u03c3\u0302` to `S_k`, so a candidate whose gate product will be 0 can carry `\u03c3\u0302=0.9` and win the dispatch. **The \"hard qualification boundary\" has no formal expression in the score.**\n**fix** FIX 2 \u2014 carry the tri-state; move the exclusion into \u00a76.5's `x_mu=0` constraint where a program can check it.\n**what would refute me** A reading of \"credit\" as a reporting ledger rather than as `g`. But \u00a76.4 consumes `g`, so the score is still unguarded.\n\n---\n\n### F3 \u2014 \u00a76.1/\u00a76.4 rank candidates on the wrong branch quantity, and it **inverts orderings**\n\n**claim** `g = R \u2212 R_next` is the negative-branch blend `A`; a dispatch is chosen *before* the branch is known, so the decision quantity is `M = R(1\u2212q\u03c3)` (`compute_rk_expectation`). Because `A \u2212 M = \u03c3qR\u00b2(1\u2212q)/(1\u2212qR)` depends on `(q,\u03c3)`, the substitution is not rank-preserving.\n\n**evidence**\n```\nstrictly-ordered pairs : 64979\nranking inversions     : 1537\ninversion rate         : 2.3654%  Wilson 95% [2.2513%, 2.4851%]\nm1=(q=0.05,\u03c3=0.10): g_A=-0.109501  g_M=-0.108553\nm2=(q=0.35,\u03c3=0.05): g_A=-0.111169  g_M=-0.108517\nspec \u00a76.4 dispatches m1; pre-branch expectation prefers m2\nz3: exists a point with A < M -> unsat\n```\nWolfram: `Resolve[ForAll[...], A \u2212 M \u2265 0] \u2192 True` (*computed with Wolfram Language*).\n\n**Sampling distribution, stated:** uniform on `q,\u03c3 \u2208 {0.05,\u2026,0.95}` (19\u00d719), `R=0.5`, shipped `\u03bd`. **Not** the operational distribution, which is unknown. The rate is a property of this grid.\n\n**verdict HOLDS \u2014 and the spec is not culpable.** `git log docs/MATHEMATICAL_APPENDIX.md` shows **7 commits after 2026-09-14**, two on this exact quantity: `d6eeb90 2026-09-29 \"explorer A-vs-M\"` and `b509a44 2026-09-21 \"I attacked the maths model's Phase 2 and lost\"`. **The appendix moved under the spec, on the one equation it depends on most.** That is the real cost of consuming a live model by reference.\n**fix** FIX 3 (rank on `M`, report both, gate on neither) **plus** a repo-side additive entry at `docs/MATHEMATICAL_APPENDIX.md:270` \u2014 the appendix already says `A` is wrong for a *stopping* decision and nowhere says it is wrong for a *routing* decision. No gate or shipped number changes.\n**what would refute me** A demonstration that the operational `(q,\u03c3)` distribution is concentrated where the inversion set is empty; or a ruling that gate-compatibility requires `A` for routing too.\n\n---\n\n### F4 \u2014 \u00a76.5's objective does what \u00a76.7.1 forbids, and the bias is **two-signed**\n\n**claim** With `r_u \u2208 {2,3}` the objective sums gains of configurations on the *same* unit. The update composes multiplicatively in the **odds**, so the true joint gain is the single-pass gain at `q_eff`.\n\n**PASS 3 REFUTED MY FIRST VERSION OF THIS.** I claimed the sum always overstates. Wolfram: `Resolve[ForAll[..., gap > 0]] \u2192 **False**`. Repaired by deriving the exact boundary:\n\n**evidence**\n```\nSymPy: T(T(R,q1),q2) - T(R, 1-(1-q1)(1-q2)) = 0        <- odds composition, exact\nsign boundary R* = (1-sqrt(1-q_eff))/q_eff   limits: 1/2 -> 1;  gap at R=R* : 0\nR=1/2 (== RK0_PI_BASE): g1+g2 = 1/3, g_joint = 3/10  -> OVERSTATES 11.11%\nR=9/10 (above R*=2/3): 0.163636 vs 0.207692          -> UNDERSTATES 21.21%\nz3: any point with R<=1/2 failing to overstate -> unsat\nz3: any point at all where it understates      -> sat\ngrid {0.05..0.95}^3: overstates 71.35% Wilson [70.27%, 72.41%]; understates 28.65%\nLIVE, \u00a76.2's own numbers: g_A+g_B=0.188661 vs joint 0.173507  -> +8.73%\n```\nWolfram confirmed `gap>0` for all `R \u2264 1/2` \u2192 **True** (*computed with Wolfram Language*).\n\n**verdict HOLDS (sharper than claimed).** `RK0_PI_BASE = 0.5` sits **exactly on the boundary's floor**, so an additive allocator over-buys redundancy early and under-buys it on units that accrued risk through re-injection. A two-signed bias is worse than one-signed: it cannot be treated as a conservative bound.\n**fix** FIX 4 \u2014 compose over the selected set; add the overlap relation as a **solver constraint** so \u00a76.7.1 is enforced, not remembered. Greedy survives: the composed form is still submodular at fixed `R`.\n**what would refute me** A ruling that `r_u \u2265 2` always means *distinct claim surfaces* \u2014 but then \u00a76.7.1's overlap clause has nothing to forbid.\n\n---\n\n### F5 \u2014 \u00a76.4: exploration is **off** when uncertainty is greatest; the score is unit-dependent\n\n**claim (a)** `e_mu = sqrt(log(1+N_u)/(1+n_mu))` is identically 0 at `N_u=0`. **(b)** `score = g/D + \u03b2e` is not invariant under a change of cost unit.\n\n**evidence**\n```\nN_u=   0   n=0:0.0000  n=1:0.0000  n=5:0.0000\ne_mu == 0 for EVERY n_mu when N_u=0 : True\n\u03b2=0.0010 : dollars picks A (0.020560 vs 0.016482); cents picks B (0.000760 vs 0.001632) -> flip=True\n\u03b2=0.1000 : dollars picks B; cents picks B -> flip=False\nEXACT flip band for this pair: beta in (0.000054, 0.005423)\ndollars-vs-cents ranking flips: 44782 / 200000 = 22.39% Wilson 95% [22.21%, 22.57%]\n```\n**verdict (a) HOLDS. (b) PARTIAL** \u2014 my first instance (`\u03b2=0.10`) did **not** flip; the flip is a ~100-fold band in `\u03b2` whose *location* moves with the currency unit. **Sampling distribution, stated:** `g~U(0.001,0.05)`, `D~U(0.05,5.0)`, `n~U{0..19}`, `N_u~U{1..49}`, `\u03b2~log-uniform(1e-4,1)`, 200 000 draws, seed 20260929. **That is my prior, not the operational one.** The qualitative point is unit-analytic and survives any box: `\u03b2` silently carries units of risk-per-currency, and \u00a76.4 says fix it before a run without saying in what.\n\nOn (a): a never-tried configuration (`n=0`) and a saturated one (`n=49`) get **the same bonus: zero** \u2014 precisely when \u00a76.3 says the intervals are widest. Standard UCB either keeps a global count \u22651 or forces one pull per arm; this has neither.\n**fix** FIX 5 \u2014 move the bonus into the **numerator** (one unit for the whole score), use `log(2+N_u)`, and add the property test `e(N=0,n=0) > e(N=0,n=49)`, which the specified form fails.\n**what would refute me** For (a): an initialisation convention setting `N_u \u2265 1`. For (b): a policy declaring `\u03b2` in risk-per-currency with the currency pinned.\n\n---\n\n### F6 \u2014 \u00a79.2/\u00a79.3 cannot resolve the difference they are built to test; \u00a79.4's live gates are not program-evaluable\n\n**evidence** (statsmodels `TTestIndPower`, two-sample t, \u03b1=0.05)\n```\n n/arm  power@d=0.8  power@d=1.5  min detectable d @80%\n     3       0.1193       0.2932                  3.071\n    20       0.6934       0.9961                  0.909\nBonferroni \u03b1=0.05/15 (6 conditions -> 15 comparisons) at n=3 : d = 6.401\nSE(V_n - V_(n-1)) at 3 runs/arm = 0.8165*sigma; sign undetermined below 1.600*sigma\n\u00a79.4: program-evaluable gates: 2 of 4\n'threshold' appears 4 times; NUMERIC values attached: 0\n\u00a74.2 compiler: DECIDABLE 3 of 5; requiring an unspecified oracle 2 of 5\n     (\"entail\" 0 occurrences, \"decidab\" 0 occurrences in 624 lines)\n```\n**verdict HOLDS.** \u00a79.2 says three runs are needed *\"before comparing small differences\"* \u2014 **three runs cannot compare small differences at all**. And the two gates that authorise going live are the two with no predicate: \"matched-budget improvement\" names no statistic, threshold or interval; \"replicated benefit\" has no `k`. Deferring thresholds is legitimate in a design brief; presenting them in a table headed *\"Promotion evidence\"* is not.\n**fix** FIX 6 \u2014 pre-register effect size, `n`, multiplicity and the variance estimate's provenance; report `MarginalVerifiedYield` with an interval; make each gate a predicate over stored artefacts.\n**what would refute me** A named variance estimate from archived runs showing the real effect is `d > 3`. That would also mean the comparison is not close and the panel question is already settled.\n\n---\n\n## SOUND \u2014 recorded because a round of only complaints has been obliging, not sceptical\n\n1. **\u00a76.2's arithmetic is exact.** `257/400 = 0.6425`, marginal `77/400 = 0.1925`, in SymPy rationals. The marginal-gain principle it illustrates is the right one.\n2. **\u00a76.3's refusal to manufacture a scalar correlation correction is correct** and matches the appendix's own Ising branch and its stated data-hunger.\n3. **\u00a76.6 is honestly hedged** \u2014 submodularity claimed for `D_u(n)`, no global optimisation guarantee claimed for the full objective.\n4. **The task compiler is buildable for 3 of its 5 obligations, and I implemented each to confirm it**: Kahn separates a DAG from a cycle, dangling deps are set membership, interface ownership is an arity check. It is a specification for three fifths and a wish for two fifths \u2014 a scoping problem, not a fatal one.\n5. **\u00a710's ruling on `_load_balancer.py` is correct** and consistent with the additive standard: shelved, not live, replacement with committed invariants.\n6. **\u00a712 is the best part of the document.** Rule 2 concedes the scheduler in advance if the flat panel is not beaten at matched budget.\n\n---\n\n## What I did NOT check, named\n\n\u00a73/\u00a75 topology diagrams for feasibility; \u00a74.3 `EvidencePacket` against the live `bench/dm/` packet builders; \u00a74.4's forbidden transitions as a reachability property; \u00a78's 10 invariants individually (I classified them as property-testable, I did not write the properties); \u00a76.3's Ising normalisation `Z` and whether `\u03c8_ab` is identifiable at panel sizes \u2264 32; whether `D(n)` as the spec writes it matches `bench/DISTRIBUTED_COMPUTE_PROTOCOL.md`; \u00a711's Phase-A dependency on Exp 56; the full test suite (instructed not to).\n\n## Where I could not decide\n\n**The operational distribution over `(q, \u03c3, R)`.** Every rate I report \u2014 2.37%, 71.35%, 22.39% \u2014 is a property of a grid or box I chose. `RK0_PI_BASE = 0.5` is the one operationally pinned value, and it happens to sit at the floor of F4's sign boundary, which is why I lean on it rather than on the grid. Whether F3's 2.37% is 0% or 40% in practice is **undecided**, and I decline to let my flat prior stand in for it. F3's *existence* is derived; its *rate* is not.\n\n**Whether F2 is a defect or a wording gap.** If \"credit\" means only the reporting ledger, the sentence is defensible. \u00a76.4 consumes `g`, so the score is unguarded either way \u2014 but the severity differs and I cannot settle which reading the author intended.\n\n## My strongest disagreement with this brief's framing\n\nThe brief directs me to check whether \u00a76.1's transcription matches `compute_rk` \u2014 and it does not, which is F1. But **that framing understates the problem by treating the canonical model as a fixed target.** `git log` shows the appendix changed **7 times in the 15 days after the spec was written**, twice on the exact quantity \u00a76.1 transcribes. So F3 is not a transcription error at all: the spec transcribed correctly and the canon moved. Asking \"does the spec match the runner?\" produces a finding against the spec when the structural defect is in the **coupling**: a layer that declares it \"CONSUMES the canonical mathematics without redefining it\" has silently taken on the canon's revision rate as a dependency, and neither document names the mechanism that would catch it. The cheap mitigation is one line in \u00a76.1 \u2014 pin the consumed appendix by commit hash and execute the transcription against `compute_rk` in CI, so the next appendix revision breaks a test instead of quietly invalidating a scheduler. I would rather the founder buy that line than any of my other five fixes.\n\n---\n\n**Delivered (sandbox tree, real paths):**\n- `scripts/adaptive_spec_falsifiers_2026-09-29.py` \u2014 9 checks, runs, exit 0, prints `FALSIFIED`\n- `experimental_notes/panel_fixes_adaptive_spec_2026-09-29/opus-blind-seat.md` \u2014 447 lines, 6 fixes with original + replacement text per section\n- `docs/MATHEMATICAL_APPENDIX.md:270` \u2014 additive entry: the A-vs-M gap breaks a *ranking*, not only a level\n\n**Regression:** `python3 -m pytest bench/tests/test_rk_expectation_companion_2026-09-29.py bench/tests/test_explorer_branch_table_2026-09-29.py -q` \u2192 `32 passed in 2.96s`. Nothing removed, nothing disabled. Wolfram computed on all four calls (local kernel, exit 0, `Out` values present, no `Name::tag`, no `$Failed`).",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9ezvm38f/repo",
+      "built": false
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 12714,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and contents\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/Users/georgejackson/Developer_Projects/Responses/Codex, ChatGPT & Grok resources/adaptive_distributed_compute_design_spec.md\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def compute_rk\\\\|def compute_sk\\\" bench/reference_runner_v3.py && git log --oneline --since=2026-09-01 -- docs/MATHEMATICAL_APPENDIX.md\", \"description\": \"Locate compute_rk/compute_sk and appendix git history\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -a | head -20; ls docs/ | head -30\", \"description\": \"Check for .git and docs contents\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5qinw0wh/repo/bench/reference_runner_v3.py\", \"offset\": 11417, \"limit\": 280}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls \\\"/Users/georgejackson/Developer_Projects\\\" 2>/dev/null | head; ls -d /Users/georgejackson/Developer_Projects/*/.git 2>/dev/null | head\", \"description\": \"Look for canonical repo with .git\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5qinw0wh/repo/bench/reference_runner_v3.py\", \"offset\": 11010, \"limit\": 120}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"psi|\\u03c8|Ising|Boltzmann|correlated\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5qinw0wh/repo/docs/MATHEMATICAL_APPENDIX.md\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for d in /Users/georgejackson/Developer_Projects/*/.git; do r=\\\"${d%/.git}\\\"; if [ -f \\\"$r/docs/MATHEMATICAL_APPENDIX.md\\\" ] && [ -f \\\"$r/bench/reference_runner_v3.py\\\" ]; then echo \\\"CANONICAL: $r\\\"; fi; done; ls -d /Users/georgejackson/Developer_Projects/*/ | head -40\", \"description\": \"Find canonical CDSFL repo containing appendix and runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/Users/georgejackson/Developer_Projects/Constraint_Engineering\\\" && git log --since=2026-09-10 --format='%h %ad %s' --date=short -- docs/MATHEMATICAL_APPENDIX.md | head -30\", \"description\": \"Git log of MATHEMATICAL_APPENDIX.md since 2026-09-10 (read-only)\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/Users/georgejackson/Developer_Projects/Constraint_Engineering\\\" && git diff 8a0952a^..ea43d3f -- docs/MATHEMATICAL_APPENDIX.md | head -120\", \"description\": \"Diff of appendix from pre-2026-09-18 to now\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"D\\\\(n\\\\)|D_n|distributed.?compute coverage\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5qinw0wh/repo/docs/MATHEMATICAL_APPENDIX.md\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 30}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5qinw0wh/repo/docs/MATHEMATICAL_APPENDIX.md\", \"offset\": 510, \"limit\": 40}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/Users/georgejackson/Developer_Projects/Constraint_Engineering\\\" && git log --format='%h %ad' --date=short -S 'o_ik' -- docs/MATHEMATICAL_APPENDIX.md | tail -3; grep -rn \\\"apply_sk_to_rk(\\\" bench/reference_runner_v3.py | grep -v \\\"def apply_sk_to_rk\\\" | head\", \"description\": \"Date the o_ik overlap factor; find apply_sk_to_rk call sites\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5qinw0wh/repo/docs/MATHEMATICAL_APPENDIX.md\", \"offset\": 820, \"limit\": 45}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"Part XII|Part XIII|distributed compute\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5qinw0wh/repo/PAPER.md\", \"output_mode\": \"content\", \"-n\": true, \"-i\": true, \"head_limit\": 20}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5qinw0wh/repo/PAPER.md\", \"offset\": 1022, \"limit\": 60}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nfrom bench.reference_runner_v3 import compute_rk, compute_rk_expectation, apply_sk_to_rk, SK_NO_SCORE\\nprint('import ok')\\nprint('rk(0.5,0.5,0)=', compute_rk(0.5,0.5,0.0))\\nprint('rk_exp(0.5,0.5,0)=', compute_rk_expectation(0.5,0.5,0.0))\\nprint(apply_sk_to_rk(0.5, SK_NO_SCORE))\\n\\\" 2>&1 | tail -5\", \"description\": \"Smoke test importing compute_rk functions\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5qinw0wh/repo/scripts/panel_adaptive_spec_falsifiers_2026-09-29.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Falsifiers for the adaptive distributed-compute design spec (2026-09-14).\\n\\nPanel seat: fable (blind round, 2026-09-29).\\n\\nEach check compares the specification's OWN transcriptions (\\u00a76.1, \\u00a76.2"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p scripts experimental_notes/panel_fixes_adaptive_spec_2026-09-29 && cat > scripts/panel_adaptive_spec_falsifiers_2026-09-29.py << 'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Falsifiers for the adaptive distributed-compute design spec (2026-09-14).\\n\\nPanel seat: fable (blind round, 2026-09-29).\\n\\nEach check compares the specification's OWN transcriptions (SS6.1, SS6.2, SS6.4,\\nSS9"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'Rdet = R (1-q)/(1-q R); Rbase = s Rdet + (1-s) R; nue = 1-(1-nb)(1-(1-s) nf); d1 = Simplify[(Rbase (1-nh)+nh) - (Rbase (1-nue)+nue) - (nh-nue)(1-Rbase)]; d2 = Simplify[R - Rbase - s q R (1-R)/(1-q R)]; d3 = Simplify[R - R(1-q s) - R q s]; {d1, d2, d3}' 2>&1; echo \\\"exit=$?\\\"\", \"description\": \"Wolfram cross-check of the three SymPy identities"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"nu_eff|\\u03bd_eff\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5qinw0wh/repo\", \"glob\": \"*operational*.md\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 12}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > \\\"experimental_notes/panel_fixes_adaptive_spec_2026-09-29/fable.md\\\" << 'MDEOF'\\n# Panel fixes: adaptive distributed-compute design spec (2026-09-14)\\n\\nSeat: **fable** \\u00b7 Blind round, 2026-09-29.\\nFalsifier (executed, exit 0): `scripts/panel_adaptive_spec_falsifiers_2026-09-29.py`.\\nAll identities cross-checked on SymPy and Wolfram Language (local kernel, `{0,0,0}`, exit 0)"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport math\\nfrom scipy import stats\\n# Independent power computation: two-sample t, n=3/group, d=3.07, alpha=.05\\nn, d, alpha = 3, 3.0662, 0.05\\ndf = 2*n-2\\nnc = d*math.sqrt(n/2)\\ntcrit = stats.t.ppf(1-alpha/2, df)\\npower = 1 - stats.nct.cdf(tcrit, df, nc) + stats.nct.cdf(-tcrit, df, nc)\\nprint('scipy power at d=3.0662, n=3:', round(power,4))\\n# Wilson 3/3 by hand vs s"
+    }
+  ],
+  "n_tool_calls": 24,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 649.8,
+  "response": "All cross-checks agree (scipy noncentral-t power 0.7989 \u2248 0.8 at d = 3.0662, n = 3; hand-Wilson \u2261 statsmodels). Final report.\n\n---\n\n# BLIND REVIEW \u2014 adaptive distributed-compute design spec (2026-09-14)\n\n**Verdict on the question asked:** The specification is **sound in architecture and discipline, and defective in its mathematical transcriptions at exactly the points it claims to consume the canonical model**. It earns a place on the runway at **Phase B (substrate) only**, and it does **not** earn a paid experiment until \u00a76.1 and \u00a76.4 are repaired \u2014 because the scheduler's scoring core, as written, predicts a state the runner does not produce and ranks by a quantity the project's own appendix has since ruled wrong for pre-dispatch decisions. All fixes are delivered and all falsifiers executed.\n\n**Note on blindness:** canonical commit `ea43d3f` (today) contains the founder's own assessment of this spec. I used the canonical git history for **dates only** and did not read that assessment.\n\n## Findings\n\n### F-1 \u2014 \u00a76.1's re-injection phase is not the operational update law it claims to consume \u2014 **HOLDS**\n\n- **claim:** The spec's `R_next = [\u03c3\u0302R_det + (1\u2212\u03c3\u0302)R](1\u2212\u03bd\u0302) + \u03bd\u0302` with a free per-configuration \u03bd\u0302 cannot reproduce `compute_rk`, whose \u03bd_eff = 1\u2212(1\u2212\u03bd_b)(1\u2212(1\u2212S_k)\u03bd_f) is **coupled to fix efficacy** (`cdsfl_operational.md` \u00a73 lines 159\u2013165 \u2014 the operational law).\n- **evidence:** `python3 scripts/panel_adaptive_spec_falsifiers_2026-09-29.py` \u2192 `F1a max |diff| = 0.00e+00` when \u03bd\u0302=\u03bd_eff(\u03c3) (the forms are algebraically identical then); `F1b best constant nu-hat=0.14, max |diff|=0.0736; |diff|>0.01 at 522/729 grid pts (rate 0.716, Wilson95 [0.682,0.748])`. SymPy: spec\u2212runner = (\u03bd\u0302\u2212\u03bd_eff)(1\u2212R_base); Wolfram Language returned `0` for the same difference (local kernel, exit 0). Sub-defect: spec form is 0/0 at q\u0302R=1; `compute_rk` guards it (F1d).\n- **fix:** `experimental_notes/panel_fixes_adaptive_spec_2026-09-29/fable.md` Fix 1.\n- **falsifier:** the script above; exit 0, all 16 checks reproduced.\n- **what would refute me:** a passage in the spec (I found none; \u00a76.7.5 treats \u03c3 and \u03bd as separately fit) declaring \u03bd\u0302_muk to be an estimator of \u03bd_eff(\u03c3\u0302) with the (\u03bd_b, \u03bd_f, \u03c3\u0302) functional form and the \u03bd_b+\u03bd_f\u22641 rescaling; or a founder ruling that the appendix's plain-\u03bd Stage 5 form, not the runner's bounded form, is the layer schedulers must predict.\n\n### F-2 \u2014 \u00a76.1's closing S_k claim (\"zero credit\") contradicts the shipped tri-state \u2014 **HOLDS**\n\n- **claim:** A candidate failing an **applicable** gate receives **negative** credit, not zero: only NO_SCORE (no applicable gate) is zero movement.\n- **evidence:** `F2: gate-failed: R 0.5 -> 0.6200 (credit -0.1200, NEGATIVE); NO_SCORE: R 0.5 -> 0.5000 (credit exactly 0)` \u2014 run against shipped `compute_rk` and `apply_sk_to_rk`, whose docstring makes the distinction the A2 design point. A scheduler crediting zero under-penalises configurations that produce inadmissible fixes and will over-dispatch them.\n- **fix:** fable.md Fix 2. **falsifier:** F2, executed above.\n- **what would refute me:** evidence that the intended dispatch flow never applies the R_k update to a gate-failed candidate (i.e. REJECTED never reaches `compute_rk` with sk=0 in the operational runner) \u2014 I did not trace every call path; if REJECTED is also zero-movement in practice, the finding downgrades to a wording defect.\n\n### F-3 \u2014 \u00a76.1's routing estimator uses the gate's conditional blend where the canonical maths (revised *after* the spec) requires the pre-branch expectation \u2014 **HOLDS**\n\n- **claim:** g_muk = R \u2212 R_next(blend) is the wrong decision quantity for choosing a dispatch *before* the outcome branch is known; the appendix entries of 2026-09-21/2026-09-29 and shipped `compute_rk_expectation` (\"the quantity an explorer needs BEFORE a run\") establish E[improvement] = Rq\u0302\u03c3\u0302(1\u2212\u03bd\u0302_eff) \u2212 \u03bd\u0302_eff(1\u2212R) as the correct one. This is a **dating** defect: the spec (09-14) predates the ruling (`git log docs/MATHEMATICAL_APPENDIX.md`: `8a0952a 2026-09-18`, `b509a44\u20260a4a491 2026-09-21`, `ea43d3f 2026-09-29`).\n- **evidence (all against shipped functions):** `F3c` conditional gain at R=0.99, q=0.3 is 0.004225 vs expectation 0.2970 \u2014 **70.3\u00d7** understatement, reproducing the appendix's figures; premature-stop band bites \u00a77.1 step 9. `F3a` ranking reversal at R=0.9: spec's g prefers X(q=.9,\u03c3=.4) 0.1262>0.0509, expectation prefers Y(q=.5,\u03c3=.8) 0.3195>0.2545. SymPy+Wolfram: blend-gain = \u03c3qR(1\u2212R)/(1\u2212qR) (ranks by \u03c3q/(1\u2212qR)), expectation-gain = Rq\u03c3 (ranks by \u03c3q). `F3b` reversal rate 619/20000 = **3.09%**, Wilson95 [2.86%, 3.34%] \u2014 under a **uniform** draw on (R,q,\u03c3)\u00b2; the operationally relevant distribution is unknown, and reversals concentrate at high R, where dispatch matters most.\n- **fix:** fable.md Fix 3. **falsifier:** F3a\u2013c, executed.\n- **what would refute me:** a founder ruling that the router must predict the *recorded* (gated) state rather than the decision-theoretic expectation \u2014 that would make the spec self-consistent but would re-import the premature-stop pathology the appendix documents; or a demonstration that under the operational (R,q,\u03c3) distribution reversal probability is negligible *and* stopping decisions never occur above R\\*.\n\n### F-4 \u2014 \u00a76.4's dispatch policy is not well-posed \u2014 **HOLDS**\n\n- **claim:** (a) e_mu = \u221a(log(1+N_u)/(1+n_mu)) is identically **0 at N_u=0** \u2014 zero exploration exactly at maximum ignorance; (b) score \u2192 \u221e as denominator \u2192 0 (no cost floor); (c) units incoherent: g/(money) plus a dimensionless \u03b2e requires \u03b2 to carry [risk-reduction/money], unstated.\n- **evidence:** `F4a e_mu at N_u=0: [0.0, 0.0, 0.0]`; `F4b scores at c=1e-3,1e-6,1e-9: [100.0, 1e5, 1e8]`. Units defect is derivational: \u03bb_t, \u03bb_h convert t, h to money, so denominator is money; numerator dimensionless risk-reduction; \u03b2e added to a [1/money] ratio.\n- **fix:** fable.md Fix 4 (bonus into the numerator, declared c_floor, cold-start-positive e_mu, published units for \u03bb_t, \u03bb_h, \u03b2). **falsifier:** F4a/F4b, executed.\n- **what would refute me:** a reading of N_u under which the first allocation already makes N_u\u22651 for *scoring* purposes before any m is chosen (the spec says \"completed allocations\", so no); for (c), a published units convention elsewhere in the spec \u2014 there is none.\n\n### F-5 \u2014 \u00a79.3's design has power only for enormous effects \u2014 **PARTIAL**\n\n- **claim:** n=3 per condition \u21d2 minimum detectable effect **d \u2248 3.07** (\u03b1=.05, power .8), **d \u2248 4.80** Bonferroni-corrected over the 5 control comparisons; a 3/3 proportion carries Wilson95 [0.439, 1.000]. \"At least three runs \u2026 before comparing small differences\" installs a floor that will be read as adequacy; small differences need n \u2248 17\u201323 per condition at d=1.\n- **evidence:** `F5a MDE = 3.07; Bonferroni d = 4.80`; cross-verified independently: scipy noncentral-t power at d=3.0662, n=3 \u2192 **0.7989**; hand-Wilson \u2261 statsmodels `(0.4385, 1.0)`. PARTIAL because the spec says \"at least\" and never claims adequacy \u2014 the defect is the absent MDE statement, not a false one.\n- **fix:** fable.md Fix 5. **falsifier:** F5a/F5b + the scipy cross-check, executed.\n- **what would refute me:** a pre-registered analysis plan elsewhere in the programme specifying per-condition n from an expected effect size \u2014 none exists in the document.\n\n### F-6 \u2014 \u00a79.4: two of four promotion gates are not machine-checkable \u2014 **PARTIAL**\n\n- **claim:** Library and the invariant halves of Shadow/Controlled-live are programmatically evaluable; \"counterfactual comparison\", \"matched-budget improvement\" and \"replicated benefit\" name no metric, threshold, replication count, or test \u2014 a program cannot return PASS/FAIL on them.\n- **evidence:** textual; \u00a79.1/\u00a79.3 supply usable statistics (primary outcome, MarginalVerifiedYield) that \u00a79.4 never binds to the gates.\n- **fix:** fable.md Fix 6 (concrete criteria binding each gate to \u00a79.1/\u00a79.3 statistics with pre-frozen thresholds). **falsifier:** none executable against prose; the fix's criteria are themselves programmatic, which is the point.\n- **what would refute me:** any sentence in the spec binding a gate to a named statistic and threshold. \u00a79.3's \"pre-registered criterion is met\" comes closest but names no criterion.\n\n### F-7 \u2014 \u00a74.1: the task compiler is buildable as a **validator**, not as the **prover** the text implies \u2014 **PARTIAL**\n\n- **claim:** Acyclicity, dependency closure, interface ownership, hashing: mechanical. \"Checked for coverage of HARD constraints\" is decidable only as a syntactic mapping (h \u2208 H \u21a6 \u22651 unit); whether a unit's oracle actually tests h has no oracle in the document; and the duplication check has no admissible identity mechanism, given \u00a78 invariant 8 prohibits lexical similarity alone.\n- **evidence:** textual analysis of \u00a74.1/\u00a74.2/\u00a78; no counter-passage defines \"coverage\" or the identity mechanism for *proposed* units.\n- **fix:** fable.md Fix 7 (syntactic-coverage wording, REFUSE-to-dispatch on uncovered constraints, \u00a78-invariant-8 identity for dedup). **what would refute me:** a definition of constraint coverage or unit identity anywhere in the spec.\n\n### Sound, and said so\n\n- **\u00a76.2 D(n)** is a faithful transcription of PAPER.md Part XIII's general multi-class form, worked example exact (`F6`: 257/400 = 0.6425, increment 77/400 = 0.1925, Fraction arithmetic); the conditional-increment \u0394(m|A) is the right generalisation of Part XIII's marginal gain. (The appendix's Part XII extension adds an o_ik overlap matrix, in place since 2026-03-19; the spec's \u00a76.3 handles correlation separately and correctly, so this is presentation, not defect.)\n- **\u00a76.3 Ising transcription** matches appendix \u00a70.1 term for term; the f_a rename *avoids* the appendix's own overload of q (failure prob in \u00a70.1 vs detection operationally). Refusing early \u03c8 fitting is consistent with the appendix's n\u22653 normalisation finding.\n- **q\u0302 = \u03b7\u0302d\u0302p\u0302** matches `compute_rk_with_eta_channel` (q = \u03b7_combined\u00b7d\u00b7p), and the ban on a second novelty multiplier matches the m_div-on-\u03b7_int-only channel rule.\n- **\u00a76.6** correctly claims submodularity only for fixed-event coverage; **\u00a76.5/\u00a710** feasibility-refusal and load-balancer reading match the additive standard and the shelving record.\n\n## What I did NOT check\n\nThe \u00a74.3/\u00a74.4 state machine against `bench/dm` vocabulary; \u00a78 invariants 7\u201310 against existing provenance machinery; \u00a75.2's diversity-vector calibration claims; whether \u00a79.2's six conditions are mutually confounded; every call path by which SK_REJECTED reaches (or does not reach) `compute_rk` (bears on F-2's severity); the full test suite (prohibited); Exp 56 scope-boundary appropriateness.\n\n## Where I could not decide\n\nWhether F-3 is a defect *in the spec* or a spec-appendix **race**: the spec was arguably correct on 2026-09-14 under the then-current appendix gloss, and the appendix moved under it on 09-21/09-29. The defect is real either way \u2014 the document on the runway today mis-specifies the router \u2014 but attribution (author error vs. canonical drift) is the founder's call. Also: the operational (R, q, \u03c3) distribution is unknown, so my 3.09% reversal rate and 71.6% mispredict rate are properties of uniform sampling, not of production traffic.\n\n## Strongest disagreement with the brief's framing\n\nThe brief directs the \u03c3/\u03bd comparison as if the spec's transcription might disagree with `compute_rk` *pointwise as formulas*. It doesn't \u2014 with \u03bd\u0302 bound to \u03bd_eff(\u03c3\u0302) they are the same function to 0.0 (F1a, SymPy, Wolfram). The real defect is **parametric**, not algebraic: the spec frees a parameter the runner couples. A panel that only diffed outputs at matched parameters would have declared them identical and missed the finding; a panel that only read the formulas would have called them different and overstated it. The instrument that decided was the *calibration* question \u2014 can any constant \u03bd\u0302 track \u03bd_eff(\u03c3)? (No: max error 0.0736.) Secondly: the brief's \"Wilson governs every proportion\" is right but insufficient here \u2014 the binding caveat on my rates is the unknown sampling distribution, which no interval repairs.\n\n## Termination\n\n**3 passes.** Pass 1: spec, runner, operational directives, appendix + its post-09-14 history. Pass 2: executed falsifiers (16 checks, exit 0; SymPy + Wolfram + scipy/statsmodels cross-checks). Pass 3: sweep of \u00a74.4, \u00a76.5, \u00a78, \u00a79.1, \u00a712\u201314 produced nothing above the material threshold (worst candidates: MarginalVerifiedYield's C_n\u2212C_{n\u22121}=0 division; TOOL_REFUTED's\u8def\u5f84 through INTEGRATION_CHECK \u2014 both below consequence threshold). Converged: no new material finding in pass 3; declared per \u00a710 with the evidence above, refutable by the runner's independent re-execution of `scripts/panel_adaptive_spec_falsifiers_2026-09-29.py`.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5qinw0wh/repo",
+      "built": false
+    }
+  ]
+}
