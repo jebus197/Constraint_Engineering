@@ -8,22 +8,22 @@ what was filtered and the criterion that filtered it, so the public
 record is honest about the shape of what is withheld, not only what is
 shown.
 
-## Accounting (counted 2026-09-29 09:58 BST)
+## Accounting (counted 2026-09-29 13:51 BST)
 
 The source index lives privately at
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
-The directory holds **152 files**, of which one is `MEMORY.md` itself
-(the index), leaving **151 individual memory files**. They partition as:
+The directory holds **153 files**, of which one is `MEMORY.md` itself
+(the index), leaving **152 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 94 |
+| Mirrored (in summarised form) in `MEMORY.md` | 95 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 151 |
+| total | 152 |
 
 > **[Correction 2026-09-21.]** Total 147 -> 149, mirrored 90 -> 92, directory 148 -> 150. Two memory files were written overnight on 2026-09-21: `cdsfl_the_appendix_won_2026-09-21.md`, recording that the assistant attacked the model's Phase 2 and was refuted by both free seats in a single round, and `cdsfl_scorer_measured_absence_of_harm_2026-09-21.md`, recording that S_k filled the appendix's sigma slot while every gate measured absence of harm. Both are mirrored in `MEMORY.md` under the pointers "THE APPENDIX WON" and "SCORER MEASURED ABSENCE OF HARM", so both fall in the residual bucket rather than needing a name under Excluded or Unclassified.
 >
