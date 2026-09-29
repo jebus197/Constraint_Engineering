@@ -2159,7 +2159,8 @@ class FindingRegistry:
         self.model_identity: Dict[str, str] = {}
 
     def record_codiscovery(self, canonical_id: str, model_id: str,
-                           finding_id: str, similarity: float = 0.0) -> bool:
+                           finding_id: str, similarity: float = 0.0,
+                           round_idx: int = 0) -> bool:
         """Record that ANOTHER model independently raised this same defect.
 
         THE DEFECT THIS CLOSES, MEASURED 2026-08-23. `source_aliases` was written
@@ -2176,12 +2177,34 @@ class FindingRegistry:
         21 are co-discovery that the registry could not see. This makes the
         registry record for free what that adjudication recovers for 0.287s a pair.
 
-        DELIBERATELY NON-DESTRUCTIVE. This appends an alias and nothing else. It
-        does NOT suppress the duplicate's own registration, does NOT touch
-        `novel_this_round`, and therefore CANNOT move gamma or any convergence
-        decision. Suppressing registration would be the natural "fix" and it would
-        alter core schema behaviour, which is a founder ruling, not an engineering
-        choice. Recording is free; deciding is not.
+        STILL NON-DESTRUCTIVE: it appends and never suppresses the duplicate's
+        own registration, which would alter core schema behaviour -- a founder
+        ruling, not an engineering choice.
+
+        BUT THE OLD "CANNOT MOVE A VERDICT" GUARANTEE NO LONGER HOLDS, AND SAYING
+        SO HERE IS THE POINT. Until 2026-09-29 this docstring promised the method
+        "does NOT touch `novel_this_round`, and therefore CANNOT move gamma or any
+        convergence decision". That was true while the overlap record was read by
+        nothing. On the founder's 2026-09-29 ruling -- option 3 of
+        `experimental_notes/Shakedown_Finding_Rho_Cannot_Fall_2026-09-29.md` --
+        the occasion written below IS read, by `_corroborated_novelty_series`,
+        which supplies rho's numerator. Corroboration is now EVIDENCE, so this
+        method can move rho and, through rho's churn flag, reach the convergence
+        gate. A stale guarantee left in a docstring is how a rejected position
+        acquires authority in this project, so it is CORRECTED here rather than
+        deleted, leaving the change of status visible.
+
+        WHY AN OCCASION AND NOT JUST AN ALIAS. `source_aliases` and `codiscovery`
+        already recorded this. Measured on the 2026-09-29 shakedown arm 1 they
+        held 10 corroboration events across 8 of 53 canonicals -- while all 53
+        entries carried exactly 1 occasion, because `occasions` was appended only
+        inside a merge path and merges are withheld pending a tool verdict. The
+        signal was arriving and landing in a field nothing counted.
+
+        `from_canonical` names the DUPLICATE's own canonical where the alias map
+        can resolve it, not this entry, so a reader can see which registration
+        the occasion discounts. It falls back to `canonical_id` when it cannot,
+        which keeps the field unconditional.
 
         Returns True if an alias was actually added.
         """
@@ -2190,12 +2213,65 @@ class FindingRegistry:
             return False
         alias = f"{model_id}:{finding_id}"
         aliases = entry.setdefault("source_aliases", [])
-        if alias in aliases or finding_id in aliases:
+        already = alias in aliases or finding_id in aliases
+        if already:
+            # BACKFILL, AND THIS IS A RESUME DEFECT CAUGHT BY THIS METHOD'S OWN
+            # GUARD TEST, 2026-09-29. Returning here unconditionally -- which is
+            # what this method did until now -- means an alias recorded BEFORE the
+            # occasion write existed can never acquire its occasion. Any run
+            # resumed from a pre-2026-09-29 checkpoint would carry corroboration
+            # in `source_aliases` and `codiscovery` while `occasions` stayed
+            # starved, so rho would silently keep counting re-sightings as
+            # discoveries -- the exact defect option 3 repairs, reintroduced by
+            # the resume path alone. The alias is NOT re-appended; only the
+            # missing occasion is. The return value stays False, because "an alias
+            # was added" is still false and 3 existing tests assert on that.
+            self._backfill_occasion(entry, canonical_id, model_id, finding_id,
+                                    similarity, round_idx)
             return False
         aliases.append(alias)
         entry.setdefault("codiscovery", []).append({
             "model": model_id,
             "finding_id": finding_id,
+            "similarity": round(float(similarity), 4),
+        })
+        # THE OVERLAP RECORD NOW GROWS ON CORROBORATION (founder ruling
+        # 2026-09-29, option 3). Before this, `occasions` grew only inside a
+        # merge path, and merges are withheld pending a tool verdict -- so the
+        # list the novelty count is meant to read never reached length 2.
+        # Measured on shakedown arm 1: 53 of 53 canonicals carried exactly 1
+        # occasion; multi-occasion 0 of 53, Wilson [0.0000%, 6.7582%].
+        self._backfill_occasion(entry, canonical_id, model_id, finding_id,
+                                similarity, round_idx)
+        return True
+
+    def _backfill_occasion(self, entry: dict, canonical_id: str, model_id: str,
+                           finding_id: str, similarity: float,
+                           round_idx: int) -> bool:
+        """Append the corroboration occasion unless it is already recorded.
+
+        ONE DEFINITION FOR BOTH CALLERS, deliberately. The fresh path and the
+        resume backfill must write the identical shape; two copies of this literal
+        is how a producer and a consumer come to disagree while each reads
+        correctly on its own (`execute-do-not-grep`, founder ruling 2026-09-04).
+
+        Idempotent on (model, alias), so a duplicate triaged in 2 consecutive
+        rounds contributes 1 occasion, not 2 -- otherwise rho would be
+        UNDERSTATED, which is the mirror of the defect being fixed.
+        """
+        occs = entry.setdefault("occasions", [])
+        for o in occs:
+            if (isinstance(o, dict) and o.get("via") == "codiscovery"
+                    and o.get("model") == model_id
+                    and o.get("alias") == finding_id):
+                return False
+        occs.append({
+            "model": model_id,
+            "round": int(round_idx),
+            "alias": finding_id,
+            "from_canonical": self._alias_map.get(
+                f"{model_id}:{finding_id}", canonical_id),
+            "via": "codiscovery",
             "similarity": round(float(similarity), 4),
         })
         return True
@@ -7642,6 +7718,116 @@ def _settled_novelty_series(
         if r is None or r < 0 or r > max_round:
             continue
         if e.get("status") in _NON_NOVEL_TERMINAL_STATUSES:
+            continue
+        all_s[r] += 1
+        if (e.get("severity") or 0.0) >= _thr:
+            crit_s[r] += 1
+    return all_s, crit_s
+
+
+def _corroborated_discounts(registry) -> Dict[str, str]:
+    """Canonical ids that a LATER corroboration showed were not new discoveries.
+
+    Reads the `occasions` overlap record written by `FindingRegistry.register`
+    (via="register") and `record_codiscovery` (via="codiscovery"). A codiscovery
+    occasion sitting on entry T names, in `from_canonical`, the canonical D that
+    the duplicate finding registered for ITSELF. D and T are the same defect, so
+    exactly one of them is a discovery and the other is a re-sighting.
+
+    Returns {discounted_canonical: the canonical it corroborates}.
+
+    WHICH ONE IS DISCOUNTED, AND WHY IT IS NOT A COIN TOSS. The one that opened
+    LATER. Where both opened in the same round, T is kept because T is the entry
+    the triage pipeline resolved the duplicate ONTO, so T is the earlier
+    registration by construction. Ties are therefore resolved by registration
+    order and not by similarity, severity or model -- none of which is evidence
+    about which sighting came first.
+
+    SELF-REFERENCE IS REFUSED. `from_canonical` falls back to the target's own id
+    when the alias map cannot resolve the duplicate, so D == T is a legitimate
+    unresolved case and must never discount T against itself. That would delete a
+    genuine discovery, which is the failure mode
+    `cdsfl_a_model_can_delete_a_finding_by_repeating_itself` records.
+    """
+    entries = registry.entries if hasattr(registry, "entries") else {}
+    if not isinstance(entries, dict):
+        return {}
+    discounts: Dict[str, str] = {}
+    for tgt_id, tgt in entries.items():
+        if not isinstance(tgt, dict):
+            continue
+        t_round = tgt.get("open_since_round")
+        for occ in tgt.get("occasions") or []:
+            if not isinstance(occ, dict) or occ.get("via") != "codiscovery":
+                continue
+            dup_id = occ.get("from_canonical")
+            if not dup_id or dup_id == tgt_id or dup_id not in entries:
+                continue
+            dup = entries[dup_id]
+            if not isinstance(dup, dict):
+                continue
+            d_round = dup.get("open_since_round")
+            if t_round is None or d_round is None:
+                continue
+            # discount the LATER sighting; same round keeps the target
+            if d_round >= t_round:
+                discounts[dup_id] = tgt_id
+            else:
+                discounts[tgt_id] = dup_id
+    return discounts
+
+
+def _corroborated_novelty_series(
+    registry, max_round: int, severity_threshold: float = None,
+) -> Tuple[List[int], List[int]]:
+    """Per-round novelty counting DISTINCT DEFECTS, not distinct registrations.
+
+    FOUNDER RULING 2026-09-29, option 3 of
+    `experimental_notes/Shakedown_Finding_Rho_Cannot_Fall_2026-09-29.md`:
+    "Count novelty from `occasions` rather than from alias misses, and let the
+    overlap record grow on corroboration instead of only on merge."
+
+    This is `_settled_novelty_series` plus one further exclusion: a registration
+    that a later corroboration identified as a re-sighting of an earlier
+    canonical is not a discovery. `_settled_novelty_series` is left byte-identical
+    and keeps its callers, because it answers a different question -- "did this
+    survive reconciliation" -- and `gamma_threshold_profile` re-reads it at four
+    severity cuts.
+
+    WHY THIS COULD NOT BE DONE AT THE REGISTRATION SITE. Novelty was counted from
+    `lookup_alias(model_id, finding_id)`, whose whole body is a dict lookup keyed
+    `model:local_id`, so it can only ever match the SAME model re-raising its OWN
+    id. Two models raising one defect both miss and both count novel. Moving that
+    test to `occasions` at the same site changes nothing, because corroboration
+    for round K is not recorded until the triage pipeline has run, several hundred
+    lines later in the same round. The count therefore has to be taken after
+    corroboration exists -- which is why the caller recomputes rho after the
+    settle pass rather than trying to fix the counter in place.
+
+    MEASURED, on the 2026-09-29 shakedown arm 1 registry (53 canonicals, rounds
+    0-4). Recorded rho was 1.000 in all 5 rounds. Recomputed here:
+    [0.5909, 0.7500, 0.5714, 0.8750, 0.8750]. All 10 corroboration events in that
+    run sat on entries whose status was NOT terminal, so every one of these
+    exclusions is additional to what `_settled_novelty_series` already removes --
+    the two are complementary, not overlapping.
+    """
+    _thr = (CRITICAL_SEVERITY_THRESHOLD if severity_threshold is None
+            else float(severity_threshold))
+    entries = registry.entries if hasattr(registry, "entries") else {}
+    vals = (list(entries.values())
+            if isinstance(entries, dict) else list(entries))
+    discounts = _corroborated_discounts(registry)
+    all_s = [0] * (max_round + 1)
+    crit_s = [0] * (max_round + 1)
+    for e in vals:
+        if not isinstance(e, dict):
+            continue
+        r = e.get("open_since_round")
+        if r is None or r < 0 or r > max_round:
+            continue
+        if e.get("status") in _NON_NOVEL_TERMINAL_STATUSES:
+            continue
+        if e.get("canonical_id") in discounts:
             continue
         all_s[r] += 1
         if (e.get("severity") or 0.0) >= _thr:
@@ -14590,14 +14776,24 @@ def run_experiment(
         # A2: Rho
         rho_current, rho_avg, rho_churn = _compute_rho(novelty_counts, raw_counts, cfg)
         rho_history.append(rho_current)
-        # D1: track consecutive churn rounds for phase transition
+        # D1: track consecutive churn rounds for phase transition.
+        #
+        # PROVISIONAL AT THIS POINT (2026-09-29). Everything computed here is
+        # pre-verifier: the triage pipeline has not run, so no corroboration is
+        # known yet and every registration still looks novel. The rho
+        # recomputation after the settle pass re-derives all of it from
+        # `_churn_base`, which is kept for exactly that reason -- re-deriving from
+        # a saved base is exact, whereas undoing an increment is a second place to
+        # get the arithmetic wrong.
+        _churn_base = consecutive_churn_rounds
         if rho_churn:
             consecutive_churn_rounds += 1
         else:
             consecutive_churn_rounds = 0
         _log(f"  Registry: {novel_this_round} novel / {len(findings)} raw, "
              f"{len(registry.entries)} total, "
-             f"rho={rho_current:.3f}, rho_avg={rho_avg:.3f}"
+             f"rho={rho_current:.3f} (provisional, pre-verifier), "
+             f"rho_avg={rho_avg:.3f}"
              f"{' [CHURN]' if rho_churn else ''}"
              f"{f' (churn x{consecutive_churn_rounds})' if consecutive_churn_rounds > 1 else ''}")
 
@@ -15025,8 +15221,17 @@ def run_experiment(
         # symptom was the feedback channel silently going dark. Caught live in
         # Exp 55 at 15:31 by the cy monitor, on the round-1 boundary.
         #
-        # Recording changes nothing it must not: registration, `novel_this_round`
-        # and therefore gamma are untouched. See record_codiscovery.
+        # WHAT RECORDING NOW CHANGES, corrected 2026-09-29. This comment used to
+        # read "Recording changes nothing it must not: registration,
+        # `novel_this_round` and therefore gamma are untouched." Registration is
+        # still untouched -- the duplicate keeps its own canonical, which is a
+        # founder ruling on core schema behaviour. But on the founder's 2026-09-29
+        # option-3 ruling the occasion recorded here IS counted: the rho
+        # recomputation after the settle pass reads it through
+        # `_corroborated_novelty_series`. So this call can move rho, and rho's
+        # churn flag is blocking condition (d) of the gamma-alt gate. It runs
+        # BEFORE that recomputation, and that ordering is the whole reason the
+        # recomputation sits where it does.
         try:
             for _tr in getattr(immune_result, "triaged", []) or []:
                 if not (getattr(_tr, "is_duplicate", False) and _tr.duplicate_of):
@@ -15040,7 +15245,8 @@ def run_experiment(
                 if _cid in registry.entries:
                     registry.record_codiscovery(
                         _cid, _model, _tr.finding.finding_id,
-                        float(getattr(_tr, "similarity", 0.0)))
+                        float(getattr(_tr, "similarity", 0.0)),
+                        round_idx=round_idx)
         except Exception as _exc:                     # noqa: BLE001
             # Loud, not silent. A recording failure must not kill a run, and it
             # must not vanish either -- the first version of this vanished.
@@ -15278,16 +15484,81 @@ def run_experiment(
         # "no new GENUINE discoveries that survived reconciliation + the
         # (now-live) specialist verifier."
         _settled_all, _settled_crit = _settled_novelty_series(registry, round_idx)
-        if round_idx < len(_settled_all):
+        # OPTION 3, FOUNDER RULING 2026-09-29. Novelty counts DISTINCT DEFECTS.
+        # `_corroborated_novelty_series` is `_settled_novelty_series` plus one
+        # exclusion: a registration a later corroboration showed to be a
+        # re-sighting of an earlier canonical. The settled series is still
+        # computed, unchanged, because the CRITICAL side of the gate reads it and
+        # promoting that too is a separate decision -- see the shadow line below.
+        _corr_all, _corr_crit = _corroborated_novelty_series(registry, round_idx)
+        if round_idx < len(_corr_all):
             _raw_novel = novel_this_round
-            novel_this_round = _settled_all[round_idx]
+            _settled_novel = (_settled_all[round_idx]
+                              if round_idx < len(_settled_all) else _raw_novel)
+            novel_this_round = _corr_all[round_idx]
             if novelty_counts:
-                novelty_counts[-1] = _settled_all[round_idx]
+                novelty_counts[-1] = _corr_all[round_idx]
             if novel_critical_history and round_idx < len(_settled_crit):
                 novel_critical_history[-1] = _settled_crit[round_idx]
             if novel_this_round != _raw_novel:
-                _log(f"  novelty (settled/genuine): all={_settled_all[round_idx]} "
-                     f"crit={_settled_crit[round_idx]} (raw all={_raw_novel})")
+                _log(f"  novelty (settled/genuine): all={novel_this_round} "
+                     f"crit={_settled_crit[round_idx]} (raw all={_raw_novel}, "
+                     f"settled-only all={_settled_novel})")
+            if novel_this_round != _settled_novel:
+                _log(f"  corroboration discounted "
+                     f"{_settled_novel - novel_this_round} registration(s) this "
+                     f"round as re-sightings of earlier canonicals (option 3)")
+            # SHADOW, NOT GATING. What the count side of the gamma-alt gate would
+            # see if the CRITICAL series were corroborated too. Logged so the
+            # decision has evidence behind it instead of a guess; promoting it
+            # changes a convergence trigger and is the founder's call.
+            if (round_idx < len(_corr_crit)
+                    and _corr_crit[round_idx] != _settled_crit[round_idx]):
+                _log(f"  [shadow] corroborated critical novelty would be "
+                     f"{_corr_crit[round_idx]} vs the gating "
+                     f"{_settled_crit[round_idx]} at round {round_idx} "
+                     f"— TELEMETRY ONLY, does not gate")
+
+            # RHO IS RECOMPUTED HERE, AND THIS IS THE POINT OF THE CHANGE.
+            #
+            # THE DEFECT, measured 2026-09-29 by
+            # `scripts/rho_computed_before_the_settle_2026-09-29.py`. rho was
+            # computed at the registration site, ~690 lines above, and appended to
+            # `rho_history`. The settle pass then overwrote `novelty_counts[-1]`
+            # -- rho's own numerator -- and rho was never recomputed, because
+            # `_compute_rho` has exactly 1 call site and `rho_history` is only
+            # cleared or serialised thereafter. Across 49 archived runs and 406
+            # rounds, 25 rounds carried a rho disagreeing with their own stored
+            # numerator: 6.1576%, Wilson [4.2053%, 8.9318%]. The direction is
+            # unanimous -- 25 of 25 are OVERSTATEMENTS, Wilson [86.6808%,
+            # 100.0000%] -- mean -0.2066, worst -0.5000. 13 of 49 runs affected,
+            # 26.5306%, Wilson [16.2113%, 40.2623%].
+            #
+            # HONEST SCOPE: on that archive it flipped NO churn decision, 0 of
+            # 406, Wilson [0.0000%, 0.9373%], because every mismatch sits in an
+            # early round and churn requires round_number >= rho_earliest_round
+            # (12). It corrupted a REPORTED metric and the saturation diagnostic,
+            # not a recorded verdict. That is a property of this corpus and not a
+            # guarantee about future runs.
+            #
+            # WHY THE FIX HAS TO BE HERE AND COULD NOT BE AT THE COUNTER. Option 3
+            # counts novelty from the overlap record, and the overlap record for
+            # round K is not complete until `record_codiscovery` has run on this
+            # round's triage -- which happens after the counter and before this
+            # point. Computing rho before corroboration exists cannot see
+            # corroboration, whatever the counter is keyed on.
+            _rho_pre = rho_current
+            rho_current, rho_avg, rho_churn = _compute_rho(
+                novelty_counts, raw_counts, cfg)
+            if rho_history:
+                rho_history[-1] = rho_current
+            # Re-derived from the saved base, so the provisional increment above
+            # cannot double-count.
+            consecutive_churn_rounds = (_churn_base + 1) if rho_churn else 0
+            if abs(rho_current - _rho_pre) > 1e-9:
+                _log(f"  rho RECOMPUTED after the settle: {_rho_pre:.4f} -> "
+                     f"{rho_current:.4f} (rho_avg={rho_avg:.4f}"
+                     f"{', CHURN' if rho_churn else ''})")
 
         # Code-location novelty series (2026-06-08). Computes the critical-novelty series
         # keyed by code location (the verified fix for the cross-round dedup failure) and

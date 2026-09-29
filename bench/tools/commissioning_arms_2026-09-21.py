@@ -50,10 +50,20 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import datetime as _dt
 import shlex
 import subprocess
 import sys
 from pathlib import Path
+
+
+def _utc_date() -> str:
+    """UTC date stamp for the default log directory.
+
+    UTC and not local time, so a run launched either side of midnight BST cannot
+    land in 2 different directories within one session.
+    """
+    return _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d")
 
 REPO = Path(__file__).resolve().parents[2]
 SANDBOXED = "bench/tools/run_simulated_experiment_sandboxed.sh"
@@ -118,6 +128,47 @@ def command(arm: Arm) -> list[str]:
     return ["bash", SANDBOXED, *arm.argv()]
 
 
+def detach(child_argv: list[str], log_path: Path) -> int:
+    """Start `child_argv` so it OUTLIVES this process, and return its pid.
+
+    WHY THIS EXISTS, AND IT IS THE ROOT CAUSE OF A LOST RUN. The founder's
+    standing detached-launch directive (2026-07-29) requires every experiment
+    runner to survive the Claude Code host, "logs are the only tether".
+    `bench/detached_launch.sh` implements that -- for `bench/launch_exp42.py`
+    ONLY, whose config path and flags it hardcodes. The SIMULATED path goes
+    through `run_simulated_experiment_sandboxed.sh` instead, and nothing detached
+    it: `--run` called `subprocess.call`, which blocks and dies with its parent.
+
+    Measured consequence, 2026-09-29: the shakedown's arm 1 reached round 5 of 8
+    and died at 18:53:47 when the launching session ended, losing the run. Its 50
+    evidence files were harvested, so the round-0-to-4 data survived, but the run
+    did not finish and could not be resumed. The directive was in force the whole
+    time and had no wrapper for this path.
+
+    `start_new_session=True` is setsid, which is STRONGER than the nohup+disown
+    in `detached_launch.sh`: the child leads a new session and process group, so
+    it is immune to SIGHUP and to a signal sent to this process's group, and it
+    reparents to init when this process exits. stdout and stderr go to the log,
+    which is the tether.
+
+    The pidfile is written at `${LOG%.log}.pid` -- the SAME convention
+    `detached_launch.sh` uses at its line 11 -- so `bench/tail_until_done.sh`
+    monitors a detached simulated run with no argument and no change.
+    """
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    fh = open(log_path, "ab", buffering=0)
+    try:
+        proc = subprocess.Popen(
+            child_argv, cwd=REPO, stdout=fh, stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL, start_new_session=True,
+        )
+    finally:
+        fh.close()
+    pidfile = log_path.with_suffix(".pid")
+    pidfile.write_text(f"{proc.pid}\n", encoding="utf-8")
+    return proc.pid
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -127,6 +178,12 @@ def main() -> int:
                     help="execute the arms sequentially through the sandboxed launcher")
     ap.add_argument("--only", default=None,
                     help="restrict to one arm key, e.g. arm1")
+    ap.add_argument("--detach", action="store_true",
+                    help="run the arms in a DETACHED session that survives this "
+                         "one (founder directive 2026-07-29); implies --run")
+    ap.add_argument("--log", default=None,
+                    help="log path for --detach; defaults to "
+                         "bench/logs/shakedown_<UTC date>/arms.log")
     args = ap.parse_args()
 
     arms = [a for a in ARMS if args.only in (None, a.key)]
@@ -134,6 +191,26 @@ def main() -> int:
         print(f"no arm matches {args.only!r}; keys are "
               + ", ".join(a.key for a in ARMS), file=sys.stderr)
         return 2
+
+    if args.detach:
+        # RE-INVOKE THIS FILE WITH --run RATHER THAN COPYING THE SEQUENCING.
+        # The arms MUST run one at a time: 4 arms detached in parallel would put
+        # 17 simulated seats on the founder's plan at once, which is the overload
+        # he reported on 2026-09-29 ("burning through my Max plan allowance by
+        # launching too many concurrent instances"). Delegating to --run keeps
+        # exactly 1 definition of the order and the concurrency.
+        log = Path(args.log) if args.log else (
+            REPO / "bench" / "logs"
+            / f"shakedown_{_utc_date()}" / "arms.log")
+        child = [sys.executable, str(Path(__file__).resolve()), "--run"]
+        if args.only:
+            child += ["--only", args.only]
+        pid = detach(child, log)
+        print(f"detached PID {pid} -> {log}")
+        print(f"pidfile:  {log.with_suffix('.pid')}")
+        print(f"monitor:  bash bench/tail_until_done.sh \"{log}\"")
+        print(f"arms:     {', '.join(a.key for a in arms)}")
+        return 0
 
     if not args.run:
         for a in arms:

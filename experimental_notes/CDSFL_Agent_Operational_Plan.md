@@ -1,3 +1,27 @@
+## ★ RESUME POINTER — 2026-09-29T20:35:28+01:00. SUPERSEDES EVERY POINTER BELOW.
+
+**THE SHAKEDOWN IS RE-LAUNCHED UNDER OPTION 3. THE LOOP IS RUNNING.** The founder's standing arrangement, set 2026-09-29: run the simulated shakedown under full `cy`, hold a FREE panel review between cycles to decide how to resolve what surfaced, apply the fixes, and repeat until the runner fully meets the project spec, cuts no corners to do so, and **converges cleanly over at least 3 consecutive cycles**. Budget up to a full day. **Monitoring is not left while anything runs.**
+
+**`rs` ran after the 18:57:50 compaction with `--record-restore`, exit code 0.** Git and Open Brain both confirmed `a94a7bb`, clean, level with `origin/main`.
+
+**OPTION 3 IS IMPLEMENTED, AND IT IS 2 DEFECTS NOT 1.** Full account and every figure: `experimental_notes/Shakedown_Finding_Rho_Cannot_Fall_2026-09-29.md`, correction block dated 20:50 BST.
+- **`occasions` now grows on corroboration**, not only inside a merge path that never completes. `record_codiscovery` writes the occasion; `_corroborated_novelty_series` counts distinct DEFECTS rather than distinct registrations. `_settled_novelty_series` is untouched and keeps its 8 callers and 6 test files.
+- **rho is recomputed after the settle pass, and that is a PRECONDITION of option 3, not extra scope.** rho was computed at the registration loop and `novelty_counts[-1]` — its own numerator — was overwritten about 690 lines later by the settle; rho was never recomputed. Measured over 49 runs and 406 rounds: **25 rounds carried a rho disagreeing with their own stored numerator, 6.1576%, Wilson [4.2053%, 8.9318%], and 25 of 25 are OVERSTATEMENTS**, Wilson [86.6808%, 100.0000%], mean −0.2066, worst −0.5000. **It flipped 0 churn decisions, 0 of 406, Wilson [0.0000%, 0.9373%]** — every mismatch sits below `rho_earliest_round` of 12. It corrupted a reported metric, not a recorded verdict. Producer: `scripts/rho_computed_before_the_settle_2026-09-29.py`.
+- **Replayed effect**, `scripts/option3_replay_2026-09-29.py`: arm 1's rho becomes [0.5909, 0.7500, 0.5714, 0.8750, 0.8750] against a recorded [1.000] × 5; the 2026-09-21 panel arm becomes [0.9130, 0.8571, 0.7500, 0.2857, 0.4000, 0.8750, 0.5000, 0.3333] against [1.000] × 8. **That replay is an UPPER BOUND** — it reads each run's final registry, while the live runner sees only what each round knew. The live figure is what the re-run measures.
+
+**WHY THE LAST RUN DIED, AND IT WAS NOT THE RUNNER.** Arm 1 reached round 5 of 8 and died at 18:53:47 with the session that launched it. The detached-launch directive has stood since 2026-07-29 and `bench/detached_launch.sh` implements it — **for `launch_exp42.py` only**, whose config argument it hardcodes. The simulated path goes through `run_simulated_experiment_sandboxed.sh` and nothing detached it: `--run` used `subprocess.call`, which blocks and dies with its parent. A standing rule with no executing caller on the route in use, the same shape as `boundary_band_sensitivity` and `EXTEND`. **Repaired:** `commissioning_arms_2026-09-21.py --detach` re-enters `--run` in a new session (setsid), so the arms stay sequential — 4 detached in parallel would be 17 concurrent seats, the overload he reported — and the ordering keeps exactly 1 definition. Pidfile convention matches `detached_launch.sh` so `bench/tail_until_done.sh` monitors it unchanged.
+
+**A RESUME DEFECT FOUND BY THE NEW GUARD TEST ITSELF.** `record_codiscovery` returned early whenever the alias was already recorded, so a run resumed from a pre-fix checkpoint would carry corroboration in `source_aliases` while `occasions` stayed starved — the whole defect reinstated through the resume path, silently, with every test green. Backfill added; the `False` return preserved because 3 existing tests assert on it.
+
+**OPEN FOR THE FREE PANEL, deliberately not taken here.**
+1. **Retroactive resettling of the rho history.** Only `novelty_counts[-1]` is overwritten, so earlier rounds stay frozen at their vintage — arm 1 round 1 holds 7, the final registry says 6. The runner's own comment records this class of defect for `novel_critical_history` and says the whole-series correction was applied there on 2026-08-19, leaving this copy. Changing a reported series across a whole run is the founder's call.
+2. **Corroborated CRITICAL novelty reaching the gate.** Logged as a shadow line, does not gate. Promoting it moves a convergence trigger.
+3. **Options 1 and 2** from the original finding: lower the candidate threshold keeping the gate (13.79% precision at 0.1528); let a falsifier firing on both locations be the tool verdict.
+
+**GUARDS ADDED.** `bench/tests/test_rho_counts_distinct_defects_2026-09-29.py` (35 tests, executing both series against each other per `execute-do-not-grep`) and `bench/tests/test_a_simulated_run_survives_its_session_2026-09-29.py` (17 tests, detaching a real child process rather than reading the source for `start_new_session`).
+
+---
+
 
 ## RESUME POINTER — 2026-09-29 09:55 BST, written against an imminent compaction
 
