@@ -12635,10 +12635,14 @@ def sk_threshold_shadow(
 
     Pure. Changes nothing. Exists because a gate that has passed every fix it
     ever saw is a mechanical failure that no artefact currently names. `s_star`
-    is zero in 4056 of 4056 gate records in `bench/logs`, Wilson
+    is zero in 4221 of 4221 gate records in `bench/logs`, Wilson
     [99.91%, 100.00%], Clopper-Pearson [99.91%, 100.00%] -- the figure over the
     GIT-TRACKED archive, which is the only one a reader who clones this
-    repository can recompute.
+    repository can recompute. BOTH INTERVALS WERE RECOMPUTED FOR THE NEW
+    DENOMINATOR AND ROUND IDENTICALLY AT THIS PRECISION; that is stated because
+    an unchanged interval beside a changed count is exactly what the guard calls
+    a lying pair, and silence here would look like the recomputation was skipped.
+    statsmodels and a local closed form agree to 1.11e-16.
 
     THE CORPUS IS PART OF THE CLAIM, and until 2026-09-10 it was not stated.
     This sentence read "4142 of 4142, Wilson [99.91%, 100.00%]", measured over
@@ -12670,7 +12674,7 @@ def sk_threshold_shadow(
     refused the commit: "THE PROSE AND THE ARCHIVE DISAGREE ... states 3507 ...
     gives 3555". That is the blast radius of adding evidence to git, and it was
     not anticipated when the files were staged. On the
-    maintainer's disk the coercing count is 4643 of 4643, Wilson
+    maintainer's disk the coercing count is 4808 of 4808, Wilson
     [99.92%, 100.00%], Clopper-Pearson [99.92%, 100.00%]. Both are real; only
     the first is reproducible.
 
@@ -12683,8 +12687,11 @@ def sk_threshold_shadow(
     and 4405 -> 4446, and the guard refused a second time. ARM 3 MADE IT A THIRD, 3859 -> 4020 and 4446 -> 4607.
     A FOURTH, 2026-09-29: harvesting the interrupted shakedown's 50 evidence files out of a
     torn-down sandbox moved them 4020 -> 4056 and 4607 -> 4643, and the guard refused again.
-    So the trigger is not 'a run completes' -- it is ANY act that adds run evidence to the
-    tracked tree, harvest included. 4 recurrences now, each caught, none prevented.
+    A FIFTH, the same evening: cycle 2 of the stipulated loop ran to completion and its
+    sandbox extraction added exactly 2 tracked files -- one report and one runner_state --
+    which moved them 4056 -> 4221 and 4643 -> 4808. So the trigger is not 'a run completes'
+    -- it is ANY act that adds run evidence to the tracked tree, harvest and extraction
+    alike, and 2 files are enough. 5 recurrences now, each caught, none prevented.
 
     THAT RECURRENCE IS A DESIGN QUESTION, NOT JUST AN ERRAND, AND IT IS FLAGGED
     RATHER THAN ANSWERED HERE. Every completed experimental run appends gate
