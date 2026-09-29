@@ -1,0 +1,100 @@
+# BETWEEN-ROUNDS REVIEW: the rho repair, an archive-ageing defect, and 5 instrument questions
+
+## SECTION 1 — The question
+
+**Are the 2 repairs landed this evening sound and complete, and what are the correct resolutions to the 5 instrument questions left open?**
+
+A simulated shakedown run is in flight while this review runs. It exists to find out whether the runner behaves as expected before any paid run spends money. Its first finding was that `rho`, discovery efficiency, was pinned at exactly 1.000 in every round of every simulated run, so convergence by saturation was unreachable and a run could only ever exhaust its round cap.
+
+The founder ruled for one of 3 candidate repairs: count novelty from the `occasions` overlap record rather than from alias misses, and let that record grow on corroboration instead of only on merge. That is implemented, at commits `35117b2` and `80f0a0c`.
+
+**You are not being asked whether you agree.** Under this project's standing rule findings are confirmed by programs or by the founder, never by models agreeing with one another. Find what is wrong. If something that looked suspect turns out sound, say that too — a round returning only complaints has been obliging rather than sceptical.
+
+**BLINDNESS IS PARTIAL AND THIS BRIEF SAYS SO RATHER THAN PRETENDING.** The repository you are in contains the implementing session's own notes, tracker entries and commit messages, which carry its reasoning and its figures. You may read them; you are asked to treat every number in them as a claim to be re-measured, not as evidence. Where you rely on one, say which.
+
+## SECTION 2 — Use the harness
+
+Form your answer by RUNNING the machinery, not by describing it.
+
+**`rho` and the 2 novelty series are the instruments that bear hardest.** `bench/reference_runner_v3.py` now carries `_settled_novelty_series` and `_corroborated_novelty_series`. **Call both on the same registry and compare their outputs**, and call `_compute_rho` on each result. Reading the two functions and judging them consistent is not the check: two implementations can each be internally coherent and still disagree about the population they count. Build registries with `FindingRegistry`, register findings, call `record_codiscovery`, and see what the series do across the range — not only at the endpoints.
+
+**`gamma` bears on whether this change can reach a convergence decision.** `rho`'s churn flag is blocking condition (d) in `_check_gamma_alt_convergence`. Gamma is a load-bearing, active convergence measure in this project and is not up for demotion; the question is whether the new numerator can move the gate, and under what conditions. `_check_gamma_alt_convergence` and `_estimate_gamma` are live — call them.
+
+**`_is_simulated`, `_simulated_run_dirs` and `_provenance_time`** in `scripts/latent_control_audit.py` bear on the second repair. Call them against the real archive.
+
+**Wilson governs every proportion you report.** Any rate needs an interval; any computational claim needs 2 independent tools agreeing. SymPy, z3, mpmath, SciPy, statsmodels and NumPy are PRIMARY. Wolfram is available through the serial gate on your PATH as a secondary cross-verification falsifier, and where it is unavailable to you the open-source set is the correct and sufficient fallback.
+
+**Two producing scripts are committed and you should re-run them rather than trust their recorded output:** `scripts/rho_computed_before_the_settle_2026-09-29.py` and `scripts/option3_replay_2026-09-29.py`. Both answer `--help` without doing work.
+
+## SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is half an answer. A fix without a falsifier you have EXECUTED is a hypothesis.
+
+Report the exact command you ran and the output you saw.
+
+**Deliver every fix as a file, written INTO the sandbox repository tree at a real path.** A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down.
+
+- A defect in this project's code — fix it at its real path under `bench/` or `scripts/`.
+- A defect in a document — fix it at its real path under `docs/` or `experimental_notes/`.
+- A falsifier you write goes to `scripts/` with a dated name and must run.
+- Where a question is a DECISION rather than a defect, write your recommendation and its evidence to `experimental_notes/panel_fixes_rho_repair_2026-09-29/<your-seat-name>.md`.
+
+**Fixes are suggested, never applied to the canonical tree.** This project's standing rule is that fixes are put to the human, who decides.
+
+## SECTION 4 — What would refute you
+
+Before you conclude, state for each finding what evidence would overturn it. A verdict with no stated refutation condition is an opinion.
+
+This applies to your own measurements. **If you measure a proportion by sampling a parameter space, that proportion is a property of your sampling distribution as much as of the mechanism you are measuring.** State the distribution you sampled from, and say whether the operationally relevant distribution is known. If it is not, say so rather than letting an assumed prior stand in for it.
+
+## SECTION 5 — Output shape
+
+Per finding:
+
+- **claim** — stated so it could be wrong;
+- **site** — the file and symbol where it bites;
+- **evidence** — the command run and its output, verbatim;
+- **verdict** — HOLDS, PARTIAL or REFUTED;
+- **fix** — the path you wrote it to;
+- **falsifier** — the command, and its executed result;
+- **what would refute me**.
+
+Then, once:
+
+- **what I did NOT check**, named explicitly;
+- **where I could not decide**, and why;
+- **my strongest disagreement with this brief's own framing.**
+
+## SECTION 6 — Termination
+
+Stop on diminishing returns: when a further pass produces no new finding above the threshold of real-world consequence. **State how many passes you ran.**
+
+### The 5 open questions, stated neutrally
+
+Each is a DECISION the implementing session declined to take alone. None has a preferred answer in this brief.
+
+1. **Should the CRITICAL novelty series be corroboration-aware?** `novel_critical_history` is the COUNT side of the two-sided convergence gate and currently reads `_settled_novelty_series`. The corroborated critical novelty total is computed and logged as a shadow line that gates nothing. Promoting it would change a convergence trigger. Decide whether it should be promoted, and on what evidence.
+
+2. **Should `rho`'s history be retroactively resettled?** Only `novelty_counts[-1]` is overwritten each round, so earlier rounds keep the value known at the time. In the dead run's archive, round 1 holds 7 where the final registry yields 6. The runner's own comment records this class of defect for `novel_critical_history` and says the whole-series correction was applied there on 2026-08-19, leaving this copy. Decide whether a round's `rho` is a statement about what was known then, or about what is known now.
+
+3. **The 2 repairs the founder did not choose, and whether they compose.** (a) Lower the routing dedup threshold from 0.85 so real duplicates become merge CANDIDATES, keeping the tool-verdict gate: measured precision at the threshold that catches all 4 known duplicates is 13.79%. (b) Let a falsifier that fires on both findings' locations BE the tool verdict that authorises a merge. Assess both, including whether either is now redundant given the landed repair.
+
+4. **Is keying simulation on `-SIM` seat labels in dict KEYS the right general invariant?** The landed repair recognises a simulated run from its own `novelty_counts_per_model` keys. Measured over 103 keyed archive documents: 30 caught by both the per-file and per-directory rules, 0 by either alone, 73 by neither. Ask whether a better invariant exists, and whether the per-directory rule should be retained, given that its redundancy is a property of this corpus rather than of the rule.
+
+### The full-suite result, and a 5th failure that is a test-design question
+
+A full-suite run at `693b29f` returned **5 failed, 9016 passed, 7 skipped** in 2722.49 s. 4 of the 5 are addressed at `80f0a0c` and the citation repair in `35117b2`; the 5th is open and is question 5 for you.
+
+`bench/tests/test_shell_grep_blind_spot_2026-09-28.py::TestTheDivergenceIsReal::test_the_session_grep_sees_fewer_files_than_usr_bin_grep` asserts that the session's `grep` sees FEWER files than `/usr/bin/grep`. Measured here: **403 and 403** — identical, so no blind spot exists in this environment and the test fails. Its own message says the wrapper is not loaded.
+
+**That is a test asserting a TRANSIENT as an invariant, and this repository has already ruled on that exact shape once.** `test_latent_control_audit_2026-09-01.py::TestAgeControl` was rewritten on the day it was written for the same reason, its docstring recording that it "failed *because the age control worked*". Decide whether the same rewrite applies here, what the invariant actually is, and whether skipping when no wrapper is present preserves the detection this test exists for or destroys it.
+
+**A caution about how this failure was identified, offered against the implementing session's own method.** It first mis-identified this failure by counting progress characters in the pytest output and mapping the index onto a collection listing. That gave `test_sim_naming_and_integrity_directive.py`, which passes 41 of 41 and never failed. The collection had shifted because test files were added after the suite began. If you use a positional method anywhere, prefer the named `FAILED` lines.
+
+### A signature the founder named, standing
+
+**An unusually high human-escalation queue has, in this project's whole record so far, always indicated broken machinery and has never matched the project's own formal escalation criteria; every instance proved computationally reducible.** If you find escalation volume that looks high, treat it as a machinery fault to be located, not as a legitimate queue.
+
+## Constraints
+
+You are in a sandbox copy. Do not attempt to modify the canonical tree. **Spend nothing. Dispatch no models.** A simulated experiment is running on this machine at the same time; do not launch, resume, kill or interfere with any experiment, and do not write into `bench/logs/`.

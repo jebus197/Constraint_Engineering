@@ -13,6 +13,20 @@
 
 **A RESUME DEFECT FOUND BY THE NEW GUARD TEST ITSELF.** `record_codiscovery` returned early whenever the alias was already recorded, so a run resumed from a pre-fix checkpoint would carry corroboration in `source_aliases` while `occasions` stayed starved — the whole defect reinstated through the resume path, silently, with every test green. Backfill added; the `False` return preserved because 3 existing tests assert on it.
 
+**★★★ VERIFIED LIVE AT 21:22:50 — `rho` MOVED OFF 1.000 FOR THE FIRST TIME IN A SIMULATED RUN.** Arm 1, round 0, from the run's own log:
+
+```
+novelty (settled/genuine): all=22 crit=0 (raw all=23, settled-only all=23)
+corroboration discounted 1 registration(s) this round as re-sightings of earlier canonicals (option 3)
+rho RECOMPUTED after the settle: 1.0000 -> 0.9565 (rho_avg=0.9565)
+```
+
+**22/23 = 0.9565217391**, cross-checked on exact `Fraction`, numpy float64 and mpmath at 30 digits, all agreeing to **0.000e+00**.
+
+**THE ATTRIBUTION IS DECISIVE AND IT IS OPTION 3, NOT THE TIMING FIX.** The log records `settled-only all=23` — the settle pass by itself would have left the numerator at 23 and `rho` at exactly 1.000, as every previous simulated run recorded. The whole **−0.0435** comes from `corroboration discounted 1 registration(s)`. So counting novelty from corroboration — the founder's chosen repair — is what does the work, and the recomputation is what allows the fall to be seen rather than what produces it. Both halves were necessary and neither was sufficient.
+
+**Honest scope: 1 discount in 1 round is a small movement, and it proves function rather than magnitude.** Whether `rho` falls far enough to make convergence-by-saturation reachable is a question about later rounds, where models re-find earlier defects; the replay's upper bound on the archived 2026-09-21 arm reached 0.2857 by round 3. The live figure for this run is being measured as it goes.
+
 **A THIRD DEFECT, FOUND BY THE SUITE WHILE THE RUN WAS IN ROUND 0, AND IT IS THE SAME DEFECT FOR THE THIRD TIME.** `scripts/latent_control_audit.py` admitted `bench/logs/shakedown_2026-09-29/arm1_harvest/runner_state.json` — the harvest of the simulated run that DIED at round 5 of 8 — as a REAL archived run. Its recorded provenance is 2026-09-29, which moved the age baseline from 2026-08-23 to 2026-09-29, **37.0 days**, and silently released every control key committed in that window from the TOO_NEW quarantine. `critical_boundary_census`, first committed 2026-09-01, scored SILENT_BUT_RAN where the rule says TOO_NEW.
 
 **NOT CAUSED BY THE OPTION-3 WORK.** `git diff --name-only 67f2e26..HEAD` names neither the audit nor any `bench/logs` JSON; the harvest landed in `67f2e26`, the previous session's commit.
