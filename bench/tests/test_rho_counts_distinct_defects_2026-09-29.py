@@ -391,3 +391,168 @@ class TestTheResumePathCannotStarveTheRecord:
         assert src.count('"via": "codiscovery",') == 1, (
             "the occasion literal is written in more than one place")
         assert src.count("def _backfill_occasion(") == 1
+
+
+class TestADefectCannotBeZeroedOutOfTheCount:
+    """F1 from the free between-rounds panel, 2026-09-29 — found by BOTH seats
+    independently, by execution.
+
+    The first `_corroborated_discounts` applied keep/discount to each occasion on
+    its own and never checked that the entry it discounted AGAINST was itself
+    still counted. Two degenerate shapes then erase a real defect completely:
+
+      * MUTUAL OCCASIONS -- A names B and B names A in the same round. Both were
+        discounted, so 1 defect with 2 registrations contributed 0. This is the
+        same deletion `TestItCannotDeleteAGenuineFinding` above refuses, arriving
+        through a 2-CYCLE rather than a self-loop: the earlier guard named only
+        self-reference, so the door it left open was the one that mattered.
+      * A KEPT ENTRY THAT IS NOT COUNTABLE -- D discounted against a REFUTED T.
+        The status filter removes T, the discount removes D, and an entry that is
+        still OPEN, including an OPEN CRITICAL, contributes 0 for the whole run.
+
+    A seat measured 2 of 42 archive same-defect groups fully annihilated,
+    4.7619%, Wilson [1.3158%, 15.7899%], one component spanning 39 canonicals and
+    collapsing [14,3,4,5,5,5,3] to all zeroes. It reaches a real gate:
+    `novel_this_round` is an unconditional blocking condition of the state gate.
+
+    The repair treats occasions as EDGES and a defect as a CONNECTED COMPONENT,
+    with one survivor per component.
+    """
+
+    def test_mutual_occasions_count_the_defect_once_not_zero(self):
+        reg, (a, b) = reg_with(("A_F1", "A-SIM", "same defect"),
+                               ("B_F1", "B-SIM", "same defect"))
+        reg.record_codiscovery(a, "B-SIM", "B_F1", 0.9, round_idx=0)
+        reg.record_codiscovery(b, "A-SIM", "A_F1", 0.9, round_idx=0)
+        assert _settled_novelty_series(reg, 0)[0] == [2]
+        assert _corroborated_novelty_series(reg, 0)[0] == [1], (
+            "a 2-cycle annihilated the defect: 2 registrations of 1 defect "
+            "counted 0 discoveries")
+
+    def test_the_pairwise_rule_would_have_annihilated_it(self):
+        """ANTI-VACUITY: reproduce the pre-fix rule exactly and show it gives 0."""
+        reg, (a, b) = reg_with(("A_F1", "A-SIM", "d"), ("B_F1", "B-SIM", "d"))
+        reg.record_codiscovery(a, "B-SIM", "B_F1", 0.9, round_idx=0)
+        reg.record_codiscovery(b, "A-SIM", "A_F1", 0.9, round_idx=0)
+        # the old algorithm, verbatim in behaviour
+        pairwise = {}
+        for tgt_id, tgt in reg.entries.items():
+            t_round = tgt.get("open_since_round")
+            for occ in tgt.get("occasions") or []:
+                if occ.get("via") != "codiscovery":
+                    continue
+                dup_id = occ.get("from_canonical")
+                if not dup_id or dup_id == tgt_id or dup_id not in reg.entries:
+                    continue
+                d_round = reg.entries[dup_id].get("open_since_round")
+                if t_round is None or d_round is None:
+                    continue
+                if d_round >= t_round:
+                    pairwise[dup_id] = tgt_id
+                else:
+                    pairwise[tgt_id] = dup_id
+        assert set(pairwise) == {a, b}, (
+            "the pairwise rule no longer discounts both, so this guard is vacuous")
+        survivors = [c for c in reg.entries if c not in pairwise]
+        assert survivors == [], "precondition: the old rule left no survivor"
+        # and the shipped rule leaves exactly one
+        assert len(_corroborated_discounts(reg)) == 1
+
+    def test_an_open_critical_is_not_erased_by_a_refuted_keeper(self):
+        reg, (x, y) = reg_with(("X_F1", "X-SIM", "d"), ("Y_F1", "Y-SIM", "d"),
+                               round_of=[0, 1])
+        reg.entries[x]["status"] = "REFUTED"
+        reg.entries[y]["status"] = "OPEN"
+        reg.record_codiscovery(x, "Y-SIM", "Y_F1", 0.9, round_idx=1)
+        assert _corroborated_novelty_series(reg, 1)[0] == [0, 1], (
+            "the OPEN entry was discounted against a REFUTED one that the status "
+            "filter also removes, so the defect contributed 0 for the whole run")
+        assert _corroborated_discounts(reg) == {x: y}, (
+            "the survivor must be the countable member, not the earliest")
+
+    def test_a_chain_keeps_exactly_one_survivor(self):
+        reg, ids = reg_with(("A_F1", "A-SIM", "d"), ("B_F1", "B-SIM", "d"),
+                            ("C_F1", "C-SIM", "d"), round_of=[0, 1, 2])
+        reg.record_codiscovery(ids[0], "B-SIM", "B_F1", 0.9, round_idx=1)
+        reg.record_codiscovery(ids[1], "C-SIM", "C_F1", 0.9, round_idx=2)
+        assert _corroborated_novelty_series(reg, 2)[0] == [1, 0, 0]
+        assert len(_corroborated_discounts(reg)) == 2
+
+    def test_a_three_cycle_keeps_exactly_one_survivor(self):
+        reg, ids = reg_with(*[(f"M{i}_F1", f"M{i}-SIM", "d") for i in range(3)])
+        reg.record_codiscovery(ids[0], "M1-SIM", "M1_F1", 0.9, round_idx=0)
+        reg.record_codiscovery(ids[1], "M2-SIM", "M2_F1", 0.9, round_idx=0)
+        reg.record_codiscovery(ids[2], "M0-SIM", "M0_F1", 0.9, round_idx=0)
+        assert sum(_corroborated_novelty_series(reg, 0)[0]) == 1
+
+    def test_a_fully_terminal_component_still_names_a_representative(self):
+        """The caller's status filter removes them all, so the map must not
+        acquire a special empty case that a later reader could misread."""
+        reg, (a, b) = reg_with(("A_F1", "A-SIM", "d"), ("B_F1", "B-SIM", "d"))
+        reg.entries[a]["status"] = "REFUTED"
+        reg.entries[b]["status"] = "MERGED"
+        reg.record_codiscovery(a, "B-SIM", "B_F1", 0.9, round_idx=0)
+        assert len(_corroborated_discounts(reg)) == 1
+        assert _corroborated_novelty_series(reg, 0)[0] == [0]
+
+    def test_two_separate_defects_stay_two(self):
+        """The component rule must not merge unrelated defects."""
+        reg, ids = reg_with(("A_F1", "A-SIM", "d1"), ("B_F1", "B-SIM", "d1"),
+                            ("C_F1", "C-SIM", "d2"), ("D_F1", "D-SIM", "d2"))
+        reg.record_codiscovery(ids[0], "B-SIM", "B_F1", 0.9, round_idx=0)
+        reg.record_codiscovery(ids[2], "D-SIM", "D_F1", 0.9, round_idx=0)
+        assert _corroborated_novelty_series(reg, 0)[0] == [2]
+
+
+class TestTheWholeSeriesIsCorroborationAware:
+    """F2, found by the fable seat: the option-3 repair was undone 1 round later.
+
+    A pre-existing retroactive loop (2026-08-18) recomputes the WHOLE
+    `novelty_counts` series every round. It used the SETTLED criterion inline, so
+    it wiped the corroborated value the settle pass writes into
+    `novelty_counts[-1]` EXACTLY ONE ROUND after it was written. `rho_avg`'s
+    rolling window and gamma's input therefore kept re-sightings the registry
+    already knew were re-sightings.
+
+    Observed live in this project's own run: round 0 logged
+    `rho RECOMPUTED 1.0000 -> 0.9565`, and round 1's provisional `rho_avg=0.978`
+    proves the 22 was still present at round 1's start -- 0.9783 with 22 against
+    1.0000 with 23. The wipe then takes it back.
+
+    Call ORDER is not observable from one call, so the 2 ordering assertions read
+    source and say so. The VALUE behaviour is executed.
+    """
+
+    def test_the_retroactive_loop_reads_the_corroborated_series(self):
+        src = RUNNER.read_text(encoding="utf-8")
+        assert "_retro_all, _ = _corroborated_novelty_series(" in src, (
+            "the whole-series loop still uses a settled-only criterion, so every "
+            "round but the current one loses its corroboration discount")
+
+    def test_only_one_copy_of_the_settled_criterion_remains(self):
+        """The loop used to spell the statuses out beside
+        `_settled_novelty_series`: a producer/consumer pair that could drift."""
+        src = RUNNER.read_text(encoding="utf-8")
+        assert src.count('"MERGED", "DUPLICATE", "UNCONFIRMED", "REFUTED",') == 2, (
+            "expected exactly 2 spellings: the module constant and the "
+            "diagnostic-only local set")
+
+    def test_the_loop_runs_before_the_settle_pass_overwrite(self):
+        """So the current round is corrected again after this round's
+        corroboration is recorded, and earlier rounds keep theirs."""
+        src = RUNNER.read_text(encoding="utf-8")
+        i_retro = src.index("_retro_all, _ = _corroborated_novelty_series(")
+        i_cod = src.index("registry.record_codiscovery(")
+        i_settle = src.index("novelty_counts[-1] = _corr_all[round_idx]")
+        assert i_retro < i_cod < i_settle
+
+    def test_the_two_series_differ_on_a_whole_series_so_the_input_matters(self):
+        """ANTI-VACUITY: if they agreed everywhere, F2 would change nothing."""
+        reg, ids = reg_with(("A_F1", "A-SIM", "d"), ("B_F1", "B-SIM", "d"),
+                            ("C_F1", "C-SIM", "e"), ("D_F1", "D-SIM", "e"),
+                            round_of=[0, 0, 1, 1])
+        reg.record_codiscovery(ids[0], "B-SIM", "B_F1", 0.9, round_idx=0)
+        reg.record_codiscovery(ids[2], "D-SIM", "D_F1", 0.9, round_idx=1)
+        settled = _settled_novelty_series(reg, 1)[0]
+        corr = _corroborated_novelty_series(reg, 1)[0]
+        assert settled == [2, 2] and corr == [1, 1], (settled, corr)

@@ -41,6 +41,30 @@ def mod():
     return m
 
 
+def _wrapper_state() -> str:
+    """How `grep` resolves in the newest shell snapshot: independent of any count.
+
+    Returns "function" when a wrapper is defined, "binary" when it resolves to a
+    file, "no-snapshot" when there is nothing to source. Kept separate from
+    `counts()` so wrapper presence is never inferred from the inequality under
+    test -- which is exactly the circularity that made the strict divergence test
+    report a clean environment as a failure on 2026-09-29.
+    """
+    try:
+        r = subprocess.run(
+            ["zsh", "-c", "ls -t ~/.claude/shell-snapshots/ 2>/dev/null | head -1"],
+            capture_output=True, text=True, timeout=60)
+        if not r.stdout.strip():
+            return "no-snapshot"
+        r = subprocess.run(
+            ["zsh", "-c", "source ~/.claude/shell-snapshots/"
+             "$(ls -t ~/.claude/shell-snapshots/ | head -1) 2>/dev/null; type grep"],
+            capture_output=True, text=True, timeout=60)
+    except Exception:                                         # noqa: BLE001
+        return "no-snapshot"
+    return "function" if "shell function" in r.stdout else "binary"
+
+
 class TestTheVacuityGuard:
     """A measurement whose control and treatment are the same thing measures
     nothing, and must say so instead of printing a small number."""
@@ -68,16 +92,63 @@ class TestTheDivergenceIsReal:
     what makes the blind spot real rather than theoretical.
     """
 
+    def test_the_wrapper_can_only_subtract_never_add(self, mod):
+        """THE UNCONDITIONAL INVARIANT, and it is the one worth having.
+
+        The wrapper filters; it cannot conjure matches. So `seen <= real` holds in
+        EVERY environment, wrapper or not, and its violation would invalidate
+        every figure in this file's header. This runs with no skip, which is what
+        the strict form below cannot do.
+        """
+        seen, real = mod.counts("gamma_critical")
+        if seen < 0 or real == 0:
+            pytest.skip("probe could not run in this environment")
+        assert seen <= real, (
+            f"session grep found MORE files ({seen}) than /usr/bin/grep ({real}). "
+            "The wrapper filters, so it cannot add matches: either the comparison "
+            "is not measuring the 2 things it names, or /usr/bin/grep is being "
+            "given a narrower root. Every rate in this file's header is void "
+            "until this is explained.")
+
     def test_the_session_grep_sees_fewer_files_than_usr_bin_grep(self, mod):
+        """THE STRICT FORM, now gated on an INDEPENDENT wrapper probe.
+
+        REWRITTEN 2026-09-29, by both seats of the free between-rounds panel and
+        confirmed here. It asserted the divergence UNCONDITIONALLY and so inferred
+        wrapper presence FROM THE INEQUALITY IT WAS ASSERTING. Measured on
+        2026-09-29 under Claude Code 2.1.284: 403 and 403, identical -- and the
+        test reported a clean environment as a failure. `counts()` sources whichever
+        snapshot is NEWEST, which need not be the one this session loaded and need
+        not define `grep` at all, so absence of a wrapper is an ordinary state and
+        not a fault.
+
+        THIS IS THE SAME SHAPE `TestAgeControl` WAS REWRITTEN FOR on the day it was
+        written, its docstring recording that it "failed *because the age control
+        worked*". A test asserting a transient cannot tell a fixed world from a
+        broken one.
+
+        DETECTION IS NOT LOST, and that is the point of splitting the assertion in
+        two. The invariant above runs unconditionally; the script's own honesty
+        guard (it exits 3 and prints VACUOUS rather than a reassuring 0%) is tested
+        unconditionally in `TestTheScriptRefusesRatherThanReassures`; and the
+        wrapper probe below is independent of the counts. What is skipped is only
+        the claim that cannot be true when there is no wrapper to measure.
+        """
+        if _wrapper_state() != "function":
+            pytest.skip(
+                f"grep resolves to {_wrapper_state()!r} in the newest snapshot, "
+                "so there is no wrapper to diverge from; the blind spot cannot "
+                "exist here and its absence is not a defect")
         seen, real = mod.counts("gamma_critical")
         if seen < 0 or real == 0:
             pytest.skip("probe could not run in this environment")
         assert real > 0
         assert seen < real, (
-            f"session grep found {seen} files and /usr/bin/grep found {real}; "
-            "if these are equal the wrapper is not loaded and the blind spot "
-            "measurement in this file's header needs re-taking"
-        )
+            f"a grep WRAPPER is loaded yet session grep found {seen} files and "
+            f"/usr/bin/grep found {real}. Either the wrapper has stopped honouring "
+            "ignore files -- measured as its behaviour under Claude Code 2.1.284, "
+            "in which case this file's 71.3632% is stale and must be re-taken -- "
+            "or `counts()` is no longer reaching the wrapper it thinks it is.")
 
     def test_the_wrapper_is_a_shell_function_not_a_binary(self):
         """The mechanism, checked directly: `grep` must not resolve to a file."""

@@ -3278,9 +3278,15 @@ def _compute_rho(
     #
     # It is NOT promoted, for two measured reasons. A floor of 6 would have
     # REFUSED convergence in exp46 (corrected rho_avg 0.2176) and exp48 (0.1944),
-    # both under the 0.25 threshold - churn is blocking condition (d) in
-    # _check_gamma_alt_convergence, so this is behavioural, not an accounting
-    # tidy-up. And rho's input is distorted by the similarity-function defect
+    # both under the 0.25 threshold. THE REASON GIVEN HERE WAS WRONG AND IS
+    # CORRECTED 2026-09-29: it said churn is "blocking condition (d) in
+    # _check_gamma_alt_convergence", which has been false since the founder's
+    # 2026-08-29 contributory ruling (executed disproof: that gate returns the
+    # same boolean with churn on and off). The consequence runs the OTHER WAY, and
+    # that is why this is not merely a wording fix -- a floor of 6 would have made
+    # exp46 and exp48 terminate EARLIER, through _check_stall_convergence, not
+    # refused their convergence. Still behavioural rather than an accounting
+    # tidy-up, in the opposite direction from the one recorded here for 41 days. And rho's input is distorted by the similarity-function defect
     # being repaired in the same window, so any value fitted now would be
     # calibrated on contaminated data.
     #
@@ -7126,8 +7132,20 @@ def _check_gamma_alt_convergence(
           NEW genuine critical findings on the SETTLED/verifier-filtered
           series (critical decay has flattened), AND
       (b) no unresolved/unverified critical candidate (A4 fail-safe), AND
-      (c) not contested, AND
-      (d) not churning.
+      (c) not contested.
+    (d) CHURN IS NOT A REQUIREMENT, and this list stopped saying so on 2026-09-29
+    -- 31 days after the body changed. FOUNDER RULING 2026-08-29, recorded at the
+    removed early return below: churn is CONTRIBUTORY, never a veto. It is carried
+    into the reason string on every verdict and cannot flip this function's
+    boolean. Executed disproof: called twice with identical inputs and rho_churn
+    False then True, both return converged=True, while a genuinely non-converging
+    input still returns False -- so the check is not trivially satisfied. Both
+    seats of the 2026-09-29 free panel found this independently and named it their
+    strongest disagreement with the brief that asked them. A stale guarantee in a
+    docstring is how a rejected position acquires authority here, so the list is
+    corrected rather than the ruling re-litigated. Churn still reaches a run
+    outcome, through _check_stall_convergence and the D1 phase transition -- not
+    through this gate.
     All-severity novelty is deliberately NOT required to be low: a clean
     critical run must not be held open by non-critical footnotes.
 
@@ -7207,7 +7225,8 @@ def _check_gamma_alt_convergence(
             f"condition before convergence is assessed; see "
             f"build_irreducible_queue_alarm]")
 
-    # Review-clean gates (c) not contested, (d) not churning. A clean
+    # Review-clean gate (c) not contested. Churn is NOT a gate here (2026-08-29,
+    # contributory not a veto; see the condition list above). A clean
     # critical tail does not mean convergence while the panel is still
     # contesting findings or churning re-derivations.
     if contested > 0:
@@ -7748,11 +7767,43 @@ def _corroborated_discounts(registry) -> Dict[str, str]:
     unresolved case and must never discount T against itself. That would delete a
     genuine discovery, which is the failure mode
     `cdsfl_a_model_can_delete_a_finding_by_repeating_itself` records.
+
+    RESOLVED PER DEFECT, NOT PER PAIR -- AND THE FIRST VERSION OF THIS FUNCTION
+    GOT THAT WRONG. Found 2026-09-29 by BOTH seats of the free between-rounds
+    panel, independently, by execution. The pairwise rule applied keep/discount to
+    each occasion on its own and never checked that the entry it discounted
+    AGAINST was itself still counted. Two executed falsifiers show that zeroes a
+    defect out of the count completely:
+
+      * MUTUAL OCCASIONS. A carries an occasion naming B and B one naming A in the
+        same round: the pairwise rule discounted BOTH, so one real defect with 2
+        registrations contributed 0. That is the same deletion the self-reference
+        guard above refuses, arriving through a 2-CYCLE instead of a self-loop --
+        the guard named only the latter, so the door it left open was the one that
+        mattered.
+      * THE KEPT ENTRY WAS NOT COUNTABLE. D discounted against T while T's own
+        status is terminal (REFUTED, say): the status filter removes T and the
+        discount removes D, so an entry that is still OPEN -- including an OPEN
+        CRITICAL -- contributed 0 novelty for the whole run.
+
+    Measured by a seat over the archive: 2 of 42 same-defect groups had every
+    countable member discounted, 4.7619%, Wilson [1.3158%, 15.7899%], and in one
+    run a single component spanned all 39 canonicals, collapsing novelty from
+    [14,3,4,5,5,5,3] to all zeroes. IT MOVES A REAL GATE: `novel_this_round` is
+    assigned from this series and is an unconditional blocking condition of the
+    state gate, which was demonstrated flipping False -> True on archived data.
+
+    So occasions are EDGES, a defect is a CONNECTED COMPONENT, and exactly one
+    representative per component survives. Behaviour on non-degenerate input is
+    unchanged, which is what keeps this additive rather than a redesign.
     """
     entries = registry.entries if hasattr(registry, "entries") else {}
     if not isinstance(entries, dict):
         return {}
-    discounts: Dict[str, str] = {}
+    # PASS 1 -- COLLECT EDGES. Admission is unchanged from the pairwise version:
+    # codiscovery occasions only, self-reference refused, an absent canonical or a
+    # missing round skipped rather than guessed.
+    edges: List[Tuple[str, str]] = []
     for tgt_id, tgt in entries.items():
         if not isinstance(tgt, dict):
             continue
@@ -7766,14 +7817,43 @@ def _corroborated_discounts(registry) -> Dict[str, str]:
             dup = entries[dup_id]
             if not isinstance(dup, dict):
                 continue
-            d_round = dup.get("open_since_round")
-            if t_round is None or d_round is None:
+            if t_round is None or dup.get("open_since_round") is None:
                 continue
-            # discount the LATER sighting; same round keeps the target
-            if d_round >= t_round:
-                discounts[dup_id] = tgt_id
-            else:
-                discounts[tgt_id] = dup_id
+            edges.append((dup_id, tgt_id))
+    # PASS 2 -- UNION the edges into one component per defect.
+    parent: Dict[str, str] = {}
+
+    def _find(x: str) -> str:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]        # path halving
+            x = parent[x]
+        return x
+
+    for _a, _b in edges:
+        parent.setdefault(_a, _a)
+        parent.setdefault(_b, _b)
+        _ra, _rb = _find(_a), _find(_b)
+        if _ra != _rb:
+            parent[_ra] = _rb
+    components: Dict[str, List[str]] = {}
+    for _node in parent:
+        components.setdefault(_find(_node), []).append(_node)
+    # PASS 3 -- ONE SURVIVOR PER COMPONENT: the earliest-opened member the status
+    # filter will actually COUNT, ties by canonical id, which is registration
+    # order. Never by similarity, severity or model -- none of those is evidence
+    # about which sighting came first. Where every member is terminal a
+    # representative is still named; the caller's status filter removes them all
+    # regardless, so the map's meaning does not change.
+    discounts: Dict[str, str] = {}
+    for _members in components.values():
+        _countable = [m for m in _members
+                      if entries[m].get("status")
+                      not in _NON_NOVEL_TERMINAL_STATUSES]
+        _pool = _countable or _members
+        _rep = min(_pool, key=lambda m: (entries[m].get("open_since_round"), m))
+        for m in _members:
+            if m != _rep:
+                discounts[m] = _rep
     return discounts
 
 
@@ -14856,6 +14936,16 @@ def run_experiment(
         # saturated". The two metrics measured the same underlying state
         # at different layers of the pipeline. Fix: align gamma's input
         # with the reconciliation pipeline's view of novelty.
+        # DIAGNOSTIC ONLY SINCE 2026-09-29, and deliberately still SETTLED-only.
+        # The value computed from this set is written to novelty_counts[-1] just
+        # below and then SUPERSEDED by the corroboration-aware retroactive loop a
+        # few lines later, which rewrites every element including this one. It is
+        # kept because the log line it feeds reports pre- against
+        # post-RECONCILIATION novelty, which is a different quantity from the
+        # corroborated count and is the one that log has always meant. Making it
+        # corroboration-aware would silently change what a reader of that line is
+        # told. It is the last remaining copy of the settled criterion; the copy
+        # the retroactive loop used to carry is gone.
         _NON_NOVEL_TERMINAL = {
             "MERGED", "DUPLICATE", "UNCONFIRMED", "REFUTED",
         }
@@ -14897,12 +14987,39 @@ def run_experiment(
         # decay curve over cumulative novel findings, so leaving stale counts in
         # earlier rounds flattens the curve with findings that turned out to be
         # rediscoveries — the exact inflation the spec names.
+        # CORROBORATION-AWARE SINCE 2026-09-29, AND THIS CLOSES A HOLE IN THE
+        # OPTION-3 REPAIR ITSELF, found by the fable seat of the free
+        # between-rounds panel.
+        #
+        # This loop used to recompute every element with the SETTLED criterion,
+        # inline. Because it runs EVERY round and rewrites the WHOLE series, it
+        # wiped the corroborated value that the settle pass writes into
+        # `novelty_counts[-1]` some 600 lines below -- EXACTLY ONE ROUND after it
+        # was written. Round r's corroborated count reverted to its settled count
+        # on round r+1's pass through here, so `rho_avg`'s rolling window and
+        # gamma's input kept re-sightings the registry already knew were
+        # re-sightings. The repair was sound and reached only the current round.
+        #
+        # Measured by the seat: a [6,3,3] resettled series against the [6,6,3]
+        # recorded one gives rho_avg 0.6667 against 0.8333 -- an overstatement of
+        # +0.1667 landing INSIDE the window that is compared to the 0.25 churn
+        # threshold.
+        #
+        # Observed live in this project's own run the same evening: round 0
+        # recorded `rho RECOMPUTED 1.0000 -> 0.9565` and round 1's provisional
+        # `rho_avg=0.978` proves the 22 was still present at round 1's start --
+        # 0.9783 with 22, 1.0000 with 23. The wipe then takes it back.
+        #
+        # IT ALSO REMOVED A SECOND COPY OF THE SETTLED CRITERION. The statuses
+        # were spelled out here AND in `_settled_novelty_series`, which is the
+        # producer/consumer pair `execute-do-not-grep` warns about: both were
+        # individually correct and could drift apart silently. Calling the series
+        # function leaves exactly 1 definition.
+        _retro_all, _ = _corroborated_novelty_series(
+            registry, max(0, len(novelty_counts) - 1))
         for _r in range(len(novelty_counts)):
-            novelty_counts[_r] = sum(
-                1 for e in registry.entries.values()
-                if e.get("open_since_round") == _r
-                and e.get("status") not in _NON_NOVEL_TERMINAL
-            )
+            if _r < len(_retro_all):
+                novelty_counts[_r] = _retro_all[_r]
 
         # Persist round
         round_elapsed = time.monotonic() - round_start
@@ -15229,9 +15346,16 @@ def run_experiment(
         # option-3 ruling the occasion recorded here IS counted: the rho
         # recomputation after the settle pass reads it through
         # `_corroborated_novelty_series`. So this call can move rho, and rho's
-        # churn flag is blocking condition (d) of the gamma-alt gate. It runs
-        # BEFORE that recomputation, and that ordering is the whole reason the
-        # recomputation sits where it does.
+        # churn flag reaches a run outcome. CORRECTED 2026-09-29, THE SAME DAY IT
+        # WAS WRITTEN: this said "blocking condition (d) of the gamma-alt gate",
+        # which is false and has been since the founder's 2026-08-29 contributory
+        # ruling. Both panel seats disproved it by execution and so did the author
+        # afterwards. The real routes are _check_stall_convergence (STALL_CONVERGED
+        # on consecutive churn rounds) and the D1 phase transition, both
+        # UNREACHABLE while rho was pinned at 1.000 and live now -- so the honest
+        # statement of risk is that this change makes convergence EASIER to reach,
+        # not harder. It runs BEFORE that recomputation, and that ordering is the
+        # whole reason the recomputation sits where it does.
         try:
             for _tr in getattr(immune_result, "triaged", []) or []:
                 if not (getattr(_tr, "is_duplicate", False) and _tr.duplicate_of):
