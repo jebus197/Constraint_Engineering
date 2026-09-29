@@ -186,12 +186,72 @@ def _is_simulated(doc: dict, fp: pathlib.Path) -> bool:
         return True
     if doc.get("_simulated"):
         return True
-    models = doc.get("models") or doc.get("model_labels") or []
-    if isinstance(models, (list, tuple)) and any(
-            isinstance(m, str) and m.upper().endswith("-SIM") for m in models):
+    if _has_sim_seat_label(doc):
         return True
     name = fp.parent.name.lower()
     return name.startswith("sim") or "_sim" in name or "simulated" in name
+
+
+#: Document fields that carry SEAT LABELS. Lists hold them as values; the
+#: per-model mappings hold them as KEYS. Both forms are read, because the file
+#: that actually leaked carried them only as keys -- see `_has_sim_seat_label`.
+_LABEL_LISTS = ("models", "model_labels", "active_models")
+_LABEL_MAPS = ("model_responses", "novelty_counts_per_model",
+               "raw_counts_per_model", "per_model", "model_reports")
+
+
+def _has_sim_seat_label(doc: dict) -> bool:
+    """True when any seat label in this document is a `-SIM` stand-in.
+
+    WHY THIS EXISTS, AND IT IS THE SAME DEFECT FOR THE THIRD TIME. `_archive`
+    admits any document carrying `registry`, `converged_at` or `runner_version`.
+    `_simulated_run_dirs` (added earlier on 2026-09-29) closed the case where a
+    simulated run's `runner_state.json` leaked in by looking for a SIBLING
+    document that proves simulation. **A run that DIES before writing its report
+    has no such sibling.**
+
+    Measured 2026-09-29: `bench/logs/shakedown_2026-09-29/arm1_harvest/` is the
+    harvest of a simulated run that died at round 5 of 8 when its launching
+    session ended. It holds no report. `_is_simulated` returned False for its
+    `runner_state.json`, `_simulated_run_dirs()` returned 21 directories and not
+    that one, so the file was admitted as a real archived run. Its recorded
+    provenance is 2026-09-29, which moved the age baseline from 2026-08-23 to
+    2026-09-29 -- **37.0 days** -- and silently disabled the TOO_NEW quarantine
+    for every control key committed in that window. `critical_boundary_census`,
+    first committed 2026-09-01, scored SILENT_BUT_RAN where the rule says
+    TOO_NEW: a control reported as exercised-but-quiet when the archive is in
+    fact older than the control is. That is the identical symptom
+    `_simulated_run_dirs` records, arriving through an INTERRUPTED run.
+
+    THE LEAKING FILE PROVES ITS OWN SIMULATION, which is why this is keyed here
+    rather than on the directory. `runner_state.json` carries
+    `novelty_counts_per_model` and `raw_counts_per_model`, and in that file every
+    key is `CC2-SIM`, `Codex-SIM`, `Gemini-SIM`, `DeepSeek-SIM`, `ChatGPT-SIM`.
+    The old test read `doc["models"]`, a LIST, and `runner_state.json` has no
+    such field -- the labels were present the whole time, as dict KEYS, in a
+    shape nothing looked at. Keying on the file's own content means an
+    interrupted run is recognised without depending on a sibling, a directory
+    name, or a report that was never written.
+
+    IT CANNOT RESURRECT THE PROSE FALSE POSITIVE. `_is_simulated`'s docstring
+    records that reading the first 4,000 characters for the string `-SIM`
+    excluded **9 real panel transcripts** for merely DISCUSSING simulation. This
+    reads seat LABELS from named structural fields, never prose, so a real run
+    quoting `-SIM` while reviewing `routing.py` is unaffected. `-SIM` as a seat
+    suffix is a MANDATED provenance marker for simulated stand-ins, never
+    permitted on a real seat, so it is a sound key rather than a heuristic.
+    """
+    for field in _LABEL_LISTS:
+        v = doc.get(field)
+        if isinstance(v, (list, tuple)) and any(
+                isinstance(m, str) and m.upper().endswith("-SIM") for m in v):
+            return True
+    for field in _LABEL_MAPS:
+        v = doc.get(field)
+        if isinstance(v, dict) and any(
+                isinstance(m, str) and m.upper().endswith("-SIM") for m in v):
+            return True
+    return False
 
 
 def _simulated_run_dirs() -> set:

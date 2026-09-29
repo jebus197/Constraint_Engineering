@@ -62,20 +62,91 @@ def _is_report(d):
     return "registry" in d or "converged_at" in d or "runner_version" in d
 
 
+def _excluded_as_simulated(lca, parsed, sim_dirs):
+    """Keyed documents the audit excludes, by EITHER rule. The real exclusion."""
+    return [fp for fp, d in parsed
+            if _is_report(d) and (lca._is_simulated(d, fp) or fp.parent in sim_dirs)]
+
+
 class TestTheLeakClassExistsAndIsClosed:
-    def test_the_leak_class_is_not_empty(self, lca, parsed):
-        """ANTI-VACUITY. If no file were classified real-by-itself inside a
-        simulated run, the invariant below would hold on an empty set and prove
-        nothing."""
+    def test_the_state_dump_class_is_excluded_and_the_guard_is_not_vacuous(
+            self, lca, parsed):
+        """ANTI-VACUITY, RESTATED 2026-09-29 EVENING. It previously asserted that
+        the PER-DIRECTORY-ONLY class is non-empty -- files the per-file rule calls
+        real while their directory proves simulated. That went red for the best
+        possible reason: the per-file rule was STRENGTHENED the same evening, so
+        it now catches those files itself and the per-directory-only class is
+        empty.
+
+        MEASURED over the 103 keyed documents in this archive: 30 are caught by
+        BOTH rules, 0 by the per-file rule alone, 0 by the per-directory rule
+        alone, and 73 by neither -- the real runs. The old assertion conflated
+        "the per-directory fix is not inert" with "the per-file rule is weak", and
+        an improvement to the second made it fail.
+
+        The property that actually matters is that the STATE-DUMP CLASS IS
+        EXCLUDED, by whichever rule reaches it first. That is asserted here and
+        cannot be satisfied vacuously: it names `runner_state.json` explicitly.
+        """
         sim_dirs = lca._simulated_run_dirs()
         assert sim_dirs, "no simulated run in the archive at all"
-        leak = [fp for fp, d in parsed
-                if _is_report(d) and not lca._is_simulated(d, fp)
-                and fp.parent in sim_dirs]
-        assert leak, ("no report-like file is admitted by the per-file rule "
-                      "inside a simulated run; this guard is vacuous here")
-        assert any(fp.name == "runner_state.json" for fp in leak), \
-            [str(f) for f in leak]
+        excluded = _excluded_as_simulated(lca, parsed, sim_dirs)
+        assert excluded, ("no report-like file is excluded as simulated; this "
+                          "guard is vacuous here")
+        assert any(fp.name == "runner_state.json" for fp in excluded), (
+            "the state-dump class -- the 4 files this file was written for -- is "
+            "no longer being excluded at all")
+
+    def test_the_per_directory_rule_is_still_load_bearing(self, lca, tmp_path):
+        """RETAINED ON EVIDENCE, NOT ON HABIT. The additive standard permits
+        removal only when a COMMITTED MEASUREMENT shows the replacement dominates
+        on a named property. On THIS archive the per-file rule dominates
+        completely, 0 documents relying on the per-directory rule alone -- which
+        would read as licence to delete it.
+
+        It is kept because the redundancy is a property of this corpus and not of
+        the rule. A simulated run that dies in ROUND 0, before any seat returns,
+        writes `novelty_counts_per_model` as an EMPTY map: no `-SIM` key exists,
+        so the per-file rule cannot see it. Its `checkpoint.json`, written at
+        launch, does carry the seat labels. This test constructs exactly that
+        pair and shows the per-directory rule is the only thing that catches the
+        state dump.
+
+        A run dying in round 0 is not hypothetical: the run this evening was
+        launched precisely because the previous one died at round 5 of 8.
+        """
+        run = tmp_path / "logs" / "commissioning_arm9_panel_20260929T235959Z"
+        run.mkdir(parents=True)
+        # the state dump of a run that died before any seat answered
+        (run / "runner_state.json").write_text(json.dumps({
+            "runner_version": "v3.2",
+            "novelty_counts": [], "raw_counts": [],
+            "novelty_counts_per_model": {}, "raw_counts_per_model": {},
+        }), encoding="utf-8")
+        # the checkpoint written at launch, which DOES name the seats
+        (run / "checkpoint.json").write_text(json.dumps({
+            "converged_at": None,
+            "active_models": ["CC2-SIM", "Codex-SIM", "Gemini-SIM"],
+        }), encoding="utf-8")
+
+        state = json.loads((run / "runner_state.json").read_text())
+        ckpt = json.loads((run / "checkpoint.json").read_text())
+
+        # the per-FILE rule cannot see the state dump -- no labels to read
+        assert lca._is_simulated(state, run / "runner_state.json") is False, (
+            "if the per-file rule catches this, construct a harder case or "
+            "retire the per-directory rule with this measurement beside it")
+        # ...but the checkpoint proves the RUN simulated
+        assert lca._is_simulated(ckpt, run / "checkpoint.json") is True
+
+        # so a per-RUN rule over this directory catches the state dump
+        sim_dirs = {fp.parent for fp in run.glob("*.json")
+                    if lca._is_simulated(
+                        json.loads(fp.read_text(encoding="utf-8")), fp)}
+        assert run in sim_dirs
+        assert (run / "runner_state.json").parent in sim_dirs, (
+            "the state dump of a round-0 death would be admitted as a real "
+            "archived run and would date the archive to when it happened")
 
     def test_no_admitted_report_comes_from_a_simulated_run(self, lca, parsed):
         """THE INVARIANT, and it is corpus-size independent."""
@@ -115,13 +186,36 @@ class TestTheLeakClassExistsAndIsClosed:
         """
         sim_dirs = lca._simulated_run_dirs()
         writes = lca._report_key_writes(lca.RUNNER.read_text(encoding="utf-8"))
+        # RE-AIMED 2026-09-29 EVENING, AND A FIRST ATTEMPT WENT TOO WIDE.
+        #
+        # This used to examine the per-directory-ONLY class, 4 documents. The
+        # per-file rule now catches those itself, so that class is empty and the
+        # check would have measured nothing. The first repair widened it to EVERY
+        # document excluded as simulated -- and it failed, correctly, naming
+        # `study_programme`, `gamma_gate_series`, `post_sweep_reconciliation` and
+        # others as keys that would "lose their only sighting".
+        #
+        # THAT FAILURE WAS THE TEST ASKING THE WRONG QUESTION, NOT A DEFECT. Those
+        # keys are witnessed ONLY by simulated runs, and reporting a control that
+        # no real run has exercised is the audit's ENTIRE PURPOSE -- `_archive`'s
+        # own docstring records that accepting the runner's rehearsal as field
+        # evidence was the 2026-09-01 defect. A check that forbade losing those
+        # sightings would forbid the tool from working.
+        #
+        # The property this test exists for is narrower and is about STATE DUMPS: a
+        # `runner_state.json` or `checkpoint.json` is not a report and must never
+        # be the sole witness of a control key. MEASURED 2026-09-29: 13 excluded
+        # state dumps, 55 report keys tracked, 5 of them present in a state dump,
+        # and 0 of those 5 absent from the 73 admitted real reports.
+        STATE_DUMPS = {"runner_state.json", "checkpoint.json"}
         leaked = [d for fp, d in parsed
-                  if _is_report(d) and not lca._is_simulated(d, fp)
-                  and fp.parent in sim_dirs]
+                  if _is_report(d) and fp.name in STATE_DUMPS
+                  and (lca._is_simulated(d, fp) or fp.parent in sim_dirs)]
         kept = [d for fp, d in parsed
                 if _is_report(d) and not lca._is_simulated(d, fp)
                 and fp.parent not in sim_dirs]
-        assert leaked, "the fix excluded nothing; it is inert"
+        assert leaked, ("no simulated state dump is excluded; this check is "
+                        "vacuous and the 4-file class it was written for is gone")
 
         def _present(key, obj):
             if isinstance(obj, dict):
