@@ -1,0 +1,80 @@
+# Free panel, design review BEFORE build: intelligence first, tools second — and what that means for admissibility
+
+**Dispatched 2026-09-30 by CC1 on the founder's instruction.** Standing policy since 2026-09-30: the panel reviews a DESIGN before it is built. Nothing asked for here is built. Your job is to say what should be built, what evidence would show it works, and — because you are running under the full CDSFL harness while you answer — **how the harness itself behaves under these conditions, and how it would behave under whatever you propose.** You are unusually well placed to answer that last part, and the founder has asked for it explicitly.
+
+## Hard constraints, non-negotiable
+
+- **You are in your own sandbox copy. Do NOT write to the real repository.** The founder's rule: *"none of the models... should ever be able to reach the real repo, let alone edit it!"*
+- **Never touch `~/.config/cdsfl/scoring.env` or any answer-key store. Never print a secret value.**
+- **`execute-do-not-grep`.** A claim asserting on the SOURCE TEXT of a module asserts only that the module describes itself consistently. Where a producer and a consumer both exist as live code, CALL them and compare outputs. This session has been bitten by grep-shaped predicates 4 times in one day, 3 of them in CC1's own instruments.
+- **`measured-rate-travels-with-its-script`.** Every rate, proportion or count must come from code you ran, shown with its command and output. Any proportion needs a confidence interval.
+- **Cross-verify every computational claim with at least 2 independent tools.** A Wolfram call that errored verified nothing.
+- **`feedback_no_model_voting`.** Findings are confirmed programmatically or by the human, never by model agreement. Report executed evidence, not consensus.
+- **`feedback_fixes_hil_only`.** Every fix is SUGGESTED to the human.
+- **No compelled convergence.** Disagreement between seats is information and is preserved. Say where you disagree with the other seat and why, with evidence.
+- **`simplicity-default` and the additive standard, both directions.** The simplest sufficient design wins. An addition nothing reaches is not additive; a removal needs a committed measurement showing the replacement dominates on a named property.
+
+## Declared figures. RE-EXECUTED when this brief is validated, not taken from CC1's typing.
+
+<!-- figure: corpus_claims_live_in_prose | scripts/intelligence_first_brief_figures_2026-09-30.py | 29 of 29 -->
+<!-- figure: stripping_the_fences_flips_the_triage | scripts/intelligence_first_brief_figures_2026-09-30.py | 5 of 5 -->
+<!-- figure: live_path_modules_reaching_the_corpus | scripts/intelligence_first_brief_figures_2026-09-30.py | 0 of 5 -->
+<!-- figure: claims_in_prose_interval | scripts/intelligence_first_brief_figures_2026-09-30.py | statsmodels [88.3030%, 100.0000%] -->
+<!-- figure: the_false_claim_really_is_false | scripts/intelligence_first_brief_figures_2026-09-30.py | claimed_mean_is_false = 4.0 -->
+
+## The founder's principle, verbatim, and it is 5 months old
+
+From `experimental_notes/CDSFL_Stage_Three_Closure_Explained_2026-04-17.md:28`, dated 2026-04-17:
+
+> *"The language models propose claims, the mechanical tools verify them, and the human in the loop makes the final call on anything that remains uncertain."*
+
+And from his message of 2026-09-30, restating it and drawing the boundary he cares about:
+
+> *"I am not simply interested in turning current AI systems into simple 'number crunchers', that is I am not interested in potentially having spent months upon months building a system that ultimately does what any human can do, that looks directly at a problem, then simply uses tools to try to solve it... Rather my goal was to leverage the clear reasoning capacities that current (and future) LLM (and other AI) systems possess innately *and then* use tools/falsifiers to prove/disprove them. Otherwise you just end up with a vastly complicated system that may hold no advantage over current conventional methodologies."*
+
+> *"Neither can exist in isolation from the other. Neither can be considered valid without the other. Neither can be considered preferable to the other. They are simply two sides to the same coin."*
+
+**THE PROJECT HAS ALREADY REJECTED THE TOOLS-ONLY FORM ONCE**, which is the strongest internal support for his position. `docs/EXTENDED_RATIONALE.md:119`, March 2026: a proposed threshold rule *"would have silently discarded every finding that could not be computationally verified — design findings, prose findings, everything qualitative. One reviewing model caught this. The fix was a one-character change. The project manager did not see it."*
+
+**EXTERNAL, AND UNVERIFIED BY CC1.** He cites a Nature news article (`nature.com/articles/d41586-026-03039-6`) reporting that a model asked to find CRISPR-like sequences in giant viruses performed WORSE when instructed to take a tools-first or tools-only approach. **CC1 has not read it and makes no claim about it.** Treat it as the founder's input, note that one external study plus one internal near-miss does not establish a mechanism, and say whether anything in THIS project's archive could test the same hypothesis.
+
+## Measured facts, established 2026-09-30 by execution. Re-verify anything you rely on.
+
+1. **THE TRIAGE TESTS FOR FENCED PYTHON, NOT FOR COMPUTATIONAL REDUCIBILITY.** Called directly: a markdown document carrying a computable FALSE claim ("the mean of 2, 4 and 6 is 4.5", where sympy, numpy and mpmath all give 4.0) returns **INADMISSIBLE** — the identical verdict to a document about the mood in a room. `_gateable_source` reports "target carries no code; syntax gates not applicable". So the instrument cannot distinguish *no computable elements* from *computable elements not written as Python*.
+2. **THE CORPUS NEVER EXPOSED THIS, because its claims are not where its admissibility comes from.** All 5 fixture documents carry fenced Python and so pass the triage. But **29 of 29 of their claims live in PROSE**, 0 inside a code fence, Wilson [88.3030%, 100.0000%]. Strip the fences and **5 of 5 documents flip to INADMISSIBLE while 5 of 5 keep 100% of their claims in the text.** The admissibility signal and the decidable content are DISJOINT.
+3. **The affirmative channel exists and the live path does not reach it.** The corpus's 5 falsifiers discriminate bidirectionally through the runner's own `reverify_falsifier`, and now also ABSTAIN (ERROR) on an absent or empty document after a repair landed today. `reference_runner_v3.py`, `routing.py`, `falsifier_verify.py`, `immune_agents.py` and `runner_core.py` reach it **0 of 5**.
+4. **On a prose target, `ADMISSIBLE` is unreachable.** `_prose_one_sided` at `reference_runner_v3.py:11656` rewrites every would-be ADMISSIBLE into REJECTED (any new defect) or NO_SCORE. The founder's response to that: *"by either of these options the result would produce nothing useful?"*
+5. **The abstain semantics are already right.** `docs/GLOSSARY.md:237`: *"NO_SCORE is not a third grade of admissibility: it is the statement that S_k has no opinion."* A correct prose fix is unscoreable, not defective. So what is wrong is the DETECTION, not the response.
+6. **A19's own title already names the unit error:** *"S_k classifies the TARGET, not the ELEMENT, so a computable fragment inside prose is never scored."*
+
+## Questions. Answer each separately. Where execution cannot settle one, say so and name what would.
+
+**Q1 — THE PRIMARY QUESTION. What does "intelligence first, tools second" require of the architecture, and what is the simplest sufficient way to build it?** Fact 1 says the current triage gates reasoning on a tool's readability, which is the opposite order. CC1's reading is that his principle implies 3 stages — REASON (the model produces candidate claims, including ones the problem never states), REDUCE (decide which are decidable and write a falsifier), VERIFY (run it) — and that the machinery has only the last 2, with the triage sitting *before* stage 1 and gating on syntax. **Attack that reading before adopting it.** Generate 2 to 4 distinct candidate architectures independently, falsify each, then recommend one.
+
+**Q2 — Is the unit of admissibility wrong, and what is the correct one?** A current-affairs article has no decidable STEM claims. The founder's own message is prose-heavy and carries several. His words: *"It can't exactly be judged as 'inadmissible' simply because it does not specify exactly what the question is, or what the answer might be."* Should admissibility attach to a CLAIM rather than a DOCUMENT, and if so what carries the claim-level verdict, what does the file-level verdict become, and does anything downstream break?
+
+**Q3 — Where is the honest boundary of inadmissibility?** He names the cases he would accept as genuinely non-computable: a current-affairs article, a short story, poetry, "anything generally of a non-STEM nature". Can that boundary be drawn mechanically, or only by a model's judgement? If by judgement, can a small classifier (Haiku-class) do it reliably, and what labelled set would establish that? **CC1 has no evidence either way and declines to guess.**
+
+**Q4 — Is the Wolfram-connector parallel deep or shallow?** In the earlier round a seat wrote: *"what Wolfram's connector does — NL in, computation out — is what a panel model does when it writes a falsifier. The LLM is the translator; the open-source set is the engine."* CC1's objection: a connector translates a STATED question into a computation, whereas the founder is describing the model forming the claim that is worth computing — so translation is a proper subset of reasoning, and the parallel describes the narrower thing. Is that objection right, and does the distinction change what should be built?
+
+**Q5 — HOW DOES THE HARNESS ACTUALLY BEHAVE UNDER THESE CONDITIONS, and how would it behave under your proposal?** You are running under the full CDSFL harness while answering, which no static analysis can substitute for. Drive it: give it a prose-heavy problem with unstated computable elements — this brief is one, and the founder's own message is another — and report what the harness does, where it abstains, where it decides something it should not, and what your proposal would change. Report the harness's behaviour on ITSELF where you can.
+
+**Q6 — Propose fixes for the 3 outstanding items, since they interact with Q1.** (a) **The 3 wirings** for prose answerability: corpus on the live path, a fix-efficacy check for prose, and the document's own claim suite as the prose test command. (b) **A measured non-cure must be recorded in the registry and open to HIL inspection** — his ruling of 2026-09-30, which is neither plain REJECT nor plain ESCALATE, and CC1 has not yet built it. (c) **`n*` and the gamma collision**: 2 incompatible quantities are both named `gamma`, no live module emits the coefficient, and the pair (4.89, 0.709) reproduces from no archived fit. The founder asks whether the round count can instead be computed from TARGET COMPLEXITY before a run — note that `target_complexity` is already recorded in every report, carrying `gamma_input`, `beta`, `r_squared`, `n_windows` and `target_chars`, and that `EXTENDED_RATIONALE.md:65` already hypothesises the threshold *"may correlate with constraint count multiplied by constraint interaction density"*, never measured.
+
+## Delivery. A design left in prose is destroyed at teardown and does not count.
+
+**Write your answer INTO the sandbox repository tree at its real path, not into scratch space.** Rounds 5 and 6 of a prior arc returned 0 source files because both seats wrote into scratch that `panel_sandbox.teardown` deleted.
+
+- **The design** goes to `experimental_notes/<seat>_intelligence_first_2026-09-30.md`.
+- **Every falsifier you run** goes to `scripts/<descriptive_name>_2026-09-30.py`, runnable from the repository root, so each figure travels with the script that produced it.
+- **Any proposed code change** is written as a fix INTO the module it belongs to, at its real path, so a reviewer can diff it. Do not paste a patch into your reply and leave the tree untouched.
+
+A design that exists only in your reply is not delivered. Your reply should point at the files, not replace them.
+
+## When to stop
+
+**Terminate on diminishing returns, this project's own criterion.** Stop when 2 consecutive falsification passes produce no new finding above the real-world-consequence threshold, or when every HARD assumption in your design has been tested and survives. Budget up to 5 passes. `p-pass-anti-nitpick` forbids padding: a review that stops early with its HARD assumptions tested is finished, not lazy. If a question cannot reach that state, name the HARD assumption still untested and what would test it.
+
+## Output format
+
+For each question: your position, the executed evidence, and your strongest attempt to refute your own answer. State explicitly what would overturn it. Name any disagreement with the other seat. Where a question is not computationally reducible, say which part is not and why, rather than producing a qualitative opinion dressed as a finding.
