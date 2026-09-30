@@ -48,11 +48,31 @@ def main(argv=None) -> None:
         h = z * mpsqrt(p * (1 - p) / n + z**2 / (4 * n * n)) / d
         return (max(mpf(0), c - h), min(mpf(1), c + h))
 
-    print("FIGURE triage_reads_fenced_code_not_reducibility")
+    print("FIGURE extractor_reads_fenced_code_not_reducibility")
+    # CORRECTED 2026-09-30 AFTER BOTH PANEL SEATS REFUTED THIS SECTION'S LABELS.
+    #
+    # It printed 'ADMISSIBLE' or 'INADMISSIBLE' from a truthiness test on
+    # `_gateable_source`'s return. **THERE IS NO VERDICT NAMED `INADMISSIBLE`.**
+    # The live vocabulary is SK_ADMISSIBLE / SK_REJECTED / SK_NO_SCORE /
+    # SK_ESCALATE, and the runner contains the string "INADMISSIBLE" 0 times
+    # while this script contained it 3. The word was mine, and the panel was
+    # briefed on it as though it were the system's answer. cc2 found it; fable
+    # confirmed the real verdict is NO_SCORE on 4 of 4 calls.
+    #
+    # AND THE SECOND HALF OF THE MISLABEL MATTERED MORE. `_gateable_source` is
+    # NOT a triage that runs before reasoning: it is an EXTRACTOR INSIDE
+    # `compute_sk`, which scores a PROPOSED FIX. It is never asked whether a
+    # document is worth reviewing. cc2's executed refutation: the brief carrying
+    # this figure has 0 fenced listings, and the seat reasoned on it unimpeded.
+    #
+    # What the figure below now reports is exactly what the extractor returns,
+    # and NO_SCORE is named as the verdict that actually follows -- which
+    # GLOSSARY.md:237 defines as "S_k has no opinion", the correct answer rather
+    # than a defect.
     CASES = {
         "markdown with a fenced python listing":
             "# S\n\n```python\nx = 1\nassert x == 1\n```\n",
-        "markdown, no code, a COMPUTABLE FALSE claim":
+        "markdown, no code, a computable claim (mean stated falsely)":
             "# Report\n\nThe mean of 2, 4 and 6 is 4.5 and the standard deviation is 2.0.\n",
         "markdown, no code, a computable equation in prose":
             "# Derivation\n\nSince E = mc^2 and m = 2 kg, E is 1.8e17 joules.\n",
@@ -62,18 +82,39 @@ def main(argv=None) -> None:
     for label, src in CASES.items():
         kind, _ = resolve_target_kind("doc.md", src)
         red, why = _gateable_source(src, "doc.md")
-        print(f"  {label:48s} kind={kind:6s} "
-              f"{'ADMISSIBLE' if red else 'INADMISSIBLE'}  {why[:40]}")
-    print("  a computable false claim and a document about the mood in a room "
-          "receive the SAME verdict = INADMISSIBLE")
+        print(f"  {label:58s} kind={kind:6s} "
+              f"extractable_code={'YES' if red else 'NO ':3s}  {why[:38]}")
+    print("  The EXTRACTOR cannot tell 'no computable elements' from 'computable")
+    print("  elements not written as Python'. The VERDICT that follows is NO_SCORE")
+    print("  in both cases, which is S_k correctly having no opinion, not a wrong call.")
 
     print("\nFIGURE the_false_claim_really_is_false")
+    # HALF OF THIS FIGURE WAS WRONG AND cc2 CAUGHT IT USING THE BRIEF'S OWN
+    # SPECIMEN AGAINST THE BRIEF. The MEAN claim is false. The STANDARD DEVIATION
+    # claim is CONVENTION-DEPENDENT and true under the sample convention: for
+    # [2, 4, 6] the sample sd (ddof=1) is EXACTLY 2, which is what the document
+    # claimed. The original figure called the whole claim false by quoting
+    # numpy's DEFAULT, ddof=0, without naming the convention.
+    #
+    # The figure's NAME is kept because the brief declares it and the declared
+    # token `claimed_mean_is_false = 4.0` remains true -- but the name overstates,
+    # and cc2's point is the substantive one: a connector handed the stated
+    # question returns a number and never asks which convention the author meant.
+    # That is its Q4 argument, made with this figure's own material.
     vals = [2, 4, 6]
-    print(f"  sympy mean = {sp.Rational(sum(vals), len(vals))}  "
-          f"numpy mean = {np.mean(vals)}  "
-          f"mpmath mean = {mp.nstr(sum(mpf(v) for v in vals) / mpf(len(vals)), 6)}")
-    print(f"  the document claimed 4.5; population sd is {np.std(vals):.10f} "
-          f"against a claimed 2.0")
+    mean_sym = sp.Rational(sum(vals), len(vals))
+    ss = sum((sp.Integer(x) - mean_sym) ** 2 for x in vals)
+    sd_pop, sd_smp = sp.sqrt(ss / len(vals)), sp.sqrt(ss / (len(vals) - 1))
+    print(f"  MEAN   sympy {mean_sym}   numpy {np.mean(vals)}   "
+          f"mpmath {mp.nstr(sum(mpf(v) for v in vals) / mpf(len(vals)), 6)}")
+    print(f"    the document claimed 4.5 -> FALSE by all 3 tools")
+    print(f"  SD     ddof=0 (population) sympy {sp.nsimplify(sd_pop)} = "
+          f"{float(sd_pop):.10f}, numpy {np.std(vals):.10f}")
+    print(f"         ddof=1 (sample)     sympy {sp.nsimplify(sd_smp)} = "
+          f"{float(sd_smp):.10f}, numpy {np.std(vals, ddof=1):.10f}, "
+          f"mpmath {mp.nstr(mpsqrt(mpf(8) / mpf(2)), 6)}")
+    print(f"    the document claimed 2.0 -> TRUE under ddof=1, FALSE under ddof=0. "
+          f"CONVENTION-DEPENDENT, not false.")
     print("  claimed_mean_is_false = 4.0")
 
     print("\nFIGURE corpus_claims_live_in_prose")

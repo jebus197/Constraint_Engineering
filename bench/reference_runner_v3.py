@@ -10578,8 +10578,30 @@ _MD_PY_FENCE = re.compile(r"```(?:python|py)\n(.*?)```", re.S)
 #:
 #: `pycon` STAYS EXCLUDED ON PURPOSE: a doctest block interleaves source with
 #: output, and abstaining is right where convicting is not.
+# BLOCKQUOTE MARKER FOLLOWED BY MORE THAN ONE SPACE, widened 2026-09-30.
+#
+# This read `(?:>[ \t]?)*` -- a blockquote marker plus AT MOST ONE space. That
+# is narrower than `bugzilla_loop._PY_FENCE`, which anchors nothing and so
+# matches a fence at any indent. MEASURED before the widening, over the full
+# 360-shape cartesian product in
+# `scripts/fence_extractor_dominance_2026-09-30.py`:
+#
+#     recognised by BOTH          8
+#     recognised by this one only 88
+#     recognised by _PY_FENCE only 2   <-- `>  ```python` and `>  ```py`
+#
+# Those 2 are why the duplicate could NOT simply be deleted in favour of this
+# pattern: the removal clause needs the survivor to DOMINATE, and it did not.
+# `>  ```python` is a CommonMark blockquote containing an indented fence, which
+# a real author writes. Widening `[ \t]?` to `[ \t]*` makes recognition here a
+# proper superset, which is what licenses the removal in `bugzilla_loop`.
+#
+# STRICTLY ADDITIVE: `[ \t]*` accepts everything `[ \t]?` accepted. No shape
+# that matched before can stop matching, so no extraction can be lost. The
+# quantifier is bounded in practice by the back-reference `(?P=prefix)`, which
+# requires the closing fence to carry the identical prefix.
 _MD_PY_FENCE_ANY = re.compile(
-    r"^(?P<prefix>[ \t]*(?:>[ \t]?)*)(?P<f>```|~~~)[ \t]*(?:python|py)\b[^\n]*\n"
+    r"^(?P<prefix>[ \t]*(?:>[ \t]*)*)(?P<f>```|~~~)[ \t]*(?:python|py)\b[^\n]*\n"
     r"(?P<body>.*?)^(?P=prefix)?(?P=f)",
     re.S | re.M)
 
@@ -10774,6 +10796,63 @@ def _run_hard_gate_ast(modified_source: str, source_path: str = "",
 
 _SURROGATE_RE = re.compile(r"[\ud800-\udfff]")
 
+
+def collect_non_cure_ledger(entries: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    """The founder's third path for a measured non-cure (ruling of 2026-09-30).
+
+    PROPOSED BY THE fable SEAT IN THE 2026-09-30 DESIGN REVIEW; a diff for the
+    founder to accept or reject, per `feedback_fixes_hil_only`.
+
+    A FIX_INEFFECTIVE probe verdict is a MEASUREMENT: the fix was applied to a
+    disposable copy and the finding's own falsifier still demonstrated the
+    defect. The ruling says that measurement is neither a plain REJECT (the
+    fix's author gets feedback and may retry; the finding stays open) nor a
+    plain ESCALATE (it must not block the run) -- it must be RECORDED in the
+    registry's report and open to HIL inspection.
+
+    This function is pure and side-effect-free: it reads the per-entry
+    ``fix_efficacy`` records the probe already writes and rolls every measured
+    non-cure into one ledger for the report the human reads. It moves no
+    verdict and re-scores nothing -- `informative_only` by construction, the
+    same contract as ``target_complexity``.
+
+    The ledger distinguishes three states a flat count would conflate:
+      * measured non-cures (the entries listed),
+      * entries probed with another outcome,
+      * entries never probed at all -- so "0 non-cures" cannot be read as
+        "all fixes cure" when the probe never looked (the 0-of-19 lesson,
+        2026-08-30).
+    """
+    try:
+        from fix_efficacy import FIX_INEFFECTIVE as _fi
+    except ImportError:  # pragma: no cover - the module ships beside this one
+        _fi = "FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER"
+    non_cures: List[Dict[str, Any]] = []
+    probed = 0
+    for cid, e in entries.items():
+        fe = e.get("fix_efficacy") or {}
+        if not fe.get("outcome"):
+            continue
+        probed += 1
+        if fe.get("outcome") == _fi:
+            non_cures.append({
+                "canonical_id": cid,
+                "source_model": e.get("source_model"),
+                "status": e.get("status"),
+                "outcome": fe.get("outcome"),
+                "detail": (fe.get("detail") or "")[:300],
+                "hil_inspect": True,
+            })
+    return {
+        "entries": non_cures,
+        "count": len(non_cures),
+        "entries_probed": probed,
+        "entries_total": len(entries),
+        "informative_only": True,
+        "why": ("founder ruling 2026-09-30: a measured non-cure is recorded "
+                "and open to HIL inspection; it neither terminally rejects "
+                "the finding nor blocks the run"),
+    }
 
 def _write_report_json(path: Path, payload: Any) -> None:
     """Write a run report as UTF-8. A completed run must never fail to record itself.
@@ -16920,6 +16999,18 @@ def run_experiment(
         _log(f"  *** WARNING: finding catalogue NOT written ({_cat_exc}) ***")
         result["finding_catalogue"] = {"written": False,
                                        "error": str(_cat_exc)}
+
+    # NON-CURE LEDGER (founder ruling 2026-09-30; proposed by the fable seat,
+    # design review of the same date). Exception-safe like every other
+    # report-assembly section: a completed run is never lost to bookkeeping.
+    try:
+        result["non_cure_ledger"] = collect_non_cure_ledger(registry.entries)
+        if result["non_cure_ledger"]["count"]:
+            _log(f"  non-cure ledger: {result['non_cure_ledger']['count']} "
+                 f"measured non-cure(s) recorded for HIL inspection")
+    except Exception as _nc_exc:  # noqa: BLE001
+        _log(f"  WARNING: non-cure ledger not attached ({_nc_exc})")
+        result["non_cure_ledger"] = {"written": False, "error": str(_nc_exc)}
 
     # Save report
     report_path = logs_dir / f"{cfg.experiment_name}_report.json"

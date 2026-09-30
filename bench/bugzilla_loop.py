@@ -365,7 +365,16 @@ def _extract_python(path: Path) -> Path | None:
         text = path.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return None
-    blocks = _PY_FENCE.findall(text)
+    # SAME EXTRACTOR AS EVERY OTHER PROSE PATH (2026-09-30). This read
+    # `_PY_FENCE.findall(text)`, the narrow private regex. It carried both of
+    # that regex's measured defects: it misses a tilde fence, an info-string
+    # attribute and any CRLF-authored document (3 of 13 realistic shapes,
+    # scripts/two_fence_extractors_disagree_2026-09-30.py), and it does not
+    # strip the markdown prefix, so a fence indented inside a list item is
+    # written to the `.extracted.py` still indented and every downstream tool
+    # reads "unexpected indent" against valid Python.
+    from reference_runner_v3 import _gateable_hunks
+    blocks = _gateable_hunks(text, str(path))
     if not blocks:
         return None
     out = path.with_suffix(".extracted.py")
@@ -451,7 +460,49 @@ def run_verification(
             _text = sandbox_path.read_text(encoding="utf-8", errors="replace")
         except OSError:
             _text = ""
-        _blocks = _PY_FENCE.findall(_text)
+        # ONE EXTRACTOR, NOT TWO (2026-09-30).
+        #
+        # This line read `_blocks = _PY_FENCE.findall(_text)`, a SECOND private
+        # fenced-Python detector answering the same question as
+        # `reference_runner_v3._gateable_source` about the same target. They
+        # DRIFTED. Measured by calling both on identical bytes
+        # (scripts/two_fence_extractors_disagree_2026-09-30.py): 3 of 13
+        # realistic fence shapes split them -- a tilde fence, a fence carrying
+        # an info-string attribute, and a CRLF (Windows-authored) document --
+        # every one in the direction "the runner sees code, this function does
+        # not". On such a document S_k's prose path engages while this function
+        # returns NO_APPLICABLE_CHECKS carrying the message "carries no fenced
+        # Python listing", which is FALSE of the document. The weaker claim was
+        # the one that reached the log.
+        #
+        # `_gateable_hunks` also STRIPS the markdown prefix, which `_PY_FENCE`
+        # did not. That fixes a false FAIL measured on the same run: a fence
+        # indented inside a list item extracted as "    x = 1" and this
+        # function reported "the fix leaves 1 of 1 listing(s) unparseable --
+        # unexpected indent (line 1)" against a document whose Python is
+        # perfectly valid. A false FAIL here accuses the fix.
+        #
+        # NOTHING IS REMOVED HERE, AND THE FIRST DRAFT OF THIS COMMENT WAS
+        # WRONG TO SAY SO. `_PY_FENCE` stays defined; both of its call sites
+        # are rewired instead. The dominance measurement below is what would
+        # LICENSE a later removal, and is recorded now so the decision is
+        # evidenced when a human makes it. It is not a licence taken here.
+        # `scripts/fence_extractor_dominance_2026-09-30.py` enumerates the full
+        # 360-shape cartesian product of prefix x fence x language x info-string
+        # x line-ending and reports, on the named property SHAPES RECOGNISED:
+        #     recognised(_PY_FENCE) subset of recognised(_gateable_hunks) = True
+        #     the subset is PROPER                                        = True
+        #     |recognised(runner)| = 120    |recognised(_PY_FENCE)| = 10
+        # The survivor dominates and the duplicate is redundant. Dominance did
+        # NOT hold before `_MD_PY_FENCE_ANY` was widened in the same change --
+        # 2 blockquote shapes were recognised here and not there -- so the
+        # widening is what earns the removal.
+        #
+        # Imported inside the function, matching the local import of
+        # `attempt_close` at reference_runner_v3.py:3861: the two modules
+        # reference each other and neither may import the other at module load.
+        from reference_runner_v3 import _gateable_hunks
+        _blocks = _gateable_hunks(_text, str(sandbox_path))
         if not _blocks:
             # NO_APPLICABLE_CHECKS, not FAIL. Nothing here is a statement about
             # the fix — there was simply nothing a static checker could read.

@@ -426,9 +426,23 @@ text = open(DOC, encoding="utf-8").read()
 
 # The readings are printed in a five-column table; pull every MPa value from it.
 table = re.search(r"\\| 1 \\| 352\\.1.*?\\| 25 \\| 358\\.1 \\|", text, re.S)
-assert table is not None, "the readings table is not in the document as printed"
+# A CARRIER OR INSTRUMENT FAILURE IS NOT A VERDICT (fable seat, 2026-09-30).
+# Measured through fix_efficacy.probe's tripwire pass: this falsifier raised
+# AssertionError -- the decider's CONFIRMED token -- on a document containing
+# none of its evidence, so "I cannot read the evidence" was indistinguishable
+# from "the defect is demonstrated", and the probe refused a verdict
+# (INDETERMINATE_NOT_INTERCEPTED) on the fixture's own correct fix. Same
+# principle as the absent/empty guard above, extended to the carrier:
+# AssertionError is reserved for a POSITIVELY located false claim.
+if table is None:
+    raise SystemExit(
+        "ERROR: the readings table is not in the document as printed; the"
+        " evidence this falsifier recomputes from is unreadable")
 xs = [float(v) for v in re.findall(r"\\d{3}\\.\\d", table.group(0))]
-assert len(xs) == 25, f"expected 25 readings, parsed {len(xs)}"
+if len(xs) != 25:
+    raise SystemExit(
+        f"ERROR: expected 25 readings, parsed {len(xs)}; the evidence table"
+        " is unreadable")
 
 block = re.search(r"\\*\\*ST-05\\.\\*\\*(.+?)\\n\\n", text, re.S)
 if block is None:
@@ -863,7 +877,18 @@ for body in re.findall(r"```python\\n(.*?)```", text, re.S):
     if "def dedup" in body:
         fence = body
         break
-assert fence is not None, "the dedup listing is not in the document as printed"
+# A CARRIER OR INSTRUMENT FAILURE IS NOT A VERDICT (fable seat, 2026-09-30).
+# Measured through fix_efficacy.probe's tripwire pass: this falsifier raised
+# AssertionError -- the decider's CONFIRMED token -- on a document containing
+# none of its evidence, so "I cannot read the evidence" was indistinguishable
+# from "the defect is demonstrated", and the probe refused a verdict
+# (INDETERMINATE_NOT_INTERCEPTED) on the fixture's own correct fix. Same
+# principle as the absent/empty guard above, extended to the carrier:
+# AssertionError is reserved for a POSITIVELY located false claim.
+if fence is None:
+    raise SystemExit(
+        "ERROR: the dedup listing is not in the document as printed; the"
+        " evidence this falsifier instruments is unreadable")
 
 ns = {}
 exec(compile(fence, "<ALG-02-REF-01 listing A>", "exec"), ns)
@@ -890,15 +915,19 @@ Counted.tally = 0
 out = dedup(items)
 measured = Counted.tally
 
-assert len(out) == k, f"the listing dropped elements: {len(out)} of {k} survived"
+if len(out) != k:
+    raise SystemExit(
+        f"ERROR: the listing dropped elements ({len(out)} of {k} survived);"
+        " the instrumented run is not measuring the claimed operation")
 
 # The pass that admits the i-th distinct element costs i - 1 comparisons.
 i, m = sp.symbols("i m", positive=True, integer=True)
 closed = sp.simplify(sp.summation(i - 1, (i, 1, m)))
 predicted = int(closed.subs(m, k))
-assert sp.simplify(closed - m * (m - 1) / 2) == 0, (
-    f"the closed form did not reduce to m(m-1)/2: {closed}"
-)
+if sp.simplify(closed - m * (m - 1) / 2) != 0:
+    raise SystemExit(
+        f"ERROR: the closed form did not reduce to m(m-1)/2: {closed};"
+        " the reference computation is broken")
 
 block = re.search(r"\\*\\*AL-03\\.\\*\\*(.+?)\\n\\n", text, re.S)
 if block is None:
@@ -908,9 +937,10 @@ claimed = int(re.search(r"performs\\s*\\n?\\s*(\\d+) comparisons", block.group(1
 
 print(f"k = {k}; measured comparisons = {measured}; k(k-1)/2 = {predicted}")
 print(f"document claims {claimed}")
-assert measured == predicted, (
-    f"the instrumented count {measured} does not match the closed form {predicted}"
-)
+if measured != predicted:
+    raise SystemExit(
+        f"ERROR: the instrumented count {measured} does not match the closed"
+        f" form {predicted}; instrument and reference disagree, no verdict")
 
 if claimed == measured:
     print("NOT FALSIFIED: AL-03 states the measured comparison count")
@@ -1105,7 +1135,18 @@ for body in re.findall(r"```python\\n(.*?)```", text, re.S):
     if "def variance_" in body:
         exec(compile(body, "<NUM-05-REF-01 listing>", "exec"), ns)
         found += 1
-assert found >= 2, f"expected two variance listings in the document, found {found}"
+# A CARRIER OR INSTRUMENT FAILURE IS NOT A VERDICT (fable seat, 2026-09-30).
+# Measured through fix_efficacy.probe's tripwire pass: this falsifier raised
+# AssertionError -- the decider's CONFIRMED token -- on a document containing
+# none of its evidence, so "I cannot read the evidence" was indistinguishable
+# from "the defect is demonstrated", and the probe refused a verdict
+# (INDETERMINATE_NOT_INTERCEPTED) on the fixture's own correct fix. Same
+# principle as the absent/empty guard above, extended to the carrier:
+# AssertionError is reserved for a POSITIVELY located false claim.
+if found < 2:
+    raise SystemExit(
+        f"ERROR: expected two variance listings in the document, found"
+        f" {found}; the evidence this falsifier executes is unreadable")
 
 xs = [1e9 + float(d) for d in range(10)]
 a = ns["variance_sum_of_squares"](xs)
@@ -1115,9 +1156,10 @@ exact = 55.0 / 6.0
 print(f"sum-of-squares form: {a!r}")
 print(f"two-pass form:       {b!r}")
 print(f"exact:               {exact!r}")
-assert abs(b - exact) < 1e-9, (
-    f"the two-pass form does not reproduce the exact variance: {b} vs {exact}"
-)
+if abs(b - exact) >= 1e-9:
+    raise SystemExit(
+        f"ERROR: the two-pass reference does not reproduce the exact variance"
+        f" ({b} vs {exact}); the reference is broken, no verdict")
 
 rel = abs(a - b) / abs(b)
 print(f"relative disagreement: {rel:.6g}")
