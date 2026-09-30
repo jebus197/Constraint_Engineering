@@ -140,12 +140,109 @@ def executed_prose_call():
     return sig
 
 
+def live_gate_verdicts():
+    """THE ONLY SECTION THAT SETTLES ANYTHING, and it took 3 attempts.
+
+    P-PASS, 2026-09-30. The first framing compared E against S* and concluded the
+    rejection boundary vanishes. The second noticed `sk = A * E` at :11580 and
+    that :12611 says "s_star ... no longer decides anything", and concluded the
+    comparison tested a retired threshold. BOTH WERE DERIVED RATHER THAN CALLED,
+    and the third attempt -- calling the live gate -- shows the second was an
+    OVER-CORRECTION.
+
+    What is retired is the value the SHIPPED `check_sk_threshold` RETURNS, which
+    is 0.0 at the shipped operating point and admits everything; that is the gate
+    whose records are "s_star zero in 4499 of 4499". What DECIDES, at :12945, is
+    `check_sk_threshold_corrected`, whose effective threshold is
+    `max(sk_break_even(...), s_floor)` -- and `sk_break_even` returns exactly the
+    value A19 quotes. Four independent routes agree to ~1e-16 that the live sign
+    test `compute_rk(R,q,sk) <= R` is equivalent to `sk >= S*` here: mpmath
+    findroot and scipy brentq on the SHIPPED `compute_rk`, the closed form
+    sqrt(23161)/38 - 7/2, and `sk_break_even()` itself.
+
+    So A19's threshold is the correct one for the live gate, and the verdict flip
+    is real. `feedback_verify_the_deciding_layer` is the lesson: the deciding
+    layer here is which of 2 gates the runner calls, and no amount of reading the
+    arithmetic could establish it.
+
+    SCOPE. `sk = A * E`, so every verdict below assumes A = 1 -- the hard gates
+    passing, which is A19's own stated frame ("With the hard gates repaired to
+    look at the fenced listings (A=1)"). With A = 0 the fix is rejected whatever
+    E is, and that path is untouched by any of this.
+    """
+    sys.path.insert(0, str(REPO / "bench"))
+    from reference_runner_v3 import (                                # noqa: E402
+        check_sk_threshold, check_sk_threshold_corrected, compute_rk, sk_break_even,
+    )
+    from mpmath import findroot                                      # noqa: E402
+    q, R, nu_b, nu_f, s_floor = 0.5, 0.5, 0.05, 0.20, 0.0
+    print(f"  shipped operating point: q={q}, R={R}, nu_b={nu_b}, nu_f={nu_f}, "
+          f"s_floor={s_floor}  (reference_runner_v3.py:12483, :1593)")
+
+    print("\n  the live threshold, 4 independent routes:")
+    r_mp = findroot(lambda x: mpf(compute_rk(R, q, float(x), nu_b, nu_f)) - mpf(R),
+                    mpf("0.5"))
+    print(f"    mpmath findroot on shipped compute_rk : {mp.nstr(r_mp, 22)}")
+    try:
+        from scipy.optimize import brentq
+        r_sc = brentq(lambda x: compute_rk(R, q, float(x), nu_b, nu_f) - R,
+                      0.0, 1.0, xtol=1e-15, rtol=8.9e-16)
+        print(f"    scipy brentq on shipped compute_rk    : {r_sc:.20f}")
+    except Exception as exc:                                         # noqa: BLE001
+        r_sc = None
+        print(f"    scipy unavailable: {type(exc).__name__}")
+    closed = sp.sqrt(23161) / 38 - sp.Rational(7, 2)
+    print(f"    A19 closed form                       : {sp.N(closed, 22)}")
+    be = sk_break_even(nu_b=nu_b, nu_f=nu_f, q=q, R=R)
+    print(f"    sk_break_even(), shipped function     : {be!r}")
+    a19 = mpf(str(sp.N(closed, 40)))
+    worst = max(abs(r_mp - a19), abs(mpf(be) - a19),
+                *( [abs(mpf(r_sc) - a19)] if r_sc is not None else [] ))
+    print(f"    worst disagreement: {mp.nstr(worst, 5)}")
+    assert worst < mpf("1e-14"), worst
+
+    print("\n  THE VERDICT FLIP, from the LIVE gate, called:")
+    cases = (("A19 as stated  (e2 absent, 2 new HIGHs)", sp.Rational(1, 3)),
+             ("as computed    (e2 inherited, ANY HIGHs)", sp.Rational(159, 275)))
+    verdicts = {}
+    for label, sk_r in cases:
+        sk = float(sk_r)
+        passes, eff = check_sk_threshold_corrected(
+            sk, nu_b=nu_b, nu_f=nu_f, q=q, R=R, s_floor=s_floor)
+        rk = compute_rk(R, q, sk, nu_b, nu_f)
+        shipped_passes, shipped_sstar = check_sk_threshold(
+            sk, nu_b=nu_b, nu_f=nu_f, q=q, R=R, s_floor=s_floor)
+        verdicts[label] = passes
+        print(f"    {label}")
+        print(f"      sk = {sk_r} = {sk:.10f}   compute_rk = {rk:.10f}  vs R = {R}")
+        print(f"      LIVE   (check_sk_threshold_corrected) -> "
+              f"{'ADMIT ' if passes else 'REJECT'}   effective threshold {eff:.10f}")
+        print(f"      SHADOW (check_sk_threshold, retired)  -> "
+              f"{'ADMIT ' if shipped_passes else 'REJECT'}   returns s_star = "
+              f"{shipped_sstar}  <- admits everything, which is why it was inverted")
+    a, b = (v for v in verdicts.values())
+    assert a is not b, ("the flip did not reproduce; the finding is refuted",
+                        verdicts)
+    print("\n    *** THE LIVE VERDICT FLIPS REJECT -> ADMIT. A fix carrying 2 or "
+          "more new")
+    print("        bandit HIGH findings, which A19's stated arithmetic REJECTS, is "
+          "ADMITTED")
+    print("        by the code A19 describes, for any number of new HIGHs. ***")
+
+
 def main() -> None:
     rule("1. THE DECIDING LAYER — compute_sk's own signature, called not read")
     try:
         executed_prose_call()
     except Exception as exc:                                        # noqa: BLE001
         print(f"  could not import compute_sk: {type(exc).__name__}: {exc}")
+
+    rule("1b. THE LIVE GATE, CALLED — this is what settles the finding")
+    try:
+        live_gate_verdicts()
+    except Exception as exc:                                        # noqa: BLE001
+        print(f"  live gate could not be exercised: {type(exc).__name__}: {exc}")
+        raise
 
     rule("2. BREAK-EVEN S*, two engines")
     s_sym, s_mpm = s_star_two_ways()
