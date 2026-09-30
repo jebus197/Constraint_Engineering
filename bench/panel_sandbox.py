@@ -78,6 +78,13 @@ def secret_ignore(*extra_patterns):
     secrets, so every one of them materialises `.env` outside the repo. Wrapping
     the same list here keeps their existing exclusions and adds the credential
     patterns, rather than leaving 4 copies of the rule to drift apart.
+
+    THIS DESCRIBES THE 4 `copytree` CALLERS AND NOT `build` BELOW, a distinction
+    that cost a containment breach on 2026-09-30. `build` clones with `cp -Rc`,
+    which takes NO ignore callable, so nothing in this paragraph ever applied to
+    the panel sandbox: it carried `__pycache__` and `*.pyc` through, and a `.pyc`
+    embeds the absolute source path it was compiled from. See `_purge_bytecode`,
+    which removes them after the copy because the copy itself cannot filter.
     """
     base = shutil.ignore_patterns(*extra_patterns) if extra_patterns else None
 
@@ -144,6 +151,51 @@ def _tracked_digest(repo: Path) -> Dict[str, str]:
     return digest
 
 
+def _purge_bytecode(dest: Path) -> int:
+    """Remove every compiled-bytecode artefact from a fresh sandbox. Returns the count.
+
+    WHY THIS EXISTS, and it is a CONTAINMENT repair rather than a size one. Found
+    2026-09-30 by the fable seat inspecting its OWN failure: its regression run
+    inside a sandbox produced tracebacks naming paths in the REAL repository. A
+    `.pyc` embeds the absolute source path it was compiled from in `co_filename`,
+    so a cached test module imported inside the sandbox reports a `__file__`
+    OUTSIDE the sandbox, and anything deriving a path from `__file__` can then
+    import real-repository modules into a panel measurement. It demonstrated this
+    by running `strings` over the `.pyc`, purging, and re-running.
+
+    THE PRIMARY COPY PATH CANNOT FILTER, WHICH IS WHY THIS IS A POST-COPY PURGE.
+    `build` clones with `cp -Rc` for the metadata cost, and a clone takes
+    everything; `shutil.copytree(..., ignore=...)` is only the FALLBACK when the
+    clone fails. So the ignore list never ran on this machine's filesystem. The
+    `_NEVER_COPY` delete loop beside it is also NON-RECURSIVE -- it removes
+    `dest / name` only -- while caches are scattered throughout a tree. Both
+    reasons force a recursive sweep here.
+
+    Measured before the fix, over the 104 sandboxes still on disk from the
+    2026-09-30 rounds: individual sandboxes carried 61, 83, 24 and 4 `.pyc`
+    files. `secret_ignore`'s docstring already CLAIMED that callers exclude
+    `__pycache__` and `*.pyc`; that describes the callers of `secret_ignore`, not
+    this path, and the claim is corrected there.
+
+    Directories are removed before files so the file sweep has less to walk, and
+    both are tolerant of a racing removal.
+    """
+    removed = 0
+    for d in sorted(dest.rglob("__pycache__"), key=lambda q: -len(q.parts)):
+        if d.is_dir() and not d.is_symlink():
+            removed += sum(1 for _ in d.rglob("*") if _.is_file())
+            shutil.rmtree(d, ignore_errors=True)
+    for pattern in ("*.pyc", "*.pyo"):
+        for f in dest.rglob(pattern):
+            try:
+                if f.is_file() or f.is_symlink():
+                    f.unlink(missing_ok=True)
+                    removed += 1
+            except OSError:
+                continue
+    return removed
+
+
 def build(repo: Path) -> Path:
     """A throwaway copy of `repo` a seat may write to freely.
 
@@ -160,6 +212,10 @@ def build(repo: Path) -> Path:
         shutil.copytree(repo, dest, symlinks=True,
                         ignore=shutil.ignore_patterns(*_NEVER_COPY))
     subprocess.run(["chflags", "-R", "nouchg,noschg", str(base)], capture_output=True)
+    # BYTECODE FIRST, because a stale `.pyc` is a route back into the real tree
+    # (see `_purge_bytecode`), and because removing these directories shrinks the
+    # symlink walk below.
+    _purge_bytecode(dest)
     for name in _NEVER_COPY:
         victim = dest / name
         if victim.is_dir() and not victim.is_symlink():
@@ -183,6 +239,21 @@ def build(repo: Path) -> Path:
         raise RuntimeError(
             "panel sandbox still exposes credential-bearing files after scrub: "
             + ", ".join(sorted(str(p.name) for p in survivors))
+        )
+    # VERIFIED RATHER THAN ASSUMED, to the same standard as the credential scrub
+    # directly above, and for the same reason its comment gives: a purge that
+    # silently missed a file would leave the sandbox looking contained while it is
+    # not, which is worse than no purge because it would be trusted.
+    stale = [q for pat in ("*.pyc", "*.pyo") for q in dest.rglob(pat)]
+    stale += [q for q in dest.rglob("__pycache__") if q.is_dir()]
+    if stale:
+        shutil.rmtree(base, ignore_errors=True)
+        raise RuntimeError(
+            f"panel sandbox still carries {len(stale)} compiled-bytecode "
+            f"artefact(s) after the purge, e.g. "
+            + ", ".join(sorted(str(q.relative_to(dest)) for q in stale[:4]))
+            + ". A .pyc embeds the absolute path it was compiled from, so an "
+            "import inside the sandbox can resolve to the real repository."
         )
     return dest
 
