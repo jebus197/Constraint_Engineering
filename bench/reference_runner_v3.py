@@ -12635,8 +12635,8 @@ def sk_threshold_shadow(
 
     Pure. Changes nothing. Exists because a gate that has passed every fix it
     ever saw is a mechanical failure that no artefact currently names. `s_star`
-    is zero in 4221 of 4221 gate records in `bench/logs`, Wilson
-    [99.91%, 100.00%], Clopper-Pearson [99.91%, 100.00%] -- the figure over the
+    is zero in 4499 of 4499 gate records in `bench/logs`, Wilson
+    [99.91%, 100.00%], Clopper-Pearson [99.92%, 100.00%] -- the figure over the
     GIT-TRACKED archive, which is the only one a reader who clones this
     repository can recompute. BOTH INTERVALS WERE RECOMPUTED FOR THE NEW
     DENOMINATOR AND ROUND IDENTICALLY AT THIS PRECISION; that is stated because
@@ -12674,8 +12674,8 @@ def sk_threshold_shadow(
     refused the commit: "THE PROSE AND THE ARCHIVE DISAGREE ... states 3507 ...
     gives 3555". That is the blast radius of adding evidence to git, and it was
     not anticipated when the files were staged. On the
-    maintainer's disk the coercing count is 4808 of 4808, Wilson
-    [99.92%, 100.00%], Clopper-Pearson [99.92%, 100.00%]. Both are real; only
+    maintainer's disk the coercing count is 5086 of 5086, Wilson
+    [99.92%, 100.00%], Clopper-Pearson [99.93%, 100.00%]. Both are real; only
     the first is reproducible.
 
     RE-MEASURED AGAIN 2026-09-22, AND THE SAME BLAST RADIUS FIRED A SECOND TIME.
@@ -12691,7 +12691,12 @@ def sk_threshold_shadow(
     sandbox extraction added exactly 2 tracked files -- one report and one runner_state --
     which moved them 4056 -> 4221 and 4643 -> 4808. So the trigger is not 'a run completes'
     -- it is ANY act that adds run evidence to the tracked tree, harvest and extraction
-    alike, and 2 files are enough. 5 recurrences now, each caught, none prevented.
+    alike, and 2 files are enough. A SIXTH AND SEVENTH followed within 12 hours, both
+    from cycle 3 of the same study: 4221 -> 4499 tracked and 4808 -> 5086 on disk as its
+    4 arms extracted. THIS TIME THE CLOPPER-PEARSON BOUNDS MOVED TOO, 99.91% -> 99.92%
+    and 99.92% -> 99.93%, where the 5 earlier recurrences left both intervals unchanged
+    at 2 decimals -- so an author who updated only the counts would have shipped exactly
+    the lying pair this guard names. 7 recurrences now, each caught, none prevented.
 
     THAT RECURRENCE IS A DESIGN QUESTION, NOT JUST AN ERRAND, AND IT IS FLAGGED
     RATHER THAN ANSWERED HERE. Every completed experimental run appends gate
