@@ -63,9 +63,24 @@ def test_every_arm_parses_through_the_runners_own_parser():
     parser = r.build_parser()
     for arm in a.ARMS:
         ns = parser.parse_args(arm.argv())
-        assert ns.rounds == 8, f"{arm.key}: the programme specifies 8 rounds, got {ns.rounds}"
+        assert ns.rounds == 10, (
+            f"{arm.key}: the cap is 10 rounds on the founder's ruling of "
+            f"2026-09-30, got {ns.rounds}. It was 8 until then. The value is a "
+            f"BUDGET CAP, not a derived optimum -- both free panel seats "
+            f"recommended 10 and both then showed n* cannot justify it, because "
+            f"the coefficient pair (4.89, 0.709) reproduces from no archived fit.")
         assert ns.target == arm.target, arm.key
         assert r.resolve_seats(ns.seats, ns.models), arm.key
+        # THE CONSUMER'S VIEW OF THE GATE, which is the half that was missing.
+        # A producer asserting `test_cmd is None` cannot see that argparse then
+        # substitutes its own default; only parsing the argv can.
+        if arm.test_cmd is None:
+            assert ns.test_cmd == "", (
+                f"{arm.key} declares no gate, but the runner received "
+                f"{ns.test_cmd!r}. An omitted flag becomes the immune-memory "
+                f"suite and FAKES the gate rather than excluding it.")
+        else:
+            assert ns.test_cmd == arm.test_cmd, arm.key
 
 
 def test_every_arm_resolves_to_simulated_seats_only():
@@ -93,17 +108,36 @@ def test_the_panel_arm_is_five_seats_and_excludes_fable():
     assert "Fable-SIM" not in seats, seats
 
 
-def test_the_prose_arm_targets_prose_and_passes_no_test_command():
+def test_the_prose_arm_targets_prose_and_EMITS_AN_EMPTY_test_command():
     """e2_regression is unavailable on prose; excluding it beats faking it.
 
     A test command on a prose target would make `e2` score against a suite the
     target cannot affect, which is a gate reporting a result it did not measure.
+
+    THIS TEST PREVIOUSLY ENCODED THE DEFECT IT EXISTS TO CATCH, corrected
+    2026-09-30 on the founder's ruling after both free panel seats found it
+    independently. It asserted `"--test-cmd" not in arm4.argv()` -- and omitting
+    the flag is EXACTLY what let `run_simulated_experiment`'s argparse substitute
+    its own default, the immune-memory suite for `bench/dm/_memory.py`. The gate
+    then ran against the wrong artefact and returned the constant
+    52/55 = 0.9454545454545454 for every scored fix, identical on a document
+    whose bytes had been destroyed.
+
+    The test also asserted only on the PRODUCER and never parsed the argv with
+    the real consumer, which is why a producer and a consumer that disagreed both
+    looked correct. `execute-do-not-grep`. It now checks both ends.
     """
     a = _arms()
     arm4 = next(x for x in a.ARMS if x.key == "arm4")
     assert arm4.target.endswith(".md"), arm4.target
-    assert arm4.test_cmd is None
-    assert "--test-cmd" not in arm4.argv()
+    assert arm4.test_cmd is None, "the declared intent is still 'no gate'"
+    v = arm4.argv()
+    assert "--test-cmd" in v, (
+        "the flag is OMITTED, so argparse will substitute its own default and the "
+        "gate will be faked rather than excluded -- the 2026-09-30 defect")
+    assert v[v.index("--test-cmd") + 1] == "", (
+        f"the flag carries {v[v.index('--test-cmd') + 1]!r}; an empty value is what "
+        f"reaches the runner as a genuine absence")
 
 
 def test_the_code_bearing_arms_run_a_test_command_that_exercises_their_target():

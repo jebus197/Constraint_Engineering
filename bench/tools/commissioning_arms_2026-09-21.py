@@ -49,6 +49,7 @@ held-out set.
 from __future__ import annotations
 
 import argparse
+import json
 import dataclasses
 import datetime as _dt
 import shlex
@@ -89,15 +90,43 @@ class Arm:
     seats: str
     target: str
     purpose: str
-    #: None where the gate is unavailable by construction rather than by choice.
+    #: `None` means the gate is unavailable by construction. It is EMITTED as an
+    #: empty `--test-cmd`, never omitted -- see `argv`.
     test_cmd: str | None = ENGINE_TESTS
-    rounds: int = 8
+    #: RAISED 8 -> 10 on the founder's ruling of 2026-09-30, and it is a BUDGET
+    #: CAP rather than a derived optimum. Both free panel seats recommended 10;
+    #: both then established that `n*` cannot justify it, because the coefficient
+    #: pair (4.89, 0.709) reproduces from no archived fit (0 of 421 curves swept
+    #: by one seat, 379 by the other) and 2 incompatible quantities in this
+    #: codebase are both named `gamma`. His ruling: "Go with 10 -- with a
+    #: recommendation to the reviewer to set a higher cap if convergence appears
+    #: within direct reach." That recommendation is `cap_recommendation` below.
+    rounds: int = 10
 
     def argv(self) -> list[str]:
+        """Always emit `--test-cmd`; an empty value means EXPLICITLY DISABLED.
+
+        THE DEFECT THIS REPLACES, measured 2026-09-30. This read
+        `if self.test_cmd:`, a TRUTHINESS test, so `None` emitted no flag at all
+        and `run_simulated_experiment`'s argparse substituted its own default --
+        the immune-memory suite for `bench/dm/_memory.py`, unrelated to a prose
+        target. The gate then ran against the wrong artefact and returned the
+        constant 52/55 = 0.9454545454545454 for every scored fix, identical on a
+        document whose bytes had been destroyed. A falsy guard cannot express 3
+        states: `None` (disabled), `''` and *unset* were indistinguishable, so the
+        most explicit signal was the one discarded.
+
+        VERIFIED BY EXECUTION before adopting: `_run_effect_regression` returns
+        `(None, "no test command configured")` for BOTH `None` and `''`, and the
+        launcher's argparse preserves `''` as distinct from its default. So an
+        empty value reaches the runner as a genuine absence rather than as a
+        command. Both free panel seats reached this fix independently; this is the
+        fable seat's version, which the founder chose, because it makes the intent
+        explicit where the setting is declared.
+        """
         a = ["--target", self.target, "--seats", self.seats,
              "--rounds", str(self.rounds), "--name", self.name]
-        if self.test_cmd:
-            a += ["--test-cmd", self.test_cmd]
+        a += ["--test-cmd", self.test_cmd if self.test_cmd is not None else ""]
         return a
 
 
@@ -119,9 +148,77 @@ ARMS = [
     Arm("arm4", "commissioning_arm4_prose",
         "CC2,Codex,Gemini,DeepSeek,ChatGPT", PROSE,
         "commissions A19; e2_regression is UNAVAILABLE on prose by construction, "
-        "so no test command is passed and the gate is excluded rather than faked",
+        "so an EMPTY test command is passed and the gate is genuinely excluded. "
+        "Before 2026-09-30 no flag was passed at all and argparse substituted the "
+        "immune-memory suite, which faked the gate rather than excluding it",
         test_cmd=None),
 ]
+
+
+#: How close to the gate still counts as "within direct reach", as a fraction of
+#: the configured threshold. 0.9 makes a gamma_critical of 0.27 against a 0.30
+#: threshold reach-worthy and 0.26 not. It is a REVIEWER PROMPT, never a gate: no
+#: verdict, score or convergence decision reads this value.
+REACH_FRACTION = 0.9
+
+
+def cap_recommendation(report: dict) -> str | None:
+    """A prompt to the reviewer to raise the cap when convergence was in reach.
+
+    THE FOUNDER'S RULING, 2026-09-30: *"Go with 10 -- with a recommendation to the
+    reviewer to set a higher cap if convergence appears within direct reach."*
+
+    THE CASE IT EXISTS FOR, measured from the run that prompted the ruling.
+    `commissioning_arm1_panel_20260929T214647Z` used all 8 of its 8 rounds and
+    stopped with `gamma_critical` at **0.29** against a configured
+    `gamma_alt_threshold` of **0.30** -- short by 0.01 -- while carrying 3
+    unverified criticals, which is the A4 fail-safe refusing to accrue the
+    zero-critical streak. Its novelty was also still RISING, at 9 new findings in
+    the final round. That run had not converged and had not failed; it ran out of
+    budget 1 round from the gate, and nothing in the artefact said so.
+
+    2 SIGNALS, either sufficient, both read from the report rather than inferred:
+      * the final `gamma_critical` is at or above `REACH_FRACTION` of the
+        configured `gamma_alt_threshold`; or
+      * `gamma_critical` has already MET the threshold while `unverified_critical`
+        is non-zero -- the gate satisfied and held open by the fail-safe alone.
+
+    Returns None when the cap was not reached, so a run that converged early is
+    never told to buy rounds it did not need.
+
+    THIS DECIDES NOTHING. It prints. `feedback_fixes_hil_only` -- the reviewer
+    raises the cap or does not.
+    """
+    rounds = report.get("rounds") or []
+    cap = report.get("max_rounds")
+    if not rounds or not isinstance(cap, int) or len(rounds) < cap:
+        return None
+    cfg = report.get("convergence_config") or {}
+    threshold = cfg.get("gamma_alt_threshold")
+    if not isinstance(threshold, (int, float)) or threshold <= 0:
+        return None
+    last = rounds[-1]
+    gc = last.get("gamma_critical")
+    if not isinstance(gc, (int, float)):
+        return None
+    unverified = last.get("unverified_critical") or 0
+    novel = last.get("novel_this_round")
+
+    met_and_held = gc >= threshold and unverified
+    near = gc >= threshold * REACH_FRACTION
+    if not (met_and_held or near):
+        return None
+
+    why = ("the gate was SATISFIED and held open only by the A4 fail-safe over "
+           f"{unverified} unverified critical(s)" if met_and_held else
+           f"gamma_critical reached {gc} against a threshold of {threshold}, "
+           f"short by {round(threshold - gc, 6)}")
+    tail = (f" Novelty was still {novel} in the final round, so the run was "
+            f"producing when the budget ended." if isinstance(novel, int) and novel else "")
+    return (f"RECOMMENDATION TO THE REVIEWER: raise the round cap and re-run. "
+            f"This arm used all {cap} of its {cap} rounds and {why}.{tail} "
+            f"The cap is a budget backstop, not a convergence verdict, so a run "
+            f"that stops here is carrying falsification debt rather than a result.")
 
 
 def command(arm: Arm) -> list[str]:
@@ -228,6 +325,17 @@ def main() -> int:
         print(f"=== {a.key} — {a.purpose}", flush=True)
         rc = subprocess.call(command(a), cwd=REPO)
         print(f"=== {a.key} exit code {rc}", flush=True)
+        # THE FOUNDER'S RAISE-THE-CAP PROMPT, wired here because this is where the
+        # reviewer is looking. An unwired recommendation is an addition that does
+        # nothing, which is the defect class this session spent the day on.
+        for _rep in sorted((REPO / "bench" / "logs").glob(f"{a.name}_*/*_report.json")):
+            try:
+                _note = cap_recommendation(json.loads(_rep.read_text()))
+            except Exception:                                    # noqa: BLE001
+                continue
+            if _note:
+                print(f"=== {a.key} {_note}", flush=True)
+            break
         rc_total = rc_total or rc
     return rc_total
 
