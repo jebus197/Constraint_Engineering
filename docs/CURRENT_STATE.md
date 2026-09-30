@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 30 September 2026 11:06 BST (2026-09-30T11:06:59+01:00)
+Generated: 30 September 2026 23:58 BST (2026-09-30T23:58:18+01:00)
 
 ---
 
@@ -18,20 +18,16 @@ Generated: 30 September 2026 11:06 BST (2026-09-30T11:06:59+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `79aa4ec` Seat evidence was 100% gitignored, and the on-disk gate count was counting the copies
-- **Committed:** 2026-09-30 10:57:14 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
-- **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
-
-Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M resources/ONBOARDING.md`
-- `M resources/RECOVERY.md`
+- **Last commit (the PARENT of the commit containing this file):** `5f7938e` Take-home digest of the intelligence-first round, spoken version plus mirror
+- **Committed:** 2026-09-30 23:55:19 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 1
+- **Working tree at snapshot time:** clean
 
 ---
 
 ## Tests
 
-**9126 tests collected** at 30 September 2026 11:06 BST, HEAD `79aa4ec` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**9227 tests collected** at 30 September 2026 23:58 BST, HEAD `5f7938e` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -61,13 +57,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `79aa4ec Seat evidence was 100% gitignored, and the on-disk gate count was counting the copies`
-- `f3b35d9 The second invented Wolfram rule in 2 days, struck with his words beside it`
-- `33f6a1e Cycle 3 simulation output: 4 arms, 1 halt, 0 clean convergences, 1 cause`
-- `9a12ab1 Cycle 2 closed: exit 0, 42 findings, rho verified, 4 defects found and fixed`
-- `0e51c7b Option 3 repaired the counter; corroboration SUPPLY is the next bound`
-- `59a15f5 F2's 4th confirmation: the live artefact contradicts itself`
-- `c1b6b3c F2 confirmed by a live out-of-sample prediction on the unfixed run`
-- `7cc5514 The free panel found a correctness defect in the option-3 repair, and both seats found it independently`
-- `b1a2263 VERIFIED: rho moved off 1.000 for the first time in a simulated run`
-- `80f0a0c An interrupted simulated run cannot age the archive — the same defect, 3rd door`
+- `5f7938e Take-home digest of the intelligence-first round, spoken version plus mirror`
+- `b4f37de Apply the intelligence-first round, composed: 4 seat fixes, 3 of which had no guard`
+- `8f4eb83 Brief for the intelligence-first panel round, with 5 figures re-executable`
+- `b8f724b D2 and D3: rounds = 10 with a raise-the-cap prompt, and arm 4's gate genuinely excluded`
+- `63c1e19 Decision 12: a falsifier on an absent target now ABSTAINS, all 5, not 2`
+- `f8f4d7c Fix the sandbox containment breach: a .pyc is a route back into the real repository`
+- `0b05822 Closing report for both 2026-09-30 panel reviews, with every decision the founder owns`
+- `1a30d87 The 2 controls both panel seats converged on, built and verified to bite`
+- `4fa7ad7 Panel brief for the A19 calculator design review, with its figures re-executable`
+- `0ce3c08 Correct the 2 false sentences about e2 on prose, plus the citations my own edit shifted`
