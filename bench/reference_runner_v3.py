@@ -11332,8 +11332,33 @@ def compute_sk(
       * ``e4_bandit`` — bandit cannot parse the file, returns an empty result
         set, and therefore reports "0 HIGH / 0 MEDIUM" forever, at weight 2.0,
         the heaviest in the set. It is structurally incapable of failing.
-      * ``e2_regression`` — permanently unavailable: prose targets live outside
-        the repository and no prose config sets ``test_cmd``.
+      * ``e2_regression`` — **THIS SENTENCE WAS FALSE ON BOTH HALVES AND IS
+        CORRECTED HERE, 2026-09-30, on the founder's instruction.** It read
+        "permanently unavailable: prose targets live outside the repository and
+        no prose config sets ``test_cmd``". Measured by execution against the
+        run that tested it, ``commissioning_arm4_prose_20260930T064044Z``:
+        (a) the target ``bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`` is INSIDE the
+        repository — containment is the only kind-independent suppressor, and a
+        copy placed outside ``REPO_ROOT`` does return
+        ``{"score": null, "detail": "source not under REPO_ROOT"}``;
+        (b) a ``test_cmd`` IS set. ``Arm.argv()`` guards ``--test-cmd`` with a
+        truthiness test, so ``test_cmd=None`` emits no flag and
+        ``run_simulated_experiment``'s argparse substitutes its own default —
+        the immune-memory suite for ``bench/dm/_memory.py``, unrelated to any
+        prose target. Executed: arm1-arm3 emit the flag, arm4 does not,
+        substitution occurs.
+        SO e2 RUNS ON PROSE, AND IT CANNOT SEE ITS TARGET: the prose document
+        with real bytes and with its bytes destroyed both return
+        ``0.9454545454545454`` ("52/55 passed (sandbox)"), while gutting a
+        ``.py`` target correctly returns ``None``. The 52/55 is itself an
+        artefact — ``_run_effect_regression`` copies ``REPO_ROOT`` with
+        ``secret_ignore(..., 'logs')``, so ``bench/logs`` is absent from the
+        sandbox and 3 tests fail for that reason alone.
+        NO VERDICT MOVES, because the ``_prose_one_sided`` veto below reads only
+        the e3 and e4 ``new:`` fields and is invariant across 7 e2 values; the
+        residue is the advisory ``computed_sk``, which reads 0.9782 with the
+        substituted suite against 1.0 without it. Producer:
+        ``scripts/a19_break_even_assumes_e2_absent_2026-09-30.py``.
 
     With the hard gates repaired to look at the fenced listings (A=1), those
     three combine to a measured sk=1.0000 ADMISSIBLE for a fix that injected
@@ -11362,7 +11387,14 @@ def compute_sk(
     #     BEFORE, a syntax error and NO metrics -- "0 HIGH/0 MEDIUM" forever,
     #     at weight 2.0, structurally incapable of failing
     #     AFTER, e4 = 0.5 on 1 HIGH. It can fail now.
-    # The third reason stands: `e2_regression` is still unavailable on prose.
+    # THE THIRD REASON DOES NOT STAND EITHER, corrected 2026-09-30. This line
+    # read "The third reason stands: `e2_regression` is still unavailable on
+    # prose." Both halves of its justification are false by execution -- the
+    # arm4 target is INSIDE the repository and argparse substitutes a test
+    # command when the config passes none -- so ALL 3 of the short-circuit's
+    # stated reasons have now failed. See the corrected bullet in the docstring
+    # above. The short-circuit's DEFAULT-OFF status is unaffected: it rests on
+    # the founder's call about what reaches a verdict, not on these 3 reasons.
     #
     # DEFAULT OFF, because this changes what reaches a verdict and that is the
     # founder's call, not the assistant's. A prose target with NO fenced listing

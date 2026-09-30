@@ -12,7 +12,7 @@ Every figure below was computed twice with independent tools. Producers: `script
 
 **Both are now false against current code.** Run against the same committed fixture `tk.SHELL_INJECTION_FIX`, `compute_sk` returns `NO_SCORE` at `sk = 0.0`, not `ADMISSIBLE` at 1.0.
 
-**The cause is a repair made 11 days after the measurement.** `_prose_one_sided`, added 2026-09-22, sits at `bench/reference_runner_v3.py:11624`:
+**The cause is a repair made 11 days after the measurement.** `_prose_one_sided`, added 2026-09-22, sits at `bench/reference_runner_v3.py:11656`:
 
 ```python
 if _scoring_prose and tristate == SK_ADMISSIBLE:
@@ -42,7 +42,7 @@ End-to-end on the real prose target, 1/2/5/20 new HIGHs all returned `REJECTED`:
 
 ### Confirmed, by execution
 
-`compute_sk`'s docstring (`:11335`) gives as the third of 3 reasons for the prose short-circuit that `e2_regression` is *"permanently unavailable: prose targets live outside the repository and no prose config sets `test_cmd`"*, and `:11365` asserts *"The third reason stands."*
+`compute_sk`'s docstring (`:11335`) gives as the third of 3 reasons for the prose short-circuit that `e2_regression` is *"permanently unavailable: prose targets live outside the repository and no prose config sets `test_cmd`"*, and `:11390` asserts *"The third reason stands."*
 
 **False on both halves for the run that tested it.**
 
@@ -74,7 +74,7 @@ The claim was *"no number of new bandit HIGH findings can ever cause rejection o
 
 **The sign of the risk was also reversed:** the search was for a contaminated gate letting harm through, when the contaminated gate on prose cannot admit anything.
 
-An intermediate claim, since withdrawn, held that `s_star` no longer decides. That was an over-correction. What is retired is the value the **shipped** `check_sk_threshold` *returns* (0.0 at the operating point, admitting everything — the gate whose records are "s_star zero in 4499 of 4499"). The live decision at `:12945` is `check_sk_threshold_corrected`, whose effective threshold is `max(sk_break_even(...), s_floor)`, and `sk_break_even` returns exactly A19's value. 4 routes agree to 2.005e-16 that `compute_rk(R,q,sk) <= R` is equivalent to `sk >= S*` at `q=0.5, R=0.5, nu_b=0.05, nu_f=0.20`: mpmath `findroot` 0.5049311709704231457357, scipy `brentq` 0.50493117097042339303, the closed form 0.5049311709704233462329, `sk_break_even()` 0.5049311709704235. **That equivalence is real but governs the Python path only.**
+An intermediate claim, since withdrawn, held that `s_star` no longer decides. That was an over-correction. What is retired is the value the **shipped** `check_sk_threshold` *returns* (0.0 at the operating point, admitting everything — the gate whose records are "s_star zero in 4499 of 4499"). The live decision at `:12977` is `check_sk_threshold_corrected`, whose effective threshold is `max(sk_break_even(...), s_floor)`, and `sk_break_even` returns exactly A19's value. 4 routes agree to 2.005e-16 that `compute_rk(R,q,sk) <= R` is equivalent to `sk >= S*` at `q=0.5, R=0.5, nu_b=0.05, nu_f=0.20`: mpmath `findroot` 0.5049311709704231457357, scipy `brentq` 0.50493117097042339303, the closed form 0.5049311709704233462329, `sk_break_even()` 0.5049311709704235. **That equivalence is real but governs the Python path only.**
 
 ---
 
