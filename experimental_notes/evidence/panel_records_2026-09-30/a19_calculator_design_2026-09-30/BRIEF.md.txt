@@ -20,6 +20,18 @@
 
 He also observed, of the 2 options he was offered on task A19, that **"by either of these options the result would produce nothing useful"** — and the measurements below say he is right about that.
 
+## Declared figures. These are RE-EXECUTED when this brief is validated, not taken from CC1's typing.
+
+`scripts/panel_brief_validate.py` runs the producer below and refuses this brief if any value fails to reproduce. That mechanism exists because a prior brief typed a gamma of 0.451 when the value is 0.415413, and 2 seats were briefed on the wrong number.
+
+<!-- figure: e2_constant_on_prose | scripts/a19_calculator_brief_figures_2026-09-30.py | 0.9454545454545454 -->
+<!-- figure: E_with_substituted_suite | scripts/a19_calculator_brief_figures_2026-09-30.py | 0.978182 -->
+<!-- figure: E_floor_at_2_or_more_new_HIGHs | scripts/a19_calculator_brief_figures_2026-09-30.py | 159/275 -->
+<!-- figure: S_star_break_even | scripts/a19_calculator_brief_figures_2026-09-30.py | 0.50493117097042334623290819418709903839714462053309 -->
+<!-- figure: e1_uncured_fix_score | scripts/a19_calculator_brief_figures_2026-09-30.py | 0.7142857142857143 -->
+<!-- figure: live_path_modules_reaching_the_prose_corpus | scripts/a19_calculator_brief_figures_2026-09-30.py | 0 of 5 -->
+<!-- figure: new_HIGH_rejection_lower_bound | scripts/a19_calculator_brief_figures_2026-09-30.py | 51.0109 -->
+
 ## Measured facts, established 2026-09-30 by execution. Treat as data, and re-verify anything you intend to rely on.
 
 1. **On a prose target with `sk_score_prose_listings` ON, `ADMISSIBLE` is UNREACHABLE.** `reference_runner_v3.py:11624`: `if _scoring_prose and tristate == SK_ADMISSIBLE:` — both arms return. Any new defect gives `REJECTED` with `sk = 0.0`; none gives `NO_SCORE`. Executed: 1 new bandit HIGH rejects; 1 new ruff diagnostic alone rejects; 1/2/5/20 new HIGHs all reject, 4 of 4, Wilson [51.0109%, 100.0000%]. So the instrument can refuse or abstain, and cannot affirm.
@@ -44,6 +56,22 @@ He also observed, of the 2 options he was offered on task A19, that **"by either
 **Q5 — Remedy for the structural conflation in fact 8.** Candidates to weigh, not endorse: a single shared "is this a copy" predicate every consumer must use; moving harvest out of the archive namespace entirely so no glob can reach it; a guard test refusing any new archive scan that does not use the shared predicate. Which is simplest sufficient, and what does each cost?
 
 **Q6 — Settle `n* = (a/theta)^(1/gamma)`.** A prior round reported that `_estimate_gamma` fits the CUMULATIVE curve, making `n* = (a(1-gamma)/theta)^(1/gamma) = 1.6447` rather than 9.3805, a factor 5.70, but could not locate the fitting code to decide whether `a = 4.89` is cumulative or a rate coefficient. Find the fitting code and settle it by execution. **GAMMA IS LOAD-BEARING** — a standing founder directive. Also: both seats of a prior round recommended `rounds = 10`; say whether that survives your own analysis and whether it depends on the answer.
+
+## Delivery. A design left in prose is destroyed at teardown and does not count.
+
+**Write your answer INTO the sandbox repository tree at its real path, not into scratch space.** Rounds 5 and 6 of a prior arc returned 0 source files because both seats wrote into scratch that `panel_sandbox.teardown` deleted. Specifically:
+
+- **The design itself** goes to `experimental_notes/<seat>_a19_calculator_design_2026-09-30.md` in your sandbox tree, as a real file at a real path.
+- **Every falsifier you run** goes to `scripts/<descriptive_name>_2026-09-30.py` in your sandbox tree, committed-shaped and runnable from the repository root, so the figure it produces travels with the script that produced it.
+- **Any proposed code change** is written as a fix INTO the module it belongs to, at its real path, so a reviewer can diff it. Do not paste a patch into your reply and leave the tree untouched.
+
+A fix or a design that exists only in your reply text is not delivered. Your reply should point at the files, not substitute for them.
+
+## When to stop
+
+**Terminate on diminishing returns, which is this project's own criterion.** Concretely: stop when 2 consecutive falsification passes produce no new finding above the real-world-consequence threshold, or when every HARD assumption in your design has been tested and survives. Budget up to 5 passes. Do not pad: `p-pass-anti-nitpick` forbids generating findings for their own sake, and a design review that stops early with its HARD assumptions tested is finished, not lazy.
+
+If you cannot reach that state on a question, say which HARD assumption remains untested and what would test it, rather than continuing past the point of return.
 
 ## Output format
 
