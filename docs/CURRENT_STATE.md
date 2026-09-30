@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 29 September 2026 19:50 BST (2026-09-29T19:50:02+01:00)
+Generated: 30 September 2026 11:06 BST (2026-09-30T11:06:59+01:00)
 
 ---
 
@@ -17,17 +17,21 @@ Generated: 29 September 2026 19:50 BST (2026-09-29T19:50:02+01:00)
 > commit this file actually lives in and its real contents, run
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
-- **Branch:** main
-- **Last commit (the PARENT of the commit containing this file):** `67f2e26` Shakedown finding: rho cannot fall, and the code predicted it
-- **Committed:** 2026-09-29 19:29:52 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/main
-- **Working tree at snapshot time:** clean
+- **Branch:** sim/shakedown-2026-09-29
+- **Last commit (the PARENT of the commit containing this file):** `79aa4ec` Seat evidence was 100% gitignored, and the on-disk gate count was counting the copies
+- **Committed:** 2026-09-30 10:57:14 +0100
+- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
+- **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
+
+Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
+- `M resources/ONBOARDING.md`
+- `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**8988 tests collected** at 29 September 2026 19:50 BST, HEAD `67f2e26` (`python3 -m pytest bench/tests/ --co -q`)
+**9126 tests collected** at 30 September 2026 11:06 BST, HEAD `79aa4ec` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,13 +61,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `67f2e26 Shakedown finding: rho cannot fall, and the code predicted it`
-- `1650b33 A seat inherited its launcher's Claude Code session identity, and that is why`
-- `70da621 BLOCKED: the vault guard falsely refuses the shakedown; 9 hypotheses refuted`
-- `e89a316 Blind panel on the adaptive spec: 6 defects, 4 of them CC1 missed`
-- `1d0dc84 sv: state save 29 September 2026 13:51 BST`
-- `ea43d3f Apply both of Astra's corrections; assess its distributed-compute spec`
-- `d6eeb90 Retract the invented Wolfram denial rule; explorer A-vs-M; I31 cannot fire`
-- `9c39332 sv: resume pointer rewritten for compaction — the shakedown is next and is NOT blocked`
-- `28c4234 None of the 3 "rulings before the run" actually blocks the run, checked against the code`
-- `f33da34 sv: the study window measured against the founder's own marker, and it changes nothing`
+- `79aa4ec Seat evidence was 100% gitignored, and the on-disk gate count was counting the copies`
+- `f3b35d9 The second invented Wolfram rule in 2 days, struck with his words beside it`
+- `33f6a1e Cycle 3 simulation output: 4 arms, 1 halt, 0 clean convergences, 1 cause`
+- `9a12ab1 Cycle 2 closed: exit 0, 42 findings, rho verified, 4 defects found and fixed`
+- `0e51c7b Option 3 repaired the counter; corroboration SUPPLY is the next bound`
+- `59a15f5 F2's 4th confirmation: the live artefact contradicts itself`
+- `c1b6b3c F2 confirmed by a live out-of-sample prediction on the unfixed run`
+- `7cc5514 The free panel found a correctness defect in the option-3 repair, and both seats found it independently`
+- `b1a2263 VERIFIED: rho moved off 1.000 for the first time in a simulated run`
+- `80f0a0c An interrupted simulated run cannot age the archive — the same defect, 3rd door`
