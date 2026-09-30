@@ -137,18 +137,65 @@ def tracked_under(logs_dir: Path) -> set[Path] | None:
     return {(logs_dir / rel).resolve() for rel in out.stdout.split("\0") if rel}
 
 
-def route_1_structured(logs_dir: Path, only: set[Path] | None = None):
+#: Subtrees holding COPIES of the repository made for a panel seat's sandbox.
+#: `bench/panel_sandbox.py:565` documents the 3 destination shapes. A file under
+#: one of these is a copy of an artefact, not an artefact: counting it inflates
+#: the corpus by however many seats happened to be dispatched.
+HARVEST_DIRS = ("sandbox_harvest", "worktree_harvest", "panel_worktree_harvest")
+
+
+def _is_harvest_copy(path: Path) -> bool:
+    return any(part in HARVEST_DIRS for part in path.parts)
+
+
+def route_1_structured(logs_dir: Path, only: set[Path] | None = None,
+                       include_harvest_copies: bool = False):
     """Count passes_threshold True/False across archived JSON reports.
 
     `only`, when given, restricts the scan to that set of resolved paths -- the
     git-tracked subcorpus, so the figure is one a reader can reproduce.
+
+    A SEAT'S SANDBOX COPY IS NOT AN ARCHIVE RECORD, corrected 2026-09-30.
+    Committing the falsifier-root-cause panel round put that round's harvest on
+    disk, and the on-disk figure jumped 5086 -> 5972 while the tracked figure
+    held at 4499. The +886 was NOT archive growth. Measured: excluding every
+    harvest subtree returns EXACTLY 5086, the figure already stated in
+    `sk_threshold_shadow`'s docstring, and all 886 surplus records come from the
+    136 harvest JSONs that are BYTE-IDENTICAL (sha256) to files already tracked
+    at their canonical paths -- the same gate results counted once as archive and
+    again once per dispatched seat, 14.8359% inflation.
+
+    THE GUARD TOLD ME TO DO THE WRONG THING, which is the part worth keeping.
+    `test_stated_gate_count_matches_measurement_2026-09-07`'s docstring says "IF
+    THIS TEST FAILS BECAUSE THE ARCHIVE GREW, THE TEST IS RIGHT AND THE PROSE IS
+    STALE. Restate the claim with the new count AND recompute its interval." That
+    is right in general and wrong here, because the archive had not grown. Obeying
+    it would have published 5972 with a freshly-computed Clopper-Pearson interval
+    around a number 14.8359% duplicate. The prose was correct; the instrument
+    was counting copies. See `execute-do-not-grep` and
+    [[feedback_verify_the_deciding_layer]] -- the deciding layer here is the
+    corpus definition, not the arithmetic over it.
+
+    SCOPE, and no further. All 886 come from ONE round,
+    `falsifier_root_cause_2026-09-30`; every earlier harvest contributes 0,
+    because earlier rounds harvested scripts and notes rather than gate-bearing
+    reports. So no previously published figure was inflated: the defect was
+    latent until a harvest first carried runner reports. Stated because
+    `failure-scope-discipline` forbids generalising past what was measured.
+
+    `include_harvest_copies=True` restores the old behaviour for anyone who
+    genuinely wants to measure what a seat saw inside its sandbox.
     """
     true_n = false_n = 0
     files_with_field = 0
     files_scanned = 0
     per_run = Counter()
+    harvest_skipped = 0
 
     for path in sorted(logs_dir.rglob("*.json")):
+        if not include_harvest_copies and _is_harvest_copy(path):
+            harvest_skipped += 1
+            continue
         if only is not None and path.resolve() not in only:
             continue
         files_scanned += 1
@@ -176,6 +223,7 @@ def route_1_structured(logs_dir: Path, only: set[Path] | None = None):
         "passes_false": false_n,
         "total": true_n + false_n,
         "runs_with_a_rejection": dict(per_run),
+        "harvest_copies_skipped": harvest_skipped,
     }
 
 

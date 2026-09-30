@@ -1,0 +1,232 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 8585,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and contents\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/**/*.py\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def compute_sk\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/routing.py bench/falsifier_verify.py bench/tests/fixtures/stem/ scripts/ 2>&1 | head -50\", \"description\": \"List key files named in the brief\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '11280,11420p' bench/reference_runner_v3.py\", \"description\": \"Read compute_sk in reference_runner_v3.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/routing.py bench/falsifier_verify.py bench/tests/fixtures/stem/stem_fixtures.py bench/reference_runner_v3.py\", \"description\": \"Line counts of key files\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kj31j5rm/repo/bench/routing.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,120p' bench/tests/fixtures/stem/stem_fixtures.py && ls bench/tests/fixtures/stem/docs/\", \"description\": \"Read start of stem_fixtures.py and list docs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '560,660p' bench/falsifier_verify.py\", \"description\": \"Read Wolfram refusal region in falsifier_verify.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def reverify_falsifier\\\" bench/falsifier_verify.py bench/routing.py bench/*.py 2>/dev/null | head; grep -rn \\\"rounds = 8\\\\|rounds=8\\\" bench/tools/ bench/*.py scripts/*.py 2>/dev/null | head\", \"description\": \"Locate reverify_falsifier and rounds=8\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1156,1230p' bench/falsifier_verify.py\", \"description\": \"Read reverify_falsifier signature\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"stem_fixtures\\\" --include=\\\"*.py\\\" bench/ scripts/ | grep -v __pycache__ | grep -v \\\"bench/logs\\\" ; echo ---; grep -rn \\\"rounds\\\" bench/tools/simulated_bench.py | head -20\", \"description\": \"Verify fixture reachability and find rounds config\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"stem\\\" bench/sim_panel_agents.py 2>/dev/null | head -5; ls bench/sim_panel_agents.py bench/runner_core.py bench/immune_agents.py 2>&1; echo ---; grep -rln \\\"rounds = 8\\\\|rounds=8\\\\|ROUNDS = 8\\\" scripts/*.py bench/*.py bench/tools/*.py 2>/dev/null | head\", \"description\": \"Check sim_panel_agents fixture reference and rounds=8 location\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"e2_regression\\\\|excluded rather than faked\\\" bench/tools/simulated_bench.py | head; echo ---; grep -rn \\\"test_cmd\\\" bench/tools/simulated_bench.py | head\", \"description\": \"Find prose arm test command handling in simulated bench\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find . -name \\\"sim_panel_agents*\\\" -not -path \\\"*/__pycache__/*\\\" 2>/dev/null; echo ---; grep -rln \\\"sk_score_prose_listings\\\" bench/*.py bench/tools/*.py scripts/*.py 2>/dev/null; echo ---; sed -n '120,200p' bench/tools/simulated_bench.py\", \"description\": \"Locate sim_panel_agents and sk flag users; read simulated_bench\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"rounds\\\\|test_cmd\\\\|excluded rather than faked\\\\|prose\\\" bench/tools/run_simulated_experiment.py | head -40; echo ===; ls bench/tools/\", \"description\": \"Inspect run_simulated_experiment for arm configs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tools/; echo ---; sed -n '180,200p' bench/tools/run_simulated_experiment.py\", \"description\": \"List bench/tools and read test-cmd argument\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"excluded rather than faked\\\" --include=\\\"*.py\\\" --include=\\\"*.sh\\\" --include=\\\"*.md\\\" . 2>/dev/null | grep -v __pycache__ | head\", \"description\": \"Find the prose arm comment\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,180p' bench/tools/commissioning_arms_2026-09-21.py\", \"description\": \"Read commissioning arms configuration\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"e2_regression\\\\|def _run_effect_regression\\\\|test_cmd\\\" bench/reference_runner_v3.py | head -40\", \"description\": \"Find e2_regression handling of test_cmd\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '30,110p' scripts/a19_flag_admits_harmful_fixes_2026-09-22.py\", \"description\": \"See how a19 script drives compute_sk on fixtures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"falsifier_template\\\\|STRUCTURAL = \\\\|ALGORITHMS = \\\\|def load_all\\\" bench/tests/fixtures/stem/stem_fixtures.py | head; sed -n '/^STRUCTURAL = Fixture/,/^$/p' bench/tests/fixtures/stem/stem_fixtures.py | head -80\", \"description\": \"Inspect fixture structure and a template\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_STRUCTURAL_FALSIFIER = \\\" bench/tests/fixtures/stem/stem_fixtures.py; sed -n '/_STRUCTURAL_FALSIFIER = /,/^\\\"\\\"\\\"$/p' bench/tests/fixtures/stem/stem_fixtures.py | head -70; sed -n '140,160p' bench/tests/fixtures/stem/stem_fixtures.py\", \"description\": \"Read structural falsifier template and Fixture helper\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _fix_text\\\\|def _real_baseline\\\\|def _register\\\" bench/tests/test_prose_acceptance_stem.py; sed -n \\\"$(grep -n 'def _fix_text' bench/tests/test_prose_acceptance_stem.py | cut -d: -f1),+25p\\\" bench/tests/test_prose_acceptance_stem.py; sed -n \\\"$(grep -n 'def _real_baseline' bench/tests/test_prose_acceptance_stem.py | cut -d: -f1),+15p\\\" bench/tests/test_prose_acceptance_s"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kj31j5rm/repo/scripts/falsifier_supply_fable_2026-09-30.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Falsifiers for the fable seat's findings, design review 2026-09-30.\\n\\nFive executed checks, each named for the finding it decides:\\n\\n  CHK-1  fixture falsifier contract: the STRUCTURAL template, bound to a copy\\"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kj31j5rm/repo/scripts/falsifier_supply_fable_2026-09-30.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Falsifiers for the fable seat's findings, design review 2026-09-30.\\n\\nFive executed checks, each named for the finding it decides:\\n\\n  CHK-1  fixture falsifier contract: the STRUCTURAL template, bound to a copy\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p scripts experimental_notes/panel_fixes_falsifier_root_cause_2026-09-30 && cat > scripts/falsifier_supply_fable_2026-09-30.py << 'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Falsifiers for the fable seat's findings, design review 2026-09-30.\\n\\nFive executed checks, each named for the finding it decides:\\n\\n  CHK-1  fixture falsifier contract: the STRUCTURAL template, bound to a cop"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_scoring_prose\\\" bench/reference_runner_v3.py | head; sed -n '11510,11580p' bench/reference_runner_v3.py\", \"description\": \"Read post-gate prose scoring semantics\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '11600,11680p' bench/reference_runner_v3.py\", \"description\": \"Read veto-only prose block\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport re, pathlib\\np = pathlib.Path(\\\"scripts/falsifier_supply_fable_2026-09-30.py\\\")\\ns = p.read_text()\\nold = s[s.index(\\\"def chk2_sk_flag\\\"):s.index(\\\"def chk3_routing_supplies\\\")]\\nnew = '''def chk2_sk_flag(tmp: pathlib.Path) -> None:\\n    \\\"\\\"\\\"The flag's real semantics are ONE-SIDED (veto, never admit).\\n\\n    First run of this check asserted flag-on must "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/falsifier_supply_fable_2026-09-30.py\\\")\\ns = p.read_text()\\ns = s.replace(\\\"\\\"\\\"    arms_mod = importlib.util.module_from_spec(spec)\\n    spec.loader.exec_module(arms_mod)\\\"\\\"\\\",\\n\\\"\\\"\\\"    arms_mod = importlib.util.module_from_spec(spec)\\n    sys.modules[\\\"commissioning_arms\\\"] = arms_mod   # dataclasses resolves __modu"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/falsifier_supply_fable_2026-09-30.py\\\")\\ns = p.read_text()\\ns = s.replace('''    real = (ROOT / \\\"bench/tools/run_simulated_experiment.py\\\").read_text(encoding=\\\"utf-8\\\")\\n    assert default_cmd.split(\\\"pytest \\\")[1] in real, \\\"launcher default drifted\\\"''',\\n'''    real = (ROOT / \\\"bench/tools/run_simulated_experiment.p"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/falsifier_supply_fable_2026-09-30.py\\\")\\ns = p.read_text()\\ns = s.replace('''    cases = [(4.89, 1.0, 0.709, \\\"9.3805\\\"),\\n             (4.89, 1.0, 0.5301, \\\"19.9645\\\")]\\n    for a, th, g, want in cases:\\n        v_mp = mp.power(a / th, 1 / mp.mpf(g))\\n        v_sp = float(sp.N(sp.Rational(str(a)) ** (1 / sp.Rational(str"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/tools/run_simulated_experiment_sandboxed.sh | head -60; echo ===; sed -n '245,258p' .claude/CLAUDE.md\", \"description\": \"Check arg forwarding and CLAUDE.md:251\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"28 of 28\\\\|28/28\\\" --include=\\\"*.md\\\" --include=\\\"*.py\\\" experimental_notes/ bench/ .claude/ 2>/dev/null | grep -iv logs | grep -i \\\"untool\\\" | head -5; ls bench/logs/falsifier_root_cause_2026-09-30/ 2>/dev/null\", \"description\": \"Find 28-of-28 UNTOOLABLE record and overnight log dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '244,256p' .claude/CLAUDE.md; echo \\\"---\\\"; which wolframscript; ls bench/tools/wolfram_gate 2>/dev/null\", \"description\": \"Read CLAUDE.md around line 251; check Wolfram availability\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'N[{4.89^(1/0.709), 4.89^(1/0.5301)}, 10]' 2>&1; echo \\\"exit=$?\\\"\", \"description\": \"Wolfram secondary check of n-star values\", \"timeout\": 120000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport numpy as np, mpmath as mp\\nfrom scipy import optimize, stats\\nnovel = np.array([8,2,6,5,4,3,3,9], float)\\nk = np.arange(1, 9, dtype=float)\\n\\n# Power-law fit novel(k) = a * k^-g, log-space least squares\\ndef fit(idx):\\n    lk, ln = np.log(k[idx]), np.log(novel[idx])\\n    g, la = np.polyfit(lk, ln, 1)\\n    return np.exp(la), -g\\n\\na_all, g_all = fit(slice(N"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"tail -30 bench/tools/run_simulated_experiment_sandboxed.sh; grep -n 'test_cmd=args.test_cmd' bench/tools/run_simulated_experiment.py\", \"description\": \"Check arg forwarding in sandboxed launcher\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n 'run_simulated_experiment.py\\\\|\\\"\\\\$@\\\"' bench/tools/run_simulated_experiment_sandboxed.sh | head\", \"description\": \"Confirm $@ forwarding to the python launcher\"}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kj31j5rm/repo/bench/tools/commissioning_arms_2026-09-21.py\", \"old_string\": \"    def argv(self) -> list[str]:\\n        a = [\\\"--target\\\", self.target, \\\"--seats\\\", self.seats,\\n             \\\"--rounds\\\", str(self.rounds), \\\"--name\\\", self.name]\\n        if self.test_cmd:\\n            a += [\\\"--"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tools/commissioning_arms_2026-09-21.py\\\")\\ns = p.read_text()\\nold = '''    def argv(self) -> list[str]:\\n        a = [\\\"--target\\\", self.target, \\\"--seats\\\", self.seats,\\n             \\\"--rounds\\\", str(self.rounds), \\\"--name\\\", self.name]\\n        if self.test_cmd:\\n            a += [\\\"--test-cmd\\\", self.test_cmd]\\n       "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"commissioning_arms\\\" bench/tests/*.py | head -3\", \"description\": \"Find the arms' committed test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_commissioning_arms_carry_their_settings_2026-09-21.py bench/tests/test_a_simulated_run_survives_its_session_2026-09-29.py -q 2>&1 | tail -15\", \"description\": \"Run the two committed tests over the arms module\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '85,115p' bench/tests/test_commissioning_arms_carry_their_settings_2026-09-21.py\", \"description\": \"Read the wrong test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_commissioning_arms_carry_their_settings_2026-09-21.py\\\")\\ns = p.read_text()\\nold = '''def test_the_prose_arm_targets_prose_and_passes_no_test_command():\\n    \\\"\\\"\\\"e2_regression is unavailable on prose; excluding it beats faking it.\\n\\n    A test command on a prose target would make `e2` score against a suite th"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"resolve_via_routing\\\\|from bench.routing\\\\|import routing\\\\|routing_enabled\\\" bench/reference_runner_v3.py | head -20; grep -n \\\"routing_enabled\\\" bench/tools/run_simulated_experiment.py | head\", \"description\": \"Locate routing call sites in runner and launcher\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '6020,6075p' bench/reference_runner_v3.py\", \"description\": \"Read routing invocation context in runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_routing_system\\\\|def _routing_prompt\\\\|falsifier_template\\\\|PATTERN\\\" bench/reference_runner_v3.py | sed -n '1,15p'; sed -n \\\"$(grep -n 'def _routing_system' bench/reference_runner_v3.py | head -1 | cut -d: -f1),+45p\\\" bench/reference_runner_v3.py\", \"description\": \"Inspect the routed writer's prompt material\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n \\\"$(grep -n '_ROUTING_SYSTEM_PROSE = ' bench/reference_runner_v3.py | head -1 | cut -d: -f1),+45p\\\" bench/reference_runner_v3.py\", \"description\": \"Read the prose routing system prompt\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/directives/ 2>/dev/null | head; grep -rln \\\"falsifier\\\" bench/directives/ 2>/dev/null | head -5; grep -c \\\"falsifier\\\" configs/cdsfl_operational.md 2>/dev/null; ls configs/ 2>/dev/null | head\", \"description\": \"Check seat-facing directive files for falsifier pattern teaching\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"falsifier_template\\\\|stem_fixtures\\\\|STR-07\\\" bench/directives/ 2>/dev/null | head -5; echo \\\"---\\\"; grep -n \\\"open the document by path\\\\|OPENS THE DOCUMENT BY PATH\\\\|opens the document\\\" bench/directives/universal/*.md 2>/dev/null | head -5\", \"description\": \"Confirm no directive names the fixture pattern\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > experimental_notes/panel_fixes_falsifier_root_cause_2026-09-30/fable.md << 'MDEOF'\\n# Falsifier-supply root cause \\u2014 fable seat, design review 2026-09-30\\n\\nEvery claim below was decided by execution. The executed falsifier for this\\nnote is `scripts/falsifier_supply_fable_2026-09-30.py` (5 checks, ALL PASS at\\ntime of writing; CHK-4 ran RED against the pre-fix tree and GREE"
+    }
+  ],
+  "n_tool_calls": 53,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 705.3,
+  "response": "All deliverables are written and executed. Final report.\n\n---\n\n# Fable seat \u2014 verdicts, evidence, fixes\n\n**Deliverables (all in the sandbox tree, all executed):**\n- `scripts/falsifier_supply_fable_2026-09-30.py` \u2014 5 checks, final run **ALL CHECKS PASS**\n- `bench/tools/commissioning_arms_2026-09-21.py` \u2014 arm-4 fix applied\n- `bench/tests/test_commissioning_arms_carry_their_settings_2026-09-21.py` \u2014 wrong test corrected; **33/33 pass**\n- `experimental_notes/panel_fixes_falsifier_root_cause_2026-09-30/fable.md` \u2014 full design note\n\n## F1 \u2014 Q1: There is one root cause, and it is fixable within spec. **HOLDS**\n\n**Claim:** falsifier production is coupled to finding production \u2014 the seat that discovers a claim must also supply the tool that decides it, with UNTOOLABLE as a free exit. The brief's candidate hypothesis (absent instruction) is only a surface form; so is absent capability.\n\n**Evidence, executed:**\n- CHK-1: the STRUCTURAL fixture falsifier through the runner's real decider: `pristine=CONFIRMED fixed=REFUTED`. Prose claims ARE decidable by runnable code, both directions \u2014 capability isn't absent from the toolset.\n- CHK-3: `resolve_via_routing` with the real `reverify_falsifier` as decider: weak rung (empty falsifier) \u2192 `ERROR`, ladder with a strong rung \u2192 `CONFIRMED resolved=True model=Codex rungs=2`. Supply is a property of the **ladder**, not the finding. The historical record agrees: teaching weak finders 1/3, routing 7/7 (`bench/routing.py:14-20`).\n- Reachability re-verified: `stem_fixtures` imported by `simulated_bench.py`, 2 tests, 3 A19 scripts; **0** of `reference_runner_v3`/`runner_core`/`immune_agents`/registry/directives; grep over `bench/directives/` for the open-by-path pattern returns nothing. The 28/28-toolable UNTOOLABLE record verified in `CDSFL_MASTER_TASK_LIST.md` \u00a72.2.\n- The cure exists but is not the invariant: `routing_enabled: bool = False` (`reference_runner_v3.py:1442`); preflight forces it only on prose (`:13324`). Everywhere else an UNTOOLABLE critical goes straight to HIL \u2014 the founder's exact \"plugging holes retrospectively\".\n\n**Fix (design, recommend-not-ratify):** R1 make routing-before-escalation unconditional whenever the falsifier gate is on (default flip + preflight refusal, mirroring the prose refusal that already exists). R2 finder-supplied UNTOOLABLE is a routing input, never terminal. R3 attach the domain-matched `falsifier_template` to `_routing_resolve_prompt` as strong-rung scaffolding \u2014 measure-before-keep, since the 1/3 result was weak-rung teaching and doesn't decide this case. R4 give the sim a scripted strong rung emitting fixture-derived falsifiers, because a `-SIM` ladder is the same model at every rung and cannot rehearse the cure.\n\n**What would refute me:** a live run, routing on, rungs of provably distinct capability, still leaving criticals unresolved at the A4 fail-safe.\n\n## F2 \u2014 Q2: The lessons are applied; the Wolfram connector's essence is already internalised. **HOLDS**\n\nCHK-2 executed the flag both ways: correct fix `off=NO_SCORE on=NO_SCORE (computed_sk=1.0)`; harmful fix `off=NO_SCORE on=REJECTED` (bandit 1 new HIGH in the fenced listing). The flag is **veto-only by design** (`:11624`) \u2014 so closure on prose runs solely through falsifiers, which is why Q1 *is* the prose question. The founder's triage (admissible iff computationally reducible elements exist; model's intelligence first, tools verify) is implemented and running: `resolve_target_kind`, `_gateable_source`, the one-sided A19 branch, preflight.\n\nThe NL-connector lesson: what Wolfram's connector does \u2014 NL in, computation out \u2014 is what a panel model does when it writes a falsifier. The LLM is the translator; the open-source set is the engine; CHK-1 is the executed proof, and the corpus spans five STEM domains, so nothing confines the project to NL mathematics or to Wolfram owners.\n\nOn `falsifier_verify.py:596`: the refusal should **stand, as my engineering judgement**: portability (stored falsifiers must re-run on Wolfram-less machines), serialisation (parallel falsifiers vs 1 kernel), and a measured cost of the prohibition of exactly zero (0/1006). `.claude/CLAUDE.md` already carries the corrected attribution in this sandbox (verified at lines 250\u2013256). The headless-seat connector gap (0 MCP tools) is a capability fact, not a policy one; nothing recommended here depends on it.\n\n## F3 \u2014 Q3: Recommend **max_rounds = 10**; the gates stay the stopper. **HOLDS**\n\n- n\\*(4.89, 0.709) = **9.3805** \u2192 ceil 10. Verified mpmath == sympy == **Wolfram Language** (`{9.380519..., 19.968130...}`, local kernel, exit 0).\n- The brief's **19.9645 is wrong**: from its own inputs (\u03b3=0.5301) the value is **19.9681** (rel. err 1.8e-4; non-material, but the brief demanded derivation).\n- Per-run fits cannot set the limit \u2014 demonstrated: fitting arm 1's own novelty series gives n\\* = 313.6 (rounds 1\u20137) or 1.64\u00d710\u2079 (all 8; the round-7 surge flips \u03b3 to 0.075). Sensitivity d ln n\\*/d\u03b3 = \u2212ln a/\u03b3\u00b2 = \u221250.3 per unit \u03b3 at \u03b3=0.1776.\n- Arm 1 met both convergence conditions at round 6 and was held open only by A4 over unsupplied falsifiers: **N is the wrong lever for that failure; Q1's fix dominates**. The round-7 surge (3\u21929 after budget extension) says novelty is budget-coupled \u2014 keep the extension mechanism gated on last-round novelty \u2265 \u03b8 rather than inflating the ceiling.\n- Cost: worst case +25% dispatches (40\u219250 on a 5-seat arm), paid only when gates don't stop earlier. **Refuted by:** a pooled \u22652-cycle fit with \u03b3 < 0.5, or a surge reproducing without a budget extension. **Sampling caveat:** the per-run numbers come from one simulated arm; the operationally relevant (live-panel) distribution is not the one sampled \u2014 only the March pooled fit approximates it, which is why the recommendation rests there.\n\n## F4 \u2014 Q4: The arm-4 \"excluded\" gate was inherited, demonstrated, and is now fixed. **HOLDS \u2192 FIXED**\n\n- **Demonstrated pre-fix** (CHK-4, first run): arm 4's `argv()` omits `--test-cmd`; parsed through the launcher's own argparse it yields the immune-memory suite \u2014 `AssertionError` at \"defect demonstrated\".\n- **Fix at the real path:** `Arm.argv()` always emits `--test-cmd`, `\"\"` when excluded; `\"\"` reaches `RunnerConfig.test_cmd=\"\"` and `_run_effect_regression` returns `score=None, 'no test command configured'` \u2014 executed in CHK-4 post-fix: `parsed test_cmd = ''`, gate genuinely unavailable. `\"$@\"` in the sandboxed launcher (line 197) carries the empty argument.\n- The committed test asserting the omission (`test_..._passes_no_test_command`) encoded the defect; corrected per the integrity rule (reported, falsifier attached, not silently weakened). **33/33 pass.**\n- **Lesson:** constant-e2, the unreachable corpus, and the 11 additions-that-did-nothing are one class \u2014 machinery whose output does not vary with its input. Tighten the additive standard: every gate needs a committed **discrimination pair** (known-good vs known-bad input producing different outputs). The fixture corpus supplies those pairs for five domains, free.\n\n## F5 \u2014 Minor: the brief's 19.9645 (see F3). **HOLDS**, non-material transcription defect.\n\n---\n\n**What I did NOT check:** the overnight raw run data (blinded in this sandbox \u2014 I recomputed every number derivable from stated inputs: all three Wilson intervals and the Fisher p reproduce exactly, two tools each; the rest is taken on the brief); why arm 1's 2 specific criticals failed routing (logs absent); timeout behaviour of a routed falsifier; the wolfram_gate deny mechanics.\n\n**Where I could not decide:** whether R3 (templates at the strong rung) lifts confirm rates \u2014 no measurement exists for that configuration; proposed as measure-before-keep.\n\n**Strongest disagreement with the brief's framing:** the overnight arms could not have exercised the live spec's cure \u2014 a `-SIM` ladder is one model wearing five names \u2014 so the 0/12 prose sweep and its p = 8.4\u00d710\u207b\u00b9\u2070 measure the *simulation's* ladder, not the project's. And the fixture corpus is the answer to \"is prose falsifiable\" (CHK-1), not to \"who writes the falsifier\": reachability alone would not have saved a weak finder. The answer is routing as the default invariant; the corpus is the rehearsal material.\n\n**Passes run: 3** (evidence; execution \u2014 in which the code refuted my own CHK-2 assertion and I corrected my check, not the code; integration \u2014 in which the committed arms test refuted my fix until its own defect was established and repaired). A fourth pass produced nothing above the material threshold; converged, with the stated residuals as the falsification debt.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kj31j5rm/repo",
+      "built": false
+    }
+  ]
+}

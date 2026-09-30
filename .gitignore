@@ -58,6 +58,21 @@ bench/logs/**
 !bench/logs/**/*.PROVENANCE.jsonl
 !bench/logs/*.PROVENANCE.jsonl
 
+# A HARVEST COPY OF A TRACKED ARTEFACT IS A DUPLICATE; A SEAT-WRITTEN SCRIPT IS NOT.
+# Measured 2026-09-30 by scripts/seat_evidence_is_gitignored_2026-09-30.py: the two
+# `**` negations above match at ANY depth, so they also un-ignore the harvest's own
+# copies of report/runner_state JSONs nested under
+# <run>/sandbox_harvest/<seat>/attempt-N/files/bench/logs/<run>/. Committing the
+# falsifier-root-cause round, `git add -A` therefore staged 20 such copies -- 47 MB,
+# 344,597 insertions, and 20 of 20 BYTE-IDENTICAL to files already tracked at their
+# canonical paths (cmp) -- while leaving out the 3 seat-written falsifiers that
+# produced every figure the round published. The selection was exactly inverted.
+# Re-ignoring the nested duplicates restores the intent of the negations without
+# touching what they were written for: the canonical <run>/ artefacts one level up.
+bench/logs/*/sandbox_harvest/**/files/bench/logs/**
+bench/logs/*/worktree_harvest/**/files/bench/logs/**
+bench/logs/*/panel_worktree_harvest/**/files/bench/logs/**
+
 # Answer keys and planted-defect records live OUTSIDE this repo
 # (founder ruling 2026-08-25). See ../CDSFL_experiment_keys/README.md
 *_KEY.md
