@@ -1,0 +1,82 @@
+# DESIGN REVIEW, BEFORE ANYTHING IS BUILT: the falsifier-supply root cause, prose targets, and the round limit
+
+## SECTION 1 — The question
+
+**Is there a single root cause behind this project's recurring "no runnable falsifier" problem, and can it be fixed once, going forward, within the project's existing specification — or must the holes keep being plugged one at a time as they are found?**
+
+The founder's words, 2026-09-30, verbatim: *"No runnable falsifier has been an issue that has plagued this project throughout. Instead of constantly fixing it retrospectively when we find it, perhaps we should ask, is there a root cause and can we fix it fully going forward that remains within the specifications of the project overall? If not, then I guess we will just have to keep plugging the falsifier holes whenever we find them, as inefficient as this seems?"*
+
+**THIS IS A DESIGN REVIEW HELD BEFORE IMPLEMENTATION, AND THAT IS NEW POLICY.** The founder ruled on 2026-09-30 that the panel reviews a design *before* it is built rather than after. The immediate cause of that ruling: on 2026-09-29 this panel found a correctness defect in a repair that had already been written, tested and committed, and both seats found it independently. Nothing in this brief has been built. Recommend, do not ratify.
+
+**Why it matters now, measured overnight.** Across 2 simulated cycles and 5 arms, one mechanism explains every failure to converge:
+- Arm 1 was held open at round 6 with **both** convergence conditions satisfied — `gamma_critical` 0.436 against a 0.30 threshold, and a `[0,0,0]` critical tail — solely by the A4 fail-safe, because 2 criticals had no resolved falsifier.
+- The prose arm **halted** at round 0 with 4 of 8 queued criticals carrying no falsifier at all.
+- The prose arm's post-convergence sweep then resolved **0 of 12** residuals, against the code arms' **46 of 50 = 92.0000%**, Wilson [81.1618%, 96.8450%], Fisher exact **p = 8.425329e-10**.
+
+A finding with no runnable falsifier cannot be verified, so it cannot be cleared, so the gate stays open. Everything else in the machinery is working: `rho` now falls correctly on every arm that produced corroboration, and gamma behaved throughout.
+
+## SECTION 2 — Use the harness
+
+Form your answer by RUNNING `compute_sk`, `resolve_via_routing` and the fixture falsifier templates, not by describing them.
+
+**`S_k` and the effect gates bear hardest on the prose half.** `compute_sk` classifies at FILE granularity, `TARGET_KINDS` is exactly `(python_module, prose)`, and `_gateable_source` extracts fenced listings. **Call `compute_sk` on a prose target with `sk_score_prose_listings` both on and off, and compare.** Reading the two paths and judging them equivalent is not the check.
+
+**`bench/routing.py` bears on whether a stronger writer can supply what a weaker one could not.** `resolve_via_routing` and `reverify_falsifier` are live. Call them.
+
+**Wilson governs every proportion you report.** Any rate needs an interval; any computational claim needs 2 independent tools agreeing. SymPy, z3, mpmath, SciPy, statsmodels and NumPy are PRIMARY. Wolfram is available through the serial gate on your PATH as a secondary cross-verification falsifier, and where it is unavailable to you the open-source set is correct and sufficient.
+
+**READ THIS BEFORE FORMING A VIEW, because it may already be the answer.** `bench/tests/fixtures/stem/stem_fixtures.py` and its 5 documents under `docs/` are a committed corpus of prose STEM reference documents — claims in prose, mathematics in prose, reference implementations in fenced Python — carrying **29 ground-truth-tagged claims (24 TRUE, 5 FALSE; planted-false rate 17.2414%, Wilson [7.5979%, 34.5484%])**, a declared `tools` tuple per document, and **a runnable `falsifier_template` per document**. One template's shape: open the document by path, regex out the claimed second moment of area and critical load, recompute both from the section constants with SymPy, cross-check against pint, raise `AssertionError` iff the claim still stands, print `NOT FALSIFIED` and exit 0 if corrected.
+
+**Measured reachability, 2026-09-30:** that corpus is imported by `bench/tools/simulated_bench.py`, 2 test files and 3 A19 scripts. It is imported by **0** of: `reference_runner_v3.py`, `runner_core.py`, `immune_agents.py`, `bench/cdsfl_registry/`, `bench/directives/`. `sim_panel_agents.py` names one fixture only as a default `--target` path string. **No seat-facing directive teaches the pattern.** Verify this yourself before relying on it.
+
+## SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is half an answer. A fix without a falsifier you have EXECUTED is a hypothesis.
+
+Report the exact command you ran and the output you saw.
+
+**Deliver every fix as a file, written INTO the sandbox repository tree at a real path.** A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down.
+
+- A defect in this project's code — fix it at its real path.
+- A DESIGN recommendation — write it to `experimental_notes/panel_fixes_falsifier_root_cause_2026-09-30/<your-seat-name>.md`, with its evidence and its falsifier.
+- A falsifier you write goes to `scripts/` with a dated name and must run.
+
+**Fixes are suggested, never applied to the canonical tree.** This review runs on a simulation branch; the canonical branch is the founder's to touch.
+
+## SECTION 4 — What would refute you
+
+Before you conclude, state for each finding what evidence would overturn it. A verdict with no stated refutation condition is an opinion.
+
+This applies to your own measurements. **A rate obtained by sampling a parameter space is a property of your sampling distribution as much as of the code under test.** State the distribution you sampled from, and say whether the operationally relevant distribution is known. If it is not, say so rather than letting an assumed prior stand in for it.
+
+## SECTION 5 — Output shape
+
+Per finding: **claim** stated so it could be wrong; **site**; **evidence**, the command and its verbatim output; **verdict** HOLDS / PARTIAL / REFUTED; **fix**, the path you wrote it to; **falsifier**, the command and its executed result; **what would refute me**.
+
+Then, once: **what I did NOT check**, named; **where I could not decide**, and why; **my strongest disagreement with this brief's own framing.**
+
+## SECTION 6 — Termination
+
+Stop on diminishing returns: when a further pass produces no new finding above the threshold of real-world consequence. **State how many passes you ran.**
+
+### The 4 questions, in the founder's own terms
+
+**Q1 — IS THERE A ROOT CAUSE, AND IS IT FIXABLE WITHIN SPEC?** A candidate hypothesis is offered so you can attack it, not adopt it: that seats are never shown the one proven pattern this project has for falsifying a claim stated in prose, and that `UNTOOLABLE` is an available qualitative escape hatch. Supporting evidence, each to be re-verified: the fixture corpus above is unreachable from the live path; the project has measured that **28 of 28** findings carrying `UNTOOLABLE` were in fact toolable; and the standing rule `feedback_no_qualitative_escape` records that models default to natural-language reasoning whenever a directive permits it. **Against that hypothesis:** teaching was already tested on 2026-06-07 and returned **1 of 3** against 0 of 5 untaught, recorded as *"a marginal booster, not a cure"* because models do not learn across calls, while capability-aware ROUTING reached **7 of 7** on the same residuals. So if the answer were only "teach the pattern", that measurement predicts it will underperform routing. Decide whether the root cause is absent instruction, absent routing, absent capability, or something none of these names.
+
+**Q2 — PROSE TARGETS, AND WHETHER A NATURAL-LANGUAGE QUESTION CAN STILL BE COMPUTABLE.** The founder's original framing, verbatim: *"look at a body of prose and decide if it contained computationally admissible elements? Such as a maths problem, a chemical equation, a line of code etc. If it did it would be considered admissible and solvable ... while allowing the models to use their innate intelligence first and using tools to verify/falsify any assumptions they make. If it contained no computable elements then it would be listed as inadmissible."* He asks whether the lessons since have been applied. He then raises a distinct case: *"There may be a case where a question could be posed fully in natural language, but that could nevertheless be theoretically computable."* His example is the Wolfram connector, which takes natural language and returns computed output. His question: *"Is there nothing we can learn from this, or could apply in our case, or is our only option to offer this facility when a user may have the Wolfram Connector resource installed — which would then unfortunately limit us to this and to natural language maths problems, rather than STEM more generally?"* **THE WOLFRAM CONSTRAINT, CORRECTED BEFORE YOU REASON FROM IT. An earlier draft of this brief stated a rule that does not exist, and the founder caught it.** That draft said a STORED falsifier may not call Wolfram, and attributed it to him. It is not his ruling. It is an inference, and `.claude/CLAUDE.md:251` compounds the error by calling it *"the founder's own condition rather than a preference"*. This is the second Wolfram rule in 2 days that acquired his name without his words behind it; see `feedback_rejected_advice_acquires_authority`.
+
+**His actual ruling, verbatim, 2026-09-28, and note that its emphasis is the opposite of the draft's:** *"you appear to be potentially overstating a user preference as a 'rule'. But if it is to be a rule that rule stated plainly should be that no user should be compelled to use Wolfram before they can run an experiment, but that anyone running the project should be offered the opportunity to install it via onboarding.md, in the same 'best of both' configuration discussed here. And where available to whatever orchestrator model they might load it with, that model should adopt the rule to use this configuration whenever available, or default to other tools such as SymPy -- and the other STEM Open Source tools listed in your local and global CLAUDE.md files, which should also be made available to them to install by running onboarding.md. ... Wolfram (when available) however should remain the secondary falsifier ran against any output produced from the installed Open Source tools and should never be considered the primary falsifier route."*
+
+**So the binding rule is: nobody is COMPELLED to install Wolfram; where it IS available the model SHOULD use it, as a SECONDARY falsifier against open-source output, never primary.** Nothing in that forbids a stored falsifier from calling it.
+
+**WHETHER A STORED FALSIFIER MAY CALL WOLFRAM IS THEREFORE AN OPEN QUESTION, AND IT IS PART OF Q2.** The refusal is live in code at `bench/falsifier_verify.py:596`, which raises `PermissionError("Wolfram refused")` on any scored falsifier that reaches for the kernel. Its 2 stated reasons are technical and worth weighing on their merits rather than dismissing: a falsifier must re-run on a machine that has no Wolfram, and falsifiers run in parallel against 1 licensed kernel. Measured: **0 of 1,006 archived falsifier sources mention Wolfram**, so the refusal has never actually bitten. Decide whether it should stand, and if it should, say so as an engineering judgement rather than as his ruling.
+
+**The capability limit is separate and is measured.** On 2026-09-29 a headless `claude -p` seat saw **0** MCP tools whose name contains "olfram", so the natural-language connector route is unreachable from a command-line seat regardless of policy. His question is whether anything about that natural-language capability can be reproduced with the open-source set, or whether offering it only to users who have installed Wolfram would confine the project to natural-language mathematics rather than STEM generally.
+
+**Q3 — THE ROUND LIMIT. STUDY THE DATA AND RECOMMEND A NUMBER.** The founder's instruction: *"Ask the models in the above review to study our data and make a sane recommendation based on this and then adopt it. My choice otherwise would be purely arbitrary."* The arms are hard-coded `rounds = 8`. The project's own law is `n* = (a/theta)^(1/gamma)` at appendix line 205; fitted to March 2026 data (a = 4.89, gamma = 0.709) at theta = 1 it gives **9.3805**. Using arm 1's own best fitted gamma of 0.5301 it gives **19.9645**. Arm 1's gamma history was [0, 0, 0.5301, 0.2824, 0.1914, 0.1830, 0.1873, 0.1776] and its novel-per-round [8, 2, 6, 5, 4, 3, 3, 9] — note the round-7 surge after a budget extension. Recommend a number, with its derivation and its cost, and say what would make it wrong.
+
+**Q4 — THIS SESSION'S OWN DEFECT RECORD.** 13 substantive defects were found overnight. The mechanised layers (commit gate, suite, a committed test) found **7 of 13 = 53.8462%**, Wilson [29.1438%, 76.7939%]; this panel's predecessor found 3; CC1 found 2 unaided; and of the 3 capable of corrupting a result CC1 found **0 of 3**. 4 of 9 commits were refused by a guard before being accepted. The founder asks whether all of these are addressed and, if not, how they should be, and what lesson to carry forward. **One is explicitly NOT fixed and is yours to assess:** the prose arm passes no test command because its own comment says the regression gate is *"excluded rather than faked"* — but passing nothing inherits the runner's default, the immune-memory suite tied to `bench/dm/_memory.py`, so `e2_regression` scored a CONSTANT **0.9454545454545454** across all 4 scored fixes, and its 3 failures are an artefact of the sandbox being blinded to `bench/logs`. A gate whose output does not vary with its input decides nothing.
+
+## Constraints
+
+You are in a sandbox copy. Do not attempt to modify the canonical tree. **Spend nothing. Dispatch no models.** Do not launch, resume or interfere with any experiment, and do not write into `bench/logs/`.

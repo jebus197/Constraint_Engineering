@@ -247,15 +247,45 @@ the words and the launcher can never disagree. SymPy, z3, mpmath, SciPy,
 statsmodels and NumPy remain PRIMARY in every case; a missing or busy kernel is
 reported and worked around, never a blocker.
 
-**The 1 exception, and it is the founder's own condition rather than a
-preference: a STORED FALSIFIER may not call Wolfram.** A falsifier is re-run by
-whoever reproduces the experiment, and *"anyone running the project should not be
-required to install Wolfram to do so"* — a falsifier that calls the kernel writes
-exactly that requirement into the archive. Falsifiers also run in parallel
-against 1 licensed kernel. The model that WRITES a falsifier is free to use
-Wolfram while reasoning, through the serial gate on its own PATH. Enforced in
-`bench/falsifier_verify.py`, which pins the sandbox to `deny` explicitly rather
-than inheriting the policy.
+**A STORED FALSIFIER MAY NOT CALL WOLFRAM. THIS IS AN ENGINEERING JUDGEMENT, NOT
+THE FOUNDER'S RULING, AND THE ATTRIBUTION HERE WAS FALSE UNTIL 2026-09-30.** This
+paragraph opened *"the 1 exception, and it is the founder's own condition rather
+than a preference"*. He struck that on 2026-09-30: *"We discussed the Wolfram
+access problem only recently. You are quoting a rule that does not exist."* He was
+right. He never ruled it. It is an inference CC1 drew from his no-compulsion
+clause and then wrote up in his name — **the SECOND Wolfram rule in 2 days to
+acquire his name without his words behind it**, the first being the invented
+denial rule retracted on 2026-09-29. See [[feedback_rejected_advice_acquires_authority]].
+
+**HIS ACTUAL RULING, VERBATIM, 2026-09-28, and its emphasis runs the other way:**
+*"you appear to be potentially overstating a user preference as a 'rule'. But if it
+is to be a rule that rule stated plainly should be that no user should be
+compelled to use Wolfram before they can run an experiment, but that anyone
+running the project should be offered the opportunity to install it via
+onboarding.md, in the same 'best of both' configuration discussed here. And where
+available to whatever orchestrator model they might load it with, that model
+should adopt the rule to use this configuration whenever available, or default to
+other tools such as SymPy — and the other STEM Open Source tools listed in your
+local and global CLAUDE.md files, which should also be made available to them to
+install by running onboarding.md. ... Wolfram (when available) however should
+remain the secondary falsifier ran against any output produced from the installed
+Open Source tools and should never be considered the primary falsifier route."*
+
+**So what binds is: nobody is COMPELLED to install Wolfram; where it IS available
+the model SHOULD use it, as a SECONDARY falsifier against open-source output,
+never as the primary route.** Nothing in that forbids a stored falsifier from
+calling the kernel.
+
+**The refusal nevertheless STAYS IN FORCE, on its own merits, and is labelled as
+such.** `bench/falsifier_verify.py:596` raises `PermissionError("Wolfram refused")`
+on any scored falsifier reaching for the kernel. Its 2 reasons are technical and
+stand without his name on them: a falsifier is re-run by whoever reproduces the
+experiment and must not require a licensed kernel to do so, and falsifiers run in
+parallel against 1 kernel. Measured: **0 of 1,006 archived falsifier sources
+mention Wolfram**, so the refusal has never actually bitten. It is a judgement open
+to his review, not a ruling already given, and it is with the 2026-09-30 free
+panel as part of Q2. The model that WRITES a falsifier is free to use Wolfram
+while reasoning, through the serial gate on its own PATH.
 
 **The licence reasoning that produced the earlier default is RETAINED, because
 the ruling overrides the conclusion and not the facts.** Wolfram's general Terms
