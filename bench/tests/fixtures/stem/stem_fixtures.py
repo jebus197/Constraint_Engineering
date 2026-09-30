@@ -185,6 +185,40 @@ import re
 import sympy as sp
 
 DOC = r"<<DOC_PATH>>"
+
+# AN ABSENT OR EMPTY TARGET IS NOT A VERDICT. Exit non-zero so the project's own
+# decider records ERROR rather than a claim about a document that is not there.
+#
+# ADDED 2026-09-30 on the founder's instruction, after the blank-target control
+# proposed by the cc2 panel seat. Measured before this guard, through
+# `falsifier_verify.reverify_falsifier` against an empty file: `structural` and
+# `metrology` returned REFUTED -- so DELETING the target read as a successful
+# correction -- while `statistics`, `algorithms` and `numerical` returned
+# CONFIRMED, asserting the false claim was present in a document with no text.
+# 0 of 5 abstained. Both answers are wrong; only the REFUTED half is dangerous,
+# which is why the seat's control caught 2 and this guard covers all 5.
+#
+# NO IMPORT STATEMENT, DELIBERATELY. `test_prose_acceptance_stem.py`'s
+# `test_the_import_free_falsifier_is_kept` asserts on the PARSE TREE that the
+# metrology falsifier carries no Import node, because task A5 dropped the routing
+# extractor's import requirement and that fixture is the demonstration. A first
+# version of this guard used `import os` and `import sys` and broke it. `open`,
+# `SystemExit` and the string it carries are builtins: SystemExit prints its
+# argument to stderr and exits 1, which is all the decider needs.
+#
+# THE ANCHOR BEING ABSENT FROM A DOCUMENT THAT DOES HAVE CONTENT IS A DIFFERENT
+# CASE and still means NOT FALSIFIED, hence REFUTED. That is exactly what makes
+# this corpus bidirectional, and this guard is scoped not to touch it.
+try:
+    _raw = open(DOC, encoding="utf-8", errors="replace").read()
+except OSError:
+    raise SystemExit(
+        "ERROR: target does not exist or cannot be read; a falsifier cannot"
+        " decide a claim in a document that is not there")
+if not _raw.strip():
+    raise SystemExit(
+        "ERROR: target is empty; a falsifier cannot decide a claim in a"
+        " document with no content")
 text = open(DOC, encoding="utf-8").read()
 
 block = re.search(r"\\*\\*SM-08\\.\\*\\*(.+?)\\n\\n", text, re.S)
@@ -354,6 +388,40 @@ import numpy as np
 from scipy import stats
 
 DOC = r"<<DOC_PATH>>"
+
+# AN ABSENT OR EMPTY TARGET IS NOT A VERDICT. Exit non-zero so the project's own
+# decider records ERROR rather than a claim about a document that is not there.
+#
+# ADDED 2026-09-30 on the founder's instruction, after the blank-target control
+# proposed by the cc2 panel seat. Measured before this guard, through
+# `falsifier_verify.reverify_falsifier` against an empty file: `structural` and
+# `metrology` returned REFUTED -- so DELETING the target read as a successful
+# correction -- while `statistics`, `algorithms` and `numerical` returned
+# CONFIRMED, asserting the false claim was present in a document with no text.
+# 0 of 5 abstained. Both answers are wrong; only the REFUTED half is dangerous,
+# which is why the seat's control caught 2 and this guard covers all 5.
+#
+# NO IMPORT STATEMENT, DELIBERATELY. `test_prose_acceptance_stem.py`'s
+# `test_the_import_free_falsifier_is_kept` asserts on the PARSE TREE that the
+# metrology falsifier carries no Import node, because task A5 dropped the routing
+# extractor's import requirement and that fixture is the demonstration. A first
+# version of this guard used `import os` and `import sys` and broke it. `open`,
+# `SystemExit` and the string it carries are builtins: SystemExit prints its
+# argument to stderr and exits 1, which is all the decider needs.
+#
+# THE ANCHOR BEING ABSENT FROM A DOCUMENT THAT DOES HAVE CONTENT IS A DIFFERENT
+# CASE and still means NOT FALSIFIED, hence REFUTED. That is exactly what makes
+# this corpus bidirectional, and this guard is scoped not to touch it.
+try:
+    _raw = open(DOC, encoding="utf-8", errors="replace").read()
+except OSError:
+    raise SystemExit(
+        "ERROR: target does not exist or cannot be read; a falsifier cannot"
+        " decide a claim in a document that is not there")
+if not _raw.strip():
+    raise SystemExit(
+        "ERROR: target is empty; a falsifier cannot decide a claim in a"
+        " document with no content")
 text = open(DOC, encoding="utf-8").read()
 
 # The readings are printed in a five-column table; pull every MPa value from it.
@@ -545,6 +613,40 @@ Raises AssertionError iff CM-06 still quotes the linear sum. Prints NOT
 FALSIFIED if the claim has been corrected.
 """
 DOC = r"<<DOC_PATH>>"
+
+# AN ABSENT OR EMPTY TARGET IS NOT A VERDICT. Exit non-zero so the project's own
+# decider records ERROR rather than a claim about a document that is not there.
+#
+# ADDED 2026-09-30 on the founder's instruction, after the blank-target control
+# proposed by the cc2 panel seat. Measured before this guard, through
+# `falsifier_verify.reverify_falsifier` against an empty file: `structural` and
+# `metrology` returned REFUTED -- so DELETING the target read as a successful
+# correction -- while `statistics`, `algorithms` and `numerical` returned
+# CONFIRMED, asserting the false claim was present in a document with no text.
+# 0 of 5 abstained. Both answers are wrong; only the REFUTED half is dangerous,
+# which is why the seat's control caught 2 and this guard covers all 5.
+#
+# NO IMPORT STATEMENT, DELIBERATELY. `test_prose_acceptance_stem.py`'s
+# `test_the_import_free_falsifier_is_kept` asserts on the PARSE TREE that the
+# metrology falsifier carries no Import node, because task A5 dropped the routing
+# extractor's import requirement and that fixture is the demonstration. A first
+# version of this guard used `import os` and `import sys` and broke it. `open`,
+# `SystemExit` and the string it carries are builtins: SystemExit prints its
+# argument to stderr and exits 1, which is all the decider needs.
+#
+# THE ANCHOR BEING ABSENT FROM A DOCUMENT THAT DOES HAVE CONTENT IS A DIFFERENT
+# CASE and still means NOT FALSIFIED, hence REFUTED. That is exactly what makes
+# this corpus bidirectional, and this guard is scoped not to touch it.
+try:
+    _raw = open(DOC, encoding="utf-8", errors="replace").read()
+except OSError:
+    raise SystemExit(
+        "ERROR: target does not exist or cannot be read; a falsifier cannot"
+        " decide a claim in a document that is not there")
+if not _raw.strip():
+    raise SystemExit(
+        "ERROR: target is empty; a falsifier cannot decide a claim in a"
+        " document with no content")
 text = open(DOC, encoding="utf-8").read()
 
 
@@ -720,6 +822,40 @@ import re
 import sympy as sp
 
 DOC = r"<<DOC_PATH>>"
+
+# AN ABSENT OR EMPTY TARGET IS NOT A VERDICT. Exit non-zero so the project's own
+# decider records ERROR rather than a claim about a document that is not there.
+#
+# ADDED 2026-09-30 on the founder's instruction, after the blank-target control
+# proposed by the cc2 panel seat. Measured before this guard, through
+# `falsifier_verify.reverify_falsifier` against an empty file: `structural` and
+# `metrology` returned REFUTED -- so DELETING the target read as a successful
+# correction -- while `statistics`, `algorithms` and `numerical` returned
+# CONFIRMED, asserting the false claim was present in a document with no text.
+# 0 of 5 abstained. Both answers are wrong; only the REFUTED half is dangerous,
+# which is why the seat's control caught 2 and this guard covers all 5.
+#
+# NO IMPORT STATEMENT, DELIBERATELY. `test_prose_acceptance_stem.py`'s
+# `test_the_import_free_falsifier_is_kept` asserts on the PARSE TREE that the
+# metrology falsifier carries no Import node, because task A5 dropped the routing
+# extractor's import requirement and that fixture is the demonstration. A first
+# version of this guard used `import os` and `import sys` and broke it. `open`,
+# `SystemExit` and the string it carries are builtins: SystemExit prints its
+# argument to stderr and exits 1, which is all the decider needs.
+#
+# THE ANCHOR BEING ABSENT FROM A DOCUMENT THAT DOES HAVE CONTENT IS A DIFFERENT
+# CASE and still means NOT FALSIFIED, hence REFUTED. That is exactly what makes
+# this corpus bidirectional, and this guard is scoped not to touch it.
+try:
+    _raw = open(DOC, encoding="utf-8", errors="replace").read()
+except OSError:
+    raise SystemExit(
+        "ERROR: target does not exist or cannot be read; a falsifier cannot"
+        " decide a claim in a document that is not there")
+if not _raw.strip():
+    raise SystemExit(
+        "ERROR: target is empty; a falsifier cannot decide a claim in a"
+        " document with no content")
 text = open(DOC, encoding="utf-8").read()
 
 fence = None
@@ -927,6 +1063,40 @@ FALSIFIED if the claim has been corrected.
 import re
 
 DOC = r"<<DOC_PATH>>"
+
+# AN ABSENT OR EMPTY TARGET IS NOT A VERDICT. Exit non-zero so the project's own
+# decider records ERROR rather than a claim about a document that is not there.
+#
+# ADDED 2026-09-30 on the founder's instruction, after the blank-target control
+# proposed by the cc2 panel seat. Measured before this guard, through
+# `falsifier_verify.reverify_falsifier` against an empty file: `structural` and
+# `metrology` returned REFUTED -- so DELETING the target read as a successful
+# correction -- while `statistics`, `algorithms` and `numerical` returned
+# CONFIRMED, asserting the false claim was present in a document with no text.
+# 0 of 5 abstained. Both answers are wrong; only the REFUTED half is dangerous,
+# which is why the seat's control caught 2 and this guard covers all 5.
+#
+# NO IMPORT STATEMENT, DELIBERATELY. `test_prose_acceptance_stem.py`'s
+# `test_the_import_free_falsifier_is_kept` asserts on the PARSE TREE that the
+# metrology falsifier carries no Import node, because task A5 dropped the routing
+# extractor's import requirement and that fixture is the demonstration. A first
+# version of this guard used `import os` and `import sys` and broke it. `open`,
+# `SystemExit` and the string it carries are builtins: SystemExit prints its
+# argument to stderr and exits 1, which is all the decider needs.
+#
+# THE ANCHOR BEING ABSENT FROM A DOCUMENT THAT DOES HAVE CONTENT IS A DIFFERENT
+# CASE and still means NOT FALSIFIED, hence REFUTED. That is exactly what makes
+# this corpus bidirectional, and this guard is scoped not to touch it.
+try:
+    _raw = open(DOC, encoding="utf-8", errors="replace").read()
+except OSError:
+    raise SystemExit(
+        "ERROR: target does not exist or cannot be read; a falsifier cannot"
+        " decide a claim in a document that is not there")
+if not _raw.strip():
+    raise SystemExit(
+        "ERROR: target is empty; a falsifier cannot decide a claim in a"
+        " document with no content")
 text = open(DOC, encoding="utf-8").read()
 
 ns = {}
