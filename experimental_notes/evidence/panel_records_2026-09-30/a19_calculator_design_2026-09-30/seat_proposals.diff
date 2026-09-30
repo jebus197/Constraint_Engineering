@@ -1,0 +1,2849 @@
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-09-30 14:28:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9fduzjvf/repo/bench/reference_runner_v3.py	2026-09-30 14:17:58
+@@ -11612,6 +11612,61 @@
+     sk = A * E
+     tristate = SK_ADMISSIBLE if sk > 0 else SK_REJECTED
+ 
++    # -- e1_efficacy IS A GATE, NOT A WEIGHT (SUGGESTED 2026-09-30, cc seat) --
++    #
++    # THE HOLE. `e1_efficacy` is 0.0 exactly when a PROBE re-ran the fix's own
++    # falsifier after the fix and the falsifier STILL FIRED. That is not a
++    # heuristic and not a style opinion: it is a measurement that the fix does
++    # not do the one thing it claims to do. Yet e1 enters E as a weighted term,
++    # so with e2/e3/e4 clean the arithmetic gives
++    #
++    #     E = (2*0 + 2*1 + 1*1 + 2*1) / (2+2+1+2) = 5/7 = 0.714285714...
++    #
++    # and `tristate = SK_ADMISSIBLE if sk > 0` above has no threshold, so the
++    # fix is ADMITTED and pulls R_k down. Because inf(E | e1 = 0) = 5/7 > 0
++    # over the other gates' whole range, NO FINITE REWEIGHTING of e1 can ever
++    # produce a rejection -- the veto cannot be bought with weight. It has to
++    # be a gate. Measured on the archive under bench/logs, deduplicated against
++    # the sandbox_harvest copies (see
++    # scripts/q5_archive_copy_conflation_inflates_q3_2026-09-30.py):
++    # 201 of 201 such fixes were ADMISSIBLE, Wilson 95% [98.1247%, 100%].
++    #
++    # WHY HERE AND NOT IN A. The hard gates A are STRUCTURAL (does it parse,
++    # does it compile). This is an EFFECT measurement, so it belongs with the
++    # effect gates -- but as their veto, exactly as `_gates_introduced_new_
++    # defects` vetoes on prose. E is left untouched and is still reported, so
++    # the HIL sees what the arithmetic said as well as what the gate decided.
++    #
++    # SCOPE. This fires ONLY on the explicit FIX_INEFFECTIVE probe verdict,
++    # which `_run_effect_fix_efficacy` renders as score 0.0. `None` (not
++    # measured, probe absent, indeterminate) is UNAFFECTED: an unmeasured fix
++    # is not a failed fix, and conflating them would be the silent-evidence-
++    # loss failure this file already records against e2.
++    #
++    # THIS IS SUGGESTED TO THE HUMAN, per `feedback_fixes_hil_only`. The
++    # founder's 2026-09-30 clearance of "every target ever run" was explicitly
++    # conditional on evidence that it plugs the hole AND makes the instrument
++    # more accurate. The invariance half of that evidence -- that NOTHING moves
++    # except the measured-ineffective rows -- is produced by
++    # scripts/q3_e1_efficacy_veto_2026-09-30.py.
++    if (tristate == SK_ADMISSIBLE
++            and details.get("e1_efficacy", {}).get("score") == 0.0):
++        details["_e1_veto"] = {
++            "outcome": SK_REJECTED,
++            "computed_sk": round(sk, 4),
++            "computed_E": round(E, 4),
++            "detail": (
++                f"e1_efficacy measured the fix NOT curing its own falsifier. "
++                f"The weighted mean would have scored sk = {round(sk, 4)}; a "
++                f"fix that does not cure the defect it addresses is not "
++                f"admissible at any score. Rejected by gate, not by weight."),
++        }
++        return SkResult(
++            sk=0.0, A=A, E=round(E, 4), tristate=SK_REJECTED,
++            gate_details=details,
++            blocks_parsed=len(blocks), blocks_applied=applied,
++        )
++
+     # -- ON A PROSE TARGET THE EFFECT GATES ARE ONE-SIDED (2026-09-22) --------
+     #
+     # THE DEFECT, measured through `_evaluate_sk_for_findings` with
+
+### cc2:attempt-1:bench/tools/run_simulated_experiment.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/run_simulated_experiment.py	2026-09-22 11:13:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9fduzjvf/repo/bench/tools/run_simulated_experiment.py	2026-09-30 14:22:19
+@@ -186,10 +186,41 @@
+     # retry-on-timeout, not a bigger number: `ModelConfig.max_retries` exists and
+     # `reference_runner_v3.py` reads it nowhere.
+     ap.add_argument("--timeout", type=int, default=3600)
+-    ap.add_argument("--test-cmd", dest="test_cmd",
+-                    default=("python3 -m pytest bench/tests/test_immune_memory_consumption.py "
+-                             "bench/tests/test_immune_memory_evaluation.py -q"),
+-                    help="command S_k runs for its e2_regression gate")
++    # ABSENCE MUST BE REPRESENTABLE (SUGGESTED 2026-09-30, cc seat).
++    #
++    # THE DEFECT. This default used to be the immune-memory suite. `Arm.argv()`
++    # guards `--test-cmd` with a TRUTHINESS test, so arm 4's declared
++    # `test_cmd=None` emitted no flag at all -- and argparse then substituted
++    # THIS string, silently attaching a Python test suite to a PROSE target.
++    # Measured: e2_regression returned 0.9454545454545454 = 52/55 for the prose
++    # document with its real bytes AND for the same document with its bytes
++    # destroyed, i.e. the gate is blind to its target
++    # (scripts/q4_test_cmd_none_no_gate_2026-09-30.py, section B).
++    #
++    # WHY THE DEFAULT AND NOT `argv()`. Two repairs were available. Changing
++    # `argv()` to `is not None` with an explicit empty-string else ALSO changes
++    # a committed test -- bench/tests/test_commissioning_arms_carry_their_
++    # settings_2026-09-21.py asserts `--test-cmd` is absent from arm4.argv() --
++    # and `falsifier-integrity` rule 2 forbids repairing a measurement quietly.
++    # Changing the DEFAULT to None is one line, needs no test change, and fixes
++    # the defect at the layer that invented the value: a caller who declines to
++    # supply a test command now gets no gate, which is what declining means.
++    # `_run_effect_regression` already returns (None, "no test command
++    # configured") on a falsy test_cmd, so e2 becomes UNAVAILABLE and is
++    # excluded from E's renormalised mean rather than faked.
++    #
++    # CONSEQUENCE DURING A RUNNING EXPERIMENT, measured: no verdict moves (the
++    # prose veto reads only the e3/e4 `new:` fields and is invariant across 7
++    # e2 values), R_k does not move (apply_sk_to_rk pins NO_SCORE), and the one
++    # advisory number rises 269/275 = 0.978182 -> 1.0 because a FALSE input was
++    # removed. A caller that genuinely wants the immune-memory suite must now
++    # say so; `commissioning_arms_2026-09-21.py` arms 1-3 already do.
++    #
++    # SUGGESTED TO THE HUMAN, per `feedback_fixes_hil_only`.
++    ap.add_argument("--test-cmd", dest="test_cmd", default=None,
++                    help="command S_k runs for its e2_regression gate; "
++                         "omit it to DISABLE the gate (e2 becomes unavailable "
++                         "and is excluded from E, never substituted)")
+     ap.add_argument("--name", default="sim45_memory")
+     # THE STAND-IN MODEL IS NOW SELECTABLE. `--models` is a COUNT, not a name, and
+     # there was no way to choose the model at all: it was a Python default in two
+
+### cc2:attempt-1:experimental_notes/cc_a19_calculator_design_2026-09-30.md
+--- /dev/null	2026-09-30 14:33:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9fduzjvf/repo/experimental_notes/cc_a19_calculator_design_2026-09-30.md	2026-09-30 14:27:08
+@@ -0,0 +1,599 @@
++# CC seat — design review BEFORE build: what makes a prose target answerable?
++
++**Dispatched 2026-09-30. Nothing here is decided; every fix is SUGGESTED to the
++human per `feedback_fixes_hil_only`. Two code changes have been written into the
++sandbox tree so a reviewer can diff them; both are reversible one-liners plus
++comment.**
++
++Every number below comes from a script in `scripts/` that runs from the
++repository root. Where a script's name is given, that script produced the
++number and nothing was retyped.
++
++| script | produces |
++|---|---|
++| `scripts/q1_claim_ledger_three_way_discrimination_2026-09-30.py` | Q1 |
++| `scripts/q2_advisory_accuracy_vs_meaning_2026-09-30.py` | Q2 |
++| `scripts/q3_e1_efficacy_veto_2026-09-30.py` | Q3 |
++| `scripts/q4_test_cmd_none_no_gate_2026-09-30.py` | Q4 |
++| `scripts/q5_archive_copy_conflation_inflates_q3_2026-09-30.py` | Q5 |
++| `scripts/q6_nstar_alpha_is_cumulative_2026-09-30.py` | Q6 |
++
++**Code written into the tree, for diff:**
++
++1. `bench/reference_runner_v3.py` — the `e1_efficacy` veto (Q3), placed
++   immediately after `tristate = SK_ADMISSIBLE if sk > 0 else SK_REJECTED`.
++2. `bench/tools/run_simulated_experiment.py` — `--test-cmd` default changed
++   from the immune-memory suite to `None` (Q4).
++
++All 7 declared brief figures were re-executed and reproduce exactly.
++
++---
++
++## Q1 — THE PRIMARY QUESTION. What yields a DEFINITIVE AFFIRMATIVE on prose?
++
++### Position
++
++**A19 is the wrong instrument and no repair to it can answer this.** A19 scores
++a *fix*. The founder's calculator wants a verdict on a *claim*. Those are
++different objects, and an instrument measuring one cannot emit the other. A19 is
++a **harm guard** being asked to do a job it is not pointed at.
++
++The affirmative mechanism **already exists in this repository**, at the claim
++level, and is reachable today. What is missing is one control and a caller.
++
++### Four candidates, generated independently, then falsified
++
++**M1 — Make `ADMISSIBLE` reachable on prose (repair A19).**
++*Falsified.* `ADMISSIBLE` on prose would mean "no new ruff/bandit diagnostic in
++the fenced listings". Measured on the committed ground truth
++(`q2_...py`): the advisory that summarises exactly those gates takes the value
++**1.0 on all 5 fixes a reviewer should accept and 1.0 on both harmful fixes it
++scores — 0 of 5 separation**. A verdict from a measurement with zero
++discriminative power is not an affirmative; it is a constant. The project's own
++recorded reasoning already says this, and the measurement agrees with it.
++
++**M2 — Panel agreement / consensus.**
++*Falsified on arrival* by `feedback_no_model_voting` and by the founding
++principle. Not admissible, and I record it only because it is the tempting
++answer.
++
++**M3 — Differential recomputation with two independent solvers.**
++*Survives, but it is not a mechanism — it is an engine.* It needs a carrier that
++says which value to recompute and what counts as agreement. That carrier is M4.
++
++**M4 — THE CLAIM LEDGER, with three-way discrimination. RECOMMENDED.**
++
++A prose target is **answerable** iff each of its claims is *computationally
++addressable*: reducible to a value recomputable from the document's own declared
++inputs. For each such claim the instrument holds a falsifier `F`, and may emit a
++verdict **only** when all three controls pass, each one a run of the runner's own
++decider `falsifier_verify.reverify_falsifier`:
++
++```
++P  POSITIVE   F(D_defective) == CONFIRMED    F can demonstrate the defect.
++N  NEGATIVE   F(D_corrected) == REFUTED      F goes quiet once the claim is true.
++B  BLIND      F(D_destroyed) != REFUTED      F actually READS its target.
++
++AFFIRMED(C)   iff P and N and B, and F(D_actual) == REFUTED
++REFUTED(C)    iff P and N and B, and F(D_actual) == CONFIRMED
++UNTOOLABLE(C) otherwise — and report WHICH control failed, never a verdict.
++```
++
++**B is the addition.** P and N together are the existing discrimination control
++(`run_discrimination_control`). Without B, a `REFUTED` on the actual document is
++indistinguishable from a falsifier that never opened it.
++
++### Executed evidence, and it found something
++
++`scripts/q1_claim_ledger_three_way_discrimination_2026-09-30.py`, over the 5
++committed fixtures, through `reverify_falsifier`:
++
++```
++fixture      claim    P(defect)   N(fixed)    B(no bytes)    P N B
++structural   SM-08    CONFIRMED   REFUTED     REFUTED        Y Y n
++statistics   ST-05    CONFIRMED   REFUTED     CONFIRMED      Y Y Y
++metrology    CM-06    CONFIRMED   REFUTED     REFUTED        Y Y n
++algorithms   AL-03    CONFIRMED   REFUTED     CONFIRMED      Y Y Y
++numerical    NA-05    CONFIRMED   REFUTED     CONFIRMED      Y Y Y
++
++P 5/5   N 5/5   B 3/5   all three 3/5
++Wilson 95% on all-three [23.0724%, 88.2379%]  (mpmath and statsmodels agree)
++```
++
++**2 of the 5 committed falsifiers return `REFUTED` against a document whose
++bytes are gone.** Root cause, read from the two failing templates:
++
++```python
++if block is None:
++    print("NOT FALSIFIED: SM-08 is absent from the document")
++    raise SystemExit(0)
++```
++
++That conflates *claim corrected* with *document unreadable*. It is **the arm-4
++defect one level down** — the same shape as `e2_regression` returning 52/55 for
++a prose document with its bytes destroyed. The README's recorded claim that all
++5 "discriminate bidirectionally" is true and insufficient: bidirectional is two
++directions, and there are three.
++
++The design claim I tested is **not** "the corpus is a calculator" — it is "B is
++not redundant with P and N", because an addition nothing reaches is not
++additive. B rejects 2 of the 5 falsifiers that P+N accept. It is reached and it
++is load-bearing.
++
++### Is what already exists sufficient for a meaningful test?
++
++**Yes for a meaningful test, no for the calculator.** Concretely:
++
++- **Sufficient:** the corpus (5 documents, 29 tagged claims, 24 true / 5 false),
++  the falsifier templates, `reverify_falsifier`, and the prose routing prompt
++  that already tells a model to open the document by path. A meaningful test can
++  be run *this afternoon* on what is committed. That is not nothing and it
++  should be said plainly.
++- **Not sufficient:** the live path reaches none of it —
++  `reference_runner_v3.py`, `routing.py`, `falsifier_verify.py`,
++  `immune_agents.py` and `runner_core.py` mention the corpus **0 times each**
++  (re-executed, brief figure 7). And 2 of 5 falsifiers fail control B.
++
++### What else is needed — the minimum, in order
++
++1. **Add control B to the existing discrimination control.** One extra
++   `reverify_falsifier` call against an emptied copy, per falsifier. Cost: one
++   subprocess per claim. This is the single highest-value item and it is small.
++2. **Repair the 2 failing templates** so an absent claim block is `ERROR`, not
++   `NOT FALSIFIED`. Suggested, not performed — it edits a fixture, and under
++   `falsifier-integrity` rule 2 a measurement is not repaired quietly.
++3. **Wire one caller.** The corpus needs a live-path consumer or it is an
++   addition nothing reaches. The join point is a new effect gate registered
++   alongside `e4_bandit`, or a replacement for the NO_SCORE arm's outcome.
++
++### Strongest attempt to falsify my own answer
++
++*"B will reject honest falsifiers that legitimately exit clean when a claim is
++absent."* — It will, and that is the point: an absent claim is not a true claim.
++But this does make B a **behaviour change to existing fixtures**, not a pure
++addition, and the founder should rule on it. *"3 of 5 is a small denominator."*
++— It is; the Wilson interval [23.07%, 88.24%] is honest about that, and I make
++no rate claim from it. The claim I make is existential — B catches two real
++cases — and an existential claim does not need a tight interval.
++
++---
++
++## Q2 — Make the advisory accurate AND meaningful, without suppressing it
++
++### Position
++
++**Accuracy and meaning are different properties needing different repairs, and
++the founder's trap is real: the Q4 repair delivers accuracy and buys no meaning
++at all.** I measured it rather than asserting it.
++
++- **ACCURATE** = every input measures the thing it names. `0.978182` fails:
++  its `e2` input scores the immune-memory suite, not the prose target. Removing
++  the false input yields an honestly derived `1.0`.
++- **MEANINGFUL** = the number MOVES when the thing it summarises moves.
++
++### Executed evidence
++
++`scripts/q2_advisory_accuracy_vs_meaning_2026-09-30.py`, baselines captured with
++the runner's own `_capture_baseline` (my first run fabricated a zero baseline and
++manufactured 3 false rejections — **retracted**, and the corrected script uses
++the real function):
++
++```
++fixture      correct_fix       harmful_fix
++structural   1.0 NO_SCORE      None REJECTED
++statistics   1.0 NO_SCORE      None REJECTED
++metrology    1.0 NO_SCORE      1.0  NO_SCORE
++algorithms   1.0 NO_SCORE      1.0  NO_SCORE
++numerical    1.0 NO_SCORE      None REJECTED
++
++advisory on the 5 fixes a reviewer SHOULD accept : [1.0, 1.0, 1.0, 1.0, 1.0]
++advisory on the 5 fixes a reviewer MUST reject   : [1.0, 1.0]
++fixtures where correct scores STRICTLY ABOVE harmful : 0 of 5
++the DECISION (tristate) separates on                 : 3 of 5
++```
++
++**The advisory scalar has zero discriminative power (0/5). The decision it sits
++beside has 3/5.** The 2 it misses are exactly the 2 the fixture module declares
++to be semantic harms with no payload — the metrology harm edits the measured
++input so the document becomes self-consistent; the algorithms harm improves the
++metric under review while destroying correctness. No static sweep can see
++either, by construction.
++
++### The design that delivers both
++
++Not suppression. Not a bigger number. **Report the number with its measured
++discrimination attached.** Three parts:
++
++1. **Fix the inputs** (Q4). `computed_sk` becomes honestly derived.
++2. **Rename it to what it is.** Not "sk would have been 1.0" — which invites the
++   reading that the fix scored full marks — but
++   `static_harm_sweep: CLEAN (0 new ruff, 0 new bandit)`. Same information, no
++   false implicature. This costs one string.
++3. **Attach the separation.** Ship the Q2 measurement as a committed test, and
++   have the advisory carry its own last-measured discrimination:
++   `static_harm_sweep: CLEAN — separates 3/5 known harm classes; blind to
++   semantic harm`. A number that states what it cannot see is meaningful even
++   when its value is constant, because the *reader* can now act on it.
++
++Meaning at the level the founder wants comes from a **different measurement**,
++and it is Q1's claim ledger, which demonstrably separates (P and N, 5/5).
++
++### Strongest attempt to falsify
++
++*"Attaching a discrimination figure is itself an addition nothing reaches."* —
++Fair, and it is why part 3 is specified as a committed test first and a display
++string second: the test is reached by CI, the string by the HIL. If the founder
++takes only one part, take part 2 — it is one string and it removes a false
++implicature at zero cost.
++
++---
++
++## Q3 — The `e1_efficacy` veto, and its evidence
++
++### Position
++
++`e1_efficacy` must be a **gate**, not a weighted term. Written into
++`bench/reference_runner_v3.py` for diff.
++
++### Derivation, not assertion — no finite weight can do this job
++
++With `e1 = 0` and the other gates clean, SymPy gives
++
++```
++E(e1=0) = (2*s2 + s3 + 2*s4) / (w1 + 5)        with e2=e3=e4=1:  E = 5/(w1+5)
++
++w1 = 2       E = 5/7      = 0.7142857143   > 0  -> ADMISSIBLE
++w1 = 10      E = 1/3      = 0.3333333333   > 0  -> ADMISSIBLE
++w1 = 100     E = 1/21     = 0.0476190476   > 0  -> ADMISSIBLE
++w1 = 10^6    E = 1/200001 = 0.0000050000   > 0  -> ADMISSIBLE
++lim(w1->oo) E = 0
++```
++
++`tristate = SK_ADMISSIBLE if sk > 0` has **no threshold**. `E > 0` at every
++finite `w1`, so **no reweighting ever rejects**. The veto cannot be bought with
++weight; it has to be a gate. (5/7 cross-checked on SymPy, `Fraction` and mpmath,
++agreeing to 1e-30.)
++
++### The two measurements the founder's condition requires
++
++His clearance was conditional: it must *plug the hole and make the instrument
++more accurate*, not merely change which fixes pass. So:
++
++**(1) EFFICACY — the targeted class.** The named property is the
++**false-admission rate on fixes MEASURED not to cure their own falsifier**. This
++requires no judgement: `FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER` is a probe verdict
++produced by re-running the falsifier after the fix. Admitting such a fix is a
++false positive by the instrument's own definition.
++
++Archive measurement, deduplicated against the copy conflation (Q5):
++
++```
++fixes measured not to cure their own falsifier, ADMITTED anyway: 201 of 201
++Wilson 95% [98.1247%, 100.0000%]   (hand Wilson and statsmodels agree)
++```
++
++(The brief's figure of 73 is a hardcoded literal in the figures script, not a
++live count. The live count is 201 after deduplication and 309 before — see Q5.)
++
++After the change, live `compute_sk` on `bench/dm/_convergence.py`:
++`e1 = FIX_INEFFECTIVE -> REJECTED, sk = 0.0`, with the arithmetic preserved in
++`_e1_veto.computed_sk`. **Nothing is hidden**; the HIL still sees what the
++weighted mean said.
++
++**(2) INVARIANCE — everything else. This is the load-bearing half.** Six other
++e1 classes, live calls:
++
++```
++FIX_CURES_ITS_OWN_FALSIFIER        ADMISSIBLE  sk=1.0  veto_fired=False
++NOT_PROBED_NO_FALSIFIER            ADMISSIBLE  sk=1.0  veto_fired=False
++None                               ADMISSIBLE  sk=1.0  veto_fired=False
++INDETERMINATE_NO_BASELINE          ADMISSIBLE  sk=1.0  veto_fired=False
++INDETERMINATE_OTHER                ADMISSIBLE  sk=1.0  veto_fired=False
++INDETERMINATE_NOT_INTERCEPTED      ADMISSIBLE  sk=1.0  veto_fired=False
++```
++
++**0 of 6.** The veto fires only on the explicit measured-ineffective verdict.
++`None` — not measured — is untouched, because an unmeasured fix is not a failed
++fix and conflating them would be the silent-evidence-loss failure the file
++already records against `e2`.
++
++Targeted tests after the change, all green: `test_prose_acceptance_stem.py`
++(226 passed), and 155 passed across `test_prose_gates_are_one_sided`,
++`test_target_kind_and_no_score`, `test_immune_memory_consumption` (the AST guard
++on the `sk_result` reader set), `test_e2_unavailability_is_recorded`,
++`test_commissioning_arms_carry_their_settings`.
++
++### The one thing the founder must rule on
++
++**On a prose target the e1 veto now runs BEFORE the prose one-sided veto**, so a
++prose fix with a genuinely measured `FIX_INEFFECTIVE` moves `NO_SCORE ->
++REJECTED`. I judge that correct — it is a decided rejection on *measured
++evidence*, not a static sweep, which is precisely the distinction the prose
++NO_SCORE arm was built to protect. But it **is** a prose-path behaviour change
++and it is not covered by the founder's 2026-09-30 clearance, which was about
++Python targets. If he wants it scoped to Python, add
++`and not _scoring_prose` to the condition. One clause.
++
++### Strongest attempt to falsify
++
++*"Invariance on 6 synthetic classes is not invariance on the archive."* — True,
++and it is the gap. The synthetic sweep proves the branch condition is narrow; it
++does not prove no archived Python entry changes. **What would settle it:** a
++replay of the archived entries through the patched `compute_sk` with their
++recorded gate inputs, asserting bit-identity on every non-`FIX_INEFFECTIVE`
++entry. I did not run it — the archived entries store the *result* of
++`compute_sk`, not all its inputs, so a faithful replay needs the fix text and
++baseline reconstructed. **This is the one HARD assumption in my Q3 design that
++remains untested**, and I name it rather than continue past the point of return.
++
++---
++
++## Q4 — Should `test_cmd=None` mean NO GATE?
++
++### Position
++
++**Yes.** `None` means the caller declined to supply a test command, and no layer
++below should invent one. Written into `bench/tools/run_simulated_experiment.py`.
++
++### Which repair, and why this one
++
++Two were available:
++
++- **(a) `Arm.argv()`: `if self.test_cmd is not None`, with an explicit empty
++  else.** Rejected. It also requires changing a committed test —
++  `bench/tests/test_commissioning_arms_carry_their_settings_2026-09-21.py`
++  asserts `--test-cmd` is *absent* from `arm4.argv()` — and under
++  `falsifier-integrity` rule 2 a measurement is not repaired quietly. Note this
++  tree already carries the conflict: `scripts/falsifier_supply_fable_2026-09-30.py`
++  asserts `got.test_cmd == ""`, which the committed test contradicts. **The two
++  cannot both be satisfied**, and that disagreement belongs to the human.
++- **(b) argparse default `None`.** Taken. One line, no test change, and it fixes
++  the defect at the layer that invented the value. `_run_effect_regression`
++  already returns `(None, "no test command configured")` on a falsy `test_cmd`,
++  so `e2` becomes *unavailable* and is excluded from `E`'s renormalised mean
++  rather than faked. `simplicity-default`.
++
++End to end through the real parser, after the change:
++
++```
++parse_args(arm4.argv()).test_cmd = None       arm4 declines -> NO GATE
++parse_args(arm1.argv()).test_cmd = 'python3 -m pytest bench/tests/...'   gate ON
++```
++
++### CC1's claim: verified
++
++```
++prose with REAL bytes      -> e2 = 0.9454545454545454  (52/55 passed)
++prose with bytes DESTROYED -> e2 = 0.9454545454545454  (identical: BLIND)
++distinct veto outputs over 7 e2 values : 1
++apply_sk_to_rk(0.5, NO_SCORE) -> 0.5     delta = 0.0
++E with substituted suite = 269/275 = 0.978182   ->   E without = 1.0
++```
++
++**All three counts CONFIRMED.** No verdict moves, `R_k` does not move, and the
++advisory moves **upward** when the false input is removed.
++
++### What CC1's claim does not cover, and I add
++
++- `scripts/estimate_nu_from_archive_2026-09-21.py` reads `e2_regression.score`
++  from archived entries to emit a ν lower bound. It filters on `ADMISSIBLE`,
++  which prose never is, so it is unaffected **today** — and affected the moment
++  prose becomes scoreable. Name it now.
++- `scripts/a19_break_even_assumes_e2_absent_2026-09-30.py` counts occurrences of
++  the 52/55 constant. Its count changes by construction.
++- `scripts/scorer_discrimination_2026-09-20.py` carries its **own** hardcoded
++  `WEIGHTS["e2_regression"] = 2.0`. A second copy of the weight, pinned to the
++  runner's literal by no test. A latent divergence, independent of this change.
++- The e2 record **is** persisted into `runner_state.json`, the checkpoint and
++  `sk_pipeline`. The AST guard in `test_immune_memory_consumption.py` bounds the
++  `sk_result` reader set to 4 functions, none of which reads the e2 score by
++  name — so a resumed round cannot read it into a decision. That guard is the
++  reason this change is safe, and it should be said.
++
++### Strongest attempt to falsify
++
++*"Changing an argparse default silently changes behaviour for every caller that
++relied on it."* — It does, and that is the real cost. Measured: arms 1–3 pass
++`ENGINE_TESTS` explicitly, so only arm 4 and any ad-hoc invocation without
++`--test-cmd` are affected. An ad-hoc caller now gets `e2` unavailable instead of
++a suite it did not ask for, which is the correct outcome — but it is a change
++and it is not free.
++
++---
++
++## Q5 — Remedy for the structural conflation
++
++### Position
++
++**Content-hash deduplication at the point of measurement, plus a guard test.**
++Not a path predicate, and not relocating the harvest.
++
++### Executed evidence — a FOURTH mechanism bitten, and it is Q3's number
++
++`scripts/q5_archive_copy_conflation_inflates_q3_2026-09-30.py`:
++
++```
++e1-bearing archive entries under bench/logs : 1692
++
++raw (every path, every entry)      measured-ineffective = 309  ADMISSIBLE = 309
++path-filtered (shared predicate)   measured-ineffective = 201  ADMISSIBLE = 201
++content-deduplicated (sha + id)    measured-ineffective = 201  ADMISSIBLE = 201
++both                               measured-ineffective = 201  ADMISSIBLE = 201
++
++INFLATION raw vs deduplicated: 309 vs 201 = 53.7313%
++```
++
++**53.73% inflation on the exact count Q3 turns on.** The brief lists 3 mechanisms
++bitten; this is a fourth, and it was about to become a fifth in my own answer.
++
++### Weighing the three candidates
++
++| candidate | cost, measured | verdict |
++|---|---|---|
++| shared `is_archive_copy` predicate | **259** archive-scanning call sites carry no copy filter today; each needs editing, and the predicate hardcodes the string `sandbox_harvest`, so a rename silently un-fixes all 259 | **reject** — 259 edits, and fragile |
++| move harvest out of the archive namespace | **24** directories, **182,014,739 bytes**; every committed path into those trees breaks at once | **reject** — largest blast radius, and it fixes only the last instance |
++| guard test refusing an unguarded scan | one AST test | **keep** — the only candidate that prevents the *next* instance |
++
++**The measurement that decides it:** path filtering and content deduplication
++give the **identical** count, 201. The copies are byte-identical. So content
++hashing is *sufficient*, needs no naming convention, survives any rename of
++`sandbox_harvest`, and cannot over-count. It dominates the path predicate on a
++named property — robustness to renaming — at equal accuracy. That is the
++committed measurement the additive standard asks for before preferring one to
++the other.
++
++**Recommended, in order:** (1) a 12-line `bench/archive_scan.py` exposing
++`dedup_entries(iterable)` keyed on `(file_sha256, finding_id)`; (2) a guard test
++asserting any *new* script that globs `bench/logs/**.json` imports it. Do **not**
++retrofit all 259 — that is a large edit for measurements mostly already
++published. Fix forward.
++
++### Strongest attempt to falsify
++
++*"Content hashing collapses two genuinely distinct runs that produced identical
++files."* — It can, and in that case they are identical measurements and
++collapsing them is correct, not lossy. The failure mode is the reverse: a copy
++that differs by one byte survives dedup. **That is untested here** and is the
++one HARD assumption in Q5 I have not settled; what would settle it is a byte-diff
++of every harvested copy against its original, which I did not run.
++
++---
++
++## Q6 — Settle `n* = (a/theta)^(1/gamma)`
++
++### Position
++
++**`a` is a CUMULATIVE coefficient — settled by execution. But the prior round's
++correction to `(a(1-gamma)/theta)^(1/gamma) = 1.6447` is ALSO wrong, and the
++whole quantity is moot in the harness.** Four separate results.
++
++### S1 — the fitting code, found and called
++
++`bench/decay_analysis.py:fit_duane`, the only committed Duane fitter. Called, not
++read:
++
++```
++fit_duane([5,5,5,5,5,5,5,5])     -> alpha = 5.0, gamma = 1.0, sse = 0.0
++```
++
++A constant **rate** of 5/round has cumulative `5n`. The fitter returns
++`alpha = 5, gamma = 1`, so it fits `N(n) = alpha * n^gamma` to the **cumulative**
++series (`np.cumsum`). `alpha` is a cumulative coefficient. The module's own
++intensity comment confirms it: `lambda(n) = alpha*gamma*n^(gamma-1)`, so
++`lambda(1) = alpha*gamma != alpha`.
++
++### S2 — TWO INCOMPATIBLE QUANTITIES ARE BOTH NAMED `gamma`
++
++On arm 1's own novel-per-round series `[8, 2, 6, 5, 4, 3, 3, 9]`:
++
++```
++decay_analysis.fit_duane   gamma = 0.877600   (== beta, the growth exponent)
++run_exp35._estimate_gamma  gamma = 0.214289   (== 1 - beta, clamped at 0)
++disagreement                     = 0.663311
++```
++
++`GAMMA IS LOAD-BEARING` is a standing directive, and the repository holds two
++different load-bearing quantities under one name. Feeding one into a law written
++for the other moves `n*` by orders of magnitude. **I rate this the most
++consequential finding in Q6.**
++
++### S3 — the live path cannot evaluate `n*` at all
++
++`_estimate_gamma` returns a bare `float` and never forms the regression
++intercept. `reference_runner_v3.py` imports only `compute_d_score` from
++`decay_analysis`, which discards `alpha`. `routing.py`, `falsifier_verify.py`
++and `runner_core.py` mention it 0 times. **No live module emits `a`.** The
++`CDSFL_MASTER_TASK_LIST.md:171` claim that "the fit already runs every round via
++`_estimate_gamma`" is false for this purpose: that function cannot supply `a`.
++
++### S4 — `n*` under three readings, at `a = 4.89, gamma = 0.709, theta = 1`
++
++```
++(A) a is a RATE coefficient      n* = (a/theta)^(1/gamma)          =  9.380519307936
++(B) a cumulative, CONTINUOUS     n* = (a(1-gamma)/theta)^(1/gamma) =  1.644680681197
++(C) a cumulative, DISCRETE       a(n^b - (n-1)^b) = theta          =  2.187873457283
++```
++
++mpmath, SymPy and `scipy.optimize.brentq` agree to 12 significant figures on all
++three. **Cross-checked on Wolfram Language** (local Wolfram Engine via
++`wolframscript`, exit 0, no `Name::tag`, no `$Failed`), which returned
++`{9.380519307936057, 1.6446806811974513, 2.1878734572826417}` — agreeing to 12
++digits. *(Values computed with Wolfram Language.)*
++
++**The discriminator.** For the fitted cumulative `N(n) = alpha*n^beta`,
++`N(1) = alpha*1^beta = alpha` for **every** beta. So `alpha` **is** the round-1
++finding count, and the law's own gloss — "the round-1 finding rate divided by the
++threshold" — is satisfied by `alpha` itself. The prior round's correction
++multiplies by `(1-gamma)` because it takes the **continuous** derivative
++`dN/dn` of a series indexed by a **discrete** round number. Rounds are discrete.
++Reading (C) is the honest stopping rule and it gives **2.19**.
++
++Reading (A) is self-inconsistent on its own terms: it implies
++`N(1) = a/(1-gamma) = 16.80` findings in round 1, not 4.89.
++
++### S5 — the constants are UNSOURCED
++
++421 committed per-round curves with ≥3 rounds and >0 findings were fitted with
++`fit_duane`. Mean round-1 count **3.501188**, max 16. **44** fits land within 0.5
++of `alpha = 4.89`. **0** land within 0.5 of 4.89 *and* within 0.05 of
++`gamma = 0.709`. The pair `(4.89, 0.709)` is **not reproducible from any
++committed artefact in this tree**. It survives only as prose in
++`experimental_notes`.
++
++### S6 — does `rounds = 10` survive?
++
++```
++   gamma       (A) rate    (B) cont.   (C) discrete
++  0.7090         9.3805       1.6447       2.1879
++  0.5301        19.9681       4.8039       5.3172
++  0.2824        275.9913     85.2244      85.7250
++  0.1914       3993.9691   1316.2695    1316.7695
++  0.1776       7607.5283   2529.9264    2530.4264
++```
++
++Across **arm 1's own gamma history**, under a single reading, `n*` ranges from
++9.38 to 7607.53. Across readings at a single gamma it moves by a factor 5.70.
++
++**`n*` is not a stable number.** `rounds = 10` survives — but **only as an
++empirical budget, never as a derivation from `n*`**. Both prior seats reached 10
++and both, per the record, built it "not to depend on the answer". That was the
++right instinct and my analysis strengthens it: the answer they declined to depend
++on is a quantity with no settled value, computed from constants with no
++provenance, by a formula the harness cannot evaluate. **I agree with `rounds =
++10`, and I disagree with any justification for it that cites `n*`.**
++
++### What would make me wrong
++
++Producing the March 2026 artefact in which `(4.89, 0.709)` was fitted, and
++showing which of the two `gamma` conventions it used. If it used
++`decay_analysis`'s convention, then `0.709` is beta, the convergence gamma is
++0.291, and every `n*` above is computed with the wrong exponent. **That artefact
++is not in this tree.** Recovering it is the single action that would settle Q6
++completely; without it, S1–S3 stand on execution and S4–S6 are conditional on
++constants nobody can source.
++
++---
++
++## Disagreement with the other seat
++
++I have not seen the other seat's reply and will not shape mine toward it. Where
++we differ the disagreement is preserved as information. Two places I expect it:
++
++1. **Q6.** If the other seat endorses the prior round's `1.6447`, I disagree:
++   that is the continuous derivative of a discretely-indexed series, and the
++   discrete answer is 2.19. Both are moot next to S2 and S3.
++2. **Q1.** If the other seat proposes repairing A19 to reach `ADMISSIBLE` on
++   prose, I disagree, and the measurement is `q2_...py`: 0 of 5 separation.
++
++## Where I stopped, and why
++
++Two consecutive passes produced no new finding above the real-world-consequence
++threshold. Pass 4 produced the Q2 baseline retraction (my own artefact, corrected
++in the script). Pass 5 produced nothing new. Every HARD assumption in the design
++has been tested except two, both named above and neither padded over:
++
++1. **Q3 invariance on the real archive**, not on 6 synthetic classes. Settled by
++   replaying archived entries through the patched `compute_sk`; needs fix text
++   and baselines the archive does not store.
++2. **Q5 near-duplicate copies** differing by one byte would survive content
++   dedup. Settled by a byte-diff of every harvested copy against its original.
+
+### cc2:attempt-1:scripts/q1_claim_ledger_three_way_discrimination_2026-09-30.py
+--- /dev/null	2026-09-30 14:33:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9fduzjvf/repo/scripts/q1_claim_ledger_three_way_discrimination_2026-09-30.py	2026-09-30 14:15:46
+@@ -0,0 +1,173 @@
++#!/usr/bin/env python3
++"""Q1 - the mechanism that yields a DEFINITIVE AFFIRMATIVE on a prose target.
++
++Run from the repository root:
++
++    python3 scripts/q1_claim_ledger_three_way_discrimination_2026-09-30.py
++
++THE CLAIM UNDER TEST
++--------------------
++S_k (A19) scores a FIX. The founder's calculator wants a verdict on a
++DOCUMENT'S CLAIM. Those are different objects, so no repair to A19 can make it
++emit the affirmative. The affirmative already exists in this repository, at the
++claim level, and is reachable today through `falsifier_verify.reverify_falsifier`
++over `bench/tests/fixtures/stem`. What is missing is not a mechanism; it is a
++THIRD control and a caller.
++
++THE PROPOSED ADMISSION RULE (three-way discrimination)
++-----------------------------------------------------
++For a claim C in document D with falsifier F, the instrument may emit a verdict
++only when all three of these hold -- each one a run of the runner's OWN decider:
++
++    P  POSITIVE control   F(D_defective)  == CONFIRMED
++                          F can demonstrate the defect it is aimed at.
++    N  NEGATIVE control   F(D_corrected)  == REFUTED
++                          F goes quiet once the claim is true.
++    B  BLIND control      F(D_destroyed)  != REFUTED
++                          F actually READS its target. A falsifier that returns
++                          REFUTED on a document whose bytes are gone is not
++                          measuring the document -- it is the claim-level form
++                          of the arm-4 defect (e2 scoring 52/55 on a prose
++                          target whose bytes were destroyed).
++
++Then, and only then:
++
++    AFFIRMED(C)   iff  P and N and B hold, and F(D_actual) == REFUTED
++    REFUTED(C)    iff  P and N and B hold, and F(D_actual) == CONFIRMED
++    UNTOOLABLE(C) otherwise -- report WHICH control failed, never a verdict.
++
++B is the addition. P and N alone are the existing discrimination control
++(`reference_runner_v3.run_discrimination_control`). Without B, a REFUTED on the
++actual document is indistinguishable from a falsifier that never opened it, and
++that is precisely the failure mode already measured elsewhere in this harness.
++
++This script executes P, N and B for all 5 committed fixtures, using the runner's
++own decider, and reports which of the 3 controls each falsifier passes.
++"""
++from __future__ import annotations
++
++import sys
++import tempfile
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(REPO))
++
++from bench.falsifier_verify import reverify_falsifier      # noqa: E402
++from bench.tests.fixtures.stem import stem_fixtures as S    # noqa: E402
++
++
++def _bind(fx, text: str, tmpdir: Path, tag: str) -> str:
++    """Write `text` to a scratch copy and return F bound to that copy."""
++    p = tmpdir / f"{fx.key}_{tag}_{fx.doc_name}"
++    p.write_text(text, encoding="utf-8")
++    return fx.falsifier(p)
++
++
++def run() -> int:
++    rows = []
++    with tempfile.TemporaryDirectory() as td:
++        tmp = Path(td)
++        for fx in S.load_all():
++            pristine = fx.document                      # carries the FALSE claim
++            corrected = fx.apply(fx.correct_fix)        # claim now TRUE
++            destroyed = ""                              # bytes gone
++
++            v_P = reverify_falsifier(_bind(fx, pristine, tmp, "P"),
++                                     repo_root=str(REPO))
++            v_N = reverify_falsifier(_bind(fx, corrected, tmp, "N"),
++                                     repo_root=str(REPO))
++            v_B = reverify_falsifier(_bind(fx, destroyed, tmp, "B"),
++                                     repo_root=str(REPO))
++
++            P_ok = (v_P == "CONFIRMED")
++            N_ok = (v_N == "REFUTED")
++            B_ok = (v_B != "REFUTED")
++            rows.append((fx.key, fx.false_claim.tag, v_P, v_N, v_B,
++                         P_ok, N_ok, B_ok))
++
++    print("=" * 78)
++    print("Q1  THREE-WAY DISCRIMINATION OVER THE COMMITTED PROSE CORPUS")
++    print("    decider: bench.falsifier_verify.reverify_falsifier (the runner's own)")
++    print("=" * 78)
++    print()
++    print(f"{'fixture':<12} {'claim':<8} {'P(defect)':<11} {'N(fixed)':<11} "
++          f"{'B(no bytes)':<13}  P N B")
++    for key, tag, vP, vN, vB, P_ok, N_ok, B_ok in rows:
++        print(f"{key:<12} {tag:<8} {vP:<11} {vN:<11} {vB:<13}  "
++              f"{'Y' if P_ok else 'n'} {'Y' if N_ok else 'n'} "
++              f"{'Y' if B_ok else 'n'}")
++    print()
++
++    n = len(rows)
++    nP = sum(r[5] for r in rows)
++    nN = sum(r[6] for r in rows)
++    nB = sum(r[7] for r in rows)
++    nAll = sum(1 for r in rows if r[5] and r[6] and r[7])
++    print(f"P positive control passed : {nP}/{n}")
++    print(f"N negative control passed : {nN}/{n}")
++    print(f"B blind   control passed : {nB}/{n}")
++    print(f"all three                : {nAll}/{n}")
++
++    # Wilson interval on the all-three proportion, two independent tools.
++    try:
++        import math
++        z = 1.959963984540054
++        p = nAll / n
++        d = 1 + z * z / n
++        c = (p + z * z / (2 * n)) / d
++        h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
++        lo, hi = max(0.0, c - h), min(1.0, c + h)
++        print(f"Wilson 95% on all-three  : [{lo * 100:.4f}%, {hi * 100:.4f}%]")
++        from statsmodels.stats.proportion import proportion_confint
++        slo, shi = proportion_confint(nAll, n, method="wilson")
++        print(f"statsmodels (2nd tool)   : [{slo * 100:.4f}%, {shi * 100:.4f}%]")
++        assert abs(slo - lo) < 1e-9 and abs(shi - hi) < 1e-9
++    except ImportError as e:
++        print(f"statsmodels unavailable: {e}")
++
++    print()
++    print("READING")
++    print("  A row with P=Y N=Y B=Y is a claim on which the instrument can emit")
++    print("  a DEFINITIVE verdict in either direction, because it has been shown")
++    print("  to move in both directions AND to be reading the document.")
++    print("  A row failing B is the claim-level arm-4 defect: the falsifier's")
++    print("  REFUTED carries no information about the document.")
++    print()
++    print("  These verdicts are produced TODAY, by committed code, with no new")
++    print("  mechanism. The gap is that no live-path module calls any of it.")
++    print("=" * 78)
++
++    # ------------------------------------------------------------------
++    # THE HARD ASSERTION IS ON THE DESIGN CLAIM, NOT ON THE CORPUS.
++    # The design claim is: B is NOT redundant with P and N. It is refuted if
++    # every falsifier that passes P and N also passes B -- then B adds a gate
++    # nothing reaches, which the additive standard forbids.
++    # ------------------------------------------------------------------
++    pn_pass = [r for r in rows if r[5] and r[6]]
++    b_fail_among_pn = [r for r in pn_pass if not r[7]]
++    print()
++    print("DESIGN CLAIM UNDER TEST: the B control is not redundant with P+N.")
++    print(f"  falsifiers passing P and N          : {len(pn_pass)}/{n}")
++    print(f"  of those, FAILING B                 : {len(b_fail_among_pn)}")
++    for r in b_fail_among_pn:
++        print(f"    {r[0]} / {r[1]}: returns {r[4]} against a document with "
++              f"no bytes")
++    assert b_fail_among_pn, (
++        "REFUTED: every P+N falsifier also passes B, so B is a gate nothing "
++        "reaches. Under the additive standard it must not be built.")
++    print()
++    print(f"  SURVIVES: {len(b_fail_among_pn)} of {len(pn_pass)} falsifiers "
++          f"that the EXISTING two-way discrimination control accepts would")
++    print("  emit a REFUTED that carries no information about the document.")
++    print("  B catches them. It is reached, and it is load-bearing.")
++    print()
++    print("  ROOT CAUSE, read from the two failing templates: both open with")
++    print('      if block is None: print("NOT FALSIFIED: ... is absent"); exit 0')
++    print("  which conflates CLAIM CORRECTED with DOCUMENT UNREADABLE. That is")
++    print("  the same conflation as arm 4's e2, one level down.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(run())
+
+### cc2:attempt-1:scripts/q2_advisory_accuracy_vs_meaning_2026-09-30.py
+--- /dev/null	2026-09-30 14:33:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9fduzjvf/repo/scripts/q2_advisory_accuracy_vs_meaning_2026-09-30.py	2026-09-30 14:24:31
+@@ -0,0 +1,142 @@
++#!/usr/bin/env python3
++"""Q2 - make the advisory number ACCURATE and MEANINGFUL, without suppressing
++it. Run from the repository root:
++
++    python3 scripts/q2_advisory_accuracy_vs_meaning_2026-09-30.py
++
++THE TWO PROPERTIES ARE DIFFERENT AND MUST BE MEASURED SEPARATELY.
++
++  ACCURATE   every input measures the thing it names, and the arithmetic over
++             those inputs is right. 0.9782 fails this: its e2 input scores the
++             immune-memory suite, which is not the prose target. Removing that
++             input yields an honestly-derived 1.0.
++
++  MEANINGFUL the number MOVES when the thing it purports to summarise moves.
++             A quantity constant across the whole space it claims to summarise
++             carries zero information, whatever its provenance.
++
++The founder's trap, stated in the brief: 1.0 is accurate and still
++uninformative. This script MEASURES that -- it does not assert it -- by feeding
++the instrument the committed ground truth: 5 fixes a sound reviewer should
++ACCEPT and 5 a sound reviewer must REJECT, and asking whether the advisory
++separates them.
++
++DISCRIMINATION is the test for meaning, and it is the same test the falsifier
++gate already applies to a falsifier. A number that cannot separate a correct
++fix from a harmful one is not a score; it is a constant with a decimal point.
++"""
++from __future__ import annotations
++
++import statistics
++import sys
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(REPO))
++sys.path.insert(0, str(REPO / "bench"))
++
++from bench.reference_runner_v3 import (                          # noqa: E402
++    _capture_baseline, compute_sk,
++)
++from bench.tests.fixtures.stem import stem_fixtures as S        # noqa: E402
++
++#: THE BASELINE IS CAPTURED BY THE RUNNER'S OWN FUNCTION, not fabricated.
++#: A hand-written {"ruff_violations": 0} would manufacture "new" diagnostics
++#: for every listing the target already carries, and the rejections below would
++#: be this script's artefact rather than the instrument's behaviour.
++_BASE_CACHE: dict = {}
++
++
++def base_for(fx):
++    if fx.key not in _BASE_CACHE:
++        _BASE_CACHE[fx.key] = _capture_baseline(fx.document, str(fx.doc_path))
++    return _BASE_CACHE[fx.key]
++
++
++def _blocks(patches) -> str:
++    out = []
++    for p in patches:
++        out.append("<<<< SEARCH\n" + p.old + "\n====\n" + p.new
++                   + "\n>>>> REPLACE\n")
++    return "\n".join(out)
++
++
++def advisory(fx, patches):
++    """Return the advisory `computed_sk` the HIL would be shown."""
++    r = compute_sk(
++        fix_text=_blocks(patches), source=fx.document,
++        source_path=str(fx.doc_path), baseline=base_for(fx), test_cmd=None,
++        declared_target_kind="prose", score_prose_listings=True,
++    )
++    veto = r.gate_details.get("_prose_one_sided") or {}
++    return r.tristate, veto.get("computed_sk"), veto.get("outcome")
++
++
++def main() -> int:
++    print("=" * 78)
++    print("Q2  IS THE ADVISORY MEANINGFUL? MEASURED ON THE COMMITTED GROUND")
++    print("    TRUTH: 5 fixes to ACCEPT, 5 fixes to REJECT.")
++    print("=" * 78)
++    print()
++    print(f"{'fixture':<12} {'harm class':<44} "
++          f"{'correct_fix':<14} {'harmful_fix':<14}")
++    good, bad = [], []
++    rows = []
++    for fx in S.load_all():
++        t_ok, a_ok, o_ok = advisory(fx, fx.correct_fix)
++        t_no, a_no, o_no = advisory(fx, fx.harmful_fix)
++        rows.append((fx.key, fx.harm_class, t_ok, a_ok, t_no, a_no))
++        if a_ok is not None:
++            good.append(a_ok)
++        if a_no is not None:
++            bad.append(a_no)
++        print(f"{fx.key:<12} {fx.harm_class[:43]:<44} "
++              f"{str(a_ok)+' '+str(t_ok):<14} {str(a_no)+' '+str(t_no):<14}")
++    print()
++
++    print("SEPARATION")
++    print(f"  advisory on the 5 fixes a reviewer SHOULD accept : {good}")
++    print(f"  advisory on the 5 fixes a reviewer MUST reject   : {bad}")
++    overlap = sorted(set(good) & set(bad))
++    print(f"  values occurring in BOTH sets                    : {overlap}")
++    n_sep = sum(1 for g, b in zip(good, bad)
++                if g is not None and b is not None and g > b)
++    print(f"  fixtures where correct scores STRICTLY ABOVE harmful: "
++          f"{n_sep} of {len(rows)}")
++    if good and bad:
++        print(f"  mean(correct) = {statistics.fmean(good):.6f}   "
++              f"mean(harmful) = {statistics.fmean(bad):.6f}   "
++              f"difference = {statistics.fmean(good)-statistics.fmean(bad):+.6f}")
++    print()
++
++    print("THE TRISTATE, WHICH IS WHAT ACTUALLY DECIDES")
++    for key, hc, t_ok, a_ok, t_no, a_no in rows:
++        flag = "SEPARATES" if t_ok != t_no else "does NOT separate"
++        print(f"  {key:<12} correct -> {t_ok:<10} harmful -> {t_no:<10} "
++              f"{flag}")
++    t_sep = sum(1 for r in rows if r[2] != r[4])
++    print(f"  the DECISION separates on {t_sep} of {len(rows)} fixtures.")
++    print()
++
++    print("=" * 78)
++    print("READING")
++    print("  Where the advisory takes the SAME value on a fix that should be")
++    print("  accepted and a fix that must be rejected, it is not measuring the")
++    print("  difference between them. Making its inputs honest (Q4) fixes its")
++    print("  ACCURACY and leaves its MEANING untouched, because the inputs it")
++    print("  is honest about -- ruff and bandit over fenced listings -- are not")
++    print("  measuring the property in question. The harm classes here are")
++    print("  SEMANTIC: the metrology harm edits a measured input so the")
++    print("  document becomes self-consistent; the algorithms harm improves the")
++    print("  metric under review while destroying correctness. No static sweep")
++    print("  can see either.")
++    print()
++    print("  SO: accuracy is a repair to the INPUTS. Meaning requires a")
++    print("  DIFFERENT MEASUREMENT, and the claim ledger of Q1 is one that")
++    print("  demonstrably separates (5/5 on P and N).")
++    print("=" * 78)
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/q3_e1_efficacy_veto_2026-09-30.py
+--- /dev/null	2026-09-30 14:33:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9fduzjvf/repo/scripts/q3_e1_efficacy_veto_2026-09-30.py	2026-09-30 14:19:17
+@@ -0,0 +1,198 @@
++#!/usr/bin/env python3
++"""Q3 - evidence for the e1_efficacy veto. Run from the repository root:
++
++    python3 scripts/q3_e1_efficacy_veto_2026-09-30.py
++
++THE FOUNDER'S CONDITION, verbatim: the change must "plug the hole and make the
++instrument more accurate", not merely change which fixes pass. A verdict count
++that changes is not evidence of improvement. So this script measures TWO things
++and both must hold:
++
++  (1) EFFICACY   on the class the veto targets -- fixes MEASURED not to cure
++                 their own falsifier -- the false-admission rate goes to 0.
++  (2) INVARIANCE on EVERY other class -- FIX_CURES, not-probed, indeterminate,
++                 and every prose path -- the result is BIT-IDENTICAL.
++
++(2) is the load-bearing half. Without it the change is a reweighting with a
++different name.
++
++A THIRD measurement answers "is it reached?", which the additive standard
++demands of every addition: the veto must fire on a live compute_sk call, not
++only in a unit test.
++
++Also DERIVED here, not asserted: that no finite weight on e1 can produce a
++rejection, so a gate is the only available instrument.
++"""
++from __future__ import annotations
++
++import sys
++from fractions import Fraction
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(REPO))
++sys.path.insert(0, str(REPO / "bench"))
++
++import mpmath as mp                                            # noqa: E402
++import sympy as sp                                             # noqa: E402
++
++from bench.reference_runner_v3 import (                        # noqa: E402
++    FIX_EFFICACY_GATE_WEIGHT, SK_ADMISSIBLE, SK_NO_SCORE, SK_REJECTED,
++    compute_sk,
++)
++from fix_efficacy import (                                     # noqa: E402
++    FIX_CURES, FIX_INEFFECTIVE, NO_FALSIFIER,
++)
++
++mp.mp.dps = 30
++
++TARGET = REPO / "bench" / "dm" / "_convergence.py"
++
++
++def _fix_for(src: str) -> str:
++    """A minimal, harmless, APPLICABLE fix: add a trailing comment line."""
++    tail = src.rstrip("\n").split("\n")[-1]
++    return (
++        "<<<< SEARCH\n" + tail + "\n====\n" + tail +
++        "\n# touched by the Q3 e1 veto falsifier, 2026-09-30\n>>>> REPLACE\n"
++    )
++
++
++def derive_no_weight_can_veto() -> None:
++    print("D1  NO FINITE WEIGHT ON e1 CAN PRODUCE A REJECTION (derived)")
++    w1, s2, s3, s4 = sp.symbols("w1 s2 s3 s4", positive=True)
++    # e1 = 0. Other gates clean at their best case is irrelevant; take the
++    # INFIMUM over the other gates' scores, which is what a veto would need to
++    # drive to 0.
++    E = (w1 * 0 + 2 * s2 + 1 * s3 + 2 * s4) / (w1 + 2 + 1 + 2)
++    inf_E = sp.limit(E.subs({s2: 0, s3: 0, s4: 0}), w1, sp.oo)
++    print(f"      E(e1=0) = {sp.simplify(E)}")
++    print(f"      inf over other gates, w1 -> oo : {inf_E}   "
++          f"(reaches 0 only in the limit, never AT a finite weight)")
++    # The operational case: the other gates are CLEAN (score 1), which is the
++    # 201/201 archive situation.
++    E_clean = sp.simplify(E.subs({s2: 1, s3: 1, s4: 1}))
++    print(f"      with e2=e3=e4=1 (the archived case): E = {E_clean}")
++    for W in (2, 10, 100, 10**6):
++        v = sp.nsimplify(E_clean.subs(w1, W))
++        print(f"        w1 = {W:>8}: E = {v} = {float(v):.10f}  > 0 -> "
++              f"sk > 0 -> ADMISSIBLE")
++    lim = sp.limit(E_clean, w1, sp.oo)
++    print(f"      lim_(w1->oo) E = {lim}. Since tristate = ADMISSIBLE iff "
++          f"sk > 0 and")
++    print(f"      E > 0 for every finite w1, no reweighting ever rejects. "
++          f"QED.")
++    assert lim == 0 and all(float(E_clean.subs(w1, W)) > 0
++                            for W in (2, 10, 100, 10**6))
++    # Cross-check the operational value on 3 tools.
++    v_sp = sp.Rational(5, 7)
++    v_fr = Fraction(2 * 0 + 2 * 1 + 1 * 1 + 2 * 1, 2 + 2 + 1 + 2)
++    v_mp = mp.mpf(5) / 7
++    print(f"      the admitted score, 3 tools: sympy {v_sp} = "
++          f"{float(v_sp):.16f} | Fraction {float(v_fr):.16f} | "
++          f"mpmath {mp.nstr(v_mp, 17)}")
++    assert v_fr == Fraction(5, 7) and abs(float(v_sp) - float(v_mp)) < 1e-30
++    print(f"      FIX_EFFICACY_GATE_WEIGHT read from the module = "
++          f"{FIX_EFFICACY_GATE_WEIGHT}")
++    print()
++
++
++def main() -> int:
++    print("=" * 78)
++    print("Q3  THE e1_efficacy VETO — EFFICACY, INVARIANCE, AND REACHABILITY")
++    print("=" * 78)
++    print()
++    derive_no_weight_can_veto()
++
++    src = TARGET.read_text(encoding="utf-8")
++    fix = _fix_for(src)
++    base = {"ruff_violations": 0, "bandit_findings": {"high": 0, "medium": 0}}
++
++    def call(outcome):
++        return compute_sk(
++            fix_text=fix, source=src, source_path=str(TARGET),
++            baseline=base, test_cmd=None,
++            declared_target_kind="python_module",
++            fix_efficacy_outcome=outcome,
++        )
++
++    print("M1  EFFICACY — the class the veto targets")
++    r = call(FIX_INEFFECTIVE)
++    print(f"      e1 = FIX_INEFFECTIVE -> tristate = {r.tristate}, "
++          f"sk = {r.sk}, E = {r.E}")
++    veto = r.gate_details.get("_e1_veto")
++    print(f"      _e1_veto record present: {veto is not None}")
++    if veto:
++        print(f"        computed_sk (what the arithmetic said) = "
++              f"{veto['computed_sk']}")
++        print(f"        computed_E                             = "
++              f"{veto['computed_E']}")
++    assert r.tristate == SK_REJECTED, r.tristate
++    assert r.sk == 0.0
++    assert veto is not None and veto["computed_sk"] > 0, (
++        "the advisory number must be PRESERVED, not suppressed")
++    print(f"      the arithmetic is PRESERVED for the HIL, not suppressed. "
++          f"Nothing is hidden.")
++    print()
++
++    print("M2  INVARIANCE — every other e1 class must be BIT-IDENTICAL")
++    others = [FIX_CURES, NO_FALSIFIER, None,
++              "INDETERMINATE_NO_BASELINE", "INDETERMINATE_OTHER",
++              "INDETERMINATE_NOT_INTERCEPTED"]
++    ok = True
++    for o in others:
++        rr = call(o)
++        has_veto = "_e1_veto" in rr.gate_details
++        e1 = rr.gate_details.get("e1_efficacy", {}).get("score")
++        line = (f"      e1 = {str(o):<42} score={str(e1):<5} "
++                f"tristate={rr.tristate:<11} sk={rr.sk:<8} "
++                f"veto_fired={has_veto}")
++        print(line)
++        if has_veto:
++            ok = False
++    assert ok, "INVARIANCE FAILED: the veto fired on a class it must not touch"
++    print(f"      the veto fired on 0 of {len(others)} non-ineffective "
++          f"classes.")
++    print()
++
++    print("M3  REACHABILITY — is the branch reached by a LIVE call?")
++    print(f"      M1 above is a live compute_sk() on a real repository module")
++    print(f"      ({TARGET.relative_to(REPO)}), not a stub. The branch is "
++          f"reached.")
++    print()
++
++    print("M4  THE ONE BOUNDARY CASE — does the veto steal prose's NO_SCORE?")
++    prose = REPO / "bench/tests/fixtures/stem/docs/STR-07-REF-01.md"
++    ptext = prose.read_text(encoding="utf-8")
++    ptail = [l for l in ptext.split("\n") if l.strip()][-1]
++    pfix = ("<<<< SEARCH\n" + ptail + "\n====\n" + ptail +
++            "\n>>>> REPLACE\n")
++    pr = compute_sk(fix_text=pfix, source=ptext, source_path=str(prose),
++                    baseline=base, test_cmd=None,
++                    declared_target_kind="prose",
++                    score_prose_listings=True,
++                    fix_efficacy_outcome=FIX_INEFFECTIVE)
++    print(f"      prose target, e1 = FIX_INEFFECTIVE -> {pr.tristate}")
++    print(f"      _e1_veto present: {'_e1_veto' in pr.gate_details}   "
++          f"_prose_one_sided present: "
++          f"{'_prose_one_sided' in pr.gate_details}")
++    print(f"      NOTE FOR THE HIL: on prose the e1 veto now runs BEFORE the")
++    print(f"      prose one-sided veto. Where e1 is genuinely measured on a")
++    print(f"      prose fix that does not cure its falsifier, the outcome")
++    print(f"      moves NO_SCORE -> REJECTED. That is a DECIDED rejection on")
++    print(f"      measured evidence, not a static sweep, so it is admissible")
++    print(f"      under the prose reasoning -- but it IS a behaviour change on")
++    print(f"      the prose path and the founder should rule on it explicitly.")
++    print()
++
++    print("=" * 78)
++    print("BOTH HALVES HOLD. Efficacy: the targeted class flips to REJECTED.")
++    print("Invariance: 0 of 6 other classes move. The advisory arithmetic is")
++    print("preserved in `_e1_veto.computed_sk`, so nothing is hidden.")
++    print("SUGGESTED TO THE HUMAN. Not decided here.")
++    print("=" * 78)
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/q4_test_cmd_none_no_gate_2026-09-30.py
+--- /dev/null	2026-09-30 14:33:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9fduzjvf/repo/scripts/q4_test_cmd_none_no_gate_2026-09-30.py	2026-09-30 14:22:40
+@@ -0,0 +1,193 @@
++#!/usr/bin/env python3
++"""Q4 - should `test_cmd=None` mean NO GATE rather than a substituted default,
++and what is the consequence DURING A RUNNING EXPERIMENT?
++
++Run from the repository root:
++
++    python3 scripts/q4_test_cmd_none_no_gate_2026-09-30.py
++
++CC1's measurement, to verify or refute: "no verdict and no R_k moves and only
++the advisory number shifts 0.9782 to 1.0". This script tests the claim by
++calling the live producer and the live consumer, and then enumerates what the
++claim does NOT cover.
++"""
++from __future__ import annotations
++
++import importlib.util
++import sys
++from fractions import Fraction
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(REPO))
++sys.path.insert(0, str(REPO / "bench"))
++
++import mpmath as mp                                            # noqa: E402
++import sympy as sp                                             # noqa: E402
++
++from bench.reference_runner_v3 import (                        # noqa: E402
++    SK_NO_SCORE, _gates_introduced_new_defects, _run_effect_regression,
++    apply_sk_to_rk,
++)
++
++mp.mp.dps = 30
++PROSE = REPO / "bench/tests/fixtures/stem/docs/STR-07-REF-01.md"
++
++
++def _load_arms():
++    path = REPO / "bench/tools/commissioning_arms_2026-09-21.py"
++    spec = importlib.util.spec_from_file_location("commissioning_arms", path)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules["commissioning_arms"] = mod        # dataclass needs this
++    spec.loader.exec_module(mod)
++    return mod
++
++
++def main() -> int:
++    print("=" * 78)
++    print("Q4  test_cmd=None -- NO GATE, OR A SUBSTITUTED DEFAULT?")
++    print("=" * 78)
++    print()
++
++    # ------------------------------------------------------------------
++    print("A  THE GUARD, READ BY CALLING IT (execute-do-not-grep)")
++    mod = _load_arms()
++    arms = {a.key: a for a in mod.ARMS}
++    a4 = arms["arm4"]
++    argv = a4.argv()
++    print(f"      arm4.test_cmd     = {a4.test_cmd!r}")
++    print(f"      arm4.argv()       = {argv}")
++    emits = "--test-cmd" in argv
++    print(f"      emits --test-cmd  : {emits}")
++    assert not emits, "arm4 now emits --test-cmd; this script is stale"
++
++    # END TO END: arm4's argv through the REAL parser. Not a grep.
++    spec = importlib.util.spec_from_file_location(
++        "rse_q4", REPO / "bench/tools/run_simulated_experiment.py")
++    rse = importlib.util.module_from_spec(spec)
++    sys.modules["rse_q4"] = rse
++    spec.loader.exec_module(rse)
++    ns4 = rse.build_parser().parse_args(argv)
++    ns1 = rse.build_parser().parse_args(arms["arm1"].argv())
++    print(f"      parse_args(arm4.argv()).test_cmd = {ns4.test_cmd!r}")
++    print(f"      parse_args(arm1.argv()).test_cmd = "
++          f"{(ns1.test_cmd or '')[:44]!r}...")
++    print(f"      arm4 declines -> NO GATE  : {ns4.test_cmd is None}")
++    print(f"      arm1 supplies -> gate ON  : {bool(ns1.test_cmd)}")
++    assert ns4.test_cmd is None, (
++        "REFUTED: argparse still substitutes a value arm4 declined to give")
++    assert ns1.test_cmd, "an arm that DOES supply a command must keep it"
++    print()
++
++    # ------------------------------------------------------------------
++    print("B  DOES THE SUBSTITUTED SUITE EVEN SEE THE TARGET?")
++    text = PROSE.read_text(encoding="utf-8")
++    cmd = ("python3 -m pytest bench/tests/test_immune_memory_consumption.py "
++           "bench/tests/test_immune_memory_evaluation.py -q")
++    s_real, d_real = _run_effect_regression(text, str(PROSE), cmd)
++    s_dead, d_dead = _run_effect_regression("", str(PROSE), cmd)
++    print(f"      prose with REAL bytes      -> score {s_real}  ({d_real})")
++    print(f"      prose with bytes DESTROYED -> score {s_dead}  ({d_dead})")
++    blind = (s_real == s_dead)
++    print(f"      identical => the gate is BLIND to its target: {blind}")
++    assert blind, "REFUTED: e2 discriminates on prose after all"
++    print()
++
++    # ------------------------------------------------------------------
++    print("C  CC1's CLAIM: no verdict moves, no R_k moves, only the advisory")
++    clean = {"e3_ruff": {"detail": "4 total, 0 new (baseline: 4)"},
++             "e4_bandit": {"detail":
++                           "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"}}
++    # The veto reads ONLY e3/e4 `new:` fields. Sweep e2 across its whole range
++    # and show the veto output is constant.
++    outs = set()
++    for e2 in (None, 0.0, 0.25, 0.5, Fraction(52, 55), 0.99, 1.0):
++        d = dict(clean)
++        d["e2_regression"] = {"score": e2, "detail": f"{e2} (synthetic)"}
++        outs.add(tuple(_gates_introduced_new_defects(d)))
++    print(f"      distinct veto outputs over 7 e2 values : {len(outs)} "
++          f"-> {outs}")
++    assert len(outs) == 1, "REFUTED: the veto is sensitive to e2"
++
++    r_old = 0.5
++    r_new, why = apply_sk_to_rk(r_old, SK_NO_SCORE)
++    print(f"      apply_sk_to_rk({r_old}, NO_SCORE) -> {r_new}   "
++          f"delta = {r_new - r_old}")
++    assert r_new == r_old, "REFUTED: NO_SCORE moves R_k"
++    print(f"      reason returned: {why[:70]}...")
++
++    E_with = sp.Rational(2 * 52, 55) + 1 + 2
++    E_with = sp.Rational(2 * 52 + 55 * 3, 5 * 55)
++    E_without = sp.Rational(1 + 2, 3)
++    print(f"      E with substituted suite (4 gates, w=2,2,1,... ) = "
++          f"{E_with} = {float(E_with):.6f}")
++    print(f"      E without it (3 gates)                          = "
++          f"{E_without} = {float(E_without):.6f}")
++    fr = Fraction(2 * 52 + 55 * 3, 5 * 55)
++    print(f"      cross-check Fraction {float(fr):.6f} | mpmath "
++          f"{mp.nstr(mp.mpf(269) / 275, 9)}")
++    assert fr == Fraction(269, 275)
++    print(f"      the advisory moves UPWARD, {float(E_with):.4f} -> "
++          f"{float(E_without):.4f}, when the FALSE input is removed.")
++    print(f"      CC1's CLAIM IS CONFIRMED on all three counts.")
++    print()
++
++    # ------------------------------------------------------------------
++    print("D  WHAT CC1's CLAIM DOES NOT COVER — the other e2 consumers")
++    consumers = {
++        "scripts/estimate_nu_from_archive_2026-09-21.py":
++            "reads e2_regression.score from ARCHIVED entries to emit a nu "
++            "lower bound; filters on ADMISSIBLE, which prose never is -- so "
++            "unaffected TODAY, and affected the moment prose becomes "
++            "scoreable.",
++        "scripts/a19_break_even_assumes_e2_absent_2026-09-30.py":
++            "counts occurrences of the 52/55 constant in the archive; its "
++            "count CHANGES under this fix, by construction.",
++        "scripts/scorer_discrimination_2026-09-20.py":
++            "re-implements the weighted mean with its OWN hardcoded "
++            "WEIGHTS['e2_regression'] = 2.0 -- a second copy of the weight "
++            "that no test pins to the runner's literal.",
++        "bench/tests/test_prose_acceptance_stem.py:1162":
++            "asserts _prose_one_sided['computed_sk'] lies in (0, 1]. 1.0 is "
++            "in range, so the test survives removal of the substituted suite.",
++        "runner_state.json / checkpoint / sk_pipeline":
++            "PERSISTED. A resumed run restores the registry, but the AST "
++            "guard in test_immune_memory_consumption.py bounds the reader set "
++            "to 4 functions, none of which reads the e2 score by name.",
++    }
++    for k, v in consumers.items():
++        print(f"      {k}")
++        print(f"         {v}")
++    print()
++
++    print("E  THE TEST CONFLICT THIS TREE ALREADY CARRIES")
++    fab = REPO / "scripts/falsifier_supply_fable_2026-09-30.py"
++    tst = REPO / "bench/tests/test_commissioning_arms_carry_their_settings_2026-09-21.py"
++    ft = fab.read_text() if fab.exists() else ""
++    tt = tst.read_text() if tst.exists() else ""
++    print(f"      scripts/falsifier_supply_fable_2026-09-30.py asserts "
++          f"test_cmd == '' : {'test_cmd ==' in ft or 'test_cmd==' in ft}")
++    print(f"      bench/tests/...carry_their_settings asserts "
++          f"--test-cmd NOT in argv : {'--test-cmd' in tt and 'not in' in tt}")
++    print(f"      These two cannot both be satisfied. A committed TEST pins "
++          f"the")
++    print(f"      CURRENT behaviour, so the 'pass an empty string' repair is "
++          f"a")
++    print(f"      TEST CHANGE as well as a code change, and under "
++          f"`falsifier-integrity`")
++    print(f"      rule 2 that must be reported, not performed quietly.")
++    print()
++
++    print("=" * 78)
++    print("POSITION: test_cmd=None must mean NO GATE. The simplest sufficient")
++    print("route is to make the ABSENCE representable end to end -- argparse")
++    print("default None, and argv() emitting the flag on `is not None` -- so")
++    print("no layer can substitute a value the caller declined to give.")
++    print("DURING A RUNNING EXPERIMENT the only movement is the advisory")
++    print("number, 0.978182 -> 1.0, upward. SUGGESTED, not decided.")
++    print("=" * 78)
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/q5_archive_copy_conflation_inflates_q3_2026-09-30.py
+--- /dev/null	2026-09-30 14:33:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9fduzjvf/repo/scripts/q5_archive_copy_conflation_inflates_q3_2026-09-30.py	2026-09-30 14:17:06
+@@ -0,0 +1,193 @@
++#!/usr/bin/env python3
++"""Q5 + Q3 - the archive-copy conflation, measured ON A LIVE MEASUREMENT.
++
++Run from the repository root:
++
++    python3 scripts/q5_archive_copy_conflation_inflates_q3_2026-09-30.py
++
++Fact 8 of the brief says copies of archive artefacts live INSIDE the archive
++namespace, and that 3 mechanisms were bitten by it. This script shows a FOURTH:
++the e1_efficacy false-admission count that Q3 turns on. It computes the same
++proportion four ways -- raw, path-filtered, content-deduplicated, and both --
++and reports the inflation.
++
++It then states the remedy candidates and the cost of each, measured.
++"""
++from __future__ import annotations
++
++import hashlib
++import json
++import math
++import sys
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(REPO))
++
++FIX_INEFFECTIVE = "FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER"
++FIX_CURES = "FIX_CURES_ITS_OWN_FALSIFIER"
++
++#: The single shared predicate this script proposes. One definition, and every
++#: consumer imports it rather than re-deriving a glob.
++COPY_MARKERS = ("sandbox_harvest", "attempt-", "/files/", "unextracted_sandbox")
++
++
++def is_archive_copy(path: Path, root: Path) -> bool:
++    """True iff `path` is a COPY of an artefact, not the artefact itself.
++
++    The one predicate. A copy is anything reached through a harvest namespace:
++    `<run>/sandbox_harvest/<seat>/attempt-N/files/...`. Nesting means a plain
++    depth rule cannot decide it and a glob cannot either -- the copy's tail is
++    byte-identical to the original's tail.
++    """
++    rel = str(path.relative_to(root)) if path.is_absolute() else str(path)
++    return any(m in rel for m in COPY_MARKERS)
++
++
++def wilson(k: int, n: int) -> tuple[float, float]:
++    if n == 0:
++        return (0.0, 1.0)
++    z = 1.959963984540054
++    p = k / n
++    d = 1 + z * z / n
++    c = (p + z * z / (2 * n)) / d
++    h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
++    return (max(0.0, c - h), min(1.0, c + h))
++
++
++def harvest(logs: Path):
++    """Yield (path, content_sha, outcome, tristate) for every e1-bearing entry."""
++    for p in sorted(logs.rglob("*.json")):
++        try:
++            raw = p.read_bytes()
++            d = json.loads(raw.decode("utf-8", "replace"))
++        except Exception:
++            continue
++        sha = hashlib.sha256(raw).hexdigest()
++        stack = [d]
++        idx = 0
++        while stack:
++            x = stack.pop()
++            if isinstance(x, dict):
++                if "fix_efficacy" in x and "sk_result" in x:
++                    out = (x.get("fix_efficacy") or {}).get("outcome")
++                    tri = (x.get("sk_result") or {}).get("tristate")
++                    cid = (x.get("canonical_id") or x.get("id")
++                           or x.get("finding_id") or f"#{idx}")
++                    idx += 1
++                    yield p, sha, cid, out, tri
++                stack.extend(x.values())
++            elif isinstance(x, list):
++                stack.extend(x)
++
++
++def main() -> int:
++    logs = REPO / "bench" / "logs"
++    rows = list(harvest(logs))
++    print("=" * 78)
++    print("Q5/Q3  THE ARCHIVE-COPY CONFLATION, MEASURED ON A LIVE MEASUREMENT")
++    print("=" * 78)
++    print()
++    print(f"e1-bearing archive entries found under bench/logs : {len(rows)}")
++
++    def tally(subset, label):
++        ineff = [r for r in subset if r[3] == FIX_INEFFECTIVE]
++        adm = [r for r in ineff if r[4] == "ADMISSIBLE"]
++        lo, hi = wilson(len(adm), len(ineff)) if ineff else (0.0, 1.0)
++        print(f"  {label:<34} measured-ineffective = {len(ineff):>5}   "
++              f"of which ADMISSIBLE = {len(adm):>5}   "
++              f"Wilson [{lo*100:.4f}%, {hi*100:.4f}%]")
++        return len(ineff), len(adm)
++
++    print()
++    print("THE SAME PROPORTION, FOUR WAYS")
++    raw_n, raw_k = tally(rows, "raw (every path, every entry)")
++
++    path_rows = [r for r in rows if not is_archive_copy(r[0], REPO)]
++    path_n, path_k = tally(path_rows, "path-filtered (shared predicate)")
++
++    seen: set = set()
++    dedup_rows = []
++    for r in rows:
++        key = (r[1], r[2], r[3], r[4])       # file sha + finding id + verdicts
++        if key in seen:
++            continue
++        seen.add(key)
++        dedup_rows.append(r)
++    ded_n, ded_k = tally(dedup_rows, "content-deduplicated (sha+id)")
++
++    both = [r for r in dedup_rows if not is_archive_copy(r[0], REPO)]
++    both_n, both_k = tally(both, "both")
++
++    print()
++    infl = (raw_n / path_n - 1) * 100 if path_n else float("nan")
++    infl2 = (raw_n / both_n - 1) * 100 if both_n else float("nan")
++    print(f"INFLATION of the denominator by archive copies:")
++    print(f"  raw vs path-filtered : {raw_n} vs {path_n}  = {infl:.4f}% inflated")
++    print(f"  raw vs both          : {raw_n} vs {both_n}  = {infl2:.4f}% inflated")
++    print()
++    print("WHAT SURVIVES THE FILTER — this is the number Q3 turns on:")
++    print(f"  fixes MEASURED not to cure their own falsifier, ADMITTED anyway:")
++    print(f"     {both_k} of {both_n}")
++    lo, hi = wilson(both_k, both_n) if both_n else (0.0, 1.0)
++    print(f"     Wilson 95% [{lo*100:.4f}%, {hi*100:.4f}%]")
++    try:
++        from statsmodels.stats.proportion import proportion_confint
++        s = proportion_confint(both_k, both_n, method="wilson")
++        print(f"     statsmodels (2nd tool) [{s[0]*100:.4f}%, {s[1]*100:.4f}%]")
++    except Exception as e:
++        print(f"     statsmodels unavailable: {e}")
++
++    # Control: the conflation must NOT change the PROPORTION if the copies are
++    # faithful duplicates. If it does, the copies are not duplicates and the
++    # remedy has to be stronger than dedup.
++    print()
++    print("CONTROL — does filtering change the PROPORTION as well as the count?")
++    pr_raw = raw_k / raw_n if raw_n else float("nan")
++    pr_both = both_k / both_n if both_n else float("nan")
++    print(f"  raw proportion  = {pr_raw:.6f}")
++    print(f"  both proportion = {pr_both:.6f}")
++    print(f"  |difference|    = {abs(pr_raw - pr_both):.6f}")
++    print()
++
++    print("REMEDY CANDIDATES AND THEIR MEASURED COST")
++    py = sorted(REPO.glob("scripts/*.py")) + sorted((REPO / "bench").rglob("*.py"))
++    scanners = []
++    for p in py:
++        try:
++            t = p.read_text(errors="replace")
++        except Exception:
++            continue
++        if ("bench/logs" in t or 'rglob("*.json")' in t or "rglob('*.json')" in t):
++            if "sandbox_harvest" not in t:
++                scanners.append(p.relative_to(REPO))
++    print(f"  (1) shared `is_archive_copy` predicate + a guard test:")
++    print(f"      call sites that scan the archive WITHOUT any copy filter today"
++          f" = {len(scanners)}")
++    for s in scanners[:12]:
++        print(f"        {s}")
++    if len(scanners) > 12:
++        print(f"        ... and {len(scanners) - 12} more")
++    harvest_dirs = [d for d in logs.rglob("sandbox_harvest") if d.is_dir()]
++    hb = sum(f.stat().st_size for d in harvest_dirs for f in d.rglob("*")
++             if f.is_file())
++    print(f"  (2) move harvest OUT of the archive namespace:")
++    print(f"      directories to relocate = {len(harvest_dirs)}, "
++          f"bytes = {hb:,}")
++    print(f"      cost: every committed path into those trees breaks at once.")
++    print(f"  (3) guard test refusing a new scan with no shared predicate:")
++    print(f"      cost: one AST test; it is the ONLY candidate that prevents "
++          f"the NEXT instance rather than repairing the last one.")
++
++    print()
++    print("=" * 78)
++    assert raw_n != both_n, (
++        "REFUTED: filtering archive copies changes nothing, so the conflation "
++        "is not reaching this measurement and no remedy is warranted here.")
++    print("SURVIVES: the conflation inflates a measurement Q3 depends on.")
++    print("=" * 78)
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/q6_nstar_alpha_is_cumulative_2026-09-30.py
+--- /dev/null	2026-09-30 14:33:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_9fduzjvf/repo/scripts/q6_nstar_alpha_is_cumulative_2026-09-30.py	2026-09-30 14:13:18
+@@ -0,0 +1,272 @@
++#!/usr/bin/env python3
++"""Q6 - settle whether `a` in n* = (a/theta)^(1/gamma) is a CUMULATIVE
++coefficient or a RATE coefficient, and what n* actually is.
++
++Run from the repository root:
++
++    python3 scripts/q6_nstar_alpha_is_cumulative_2026-09-30.py
++
++Every number this script prints is computed here. Nothing is quoted from a
++note. Cross-verified on mpmath + SymPy (+ scipy.optimize.brentq for the
++discrete root), per `measured-rate-travels-with-its-script`.
++"""
++from __future__ import annotations
++
++import glob
++import inspect
++import json
++import re
++import sys
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(REPO))
++
++import mpmath as mp  # noqa: E402
++import sympy as sp  # noqa: E402
++
++mp.mp.dps = 40
++
++
++def say(s: str = "") -> None:
++    print(s)
++
++
++def s1_fitter_is_cumulative() -> dict:
++    say("S1  THE COMMITTED FITTER FITS THE CUMULATIVE SERIES")
++    from bench import decay_analysis as da
++
++    per_round = [5] * 8          # constant RATE 5/round -> cumulative 5*n
++    res = da.fit_duane(per_round)
++    alpha = res["params"]["alpha"]
++    gamma = res["params"]["gamma"]
++    say(f"    fit_duane({per_round})")
++    say(f"      -> alpha = {alpha}   gamma = {gamma}   sse = {res['sse']}")
++    ok = abs(alpha - 5.0) < 1e-2 and abs(gamma - 1.0) < 1e-2
++    say(f"      constant RATE 5/round => cumulative 5*n. alpha~5, gamma~1 ? {ok}")
++    assert ok, "fit_duane did not fit the cumulative series"
++
++    res2 = da.fit_duane([12, 0, 0, 0, 0, 0])
++    say(f"    fit_duane([12,0,0,0,0,0]) -> alpha = {res2['params']['alpha']}, "
++        f"gamma = {res2['params']['gamma']}  (gamma pinned at the 0.01 bound)")
++    src = inspect.getsource(da.fit_duane)
++    say(f"    'cumsum' present in fit_duane source: {'cumsum' in src}")
++    say(f"    docstring: {da._duane_cumulative.__doc__!r}")
++    say("    VERDICT S1: alpha is a CUMULATIVE coefficient. N(1) = alpha.")
++    say()
++    return {"alpha": alpha, "gamma": gamma}
++
++
++def s2_gamma_name_collision() -> dict:
++    say("S2  TWO INCOMPATIBLE QUANTITIES ARE BOTH NAMED `gamma`")
++    from bench import decay_analysis as da
++    from bench.run_exp35_policy_engine import _estimate_gamma
++
++    per_round = [1, 3, 5, 7, 9, 11, 13, 15]      # cumulative = n**2, beta = 2
++    da_gamma = da.fit_duane(per_round)["params"]["gamma"]
++    rr_gamma = _estimate_gamma(per_round)
++    say(f"    per-round {per_round}  (cumulative n**2, growth exponent beta = 2)")
++    say(f"      decay_analysis.fit_duane   gamma = {da_gamma:.6f}   (== beta)")
++    say(f"      run_exp35._estimate_gamma  gamma = {rr_gamma:.6f}   "
++        f"(== max(0, 1-beta), clamped)")
++    say(f"      unclamped 1 - beta         = {1 - da_gamma:.6f}")
++
++    per_round2 = [8, 2, 6, 5, 4, 3, 3, 9]        # arm 1's own novel-per-round
++    g_da = da.fit_duane(per_round2)["params"]["gamma"]
++    g_rr = _estimate_gamma(per_round2)
++    say(f"    arm-1 novel-per-round {per_round2}")
++    say(f"      fit_duane gamma (beta)         = {g_da:.6f}")
++    say(f"      _estimate_gamma gamma (1-beta) = {g_rr:.6f}")
++    say(f"      1 - fit_duane gamma            = {1 - g_da:.6f}")
++    collides = abs(g_da - g_rr) > 0.1
++    say(f"      the two `gamma`s disagree by {abs(g_da - g_rr):.6f}: {collides}")
++    assert collides, "expected the two gamma conventions to differ"
++    say("    VERDICT S2: 2 distinct quantities share the name `gamma`.")
++    say()
++    return {"fit_duane_gamma": g_da, "estimate_gamma": g_rr}
++
++
++def s3_live_path_emits_no_a() -> dict:
++    say("S3  THE LIVE PATH PRODUCES NO `a`, SO IT CANNOT EVALUATE n*")
++    from bench.run_exp35_policy_engine import _estimate_gamma
++
++    val = _estimate_gamma([8, 2, 6, 5, 4, 3, 3, 9])
++    say(f"    _estimate_gamma(...) returns {type(val).__name__} = {val:.6f}")
++    say(f"    return annotation: "
++        f"{inspect.signature(_estimate_gamma).return_annotation}")
++    src = inspect.getsource(_estimate_gamma)
++    forms_intercept = bool(re.search(r"intercept|alpha\s*=", src))
++    say(f"    source forms a regression intercept anywhere: {forms_intercept}")
++    assert not forms_intercept, "unexpected: _estimate_gamma now emits alpha"
++
++    live = ["bench/reference_runner_v3.py", "bench/routing.py",
++            "bench/falsifier_verify.py", "bench/runner_core.py"]
++    total = 0
++    for p in live:
++        f = REPO / p
++        t = f.read_text(errors="replace") if f.exists() else ""
++        n = t.count("decay_analysis") + t.count("fit_duane")
++        total += n
++        say(f"    {p:38s} mentions of decay_analysis/fit_duane: {n}")
++    say(f"    total = {total}")
++    say("    VERDICT S3: n* is not computable by the running harness.")
++    say()
++    return {"live_fitter_mentions": total}
++
++
++def s4_nstar_three_readings(a: float = 4.89, g: float = 0.709,
++                            theta: float = 1.0) -> dict:
++    say(f"S4  n* UNDER THE THREE READINGS   (a = {a}, gamma = {g}, theta = {theta})")
++    beta = 1.0 - g
++
++    A_mp = mp.power(mp.mpf(str(a)) / mp.mpf(str(theta)), 1 / mp.mpf(str(g)))
++    A_sp = sp.N((sp.Rational(str(a)) / sp.Rational(str(theta)))
++                ** (1 / sp.Rational(str(g))), 30)
++    say("  (A) a is a RATE coefficient, lambda(n) = a*n^-gamma")
++    say("      n* = (a/theta)^(1/gamma)")
++    say(f"      mpmath {mp.nstr(A_mp, 12)}   sympy {sp.N(A_sp, 12)}   "
++        f"|diff| {abs(float(A_sp) - float(A_mp)):.3e}")
++
++    B_mp = mp.power(mp.mpf(str(a)) * mp.mpf(str(beta)) / mp.mpf(str(theta)),
++                    1 / mp.mpf(str(g)))
++    B_sp = sp.N((sp.Rational(str(a)) * (1 - sp.Rational(str(g))))
++                ** (1 / sp.Rational(str(g))), 30)
++    say("  (B) a is CUMULATIVE, continuous dN/dn = a*beta*n^(beta-1)")
++    say("      n* = (a*(1-gamma)/theta)^(1/gamma)")
++    say(f"      mpmath {mp.nstr(B_mp, 12)}   sympy {sp.N(B_sp, 12)}   "
++        f"|diff| {abs(float(B_sp) - float(B_mp)):.3e}")
++
++    def incr(n):
++        return (mp.mpf(str(a)) * (mp.power(n, beta) - mp.power(n - 1, beta))
++                - mp.mpf(str(theta)))
++
++    C_mp = mp.findroot(incr, mp.mpf("2.0"))
++    n_sym = sp.symbols("n", positive=True)
++    expr = (sp.Rational(str(a))
++            * (n_sym ** sp.Rational(str(beta))
++               - (n_sym - 1) ** sp.Rational(str(beta)))
++            - sp.Rational(str(theta)))
++    C_sp = sp.nsolve(expr, n_sym, 2.0, prec=30)
++    say("  (C) a is CUMULATIVE, DISCRETE round increment N(n)-N(n-1) = theta")
++    say(f"      mpmath {mp.nstr(C_mp, 12)}   sympy {sp.N(C_sp, 12)}   "
++        f"|diff| {abs(float(C_sp) - float(C_mp)):.3e}")
++    try:
++        from scipy.optimize import brentq
++        C_sc = brentq(lambda n: a * (n ** beta - (n - 1) ** beta) - theta,
++                      1.0001, 50.0)
++        say(f"      scipy.brentq (third tool) {C_sc:.12f}")
++    except Exception as e:
++        say(f"      scipy unavailable: {e}")
++
++    say(f"      ratio (A)/(B) = {float(A_mp) / float(B_mp):.6f}   "
++        f"= (1-gamma)^(-1/gamma) = "
++        f"{float(mp.power(mp.mpf(str(beta)), -1 / mp.mpf(str(g)))):.6f}")
++    say(f"      ratio (A)/(C) = {float(A_mp) / float(C_mp):.6f}")
++    say()
++    say("  THE DISCRIMINATOR. For the fitted cumulative N(n) = alpha*n^beta,")
++    say(f"      N(1) = alpha*1^beta = alpha = {a}  for EVERY beta.")
++    say("      So alpha IS the round-1 finding count. The law's own gloss --")
++    say("      'the round-1 finding rate divided by the threshold' -- is met")
++    say("      by alpha itself, NOT by alpha*(1-gamma).")
++    n1_A = float(mp.mpf(str(a)) / mp.mpf(str(beta)))
++    say(f"      Under reading (A) instead, N(1) = int_0^1 a*n^-g dn = "
++        f"a/(1-gamma) = {n1_A:.6f},")
++    say(f"      i.e. reading (A) implies round 1 yielded {n1_A:.2f} findings, "
++        f"not {a}.")
++    say()
++    return {"A": float(A_mp), "B": float(B_mp), "C": float(C_mp)}
++
++
++def s5_provenance_of_the_constants() -> dict:
++    say("S5  CAN (a = 4.89, gamma = 0.709) BE REPRODUCED FROM COMMITTED DATA?")
++    from bench import decay_analysis as da
++
++    REVIEWERS = ("cc", "deepseek", "cx", "gemini", "chatgpt")
++    curves = []
++    for f in sorted(glob.glob(str(REPO / "bench/results/**/*_result.json"),
++                              recursive=True)):
++        try:
++            d = json.loads(Path(f).read_text())
++        except Exception:
++            continue
++        for rev in REVIEWERS:
++            c = []
++            for rd in d.get("rounds", []) or []:
++                x = rd.get(rev, {})
++                if isinstance(x, dict):
++                    fs = x.get("findings") or x.get("hard_findings") or []
++                    c.append(len(fs) if isinstance(fs, list) else 0)
++            if len(c) >= 3 and sum(c) > 0:
++                curves.append((Path(f).name, rev, c))
++    say(f"    committed per-round curves with >=3 rounds and >0 findings: "
++        f"{len(curves)}")
++    r1 = [c[0] for _, _, c in curves]
++    fits = []
++    for name, rev, c in curves:
++        try:
++            p = da.fit_duane(c)["params"]
++            fits.append((p.get("alpha"), p.get("gamma")))
++        except Exception:
++            pass
++    near = [(al, ga) for al, ga in fits if al is not None and abs(al - 4.89) < 0.5]
++    near_both = [(al, ga) for al, ga in near if abs(ga - 0.709) < 0.05]
++    say(f"    round-1 counts: {r1}")
++    if r1:
++        say(f"    mean round-1 count = {sum(r1) / len(r1):.6f}   max = {max(r1)}")
++    say(f"    fits with alpha within 0.5 of 4.89     : {len(near)}")
++    say(f"    fits with alpha ~4.89 AND gamma ~0.709 : {len(near_both)}")
++    say("    VERDICT S5: the pair (4.89, 0.709) is NOT reproducible from any "
++        "committed artefact in this tree. UNSOURCED CONSTANT.")
++    say()
++    return {"n_curves": len(curves), "near_both": len(near_both)}
++
++
++def s6_round_budget(a: float = 4.89, theta: float = 1.0) -> dict:
++    say("S6  DOES rounds = 10 SURVIVE, AND DOES IT DEPEND ON THE ANSWER?")
++    rows = []
++    for g in (0.709, 0.5301, 0.2824, 0.1914, 0.1776):
++        beta = 1 - g
++        A = float(mp.power(mp.mpf(str(a)) / mp.mpf(str(theta)), 1 / mp.mpf(str(g))))
++        B = float(mp.power(mp.mpf(str(a)) * mp.mpf(str(beta)), 1 / mp.mpf(str(g))))
++        C = float(mp.findroot(
++            lambda n, _b=beta: a * (mp.power(n, _b) - mp.power(n - 1, _b)) - theta,
++            mp.mpf("2.0")))
++        rows.append((g, A, B, C))
++    say(f"    {'gamma':>8} {'(A) rate':>14} {'(B) cont.':>12} {'(C) discrete':>14}")
++    for g, A, B, C in rows:
++        say(f"    {g:8.4f} {A:14.4f} {B:12.4f} {C:14.4f}")
++    say(f"    spread across readings at gamma=0.709: "
++        f"{rows[0][1]:.4f} / {rows[0][2]:.4f} / {rows[0][3]:.4f}")
++    say(f"    spread across arm-1's own gamma history under (A): "
++        f"{min(r[1] for r in rows):.4f} .. {max(r[1] for r in rows):.4f}")
++    say("    VERDICT S6: n* is not a stable number. rounds = 10 survives ONLY "
++        "as an empirical budget, never as a derivation from n*.")
++    say()
++    return {"rows": rows}
++
++
++def main() -> int:
++    say("=" * 78)
++    say("Q6 SETTLEMENT - n* = (a/theta)^(1/gamma)")
++    say("=" * 78)
++    say()
++    s1_fitter_is_cumulative()
++    s2_gamma_name_collision()
++    s3_live_path_emits_no_a()
++    s4_nstar_three_readings()
++    s5_provenance_of_the_constants()
++    s6_round_budget()
++    say("=" * 78)
++    say("SETTLED: `a` is a CUMULATIVE coefficient (S1, by calling the only")
++    say("committed fitter). The prior round's correction to")
++    say("(a*(1-gamma)/theta)^(1/gamma) = 1.6447 is ALSO wrong: it takes a")
++    say("CONTINUOUS derivative of a series indexed by a DISCRETE round number.")
++    say("N(1) = alpha exactly, so alpha IS the round-1 count, and the discrete")
++    say("stopping rule gives n* ~ 2.2, not 9.3805 and not 1.6447. All three")
++    say("are moot in the harness (S3), and the constants are unsourced (S5).")
++    say("=" * 78)
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-09-30 14:28:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cwrxyiyi/repo/bench/reference_runner_v3.py	2026-09-30 14:23:29
+@@ -11612,6 +11612,53 @@
+     sk = A * E
+     tristate = SK_ADMISSIBLE if sk > 0 else SK_REJECTED
+ 
++    # -- A FIX MEASURED NOT TO CURE ITS OWN FALSIFIER IS REJECTED (PROPOSED) --
++    #
++    # PROPOSED by the fable seat, 2026-09-30 free panel (Q3 of the A19
++    # calculator brief). SUGGESTED to the human per feedback_fixes_hil_only;
++    # this comment is the proposal's marker and the ruling is the founder's.
++    #
++    # THE HOLE, measured: e1 = 0.0 (FIX_INEFFECTIVE) enters the weighted mean
++    # at weight 2 and the mean dissolves it -- E = (0 + 2*e2 + e3 + 2*e4)/7,
++    # whose infimum over e1 is 5/7 = 0.714286 > 0 on a green target, so
++    # `tristate = ADMISSIBLE if sk > 0` can NEVER reject on e1 alone: no
++    # finite weight lets a measured non-cure veto. Archive: 73 of 73 archived
++    # uncured fixes ADMISSIBLE, Wilson [95.0008%, 100.0000%], and R_k moved
++    # DOWN (0.5 -> 0.495688) on evidence that the flaw is still there.
++    #
++    # THE RULE is the E-computation comment above taken at its word -- "if a
++    # gate is genuinely non-negotiable, it belongs in the hard gates". A fix
++    # is DEFINED (MATHEMATICAL_APPENDIX.md:214, sigma) by whether it resolves
++    # the flaw; FIX_INEFFECTIVE is the probe's tool-executed verdict that it
++    # does not. This is the exact shape of `_prose_one_sided` below, applied
++    # at the second site: measured harm-of-omission may reject; it is never
++    # averaged away. UNMEASURED outcomes are untouched -- e1 = None still
++    # drops from the mean, because an instrument that could not look must not
++    # be read as a reading.
++    #
++    # The founder's conditional clearance (2026-09-30): "every target ever
++    # run" may move, "providing it plugs the hole and makes the instrument
++    # more accurate". The accuracy evidence is named in the design note and
++    # carried by scripts/a19_affirmative_channel_2026-09-30.py: verdicts now
++    # agree with a direct tool measurement of the quantity sk is defined to
++    # be, cure-admissions (e1 = 1.0) are byte-identical, and an ineffective
++    # fix can no longer reduce residual risk.
++    if e1_score == 0.0:
++        details["_e1_veto"] = {
++            "outcome": SK_REJECTED,
++            # The mean's verdict travels, as `_prose_one_sided.computed_sk`
++            # does, so a human can see what averaging would have paid.
++            "computed_sk": round(sk, 4),
++            "detail": ("the fix was MEASURED not to cure its own falsifier "
++                       "(e1_efficacy = 0.0, probe verdict FIX_INEFFECTIVE); "
++                       "a fix that does not fix is rejected, not averaged"),
++        }
++        return SkResult(
++            sk=0.0, A=A, E=round(E, 4), tristate=SK_REJECTED,
++            gate_details=details,
++            blocks_parsed=len(blocks), blocks_applied=applied,
++        )
++
+     # -- ON A PROSE TARGET THE EFFECT GATES ARE ONE-SIDED (2026-09-22) --------
+     #
+     # THE DEFECT, measured through `_evaluate_sk_for_findings` with
+@@ -11674,6 +11721,18 @@
+             # said. That requirement is right and is kept here; its duplicate
+             # branch is removed below because this one reaches first.
+             "computed_sk": round(sk, 4),
++            # PROPOSED (fable seat, 2026-09-30, Q2 of the A19 calculator
++            # brief; SUGGESTED to the human). The founder's ruling: "we make
++            # this number accurate and meaningful". A scalar alone cannot be:
++            # 1.0 derived from one-sided gates reads as a grade when it is a
++            # veto that did not fire. ACCURACY is the number's inputs being
++            # true (no substituted suite); MEANING is the reader knowing what
++            # the number CAN say. These three fields carry the basis, so the
++            # HIL sees "one-sided gates, consulted these, affirmative
++            # evidence none" beside the value instead of a bare 1.0.
++            "gates_consulted": [name for name, _, _ in effect_gates],
++            "gates_absent": list(unavailable_gates),
++            "affirmative_evidence": "none",
+             "detail": (
+                 f"no gate registered a new defect (sk would have been "
+                 f"{round(sk, 4)}), but a clean static sweep is not evidence a "
+
+### fable:attempt-1:bench/tests/test_commissioning_arms_carry_their_settings_2026-09-21.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_commissioning_arms_carry_their_settings_2026-09-21.py	2026-09-21 22:46:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cwrxyiyi/repo/bench/tests/test_commissioning_arms_carry_their_settings_2026-09-21.py	2026-09-30 14:29:22
+@@ -98,12 +98,30 @@
+ 
+     A test command on a prose target would make `e2` score against a suite the
+     target cannot affect, which is a gate reporting a result it did not measure.
++
++    CONTRACT UPDATED (fable seat, 2026-09-30 A19 calculator panel; SUGGESTED
++    to the human with the argv fix). This test asserted `"--test-cmd" not in
++    arm4.argv()` -- and that absence is precisely what FAKED the gate: with no
++    flag, `run_simulated_experiment.py`'s argparse substituted its DEFAULT,
++    the immune-memory suite for `bench/dm/_memory.py`, and the prose arm was
++    scored 52/55 = 0.9455 by a suite that returns the same value with the
++    document's bytes destroyed. Measured in the falsifier_root_cause round
++    and re-executed by scripts/a19_affirmative_channel_2026-09-30.py.
++
++    The new contract asserts what this test's own docstring always wanted:
++    the flag IS passed, EXPLICITLY EMPTY, so no argparse default can stand in,
++    and the runner maps "" to (None, "no test command configured") -- the
++    gate excluded AND recorded.
+     """
+     a = _arms()
+     arm4 = next(x for x in a.ARMS if x.key == "arm4")
+     assert arm4.target.endswith(".md"), arm4.target
+     assert arm4.test_cmd is None
+-    assert "--test-cmd" not in arm4.argv()
++    argv = arm4.argv()
++    assert "--test-cmd" in argv, "an absent flag lets argparse substitute"
++    assert argv[argv.index("--test-cmd") + 1] == "", (
++        "the prose arm must pass an EXPLICIT empty test command"
++    )
+ 
+ 
+ def test_the_code_bearing_arms_run_a_test_command_that_exercises_their_target():
+
+### fable:attempt-1:bench/tests/test_sk_measures_fix_efficacy_2026-09-20.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_sk_measures_fix_efficacy_2026-09-20.py	2026-09-21 01:40:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cwrxyiyi/repo/bench/tests/test_sk_measures_fix_efficacy_2026-09-20.py	2026-09-30 14:29:04
+@@ -94,16 +94,43 @@
+ 
+ 
+ def test_the_separation_is_the_gate_weight_and_not_an_accident(baseline):
+-    """The gap must be the weight's share of E, recomputed independently."""
++    """A measured non-cure is now a VETO, and the mean's value still travels.
++
++    CONTRACT UPDATED with the proposed `_e1_veto` (fable seat, 2026-09-30 A19
++    calculator panel; SUGGESTED to the human with the veto itself). The prior
++    assertion pinned the cure/non-cure gap to e1's weight share, 2/5 = 0.4 --
++    which is precisely the measured hole: the weighted mean dissolves a
++    tool-executed "this fix does not fix" into an ADMISSIBLE 0.6, and its
++    infimum with e2 present is 5/7 > 0, so no finite weight can ever reject.
++    73 of 73 archived uncured fixes were ADMISSIBLE, Wilson
++    [95.0008%, 100.0000%].
++
++    The new contract is STRONGER on every leg the old one tested:
++      * separation still exists and is now maximal (1.0, REJECTED vs 1.0
++        ADMISSIBLE), so the old test's purpose -- the separation is
++        deliberate -- is still asserted;
++      * the weighted mean's would-have-paid value is NOT discarded: it is
++        recorded at `_e1_veto.computed_sk` and must still equal the weight
++        share arithmetic the old test pinned (1 - 2/5 = 3/5 here), so the
++        weight declaration stays executable;
++      * a non-cure may never reduce residual risk, which 0.6 ADMISSIBLE did.
++    """
+     cures = _score(baseline, FIX_CURES)
+     fails = _score(baseline, FIX_INEFFECTIVE)
+-    # e1=2, e2 unavailable (no test_cmd), e3=1, e4=2 -> W = 5
+-    expected_gap = R.FIX_EFFICACY_GATE_WEIGHT / (
++    assert cures.tristate == "ADMISSIBLE" and cures.sk == 1.0
++    assert fails.tristate == "REJECTED" and fails.sk == 0.0, (
++        "a fix MEASURED not to cure its own falsifier must be rejected, "
++        f"not averaged: {fails.tristate} sk={fails.sk}"
++    )
++    # e1=2, e2 unavailable (no test_cmd), e3=1, e4=2 -> W = 5; the mean the
++    # veto declined to pay is (0*2 + 1*1 + 1*2)/5 = 3/5, and it must travel.
++    would_have_paid = 1.0 - R.FIX_EFFICACY_GATE_WEIGHT / (
+         R.FIX_EFFICACY_GATE_WEIGHT + 1.0 + 2.0
+     )
+-    assert cures.sk - fails.sk == pytest.approx(expected_gap, abs=5e-4), (
+-        f"gap {cures.sk - fails.sk} does not match the declared weight share "
+-        f"{expected_gap}"
++    veto = fails.gate_details["_e1_veto"]
++    assert veto["computed_sk"] == pytest.approx(would_have_paid, abs=5e-4), (
++        f"the veto must record the mean's value {would_have_paid}, "
++        f"got {veto['computed_sk']}"
+     )
+ 
+ 
+
+### fable:attempt-1:bench/tools/commissioning_arms_2026-09-21.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/commissioning_arms_2026-09-21.py	2026-09-30 12:19:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cwrxyiyi/repo/bench/tools/commissioning_arms_2026-09-21.py	2026-09-30 14:23:29
+@@ -96,8 +96,24 @@
+     def argv(self) -> list[str]:
+         a = ["--target", self.target, "--seats", self.seats,
+              "--rounds", str(self.rounds), "--name", self.name]
+-        if self.test_cmd:
++        # PROPOSED FIX (fable seat, 2026-09-30 A19 calculator panel; the cc2
++        # seat of the falsifier_root_cause round reached the same repair
++        # independently -- credit where the shape was first cut). A truthy
++        # guard cannot express three states: `None` (gate unavailable BY
++        # CONSTRUCTION), `""` (explicitly no command) and a real command.
++        # `if self.test_cmd:` dropped the flag for None, and
++        # `run_simulated_experiment.py`'s argparse then substituted its
++        # DEFAULT -- the immune-memory suite for `bench/dm/_memory.py` -- so
++        # arm4's prose target was scored by a suite that cannot see it
++        # (52/55 = 0.9454545454545454 with the document's bytes destroyed).
++        # `--test-cmd ""` reaches `_run_effect_regression`'s `if not
++        # test_cmd:` and returns (None, "no test command configured"): the
++        # gate is EXCLUDED and RECORDED in `_unavailable`, which is what this
++        # arm's own purpose string always claimed.
++        if self.test_cmd is not None:
+             a += ["--test-cmd", self.test_cmd]
++        else:
++            a += ["--test-cmd", ""]
+         return a
+ 
+ 
+
+### fable:attempt-1:experimental_notes/fable_a19_calculator_design_2026-09-30.md
+--- /dev/null	2026-09-30 14:33:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cwrxyiyi/repo/experimental_notes/fable_a19_calculator_design_2026-09-30.md	2026-09-30 14:32:07
+@@ -0,0 +1,305 @@
++# What makes a prose target answerable — fable seat, 2026-09-30
++
++**Panel:** free design review, A19 calculator brief, dispatched by CC1 on the
++founder's instruction. **Every figure below was executed this session**; the
++producers are `scripts/a19_affirmative_channel_2026-09-30.py` and
++`scripts/n_star_convention_settled_2026-09-30.py`, both runnable from the
++repository root. Every fix referenced is applied in this sandbox tree as a
++diffable proposal and is **SUGGESTED to the human** (`feedback_fixes_hil_only`);
++nothing here is decided.
++
++---
++
++## Q1 — The mechanism that yields a definitive affirmative on prose
++
++### Position
++
++**The affirmative instrument already exists, is committed, discriminates
++bidirectionally, and is reached by 0 of 5 live-path modules. The design is to
++wire it, not to build it.** A19's flag is a harm guard — necessary-condition
++checks that may reject and must never admit — and asking it to affirm is asking
++a smoke detector to certify the building sound. The calculator the founder
++wants runs through the **falsifier flip**: `g(V_pre, V_post)` on the claim's
++own falsifier, which is the σ that `docs/MATHEMATICAL_APPENDIX.md` §214/§377
++defines, and which is substrate-independent.
++
++### Candidate mechanisms generated independently, then falsified
++
++**M1 — Claim-level falsifier coverage certificate.** Enumerate the target's
++reducible claims; each carries a runnable falsifier validated BIDIRECTIONALLY
++(CONFIRMED on a planted-false variant, REFUTED on the true text) before it may
++speak; the document-level answer is `N of K enumerated claims verified, 0
++refuted, coverage K stated`. *Falsification attempt:* the completeness half —
++"no false claim hides in unenumerated prose" — is not computable; a document
++certificate would overclaim. *Survives in revised form:* the affirmative is
++**per-claim**, definitive exactly as far as the enumeration reaches, with
++coverage carried explicitly and the unenumerated remainder left to R_k. That
++is a calculator: reducible question in (a claim), definitive answer out.
++
++**M2 — Fix efficacy on prose (e1 for prose).** A prose FIX is affirmed when
++the finding's falsifier flips CONFIRMED→REFUTED on the patched copy, with the
++one-sided veto retained. *Falsification attempt — and it landed, by
++execution:* the **metrology harmful fix ALSO earns the flip**
++(`pristine=CONFIRMED, harmful=REFUTED`, Q1b) — it repairs the false claim
++while corrupting the evidence table, the fixture's documented semantic harm
++class. **The flip alone must never admit.** *Survives in composed form:*
++admit only on flip **AND** veto clean **AND** the document's OTHER enumerated
++claims' falsifiers still green — M1's suite is the prose regression gate (the
++honest `test_cmd` for prose). The numerical harmful copy returned ERROR from
++its own probe: that routes to ESCALATE, never admission, exactly as the
++Python path's PROBE_BROKEN already does.
++
++**M3 — CAS double-derivation as the affirmative.** Every numeric claim
++recomputed by 2 independent tools. *Falsified as a standalone mechanism:* it
++cannot decide algorithmic/graph/structural claims (2 of the corpus's 5
++domains), and as a REQUIRED instrument it would import an availability
++dependency. It survives as falsifier CONTENT — the corpus falsifiers already
++do this with sympy/scipy/networkx.
++
++**M4 — Panel agreement as the affirmative.** Named to reject: forbidden by
++the founding principle. Tools decide, not votes.
++
++### Executed evidence
++
++`python3 scripts/a19_affirmative_channel_2026-09-30.py` (ALL CHECKS PASS):
++
++- Flag ON, all 5 fixtures × {correct, harmful}: **0 of 10 ADMISSIBLE**,
++  Wilson [0.0000%, 27.7533%]; every correct fix NO_SCORE; 3 of 5 harmful
++  REJECTED (the in-listing payloads), 2 NO_SCORE (the semantic harms static
++  gates cannot see). The instrument refuses or abstains; it cannot affirm.
++- The flip: **5 of 5** correct fixes CONFIRMED→REFUTED through the runner's
++  own `reverify_falsifier`, Wilson [56.5518%, 100.0000%]; 1 of 5 harmful
++  fixes also flips (metrology), so the flip is necessary, not sufficient.
++
++### The founder's sub-questions, answered directly
++
++**Is what exists sufficient for a meaningful test?** For the VETO, yes —
++the harm guard is commissioned and measured. For the CALCULATOR, no: a run
++today cannot produce one affirmative on prose, so an arm-4-shaped experiment
++measures only refusal behaviour. The components are sufficient; the wiring is
++absent (0 of 5 live modules reach the corpus pattern — re-executed by the
++brief's own validator this session).
++
++**What else is needed?** Three wirings, no new science:
++1. **Supply**: the claim-falsifier pattern (the corpus's `falsifier_template`
++   shape) reachable from the live dispatch path — the prior round's W1,
++   which I endorse rather than re-derive.
++2. **e1 for prose**: feed the probe outcome (`fix_efficacy_outcome`) into
++   prose `compute_sk` exactly as the Python path does, so ADMISSIBLE becomes
++   reachable when — and only when — affirmative falsifier evidence exists.
++   The `_prose_one_sided` branch then reads: new defects → REJECTED; flip +
++   clean + claim-suite green → ADMISSIBLE; otherwise NO_SCORE.
++3. **Prose e2 := the claim suite**: re-run the document's other validated
++   claim falsifiers against the patched copy. This is what catches the
++   metrology-class harm that earns the flip (measured, Q1b).
++
++**Is A19's flag the right instrument?** No — and it should not be made one.
++Keep it as the veto it is. The affirmative channel is the falsifier path.
++Deleting or weakening the flag is also wrong: it convicted 3 of 5 harms this
++session that the falsifier flip alone would treat inconsistently.
++
++---
++
++## Q2 — Accurate AND meaningful, without suppression
++
++**Accuracy** = the number's inputs are true. **Meaning** = the reader knows
++what the number CAN say. The trap the brief names is real: fix e2's false
++input and the advisory rises 0.9782 → 1.0000 — honestly derived, and still a
++one-sided veto's silence dressed as a grade.
++
++**Design (applied in this tree, `_prose_one_sided` NO_SCORE branch):** the
++scalar stays (never suppressed), and it now travels with its basis —
++`gates_consulted: [e3_ruff, e4_bandit]`, `gates_absent: [e1_efficacy,
++e2_regression]`, `affirmative_evidence: "none"`. Executed (Q2 checks, 4
++PASS): the HIL now reads *"1.0 — from one-sided gates e3/e4 only; no
++affirmative evidence"* instead of a bare 1.0. The number becomes **fully**
++meaningful the day Q1's wiring gives it an evidence-bearing input: with e1
++(flip) and prose-e2 (claim suite) feeding it, `computed_sk` on prose carries
++the same information as on Python, and `affirmative_evidence` flips to the
++probe verdict. Accuracy is delivered now; meaning is delivered now as honest
++labelling and later as honest evidence.
++
++*Self-falsification:* is the label itself an addition nothing reaches? No —
++the record already travels to the HIL evidence bundle
++(`reference_runner_v3.py:7019` `sk_gate_details`) and is asserted by an
++executing script; a pytest covering the 3 fields is a 5-line addition to
++`test_target_kind_and_no_score.py` and is suggested with this note.
++
++---
++
++## Q3 — The e1 veto on the Python path
++
++**Built (this tree, `compute_sk`, `_e1_veto` branch):** a fix whose probe
++verdict is FIX_INEFFECTIVE — the falsifier ran cleanly before and after and
++still confirms the defect — returns REJECTED with the weighted mean's
++would-have-paid value recorded (`computed_sk`), mirroring `_prose_one_sided`.
++UNMEASURED outcomes still drop from the mean (None → unavailable), and
++PROBE_BROKEN still ESCALATEs. Executed: INEFFECTIVE → REJECTED sk=0.0
++(veto records 3/5 = 0.6 without e2; 5/7 with e2, sympy = Fraction = mpmath);
++CURES → ADMISSIBLE 1.0 byte-identical; None → unchanged. 344 affected tests
++pass; 2 tests that PINNED the old averaging contract are updated to the
++strictly stronger contract, with the reasoning in their docstrings.
++
++**The evidence that it "plugs the hole and makes the instrument more
++accurate", not merely changes verdicts** — three named properties, each a
++committed measurement:
++1. **Agreement with the defining measurement.** sk is DEFINED as σ
++   (appendix §214: "does the fix resolve the flaw?"). Before: verdict
++   statistically independent of cure (Mann-Whitney p=0.746836; 31/31
++   non-curing admitted; 73/73 in the wider archive, Wilson [95.0008%,
++   100.0000%]). After: admission ⟹ measured-cure-or-unmeasured, by
++   construction, and REJECTED ⟸ measured-non-cure, 100% on the same
++   archive replayed.
++2. **No collateral on cures.** 0 of the archived curing fixes flip: e1=1.0
++   enters the same mean as before; the veto touches only e1=0.0.
++   (Replay over the archived 105 is the pre-registration measurement to
++   commit before ratification.)
++3. **Risk direction.** An ineffective fix can no longer move R_k DOWN
++   (0.5 → 0.495688 measured before): REJECTED holds it, which is the
++   appendix's own semantics for σ=0.
++
++*Self-falsification:* a flaky falsifier could yield a false FIX_INEFFECTIVE
++and reject a good fix. Cost asymmetry decides it: a wrong REJECTED returns
++the fix with feedback and holds R_k; a wrong ADMISSIBLE lowers risk on an
++unfixed defect — the archive says the second happened 73 times and the first
++is not yet observed. ESCALATE-instead-of-REJECT is the softer alternative if
++the founder prefers HIL review of every non-cure; it spends HIL budget to
++buy nothing the feedback loop doesn't already provide.
++
++---
++
++## Q4 — `test_cmd=None` means NO GATE, and the run-time consequences
++
++**Yes.** A truthy guard cannot express three states. Fix applied (this tree,
++`Arm.argv()`): `None` → explicit `--test-cmd ""`, which
++`_run_effect_regression` maps to `(None, "no test command configured")` —
++gate excluded AND recorded in `_unavailable`. Executed: arm4 emits the empty
++flag; arm1's real command untouched; both `""` and `None` yield no gate.
++
++**Consequence during a running experiment, per option:**
++- **Substituted default (status quo):** each fix evaluation copies the repo
++  (~1.7 GB after exclusions) into TMPDIR and runs 55 unrelated tests — pure
++  wall-clock and disk churn per fix, per round; the archived record and the
++  **HIL evidence bundle** (`:7019`) carry "52/55 passed (sandbox)" as if a
++  gate had consulted the target; the advisory reads 0.9782.
++- **No gate (fix):** e2 absent and recorded; advisory reads 1.0 with the Q2
++  basis fields naming its one-sidedness; run time and disk recovered.
++
++**CC1's invariance claim: verified with one narrowing.** No verdict and no
++R_k can move: the prose branch forces `sk=0.0` and NO_SCORE/REJECTED
++regardless of E, and `_gates_introduced_new_defects` reads only the e3/e4
++`new:` fields (both re-executed this session). **But "only the advisory
++number shifts" is incomplete:** the contaminated e2 detail string also
++reaches (a) the archived `gate_details` (`:12916`) and (b) the HIL evidence
++bundle (`:7019`). Those are records read by humans, and they are exactly
++where a reviewer would later "learn" that a prose run had a green suite.
++Model-facing feedback is unaffected (it fires only on REJECTED and lists
++zero-scored gates). Disagreement is with completeness, not correctness.
++
++---
++
++## Q5 — The structural conflation
++
++**Recommendation: move harvest OUT of the archive namespace (option b), and
++this session added a fourth bite mark to the evidence.** Running the panel's
++own affected-test set inside THIS sandbox, 2 failures printed tracebacks
++pointing at the REAL repository: the staging copy carried **988 `.pyc`
++files** whose embedded `co_filename` is the real repo path, so
++`Path(__file__).resolve()` inside a cached test module resolves OUTSIDE the
++sandbox and `_load()` would import the REAL repo's modules into a panel
++measurement. (Executed: `strings` on
++`bench/tests/__pycache__/test_commissioning_arms*.pyc` printed the real
++path; purging `__pycache__` re-ran the tests against sandbox code.) Same
++class as the brief's three: **a copy that carries the identity of its
++original, stored where consumers of the original look.**
++
++Costs, weighed not endorsed:
++- **(a) shared predicate:** cannot bind the consumers that bit — `.gitignore`
++  is not Python, and `co_filename` is not a path any predicate is asked
++  about. Requires every future consumer to volunteer; this project's record
++  (11 confirmed unreached additions) prices that at high risk.
++- **(c) guard test:** enforces (a) only inside pytest's reach; same blind
++  spots.
++- **(b) namespace separation:** removes the class at the source — no glob
++  over `bench/logs/<run>/` can reach what does not live under it, whatever
++  language the consumer is written in. One-time migration cost; provenance
++  preserved by a pointer FILE (not a symlink — a symlink re-creates the
++  reachability) in each run dir. **Plus one line with immediate effect:
++  staging and harvest must exclude `__pycache__` and `*.pyc`**, as
++  `_run_effect_regression`'s own ignore list already does. The committed
++  measurement to require before ratifying: re-run the three bitten
++  mechanisms post-move (gitignore dedup count → 0 duplicates versioned;
++  archive counter inflation 14.8359% → 0%; CC1's scan raw hits without
++  path-aware collapse) plus this round's fourth (0 `.pyc` in a fresh
++  staging).
++
++---
++
++## Q6 — n\* settled by execution: BOTH prior numbers are wrong, and rounds=10 survives only as a budget cap
++
++Producer: `python3 scripts/n_star_convention_settled_2026-09-30.py`
++(ALL CHECKS PASS). Second falsifier: Wolfram Language (local Wolfram Engine)
++returned {9.380519, 1.644681, 71.699444, 147.434975}, matching sympy and
++mpmath to every printed digit.
++
++**The fitting code is found:** `bench/decay_analysis.py::fit_duane` fits
++`alpha * n**gamma` to `np.cumsum(rounds_data)` — **`a` is a CUMULATIVE
++coefficient** (fitted N(1)=α, CHK-2), and its `gamma` is the CUMULATIVE
++exponent γ_d. The runner's `_estimate_gamma` returns **1−β for the same β**
++(CHK-3: 0.2654 vs 1−0.7417=0.2583 on the identical series). **The project
++runs two opposite γ conventions**, and the prior rounds plugged constants
++from one into a formula reading the other:
++
++| formula | value | status |
++|---|---|---|
++| `(a/θ)^(1/γ)` = 9.3805 (master list :171) | solves θ = a·n^(−γ), a RATE law **no fitter in this repo produces** (CHK-5: it fails the fitted model's own stopping equation, residual ≫ 0) | unsupported under BOTH conventions |
++| `(a(1−γ)/θ)^(1/γ)` = 1.6447 (prior round) | correct **only if** γ=0.709 is runner-convention | **refuted by the fit's own data** (CHK-6: the α=4.8969 series still yields 2 novel findings in round 5) |
++| `(aγ/θ)^(1/(1−γ))` = **71.6994** at (4.89, 0.709); **147.4350** at the actual record (4.8969, 0.7417) | the fitted model's own λ(n\*)=θ | correct under the convention the constants came from |
++
++**And the pair (4.89, 0.709) exists in NO single archived fit** (CHK-4, 379
++fits swept: α≈4.89 appears once, ft-014/deepseek with γ=0.7417; γ≈0.709
++appears in five OTHER records). The master-list constants are themselves of
++mixed provenance.
++
++**rounds = 10:** survives, but **not for the prior rounds' stated reason**.
++`ceil(9.3805)` is the ceiling of a derivationally unsupported number; the
++correct n\* under the constants' own convention is ~72–147, far beyond any
++sane budget, which says the March power law's tail is too slow for n\* to
++set a cap at all. What actually justifies 10 is what both prior seats
++independently converged on and my analysis preserves: **the binding stop is
++novelty** (< θ for 2 consecutive rounds), the cap is a **budget backstop
++that must declare falsification debt when it binds** (arm 1 ended RISING at
++9 novel in round 8 — that was budget exhaustion, not convergence), and 10 is
++a defensible budget at +25% over 8. So: yes to 10, no to deriving it from
++n\*; the recommendation does NOT depend on the a-coefficient answer, which
++is exactly why it survives the answer being "both prior numbers were wrong."
++GAMMA stays load-bearing — as the **exponent in the novelty stop and the
++debt declaration**, not as an input to a round-count formula. SUGGESTED:
++correct master list :171 and record the convention beside every γ the
++project stores.
++
++---
++
++## Deliverables in this tree
++
++| path | what |
++|---|---|
++| `scripts/a19_affirmative_channel_2026-09-30.py` | Q1–Q4 falsifiers, ALL CHECKS PASS |
++| `scripts/n_star_convention_settled_2026-09-30.py` | Q6 falsifiers, ALL CHECKS PASS |
++| `bench/reference_runner_v3.py` | `_e1_veto` (Q3) + advisory basis fields (Q2), both marked PROPOSED |
++| `bench/tools/commissioning_arms_2026-09-21.py` | three-state `test_cmd` (Q4) |
++| `bench/tests/test_sk_measures_fix_efficacy_2026-09-20.py` | contract updated to the veto, strictly stronger |
++| `bench/tests/test_commissioning_arms_carry_their_settings_2026-09-21.py` | contract updated to explicit-empty flag |
++| this file | the design |
++
++**Passes run: 4.** Pass 3 (regression over affected tests) surfaced the
++`.pyc` finding; pass 4 produced no new finding above the consequence
++threshold. HARD assumptions tested: flag-on inadmissibility (executed),
++flip bidirectionality (executed), veto non-collateral on cures (executed on
++synthetic; archive replay named as the pre-ratification measurement),
++n\* conventions (executed, 3 tools). Untested and named: the archive replay
++of Q3 over the 136 probe-carrying records (data lives in run archives; the
++producer pattern is `scripts/scorer_discrimination_2026-09-20.py`), and
++prose e1/e2 wiring itself, which is deliberately NOT built here — an
++addition must arrive with its caller and its test, and that is a build
++task for after the founder rules on this design.
+
+### fable:attempt-1:scripts/a19_affirmative_channel_2026-09-30.py
+--- /dev/null	2026-09-30 14:33:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cwrxyiyi/repo/scripts/a19_affirmative_channel_2026-09-30.py	2026-09-30 14:26:13
+@@ -0,0 +1,229 @@
++#!/usr/bin/env python3
++"""Q1-Q4 falsifiers for the 2026-09-30 A19 calculator design (fable seat).
++
++WHAT THIS EXECUTES, against live code -- no source-text assertions:
++
++  Q1a  With sk_score_prose_listings=True, NO fix on any of the 5 committed
++       STEM fixtures is ever ADMISSIBLE: correct fixes -> NO_SCORE, harmful
++       fixes -> REJECTED or NO_SCORE. 0/10 admitted, Wilson interval printed.
++       The instrument refuses or abstains; it cannot affirm. (Fact 1 on the
++       corpus, and the reason A19's flag is a harm guard, not a calculator.)
++  Q1b  THE AFFIRMATIVE CHANNEL ALREADY EXISTS AND DISCRIMINATES: for each
++       fixture, the committed falsifier through the runner's own
++       `reverify_falsifier` is CONFIRMED on the pristine document and REFUTED
++       on the correct-fix copy (the g(V_pre,V_post) flip = affirmative
++       evidence), and does NOT flip on the harmful-fix copy where the false
++       claim survives. This is the mechanism Q1 proposes to wire in.
++  Q2   The NO_SCORE advisory record now carries its evidential basis:
++       computed_sk PLUS gates_consulted / gates_absent / affirmative_evidence,
++       so a 1.0 can no longer read as a grade.
++  Q3   The proposed `_e1_veto`: a fix MEASURED not to cure its own falsifier
++       (FIX_INEFFECTIVE) is REJECTED with the mean's would-have-paid value
++       recorded; FIX_CURES and unmeasured (None) outcomes are byte-identical
++       to before. Closed-form 3/5 and 5/7 cross-checked sympy vs Fraction.
++  Q4   Arm4 now emits `--test-cmd ""`; `_run_effect_regression` returns
++       (None, "no test command configured") for BOTH "" and None, so the gate
++       is excluded and recorded rather than fed a substituted suite.
++
++Writes only inside tempfile scratch. No model dispatched. No key touched.
++"""
++from __future__ import annotations
++
++import argparse
++import pathlib
++import sys
++import tempfile
++from fractions import Fraction
++
++REPO = pathlib.Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(REPO))
++sys.path.insert(0, str(REPO / "bench"))
++
++import sympy as sp                                                    # noqa: E402
++from mpmath import mp, mpf, sqrt as mpsqrt                            # noqa: E402
++mp.dps = 40
++
++from bench.tests.fixtures.stem.stem_fixtures import load_all          # noqa: E402
++from bench.falsifier_verify import reverify_falsifier                 # noqa: E402
++from reference_runner_v3 import (                                     # noqa: E402
++    compute_sk, _run_effect_regression, _capture_baseline, SK_ADMISSIBLE,
++    SK_REJECTED, SK_NO_SCORE,
++)
++from fix_efficacy import FIX_CURES, FIX_INEFFECTIVE                   # noqa: E402
++
++
++def wilson(k, n):
++    z = mpf("1.959963984540054")
++    p = mpf(k) / n
++    d = 1 + z ** 2 / n
++    c = (p + z ** 2 / (2 * n)) / d
++    h = z * mpsqrt(p * (1 - p) / n + z ** 2 / (4 * n * n)) / d
++    return float(max(0, c - h)), float(min(1, c + h))
++
++
++def sr(fixture, patches, path):
++    return "".join(
++        f"<<<< SEARCH {path}\n{p.old}\n==== REPLACE\n{p.new}\n>>>>\n"
++        for p in patches)
++
++
++def main(argv=None) -> int:
++    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
++    ap.parse_args(argv)
++    failures = 0
++
++    def check(label, ok):
++        nonlocal failures
++        print(("PASS  " if ok else "FAIL  ") + label)
++        if not ok:
++            failures += 1
++
++    fixtures = load_all()
++    check("corpus loads 5 fixtures", len(fixtures) == 5)
++
++    # ---- Q1a: flag ON, nothing is ever ADMISSIBLE --------------------------
++    admitted = 0
++    outcomes = {}
++    baselines = {f.key: _capture_baseline(f.document, str(f.doc_path))
++                 for f in fixtures}
++    for f in fixtures:
++        for kind, patches in (("correct", f.correct_fix),
++                              ("harmful", f.harmful_fix)):
++            r = compute_sk(sr(f, patches, f.doc_path), f.document,
++                           str(f.doc_path), baseline=baselines[f.key],
++                           score_prose_listings=True)
++            outcomes[(f.key, kind)] = r.tristate
++            if r.tristate == SK_ADMISSIBLE:
++                admitted += 1
++    lo, hi = wilson(admitted, len(outcomes))
++    print(f"Q1a outcomes: { {k: v for k, v in sorted(outcomes.items())} }")
++    print(f"Q1a admitted {admitted} of {len(outcomes)}, "
++          f"Wilson [{100*lo:.4f}%, {100*hi:.4f}%]")
++    check("0 of 10 fixes ADMISSIBLE with the flag ON (refuse or abstain only)",
++          admitted == 0)
++    check("every correct fix is NO_SCORE (abstention, not conviction)",
++          all(outcomes[(f.key, "correct")] == SK_NO_SCORE for f in fixtures))
++    rejected_harm = sum(1 for f in fixtures
++                        if outcomes[(f.key, "harmful")] == SK_REJECTED)
++    check("the veto convicts the in-listing harms (>= 3 of 5 harmful "
++          "REJECTED; the semantic 2 abstain -- static gates cannot see them)",
++          rejected_harm >= 3)
++
++    # ---- Q1b: the affirmative channel exists and discriminates -------------
++    flips = 0
++    stays = 0
++    with tempfile.TemporaryDirectory() as td:
++        for f in fixtures:
++            pre = reverify_falsifier(f.falsifier())
++            good = pathlib.Path(td) / f"good_{f.doc_name}"
++            good.write_text(f.apply(f.correct_fix), encoding="utf-8")
++            post = reverify_falsifier(f.falsifier(good))
++            bad = pathlib.Path(td) / f"bad_{f.doc_name}"
++            bad.write_text(f.apply(f.harmful_fix), encoding="utf-8")
++            harm = reverify_falsifier(f.falsifier(bad))
++            print(f"Q1b {f.key:12s} pristine={pre:9s} corrected={post:8s} "
++                  f"harmful={harm}")
++            if pre == "CONFIRMED" and post == "REFUTED":
++                flips += 1
++            if harm == "CONFIRMED":
++                stays += 1
++            harm_verdicts = None
++    lo, hi = wilson(flips, 5)
++    print(f"Q1b affirmative flip on correct fix: {flips} of 5, "
++          f"Wilson [{100*lo:.4f}%, {100*hi:.4f}%]")
++    check("g(V_pre, V_post) flip CONFIRMED->REFUTED on ALL 5 correct fixes "
++          "(the affirmative instrument exists)", flips == 5)
++    # MEASURED, NOT ASSUMED: the metrology harmful fix ALSO earns the flip --
++    # it repairs the false claim while corrupting the evidence table, which is
++    # exactly the fixture's documented semantic harm class. THE FLIP ALONE IS
++    # THEREFORE NOT SUFFICIENT TO ADMIT: the design requires flip AND the
++    # one-sided veto AND the document's OTHER claims re-verified (the prose
++    # regression suite). The numerical harmful copy breaks its probe (ERROR),
++    # which must route to ESCALATE, never admission.
++    check("harmful fixes do NOT uniformly stay CONFIRMED (>= 1 earns the "
++          "flip), so flip alone must never admit -- claim-suite regression "
++          "is required", 1 <= stays <= 4)
++
++    # ---- Q2: the advisory record carries its basis --------------------------
++    f0 = fixtures[0]
++    r = compute_sk(sr(f0, f0.correct_fix, f0.doc_path), f0.document,
++                   str(f0.doc_path), baseline=baselines[f0.key],
++                   score_prose_listings=True)
++    rec = r.gate_details.get("_prose_one_sided") or {}
++    print(f"Q2 _prose_one_sided = { {k: rec.get(k) for k in ('outcome',
++          'computed_sk', 'gates_consulted', 'gates_absent',
++          'affirmative_evidence')} }")
++    check("advisory record carries computed_sk", "computed_sk" in rec)
++    check("advisory record names the gates consulted",
++          rec.get("gates_consulted") == ["e3_ruff", "e4_bandit"])
++    check("advisory record names the absent gates",
++          set(rec.get("gates_absent") or []) >= {"e1_efficacy", "e2_regression"})
++    check("advisory record states affirmative evidence is none",
++          rec.get("affirmative_evidence") == "none")
++
++    # ---- Q3: the e1 veto ----------------------------------------------------
++    py_src = "def f():\n    return 1\n"
++    py_fix = ("<<<< SEARCH bench/tmp_seat_probe_target.py\n"
++              "    return 1\n==== REPLACE\n    return 2\n>>>>\n")
++    path = str(REPO / "bench/tmp_seat_probe_target.py")  # never written
++
++    py_base = _capture_baseline(py_src, path)
++    r_bad = compute_sk(py_fix, py_src, path, baseline=py_base,
++                       fix_efficacy_outcome=FIX_INEFFECTIVE)
++    r_good = compute_sk(py_fix, py_src, path, baseline=py_base,
++                        fix_efficacy_outcome=FIX_CURES)
++    r_none = compute_sk(py_fix, py_src, path, baseline=py_base,
++                        fix_efficacy_outcome=None)
++    print(f"Q3 INEFFECTIVE -> {r_bad.tristate} sk={r_bad.sk} "
++          f"veto={r_bad.gate_details.get('_e1_veto', {}).get('computed_sk')}")
++    print(f"Q3 CURES       -> {r_good.tristate} sk={r_good.sk}")
++    print(f"Q3 unmeasured  -> {r_none.tristate} sk={r_none.sk} "
++          f"(e1 dropped: {'e1_efficacy' in (r_none.gate_details.get('_unavailable') or [])})")
++    check("MEASURED non-cure is REJECTED (the veto fires)",
++          r_bad.tristate == SK_REJECTED and r_bad.sk == 0.0)
++    veto = r_bad.gate_details.get("_e1_veto") or {}
++    e35 = float(Fraction(3, 5))
++    check("veto records the mean's would-have-paid value 3/5 (no e2: "
++          "(0*2+1+2)/5), sympy == Fraction",
++          veto.get("computed_sk") == round(e35, 4)
++          and float(sp.Rational(3, 5)) == e35)
++    e57 = float(Fraction(5, 7))
++    check("with e2 present the dissolved mean is 5/7 = 0.714286 "
++          "(closed form, sympy == Fraction)",
++          abs(float(sp.Rational(5, 7)) - e57) == 0.0
++          and abs(e57 - 0.7142857142857143) < 1e-16)
++    check("a MEASURED cure is ADMISSIBLE, unchanged", 
++          r_good.tristate == SK_ADMISSIBLE and r_good.sk == 1.0)
++    check("an UNMEASURED outcome still drops from the mean, unchanged",
++          r_none.tristate == SK_ADMISSIBLE
++          and "e1_efficacy" in (r_none.gate_details.get("_unavailable") or []))
++
++    # ---- Q4: three-state test_cmd -------------------------------------------
++    import importlib.util
++    spec = importlib.util.spec_from_file_location(
++        "commissioning_arms", REPO / "bench/tools/commissioning_arms_2026-09-21.py")
++    arms = importlib.util.module_from_spec(spec)
++    sys.modules["commissioning_arms"] = arms   # dataclass needs the registry
++    spec.loader.exec_module(arms)
++    arm4 = next(a for a in arms.ARMS if a.key == "arm4")
++    argv4 = arm4.argv()
++    print(f"Q4 arm4.argv() = {argv4}")
++    check("arm4 now emits an EXPLICIT empty --test-cmd (no argparse "
++          "substitution possible)",
++          "--test-cmd" in argv4 and argv4[argv4.index("--test-cmd") + 1] == "")
++    arm1 = next(a for a in arms.ARMS if a.key == "arm1")
++    check("arm1's real test command is untouched",
++          "--test-cmd" in arm1.argv()
++          and arm1.argv()[arm1.argv().index("--test-cmd") + 1] == arms.ENGINE_TESTS)
++    for tc in ("", None):
++        score, detail = _run_effect_regression("x = 1\n", path, tc)
++        print(f"Q4 _run_effect_regression(test_cmd={tc!r}) -> ({score}, {detail!r})")
++        check(f"test_cmd={tc!r} yields NO GATE, recorded reason",
++              score is None and detail == "no test command configured")
++
++    print(f"\n{'ALL CHECKS PASS' if failures == 0 else str(failures) + ' CHECK(S) FAILED'}")
++    return 1 if failures else 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main(sys.argv[1:]))
+
+### fable:attempt-1:scripts/n_star_convention_settled_2026-09-30.py
+--- /dev/null	2026-09-30 14:33:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cwrxyiyi/repo/scripts/n_star_convention_settled_2026-09-30.py	2026-09-30 14:22:11
+@@ -0,0 +1,183 @@
++#!/usr/bin/env python3
++"""Q6 of the 2026-09-30 A19 calculator brief: settle n* = (a/theta)^(1/gamma).
++
++THE QUESTION. A prior round reported that `_estimate_gamma` fits the CUMULATIVE
++curve, making n* = (a(1-gamma)/theta)^(1/gamma) = 1.6447 rather than 9.3805,
++but could not locate the fitting code to decide whether a = 4.89 is a
++cumulative or a rate coefficient.
++
++THE FITTING CODE IS FOUND AND EXECUTED HERE: `bench/decay_analysis.py`, whose
++`fit_duane` fits `_duane_cumulative(n, alpha, gamma) = alpha * n**gamma` to
++`np.cumsum(rounds_data)` with scipy curve_fit, and whose own line ~176 states
++the intensity `lambda(n) = alpha*gamma*n^(gamma-1)`. So in the ONLY code in
++this repository that produces an `a` at all:
++
++    * `alpha` IS A CUMULATIVE COEFFICIENT: N(1) = alpha (predicted cumulative
++      findings after round 1), NOT a rate coefficient.
++    * `gamma` THERE IS THE CUMULATIVE EXPONENT gamma_d, where the RUNNER's
++      `_estimate_gamma` (reference_runner_v3.py:3190) returns gamma_r = 1 - beta
++      for the SAME beta. The two "gammas" in this project are OPPOSITE
++      conventions: gamma_r = 1 - gamma_d.
++
++WHAT THIS SCRIPT EXECUTES
++  CHK-1  reproduce the archived fit (alpha=4.8969, gamma_d=0.7417) from its own
++         rounds_data [5,3,3,3,2] with scipy curve_fit; cross-check with sympy
++         and mpmath.
++  CHK-2  show alpha is cumulative: fitted N(1) = alpha.
++  CHK-3  run the RUNNER's `_estimate_gamma` on the same series and show it
++         returns approximately 1 - gamma_d, i.e. the OTHER convention.
++  CHK-4  sweep the whole decay_analysis.json for any single fit pairing
++         (4.89 +/- 0.01, 0.709 +/- 0.01): the master-list pair does not exist
++         as one record, so its provenance is mixed.
++  CHK-5  the three n* candidates, sympy AND mpmath:
++           claimed  (a/th)^(1/g)            = 9.3805   solves th = a*n^-g,
++                    a RATE model no fitter in this repo produces;
++           CC2      (a(1-g)/th)^(1/g)       = 1.6447   correct ONLY if g is
++                    runner-convention (rate exponent g_r = 0.709);
++           decay    (a*g/th)^(1/(1-g))      = 71.7...  correct if g is the
++                    decay-convention cumulative exponent g_d = 0.709.
++  CHK-6  the data refute 1.6447 empirically: the series that carries
++         alpha=4.8969 still yields 2 novel findings in round 5.
++
++Writes nothing. Runs in seconds. No model dispatched.
++"""
++from __future__ import annotations
++
++import argparse
++import json
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(REPO))
++sys.path.insert(0, str(REPO / "bench"))
++
++import numpy as np                                   # noqa: E402
++import sympy as sp                                   # noqa: E402
++from mpmath import mp, mpf                           # noqa: E402
++from scipy.optimize import curve_fit                 # noqa: E402
++
++mp.dps = 30
++
++DECAY = REPO / "bench/results/round_robin_phase2/decay_analysis.json"
++
++
++def main(argv=None) -> int:
++    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
++    ap.parse_args(argv)
++
++    failures = 0
++
++    def check(label, ok):
++        nonlocal failures
++        print(("PASS  " if ok else "FAIL  ") + label)
++        if not ok:
++            failures += 1
++
++    d = json.loads(DECAY.read_text())
++
++    # ---- CHK-1: reproduce the archived fit from its own data ---------------
++    rec = d["per_task"][51]["models"]["deepseek"]
++    rounds = rec["rounds_data"]
++    want_a = rec["duane"]["params"]["alpha"]
++    want_g = rec["duane"]["params"]["gamma"]
++    cum = np.cumsum(rounds).astype(float)
++    x = np.arange(1, len(cum) + 1, dtype=float)
++    popt, _ = curve_fit(lambda n, a, g: a * np.power(n, g), x, cum,
++                        p0=[cum[-1], 0.5], maxfev=10000)
++    a_fit, g_fit = float(popt[0]), float(popt[1])
++    print(f"CHK-1 rounds_data={rounds} cumulative={cum.tolist()}")
++    print(f"      archived (alpha, gamma_d) = ({want_a}, {want_g})")
++    print(f"      re-fit   (alpha, gamma_d) = ({a_fit:.4f}, {g_fit:.4f})")
++    check("archived Duane fit reproduces to 4 dp",
++          abs(a_fit - want_a) < 5e-4 and abs(g_fit - want_g) < 5e-4)
++
++    # ---- CHK-2: alpha is the CUMULATIVE coefficient ------------------------
++    n1_pred = a_fit * 1.0 ** g_fit
++    print(f"CHK-2 fitted N(1) = alpha = {n1_pred:.4f}; observed cumsum[0] = {cum[0]}")
++    check("alpha = fitted CUMULATIVE at round 1 (a cumulative coefficient, "
++          "not a rate coefficient)", abs(n1_pred - a_fit) < 1e-12)
++
++    # ---- CHK-3: the runner's gamma is the OPPOSITE convention --------------
++    from reference_runner_v3 import _estimate_gamma
++    g_runner = _estimate_gamma(list(rounds), min_rounds=3)
++    print(f"CHK-3 runner _estimate_gamma(same series) = {g_runner:.4f}; "
++          f"1 - gamma_d(curve_fit) = {1 - g_fit:.4f}")
++    check("runner gamma sits near 1-gamma_d and far from gamma_d: the two "
++          "conventions are opposite", abs(g_runner - (1 - g_fit)) < 0.15
++          and abs(g_runner - g_fit) > 0.25)
++
++    # ---- CHK-4: the pair (4.89, 0.709) exists in NO single fit -------------
++    pairs = []
++    for t in d["per_task"]:
++        for mname, m in t["models"].items():
++            p = (m.get("duane") or {}).get("params") or {}
++            if "alpha" in p:
++                pairs.append((p["alpha"], p["gamma"], t["task_id"], mname))
++    hits = [p for p in pairs if abs(p[0] - 4.89) < 0.01 and abs(p[1] - 0.709) < 0.01]
++    near_a = [p for p in pairs if abs(p[0] - 4.89) < 0.01]
++    near_g = [p for p in pairs if abs(p[1] - 0.709) < 0.01]
++    print(f"CHK-4 fits scanned: {len(pairs)}; pairing both 4.89 and 0.709: "
++          f"{len(hits)}")
++    print(f"      alpha~4.89 alone: {[(p[2], p[3], p[0], p[1]) for p in near_a]}")
++    print(f"      gamma~0.709 alone: {[(p[2], p[3], p[0], p[1]) for p in near_g]}")
++    check("the master-list pair (a=4.89, gamma=0.709) is NOT a single archived "
++          "fit -- its two halves come from different records", len(hits) == 0)
++
++    # ---- CHK-5: the three n* candidates, 2 tools each -----------------------
++    a_s, g_s, th = sp.Rational(489, 100), sp.Rational(709, 1000), sp.Integer(1)
++    cand = {
++        "claimed (a/th)^(1/g)": (a_s / th) ** (1 / g_s),
++        "CC2 (a(1-g)/th)^(1/g)": (a_s * (1 - g_s) / th) ** (1 / g_s),
++        "decay-correct (a*g/th)^(1/(1-g))": (a_s * g_s / th) ** (1 / (1 - g_s)),
++    }
++    ref = {"claimed (a/th)^(1/g)": "9.3805",
++           "CC2 (a(1-g)/th)^(1/g)": "1.6447",
++           "decay-correct (a*g/th)^(1/(1-g))": None}
++    a_m, g_m = mpf("4.89"), mpf("0.709")
++    m_vals = {
++        "claimed (a/th)^(1/g)": a_m ** (1 / g_m),
++        "CC2 (a(1-g)/th)^(1/g)": (a_m * (1 - g_m)) ** (1 / g_m),
++        "decay-correct (a*g/th)^(1/(1-g))": (a_m * g_m) ** (1 / (1 - g_m)),
++    }
++    for k, v in cand.items():
++        v_sp = float(sp.N(v, 20))
++        v_mp = float(m_vals[k])
++        print(f"CHK-5 {k} = {v_sp:.4f} (sympy) / {v_mp:.4f} (mpmath)")
++        check(f"sympy == mpmath for {k}", abs(v_sp - v_mp) < 1e-9)
++        if ref[k]:
++            check(f"reproduces the prior round's {ref[k]}",
++                  abs(v_sp - float(ref[k])) < 5e-4)
++    # Verify by SUBSTITUTION (symbolic solve on n^(709/1000) would expand a
++    # degree-1000 polynomial): each candidate must zero its own equation.
++    n = sp.Symbol("n", positive=True)
++    rate_decay = sp.diff(a_s * n ** g_s, n)            # a*g*n^(g-1)
++    resid1 = sp.N(rate_decay.subs(n, cand["decay-correct (a*g/th)^(1/(1-g))"]) - th, 30)
++    check("substituting (a*g/th)^(1/(1-g)) into d/dn[a*n^g] = theta zeroes it",
++          abs(float(resid1)) < 1e-20)
++    rate_claimed = a_s * n ** (-g_s)                   # the model the claimed
++    resid2 = sp.N(rate_claimed.subs(n, cand["claimed (a/th)^(1/g)"]) - th, 30)
++    check("substituting (a/th)^(1/g) into a*n^-g = theta zeroes it  [a RATE "
++          "model NO fitter in this repo produces]", abs(float(resid2)) < 1e-20)
++    resid3 = sp.N(rate_decay.subs(n, cand["claimed (a/th)^(1/g)"]) - th, 30)
++    check("the claimed 9.3805 does NOT satisfy the fitted model's own "
++          "stopping equation (residual is far from 0)", abs(float(resid3)) > 0.5)
++
++    # ---- CHK-6: the fit's own data refute n* = 1.6447 -----------------------
++    print(f"CHK-6 marginal novelty by round for the alpha=4.8969 series: {rounds}")
++    check("round 5 still yields >= 2 novel findings, so 'marginal < 1/round "
++          "after 1.64 rounds' is false on the fit's own data",
++          rounds[4] >= 2)
++    n_star_fit = (a_fit * g_fit) ** (1 / (1 - g_fit))
++    lam5 = a_fit * g_fit * 5 ** (g_fit - 1)
++    print(f"      fitted intensity at n=5: {lam5:.4f}/round (observed 2); "
++          f"intensity reaches 1/round at n = {n_star_fit:.1f}")
++    check("fitted intensity at the last observed round is still > 1/round, "
++          "consistent with the correct n* being far beyond 10", lam5 > 1.0)
++
++    print(f"\n{'ALL CHECKS PASS' if failures == 0 else str(failures) + ' CHECK(S) FAILED'}")
++    return 1 if failures else 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main(sys.argv[1:]))

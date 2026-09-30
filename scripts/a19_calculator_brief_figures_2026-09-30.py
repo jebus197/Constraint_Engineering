@@ -122,8 +122,22 @@ def main(argv=None) -> None:
     print(f"  live_path_modules_reaching_the_prose_corpus = {hits} of {len(LIVE)}")
 
     print("\nFIGURE wilson_intervals")
+    # "e1_uncured_admissible: 73 of 73" WAS A HARDCODED LITERAL AND IS WITHDRAWN.
+    # Caught by the cc2 seat in the 2026-09-30 calculator-design round: "the
+    # brief's '73 of 73' is a hardcoded literal in the figures script, not a live
+    # count; the live deduplicated count is 201." That is exactly the defect the
+    # declared-figure mechanism exists to prevent -- a number typed into a brief
+    # rather than re-executed -- and this script shipped it.
+    #
+    # 3 MEASUREMENTS NOW EXIST AND I CANNOT RECONCILE THEM: 73 (the adversarial
+    # agent of the earlier review), 201 (cc2, content-hash deduplicated) and 309
+    # (cc2's raw count including harvest copies, a 53.7313% inflation over 201).
+    # A re-measurement here returned 0 records, so this script's accessor does not
+    # match the archive's shape either. Substituting any one of the 3 would be
+    # picking a number, so the figure is REFUSED rather than guessed, and the
+    # dispute is recorded as an open item for the founder. See
+    # `measured-rate-travels-with-its-script` and `no-fabricated-certainty`.
     for label, k, n in (("new_HIGH_injections_rejected", 4, 4),
-                        ("e1_uncured_admissible", 73, 73),
                         ("prose_fixes_ever_admitted", 0, 8)):
         lo, hi = wilson(k, n)
         line = f"  {label}: {k} of {n}, Wilson [{mp.nstr(100*lo, 6)}%, {mp.nstr(100*hi, 6)}%]"
