@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 1 October 2026 23:07 BST (2026-10-01T23:07:31+01:00)
+Generated: 1 October 2026 23:42 BST (2026-10-01T23:42:55+01:00)
 
 ---
 
@@ -18,20 +18,16 @@ Generated: 1 October 2026 23:07 BST (2026-10-01T23:07:31+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `6562589` sv: 1 October 2026 — green table, the claim channel on, and the free panel's day review applied
-- **Committed:** 2026-10-01 22:58:52 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
-- **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
-
-Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M experimental_notes/Closing_Report_2026-10-01.md`
-- `M experimental_notes/PARKED_FOR_THE_FOUNDER.md`
+- **Last commit (the PARENT of the commit containing this file):** `5a81bd6` fix: the compaction alarm read UTC as local, and the index audit could not see grouped pointers
+- **Committed:** 2026-10-01 23:41:50 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 1
+- **Working tree at snapshot time:** clean
 
 ---
 
 ## Tests
 
-**9450 tests collected** at 1 October 2026 23:07 BST, HEAD `6562589` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**9485 tests collected** at 1 October 2026 23:42 BST, HEAD `5a81bd6` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -61,6 +57,9 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `5a81bd6 fix: the compaction alarm read UTC as local, and the index audit could not see grouped pointers`
+- `8e9ea62 docs: the closing report records the second save, and the index warning is parked`
+- `623080a sv: the closing report carries the gate diagnosis; the 12:16 gate was never wrong`
 - `6562589 sv: 1 October 2026 — green table, the claim channel on, and the free panel's day review applied`
 - `0f72af3 sv: state save 1 October 2026 12:16 BST — THE CLEAN SUITE RAN AND IT IS RED`
 - `450bb1d sv: state save 1 October 2026 01:22 BST, simulation branch, end of session`
@@ -68,6 +67,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `5f7938e Take-home digest of the intelligence-first round, spoken version plus mirror`
 - `b4f37de Apply the intelligence-first round, composed: 4 seat fixes, 3 of which had no guard`
 - `8f4eb83 Brief for the intelligence-first panel round, with 5 figures re-executable`
-- `b8f724b D2 and D3: rounds = 10 with a raise-the-cap prompt, and arm 4's gate genuinely excluded`
-- `63c1e19 Decision 12: a falsifier on an absent target now ABSTAINS, all 5, not 2`
-- `f8f4d7c Fix the sandbox containment breach: a .pyc is a route back into the real repository`
