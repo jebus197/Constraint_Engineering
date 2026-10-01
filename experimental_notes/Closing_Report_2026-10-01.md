@@ -97,6 +97,25 @@ Nothing is committed. 55 files are changed on the simulation branch and the bran
 2 canonical documents are stale and should be refreshed at the next save. The operational tracker's resume pointer is from 30 September and still lists 3 open decisions, 2 of which have since been applied. The recovery document's newest state block is also from 30 September. Neither reflects anything from today.
 
 
+THE COMMIT GATE, DIAGNOSED BEFORE ANYTHING WAS CHANGED
+
+The founder asked why the interval gate passed at 12:16 and refused at 22:30. The answer is that the gate was never wrong and nothing in the repository changed underneath it. The file it objected to DID NOT EXIST at 12:16. It was written at 22:20, and it carried a seat's arithmetic error into the permanent record.
+
+The one real disagreement was in the panel's own full record: an accuracy of 11 of 17 stated with a confidence interval narrower than any standard method gives. The correct Wilson interval for 11 of 17 is 41.3004 to 82.6903 per cent, agreed exactly by statsmodels, by mpmath at 50 decimal places and by SymPy's symbolic form. No standard method reproduces what the seat's prose stated, not Clopper-Pearson, Agresti-Coull, Jeffreys, the normal approximation or an exact binomial test, so it was a transcription error rather than a choice of method. It erred in the direction that matters, understating how little 17 cases can settle.
+
+The seat's own delivered script computes it correctly. Re-running that script prints the right interval. So this is precisely the failure that the measured-rate-travels-with-its-script rule exists to prevent, and it was caught by that rule rather than by a reader: the script travelled with the number, the number could therefore be checked, and it did not survive the check. The seat's raw reply is left exactly as it arrived, because editing evidence to match a correction destroys the very record that lets a reader check the correction. The figure is corrected in the readable record and labelled there.
+
+The gate then refused a second time, on the correction itself. Quoting the wrong figure beside its own count re-created the very pattern being corrected, because the checker matches a count and a bracketed interval within about 30 characters of each other. The superseded bounds are now written in words instead.
+
+One further figure was genuinely mis-rounded at its own stated precision and is corrected: a lower bound given as 1.0611 per cent where the 4-decimal value is 1.0612, verified on 2 tools agreeing to 2.78 times 10 to the minus 17.
+
+31 further pairs remain and are NOT defects. The checker classes them as wider than computed, which is valid but loose: an interval wider than the truth still contains it, and outward rounding weakens a claim rather than overstating it. 18 of those 31 are triplicate copies of the same 6 figures inside 3 stale agent worktrees under the hidden Claude directory, which is a matter of what the scanner walks into rather than of any figure. Those worktrees are registered git worktrees carrying their own branches, so removing them would delete git references, which is one of the 3 categories reserved to the founder in person. They are reported and left alone.
+
+STATE IS SAVED
+
+sv completed: commit 6562589, 80 files changed, 10,633 insertions, pushed to the simulation branch's remote. The working tree is clean, the generated state file matches the commit, and the canonical branch is untouched and byte-identical to its own remote. The day's memory entries are written and indexed.
+
+
 Every figure in this report was computed in this session, every proportion carries a confidence interval, and the scripts that produce them are committed alongside them.
 
 Written under CDSFL note standard v1.7 (26 August 2026).

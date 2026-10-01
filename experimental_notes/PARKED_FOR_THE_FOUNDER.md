@@ -231,3 +231,11 @@ So A8 — whose own committed text ends *"**NEEDS A POLICY RULING**: track them,
 **What he does.** Run `claude` interactively once and complete the login. The brief is already written and validates against all 8 required sections, so the round re-dispatches with `PANEL_ONLY=cc2,fable python3 bench/confer_maths_panel_2026-09-05.py founder_verdicts_2026-09-28`.
 
 **A separate, smaller item in the same output, needing no action unless he wants it gone.** The CLI also reports `Ignoring 19 permissions.allow entries from .claude/settings.json: this workspace has not been trusted`, and `~/.claude.json` does carry `hasTrustDialogAccepted: False` for this workspace. It is **not load-bearing**: the dispatcher passes seats their tool list via the `--allowedTools` command-line flag (`bench/experiment_11_orchestrator.py:1190`), which the trust state does not touch, and earlier rounds recorded 16 to 37 tool calls per seat. Accepting the trust dialog on that same interactive run would clear it.
+
+## NOT A BLOCKER — the memory index warns about 2 names it cannot see as entries (added 2026-10-01T23:06:22+01:00)
+
+**Nothing waits on this**, and it is reported rather than fixed because the obvious fix is me editing a checker so it accepts my own formatting.
+
+`scripts/cdsfl_sv.py` warns that `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` and `handoff_2026-03-23.md` *"appear in the index text, but not as an entry"*. Both ARE linked in `MEMORY.md`, correctly. What the checker counts as an entry is a line whose own first token is the link, and both names sit on **date-grouped lines** that open with prose — `- **1 Oct 2026** — [...]` and `- March 2026 handoffs — [...]`. The grouping was my doing: it is how the index was brought back under its 200-line ceiling, and it currently stands at 190 lines with 10 left.
+
+**The 3 options, and the choice is his.** Teach the checker that a grouped line carries several entries, which is editing a guard to accept the style that tripped it. Split the grouped lines back out, which costs 6 lines of the remaining 10. Or leave the warning standing as an accurate description of a deliberate trade-off, which is what it is doing now.
