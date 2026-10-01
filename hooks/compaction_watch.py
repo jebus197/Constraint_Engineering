@@ -8,7 +8,11 @@ wherever he happens to be. The remote interface gives NO indication that a compa
 occurred. So he cannot know when to issue `rs`, and after a compaction the assistant is
 working from a summary of the project rather than the project.
 
-Measured in one session's transcript on 2026-09-04: SIX compactions, at 2026-08-25 23:19,
+Measured in one session's transcript on 2026-09-04: SIX compactions, at 2026-08-26 00:19,
+2026-08-28 03:50, 2026-08-30 17:06, 2026-08-31 21:45, 2026-09-01 13:16 and 2026-09-02
+18:51 British Summer Time. Those 6 times were stated an hour early until 2026-10-01: the
+transcript records UTC and they were copied out as though they were local, which is the
+same fault `parse_transcript_ts` was added to stop. The UTC values are 2026-08-25 23:19,
 2026-08-28 02:50, 2026-08-30 16:06, 2026-08-31 20:45, 2026-09-01 12:16 and 2026-09-02
 17:51. The founder was aware of almost none of them. The last of the six preceded a night
 in which four measurements in three hours were drawn from a narrow slice without checking
@@ -37,6 +41,7 @@ standalone token, which is the command that does the restoring. Nothing else cle
 MUST ALWAYS EXIT 0. A hook that blocks a prompt is far worse than a missed notice.
 """
 import json, sys, time, pathlib, re, os
+from datetime import datetime, timezone
 
 STATE = pathlib.Path.home() / ".claude" / ".compaction_watch"
 RS_TOKEN = re.compile(r"(?:^|[\s,;])rs(?:$|[\s,;.!])", re.I)
@@ -59,6 +64,50 @@ def human(sec):
         return f"{s // 3600}h{(s % 3600) // 60:02d}m"
     return f"{s // 86400}d {(s % 86400) // 3600}h"
 
+
+def parse_transcript_ts(iso_ts):
+    """A transcript timestamp as an AWARE datetime. Claude Code writes UTC ("...Z").
+
+    THE DEFECT THIS EXISTS TO PREVENT, measured 2026-10-01 and confirmed to the
+    second in mpmath. `time.mktime(time.strptime(ts[:19], ...))` reads a
+    struct_time as LOCAL time, so the UTC stamp `2026-10-01T22:04:19.096Z` was
+    taken as 22:04:19 BST, an hour before it happened. Two consequences, and
+    neither is cosmetic:
+
+      1. The age was inflated by exactly the UTC offset -- 3600 s under BST. A
+         compaction 791 s old was announced as "73m ago".
+      2. The notice printed the UTC wall clock with no zone label, directly
+         beside `prompt_clock.py` printing LOCAL time with one. Two clocks an
+         hour apart, in the same context window, and only one of them labelled.
+
+    IT INVERTED AN ORDERING, which is the part that cost something. Asked
+    whether a compaction fell before or after a save, the notice's "22:04" put
+    it BEFORE a commit timestamped 22:58, when the truth was 23:04:19 BST and
+    therefore AFTER it. The answer read off the instrument was the opposite of
+    the answer in the record. The same hour also reached a delivered report,
+    whose elapsed-time denominator was 1 hour too long and whose headline
+    proportion was understated as a result.
+
+    A stamp carrying an explicit offset is honoured. A naive one is taken as
+    UTC, which is what Claude Code writes, and that assumption is stated here
+    rather than left implicit.
+    """
+    s = (iso_ts or "").strip()
+    if not s:
+        return None
+    if s.endswith(("Z", "z")):
+        s = s[:-1] + "+00:00"
+    d = None
+    try:
+        d = datetime.fromisoformat(s)
+    except ValueError:
+        try:
+            d = datetime.strptime(s[:19], "%Y-%m-%dT%H:%M:%S")
+        except ValueError:
+            return None
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=timezone.utc)
+    return d
 
 def find_transcript(session_id):
     if not session_id:
@@ -111,8 +160,23 @@ def _recovery_ran_after(iso_ts: str) -> bool:
         f = STATE / "last_recovery"
         if not f.is_file():
             return False
-        ran = f.read_text(encoding="utf-8").strip()[:19]
-        return bool(ran) and ran >= (iso_ts or "")[:19]
+        raw = f.read_text(encoding="utf-8").strip()
+        if not raw:
+            return False
+        # COMPARE INSTANTS, NOT STRINGS. Both writers happen to emit UTC today
+        # -- `cdsfl_recover.py` writes `datetime.now(timezone.utc).isoformat()`
+        # and the transcript writes "...Z" -- so the old lexicographic compare
+        # was correct, and verified so on 2026-10-01. It was also one edit away
+        # from silently disarming this alarm: a marker written in LOCAL time is
+        # lexicographically LARGER than the UTC stamp of the same instant, so a
+        # restore that ran an hour BEFORE a compaction would read as after it.
+        # That is the identical mixed-zone fault repaired 20 lines above, and
+        # leaving its twin in the arming path is how the project keeps finding
+        # the same defect twice.
+        ran, comp = parse_transcript_ts(raw), parse_transcript_ts(iso_ts)
+        if ran is not None and comp is not None:
+            return ran >= comp
+        return bool(raw) and raw[:19] >= (iso_ts or "")[:19]
     except (OSError, ValueError):
         return False
 
@@ -197,11 +261,19 @@ def main():
     if not newest or st.get("acknowledged") == newest:
         return
 
-    try:
-        t = time.mktime(time.strptime(newest[:19], "%Y-%m-%dT%H:%M:%S"))
-        ago = human(time.time() - t)
-    except Exception:
-        ago = "unknown"
+    # LOCAL TIME, AND LABELLED. The founder reads this beside a clock line in
+    # local time; an unlabelled UTC stamp an hour away from it is worse than no
+    # stamp. See parse_transcript_ts for what the unlabelled form cost.
+    when = parse_transcript_ts(newest)
+    if when is None:
+        shown, ago = newest[:19].replace("T", " ") + " (UNPARSED)", "unknown"
+    else:
+        try:
+            local = when.astimezone()
+            shown = local.strftime("%Y-%m-%d %H:%M:%S %Z").strip()
+            ago = human(time.time() - when.timestamp())
+        except (OSError, OverflowError, ValueError):
+            shown, ago = newest[:19].replace("T", " ") + " UTC", "unknown"
     # ADDRESSED TO THE FOUNDER FIRST, 2026-09-08. This message used to speak only
     # to the assistant ("Say so, and run the restore"), and was emitted with
     # suppressOutput=True so it reached the assistant and NOBODY ELSE. Delivery to
@@ -212,7 +284,7 @@ def main():
     # An alarm routed through the party it is monitoring is not an independent
     # alarm. The founder is the one who issues `rs`, so the notice addresses him,
     # and the assistant's instruction follows rather than leads.
-    msg = (f"[compaction] COMPACTION AT {newest[:19].replace('T', ' ')} ({ago} ago) "
+    msg = (f"[compaction] COMPACTION AT {shown} ({ago} ago) "
            f"— `rs` HAS NOT BEEN RUN SINCE.\n"
            f"  GEORGE: issue `rs` when convenient. Until then the assistant is "
            f"working from a summary of the project rather than the project.\n"
@@ -231,8 +303,17 @@ def main():
     }))
 
 
-try:
-    main()
-except Exception:
-    pass
-sys.exit(0)
+# GUARDED UNDER `__main__`, 2026-10-01. This ran at IMPORT time and then called
+# `sys.exit(0)`, so the module could not be imported at all -- the wart its own
+# comment above complains about ("importing that hook runs its main(), which
+# reads a stdin this process has already consumed"). Claude Code invokes this
+# file as a script, where `__name__` is `"__main__"`, so the runtime behaviour
+# is byte-for-byte what it was; what changes is that `parse_transcript_ts` and
+# `_recovery_ran_after` can now be CALLED by a test instead of being asserted
+# about from their source text.
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception:
+        pass
+    sys.exit(0)

@@ -1408,6 +1408,83 @@ _FLAG_OVERWRITE_DESKTOP = "--overwrite-newer-desktop-tracker"
 # over-long report were all computed off the smaller set.
 _MEMORY_ENTRY_RE = re.compile(r"^\s*[-*]\s+\*{0,2}\[([^\]]+)\]\(([^)]+)\)")
 
+# THE BLIND SPOT RECURRED IN A SECOND FORM, 2026-10-01. The 2026-09-01 repair
+# above taught the audit about `- **[Title](file.md)**`, and a GROUPED line --
+# `- **1 Oct 2026** — [A](a.md) gloss; [B](b.md) gloss` -- still matched
+# nothing, because `.match()` requires the link to follow the bullet directly.
+# Measured on the live index: 22 of 161 pointers invisible (13.6646%, Wilson
+# [9.2001%, 19.8226%]), across 5 lines. THREE holes, not the one visible
+# symptom:
+#
+#   1. Those 22 .md files were reported as ORPHANS -- "name appears in the
+#      index text, but not as an entry" -- which is the warning the founder
+#      asked about. Cosmetic.
+#   2. `audit.broken` could not see them, so a grouped line could point at a
+#      DELETED memory file and this audit would say nothing. Not cosmetic.
+#   3. `audit.over_long` could not see them either, so a grouped line could
+#      carry unbounded prose and evade the rule that REFUSES the save.
+#
+# THE UNIT IS THE POINTER, NOT THE LINE, and that choice is what makes the fix
+# non-harmful rather than blocking. All 5 grouped lines run 159 to 655
+# characters, so charging the whole line to each pointer would put 5 of 5 over
+# the 150-character rule and refuse EVERY future save -- forcing the lines
+# apart at a cost in lines the index does not have. Charging each pointer its
+# own span gives 22 of 22 under the limit, longest 137. That is also the more
+# faithful reading of the rule's own stated purpose below: what is limited is
+# how much prose a POINTER carries, since detail belongs in the file it points
+# at. A bloated pointer on a grouped line still fails, which is what keeps this
+# a guard rather than an exemption.
+_MEMORY_BULLET_RE = re.compile(r"^\s*[-*]\s+")
+_MEMORY_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+
+
+def _memory_index_pointers(line: str) -> list[tuple[str, str, int]]:
+    """Every pointer on one index line, with the length the one-line rule charges.
+
+    A single pointer opening its own line is charged the whole line, exactly as
+    before this function existed, so no previously-seen entry changes length.
+    """
+    if not _MEMORY_BULLET_RE.match(line):
+        return []
+    links = list(_MEMORY_LINK_RE.finditer(line))
+    if not links:
+        return []
+    if len(links) == 1 and _MEMORY_ENTRY_RE.match(line):
+        m = links[0]
+        return [(m.group(1), m.group(2), len(line))]
+    bounds = [m.start() for m in links] + [len(line)]
+    out: list[tuple[str, str, int]] = []
+    for i, m in enumerate(links):
+        seg = line[bounds[i]:bounds[i + 1]].rstrip(" ;,")
+        out.append((m.group(1), m.group(2), len(seg)))
+    return out
+
+
+def _memory_index_group_preamble(line: str) -> tuple[str, int] | None:
+    """The shared preamble of a grouped line -- `- **Late Aug 2026 sessions** - `.
+
+    MEASURED AS ITS OWN ITEM, and the first version of this fix got it wrong.
+    That version charged the whole preamble to the FIRST pointer, which put
+    `31st` at 156 characters -- 125 of its own prose plus 31 of a date heading
+    shared by 4 pointers -- and so would have refused the save over text that
+    pointer does not own. Charging shared text to one pointer makes the longest
+    pointer an artefact of where it sits in the line.
+
+    Charging it to NOBODY is the other error: a line could then grow an
+    unbounded preamble measured by nothing, which is the hole this fix exists
+    to close. So the preamble is held to the same limit in its own right.
+    """
+    if not _MEMORY_BULLET_RE.match(line):
+        return None
+    links = list(_MEMORY_LINK_RE.finditer(line))
+    if len(links) < 2 and (not links or _MEMORY_ENTRY_RE.match(line)):
+        return None
+    if not links:
+        return None
+    pre = line[:links[0].start()].rstrip(" -—:;,")
+    label = pre.lstrip("-*# ").strip("* ")
+    return (label or "(unlabelled group)", len(pre))
+
 
 @dataclass
 class _Check:
@@ -1441,6 +1518,11 @@ class _MemoryIndexAudit:
     orphans_unmentioned: list[str] = field(default_factory=list)
     orphans_mentioned: list[str] = field(default_factory=list)
     over_long: list[tuple[int, str]] = field(default_factory=list)
+    # Kept SEPARATE from over_long on purpose. A preamble is not an entry, and
+    # folding it in would make "N of M entries exceed" count a non-entry in its
+    # numerator against a denominator that excludes it -- a corrupted
+    # denominator, which is this project's single most repeated defect.
+    over_long_preambles: list[tuple[int, str]] = field(default_factory=list)
     median_entry: int = 0
 
     @property
@@ -1490,9 +1572,11 @@ def _audit_memory_index(mem_dir: Path) -> _MemoryIndexAudit:
     # Parse per line. A multiline regex would let ``\s`` swallow newlines and
     # silently mis-measure entry lengths.
     for line in text.splitlines():
-        m = _MEMORY_ENTRY_RE.match(line)
-        if m:
-            audit.entries.append((m.group(1), m.group(2), len(line)))
+        audit.entries.extend(_memory_index_pointers(line))
+        pre = _memory_index_group_preamble(line)
+        if pre is not None and pre[1] > _MEMORY_ENTRY_ONE_LINE_CHARS:
+            audit.over_long_preambles.append((pre[1], pre[0]))
+    audit.over_long_preambles.sort(reverse=True)
 
     targets = {t for _title, t, _n in audit.entries if t.endswith(".md")}
     audit.broken = sorted(t for t in targets if not (mem_dir / t).is_file())
@@ -1706,8 +1790,11 @@ def _print_memory_index_report(audit: _MemoryIndexAudit) -> None:
         for name in audit.orphans_mentioned:
             print(f"      {name} — name appears in the index text, but not as an entry")
 
+    for n, label in audit.over_long_preambles:
+        print(f"      GROUP PREAMBLE over the one-line rule: {n} chars — {label[:52]}")
     if not audit.over_long:
-        print(f"    One-line rule: all entries are within {_MEMORY_ENTRY_ONE_LINE_CHARS} chars.")
+        print(f"    One-line rule: all {len(audit.entries)} pointers are within "
+              f"{_MEMORY_ENTRY_ONE_LINE_CHARS} chars.")
     else:
         shown = audit.over_long[:5]
         print(
@@ -1768,8 +1855,12 @@ def _check_memory_index_size(audit: _MemoryIndexAudit) -> _Check:
     # the excess was 5,801 characters -- a quarter of the whole index. Refusing
     # here is what makes terseness structural rather than dependent on the
     # founder having the energy to insist on it.
-    if audit.over_long:
-        worst = audit.over_long[0]
+    if audit.over_long or audit.over_long_preambles:
+        worst = (audit.over_long or audit.over_long_preambles)[0]
+        if audit.over_long_preambles and (
+                not audit.over_long or audit.over_long_preambles[0][0] > worst[0]):
+            worst = (audit.over_long_preambles[0][0],
+                     f"group preamble: {audit.over_long_preambles[0][1]}")
         return _Check(
             name="memory-index-entries-are-one-line", passed=False,
             why=("an index entry is a POINTER, not the memory. Detail belongs "
@@ -1779,8 +1870,10 @@ def _check_memory_index_size(audit: _MemoryIndexAudit) -> _Check:
                  "opening the file."),
             expected=f"every entry within {_MEMORY_ENTRY_ONE_LINE_CHARS} characters",
             observed=(f"{len(audit.over_long)} entr"
-                      f"{'y is' if len(audit.over_long) == 1 else 'ies are'} over: "
-                      f"longest {worst[0]} chars — {worst[1][:60]}"),
+                      f"{'y is' if len(audit.over_long) == 1 else 'ies are'} over"
+                      + (f" and {len(audit.over_long_preambles)} group preamble(s)"
+                         if audit.over_long_preambles else "")
+                      + f": longest {worst[0]} chars — {worst[1][:60]}"),
             look_at=str(audit.path),
         )
     line_threshold = int(_MEMORY_INDEX_LIMIT_LINES * _MEMORY_INDEX_REFUSE_FRACTION)
