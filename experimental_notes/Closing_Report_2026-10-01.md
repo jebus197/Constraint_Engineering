@@ -115,6 +115,8 @@ STATE IS SAVED
 
 sv completed: commit 6562589, 80 files changed, 10,633 insertions, pushed to the simulation branch's remote. The working tree is clean, the generated state file matches the commit, and the canonical branch is untouched and byte-identical to its own remote. The day's memory entries are written and indexed.
 
+A second save followed, carrying this report with the gate diagnosis in it: commit 623080a, 6 files changed, 41 insertions. It was refused twice before it landed, and both refusals were the save checking itself rather than a fault in the work. The first said that no memory file had changed since the previous commit. That was true, because the diagnosis had not yet been written down, and a save that keeps the code but loses the session is exactly what that check exists to prevent. The second said the memory index stood at 190 lines against a ceiling of 190. Also true. Both were cleared without losing anything: the diagnosis is now a memory entry of its own, and the index regained 2 lines by dropping 2 stray blank lines from inside its own lists, leaving all 151 entries intact.
+
 
 Every figure in this report was computed in this session, every proportion carries a confidence interval, and the scripts that produce them are committed alongside them.
 
