@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 30 September 2026 23:58 BST (2026-09-30T23:58:18+01:00)
+Generated: 1 October 2026 01:22 BST (2026-10-01T01:22:27+01:00)
 
 ---
 
@@ -18,16 +18,16 @@ Generated: 30 September 2026 23:58 BST (2026-09-30T23:58:18+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `5f7938e` Take-home digest of the intelligence-first round, spoken version plus mirror
-- **Committed:** 2026-09-30 23:55:19 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 1
+- **Last commit (the PARENT of the commit containing this file):** `917028b` sv: state save 1 October 2026 00:22 BST, simulation branch
+- **Committed:** 2026-09-30 23:58:18 +0100
+- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** clean
 
 ---
 
 ## Tests
 
-**9227 tests collected** at 30 September 2026 23:58 BST, HEAD `5f7938e` (`python3 -m pytest bench/tests/ --co -q`)
+**9227 tests collected** at 1 October 2026 01:22 BST, HEAD `917028b` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,6 +57,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `917028b sv: state save 1 October 2026 00:22 BST, simulation branch`
 - `5f7938e Take-home digest of the intelligence-first round, spoken version plus mirror`
 - `b4f37de Apply the intelligence-first round, composed: 4 seat fixes, 3 of which had no guard`
 - `8f4eb83 Brief for the intelligence-first panel round, with 5 figures re-executable`
@@ -66,4 +67,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `0b05822 Closing report for both 2026-09-30 panel reviews, with every decision the founder owns`
 - `1a30d87 The 2 controls both panel seats converged on, built and verified to bite`
 - `4fa7ad7 Panel brief for the A19 calculator design review, with its figures re-executable`
-- `0ce3c08 Correct the 2 false sentences about e2 on prose, plus the citations my own edit shifted`
