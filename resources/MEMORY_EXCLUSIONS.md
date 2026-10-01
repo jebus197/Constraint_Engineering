@@ -8,23 +8,31 @@ what was filtered and the criterion that filtered it, so the public
 record is honest about the shape of what is withheld, not only what is
 shown.
 
-## Accounting (counted 2026-10-01 12:18 BST)
+## Accounting (counted 2026-10-01 22:58 BST)
 
 The source index lives privately at
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
-The directory holds **159 files**, of which one is `MEMORY.md` itself
-(the index), leaving **158 individual memory files**. They partition as:
+The directory holds **165 files**, of which one is `MEMORY.md` itself
+(the index), leaving **164 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 101 |
+| Mirrored (in summarised form) in `MEMORY.md` | 107 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 158 |
+| total | 164 |
 
+> **[Correction 2026-10-01.]** Total 158 -> 163, mirrored 101 -> 106. 5 memory files were written on 2026-10-01 recording the day's work on the simulation branch: `cdsfl_dated_claim_dated_denominator_2026-10-01.md` (6 of the 20 suite failures were one fault, a dated measurement checked against a grown archive, and nothing was broken in any of the 6), `cdsfl_claim_channel_is_on_2026-10-01.md` (the claim-level channel the free panel designed is built, wired and informative-only), `cdsfl_seat_writes_are_prevented_now_2026-10-01.md` (a kernel sandbox now DENIES a seat writing the canonical tree, measured on 6 properties, and the gitignored-harvest stranding is repaired at source with a ratchet), `cdsfl_marker_matched_a_modifier_2026-10-01.md` (the latent classifier tagged a live defect latent on "no caller override", which means the opposite) and `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` (2 seat replies preserved disagreement in full and a line-anchored pattern could not see it; 4 gained of 306, 0 lost). All 5 carry a pointer line in `MEMORY.md`, so all 5 fall in the mirrored bucket rather than needing a name under Excluded or Unclassified. Recorded 2026-10-01T16:06:03+01:00.
+>
+> **CORRECTED LATER THE SAME DAY, AND THE CORRECTION IS THE POINT. The sentence first written here said the derivation "remains unbuilt". That was FALSE.** `_update_memory_exclusions_ledger` is defined at `scripts/cdsfl_sv.py:1598` and `sv` CALLS it from its own `main()` at line 2617 — verified by parsing the module rather than reading it, 1 definition and 1 call. `git log -S` dates it to commit `b312b84`, **2026-08-23**, 6 days after the 2026-08-17 remedy asked for it. So **7 of the recurring corrections post-date the remedy being built**, and absence was never the cause.
+>
+> **THE ACTUAL CAUSE, and it is not the tool's.** 5 memory files were written on 2026-10-01 and `sv` was never run, which is exactly what the pre-commit hook's own message names as the usual cause. The hand correction that followed was then INCOMPLETE: this document carries 3 figures, the hand edit fixed the bucket table and the total correctly and missed the third, which still read 159 where 164 is true. Running the built derivation against a copy changed precisely 2 lines — that stale count and the counted-at stamp — and left both hand-corrected figures untouched, which establishes at once that the arithmetic was right and that hand-editing missed something the tool does not.
+>
+> **So the standing recommendation to BUILD it is withdrawn, and what is owed is to RUN it.** The figures below were produced by the derivation, not typed. This entry is left in full rather than tidied away, because a correction that removes its own error leaves the next reader to repeat it ([[feedback_check_the_record_before_declaring_a_gap]]).
+>
 > **[Correction 2026-09-21.]** Total 147 -> 149, mirrored 90 -> 92, directory 148 -> 150. Two memory files were written overnight on 2026-09-21: `cdsfl_the_appendix_won_2026-09-21.md`, recording that the assistant attacked the model's Phase 2 and was refuted by both free seats in a single round, and `cdsfl_scorer_measured_absence_of_harm_2026-09-21.md`, recording that S_k filled the appendix's sigma slot while every gate measured absence of harm. Both are mirrored in `MEMORY.md` under the pointers "THE APPENDIX WON" and "SCORER MEASURED ABSENCE OF HARM", so both fall in the residual bucket rather than needing a name under Excluded or Unclassified.
 >
 > **This is the 9th consecutive manual correction to a figure the 2026-08-17 remedy said should be derived inside `sv` rather than typed.** The guard caught it at the suite gate again, which is the mechanism working. The underlying remedy is still not built, and 9 consecutive manual corrections is now the strongest evidence in the record that it should be.

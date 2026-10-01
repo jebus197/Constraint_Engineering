@@ -98,6 +98,43 @@ INDETERMINATE = "INDETERMINATE_OTHER"
 #: equipment failure may not write a TERMINAL status, and ESCALATE is not one.
 PROBE_BROKEN_AFTER_BASELINE = "INDETERMINATE_PROBE_BROKEN_AFTER_BASELINE"
 
+#: EVERY OUTCOME WITH ITS MEANING INLINE, added 2026-10-01 on the founder's
+#: ruling "Add it".
+#:
+#: THE DEFECT IT CLOSES, found by the cc2 seat in the free panel of 2026-09-30.
+#: A fix MEASURED and found not to cure its own falsifier appeared NOWHERE in
+#: the exported finding catalogue -- `export_finding_catalogue` carried
+#: `demonstrated` and `falsifier_verdict`, both about whether the DEFECT was
+#: shown, and no field at all about whether the proposed FIX worked. Measured
+#: on bench/logs/commissioning_arm1_panel_20260921T215405Z: all 69 registry
+#: entries carry a `fix_efficacy` dict, 16 of them reading
+#: FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER, and not one of those 16 was visible to
+#: anyone reading the exported record. The founder's standing ruling is that
+#: wrong fixes and failures be recorded and open to HIL inspection, and the
+#: data was on the entry the whole time.
+#:
+#: THE MEANINGS LIVE HERE, BESIDE THE CONSTANTS, for the reason the status
+#: vocabulary gives: a reader of one exported record must not need a second
+#: file to interpret it, and a meaning kept anywhere but next to its constant
+#: is a second description free to drift from the first.
+OUTCOME_MEANINGS = {
+    FIX_CURES: "The fix was applied and its own falsifier then passed: measured, and it worked.",
+    FIX_INEFFECTIVE: "The fix was applied and its own falsifier still fired: measured, and it did NOT work.",
+    NOT_INTERCEPTED: "Indeterminate: the falsifier never read the target, so applying the fix could not have changed its verdict.",
+    NO_BASELINE: "Indeterminate: the falsifier does not reproduce the defect on the UNMODIFIED target, so there was no baseline to improve on.",
+    NO_FIX: "Indeterminate: the proposed fix did not apply to the target.",
+    NO_FALSIFIER: "Not probed: the finding carries a fix but no falsifier, so there was nothing to run the fix against.",
+    INDETERMINATE: "Indeterminate for a reason not covered by the named cases; read the detail string.",
+    PROBE_BROKEN_AFTER_BASELINE: "Indeterminate: the falsifier reproduced the defect and then errored on the PATCHED target, so the fix may have broken the instrument. Escalated rather than scored.",
+}
+
+#: The outcomes on which the probe actually reached a verdict about the fix.
+#: Everything else is the instrument failing to look, which is NOT the same
+#: thing and must never be merged with it.
+CONCLUSIVE_OUTCOMES = (FIX_CURES, FIX_INEFFECTIVE)
+
+ALL_OUTCOMES = tuple(OUTCOME_MEANINGS)
+
 
 @dataclasses.dataclass(frozen=True)
 class FixEfficacyResult:

@@ -60,9 +60,33 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 
 
+#: THE CLAIM IS DATED, SO THE POPULATION MUST BE TOO. Scoped 2026-10-01.
+#:
+#: This producer disputes the morning report's 3-arm regression and shows the
+#: per-seat-round slope reversing sign when the 4th completed arm is included.
+#: That argument is about the 4 arms of 2026-09-21/22 and no others. The glob
+#: was `commissioning_*`, so once the arms of 2026-09-29/30 were archived it
+#: printed 7 rows under a heading reading "THE 4 COMPLETED ARMS" -- the heading
+#: and the table contradicting each other inside one output -- and the slopes
+#: it reproduces, which are the whole point of reproducing before refuting,
+#: silently became slopes over a different dataset.
+#:
+#: Same defect, same day, same fix as `falsifier_coverage_2026-09-22.py`,
+#: `e1_population_recount_falsifier_2026-09-22.py` and task A7: a dated claim
+#: needs a dated denominator.
+CLAIM_SCOPE = ("20260921", "20260922")
+
+
+def _in_claim_scope(path: str) -> bool:
+    """Does this run belong to the 4 arms the argument is about?"""
+    return any(stamp in Path(path).parent.name for stamp in CLAIM_SCOPE)
+
+
 def arms():
     out = []
     for f in sorted(glob.glob(str(REPO / "bench/logs/commissioning_*/commissioning_*_report.json"))):
+        if not _in_claim_scope(f):
+            continue
         r = json.load(open(f))
         arm = f.split("commissioning_")[1].split("_")[0]
         per = [rd.get("findings_count") or 0 for rd in r.get("rounds", [])]

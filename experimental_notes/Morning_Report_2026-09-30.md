@@ -17,7 +17,7 @@ It still did not converge, and the runner named the reason itself:
 
 So a single safety rule held it open. That rule, A4, refuses to count a quiet round while any critical finding is still unverified. It is behaving correctly. The problem is upstream: those findings were unverified because **no runnable test was ever attached to them**. The run log is explicit: *"1 unresolved critical, 1 never assessed, no runnable falsifier"*.
 
-**That is one mechanism, not a pile of them, and it is the same mechanism that stalls the prose arm**, where round 0 sent 12 of 12 findings to the human queue with no test verdict at all, a rate of 100.0000%, confidence interval 75.7506% to 100.0000%.
+**That is one mechanism, not a pile of them, and it is the same mechanism that stalls the prose arm**, where round 0 catalogued 15 findings, sent 12 of them to the human queue unconfirmed, and every one of those 12 carried no test verdict at all, a rate of 100.0000%, Wilson confidence interval 75.7506% to 100.0000%. The remaining 3 closed with a confirmed falsifier verdict, so the 100.0000% is the rate among findings that reached the queue rather than among all findings in the round.
 
 **So the honest answer to whether convergence is out of reach under the current set-up: no.** It is blocked by one identified, already-prioritised problem, which is the supply of runnable tests for findings. Nothing in the mathematics, in gamma, or in the gate needs changing. The model was not the obstacle at any point last night.
 
@@ -30,7 +30,7 @@ Rho was stuck at exactly 1.000 in every round of every simulated run, which made
 | before the repair | 3 of 4 | 0.9565 |
 | after the repair | **0 of 8** | **0.3333** |
 
-The difference is statistically clear, Mann-Whitney p = 0.0040.
+The difference is statistically clear: a one-sided Mann-Whitney test gives p = 0.0040, and the two-sided test gives p = 0.0079. The one-sided form is the one quoted because the repair was predicted in advance to lower rho rather than merely to change it, and the conclusion holds either way.
 
 4 further defects were found and repaired along the way. 2 of them could have corrupted a result:
 
@@ -59,8 +59,10 @@ What did happen is that 9 commits were made to the local copy of the main branch
 
 ## What this session's own defect record showed
 
-13 substantive defects were found overnight. The automatic guards, the test suite and the committed tests found **7 of them, 53.8462%**, confidence interval 29.1438% to 76.7939%. The free review panel found 3. The assistant found 2 unaided, and of the 3 defects capable of corrupting a result, the assistant found **none** alone. 4 of the 9 commits were refused by a guard before being accepted, and each refusal was correct.
+13 substantive defects were found overnight. The automatic guards, the test suite and the committed tests found **7 of them, 53.8462%**, Wilson confidence interval 29.1438% to 76.7939%. That count of 7 out of 13 is a hand enumeration of one night's defects and of what found each one. No artefact on disk records that attribution, so the arithmetic can be rechecked but the inputs cannot be rebuilt, and the figure should be read as an attribution with its arithmetic verified rather than as a measurement. The free review panel found 3. The assistant found 2 unaided, and of the 3 defects capable of corrupting a result, the assistant found **none** alone. 4 of the 9 commits were refused by a guard before being accepted, and each refusal was correct.
 
 The practical lesson is that the mechanised layer earns its keep and should be extended, and that the review panel should look at a design before it is built rather than after.
+
+**FIGURE PROVENANCE, added 2026-10-01T13:47:27+01:00.** Every figure in this note is recomputed by `scripts/morning_report_figures_2026-10-01.py`, which reads the archived runs rather than restating the note. The rho table comes from the per-round `rho_history` in `bench/logs/commissioning_arm1_panel_20260929T194414Z/runner_state.json` before the repair and `bench/logs/commissioning_arm1_panel_20260929T214647Z/runner_state.json` after it; the prose arm's queue figures come from the finding catalogue in `bench/logs/commissioning_arm4_prose_20260930T064044Z/`. All of those reproduce exactly. Each rate carries a Wilson and a Clopper-Pearson interval, with the Wilson interval recomputed independently in mpmath at 50 decimal places and agreeing with statsmodels to within 2.2e-16. The exception is stated above and is deliberate: the 7 of 13 attribution has no artefact behind it, and only its arithmetic is reproduced. Rebuilding the figures also surfaced 2 under-specifications in the original wording, the unlabelled p-value and the unstated denominator of the 12 of 12, both corrected in place above; neither changes a conclusion.
 
 Written under CDSFL note standard v1.7 (26 August 2026).

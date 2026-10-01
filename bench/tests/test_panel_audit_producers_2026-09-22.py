@@ -97,3 +97,49 @@ def test_arm4_is_the_arm_whose_inclusion_reverses_the_sign():
     assert (seats, rounds, rep["total_findings"]) == (5, 1, 17)
     # The HIGHEST per-seat-round rate of all 4 arms, at the LARGEST panel size.
     assert abs(psr - 3.4) < 1e-9, psr
+
+
+class TestTheClaimScopeCannotDriftAgain:
+    """The scoping added 2026-10-01, held by execution rather than by comment.
+
+    BOTH PRODUCERS WENT RED WITHOUT BEING TOUCHED. They globbed
+    `commissioning_*`, so archiving the arms of 2026-09-29/30 grew their
+    denominators and they began reporting a different measurement under an
+    unchanged heading -- the confound producer printing 7 rows under "THE 4
+    COMPLETED ARMS". Every figure above is a statement about the 4 arms of
+    2026-09-21/22, so the population is now pinned to those arms.
+
+    The figure assertions above would catch a re-widening only by going red
+    with a confusing message. These 2 name the cause directly.
+    """
+
+    def test_both_producers_declare_the_same_dated_scope(self):
+        import importlib.util
+        scopes = {}
+        for script in (COVERAGE, CONFOUND):
+            spec = importlib.util.spec_from_file_location(script.stem, script)
+            m = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(m)
+            assert hasattr(m, "CLAIM_SCOPE"), (
+                f"{script.name} no longer declares CLAIM_SCOPE, so its "
+                f"denominator is free to grow with the archive again")
+            scopes[script.name] = tuple(m.CLAIM_SCOPE)
+        assert len(set(scopes.values())) == 1, (
+            f"the 2 producers disagree about which arms the audit is about: "
+            f"{scopes}")
+        assert set(next(iter(scopes.values()))) == {"20260921", "20260922"}
+
+    def test_the_confound_table_holds_exactly_the_4_arms_it_names(self):
+        if not _have_arms():
+            pytest.skip("commissioning archive absent")
+        out = _run(CONFOUND).stdout
+        head, _, rest = out.partition("1. THE REPORT'S 3-ARM REGRESSION")
+        assert "THE 4 COMPLETED ARMS" in head, head[:200]
+        rows = [ln for ln in head.splitlines()
+                if ln.strip().startswith("arm") and "seats" not in ln]
+        assert len(rows) == 4, (
+            "the heading says 4 and the table printed "
+            f"{len(rows)} rows:\n" + "\n".join(rows))
+        assert len({ln.split()[0] for ln in rows}) == 4, (
+            "an arm appears twice, so a later run of the same arm is being "
+            "counted as a separate arm:\n" + "\n".join(rows))

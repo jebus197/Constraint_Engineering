@@ -417,6 +417,38 @@ def set_panel_cwd(path: str | None) -> None:
     _log(f"[panel] working directory: {path or '(inherited — repo)'}")
 
 
+#: WRITES TO THE CANONICAL TREE ARE PREVENTED, NOT ONLY DETECTED. Added
+#: 2026-10-01 on the founder's "Fix it", closing the asymmetry the cc2 seat
+#: reported on 2026-09-30: `--allowedTools` withholds Write and Edit, and a Bash
+#: shell redirection was reachable anyway. Bash cannot be withheld -- every STEM
+#: tool the seats are required to use runs through it -- so the control has to
+#: sit below the tool list. `panel_sandbox.confine` wraps the seat in a macOS
+#: kernel sandbox that denies writes to the canonical subpath.
+#:
+#: IT RETURNS A MECHANISM STRING AND THE RECORD CARRIES IT. A control whose
+#: presence is assumed rather than recorded is how this project ends up with
+#: mechanisms nothing calls; the per-attempt log now states which control was in
+#: force, including when it was NONE.
+def _confine_seat_command(cmd, cwd):
+    """(argv, mechanism). Unchanged argv wherever confinement cannot apply."""
+    try:
+        from bench import panel_sandbox as _PS
+    except ImportError:                                       # noqa: BLE001
+        try:
+            import panel_sandbox as _PS                       # type: ignore
+        except ImportError:
+            return list(cmd), "none: panel_sandbox unavailable"
+    try:
+        return _PS.confine(cmd, _REPO_ROOT_FOR_CONFINEMENT, cwd)
+    except Exception as _exc:                                 # noqa: BLE001
+        # A confinement failure must never silently become a dispatch failure,
+        # and must never silently become a confident claim either.
+        return list(cmd), f"none: confinement errored ({_exc})"
+
+
+_REPO_ROOT_FOR_CONFINEMENT = pathlib.Path(__file__).resolve().parents[1]
+
+
 def get_panel_cwd() -> str | None:
     """Current panel working directory, or None if inherited."""
     return _get_panel_cwd_raw()
@@ -1293,8 +1325,9 @@ def call_claude_cli(
             break
         t0 = time.monotonic()
         try:
+            _confined_cmd, _confinement = _confine_seat_command(cmd, _cwd)
             result = subprocess.run(
-                cmd,
+                _confined_cmd,
                 input=user_prompt,
                 capture_output=True,
                 text=True,
@@ -1314,7 +1347,12 @@ def call_claude_cli(
                                        # WHICH TREE THIS ATTEMPT RAN IN, so a
                                        # reply can be matched to the files it
                                        # left rather than to a shared directory.
-                                       "cwd": _cwd})
+                                       "cwd": _cwd,
+                                       # WHICH WRITE-CONFINEMENT WAS IN FORCE,
+                                       # recorded so a reader never has to
+                                       # assume it. "none: ..." is a real and
+                                       # reportable answer.
+                                       "write_confinement": _confinement})
                 try:
                     pathlib.Path(_sink).write_text(json.dumps(
                         {"model": model_id, "elapsed_s": round(elapsed, 1),

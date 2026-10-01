@@ -1,0 +1,49 @@
+{
+  "_what_this_is": [
+    "THE BACKLOG OF STRANDED SEAT EVIDENCE, as it stood when the fault was",
+    "repaired at source. A panel harvest lands under bench/logs/**, which",
+    ".gitignore ignores, so every seat-written file is invisible to git by",
+    "construction. 12 scripts and 2 design notes were rescued BY HAND on",
+    "2026-09-30; the founder's ruling on being shown it was recurring was",
+    "'clearly that also needs to be repaired'.",
+    "",
+    "THE REPAIR is bench/panel_sandbox.py:preserve_seat_evidence, called from",
+    "harvest(), which copies every seat-written file with NO tracked",
+    "counterpart into experimental_notes/seat_evidence/<round>/<seat>/ with",
+    "provenance at source and the seat's own sha256 recorded before the header",
+    "is prepended. From now on a round preserves its own evidence.",
+    "",
+    "THIS FILE IS THE RATCHET'S BASELINE, not an exemption. The guard at",
+    "bench/tests/test_seat_evidence_stranding_does_not_grow_2026-10-01.py",
+    "asserts that no round's count GROWS, and that any round not listed here",
+    "has ZERO stranded files -- because any round archived after the repair",
+    "should have preserved its own. Counts may only fall.",
+    "",
+    "RULES FOR EDITING. Lower a count when files are genuinely rescued, and",
+    "delete the entry when it reaches 0. Never raise one, and never add a new",
+    "round: a new round with stranded evidence means the repair stopped",
+    "working, which is the thing this file exists to catch."
+  ],
+  "measured_at": "2026-10-01T14:57:24+01:00",
+  "measured_by": "scripts/seat_evidence_is_gitignored_2026-09-30.py (survey / unpreserved_by_round)",
+  "totals_at_baseline": {
+    "seat_py_files_in_harvest_space": 251,
+    "ignored_by_git": 251,
+    "unpreserved": 46,
+    "unpreserved_share": "46 of 251 = 18.3267%, Wilson [14.0302%, 23.5781%]",
+    "tracked_but_diverged": 144
+  },
+  "unpreserved_by_round": {
+    "a19_calculator_design_2026-09-30": 8,
+    "adaptive_spec_blind_2026-09-29": 2,
+    "check_my_work_2026-09-28": 10,
+    "explorer_modes_2026-09-28": 2,
+    "green_board_2026-09-29": 3,
+    "maths_panel_2026-09-20": 3,
+    "maths_panel_2026-09-20_r4": 7,
+    "maths_panel_2026-09-21_open": 1,
+    "overnight_review_2026-09-22": 5,
+    "prose_and_astra_2026-09-22": 1,
+    "rho_repair_review_2026-09-29": 4
+  }
+}

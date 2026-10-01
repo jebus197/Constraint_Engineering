@@ -1038,8 +1038,20 @@ def wire_git_hooks(root: Path) -> bool:
         return False
     current = subprocess.run(["git", "config", "--get", "core.hooksPath"],
                              cwd=root, capture_output=True, text=True).stdout.strip()
-    if current == "hooks":
-        print("  [OK] core.hooksPath already points at hooks/")
+    # COMPARED BY RESOLUTION, NOT BY SPELLING, 2026-10-01. `== "hooks"` treated
+    # an ABSOLUTE `<repo>/hooks` as wrong and rewrote it on every run, reporting
+    # a repair where nothing was broken. Either spelling is accepted when it
+    # resolves to this clone's own hooks/. The same spelling comparison had
+    # taken `test_precommit_guard_2026-09-09.py` red on a fully wired clone.
+    # git resolves a relative `core.hooksPath` against the TOP LEVEL, not the
+    # current directory: measured on git 2.50.1 by committing from a
+    # subdirectory of a throwaway repo under each spelling, and the hook ran
+    # both times. So neither spelling is safer and neither is repaired -- the
+    # only defect was comparing the STRING.
+    _cur = Path(current) if current else None
+    _resolved = None if _cur is None else (_cur if _cur.is_absolute() else root / _cur)
+    if _resolved is not None and _resolved.resolve() == hooks_dir.resolve():
+        print(f"  [OK] core.hooksPath already points at hooks/ ({current})")
     else:
         subprocess.run(["git", "config", "core.hooksPath", "hooks"], cwd=root, check=False)
         print(f"  [SET] core.hooksPath: {current or '(unset)'} -> hooks")

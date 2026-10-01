@@ -41,6 +41,54 @@ def mod():
     return m
 
 
+def _backend_state() -> str:
+    """Can the grep wrapper reach the backend it shells out to? "reachable" or not.
+
+    THE THIRD PRECONDITION, AND THE ONE THAT ACTUALLY BIT. Measured 2026-10-01.
+    The wrapper is NOT self-contained. Its own body reads:
+
+        local _cc_bin="${CLAUDE_CODE_EXECPATH:-}"
+        [[ -x $_cc_bin ]] || _cc_bin=$HOME/.local/bin/claude
+        if [[ ! -x $_cc_bin ]]; then command grep "$@"; return; fi
+
+    So `grep` resolving to a shell function is NOT sufficient for the divergence
+    to exist: the backend it execs as `ugrep` must be executable, or the wrapper
+    SILENTLY becomes plain grep and the 2 counts are identical by construction.
+
+    WHY THIS TEST FLIPPED ON 2 CONSECUTIVE DAYS, AND IT WAS NEVER SUITE CONTEXT.
+    `CLAUDE_CODE_EXECPATH` is exported into the agent's environment and is NOT
+    set in the operator's login shell, where `$HOME/.local/bin/claude` does not
+    exist either. Measured in both: agent shell, the variable set and executable,
+    911 against 1159; login shell, UNSET with the fallback absent, 1159 against
+    1159 and `assert 1159 < 1159`. Every targeted re-run was launched by the
+    agent and passed; both full-suite runs were launched from the terminal and
+    failed. The variable is WHICH SHELL STARTED PYTEST.
+
+    Reproduced directly rather than inferred: pointing CLAUDE_CODE_EXECPATH at a
+    missing path turns 911 against 1159 into 1159 against 1159, which is the
+    suite's exact failure. The wrapper hides 248 of 1159 files when it works,
+    21.3978%, Wilson [19.1332%, 23.8513%] on statsmodels and mpmath agreeing to
+    2.8e-17.
+
+    A WRONG HYPOTHESIS WAS TRIED FIRST AND IS RECORDED SO IT IS NOT RETRIED. It
+    gated on whether any git-ignored file carried the pattern, reasoning that the
+    suite creates and deletes ignored files for 55 minutes. That gate measured
+    910 ignored matches, so it never fired, the test failed again, and the
+    failure message refuted the hypothesis outright: 1159 against 1159 WITH 910
+    ignored matches present is a wrapper doing nothing, not a population with
+    nothing to hide.
+    """
+    try:
+        r = subprocess.run(
+            ["zsh", "-c",
+             'b="${CLAUDE_CODE_EXECPATH:-}"; [[ -x $b ]] || b="$HOME/.local/bin/claude"; '
+             '[[ -x $b ]] && echo reachable || echo unreachable'],
+            capture_output=True, text=True, timeout=60)
+        return r.stdout.strip() or "unknown"
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+
+
 def _wrapper_state() -> str:
     """How `grep` resolves in the newest shell snapshot: independent of any count.
 
@@ -143,7 +191,20 @@ class TestTheDivergenceIsReal:
         if seen < 0 or real == 0:
             pytest.skip("probe could not run in this environment")
         assert real > 0
+        # THE BACKEND MUST BE REACHABLE, PROBED RATHER THAN INFERRED. See
+        # `_backend_state`: a wrapper that cannot exec its backend falls back to
+        # plain grep, so the counts agree by construction and the blind spot
+        # cannot exist here.
+        backend = _backend_state()
+        if backend != "reachable":
+            pytest.skip(
+                f"the grep wrapper's ignore-aware backend is {backend!r} in "
+                "this environment -- CLAUDE_CODE_EXECPATH unset and the "
+                "fallback path absent -- so the wrapper degrades to plain grep "
+                "and there is no divergence to measure. Its absence is not a "
+                "defect, and it depends on WHICH SHELL started pytest")
         assert seen < real, (
+            f"the wrapper's backend is reachable, so it must filter. "
             f"a grep WRAPPER is loaded yet session grep found {seen} files and "
             f"/usr/bin/grep found {real}. Either the wrapper has stopped honouring "
             "ignore files -- measured as its behaviour under Claude Code 2.1.284, "

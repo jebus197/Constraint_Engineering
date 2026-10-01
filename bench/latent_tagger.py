@@ -200,8 +200,26 @@ _LATENCY_MARKERS: Tuple[Tuple[str, str], ...] = (
     ("cannot_trigger", r"\bcannot be (?:reached|triggered|invoked|hit) "
                        r"(?:by|from|through)\b|\bno code path (?:can |could )?"
                        r"(?:reach|trigger)\b"),
+    # THE NOUN MUST BE THE ABSENCE, NOT A MODIFIER. Tightened 2026-10-01.
+    # This matched "a two-parameter signature ... with no caller override",
+    # where "caller" qualifies "override" and the sentence says callers CANNOT
+    # override a stop set -- the DEFECT -- rather than that no caller exists.
+    # The entry was tagged latent on prose meaning the opposite, which is the
+    # manufactured-false-latent failure this subsystem must never cause: latent
+    # feeds demotion eligibility. (It did not reach demotion, checked, so
+    # nothing was demoted on it.)
+    # MEASURED over every registry entry in bench/logs: 1 lost, which is that
+    # false positive, and 0 true positives lost, so the archive's tagged set
+    # returns to the 16 already pinned in
+    # bench/tests/test_latent_tagger_evaluation.py rather than growing to 17.
+    # Still matched: "no production consumer exists", "no file, no command, and
+    # no invocation", "there is no caller", "no call sites remain", "no
+    # callers". Now correctly unmatched: "no caller override", "no caller
+    # overrides are permitted", "no consumer parameter is passed".
     ("no_caller", r"\bno (?:current |in-?repo |live |real |production )?"
-                  r"(?:caller|call site|consumer|invocation)s?\b"),
+                  r"(?:caller|call site|consumer|invocation)s?\b"
+                  r"(?!\s+(?:override|overrid\w+|parameter|param|argument|arg|"
+                  r"option|flag|kwarg|default)s?\b)"),
     ("shadow_path", r"\b(?:shadow[/ -]?(?:only|observation)|observation[- ]only|"
                     r"telemetry[- ]only|shadow instrumentation|"
                     r"never gates?|not load[- ]bearing|"

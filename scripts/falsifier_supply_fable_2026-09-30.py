@@ -48,6 +48,35 @@ from bench.falsifier_verify import reverify_falsifier                    # noqa:
 from bench.routing import resolve_via_routing                            # noqa: E402
 from bench.reference_runner_v3 import compute_sk, _capture_baseline      # noqa: E402
 
+# A REAL PARSER, AND THE CHOICE IS THE PROJECT'S RATHER THAN MINE.
+# `test_operational_scripts::test_an_unknown_flag_is_rejected_loudly` asserts
+# argparse's OWN wording, "unrecognized arguments". The shared helper in
+# `scripts/_cli_help.py` emits British "unrecognised argument(s)" instead, so a
+# script taking that route cannot satisfy the guard however correctly it
+# behaves. Widening the assertion was the wrong fix: the guard is DELIBERATE,
+# and two scripts (`panel_brief_validate.py`, `quarantine_to_candidate.py`)
+# carry `nargs="?"` added expressly so argparse REACHES its unknown-flag check.
+# So the script changes, not the test.
+#
+# Parsing nothing is correct here -- this file takes no arguments. argparse
+# supplies the usage line for `--help` (exit 0) and exits 2 with its own
+# message on anything else, before any work is done. Added 2026-10-01 after
+# the first clean full-suite run went red and 9 of its 20 failures were this
+# family; the founder's rule is `feedback_help_must_never_cost_money`, where
+# 15 of 17 runners once billed a live dispatch on an unrecognised argument.
+#
+# The `__main__` guard is load-bearing too: `test_operational_scripts` imports
+# every parser-less script in a subprocess with `sys.argv == ['-c', <path>]`,
+# so an UNGUARDED parse would read that path as an unrecognised argument and
+# exit 2 -- the fix for one guard breaking another.
+if __name__ == "__main__":
+    import argparse as _argparse
+
+    _argparse.ArgumentParser(
+        description=(__doc__ or "").strip().split("\n")[0] or None,
+    ).parse_args()
+
+
 BASELINE = _capture_baseline(STRUCTURAL.document, str(STRUCTURAL.doc_path))
 
 

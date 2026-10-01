@@ -826,3 +826,79 @@ class TestTheToolEnabledDateMatchesTheArchive:
             f"the archive's earliest tool-enabled round is {earliest}, and entry P3 "
             f"does not say so. A date in prose is a claim about the archive and "
             f"must agree with it.")
+
+
+class TestDisagreementIsRecognisedAsAnAssertionNotAMention:
+    """The 2026-10-01 widening of DISAGREEMENT_RE, held by calling it.
+
+    WHY IT WIDENED. The pattern's section alternative is LINE-ANCHORED, so a
+    disagreement stated inside a sentence was invisible. 2 replies of 2026-09-30
+    took P5 red while complying in full, both naming whom they disagreed with
+    and carrying the substance. Measured over all 306 archived seat replies the
+    widening gained 4 and lost 0.
+
+    WHY IT DID NOT WIDEN FURTHER. A bare `disagreement with` also matched "a
+    model's disagreement with a CONFIRMED finding would vanish" -- the word as a
+    technical noun about the mechanism, not the seat's own position. Matching a
+    MENTION rather than an ASSERTION weakens the guard in the reassuring
+    direction, so the new alternatives require the first person or an object
+    that is an ACTOR rather than an artefact.
+    """
+
+    _MUST_CARRY = (
+        "Disagreements with CC1 (verdict vocabulary; stage reading) are preserved.",
+        # THE REAL SHAPE, from fable on a19_calculator_design_2026-09-30: the
+        # phrase ends a `##` heading, so what it introduces is the section
+        # body. A bare one-line version introduces nothing and is CORRECTLY
+        # refused -- a label with no body is not a preserved disagreement.
+        "## Q4 -- Yes: NO GATE. And CC1's invariance claim is correct but "
+        "incomplete -- my named disagreement.\n\nThe invariance holds only where "
+        "the weight is renormalised over available gates.",
+        "My strongest likely disagreement with the panel: I would not cut it.",
+        "**This is a disagreement with the brief's framing**, which treats it as a gap.",
+        "I disagree with the brief's central framing, and it is executed.",
+        "## Disagreement\n\nThe other seat read gamma as constant; it is not.",
+    )
+    _MUST_NOT_CARRY = (
+        "No disagreements with the other seat.",
+        "no disagreement with CC1",
+        "## Disagreement\n\nNone.",
+        "strongest_disagreement: none",
+        "I disagree with nothing.",
+        # THE ONE THE TIGHTENING EXISTS FOR: a mention, not an assertion.
+        "a model's disagreement with a CONFIRMED finding would vanish",
+        # A LABEL WITH NO BODY. Refused on purpose: the condition asks that a
+        # disagreement be PRESERVED, and a heading naming one without stating
+        # it preserves nothing.
+        "CC1's claim is incomplete -- my named disagreement.",
+    )
+
+    @pytest.mark.parametrize("text", _MUST_CARRY)
+    def test_an_asserted_disagreement_is_recognised(self, text):
+        assert carries_disagreement(text), (
+            f"a stated disagreement was not recognised, so a complying seat "
+            f"would be reported as smoothing to consensus: {text!r}")
+
+    @pytest.mark.parametrize("text", _MUST_NOT_CARRY)
+    def test_an_absence_or_a_mere_mention_is_not_recognised(self, text):
+        assert not carries_disagreement(text), (
+            f"this counts as disagreement preserved when it is not, which "
+            f"weakens P5 in the reassuring direction: {text!r}")
+
+    def test_the_widening_is_load_bearing_on_the_real_corpus(self):
+        """FALSIFIER: restore the narrow pattern and replies are lost again."""
+        import re
+        narrow = re.compile(
+            r"strongest[_ ]disagreements?"
+            r"|where\s+i\s+disagree"
+            r"|(?:^|\n)\s*#{0,4}\s*\**\s*(?:\d+[.)]\s*)?disagreements?\b"
+            r"|i\s+disagree\s+with", re.I)
+        rows = [d.get("response", "") for _rnd, d in _replies()]
+        reason = corpus.shortfall(len(rows), 10, "panel seat replies")
+        if reason:
+            pytest.skip(reason)
+        wide_only = [r for r in rows
+                     if carries_disagreement(r) and not narrow.search(r)]
+        assert wide_only, (
+            "the widening recovers nothing on the real corpus, so it is an "
+            "addition nothing reaches")

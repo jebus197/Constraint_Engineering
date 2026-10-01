@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import hashlib
 import fnmatch
+import json
 import os
 import shutil
 import subprocess
@@ -777,10 +778,23 @@ def harvest(sandbox: Path, repo: Path, dest: Path) -> dict:
         (dest / "changes.diff").write_text(
             "\n".join(f"### {rel}\n{d}" for rel, d in sorted(seat_diffs.items())),
             encoding="utf-8")
+    # SEAT EVIDENCE OUT OF THE IGNORED TREE, 2026-10-01. Wired HERE rather than
+    # at the 3 call sites, for the same reason `run_log_rel` is derived here:
+    # one place to fix, and no call site can forget it.
+    preserved = preserve_seat_evidence(Path(dest), Path(repo))
+    if preserved.get("preserved"):
+        print(f"    harvest preserved {len(preserved['preserved'])} seat-written "
+              f"file(s) to {preserved['dir']} -- they exist nowhere else a clone "
+              f"can reach", flush=True)
+    if preserved.get("failed"):
+        print(f"    harvest FAILED to preserve {len(preserved['failed'])} "
+              f"seat-written file(s); they remain only in the ignored tree",
+              flush=True)
     return {"sandbox": str(sandbox), "dest": str(dest), "changed": len(seat_diffs),
             "changed_including_excluded": len(diffs),
             "skipped_own_log_output": len(skipped_own),
             "files_taken": taken, "bytes": bytes_taken, "failed": failed,
+            "seat_evidence_preserved": preserved,
             "harvested": not failed}
 
 
@@ -801,3 +815,304 @@ def release(sandbox: Path, repo: Path, dest: Path, reap: bool = False) -> dict:
                              "would destroy the only surviving record")
     m["exists"] = Path(sandbox).exists()
     return m
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# PREVENTION FOR THE BASH HALF, added 2026-10-01 on the founder's "Fix it".
+#
+# THE GAP, reported by the cc2 seat in the free panel of 2026-09-30 and left
+# unaddressed until now: confinement was ASYMMETRIC ACROSS TOOLS. `--allowedTools`
+# withholds Write and Edit, so those are prevented; a shell write through Bash is
+# not, and Bash cannot be withheld because every STEM tool the seats are required
+# to use runs through it. This module's own header says so -- "The seat wrote
+# anyway, through Bash, which no tool-list can restrain" -- and answered with
+# position plus detection: a COPY so relative paths are harmless, and a
+# before/after fingerprint so an absolute-path write is caught afterwards.
+#
+# Detection is not prevention, and the founder's rule is prevention: "none of the
+# models ... should ever be able to reach the real repo, let alone edit it".
+#
+# WHAT THIS ADDS: a macOS kernel sandbox profile that DENIES WRITES to the
+# canonical tree for the seat process and everything it spawns, including a shell
+# redirection, which is precisely what no tool-list can reach.
+#
+# MEASURED 2026-10-01 against the real canonical path, 6 properties:
+#   write inside the sandbox copy        ALLOWED
+#   `echo > <canonical>/new`             DENIED, file not created
+#   `echo >> <canonical>/README.md`      DENIED
+#   `git -C <canonical> config --local`  DENIED, "could not lock config file"
+#   reading the canonical tree           ALLOWED  (a seat must read source)
+#   python3 with sympy, and HOME writes  ALLOWED  (STEM tools stay primary)
+#
+# A TARGETED DENY, NOT A GLOBAL ONE, and the choice is deliberate. A profile that
+# denied all writes and allow-listed the sandbox also broke the CLI's own state
+# and cache directories, so it would have traded a confinement gap for a dead
+# seat. Denying exactly the canonical subpath is the smallest rule that closes
+# the founder's stated hole, and `control_plane_fingerprint` already covers the
+# home directory by detection.
+#
+# IT DEGRADES BY REPORTING, NEVER BY PRETENDING. On a machine with no
+# `sandbox-exec` -- every non-macOS host -- `confine` returns the command
+# unchanged and a mechanism string saying so, and the caller records that string.
+# The alternative, failing the dispatch, would make the harness unrunnable
+# elsewhere; the alternative of silence would let a reader believe a control was
+# in force that was not. Same shape as the Wolfram ruling: nobody is compelled to
+# have it, and where it exists it is used.
+_CONFINE_PROFILE = ".cdsfl_deny_canonical_writes.sb"
+
+#: What `confine` returns when it could not confine. A caller that records this
+#: string is recording the ABSENCE of the control, which is the point.
+NO_CONFINEMENT = "none: sandbox-exec unavailable"
+NOT_CONFINABLE = "none: cwd is inside the canonical tree"
+CONFINED = "sandbox-exec: writes to the canonical tree denied"
+
+
+def _sandbox_exec() -> str | None:
+    """The kernel sandbox binary, or None where there is none."""
+    return shutil.which("sandbox-exec")
+
+
+def confinement_profile(repo: Path, where: Path) -> Path:
+    """Write the deny-canonical-writes profile into `where`, returning its path.
+
+    Both paths are RESOLVED. `subpath` in a sandbox profile matches the real
+    filesystem path, so an unresolved `/var/...` (a symlink to `/private/var`)
+    silently matches nothing -- measured while building this, where an
+    allow-rule on the unresolved temp path denied the sandbox its own writes.
+    """
+    real = Path(repo).resolve()
+    path = Path(where) / _CONFINE_PROFILE
+    rules = ["(version 1)", "(allow default)",
+             f'(deny file-write* (subpath "{real}"))']
+    rules += _control_plane_denies()
+    path.write_text("\n".join(rules) + "\n", encoding="utf-8")
+    return path
+
+
+#: The surfaces under the operator's config that a LATER session EXECUTES.
+#: Everything else there is state the CLI must keep writing.
+_EXECUTED_SURFACES = ("hooks", "plugins", "scheduled-tasks", "commands", "agents")
+_EXECUTED_FILES = ("settings.json", "CLAUDE.md", "mcp_settings.json")
+
+
+def _control_plane_denies() -> list:
+    """Deny the config surfaces a later session would EXECUTE.
+
+    FOUND BY THE cc2 SEAT, 2026-10-01, running under this very profile and
+    attacking it: *"`~/.claude` is writable. A seat cannot write the repo, but it
+    can write something the operator's NEXT session executes with full rights.
+    The deny-list covers the artefact and not the agent that edits it."* It
+    demonstrated the write and removed the file.
+
+    THAT IS A PERSISTENCE ROUTE INTO THE REPO BY PROXY, and it defeats the
+    founder's rule -- *"none of the models ... should ever be able to reach the
+    real repo, let alone edit it"* -- without ever touching the repo.
+
+    WHY THIS IS SURGICAL AND NOT A BLANKET DENY ON `~/.claude`. A blanket deny
+    was measured as breaking the CLI's own state when the repo profile was first
+    built, which would trade a confinement gap for a dead seat. Measured on this
+    machine, the directory holds BOTH kinds: `hooks/`, `settings.json`,
+    `CLAUDE.md`, `mcp_settings.json`, `plugins/` and `scheduled-tasks/` are read
+    and EXECUTED by a later session, while `cache/`, `sessions/`, `projects/`,
+    `file-history/`, `debug/` and `history.jsonl` are state a running seat
+    writes. Only the first group is denied.
+
+    BOTH PATHS ARE DENIED. `~/.claude` is a symlink into iCloud here, and a
+    sandbox profile matches the REAL path, so the resolved target is the one
+    that binds; the symlink path is listed too so the rule still holds on a
+    machine where it is a real directory.
+    """
+    import os
+
+    home = Path(os.path.expanduser("~"))
+    roots = {home / ".claude"}
+    try:
+        roots.add((home / ".claude").resolve())
+    except OSError:                                           # pragma: no cover
+        pass
+    out = []
+    for root in sorted(str(r) for r in roots):
+        for d in _EXECUTED_SURFACES:
+            out.append(f'(deny file-write* (subpath "{root}/{d}"))')
+        for f in _EXECUTED_FILES:
+            out.append(f'(deny file-write* (literal "{root}/{f}"))')
+    return out
+
+
+def confine(cmd, repo: Path, cwd: "Path | str | None") -> tuple[list, str]:
+    """Wrap `cmd` so it cannot WRITE into `repo`. Returns (argv, mechanism).
+
+    `mechanism` is always a sentence a report can carry verbatim, so whether the
+    control was in force is recorded rather than assumed. The command is
+    returned unchanged whenever it cannot be applied.
+    """
+    argv = list(cmd)
+    if cwd is None:
+        return argv, NOT_CONFINABLE
+    real_repo, real_cwd = Path(repo).resolve(), Path(cwd).resolve()
+    # A cwd INSIDE the canonical tree cannot be confined by this rule: the deny
+    # would also refuse the seat its own working directory. `.claude/worktrees`
+    # is the live example. Reported, not silently skipped.
+    if real_cwd == real_repo or real_repo in real_cwd.parents:
+        return argv, NOT_CONFINABLE
+    binary = _sandbox_exec()
+    if not binary:
+        return argv, NO_CONFINEMENT
+    try:
+        profile = confinement_profile(real_repo, real_cwd)
+    except OSError as exc:                                    # noqa: BLE001
+        return argv, f"none: profile not written ({exc})"
+    return [binary, "-f", str(profile), *argv], CONFINED
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# SEAT EVIDENCE REACHES A CLONE, added 2026-10-01 on the founder's ruling that a
+# recurring fault be repaired rather than re-reported.
+#
+# THE FAULT. A harvest lands under `bench/logs/<run>/.../files/<rel>`, and
+# `.gitignore:48` ignores `bench/logs/**`. So EVERY seat-written file is
+# invisible to git by construction. Measured by
+# `scripts/seat_evidence_is_gitignored_2026-09-30.py`, which decides each case
+# by CALLING `git check-ignore` and `git ls-files` rather than reading the
+# ignore file: 251 seat `.py` files across 22 panel rounds, 251 of 251 = 100%
+# ignored, and 46 of 251 = 18.3267% UNPRESERVED, Wilson [14.0302%, 23.5781%] --
+# existing nowhere a clone could reach. 11 rounds have stranded evidence.
+#
+# WHY IT MATTERS BEYOND TIDINESS. `measured-rate-travels-with-its-script` says a
+# rate may be cited only if the script that produced it is committed alongside
+# it. A producer in a gitignored directory is that rule's own defect wearing a
+# filename: `scripts/panel_figure_provenance_2026-09-20.py` names harvest paths
+# as the producer of published figures, so in a fresh clone those producers are
+# simply absent. 12 scripts and 2 design notes were rescued BY HAND on
+# 2026-09-30, which is exactly the manual step this replaces.
+#
+# WHY NOT JUST UN-IGNORE THE HARVEST. That was tried and reverted for cause: the
+# harvest also holds copies of files ALREADY TRACKED at their canonical paths,
+# and un-ignoring it staged 20 byte-identical duplicates totalling 47 MB while
+# still leaving the unique evidence out. 144 of the 251 are seat EDITS to
+# tracked files, where the canonical file already reaches a clone and only the
+# diff is new -- and `changes.diff` already carries that. So only the files with
+# NO tracked counterpart are copied out, which is the set that is actually lost.
+#
+# `.scratch/` IS DELIBERATELY NOT PRESERVED. The stranding measurement calls it
+# "the only group that SHOULD be unpreserved": a seat's scratch space is working
+# residue, not evidence.
+_PRESERVE_SUFFIXES = (".py", ".md")
+_NO_PRESERVE_PARTS = (".scratch", "__pycache__", ".git")
+
+#: Where preserved evidence lands. Inside `experimental_notes/` because that
+#: tree is tracked and is already where this project keeps its record.
+SEAT_EVIDENCE_DIR = Path("experimental_notes") / "seat_evidence"
+
+
+def _harvest_identity(dest: Path, repo: Path) -> tuple[str, str]:
+    """(round, seat) for a harvest destination, derived from its position.
+
+    Derived rather than passed, for the reason `_run_log_dir` gives: the 3
+    harvest call sites have different depths and a signature change would have
+    to reach all 3. The run directory is the ancestor sitting directly inside a
+    directory named `logs`; the seat is whatever lies between it and `dest`.
+    """
+    dest = Path(dest).resolve()
+    parts = dest.parts
+    run = seat = ""
+    for i, part in enumerate(parts[:-1]):
+        if part == "logs" and i + 1 < len(parts):
+            run = parts[i + 1]
+            tail = [p for p in parts[i + 2:]
+                    if not p.startswith("attempt-")
+                    and p not in ("sandbox_harvest", "worktree_harvest",
+                                  "panel_worktree_harvest", "files")]
+            seat = tail[0] if tail else "seat"
+            break
+    return run or dest.parent.name, seat or "seat"
+
+
+def _should_preserve(rel: str) -> bool:
+    p = Path(rel)
+    if p.suffix not in _PRESERVE_SUFFIXES:
+        return False
+    return not any(part in _NO_PRESERVE_PARTS for part in p.parts)
+
+
+def preserve_seat_evidence(dest: Path, repo: Path) -> dict:
+    """Copy harvested seat files that NO tracked file corresponds to into the
+    tracked tree, so a clone can reach them.
+
+    Returns a manifest. Never raises: a preservation failure must not fail a
+    harvest, and must not be silent either -- every skip and every error is
+    named in the returned dict.
+    """
+    dest, repo = Path(dest), Path(repo)
+    files_dir = dest / "files"
+    out = {"preserved": [], "already_tracked": [], "skipped": [],
+           "failed": [], "dir": "", "round": "", "seat": ""}
+    if not files_dir.is_dir():
+        return out
+    run, seat = _harvest_identity(dest, repo)
+    out["round"], out["seat"] = run, seat
+    target_root = repo / SEAT_EVIDENCE_DIR / run / seat
+    for src in sorted(files_dir.rglob("*")):
+        if not src.is_file():
+            continue
+        rel = src.relative_to(files_dir).as_posix()
+        if not _should_preserve(rel):
+            out["skipped"].append(rel)
+            continue
+        # A file that already exists at its canonical path reaches a clone
+        # without this; the harvest's `changes.diff` carries what the seat
+        # altered. Copying it out again is the 47 MB of duplicates.
+        if (repo / rel).is_file():
+            out["already_tracked"].append(rel)
+            continue
+        try:
+            target = target_root / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            body = src.read_bytes()
+            digest = hashlib.sha256(body).hexdigest()
+            # PROVENANCE AT SOURCE, so the file says where it came from even if
+            # it is read on its own. The seat's own sha256 is recorded BEFORE
+            # the header is prepended, so byte-identity with the harvest copy
+            # stays checkable afterwards.
+            # THE HARVEST PATH IS DELIBERATELY NOT CITED, corrected 2026-10-01.
+            #
+            # This header first read "Harvested from <absolute path under
+            # bench/logs/...>, which `.gitignore` places outside version
+            # control" -- and `test_cited_evidence_is_recoverable_2026-09-11`
+            # caught it on the first live round: 11 preserved files cited 11
+            # paths a reader cannot reach, taking the unrecoverable-citation
+            # ratchet from 20 to 25. The header was announcing its own defect
+            # in the same sentence.
+            #
+            # The round and the seat above identify the origin and ARE
+            # reachable, and the sha256 pins the bytes, so naming the ignored
+            # path added nothing a reader could use.
+            header = (
+                f"# PRESERVED SEAT EVIDENCE. Written by seat {seat!r} during "
+                f"panel round {run!r}, at the path shown above.\n"
+                f"# Rescued from that round's sandbox harvest, which "
+                f"`.gitignore` keeps out of version control; the harvest path "
+                f"is NOT cited here because a citation a reader cannot follow "
+                f"is not evidence.\n"
+                f"# sha256 of the seat's original, before this header: {digest}\n"
+                f"# Copied by bench/panel_sandbox.py:preserve_seat_evidence. "
+                f"NOT edited.\n"
+            )
+            if src.suffix == ".md":
+                header = header.replace("# ", "<!-- ", 1).rstrip("\n") + " -->\n"
+            target.write_bytes(header.encode("utf-8") + body)
+            out["preserved"].append({"rel": rel, "sha256": digest,
+                                     "path": str(target.relative_to(repo))})
+        except OSError as exc:                                  # noqa: PERF203
+            out["failed"].append({"path": rel, "error": str(exc)})
+    if out["preserved"]:
+        out["dir"] = str(target_root.relative_to(repo))
+        try:
+            man = target_root / "PROVENANCE.json"
+            man.write_text(json.dumps(
+                {"round": run, "seat": seat,
+                 "harvest": str(dest),
+                 "preserved": out["preserved"]}, indent=2), encoding="utf-8")
+        except OSError as exc:                                  # noqa: BLE001
+            out["failed"].append({"path": "PROVENANCE.json", "error": str(exc)})
+    return out

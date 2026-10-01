@@ -56,6 +56,9 @@ def build(prefix, fence, lang, attrs, eol):
     ])
 
 
+CRLF = "\r\n"
+
+
 def main(argv=None) -> int:
     import argparse
     ap = argparse.ArgumentParser(
@@ -72,8 +75,14 @@ def main(argv=None) -> int:
         doc = build(*shape)
         a = _gateable_source(doc, "doc.md")[0] is not None
         b = bool(_PY_FENCE.findall(doc))
-        tag = f"prefix={shape[0]!r} fence={shape[1]} lang={shape[2]!r} " \
-              f"attrs={shape[3]!r} eol={'CRLF' if shape[4]=='\r\n' else 'LF'}"
+        # THE LABEL IS BUILT OUTSIDE THE f-STRING, 2026-10-01. A backslash in an
+        # f-string expression is legal from Python 3.12 and a SyntaxError on
+        # 3.11, and `test_python_floor` holds the floor at 3.11 because a module
+        # that will not PARSE there stops the suite COLLECTING there -- one file
+        # takes the whole run down, not just itself.
+        eol_label = "CRLF" if shape[4] == CRLF else "LF"
+        tag = (f"prefix={shape[0]!r} fence={shape[1]} lang={shape[2]!r} "
+               f"attrs={shape[3]!r} eol={eol_label}")
         (both if (a and b) else only_a if a else only_b if b else neither
          ).append(tag)
 
@@ -90,6 +99,12 @@ def main(argv=None) -> int:
         print("\nSHAPES B RECOGNISES AND A DOES NOT (dominance breakers):")
         for t in only_b[:10]:
             print("   ", t)
+        # STATE THE REMAINDER. A list cut to 10 under a heading that reads as
+        # complete is a silent falsehood, and this one would understate exactly
+        # the quantity the script exists to measure: the shapes that break
+        # dominance and therefore FORBID the de-duplication.
+        if len(only_b) > 10:
+            print(f"    ... and {len(only_b) - 10} more not shown")
 
     subset = (len(only_b) == 0)
     proper = (len(only_a) > 0)

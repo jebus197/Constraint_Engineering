@@ -38,6 +38,48 @@ sys.path.insert(0, str(REPO / "bench"))
 import wolfram_standard as W  # noqa: E402
 
 
+# ═════════════════════════════════════════════════════════════════════════════
+# THE DENY-PIN PREDICATE, EXTRACTED 2026-10-01 SO IT CAN BE CALLED
+#
+# It was an inline comprehension inside the test, which meant the only way to
+# ask what it recognises was to read it -- the failure `execute-do-not-grep`
+# names. Extracted, it is exercised below on lines whose answer is known.
+#
+# TWO FIXES LANDED WITH THE EXTRACTION.
+#
+# (1) SCOPE. `.claude/worktrees/wf_*` holds throwaway clones the agent tooling
+#     makes, and 3 of them from 2026-09-30 took this guard red: they carry
+#     COPIES of the two exempt files, and the exemptions are absolute prefixes
+#     under REPO, so a copy one directory deeper matched neither. Nothing was
+#     pinned to deny -- the scan had walked out of its subject. The exclusion is
+#     the project's existing convention, already spelled `_SKIP_DIRS` in
+#     test_declared_patterns_reach_the_live_path_2026-09-30 and
+#     `_NOT_THE_PROJECT` in test_every_test_file_is_collected_2026-09-01.
+#
+# (2) REACH. The old pattern required the separator to follow the NAME
+#     directly, so it recognised `CDSFL_WOLFRAM_POLICY=deny` and missed BOTH
+#     spellings anyone would actually commit:
+#         env["CDSFL_WOLFRAM_POLICY"] = "deny"      <-- Python
+#         "CDSFL_WOLFRAM_POLICY": "deny"            <-- JSON/TOML config
+#     A guard that catches only the shell form, over a file set that includes
+#     .py and .json precisely because those are where it would be set, could
+#     have let the founder's ruling be inverted in silence. Quotes and a closing
+#     bracket may now sit between the name and the separator. Backticks may NOT,
+#     so a prose mention like `CDSFL_WOLFRAM_POLICY`: deny is not a false hit.
+_DENY_PIN = re.compile(r"""CDSFL_WOLFRAM_POLICY['"\]]*\s*[=:]\s*['"]?deny""")
+
+_NOT_THE_REPOSITORY = ("/.git/", "/.claude/worktrees/")
+
+
+def _deny_pins(grep_lines: list[str]) -> list[str]:
+    """Which `grep -rn` lines pin the policy to deny, in the LIVE tree?"""
+    return [ln for ln in grep_lines
+            if not any(seg in ln for seg in _NOT_THE_REPOSITORY)
+            and not ln.startswith(str(REPO / "bench" / "wolfram_standard.py"))
+            and not ln.startswith(str(REPO / "bench" / "tests"))
+            and _DENY_PIN.search(ln)]
+
+
 class TestThePolicyInForceIsEnablement:
     """Executed against the live module, not read from its comments."""
 
@@ -77,11 +119,7 @@ class TestThePolicyInForceIsEnablement:
              "--include=*.toml", "--include=*.cfg", "--include=*.ini",
              "CDSFL_WOLFRAM_POLICY", str(REPO)],
             capture_output=True, text=True).stdout.splitlines()
-        offenders = [ln for ln in out
-                     if "/.git/" not in ln
-                     and not ln.startswith(str(REPO / "bench" / "wolfram_standard.py"))
-                     and not ln.startswith(str(REPO / "bench" / "tests"))
-                     and re.search(r"CDSFL_WOLFRAM_POLICY\s*[=:]\s*[\"']?deny", ln)]
+        offenders = _deny_pins(out)
         assert offenders == [], f"something pins the policy to deny: {offenders}"
 
 
@@ -215,3 +253,55 @@ class TestQuotationIsNotAssertion:
         m = _DENIAL.search(line)
         assert not any(a <= m.start() and m.end() <= b for a, b in _quoted_spans(line)), (
             "an unquoted denial must not be excused by an unrelated quotation")
+
+
+class TestTheDenyPinPredicateRecognisesWhatItClaimsTo:
+    """ANTI-VACUITY AND FALSIFIER for `_deny_pins`, added 2026-10-01.
+
+    An exclusion added to a scanner can make the scan vacuous, and the scan
+    would still pass. So the predicate is called here on lines whose verdict is
+    known, including the 2 spellings it used to miss.
+    """
+
+    _LIVE = [
+        f"{REPO}/bench/experiment_11_orchestrator.py:12:CDSFL_WOLFRAM_POLICY=deny",
+        f"{REPO}/scripts/run.sh:4:export CDSFL_WOLFRAM_POLICY=deny",
+        f'{REPO}/scripts/foo.py:3:env["CDSFL_WOLFRAM_POLICY"] = "deny"',
+        f"{REPO}/scripts/foo.py:3:env['CDSFL_WOLFRAM_POLICY'] = 'deny'",
+        f'{REPO}/bench/directives/x.json:9:  "CDSFL_WOLFRAM_POLICY": "deny"',
+    ]
+    # THE FILENAMES ARE CHOSEN, NOT ARBITRARY. `test_line_citations_resolve`
+    # scans every tracked file for `path:line` citations and fails on one
+    # naming a file that does not exist. These probe strings LOOK like
+    # citations, so they are built from basenames its PLACEHOLDER pattern
+    # already recognises as illustrative (test.py, example.py). Renaming
+    # them to anything else takes that guard red for a file nobody touched.
+    _IGNORED = [
+        f"{REPO}/.claude/worktrees/wf_1/bench/wolfram_standard.py:69:CDSFL_WOLFRAM_POLICY=deny",
+        f"{REPO}/.claude/worktrees/wf_1/bench/tests/test.py:74:CDSFL_WOLFRAM_POLICY=deny",
+        f"{REPO}/bench/wolfram_standard.py:69:CDSFL_WOLFRAM_POLICY=deny",
+        f"{REPO}/bench/tests/example.py:74:CDSFL_WOLFRAM_POLICY=deny",
+        f"{REPO}/bench/x.py:1:CDSFL_WOLFRAM_POLICY=enable",
+        f"{REPO}/bench/x.py:1:CDSFL_WOLFRAM_POLICY=serial",
+        f"{REPO}/scripts/notes.py:8:# `CDSFL_WOLFRAM_POLICY`: deny is retained and selectable",
+    ]
+
+    def test_it_catches_every_spelling_a_committer_would_use(self):
+        missed = [ln for ln in self._LIVE if not _deny_pins([ln])]
+        assert missed == [], (
+            "a live pin to deny evaded the guard; the founder's enablement "
+            "ruling could be inverted in silence:\n" + "\n".join(missed))
+
+    def test_it_ignores_transient_copies_exempt_files_and_other_policies(self):
+        wrong = [ln for ln in self._IGNORED if _deny_pins([ln])]
+        assert wrong == [], (
+            "a false hit makes the guard's output start being ignored:\n"
+            + "\n".join(wrong))
+
+    def test_the_two_spellings_the_old_pattern_missed_are_the_reason_it_widened(self):
+        """FALSIFIER: revert the widening and exactly these 2 lines escape."""
+        narrow = re.compile(r"CDSFL_WOLFRAM_POLICY\s*[=:]\s*[\"']?deny")
+        escaped = [ln for ln in self._LIVE if not narrow.search(ln)]
+        assert len(escaped) == 3, escaped          # 2 quoted forms + the JSON pair
+        assert all(_DENY_PIN.search(ln) for ln in escaped), (
+            "the widening does not actually recover the lines it was made for")

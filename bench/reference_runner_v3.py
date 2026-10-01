@@ -3455,6 +3455,31 @@ def export_status_vocabulary(path: Optional[Path] = None) -> Dict[str, Any]:
     return doc
 
 
+# IMPORTED, NOT RESTATED. A copy of these meanings here would be a second
+# description of the same vocabulary, free to drift from the constants it
+# describes -- the defect `execute-do-not-grep` names. Imported lazily with a
+# fallback because this module is imported in environments where bench/ is not
+# on the path, and a catalogue export must not fail for want of a gloss.
+try:  # pragma: no cover - import shape varies by entry point
+    from bench.fix_efficacy import (
+        CONCLUSIVE_OUTCOMES as _FIX_CONCLUSIVE,
+        FIX_CURES as _FIX_CURES_OUTCOME,
+        OUTCOME_MEANINGS as _FIX_OUTCOME_MEANINGS,
+    )
+except ImportError:  # pragma: no cover
+    try:
+        from fix_efficacy import (
+            CONCLUSIVE_OUTCOMES as _FIX_CONCLUSIVE,
+            FIX_CURES as _FIX_CURES_OUTCOME,
+            OUTCOME_MEANINGS as _FIX_OUTCOME_MEANINGS,
+        )
+    except ImportError:
+        _FIX_OUTCOME_MEANINGS = {}
+        _FIX_CONCLUSIVE = ("FIX_CURES_ITS_OWN_FALSIFIER",
+                           "FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER")
+        _FIX_CURES_OUTCOME = "FIX_CURES_ITS_OWN_FALSIFIER"
+
+
 def export_finding_catalogue(
     registry, path: Optional[Path] = None,
 ) -> List[Dict[str, Any]]:
@@ -3472,8 +3497,20 @@ def export_finding_catalogue(
                    "model_confirm_quorum", "bugzilla_close_loop".
 
     `demonstrated` is the field that cannot be faked by a show of hands: it is
-    true only where a falsifier was executed and fired. Written as JSON Lines
-    when `path` is given — one record per line, streamable, diffable.
+    true only where a falsifier was executed and fired.
+
+    AND 3 FIELDS CARRY WHETHER THE PROPOSED FIX WORKED, added 2026-10-01:
+
+      fix_efficacy_outcome   — the probe's own term, with its definition in
+                               `fix_efficacy_meaning` so one record reads alone;
+      fix_efficacy_measured  — whether the probe reached a verdict at all;
+      fix_cured_its_falsifier — TRI-STATE: True, False, or None for "never
+                               measured". Never a bare boolean, because that
+                               merges a fix that failed with an instrument that
+                               could not look.
+
+    Written as JSON Lines when `path` is given — one record per line,
+    streamable, diffable.
     """
     entries = registry.entries if hasattr(registry, "entries") else registry
     items = (sorted(entries.items()) if isinstance(entries, dict)
@@ -3483,6 +3520,8 @@ def export_finding_catalogue(
         status = e.get("status", "OPEN")
         spec = FINDING_STATUS_VOCABULARY.get(status)
         log = e.get("status_log", []) or []
+        _fe = e.get("fix_efficacy")
+        _fe_outcome = _fe.get("outcome", "") if isinstance(_fe, dict) else ""
         if log:
             adjudicator = e.get("status_adjudicator", "unrecorded")
             evidence = e.get("status_evidence", "")
@@ -3511,6 +3550,30 @@ def export_finding_catalogue(
                 and status in ("CONFIRMED", "CLOSED")
             ),
             "falsifier_verdict": e.get("falsifier_verdict", ""),
+            # WHETHER THE PROPOSED FIX WORKED, added 2026-10-01 on the founder's
+            # "Add it". Every field above this one is about whether the DEFECT
+            # was shown; none was about whether the FIX was. A fix measured and
+            # found not to cure its own falsifier was therefore invisible to
+            # anyone reading the exported record, while the datum sat on the
+            # entry: measured over commissioning_arm1_panel_20260921T215405Z,
+            # 69 of 69 entries carry a fix_efficacy dict and 16 read
+            # FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER.
+            #
+            # 3 FIELDS, NOT 1 BOOLEAN. `fix_cured_its_falsifier` is TRI-STATE
+            # on purpose -- True, False, or None for "the probe never reached a
+            # verdict" -- because a single boolean merges "the fix did not cure
+            # it" with "the instrument could not look", which is the distinction
+            # `bench/fix_efficacy.py` says in its own comment the project keeps
+            # having to relearn. The meaning travels inline for the same reason
+            # `status_meaning` does: one record must be readable on its own.
+            "fix_efficacy_outcome": _fe_outcome,
+            "fix_efficacy_meaning": (
+                _FIX_OUTCOME_MEANINGS.get(_fe_outcome, "")
+                if _fe_outcome else "no fix-efficacy probe record on this entry"),
+            "fix_efficacy_measured": _fe_outcome in _FIX_CONCLUSIVE,
+            "fix_cured_its_falsifier": (
+                None if _fe_outcome not in _FIX_CONCLUSIVE
+                else _fe_outcome == _FIX_CURES_OUTCOME),
             "attestation_count": e.get("attestation_count", 0),
             "severity": e.get("severity", 0.0),
             "source_model": e.get("source_model", ""),
@@ -10556,7 +10619,32 @@ def apply_fix_blocks(
 
 
 
-_MD_PY_FENCE = re.compile(r"```(?:python|py)\n(.*?)```", re.S)
+# `_MD_PY_FENCE` WAS REMOVED HERE, 2026-10-01, AND THE MEASUREMENT THAT
+# LICENSES THE REMOVAL IS COMMITTED: `scripts/md_fence_orphan_dominance_2026-10-01.py`.
+#
+# It was the original narrow form -- a bare ```python fence, LF endings, no
+# attributes -- and it had ZERO CALLERS. `_MD_PY_FENCE_ANY` below is the live
+# pattern, with 2 call sites. The cc2 seat reported the orphan in the free
+# panel of 2026-09-30, where it was recorded as reported-rather-than-deleted,
+# and the founder asked why that was not a fix.
+#
+# BOTH HALVES OF THE ADDITIVE STANDARD POINT THE SAME WAY HERE. An addition
+# nothing reaches is not additive, and orphaned mechanisms are this project's
+# largest confirmed defect class; the removal half needs a committed
+# measurement showing the replacement dominates on a NAMED PROPERTY.
+#
+# THE PROPERTY IS RECOGNITION over 560 realistic markdown shapes (7 prefixes
+# x 2 fence characters x 5 language spellings x 4 attribute forms x 2 line
+# endings). Measured: orphan 14, live 224, both 14, ORPHAN-ONLY 0 of 560,
+# Wilson [0.0000%, 0.6813%] on statsmodels and mpmath at 50 dps agreeing to
+# 2.6e-18. So nothing the deleted pattern could extract becomes
+# unextractable, and the dominance is PROPER: the live pattern reaches 210
+# shapes the orphan could not.
+#
+# THE PATTERN IS NOT LOST. It survives as a literal in
+# `bench/tests/test_md_fence_orphan_is_dominated_2026-10-01.py`, which re-runs
+# the comparison every suite run, so the claim is re-derived rather than
+# remembered.
 
 #: THE SHAPES A REAL DESIGN NOTE ACTUALLY USES. Found 2026-09-11 by the cc2 seat
 #: in panel round 13 and reproduced across 7 markdown shapes before accepting:
@@ -10600,9 +10688,43 @@ _MD_PY_FENCE = re.compile(r"```(?:python|py)\n(.*?)```", re.S)
 # that matched before can stop matching, so no extraction can be lost. The
 # quantifier is bounded in practice by the back-reference `(?P=prefix)`, which
 # requires the closing fence to carry the identical prefix.
+# A LIST MARKER ON THE FENCE LINE WAS INVISIBLE (free panel, 2026-10-01).
+#
+# The prefix group admitted only spaces, tabs and blockquote markers, so a
+# python listing opened on the SAME LINE as a list marker --
+#
+#     - ```python
+#       x = 1
+#       ```
+#
+# -- matched nothing. Both call sites then returned empty, and
+# `_gateable_source`'s empty return reads "target carries no code; syntax gates
+# not applicable", so a document WITH code was triaged as pure prose: no syntax
+# gate ran and S_k reached NO_SCORE. Measured by
+# `scripts/md_fence_prefix_blind_spot_2026-10-01.py` against markdown-it-py
+# (the CommonMark reference port) and mistune, which agree the form is a real
+# python fence: 3 of 4 parser-confirmed listings were invisible.
+#
+# THE SAME MEASUREMENT FALSIFIES THE 0-OF-560 THAT LICENSED THE `_MD_PY_FENCE`
+# REMOVAL. That corpus's 7 prefixes all sit inside `[ \t]*(?:>[ \t]*)*`, so an
+# orphan-only shape was unreachable by construction. Extend the product by the
+# one axis it omits and 70 of 3360 shapes are orphan-only. The removal itself
+# still stands -- the orphan had 0 callers and the one shape it uniquely
+# accepted ("See: ```python") is not a code fence to either parser -- but the
+# NUMBER that licensed it was a property of the corpus.
+#
+# STRICTLY ADDITIVE, AND THE CONDITIONAL IS WHAT MAKES IT SO. `marker` is
+# optional, so every shape that matched before matches identically with
+# `marker` unset. The closing fence relaxes ONLY when a marker was consumed --
+# `(?(marker)[ \t]*)` matches empty otherwise -- so no previously-extracted
+# body can be truncated by a newly-acceptable closing fence. Verified over the
+# 560-shape original corpus and the 3360-shape extension: recognition is a
+# proper superset with 0 shapes lost.
 _MD_PY_FENCE_ANY = re.compile(
-    r"^(?P<prefix>[ \t]*(?:>[ \t]*)*)(?P<f>```|~~~)[ \t]*(?:python|py)\b[^\n]*\n"
-    r"(?P<body>.*?)^(?P=prefix)?(?P=f)",
+    r"^(?P<prefix>[ \t]*(?:>[ \t]*)*)"
+    r"(?P<marker>(?:[-*+]|\d{1,9}[.)])[ \t]+)?"
+    r"(?P<f>```|~~~)[ \t]*(?:python|py)\b[^\n]*\n"
+    r"(?P<body>.*?)^(?P=prefix)?(?(marker)[ \t]*)(?P=f)",
     re.S | re.M)
 
 
@@ -10795,6 +10917,30 @@ def _run_hard_gate_ast(modified_source: str, source_path: str = "",
 
 
 _SURROGATE_RE = re.compile(r"[\ud800-\udfff]")
+
+
+#: WHICH STOP REASON FIRED. Extracted so a test can CALL it rather than read
+#: the runner's source: the assignment lives inside a function that cannot be
+#: executed without a full run, and a test asserting on source text proves only
+#: that the module describes itself (`execute-do-not-grep`).
+UNSET_STOP_REASON = "UNSET"
+
+
+def stop_reason_fields(state: Any) -> Dict[str, Any]:
+    """The 2 report fields naming why the round loop stopped.
+
+    `stop_reason_recorded` is FALSE for a blank reason and for the runner's own
+    `UNRECORDED_STOP` fallback, because "the runner did not record why" is a
+    different and worse condition than any named halt and must not be
+    indistinguishable from one.
+    """
+    reason = (getattr(state, "stop_reason", "") or "").strip()
+    reason = reason or UNSET_STOP_REASON
+    return {
+        "stop_reason": reason,
+        "stop_reason_recorded": not reason.startswith(
+            ("UNRECORDED_STOP", UNSET_STOP_REASON)),
+    }
 
 
 def collect_non_cure_ledger(entries: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
@@ -17011,6 +17157,81 @@ def run_experiment(
     except Exception as _nc_exc:  # noqa: BLE001
         _log(f"  WARNING: non-cure ledger not attached ({_nc_exc})")
         result["non_cure_ledger"] = {"written": False, "error": str(_nc_exc)}
+
+    # WHICH STOP REASON FIRED, IN THE ARTEFACT, added 2026-10-01.
+    #
+    # Raised by an external model (Grok) reviewing the round-cap question, whose
+    # recommendation ends: "Stop when the gate says convergence or marginal
+    # novel-critical yield falls below a predeclared threshold or N_max is hit
+    # -- and always record which reason fired." Checked rather than assumed, and
+    # it was a real gap: `brain.state.stop_reason` is set on EVERY exit path
+    # (there is even a fallback above that names an unrecorded stop rather than
+    # leaving it blank), and the REPORT carried no stop field at all -- measured
+    # over `commissioning_arm1_panel_20260929T214647Z`, whose report's only
+    # stop-adjacent keys are `convergence_config`, `post_convergence_settled`
+    # and `post_convergence_sweep`.
+    #
+    # That is the difference between a run that converged and a run that ran out
+    # of budget, which is precisely the distinction the cap recommendation above
+    # exists to surface. It was computed in flight and discarded at the edge.
+    #
+    # The fallback's "UNRECORDED_STOP" text is carried through deliberately: "the
+    # runner did not record why" must stay distinguishable from any named halt.
+    try:
+        result.update(stop_reason_fields(getattr(brain, "state", None)))
+    except Exception as _sr_exc:  # noqa: BLE001
+        _log(f"  WARNING: stop reason not attached ({_sr_exc})")
+        result.update(stop_reason_fields(None))
+
+    # CLAIM LEDGER (founder ruling 2026-09-30: "Build it, apply it and test it
+    # before the next simulated run"; design by the fable and cc2 seats in the
+    # free panel of the same date). The CLAIM becomes the unit of record and of
+    # aggregation; `compute_sk` is untouched and `NO_SCORE` keeps its meaning.
+    #
+    # INFORMATIVE ONLY, which is the seat's own recommendation: the aggregate is
+    # reported and is NOT wired into sigma, S_k or R_k until a commissioning run
+    # measures its error rate against the corpus's known ground truth.
+    #
+    # WHY IT IS WORTH HAVING EVEN AT v1: on
+    # `commissioning_arm4_prose_20260930T064044Z`, where `_gateable_source`
+    # returns None and `compute_sk` returns NO_SCORE -- the machinery holding no
+    # opinion on anything in the target -- this reports 15 claims, 8 of them
+    # decidable, 3 decided, 7 routed to a human and 0 discarded.
+    #
+    # Exception-safe like every other report-assembly section: a completed run is
+    # never lost to bookkeeping.
+    try:
+        from bench.claim_ledger import ledger_from_registry as _claim_ledger
+    except ImportError:                                       # noqa: BLE001
+        try:
+            from claim_ledger import ledger_from_registry as _claim_ledger
+        except ImportError:
+            _claim_ledger = None
+    try:
+        if _claim_ledger is None:
+            raise ImportError("claim_ledger not importable")
+        # READ FROM `result`, NOT FROM `cfg`. `RunnerConfig` has no
+        # `target_file` field -- checked, it has `target_kind` and
+        # `multiturn_chunk_target` -- so `cfg.target_file` would raise
+        # AttributeError, the except below would catch it, and the ledger
+        # would be SILENTLY DISABLED on every run while the report
+        # carried a plausible `{"written": false}`. That is the
+        # mechanism-nothing-reaches defect, and it would have shipped.
+        # `result["target_file"]` is set above from `target_rel` and is
+        # always present by the time this runs.
+        _led = _claim_ledger(registry.entries,
+                             target=str(result.get("target_file", "")))
+        result["claim_ledger"] = _led.report()
+        _log(f"  claim ledger: {result['claim_ledger']['claims_total']} claim(s), "
+             f"{result['claim_ledger']['decidable']} decidable, "
+             f"{result['claim_ledger']['routed']} routed, "
+             f"aggregate {result['claim_ledger']['aggregate']}")
+        if result["claim_ledger"]["discarded"]:
+            _log(f"  WARNING: {result['claim_ledger']['discarded']} claim(s) "
+                 f"were neither decided nor routed, which must never happen")
+    except Exception as _cl_exc:  # noqa: BLE001
+        _log(f"  WARNING: claim ledger not attached ({_cl_exc})")
+        result["claim_ledger"] = {"written": False, "error": str(_cl_exc)}
 
     # Save report
     report_path = logs_dir / f"{cfg.experiment_name}_report.json"

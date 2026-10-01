@@ -117,3 +117,118 @@ class TestTheThresholdIsNotVacuous:
         assert src.count("cap_recommendation(") >= 2, (
             "cap_recommendation is defined but called nowhere in its own module; "
             "the reviewer would never see it")
+
+
+class TestTheRecommendationNamesANumber:
+    """Added 2026-10-01. The ruling had 2 halves and only 1 was built.
+
+    The founder, 2026-09-30: "a recommendation should be printed to the
+    researcher to extend the run to a sane suggested number, or to set their own
+    user preference in the runner dialogue." The recommendation fired on the
+    real arm-1 report and named NO NUMBER, and there was no way to set a cap at
+    all -- it was a dataclass default -- so the reviewer was told to raise a
+    number they had no means of raising.
+    """
+
+    def _report(self, cap=8, rounds=8, gc=0.29, thr=0.30, unverified=3,
+                novel=9, window=3):
+        return {
+            "max_rounds": cap,
+            "convergence_config": {"gamma_alt_threshold": thr,
+                                   "gamma_alt_consecutive_zero_crit": window},
+            "rounds": [{"gamma_critical": gc, "unverified_critical": unverified,
+                        "novel_this_round": novel} for _ in range(rounds)],
+        }
+
+    def test_the_suggested_cap_is_the_run_plus_the_gate_window(self):
+        assert _arms().suggested_cap(self._report(cap=8, window=3)) == (11, 3)
+        assert _arms().suggested_cap(self._report(cap=10, window=3)) == (13, 3)
+        assert _arms().suggested_cap(self._report(cap=10, window=5)) == (15, 5)
+
+    def test_it_falls_back_to_the_runners_own_default_window(self):
+        r = self._report(cap=10)
+        del r["convergence_config"]["gamma_alt_consecutive_zero_crit"]
+        assert _arms().suggested_cap(r) == (10 + _arms().DEFAULT_ZERO_WINDOW,
+                                        _arms().DEFAULT_ZERO_WINDOW)
+
+    def test_it_invents_nothing_when_the_report_cannot_support_a_number(self):
+        for bad in ({}, {"max_rounds": 0}, {"max_rounds": "ten"},
+                    {"max_rounds": None}):
+            assert _arms().suggested_cap(bad) is None, bad
+
+    def test_the_recommendation_text_carries_the_number(self):
+        out = _arms().cap_recommendation(self._report())
+        assert out is not None
+        assert "SUGGESTED CAP: 11 rounds" in out, out
+        assert "FLOOR, not a prediction" in out, out
+
+    def test_it_says_the_number_is_not_an_estimate_of_what_is_needed(self):
+        """Both free seats and an external model agreed n* is NOT estimable on
+        this archive. The text must not imply otherwise."""
+        out = _arms().cap_recommendation(self._report())
+        assert "NOT estimable" in out, out
+
+    def test_it_tells_the_reviewer_how_to_set_their_own(self):
+        out = _arms().cap_recommendation(self._report())
+        assert "--rounds" in out, out
+
+
+class TestTheResearcherCanActuallySetTheCap:
+    """The sentence above would be a FALSE CLAIM without these."""
+
+    def test_the_flag_exists_and_reaches_the_arm(self):
+        import subprocess
+        import sys as _sys
+        r = subprocess.run(
+            [_sys.executable, str(str(ARMS_MODULE)), "--only", "arm1",
+             "--rounds", "14"],
+            capture_output=True, text=True, timeout=120, cwd=str(REPO))
+        assert r.returncode == 0, r.stderr[-400:]
+        assert "--rounds 14" in r.stdout, r.stdout[-400:]
+
+    def test_the_default_is_the_founders_10(self):
+        import subprocess
+        import sys as _sys
+        r = subprocess.run(
+            [_sys.executable, str(str(ARMS_MODULE)), "--only", "arm1"],
+            capture_output=True, text=True, timeout=120, cwd=str(REPO))
+        assert "--rounds 10" in r.stdout, r.stdout[-400:]
+
+    def test_a_cap_below_one_is_refused_rather_than_run(self):
+        import subprocess
+        import sys as _sys
+        r = subprocess.run(
+            [_sys.executable, str(str(ARMS_MODULE)), "--only", "arm1",
+             "--rounds", "0"],
+            capture_output=True, text=True, timeout=120, cwd=str(REPO))
+        assert r.returncode == 2, (r.returncode, r.stdout, r.stderr)
+        assert "at least 1" in r.stderr
+
+    def test_an_unattended_run_is_never_prompted(self):
+        """THE HANG THIS MUST NOT CAUSE. Detached runs are the point of this
+        tool (founder directive 2026-07-29); a prompt there is a dead run."""
+        import argparse
+        for kwargs in ({"detach": True, "run": True},
+                       {"detach": False, "run": False}):
+            args = argparse.Namespace(rounds=None, **kwargs)
+            assert _arms()._is_attended(args) is False, kwargs
+        assert _arms().resolve_round_cap(None, attended=False) is None
+
+    def test_the_flag_wins_over_the_dialogue(self):
+        assert _arms().resolve_round_cap(14, attended=True) == 14
+
+    def test_a_nonsense_answer_keeps_the_default_rather_than_guessing(self,
+                                                                     monkeypatch):
+        for answer in ("", "   ", "abc", "0", "-3"):
+            monkeypatch.setattr("builtins.input", lambda *_a, **_k: answer)
+            assert _arms().resolve_round_cap(None, attended=True) is None, answer
+
+    def test_a_typed_number_is_used_unchanged(self, monkeypatch):
+        monkeypatch.setattr("builtins.input", lambda *_a, **_k: " 12 ")
+        assert _arms().resolve_round_cap(None, attended=True) == 12
+
+    def test_an_interrupted_prompt_does_not_crash_the_run(self, monkeypatch):
+        def _boom(*_a, **_k):
+            raise KeyboardInterrupt
+        monkeypatch.setattr("builtins.input", _boom)
+        assert _arms().resolve_round_cap(None, attended=True) is None

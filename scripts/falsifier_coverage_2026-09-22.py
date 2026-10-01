@@ -55,9 +55,39 @@ REPO = Path(__file__).resolve().parents[1]
 STATES = "bench/logs/commissioning_*/runner_state.json"
 
 
+#: THE CLAIM IS DATED, SO THE POPULATION MUST BE TOO. Scoped 2026-10-01.
+#:
+#: The audit this producer carries is about "the 4 completed arms" of
+#: 2026-09-21/22, and both figures it exists to defend -- 77 of 97 unmeasurable,
+#: and the arm-4 sign reversal -- are statements about THAT population. The
+#: glob was `commissioning_*`, so when the arms of 2026-09-29/30 were archived
+#: the denominator silently grew and the producer began reporting a different
+#: measurement under the same heading. It was not wrong about the new
+#: population; it was answering a question nobody asked, and it took
+#: `bench/tests/test_panel_audit_producers_2026-09-22.py` red while doing it.
+#:
+#: Same defect, same day, same fix as `e1_population_recount_falsifier_2026-09-22.py`
+#: and task A7's predicate family: a dated claim needs a dated denominator.
+#: Figures over the WHOLE archive are a different and legitimate question, and
+#: the right way to ask it is a new dated producer, not a silent re-scope of
+#: this one.
+CLAIM_SCOPE = ("20260921", "20260922")
+
+
+def _in_claim_scope(path: str) -> bool:
+    """Does this run belong to the population the audit's claims name?"""
+    return any(stamp in Path(path).parent.name for stamp in CLAIM_SCOPE)
+
+
+def state_files():
+    """The scoped run states, resolved ONCE so two call sites cannot drift."""
+    return [f for f in sorted(glob.glob(str(REPO / STATES)))
+            if _in_claim_scope(f)]
+
+
 def scored_entries():
     """Every entry carrying scorer gate detail, with its arm."""
-    for f in sorted(glob.glob(str(REPO / STATES))):
+    for f in state_files():
         arm = f.split("commissioning_")[1].split("_")[0]
         try:
             doc = json.load(open(f))
@@ -84,7 +114,7 @@ def _severity_split():
     out = {"crit_probed": 0, "crit_unprobed": 0,
            "sub_probed": 0, "sub_unprobed": 0}
     seen = False
-    for f in sorted(glob.glob(str(REPO / STATES))):
+    for f in state_files():
         try:
             doc = json.load(open(f))
         except Exception:

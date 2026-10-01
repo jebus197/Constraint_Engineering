@@ -261,10 +261,38 @@ def test_the_live_repository_is_actually_wired():
                 "cdsfl.onboarded carries no stamp. A fresh clone IS unguarded until "
                 "onboarding runs; that is expected, not a defect. Fix it with: "
                 "python3 scripts/cdsfl_onboard.py")
-    assert got == "hooks", (
-        f"core.hooksPath is {got!r}, so commits here are unguarded -- and this "
-        f"clone HAS been onboarded, so the guard was removed after setup rather "
-        f"than never installed")
+    # JUDGED BY RESOLUTION, NOT BY SPELLING, 2026-10-01.
+    #
+    # This asserted the literal string "hooks" and went red on a clone where the
+    # guard was fully wired -- `core.hooksPath` held the ABSOLUTE
+    # `<repo>/hooks`, `hooks/pre-commit` was present and executable, and the
+    # gate had refused work repeatedly that same day. The test was reading a
+    # config string and reporting on a behaviour, which is the split
+    # `execute-do-not-grep` names: two correct descriptions that disagree.
+    #
+    # git resolves a relative `core.hooksPath` against the TOP LEVEL, not the
+    # current directory: measured on git 2.50.1 by committing from a
+    # subdirectory of a throwaway repo under each spelling, and the hook ran
+    # both times. So neither spelling is safer and neither is repaired -- the
+    # only defect was comparing the STRING.
+    #
+    # Both spellings are accepted and the question asked instead is the one that
+    # matters: does the configured path resolve to the versioned hooks
+    # directory, and is there an executable pre-commit in it. A clone with
+    # hooksPath pointing somewhere else, or with the hook missing or
+    # non-executable, is still RED.
+    configured = Path(got)
+    resolved = configured if configured.is_absolute() else REPO / configured
+    assert resolved.resolve() == (REPO / "hooks").resolve(), (
+        f"core.hooksPath is {got!r}, which resolves to {resolved.resolve()} and "
+        f"not to {(REPO / 'hooks').resolve()}, so commits here run some other "
+        f"hook set or none -- and this clone HAS been onboarded, so the guard "
+        f"was repointed after setup rather than never installed")
+    pre = REPO / "hooks" / "pre-commit"
+    assert pre.is_file(), f"{pre} is missing, so commits here are unguarded"
+    assert os.access(pre, os.X_OK), (
+        f"{pre} exists but is not executable, so git skips it silently -- "
+        f"unguarded with every appearance of being guarded")
 
 
 # --- The versioned hooks must not rot away from the ones that actually run. ---

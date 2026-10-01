@@ -203,6 +203,46 @@
       "fixed": true,
       "fix": "The same brief re-dispatched as check_my_work_2026-09-28 after the founder re-authenticated, and that round DID preserve disagreement: the 2 seats reached opposite conclusions on the published explorer and both positions are recorded in experimental_notes/Panel_FULL_RECORD_Check_My_Work_2026-09-28.md rather than resolved by vote, per feedback_no_model_voting.",
       "held_by": "bench/tests/test_panel_conditions_are_met_2026-09-10.py"
+    },
+    {
+      "condition": "P5",
+      "round": "a19_calculator_design_2026-09-30",
+      "seat": "cc2",
+      "what": "The reply carries no disagreement FIELD. The SUBSTANCE was present and the word was not: it refuted the brief's own declared figure, recording that \"the brief's '73 of 73' is a hardcoded literal in the figures script, not a live count; the live deduplicated count is 201\". The project accepted that refutation and WITHDREW the figure. So the round was not smoothed to consensus by this seat; it dissented and filed the dissent under the heading \"Two corrections I owe\".",
+      "cause": [
+        "MEASURED, NOT INFERRED. The reply is 4235 characters, ok=True, after 157",
+        "tool calls, and it ends with its own stopping statement -- \"Stopped on",
+        "diminishing returns at pass 5\" -- so it is complete and was not truncated.",
+        "A token census over the whole reply returns 0 occurrences of each of",
+        "disagree, disagreement, dissent and diverge.",
+        "",
+        "THE BRIEF ASKED TWICE, so instruction was not the gap:",
+        "bench/logs/a19_calculator_design_2026-09-30/BRIEF.md line 14 (\"If you",
+        "disagree with the other seat, say so and say why, with evidence\") and line",
+        "78 (\"Name any disagreement with the other seat explicitly\").",
+        "",
+        "AND THE BRIEF ASKED FOR SOMETHING THIS ROUND'S DESIGN CANNOT SUPPLY. Both",
+        "seats answer the same brief in parallel, in separate sandboxes, with no",
+        "sight of each other's reply, so no seat can disagree with THE OTHER SEAT's",
+        "content. The only objects available are CC1 and the brief, and this seat",
+        "disagreed with the brief.",
+        "",
+        "WHY THE GUARD COULD NOT SEE IT. DISAGREEMENT_RE matches the WORD. A",
+        "refutation written as a correction is invisible to it, and no lexical",
+        "widening can close that gap without matching mentions as well as",
+        "assertions -- the defect that would weaken the guard in the reassuring",
+        "direction. The widening applied the same day was the part that CAN be done",
+        "safely: it recovered 4 replies, including this round's OTHER seat, which",
+        "named its disagreement with CC1 inside a question heading. 0 replies were",
+        "lost, measured over all 306 archived seat replies.",
+        "",
+        "THE OTHER SEAT OF THIS ROUND PRESERVED ITS DISAGREEMENT, so P5's actual",
+        "subject -- that disagreement survives into the record rather than being",
+        "smoothed -- holds for the round."
+      ],
+      "fixed": false,
+      "fix": "OUTSTANDING AND IT IS THE FOUNDER'S TO SETTLE, because the options change his `pr` protocol rather than any code. (1) Require the field as a NAMED SECTION in the brief, which makes compliance mechanically checkable at the cost of prescribing form. (2) Name the object correctly for a blind parallel round -- disagreement with CC1 or with the brief, since the other seat's reply is unreadable by design. (3) Leave it, on the ground that a seat which refutes the brief's own figure has done the thing the condition exists to protect. No code change is proposed here: the round is archived and cannot be re-run, and widening the guard further would make it match mentions. Recorded 2026-10-01T14:10:24+01:00.",
+      "held_by": "bench/tests/test_panel_conditions_are_met_2026-09-10.py"
     }
   ]
 }

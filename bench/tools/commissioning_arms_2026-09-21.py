@@ -218,7 +218,94 @@ def cap_recommendation(report: dict) -> str | None:
     return (f"RECOMMENDATION TO THE REVIEWER: raise the round cap and re-run. "
             f"This arm used all {cap} of its {cap} rounds and {why}.{tail} "
             f"The cap is a budget backstop, not a convergence verdict, so a run "
-            f"that stops here is carrying falsification debt rather than a result.")
+            f"that stops here is carrying falsification debt rather than a "
+            f"result.\n{suggested_cap_sentence(report)}")
+
+
+#: The consecutive zero-new-critical window the two-sided gate requires, when a
+#: report does not carry its own. Matches `RunnerConfig.gamma_alt_consecutive_zero_crit`.
+DEFAULT_ZERO_WINDOW = 3
+
+
+def suggested_cap(report: dict) -> "tuple[int, int] | None":
+    """(suggested cap, extra rounds) -- a FLOOR, not an estimate of n*.
+
+    THE FOUNDER'S RULING, 2026-09-30, is 2 sentences and the first version of
+    this module implemented only the first: *"we go with what you previously
+    suggested was the statistical average of 10, with the caveat that if an
+    experiment looks close to convergence, a recommendation should be printed to
+    the researcher to extend the run to a sane suggested number, or to set their
+    own user preference in the runner dialogue."* The recommendation fired and
+    named NO NUMBER, so the reviewer was told to raise the cap and left to guess
+    by how much.
+
+    WHY THE NUMBER IS DERIVED FROM THE GATE AND NOT FITTED. Both free seats, and
+    separately an unbounded external model, reached the same conclusion about
+    predicting the required round count from target complexity: it is NOT
+    estimable on this archive. Measured over the 9 archived reports carrying
+    `target_complexity`: 2 distinct targets, 3 distinct complexity values, and
+    only 4 of 9 runs using their full budget -- so the recorded round counts are
+    configured CAPS rather than measurements of what a target needed. Fitting
+    n*(complexity) on that would manufacture a precise-looking rule with no
+    predictive content.
+
+    AND THERE IS A SECOND, STRONGER REASON, raised by an external model (Grok)
+    reviewing the same question and recorded here because it is structural
+    rather than a fact about this archive, so no amount of further data would
+    answer it: COMPLEXITY IS NOT STATIONARY. After round 0 the thing that
+    determines how many rounds remain is no longer the original document. It is
+    the document PLUS the fixes applied, the challenges still open, and the
+    examination history -- so a cap fitted to pre-round complexity is predicting
+    a quantity from a state that no longer exists by the time it matters. The
+    panel's own conclusion (not estimable on this archive) and Grok's (not the
+    right variable at all) point the same way, and Grok's survives a larger
+    archive while the panel's would not. Its matching recommendation -- "always
+    record which reason fired" -- was checked and WAS a real gap, now closed:
+    `reference_runner_v3.stop_reason_fields` puts the stop reason in the report.
+
+    SO THIS ANSWERS A DIFFERENT AND ANSWERABLE QUESTION: what is the SMALLEST
+    cap that could satisfy the gate from where the run stopped? The two-sided
+    gate's second half requires `gamma_alt_consecutive_zero_crit` consecutive
+    rounds with no new critical. A run that ended while still producing
+    criticals has accrued none of that streak, so it needs AT LEAST that many
+    further rounds, whatever the target's complexity. That is a floor derived
+    from the gate's own definition, it is honest about being a floor, and it is
+    the only number here that does not require a model of the target.
+
+    Returns None where the report does not carry what this needs, so the caller
+    says nothing rather than guessing.
+    """
+    cap = report.get("max_rounds")
+    if not isinstance(cap, int) or cap <= 0:
+        return None
+    cfg = report.get("convergence_config") or {}
+    window = cfg.get("gamma_alt_consecutive_zero_crit")
+    if not isinstance(window, int) or window <= 0:
+        window = DEFAULT_ZERO_WINDOW
+    return cap + window, window
+
+
+def suggested_cap_sentence(report: dict) -> str:
+    """The reviewer-facing sentence naming the number, and its own limits."""
+    got = suggested_cap(report)
+    if got is None:
+        return ("  NO CAP SUGGESTED: this report does not carry `max_rounds`, "
+                "so any number would be invented.")
+    value, window = got
+    cap = report.get("max_rounds")
+    return (
+        f"  SUGGESTED CAP: {value} rounds, which is this run's {cap} plus the "
+        f"{window} consecutive zero-new-critical rounds the two-sided gate "
+        f"requires. It is a FLOOR, not a prediction: a run still producing "
+        f"criticals has accrued none of that streak, so it cannot satisfy the "
+        f"gate in fewer than {window} further rounds whatever the target's "
+        f"complexity. Predicting the round count a target actually needs is "
+        f"NOT estimable on the current archive -- 2 distinct targets and 3 "
+        f"distinct complexity values across 9 reports -- so no larger number "
+        f"is offered here.\n"
+        f"  OR SET YOUR OWN: pass --rounds N to this tool, or answer the "
+        f"runner's cap prompt, and your value is used unchanged."
+    )
 
 
 def command(arm: Arm) -> list[str]:
@@ -266,6 +353,59 @@ def detach(child_argv: list[str], log_path: Path) -> int:
     return proc.pid
 
 
+def _is_attended(args) -> bool:
+    """Is a human at the keyboard AND waiting on this process?
+
+    A prompt in an unattended run is a HANG, and this tool's whole reason for
+    existing is detached runs that outlive the host (founder directive
+    2026-07-29, "logs are the only tether"). So the dialogue is offered only
+    when the process both has a terminal and is not about to detach or merely
+    print.
+    """
+    if getattr(args, "detach", False) or not getattr(args, "run", False):
+        return False
+    try:
+        return sys.stdin.isatty() and sys.stdout.isatty()
+    except (AttributeError, ValueError):            # a closed or fake stream
+        return False
+
+
+def resolve_round_cap(flag: "int | None", attended: bool) -> "int | None":
+    """The cap to use: the flag, else the researcher's answer, else None.
+
+    None means "change nothing", so the arms keep their own default and this
+    function cannot silently alter a run that did not ask it to.
+
+    THE FLAG ALWAYS WINS, including over the prompt, so a scripted or detached
+    invocation is never asked and never blocked.
+    """
+    if flag is not None:
+        return flag
+    if not attended:
+        return None
+    default = ARMS[0].rounds
+    try:
+        answer = input(
+            f"Round cap per arm [{default}]: "
+            f"(Enter to accept; the cap is a BUDGET BACKSTOP, not a "
+            f"convergence verdict) ").strip()
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return None
+    if not answer:
+        return None
+    try:
+        value = int(answer)
+    except ValueError:
+        print(f"  not a number: {answer!r}; keeping {default}", flush=True)
+        return None
+    if value < 1:
+        print(f"  a cap below 1 would run no rounds; keeping {default}",
+              flush=True)
+        return None
+    return value
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -281,13 +421,30 @@ def main() -> int:
     ap.add_argument("--log", default=None,
                     help="log path for --detach; defaults to "
                          "bench/logs/shakedown_<UTC date>/arms.log")
+    # THE RESEARCHER'S OWN CAP. Founder's ruling 2026-09-30: a reviewer must be
+    # able "to extend the run to a sane suggested number, or to set their own
+    # user preference in the runner dialogue". Before this there was no way to
+    # set it at all -- the cap was a dataclass default, so `cap_recommendation`
+    # told the reviewer to raise a number they had no means of raising.
+    ap.add_argument("--rounds", type=int, default=None, metavar="N",
+                    help=f"round cap per arm (default {ARMS[0].rounds}); a "
+                         f"budget backstop, NOT a convergence verdict. Omit it "
+                         f"on an attended run and you are asked.")
     args = ap.parse_args()
+    if args.rounds is not None and args.rounds < 1:
+        print(f"--rounds must be at least 1, got {args.rounds}", file=sys.stderr)
+        return 2
 
     arms = [a for a in ARMS if args.only in (None, a.key)]
     if not arms:
         print(f"no arm matches {args.only!r}; keys are "
               + ", ".join(a.key for a in ARMS), file=sys.stderr)
         return 2
+
+    chosen = resolve_round_cap(args.rounds, attended=_is_attended(args))
+    if chosen is not None:
+        arms = [dataclasses.replace(a, rounds=chosen) for a in arms]
+        print(f"round cap: {chosen} per arm", flush=True)
 
     if args.detach:
         # RE-INVOKE THIS FILE WITH --run RATHER THAN COPYING THE SEQUENCING.

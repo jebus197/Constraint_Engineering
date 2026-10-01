@@ -218,11 +218,49 @@ def source_files(d: pathlib.Path) -> list[str]:
 #: individually correct and neither can see the other. The rule was never
 #: "singular only"; the brief asks for a disagreement section and does not
 #: dictate its heading.
+# WIDENED 2026-10-01, AND IT IS THE 5TH TIME THIS SHAPE HAS COST A FINDING.
+#
+# The 3rd alternative is LINE-ANCHORED: it recognises `## Disagreement` and
+# `3. Disagreements` but not a disagreement stated inside a sentence. 2 replies
+# of 2026-09-30 took the P5 guard red while complying in full:
+#
+#   fable, intelligence_first  : "Disagreements with CC1 (verdict vocabulary;
+#                                 stage reading) and the earlier seat (Wolfram
+#                                 parallel) are preserved in the note with the
+#                                 evidence that decides each."
+#   fable, a19_calculator_design: "## Q4 - ... And CC1's invariance claim is
+#                                 correct but incomplete - my named disagreement."
+#
+# Both name a disagreement, name whom with, and carry the substance. Neither
+# sits at a line start, so neither matched. The brief asked for the field twice
+# in each case, and the condition asks that disagreement be PRESERVED rather
+# than that it be formatted -- so the guard, not the seats, was wrong.
+#
+# MEASURED over all 306 archived seat replies: 4 GAINED, 0 LOST. The other 2
+# gains are older under-counts -- chatgpt on 2026-07-12 ("My strongest likely
+# disagreement with the panel: I would not cut section 18 wholesale") and cc2
+# on 2026-08-30 ("This is a disagreement with the brief's framing") -- so the
+# guard had been under-reporting P5 compliance for months, not only yesterday.
+#
+# IT IS DELIBERATELY NOT A BARE `disagreement with`. That form gained a 5th
+# reply whose match was "a model's disagreement with a CONFIRMED finding would
+# vanish" -- the word used as a technical noun about the MECHANISM, not the
+# seat's own position. Matching a MENTION rather than an ASSERTION is the same
+# defect the latent tagger carries, and it would weaken the guard in the
+# reassuring direction. So the new alternatives require either the FIRST PERSON
+# ("my ... disagreement", "this is a disagreement") or an object that is an
+# ACTOR rather than an artefact (CC1, me, the brief, the panel, the other seat).
+# `(?<!no )` keeps "No disagreements with the other seat" out, and
+# `carries_disagreement` still refuses any match whose body declares absence.
 DISAGREEMENT_RE = re.compile(
     r"strongest[_ ]disagreements?"
     r"|where\s+i\s+disagree"
     r"|(?:^|\n)\s*#{0,4}\s*\**\s*(?:\d+[.)]\s*)?disagreements?\b"
-    r"|i\s+disagree\s+with",
+    r"|i\s+disagree\s+with"
+    r"|(?:my|our)\s+(?:strongest\s+|likely\s+|named\s+|own\s+)*disagreements?\b"
+    r"|this\s+is\s+a\s+disagreement\b"
+    r"|(?<!no )disagreements?\s+with\s+(?:cc1|me\b|the\s+(?:brief|panel|"
+    r"other\s+seat|earlier\s+seat|first\s+seat))",
     re.I)
 
 #: A body that DECLARES ABSENCE rather than stating a disagreement.

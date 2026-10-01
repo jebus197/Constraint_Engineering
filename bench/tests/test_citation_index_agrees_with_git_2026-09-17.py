@@ -47,7 +47,7 @@ def m():
 
 
 def _git_grep(path: str) -> list[str]:
-    """The slow answer, as a WHOLE TOKEN rather than a bare substring.
+    r"""The slow answer, as a WHOLE TOKEN rather than a bare substring.
 
     CORRECTED 2026-09-21. This ran `git grep -l -- <path>`, a substring search,
     and compared it against an index built by EXTRACTING whole

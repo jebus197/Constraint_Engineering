@@ -1,0 +1,117 @@
+# Free panel, review of one day's work: 2026-10-01 on the simulation branch
+
+**Dispatched 2026-10-01 by CC1 on the founder's instruction:** *"check over your day's work with the free panel since the last panel review. Then fix anything they find."*
+
+**Your job is to find what is WRONG, not to confirm what is right.** Everything described below is already built and committed to the working tree, so this is a review of work done rather than a design review. The founder's standing policy is that the panel reviews a design before it is built; this round is the exception he asked for explicitly.
+
+**The last panel review was the intelligence-first round of 2026-09-30.** Everything here post-dates it. Two of your own recommendations from that round were implemented today and are in scope: the claim-level channel and the catalogue field.
+
+## Hard constraints, non-negotiable
+
+- **You are in your own sandbox copy. Do NOT write to the real repository.** The founder's rule: *"none of the models... should ever be able to reach the real repo, let alone edit it!"* A kernel-sandbox deny was added today to enforce this; question 3 asks you to attack it.
+- **Never touch `~/.config/cdsfl/scoring.env` or any answer-key store. Never print a secret value.**
+- **`execute-do-not-grep`.** A claim asserting on the SOURCE TEXT of a module asserts only that the module describes itself consistently. Where a producer and a consumer both exist as live code, CALL them and compare outputs. **CC1 was bitten by grep-shaped predicates 3 more times today, twice by predicates matching its own explanatory comments.**
+- **`measured-rate-travels-with-its-script`.** Every rate, proportion or count must come from code you ran, shown with its command and output. Any proportion needs a confidence interval.
+- **Cross-verify every computational claim with at least 2 independent tools.** A Wolfram call that errored verified nothing.
+- **`feedback_no_model_voting`.** Findings are confirmed programmatically or by the human, never by model agreement.
+- **`feedback_fixes_hil_only`.** Every fix is SUGGESTED to the human.
+- **No compelled convergence.** Disagreement between seats is information and is preserved. Name any disagreement with the other seat or with CC1, and say why, with evidence.
+- **The additive standard, both directions.** An addition nothing reaches is not additive; a removal needs a committed measurement showing the replacement dominates on a named property.
+
+## Declared figures. RE-EXECUTED when this brief is validated, not taken from CC1's typing.
+
+<!-- figure: source_text_assertion_census | scripts/day_review_brief_figures_2026-10-01.py | 79 total, 0 in files dated 2026-10-01 -->
+<!-- figure: md_fence_orphan_dominance | scripts/day_review_brief_figures_2026-10-01.py | orphan-only 0 of 560, live-only 210 -->
+<!-- figure: claim_ledger_on_the_prose_arm | scripts/day_review_brief_figures_2026-10-01.py | 15 claims, 8 decidable, 3 decided, 7 routed, 0 discarded, aggregate claim-addressable -->
+<!-- figure: e1_population_scoped_vs_archive | scripts/day_review_brief_figures_2026-10-01.py | claim scope 23 of 124; whole archive 50 of 265 -->
+<!-- figure: seat_evidence_unpreserved | scripts/day_review_brief_figures_2026-10-01.py | 46 of 251 unpreserved -->
+<!-- figure: disagreement_pattern_widening | scripts/day_review_brief_figures_2026-10-01.py | 4 gained, 0 lost over 306 replies -->
+<!-- figure: classifier_status_quo | scripts/day_review_brief_figures_2026-10-01.py | accuracy 10 of 15, sensitivity 5 of 10 -->
+<!-- figure: catalogue_closed_with_a_non_curing_fix | scripts/day_review_brief_figures_2026-10-01.py | 16 of 69 -->
+<!-- figure: tree_snapshot_guards | scripts/day_review_brief_figures_2026-10-01.py | 4 of 480 -->
+
+**One figure is deliberately NOT declared, and the reason is itself a finding.** The grep-wrapper divergence (session search sees 911 files against the system search's 1159) is **environment-dependent**: it holds only where `CLAUDE_CODE_EXECPATH` is set, which is true in an agent's environment and false in the operator's login shell. Declaring it would make the validator's result depend on who ran it. Question 5 is about exactly this.
+
+## What was done today, stated plainly
+
+**The starting point.** A clean full-suite run at `450bb1d` finished 20 failed, 9200 passed. All 20 are now closed.
+
+**The dominant root cause was not a regression.** 6 of the 20 were one fault: a measurement taken on a date, checked against an archive that has since grown. All 6 now count the population their claim names. The clearest case is `e1_population_recount_falsifier_2026-09-22.py`, whose target docstring names *"the 4 commissioning arms of 2026-09-21/22"* and whose glob had drifted to every commissioning run.
+
+**3 genuine defects:** a module that would not parse on the project's oldest supported Python (which stops the suite COLLECTING, not just that file); a delivered report carrying 7 percentages and a p-value with no producer; and the latent classifier tagging a live defect on the phrase *"with no caller override"*, where "caller" qualifies "override" and the sentence states the defect.
+
+**2 guards were wrong about working code:** the pre-commit guard asserted a config string rather than resolving it, and the Wolfram policy scan walked into transient agent worktrees. Fixing the second exposed a real hole: its pattern recognised only the shell spelling and missed both `env["CDSFL_WOLFRAM_POLICY"] = "deny"` and a JSON pair.
+
+**The 4 items the founder marked for fixing:**
+1. `export_finding_catalogue` now carries whether the proposed FIX worked, in 3 fields, with a TRI-STATE rather than a boolean.
+2. Seat writes to the canonical tree are now DENIED by a macOS kernel sandbox, not merely detected afterwards.
+3. `_MD_PY_FENCE`, an extractor with 0 callers, was removed under the removal clause with a committed dominance measurement.
+4. Harvest stranding is repaired at source: `preserve_seat_evidence`, called from `harvest()`, copies seat-written files with no tracked counterpart into `experimental_notes/seat_evidence/`, with a shrink-only ratchet over the existing backlog.
+
+**Your claim-level channel is built** (`bench/claim_ledger.py`), wired into the run report, informative-only, populated from registry entries. `compute_sk` is untouched.
+
+**The round cap** now suggests a number derived from the gate rather than fitted, and can be set by `--rounds` or an attended prompt. **The stop reason** now reaches the report; it was set on every exit path and discarded at the edge.
+
+**A labelled set for the admissibility classifier** now exists, and the status quo has a measured number for the first time.
+
+## CC1's own errors today, listed so you do not have to find them
+
+Listed because a review that spends its budget rediscovering known errors is wasted. **Do not treat this list as exhaustive — question 6 asks what else is wrong.**
+
+- Diagnosed one failing test wrongly, which cost a 58-minute suite run. The first hypothesis was that suite churn removed what the search wrapper hides; the real cause is that the wrapper falls back to plain search when its backend is unreachable, which depends on which shell started pytest.
+- Invalidated a suite run by editing the tree while it was in flight, after explicitly warning against it. 4 of 480 test files snapshot `git status`; one grep would have found them.
+- 2 test predicates searched source text and matched CC1's own explanatory comments; both are now AST-based.
+- Wrote into a comment that a relative `core.hooksPath` is unsafe. Measured by executing it under the installed git, committing from a subdirectory under each spelling: the hook ran both times, so the claim was false. Removed before shipping.
+- Claimed in a tracked file that the memory-ledger derivation "remains unbuilt". It exists at `cdsfl_sv.py:1598` and is called from `main()` at 2617, built 2026-08-23. The hand-fix that followed updated 2 of 3 figures and missed the third.
+
+## The questions
+
+Answer each with executed evidence. Where a question is not computationally reducible, say which part is not and why.
+
+**Q1. The claim ledger: is it the unit it claims to be, or has it relabelled findings?** v1 populates from registry entries, treating a finding with a `falsifier_code` as a decidable claim and one without as routed. Your 2026-09-30 design asked for the REASON stage's output recorded as data. Does this implementation satisfy that, or does it merely rename what the harness already had? If the latter, what is the smallest change that makes it the claim unit in substance?
+
+**Q2. The removal of `_MD_PY_FENCE`.** The dominance measurement enumerates 560 shapes from 7 prefixes, 2 fence characters, 5 language spellings, 4 attribute forms and 2 line endings. Is that corpus adequate to license a removal, or is there a shape class it cannot reach? Attack the enumeration, not the arithmetic.
+
+**Q3. Attack the write confinement.** `panel_sandbox.confine()` wraps the seat in `sandbox-exec` with `(deny file-write* (subpath <repo>))`. You are running under it. **Try to write to the real repository and report exactly what happens.** Name any route that is not closed. Note that a `cwd` inside the repository is reported as unconfinable by design.
+
+**Q4. The disagreement pattern.** It was widened to recognise a disagreement stated mid-sentence, and deliberately not widened to a bare `disagreement with`, which matched *"a model's disagreement with a CONFIRMED finding would vanish"* — a mention rather than an assertion. Measured 4 gained and 0 lost over 306 archived replies. Does the new pattern still admit a mention anywhere, and does it reject any genuine assertion?
+
+**Q5. A guard that can only pass for an agent.** The grep blind-spot guard now skips when the search wrapper's backend is unreachable, which is the operator's own shell. So the guard is meaningful when an agent runs it and silent when the founder does. Is that acceptable, or does it make the guard a measurement of the agent's environment rather than of the project? If unacceptable, what should replace it?
+
+**Q6. What else is wrong?** Open question, and the one with the largest budget. The working tree carries 57 changed files. Run what you like. Report anything above the threshold of *"missing it could cause real-world failure"*, with the evidence that decides it. If you find nothing above threshold, say so rather than manufacturing findings.
+
+## The instruments that bear on these questions, and what they should tell you
+
+**Answer by USING the machinery, not by describing it.** A seat that returns prose about a fix without having run anything has not answered.
+
+- **`S_k`** is the instrument for Q1. It scores a proposed FIX, and `GLOSSARY.md:237` defines `NO_SCORE` as *"S_k has no opinion"*. Call `compute_sk` on a prose target and on a fenced one and compare; the claim ledger must not have changed either answer. If `S_k`'s verdict moved, the channel is not informative-only and that is a finding.
+- **`gamma`** and the **two-sided gate** bear on the cap recommendation named in the context above. `gamma_critical` must reach `gamma_alt_threshold` AND the critical series must be quiet for `gamma_alt_consecutive_zero_crit` rounds. The suggested cap is derived as `max_rounds + gamma_alt_consecutive_zero_crit`. Say whether that floor is sound, and whether `gamma` is being read from the critical series rather than the all-findings one. **GAMMA IS LOAD-BEARING: it is an active convergence condition and must not be demoted.**
+- **`severity`** bears on Q1's routing: the runner treats a critical without a falsifier as a defect, and the ledger reads `falsifier_code` to decide decidability. Check that a critical claim cannot be routed away silently.
+- **Wilson intervals** are required on every proportion you report. The declared figures above each carry one computed twice, in statsmodels and in mpmath; if you re-derive any of them and your interval disagrees, say so — a disagreement there is a finding about the producer.
+
+## Produce a fix, and test it
+
+**A finding without a fix is incomplete, and a fix without a runnable falsifier that has been EXECUTED is a hypothesis.** Report the exact command you ran and the output you saw, not a summary of it.
+
+**Deliver every fix as a FILE, written INTO your sandbox repository tree at its real path.** A fix described in prose is not delivered. A fix written to scratch space is destroyed when the sandbox is torn down: rounds 5 and 6 of 2026-09-10 returned 0 source files for exactly that reason while both seats reported writing and running working code. Write the falsifier to its real path too, so it survives the harvest and can be re-run here.
+
+## What would refute you
+
+For each answer, state what evidence would overturn it, and attempt that refutation yourself before reporting. Name any HARD assumption you could not test, rather than passing over it.
+
+## Output shape
+
+Return these fields for each question, so replies can be compared without a parser guessing:
+
+1. **VERDICT** — your position in one sentence.
+2. **REASONING** — why, in whatever length it needs.
+3. **FALSIFIER** — the check you wrote, its real path in the tree, the command you ran, and its output verbatim.
+4. **EXECUTED RESULT** — what the falsifier returned, and what that settles.
+5. **WHAT WOULD OVERTURN THIS** — the evidence that would refute your own answer.
+6. **DISAGREEMENT** — your strongest disagreement with this brief's framing, with the other seat, or with CC1, and the evidence for it. If you have none, say so explicitly rather than leaving the field empty.
+
+Then, once across the whole round: **FIXES DELIVERED**, listing each file you wrote at its real path.
+
+## Termination
+
+**Stop on diminishing returns**, which is this project's own criterion: stop when a further pass produces no new finding above the threshold of *"missing it could cause real-world failure, violation or unsafe condition"*. **State how many passes you ran**, and what the last one added. Do not pad to a pass count, and do not stop while an above-threshold finding is still untested.

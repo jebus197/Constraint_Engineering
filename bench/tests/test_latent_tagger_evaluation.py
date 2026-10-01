@@ -742,3 +742,74 @@ class TestNotEnabledAnywhere:
         cfg = RunnerConfig(experiment_name="x", models=["CC2"])
         assert cfg.latent_tagger_enabled is False
         assert cfg.severity_calibration_enabled is False
+
+
+class TestNoCallerNeedsAnAbsenceNotAModifier:
+    """The `no_caller` marker, tightened 2026-10-01, held by execution.
+
+    WHAT IT MATCHED. `commissioning_arm4_prose_20260930T064044Z/C0014` describes
+    "a two-parameter signature `def _extract_section(text: str, label: str)`
+    with no caller override". There "caller" qualifies "override": the sentence
+    says callers CANNOT override the stop set, which IS the defect. The marker
+    read it as "no caller exists" and tagged the entry latent on prose meaning
+    the opposite -- a manufactured false latent, the one outcome this subsystem
+    must never produce, because latent feeds demotion eligibility.
+
+    WHY THE PIN IS NOT THE FIX. `PINNED_PROSE_TAGGED` went red on that entry.
+    Re-pinning would have recorded a wrong tag as expected behaviour. Measured
+    over every registry entry in `bench/logs`, the tightening loses exactly that
+    1 entry and 0 others, so the pinned set of 16 is correct as it stands.
+
+    THIS IS NOT THE CLASS FIX, AND DOES NOT CLAIM TO BE. `TestFalseLatentExposure`
+    records 9 further cases where a marker matches a MENTION rather than an
+    ASSERTION, and its recommendation -- retire the prose source -- is a design
+    ruling reserved to the founder. This is 1 measured false positive removed,
+    and it is a 10th instance of that class rather than an answer to it.
+    """
+
+    # (text, must the no_caller marker fire)
+    _CASES = (
+        ("no production consumer exists in the repository", True),
+        ("no file, no command, and no invocation reaches it", True),
+        ("there is no caller", True),
+        ("no call sites remain after the migration", True),
+        ("no callers", True),
+        ("no in-repo caller", True),
+        # The modifier readings. "caller"/"consumer" qualifies the next noun.
+        ("a signature with no caller override", False),
+        ("no caller overrides are permitted", False),
+        ("no consumer parameter is passed", False),
+        ("no call site argument is threaded through", False),
+    )
+
+    @pytest.mark.parametrize("text,should_fire", _CASES)
+    def test_the_marker_fires_on_an_absence_and_not_on_a_modifier(self, text,
+                                                                 should_fire):
+        hit = lt._prose_latency(text)
+        fired = bool(hit) and hit[1].startswith("no_caller:")
+        assert fired is should_fire, (
+            f"no_caller fired={fired} on {text!r}; expected {should_fire}. "
+            f"A false fire tags a live defect latent, which feeds demotion.")
+
+    def test_the_entry_that_exposed_it_is_no_longer_tagged(self):
+        """FALSIFIER: revert the lookahead and this entry is latent again."""
+        run = "commissioning_arm4_prose_20260930T064044Z"
+        hit = [data for name, data in _RUNS if name == run]
+        if not hit:
+            pytest.skip(f"{run} is not in this archive")
+        entry = dict(hit[0]["registry"]["entries"]["C0014"])
+        assert "no caller override" in entry["description"], (
+            "the specimen no longer carries the phrase this test is about")
+        assert not tag_entry(entry), (
+            "C0014 is tagged latent again, so the modifier reading is back")
+
+    def test_the_tightening_lost_nothing_else_in_the_archive(self):
+        """ANTI-OVERREACH. The measured claim was 1 lost and 0 true positives
+        lost; that is only meaningful if the archive still has true positives."""
+        tagged = sorted(f"{name}/{cid}" for name, data in _RUNS
+                        for cid, e in data["registry"]["entries"].items()
+                        if tag_entry(dict(e)))
+        by_prose = [t for t in tagged if t]
+        assert len(by_prose) == len(PINNED_PROSE_TAGGED), (
+            f"{len(by_prose)} tagged against {len(PINNED_PROSE_TAGGED)} pinned")
+        assert tagged == PINNED_PROSE_TAGGED
