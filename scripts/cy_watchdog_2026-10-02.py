@@ -153,9 +153,19 @@ def _read_pid(pid_file: pathlib.Path | None) -> int | None:
         return None
 
 
-def _round_count(log: pathlib.Path) -> int:
-    """Rounds landed, read from the run's own artefacts, not from its prose."""
-    d = log.parent
+def _round_count(log: pathlib.Path,
+                 outcome_dir: pathlib.Path | None = None) -> int:
+    """Rounds landed, read from the run's own artefacts, not from its prose.
+
+    THE SAME WRONG DIRECTORY AS `read_outcome`, found 2026-10-02 from a
+    heartbeat that said "0 round(s) landed" while the console showed the run in
+    ROUND 1. The artefacts live in the run's own timestamped directory, not
+    beside the console log, so this counted 0 forever. A monitoring channel
+    reporting a false number is the defect this whole script exists to remove,
+    and fixing `read_outcome` alone left its twin -- which is the shape this
+    project keeps finding.
+    """
+    d = pathlib.Path(outcome_dir) if outcome_dir else log.parent
     n = len(list(d.glob("round_*.json")))
     for state in (d / "runner_state.json",):
         if state.is_file():
@@ -242,7 +252,8 @@ def say(kind: str, msg: str) -> None:
 
 def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
           last_change: float, rounds: int, stall_s: int,
-          last_cpu: float | None = None) -> tuple:
+          last_cpu: float | None = None,
+          outcome_dir: pathlib.Path | None = None) -> tuple:
     """One mechanical check. Returns new state and emits events for what changed."""
     now = time.time()
     exists = log.is_file()
@@ -297,7 +308,7 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
         last_change = now
         last_size = size
 
-    r = _round_count(log)
+    r = _round_count(log, outcome_dir)
     if r > rounds:
         say("PROGRESS", f"round {r} landed (was {rounds})")
         rounds = r
@@ -372,6 +383,7 @@ def main() -> int:
         ap.error("--log is required: name the log file to watch")
 
     log = pathlib.Path(args.log)
+    outcome_dir = pathlib.Path(args.outcome_dir) if args.outcome_dir else None
     pid = args.pid or _read_pid(pathlib.Path(args.pid_file) if args.pid_file else None)
 
     say("ARMED", f"log={log} pid={pid or 'unknown'} interval={args.interval}s "
@@ -393,7 +405,7 @@ def main() -> int:
     except OSError:
         last_size, last_change = 0, time.time()
     started = last_beat = time.time()
-    rounds = _round_count(log)
+    rounds = _round_count(log, outcome_dir)
     ended = False
     last_cpu = _cpu_seconds(pid)
 
@@ -407,7 +419,7 @@ def main() -> int:
     while not stop["now"]:
         offset, last_size, last_change, rounds, ended, last_cpu = probe(
             log, pid, offset, last_size, last_change, rounds, args.stall_seconds,
-            last_cpu)
+            last_cpu, outcome_dir)
         if ended or args.once:
             break
         if (time.time() - last_beat) > args.heartbeat_minutes * 60:
@@ -424,8 +436,7 @@ def main() -> int:
     # EVERY EXIT PATH SPEAKS THE OUTCOME. One more stdout line is one more
     # Monitor wake, which is exactly what a halt deserves and what it did not
     # get before.
-    verdict, detail = read_outcome(
-        log, pathlib.Path(args.outcome_dir) if args.outcome_dir else None)
+    verdict, detail = read_outcome(log, outcome_dir)
     say(f"OUTCOME {verdict}", detail)
     say("CLOSED", f"watchdog exiting; {rounds} round(s) landed; "
                   f"run_ended={ended}; outcome={verdict}")

@@ -380,3 +380,40 @@ class TestTheVerdictCanLiveElsewhere:
                   "--outcome-dir", str(tmp_path / "nowhere")])
         assert "OUTCOME NO_SIGNAL" in r.stdout, r.stdout
 
+    def test_rounds_are_counted_in_the_runs_own_directory(self, tmp_path):
+        """THE TWIN OF THE OUTCOME DEFECT, found from a live heartbeat.
+
+        A heartbeat reported "0 round(s) landed" while the console showed the
+        run in ROUND 1, because the artefacts live in the run's own timestamped
+        directory and this counted beside the console log. Fixing `read_outcome`
+        alone left its twin, which is the shape this project keeps finding: a
+        monitoring channel reporting a false number is the defect the whole
+        script exists to remove.
+        """
+        import importlib.util
+        logdir, rundir = tmp_path / "console", tmp_path / "run_20261002T0442Z"
+        logdir.mkdir(); rundir.mkdir()
+        log = logdir / "run.log"
+        log.write_text("x\n", encoding="utf-8")
+        (rundir / "round_00.json").write_text("{}", encoding="utf-8")
+        (rundir / "round_01.json").write_text("{}", encoding="utf-8")
+        spec = importlib.util.spec_from_file_location("cywd_rc", WD)
+        m = importlib.util.module_from_spec(spec)
+        sys.modules["cywd_rc"] = m
+        spec.loader.exec_module(m)
+        assert m._round_count(log) == 0, "the console directory holds no rounds"
+        assert m._round_count(log, rundir) == 2, (
+            "rounds are not read from the run's own directory")
+
+    def test_the_heartbeat_reports_the_real_round_count(self, tmp_path):
+        logdir, rundir = tmp_path / "c", tmp_path / "r"
+        logdir.mkdir(); rundir.mkdir()
+        log = logdir / "run.log"
+        log.write_text("x\n", encoding="utf-8")
+        (rundir / "round_00.json").write_text("{}", encoding="utf-8")
+        dead = subprocess.Popen([sys.executable, "-c", "pass"]); dead.wait()
+        r = _run(["--log", str(log), "--pid", str(dead.pid), "--once",
+                  "--interval", "1", "--stall-seconds", "3600",
+                  "--outcome-dir", str(rundir)])
+        assert "1 round(s) landed" in r.stdout, r.stdout
+
