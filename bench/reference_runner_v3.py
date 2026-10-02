@@ -2659,6 +2659,34 @@ class FindingRegistry:
                 count += 1
         return count
 
+    def irreducible_queue_decomposition(self) -> Tuple[int, int]:
+        """The queue split into (ladder-exhausted, never-assessed).
+
+        TWO STATES WITH OPPOSITE DIAGNOSES, and the alarm named only the first.
+        `irreducible_escalation` means the ladder was exhausted; `routing_deferred`
+        means the item was NEVER ASSESSED -- its own reason string begins "not
+        escalated at round {n}". A human reading "3 criticals locked as
+        irreducible" reads 3 crises; run 1b's honest reading was 1 exhausted and
+        2 never assessed, which points at the instrument instead.
+
+        `irreducible_queue_count` is now the SUM of this, so the two cannot
+        drift. An item carrying both flags counts ONCE, as exhausted, which is
+        what the previous single-expression form also did -- pinned by a
+        differential test over synthetic entries rather than by reading.
+        """
+        _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+        locked = deferred = 0
+        for e in self.entries.values():
+            if e.get("status") in _TERMINAL:
+                continue
+            if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+                continue
+            if e.get("irreducible_escalation"):
+                locked += 1
+            elif e.get("routing_deferred"):
+                deferred += 1
+        return locked, deferred
+
     def irreducible_queue_count(self) -> int:
         """Static HIL queue: criticals locked as irreducible AFTER the full routing
         ladder was exhausted without any model producing a runnable test. These are
@@ -2688,12 +2716,7 @@ class FindingRegistry:
         #
         # Counting `routing_deferred` here restores the alarm to its shipped
         # behaviour exactly, while nothing false is asserted about any item.
-        return sum(
-            1 for e in self.entries.values()
-            if (e.get("irreducible_escalation") or e.get("routing_deferred"))
-            and e.get("status") not in _TERMINAL
-            and (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
-        )
+        return sum(self.irreducible_queue_decomposition())
 
     def contested_count(self, current_round: int, grace_period: int = 2,
                         subcritical_exclusion: bool = False) -> int:
@@ -7125,6 +7148,8 @@ def build_irreducible_queue_alarm(
             # The three things that decide whether this is genuine
             # irreducibility or a mechanical failure wearing its clothes.
             "falsifier_present": bool(e.get("falsifier_code")),
+            "falsifier_attempted": bool(e.get("falsifier_code")
+                                        or e.get("last_falsifier_code")),
             "falsifier_verdict": e.get("falsifier_verdict") or "",
             "sk_tristate": sk.get("tristate", ""),
             # Recorded, not discarded (founder ruling 2026-08-30).
@@ -7139,7 +7164,9 @@ def build_irreducible_queue_alarm(
     # queue shares one S_k outcome or one empty-falsifier signature, the cause
     # is one mechanism, not thirteen independent hard problems.
     sk_states = sorted({(x["sk_tristate"] or "(none)") for x in evidence})
-    no_falsifier = sum(1 for x in evidence if not x["falsifier_present"])
+    no_falsifier = sum(1 for x in evidence if not x["falsifier_attempted"])
+    _attempted_only = sum(1 for x in evidence
+                          if x["falsifier_attempted"] and not x["falsifier_present"])
 
     # HOW MANY DISTINCT DEFECTS, NOT HOW MANY ITEMS.
     #
@@ -7162,15 +7189,26 @@ def build_irreducible_queue_alarm(
     _by_falsifier: Dict[str, List[str]] = {}
     for x in evidence:
         _cid = x.get("canonical_id") or x.get("id") or "?"
-        _body = ((registry.entries.get(_cid) or {}).get("falsifier_code") or "").strip()
+        _ent = registry.entries.get(_cid) or {}
+        _body = (_ent.get("falsifier_code") or "").strip()
+        if not _body:
+            # ATTEMPTED AND CRASHED IS NOT ABSENT. Prefixed so an attempted body
+            # can never group with a resolved one of the same text.
+            _attempted = (_ent.get("last_falsifier_code") or "").strip()
+            _body = f"__attempted__{_attempted}" if _attempted else ""
         _key = _body if _body else f"__no_falsifier__{_cid}"
         _by_falsifier.setdefault(_key, []).append(_cid)
     _groups = [sorted(v) for v in _by_falsifier.values()]
     _dupes = [g for g in _groups if len(g) > 1]
 
+    _q_exhausted, _q_never = registry.irreducible_queue_decomposition()
     notify = (
         f"IRREDUCIBLE-QUEUE ALARM at round {round_idx}: {count} criticals are "
-        f"locked as irreducible, over the bound of {bound}.\n"
+        f"over the bound of {bound} — {_q_exhausted} with the routing ladder "
+        f"EXHAUSTED and {_q_never} NEVER ASSESSED.\n"
+        f"That split is the first thing to read: 'never assessed' means no "
+        f"runnable falsifier was written for the item, which is an instrument "
+        f"reading, not a property of the document.\n"
         f"Genuinely irreducible criticals are rare, so a queue this size is "
         f"overwhelmingly the INSTRUMENT rather than the document. There are 3 "
         f"causes and they are checked in this order.\n"
@@ -7204,6 +7242,11 @@ def build_irreducible_queue_alarm(
         "bound": bound,
         "sk_states_in_queue": sk_states,
         "items_without_falsifier": no_falsifier,
+        # WIRED TO A READER, not merely computed. An item whose falsifier was
+        # WRITTEN and then CRASHED is the instrument failing, not the document
+        # being hard, and it is the single most useful number on this bundle
+        # for telling those two apart.
+        "items_with_attempted_falsifier_only": _attempted_only,
         "distinct_defects": len(_groups),
         "duplicate_groups": _dupes,
         "duplicate_note": (
