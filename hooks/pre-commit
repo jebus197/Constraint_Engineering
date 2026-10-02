@@ -303,8 +303,29 @@ printf '%s\n' "$OUT" | tail -1
 #
 # WHY IT REFUSES RATHER THAN WARNS. The founder's ruling says blocking, not
 # advisory. `git commit --no-verify` remains the deliberate escape.
+#
+# ARCHIVED SEAT EVIDENCE IS EXCLUDED, added 2026-10-02, and the reason is that
+# the alternative is editing evidence. `experimental_notes/seat_evidence/` holds
+# documents a PANEL SEAT wrote, preserved unedited so a clone can reach them,
+# with each file's sha256 recorded before its provenance header. Rescuing the
+# 2026-09-20 to 2026-09-30 backlog staged 8 such notes carrying 17 findings
+# between them -- unnamed subjects and valueless quantities in a seat's own
+# prose -- and the ratchet refused the commit.
+#
+# Editing them to pass would destroy the thing that makes them evidence, which
+# is the same rule already applied to a seat's raw reply in a FULL RECORD: the
+# figure is corrected in the readable record and the reply is left exactly as
+# it arrived. The note standard governs what THIS PROJECT writes for its own
+# readers; it has no authority over what another model wrote inside a sandbox.
+#
+# NOT A HOLE: the exclusion is one directory whose contents are byte-pinned by
+# `test_seat_evidence_reaches_a_clone_2026-10-01.py`, so a project note cannot
+# be hidden there, and every other note under experimental_notes is still
+# judged. Same shape, and the same justification, as the prefix exemption in
+# test_every_test_file_is_collected_2026-09-01.py.
 STAGED_NOTES=$(git diff --cached --name-only --diff-filter=ACM \
-    | grep -E '^experimental_notes/.*\.md$' || true)
+    | grep -E '^experimental_notes/.*\.md$' \
+    | grep -v '^experimental_notes/seat_evidence/' || true)
 
 if [ -n "$STAGED_NOTES" ]; then
     if [ ! -f scripts/note_vagueness_lint.py ]; then
