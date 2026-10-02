@@ -1,0 +1,1738 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-02 17:35:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo/.cdsfl_deny_canonical_writes.sb	2026-10-02 17:12:49
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/key_access_forensics.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/key_access_forensics.py	2026-08-15 15:28:29
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo/bench/key_access_forensics.py	2026-10-02 17:32:46
+@@ -229,6 +229,12 @@
+     # False for an exam run: the panel was confined out of the repository, so
+     # repository reads are out of scope rather than the job.
+     repo_in_scope: bool = True
++    # WHICH REPOSITORY, AND WHO SAID SO (2026-10-02). `repo_root_assumed` is True
++    # when no runner-authored record named the run's own repository and the
++    # scanning checkout was used instead. A verdict carrying this flag is not
++    # portable and must not be quoted as a blind measurement.
++    repo_root_used: str = ""
++    repo_root_assumed: bool = True
+ 
+     @property
+     def confirmed(self) -> list[Hit]:
+@@ -254,6 +260,37 @@
+     return path == prefix or path.startswith(prefix.rstrip("/") + "/")
+ 
+ 
++def _is_ancestor_dir(target: str, allowed: str) -> bool:
++    """True when `target` names a DIRECTORY that CONTAINS `allowed`.
++
++    THE DISCRIMINATOR ADDED 2026-10-02 (panel round 2, disputes D1/D2).
++    `_in_scope` used to admit any `target` for which `allowed.startswith(target)`
++    held, intending the display-truncation case: a staged-target path cut
++    MID-COMPONENT by a width limit is a prefix of somewhere legitimate and names
++    nothing else.
++
++    But a real ancestor DIRECTORY is also a prefix, and it names everything
++    underneath it. On the machine that ran the experiment the run directory sits
++    inside the repository, inside the user's home -- so `/Users`,
++    `/Users/<user>`, `/Users/<user>/Developer_Projects` and the repository root
++    itself all satisfied the old test and were reported IN SCOPE. Measured in
++    bench/tests/test_scanner_machine_independence_2026-10-02.py. A home-directory
++    LISTING is exactly how a panel would discover the vault name that
++    bench/vault_keys.sh deliberately hides under $HOME, and the strongest tier of
++    the post-run audit could not see it.
++
++    It is also the whole of the round-1 disagreement. Exp 48 finding C0017 names
++    the bare repository root; on the maintainer's checkout the run directory is a
++    descendant of it, so the literal was admitted and the scan reported 10
++    CONFIRMED. In any other checkout it was not, and the same scan reported 12.
++    One scanner, two verdicts, decided by where the run directory happened to sit.
++
++    A truncation cuts mid-component; an ancestor stops exactly on a separator.
++    That is the entire distinction, and it is decidable from the two strings.
++    """
++    return allowed.startswith(target.rstrip("/") + "/")
++
++
+ def _is_benign_home(path: str) -> bool:
+     home = str(Path.home())
+     if not _under(path, home):
+@@ -284,11 +321,75 @@
+     if "/.../" in raw or raw.endswith("/..."):
+         return True
+     for a in allowlist:
+-        if _under(target, a) or a.startswith(target):
++        if _under(target, a):
+             return True
++        # TRUNCATION, NOT ANCESTRY (2026-10-02). `a.startswith(target)` alone
++        # admitted every ancestor directory of every allowed root -- see
++        # `_is_ancestor_dir` for what that cost and how it was measured.
++        if a.startswith(target) and not _is_ancestor_dir(target, a):
++            return True
+     return _is_benign_home(target)
++
++
++#: The runner-authored record of the repository the RUN executed in. Written by
++#: reference_runner_v3 since 2026-09-01 as `panel_confinement.run_root`; carried
++#: by 19 of 86 archived run directories (22.1%), including run 1b. Read here
++#: 2026-10-02 because `scan_run` was defaulting `repo_root` to the SCANNING
++#: checkout, which is a property of whoever runs the audit, not of the run.
++RUN_ROOT_RECORD = ("panel_confinement", "run_root")
++
++
++def _runner_authored_records(run_dir: Path) -> list[dict]:
++    """Every runner-authored JSON object in `run_dir`, under the same trust rule
++    `discover_target_dirs` uses: a model must not be able to add one."""
++    reports = sorted(run_dir.rglob("*_report.json"))
++    allowed_names = set(RUNNER_AUTHORED)
++    if len(reports) == 1:
++        allowed_names.add(reports[0].name)
++    elif reports:
++        declared = set()
++        for probe in [run_dir / n for n in RUNNER_AUTHORED] + reports:
++            if not probe.exists():
++                continue
++            try:
++                exp = json.loads(probe.read_text(encoding="utf-8",
++                                                errors="replace")).get("experiment")
++            except Exception:  # noqa: BLE001
++                continue
++            if exp:
++                declared.add(f"{exp}_report.json")
++        allowed_names |= {r.name for r in reports if r.name in declared}
++    out: list[dict] = []
++    for p in sorted(run_dir.rglob("*.json")):
++        if p.name not in allowed_names:
++            continue
++        try:
++            obj = json.loads(p.read_text(encoding="utf-8", errors="replace"))
++        except Exception:  # noqa: BLE001
++            continue
++        if isinstance(obj, dict):
++            out.append(obj)
++    return out
+ 
+ 
++def run_repo_root(run_dir: Path) -> str | None:
++    """The repository the RUN executed in, from a runner-authored record only.
++
++    Returns None when no such record exists -- which is the honest answer for 67
++    of 86 archived runs, and is why this does NOT refuse. A hard refusal was
++    measured and rejected: it disables the scanner on 77.9% of the archive, which
++    removes a working control to gain a property, and nothing here dominates it
++    on any named measure. `scan_run` instead marks the fallback as ASSUMED and
++    says so in its report, so the guess is visible rather than silent.
++    """
++    head, leaf = RUN_ROOT_RECORD
++    for obj in _runner_authored_records(run_dir):
++        block = obj.get(head)
++        if isinstance(block, dict) and isinstance(block.get(leaf), str) and block[leaf]:
++            return _norm_path(block[leaf])
++    return None
++
++
+ def discover_target_dirs(run_dir: Path) -> list[str]:
+     """Directories the panel was *supposed* to read, taken from runner-authored
+     records only (`target_file` / `context_files` / `staged_copy`)."""
+@@ -445,8 +546,19 @@
+              extra_target_dirs: Iterable[str] = (),
+              context_width: int = 90) -> Report:
+     run_dir = run_dir.resolve()
++    # THE RUN'S REPOSITORY, NOT THE SCANNER'S (2026-10-02, panel round 2, D2).
++    # `Path(__file__).parents[1]` is the checkout the AUDIT is running from. An
++    # explicit argument still wins -- the operator may know better than the
++    # record -- but the record beats the accident of where this file sits.
++    _assumed = True
+     if repo_root is None:
+-        repo_root = Path(__file__).resolve().parents[1]
++        recorded = run_repo_root(run_dir)
++        if recorded:
++            repo_root, _assumed = Path(recorded), False
++        else:
++            repo_root = Path(__file__).resolve().parents[1]
++    else:
++        _assumed = False
+ 
+     if key_dir is None:
+         key_dirs: list[Path] = []
+@@ -456,8 +568,19 @@
+         key_dirs = [Path(k) for k in key_dir]
+ 
+     rep = Report(run_dir=run_dir, key_dirs=key_dirs)
+-    rep.target_dirs = sorted({*discover_target_dirs(run_dir),
+-                              *(_norm_path(d) for d in extra_target_dirs)})
++    rep.repo_root_used = str(repo_root.resolve())
++    rep.repo_root_assumed = _assumed
++    # A DECLARED TARGET MAY BE REPO-RELATIVE (2026-10-02). Run 1b declares
++    # `target_file: "bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md"`, so
++    # `discover_target_dirs` yields the bare string "bench"; `_under("bench",
++    # <any absolute root>)` is False however it is spelled, so every code review
++    # was misclassified as a CONFINED exam and its own repository reads scored
++    # out of scope. Resolved against the run's repository, not the scanner's.
++    _root = str(repo_root.resolve())
++    def _abs_target(d: str) -> str:
++        return d if os.path.isabs(d) else os.path.normpath(os.path.join(_root, d))
++    rep.target_dirs = sorted({*(_abs_target(d) for d in discover_target_dirs(run_dir)),
++                              *(_abs_target(_norm_path(d)) for d in extra_target_dirs)})
+     planted = load_planted_sets(key_dirs)
+     rep.planted_sets = len(planted)
+ 
+@@ -635,6 +758,17 @@
+     print(bar)
+     print(f"  path           : {rep.run_dir}")
+     print(f"  files scanned  : {rep.files_scanned}  ({rep.bytes_scanned/1_048_576:.1f} MiB)")
++    # SAY WHOSE REPOSITORY DECIDED THIS (2026-10-02). A scan whose repo root was
++    # guessed from the scanning checkout is not portable, and round 1 produced
++    # three different verdicts for the same two runs before anyone noticed.
++    if rep.repo_root_assumed:
++        print(f"  repo root      : {rep.repo_root_used}  -- ASSUMED (the SCANNING")
++        print("                   checkout; this run records no panel_confinement.run_root).")
++        print("                   Scope decisions below are NOT portable. Pass --repo-root")
++        print("                   with the checkout the RUN executed in before quoting any")
++        print("                   figure from this scan as a blind measurement.")
++    else:
++        print(f"  repo root      : {rep.repo_root_used}  (from the run's own record)")
+     if not rep.key_dirs:
+         print("  key location   : not supplied — exact-path and planted-set signals "
+               "are OFF (set CDSFL_KEY_DIR or pass --key-dir)")
+
+### cc2:attempt-1:bench/logs/integrity_advisory_r2_2026-10-02/launch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/integrity_advisory_r2_2026-10-02/launch.log	2026-10-02 17:35:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo/bench/logs/integrity_advisory_r2_2026-10-02/launch.log	2026-10-02 17:12:02
+@@ -1,19 +0,0 @@
+-[17:12:49] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo
+-[17:12:49] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo
+-[17:12:49] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo
+-[17:12:49]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo
+-[17:12:49] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo
+-[17:12:49]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo
+-[17:31:22]   [claude-cli:fable] 59 tool call(s) this attempt, 59 in total
+-[17:31:22]   [claude-cli:fable] done (1113.4s, 18396 chars)
+-    suite: GREEN at 1cfc30e — 8,878 passed, 0 failed  [recorded at 1cfc30e, HEAD is 854efaa, 70 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 50,377 chars, about 12,594 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo
+-  [fable] ok=True chars=18396 tools=59 1113.4s
+-[17:35:09]   [claude-cli:opus] 68 tool call(s) this attempt, 68 in total
+-[17:35:09]   [claude-cli:opus] done (1340.5s, 23622 chars)
+-  [cc2] ok=True chars=23622 tools=68 1340.5s
+-[17:35:09] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-02 15:04:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo/bench/reference_runner_v3.py	2026-10-02 17:29:12
+@@ -2135,7 +2135,62 @@
+ # ─────────────────────────────────────────────────────────────────────────────
+ # FindingRegistry (identical to Exp 36 — A1 windowing, A3 HIL escalation)
+ # ─────────────────────────────────────────────────────────────────────────────
++
++#: The falsifier-gate refusal verdict. Named here rather than imported because
++#: `bench.falsifier_verify` is a leaf by design and the dependency would run the
++#: wrong way; pinned to `falsifier_verify.INTEGRITY_VIOLATION` by
++#: bench/tests/test_integrity_refusal_composition_2026-10-02.py.
++#:
++#: DELIBERATELY in neither EQUIPMENT_FAILURE_VERDICTS nor
++#: ROUTABLE_INSTRUMENT_FAULTS. The instrument did not fail -- it was not
++#: permitted to read.
++INTEGRITY_REFUSED_VERDICT = "INTEGRITY_VIOLATION"
++
++#: Where a ladder rung's verdict lands when it never reaches the entry. Set at
++#: `routing_verdict_unreconciled` by the UNTOOLABLE->ERROR reconciler: a rung
++#: that returned INTEGRITY_VIOLATION leaves the ENTRY labelled UNTOOLABLE and
++#: the refusal recorded only here. Run 1b's C0029 is the archived instance --
++#: `falsifier_verdict: CONFIRMED`, `routing_deferred: True`,
++#: `routing_verdict_unreconciled: INTEGRITY_VIOLATION`. Both round-1 seats'
++#: predicates read `falsifier_verdict` only, so neither covered it.
++LADDER_VERDICT_FIELD = "routing_verdict_unreconciled"
++
++
++def _integrity_refused(e) -> bool:
++    """True when a key-access refusal -- and ONLY that -- must leave the
++    convergence machinery.
++
++    FOUNDER RULING 2026-10-02: "convergence should not be blocked and runs
++    should not be terminated even if a key was read. That is a reporting and
++    post run fix issue ... not part of the convergence machinery of the schema."
++
++    THIS IS A COMPOSITION OF THE TWO ROUND-1 IMPLEMENTATIONS, because each alone
++    was measured unsafe and the failures are in opposite directions.
+ 
++    THE CAUSE CARVE-OUT (seat fable's half, and it is load-bearing).
++    `reverify_falsifier` also returns INTEGRITY_VIOLATION when the runtime
++    observer never installed -- "no boundary AND no measurement". That is an
++    EQUIPMENT fault and it is machine-wide when it happens: a broken
++    sitecustomize would return it for EVERY falsifier, and a predicate keyed on
++    the verdict string alone would then drain every critical out of both
++    counters and converge a run on which nothing was tested. Seat cc2's round-1
++    implementation keys on the string alone (0 occurrences of any observer
++    carve-out in its harvested source) and has exactly that failure.
++
++    THE LADDER FIELD (neither seat's half). See LADDER_VERDICT_FIELD.
++
++    What this does NOT do is report. Releasing without recording is the silent
++    false convergence; `FindingRegistry.integrity_refused_criticals()` is the
++    paired record and it is not optional.
++    """
++    if e.get("integrity_unobserved"):
++        return False
++    for field in ("falsifier_verdict", LADDER_VERDICT_FIELD):
++        if (e.get(field) or "").strip().upper() == INTEGRITY_REFUSED_VERDICT:
++            return True
++    return False
++
++
+ def _irreducible_queue_split(entries) -> Tuple[int, int]:
+     """(ladder-exhausted, never-assessed) over a registry's entries.
+ 
+@@ -2159,6 +2214,15 @@
+             continue
+         if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+             continue
++        # KEY-ACCESS REFUSAL IS NOT A HALT INPUT (founder ruling 2026-10-02).
++        # Run 1b is the case: gamma_critical 0.336 >= 0.30 and gamma_all 0.432 at
++        # round 2 -- both halves of the two-sided gate satisfied -- and the run
++        # HALTED on a queue of 3 against a bound of 2. All 3 were settled by the
++        # post-sweep afterwards. Verified by execution that this changes the HALT
++        # INPUT ONLY: `_check_gamma_alt_convergence` reads `irreducible_queue`
++        # for a NOTE string and nothing else.
++        if _integrity_refused(e):
++            continue
+         if e.get("irreducible_escalation"):
+             locked += 1
+         elif e.get("routing_deferred"):
+@@ -2623,6 +2687,30 @@
+                 continue
+             count += 1
+         return count
++
++    def integrity_refused_criticals(self) -> List[str]:
++        """Canonical ids of non-terminal findings excused by a key-access refusal.
++
++        THE PAIRED RECORD. Both convergence counters skip these by the 2026-10-02
++        ruling, so nothing in the convergence machinery can see them. This reader
++        is the only thing that can, and it exists so "clean convergence" is never
++        reported over an untested critical in silence. An empty list means silent,
++        which is the ruling's own wording.
++
++        NO SEVERITY GATE, DELIBERATELY, AND THIS IS WHERE ROUND 1 WENT WRONG.
++        `unverified_critical_count` stopped gating on `severity` on 2026-09-06
++        (model-assigned float, AUC 0.464 inside the band where 0.7 decides). Seat
++        cc2's round-1 record gates on `severity >= CRITICAL_SEVERITY_THRESHOLD`
++        while the counter it is supposed to shadow does not -- so an UNCONFIRMED
++        entry at severity 0.5 is RELEASED by A4 and OMITTED from the record. That
++        is the silent false convergence the record exists to prevent, reachable
++        without editing any severity. A record that is narrower than the release
++        it documents is not a record.
++        """
++        _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
++        return sorted(cid for cid, e in self.entries.items()
++                      if _integrity_refused(e)
++                      and e.get("status") not in _TERMINAL)
+ 
+     def unverified_critical_count(self) -> int:
+         """A4 fail-safe signal: UNCONFIRMED critical-severity candidates.
+@@ -2650,6 +2738,17 @@
+             # small-queue alarm.
+             if e.get("irreducible_escalation"):
+                 continue
++            # AND NOT A CONVERGENCE BLOCKER EITHER (founder ruling 2026-10-02).
++            # Measured before this line was written: excluding the refusal from
++            # the halt bound ALONE is not safe. With `irreducible_escalation` no
++            # longer stamped, an UNCONFIRMED critical carrying the refusal falls
++            # straight into this counter and A4 blocks; the `exhausted` valve
++            # needs `len(verdicts) > 0`, and 156 of 263 archived UNCONFIRMED
++            # criticals (59.32%) carry zero verdicts, so for the majority the
++            # valve never opens and the run burns to `max_rounds`. Both counters
++            # release, and `integrity_refused_criticals()` carries the record.
++            if _integrity_refused(e):
++                continue
+             # SEVERITY NO LONGER GATES (2026-09-06, founder ruling 23: "Verdict:
+             # do it. There are no votes in CDSFL.", with a 2-seat panel converging
+             # independently on the same replacement).
+@@ -5680,8 +5779,22 @@
+                     e["verified"] = False
+                 tally["HIL"] += 1
+             continue
++        from bench import falsifier_verify as _fv_mod
++        _n_rej_before = len(_fv_mod.INTEGRITY_REJECTIONS)
+         verdict = reverify_falsifier(fcode, repo_root=repo_root)
+         e["falsifier_verdict"] = verdict
++        # SAY WHICH KIND OF INTEGRITY_VIOLATION (2026-10-02). A key-access
++        # refusal leaves the convergence machinery; an UNOBSERVED run -- the
++        # observer never installed, so nothing was measured -- is an equipment
++        # fault and must keep blocking. The rejection records appended by this
++        # very call are the evidence, so read them rather than re-deriving the
++        # cause from the source text. Absent evidence the entry keeps blocking,
++        # which is the fail-closed direction.
++        if verdict == INTEGRITY_REFUSED_VERDICT:
++            _recs = _fv_mod.INTEGRITY_REJECTIONS[_n_rej_before:]
++            e["integrity_unobserved"] = any(
++                "observer did not install" in (v.get("reason") or "")
++                for r in _recs for v in (r.get("violations") or []))
+         # Recorded on the RUNNER's re-execution result, before any later stage
+         # rewrites the verdict field (the discrimination control overwrites it
+         # with NON_DISCRIMINATING), because what the ledger documents is what
+
+### cc2:attempt-1:bench/tests/test_integrity_refusal_composition_2026-10-02.py
+--- /dev/null	2026-10-02 17:35:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo/bench/tests/test_integrity_refusal_composition_2026-10-02.py	2026-10-02 17:29:53
+@@ -0,0 +1,177 @@
++"""A key-access refusal leaves BOTH convergence counters, and is RECORDED.
++
++PANEL ROUND 2, 2026-10-02, disputes D3, D4 and D6. Round 1 produced two
++different implementations of the same ruling and each was measured unsafe in a
++direction the other covers:
++
++  seat fable  `integrity_unobserved` carve-out, one shared predicate across both
++              counters -- and NO record coupled to the exclusion. Its reporting
++              channel is the post-run forensics advisory, which is SILENT exactly
++              in run 1b's case (all 10 gate refusals there were VOCABULARY
++              matches on `seeded_fault`, so the artefact scan finds no access and
++              `end_of_run_advisory` returns None). Executed on fable's own
++              harvested module: run 1b advisory SILENT. So the critical is
++              excused from both counters and nothing says so.
++
++  seat cc2    the paired record and a distinct `integrity_refused` flag -- and NO
++              cause carve-out (0 occurrences of any observer check in its
++              harvested source), so an observer-did-not-install failure, which is
++              machine-wide when it happens, releases every critical and converges
++              a run on which nothing was tested. Its record also gates on
++              `severity >= 0.7` while the counter it shadows stopped gating on
++              severity on 2026-09-06, so a release at severity 0.5 is silent.
++
++They are COMPLEMENTARY, not duplicates and not in conflict. `_integrity_refused`
++composes both halves and adds the third thing neither covered: the LADDER-side
++field. These tests pin all three, each with an anti-vacuity control.
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++import pytest
++
++REPO_ROOT = Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO_ROOT))
++
++from bench.reference_runner_v3 import (  # noqa: E402
++    CRITICAL_SEVERITY_THRESHOLD,
++    INTEGRITY_REFUSED_VERDICT,
++    LADDER_VERDICT_FIELD,
++    FindingRegistry,
++    _integrity_refused,
++    _irreducible_queue_split,
++)
++
++
++def test_the_verdict_string_is_pinned_to_the_gates_own_constant():
++    """A rename in falsifier_verify must fail a test, not silently un-handle the
++    verdict here."""
++    from bench.falsifier_verify import INTEGRITY_VIOLATION
++    assert INTEGRITY_REFUSED_VERDICT == INTEGRITY_VIOLATION
++
++
++class _Reg:
++    """The registry fixture shape test_panel_five_fixes_2026-09-07.py uses: a
++    plain object owning only `.entries`, so the unbound readers can be borrowed
++    onto it without constructing a runner."""
++
++    def __init__(self, entries):
++        self.entries = entries
++
++    integrity_refused_criticals = FindingRegistry.integrity_refused_criticals
++    unverified_critical_count = FindingRegistry.unverified_critical_count
++
++
++def _entry(**kw):
++    e = {"status": "UNCONFIRMED", "severity": 0.8, "falsifier_verdict": ""}
++    e.update(kw)
++    return e
++
++
++# ── the release, both counters, one predicate ────────────────────────────────
++
++def test_a_key_access_refusal_leaves_both_counters_and_lands_in_the_record():
++    reg = _Reg({"C0001": _entry(falsifier_verdict=INTEGRITY_REFUSED_VERDICT)})
++    assert _irreducible_queue_split(reg.entries) == (0, 0)
++    assert reg.unverified_critical_count() == 0
++    assert reg.integrity_refused_criticals() == ["C0001"], (
++        "released from both counters and invisible to every reader -- this is "
++        "the silent false convergence, not a fix"
++    )
++
++
++def test_without_the_refusal_it_still_blocks_so_the_test_above_is_not_vacuous():
++    """THE CONTROL. A test asserting `count == 0` passes just as well against a
++    counter that ignores the verdict outright."""
++    reg = _Reg({"C0001": _entry(falsifier_verdict="")})
++    assert reg.unverified_critical_count() == 1
++    assert reg.integrity_refused_criticals() == []
++
++
++# ── D3: the cause carve-out (fable's half) ───────────────────────────────────
++
++def test_an_unobserved_run_keeps_blocking():
++    """The equipment fault must NOT be released. If a broken sitecustomize made
++    every falsifier return INTEGRITY_VIOLATION and this were released, a run
++    could converge with zero verified criticals."""
++    reg = _Reg({f"C{i:04d}": _entry(falsifier_verdict=INTEGRITY_REFUSED_VERDICT,
++                                    integrity_unobserved=True)
++                for i in range(1, 6)})
++    assert reg.unverified_critical_count() == 5
++    assert _irreducible_queue_split(reg.entries) == (0, 0)  # not escalated here
++    assert reg.integrity_refused_criticals() == [], (
++        "an unobserved run is not a key access and must not be reported as one"
++    )
++
++
++def test_the_carve_out_is_the_only_difference_between_the_two_cases():
++    """ANTI-VACUITY for the carve-out: the two entries differ in one key."""
++    refused = _entry(falsifier_verdict=INTEGRITY_REFUSED_VERDICT)
++    unobserved = dict(refused, integrity_unobserved=True)
++    assert _integrity_refused(refused) is True
++    assert _integrity_refused(unobserved) is False
++    assert set(unobserved) - set(refused) == {"integrity_unobserved"}
++
++
++# ── D6: the ladder-side refusal neither seat covered ─────────────────────────
++
++def test_a_ladder_side_refusal_is_covered_too():
++    """Run 1b's C0029, verbatim from the archive: the ENTRY says CONFIRMED and
++    `routing_deferred`, and the refusal exists only at
++    `routing_verdict_unreconciled`. Both round-1 predicates read
++    `falsifier_verdict` only, so neither saw it and it fed the halt bound."""
++    c0029 = _entry(status="OPEN", severity=0.8, falsifier_verdict="UNTOOLABLE",
++                   routing_deferred=True,
++                   **{LADDER_VERDICT_FIELD: INTEGRITY_REFUSED_VERDICT})
++    assert _integrity_refused(c0029) is True
++    reg = _Reg({"C0029": c0029})
++    assert _irreducible_queue_split(reg.entries) == (0, 0), (
++        "the ladder-side refusal is still in the halt bound; run 1b halted at "
++        "round 2 with both halves of the convergence gate already satisfied"
++    )
++    assert reg.integrity_refused_criticals() == ["C0029"]
++
++
++def test_reading_only_the_entry_verdict_misses_it():
++    """ANTI-VACUITY for the field above, stated as the round-1 predicates were."""
++    c0029 = _entry(status="OPEN", falsifier_verdict="UNTOOLABLE",
++                   routing_deferred=True,
++                   **{LADDER_VERDICT_FIELD: INTEGRITY_REFUSED_VERDICT})
++    entry_verdict_only = (
++        (c0029.get("falsifier_verdict") or "").strip().upper()
++        == INTEGRITY_REFUSED_VERDICT)
++    assert entry_verdict_only is False, (
++        "if this is True the two seats' predicates did cover C0029 and D6's "
++        "residual was already closed"
++    )
++
++
++# ── D4/D3: the record must be at least as wide as the release ────────────────
++
++def test_the_record_does_not_gate_on_severity_while_a4_does_not():
++    """SEAT cc2's RESIDUAL, EXECUTED. An UNCONFIRMED entry below the severity
++    threshold is released by A4 (which stopped gating on severity on 2026-09-06)
++    and must therefore also appear in the record. A record narrower than the
++    release it documents produces exactly the silence it exists to prevent."""
++    low = _entry(severity=0.5, falsifier_verdict=INTEGRITY_REFUSED_VERDICT)
++    reg = _Reg({"C0007": low})
++    assert low["severity"] < CRITICAL_SEVERITY_THRESHOLD
++    control = _Reg({"C0007": _entry(severity=0.5, falsifier_verdict="")})
++    assert control.unverified_critical_count() == 1, (
++        "A4 must count a low-severity UNCONFIRMED entry, else this test is "
++        "measuring nothing"
++    )
++    assert reg.unverified_critical_count() == 0        # released
++    assert reg.integrity_refused_criticals() == ["C0007"]   # and recorded
++
++
++def test_an_adjudicated_finding_is_not_reported_as_outstanding():
++    """Silent means silent. A refusal on a finding that later reached a terminal
++    status is resolved and must leave the record, or every converged run carries
++    a permanent advisory and the signal stops meaning anything."""
++    for status in ("CONFIRMED", "CLOSED", "REFUTED", "DUPLICATE", "MERGED"):
++        reg = _Reg({"C0001": _entry(status=status,
++                                    falsifier_verdict=INTEGRITY_REFUSED_VERDICT)})
++        assert reg.integrity_refused_criticals() == [], status
+
+### cc2:attempt-1:bench/tests/test_scanner_machine_independence_2026-10-02.py
+--- /dev/null	2026-10-02 17:35:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo/bench/tests/test_scanner_machine_independence_2026-10-02.py	2026-10-02 17:26:55
+@@ -0,0 +1,264 @@
++"""The forensic scanner's verdict must not depend on who runs the audit.
++
++PANEL ROUND 2, 2026-10-02, disputes D1 and D2. Round 1 was blind and produced
++three different numbers for the same two scans:
++
++    Exp 48   founder, maintainer's checkout : 10 CONFIRMED, all C0012
++    Exp 48   both seats, sandbox copies     : 12 CONFIRMED, C0012 x10 + C0017 x2
++    run 1b   founder                        : 89 CONFIRMED / 83 out-of-scope
++    run 1b   both seats                     : 114 / 108
++
++All four readings were correct. The scanner was not.
++
++THE CAUSE IS NOT `repo_root`. That was the leading hypothesis and it is refuted
++by `test_repo_root_was_never_the_variable` below: pinning `repo_root` to the
++sandbox checkout and to the maintainer's checkout gives byte-identical hit sets
++on both runs, because both runs resolved to `confined=True` and a confined scan
++never puts `repo_root` on the allowlist at all.
++
++The cause is `_in_scope`'s prefix clause. `a.startswith(target)` was written for
++display truncation -- a staged-target path cut mid-component by a width limit --
++but an ancestor DIRECTORY is also a prefix. On the machine that ran the
++experiment the run directory sits inside the repository, inside $HOME, so the
++repository root, the home directory and `/Users` were all admitted as in scope.
++Exp 48's C0017 names the bare repository root, so it vanished there and appeared
++everywhere else; run 1b's 25 bare `<repo>/bench` literals did the same.
++
++Two of these tests are ANTI-VACUITY controls. They restore the pre-fix clause by
++monkeypatching `_is_ancestor_dir` to a constant False and assert the defect comes
++back -- because a test that only ever sees the fixed code cannot tell a fix from
++a no-op.
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++import pytest
++
++REPO_ROOT = Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO_ROOT / "bench"))
++
++import key_access_forensics as K  # noqa: E402
++
++EXP48 = REPO_ROOT / "bench/logs/exp48_chemistry_exam_live_20260729T044134Z"
++RUN1B = REPO_ROOT / "bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z"
++
++# The maintainer's checkout, as recorded BY THE RUNNER inside run 1b's own report
++# (`panel_confinement.run_root`, written since 2026-09-01). Not hardcoded from
++# the outside: asserted against the record in
++# `test_the_runner_already_records_the_runs_own_repository`.
++MAINTAINER_CHECKOUT = "/Users/georgejackson/Developer_Projects/Constraint_Engineering"
++
++pytestmark = pytest.mark.skipif(
++    not (EXP48.is_dir() and RUN1B.is_dir()),
++    reason="the two archived runs this measures against are not present",
++)
++
++
++@pytest.fixture
++def prefix_clause_unfixed(monkeypatch):
++    """Restore the pre-2026-10-02 `_in_scope` prefix clause, exactly.
++
++    The old line was `_under(target, a) or a.startswith(target)`. The new line is
++    `_under(target, a) or (a.startswith(target) and not _is_ancestor_dir(...))`.
++    Forcing the discriminator to False recovers the old expression and nothing
++    else, so the two states differ in one term.
++    """
++    monkeypatch.setattr(K, "_is_ancestor_dir", lambda target, allowed: False)
++
++
++def _findings(rep) -> dict[str, int]:
++    out: dict[str, int] = {}
++    for h in rep.confirmed:
++        out[h.finding or "?"] = out.get(h.finding or "?", 0) + 1
++    return out
++
++
++# ── D2: the ancestry hole, which is the whole of D1 as well ──────────────────
++
++def test_an_ancestor_directory_of_the_run_is_not_in_scope():
++    """THE HOLE, stated at its worst case rather than at Exp 48's.
++
++    `vault_keys.sh` keeps the answer-key store under $HOME. On the machine that
++    ran the experiment the run directory is a descendant of $HOME, so under the
++    pre-fix clause `os.listdir("/Users/<user>")` -- the listing that discovers the
++    vault's name -- was IN SCOPE and the strongest tier of the post-run audit
++    could not see it. `protected` rescues the key directory itself, and only when
++    `--key-dir`/$CDSFL_KEY_DIR is set; the listing of its parent is not covered.
++    """
++    run_dir = f"{MAINTAINER_CHECKOUT}/bench/logs/exp48_chemistry_exam_live_20260729T044134Z"
++    allowlist = [run_dir, "/Users/georgejackson/CDSFL_review_targets"]
++    for ancestor in (
++        "/Users",
++        "/Users/georgejackson",
++        "/Users/georgejackson/Developer_Projects",
++        MAINTAINER_CHECKOUT,
++        f"{MAINTAINER_CHECKOUT}/bench",
++    ):
++        assert not K._in_scope(ancestor, allowlist, []), (
++            f"{ancestor} is an ANCESTOR of an allowed root, not a truncation of "
++            f"one. Admitting it admits everything beneath it, including the "
++            f"vault that bench/vault_keys.sh hides under $HOME."
++        )
++
++
++def test_the_hole_was_real_and_this_fix_is_what_closes_it(prefix_clause_unfixed):
++    """ANTI-VACUITY for the test above. Without the discriminator, every one of
++    those ancestors is admitted -- so the assertion above is testing the fix and
++    not a property the module always had."""
++    run_dir = f"{MAINTAINER_CHECKOUT}/bench/logs/exp48_chemistry_exam_live_20260729T044134Z"
++    allowlist = [run_dir, "/Users/georgejackson/CDSFL_review_targets"]
++    admitted = [p for p in ("/Users", "/Users/georgejackson", MAINTAINER_CHECKOUT)
++                if K._in_scope(p, allowlist, [])]
++    assert admitted == ["/Users", "/Users/georgejackson", MAINTAINER_CHECKOUT], (
++        "the pre-fix clause did not admit the ancestors, so the fix above is not "
++        "the thing that closed the hole and this file's reasoning is wrong"
++    )
++
++
++def test_a_truncated_staged_target_is_still_in_scope():
++    """THE CASE THE CLAUSE EXISTS FOR, which the fix must not break. The runner
++    truncates long paths for round context; a path cut MID-COMPONENT is a prefix
++    of somewhere legitimate and names nothing else."""
++    allowlist = ["/Users/georgejackson/CDSFL_review_targets/current"]
++    assert K._in_scope("/Users/georgejackson/CDSFL_review_targets/curr", allowlist, [])
++    assert K._in_scope("/Users/georgejackson/CDSFL_review_targe", allowlist, [])
++    # ... and the component-boundary ancestor of the same root is NOT.
++    assert not K._in_scope("/Users/georgejackson/CDSFL_review_targets", allowlist, []), (
++        "the targets directory holds every other paper in the series; the "
++        "scanner's own 2026-07-29 comment is about exactly this read"
++    )
++
++
++# ── D1: the Exp 48 total, settled ────────────────────────────────────────────
++
++def test_repo_root_was_never_the_variable_before_the_fix():
++    """D1's leading hypothesis, refuted by execution.
++
++    The brief proposed that the 10-vs-12 and 89-vs-114 splits came from
++    `scan_run` defaulting `repo_root` to the scanning checkout. They did not.
++    BEFORE this round's fix, BOTH runs resolved to `confined=True` and a confined
++    scan never inserts `repo_root` into the allowlist at all, so no value of it
++    could move one hit:
++
++      - Exp 48 declares an ABSOLUTE target outside either checkout.
++      - run 1b declares the repo-RELATIVE target `bench/...`, and
++        `_under("bench", <any absolute root>)` is False however it is spelled.
++
++    This asserts the second, which is the load-bearing half: the relative string
++    loses against both candidate roots identically.
++
++    AFTER the fix it IS the variable, deliberately -- resolving the relative
++    target against a root is what classifies run 1b correctly -- and that is
++    exactly why `run_repo_root` reading the runner's own record is not optional.
++    `test_a_wrong_explicit_repo_root_still_changes_the_answer` pins the new state.
++    """
++    for root in (str(REPO_ROOT), MAINTAINER_CHECKOUT):
++        assert not K._under("bench", root), (
++            f"a repo-relative declared target compared against {root} -- if this "
++            f"ever becomes True the pre-fix account above is wrong"
++        )
++    # Exp 48 keeps the property post-fix, because its declared target is absolute.
++    a = K.scan_run(EXP48, repo_root=REPO_ROOT)
++    b = K.scan_run(EXP48, repo_root=Path(MAINTAINER_CHECKOUT))
++    assert [h[:5] for h in a.hits] == [h[:5] for h in b.hits]
++
++
++def test_exp48_totals_twelve_on_every_machine():
++    """D1 SETTLED: 12, and 12 at every `repo_root`. 10 was the artefact.
++
++    Exp 48 carries no `panel_confinement.run_root` (it predates the record), so
++    this also pins that a run WITHOUT the record is still scanned identically
++    everywhere once ancestry is no longer admitted.
++    """
++    for rr in (None, REPO_ROOT, Path(MAINTAINER_CHECKOUT)):
++        rep = K.scan_run(EXP48, repo_root=rr)
++        assert _findings(rep) == {"C0012": 10, "C0017": 2}, (
++            f"repo_root={rr}: expected 10x C0012 + 2x C0017 = 12 CONFIRMED"
++        )
++        assert rep.files_scanned == 87 and rep.bytes_scanned == 4068509
++        assert rep.unreadable == []
++
++
++def test_exp48_reported_ten_before_the_fix_on_the_maintainers_machine(prefix_clause_unfixed):
++    """ANTI-VACUITY, and the reconciliation of D1.
++
++    The founder's 10 is reproduced here, from a sandbox, by restoring one term.
++    C0017's falsifier names the bare repository root; the maintainer's run
++    directory is a descendant of it, so the literal was admitted. Nobody
++    mis-measured -- the instrument returned a different reading per machine.
++    """
++    maint_run = f"{MAINTAINER_CHECKOUT}/bench/logs/{EXP48.name}"
++    rep = K.scan_run(EXP48, repo_root=Path(MAINTAINER_CHECKOUT),
++                     extra_target_dirs=())
++    # The scan's own run_dir is this sandbox's, so reproduce the maintainer's
++    # allowlist directly against the clause that decided it.
++    allow = [maint_run, "/Users/georgejackson/CDSFL_review_targets"]
++    assert K._in_scope(MAINTAINER_CHECKOUT, allow, []), (
++        "pre-fix, the bare repository root was in scope when the run directory "
++        "sat inside it -- this is why C0017 was invisible there"
++    )
++    assert not K._in_scope(MAINTAINER_CHECKOUT, [str(EXP48), *allow[1:]], []), (
++        "and out of scope when the run directory sat elsewhere -- 12, not 10"
++    )
++    assert _findings(rep)["C0017"] == 2
++
++
++# ── D2: the run's own repository, from the runner's own record ───────────────
++
++def test_the_runner_already_records_the_runs_own_repository():
++    """D2's answer was already in the archive, unread.
++
++    `reference_runner_v3` has written `panel_confinement.run_root` since
++    2026-09-01. Run 1b carries it. `scan_run` was ignoring it and defaulting to
++    `Path(__file__).parents[1]` -- the checkout the AUDIT runs from.
++    """
++    assert K.run_repo_root(RUN1B) == MAINTAINER_CHECKOUT
++    assert K.run_repo_root(EXP48) is None, "Exp 48 predates the record"
++
++
++def test_run1b_is_scanned_against_its_own_repo_from_any_sandbox():
++    """D2 SETTLED for a run that carries the record: the default is now portable.
++
++    Run 1b is a CODE review -- `target_file: bench/...`, repo-relative -- so the
++    repository is the job and `repo_in_scope` must be True. Pre-fix the bare
++    string "bench" failed `_under` against every absolute root, the run was
++    misclassified as a confined exam, and its own repository reads were reported
++    as egress.
++    """
++    rep = K.scan_run(RUN1B)                      # no repo_root argument at all
++    assert rep.repo_root_assumed is False
++    assert rep.repo_root_used == MAINTAINER_CHECKOUT
++    assert rep.repo_in_scope is True
++    assert rep.target_dirs == [f"{MAINTAINER_CHECKOUT}/bench"]
++    assert len(rep.confirmed) == 7, (
++        "7 is the residual carried-source class; the 107 honest reads of the "
++        "repository under review are no longer reported as out of scope"
++    )
++    # The same scan, run from the maintainer's checkout, must agree exactly.
++    there = K.scan_run(RUN1B, repo_root=Path(MAINTAINER_CHECKOUT))
++    assert [h[:5] for h in rep.hits] == [h[:5] for h in there.hits]
++
++
++def test_a_wrong_explicit_repo_root_still_changes_the_answer():
++    """THE RESIDUAL, STATED AS A TEST RATHER THAN AS PROSE.
++
++    The record removes the GUESS, not the dependence. An operator who overrides
++    `repo_root` with the wrong checkout gets 114 again. That is the honest bound
++    on this fix: it is portable where the record exists, and `repo_root_assumed`
++    marks every run where it does not.
++    """
++    wrong = K.scan_run(RUN1B, repo_root=REPO_ROOT)
++    assert len(wrong.confirmed) == 114
++    assert wrong.repo_root_assumed is False   # explicit, so not a guess -- but wrong
++
++
++def test_a_run_without_the_record_is_marked_assumed_not_reported_clean():
++    """Refusing instead of guessing was measured and rejected: 67 of 86 archived
++    run directories carry no `run_root`, so a hard refusal disables the scanner on
++    77.9% of the archive. Nothing dominates it on a named property, so the control
++    stays and the guess becomes visible instead."""
++    rep = K.scan_run(EXP48)
++    assert rep.repo_root_assumed is True
++    assert rep.repo_root_used == str(REPO_ROOT)
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-02 17:35:26
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo/.cdsfl_deny_canonical_writes.sb	2026-10-02 17:12:49
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/insect_brain.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/insect_brain.py	2026-09-01 13:24:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo/bench/insect_brain.py	2026-10-02 17:23:27
+@@ -1384,11 +1384,19 @@
+     # Core function 7: signal_complete()
+     # ───────────────────────────────────────────────────────────────────────
+ 
+-    def signal_complete(self) -> Dict[str, Any]:
++    def signal_complete(self, extras: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+         """Emit convergence or failure signal.
+ 
+         Returns a summary dict suitable for logging and reporting.
+         This is the final output of the brain for the experiment.
++
++        ``extras`` (2026-10-02, panel round 2, D-2/D-4): runner-supplied fields
++        merged into the signal before the atomic write -- the run's own
++        ``repo_root`` (read back by key_access_forensics.resolve_run_repo_root,
++        which refuses to guess) and, when non-empty, ``key_access_advisory``
++        (the mandatory record paired with releasing integrity-refused findings
++        from the convergence counters). Reserved keys of the signal itself win:
++        extras must not be able to overwrite ``status``.
+         """
+         total_findings = sum(len(rnd) for rnd in self.state.all_findings)
+         total_rounds = len(self.state.round_records)
+@@ -1436,6 +1444,10 @@
+         # Per-round finding counts
+         signal["per_round_counts"] = [len(rnd) for rnd in self.state.all_findings]
+ 
++        if extras:
++            for k, v in extras.items():
++                signal.setdefault(k, v)  # the signal's own fields win
++
+         # Save completion signal (Bug#62: atomic write)
+         filepath = self.logs_dir / "completion_signal.json"
+         self._atomic_write_json(filepath, signal)
+
+### fable:attempt-1:bench/key_access_forensics.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/key_access_forensics.py	2026-08-15 15:28:29
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo/bench/key_access_forensics.py	2026-10-02 17:21:28
+@@ -284,11 +284,58 @@
+     if "/.../" in raw or raw.endswith("/..."):
+         return True
+     for a in allowlist:
+-        if _under(target, a) or a.startswith(target):
++        if _under(target, a):
+             return True
++        # TRUNCATION, NOT ANCESTRY (2026-10-02, panel round 2, D-1). The old
++        # branch was `a.startswith(target)`: any literal that is a PREFIX of an
++        # allowed root scored in scope. A display-truncated path is cut
++        # MID-COMPONENT, so the allowed root continues it without a separator.
++        # A literal whose continuation begins with "/" is not a truncation at
++        # all -- it is a COMPLETE ANCESTOR DIRECTORY, a real openable path. On
++        # the canonical checkout the run directory sits INSIDE the repository,
++        # so the repo root (and $HOME, and /Users) were ancestors of an
++        # allowlist entry and every read of them scored in scope. That is how
++        # Exp 48's C0017 -- Path("<repo>") then a read of the exam target --
++        # reported 10 CONFIRMED on the canonical checkout and 12 in a sandbox:
++        # the verdict depended on where the scanner ran, in the direction that
++        # hid a finding on the machine that mattered.
++        if a.startswith(target) and not a[len(target):].startswith(("/", "\\")):
++            return True
+     return _is_benign_home(target)
++
++
++class RepoRootUnresolved(RuntimeError):
++    """The run's own repository root could not be determined.
++
++    A forensic verdict that depends on which checkout the SCANNER happens to
++    live in cannot source an end-of-run advisory: "if no key was accessed, say
++    nothing" stops being well defined when the same artefacts score 89
++    CONFIRMED on one machine and 114 on another (measured, run 1b, 2026-10-02).
++    So the run's repo comes from a RUNNER-AUTHORED record (`repo_root` in
++    completion_signal.json / runner_state.json / checkpoint.json -- written by
++    the runner at finalize since 2026-10-02) or from an explicit --repo-root.
++    When neither exists the scan REFUSES, loudly, rather than guessing from
++    `__file__` -- the same rule the census producer learned on the same day:
++    a failure rendered as a measurement is worse than no measurement.
++    """
+ 
+ 
++def resolve_run_repo_root(run_dir: Path) -> Path | None:
++    """The run's own repository root, from runner-authored records only."""
++    for name in RUNNER_AUTHORED:
++        p = run_dir / name
++        if not p.exists():
++            continue
++        try:
++            obj = json.loads(p.read_text(encoding="utf-8", errors="replace"))
++        except Exception:  # noqa: BLE001
++            continue
++        v = obj.get("repo_root") if isinstance(obj, dict) else None
++        if isinstance(v, str) and v.strip():
++            return Path(v)
++    return None
++
++
+ def discover_target_dirs(run_dir: Path) -> list[str]:
+     """Directories the panel was *supposed* to read, taken from runner-authored
+     records only (`target_file` / `context_files` / `staged_copy`)."""
+@@ -445,8 +492,21 @@
+              extra_target_dirs: Iterable[str] = (),
+              context_width: int = 90) -> Report:
+     run_dir = run_dir.resolve()
++    # THE RUN'S REPO, NEVER THE SCANNER'S (2026-10-02, panel round 2, D-2).
++    # The old default was `Path(__file__).resolve().parents[1]` -- the checkout
++    # the SCANNER lives in. A verdict that changes with the scanning machine
++    # (89 vs 114 CONFIRMED on the same run 1b artefacts) cannot source an
++    # end-of-run advisory. Resolution order: explicit argument, then the
++    # runner-authored record, then REFUSE. Guessing is not an option.
+     if repo_root is None:
+-        repo_root = Path(__file__).resolve().parents[1]
++        repo_root = resolve_run_repo_root(run_dir)
++    if repo_root is None:
++        raise RepoRootUnresolved(
++            f"{run_dir.name}: no `repo_root` in any runner-authored record "
++            f"({', '.join(RUNNER_AUTHORED)}) and none passed explicitly. "
++            f"Pass --repo-root <the checkout the RUN executed in>; refusing "
++            f"to substitute the scanning checkout.")
++    repo_root = Path(repo_root)
+ 
+     if key_dir is None:
+         key_dirs: list[Path] = []
+@@ -456,8 +516,17 @@
+         key_dirs = [Path(k) for k in key_dir]
+ 
+     rep = Report(run_dir=run_dir, key_dirs=key_dirs)
+-    rep.target_dirs = sorted({*discover_target_dirs(run_dir),
+-                              *(_norm_path(d) for d in extra_target_dirs)})
++    # A RELATIVE DECLARED TARGET IS REPO-RELATIVE (2026-10-02, round 2, D-2/D-3
++    # of round 1). `discover_target_dirs` returns the runner record verbatim; a
++    # code-review run records `bench`, and `_under("bench", "/abs/repo")` is
++    # False however it is spelled -- so every code review was misclassified as
++    # a confined exam and its repository reads all scored out of scope.
++    _raw_targets = {*discover_target_dirs(run_dir),
++                    *(_norm_path(d) for d in extra_target_dirs)}
++    rep.target_dirs = sorted(
++        d if os.path.isabs(d)
++        else os.path.normpath(str(repo_root.resolve() / d))
++        for d in _raw_targets)
+     planted = load_planted_sets(key_dirs)
+     rep.planted_sets = len(planted)
+ 
+@@ -741,8 +810,12 @@
+         if not d.is_dir():
+             print(f"not a directory: {d}", file=sys.stderr)
+             return 2
+-        rep = scan_run(d, key_dir=key_dirs, repo_root=ns.repo_root,
+-                       extra_target_dirs=ns.target_dir)
++        try:
++            rep = scan_run(d, key_dir=key_dirs, repo_root=ns.repo_root,
++                           extra_target_dirs=ns.target_dir)
++        except RepoRootUnresolved as exc:
++            print(f"REFUSED: {exc}", file=sys.stderr)
++            return 2
+         print_report(rep, quiet=ns.quiet)
+         # An unreadable artefact fails CLOSED. The panel holds Bash and can
+         # chmod; `chmod 000` on one file previously produced VERDICT CLEAN and
+
+### fable:attempt-1:bench/logs/integrity_advisory_r2_2026-10-02/launch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/integrity_advisory_r2_2026-10-02/launch.log	2026-10-02 17:35:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo/bench/logs/integrity_advisory_r2_2026-10-02/launch.log	2026-10-02 17:12:02
+@@ -1,19 +0,0 @@
+-[17:12:49] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo
+-[17:12:49] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo
+-[17:12:49] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo
+-[17:12:49]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo
+-[17:12:49] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo
+-[17:12:49]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo
+-[17:31:22]   [claude-cli:fable] 59 tool call(s) this attempt, 59 in total
+-[17:31:22]   [claude-cli:fable] done (1113.4s, 18396 chars)
+-    suite: GREEN at 1cfc30e — 8,878 passed, 0 failed  [recorded at 1cfc30e, HEAD is 854efaa, 70 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 50,377 chars, about 12,594 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7tfq53x8/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo
+-  [fable] ok=True chars=18396 tools=59 1113.4s
+-[17:35:09]   [claude-cli:opus] 68 tool call(s) this attempt, 68 in total
+-[17:35:09]   [claude-cli:opus] done (1340.5s, 23622 chars)
+-  [cc2] ok=True chars=23622 tools=68 1340.5s
+-[17:35:09] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-02 15:04:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo/bench/reference_runner_v3.py	2026-10-02 17:25:46
+@@ -2135,7 +2135,85 @@
+ # ─────────────────────────────────────────────────────────────────────────────
+ # FindingRegistry (identical to Exp 36 — A1 windowing, A3 HIL escalation)
+ # ─────────────────────────────────────────────────────────────────────────────
++
++#: Pinned to bench.falsifier_verify.INTEGRITY_VIOLATION by test. Deliberately
++#: NOT a member of EQUIPMENT_FAILURE_VERDICTS or ROUTABLE_INSTRUMENT_FAULTS:
++#: an integrity refusal is neither an instrument that produced no reading nor a
++#: fault a stronger writer should be asked to "repair" into a key read.
++INTEGRITY_REFUSED_VERDICT = "INTEGRITY_VIOLATION"
+ 
++#: Marker text of the ONE reverify_falsifier rejection that is an EQUIPMENT
++#: fault, not a key-access refusal: the runtime observer did not install, so
++#: the falsifier ran with no boundary. Releasing THAT class would let a
++#: machine-wide sitecustomize failure drain every critical out of A4 and the
++#: queue -- a silent false convergence on a run with no sandbox boundary.
++_UNOBSERVED_MARKERS = ("observer did not install", "observer trace absent")
++
++
++def _classify_integrity_refusal() -> tuple:
++    """(kind, reason) from the most recent INTEGRITY_REJECTIONS record.
++
++    kind == "unobserved": equipment fault (observer absent) -- keeps blocking.
++    kind == "key_access": genuine refusal -- released from the convergence
++    counters AND reported (founder ruling 2026-10-02: release + report).
++    Correlation is by recency, which is correct single-threaded: the record is
++    appended by the same reverify call whose verdict the caller just received.
++    FAIL-SAFE DEFAULT: an unexplained INTEGRITY_VIOLATION classifies as
++    "unobserved" and keeps blocking -- release requires evidence.
++    """
++    try:
++        from bench.falsifier_verify import INTEGRITY_REJECTIONS
++        rec = INTEGRITY_REJECTIONS[-1]
++        text = " ".join(
++            f"{d.get('reason', '')} {d.get('matched', '')}"
++            for d in (rec.get("violations") or []))
++        if not text.strip():
++            return "unobserved", "(empty rejection record -- fail-safe: blocks)"
++        if any(m in text for m in _UNOBSERVED_MARKERS):
++            return "unobserved", text[:400]
++        return "key_access", text[:400]
++    except Exception:  # noqa: BLE001
++        return "unobserved", "(no rejection record -- fail-safe: blocks)"
++
++
++def _stamp_integrity_refusal(e, round_idx, site) -> str:
++    """Record an integrity refusal on the entry, classified by cause.
++
++    Returns the kind. Reads NOTHING from the S(k) record (pinned by test:
++    the fix-admission pipeline must not influence routing or convergence
++    through this path).
++    """
++    kind, reason = _classify_integrity_refusal()
++    if kind == "unobserved":
++        e["integrity_unobserved"] = True
++    else:
++        e["integrity_refused"] = True
++    e.setdefault("integrity_refusal_events", []).append({
++        "round": round_idx, "site": site, "kind": kind, "reason": reason})
++    return kind
++
++
++def _integrity_released(e) -> bool:
++    """ONE predicate, THREE readers (2026-10-02, panel round 2, D-3/D-6).
++
++    Consumed by `_irreducible_queue_split`, `unverified_critical_count` and the
++    halt alarm's evidence collector, so an entry is released from ALL
++    convergence counters or from NONE -- the shared-predicate property that
++    makes the block-to-round-cap shape unconstructible through these counters.
++
++    Released == the integrity gate REFUSED the falsifier for reaching toward
++    key material (entry-level or at a routing rung -- D-6: run 1b's C0029 class,
++    where the refusal lands on the rung and the entry label stays
++    UNTOOLABLE/ERROR). The release is paired with a MANDATORY record
++    (`FindingRegistry.integrity_refused_criticals`), reported every round and
++    in completion_signal.json: the ruling is release AND report, and the record
++    is the only observer left once both counters let go.
++
++    `integrity_unobserved` is NOT released: that is an equipment fault.
++    """
++    return bool(e.get("integrity_refused")) and not e.get("integrity_unobserved")
++
++
+ def _irreducible_queue_split(entries) -> Tuple[int, int]:
+     """(ladder-exhausted, never-assessed) over a registry's entries.
+ 
+@@ -2158,6 +2236,11 @@
+         if e.get("status") in _TERMINAL:
+             continue
+         if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
++            continue
++        # Integrity refusal is released from the queue AND reported -- see
++        # _integrity_released. Run 1b's C0035 (entry-level) and C0029
++        # (routing-rung) both halted the run through this counter.
++        if _integrity_released(e):
+             continue
+         if e.get("irreducible_escalation"):
+             locked += 1
+@@ -2641,6 +2724,10 @@
+         count = 0
+         for e in self.entries.values():
+             if e.get("status") != "UNCONFIRMED":
++                continue
++            # Released from A4 by the shared predicate; reported instead
++            # (integrity_refused_criticals -> round log + completion_signal).
++            if _integrity_released(e):
+                 continue
+             # Static-queue closure (2026-06-09): a critical locked as irreducible AFTER
+             # the full routing ladder was exhausted (no model could write a runnable test)
+@@ -2753,6 +2840,33 @@
+         # behaviour exactly, while nothing false is asserted about any item.
+         return sum(_irreducible_queue_split(self.entries))
+ 
++    def integrity_refused_criticals(self) -> List[Dict[str, Any]]:
++        """THE MANDATORY RECORD paired with the release (2026-10-02, D-3/D-4).
++
++        Every non-terminal entry `_integrity_released` has released from the
++        convergence counters, with its refusal events. Deliberately NOT gated
++        on severity: the counters it was released from are severity-gated
++        themselves, and a model-assigned float (AUC 0.464, removed from A4 on
++        2026-09-06) must not be able to hide the record by drifting below 0.7.
++        Consumed by the per-round KEY-ACCESS ADVISORY log line and by
++        completion_signal.json at finalize -- the reader that sees only
++        `status` must see the advisory beside it.
++        """
++        _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
++        out: List[Dict[str, Any]] = []
++        for cid, e in self.entries.items():
++            if not _integrity_released(e):
++                continue
++            if e.get("status") in _TERMINAL:
++                continue
++            out.append({
++                "canonical_id": cid,
++                "status": e.get("status"),
++                "severity": e.get("severity"),
++                "events": list(e.get("integrity_refusal_events") or []),
++            })
++        return out
++
+     def contested_count(self, current_round: int, grace_period: int = 2,
+                         subcritical_exclusion: bool = False) -> int:
+         """Count actively contested non-terminal findings.
+@@ -5687,6 +5801,14 @@
+         # with NON_DISCRIMINATING), because what the ledger documents is what
+         # the falsifier did when the runner ran it.
+         _to_ledger(cid, e, verdict)
++        if verdict == INTEGRITY_REFUSED_VERDICT:
++            # Classified at the landing site because the rejection record and
++            # the verdict are correlated HERE and nowhere later (D-3, 2026-10-02).
++            _kind = _stamp_integrity_refusal(e, round_idx, "entry")
++            _log(f"  INTEGRITY {_kind.upper()} {cid}: falsifier refused by the "
++                 f"integrity gate ({'released from convergence counters and '
++                 'reported' if _kind == 'key_access' else 'equipment fault: '
++                 'still blocks'})")
+         if verdict == "CONFIRMED":
+             # DISCRIMINATION CONTROL (founder ruling 2026-08-08). "It fired" is
+             # not "it fired because of the claim". Before a CONFIRMED closes a
+@@ -6392,6 +6514,17 @@
+             _log(f"  routing verdict reconciled {cid}: UNTOOLABLE -> ERROR "
+                  f"(a falsifier was written and crashed; the panel is now told "
+                  f"to FIX it, not to write one)")
++        # D-6 (2026-10-02, panel round 2): a rung's falsifier refused by the
++        # integrity gate leaves the ENTRY labelled UNTOOLABLE/ERROR -- run 1b's
++        # C0029 -- so an entry-verdict predicate alone never sees it and the
++        # refusal counts into the queue as "deferred". The rung verdict is the
++        # evidence; stamp it here, where result.verdict and the rejection
++        # record are both live.
++        if (getattr(result, "verdict", None) == INTEGRITY_REFUSED_VERDICT
++                and not result.resolved):
++            _kind = _stamp_integrity_refusal(e, round_idx, "routing_rung")
++            _log(f"  INTEGRITY {_kind.upper()} {cid} at a routing rung: "
++                 f"{'released and reported' if _kind == 'key_access' else 'equipment fault: still blocks'}")
+         if e.pop("_error_route_pending", None):
+             if len(_routing_attempts) > _n0:
+                 e["error_routed"] = True
+@@ -6498,6 +6631,17 @@
+             e["mechanical_fault"] = False
+             registry.resolve(cid, "CONFIRMED", round_idx)
+             tally["resolved"] += 1
++        elif ((e.get("falsifier_verdict") or "").strip().upper()
++                  == INTEGRITY_REFUSED_VERDICT
++              or e.get("integrity_refused") or e.get("integrity_unobserved")):
++            # NOT irreducible and NOT deferred-as-unassessed. "Irreducible"
++            # asserts a machine tried and could not; here the machine was NOT
++            # PERMITTED to try (or ran unobserved). The released/blocking
++            # decision belongs to _integrity_released; this branch only stops
++            # the final else stamping `irreducible_escalation` on a refusal --
++            # the false assertion that put run 1b's C0035 in the queue that
++            # halted the run.
++            tally["integrity"] = tally.get("integrity", 0) + 1
+         elif (e.get("falsifier_verdict") or "").strip().upper() in EQUIPMENT_FAILURE_VERDICTS:
+             # NEVER ASSESSED IS NOT IRREDUCIBLE (2026-09-07). THIS IS THE ROUND-0
+             # ESCALATION ROOT CAUSE, and it is why nothing has run for 12 days.
+@@ -7166,6 +7310,11 @@
+         # text says "read the bundle, not move the line". The bundle was empty,
+         # so the only documented way to act on the halt was unavailable.
+         if not (e.get("irreducible_escalation") or e.get("routing_deferred")):
++            continue
++        # MATCH `_irreducible_queue_split` EXACTLY, still: released entries are
++        # excluded from the COUNT, so they must be excluded from the COLLECTOR,
++        # or a queue of released items would halt and then describe nothing.
++        if _integrity_released(e):
+             continue
+         if e.get("status") in _TERMINAL:
+             continue
+@@ -16274,6 +16423,16 @@
+                  f"({_q_locked} ladder-exhausted, {_q_deferred} never assessed "
+                  f"— no runnable falsifier) — excluded from the A4 blocker; "
+                  f"HALT ALARM if > {cfg.max_irreducible_queue}")
++        # KEY-ACCESS ADVISORY (2026-10-02, D-3/D-4): both counters above have
++        # RELEASED these entries, so this record is the only in-loop observer
++        # of a key-access refusal. Emitted every round it is non-empty.
++        _ir_released = registry.integrity_refused_criticals()
++        if _ir_released:
++            _log(f"  KEY-ACCESS ADVISORY: {len(_ir_released)} finding(s) "
++                 f"released from the convergence counters after an integrity "
++                 f"refusal (falsifier reached for key material): "
++                 f"{', '.join(x['canonical_id'] for x in _ir_released)} -- "
++                 f"adjudication is HUMAN, never silent")
+         if getattr(cfg, "hardened_gate_enabled", False):
+             # F4/F6/conjunction hardened gate: settled-registry γ,
+             # critical/structural conjunction, all-novelty γ as
+@@ -16814,7 +16973,21 @@
+         brain.state.stop_reason = _fallback.strip() or (
+             "UNRECORDED_STOP (the round loop exited by a path that names no "
+             "reason; see the run log)")
+-    signal = brain.signal_complete()
++    # D-4 (2026-10-02): the advisory must land WHERE THE STATUS LANDS.
++    # completion_signal.json is the artefact whose `status` a downstream reader
++    # consumes alone, and it is runner-authored (the forensics scanner trusts
++    # exactly that set) -- so it carries the advisory and the run's own
++    # repo_root (D-2: the forensics scanner refuses to guess the repo; this is
++    # the record it reads).
++    _signal_extras: Dict[str, Any] = {"repo_root": str(REPO_ROOT)}
++    try:
++        _ir_final = registry.integrity_refused_criticals()
++    except Exception:  # noqa: BLE001 -- never lose a run to bookkeeping
++        _ir_final = []
++    if _ir_final:
++        _signal_extras["key_access_advisory"] = _ir_final
++        result["key_access_advisory"] = _ir_final
++    signal = brain.signal_complete(extras=_signal_extras)
+ 
+     total_elapsed = time.monotonic() - experiment_start
+     total_findings = sum(len(rnd) for rnd in brain.state.all_findings)
+
+### fable:attempt-1:bench/tests/test_forensics_machine_independence_2026-10-02.py
+--- /dev/null	2026-10-02 17:35:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo/bench/tests/test_forensics_machine_independence_2026-10-02.py	2026-10-02 17:26:34
+@@ -0,0 +1,127 @@
++"""Panel round 2 (2026-10-02), seat fable: D-1 / D-2 / D-5.
++
++D-1. Exp 48's correct total is 12, not 10. The 2 extra hits (C0017) are a
++confined exam falsifier reading the repository by absolute path. The 10 seen on
++the canonical checkout was a FALSE NEGATIVE: `_in_scope`'s truncation shortcut
++(`a.startswith(target)`) scored any ANCESTOR of an allowlist entry as in scope,
++and on the canonical checkout the run directory sits inside the repository, so
++the repo-root literal was an ancestor of the run_dir allowlist entry. The
++repo_root PARAMETER was never the mechanism: all three pins give 12.
++
++D-2. A forensic verdict must not depend on the scanning checkout. `scan_run`
++now takes the run's own repo from a runner-authored record (`repo_root` in
++completion_signal.json, written at finalize since 2026-10-02) or an explicit
++argument, and REFUSES rather than guessing from `__file__`.
++
++D-5. The C0015 oracle edit (round 1) IS an amendment to a committed acceptance
++oracle. What protects C0012's half from the same reasoning later is pinned
++here: C0012 is refused by ACCESS rules, not vocabulary, so no
++vocabulary-precision argument can ever extend to it.
++"""
++from __future__ import annotations
++
++import json
++from pathlib import Path
++
++import pytest
++
++from bench.key_access_forensics import (
++    RepoRootUnresolved,
++    _in_scope,
++    resolve_run_repo_root,
++    scan_run,
++)
++
++REPO = Path(__file__).resolve().parents[2]
++EXP48 = REPO / "bench/logs/exp48_chemistry_exam_live_20260729T044134Z"
++RUN1B = REPO / "bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z"
++CANONICAL = Path("/Users/georgejackson/Developer_Projects/Constraint_Engineering")
++
++
++# ── D-1 ──────────────────────────────────────────────────────────────────────
++
++def test_exp48_total_is_12_under_both_repo_root_pins():
++    for rr in (REPO, CANONICAL):
++        rep = scan_run(EXP48, repo_root=rr)
++        by = {}
++        for h in rep.confirmed:
++            by[h.finding] = by.get(h.finding, 0) + 1
++        assert by == {"C0012": 10, "C0017": 2}, (rr, by)
++        assert rep.repo_in_scope is False  # confined exam, either pin
++
++
++def test_truncation_shortcut_no_longer_scores_ancestors_in_scope():
++    run_on_canonical = str(EXP48).replace(str(REPO), str(CANONICAL))
++    allow = [run_on_canonical, "/Users/georgejackson/CDSFL_review_targets"]
++    # The C0017 literal: the repo root, an ANCESTOR of the run dir. Pre-fix this
++    # was True on the canonical checkout, which is where the 10 came from.
++    assert not _in_scope(str(CANONICAL), allow)
++    # $HOME was an ancestor of every target dir, so `ls /Users/georgejackson`
++    # scored in scope on EVERY machine. Closed by the same line.
++    assert not _in_scope("/Users/georgejackson", allow)
++    # A genuine display truncation (cut MID-COMPONENT) keeps its shortcut.
++    assert _in_scope("/Users/georgejackson/CDSFL_rev", allow)
++    # And an elided path keeps its documented carve-out.
++    assert _in_scope("~/.../target.md", allow)
++
++
++# ── D-2 ──────────────────────────────────────────────────────────────────────
++
++def test_scan_refuses_rather_than_guessing_the_repo_root():
++    with pytest.raises(RepoRootUnresolved):
++        scan_run(EXP48)  # archived run: no runner-authored repo_root record
++
++
++def test_runner_authored_record_is_honoured(tmp_path):
++    run = tmp_path / "run"
++    run.mkdir()
++    (run / "completion_signal.json").write_text(
++        json.dumps({"status": "CONVERGED", "repo_root": str(tmp_path / "repo")}))
++    assert resolve_run_repo_root(run) == tmp_path / "repo"
++    rep = scan_run(run)  # resolves from the record: no refusal, no guess
++    assert rep.files_scanned == 1
++
++
++def test_relative_declared_target_resolves_against_the_runs_repo():
++    # run 1b declares `bench` (relative). Resolved against the run's own repo
++    # it is UNDER the repo root, so the run is a code review, not a confined
++    # exam -- the misclassification that produced 114/108 is gone.
++    rep = scan_run(RUN1B, repo_root=CANONICAL)
++    assert rep.repo_in_scope is True
++    assert str(CANONICAL / "bench") in rep.target_dirs
++    # Residual, carried not hidden: the harvested detector copy quoting its own
++    # fixtures. Every remaining hit is in that one carried source file.
++    assert {h.file for h in rep.confirmed} <= {
++        "panel_worktree_harvest/files/bench/falsifier_verify.py"}
++
++
++def test_verdict_no_longer_depends_on_the_scanning_machine_for_exp48():
++    a = scan_run(EXP48, repo_root=REPO)
++    b = scan_run(EXP48, repo_root=CANONICAL)
++    key = lambda rep: sorted((h.file, h.finding, h.label) for h in rep.confirmed)
++    assert key(a) == key(b)
++
++
++# ── D-5 ──────────────────────────────────────────────────────────────────────
++
++_ACCESS_REASONS = {
++    "an answer-key file path",
++    "a key-internal field subscripted (implies a loaded key object)",
++    "a key-internal field fetched via .get()",
++    "a claims->truth lookup (the answer-key schema)",
++}
++
++
++def test_c0012_refusal_is_access_not_vocabulary():
++    """The criterion, pinned, not the list: C0012 fires ACCESS rules. The C0015
++    amendment's whole justification was 'fires 0 access rules, 1 vocabulary
++    rule'; that reasoning can never extend to a falsifier that opens the key,
++    subscripts its fields, and walks claims->truth -- and this test is the
++    committed statement of that boundary."""
++    from bench.falsifier_verify import scan_falsifier_source
++    report = json.loads(
++        (EXP48 / "exp48_chemistry_exam_live_report.json").read_text())
++    code = report["registry"]["entries"]["C0012"]["falsifier_code"]
++    reasons = {r for r, _ in scan_falsifier_source(code)}
++    access = reasons & _ACCESS_REASONS
++    assert len(access) >= 3, reasons   # path + subscript + claims->truth
+
+### fable:attempt-1:bench/tests/test_integrity_release_and_report_2026-10-02.py
+--- /dev/null	2026-10-02 17:35:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo/bench/tests/test_integrity_release_and_report_2026-10-02.py	2026-10-02 17:25:46
+@@ -0,0 +1,258 @@
++"""Panel round 2 (2026-10-02), seat fable: the surviving D2/D3 variant.
++
++The ruling: a key-access integrity refusal must not BLOCK convergence, and must
++be REPORTED at the end of the run. The surviving variant is the synthesis of
++both round-1 implementations:
++
++  * release is decided by ONE shared predicate (`_integrity_released`) consumed
++    by `_irreducible_queue_split`, `unverified_critical_count` AND the halt
++    alarm's evidence collector (cc2's shared-predicate property);
++  * the observer-did-not-install class (`integrity_unobserved`) is carved out
++    and KEEPS BLOCKING (fable's carve-out) -- a machine-wide sitecustomize
++    failure must not drain every critical out of A4;
++  * the release is paired with a MANDATORY record
++    (`integrity_refused_criticals`), a per-round KEY-ACCESS ADVISORY log line,
++    and a `key_access_advisory` field in completion_signal.json (cc2's record,
++    extended to the signal per D-4);
++  * a refusal landing on a ROUTING RUNG (run 1b's C0029: entry label stays
++    UNTOOLABLE/ERROR) is stamped at the rung site, so the shared predicate
++    covers the ladder-side path too (D-6).
++"""
++from __future__ import annotations
++
++import inspect
++import json
++import types
++from pathlib import Path
++
++import pytest
++
++from bench import falsifier_verify as fv
++from bench.reference_runner_v3 import (
++    EQUIPMENT_FAILURE_VERDICTS,
++    INTEGRITY_REFUSED_VERDICT,
++    ROUTABLE_INSTRUMENT_FAULTS,
++    FindingRegistry,
++    RunnerConfig,
++    _check_gamma_alt_convergence,
++    _classify_integrity_refusal,
++    _integrity_released,
++    _irreducible_queue_split,
++    _stamp_integrity_refusal,
++)
++
++REPO = Path(__file__).resolve().parents[2]
++RUN1B = REPO / "bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z"
++
++
++def _reg(**entry) -> FindingRegistry:
++    r = FindingRegistry()
++    base = {"status": "UNCONFIRMED", "severity": 0.8, "description": "x"}
++    base.update(entry)
++    r.entries["C9001"] = base
++    return r
++
++
++# ── the verdict constant ─────────────────────────────────────────────────────
++
++def test_verdict_constant_pinned_to_the_gate_and_in_neither_fault_set():
++    assert INTEGRITY_REFUSED_VERDICT == fv.INTEGRITY_VIOLATION
++    assert INTEGRITY_REFUSED_VERDICT not in EQUIPMENT_FAILURE_VERDICTS
++    assert INTEGRITY_REFUSED_VERDICT not in ROUTABLE_INSTRUMENT_FAULTS
++
++
++# ── release + report ─────────────────────────────────────────────────────────
++
++def test_key_access_refusal_is_released_from_both_counters_and_reported():
++    r = _reg(integrity_refused=True,
++             irreducible_escalation=True, routing_deferred=True,
++             integrity_refusal_events=[{"round": 0, "site": "entry",
++                                        "kind": "key_access", "reason": "r"}])
++    assert r.unverified_critical_count() == 0          # A4 released
++    assert r.irreducible_queue_count() == 0            # queue/halt released
++    rec = r.integrity_refused_criticals()              # ...and REPORTED
++    assert [x["canonical_id"] for x in rec] == ["C9001"]
++    assert rec[0]["events"][0]["site"] == "entry"
++
++
++def test_without_the_flag_it_still_blocks_so_the_release_is_not_vacuous():
++    r = _reg()
++    assert r.unverified_critical_count() == 1
++    r2 = _reg(routing_deferred=True)
++    assert r2.irreducible_queue_count() == 1
++    assert r2.integrity_refused_criticals() == []
++
++
++def test_unobserved_refusal_keeps_blocking_and_is_not_reported_as_released():
++    # fable's carve-out: observer-did-not-install is EQUIPMENT, not key access.
++    r = _reg(integrity_refused=True, integrity_unobserved=True,
++             routing_deferred=True)
++    assert not _integrity_released(r.entries["C9001"])
++    assert r.unverified_critical_count() == 1
++    assert r.irreducible_queue_count() == 1
++    assert r.integrity_refused_criticals() == []
++
++
++def test_shared_predicate_means_all_or_none():
++    # cc2's property: an entry is excluded from BOTH counters or NEITHER.
++    # routing_deferred is the state BOTH counters observe pre-release (an
++    # irreducible_escalation entry is already excluded from A4 by the
++    # pre-existing HIL-handoff rule, so it cannot witness this property).
++    for flags in ({}, {"integrity_refused": True},
++                  {"integrity_refused": True, "integrity_unobserved": True}):
++        r = _reg(routing_deferred=True, **flags)
++        released = _integrity_released(r.entries["C9001"])
++        assert (r.unverified_critical_count() == 0) == released
++        assert (r.irreducible_queue_count() == 0) == released
++
++
++def test_report_is_not_severity_gated():
++    # cc2's own named weakness: a model-assigned float (AUC 0.464) must not be
++    # able to hide the record by drifting below 0.7.
++    r = _reg(integrity_refused=True, severity=0.2)
++    assert [x["canonical_id"] for x in r.integrity_refused_criticals()] == ["C9001"]
++
++
++def test_terminal_entries_leave_the_report():
++    r = _reg(integrity_refused=True, status="CLOSED")
++    assert r.integrity_refused_criticals() == []
++
++
++# ── the classifier at the stamp site ─────────────────────────────────────────
++
++def _with_rejection(violations):
++    fv.INTEGRITY_REJECTIONS.append(
++        {"where": "t", "violations": violations, "code_head": ""})
++
++
++def test_classifier_key_access_vs_unobserved(monkeypatch):
++    monkeypatch.setattr(fv, "INTEGRITY_REJECTIONS", [])
++    _with_rejection([{"reason": "an answer-key file path",
++                      "matched": "exam_answer_key.json"}])
++    assert _classify_integrity_refusal()[0] == "key_access"
++    _with_rejection([{"reason": "the runtime observer did not install, so this "
++                                "falsifier ran with no boundary",
++                      "matched": "observer trace absent"}])
++    assert _classify_integrity_refusal()[0] == "unobserved"
++
++
++def test_classifier_fail_safe_default_is_block(monkeypatch):
++    monkeypatch.setattr(fv, "INTEGRITY_REJECTIONS", [])
++    kind, reason = _classify_integrity_refusal()
++    assert kind == "unobserved"        # no evidence -> keeps blocking
++    _with_rejection([])
++    assert _classify_integrity_refusal()[0] == "unobserved"
++
++
++def test_stamp_routes_by_kind(monkeypatch):
++    monkeypatch.setattr(fv, "INTEGRITY_REJECTIONS", [])
++    _with_rejection([{"reason": "a claims->truth lookup (the answer-key schema)",
++                      "matched": 'key["claims"]["CH-13"]["truth"]'}])
++    e: dict = {}
++    assert _stamp_integrity_refusal(e, 3, "routing_rung") == "key_access"
++    assert e.get("integrity_refused") and not e.get("integrity_unobserved")
++    assert e["integrity_refusal_events"][0]["site"] == "routing_rung"
++    _with_rejection([{"reason": "x", "matched": "observer trace absent"}])
++    e2: dict = {}
++    assert _stamp_integrity_refusal(e2, 3, "entry") == "unobserved"
++    assert e2.get("integrity_unobserved") and not e2.get("integrity_refused")
++
++
++# ── D-6: the ladder-side path, replayed from run 1b's own record ─────────────
++
++def test_d6_rung_refusal_shape_from_run1b_is_released_once_stamped(monkeypatch):
++    """Run 1b's C0029: entry verdict UNTOOLABLE/ERROR, rung verdict
++    INTEGRITY_VIOLATION. An entry-verdict predicate alone never sees it; the
++    rung-site stamp is what brings it under the shared predicate."""
++    st = json.loads((RUN1B / "runner_state.json").read_text())
++    c29 = st["registry"]["entries"]["C0029"]
++    assert [h["verdict"] for h in c29["routing_history"]] == ["INTEGRITY_VIOLATION"]
++    # The halt-round shape: live, deferred, entry label is an equipment verdict.
++    live = {"status": "UNCONFIRMED", "severity": c29["severity"],
++            "falsifier_verdict": "UNTOOLABLE", "routing_deferred": True}
++    r = FindingRegistry(); r.entries["C0029"] = live
++    assert r.irreducible_queue_count() == 1            # pre-stamp: in the queue
++    monkeypatch.setattr(fv, "INTEGRITY_REJECTIONS", [])
++    _with_rejection([{"reason": "an answer-key file path", "matched": "k.json"}])
++    _stamp_integrity_refusal(live, 2, "routing_rung")
++    assert r.irreducible_queue_count() == 0            # post-stamp: released
++    assert r.unverified_critical_count() == 0
++    assert [x["canonical_id"] for x in r.integrity_refused_criticals()] == ["C0029"]
++
++
++# ── REQUIRED SECTION 2: gate input invariance + S_k untouched ────────────────
++
++def test_gate_input_invariance_queue_reaches_only_the_halt():
++    cfg = RunnerConfig()
++    kw = dict(round_idx=max(6, getattr(cfg, "gamma_alt_earliest_round", 6)),
++              gamma=0.432,
++              novel_critical_history=[3, 1, 0, 0, 0, 0, 0, 0],
++              cfg=cfg, unresolved_critical=0, contested=0, rho_churn=False,
++              gamma_critical=0.336, total_findings=40)
++    a = _check_gamma_alt_convergence(irreducible_queue=0, **kw)
++    b = _check_gamma_alt_convergence(irreducible_queue=3, **kw)
++    assert a[0] == b[0], (a, b)        # the queue reaches only the halt
++    assert a[0] is True, a             # and both gate conditions pass here
++
++
++def test_a4_still_blocks_the_gate_so_the_invariance_test_is_not_vacuous():
++    cfg = RunnerConfig()
++    kw = dict(round_idx=max(6, getattr(cfg, "gamma_alt_earliest_round", 6)),
++              gamma=0.432,
++              novel_critical_history=[3, 1, 0, 0, 0, 0, 0, 0],
++              cfg=cfg, contested=0, rho_churn=False,
++              gamma_critical=0.336, total_findings=40, irreducible_queue=0)
++    blocked = _check_gamma_alt_convergence(unresolved_critical=1, **kw)
++    assert blocked[0] is False and "A4 BLOCK" in blocked[1]
++
++
++def test_new_paths_read_no_sk_state():
++    from bench import reference_runner_v3 as rr
++    for fn in (rr._classify_integrity_refusal, rr._stamp_integrity_refusal,
++               rr._integrity_released,
++               rr.FindingRegistry.integrity_refused_criticals):
++        src = inspect.getsource(fn)
++        assert "sk_" not in src, fn.__name__
++
++
++def test_sk_tristates_of_run1b_are_what_the_archive_says():
++    st = json.loads((RUN1B / "runner_state.json").read_text())
++    from collections import Counter
++    c = Counter((e.get("sk_result") or {}).get("tristate", "(none)")
++                for e in st["registry"]["entries"].values())
++    assert c == Counter({"NO_SCORE": 30, "REJECTED": 6, "(none)": 4})
++
++
++# ── D-4: the advisory lands where the status lands ───────────────────────────
++
++def test_completion_signal_carries_advisory_and_repo_root(tmp_path):
++    from bench.insect_brain import InsectBrain
++    fake = types.SimpleNamespace()
++    fake.state = types.SimpleNamespace(
++        converged=True, failed=False, convergence_reason="CRITICAL_QUIESCENCE",
++        stop_reason="", failure_reason="", all_findings=[], round_records=[],
++        active_models=["m"])
++    fake.logs_dir = tmp_path
++    written = {}
++    fake._atomic_write_json = lambda fp, obj: written.update(obj)
++    sig = InsectBrain.signal_complete(
++        fake, extras={"repo_root": "/run/repo",
++                      "key_access_advisory": [{"canonical_id": "C0035"}],
++                      "status": "FORGED"})
++    assert written["repo_root"] == "/run/repo"
++    assert written["key_access_advisory"][0]["canonical_id"] == "C0035"
++    assert written["status"] == "CONVERGED"   # extras cannot overwrite status
++
++
++def test_signal_without_extras_is_unchanged(tmp_path):
++    from bench.insect_brain import InsectBrain
++    fake = types.SimpleNamespace()
++    fake.state = types.SimpleNamespace(
++        converged=False, failed=False, convergence_reason="",
++        stop_reason="BUDGET_EXHAUSTED x", failure_reason="",
++        all_findings=[], round_records=[], active_models=[])
++    fake.logs_dir = tmp_path
++    written = {}
++    fake._atomic_write_json = lambda fp, obj: written.update(obj)
++    InsectBrain.signal_complete(fake)
++    assert "key_access_advisory" not in written and "repo_root" not in written
+
+### fable:attempt-1:bench/tests/test_key_access_forensics.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_key_access_forensics.py	2026-08-15 15:28:29
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_efceg5bo/repo/bench/tests/test_key_access_forensics.py	2026-10-02 17:28:10
+@@ -56,6 +56,20 @@
+ def _run_dir(tmp_path: Path, name: str = "exp99_widget_exam_live_20260729T000000Z") -> Path:
+     d = tmp_path / name
+     d.mkdir()
++    # FIXTURE AMENDMENT, 2026-10-02 (panel round 2, D-2) -- declared openly:
++    # scan_run no longer guesses the repo root from the SCANNING checkout (the
++    # guess made the verdict machine-dependent: 89 vs 114 CONFIRMED on the same
++    # run 1b artefacts). The runner now writes `repo_root` into
++    # completion_signal.json at finalize, and the scanner refuses when no
++    # record and no explicit --repo-root exists. These synthetic runs therefore
++    # carry the record a real run carries. The repo path is a deliberately
++    # nonexistent sibling so it matches nothing else in the fixture tree; no
++    # assertion in this file is changed. `experiment` is deliberately omitted
++    # so report-name arbitration (the allowlist-widening guard) is untouched.
++    (d / "completion_signal.json").write_text(json.dumps({
++        "status": "CONVERGED",
++        "repo_root": str(tmp_path / "repo_checkout_not_created"),
++    }))
+     return d
+ 
+ 
+@@ -110,7 +124,14 @@
+     key_path = tmp_path / "keys_under_test" / "exp99_widget_answer_key.json"
+     _write_report(run_dir, filename, LEAKY_FALSIFIER.format(key_path=key_path))
+ 
+-    rep = scan_run(run_dir, key_dir=_fake_key(tmp_path))
++    # 2026-10-02 (D-2): the completion_signal.json parameter OVERWRITES the
++    # fixture's runner-authored repo_root record with report-shaped content, so
++    # the root is passed explicitly here. The test's subject is the scan
++    # surface (name-independent walking), not root resolution -- and a run
++    # whose completion_signal has been displaced now refuses by default, which
++    # is the fail-loud direction.
++    rep = scan_run(run_dir, key_dir=_fake_key(tmp_path),
++                   repo_root=tmp_path / "repo_checkout_not_created")
+ 
+     assert rep.confirmed, f"{filename}: key access went undetected"
+     assert {h.file for h in rep.confirmed} == {filename}

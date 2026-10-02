@@ -1,0 +1,80 @@
+# Panel brief: take the key-access check out of the convergence machinery
+
+## REQUIRED SECTION 1 — The question
+
+**Is the design below safe and sufficient to implement the founder's ruling that a key-access check must never block convergence or terminate a run, and must report at the end only when a key was actually read?**
+
+Artefacts under review, by path:
+- `bench/falsifier_verify.py` — the PRE-execution gate. Rule at `:294` matches the singular `seeded_fault` inside the plural field name `seeded_faults`. `_KEY_FIELDS` at `:267` does not contain `seeded_faults`. A bare-mention rule over `_KEY_FIELDS` sits at `:298`.
+- `bench/key_access_forensics.py` — the POST-run scanner, called from `bench/score_exam.py:322`.
+- `bench/reference_runner_v3.py` — `irreducible_queue_count` (the halt bound), `unverified_critical_count` (the A4 convergence blocker), `_irreducible_queue_split`, and the deferral/escalation branches that classify a failed routing rung.
+- The run that failed: `bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z`.
+- The historical breach: `bench/logs/exp48_chemistry_exam_live_20260729T044134Z`, finding C0012.
+
+**The founder's ruling, verbatim, which is NOT under review:**
+
+> "Just make it accurate. If a key was accessed and read, report it at the end of a run. If no key was accessed, say nothing, and let the system report clean convergence. But convergence should not be blocked and runs should not be terminated even if a key was read. That is a reporting and post run fix issue (as it always has been), not part of the convergence machinery of the schema."
+
+> "The role of experiments is to provide solutions to any problem that is posed. Not to choke on minor prose/syntax issues of this nature. Problem in -> solution out."
+
+Review the DESIGN that implements the ruling. Do not re-litigate the ruling.
+
+**THE DESIGN.**
+- **D1.** Narrow the pre-execution gate to ACCESS evidence only; vocabulary-only matches stop being refusals. Add `seeded_faults` to `_KEY_FIELDS` so subscript and `.get` access to it is still refused.
+- **D2.** Remove `INTEGRITY_VIOLATION` from the convergence machinery: it must feed neither `irreducible_queue_count` (so it cannot halt) nor the A4 blocker (so it cannot block convergence).
+- **D3.** Repair 2 precision defects in the post-run scanner (the run's own repo and declared target go IN scope; harvested copies of the detector's own source are excluded) and source an end-of-run advisory from it — silent when clean, naming file and location when not, with zero weight on convergence or completion status.
+
+**RE-EXECUTE EVERY FIGURE BELOW BEFORE YOU USE IT.** None of these numbers is to be taken from my typing. The producer for the token census is `scripts/guard_false_positive_blind_spot_2026-10-02.py`; the scanner figures come from `bench.key_access_forensics.scan_run` over the named run directories; the gate figures come from `bench.falsifier_verify.scan_falsifier_source`. A figure that does not reproduce is itself an above-threshold finding and I want it reported as one. This project lost a panel round to `gamma is 0.451` when the value was 0.415413, and 3 of my own figures were withdrawn earlier today for the same reason: a unit error, a double count, and a census that included the documents written about it.
+
+**MY 5 CLAIMS, each measured, each for you to attack:**
+- **C1.** The bare singular `seeded_fault(?!s)` occurs 0 times in the tracked population against 111 occurrences of the plural, so that rule has never matched the string it was written to catch.
+- **C2.** Under access-only with `seeded_faults` added to `_KEY_FIELDS`, 6 of 6 cases behave: the real C0012 exploit REFUSED (by 3 independent rules), `task["seeded_faults"]` REFUSED, `task.get("seeded_faults")` REFUSED, a set-literal mention ALLOWED, honest prose ALLOWED, any answer-key path REFUSED.
+- **C3.** The post-run scanner already detects the real breach at tier CONFIRMED: 10 CONFIRMED hits on the Exp 48 run attributed to `/registry/entries/C0012/falsifier_code`, 87 files and 4,068,509 bytes scanned, 0 unreadable.
+- **C4.** That scanner is not accurate enough today: run 1b, where no key was read, yields 89 CONFIRMED hits, and 22 of 69 archived runs carry CONFIRMED hits — 31.8841%, Wilson [22.0948%, 43.5841%], Clopper-Pearson [21.1748%, 44.2054%]. 83 of the 89 are "out-of-scope path opened or listed" with `repo_in_scope: False`.
+- **C5.** Excluding those 2 classes yields exactly the ruling: run 1b -> 0 CONFIRMED -> advisory SILENT; Exp 48 -> 10 CONFIRMED -> advisory FIRES.
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form your answer by RUNNING the machinery, not by describing it. A seat that returns prose about a fix without having run anything has not answered.
+
+**The two-sided gate is the instrument that bears on this question**, and it is what D2 touches. Convergence requires `gamma_critical >= 0.30` AND 3 consecutive zero-new-critical rounds; the halt is a separate veto driven by `irreducible_queue_count` against `max_irreducible_queue` (default 2). Run 1b reached `gamma_critical = 0.336` and `gamma_all = 0.432` at round 2 — above the gate's threshold — and halted anyway on a queue of 3. **Expected: D2 should change the halt input and leave both gate conditions untouched. Verify by executing `build_irreducible_queue_alarm` and `_check_gamma_alt_convergence` on synthetic registries, and say whether any gate input moves.**
+
+**`S_k` is the second instrument.** On a prose target it returns NO_SCORE (43 of 50 decisions in run 1b, with 7 REJECTED), so criticals cannot close through the scorer and the falsifier path is the only route. **Expected: D1/D2/D3 should leave every `S_k` tristate byte-identical. Verify it, do not assume it.**
+
+Also available and relevant: `bench/key_access_forensics.scan_run`, `bench/falsifier_verify.scan_falsifier_source`, and the archived registries under `bench/logs/`.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete, and a fix without a runnable falsifier that has been EXECUTED is a hypothesis. Report the exact command you ran and the output you saw.
+
+**Deliver every fix as a FILE, written INTO your sandbox repository tree at its real path** — for example `bench/falsifier_verify.py`, or a new test at `bench/tests/test_<name>_2026-10-02.py`. A fix described in prose is not delivered. A fix written to scratch space is destroyed when the sandbox is torn down: rounds 5 and 6 on 2026-09-10 returned 0 source files for exactly that reason while both seats reported writing and running working code.
+
+You are in a SANDBOX COPY of the repository. Writing into it is expected and is how your work is harvested. Do not attempt to reach the real repository outside the sandbox. Do not start any experiment or runner, do not run the full `pytest bench/tests/` suite, and do not make any paid dispatch.
+
+## REQUIRED SECTION 4 — What would refute you
+
+Before concluding, state what evidence would overturn your own answer. A verdict with no stated refutation condition is an opinion.
+
+Specifically: name the construct that would read key material and still pass D1, or the registry state under which D2 lets a critical silently block convergence to the round cap, or the run in which D3's exclusions hide a real breach. If you cannot construct one, say what you tried.
+
+## REQUIRED SECTION 5 — Output shape
+
+For each of Q1–Q5 below, return these fields:
+- **VERDICT** — one line.
+- **REASONING** — why, in full.
+- **FALSIFIER AND ITS EXECUTED RESULT** — the command, and the output you saw.
+- **FIX** — the file path you wrote in the sandbox, and the test path, or NONE and why.
+- **FAILURE MODE** — how your own fix fails.
+- **REFUTATION** — what would show you wrong.
+- **STRONGEST DISAGREEMENT WITH THIS BRIEF'S OWN FRAMING** — mandatory, even if small. If one of C1–C5 is false, say so and show the command.
+- **CONFIDENCE**, and what would raise it.
+
+**Q1.** Is D1 safe? Name any construct that reads key material and would NOT be refused under access-only with `seeded_faults` added.
+**Q2.** Is D2 safe, or does removing `INTEGRITY_VIOLATION` from both counters reintroduce the shape the record already warns about — a finding with neither `irreducible_escalation` nor `routing_deferred` that "blocked convergence to the round cap while never entering the irreducible-queue count"?
+**Q3.** Is D3's exclusion list right, or does putting the repo in scope open a hole where a falsifier reads a key that sits inside the repo?
+**Q4.** Is there a 4th precision defect in the scanner that C4 missed? 22 of 69 runs flag CONFIRMED; I inspected only run 1b and Exp 48.
+**Q5.** What would make this design fail in a LIVE paid run that it would not fail in a simulated one?
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new above-threshold findings, and state how many passes you ran. A finding is above threshold if missing it could cause a real-world failure, an unsafe condition, or a false experimental result. Do not converge with the other seat: disagreement is preserved as information.

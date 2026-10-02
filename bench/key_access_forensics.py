@@ -284,7 +284,43 @@ def _in_scope(raw: str, allowlist: Iterable[str], protected: Iterable[str] = ())
     if "/.../" in raw or raw.endswith("/..."):
         return True
     for a in allowlist:
-        if _under(target, a) or a.startswith(target):
+        if _under(target, a):
+            return True
+        # AN ANCESTOR DIRECTORY IS ALSO A PREFIX, and that is the hole.
+        #
+        # This clause exists for DISPLAY TRUNCATION: a staged-target path cut
+        # mid-component by a line limit is a prefix of somewhere legitimate and
+        # must keep its carve-out. But `a.startswith(target)` is also true when
+        # `target` is a complete ANCESTOR of an allowed root, and on the machine
+        # that runs the experiments the run directory sits inside the repository
+        # inside $HOME -- so the repository root, `/Users/georgejackson` and even
+        # `/Users` all scored IN SCOPE.
+        #
+        # MEASURED, 2026-10-02, and this is a HOLE rather than a precision
+        # defect: `os.listdir("/Users/georgejackson")` -- the listing that would
+        # discover the key store `vault_keys.sh` deliberately hides under $HOME
+        # -- was scored in scope here. The PRE-EXECUTION gate refuses that same
+        # probe ("a path outside the declared target"); this scanner did not. On
+        # the founder's 2026-10-02 ruling the gate becomes advisory, which would
+        # have left NO layer catching it.
+        #
+        # It also produced the Exp 48 miscount that sent a panel round chasing
+        # `repo_root`: 10 CONFIRMED here against 12 anywhere else, because
+        # C0017's literal IS the bare repository root. Pinning `repo_root` to
+        # either checkout returns byte-identical hit sets -- it was never the
+        # variable. Found by the fable and cc2 seats independently in the star
+        # round of panel `integrity_advisory_r2_2026-10-02`, each with a
+        # one-command prediction that held.
+        #
+        # THE SAME CLASS WAS FIXED IN THE GATE ON 2026-09-10 and never reached
+        # here: `test_falsifier_cannot_read_the_key.py` records "On the
+        # maintainer's machine that path IS the repository root, so it never
+        # fires; in any other checkout it does". The gate got a classifier for
+        # it. This scanner did not. Fixed in one place, not its twin.
+        #
+        # The repair keeps truncation and refuses ancestry: the continuation
+        # must begin MID-COMPONENT, not at a separator.
+        if a.startswith(target) and not a[len(target):].startswith(("/", "\\")):
             return True
     return _is_benign_home(target)
 

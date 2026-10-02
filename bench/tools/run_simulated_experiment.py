@@ -244,6 +244,93 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
+#: THE WATCH STARTS WITH THE RUN AND DIES WITH IT. Founder, 2026-10-02:
+#: *"The cy monitor should run automatically when a run starts and end when the
+#: run ends."*
+#:
+#: WHY IT LIVES HERE AND NOT IN A LAUNCHER. The watchdog needs 3 things and the
+#: runner is the only process that knows all 3 at once: its own pid, the
+#: TIMESTAMPED outcome directory it names itself, and a console log that grows.
+#: Arming it by hand from outside got the outcome directory wrong on
+#: 2026-10-02 (commit 058dfae, "the watchdog looked for the run's verdict in the
+#: wrong directory") and again in its twin `_round_count` (cd0b5f3), because the
+#: artefacts live in the run's own directory and the console log is wherever the
+#: operator happened to redirect it. Spawned from here, all 3 are correct by
+#: construction and cannot drift.
+#:
+#: IT ALSO ENDS ITSELF. `cy_watchdog` exits on PROCESS GONE when this pid dies,
+#: so nothing has to remember to stop it -- which is the other half of the
+#: founder's sentence.
+#:
+#: FAIL-OPEN, DELIBERATELY. A monitoring process must never be able to stop an
+#: experiment. Every failure path here returns quietly and the run proceeds
+#: unwatched, which is worse than watched and far better than halted. Set
+#: CDSFL_NO_CY_WATCHDOG=1 to suppress it.
+def _start_cy_watchdog(outcome_dir, console_log):
+    """Spawn the cy watchdog against THIS run. Returns the Popen or None."""
+    if os.environ.get("CDSFL_NO_CY_WATCHDOG", "").strip():
+        return None
+    script = REPO / "scripts" / "cy_watchdog_2026-10-02.py"
+    if not script.is_file():
+        return None
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, str(script),
+             "--log", str(console_log),
+             "--pid", str(os.getpid()),
+             "--outcome-dir", str(outcome_dir),
+             "--interval", "60", "--stall-seconds", "1200",
+             "--heartbeat-minutes", "25", "--max-hours", "12"],
+            stdout=open(outcome_dir / "cy_watchdog.log", "w"),
+            stderr=subprocess.STDOUT,
+            start_new_session=True)
+    except (OSError, ValueError):
+        return None
+    print(f"    cy watchdog armed (pid {proc.pid}) -> "
+          f"{outcome_dir.name}/cy_watchdog.log", flush=True)
+    return proc
+
+
+class _Tee:
+    """Mirror a stream into a file so the watchdog has a log that grows.
+
+    The sandboxed launcher does not redirect anything -- it runs the runner in
+    the foreground and leaves stdout to the operator -- so before this there was
+    no console log unless someone made one by hand. The watchdog's stall
+    detector reads byte growth, so without a log a stall is undetectable.
+    Writes are best-effort: a failed mirror must never break the run's own
+    output.
+    """
+
+    def __init__(self, stream, path):
+        self._stream = stream
+        try:
+            self._fh = open(path, "a", buffering=1, encoding="utf-8",
+                            errors="replace")
+        except OSError:
+            self._fh = None
+
+    def write(self, data):
+        n = self._stream.write(data)
+        if self._fh is not None:
+            try:
+                self._fh.write(data)
+            except (OSError, ValueError):
+                self._fh = None
+        return n
+
+    def flush(self):
+        self._stream.flush()
+        if self._fh is not None:
+            try:
+                self._fh.flush()
+            except (OSError, ValueError):
+                self._fh = None
+
+    def __getattr__(self, name):
+        return getattr(self._stream, name)
+
+
 def main() -> int:
     args = build_parser().parse_args()
 
@@ -262,6 +349,12 @@ def main() -> int:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     logs = REPO / "bench" / "logs" / f"{args.name}_{stamp}"
     logs.mkdir(parents=True, exist_ok=True)
+
+    # The console log and the watch, both by construction. See _start_cy_watchdog.
+    _console = logs / "console.log"
+    sys.stdout = _Tee(sys.stdout, _console)
+    sys.stderr = _Tee(sys.stderr, _console)
+    _start_cy_watchdog(logs, _console)
 
     # SEPARATION BY CONSTRUCTION, 2026-08-31.
     #

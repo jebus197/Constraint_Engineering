@@ -277,6 +277,51 @@ OUTCOME_UNREADABLE = "UNREADABLE"
 
 
 
+_SUITE_SUMMARY = re.compile(
+    # `warnings` BELONGS IN THIS LIST. Without it the live green summary
+    # `9668 passed, 7 skipped, 20 warnings in 2944.77s` did not match: the
+    # alternation stopped at `7 skipped, ` and then required `in <seconds>s`
+    # where `20 warnings` stood, so the best outcome of the day read NO_SIGNAL.
+    # Caught by running this against the real log rather than by reading it.
+    r"^(?P<body>(?:\d[\d,]*\s+(?:passed|failed|skipped|errors?|warnings?"
+    r"|xfailed|xpassed|deselected)(?:,\s*)?)+)\s+in\s+[\d.]+s", re.M)
+_SUITE_EXIT = re.compile(r"^EXIT=(?P<code>\d+)\b", re.M)
+_SUITE_FAILED = re.compile(r"\b([1-9][\d,]*)\s+failed\b")
+
+
+def _suite_outcome(log: pathlib.Path):
+    """A pytest run's verdict, read from its own summary. None if not a suite.
+
+    WHY THIS IS NOT A GUESS. Two independent anchors must agree that this log
+    belongs to a test run: a pytest summary line of the exact shape
+    `<counts> in <seconds>s`, and/or the `EXIT=<code>` line the suite launcher
+    writes. A log that merely contains the word "passed" in prose matches
+    neither, so an experiment log cannot be misread as a suite.
+    """
+    try:
+        text = log.read_text(errors="ignore") if log.is_file() else ""
+    except OSError:
+        return None
+    summary = None
+    for m in _SUITE_SUMMARY.finditer(text):
+        summary = m.group("body").strip().rstrip(",")
+    exit_m = None
+    for m in _SUITE_EXIT.finditer(text):
+        exit_m = m
+    if summary is None and exit_m is None:
+        return None
+    failed = _SUITE_FAILED.search(summary or "")
+    code = int(exit_m.group("code")) if exit_m else None
+    if failed or (code is not None and code != 0):
+        return OUTCOME_BAD, (f"test suite: {summary or 'no summary line'}"
+                             + (f" (EXIT={code})" if code is not None else "")
+                             + " -- this is NOT a clean suite")
+    if summary is None:
+        return None          # EXIT=0 alone is not a suite verdict
+    return OUTCOME_CLEAN, (f"test suite: {summary}"
+                           + (f" (EXIT={code})" if code is not None else ""))
+
+
 def read_outcome(log: pathlib.Path, outcome_dir: pathlib.Path | None = None) -> tuple:
     """What the run ended AS. Returns (verdict, detail).
 
@@ -314,6 +359,22 @@ def read_outcome(log: pathlib.Path, outcome_dir: pathlib.Path | None = None) -> 
     sig = d / "completion_signal.json"
     reports = sorted(d.glob("*_report.json"))
     if not sig.is_file() and not reports:
+        # A TEST SUITE RECORDS ITS VERDICT TOO, just not as a signal file.
+        # Measured 2026-10-02 16:01: the confirming full suite finished
+        # `9668 passed, 7 skipped, 0 failed` with `EXIT=0`, and this function
+        # announced `OUTCOME NO_SIGNAL: the run recorded no verdict at all`.
+        # That is the cry-wolf class this script spent the same morning
+        # removing from its own TROUBLE channel, reappearing one function away:
+        # a channel whose only value is being believed, reporting the best
+        # possible outcome as an unrecorded one.
+        #
+        # ANCHORED, not loose. The summary must carry a pytest-shaped count
+        # (`N passed` / `N failed`) or an explicit `EXIT=` written by the
+        # launcher. Prose that merely contains the word "passed" does not
+        # qualify, which `test_prose_mentioning_passed_is_not_a_verdict` pins.
+        verdict = _suite_outcome(log)
+        if verdict is not None:
+            return verdict
         return OUTCOME_NO_SIGNAL, ("no completion_signal.json and no report: "
                                    "the run recorded no verdict at all")
     status = reason = None

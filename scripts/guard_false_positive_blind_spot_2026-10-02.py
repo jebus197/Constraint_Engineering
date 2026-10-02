@@ -203,8 +203,39 @@ def main() -> int:
     SELF = ("experimental_notes/Integrity_Guard_False_Positive",
             "scripts/guard_false_positive_blind_spot",
             "bench/tests/test_guard_false_positive_figures")
-    tracked = subprocess.run(["git", "ls-files"], cwd=REPO,
-                             capture_output=True, text=True).stdout.split()
+    # A FAILED CALL IS NOT AN EMPTY POPULATION. `git ls-files` outside a work
+    # tree exits 128 with 0 bytes of stdout, and this line took `.stdout.split()`
+    # with no returncode check -- so a git-less environment produced a census of
+    # ZERO and printed it as a measurement.
+    #
+    # THAT IS THE ONE ENVIRONMENT WHERE IT MATTERED. A panel seat receives this
+    # repository as a sandbox COPY WITH NO `.git`, which is the only place a seat
+    # can re-execute this producer, so the figure the brief told 2 seats to
+    # re-execute reported `0 across 0 files` and read as a CONFIRMATION of the
+    # claim it was meant to test -- built out of an error, in the direction that
+    # makes every claim look confirmed. Caught 2026-10-02 by the cc2 and fable
+    # seats independently, each quoting the `fatal: not a git repository` line
+    # beside the zero.
+    #
+    # `measured-rate-travels-with-its-script` is defeated by a script that
+    # substitutes an empty population for a failure. It fails LOUD now.
+    _ls = subprocess.run(["git", "ls-files"], cwd=REPO,
+                         capture_output=True, text=True)
+    if _ls.returncode != 0:
+        raise SystemExit(
+            f"TRACKED-POPULATION CENSUS UNAVAILABLE: `git ls-files` exited "
+            f"{_ls.returncode} in {REPO}.\n"
+            f"  stderr: {(_ls.stderr or '').strip()[:200]}\n"
+            f"  This figure is a census of GIT-TRACKED files. Outside a work "
+            f"tree there is no population to count, and reporting 0 would be a "
+            f"measurement of nothing. Re-run inside the repository, or pass an "
+            f"explicit file list.")
+    tracked = _ls.stdout.split()
+    if not tracked:
+        raise SystemExit(
+            f"TRACKED-POPULATION CENSUS UNAVAILABLE: `git ls-files` succeeded "
+            f"in {REPO} but listed 0 files. An empty repository is not a "
+            f"measurable population for this figure.")
     def census(pred):
         occ = files_n = 0
         for rel in tracked:
