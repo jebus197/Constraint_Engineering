@@ -179,3 +179,68 @@ class TestRunnerWiring:
         rr.apply_falsifier_verdicts(reg, 0, cfg=cfg, repo_root=str(REPO))
         assert reg.entries["C0001"]["falsifier_verdict"] == "REFUTED", (
             reg.entries["C0001"].get("falsifier_verdict"))
+
+
+class TestItNeverTouchesACallerSuppliedView:
+    """The materialisation must not write into a directory a caller built.
+
+    THE HAZARD, MEASURED 2026-10-02 WHILE RUN 1b WAS LIVE. `execute_python` and
+    `reverify_falsifier` both compute `tmp_cwd = cwd or _scratch` and then
+    materialised the target into it. The DISCRIMINATION CONTROL is a caller that
+    supplies `cwd`: it builds an overlay with the target replaced by a tripwire
+    and runs the falsifier there to see whether the falsifier notices. Writing
+    the real target into that overlay answers the control's own question for it.
+
+    MEASURED BOTH WAYS BEFORE THE FIX. Where the control SUBSTITUTES the target,
+    `if not dest.exists()` already protected it and the tripwire survived. Where
+    an overlay OMITS the target, the copy landed and restored the real file,
+    defeating "replaced wholesale" and yielding NOT_INTERCEPTED or a false pass.
+    The safe case depended on another module's internal choice between omitting
+    and substituting, which is not a margin to rely on.
+
+    The relative-path defect only ever occurs in the throwaway scratch, where
+    there is no view to respect, so restricting it there costs nothing.
+    """
+
+    TRIPWIRE = "raise RuntimeError('TRIPWIRE: the control substituted this')\n"
+
+    def test_a_substituting_overlay_keeps_its_tripwire(self, tmp_path):
+        (tmp_path / "bench").mkdir(parents=True, exist_ok=True)
+        leaf = tmp_path / SPEC_REL
+        leaf.write_text(self.TRIPWIRE, encoding="utf-8")
+        fv.set_falsifier_target(str(SPEC_ABS), SPEC_REL)
+        fv.execute_python("print('x')", cwd=str(tmp_path), timeout=20)
+        assert leaf.read_text(encoding="utf-8") == self.TRIPWIRE, (
+            "the materialisation overwrote the control's substitution")
+
+    def test_an_omitting_overlay_stays_empty(self, tmp_path):
+        """THE HALF THAT WAS A REAL HOLE."""
+        (tmp_path / "bench").mkdir(parents=True, exist_ok=True)
+        fv.set_falsifier_target(str(SPEC_ABS), SPEC_REL)
+        fv.execute_python("print('x')", cwd=str(tmp_path), timeout=20)
+        assert not (tmp_path / SPEC_REL).exists(), (
+            "the real target was restored into an overlay that deliberately "
+            "omitted it, so 'replaced wholesale' is defeated")
+
+    def test_reverify_respects_a_caller_view_too(self, tmp_path):
+        """Both call sites, because fixing one would leave its twin."""
+        (tmp_path / "bench").mkdir(parents=True, exist_ok=True)
+        fv.set_falsifier_target(str(SPEC_ABS), SPEC_REL)
+        try:
+            fv.reverify_falsifier("print('FALSIFIED')", cwd=str(tmp_path),
+                                  timeout=20)
+        except TypeError:
+            pytest.skip("reverify_falsifier takes no cwd in this revision")
+        assert not (tmp_path / SPEC_REL).exists()
+
+    def test_the_scratch_path_still_gets_the_target(self, tmp_path):
+        """ANTI-REGRESSION: the defect this all exists to fix must stay fixed."""
+        fv.set_falsifier_target(str(SPEC_ABS), SPEC_REL)
+        code = (f"import pathlib\n"
+                f"assert pathlib.Path({SPEC_REL!r}).is_file(), 'target unreachable'\n"
+                f"print('FALSIFIED')\n")
+        out = fv.execute_python(code, timeout=30)
+        blob = str(out)
+        assert "unreachable" not in blob, (
+            f"a relative-path falsifier can no longer reach its target: {blob[:300]}")
+

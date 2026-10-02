@@ -1047,7 +1047,27 @@ def execute_python(
         # rather than decided here.
         tmp_cwd = cwd or _scratch
         _snippet_dir = _scratch   # never write the snippet into a symlink tree
-        _materialize_target_into(tmp_cwd)
+        # ONLY INTO OUR OWN SCRATCH, NEVER INTO A CALLER'S DIRECTORY.
+        #
+        # A caller that supplies `cwd` has CONSTRUCTED a filesystem view on
+        # purpose, and the discrimination control is exactly such a caller: it
+        # builds an overlay with the target substituted by a tripwire and runs
+        # the falsifier in it to see whether the falsifier notices. Writing the
+        # REAL target into that overlay would answer its question for it.
+        #
+        # MEASURED 2026-10-02, both directions. Where the control SUBSTITUTES
+        # the target, `if not dest.exists()` already protected it and the
+        # tripwire survived. Where an overlay OMITS the target, the copy landed
+        # and restored the real file -- defeating "replaced wholesale" and
+        # producing NOT_INTERCEPTED or a false pass. The second case depended on
+        # another module's internal choice of whether to omit or substitute,
+        # which is not a safety margin anyone should rely on.
+        #
+        # The defect this materialisation exists to fix only ever occurs in the
+        # throwaway scratch directory, where there is no view to respect, so
+        # restricting it there loses nothing.
+        if cwd is None:
+            _materialize_target_into(tmp_cwd)
         env, trace_path = _install_observer(obs_dir, tmp_cwd, root)
         fh = tempfile.NamedTemporaryFile(
             "w", suffix=".py", dir=_snippet_dir, delete=False, encoding="utf-8"
@@ -1294,7 +1314,13 @@ def reverify_falsifier(
         # The snippet still lives in the scratch dir, never in the overlay: writing
         # it into a symlink tree would put a stray .py file in the real repository.
         _snippet_dir = _scratch
-        _materialize_target_into(tmp_cwd)
+        # SAME BOUNDARY AS execute_python: only our own scratch. A caller
+        # supplying `cwd` -- the discrimination control does -- has built a
+        # filesystem view deliberately, and writing the real target into it
+        # would answer the control's own question for it. Measured both ways
+        # on 2026-10-02; see execute_python for the figures.
+        if cwd is None:
+            _materialize_target_into(tmp_cwd)
         env, trace_path = _install_observer(obs_dir, tmp_cwd, root)
         fh = tempfile.NamedTemporaryFile(
             "w", suffix=".py", dir=_snippet_dir, delete=False, encoding="utf-8"
