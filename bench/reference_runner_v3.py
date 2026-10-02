@@ -5480,6 +5480,31 @@ def _apply_discrimination_control(
     return outcome
 
 
+def _register_falsifier_target(cfg, repo_root: Optional[str] = None) -> None:
+    """Register the run's declared target so relative-path falsifiers can read it.
+
+    WIRED 2026-10-02 (free panel) after both commissioning_arm4 prose runs
+    halted at round 0: every seat's falsifier read the target by RELATIVE path,
+    which resolves inside the sandbox's empty scratch cwd, so every rung
+    returned ERROR and the whole registry locked as routing_deferred in its
+    birth round. See bench/falsifier_verify._materialize_target_into for the
+    mechanism, the measured reproduction and the stated failure modes.
+
+    Registration is the TARGET ONLY -- never a key or manifest -- and clearing
+    on a blank test_article keeps unrelated callers byte-identical.
+    """
+    try:
+        from bench.falsifier_verify import set_falsifier_target
+    except ImportError:  # pragma: no cover - the module ships beside this one
+        return
+    rel = (getattr(cfg, "test_article", "") or "") if cfg else ""
+    if not rel:
+        set_falsifier_target(None)
+        return
+    base = Path(repo_root) if repo_root else REPO_ROOT
+    set_falsifier_target(str(base / rel), rel)
+
+
 def apply_falsifier_verdicts(
     registry: FindingRegistry, round_idx: int,
     cfg: Optional[RunnerConfig] = None, repo_root: Optional[str] = None,
@@ -5525,6 +5550,7 @@ def apply_falsifier_verdicts(
     if not (cfg and getattr(cfg, "falsifier_gate_enabled", False)):
         return
     from bench.falsifier_verify import reverify_falsifier
+    _register_falsifier_target(cfg, repo_root)
     _HARD_TERMINAL = {"MERGED", "CLOSED", "DUPLICATE"}
 
     def _to_ledger(cid, entry, verdict):
@@ -6105,6 +6131,7 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
         return
     from bench.routing import route
     from bench.falsifier_verify import reverify_falsifier
+    _register_falsifier_target(cfg, repo_root)
 
     _roster = _declared_models(exp_config, cfg)
     models = [mc.label for mc in _roster]

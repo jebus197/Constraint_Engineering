@@ -175,6 +175,7 @@ import ast
 import hashlib
 import os
 import re
+import shutil
 import site
 import subprocess
 import sys
@@ -911,6 +912,78 @@ def _sandbox_env(repo_root: str, bootstrap: str | None = None) -> dict:
     return env
 
 
+# ── THE DECLARED TARGET, REACHABLE BY THE RELATIVE PATH A FALSIFIER USES ────
+#
+# THE DEFECT (free panel, 2026-10-02, from the artefacts of BOTH halted prose
+# runs). Falsifiers execute with cwd = a throwaway scratch directory -- the
+# correct isolation, kept. A falsifier against a PYTHON target IMPORTS it via
+# PYTHONPATH, so the scratch cwd never bites. A falsifier against a PROSE
+# target has no import path: every seat on both commissioning_arm4 runs read
+# the document by a RELATIVE path (`open("bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md")`
+# or its bare basename), which resolves inside the empty scratch directory.
+# Reproduced by execution from the 2026-09-30 run's own registry: every one of
+# the 8 queued falsifiers dies with FileNotFoundError before its first
+# assertion -> verdict ERROR on every rung -> routing_deferred at round 0 ->
+# irreducible queue 8 > bound 2 -> HALTED_IRREDUCIBLE_QUEUE_ALARM. The alarm
+# was RIGHT (mechanical failure, its cause 2); this closes the mechanism.
+#
+# THE REMEDY: the runner REGISTERS the one target under review, and the
+# sandbox MATERIALISES a copy of it inside the scratch cwd under the names a
+# relative reader would use (its repo-relative path and its basename). This
+# widens access to NOTHING: the target is the artefact under review, already
+# the one thing a falsifier is for (admissible(f): reads ⊆ A ∪ I(A)). Keys,
+# manifests and every other path stay exactly as unreachable as before.
+#
+# HOW IT FAILS, stated per the unfailable-gate rule: (a) unregistered (any
+# caller that does not opt in) => byte-identical behaviour, the ERROR is loud
+# and the queue alarm still halts the run; (b) a falsifier reading any OTHER
+# relative path still gets FileNotFoundError -> ERROR, loud; (c) a .py target
+# is NEVER materialised, so a scratch copy can never shadow a real import.
+# The copy is per-execution and discarded with the scratch dir.
+#
+# Module-level mutable, same shape and same reason as the runner's
+# _PANEL_CWD_FOR_WORKERS mirror: reverify_falsifier is handed bare into
+# bench.routing.route as a callback, so a parameter cannot reach it without
+# rewriting every rung.
+_FALSIFIER_TARGET: dict = {"abs": None, "rel": None}
+
+
+def set_falsifier_target(abs_path: str | None, rel_path: str | None = None) -> None:
+    """Declare the artefact under review so relative-path falsifiers can read it.
+
+    Pass None to clear (test hygiene). Only ever call this with the TARGET of
+    the run -- never a key, a manifest, or any ground-truth material.
+    """
+    _FALSIFIER_TARGET["abs"] = str(abs_path) if abs_path else None
+    _FALSIFIER_TARGET["rel"] = str(rel_path) if rel_path else None
+
+
+def _materialize_target_into(tmp_cwd: str) -> None:
+    """Copy the registered NON-PYTHON target into the scratch cwd, best effort.
+
+    Best-effort is safe here because absence reproduces the status quo exactly:
+    the falsifier fails with FileNotFoundError and the verdict is a loud ERROR.
+    """
+    abs_p = _FALSIFIER_TARGET.get("abs")
+    if not abs_p:
+        return
+    src = Path(abs_p)
+    if not src.is_file() or src.suffix in (".py", ".pyi"):
+        return
+    names = {src.name}
+    rel = _FALSIFIER_TARGET.get("rel")
+    if rel and not os.path.isabs(rel) and ".." not in Path(rel).parts:
+        names.add(rel)
+    for name in names:
+        dest = Path(tmp_cwd) / name
+        try:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            if not dest.exists():
+                shutil.copyfile(src, dest)
+        except OSError:
+            pass  # loud-ERROR status quo; never fell an execution over a copy
+
+
 def execute_python(
     code: str,
     repo_root: str | None = None,
@@ -974,6 +1047,7 @@ def execute_python(
         # rather than decided here.
         tmp_cwd = cwd or _scratch
         _snippet_dir = _scratch   # never write the snippet into a symlink tree
+        _materialize_target_into(tmp_cwd)
         env, trace_path = _install_observer(obs_dir, tmp_cwd, root)
         fh = tempfile.NamedTemporaryFile(
             "w", suffix=".py", dir=_snippet_dir, delete=False, encoding="utf-8"
@@ -1220,6 +1294,7 @@ def reverify_falsifier(
         # The snippet still lives in the scratch dir, never in the overlay: writing
         # it into a symlink tree would put a stray .py file in the real repository.
         _snippet_dir = _scratch
+        _materialize_target_into(tmp_cwd)
         env, trace_path = _install_observer(obs_dir, tmp_cwd, root)
         fh = tempfile.NamedTemporaryFile(
             "w", suffix=".py", dir=_snippet_dir, delete=False, encoding="utf-8"
