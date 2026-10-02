@@ -11373,6 +11373,7 @@ def _run_effect_fix_efficacy(
 
 _NEW_RUFF_RE = re.compile(r"(\d+)\s+new\b")
 _NEW_BANDIT_RE = re.compile(r"new:\s*(\d+)H/(\d+)M")
+_NEW_BANDIT_LOW_RE = re.compile(r"new:\s*\d+H/\d+M/(\d+)L")
 
 
 def _gates_introduced_new_defects(details: Dict[str, Any]) -> List[str]:
@@ -11460,15 +11461,29 @@ def _run_effect_bandit(
             )
         except (json.JSONDecodeError, TypeError) as e:
             return None, f"bandit output parse failed: {e}"
+        # LOW IS COUNTED FOR VISIBILITY, NEVER FOR THE SCORE (2026-10-02).
+        # Measured on the archived SHELL_INJECTION_FIX exploit: bandit rates
+        # `subprocess.call("<literal>", shell=True)` LOW (B404/B607/B602), so
+        # a shell call smuggled into a fenced listing left NO trace in this
+        # gate's record and the exploit's NO_SCORE was byte-identical to a
+        # correct prose fix's. The delta below travels in the detail string
+        # and in `_prose_one_sided`; it costs 0.0 in the score, so every
+        # Python verdict is byte-identical by construction.
+        low_count = sum(
+            1 for r in results_list
+            if r.get("issue_severity", "").upper() == "LOW"
+        )
         baseline_high = baseline_findings.get("high", 0)
         baseline_med = baseline_findings.get("medium", 0)
+        baseline_low = baseline_findings.get("low", 0)
         new_high = max(0, high_count - baseline_high)
         new_med = max(0, med_count - baseline_med)
+        new_low = max(0, low_count - baseline_low)
         score = max(0.0, 1.0 - new_high * 0.5 - new_med * 0.2)
         return score, (
-            f"{high_count} HIGH/{med_count} MEDIUM "
-            f"(baseline: {baseline_high}H/{baseline_med}M, "
-            f"new: {new_high}H/{new_med}M)"
+            f"{high_count} HIGH/{med_count} MEDIUM/{low_count} LOW "
+            f"(baseline: {baseline_high}H/{baseline_med}M/{baseline_low}L, "
+            f"new: {new_high}H/{new_med}M/{new_low}L)"
         )
     except (subprocess.TimeoutExpired, OSError) as e:
         return None, f"bandit unavailable: {e}"
@@ -11569,6 +11584,12 @@ def _capture_baseline(source: str, source_path: str = "") -> Dict[str, Any]:
                         "medium": sum(
                             1 for r in results_list
                             if r.get("issue_severity", "").upper() == "MEDIUM"
+                        ),
+                        # Visibility only; absent in archived baselines, so the
+                        # consumer defaults it to 0 (see _run_effect_bandit).
+                        "low": sum(
+                            1 for r in results_list
+                            if r.get("issue_severity", "").upper() == "LOW"
                         ),
                     }
             except (json.JSONDecodeError, TypeError):
@@ -11942,8 +11963,19 @@ def compute_sk(
                 gate_details=details,
                 blocks_parsed=len(blocks), blocks_applied=applied,
             )
+        # LOW-SEVERITY DELTA, SURFACED BUT NEVER CONVICTING (2026-10-02).
+        # The archived exploit's literal shell=True is LOW to bandit, so it
+        # passes every gate; a REJECT on LOW would be a claim this evidence
+        # cannot carry (B404 fires on any `import subprocess`, which a spec
+        # may legitimately illustrate). The human adjudicating the NO_SCORE
+        # queue gets the count instead of a record indistinguishable from a
+        # correct fix's.
+        _low_m = _NEW_BANDIT_LOW_RE.search(
+            (details.get("e4_bandit") or {}).get("detail") or "")
+        _new_lows = int(_low_m.group(1)) if _low_m else 0
         details["_prose_one_sided"] = {
             "outcome": SK_NO_SCORE,
+            "new_low_severity_security_findings": _new_lows,
             # ADDED 2026-09-24 (CC1), adjudicating 2 seats' fixes. The other
             # seat's version of this branch carried the computed value as a
             # NUMBER so a human reviewer could see what the gates would have
@@ -11955,7 +11987,11 @@ def compute_sk(
                 f"{round(sk, 4)}), but a clean static sweep is not evidence a "
                 "prose fix is correct -- the harm class here is semantic. "
                 "Unscored: neither admitted nor rejected, R_k unmoved. "
-                "Resolution runs through the falsifier path."),
+                "Resolution runs through the falsifier path."
+                + (f" NOTE: this fix introduced {_new_lows} new LOW-severity "
+                   f"security finding(s) into the fenced listings -- too weak "
+                   f"to convict, mandatory to inspect."
+                   if _new_lows else "")),
         }
         return SkResult(
             sk=0.0, A=A, E=round(E, 4), tristate=SK_NO_SCORE,

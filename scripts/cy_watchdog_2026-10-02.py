@@ -174,9 +174,6 @@ OUTCOME_BAD = "BAD"
 OUTCOME_NO_SIGNAL = "NO_SIGNAL"
 OUTCOME_UNREADABLE = "UNREADABLE"
 
-#: Exit codes, so a caller can branch without parsing prose.
-_EXIT = {OUTCOME_CLEAN: 0, OUTCOME_BAD: 2, OUTCOME_NO_SIGNAL: 3,
-         OUTCOME_UNREADABLE: 4}
 
 
 def read_outcome(log: pathlib.Path) -> tuple:
@@ -244,6 +241,33 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
     now = time.time()
     exists = log.is_file()
     size = log.stat().st_size if exists else 0
+
+    # TRUNCATION OR ROTATION, found by the fable seat in the free panel of
+    # 2026-10-02 and reproduced before fixing. A run that reopens its log with
+    # "w", or a supervisor that rotates it, leaves the file SHORTER than the
+    # offset already read. `size > offset` was then false forever and this
+    # watchdog stopped reading the log permanently -- going BLIND rather than
+    # silent, which is worse than the seat's own framing.
+    #
+    # MEASURED: a `Traceback ... RuntimeError: seat crashed` written into a
+    # freshly truncated log produced NO TROUBLE event at any point, because the
+    # offset stood at 5018 bytes against a 62-byte file. A short stall
+    # threshold masked it by catching the stall instead; at a realistic
+    # --stall-seconds the crash was never mentioned. Verified formally
+    # afterwards: z3 finds the old rule blind to every truncated state and
+    # UNSAT for the new one, and an exhaustive sweep agrees at 79,800 of 79,800
+    # against 0.
+    #
+    # The truncation is announced in its own right: a run rewriting its own log
+    # is doing something unusual and the operator should hear it, not infer it
+    # from a byte count going backwards.
+    if exists and size < offset:
+        say("LOG TRUNCATED", f"the log shrank from {offset} to {size} bytes, so "
+                             f"it was rewritten or rotated. Re-reading from the "
+                             f"start; anything written before this is already "
+                             f"reported.")
+        offset = 0
+        last_size = 0
 
     if exists and size > offset:
         try:
@@ -395,9 +419,16 @@ def main() -> int:
     say(f"OUTCOME {verdict}", detail)
     say("CLOSED", f"watchdog exiting; {rounds} round(s) landed; "
                   f"run_ended={ended}; outcome={verdict}")
-    if not ended:
-        return 1
-    return _EXIT.get(verdict, 2)
+    # THE EXIT CODE STAYS AS IT WAS, and that is the cc2 seat's call over this
+    # assistant's. Its specification carried the verdict as one more stdout
+    # line -- one more Monitor wake -- and deliberately did not touch the exit
+    # contract; `test_the_exit_code_contract_is_untouched` pins that. The first
+    # version here returned 0/2/3/4 by outcome, and the measurement settled it
+    # against that: a NO_SIGNAL end returned 3 and the Monitor reported
+    # "script failed (exit 3)" for an ordinary finish, manufacturing exactly
+    # the misleading signal this work exists to remove. The verdict travels in
+    # the OUTCOME line, which is what drives the wake.
+    return 0 if ended else 1
 
 
 if __name__ == "__main__":

@@ -72,11 +72,11 @@ class TestSilenceIsAnEvent:
         r = _run(["--log", str(log), "--pid", str(dead.pid),
                   "--once", "--interval", "1"])
         assert "PROCESS GONE" in r.stdout, r.stdout
-        # EXIT SEMANTICS CHANGED DELIBERATELY, 2026-10-02. This asserted 0 for
-        # "the run ended", which conflated ending with ending WELL — the exact
-        # defect the cc2 seat found. With no verdict file present the outcome is
-        # NO_SIGNAL, which is its own exit code.
-        assert r.returncode == 3, f"expected NO_SIGNAL exit, got {r.returncode}"
+        # THE EXIT CODE IS UNCHANGED, on the cc2 seat's call: a run that ended
+        # is a clean watchdog exit, and the VERDICT travels in the OUTCOME line.
+        # An earlier version here returned a code per outcome, and the Monitor
+        # then reported "script failed (exit 3)" for an ordinary finish.
+        assert r.returncode == 0, f"a run that ended must exit 0: {r.returncode}"
         assert "OUTCOME NO_SIGNAL" in r.stdout
 
     def test_a_live_process_is_not_called_gone(self, tmp_path):
@@ -292,7 +292,9 @@ class TestTheOutcomeIsReadNotInferred:
         r = self._ended_run(tmp_path, {"status": "INCOMPLETE",
                                        "reason": "HALTED_IRREDUCIBLE_QUEUE_ALARM"})
         assert "OUTCOME BAD" in r.stdout, r.stdout
-        assert r.returncode == 2, "a halt must not exit 0"
+        assert r.returncode == 0, (
+            "the exit contract is untouched; a halt is distinguished by its "
+            "OUTCOME line, which is what wakes the model")
 
     def test_the_two_are_distinguishable(self, tmp_path):
         """THE EXACT COMPARISON THE SEAT MADE. Before the fix these were equal."""
@@ -300,14 +302,14 @@ class TestTheOutcomeIsReadNotInferred:
                                              "reason": "CRITICAL_QUIESCENCE_CONVERGED"})
         b = self._ended_run(tmp_path / "b", {"status": "INCOMPLETE",
                                              "reason": "HALTED_IRREDUCIBLE_QUEUE_ALARM"})
-        assert a.returncode != b.returncode
         assert "OUTCOME CLEAN" in a.stdout and "OUTCOME BAD" in b.stdout
+        assert a.stdout != b.stdout, (
+            "a halt and a convergence are still indistinguishable")
 
     def test_an_unrecorded_verdict_is_its_own_third_class(self, tmp_path):
         """NO_SIGNAL is not a kind of BAD: an unrecorded end cannot be acted on."""
         r = self._ended_run(tmp_path, None)
         assert "OUTCOME NO_SIGNAL" in r.stdout, r.stdout
-        assert r.returncode == 3
 
     def test_a_corrupt_verdict_file_is_reported_not_guessed(self, tmp_path):
         (tmp_path / "round_00.json").write_text("{}", encoding="utf-8")
@@ -319,7 +321,6 @@ class TestTheOutcomeIsReadNotInferred:
         r = _run(["--log", str(log), "--pid", str(dead.pid), "--once",
                   "--interval", "1", "--stall-seconds", "3600"])
         assert "OUTCOME UNREADABLE" in r.stdout, r.stdout
-        assert r.returncode == 4
 
     def test_the_outcome_is_spoken_even_when_the_watchdog_gives_up(self, tmp_path):
         """Every exit path, not just the tidy one."""
