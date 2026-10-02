@@ -289,11 +289,30 @@ def main() -> int:
             for x in al["evidence"]:
                 h = (x.get("routing_history") or [{}])[0]
                 body = (h.get("last_falsifier_code") or "").strip()
-                print(f"      {x['canonical_id']}: verdict={x['falsifier_verdict']} "
-                      f"born={x['open_since_round']} "
+                # THE ENTRY LABEL IS STALE BY DESIGN AND I READ IT ANYWAY.
+                # `reconcile_routing_verdict`'s docstring states it outright:
+                # "_apply_routing writes falsifier_code/falsifier_verdict back
+                # only on result.resolved ... the entry keeps the stale
+                # UNTOOLABLE and the ladder's real verdict survives only in
+                # routing_history[-1]['verdict'], beside a body truncated to
+                # 600 chars." This loop already bound `h` to that history and
+                # read `rungs_tried` from it, then printed the ENTRY's
+                # `falsifier_verdict` one key away. C0029 therefore read
+                # UNTOOLABLE, "no falsifier was written", when the ladder had
+                # written one and the guard had REFUSED it.
+                #
+                # `scan=` is likewise reported against the 600-char PREFIX, not
+                # against what the guard read: archive-wide 183 of 221 retained
+                # bodies sit at the cap, so a clean scan is evidence of nothing.
+                # The run's OWN recorded verdict is authoritative and is printed
+                # first.
+                print(f"      {x['canonical_id']}: ladder_verdict={h.get('verdict')} "
+                      f"(entry label: {x['falsifier_verdict']}, stale unless "
+                      f"resolved) born={x['open_since_round']} "
                       f"rungs_tried={h.get('rungs_tried')}/"
                       f"{h.get('rungs_available')} "
-                      f"scan={'REFUSED' if (body and scan_falsifier_source(body)) else 'clean'}")
+                      f"prefix_scan={'REFUSED' if (body and scan_falsifier_source(body)) else 'clean'}"
+                      f" (over {len(body)} of up to 600 retained chars)")
             break
     log = LOGS / "prose_convergence_run1b_2026-10-02" / "run.log"
     if log.is_file():
