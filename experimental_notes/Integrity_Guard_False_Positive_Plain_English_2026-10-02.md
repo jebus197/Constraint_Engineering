@@ -1,3 +1,9 @@
+> ## CORRECTION NOTICE, 2026-10-02 14:05 BST — DO NOT DECIDE FROM THIS DOCUMENT YET
+>
+> An independent adversarial review returned 32 findings; 4 are blocking and verified by execution. **Three load-bearing claims in this note are wrong.** (1) `falsifier_code` is written at **registry intake** (`bench/reference_runner_v3.py:2345`), not only on `result.resolved` — there are 7 write sites. A finding’s own attached falsifier IS visible to the sweep; the blind spot covers only **routing-written bodies that did not resolve**, of which 221 exist archive-wide and **exactly 1 was refused** (C0035). (2) `bench/falsifier_verify.py:298` carries `\b(?:_KEY_FIELDS)\b` → "an answer-key schema field named", a **bare-mention** rule over the same list — so the access-not-mention precedent this note rests on **does not exist**. (3) The `0 of 94` access figure used a regex blind to JSON-escaped quotes; re-measured on the parsed corpus it is **0 of 80**, so the conclusion holds but the instrument did not earn it. Withdrawal 4 is itself wrong: C0029 **was** integrity-refused, so 2 of 3 were, as originally stated. The same guard also fired on the same target in `commissioning_arm4_prose_20260922T053349Z`.
+>
+> A corrected version follows. The recommendation needs rebuilding.
+
 # A lock that jammed, and the inspector who could not see jams
 
 **2 October 2026, 13:50 BST.** Audience: a smart, curious non-specialist. The technical version is *Integrity Guard False Positive*; the spoken companion of the same title is in the text-to-speech folder.
