@@ -333,3 +333,50 @@ class TestTheOutcomeIsReadNotInferred:
         assert "OUTCOME" in r.stdout, r.stdout
         assert r.returncode == 1, "gave up without the run ending"
 
+
+class TestTheVerdictCanLiveElsewhere:
+    """The run's verdict is not always beside the console log.
+
+    `run_simulated_experiment.py` writes its artefacts into a TIMESTAMPED
+    directory it names itself, while the console log sits wherever the operator
+    redirected it. Assuming they share a parent reported NO_SIGNAL for a clean
+    convergence -- the false-negative twin of the defect the cc2 seat found,
+    caught on the first real launch before the run ended rather than after.
+    """
+
+    def test_the_outcome_is_read_from_the_named_directory(self, tmp_path):
+        logdir, rundir = tmp_path / "console", tmp_path / "run_20261002T0351Z"
+        logdir.mkdir(); rundir.mkdir()
+        log = logdir / "run.log"
+        log.write_text("dispatching\n", encoding="utf-8")
+        (rundir / "completion_signal.json").write_text(
+            json.dumps({"status": "CONVERGED",
+                        "reason": "CRITICAL_QUIESCENCE_CONVERGED"}),
+            encoding="utf-8")
+        dead = subprocess.Popen([sys.executable, "-c", "pass"]); dead.wait()
+        r = _run(["--log", str(log), "--pid", str(dead.pid), "--once",
+                  "--interval", "1", "--stall-seconds", "3600",
+                  "--outcome-dir", str(rundir)])
+        assert "OUTCOME CLEAN" in r.stdout, r.stdout
+
+    def test_without_the_flag_it_still_reads_the_logs_own_directory(self, tmp_path):
+        """ANTI-REGRESSION: the default must not have moved."""
+        (tmp_path / "completion_signal.json").write_text(
+            json.dumps({"status": "INCOMPLETE", "reason": "HALTED_X"}),
+            encoding="utf-8")
+        log = tmp_path / "run.log"
+        log.write_text("x\n", encoding="utf-8")
+        dead = subprocess.Popen([sys.executable, "-c", "pass"]); dead.wait()
+        r = _run(["--log", str(log), "--pid", str(dead.pid), "--once",
+                  "--interval", "1", "--stall-seconds", "3600"])
+        assert "OUTCOME BAD" in r.stdout, r.stdout
+
+    def test_a_wrong_outcome_dir_says_no_signal_rather_than_guessing(self, tmp_path):
+        log = tmp_path / "run.log"
+        log.write_text("x\n", encoding="utf-8")
+        dead = subprocess.Popen([sys.executable, "-c", "pass"]); dead.wait()
+        r = _run(["--log", str(log), "--pid", str(dead.pid), "--once",
+                  "--interval", "1", "--stall-seconds", "3600",
+                  "--outcome-dir", str(tmp_path / "nowhere")])
+        assert "OUTCOME NO_SIGNAL" in r.stdout, r.stdout
+

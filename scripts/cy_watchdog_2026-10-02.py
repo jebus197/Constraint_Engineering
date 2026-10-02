@@ -176,7 +176,7 @@ OUTCOME_UNREADABLE = "UNREADABLE"
 
 
 
-def read_outcome(log: pathlib.Path) -> tuple:
+def read_outcome(log: pathlib.Path, outcome_dir: pathlib.Path | None = None) -> tuple:
     """What the run ended AS. Returns (verdict, detail).
 
     THE DEFECT THIS FIXES, found by the cc2 seat in the free panel of
@@ -203,7 +203,13 @@ def read_outcome(log: pathlib.Path) -> tuple:
     recording why is worse than any NAMED halt, because a named halt can be
     acted on and an unrecorded one cannot even be classified.
     """
-    d = log.parent
+    # THE VERDICT IS NOT ALWAYS BESIDE THE CONSOLE LOG, and assuming it was
+    # would have manufactured a false NO_SIGNAL at the end of a 2-hour run.
+    # `run_simulated_experiment.py` writes its artefacts into a TIMESTAMPED
+    # directory it names itself, while the console log is wherever the operator
+    # redirected it. Caught on the first real launch, 2026-10-02, before the
+    # run ended rather than after.
+    d = pathlib.Path(outcome_dir) if outcome_dir else log.parent
     sig = d / "completion_signal.json"
     reports = sorted(d.glob("*_report.json"))
     if not sig.is_file() and not reports:
@@ -357,6 +363,9 @@ def main() -> int:
                     help="say something even when all is well, so a dead "
                          "watchdog can be told from a quiet one")
     ap.add_argument("--max-hours", type=float, default=24.0)
+    ap.add_argument("--outcome-dir", default=None,
+                    help="where the run writes completion_signal.json and its "
+                         "report, when that is not the log's own directory")
     ap.add_argument("--once", action="store_true", help="single probe, then exit")
     args = ap.parse_args()
     if not args.log:
@@ -415,7 +424,8 @@ def main() -> int:
     # EVERY EXIT PATH SPEAKS THE OUTCOME. One more stdout line is one more
     # Monitor wake, which is exactly what a halt deserves and what it did not
     # get before.
-    verdict, detail = read_outcome(log)
+    verdict, detail = read_outcome(
+        log, pathlib.Path(args.outcome_dir) if args.outcome_dir else None)
     say(f"OUTCOME {verdict}", detail)
     say("CLOSED", f"watchdog exiting; {rounds} round(s) landed; "
                   f"run_ended={ended}; outcome={verdict}")
