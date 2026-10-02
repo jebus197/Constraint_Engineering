@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 1 October 2026 23:42 BST (2026-10-01T23:42:55+01:00)
+Generated: 2 October 2026 04:49 BST (2026-10-02T04:49:22+01:00)
 
 ---
 
@@ -18,16 +18,21 @@ Generated: 1 October 2026 23:42 BST (2026-10-01T23:42:55+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `5a81bd6` fix: the compaction alarm read UTC as local, and the index audit could not see grouped pointers
-- **Committed:** 2026-10-01 23:41:50 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 1
-- **Working tree at snapshot time:** clean
+- **Last commit (the PARENT of the commit containing this file):** `bf04cf7` fix: 3 guards met the same category error, and A7 stops drifting
+- **Committed:** 2026-10-02 04:24:13 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 8
+- **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
+
+Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
+- `M experimental_notes/CDSFL_Agent_Operational_Plan.md`
+- `M experimental_notes/data/instrument_inventory.json`
+- `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**9485 tests collected** at 1 October 2026 23:42 BST, HEAD `5a81bd6` (`python3 -m pytest bench/tests/ --co -q`)
+**9585 tests collected** at 2 October 2026 04:49 BST, HEAD `bf04cf7` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,13 +62,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `bf04cf7 fix: 3 guards met the same category error, and A7 stops drifting`
+- `ad8fe13 feat: rescue the seat evidence that predated the preservation repair`
+- `43d570a fix: the watchdog went blind on truncation, and the Q2 split the founder ruled on`
+- `1ac147c fix: closure never asked whether a fix cures the defect its finding claims`
+- `057781d fix: the 4 red tests were all mine, and each was a real tension not a typo`
+- `8a39117 fix: a prose falsifier could not reach its own target, which halted both runs at round 0`
+- `2a06f7b fix: the cy watchdog reported a halt exactly like a convergence`
+- `0edee1d feat: a mechanical cy trigger, because the 30-minute cap was a half-truth`
+- `04bff14 sv: the alarm's clock, the index audit's grouped pointers, and a report figure withdrawn`
 - `5a81bd6 fix: the compaction alarm read UTC as local, and the index audit could not see grouped pointers`
-- `8e9ea62 docs: the closing report records the second save, and the index warning is parked`
-- `623080a sv: the closing report carries the gate diagnosis; the 12:16 gate was never wrong`
-- `6562589 sv: 1 October 2026 — green table, the claim channel on, and the free panel's day review applied`
-- `0f72af3 sv: state save 1 October 2026 12:16 BST — THE CLEAN SUITE RAN AND IT IS RED`
-- `450bb1d sv: state save 1 October 2026 01:22 BST, simulation branch, end of session`
-- `917028b sv: state save 1 October 2026 00:22 BST, simulation branch`
-- `5f7938e Take-home digest of the intelligence-first round, spoken version plus mirror`
-- `b4f37de Apply the intelligence-first round, composed: 4 seat fixes, 3 of which had no guard`
-- `8f4eb83 Brief for the intelligence-first panel round, with 5 figures re-executable`

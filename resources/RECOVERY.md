@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 1 October 2026 23:42 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 2 October 2026 04:49 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -22,6 +22,22 @@ session loss, compaction event, or fresh start with a new model instance.
 **THE ACTION THIS RULING IMPLIES, and it is the founder's, not CC1's.** Put the store location and the passphrase in the password manager, together, off this machine. Losing either makes the sealed archive unrecoverable, and the passphrase cannot be reset — the whole point of the design is that nothing running here can reach it. CC1 cannot do this and should not: it would mean handling the passphrase in plain text.
 
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
+
+---
+
+## SESSION STATE — 2026-10-02 04:30 BST (READ THIS FIRST)
+
+**BRANCH, FIRST, BECAUSE IT DECIDES WHETHER A COMMIT IS LEGITIMATE.** HEAD `bf04cf7` before this save, on `sim/shakedown-2026-09-29`, pushed to its own remote. `main` is untouched at `b536ff86` and byte-identical to `origin/main`, verified after each push. The founder's ruling of 2026-09-30 still binds: simulated work goes to the simulation branch, and `main` is touched only by agreement.
+
+**★★★ THE ROUND-0 PROSE HALT IS SOLVED, AND IT WAS NEVER THE MODEL.** Both `commissioning_arm4_prose` runs, 2026-09-22 and 2026-09-30, stopped at round 0 with `HALTED_IRREDUCIBLE_QUEUE_ALARM`. The free panel of 2026-10-02 found the cause and it is mechanical, as every failure in this project's history has been: falsifiers execute with the working directory set to a throwaway scratch directory, which is the correct isolation and is kept, and every stored falsifier opened the prose target by a RELATIVE path. The read resolved inside the empty scratch directory, so each falsifier died with `FileNotFoundError` before its first assertion, every rung returned `ERROR`, the finding was stamped `routing_deferred` in its birth round, and the queue reached 8 against a bound of 2. A Python target cannot reach this failure at all, because its falsifiers import through `PYTHONPATH`, which is why the halts split by target kind. Fixed by `set_falsifier_target` and `_materialize_target_into` in `bench/falsifier_verify.py`, wired through `_register_falsifier_target` in the runner. The alarm was RIGHT, as it was on 2026-08-01 when its bound was raised twice to silence it.
+
+**★★★ CLOSURE NEVER ASKED WHETHER A FIX CURES THE DEFECT ITS FINDING CLAIMS.** `attempt_close` closes on `VerificationOutcome.PASS`, and `run_verification` runs ruff, mypy, bandit and the experiment's generic test command: it asks whether the fix broke anything. Over the committed sweep at `experimental_notes/data/fix_efficacy_2026-08-30.json`, 126 of 246 conclusively probed fixes do NOT cure their own falsifier, 51.2195 per cent, Wilson [45.0027 per cent, 57.3989 per cent], and every one of those findings closed regardless. The question was not merely unasked but unaskable, because the live call site passed no falsifier. `attempt_close` now takes `efficacy_mode` with values off, record and veto, the runner passes the falsifier and the target's relative path, and the simulated-run configuration sets record. The veto is deliberately NOT on: it would stop over half of all closures at once and change when a run converges, so it earns promotion from a measured run rather than from argument.
+
+**THE `cy` MONITORING HOLE IS CLOSED MECHANICALLY.** `scripts/cy_watchdog_2026-10-02.py` polls a run at a fixed interval and speaks only on an event, so each line becomes a wake-up when armed under a monitor. Absence counts as an event: a stalled log and a dead process both speak, a truncated log is announced and re-read rather than leaving the watcher blind, and the run's recorded outcome is read from its own completion signal so a halt can never be reported like a convergence. A cron heartbeat runs beside it as a second, independent path, because the failure being prevented is a watcher that went quiet.
+
+**WHAT A RECOVERING AGENT SHOULD KNOW ABOUT THE EVIDENCE TREE.** `experimental_notes/seat_evidence/` now holds the rescued backlog: unpreserved seat files fell from 46 of 281 to 9 of 281, and the 9 that remain are scratch paths the founder ruled should stay unpreserved. The rescue is reproducible with `python3 scripts/backfill_seat_evidence_2026-10-02.py --apply`, which is a dry run without the flag. That directory is registered in `bench/repo_paths.ARCHIVE_ROOTS`, so guards treat it as run output rather than live project work: a seat's file is not held to this project's prose standard, its line citations are not required to resolve, and it is not required to parse. Editing it to satisfy a guard would destroy what makes it evidence.
+
+**OPEN, AND THE FOUNDER'S TO DECIDE.** Whether the 3 stale agent worktrees under the hidden Claude directory should be removed, which would delete git references and is one of his reserved categories. Whether cc2's conviction-only class check for low-severity injection should be promoted from the programme of study, fable's visibility half having been applied on his ruling. The disposition of the archived findings closed on a fix that did not cure its own falsifier, where the recommendation is to leave the archive as it stands and flag new cases at closure time rather than rewrite results other figures were computed from.
 
 ---
 

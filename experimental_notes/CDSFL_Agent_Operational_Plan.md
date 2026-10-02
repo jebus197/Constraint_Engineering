@@ -1,3 +1,24 @@
+## ★ RESUME POINTER — 2026-10-02T04:43:48+01:00. SUPERSEDES EVERY POINTER BELOW.
+
+**WHERE TO RESUME: the 3 simulated convergence runs on the prose target.** The founder's instruction of 2026-10-02: *"start a fresh simulated run on the same target as before with the same rules. Three consecutive experimental runs that cleanly converge while you monitor and actively repair everything under full cy protocol (not some lesser version of this) qualifies as a success."* He chose the prose target over the code target and ruled that A19 is closed first, then the runs start without waiting for him.
+
+**THE EXACT LAUNCH, which reproduces arm 4's rules on the same target:**
+```
+nohup python3 bench/tools/run_simulated_experiment.py \
+  --target bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md \
+  --rounds 8 --domain statistics --name <run name> &
+disown
+```
+`run_simulated_experiment.py` does NOT detach itself, so `nohup` and `disown` are required or the run dies with the session. It builds `pattern="four_layer"`, `topology` defaulting to `"star"`, `extension_cap` equal to `--rounds`, and it carries `sk_score_prose_listings=True` and `fix_efficacy_mode="record"`. A local terminal window must tail the log on the founder's own machine rather than in the assistant's pane, because a pane permission prompt stops the watch; open it with `osascript` and a script FILE, never an inline command string.
+
+**MONITOR IT UNDER FULL `cy`, MECHANICALLY.** `python3 scripts/cy_watchdog_2026-10-02.py --log <log> --pid-file <pid> --interval 60 --stall-seconds 900`. Arm it under a monitor so each line it prints is a wake-up, and RE-ARM on expiry: a monitor arming is capped and the 9-hour unmonitored run of 2026-09-29 into 2026-09-30 was an expired watch nobody re-armed. A cron heartbeat runs as the second, independent path.
+
+**THE FALSIFIABLE PREDICTION TO CHECK ON RUN 1, recorded before it starts.** 5 of the 8 decidable claims in the 2026-09-30 prose run went undecided because their falsifiers returned `ERROR`, which was the relative-path fault now fixed. With `_materialize_target_into` in place the next prose run must show MORE than 3 decided of 8. If it still shows 3, the fix did not reach that path and the diagnosis is wrong.
+
+**STATE AT THIS POINTER.** HEAD `bf04cf7` on `sim/shakedown-2026-09-29`; `main` untouched at `b536ff86`. Suite run 3 closed at 4 failed, 9574 passed, 7 skipped, and all 4 failures are fixed since. Outstanding items that do not block the runs: a sweep of the remaining run-directory counters for the symlink double-count, the claim-channel promotion, the Haiku classifier arm, and the blind-then-star disagreement machinery the founder specified.
+
+---
+
 ## ★ RESUME POINTER — 2026-09-30T10:42:04+01:00. SUPERSEDES EVERY POINTER BELOW. WRITTEN AGAINST IMMINENT COMPACTION.
 
 **BRANCH DISCIPLINE IS NOW THE FIRST THING TO GET RIGHT.** Founder ruling 2026-09-30: *"nothing should be committed from simulated runs, except to a local simulated branch. The live repo is the separate canonical branch that should only be touched by agreement between us after I request it, or after a successful real experimental run."* Then, the same morning: *"perhaps we need to create a formal simulated run branch so we can save our results from simulated experiments regardless?"*
