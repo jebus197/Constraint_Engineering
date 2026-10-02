@@ -1114,6 +1114,58 @@ _SECRET_NAME = _re.compile(
     _re.IGNORECASE)
 
 
+#: WHAT A BROKEN STREAM LOOKS LIKE, and why it needed naming.
+#:
+#: The Claude CLI exits 0 and prints its transport failure into STDOUT, so a
+#: dispatch that died halfway reads as a successful dispatch whose answer
+#: happens to be an error sentence. MEASURED 2026-10-02 on simulated run 1:
+#: 4 of 5 seats returned 141 to 246 characters ending "API Error: Response
+#: stalled mid-stream. The response above may be incomplete.", and each was
+#: recorded as a seat response CREDITED WITH 1 FINDING. The 5th seat returned
+#: 39,616 characters. The cause was a VPN being toggled on the operator's
+#: machine, which he does routinely and briefly.
+#:
+#: THIS IS THE RULE THIS PROJECT ALREADY WROTE FOR WOLFRAM, applied to the seat
+#: transport: "a failed call is NOT a result". `.claude/CLAUDE.md` records the
+#: same shape there -- `[HTTP Error 401]` arriving as a successful tool result
+#: -- and the remedy is the same: recognise the failure, never score it.
+_STALL_MARKERS = (
+    "response stalled mid-stream",
+    "api error: request was aborted",
+    "api error: connection error",
+    "api error: terminated",
+    "api error: fetch failed",
+    "api error: socket hang up",
+)
+
+
+def stalled_mid_stream(text: str) -> "str | None":
+    """A reason string when a reply is a BROKEN STREAM, else None.
+
+    Shaped to compose with `call_claude_cli`'s `accept` contract, which already
+    retries a rejected reply "like any other transport failure" -- the mechanism
+    existed and nothing used it for this.
+
+    MATCHED CASE-INSENSITIVELY AND ANYWHERE IN THE REPLY, because the marker
+    arrives APPENDED to whatever the seat had managed to say: the text before it
+    is real but truncated, which is more dangerous than an empty reply, not
+    less. A seat that produced 3 of its 9 findings before the stream died would
+    otherwise have a partial registry recorded as a complete one.
+    """
+    low = (text or "").lower()
+    for m in _STALL_MARKERS:
+        if m in low:
+            return f"broken stream: {m!r} present in the reply"
+    return None
+
+
+#: A brief outage needs SECONDS, not milliseconds. `backoff_base` defaults to
+#: 1.0, giving 1 s then 2 s, which is shorter than a VPN handshake; the operator
+#: toggles his VPN deliberately and says "the outage is only ever brief", so a
+#: stall waits at least this long before the next attempt.
+STALL_RETRY_MIN_WAIT = 20.0
+
+
 def seat_environment(base: "dict[str, str] | None" = None,
                      keep: "tuple[str, ...]" = (),
                      seat: "str | None" = None) -> "dict[str, str]":
@@ -1389,6 +1441,20 @@ def call_claude_cli(
                     "empty_response", model_id, "dispatch",
                     f"Empty stdout after {elapsed:.1f}s",
                 )
+            # A BROKEN STREAM IS NOT A REPLY, and it is checked BEFORE the
+            # caller's substance test rather than inside it: `accept` defaults
+            # to None, so a stall would otherwise be returned as the answer no
+            # matter what any caller does. Retried like any transport failure,
+            # which is what it is.
+            _stall = stalled_mid_stream(text)
+            if _stall:
+                last_error = RuntimeError(f"stalled dispatch: {_stall}")
+                _log(f"  [claude-cli:{model_id}] attempt {attempt} STALLED "
+                     f"({len(text)} chars): {_stall}")
+                if attempt < max_retries:
+                    time.sleep(max(STALL_RETRY_MIN_WAIT,
+                                   backoff_base * (2 ** (attempt - 1))))
+                continue
             if accept is not None:
                 reason = accept(text)
                 if reason:

@@ -48,7 +48,9 @@ for p in (str(REPO), str(REPO / "bench")):
         sys.path.insert(0, p)
 
 import reference_runner_v3 as R   # noqa: E402
-from experiment_11_orchestrator import WOLFRAM_ARGS, seat_environment  # noqa: E402
+from experiment_11_orchestrator import (  # noqa: E402
+    STALL_RETRY_MIN_WAIT, WOLFRAM_ARGS, seat_environment,
+    stalled_mid_stream)
 
 #: Vendor label -> simulated stand-in. Order fixed so a run is reproducible.
 #: Founder ruling 2026-08-08 supersedes the earlier ``SIM-A``..``SIM-E`` form:
@@ -63,6 +65,11 @@ LABEL_MAP = {v: f"{v}-SIM" for v in
 _LOCK = threading.Lock()
 _CALLS: list = []
 
+
+#: How many times a STALLED dispatch is re-attempted before the run is
+#: told the transport is dead. 3 attempts, 20 s then 40 s apart, covers a
+#: brief outage without masking a sustained one.
+STALL_ATTEMPTS = 3
 
 def _sim_label(mc_label: str) -> str:
     return LABEL_MAP.get(mc_label, mc_label if str(mc_label).endswith("-SIM")
@@ -138,7 +145,7 @@ def make_shim(model: str = "opus", timeout: int = 900):
     anything, so there is no longer a place where a label can be dropped.
     """
 
-    def _dispatch(model_config, prompt, cdsfl_text,
+    def _dispatch_once(model_config, prompt, cdsfl_text,
                   wall_clock_limit: float = 0, enable_tools: bool = False):
         label = _sim_label(getattr(model_config, "label", "?"))
         t0 = time.monotonic()
@@ -230,6 +237,60 @@ def make_shim(model: str = "opus", timeout: int = 900):
         el = time.monotonic() - t0
         _record(label, el, len(text), budget, None)
         return text, el
+
+    def _dispatch(model_config, prompt, cdsfl_text,
+                  wall_clock_limit: float = 0, enable_tools: bool = False):
+        """Retry a dispatch whose STREAM BROKE, which is not a bad answer.
+
+        THE DEFECT, MEASURED ON SIMULATED RUN 1, 2026-10-02. The Claude CLI
+        exits 0 and prints its transport failure into STDOUT, so 4 of 5 seats
+        returned 141 to 246 characters ending "API Error: Response stalled
+        mid-stream" and each was recorded as a seat response CREDITED WITH 1
+        FINDING; the 5th returned 39,616 characters. Round 0 would have been
+        built from 4 near-empty seats and 1 real one, and the run would still
+        have reported a number. The cause was a VPN toggled on the operator's
+        machine, which he does routinely: "Sometimes I need to turn vpn on and
+        off on my Mac Mini. The outage is only ever brief."
+
+        SO A BRIEF OUTAGE COSTS A RETRY, NOT A RUN, and the waits are seconds
+        rather than milliseconds because `backoff_base` was built for rate
+        limits and 1 second is shorter than a VPN handshake.
+
+        AND IF EVERY ATTEMPT STALLS IT RAISES, deliberately. This module's own
+        error contract says so: the real `dispatch_to_model` RAISES on
+        transport death and `_dispatch_single_model` converts that to the
+        `__DISPATCH_FAILED__` sentinel itself, so returning a sentinel here
+        made every other path read a dead subprocess as a success. A stall is
+        transport death; it is never a finding.
+        """
+        # THE SIGNATURE IS SPELLED OUT, NOT `*a, **kw`, because
+        # `test_the_shim_signature_matches_the_primitive` compares the shim's
+        # parameter LIST against the real `dispatch_to_model`'s. A varargs
+        # wrapper passes every call correctly and still breaks the seam's
+        # contract, which is the thing that guard exists to hold: the stand-in
+        # must be substitutable by inspection, not merely by behaviour.
+        label = _sim_label(getattr(model_config, "label", "") or "")
+        last = None
+        for attempt in range(1, STALL_ATTEMPTS + 1):
+            text, el = _dispatch_once(
+                model_config, prompt, cdsfl_text,
+                wall_clock_limit=wall_clock_limit, enable_tools=enable_tools)
+            reason = stalled_mid_stream(text)
+            if not reason:
+                return text, el
+            last = reason
+            _record(label, el, len(text), 0, f"STALLED attempt {attempt}")
+            print(f"    [{label}] attempt {attempt} STALLED after {el:.1f}s "
+                  f"({len(text)} chars): {reason}", flush=True)
+            if attempt < STALL_ATTEMPTS:
+                wait = STALL_RETRY_MIN_WAIT * attempt
+                print(f"    [{label}] waiting {wait:.0f}s for the transport, "
+                      f"then re-dispatching", flush=True)
+                time.sleep(wait)
+        raise RuntimeError(
+            f"{label} dispatch stalled mid-stream on all {STALL_ATTEMPTS} "
+            f"attempts ({last}). A broken stream is not a reply: refusing to "
+            f"record it as one.")
 
     return _dispatch
 
