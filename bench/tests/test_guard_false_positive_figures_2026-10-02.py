@@ -86,6 +86,37 @@ class TestTheProducerRuns:
             f"statsmodels and mpmath disagree on a Wilson interval: {agreements}")
 
 
+    def test_the_census_excludes_the_documents_written_about_the_token(self):
+        """THE MEASURING DOCUMENT MUST NOT BE INSIDE THE MEASURED POPULATION.
+
+        The note counts occurrences of `seeded_faults`. The note, its producer
+        and this very file all discuss `seeded_faults`, so including them made
+        the figure rise every time the analysis was revised -- measured, from
+        111 to 127 occurrences on committing the first draft.
+
+        This test went in because mutation M5 proved the exclusion was
+        UNGUARDED: removing it, verified applied by reading the file back,
+        failed 0 of 9 tests. An exclusion nothing can detect the loss of is an
+        addition nothing reaches.
+        """
+        import subprocess
+        r = subprocess.run([sys.executable, str(PRODUCER)],
+                           capture_output=True, text=True, timeout=900)
+        assert r.returncode == 0, r.stderr[-1500:]
+        all_m = re.search(r"plural occurrences, ALL tracked files: (\d+) across (\d+)", r.stdout)
+        pop_m = re.search(r"plural occurrences, POPULATION \(those 3 excluded\): (\d+) across (\d+)", r.stdout)
+        assert all_m, f"the all-files census line is gone: {r.stdout[-600:]}"
+        assert pop_m, f"the population census line is gone: {r.stdout[-600:]}"
+        all_occ, pop_occ = int(all_m.group(1)), int(pop_m.group(1))
+        assert pop_occ < all_occ, (
+            f"the population census ({pop_occ}) does not exclude the artefacts "
+            f"written about the token ({all_occ} with them): the exclusion has "
+            f"been removed, so publishing the analysis inflates the figure the "
+            f"analysis reports")
+        assert int(pop_m.group(2)) < int(all_m.group(2)), (
+            "the population file count does not exclude the 3 artefacts")
+
+
 class TestTheNotesStructuralClaims:
 
     def test_the_guard_refuses_the_field_on_MERE_MENTION(self):

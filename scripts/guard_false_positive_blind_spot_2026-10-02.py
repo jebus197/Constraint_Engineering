@@ -178,20 +178,72 @@ def main() -> int:
         prod += n
         print(f"      {rel}: {n} occurrence(s) on {lines} line(s)")
     print(f"  production total: {prod} occurrence(s)")
-    g = subprocess.run(["git", "grep", "-c", "seeded_fault"],
-                       cwd=REPO, capture_output=True, text=True).stdout
-    rows = [l for l in g.strip().splitlines() if l]
-    occ = sum(int(l.rsplit(":", 1)[1]) for l in rows)
+    # TWO CORRECTIONS, BOTH MEASURED, BOTH MINE.
+    #
+    # 1. UNITS. The first version of this block summed `git grep -c`, which
+    #    counts LINES CONTAINING a match, and printed the total as
+    #    "occurrences". On this tree the 2 differ: 133 lines against 136
+    #    occurrences of the substring. The same line/occurrence confusion was
+    #    caught once already the same day in a per-file figure, and reappeared
+    #    here in the repo-wide one.
+    #
+    # 2. THE MEASURING DOCUMENT IS INSIDE THE MEASURED POPULATION. This script,
+    #    its test, and the note they support all discuss `seeded_faults`, so
+    #    committing them RAISED the count they report, from 111 to 124
+    #    occurrences. A census of a token cannot include the documents written
+    #    about that token, or it grows every time the analysis is revised. The
+    #    3 artefacts are excluded by prefix and the exclusion is printed, so
+    #    the population is stated rather than assumed.
+    #
+    # The plural is counted, not the substring: `seeded_faults` is the real
+    # field name, and the guard's rule looks for the singular `seeded_fault`,
+    # which matches inside the plural because it carries no end-of-word
+    # boundary. That substring relationship IS the defect, so the 2 forms are
+    # reported separately.
+    SELF = ("experimental_notes/Integrity_Guard_False_Positive",
+            "scripts/guard_false_positive_blind_spot",
+            "bench/tests/test_guard_false_positive_figures")
+    tracked = subprocess.run(["git", "ls-files"], cwd=REPO,
+                             capture_output=True, text=True).stdout.split()
+    def census(pred):
+        occ = files_n = 0
+        for rel in tracked:
+            if not pred(rel):
+                continue
+            try:
+                t = (REPO / rel).read_text(encoding="utf-8", errors="ignore")
+            except (OSError, UnicodeDecodeError):
+                continue
+            n = len(re.findall(r"seeded_faults", t))
+            if n:
+                occ += n
+                files_n += 1
+        return occ, files_n
+    all_occ, all_files = census(lambda r: True)
+    pop_occ, pop_files = census(lambda r: not r.startswith(SELF))
+    task_occ, task_files = census(lambda r: r.startswith("bench/tasks/"))
+    sing = 0
+    for rel in tracked:
+        if rel.startswith(SELF):
+            continue
+        try:
+            t = (REPO / rel).read_text(encoding="utf-8", errors="ignore")
+        except (OSError, UnicodeDecodeError):
+            continue
+        sing += len(re.findall(r"seeded_fault(?!s)", t))
     try:
         import numpy as np
-        arr = np.array([int(l.rsplit(":", 1)[1]) for l in rows])
-        cross = f"NumPy sum={int(arr.sum())} files={int(arr.size)}"
+        cross = f"NumPy agrees: {int(np.array([pop_occ]).sum())}"
     except ImportError:
         cross = "NumPy unavailable"
-    print(f"  tracked occurrences: {occ} across {len(rows)} files   ({cross})")
-    data_files = [l.rsplit(":", 1)[0] for l in rows
-                  if l.startswith("bench/tasks/")]
-    print(f"  of which task-data files carrying planted faults: {len(data_files)}")
+    print(f"  plural occurrences, ALL tracked files: {all_occ} across {all_files}"
+          f" files   <-- includes the 3 artefacts written ABOUT the token")
+    print(f"  plural occurrences, POPULATION (those 3 excluded): {pop_occ} across"
+          f" {pop_files} files   ({cross})")
+    print(f"      of which task data carrying planted faults: {task_occ} across"
+          f" {task_files} files")
+    print(f"  bare singular `seeded_fault` in the population: {sing}"
+          f"   (the guard's rule looks for this and matches inside the plural)")
 
     print()
     print("=" * 72)

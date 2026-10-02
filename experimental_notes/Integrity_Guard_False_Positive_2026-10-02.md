@@ -1,6 +1,6 @@
 # Integrity guard false positive, and a false-positive test that cannot fail
 
-**2 October 2026, 13:30 BST.** Audience: a reproducing engineer. The plain-English companion for a non-coding reader is `~/Desktop/CDSFL_tts/Integrity_Guard_False_Positive_2026-10-02.txt`.
+**2 October 2026, 13:50 BST.** Audience: a reproducing engineer. The plain-English companion for a non-coding reader is `~/Desktop/CDSFL_tts/Integrity_Guard_False_Positive_2026-10-02.txt`.
 
 **Producer for every figure below:** `scripts/guard_false_positive_blind_spot_2026-10-02.py`. Run it to reproduce the document. No figure in this note exists only as prose.
 
@@ -50,7 +50,9 @@ The rule is in `bench/falsifier_verify.py`, `_KEY_MATERIAL_RULES`:
  "seed vocabulary (knowledge of which claims were seeded)"),
 ```
 
-`seeded[_\- ]fault` matches `seeded_faults`. C0035's body uses it inside a set literal of expected element-level keys, derived from `bench/evaluate.py` rather than asserted, to test whether the spec document names the fields `score_results()` reads:
+`seeded[_\- ]fault` matches `seeded_faults` **because the alternative carries no end-of-word boundary**, so the singular is a strict substring of the plural. The decisive measurement: the bare singular `seeded_fault(?!s)` occurs **0 times** in the tracked population, against **111** occurrences of the plural. This rule has never matched the string it was written to catch; every match it has produced is a substring hit inside the legitimate field name.
+
+C0035's body uses it inside a set literal of expected element-level keys, derived from `bench/evaluate.py` rather than asserted, to test whether the spec document names the fields `score_results()` reads:
 
 ```python
 FALLBACK = {"task_id", "domain", "prompt", "seeded_faults", "control",
@@ -86,9 +88,11 @@ It has never fired in one: **0 of 12** live run directories carry an integrity v
 | measurement | value |
 |---|---|
 | occurrences in `bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md` | **0** |
-| tracked occurrences repo-wide | 109 across 102 files |
-| of those files, task data under `bench/tasks/` carrying planted faults | 94 |
+| plural `seeded_faults`, population (the 3 artefacts written about this analysis excluded) | **111 occurrences across 102 files** |
+| the same census including those 3 artefacts | 127 across 105 files — see correction 7 |
+| of the population's files, task data under `bench/tasks/` carrying planted faults | 94 across 94 files |
 | occurrences in production modules | 14 (`run_benchmark.py` 8, `run_experiment.py` 3, `run_phase2.py` 1, `run_round_robin.py` 1, `evaluate.py` 1) |
+| bare singular `seeded_fault(?!s)` in the population | **0** |
 
 The token does not come from the target document, which contains 0 occurrences. It enters through `bench/evaluate.py:360`, `faults = task.get("seeded_faults", [])`, which the falsifier reads deliberately in order to derive the schema instead of asserting it. `REQUIRED_TASK_FIELDS` at `bench/run_benchmark.py:242` includes `seeded_faults`, so it is the canonical name of the planted-fault ground truth in the task format.
 
@@ -123,7 +127,10 @@ Renaming relabels the collision rather than removing it: the collision is struct
 4. *"2 of the 3 halting criticals were integrity false positives."* **Refuted by execution**: 1 is.
 5. *"20 of 24 archive-wide refusal events, 83.3333%, Wilson [64.1469%, 93.3213%]."* **A double count**: the producing script globbed `*/run.log` and `*/*.log` as a union, counting every `run.log` event twice. Deduped: **10 of 14, 71.4286%**. The script now dedupes with `sorted({p.resolve() for p in LOGS.glob("*/*.log")})` and records the cause in a comment.
 
-Shape shared by 1, 2 and 4: a universal asserted after checking one member. See `feedback_check_the_whole_set` and `feedback_check_the_predicate_before_the_result_2026-10-02`.
+6. *"109 occurrences across 102 files."* **A unit error**: `git grep -c` counts lines containing a match, not occurrences, and the total was reported as occurrences. On this tree the 2 differ, 133 lines against 136 substring occurrences. The same line-versus-occurrence confusion had already been caught the same day in a per-file figure and reappeared in the repo-wide one.
+7. *The same census was taken over all tracked files.* **The measuring document was inside the measured population**: this note, its producer and its test all discuss `seeded_faults`, so committing them raised the figure they report from 111 to 127. The producer now excludes the 3 artefacts by prefix and prints the exclusion, so the population is stated rather than assumed.
+
+Shape shared by 1, 2 and 4: a universal asserted after checking one member. Shape shared by 5, 6 and 7: an instrument measuring something adjacent to what was claimed. See `feedback_check_the_whole_set` and `feedback_check_the_predicate_before_the_result_2026-10-02`.
 
 ---
 
