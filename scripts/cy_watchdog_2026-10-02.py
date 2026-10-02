@@ -50,6 +50,7 @@ import os
 import pathlib
 import re
 import signal
+import subprocess
 import sys
 import time
 
@@ -62,7 +63,19 @@ TROUBLE = re.compile(
     r"\bKilled\b|OOM|RecursionError|PermissionError|"
     r"HALTED|ALARM|REFUSED|UNRECORDED_STOP|"
     r"rate.?limit|quota|401|403|429|5\d\d Server|"
-    r"could not|cannot |failed|FAILED|Error:",
+    # `(?-i:...)` turns IGNORECASE OFF for this alternative alone. With
+    # `re.I` applied to the whole pattern, the uppercase marker `FAILED`
+    # also matched the lower-case word in "0 failed" — which is how a GREEN
+    # result became an alarm. pytest writes the marker in capitals, so
+    # requiring capitals here keeps the real signal and drops the false one.
+    r"could not|cannot |(?-i:FAILED)|Error:|"
+    # A COUNT OF ZERO IS NOT TROUBLE. The bare word `failed` matched
+    # "8,878 passed, 0 failed" on this watchdog's first live outing, which is a
+    # GREEN result reported as an alarm. A channel that cries wolf teaches its
+    # reader to ignore it, and an ignored alarm is the 9-hour hole again by
+    # another route. So a failure count must be NON-ZERO to speak, while
+    # pytest's uppercase per-test `FAILED` marker above still speaks always.
+    r"[1-9]\d*\s+(?:failed|error|errors)\b",
     re.I)
 # Progress markers: worth one line each, because a run that is moving is news
 # after a stall and the absence of them is the stall signal.
@@ -80,6 +93,55 @@ def _alive(pid: int | None) -> bool:
     except PermissionError:
         return True            # exists, owned by someone else
     return True
+
+
+def _cpu_seconds(pid: int | None) -> float | None:
+    """Cumulative CPU time the process has consumed, or None if unknown.
+
+    THE DISCRIMINATOR A STALL ALARM NEEDS, added 2026-10-02 after this script's
+    own first live false positive. It fired STALLED on a panel dispatch whose 2
+    seats were healthy: `claude -p` writes nothing to the dispatcher's log until
+    a seat finishes, and the previous round measured 1720.7 s to first output,
+    so 900 s of silence is NORMAL for that workload and not a fault.
+
+    RAISING THE THRESHOLD WOULD HAVE BEEN THE WRONG FIX. It buys quiet by going
+    blind: a seat that hangs at second 30 then looks identical to one thinking
+    at second 1700. What distinguishes them is not elapsed time, it is whether
+    the process is still DOING anything. CPU% is useless here because a seat
+    blocked on network I/O sits near 0.3%, indistinguishable from idle. But
+    cumulative CPU TIME still advances for a streaming process and does not
+    advance for a hung one.
+
+    So silence remains an event, and the event now carries the one fact that
+    tells the operator which kind of silence it is.
+    """
+    if not pid:
+        return None
+    try:
+        r = subprocess.run(["ps", "-o", "cputime=", "-p", str(pid)],
+                           capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    raw = (r.stdout or "").strip()
+    if not raw:
+        return None
+    # macOS prints [[dd-]hh:]mm:ss
+    days = 0
+    if "-" in raw:
+        d, raw = raw.split("-", 1)
+        try:
+            days = int(d)
+        except ValueError:
+            days = 0
+    parts = raw.split(":")
+    try:
+        nums = [float(p) for p in parts]
+    except ValueError:
+        return None
+    secs = 0.0
+    for n in nums:
+        secs = secs * 60 + n
+    return secs + days * 86400
 
 
 def _read_pid(pid_file: pathlib.Path | None) -> int | None:
@@ -105,13 +167,79 @@ def _round_count(log: pathlib.Path) -> int:
     return n
 
 
+#: What the run actually ENDED AS, which is not the same question as whether it
+#: ended. Kept as 4 values, not 2.
+OUTCOME_CLEAN = "CLEAN"
+OUTCOME_BAD = "BAD"
+OUTCOME_NO_SIGNAL = "NO_SIGNAL"
+OUTCOME_UNREADABLE = "UNREADABLE"
+
+#: Exit codes, so a caller can branch without parsing prose.
+_EXIT = {OUTCOME_CLEAN: 0, OUTCOME_BAD: 2, OUTCOME_NO_SIGNAL: 3,
+         OUTCOME_UNREADABLE: 4}
+
+
+def read_outcome(log: pathlib.Path) -> tuple:
+    """What the run ended AS. Returns (verdict, detail).
+
+    THE DEFECT THIS FIXES, found by the cc2 seat in the free panel of
+    2026-10-02 and reproduced on live code before being fixed: *"it goes silent
+    whenever the run TERMINATES WITHOUT WRITING A TROUBLE TOKEN INTO THE LOG --
+    and then it reports that silence as success. A halted-INCOMPLETE run and a
+    clean convergence produced byte-identical output and the same exit code
+    0."*
+
+    Measured here: a run whose `completion_signal.json` said
+    `HALTED_IRREDUCIBLE_QUEUE_ALARM` and one that said
+    `CRITICAL_QUIESCENCE_CONVERGED` produced the SAME 3 stdout lines and the
+    same exit 0, because this watchdog read only the log and the round files and
+    never the signal. The worst outcome was announced exactly like the best.
+
+    That is the defect class this whole script exists to prevent -- silence read
+    as success -- reproduced inside the fix for it, within an hour of its own
+    tests claiming it could not happen. The lesson is not about this file: a
+    watcher must read the thing that RECORDS the verdict, never infer the
+    verdict from the absence of complaint.
+
+    NO_SIGNAL IS A THIRD VERDICT AND NOT A KIND OF BAD, on the seat's argument
+    and the same principle as `stop_reason_recorded`: a run that ended without
+    recording why is worse than any NAMED halt, because a named halt can be
+    acted on and an unrecorded one cannot even be classified.
+    """
+    d = log.parent
+    sig = d / "completion_signal.json"
+    reports = sorted(d.glob("*_report.json"))
+    if not sig.is_file() and not reports:
+        return OUTCOME_NO_SIGNAL, ("no completion_signal.json and no report: "
+                                   "the run recorded no verdict at all")
+    status = reason = None
+    for src in ([sig] if sig.is_file() else []) + reports:
+        try:
+            s = json.loads(src.read_text(encoding="utf-8"))
+        except (ValueError, OSError) as exc:
+            return OUTCOME_UNREADABLE, f"{src.name} will not parse: {exc}"
+        if not isinstance(s, dict):
+            continue
+        status = status or s.get("status")
+        reason = reason or s.get("reason") or s.get("convergence_reason")
+        if status or reason:
+            break
+    blob = f"{status or ''} {reason or ''}".upper()
+    if not blob.strip():
+        return OUTCOME_NO_SIGNAL, "a verdict file exists but names no status or reason"
+    if "CONVERGED" in blob and "HALT" not in blob:
+        return OUTCOME_CLEAN, f"status={status!r} reason={reason!r}"
+    return OUTCOME_BAD, f"status={status!r} reason={reason!r}"
+
+
 def say(kind: str, msg: str) -> None:
     """One event, one stdout line, flushed. The Monitor tool turns it into a wake."""
     print(f"[cy {time.strftime('%H:%M:%S')}] {kind}: {msg}", flush=True)
 
 
 def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
-          last_change: float, rounds: int, stall_s: int) -> tuple:
+          last_change: float, rounds: int, stall_s: int,
+          last_cpu: float | None = None) -> tuple:
     """One mechanical check. Returns new state and emits events for what changed."""
     now = time.time()
     exists = log.is_file()
@@ -146,15 +274,42 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
 
     if not _alive(pid):
         say("PROCESS GONE", f"pid {pid} is no longer running; the run has ended")
-        return offset, last_size, last_change, rounds, True
+        return offset, last_size, last_change, rounds, True, last_cpu
 
     stalled_for = now - last_change
     if stalled_for > stall_s:
-        say("STALLED", f"no log growth for {int(stalled_for)} s "
-                       f"(threshold {stall_s} s). SILENCE IS NOT SUCCESS — "
-                       f"pause, diagnose, repair, resume.")
+        cpu = _cpu_seconds(pid)
+        advanced = (cpu is not None and last_cpu is not None
+                    and cpu > last_cpu + 0.5)
+        if not advanced and cpu is not None:
+            # NO PRIOR SAMPLE, OR NONE RECENT ENOUGH TO DECIDE ON. The first
+            # stall candidate arrives before any CPU delta can have
+            # accumulated, so deciding from probe history alone reports a
+            # STALL on a healthy process every time the alarm first trips.
+            # Measure it here instead: 2 samples a second apart answer the
+            # question without reference to when this watchdog happened to
+            # start. A second is affordable because a stall candidate is rare
+            # by construction.
+            time.sleep(1.0)
+            again = _cpu_seconds(pid)
+            if again is not None and again > cpu + 0.02:
+                advanced = True
+                last_cpu, cpu = cpu, again
+        if advanced:
+            say("QUIET BUT WORKING",
+                f"no log growth for {int(stalled_for)} s, but pid {pid} has "
+                f"consumed {cpu - last_cpu:.1f} s more CPU since the last "
+                f"check, so it is running and not hung. A panel seat writes "
+                f"nothing until it finishes.")
+        else:
+            say("STALLED", f"no log growth for {int(stalled_for)} s "
+                           f"(threshold {stall_s} s) AND no CPU progress"
+                           + (f" (cputime {cpu:.1f} s, unchanged)" if cpu is not None
+                              else " (CPU time unavailable)")
+                           + ". SILENCE IS NOT SUCCESS — pause, diagnose, "
+                             "repair, resume.")
         last_change = now      # report once per stall window, not every tick
-    return offset, last_size, last_change, rounds, False
+    return offset, last_size, last_change, rounds, False, _cpu_seconds(pid)
 
 
 def main() -> int:
@@ -198,6 +353,7 @@ def main() -> int:
     started = last_beat = time.time()
     rounds = _round_count(log)
     ended = False
+    last_cpu = _cpu_seconds(pid)
 
     stop = {"now": False}
     for sig in (signal.SIGTERM, signal.SIGINT):
@@ -207,8 +363,9 @@ def main() -> int:
             pass
 
     while not stop["now"]:
-        offset, last_size, last_change, rounds, ended = probe(
-            log, pid, offset, last_size, last_change, rounds, args.stall_seconds)
+        offset, last_size, last_change, rounds, ended, last_cpu = probe(
+            log, pid, offset, last_size, last_change, rounds, args.stall_seconds,
+            last_cpu)
         if ended or args.once:
             break
         if (time.time() - last_beat) > args.heartbeat_minutes * 60:
@@ -222,9 +379,16 @@ def main() -> int:
             break
         time.sleep(max(1, args.interval))
 
+    # EVERY EXIT PATH SPEAKS THE OUTCOME. One more stdout line is one more
+    # Monitor wake, which is exactly what a halt deserves and what it did not
+    # get before.
+    verdict, detail = read_outcome(log)
+    say(f"OUTCOME {verdict}", detail)
     say("CLOSED", f"watchdog exiting; {rounds} round(s) landed; "
-                  f"run_ended={ended}")
-    return 0 if ended else 1
+                  f"run_ended={ended}; outcome={verdict}")
+    if not ended:
+        return 1
+    return _EXIT.get(verdict, 2)
 
 
 if __name__ == "__main__":

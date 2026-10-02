@@ -1,0 +1,75 @@
+# Free panel, 2026-10-02: commissioning A19 on a prose target that halts at round 0
+
+The founder has ruled that the next 3 simulated runs target `bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`, a prose specification carrying mandated Python listings, and that **A19 is fixed before any run starts**. Three consecutive clean convergences count as success. The last 2 runs on that target halted at round 0. This brief asks whether the remaining A19 findings can be closed soundly, or whether running that target now would produce a corrupted number.
+
+## Hard constraints, non-negotiable
+
+1. **A gate that cannot fail is worse than no gate.** This project has made that exact error 3 times in this area: 2026-08-01 twice, and again on 2026-09-11 when a repair moved the unfailable gate from `e4` to `e3` *inside the commit that removed it from `e4`* — within a day of CC1 writing the sentence condemning it. Any fix you propose must state how it fails.
+2. **A REJECT is a claim; NO_SCORE is an abstention.** Marking a correct prose fix REJECTED asserts the fix is bad, which is a different and wrong claim. Do not collapse them.
+3. **Findings are confirmed programmatically or by the human, never by model vote.** Your concurrence does not close anything.
+4. **No paid dispatches.** You are the free seats. Do not propose a fix whose validation needs paid runs.
+5. **Never raise `max_irreducible_queue` to clear an alarm.** CC1 raised its bound on 2 occasions on 2026-08-01; both raises were wrong and the alarm was right.
+6. **Simulated seats are labelled `-SIM`.** Never a bare vendor name.
+7. Fixes are SUGGESTED to the human, never auto-applied. Deliver a fix as a file plus a test.
+
+## Declared figures, RE-EXECUTED rather than taken from CC1's typing
+
+<!-- figure: convergence_rate | scripts/night_run_brief_figures_2026-10-02.py | 3 of 9 = 33.3333% -->
+<!-- figure: convergence_rate_interval | scripts/night_run_brief_figures_2026-10-02.py | [12.0584%, 64.5798%] -->
+<!-- figure: cross_tool_agreement | scripts/night_run_brief_figures_2026-10-02.py | tools agree to 3.55e-15 pp -->
+<!-- figure: code_target_outcome | scripts/night_run_brief_figures_2026-10-02.py | 3 converged, 0 halted, of 7 -->
+<!-- figure: prose_target_outcome | scripts/night_run_brief_figures_2026-10-02.py | 0 converged, 2 halted, of 2 -->
+<!-- figure: rounds_at_convergence | scripts/night_run_brief_figures_2026-10-02.py | [4, 4, 4] -->
+<!-- figure: rounds_at_halt | scripts/night_run_brief_figures_2026-10-02.py | ROUNDS AT WHICH A HALTED RUN HALTED -->
+<!-- figure: stop_reason_records_disagree | scripts/night_run_brief_figures_2026-10-02.py | report and signal DISAGREE -->
+
+Those figures say: convergence is the minority outcome; it has only ever happened at the same round; the halts have only ever happened at the same round; and the 2 outcomes split cleanly by target, with the founder's chosen target never having converged. Several runs also carry a stop reason in `completion_signal.json` that the report does not carry at all, so the archive holds 2 records of 1 fact that disagree.
+
+**Every other quantity in this brief is deliberately left for you to compute, and that is not laziness.** CC1 typed a Wilson interval from recall into a code comment earlier tonight and it was wrong at both bounds. The break-even S*, the score the archived exploit receives, and the live value of `sk_s_floor` are all obtainable by execution in your sandbox against committed fixtures and tests named below. Execute them. If your value disagrees with anything stated here in words, your value wins and that disagreement is itself a finding.
+
+## What is already built, stated plainly, so you do not re-derive it
+
+The 2026-08-01 panel ruled unanimously for option (b), disable S_k for prose, with a 9-item MUST list. Most of it is built: `target_kind` with `detect_target_kind`/`resolve_target_kind` reading actual bytes rather than trusting the config; `SK_NO_SCORE`; tri-state `PASS`/`FAIL`/`NO_APPLICABLE_CHECKS`; the queue alarm retargeted to `halt_notify_attach` with its own diagnosis attached; prose tool bypass; and 5 prose test files. Panel round 13 then repaired the fence substrate across 7 markdown shapes and the baseline/gate substrate mismatch, with 6 mutations verified red.
+
+`sk_score_prose_listings` has been enabled in `bench/tools/run_simulated_experiment.py` since 2026-09-21 and has never been exercised, because `--target` defaults to a Python file. The founder's chosen target is the first that would exercise it.
+
+## CC1's own errors in this area, listed so you do not have to find them
+
+- CC1 suppressed a correct alarm on 2 occasions by raising its bound.
+- CC1's repair of the hard gate converted a loud failure into a silent one: before it the pipeline rejected everything and halted visibly; after it the pipeline accepted everything including a shell injection at full marks.
+- CC1's A19 repair handed `_gateable_source` to both effect gates and not to `_capture_baseline`, so `e3` subtracted 2 numbers taken over different texts: a baseline measured over the whole prose against a gate measured over the listings alone. A seat injected real ruff diagnostics into a listing and `e3` awarded it a perfect effect score.
+- Tonight CC1 typed a Wilson interval into a code comment from recall and it was wrong at both bounds.
+
+## The questions
+
+**Q1. `g1`/`g2` are ABSOLUTE where every other gate is a DELTA.** On a prose target carrying fenced code, a fenced FRAGMENT that never parsed therefore convicts every fix. Recorded as unfixed. What is the correct form — deltas, abstention, or something else? Say how your form FAILS, and what it costs on a Python target, where `g1`/`g2` currently work.
+
+**Q2. `sk_s_floor` is left at its permissive default, which makes effect-gate rejection on prose nearly impossible.** Read its live value at `bench/reference_runner_v3.py:1593`. On prose, `e2_regression` is unavailable, so the effect term is carried by `e3` and `e4` alone with `e4` weighted the heavier. COMPUTE the break-even yourself from `bench/tests/test_sk_break_even_2026-09-06.py` and the live config; the record says a single new bandit HIGH does not reject and a pair does. Then SCORE the project's own archived exploit fixture `SHELL_INJECTION_FIX` — a `subprocess.call(..., shell=True)` smuggled into a fenced listing — and compare it against the correct-prose fixture. The record says the two score identically and the exploit is admitted, because bandit rates `shell=True` with a string literal as LOW (B404, B607, B602) while `e4` counts only HIGH and MEDIUM. Verify or refute that by execution. Is the answer to raise the floor, reweight the gates, add a gate that sees LOW-severity injection, or leave the flag off? Note that reweighting changes which fixes are admitted on every Python target ever run, which the founder has previously declined.
+
+**Q3. Is running that target now sound?** The founder has ruled: fix A19, then 3 consecutive clean convergences on the prose spec. If Q1 and Q2 cannot both be closed without a gate that cannot fail, say so plainly and say what the run would produce instead of a convergence.
+
+**Q4. Is the halt correct?** The declared alarm figure above is the whole evidence: every item `status: OPEN` with `open_since_round: 0`, a queue over its bound, several items carrying no falsifier, and no two items sharing a falsifier body. Is this the alarm working, or is something locking findings as irreducible in the round they are born? If the latter, name the mechanism.
+
+**Q5. Attack the new `cy` watchdog**, `scripts/cy_watchdog_2026-10-02.py` with `bench/tests/test_cy_watchdog_wakes_on_silence_2026-10-02.py`. It polls a run on a fixed interval and prints a line only on an event, so a Monitor arming turns each line into a wake. Name a state in which the run is dead or wrong and this script stays silent.
+
+## The instruments that bear on these questions, and what they should tell you
+
+`bench/reference_runner_v3.py`: `compute_sk` around line 11540, `_scoring_prose` at 11629, the one-sided prose block at 11881, `g0_code_retained` at 11687, `g1`/`g2` at 11701-11711, `sk_s_floor` at 1593, the alarm at 7004-7284. Tests: `test_a19_gates_and_baseline_share_a_substrate_2026-09-11.py`, `test_prose_gates_are_one_sided_2026-09-22.py`, `test_prose_listings_are_scoreable_2026-09-11.py`, `test_prose_acceptance_stem.py`, `test_sk_break_even_2026-09-06.py`. The archived exploit fixture is committed; execute against it rather than reasoning about it.
+
+## Produce a fix, and test it
+
+**Deliver every fix as a FILE, written INTO your sandbox repository tree at its real path.** A fix described in prose is not delivered. A fix written to scratch space is destroyed when the sandbox is torn down: rounds 5 and 6 of 2026-09-10 returned 0 source files for exactly that reason while both seats reported writing and running working code. Write the falsifier to its real path under `bench/tests/` too, so it survives the harvest and can be re-run here.
+
+The test must FAIL before your change and pass after. State the mutation you used to prove it bites. Your sandbox is confined and writes to the canonical tree are denied by design, which is why the real path inside YOUR tree is the delivery point.
+
+## What would refute you
+
+State, for each answer, the observation that would show you wrong, and run it if it is runnable here. An answer carrying no refutation condition is incomplete.
+
+## Output shape
+
+For each question: VERDICT (one line), EVIDENCE (what you executed, with output), FIX (diff plus test path, or NONE and why), FAILURE MODE (how your fix fails), REFUTATION (what would show you wrong), CONFIDENCE and what would raise it.
+
+## Termination
+
+Stop when every question has a verdict with executed evidence, or when you have established that a question cannot be answered in this environment and said precisely why. Do not pad. Disagreement with the other seat is information and must be preserved, not smoothed.

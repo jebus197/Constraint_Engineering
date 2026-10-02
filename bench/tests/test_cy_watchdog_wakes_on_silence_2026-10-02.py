@@ -22,6 +22,7 @@ text would only confirm it describes itself consistently.
 """
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -71,7 +72,12 @@ class TestSilenceIsAnEvent:
         r = _run(["--log", str(log), "--pid", str(dead.pid),
                   "--once", "--interval", "1"])
         assert "PROCESS GONE" in r.stdout, r.stdout
-        assert r.returncode == 0, "a run that ended is a CLEAN watchdog exit"
+        # EXIT SEMANTICS CHANGED DELIBERATELY, 2026-10-02. This asserted 0 for
+        # "the run ended", which conflated ending with ending WELL — the exact
+        # defect the cc2 seat found. With no verdict file present the outcome is
+        # NO_SIGNAL, which is its own exit code.
+        assert r.returncode == 3, f"expected NO_SIGNAL exit, got {r.returncode}"
+        assert "OUTCOME NO_SIGNAL" in r.stdout
 
     def test_a_live_process_is_not_called_gone(self, tmp_path):
         log = tmp_path / "run.log"
@@ -100,6 +106,36 @@ class TestTroubleAndProgressAreSpoken:
         r = _run(["--log", str(log), "--pid", str(os.getpid()),
                   "--stall-seconds", "3600", "--once", "--interval", "1"])
         assert "TROUBLE" in r.stdout, f"{line!r} did not wake it: {r.stdout}"
+
+    @pytest.mark.parametrize("green", [
+        "suite: GREEN at 1cfc30e - 8,878 passed, 0 failed",
+        "501 passed in 31.04s",
+        "9375 passed, 8 skipped, 0 failed",
+    ])
+    def test_a_green_result_is_not_trouble(self, tmp_path, green):
+        """A COUNT OF ZERO IS NOT TROUBLE. The bare word `failed` matched
+        '0 failed' on this watchdog's first live outing, turning a GREEN suite
+        result into an alarm. An alarm that cries wolf trains its reader to
+        ignore it, which is the 9-hour hole again by another route."""
+        log = tmp_path / "run.log"
+        log.write_text(green + "\n", encoding="utf-8")
+        r = _run(["--log", str(log), "--pid", str(os.getpid()),
+                  "--stall-seconds", "3600", "--once", "--interval", "1"])
+        assert "TROUBLE" not in r.stdout, r.stdout
+
+    @pytest.mark.parametrize("red", [
+        "3 failed, 9372 passed in 3217.53s",
+        "1 failed, 500 passed",
+        "FAILED bench/tests/test_x.py::test_y",
+        "2 errors in 4.1s",
+    ])
+    def test_a_real_failure_count_still_wakes_the_model(self, tmp_path, red):
+        """THE ANTI-REGRESSION for the narrowing above."""
+        log = tmp_path / "run.log"
+        log.write_text(red + "\n", encoding="utf-8")
+        r = _run(["--log", str(log), "--pid", str(os.getpid()),
+                  "--stall-seconds", "3600", "--once", "--interval", "1"])
+        assert "TROUBLE" in r.stdout, f"{red!r} did not wake it: {r.stdout}"
 
     def test_an_ordinary_line_does_not_wake_the_model(self, tmp_path):
         log = tmp_path / "run.log"
@@ -154,3 +190,145 @@ class TestItCannotItselfBecomeTheSilentWatcher:
         r = _run(["--log", str(log), "--pid-file", str(bad),
                   "--stall-seconds", "3600", "--once", "--interval", "1"])
         assert "ARMED" in r.stdout and "CLOSED" in r.stdout
+
+class TestQuietButWorkingIsNotAStall:
+    """A process that is silent AND busy must not be called stalled.
+
+    THE FIRST LIVE FALSE POSITIVE, 2026-10-02. This watchdog fired STALLED on a
+    panel dispatch whose 2 seats were healthy: `claude -p` writes nothing to the
+    dispatcher's log until a seat finishes, and the previous round measured
+    1720.7 s to first output, so 900 s of silence was normal.
+
+    RAISING THE THRESHOLD WOULD HAVE BEEN THE WRONG FIX, which is why this class
+    exists rather than a bigger default. A larger threshold buys quiet by going
+    blind: a seat hung at second 30 becomes indistinguishable from one thinking
+    at second 1700. CPU PERCENT cannot separate them either, because a seat
+    blocked on network I/O sits near 0.3%. Cumulative CPU TIME can: it advances
+    for a streaming process and not for a hung one.
+    """
+
+    def test_a_busy_silent_process_reports_working_not_stalled(self, tmp_path):
+        log = tmp_path / "run.log"
+        log.write_text("starting\n", encoding="utf-8")
+        burner = subprocess.Popen(
+            [sys.executable, "-c",
+             "import time\nt=time.time()\nwhile time.time()-t<45: pass"])
+        try:
+            time.sleep(3)          # let it bank measurable CPU time
+            r = _run(["--log", str(log), "--pid", str(burner.pid),
+                      "--stall-seconds", "1", "--interval", "2",
+                      "--heartbeat-minutes", "99", "--max-hours", "0.0028"],
+                     timeout=120)
+        finally:
+            burner.kill(); burner.wait()
+        assert "QUIET BUT WORKING" in r.stdout, (
+            f"a busy silent process was misreported; stdout: {r.stdout}")
+        # The burner outlives the watchdog by design: a fixture that expires
+        # mid-run makes the watchdog correctly report a stall and the test
+        # wrongly report a bug. That happened on the first attempt here.
+        assert "STALLED" not in r.stdout, (
+            f"a busy process was called stalled; stdout: {r.stdout}")
+
+    def test_a_truly_idle_silent_process_is_still_called_stalled(self, tmp_path):
+        """THE ANTI-REGRESSION. Silence is still an event when nothing is doing
+        anything, or this fix has simply disabled the alarm."""
+        log = tmp_path / "run.log"
+        log.write_text("starting\n", encoding="utf-8")
+        idle = subprocess.Popen([sys.executable, "-c",
+                                 "import time; time.sleep(60)"])
+        try:
+            time.sleep(3)
+            r = _run(["--log", str(log), "--pid", str(idle.pid),
+                      "--stall-seconds", "1", "--interval", "2",
+                      "--heartbeat-minutes", "99", "--max-hours", "0.0028"],
+                     timeout=120)
+        finally:
+            idle.kill(); idle.wait()
+        assert "STALLED" in r.stdout, (
+            f"an idle silent process was NOT reported, so the alarm is now "
+            f"blind; stdout: {r.stdout}")
+
+    def test_cpu_seconds_parses_the_platform_format_and_degrades_to_none(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("cywd", WD)
+        m = importlib.util.module_from_spec(spec)
+        sys.modules["cywd"] = m
+        spec.loader.exec_module(m)
+        mine = m._cpu_seconds(os.getpid())
+        assert mine is not None and mine >= 0.0, mine
+        assert m._cpu_seconds(None) is None
+        assert m._cpu_seconds(9999999) is None, "a dead pid must not fabricate a time"
+
+
+class TestTheOutcomeIsReadNotInferred:
+    """A halt and a convergence must NOT look alike. Panel finding, 2026-10-02.
+
+    cc2, verbatim: *"it goes silent whenever the run TERMINATES WITHOUT WRITING
+    A TROUBLE TOKEN INTO THE LOG — and then it reports that silence as success.
+    A halted-INCOMPLETE run and a clean convergence produced byte-identical
+    output and the same exit code 0."* Reproduced on live code before the fix.
+    """
+
+    def _ended_run(self, tmp_path, signal):
+        tmp_path.mkdir(parents=True, exist_ok=True)
+        (tmp_path / "round_00.json").write_text("{}", encoding="utf-8")
+        if signal is not None:
+            (tmp_path / "completion_signal.json").write_text(
+                json.dumps(signal), encoding="utf-8")
+        log = tmp_path / "run.log"
+        log.write_text("dispatching seats\nround 0 complete\nwriting report\n",
+                       encoding="utf-8")
+        dead = subprocess.Popen([sys.executable, "-c", "pass"]); dead.wait()
+        return _run(["--log", str(log), "--pid", str(dead.pid),
+                     "--once", "--interval", "1", "--stall-seconds", "3600"])
+
+    def test_a_clean_convergence_is_reported_clean(self, tmp_path):
+        r = self._ended_run(tmp_path, {"status": "CONVERGED",
+                                       "reason": "CRITICAL_QUIESCENCE_CONVERGED"})
+        assert "OUTCOME CLEAN" in r.stdout, r.stdout
+        assert r.returncode == 0
+
+    def test_a_halt_is_reported_bad_and_does_not_exit_zero(self, tmp_path):
+        r = self._ended_run(tmp_path, {"status": "INCOMPLETE",
+                                       "reason": "HALTED_IRREDUCIBLE_QUEUE_ALARM"})
+        assert "OUTCOME BAD" in r.stdout, r.stdout
+        assert r.returncode == 2, "a halt must not exit 0"
+
+    def test_the_two_are_distinguishable(self, tmp_path):
+        """THE EXACT COMPARISON THE SEAT MADE. Before the fix these were equal."""
+        a = self._ended_run(tmp_path / "a", {"status": "CONVERGED",
+                                             "reason": "CRITICAL_QUIESCENCE_CONVERGED"})
+        b = self._ended_run(tmp_path / "b", {"status": "INCOMPLETE",
+                                             "reason": "HALTED_IRREDUCIBLE_QUEUE_ALARM"})
+        assert a.returncode != b.returncode
+        assert "OUTCOME CLEAN" in a.stdout and "OUTCOME BAD" in b.stdout
+
+    def test_an_unrecorded_verdict_is_its_own_third_class(self, tmp_path):
+        """NO_SIGNAL is not a kind of BAD: an unrecorded end cannot be acted on."""
+        r = self._ended_run(tmp_path, None)
+        assert "OUTCOME NO_SIGNAL" in r.stdout, r.stdout
+        assert r.returncode == 3
+
+    def test_a_corrupt_verdict_file_is_reported_not_guessed(self, tmp_path):
+        (tmp_path / "round_00.json").write_text("{}", encoding="utf-8")
+        (tmp_path / "completion_signal.json").write_text("{not json",
+                                                         encoding="utf-8")
+        log = tmp_path / "run.log"
+        log.write_text("x\n", encoding="utf-8")
+        dead = subprocess.Popen([sys.executable, "-c", "pass"]); dead.wait()
+        r = _run(["--log", str(log), "--pid", str(dead.pid), "--once",
+                  "--interval", "1", "--stall-seconds", "3600"])
+        assert "OUTCOME UNREADABLE" in r.stdout, r.stdout
+        assert r.returncode == 4
+
+    def test_the_outcome_is_spoken_even_when_the_watchdog_gives_up(self, tmp_path):
+        """Every exit path, not just the tidy one."""
+        log = tmp_path / "run.log"
+        log.write_text("x\n", encoding="utf-8")
+        r = _run(["--log", str(log), "--pid", str(os.getpid()),
+                  "--stall-seconds", "3600", "--interval", "1",
+                  "--heartbeat-minutes", "99", "--max-hours", "0.0004"],
+                 timeout=90)
+        assert "OUTCOME" in r.stdout, r.stdout
+        assert r.returncode == 1, "gave up without the run ending"
+

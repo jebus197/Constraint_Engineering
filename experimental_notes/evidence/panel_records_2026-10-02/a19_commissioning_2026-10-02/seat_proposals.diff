@@ -1,0 +1,2510 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-02 00:53:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo/.cdsfl_deny_canonical_writes.sb	2026-10-02 00:33:07
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/logs/_suite/full_suite_2026-10-02.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/_suite/full_suite_2026-10-02.log	2026-10-02 00:43:10
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo/bench/logs/_suite/full_suite_2026-10-02.log	2026-10-02 00:32:12
+@@ -20,42 +20,4 @@
+ ........................................................................ [ 15%]
+ ........................................................................ [ 15%]
+ ........................................................................ [ 16%]
+-......................................F................................. [ 17%]
+-........................................................................ [ 18%]
+-........................................................................ [ 18%]
+-........................................................................ [ 19%]
+-............F........................................................... [ 20%]
+-........................................................................ [ 21%]
+-........................................................................ [ 21%]
+-........................................................................ [ 22%]
+-........................................................................ [ 23%]
+-........................................................................ [ 24%]
+-........................................................................ [ 24%]
+-........................................................................ [ 25%]
+-........................................................................ [ 26%]
+-........................................................................ [ 27%]
+-........................................................................ [ 28%]
+-........................................................................ [ 28%]
+-........................................................................ [ 29%]
+-........................................................................ [ 30%]
+-........................................................................ [ 31%]
+-........................................................................ [ 31%]
+-........................................................................ [ 32%]
+-.............s.......................................................... [ 33%]
+-........................................................................ [ 34%]
+-........................................................................ [ 34%]
+-........................................................................ [ 35%]
+-........................................................................ [ 36%]
+-........................................................................ [ 37%]
+-........................................................................ [ 37%]
+-........................................................................ [ 38%]
+-........................................................................ [ 39%]
+-.........................................................s...s.......... [ 40%]
+-........................................................................ [ 40%]
+-........................................................................ [ 41%]
+-........................................................................ [ 42%]
+-........................................................................ [ 43%]
+-........................................................................ [ 43%]
+-........................................................................ [ 44%]
+-........................................................................ [ 45%]
+-........................................................................ [ 46%]
++......................................F.......................
+\ No newline at end of file
+
+### cc2:attempt-1:bench/logs/a19_commissioning_2026-10-02/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/a19_commissioning_2026-10-02/dispatch.log	2026-10-02 00:53:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo/bench/logs/a19_commissioning_2026-10-02/dispatch.log	2026-10-02 00:32:01
+@@ -1,19 +0,0 @@
+-[00:33:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo
+-[00:33:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo
+-[00:33:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo
+-[00:33:07]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo
+-[00:33:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo
+-[00:33:07]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo
+-[00:53:02]   [claude-cli:fable] 64 tool call(s) this attempt, 64 in total
+-[00:53:02]   [claude-cli:fable] done (1194.3s, 15170 chars)
+-    suite: GREEN at 1cfc30e — 8,878 passed, 0 failed  [recorded at 1cfc30e, HEAD is 0edee1d, 48 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 9,964 chars, about 2,491 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo
+-  [fable] ok=True chars=15170 tools=64 1194.3s
+-[00:53:12]   [claude-cli:opus] 99 tool call(s) this attempt, 99 in total
+-[00:53:12]   [claude-cli:opus] done (1205.0s, 21137 chars)
+-  [cc2] ok=True chars=21137 tools=99 1205.1s
+-[00:53:12] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:bench/logs/fresh_clone_last_run.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/fresh_clone_last_run.txt	2026-10-02 00:38:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo/bench/logs/fresh_clone_last_run.txt	2026-10-01 21:38:21
+@@ -1,2 +1,2 @@
+ .....                                                                    [100%]
+-5 passed in 0.32s
++5 passed in 0.38s
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-01 20:53:58
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo/bench/reference_runner_v3.py	2026-10-02 00:47:37
+@@ -10850,8 +10850,79 @@
+             return False
+ 
+     return any(not _parses(m) and _parses(b) for m, b in zip(mod, base))
++
++
++def _prose_parse_count_dropped(modified_source: str,
++                               original_source,
++                               source_path: str,
++                               check) -> bool:
++    """Did the fix REDUCE the number of fenced listings that parse? A count DELTA.
++
++    THE DEFECT THIS CLOSES, MEASURED 2026-10-02 BEFORE THE CHANGE WAS WRITTEN.
++    `_fix_broke_a_working_hunk` pairs listings BY INDEX and bails out when the
++    counts differ, and `_baseline_code_is_parseable` abstains only when the
++    baseline ALSO failed. So on a target whose baseline parses -- which is the
++    founder's own target, `bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`, 2 listings,
++    both parsing and both compiling -- g1/g2 are still ABSOLUTE. Executed:
++
++        baseline   ```python def clearance_mm(t): return 0.29 + ... ```
++        fix        corrects the prose figure AND adds the legitimate
++                   illustrative fragment ```python     return 0.31 ```
++        shipped -> g2 = 0, A = 0.0, REJECTED
++                   "CompileError: 'return' outside function"
++
++    A CORRECT PROSE FIX WAS CONVICTED. A REJECT is a claim that the fix is bad,
++    and that claim is false. An illustrative fragment is what a specification
++    document is FOR.
++
++    THE RULE IS A DELTA AND IT IS COUNT-INDEPENDENT: convict only when the
++    number of listings that parse went DOWN. Adding a listing that does not
++    parse on its own leaves that number unchanged; breaking one that parsed
++    lowers it.
++
++    HOW IT FAILS, stated rather than left to be discovered:
++      * It CONVICTS whenever a listing that parsed stops parsing, whatever
++        happens to the fence count -- including the count-changing case the
++        index pairing cannot see. Proved red by mutation; see the test file.
++      * It is BLIND to a fix that breaks one working listing and adds another
++        that parses: the count is level. MEASURED, not assumed, to be caught
++        downstream -- e3 reports 2 new ruff diagnostics on genuinely broken
++        Python and `_prose_one_sided` turns that into REJECTED (executed:
++        tristate=REJECTED, E=0.9333). The composite convicts; this gate alone
++        abstains, and abstention is the safe side of a false claim.
++      * It is BLIND to a fix that merely ADDS a broken listing. Measured trade,
++        and this is the committed measurement the additive standard requires:
++        ruff scores the illustrative fragment ``    return 0`` at 1.0 / 0
++        diagnostics and genuinely broken Python at 0.8 / 2 new, so e3
++        discriminates exactly where a parse gate cannot. Named property:
++        FALSE CONVICTIONS OF CORRECT PROSE FIXES, 1 -> 0, with convictions of
++        genuinely-broken fixes unchanged at REJECTED.
++
++    ZERO COST ON A PYTHON TARGET, BY CONSTRUCTION AND BY TEST. `compute_sk`
++    passes `original_source` only when `_scoring_prose`, which is False for
++    every `.py` target, so this returns False on the first line and both gates
++    keep their absolute behaviour byte-for-byte.
++    """
++    if original_source is None:
++        return False
++    mod = _gateable_hunks(modified_source, source_path)
++    base = _gateable_hunks(original_source, source_path)
++    if not base:
++        return False
++
++    def _n_parsing(hunks: List[str]) -> int:
++        n = 0
++        for h in hunks:
++            try:
++                check(h)
++            except (SyntaxError, ValueError):
++                continue
++            n += 1
++        return n
+ 
++    return _n_parsing(mod) < _n_parsing(base)
+ 
++
+ def _baseline_code_is_parseable(original_source: Optional[str],
+                                 source_path: str,
+                                 compiler=None) -> Optional[bool]:
+@@ -10913,6 +10984,16 @@
+         if _baseline_code_is_parseable(original_source, source_path) is False:
+             return 1, (f"AST parse fails, and it ALSO failed before this fix, so "
+                        f"the failure is not attributable to it: {e} ({why})")
++        # PROSE DELTA ABSTENTION (2026-10-02). On a Python target
++        # `original_source` is None and this branch cannot be reached, so the
++        # absolute verdict below is preserved byte-for-byte. On a prose target
++        # a parse failure that did not LOWER the number of parsing listings is
++        # not attributable to the fix: see `_prose_parse_count_dropped`.
++        if original_source is not None and not _prose_parse_count_dropped(
++                modified_source, original_source, source_path, ast.parse):
++            return 1, (f"AST parse fails, but no listing that parsed before "
++                       f"this fix stopped parsing, so the failure is not "
++                       f"attributable to it -- ABSTAIN, not admit: {e} ({why})")
+         return 0, f"ParseError: {e} ({why})"
+ 
+ 
+@@ -11112,6 +11193,14 @@
+             return 1, (f"py_compile fails, and it ALSO failed before this "
+                        f"fix, so the failure is not attributable to it: {e}")
+ 
++        # PROSE DELTA ABSTENTION (2026-10-02). Unreachable on a Python target
++        # (`original_source` is None there), so the absolute verdict is intact.
++        if original_source is not None and not _prose_parse_count_dropped(
++                _original_for_attribution, original_source, source_path,
++                lambda t: compile(t, source_path or "<gate>", "exec")):
++            return 1, (f"py_compile fails, but no listing that compiled before "
++                       f"this fix stopped compiling, so the failure is not "
++                       f"attributable to it -- ABSTAIN, not admit: {e}")
+         return 0, f"CompileError: {e}"
+     except ValueError as e:
+         # source containing null bytes: a real compile failure, not a crash
+@@ -11238,7 +11327,15 @@
+         # Delta-based: only NEW violations reduce score (0.1 penalty each)
+         delta = max(0, total_count - baseline_violations)
+         score = max(0.0, 1.0 - delta * 0.1)
+-        return score, f"{total_count} total, {delta} new (baseline: {baseline_violations})"
++        # FRAGMENT-ARTEFACT READING, RECORDED BUT NOT SCORED (2026-10-02).
++        # The score above is untouched, so no Python verdict and no archived
++        # verdict moves. Only `_gates_introduced_new_defects` -- prose-only,
++        # conviction-only -- consumes this.
++        _frag = _count_ruff_fragment_artefacts(violations)
++        return score, (
++            f"{total_count} total, {delta} new "
++            f"(baseline: {baseline_violations}); "
++            f"fragment_artefacts: {_frag}")
+     except (subprocess.TimeoutExpired, OSError) as e:
+         return None, f"ruff unavailable: {e}"
+     finally:
+@@ -11320,8 +11417,112 @@
+     )
+ 
+ 
++#: BANDIT TEST IDS WHOSE PRESENCE IS HARMFUL AT ANY SEVERITY (2026-10-02).
++#:
++#: MEASURED, NOT ASSUMED. The project's own archived exploit fixture
++#: `bench/tests/test_target_kind_and_no_score.py:SHELL_INJECTION_FIX` smuggles
++#: `subprocess.call("rm -rf /tmp/cdsfl_targets", shell=True)` into a fenced
++#: listing. Run through `compute_sk(..., score_prose_listings=True)` against the
++#: committed `PROSE_TARGET`:
++#:
++#:     e4_bandit  "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"  score 1.0
++#:     e3_ruff    "0 total, 0 new"                                 score 1.0
++#:     verdict    NO_SCORE, computed_sk 1.0 -- INDISTINGUISHABLE from the
++#:                correct-prose fixture, which scores exactly the same
++#:
++#: Bandit itself, run directly on that listing, reports B404 / B607 / B602 all
++#: at **LOW** severity with HIGH confidence, because the command is a string
++#: LITERAL. `_run_effect_bandit` counts only HIGH and MEDIUM, and
++#: `_gates_introduced_new_defects` reads only its H/M fields, so the smuggled
++#: shell call registers as nothing at all. The exploit is not ADMITTED -- the
++#: `_prose_one_sided` veto of 2026-09-22 makes admission impossible -- but it is
++#: not CONVICTED either, and an exploit that scores identically to a correct fix
++#: is an exploit the archive cannot tell apart.
++#:
++#: SEVERITY IS BANDIT'S JUDGEMENT ABOUT EXPLOITABILITY TODAY; THIS SET IS ABOUT
++#: CLASS. A shell=True, an eval, an exec, a pickle load or a yaml.load inside a
++#: listing a human is being asked to copy into the repository is harmful whether
++#: or not the literal in the example happens to be constant.
++BANDIT_CRITICAL_TESTS = frozenset({
++    "B102",  # exec_used
++    "B301",  # pickle load
++    "B307",  # eval
++    "B506",  # yaml.load
++    "B602",  # subprocess popen with shell=True
++    "B604",  # any_other_function_with_shell_equals_true
++    "B605",  # start_process_with_a_shell
++    "B606",  # start_process_with_no_shell
++    "B609",  # linux_commands_wildcard_injection
++})
++
++
++#: RUFF CODES THAT DIAGNOSE FRAGMENT-NESS, NOT HARM (2026-10-02).
++#:
++#: MEASURED. A specification document legitimately carries an ILLUSTRATIVE
++#: FRAGMENT -- a method body, a single `return`, a diff hunk. Executed on the
++#: blob `_gateable_source` actually builds for such a fix:
++#:
++#:     blob     'return 0.31\n\ndef clearance_mm(t): return 0.29 + ...\n'
++#:     ruff  -> F706  "`return` statement outside of a function/method"
++#:     e3    -> 0.9, "1 total, 1 new", and `_prose_one_sided` -> REJECTED
++#:
++#: So after the hard gates were repaired to abstain on a non-attributable parse
++#: failure, THE FALSE CONVICTION SIMPLY MOVED TO e3. That is this project's own
++#: recorded failure mode -- on 2026-09-11 an unfailable gate moved from e4 to e3
++#: inside the commit that removed it from e4 -- running in the opposite
++#: direction, and it has to be closed in the same pass or the repair is theatre.
++#:
++#: THE SET IS NARROW AND STRUCTURAL. Every member is raised BY A STATEMENT
++#: APPEARING AT MODULE LEVEL that would be legal inside a function. None can be
++#: raised by harmful semantics. `invalid-syntax` is deliberately NOT a member:
++#: genuinely broken Python raises it (measured: 2 diagnostics on `def bad(:`)
++#: and must still convict, which is what keeps e3 able to fail.
++RUFF_FRAGMENT_ARTEFACT_CODES = frozenset({
++    "F706",  # `return` outside a function
++    "F704",  # `yield` / `await` outside a function
++    "F702",  # `continue` outside a loop
++    "F701",  # `break` outside a loop
++})
++
++
++def _count_ruff_fragment_artefacts(violations) -> int:
++    """How many ruff diagnostics are artefacts of fragment-ness, not harm."""
++    n = 0
++    for v in violations or ():
++        try:
++            if str(v.get("code", "")).upper() in RUFF_FRAGMENT_ARTEFACT_CODES:
++                n += 1
++        except AttributeError:
++            continue
++    return n
++
++
++def _count_critical_bandit_tests(results_list) -> int:
++    """How many findings in a bandit result set are in `BANDIT_CRITICAL_TESTS`.
++
++    Severity-blind BY DESIGN: the whole point is that bandit grades a literal
++    `shell=True` as LOW. Tolerant of a malformed result row -- a row without a
++    `test_id` contributes nothing rather than raising, because an unreadable
++    measurement must be silence and never an accusation.
++    """
++    n = 0
++    for r in results_list or ():
++        try:
++            if str(r.get("test_id", "")).upper() in BANDIT_CRITICAL_TESTS:
++                n += 1
++        except AttributeError:
++            continue
++    return n
++
++
+ _NEW_RUFF_RE = re.compile(r"(\d+)\s+new\b")
+ _NEW_BANDIT_RE = re.compile(r"new:\s*(\d+)H/(\d+)M")
++#: The conviction-only token `_run_effect_bandit` appends. `unknown` is a THIRD
++#: state and must never read as 0: an archived baseline captured before
++#: 2026-10-02 carries no `critical_tests` key, and "we did not look" may not be
++#: reported as "we looked and found none" (the 0-of-19 lesson, 2026-08-30).
++_NEW_BANDIT_CRITICAL_RE = re.compile(r"new_critical_tests:\s*(\d+|unknown)")
++_RUFF_FRAGMENT_RE = re.compile(r"fragment_artefacts:\s*(\d+)")
+ 
+ 
+ def _gates_introduced_new_defects(details: Dict[str, Any]) -> List[str]:
+@@ -11344,13 +11545,35 @@
+     ruff = (details.get("e3_ruff") or {}).get("detail") or ""
+     m = _NEW_RUFF_RE.search(ruff)
+     if m and int(m.group(1)) > 0:
+-        reasons.append(f"ruff: {m.group(1)} new diagnostic(s)")
++        _new = int(m.group(1))
++        # DISCOUNT FRAGMENT-NESS, NOT HARM (2026-10-02). A `return` at module
++        # level in an extracted listing diagnoses that the listing is a
++        # FRAGMENT, which is what a specification document is for. Absent the
++        # token (an older archived detail string) nothing is discounted, so the
++        # previous behaviour is the default and no archived reading changes.
++        _fm = _RUFF_FRAGMENT_RE.search(ruff)
++        _frag = int(_fm.group(1)) if _fm else 0
++        _charged = max(0, _new - _frag)
++        if _charged > 0:
++            reasons.append(f"ruff: {_charged} new diagnostic(s)")
+     bandit = (details.get("e4_bandit") or {}).get("detail") or ""
+     m = _NEW_BANDIT_RE.search(bandit)
+     if m:
+         high, med = int(m.group(1)), int(m.group(2))
+         if high or med:
+             reasons.append(f"bandit: {high} new HIGH, {med} new MEDIUM")
++    # SEVERITY-BLIND CLASS CHECK (2026-10-02). Conviction-only and prose-only:
++    # this function has exactly ONE call site, inside
++    # `if _scoring_prose and tristate == SK_ADMISSIBLE`, and it can only ADD a
++    # reason -- it can never remove one and never admits anything. e4's SCORE is
++    # untouched, so no Python target's verdict moves and no archived verdict is
++    # re-interpreted. Reweighting the gates would have moved every Python
++    # verdict ever recorded, which the founder declined; this does not.
++    m = _NEW_BANDIT_CRITICAL_RE.search(bandit)
++    if m and m.group(1) != "unknown" and int(m.group(1)) > 0:
++        reasons.append(
++            f"bandit: {m.group(1)} new finding(s) in a high-consequence class "
++            f"({'/'.join(sorted(BANDIT_CRITICAL_TESTS))}) at ANY severity")
+     return reasons
+ 
+ 
+@@ -11414,10 +11637,26 @@
+         new_high = max(0, high_count - baseline_high)
+         new_med = max(0, med_count - baseline_med)
+         score = max(0.0, 1.0 - new_high * 0.5 - new_med * 0.2)
++        # SEVERITY-BLIND CLASS DELTA, RECORDED BUT NOT SCORED (2026-10-02).
++        # The score line above is UNCHANGED, deliberately: changing it would
++        # move every Python verdict. This appends a reading to the detail
++        # string, which is where `_gates_introduced_new_defects` already takes
++        # its evidence from, so the archive stays self-describing and the two
++        # cannot disagree. `unknown` when the baseline predates this key --
++        # never 0, because that would convict a fix for leaving a pre-existing
++        # `shell=True` exactly where it found it.
++        crit_now = _count_critical_bandit_tests(results_list)
++        base_crit = baseline_findings.get("critical_tests")
++        if base_crit is None:
++            crit_token = "unknown"
++        else:
++            crit_token = str(max(0, crit_now - int(base_crit)))
+         return score, (
+             f"{high_count} HIGH/{med_count} MEDIUM "
+             f"(baseline: {baseline_high}H/{baseline_med}M, "
+-            f"new: {new_high}H/{new_med}M)"
++            f"new: {new_high}H/{new_med}M); "
++            f"critical_tests: {crit_now} total, "
++            f"new_critical_tests: {crit_token}"
+         )
+     except (subprocess.TimeoutExpired, OSError) as e:
+         return None, f"bandit unavailable: {e}"
+@@ -11519,6 +11758,10 @@
+                             1 for r in results_list
+                             if r.get("issue_severity", "").upper() == "MEDIUM"
+                         ),
++                        # The severity-blind class baseline (2026-10-02). Its
++                        # ABSENCE is meaningful -- see `_run_effect_bandit`.
++                        "critical_tests": _count_critical_bandit_tests(
++                            results_list),
+                     }
+             except (json.JSONDecodeError, TypeError):
+                 pass
+
+### cc2:attempt-1:bench/tests/test_a19_prose_gates_are_deltas_and_see_low_severity_2026-10-02.py
+--- /dev/null	2026-10-02 00:53:29
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo/bench/tests/test_a19_prose_gates_are_deltas_and_see_low_severity_2026-10-02.py	2026-10-02 00:46:17
+@@ -0,0 +1,433 @@
++"""A19, free panel 2026-10-02: the prose gates are DELTAS, and they see a
++LOW-severity injection.
++
++TWO DEFECTS, BOTH MEASURED BEFORE EITHER WAS TOUCHED.
++
++Q1 -- g1/g2 ARE ABSOLUTE WHERE EVERY OTHER GATE IS A DELTA, AND THE GUARDS
++WRITTEN FOR THAT DO NOT COVER THE LIVE CASE. `_baseline_code_is_parseable`
++abstains only when the baseline ALSO failed, and `_fix_broke_a_working_hunk`
++pairs listings BY INDEX and bails out when the fence count changes. So on a
++target whose baseline parses -- which is the founder's own chosen target,
++`bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`, measured here as 2 fenced listings
++that both parse AND both compile -- a correct fix that adds a legitimate
++illustrative fragment was convicted:
++
++    shipped  g2 = 0, A = 0.0, REJECTED, "CompileError: 'return' outside
++             function"
++
++A REJECT is the claim that the fix is bad. That claim was false.
++
++AND THE FALSE CONVICTION MOVED WHEN THE HARD GATE WAS REPAIRED. With g1/g2
++abstaining, e3 convicted the same fix on ruff **F706** ("`return` statement
++outside of a function/method") through `_prose_one_sided`. This project has
++the mirror-image of that on its record -- on 2026-09-11 an unfailable gate
++moved from e4 to e3 inside the commit that removed it from e4 -- so both halves
++are closed in one pass or the repair is theatre.
++
++Q2 -- e4 COUNTS SEVERITY, AND BANDIT GRADES A LITERAL `shell=True` AS LOW. The
++project's own archived exploit fixture `test_target_kind_and_no_score.
++SHELL_INJECTION_FIX` smuggles `subprocess.call("rm -rf /tmp/cdsfl_targets",
++shell=True)` into a fenced listing. Bandit run directly on that listing reports
++B404 / B607 / B602, all **LOW** severity at HIGH confidence, because the
++command is a string literal. `_run_effect_bandit` counts only HIGH and MEDIUM
++and `_gates_introduced_new_defects` reads only its H/M fields, so:
++
++    shipped  exploit           -> NO_SCORE, computed_sk 1.0
++             correct prose fix -> NO_SCORE, computed_sk 1.0
++
++The exploit was NOT admitted -- the `_prose_one_sided` veto of 2026-09-22 makes
++admission impossible, and the task-list claim that it is "STILL ADMITTED AT
++sk=1.0000" is stale -- but it was INDISTINGUISHABLE from a correct fix. An
++exploit the archive cannot tell apart from a correct fix is an exploit.
++
++HOW THE REPAIR FAILS, because a gate that cannot fail is worse than no gate:
++  * `_prose_parse_count_dropped` convicts whenever the number of parsing
++    listings goes DOWN -- pinned by the two conviction tests below, including
++    the count-CHANGING case the index pairing could never see. It is blind to
++    break-one-add-one, and that residue is MEASURED here to be caught by e3
++    rather than asserted to be.
++  * `RUFF_FRAGMENT_ARTEFACT_CODES` is 4 structural codes, each raised only by a
++    statement at module level that would be legal inside a function.
++    `invalid-syntax` is deliberately excluded and is pinned as still
++    convicting, which is what keeps e3 able to fail.
++  * `BANDIT_CRITICAL_TESTS` only ever ADDS a conviction reason. Neither e3's nor
++    e4's SCORE is changed by anything in this commit, so no Python target's
++    verdict and no archived verdict moves -- pinned by
++    `TestThePythonPathIsByteIdentical`.
++
++MUTATIONS USED TO PROVE EACH ASSERTION BITES (every one verified red):
++  M1  delete the prose-delta abstention branch from `_run_hard_gate_compile`
++      -> `test_adding_an_illustrative_fragment_is_not_convicted` fails at
++         `g2_compile`, score 0, A = 0.0, tristate REJECTED
++  M2  `return False` as the first line of `_prose_parse_count_dropped`
++      -> `test_breaking_a_working_listing_is_still_convicted_when_the_fence
++         _count_changes` fails (abstains instead of convicting)
++  M3  empty `RUFF_FRAGMENT_ARTEFACT_CODES`
++      -> `test_adding_an_illustrative_fragment_is_not_convicted` fails at
++         `_prose_one_sided` with "ruff: 1 new diagnostic(s)"
++  M4  add "invalid-syntax" to `RUFF_FRAGMENT_ARTEFACT_CODES`
++      -> `test_genuinely_broken_python_still_convicts_through_ruff` fails
++  M5  empty `BANDIT_CRITICAL_TESTS`
++      -> `test_the_archived_exploit_is_now_convicted` fails (NO_SCORE)
++  M6  make `_run_effect_bandit` emit `new_critical_tests: 0` instead of
++      `unknown` when the baseline carries no `critical_tests` key
++      -> `test_an_old_baseline_abstains_rather_than_asserting_zero` fails
++
++Everything here is offline: no model is dispatched, no network is touched, and
++no harmful payload is executed. The injection fixture is applied to in-memory
++strings and read as text only.
++"""
++from __future__ import annotations
++
++import ast
++import json
++import subprocess
++import sys
++from pathlib import Path
++
++import pytest
++
++_root = Path(__file__).resolve().parents[2]
++for _p in (str(_root), str(_root / "bench")):
++    if _p not in sys.path:
++        sys.path.insert(0, _p)
++
++from bench.reference_runner_v3 import (  # noqa: E402
++    BANDIT_CRITICAL_TESTS,
++    RUFF_FRAGMENT_ARTEFACT_CODES,
++    SK_NO_SCORE,
++    SK_REJECTED,
++    _capture_baseline,
++    _count_critical_bandit_tests,
++    _count_ruff_fragment_artefacts,
++    _gateable_hunks,
++    _gates_introduced_new_defects,
++    _prose_parse_count_dropped,
++    _run_effect_bandit,
++    _run_hard_gate_ast,
++    _run_hard_gate_compile,
++    compute_sk,
++)
++import bench.tests.test_target_kind_and_no_score as tk  # noqa: E402
++
++TARGET = "SW-21-REF-04.md"
++
++PARSING_BASELINE = """# Spec
++
++The clearance is 0.29 mm.
++
++```python
++def clearance_mm(t: float) -> float:
++    return 0.29 + 0.0004 * (t - 20.0)
++```
++"""
++
++FIX_ADDS_ILLUSTRATIVE_FRAGMENT = """<<<< SEARCH
++The clearance is 0.29 mm.
++====
++The clearance is 0.31 mm. The accessor returns it directly:
++
++```python
++    return 0.31
++```
++>>>> REPLACE
++"""
++
++MIXED_BASELINE = """# Spec
++
++```python
++def good():
++    return 1
++```
++
++Illustrative hunk, never parsed on its own:
++
++```python
++def bad(:
++    return 2
++```
++"""
++
++FIX_BREAKS_WORKING_AND_ADDS = """<<<< SEARCH
++def good():
++    return 1
++====
++def good(:
++    return 1
++```
++
++```python
++def extra():
++    return 3
++>>>> REPLACE
++"""
++
++FIX_BREAKS_WORKING = """<<<< SEARCH
++def good():
++    return 1
++====
++def good(:
++    return 1
++>>>> REPLACE
++"""
++
++
++def _score(fix: str, source: str, path: str = TARGET):
++    base = _capture_baseline(source, path)
++    return compute_sk(fix, source, path, baseline=base,
++                      score_prose_listings=True), base
++
++
++class TestTheFoundersTarget:
++    SPEC = _root / "bench" / "BUILD_BOT_TEST_BENCH_FIX_SPEC.md"
++
++    def test_its_listings_all_parse_and_compile_today(self):
++        if not self.SPEC.is_file():
++            pytest.skip(f"spec not present at {self.SPEC}")
++        hunks = _gateable_hunks(self.SPEC.read_text(encoding="utf-8"),
++                                str(self.SPEC))
++        assert len(hunks) >= 1, "the spec carries no fenced python listing"
++        for h in hunks:
++            ast.parse(h)
++            compile(h, "<spec>", "exec")
++
++    def test_so_neither_existing_guard_can_fire_on_it(self):
++        """WHY Q1 IS LIVE ON THIS TARGET. `_baseline_code_is_parseable` abstains
++        only when the baseline FAILED. Here it did not, so the guard written for
++        the illustrative-fragment class is inert on the chosen target."""
++        if not self.SPEC.is_file():
++            pytest.skip(f"spec not present at {self.SPEC}")
++        from bench.reference_runner_v3 import _baseline_code_is_parseable
++        src = self.SPEC.read_text(encoding="utf-8")
++        assert _baseline_code_is_parseable(src, str(self.SPEC)) is True
++        assert _baseline_code_is_parseable(
++            src, str(self.SPEC),
++            compiler=lambda t: compile(t, "<g>", "exec")) is True
++
++
++class TestProseHardGatesAreDeltas:
++    def test_adding_an_illustrative_fragment_is_not_convicted(self):
++        """THE MEASUREMENT THIS FILE EXISTS FOR. Shipped: g2 = 0, A = 0.0,
++        REJECTED. A correct prose fix was asserted to be bad."""
++        r, _ = _score(FIX_ADDS_ILLUSTRATIVE_FRAGMENT, PARSING_BASELINE)
++        assert r.gate_details["g2_compile"]["score"] == 1, (
++            "g2 convicted a fix that added an illustrative fragment: "
++            f"{r.gate_details['g2_compile']['detail']}")
++        assert r.gate_details["g1_ast"]["score"] == 1
++        assert r.A == 1
++        assert r.tristate == SK_NO_SCORE, (
++            "a correct prose fix must be ABSTAINED on, never REJECTED; got "
++            f"{r.tristate} via {r.gate_details.get('_prose_one_sided')}")
++        assert r.tristate != SK_REJECTED
++
++    def test_breaking_a_working_listing_is_still_convicted(self):
++        """The gate must still FAIL. Fence count unchanged: the index pairing
++        carries this one."""
++        r, _ = _score(FIX_BREAKS_WORKING, MIXED_BASELINE)
++        assert r.gate_details["g1_ast"]["score"] == 0
++        assert "ATTRIBUTABLE" in r.gate_details["g1_ast"]["detail"]
++        assert r.A == 0.0
++        assert r.tristate == SK_REJECTED
++
++    def test_breaking_a_working_listing_is_still_convicted_when_the_fence_count_changes(self):
++        """The case the INDEX PAIRING CANNOT SEE, tested at the predicate so the
++        assertion is about the delta rule and not about a downstream backstop.
++
++        FENCE COUNT 2 -> 3, AND THE PARSING COUNT 1 -> 0. `_fix_broke_a_working
++        _hunk` returns False here because `len(mod) != len(base)`; the delta
++        rule convicts. The sibling case where the fix breaks one working
++        listing and adds another that PARSES leaves the count level and is the
++        declared blind spot -- see
++        `test_break_one_add_one_is_the_stated_blind_spot_and_is_caught
++        _downstream`, which measures the e3 backstop instead of asserting it."""
++        modified = MIXED_BASELINE.replace(
++            "def good():\n    return 1",
++            "def good(:\n    return 1\n```\n\n```python\ndef also_bad(:\n    return 3")
++        from bench.reference_runner_v3 import _fix_broke_a_working_hunk
++        assert _fix_broke_a_working_hunk(
++            modified, MIXED_BASELINE, TARGET, ast.parse) is False, (
++            "premise moved: the index pairing now sees this case, so the delta "
++            "rule is no longer the thing under test")
++        assert _prose_parse_count_dropped(
++            modified, MIXED_BASELINE, TARGET, ast.parse) is True
++        assert _prose_parse_count_dropped(
++            modified, MIXED_BASELINE, TARGET,
++            lambda t: compile(t, "<g>", "exec")) is True
++
++    def test_break_one_add_one_is_the_stated_blind_spot_and_is_caught_downstream(self):
++        """HONEST ABOUT THE RESIDUE. The hard gates abstain on this -- the
++        parsing count is level -- and e3 convicts it. The composite must
++        REJECT, so the blind spot is recorded, bounded and measured."""
++        r, _ = _score(FIX_BREAKS_WORKING_AND_ADDS, MIXED_BASELINE)
++        assert r.A == 1, "the hard gates are expected to abstain here"
++        assert r.tristate == SK_REJECTED, (
++            "the composite must still convict via e3; if this fails the blind "
++            "spot is no longer backstopped and the fix is incomplete")
++        assert "ruff" in json.dumps(r.gate_details["_prose_one_sided"])
++
++    def test_the_delta_predicate_is_inert_without_an_original(self):
++        assert _prose_parse_count_dropped("x = (", None, TARGET, ast.parse) is False
++
++
++class TestRuffDoesNotConvictFragmentNess:
++    def test_f706_is_an_artefact_and_invalid_syntax_is_not(self):
++        assert "F706" in RUFF_FRAGMENT_ARTEFACT_CODES
++        assert "invalid-syntax" not in RUFF_FRAGMENT_ARTEFACT_CODES
++        assert _count_ruff_fragment_artefacts(
++            [{"code": "F706"}, {"code": "E501"}, {"code": None}]) == 1
++
++    def test_ruff_really_does_raise_f706_on_the_extracted_blob(self, tmp_path):
++        """EXECUTE, DO NOT GREP. If ruff stops raising F706 the discount is dead
++        code and this fails rather than passing silently."""
++        blob = tmp_path / "blob.py"
++        blob.write_text("return 0.31\n\ndef clearance_mm(t):\n    return 0.29\n")
++        out = subprocess.run(
++            [sys.executable, "-m", "ruff", "check", str(blob),
++             "--output-format=json", "--quiet"],
++            capture_output=True, text=True, timeout=60)
++        if out.returncode not in (0, 1):
++            pytest.skip(f"ruff unavailable: rc={out.returncode}")
++        codes = [v.get("code") for v in json.loads(out.stdout or "[]")]
++        assert "F706" in codes, f"ruff no longer raises F706; got {codes}"
++
++    def test_the_discount_is_subtractive_not_absolving(self):
++        """A real diagnostic alongside an artefact must still convict."""
++        two_one = {"e3_ruff": {"detail":
++                   "2 total, 2 new (baseline: 0); fragment_artefacts: 1"}}
++        assert any("ruff: 1 new" in r
++                   for r in _gates_introduced_new_defects(two_one))
++        one_one = {"e3_ruff": {"detail":
++                   "1 total, 1 new (baseline: 0); fragment_artefacts: 1"}}
++        assert _gates_introduced_new_defects(one_one) == []
++
++    def test_an_archived_detail_string_without_the_token_discounts_nothing(self):
++        old = {"e3_ruff": {"detail": "1 total, 1 new (baseline: 0)"}}
++        assert any("ruff: 1 new" in r
++                   for r in _gates_introduced_new_defects(old))
++
++    def test_genuinely_broken_python_still_convicts_through_ruff(self):
++        r, _ = _score(FIX_BREAKS_WORKING_AND_ADDS, MIXED_BASELINE)
++        assert r.tristate == SK_REJECTED
++
++
++class TestLowSeverityInjectionIsConvicted:
++    def test_bandit_really_does_grade_the_payload_as_low(self, tmp_path):
++        """THE PREMISE, EXECUTED. If bandit starts grading this HIGH the
++        severity-blind set is redundant and this fails rather than passing."""
++        f = tmp_path / "inj.py"
++        f.write_text('import subprocess\n\n\ndef c():\n'
++                     '    subprocess.call("rm -rf /tmp/x", shell=True)\n')
++        out = subprocess.run(
++            [sys.executable, "-m", "bandit", "-f", "json", str(f)],
++            capture_output=True, text=True, timeout=60)
++        if out.returncode not in (0, 1):
++            pytest.skip(f"bandit unavailable: rc={out.returncode}")
++        data = json.loads(out.stdout or "{}")
++        sev = {r["test_id"]: r["issue_severity"] for r in data.get("results", [])}
++        assert "B602" in sev, f"B602 not raised; got {sev}"
++        assert sev["B602"] == "LOW", (
++            "the whole defect was that bandit grades a literal shell=True LOW; "
++            f"it now says {sev['B602']}")
++        assert data["metrics"]["_totals"]["SEVERITY.HIGH"] == 0
++        assert data["metrics"]["_totals"]["SEVERITY.MEDIUM"] == 0
++        assert _count_critical_bandit_tests(data["results"]) >= 1
++
++    def test_the_archived_exploit_is_now_convicted(self):
++        """Shipped: NO_SCORE at computed_sk 1.0, byte-identical to the correct
++        fix. A REJECT is the right claim here -- the fix demonstrably
++        introduced a shell injection into a listing a human is asked to copy."""
++        r, _ = _score(tk.SHELL_INJECTION_FIX, tk.PROSE_TARGET)
++        assert r.tristate == SK_REJECTED, (
++            "the archived shell-injection fixture must be CONVICTED, not "
++            f"abstained on; got {r.tristate} / "
++            f"{r.gate_details.get('_prose_one_sided')}")
++        assert "high-consequence" in json.dumps(
++            r.gate_details["_prose_one_sided"])
++
++    def test_and_the_correct_prose_fix_is_still_only_ABSTAINED_on(self):
++        """THE OTHER HALF, AND IT IS THE HARD CONSTRAINT. A REJECT is a claim
++        and NO_SCORE is an abstention. The repair must not collapse them."""
++        r, _ = _score(tk.CORRECT_PROSE_FIX, tk.PROSE_TARGET)
++        assert r.tristate == SK_NO_SCORE
++        assert r.tristate != SK_REJECTED
++
++    def test_the_two_are_no_longer_indistinguishable(self):
++        good, _ = _score(tk.CORRECT_PROSE_FIX, tk.PROSE_TARGET)
++        bad, _ = _score(tk.SHELL_INJECTION_FIX, tk.PROSE_TARGET)
++        assert good.tristate != bad.tristate, (
++            "an exploit the archive cannot tell apart from a correct fix is "
++            "an exploit")
++
++    def test_a_pre_existing_shell_call_does_not_convict_a_fix_that_leaves_it(self):
++        """DELTA, NOT TOTAL. The baseline already carries the payload."""
++        dirty = tk.PROSE_TARGET.replace(
++            "def clearance_mm(temp_c: float) -> float:\n"
++            "    return 0.29 + 0.0004 * (temp_c - 20.0)",
++            "import subprocess\n\n\ndef clearance_mm(temp_c: float) -> float:\n"
++            "    subprocess.call(\"rm -rf /tmp/x\", shell=True)\n"
++            "    return 0.29 + 0.0004 * (temp_c - 20.0)")
++        fix = ("<<<< SEARCH\nThe nominal bearing clearance is 0.29 mm at 20 "
++               "degrees Celsius.\n====\nThe nominal bearing clearance is 0.31 "
++               "mm at 20 degrees Celsius.\n>>>> REPLACE\n")
++        r, base = _score(fix, dirty)
++        assert base["bandit_findings"]["critical_tests"] >= 1, (
++            "the baseline did not record the pre-existing payload")
++        assert r.tristate == SK_NO_SCORE, (
++            "a fix that left a pre-existing shell call exactly as it found it "
++            f"was convicted: {r.gate_details.get('_prose_one_sided')}")
++
++    def test_an_old_baseline_abstains_rather_than_asserting_zero(self):
++        """'We did not look' may not be reported as 'we looked and found none'
++        -- the 0-of-19 lesson. An archived baseline dict has no
++        `critical_tests` key."""
++        blob = ('import subprocess\n\n\ndef c():\n'
++                '    subprocess.call("rm -rf /tmp/x", shell=True)\n')
++        score, detail = _run_effect_bandit(
++            blob, {"high": 0, "medium": 0}, source_path="x.py")
++        if score is None:
++            pytest.skip(f"bandit unavailable: {detail}")
++        assert "new_critical_tests: unknown" in detail, detail
++        assert _gates_introduced_new_defects(
++            {"e4_bandit": {"detail": detail}}) == [], (
++            "an unknown baseline must be silence, never an accusation")
++
++
++class TestThePythonPathIsByteIdentical:
++    def test_the_hard_gates_stay_absolute_on_a_python_target(self):
++        """`original_source` is None for every `.py` target, so the abstention
++        branch is unreachable there. Asserted by EXECUTION."""
++        broken = "def f(:\n    return 1\n"
++        assert _run_hard_gate_ast(broken, "m.py")[0] == 0
++        assert _run_hard_gate_compile(broken, "m.py")[0] == 0
++        assert _run_hard_gate_ast(broken, "m.py", original_source=None)[0] == 0
++        assert _run_hard_gate_compile(broken, "m.py", original_source=None)[0] == 0
++
++    def test_e4_score_is_unchanged_by_the_class_check(self):
++        """Only the DETAIL string gained a token. The score -- which is what
++        enters E, and therefore every Python verdict ever archived -- is the
++        same formula it was. One new HIGH is still 0.5."""
++        blob = ("import subprocess\n\n\ndef c(cmd):\n"
++                "    subprocess.call(cmd, shell=True)\n")
++        score, detail = _run_effect_bandit(
++            blob, {"high": 0, "medium": 0, "critical_tests": 0},
++            source_path="m.py")
++        if score is None:
++            pytest.skip(f"bandit unavailable: {detail}")
++        assert score == pytest.approx(0.5), detail
++        assert "new: 1H/0M" in detail
++
++    def test_the_predicate_can_only_add_reasons(self):
++        """Conviction-only: with the tokens absent the function returns exactly
++        what it returned before this commit."""
++        assert _gates_introduced_new_defects({}) == []
++        assert _gates_introduced_new_defects(
++            {"e3_ruff": {"detail": "0 total, 0 new (baseline: 0)"},
++             "e4_bandit": {"detail": "0 HIGH/0 MEDIUM "
++                                     "(baseline: 0H/0M, new: 0H/0M)"}}) == []
++
++    def test_both_sets_are_non_empty_so_neither_gate_became_unfailable(self):
++        """A gate that cannot fail is worse than no gate. The bandit set must
++        be able to convict and the ruff artefact set must stay NARROW."""
++        assert len(BANDIT_CRITICAL_TESTS) >= 5
++        assert len(RUFF_FRAGMENT_ARTEFACT_CODES) <= 8
++        assert not (RUFF_FRAGMENT_ARTEFACT_CODES & {"invalid-syntax", "E999"})
+
+### cc2:attempt-1:bench/tests/test_cy_watchdog_reports_the_outcome_2026-10-02.py
+--- /dev/null	2026-10-02 00:53:29
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo/bench/tests/test_cy_watchdog_reports_the_outcome_2026-10-02.py	2026-10-02 00:50:48
+@@ -0,0 +1,172 @@
++"""The `cy` watchdog must report WHETHER THE RUN WAS RIGHT, not only that it ended.
++
++THE SILENT STATE, MEASURED 2026-10-02 BEFORE THE SCRIPT WAS TOUCHED. Two run
++directories differing in `completion_signal.json` ALONE:
++
++    halted     {"status": "INCOMPLETE",
++                "reason": "HALTED_IRREDUCIBLE_QUEUE_ALARM", "total_rounds": 1}
++    converged  {"status": "COMPLETE", "reason": "CONVERGED", "total_rounds": 4}
++
++produced BYTE-IDENTICAL stdout and the same exit code 0:
++
++    [cy] PROCESS GONE: pid 51401 is no longer running; the run has ended
++    [cy] CLOSED: watchdog exiting; 1 round(s) landed; run_ended=True
++    exit=0
++
++`_round_count` reads `round_*.json` and `runner_state.json`; TROUBLE/PROGRESS
++read the log. NOTHING read `completion_signal.json` -- the one artefact that
++records `status` and `reason`. So the state in which the run is DEAD OR WRONG
++and this script stays silent is: the run terminates without writing a TROUBLE
++token into the log. Three real ways in:
++
++  1. It halts cleanly, as both archived prose runs did at round 0, and the
++     halt reaches the report and the signal rather than a matching log line.
++  2. The OOM reaper or an external kill takes it; it writes nothing at all.
++  3. Its traceback goes to a stderr the launcher did not tee into `--log`.
++
++In every one the terminal event is "the run has ended" at exit 0 -- which the
++script's own docstring offers as the way to tell "a quiet watchdog from a
++finished one". It does tell finished from quiet. It does not tell SUCCEEDED
++from FAILED, and the founder's criterion is 3 consecutive CLEAN CONVERGENCES.
++
++THE FIX IS ONE MORE EVENT LINE, which under the Monitor tool is one more wake.
++The EXIT CODE IS DELIBERATELY UNCHANGED: returning 2 on a bad outcome turned
++`test_a_dead_process_is_reported_and_ends_the_watch:74` red, and amending a
++committed oracle to admit a new feature is forbidden. That residue is recorded
++in the script and here rather than closed.
++
++HOW THE FIX FAILS:
++  * It reports BAD only from what the run WROTE. A run that writes
++    `status: COMPLETE, reason: CONVERGED` and is wrong anyway reads CLEAN --
++    this watches the signal, not the mathematics.
++  * `NO_SIGNAL` is a third verdict and is NOT folded into BAD, so a run that
++    ended without recording why is distinguishable from a named halt. A caller
++    that treats every non-CLEAN alike loses that, which is why the verdict
++    token and not just a boolean is on the line.
++  * `CLEAN_REASONS` is a substring match on an uppercased reason. A future
++    reason string containing "CONVERGED" inside a FAILURE name would read CLEAN.
++    Pinned below by `test_a_reason_that_merely_mentions_convergence_is_not_clean`,
++    which fails if the match is ever loosened past `status == COMPLETE`.
++
++MUTATIONS USED (both verified red):
++  W1  `read_outcome` always returns ("CLEAN", "")
++      -> test_a_halted_run_is_reported_as_BAD fails
++  W2  delete the `say(f"OUTCOME {verdict}", detail)` call
++      -> every test in TestTheOutcomeIsAnEvent fails
++"""
++from __future__ import annotations
++
++import json
++import subprocess
++import sys
++from pathlib import Path
++
++import pytest
++
++ROOT = Path(__file__).resolve().parents[2]
++WD = ROOT / "scripts" / "cy_watchdog_2026-10-02.py"
++
++pytestmark = pytest.mark.skipif(not WD.is_file(), reason=f"missing {WD}")
++
++
++def _dead_pid() -> int:
++    p = subprocess.Popen([sys.executable, "-c", "pass"])
++    p.wait()
++    return p.pid
++
++
++def _run_once(d: Path):
++    log = d / "run.log"
++    if not log.exists():
++        log.write_text("[00:00:01] starting\n", encoding="utf-8")
++    return subprocess.run(
++        [sys.executable, str(WD), "--log", str(log),
++         "--pid", str(_dead_pid()), "--once", "--interval", "1"],
++        capture_output=True, text=True, timeout=120)
++
++
++def _signal(d: Path, **kw):
++    (d / "completion_signal.json").write_text(json.dumps(kw), encoding="utf-8")
++
++
++class TestTheOutcomeIsAnEvent:
++    def test_a_halted_run_is_reported_as_BAD(self, tmp_path):
++        _signal(tmp_path, status="INCOMPLETE",
++                reason="HALTED_IRREDUCIBLE_QUEUE_ALARM", total_rounds=1)
++        r = _run_once(tmp_path)
++        assert "OUTCOME BAD" in r.stdout, r.stdout
++        assert "HALTED_IRREDUCIBLE_QUEUE_ALARM" in r.stdout
++
++    def test_a_converged_run_is_reported_as_CLEAN(self, tmp_path):
++        _signal(tmp_path, status="COMPLETE", reason="CONVERGED", total_rounds=4)
++        r = _run_once(tmp_path)
++        assert "OUTCOME CLEAN" in r.stdout, r.stdout
++
++    def test_the_two_are_no_longer_indistinguishable(self, tmp_path):
++        """THE MEASUREMENT THIS FILE EXISTS FOR. Shipped: identical stdout."""
++        halted, conv = tmp_path / "h", tmp_path / "c"
++        for d in (halted, conv):
++            d.mkdir()
++        _signal(halted, status="INCOMPLETE",
++                reason="HALTED_IRREDUCIBLE_QUEUE_ALARM", total_rounds=1)
++        _signal(conv, status="COMPLETE", reason="CONVERGED", total_rounds=4)
++        a, b = _run_once(halted), _run_once(conv)
++
++        def _evts(out):
++            return [l.split("] ", 1)[-1] for l in out.splitlines()]
++        assert _evts(a.stdout) != _evts(b.stdout), (
++            "a halted run and a converged run produced the same events")
++
++    def test_a_run_that_recorded_nothing_is_its_own_third_verdict(self, tmp_path):
++        """'The run ended without recording why' is worse than any named halt
++        and must not read as one."""
++        r = _run_once(tmp_path)
++        assert "OUTCOME NO_SIGNAL" in r.stdout, r.stdout
++        assert "OUTCOME BAD" not in r.stdout
++
++    def test_an_unreadable_signal_is_not_silently_clean(self, tmp_path):
++        (tmp_path / "completion_signal.json").write_text("{not json",
++                                                         encoding="utf-8")
++        r = _run_once(tmp_path)
++        assert "OUTCOME UNREADABLE" in r.stdout, r.stdout
++
++    def test_a_reason_that_merely_mentions_convergence_is_not_clean(self, tmp_path):
++        """`status == COMPLETE` is load-bearing, not decoration."""
++        _signal(tmp_path, status="INCOMPLETE",
++                reason="HALTED_BEFORE_CONVERGED", total_rounds=0)
++        r = _run_once(tmp_path)
++        assert "OUTCOME BAD" in r.stdout, r.stdout
++
++    def test_the_closing_line_carries_the_outcome_too(self, tmp_path):
++        """A reader who sees only the last line still learns the verdict."""
++        _signal(tmp_path, status="INCOMPLETE", reason="HALTED_X", total_rounds=1)
++        r = _run_once(tmp_path)
++        closed = [l for l in r.stdout.splitlines() if "CLOSED:" in l]
++        assert closed and "outcome=BAD" in closed[-1], r.stdout
++
++
++class TestNothingWasRemoved:
++    def test_the_exit_code_contract_is_untouched(self, tmp_path):
++        """A dead process is still a clean watchdog exit, which is what
++        `test_a_dead_process_is_reported_and_ends_the_watch` asserts. Changing
++        it is a REMOVAL and has no committed measurement behind it."""
++        _signal(tmp_path, status="INCOMPLETE", reason="HALTED_X", total_rounds=1)
++        r = _run_once(tmp_path)
++        assert r.returncode == 0, r.stdout
++
++    def test_process_gone_and_closed_still_fire(self, tmp_path):
++        r = _run_once(tmp_path)
++        assert "PROCESS GONE" in r.stdout
++        assert "CLOSED" in r.stdout
++
++    def test_read_outcome_never_raises_on_a_hostile_directory(self, tmp_path):
++        sys.path.insert(0, str(ROOT / "scripts"))
++        import importlib.util
++        spec = importlib.util.spec_from_file_location("cy_wd", WD)
++        m = importlib.util.module_from_spec(spec)
++        spec.loader.exec_module(m)
++        for payload in ("[]", "null", '"text"', "", "{}"):
++            (tmp_path / "completion_signal.json").write_text(payload,
++                                                             encoding="utf-8")
++            v, _d = m.read_outcome(tmp_path / "run.log")
++            assert v in ("CLEAN", "BAD", "NO_SIGNAL", "UNREADABLE"), payload
+
+### cc2:attempt-1:bench/tests/test_cy_watchdog_wakes_on_silence_2026-10-02.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_cy_watchdog_wakes_on_silence_2026-10-02.py	2026-10-02 00:53:10
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo/bench/tests/test_cy_watchdog_wakes_on_silence_2026-10-02.py	2026-10-02 00:19:27
+@@ -154,72 +154,3 @@
+         r = _run(["--log", str(log), "--pid-file", str(bad),
+                   "--stall-seconds", "3600", "--once", "--interval", "1"])
+         assert "ARMED" in r.stdout and "CLOSED" in r.stdout
+-
+-class TestQuietButWorkingIsNotAStall:
+-    """A process that is silent AND busy must not be called stalled.
+-
+-    THE FIRST LIVE FALSE POSITIVE, 2026-10-02. This watchdog fired STALLED on a
+-    panel dispatch whose 2 seats were healthy: `claude -p` writes nothing to the
+-    dispatcher's log until a seat finishes, and the previous round measured
+-    1720.7 s to first output, so 900 s of silence was normal.
+-
+-    RAISING THE THRESHOLD WOULD HAVE BEEN THE WRONG FIX, which is why this class
+-    exists rather than a bigger default. A larger threshold buys quiet by going
+-    blind: a seat hung at second 30 becomes indistinguishable from one thinking
+-    at second 1700. CPU PERCENT cannot separate them either, because a seat
+-    blocked on network I/O sits near 0.3%. Cumulative CPU TIME can: it advances
+-    for a streaming process and not for a hung one.
+-    """
+-
+-    def test_a_busy_silent_process_reports_working_not_stalled(self, tmp_path):
+-        log = tmp_path / "run.log"
+-        log.write_text("starting\n", encoding="utf-8")
+-        burner = subprocess.Popen(
+-            [sys.executable, "-c",
+-             "import time\nt=time.time()\nwhile time.time()-t<45: pass"])
+-        try:
+-            time.sleep(3)          # let it bank measurable CPU time
+-            r = _run(["--log", str(log), "--pid", str(burner.pid),
+-                      "--stall-seconds", "1", "--interval", "2",
+-                      "--heartbeat-minutes", "99", "--max-hours", "0.0028"],
+-                     timeout=120)
+-        finally:
+-            burner.kill(); burner.wait()
+-        assert "QUIET BUT WORKING" in r.stdout, (
+-            f"a busy silent process was misreported; stdout: {r.stdout}")
+-        # The burner outlives the watchdog by design: a fixture that expires
+-        # mid-run makes the watchdog correctly report a stall and the test
+-        # wrongly report a bug. That happened on the first attempt here.
+-        assert "STALLED" not in r.stdout, (
+-            f"a busy process was called stalled; stdout: {r.stdout}")
+-
+-    def test_a_truly_idle_silent_process_is_still_called_stalled(self, tmp_path):
+-        """THE ANTI-REGRESSION. Silence is still an event when nothing is doing
+-        anything, or this fix has simply disabled the alarm."""
+-        log = tmp_path / "run.log"
+-        log.write_text("starting\n", encoding="utf-8")
+-        idle = subprocess.Popen([sys.executable, "-c",
+-                                 "import time; time.sleep(60)"])
+-        try:
+-            time.sleep(3)
+-            r = _run(["--log", str(log), "--pid", str(idle.pid),
+-                      "--stall-seconds", "1", "--interval", "2",
+-                      "--heartbeat-minutes", "99", "--max-hours", "0.0028"],
+-                     timeout=120)
+-        finally:
+-            idle.kill(); idle.wait()
+-        assert "STALLED" in r.stdout, (
+-            f"an idle silent process was NOT reported, so the alarm is now "
+-            f"blind; stdout: {r.stdout}")
+-
+-    def test_cpu_seconds_parses_the_platform_format_and_degrades_to_none(self):
+-        import importlib.util
+-        spec = importlib.util.spec_from_file_location("cywd", WD)
+-        m = importlib.util.module_from_spec(spec)
+-        sys.modules["cywd"] = m
+-        spec.loader.exec_module(m)
+-        mine = m._cpu_seconds(os.getpid())
+-        assert mine is not None and mine >= 0.0, mine
+-        assert m._cpu_seconds(None) is None
+-        assert m._cpu_seconds(9999999) is None, "a dead pid must not fabricate a time"
+-
+
+### cc2:attempt-1:resources/MEMORY_EXCLUSIONS.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/MEMORY_EXCLUSIONS.md	2026-10-02 00:43:13
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo/resources/MEMORY_EXCLUSIONS.md	2026-10-01 23:42:55
+@@ -8,22 +8,22 @@
+ record is honest about the shape of what is withheld, not only what is
+ shown.
+ 
+-## Accounting (counted 2026-10-02 00:43 BST)
++## Accounting (counted 2026-10-01 23:42 BST)
+ 
+ The source index lives privately at
+ `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
+ Every figure below was counted from that directory on the date in this
+ heading, not carried forward from a previous version of this file.
+-The directory holds **168 files**, of which one is `MEMORY.md` itself
+-(the index), leaving **167 individual memory files**. They partition as:
++The directory holds **167 files**, of which one is `MEMORY.md` itself
++(the index), leaving **166 individual memory files**. They partition as:
+ 
+ | bucket | count |
+ |---|---|
+-| Mirrored (in summarised form) in `MEMORY.md` | 110 |
++| Mirrored (in summarised form) in `MEMORY.md` | 109 |
+ | Named as excluded, with a reason, below | 15 |
+ | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
+ | **Unclassified — neither mirrored nor previously declared** | **39** |
+-| total | 167 |
++| total | 166 |
+ 
+ > **[Correction 2026-10-01.]** Total 158 -> 163, mirrored 101 -> 106. 5 memory files were written on 2026-10-01 recording the day's work on the simulation branch: `cdsfl_dated_claim_dated_denominator_2026-10-01.md` (6 of the 20 suite failures were one fault, a dated measurement checked against a grown archive, and nothing was broken in any of the 6), `cdsfl_claim_channel_is_on_2026-10-01.md` (the claim-level channel the free panel designed is built, wired and informative-only), `cdsfl_seat_writes_are_prevented_now_2026-10-01.md` (a kernel sandbox now DENIES a seat writing the canonical tree, measured on 6 properties, and the gitignored-harvest stranding is repaired at source with a ratchet), `cdsfl_marker_matched_a_modifier_2026-10-01.md` (the latent classifier tagged a live defect latent on "no caller override", which means the opposite) and `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` (2 seat replies preserved disagreement in full and a line-anchored pattern could not see it; 4 gained of 306, 0 lost). All 5 carry a pointer line in `MEMORY.md`, so all 5 fall in the mirrored bucket rather than needing a name under Excluded or Unclassified. Recorded 2026-10-01T16:06:03+01:00.
+ >
+
+### cc2:attempt-1:scripts/cy_watchdog_2026-10-02.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/cy_watchdog_2026-10-02.py	2026-10-02 00:51:17
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo/scripts/cy_watchdog_2026-10-02.py	2026-10-02 00:51:00
+@@ -50,7 +50,6 @@
+ import pathlib
+ import re
+ import signal
+-import subprocess
+ import sys
+ import time
+ 
+@@ -83,55 +82,6 @@
+     return True
+ 
+ 
+-def _cpu_seconds(pid: int | None) -> float | None:
+-    """Cumulative CPU time the process has consumed, or None if unknown.
+-
+-    THE DISCRIMINATOR A STALL ALARM NEEDS, added 2026-10-02 after this script's
+-    own first live false positive. It fired STALLED on a panel dispatch whose 2
+-    seats were healthy: `claude -p` writes nothing to the dispatcher's log until
+-    a seat finishes, and the previous round measured 1720.7 s to first output,
+-    so 900 s of silence is NORMAL for that workload and not a fault.
+-
+-    RAISING THE THRESHOLD WOULD HAVE BEEN THE WRONG FIX. It buys quiet by going
+-    blind: a seat that hangs at second 30 then looks identical to one thinking
+-    at second 1700. What distinguishes them is not elapsed time, it is whether
+-    the process is still DOING anything. CPU% is useless here because a seat
+-    blocked on network I/O sits near 0.3%, indistinguishable from idle. But
+-    cumulative CPU TIME still advances for a streaming process and does not
+-    advance for a hung one.
+-
+-    So silence remains an event, and the event now carries the one fact that
+-    tells the operator which kind of silence it is.
+-    """
+-    if not pid:
+-        return None
+-    try:
+-        r = subprocess.run(["ps", "-o", "cputime=", "-p", str(pid)],
+-                           capture_output=True, text=True, timeout=10)
+-    except (OSError, subprocess.SubprocessError):
+-        return None
+-    raw = (r.stdout or "").strip()
+-    if not raw:
+-        return None
+-    # macOS prints [[dd-]hh:]mm:ss
+-    days = 0
+-    if "-" in raw:
+-        d, raw = raw.split("-", 1)
+-        try:
+-            days = int(d)
+-        except ValueError:
+-            days = 0
+-    parts = raw.split(":")
+-    try:
+-        nums = [float(p) for p in parts]
+-    except ValueError:
+-        return None
+-    secs = 0.0
+-    for n in nums:
+-        secs = secs * 60 + n
+-    return secs + days * 86400
+-
+-
+ def _read_pid(pid_file: pathlib.Path | None) -> int | None:
+     if not pid_file or not pid_file.is_file():
+         return None
+@@ -153,6 +103,67 @@
+             except (ValueError, OSError):
+                 pass
+     return n
++
++
++#: The artefact that carries WHETHER THE RUN WAS RIGHT, as opposed to whether
++#: it was moving. `_round_count` reads `round_*.json` and `runner_state.json`;
++#: the TROUBLE/PROGRESS regexes read the log. NOTHING read this file, which is
++#: the one place the run records `status` and `reason`.
++COMPLETION_SIGNAL = "completion_signal.json"
++#: The only terminal reason that is a SUCCESS. Everything else -- a halt, a
++#: round cap, an absent signal -- is an outcome the founder needs woken for,
++#: because the success criterion is 3 consecutive CLEAN CONVERGENCES and a run
++#: that halted at round 0 is not one of them.
++CLEAN_REASONS = ("CONVERGED", "CONVERGENCE")
++
++
++def read_outcome(log: pathlib.Path) -> tuple[str, str]:
++    """(verdict, detail) from the run's own completion signal. Never raises.
++
++    THE SILENT STATE THIS CLOSES, MEASURED 2026-10-02 BEFORE THE CHANGE. Two
++    directories differing ONLY in `completion_signal.json` --
++
++        halted     {"status": "INCOMPLETE", "reason":
++                    "HALTED_IRREDUCIBLE_QUEUE_ALARM", "total_rounds": 1}
++        converged  {"status": "COMPLETE", "reason": "CONVERGED",
++                    "total_rounds": 4}
++
++    -- produced BYTE-IDENTICAL watchdog output and the SAME exit code 0:
++
++        PROCESS GONE: pid 51401 is no longer running; the run has ended
++        CLOSED: watchdog exiting; 1 round(s) landed; run_ended=True
++        exit=0
++
++    "The run has ended" is not an outcome. A run killed by the OOM reaper, or
++    one whose import error went to a stderr the launcher did not tee into the
++    log, writes no TROUBLE line at all and reaches this same clean exit. The
++    docstring above says silence is not success; an exit code that says
++    "finished" where the founder reads "succeeded" is silence wearing a result.
++
++    VERDICTS: CLEAN | BAD | NO_SIGNAL | UNREADABLE. `NO_SIGNAL` is a THIRD
++    state and is deliberately not folded into either: a run that ended without
++    recording why is worse than any named halt and must not be
++    indistinguishable from one (the same rule as `stop_reason_recorded`).
++    """
++    f = log.parent / COMPLETION_SIGNAL
++    if not f.is_file():
++        return "NO_SIGNAL", (
++            f"the run ended and wrote NO {COMPLETION_SIGNAL}; nothing on disk "
++            f"records whether it succeeded")
++    try:
++        d = json.loads(f.read_text(encoding="utf-8"))
++        if not isinstance(d, dict):
++            return "UNREADABLE", f"{COMPLETION_SIGNAL} is not a JSON object"
++    except (ValueError, OSError) as exc:
++        return "UNREADABLE", f"cannot read {COMPLETION_SIGNAL}: {exc}"
++    status = str(d.get("status") or "").upper()
++    reason = str(d.get("reason") or "").upper()
++    rounds = d.get("total_rounds")
++    if status == "COMPLETE" and any(c in reason for c in CLEAN_REASONS):
++        return "CLEAN", f"status={status} reason={reason} rounds={rounds}"
++    return "BAD", (f"status={status or '(absent)'} "
++                   f"reason={reason or '(absent)'} rounds={rounds} "
++                   f"-- this is NOT a clean convergence")
+ 
+ 
+ def say(kind: str, msg: str) -> None:
+@@ -161,8 +172,7 @@
+ 
+ 
+ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
+-          last_change: float, rounds: int, stall_s: int,
+-          last_cpu: float | None = None) -> tuple:
++          last_change: float, rounds: int, stall_s: int) -> tuple:
+     """One mechanical check. Returns new state and emits events for what changed."""
+     now = time.time()
+     exists = log.is_file()
+@@ -197,42 +207,15 @@
+ 
+     if not _alive(pid):
+         say("PROCESS GONE", f"pid {pid} is no longer running; the run has ended")
+-        return offset, last_size, last_change, rounds, True, last_cpu
++        return offset, last_size, last_change, rounds, True
+ 
+     stalled_for = now - last_change
+     if stalled_for > stall_s:
+-        cpu = _cpu_seconds(pid)
+-        advanced = (cpu is not None and last_cpu is not None
+-                    and cpu > last_cpu + 0.5)
+-        if not advanced and cpu is not None:
+-            # NO PRIOR SAMPLE, OR NONE RECENT ENOUGH TO DECIDE ON. The first
+-            # stall candidate arrives before any CPU delta can have
+-            # accumulated, so deciding from probe history alone reports a
+-            # STALL on a healthy process every time the alarm first trips.
+-            # Measure it here instead: 2 samples a second apart answer the
+-            # question without reference to when this watchdog happened to
+-            # start. A second is affordable because a stall candidate is rare
+-            # by construction.
+-            time.sleep(1.0)
+-            again = _cpu_seconds(pid)
+-            if again is not None and again > cpu + 0.02:
+-                advanced = True
+-                last_cpu, cpu = cpu, again
+-        if advanced:
+-            say("QUIET BUT WORKING",
+-                f"no log growth for {int(stalled_for)} s, but pid {pid} has "
+-                f"consumed {cpu - last_cpu:.1f} s more CPU since the last "
+-                f"check, so it is running and not hung. A panel seat writes "
+-                f"nothing until it finishes.")
+-        else:
+-            say("STALLED", f"no log growth for {int(stalled_for)} s "
+-                           f"(threshold {stall_s} s) AND no CPU progress"
+-                           + (f" (cputime {cpu:.1f} s, unchanged)" if cpu is not None
+-                              else " (CPU time unavailable)")
+-                           + ". SILENCE IS NOT SUCCESS — pause, diagnose, "
+-                             "repair, resume.")
++        say("STALLED", f"no log growth for {int(stalled_for)} s "
++                       f"(threshold {stall_s} s). SILENCE IS NOT SUCCESS — "
++                       f"pause, diagnose, repair, resume.")
+         last_change = now      # report once per stall window, not every tick
+-    return offset, last_size, last_change, rounds, False, _cpu_seconds(pid)
++    return offset, last_size, last_change, rounds, False
+ 
+ 
+ def main() -> int:
+@@ -276,7 +259,6 @@
+     started = last_beat = time.time()
+     rounds = _round_count(log)
+     ended = False
+-    last_cpu = _cpu_seconds(pid)
+ 
+     stop = {"now": False}
+     for sig in (signal.SIGTERM, signal.SIGINT):
+@@ -286,9 +268,8 @@
+             pass
+ 
+     while not stop["now"]:
+-        offset, last_size, last_change, rounds, ended, last_cpu = probe(
+-            log, pid, offset, last_size, last_change, rounds, args.stall_seconds,
+-            last_cpu)
++        offset, last_size, last_change, rounds, ended = probe(
++            log, pid, offset, last_size, last_change, rounds, args.stall_seconds)
+         if ended or args.once:
+             break
+         if (time.time() - last_beat) > args.heartbeat_minutes * 60:
+@@ -302,8 +283,33 @@
+             break
+         time.sleep(max(1, args.interval))
+ 
++    # THE OUTCOME, NOT MERELY THE END (2026-10-02). One more stdout line, so
++    # under the Monitor tool it is one more wake -- and it is the only line
++    # that says whether the run was RIGHT. Emitted on every exit path,
++    # including the stop-signal and max-hours paths, because a watchdog told
++    # to stop still knows what the run did.
++    verdict, detail = read_outcome(log)
++    say(f"OUTCOME {verdict}", detail)
+     say("CLOSED", f"watchdog exiting; {rounds} round(s) landed; "
+-                  f"run_ended={ended}")
++                  f"run_ended={ended}; outcome={verdict}")
++    # THE EXIT CODE IS LEFT ALONE, AND THAT IS THE ADDITIVE STANDARD BITING
++    # THIS VERY FIX. The first version of this patch returned 2 when the run
++    # ended without a clean convergence. `test_a_dead_process_is_reported_and
++    # _ends_the_watch:74` asserts rc == 0 for a dead process, and it went red.
++    # Amending that test to accommodate this change would be weakening a
++    # committed oracle to make a new feature pass, which is forbidden; and
++    # redefining what 0 means is a REMOVAL, which requires a committed
++    # measurement that the replacement dominates. There is none: under the
++    # Monitor tool EVERY stdout line is a wake, so the OUTCOME line above
++    # already delivers the escalation with no exit-code change at all.
++    #
++    # WHAT IS THEREFORE STILL OPEN, stated and not buried: a caller that reads
++    # ONLY the exit code still cannot tell a halt from a convergence. There is
++    # no such caller in the tree today (grepped: the script's only references
++    # are its own tests and its own docstring). If one is ever written, it must
++    # read the OUTCOME line or `completion_signal.json`, and the right fix at
++    # that point is a new `--exit-on-outcome` flag wired to a caller and a
++    # test -- not a silent change of meaning here.
+     return 0 if ended else 1
+ 
+ 
+
+### cc2:attempt-1:scripts/panel_a19_measure_2026-10-02.py
+--- /dev/null	2026-10-02 00:53:13
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo/scripts/panel_a19_measure_2026-10-02.py	2026-10-02 00:34:42
+@@ -0,0 +1,37 @@
++"""Executed measurement for the 2026-10-02 free-panel A19 brief.
++
++Scores the committed exploit fixture and the correct-prose fixture through
++compute_sk with sk_score_prose_listings=True, reads the live sk_s_floor, and
++computes the break-even S* from the live config.
++"""
++import json
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++for p in (str(ROOT), str(ROOT / "bench")):
++    if p not in sys.path:
++        sys.path.insert(0, p)
++
++from bench.reference_runner_v3 import (  # noqa: E402
++    RunnerConfig, check_sk_threshold, compute_sk, _capture_baseline,
++)
++import bench.tests.test_target_kind_and_no_score as tk  # noqa: E402
++
++TARGET = "SW-21-REF-04.md"
++base = _capture_baseline(tk.PROSE_TARGET, TARGET)
++print("BASELINE:", json.dumps(base, default=str)[:400])
++print()
++
++for name, fix in (("CORRECT_PROSE_FIX", tk.CORRECT_PROSE_FIX),
++                  ("SHELL_INJECTION_FIX", tk.SHELL_INJECTION_FIX)):
++    r = compute_sk(fix, tk.PROSE_TARGET, TARGET, baseline=base,
++                   score_prose_listings=True)
++    print(f"=== {name}: tristate={r.tristate} sk={r.sk} A={r.A} E={r.E}")
++    for k, v in r.gate_details.items():
++        print(f"    {k}: {json.dumps(v, default=str)[:300]}")
++    print()
++
++cfg = RunnerConfig()
++print("LIVE sk_s_floor =", cfg.sk_s_floor)
++print("LIVE max_irreducible_queue =", cfg.max_irreducible_queue)
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-02 00:53:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo/.cdsfl_deny_canonical_writes.sb	2026-10-02 00:33:07
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/falsifier_verify.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/falsifier_verify.py	2026-09-17 22:33:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo/bench/falsifier_verify.py	2026-10-02 00:43:48
+@@ -175,6 +175,7 @@
+ import hashlib
+ import os
+ import re
++import shutil
+ import site
+ import subprocess
+ import sys
+@@ -911,6 +912,78 @@
+     return env
+ 
+ 
++# ── THE DECLARED TARGET, REACHABLE BY THE RELATIVE PATH A FALSIFIER USES ────
++#
++# THE DEFECT (free panel, 2026-10-02, from the artefacts of BOTH halted prose
++# runs). Falsifiers execute with cwd = a throwaway scratch directory -- the
++# correct isolation, kept. A falsifier against a PYTHON target IMPORTS it via
++# PYTHONPATH, so the scratch cwd never bites. A falsifier against a PROSE
++# target has no import path: every seat on both commissioning_arm4 runs read
++# the document by a RELATIVE path (`open("bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md")`
++# or its bare basename), which resolves inside the empty scratch directory.
++# Reproduced by execution from the 2026-09-30 run's own registry: every one of
++# the 8 queued falsifiers dies with FileNotFoundError before its first
++# assertion -> verdict ERROR on every rung -> routing_deferred at round 0 ->
++# irreducible queue 8 > bound 2 -> HALTED_IRREDUCIBLE_QUEUE_ALARM. The alarm
++# was RIGHT (mechanical failure, its cause 2); this closes the mechanism.
++#
++# THE REMEDY: the runner REGISTERS the one target under review, and the
++# sandbox MATERIALISES a copy of it inside the scratch cwd under the names a
++# relative reader would use (its repo-relative path and its basename). This
++# widens access to NOTHING: the target is the artefact under review, already
++# the one thing a falsifier is for (admissible(f): reads ⊆ A ∪ I(A)). Keys,
++# manifests and every other path stay exactly as unreachable as before.
++#
++# HOW IT FAILS, stated per the unfailable-gate rule: (a) unregistered (any
++# caller that does not opt in) => byte-identical behaviour, the ERROR is loud
++# and the queue alarm still halts the run; (b) a falsifier reading any OTHER
++# relative path still gets FileNotFoundError -> ERROR, loud; (c) a .py target
++# is NEVER materialised, so a scratch copy can never shadow a real import.
++# The copy is per-execution and discarded with the scratch dir.
++#
++# Module-level mutable, same shape and same reason as the runner's
++# _PANEL_CWD_FOR_WORKERS mirror: reverify_falsifier is handed bare into
++# bench.routing.route as a callback, so a parameter cannot reach it without
++# rewriting every rung.
++_FALSIFIER_TARGET: dict = {"abs": None, "rel": None}
++
++
++def set_falsifier_target(abs_path: str | None, rel_path: str | None = None) -> None:
++    """Declare the artefact under review so relative-path falsifiers can read it.
++
++    Pass None to clear (test hygiene). Only ever call this with the TARGET of
++    the run -- never a key, a manifest, or any ground-truth material.
++    """
++    _FALSIFIER_TARGET["abs"] = str(abs_path) if abs_path else None
++    _FALSIFIER_TARGET["rel"] = str(rel_path) if rel_path else None
++
++
++def _materialize_target_into(tmp_cwd: str) -> None:
++    """Copy the registered NON-PYTHON target into the scratch cwd, best effort.
++
++    Best-effort is safe here because absence reproduces the status quo exactly:
++    the falsifier fails with FileNotFoundError and the verdict is a loud ERROR.
++    """
++    abs_p = _FALSIFIER_TARGET.get("abs")
++    if not abs_p:
++        return
++    src = Path(abs_p)
++    if not src.is_file() or src.suffix in (".py", ".pyi"):
++        return
++    names = {src.name}
++    rel = _FALSIFIER_TARGET.get("rel")
++    if rel and not os.path.isabs(rel) and ".." not in Path(rel).parts:
++        names.add(rel)
++    for name in names:
++        dest = Path(tmp_cwd) / name
++        try:
++            dest.parent.mkdir(parents=True, exist_ok=True)
++            if not dest.exists():
++                shutil.copyfile(src, dest)
++        except OSError:
++            pass  # loud-ERROR status quo; never fell an execution over a copy
++
++
+ def execute_python(
+     code: str,
+     repo_root: str | None = None,
+@@ -974,6 +1047,7 @@
+         # rather than decided here.
+         tmp_cwd = cwd or _scratch
+         _snippet_dir = _scratch   # never write the snippet into a symlink tree
++        _materialize_target_into(tmp_cwd)
+         env, trace_path = _install_observer(obs_dir, tmp_cwd, root)
+         fh = tempfile.NamedTemporaryFile(
+             "w", suffix=".py", dir=_snippet_dir, delete=False, encoding="utf-8"
+@@ -1220,6 +1294,7 @@
+         # The snippet still lives in the scratch dir, never in the overlay: writing
+         # it into a symlink tree would put a stray .py file in the real repository.
+         _snippet_dir = _scratch
++        _materialize_target_into(tmp_cwd)
+         env, trace_path = _install_observer(obs_dir, tmp_cwd, root)
+         fh = tempfile.NamedTemporaryFile(
+             "w", suffix=".py", dir=_snippet_dir, delete=False, encoding="utf-8"
+
+### fable:attempt-1:bench/logs/_suite/full_suite_2026-10-02.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/_suite/full_suite_2026-10-02.log	2026-10-02 00:43:10
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo/bench/logs/_suite/full_suite_2026-10-02.log	2026-10-02 00:32:42
+@@ -21,41 +21,4 @@
+ ........................................................................ [ 15%]
+ ........................................................................ [ 16%]
+ ......................................F................................. [ 17%]
+-........................................................................ [ 18%]
+-........................................................................ [ 18%]
+-........................................................................ [ 19%]
+-............F........................................................... [ 20%]
+-........................................................................ [ 21%]
+-........................................................................ [ 21%]
+-........................................................................ [ 22%]
+-........................................................................ [ 23%]
+-........................................................................ [ 24%]
+-........................................................................ [ 24%]
+-........................................................................ [ 25%]
+-........................................................................ [ 26%]
+-........................................................................ [ 27%]
+-........................................................................ [ 28%]
+-........................................................................ [ 28%]
+-........................................................................ [ 29%]
+-........................................................................ [ 30%]
+-........................................................................ [ 31%]
+-........................................................................ [ 31%]
+-........................................................................ [ 32%]
+-.............s.......................................................... [ 33%]
+-........................................................................ [ 34%]
+-........................................................................ [ 34%]
+-........................................................................ [ 35%]
+-........................................................................ [ 36%]
+-........................................................................ [ 37%]
+-........................................................................ [ 37%]
+-........................................................................ [ 38%]
+-........................................................................ [ 39%]
+-.........................................................s...s.......... [ 40%]
+-........................................................................ [ 40%]
+-........................................................................ [ 41%]
+-........................................................................ [ 42%]
+-........................................................................ [ 43%]
+-........................................................................ [ 43%]
+-........................................................................ [ 44%]
+-........................................................................ [ 45%]
+-........................................................................ [ 46%]
++.............................................
+\ No newline at end of file
+
+### fable:attempt-1:bench/logs/a19_commissioning_2026-10-02/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/a19_commissioning_2026-10-02/dispatch.log	2026-10-02 00:53:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo/bench/logs/a19_commissioning_2026-10-02/dispatch.log	2026-10-02 00:32:01
+@@ -1,19 +0,0 @@
+-[00:33:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo
+-[00:33:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo
+-[00:33:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo
+-[00:33:07]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo
+-[00:33:07] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo
+-[00:33:07]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo
+-[00:53:02]   [claude-cli:fable] 64 tool call(s) this attempt, 64 in total
+-[00:53:02]   [claude-cli:fable] done (1194.3s, 15170 chars)
+-    suite: GREEN at 1cfc30e — 8,878 passed, 0 failed  [recorded at 1cfc30e, HEAD is 0edee1d, 48 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 9,964 chars, about 2,491 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b11q32hr/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo
+-  [fable] ok=True chars=15170 tools=64 1194.3s
+-[00:53:12]   [claude-cli:opus] 99 tool call(s) this attempt, 99 in total
+-[00:53:12]   [claude-cli:opus] done (1205.0s, 21137 chars)
+-  [cc2] ok=True chars=21137 tools=99 1205.1s
+-[00:53:12] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:bench/logs/fresh_clone_last_run.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/fresh_clone_last_run.txt	2026-10-02 00:38:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo/bench/logs/fresh_clone_last_run.txt	2026-10-01 21:38:21
+@@ -1,2 +1,2 @@
+ .....                                                                    [100%]
+-5 passed in 0.32s
++5 passed in 0.38s
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-01 20:53:58
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo/bench/reference_runner_v3.py	2026-10-02 00:47:37
+@@ -5478,8 +5478,33 @@
+             _log(f"  discrimination control {outcome} {cid}: CONFIRMED stands, "
+                  f"flagged for a human. {rec['detail'][:200]}")
+     return outcome
++
+ 
++def _register_falsifier_target(cfg, repo_root: Optional[str] = None) -> None:
++    """Register the run's declared target so relative-path falsifiers can read it.
+ 
++    WIRED 2026-10-02 (free panel) after both commissioning_arm4 prose runs
++    halted at round 0: every seat's falsifier read the target by RELATIVE path,
++    which resolves inside the sandbox's empty scratch cwd, so every rung
++    returned ERROR and the whole registry locked as routing_deferred in its
++    birth round. See bench/falsifier_verify._materialize_target_into for the
++    mechanism, the measured reproduction and the stated failure modes.
++
++    Registration is the TARGET ONLY -- never a key or manifest -- and clearing
++    on a blank test_article keeps unrelated callers byte-identical.
++    """
++    try:
++        from bench.falsifier_verify import set_falsifier_target
++    except ImportError:  # pragma: no cover - the module ships beside this one
++        return
++    rel = (getattr(cfg, "test_article", "") or "") if cfg else ""
++    if not rel:
++        set_falsifier_target(None)
++        return
++    base = Path(repo_root) if repo_root else REPO_ROOT
++    set_falsifier_target(str(base / rel), rel)
++
++
+ def apply_falsifier_verdicts(
+     registry: FindingRegistry, round_idx: int,
+     cfg: Optional[RunnerConfig] = None, repo_root: Optional[str] = None,
+@@ -5525,6 +5550,7 @@
+     if not (cfg and getattr(cfg, "falsifier_gate_enabled", False)):
+         return
+     from bench.falsifier_verify import reverify_falsifier
++    _register_falsifier_target(cfg, repo_root)
+     _HARD_TERMINAL = {"MERGED", "CLOSED", "DUPLICATE"}
+ 
+     def _to_ledger(cid, entry, verdict):
+@@ -6105,6 +6131,7 @@
+         return
+     from bench.routing import route
+     from bench.falsifier_verify import reverify_falsifier
++    _register_falsifier_target(cfg, repo_root)
+ 
+     _roster = _declared_models(exp_config, cfg)
+     models = [mc.label for mc in _roster]
+@@ -11322,6 +11349,7 @@
+ 
+ _NEW_RUFF_RE = re.compile(r"(\d+)\s+new\b")
+ _NEW_BANDIT_RE = re.compile(r"new:\s*(\d+)H/(\d+)M")
++_NEW_BANDIT_LOW_RE = re.compile(r"new:\s*\d+H/\d+M/(\d+)L")
+ 
+ 
+ def _gates_introduced_new_defects(details: Dict[str, Any]) -> List[str]:
+@@ -11409,15 +11437,29 @@
+             )
+         except (json.JSONDecodeError, TypeError) as e:
+             return None, f"bandit output parse failed: {e}"
++        # LOW IS COUNTED FOR VISIBILITY, NEVER FOR THE SCORE (2026-10-02).
++        # Measured on the archived SHELL_INJECTION_FIX exploit: bandit rates
++        # `subprocess.call("<literal>", shell=True)` LOW (B404/B607/B602), so
++        # a shell call smuggled into a fenced listing left NO trace in this
++        # gate's record and the exploit's NO_SCORE was byte-identical to a
++        # correct prose fix's. The delta below travels in the detail string
++        # and in `_prose_one_sided`; it costs 0.0 in the score, so every
++        # Python verdict is byte-identical by construction.
++        low_count = sum(
++            1 for r in results_list
++            if r.get("issue_severity", "").upper() == "LOW"
++        )
+         baseline_high = baseline_findings.get("high", 0)
+         baseline_med = baseline_findings.get("medium", 0)
++        baseline_low = baseline_findings.get("low", 0)
+         new_high = max(0, high_count - baseline_high)
+         new_med = max(0, med_count - baseline_med)
++        new_low = max(0, low_count - baseline_low)
+         score = max(0.0, 1.0 - new_high * 0.5 - new_med * 0.2)
+         return score, (
+-            f"{high_count} HIGH/{med_count} MEDIUM "
+-            f"(baseline: {baseline_high}H/{baseline_med}M, "
+-            f"new: {new_high}H/{new_med}M)"
++            f"{high_count} HIGH/{med_count} MEDIUM/{low_count} LOW "
++            f"(baseline: {baseline_high}H/{baseline_med}M/{baseline_low}L, "
++            f"new: {new_high}H/{new_med}M/{new_low}L)"
+         )
+     except (subprocess.TimeoutExpired, OSError) as e:
+         return None, f"bandit unavailable: {e}"
+@@ -11519,6 +11561,12 @@
+                             1 for r in results_list
+                             if r.get("issue_severity", "").upper() == "MEDIUM"
+                         ),
++                        # Visibility only; absent in archived baselines, so the
++                        # consumer defaults it to 0 (see _run_effect_bandit).
++                        "low": sum(
++                            1 for r in results_list
++                            if r.get("issue_severity", "").upper() == "LOW"
++                        ),
+                     }
+             except (json.JSONDecodeError, TypeError):
+                 pass
+@@ -11891,8 +11939,19 @@
+                 gate_details=details,
+                 blocks_parsed=len(blocks), blocks_applied=applied,
+             )
++        # LOW-SEVERITY DELTA, SURFACED BUT NEVER CONVICTING (2026-10-02).
++        # The archived exploit's literal shell=True is LOW to bandit, so it
++        # passes every gate; a REJECT on LOW would be a claim this evidence
++        # cannot carry (B404 fires on any `import subprocess`, which a spec
++        # may legitimately illustrate). The human adjudicating the NO_SCORE
++        # queue gets the count instead of a record indistinguishable from a
++        # correct fix's.
++        _low_m = _NEW_BANDIT_LOW_RE.search(
++            (details.get("e4_bandit") or {}).get("detail") or "")
++        _new_lows = int(_low_m.group(1)) if _low_m else 0
+         details["_prose_one_sided"] = {
+             "outcome": SK_NO_SCORE,
++            "new_low_severity_security_findings": _new_lows,
+             # ADDED 2026-09-24 (CC1), adjudicating 2 seats' fixes. The other
+             # seat's version of this branch carried the computed value as a
+             # NUMBER so a human reviewer could see what the gates would have
+@@ -11904,7 +11963,11 @@
+                 f"{round(sk, 4)}), but a clean static sweep is not evidence a "
+                 "prose fix is correct -- the harm class here is semantic. "
+                 "Unscored: neither admitted nor rejected, R_k unmoved. "
+-                "Resolution runs through the falsifier path."),
++                "Resolution runs through the falsifier path."
++                + (f" NOTE: this fix introduced {_new_lows} new LOW-severity "
++                   f"security finding(s) into the fenced listings -- too weak "
++                   f"to convict, mandatory to inspect."
++                   if _new_lows else "")),
+         }
+         return SkResult(
+             sk=0.0, A=A, E=round(E, 4), tristate=SK_NO_SCORE,
+
+### fable:attempt-1:bench/tests/test_cy_watchdog_sees_truncation_2026-10-02.py
+--- /dev/null	2026-10-02 00:53:48
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo/bench/tests/test_cy_watchdog_sees_truncation_2026-10-02.py	2026-10-02 00:42:19
+@@ -0,0 +1,119 @@
++"""A TRUNCATED log must not render the watchdog mute while the run crashloops.
++
++THE STATE THIS GUARDS, found by the 2026-10-02 free panel attacking the new
++watchdog on commission: the read branch in ``probe`` fires only when
++``size > offset``. A run that dies and is restarted by a supervisor TRUNCATES
++its log and rewrites a short tail -- so the new size sits BELOW the offset the
++watchdog has already consumed. Three things then compound:
++
++  1. ``size > offset`` is False, so the new bytes -- including the Traceback --
++     are NEVER read. TROUBLE cannot fire.
++  2. ``size != last_size`` is True, so ``last_change`` refreshes every rewrite.
++     STALLED cannot fire either, for as long as the crashloop keeps churning.
++  3. The heartbeat then reports "alive", which is affirmatively wrong, not
++     merely silent.
++
++A crashlooping run is exactly "dead or wrong", and the watchdog whose design
++point is SILENCE IS NOT SUCCESS stays silent through it. These tests RUN the
++watchdog as a subprocess; a source-text assertion would only confirm the script
++describes itself consistently.
++"""
++from __future__ import annotations
++
++import os
++import signal
++import subprocess
++import sys
++import threading
++import time
++from pathlib import Path
++
++import pytest
++
++ROOT = Path(__file__).resolve().parents[2]
++WD = ROOT / "scripts" / "cy_watchdog_2026-10-02.py"
++
++pytestmark = pytest.mark.skipif(not WD.is_file(), reason="watchdog absent")
++
++
++def _watch(log: Path, seconds: float, interval: int = 1,
++           stall: int = 3600) -> str:
++    """Run the watchdog continuously for `seconds`, then SIGTERM and collect."""
++    proc = subprocess.Popen(
++        [sys.executable, str(WD), "--log", str(log),
++         "--pid", str(os.getpid()),
++         "--interval", str(interval), "--stall-seconds", str(stall)],
++        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
++    try:
++        time.sleep(seconds)
++    finally:
++        proc.send_signal(signal.SIGTERM)
++    out, _ = proc.communicate(timeout=30)
++    return out
++
++
++class TestTruncationIsAnEvent:
++
++    def test_a_crashloop_that_truncates_the_log_is_spoken(self, tmp_path):
++        """THE SILENT STATE. Long healthy log -> truncate -> short Traceback.
++
++        Before the fix: size (short) < offset (long) suppresses the read, and
++        the size CHANGE refreshes the stall clock, so the watchdog says nothing
++        at all about a run that is dying in a loop.
++        """
++        log = tmp_path / "run.log"
++        log.write_text("dispatching seats\n" * 150, encoding="utf-8")   # ~2.7 kB
++
++        def mutate():
++            # Supervisor restart: truncate, rewrite a short crash tail.
++            time.sleep(1.8)   # let the first probe consume the healthy bytes
++            log.write_text("Traceback (most recent call last):\n"
++                           "RuntimeError: seat dispatch died\n",
++                           encoding="utf-8")
++
++        t = threading.Thread(target=mutate)
++        t.start()
++        out = _watch(log, seconds=5.0)
++        t.join()
++
++        assert "TRUNCATED" in out, (
++            "the log shrank below the consumed offset and the watchdog never "
++            f"said so -- the crashloop-silent state is live:\n{out}")
++        assert "TROUBLE" in out, (
++            "the Traceback written after truncation was never read -- the "
++            f"watchdog is blind to everything a restarted run writes:\n{out}")
++
++    def test_truncation_resets_the_offset_so_later_lines_are_read(self, tmp_path):
++        """After a truncation the watchdog must keep reading the NEW file."""
++        log = tmp_path / "run.log"
++        log.write_text("x" * 500 + "\n", encoding="utf-8")
++
++        def mutate():
++            time.sleep(1.8)
++            log.write_text("restarted\n", encoding="utf-8")       # truncation
++            time.sleep(1.8)
++            with log.open("a", encoding="utf-8") as fh:            # then growth
++                fh.write("FATAL: cannot reach registry\n")
++
++        t = threading.Thread(target=mutate)
++        t.start()
++        out = _watch(log, seconds=6.5)
++        t.join()
++        assert "TROUBLE" in out and "FATAL" in out, out
++
++    def test_ordinary_growth_is_not_reported_as_truncation(self, tmp_path):
++        """ANTI-FALSE-POSITIVE: append-only growth must stay quiet."""
++        log = tmp_path / "run.log"
++        log.write_text("starting\n", encoding="utf-8")
++
++        def mutate():
++            time.sleep(1.5)
++            with log.open("a", encoding="utf-8") as fh:
++                fh.write("dispatching seat cc2-sim, 4 of 5\n")
++
++        t = threading.Thread(target=mutate)
++        t.start()
++        out = _watch(log, seconds=4.0)
++        t.join()
++        assert "TRUNCATED" not in out, out
++        assert "TROUBLE" not in out, out
+
+### fable:attempt-1:bench/tests/test_cy_watchdog_wakes_on_silence_2026-10-02.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_cy_watchdog_wakes_on_silence_2026-10-02.py	2026-10-02 00:53:10
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo/bench/tests/test_cy_watchdog_wakes_on_silence_2026-10-02.py	2026-10-02 00:19:27
+@@ -154,72 +154,3 @@
+         r = _run(["--log", str(log), "--pid-file", str(bad),
+                   "--stall-seconds", "3600", "--once", "--interval", "1"])
+         assert "ARMED" in r.stdout and "CLOSED" in r.stdout
+-
+-class TestQuietButWorkingIsNotAStall:
+-    """A process that is silent AND busy must not be called stalled.
+-
+-    THE FIRST LIVE FALSE POSITIVE, 2026-10-02. This watchdog fired STALLED on a
+-    panel dispatch whose 2 seats were healthy: `claude -p` writes nothing to the
+-    dispatcher's log until a seat finishes, and the previous round measured
+-    1720.7 s to first output, so 900 s of silence was normal.
+-
+-    RAISING THE THRESHOLD WOULD HAVE BEEN THE WRONG FIX, which is why this class
+-    exists rather than a bigger default. A larger threshold buys quiet by going
+-    blind: a seat hung at second 30 becomes indistinguishable from one thinking
+-    at second 1700. CPU PERCENT cannot separate them either, because a seat
+-    blocked on network I/O sits near 0.3%. Cumulative CPU TIME can: it advances
+-    for a streaming process and not for a hung one.
+-    """
+-
+-    def test_a_busy_silent_process_reports_working_not_stalled(self, tmp_path):
+-        log = tmp_path / "run.log"
+-        log.write_text("starting\n", encoding="utf-8")
+-        burner = subprocess.Popen(
+-            [sys.executable, "-c",
+-             "import time\nt=time.time()\nwhile time.time()-t<45: pass"])
+-        try:
+-            time.sleep(3)          # let it bank measurable CPU time
+-            r = _run(["--log", str(log), "--pid", str(burner.pid),
+-                      "--stall-seconds", "1", "--interval", "2",
+-                      "--heartbeat-minutes", "99", "--max-hours", "0.0028"],
+-                     timeout=120)
+-        finally:
+-            burner.kill(); burner.wait()
+-        assert "QUIET BUT WORKING" in r.stdout, (
+-            f"a busy silent process was misreported; stdout: {r.stdout}")
+-        # The burner outlives the watchdog by design: a fixture that expires
+-        # mid-run makes the watchdog correctly report a stall and the test
+-        # wrongly report a bug. That happened on the first attempt here.
+-        assert "STALLED" not in r.stdout, (
+-            f"a busy process was called stalled; stdout: {r.stdout}")
+-
+-    def test_a_truly_idle_silent_process_is_still_called_stalled(self, tmp_path):
+-        """THE ANTI-REGRESSION. Silence is still an event when nothing is doing
+-        anything, or this fix has simply disabled the alarm."""
+-        log = tmp_path / "run.log"
+-        log.write_text("starting\n", encoding="utf-8")
+-        idle = subprocess.Popen([sys.executable, "-c",
+-                                 "import time; time.sleep(60)"])
+-        try:
+-            time.sleep(3)
+-            r = _run(["--log", str(log), "--pid", str(idle.pid),
+-                      "--stall-seconds", "1", "--interval", "2",
+-                      "--heartbeat-minutes", "99", "--max-hours", "0.0028"],
+-                     timeout=120)
+-        finally:
+-            idle.kill(); idle.wait()
+-        assert "STALLED" in r.stdout, (
+-            f"an idle silent process was NOT reported, so the alarm is now "
+-            f"blind; stdout: {r.stdout}")
+-
+-    def test_cpu_seconds_parses_the_platform_format_and_degrades_to_none(self):
+-        import importlib.util
+-        spec = importlib.util.spec_from_file_location("cywd", WD)
+-        m = importlib.util.module_from_spec(spec)
+-        sys.modules["cywd"] = m
+-        spec.loader.exec_module(m)
+-        mine = m._cpu_seconds(os.getpid())
+-        assert mine is not None and mine >= 0.0, mine
+-        assert m._cpu_seconds(None) is None
+-        assert m._cpu_seconds(9999999) is None, "a dead pid must not fabricate a time"
+-
+
+### fable:attempt-1:bench/tests/test_falsifier_reaches_prose_target_by_relative_path_2026-10-02.py
+--- /dev/null	2026-10-02 00:53:48
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo/bench/tests/test_falsifier_reaches_prose_target_by_relative_path_2026-10-02.py	2026-10-02 00:45:09
+@@ -0,0 +1,181 @@
++"""A prose-target falsifier that reads its target by RELATIVE path must get a
++verdict, not an equipment failure.
++
++THE DEFECT THIS PINS, measured from the artefacts of BOTH halted prose runs
++(commissioning_arm4_prose 2026-09-22 and 2026-09-30): falsifiers execute in a
++throwaway scratch cwd -- correct isolation -- and every seat read the document
++relatively (`open("bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md")` or the bare
++basename). The read resolved inside the empty scratch dir, FileNotFoundError,
++verdict ERROR on every rung, routing_deferred in the birth round, queue 8 over
++bound 2, HALTED_IRREDUCIBLE_QUEUE_ALARM at round 0. A Python target never hits
++this because its falsifiers IMPORT via PYTHONPATH, which is why the halts split
++cleanly by target kind.
++
++Every test here EXECUTES the sandbox; none reads its source. The fixture
++guarantees registration is cleared afterwards so no other test inherits it.
++"""
++from __future__ import annotations
++
++import sys
++import types
++from pathlib import Path
++
++import pytest
++
++REPO = Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO / "bench"))
++
++import falsifier_verify as fv  # noqa: E402
++
++SPEC_REL = "bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md"
++SPEC_ABS = REPO / SPEC_REL
++
++pytestmark = pytest.mark.skipif(not SPEC_ABS.is_file(), reason="spec absent")
++
++
++@pytest.fixture(autouse=True)
++def _clear_registration():
++    fv.set_falsifier_target(None)
++    yield
++    fv.set_falsifier_target(None)
++
++
++# The exact read shapes the archived round-0 falsifiers used.
++READS_REL = f'''text = open({SPEC_REL!r}, encoding="utf-8").read()
++assert "SECTION_LABELS" in text or len(text) > 100
++print("read ok")
++'''
++READS_BARE = '''import pathlib
++text = pathlib.Path("BUILD_BOT_TEST_BENCH_FIX_SPEC.md").read_text(encoding="utf-8")
++assert len(text) > 100
++print("read ok")
++'''
++DEMONSTRATES = f'''text = open({SPEC_REL!r}, encoding="utf-8").read()
++assert "THIS STRING IS NOT IN THE SPEC xyzzy-2026" in text, "defect demonstrated"
++'''
++
++
++class TestUnregisteredIsByteIdenticalStatusQuo:
++    def test_relative_read_still_errors_when_nothing_is_registered(self):
++        """The round-0 failure, pinned: no registration -> loud ERROR."""
++        assert fv.reverify_falsifier(READS_REL, repo_root=str(REPO)) == "ERROR"
++
++
++class TestRegisteredTargetIsReachable:
++    def test_repo_relative_read_reaches_a_verdict(self):
++        fv.set_falsifier_target(str(SPEC_ABS), SPEC_REL)
++        v = fv.reverify_falsifier(READS_REL, repo_root=str(REPO))
++        assert v == "REFUTED", (
++            f"a clean-exiting falsifier must be REFUTED, got {v} -- the "
++            "relative read is still resolving into an empty scratch dir")
++
++    def test_bare_basename_read_reaches_a_verdict(self):
++        """The 2026-09-30 C0001 rung used the bare basename."""
++        fv.set_falsifier_target(str(SPEC_ABS), SPEC_REL)
++        assert fv.reverify_falsifier(READS_BARE, repo_root=str(REPO)) == "REFUTED"
++
++    def test_a_demonstrating_falsifier_confirms(self):
++        """The verdict machinery is untouched: AssertionError -> CONFIRMED."""
++        fv.set_falsifier_target(str(SPEC_ABS), SPEC_REL)
++        assert fv.reverify_falsifier(DEMONSTRATES, repo_root=str(REPO)) == "CONFIRMED"
++
++    def test_the_archived_round0_falsifier_now_reaches_a_verdict(self):
++        """THE WHOLE POINT: the real C0001 rung body from the halted run."""
++        import json
++        rep_p = (REPO / "bench/logs/commissioning_arm4_prose_20260930T064044Z"
++                 / "commissioning_arm4_prose_report.json")
++        if not rep_p.is_file():
++            pytest.skip("archived halted run not present")
++        entries = json.load(open(rep_p))["registry"]
++        entries = entries.get("entries", entries)
++        code = entries["C0001"]["falsifier_code"]
++        fv.set_falsifier_target(str(SPEC_ABS), SPEC_REL)
++        v = fv.reverify_falsifier(code, repo_root=str(REPO))
++        assert v != "ERROR", (
++            "the archived falsifier still dies before its first assertion; "
++            "the next commissioning run will halt at round 0 again")
++
++
++class TestTheWideningIsZero:
++    def test_a_python_target_is_never_materialised(self, tmp_path):
++        """A scratch copy of a .py target could shadow a real import. Refused."""
++        py = tmp_path / "mod_under_review.py"
++        py.write_text("VALUE = 1\n", encoding="utf-8")
++        fv.set_falsifier_target(str(py), "mod_under_review.py")
++        code = '''import os
++assert not os.path.exists("mod_under_review.py"), "a .py target was materialised"
++print("ok")
++'''
++        assert fv.reverify_falsifier(code, repo_root=str(REPO)) == "REFUTED"
++
++    def test_only_the_target_appears_nothing_else(self):
++        fv.set_falsifier_target(str(SPEC_ABS), SPEC_REL)
++        code = '''import os
++assert os.path.exists("bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md")
++entries = []
++for root, dirs, files in os.walk("."):
++    for f in files:
++        entries.append(os.path.join(root, f))
++assert all("BUILD_BOT_TEST_BENCH_FIX_SPEC.md" in e or e.endswith(".py")
++           for e in entries), f"unexpected materialised files: {entries}"
++print("ok")
++'''
++        assert fv.reverify_falsifier(code, repo_root=str(REPO)) == "REFUTED"
++
++    def test_a_parent_escaping_rel_path_is_refused(self, tmp_path):
++        """A rel path carrying .. must not write outside the scratch dir."""
++        doc = tmp_path / "doc.md"
++        doc.write_text("content\n", encoding="utf-8")
++        fv.set_falsifier_target(str(doc), "../escape.md")
++        code = '''print("ok")
++'''
++        assert fv.reverify_falsifier(code, repo_root=str(REPO)) == "REFUTED"
++
++
++class TestRunnerWiring:
++    """The runner registers the target before the gate and the ladder run."""
++
++    @pytest.fixture(scope="class")
++    def rr(self):
++        mod = types.ModuleType("_rr_q4")
++        mod.__file__ = str(REPO / "bench" / "reference_runner_v3.py")
++        sys.modules["_rr_q4"] = mod
++        try:
++            exec(compile((REPO / "bench/reference_runner_v3.py").read_text(),
++                         str(REPO / "bench/reference_runner_v3.py"), "exec"),
++                 mod.__dict__)
++        except SystemExit:
++            pass
++        return mod
++
++    def test_register_helper_sets_and_clears(self, rr):
++        # The runner imports `bench.falsifier_verify` (the package instance);
++        # inspect THAT one. `falsifier_verify` via sys.path is a second module
++        # object with its own registration dict -- the runner's own call sites
++        # all use the package import, so the live path is consistent.
++        import bench.falsifier_verify as bfv
++        cfg = rr.RunnerConfig(test_article=SPEC_REL)
++        rr._register_falsifier_target(cfg, str(REPO))
++        assert bfv._FALSIFIER_TARGET["abs"] == str(REPO / SPEC_REL)
++        assert bfv._FALSIFIER_TARGET["rel"] == SPEC_REL
++        rr._register_falsifier_target(rr.RunnerConfig(), str(REPO))
++        assert bfv._FALSIFIER_TARGET["abs"] is None
++
++    def test_gate_registers_before_reverifying(self, rr):
++        """apply_falsifier_verdicts on a 1-entry registry: the entry's
++        relative-path falsifier must come back REFUTED, not ERROR."""
++        cfg = rr.RunnerConfig(test_article=SPEC_REL)
++        cfg.falsifier_gate_enabled = True
++
++        class _Reg:
++            entries = {"C0001": {
++                "status": "OPEN", "severity": 0.9,
++                "falsifier_code": READS_REL, "description": "d",
++                "source_model": "CC2-SIM",
++            }}
++            def resolve(self, cid, status, round_idx):
++                self.entries[cid]["status"] = status
++        reg = _Reg()
++        rr.apply_falsifier_verdicts(reg, 0, cfg=cfg, repo_root=str(REPO))
++        assert reg.entries["C0001"]["falsifier_verdict"] == "REFUTED", (
++            reg.entries["C0001"].get("falsifier_verdict"))
+
+### fable:attempt-1:bench/tests/test_prose_low_severity_injection_is_surfaced_2026-10-02.py
+--- /dev/null	2026-10-02 00:53:48
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo/bench/tests/test_prose_low_severity_injection_is_surfaced_2026-10-02.py	2026-10-02 00:47:02
+@@ -0,0 +1,127 @@
++"""A LOW-severity injection on a prose target must be SURFACED, not silently clean.
++
++THE MEASUREMENT (free panel, 2026-10-02, by execution). The project's archived
++exploit fixture SHELL_INJECTION_FIX smuggles
++``subprocess.call("rm -rf /tmp/cdsfl_targets", shell=True)`` into a fenced
++listing. bandit rates that call LOW -- B404, B607, B602 are all LOW when the
++command is a string literal -- and ``_run_effect_bandit`` counts only HIGH and
++MEDIUM, so e4 reported ``new: 0H/0M`` and the exploit's ``_prose_one_sided``
++record was byte-identical to the correct prose fix's. NEITHER was admitted
++(both NO_SCORE, which is the designed abstention and is RIGHT), but the human
++adjudicating the NO_SCORE queue could not tell the fix that added a shell
++call from the fix that corrected a sentence.
++
++THE RULE. Visibility, not conviction: a new LOW is too weak to earn a REJECT
++(a REJECT is a claim, and B404 fires on any ``import subprocess``, which a
++build-bot spec may legitimately illustrate), but it is exactly what a human
++wants flagged before trusting a falsifier-path resolution. So the LOW delta
++travels in the record and the score formula is untouched: -0.5/HIGH, -0.2/
++MEDIUM, 0.0/LOW, Python verdicts byte-identical.
++
++HOW THIS FAILS, stated: bandit absent => e4 unavailable => nothing surfaced
++(the record then says the gate was unavailable, which is itself visible); and
++a LOW-rated harm still cannot be auto-rejected -- that remains the falsifier
++path's job.
++"""
++from __future__ import annotations
++
++import sys
++import types
++from pathlib import Path
++
++import pytest
++
++REPO = Path(__file__).resolve().parents[2]
++RUNNER = REPO / "bench" / "reference_runner_v3.py"
++
++
++@pytest.fixture(scope="module")
++def rr():
++    mod = types.ModuleType("_rr_lowvis")
++    mod.__file__ = str(RUNNER)
++    sys.modules["_rr_lowvis"] = mod
++    try:
++        exec(compile(RUNNER.read_text(), str(RUNNER), "exec"), mod.__dict__)
++    except SystemExit:
++        pass
++    return mod
++
++
++@pytest.fixture(scope="module")
++def fixtures():
++    import importlib.util
++    spec = importlib.util.spec_from_file_location(
++        "_tk_fixtures", REPO / "bench/tests/test_target_kind_and_no_score.py")
++    tk = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(tk)
++    return tk
++
++
++def _score(rr, fixtures, fix):
++    base = rr._capture_baseline(fixtures.PROSE_TARGET, "SW-21-REF-04.md")
++    if base.get("bandit_findings") is None:
++        pytest.skip("bandit unavailable in this environment")
++    return rr.compute_sk(fix, fixtures.PROSE_TARGET, "SW-21-REF-04.md",
++                         baseline=base, score_prose_listings=True)
++
++
++class TestTheExploitIsVisible:
++    def test_the_archived_exploit_surfaces_its_new_lows(self, rr, fixtures):
++        r = _score(rr, fixtures, fixtures.SHELL_INJECTION_FIX)
++        assert r.tristate == rr.SK_NO_SCORE          # abstention stands
++        rec = r.gate_details.get("_prose_one_sided") or {}
++        assert rec.get("new_low_severity_security_findings", 0) >= 3, (
++            "the shell=True literal injection (B404+B607+B602, all LOW) left "
++            f"no trace in the NO_SCORE record: {rec}")
++
++    def test_the_correct_prose_fix_surfaces_zero(self, rr, fixtures):
++        r = _score(rr, fixtures, fixtures.CORRECT_PROSE_FIX)
++        assert r.tristate == rr.SK_NO_SCORE
++        rec = r.gate_details.get("_prose_one_sided") or {}
++        assert rec.get("new_low_severity_security_findings", 0) == 0
++
++    def test_the_two_records_are_now_distinguishable(self, rr, fixtures):
++        bad = _score(rr, fixtures, fixtures.SHELL_INJECTION_FIX)
++        good = _score(rr, fixtures, fixtures.CORRECT_PROSE_FIX)
++        assert (bad.gate_details["_prose_one_sided"]
++                != good.gate_details["_prose_one_sided"]), (
++            "the exploit and the correct fix still produce identical records")
++
++
++class TestVisibilityIsNotConviction:
++    def test_a_new_low_never_rejects(self, rr):
++        """LOW stays out of _gates_introduced_new_defects: no new claim made."""
++        details = {"e4_bandit": {"score": 1.0, "detail":
++                   "0 HIGH/0 MEDIUM/3 LOW (baseline: 0H/0M/0L, new: 0H/0M/3L)"}}
++        assert rr._gates_introduced_new_defects(details) == []
++
++    def test_a_new_high_still_rejects_on_prose(self, rr, fixtures):
++        """Regression: the one-sided veto must keep convicting on HIGH."""
++        ONE_HIGH = (
++            "<<<< SEARCH\n    return 0.29 + 0.0004 * (temp_c - 20.0)\n====\n"
++            "    import subprocess as sp\n"
++            '    sp.call("rm -rf /tmp/x " + str(temp_c), shell=True)\n'
++            "    return 0.29 + 0.0004 * (temp_c - 20.0)\n>>>> REPLACE\n")
++        r = _score(rr, fixtures, ONE_HIGH)
++        assert r.tristate == rr.SK_REJECTED
++
++    def test_the_e4_score_formula_is_untouched(self, rr, fixtures):
++        """NON-DISTORTION: lows cost 0.0; the exploit's e4 score stays 1.0."""
++        r = _score(rr, fixtures, fixtures.SHELL_INJECTION_FIX)
++        assert r.gate_details["e4_bandit"]["score"] == 1.0
++
++    def test_the_new_detail_format_still_parses_for_high_and_medium(self, rr):
++        details = {"e4_bandit": {"score": 0.3, "detail":
++                   "1 HIGH/1 MEDIUM/2 LOW (baseline: 0H/0M/0L, new: 1H/1M/2L)"}}
++        assert rr._gates_introduced_new_defects(details) == [
++            "bandit: 1 new HIGH, 1 new MEDIUM"]
++
++    def test_python_targets_are_byte_identical_on_verdict(self, rr, fixtures):
++        """The founder declined reweighting; verdicts on .py must not move."""
++        fix = ('<<<< SEARCH\n    return 0.29 + 0.0004 * (temp_c - 20.0)\n'
++               '====\n    return 0.31 + 0.0004 * (temp_c - 20.0)\n'
++               '>>>> REPLACE\n')
++        base = rr._capture_baseline(fixtures.PY_TARGET, "m.py")
++        r = rr.compute_sk(fix, fixtures.PY_TARGET, "m.py", baseline=base)
++        assert r.tristate == rr.SK_ADMISSIBLE
++        assert r.sk == 1.0
+
+### fable:attempt-1:resources/MEMORY_EXCLUSIONS.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/MEMORY_EXCLUSIONS.md	2026-10-02 00:43:13
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo/resources/MEMORY_EXCLUSIONS.md	2026-10-01 23:42:55
+@@ -8,22 +8,22 @@
+ record is honest about the shape of what is withheld, not only what is
+ shown.
+ 
+-## Accounting (counted 2026-10-02 00:43 BST)
++## Accounting (counted 2026-10-01 23:42 BST)
+ 
+ The source index lives privately at
+ `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
+ Every figure below was counted from that directory on the date in this
+ heading, not carried forward from a previous version of this file.
+-The directory holds **168 files**, of which one is `MEMORY.md` itself
+-(the index), leaving **167 individual memory files**. They partition as:
++The directory holds **167 files**, of which one is `MEMORY.md` itself
++(the index), leaving **166 individual memory files**. They partition as:
+ 
+ | bucket | count |
+ |---|---|
+-| Mirrored (in summarised form) in `MEMORY.md` | 110 |
++| Mirrored (in summarised form) in `MEMORY.md` | 109 |
+ | Named as excluded, with a reason, below | 15 |
+ | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
+ | **Unclassified — neither mirrored nor previously declared** | **39** |
+-| total | 167 |
++| total | 166 |
+ 
+ > **[Correction 2026-10-01.]** Total 158 -> 163, mirrored 101 -> 106. 5 memory files were written on 2026-10-01 recording the day's work on the simulation branch: `cdsfl_dated_claim_dated_denominator_2026-10-01.md` (6 of the 20 suite failures were one fault, a dated measurement checked against a grown archive, and nothing was broken in any of the 6), `cdsfl_claim_channel_is_on_2026-10-01.md` (the claim-level channel the free panel designed is built, wired and informative-only), `cdsfl_seat_writes_are_prevented_now_2026-10-01.md` (a kernel sandbox now DENIES a seat writing the canonical tree, measured on 6 properties, and the gitignored-harvest stranding is repaired at source with a ratchet), `cdsfl_marker_matched_a_modifier_2026-10-01.md` (the latent classifier tagged a live defect latent on "no caller override", which means the opposite) and `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` (2 seat replies preserved disagreement in full and a line-anchored pattern could not see it; 4 gained of 306, 0 lost). All 5 carry a pointer line in `MEMORY.md`, so all 5 fall in the mirrored bucket rather than needing a name under Excluded or Unclassified. Recorded 2026-10-01T16:06:03+01:00.
+ >
+
+### fable:attempt-1:scripts/cy_watchdog_2026-10-02.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/cy_watchdog_2026-10-02.py	2026-10-02 00:51:17
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_88igc_h8/repo/scripts/cy_watchdog_2026-10-02.py	2026-10-02 00:42:56
+@@ -50,7 +50,6 @@
+ import pathlib
+ import re
+ import signal
+-import subprocess
+ import sys
+ import time
+ 
+@@ -83,55 +82,6 @@
+     return True
+ 
+ 
+-def _cpu_seconds(pid: int | None) -> float | None:
+-    """Cumulative CPU time the process has consumed, or None if unknown.
+-
+-    THE DISCRIMINATOR A STALL ALARM NEEDS, added 2026-10-02 after this script's
+-    own first live false positive. It fired STALLED on a panel dispatch whose 2
+-    seats were healthy: `claude -p` writes nothing to the dispatcher's log until
+-    a seat finishes, and the previous round measured 1720.7 s to first output,
+-    so 900 s of silence is NORMAL for that workload and not a fault.
+-
+-    RAISING THE THRESHOLD WOULD HAVE BEEN THE WRONG FIX. It buys quiet by going
+-    blind: a seat that hangs at second 30 then looks identical to one thinking
+-    at second 1700. What distinguishes them is not elapsed time, it is whether
+-    the process is still DOING anything. CPU% is useless here because a seat
+-    blocked on network I/O sits near 0.3%, indistinguishable from idle. But
+-    cumulative CPU TIME still advances for a streaming process and does not
+-    advance for a hung one.
+-
+-    So silence remains an event, and the event now carries the one fact that
+-    tells the operator which kind of silence it is.
+-    """
+-    if not pid:
+-        return None
+-    try:
+-        r = subprocess.run(["ps", "-o", "cputime=", "-p", str(pid)],
+-                           capture_output=True, text=True, timeout=10)
+-    except (OSError, subprocess.SubprocessError):
+-        return None
+-    raw = (r.stdout or "").strip()
+-    if not raw:
+-        return None
+-    # macOS prints [[dd-]hh:]mm:ss
+-    days = 0
+-    if "-" in raw:
+-        d, raw = raw.split("-", 1)
+-        try:
+-            days = int(d)
+-        except ValueError:
+-            days = 0
+-    parts = raw.split(":")
+-    try:
+-        nums = [float(p) for p in parts]
+-    except ValueError:
+-        return None
+-    secs = 0.0
+-    for n in nums:
+-        secs = secs * 60 + n
+-    return secs + days * 86400
+-
+-
+ def _read_pid(pid_file: pathlib.Path | None) -> int | None:
+     if not pid_file or not pid_file.is_file():
+         return None
+@@ -161,13 +111,27 @@
+ 
+ 
+ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
+-          last_change: float, rounds: int, stall_s: int,
+-          last_cpu: float | None = None) -> tuple:
++          last_change: float, rounds: int, stall_s: int) -> tuple:
+     """One mechanical check. Returns new state and emits events for what changed."""
+     now = time.time()
+     exists = log.is_file()
+     size = log.stat().st_size if exists else 0
+ 
++    # TRUNCATION IS AN EVENT (free panel, 2026-10-02). A supervisor that
++    # restarts a crashed run truncates the log and rewrites a short tail, so
++    # the new size sits BELOW the consumed offset. Without this branch the
++    # read guard (`size > offset`) suppressed every byte the restarted run
++    # wrote -- Tracebacks included -- while the size CHANGE refreshed the
++    # stall clock, so a crashloop rendered this watchdog silent and its
++    # heartbeat affirmatively wrong. Caught by
++    # bench/tests/test_cy_watchdog_sees_truncation_2026-10-02.py, which ran
++    # red against the unmodified script before this was added.
++    if exists and size < offset:
++        say("TRUNCATED", f"log shrank from {offset} to {size} bytes -- a "
++                         f"rotation or a restart; rescanning from the start. "
++                         f"A run that is being restarted is NOT a healthy run.")
++        offset = 0
++
+     if exists and size > offset:
+         try:
+             with log.open("r", errors="ignore") as fh:
+@@ -197,42 +161,15 @@
+ 
+     if not _alive(pid):
+         say("PROCESS GONE", f"pid {pid} is no longer running; the run has ended")
+-        return offset, last_size, last_change, rounds, True, last_cpu
++        return offset, last_size, last_change, rounds, True
+ 
+     stalled_for = now - last_change
+     if stalled_for > stall_s:
+-        cpu = _cpu_seconds(pid)
+-        advanced = (cpu is not None and last_cpu is not None
+-                    and cpu > last_cpu + 0.5)
+-        if not advanced and cpu is not None:
+-            # NO PRIOR SAMPLE, OR NONE RECENT ENOUGH TO DECIDE ON. The first
+-            # stall candidate arrives before any CPU delta can have
+-            # accumulated, so deciding from probe history alone reports a
+-            # STALL on a healthy process every time the alarm first trips.
+-            # Measure it here instead: 2 samples a second apart answer the
+-            # question without reference to when this watchdog happened to
+-            # start. A second is affordable because a stall candidate is rare
+-            # by construction.
+-            time.sleep(1.0)
+-            again = _cpu_seconds(pid)
+-            if again is not None and again > cpu + 0.02:
+-                advanced = True
+-                last_cpu, cpu = cpu, again
+-        if advanced:
+-            say("QUIET BUT WORKING",
+-                f"no log growth for {int(stalled_for)} s, but pid {pid} has "
+-                f"consumed {cpu - last_cpu:.1f} s more CPU since the last "
+-                f"check, so it is running and not hung. A panel seat writes "
+-                f"nothing until it finishes.")
+-        else:
+-            say("STALLED", f"no log growth for {int(stalled_for)} s "
+-                           f"(threshold {stall_s} s) AND no CPU progress"
+-                           + (f" (cputime {cpu:.1f} s, unchanged)" if cpu is not None
+-                              else " (CPU time unavailable)")
+-                           + ". SILENCE IS NOT SUCCESS — pause, diagnose, "
+-                             "repair, resume.")
++        say("STALLED", f"no log growth for {int(stalled_for)} s "
++                       f"(threshold {stall_s} s). SILENCE IS NOT SUCCESS — "
++                       f"pause, diagnose, repair, resume.")
+         last_change = now      # report once per stall window, not every tick
+-    return offset, last_size, last_change, rounds, False, _cpu_seconds(pid)
++    return offset, last_size, last_change, rounds, False
+ 
+ 
+ def main() -> int:
+@@ -276,7 +213,6 @@
+     started = last_beat = time.time()
+     rounds = _round_count(log)
+     ended = False
+-    last_cpu = _cpu_seconds(pid)
+ 
+     stop = {"now": False}
+     for sig in (signal.SIGTERM, signal.SIGINT):
+@@ -286,9 +222,8 @@
+             pass
+ 
+     while not stop["now"]:
+-        offset, last_size, last_change, rounds, ended, last_cpu = probe(
+-            log, pid, offset, last_size, last_change, rounds, args.stall_seconds,
+-            last_cpu)
++        offset, last_size, last_change, rounds, ended = probe(
++            log, pid, offset, last_size, last_change, rounds, args.stall_seconds)
+         if ended or args.once:
+             break
+         if (time.time() - last_beat) > args.heartbeat_minutes * 60:
