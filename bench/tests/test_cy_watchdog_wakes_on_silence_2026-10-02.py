@@ -123,11 +123,34 @@ class TestTroubleAndProgressAreSpoken:
                   "--stall-seconds", "3600", "--once", "--interval", "1"])
         assert "TROUBLE" not in r.stdout, r.stdout
 
+    @pytest.mark.parametrize("benign", [
+        # A TIMESTAMP IS NOT A STATUS CODE. `401` matched inside
+        # `20261002T064011Z` on a live run, so every artefact saved at such a
+        # second raised an alarm. Digit boundaries fixed the timestamp and
+        # still matched "429 findings", because a boundary cannot tell a code
+        # from a count -- so bare status codes are gone entirely.
+        "[07:40:11]   Saved: .../r2_chatgpt-sim_20261002T064011Z.json",
+        "Saved round_04.json at 20261002T040329Z",
+        "elapsed 4293.1s, 429 findings total",
+        "Round 3: 403 findings, 2932.4s",
+        "dispatching seat cc2-sim at 20261002T040112Z",
+    ])
+    def test_a_digit_run_is_not_mistaken_for_a_status_code(self, tmp_path, benign):
+        log = tmp_path / "run.log"
+        log.write_text(benign + "\n", encoding="utf-8")
+        r = _run(["--log", str(log), "--pid", str(os.getpid()),
+                  "--stall-seconds", "3600", "--once", "--interval", "1"])
+        assert "TROUBLE" not in r.stdout, (
+            f"{benign[:50]!r} cried wolf; an ignored channel is the 9-hour "
+            f"hole again: {r.stdout}")
+
     @pytest.mark.parametrize("red", [
         "3 failed, 9372 passed in 3217.53s",
         "1 failed, 500 passed",
         "FAILED bench/tests/test_x.py::test_y",
         "2 errors in 4.1s",
+        "HTTP 429 Too Many Requests: rate limit exceeded",
+        "502 Server Error",
     ])
     def test_a_real_failure_count_still_wakes_the_model(self, tmp_path, red):
         """THE ANTI-REGRESSION for the narrowing above."""

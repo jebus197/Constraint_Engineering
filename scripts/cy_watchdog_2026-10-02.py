@@ -62,7 +62,25 @@ TROUBLE = re.compile(
     r"Traceback|Exception|FATAL|CRITICAL|Segmentation|MemoryError|"
     r"\bKilled\b|OOM|RecursionError|PermissionError|"
     r"HALTED|ALARM|REFUSED|UNRECORDED_STOP|"
-    r"rate.?limit|quota|401|403|429|5\d\d Server|"
+    # BARE STATUS CODES ARE GONE, and that is a removal with a measurement
+    # behind it. `401|403|429` matched inside the timestamp `20261002T064011Z`
+    # -- the "4011" of an ordinary "Saved:" line -- so every artefact written
+    # at such a second raised an alarm. Adding digit boundaries fixed the
+    # timestamp and still matched "429 findings total", because a boundary
+    # cannot tell a status code from a count, and context matching for 3 codes
+    # is more machinery than the signal is worth.
+    #
+    # WHAT IS GIVEN UP, stated rather than discovered: a line whose ONLY
+    # evidence of trouble is a bare status code no longer wakes anyone. The
+    # transport failures that actually occur here are covered by the
+    # `api error:` family below, by `rate limit`, `quota`, `5xx Server`, and by
+    # Traceback and Exception -- the measured stall of 2026-10-02 carried
+    # "API Error: Response stalled mid-stream" and no status code at all.
+    #
+    # Third pattern-calibration defect in this file, all the same shape: a
+    # pattern matching more than it means, in a channel whose only value is
+    # being believed.
+    r"rate.?limit|quota|5\d\d Server|"
     # `(?-i:...)` turns IGNORECASE OFF for this alternative alone. With
     # `re.I` applied to the whole pattern, the uppercase marker `FAILED`
     # also matched the lower-case word in "0 failed" — which is how a GREEN
