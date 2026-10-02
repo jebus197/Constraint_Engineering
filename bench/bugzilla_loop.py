@@ -191,6 +191,14 @@ class CloseAttempt:
     verification: VerificationResult | None = None
     reason: str = ""  # human-readable summary
     outcome: VerificationOutcome = VerificationOutcome.FAIL
+    #: Did the fix cure THE DEFECT THIS FINDING CLAIMS? Empty when not asked.
+    #: `run_verification` answers "did this fix break anything"; it has never
+    #: answered this. Measured over the committed archive on 2026-08-30:
+    #: 126 of 246 conclusively probed fixes DO NOT cure their own falsifier --
+    #: 51.2195%, Wilson [45.0027%, 57.3989%] -- and every one of those findings
+    #: closed anyway, because closure keys on the generic checks alone.
+    efficacy: str = ""
+    efficacy_detail: str = ""
 
     def __post_init__(self) -> None:
         if not isinstance(self.outcome, VerificationOutcome):
@@ -638,6 +646,8 @@ def attempt_close(
     test_cmd: str | None = None,
     *,
     timeout: int = 120,
+    efficacy_mode: str = "off",
+    target_rel: str | None = None,
 ) -> CloseAttempt:
     """Attempt the four-step CONFIRMED -> CLOSED transition for a single
     finding. Returns a CloseAttempt describing the outcome.
@@ -683,6 +693,55 @@ def attempt_close(
         except OSError:
             pass
 
+    # DOES THE FIX CURE THE DEFECT THIS FINDING CLAIMS? A different question
+    # from the one `run_verification` answers, and until now nothing asked it
+    # at closure time. `fix_efficacy.probe` answers it in 3 passes whose order
+    # makes a wrong answer unreachable: a TRIPWIRE proving the falsifier
+    # actually reads the target, a BASELINE proving it still demonstrates the
+    # defect, and only then the patched verdict. An import-resolving falsifier
+    # therefore returns NOT_INTERCEPTED rather than a false "ineffective",
+    # which is the obstacle that made the obvious version of this wrong.
+    #
+    # MODES. "off" is byte-identical to the behaviour before this existed.
+    # "record" attaches the verdict and changes NO decision. "veto" refuses to
+    # close a finding whose own falsifier still fails.
+    #
+    # IT IS WIRED AS "record" AND NOT AS "veto", DELIBERATELY. Over the
+    # committed archive 126 of 246 conclusive probes are ineffective, so a veto
+    # would stop more than half of all closures at once, leaving findings open,
+    # growing the irreducible queue and plausibly tripping its alarm. That is a
+    # change to when a run converges, so it earns promotion on measured
+    # evidence from a run rather than on the strength of the argument --
+    # `feedback_shadow_promotion_now`.
+    if efficacy_mode in ("record", "veto") and finding.get("falsifier_code"):
+        try:
+            import sys as _sys
+            _here = str(Path(__file__).resolve().parent)
+            if _here not in _sys.path:
+                _sys.path.insert(0, _here)
+            from fix_efficacy import FIX_INEFFECTIVE, probe
+            rel = target_rel or target_path.name
+            res = probe(dict(finding), rel, timeout=min(timeout, 20))
+            eff_outcome = getattr(res, "outcome", "")
+            efficacy_detail = str(getattr(res, "detail", ""))
+        except Exception as exc:                                  # noqa: BLE001
+            # An instrument that could not look must not convict a fix, and
+            # must not silently vanish either.
+            eff_outcome = "INDETERMINATE_PROBE_UNAVAILABLE"
+            efficacy_detail = f"{type(exc).__name__}: {exc}"
+            FIX_INEFFECTIVE = None
+        if (efficacy_mode == "veto" and FIX_INEFFECTIVE is not None
+                and eff_outcome == FIX_INEFFECTIVE):
+            return CloseAttempt(
+                finding_id=fid, closed=False, extract=extract,
+                verification=verify, outcome=VerificationOutcome.FAIL,
+                efficacy=eff_outcome, efficacy_detail=efficacy_detail,
+                reason=("the fix does not cure this finding's own falsifier: "
+                        + efficacy_detail),
+            )
+    else:
+        eff_outcome = efficacy_detail = ""
+
     # THE line. A finding closes on PASS and on nothing else. NO_APPLICABLE_
     # CHECKS is not a near-miss to be waved through — it is the instrument
     # saying it could not look, and a finding it could not look at stays open
@@ -694,6 +753,7 @@ def attempt_close(
             extract=extract,
             verification=verify,
             outcome=VerificationOutcome.PASS,
+            efficacy=eff_outcome, efficacy_detail=efficacy_detail,
             reason="verified by " + ", ".join(verify.checks_run),
         )
 
@@ -704,6 +764,7 @@ def attempt_close(
             extract=extract,
             verification=verify,
             outcome=VerificationOutcome.NO_APPLICABLE_CHECKS,
+            efficacy=eff_outcome, efficacy_detail=efficacy_detail,
             reason=(
                 "not verifiable (no applicable checks, this is not a fault in "
                 "the fix): " + "; ".join(verify.failures)
@@ -716,6 +777,7 @@ def attempt_close(
         extract=extract,
         verification=verify,
         outcome=VerificationOutcome.FAIL,
+        efficacy=eff_outcome, efficacy_detail=efficacy_detail,
         reason="verification failed: " + "; ".join(verify.failures),
     )
 

@@ -458,6 +458,13 @@ def main() -> int:
         # "enabled" while proving nothing, which is the precise difference
         # between a flag being set and a capability being exercised.
         sk_score_prose_listings=True,
+        # fix_efficacy_mode: ask at closure time whether each fix cures the
+        # defect its own finding claims. RECORD ONLY -- it changes no decision
+        # here. 126 of 246 conclusively probed fixes in the archive do not cure
+        # their own falsifier (51.2195%, Wilson [45.0027%, 57.3989%]) and every
+        # one closed regardless, so this run is the measurement that decides
+        # whether the veto is safe to turn on.
+        fix_efficacy_mode="record",
     )
 
     print(f"=== SIMULATED EXPERIMENT (runner {R.RUNNER_VERSION}) ===", flush=True)

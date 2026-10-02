@@ -1545,6 +1545,16 @@ class RunnerConfig:
     #: markdown against 4 over its listings; bandit a syntax error and NO
     #: metrics before, e4 = 0.5 on a real HIGH after.
     sk_score_prose_listings: bool = False
+    #: Ask, at closure time, whether a fix cures THE DEFECT ITS OWN FINDING
+    #: CLAIMS. "off" | "record" | "veto". Default "off" so no existing run
+    #: changes cost or behaviour; the simulated-run config turns it to
+    #: "record". Measured over the committed archive: 126 of 246 conclusively
+    #: probed fixes do NOT cure their own falsifier, 51.2195%, Wilson
+    #: [45.0027%, 57.3989%], and all of them closed, because closure keys on
+    #: the generic checks alone. "veto" would stop over half of closures at a
+    #: stroke, which changes when a run converges, so it is promoted on
+    #: measured evidence from a run and not on argument.
+    fix_efficacy_mode: str = "off"
     # CONSUMPTION. The memory's blended prior SEEDS R_k(0) — the appendix §1.1
     # initial condition R_k(0) = π_k — per finding flaw class.
     #
@@ -3924,11 +3934,25 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                             from bugzilla_loop import attempt_close
                             attempt = attempt_close(
                                 {"finding_id": canonical_id,
-                                 "proposed_fix": entry["proposed_fix"]},
+                                 "proposed_fix": entry["proposed_fix"],
+                                 # WITHOUT THE FALSIFIER the efficacy probe
+                                 # cannot run at all, and this call site has
+                                 # never passed it: the question "does this fix
+                                 # cure its own defect" was unaskable here.
+                                 "falsifier_code": entry.get("falsifier_code")
+                                 or entry.get("last_falsifier_code") or ""},
                                 target_path,
                                 test_cmd=(cfg.test_cmd if cfg else None),
                                 timeout=120,
+                                efficacy_mode=(
+                                    getattr(cfg, "fix_efficacy_mode", "off")
+                                    if cfg else "off"),
+                                target_rel=target_file,
                             )
+                            if getattr(attempt, "efficacy", ""):
+                                entry["close_time_fix_efficacy"] = attempt.efficacy
+                                entry["close_time_fix_efficacy_detail"] = (
+                                    attempt.efficacy_detail)
                             if attempt.closed:
                                 entry["verified"] = True
                                 entry["bugzilla_verified"] = True
