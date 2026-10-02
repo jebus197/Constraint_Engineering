@@ -66,6 +66,32 @@ _DIAGNOSTIC_FALSIFIERS = {
 }
 NOT_PYTEST_MODULES.update(_DIAGNOSTIC_FALSIFIERS)
 
+#: ARCHIVED SEAT EVIDENCE IS NOT LIVE CODE, and it is exempt by PREFIX rather
+#: than file by file.
+#:
+#: The preservation mechanism of 2026-10-01 copies every file a panel seat
+#: wrote into `experimental_notes/seat_evidence/<round>/<seat>/` at its real
+#: path, because the harvest directory is gitignored and a seat's work was
+#: otherwise unreachable from any clone: measured at 46 of 281 seat files
+#: reachable from nowhere. When a seat writes a TEST, the preserved copy lands
+#: under that tree with a `test_` name and this guard reported it as a stray.
+#:
+#: THE PRECEDENT IS ALREADY IN THE LIST ABOVE. The 2026-08-30 entry exempts
+#: "the archived artefact of what a reviewer wrote inside its sandbox, kept as
+#: a record of the review" -- the identical category, admitted one file at a
+#: time. A per-file list would need an entry after every panel round, which is
+#: the hand-maintained drift the founder ruled against on 2026-10-02, so the
+#: rule is a prefix.
+#:
+#: WHY THIS IS NOT A HOLE. A file under this prefix cannot quietly become live
+#: code: `test_seat_evidence_reaches_a_clone_2026-10-01.py` asserts every
+#: preserved copy matches the harvested original a seat actually wrote, so the
+#: exemption covers archives and nothing else. A test file anywhere ELSE
+#: outside the collected root is still reported, including elsewhere under
+#: experimental_notes, which `test_the_prefix_is_not_a_blanket_exemption`
+#: holds.
+ARCHIVED_EVIDENCE_PREFIXES = ("experimental_notes/seat_evidence/",)
+
 
 #: Directories that are not the project: another checkout's worktree, a build
 #: cache, a seat's harvested copy. A test file inside one of these is not a
@@ -118,6 +144,7 @@ class TestEveryTestFileIsReachable:
     def test_no_test_file_sits_outside_the_collected_root(self):
         stray = [f for f in _tracked_test_files()
                  if not f.startswith(COLLECTED_ROOT)
+                 and not f.startswith(ARCHIVED_EVIDENCE_PREFIXES)
                  and f not in NOT_PYTEST_MODULES]
         assert not stray, (
             ("" if _is_repo() else
@@ -168,3 +195,37 @@ class TestTheRescuedTestsAreLive:
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
+
+
+class TestTheArchivedEvidenceExemptionIsNarrow:
+    """The prefix rule must cover archives only, added 2026-10-02.
+
+    An exemption wide enough to hide a live test file would defeat the guard it
+    sits inside, which is the shape of defect this project keeps finding. These
+    tests pin the boundary rather than trusting the prefix to be read carefully.
+    """
+
+    def test_a_preserved_seat_test_is_exempt(self):
+        assert "experimental_notes/seat_evidence/r/cc2/bench/tests/test_x.py"\
+            .startswith(ARCHIVED_EVIDENCE_PREFIXES)
+
+    @pytest.mark.parametrize("path", [
+        "experimental_notes/test_somewhere_else.py",
+        "experimental_notes/data/test_thing.py",
+        "scripts/test_helper.py",
+        "bench/test_stray.py",
+        "experimental_notes/seat_evidenceX/test_lookalike.py",
+    ])
+    def test_everything_else_outside_the_root_is_still_reported(self, path):
+        assert not path.startswith(ARCHIVED_EVIDENCE_PREFIXES), (
+            f"{path} would be silently exempted, so the guard is a hole")
+        assert not path.startswith(COLLECTED_ROOT)
+
+    def test_the_exemption_actually_fires_on_the_live_tree(self):
+        """Not vacuous: there ARE preserved seat tests in this tree today."""
+        preserved = [f for f in _tracked_test_files()
+                     if f.startswith(ARCHIVED_EVIDENCE_PREFIXES)]
+        if not preserved:
+            pytest.skip("no preserved seat tests committed in this clone")
+        assert len(preserved) >= 1
+

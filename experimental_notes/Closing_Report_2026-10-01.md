@@ -9,7 +9,7 @@ The founder asked whether the work took quite some time. It did, and the dominan
 
 From the compaction to this report is 5.8440 hours. Of that, 2.7133 hours was the test suite running to completion, which is 46.4287 per cent of the whole window, give or take 0.0149 percentage points from timestamp granularity. Numpy, sympy and mpmath agree on that share with 0 spread between them. There were 3 completed full runs at 2989.88, 3281.91 and 3496.13 seconds, and 2 part-runs abandoned deliberately at 66 per cent and 46 per cent, whose durations were not recorded.
 
-CORRECTION, made at 23:37 on 1 October 2026. This paragraph first stated 6.8442 hours and 57.4208 per cent. Both were wrong, for 2 unrelated reasons, and both are replaced above by figures a committed script now produces.
+CORRECTION, made at 23:37 on 1 October 2026. This paragraph first stated 6.8442 hours and 57.4208 per cent. Both were wrong, for 2 unrelated reasons, and both are replaced above by figures that scripts/day_window_timing_2026-10-01.py now produces, so they can be re-executed rather than trusted.
 
 The window was measured from a compaction time read as 12:00 local. The session transcript records that instant in Coordinated Universal Time, so the true local time was 13:00:21 British Summer Time and the window was 1 hour shorter than stated. The same mis-reading was live in the hook that announces compactions, which printed the Coordinated Universal Time wall clock with no zone label directly beside a clock line in local time, and inflated every announced age by 1 hour. That hook is repaired.
 

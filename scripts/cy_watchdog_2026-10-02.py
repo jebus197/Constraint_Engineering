@@ -315,7 +315,14 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=(__doc__ or "").strip().split("\n")[0] or None)
-    ap.add_argument("--log", required=True, help="the run's log file")
+    # NOT `required=True`. argparse reports a MISSING required argument before
+    # it reports an UNRECOGNISED one, so with --log required an unknown flag
+    # produced "the following arguments are required: --log" and never the
+    # "unrecognized arguments" that `test_an_unknown_flag_is_rejected_loudly`
+    # requires of every operational script. The flag is still mandatory; its
+    # absence is reported below, after argparse has had its say about unknown
+    # flags. Same family of defect as the --help sweep of 2026-10-01.
+    ap.add_argument("--log", help="the run's log file (required)")
     ap.add_argument("--pid-file", default=None)
     ap.add_argument("--pid", type=int, default=None)
     ap.add_argument("--interval", type=int, default=60,
@@ -328,6 +335,8 @@ def main() -> int:
     ap.add_argument("--max-hours", type=float, default=24.0)
     ap.add_argument("--once", action="store_true", help="single probe, then exit")
     args = ap.parse_args()
+    if not args.log:
+        ap.error("--log is required: name the log file to watch")
 
     log = pathlib.Path(args.log)
     pid = args.pid or _read_pid(pathlib.Path(args.pid_file) if args.pid_file else None)
