@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 2 October 2026 04:49 BST (2026-10-02T04:49:22+01:00)
+Generated: 2 October 2026 18:04 BST (2026-10-02T18:04:56+01:00)
 
 ---
 
@@ -18,21 +18,31 @@ Generated: 2 October 2026 04:49 BST (2026-10-02T04:49:22+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `bf04cf7` fix: 3 guards met the same category error, and A7 stops drifting
-- **Committed:** 2026-10-02 04:24:13 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 8
+- **Last commit (the PARENT of the commit containing this file):** `abef2f2` fix: $HOME was in scope, so the listing that finds the key store was not flagged
+- **Committed:** 2026-10-02 17:58:40 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 15
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M experimental_notes/CDSFL_Agent_Operational_Plan.md`
-- `M experimental_notes/data/instrument_inventory.json`
+- `M bench/fingerprints/CC2-SIM.json`
+- `M bench/fingerprints/CC2.json`
+- `M bench/fingerprints/ChatGPT-SIM.json`
+- `M bench/fingerprints/ChatGPT.json`
+- `M bench/fingerprints/Codex-SIM.json`
+- `M bench/fingerprints/Codex.json`
+- `M bench/fingerprints/DeepSeek-SIM.json`
+- `M bench/fingerprints/DeepSeek.json`
+- `M bench/fingerprints/Fable-SIM.json`
+- `M bench/fingerprints/Gemini-SIM.json`
+- `M bench/fingerprints/Gemini.json`
 - `M resources/RECOVERY.md`
+- `?? bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z/`
 
 ---
 
 ## Tests
 
-**9585 tests collected** at 2 October 2026 04:49 BST, HEAD `bf04cf7` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**9692 tests collected** at 2 October 2026 18:04 BST, HEAD `abef2f2` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -62,13 +72,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `bf04cf7 fix: 3 guards met the same category error, and A7 stops drifting`
-- `ad8fe13 feat: rescue the seat evidence that predated the preservation repair`
-- `43d570a fix: the watchdog went blind on truncation, and the Q2 split the founder ruled on`
-- `1ac147c fix: closure never asked whether a fix cures the defect its finding claims`
-- `057781d fix: the 4 red tests were all mine, and each was a real tension not a typo`
-- `8a39117 fix: a prose falsifier could not reach its own target, which halted both runs at round 0`
-- `2a06f7b fix: the cy watchdog reported a halt exactly like a convergence`
-- `0edee1d feat: a mechanical cy trigger, because the 30-minute cap was a half-truth`
-- `04bff14 sv: the alarm's clock, the index audit's grouped pointers, and a report figure withdrawn`
-- `5a81bd6 fix: the compaction alarm read UTC as local, and the index audit could not see grouped pointers`
+- `abef2f2 fix: $HOME was in scope, so the listing that finds the key store was not flagged`
+- `854efaa fix: the full suite found 4 same-day regressions the 501-test subset cannot reach`
+- `199cadb test: the stale-label trap now has a guard that bites`
+- `bcbe0c1 fix: I read a label the runner documents as stale, and withdrew a true claim`
+- `d8aa279 docs: 3 load-bearing claims in the guard note are refuted by execution`
+- `7b583c0 docs: the census counted lines as occurrences and counted itself`
+- `dc3921e test: the note's producer was an addition nothing executed`
+- `51efc9b docs: the integrity guard's false-positive test cannot see a false positive`
+- `a0bd8e5 fix: the halt alarm called 2 never-assessed criticals "locked as irreducible"`
+- `33cc895 fix: the alarm channel was 83% ordinary English, and re-arming lost the newest lines`

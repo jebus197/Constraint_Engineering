@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 2 October 2026 04:49 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 2 October 2026 18:04 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,36 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-02 18:00 BST (READ THIS FIRST)
+
+**BRANCH.** HEAD `abef2f2` on `sim/shakedown-2026-09-29`. `main` untouched. The founder's 2026-09-30 ruling binds: simulated work goes to the simulation branch, `main` only by agreement.
+
+**★★★ THE GREEN BOARD, AND WHAT IT COST TO GET.** Full suite at `854efaa`: **9,668 passed, 7 skipped, 0 failed, EXIT=0** in 2944.77 s, 49 network attempts all denied. Producer, re-runnable: `python3 -m pytest bench/tests/ -q --timeout=1800 -p no:cacheprovider`, launched by `bench/logs/_suite/run_full_suite_2026-10-02_pm2.sh`. The run before it, at `199cadb`, was **6 failed, 9,662 passed** — and **4 of those 6 were introduced the same day by work the 501-test pre-commit subset cannot reach**. The worst was mine: `a0bd8e5` made `irreducible_queue_count` call `self.irreducible_queue_decomposition()`, which broke the `_Reg` fixture that borrows the UNBOUND method onto a class carrying only `.entries`, and took out `test_a_deferred_item_still_counts_toward_the_alarm` — the guard whose own docstring calls it "THE ONE THAT MATTERED". Repaired by moving the rule to the module-level `_irreducible_queue_split(entries)`. **A pre-commit subset is not a board.**
+
+**★★★ `$HOME` WAS IN SCOPE, SO THE LISTING THAT FINDS THE KEY STORE WAS NOT FLAGGED.** `key_access_forensics._in_scope`'s truncation clause accepted `a.startswith(target)`, and an ANCESTOR is also a prefix. On this machine the run directory sits inside the repository inside `$HOME`, so the repository root, `/Users/georgejackson` and `/Users` all scored IN SCOPE. Measured: `os.listdir("/Users/georgejackson")` — the listing that discovers the store `vault_keys.sh` deliberately hides there — was **IN SCOPE for the scanner and REFUSED by the gate**. Under the founder's ruling the gate becomes advisory, so **fixing the scanner first is a sequencing constraint, not a preference**. The same class was fixed in the GATE on 2026-09-10 and never reached the scanner: fixed in one place, not its twin. Found by the fable and cc2 seats independently in the star round, each with a one-command prediction that held. Commit `abef2f2`, 7 tests, reverting the clause fails 4.
+
+**★★★ THE FOUNDER'S RULING ON KEY ACCESS, VERBATIM, AND NOT YET BUILT.** *"If a key was accessed and read, report it at the end of a run. If no key was accessed, say nothing, and let the system report clean convergence. But convergence should not be blocked and runs should not be terminated even if a key was read. That is a reporting and post run fix issue (as it always has been), not part of the convergence machinery of the schema."* The post-run scanner already detects the real 2026-07-29 breach at tier CONFIRMED (10 C0012 hits on Exp 48, 87 files, 4,068,509 bytes, 0 unreadable), so moving detection post-run costs nothing in detection.
+
+**THE PANEL, 2 ROUNDS, BLIND THEN STAR, 0 PAID.** `integrity_advisory_2026-10-02` and `integrity_advisory_r2_2026-10-02`, seats cc2 and fable on `claude_cli`. Full records: `experimental_notes/Panel_FULL_RECORD_Integrity_Advisory_Blind_2026-10-02.md` and `..._Star_2026-10-02.md`. Both rounds existed only in gitignored `bench/logs/` until the mirror guard caught it at 108 of 110 preserved, 98.1818%, Wilson [93.6120%, 99.5000%]; now 110 of 110.
+
+**WHAT THE PANEL SETTLED.** D-1 the Exp 48 count is **12** and CC1's 10 was the false negative. D-2 `repo_root` must be **record-or-refuse**, read from a runner-authored record, never guessed from `__file__`; fable's framing, *"one class, two records"* — `repo_root` fixed, `target_file` still needs runner-side recording. D-3 the 2 D2 variants are **complementary, each unsafe alone in opposite directions**: releasing the observer-did-not-install class lets a sitecustomize failure drain every critical out of A4. D-4 **`completion_signal.json` is mandatory** for the advisory, being the one artefact a downstream reader consumes alone. D-5 the C0015 removal **is** an amendment to a committed acceptance oracle — 2 of them, neither a weakening — and the protection is to commit the CRITERION. D-6 **neither seat's fix covers the ladder-side residual**: both predicates read `falsifier_verdict`, the carrier is `routing_verdict_unreconciled`, and run 1b's C0029 is the archived proof.
+
+**ALSO LANDED TODAY.** The watch now starts with the run and ends with it (`run_simulated_experiment` spawns it at `logs.mkdir()`, the only point knowing pid + timestamped outcome dir + console log; a `_Tee` creates the console log the sandboxed launcher never produced; fail-open throughout; worst-case 60 s to notice a run ending and 1260 s for a stall, SymPy and NumPy agreeing, against the 2026-09-29/30 hole's 9 unwatched hours). The watchdog no longer reads a green suite as "no verdict at all". The census producer no longer returns a silent zero where there is no `.git` — the one environment a panel seat can re-execute it in, where it had printed `0 across 0 files` as CONFIRMATION of the claim it was meant to test. The alarm names which kind of irreducible critical it counts. 3 pattern defects in the cy channel: a timestamp read as a status code, 83% of the alarm channel matching ordinary English, and a lossy backlog replay.
+
+**RUN 1B.** `prose_convergence_run1b_2026-10-02`, HALTED at round 2, `HALTED_IRREDUCIBLE_QUEUE_ALARM`, 3 rounds, 40 findings, per-round [20, 7, 13], kappa 0.4745, `gamma_critical` 0.336 and `gamma_all` 0.432 — on the converging trajectory when it halted. 2 of its 3 queued criticals were integrity-refused by the `seeded_fault` substring. **Not restarted yet.**
+
+### OUTSTANDING, IN THE ORDER THE SEQUENCING DEMANDS
+
+1. **D-3 + D-6 together** — `integrity_refused` AND `integrity_unobserved`, sharing one predicate, extended to read `routing_verdict_unreconciled` so the ladder-side path (C0029) is covered.
+2. **D-4** — the advisory into `completion_signal.json`, plus the forensics advisory on the report.
+3. **D-2** — `repo_root` record-or-refuse; `target_file` recorded by the runner at dispatch.
+4. **D-1 gate narrowing** — access-only with `seeded_faults` added to `_KEY_FIELDS`. UNBLOCKED now the scanner hole is closed, and verified 6 of 6 against the real C0012 exploit.
+5. **D-5** — commit the criterion that protects C0012's half of the oracle.
+6. **The 2 prevention checks the founder asked for**: a coined-term check in `note_vagueness_lint.py` (it would have caught "second-opinion channel"), and a figure-reproducibility test asserting every figure in a note appears in its committed producer's output (it would have caught 109-versus-111 and the double count).
+7. **A19 per-hunk classification** — the founder's "fix A19 first" ruling, still unbuilt.
+8. **Wire the general falsifier template.** Measured: 872 distinct falsifier bodies across 35 targets, mean 24.91 per target, only 124 of 872 = **14.2202%**, Wilson [12.0588%, 16.6955%], reused across more than 1 target. `bench/tests/fixtures/stem/` holds the proven general pattern and `reference_runner_v3.py` references it **0 times**. Open decision 1 from 2026-09-30.
+9. **Restart run 1b** with the fixes, then 2 more for the founder's 3 consecutive clean convergences.
 
 ## SESSION STATE — 2026-10-02 04:30 BST (READ THIS FIRST)
 
