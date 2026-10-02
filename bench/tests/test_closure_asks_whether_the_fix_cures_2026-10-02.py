@@ -204,18 +204,50 @@ class TestItIsActuallyReachable:
                 "the question cannot be asked at all")
 
     def test_the_config_field_exists_and_defaults_off(self):
+        """READ THE DEFAULT OFF THE DATACLASS, not off the source text.
+
+        This asserted on the source string until 2026-10-02, which
+        `test_the_class_has_not_grown_silently` counts and caps: a source-text
+        assertion proves only that the module describes itself consistently,
+        and 4 guards of this class broke on CORRECT changes in a single day.
+        Reading the field's real default settles the same question by execution.
+        """
+        import dataclasses
+
         import reference_runner_v3 as R
-        fields = {f for f in dir(R)}
-        assert "RunnerConfig" in fields or True
-        src = (ROOT / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
-        assert 'fix_efficacy_mode: str = "off"' in src, (
-            "the default must be off, so no existing run changes cost")
+        fields = {f.name: f for f in dataclasses.fields(R.RunnerConfig)}
+        assert "fix_efficacy_mode" in fields, (
+            "RunnerConfig has no fix_efficacy_mode, so the runner cannot ask "
+            "the question at all")
+        assert fields["fix_efficacy_mode"].default == "off", (
+            "the default must be off, so no existing run changes cost or "
+            "behaviour; promotion is a separate, measured decision")
+        assert R.RunnerConfig().fix_efficacy_mode == "off", (
+            "an instance disagrees with the declared default")
 
     def test_the_simulated_run_turns_it_on(self):
+        """STRUCTURAL, via the AST, not a substring of the file.
+
+        The value is set inside a function call, so there is no object to read
+        without running a whole experiment. Parsing for the keyword argument is
+        structural rather than textual: it survives reformatting and cannot be
+        satisfied by the string appearing in a comment.
+        """
+        import ast
         src = (ROOT / "bench" / "tools" /
                "run_simulated_experiment.py").read_text(encoding="utf-8")
-        assert 'fix_efficacy_mode="record"' in src, (
-            "nothing enables it, so it is an addition nothing reaches")
+        found = [
+            kw for node in ast.walk(ast.parse(src))
+            if isinstance(node, ast.Call)
+            for kw in node.keywords
+            if kw.arg == "fix_efficacy_mode"
+            and isinstance(kw.value, ast.Constant)
+        ]
+        assert found, (
+            "the simulated run passes no fix_efficacy_mode, so the probe is "
+            "an addition nothing reaches")
+        assert [kw.value.value for kw in found] == ["record"], (
+            f"expected record only, got {[kw.value.value for kw in found]}")
 
 
 class TestTheArchiveFigureIsReal:

@@ -131,11 +131,57 @@ def uncovered_escalation_sites() -> list[tuple[int, str]]:
     return out
 
 
-def registry_entries():
-    """Every registry entry in the archive, deduplicated per run by id."""
+#: THE POPULATION THIS CLAIM IS ABOUT, dated so it cannot drift.
+#:
+#: A7's predicate family is {20, 22, N}, and the unfiltered member N is a count
+#: over a GROWING archive: it read 32 until the commissioning arms of
+#: 2026-09-21/22 were archived, 34 until the arms of 2026-09-29/30 were, and 35
+#: after. The 2 severity-filtered members have never moved. So the entry's
+#: heading needed a hand edit every time an experiment ran, which is the
+#: hand-maintained drift the founder ruled against on 2026-10-02: "Do it."
+#:
+#: Scoping to runs archived before 2026-09-17 reproduces {20, 22, 32}, the
+#: family recorded in that date's withdrawal, which is what makes the dated
+#: figure quotable. Same fix, same reason, as `falsifier_coverage_2026-09-22.py`
+#: and `e1_population_recount_falsifier_2026-09-22.py`: a dated claim needs a
+#: dated denominator. A figure over the WHOLE archive is a different and
+#: legitimate question, asked with --whole-archive and labelled as such, never
+#: by silently re-scoping this one.
+CLAIM_SCOPE_BEFORE = "20260917"
+
+#: Set by main() when --whole-archive is passed. Module-level because
+#: `registry_entries` is a generator reached from 3 call sites.
+_SCOPE = {"whole_archive": False}
+
+
+def _run_dirs():
+    """Run directories in the claim's population. Resolved ONCE, 2 rules.
+
+    SYMLINKS ARE SKIPPED. `bench/logs` carries 2 of them --
+    `exp36_evidence_latest` and `experiment_18` -- and `Path.is_dir()` FOLLOWS a
+    symlink, so a walker reads the same run under 2 names. Measured 2026-10-02:
+    1 duplicate over `*/runner_state.json` (56 against 55 resolved) and 380 over
+    the per-seat `r*_*.json` files, because the target of the first link holds
+    377 of them. Which figure a counter inflates therefore depends entirely on
+    its glob, which is why the skip belongs here rather than in each counter.
+
+    A RUN WITH NO TIMESTAMP IN ITS NAME IS INCLUDED, and that is a decision
+    rather than an oversight: the unstamped directories predate the naming
+    convention, so they are older than any cutoff this scope would apply.
+    """
     for run in sorted(LOGS.iterdir()):
-        if not run.is_dir():
+        if run.is_symlink() or not run.is_dir():
             continue
+        if not _SCOPE["whole_archive"]:
+            stamp = re.search(r"(\d{8})T\d{6}Z", run.name)
+            if stamp and stamp.group(1) >= CLAIM_SCOPE_BEFORE:
+                continue
+        yield run
+
+
+def registry_entries():
+    """Every registry entry in the claim's population, deduped per run by id."""
+    for run in _run_dirs():
         seen = {}
         for f in sorted(run.glob("*_report.json")):
             try:
@@ -166,6 +212,22 @@ def escalated_without_a_falsifier(thr: float):
 
 
 def main() -> int:
+    import argparse
+    ap = argparse.ArgumentParser(
+        description=(__doc__ or "").strip().split("\n")[0] or None)
+    ap.add_argument("--whole-archive", action="store_true",
+                    help="count over EVERY archived run instead of the claim's "
+                         "dated population. A different question: the figure "
+                         "moves whenever an experiment runs.")
+    _args = ap.parse_args()
+    _SCOPE["whole_archive"] = bool(_args.whole_archive)
+    if _SCOPE["whole_archive"]:
+        print("SCOPE: THE WHOLE ARCHIVE. This figure MOVES when runs are "
+              "added and is not the dated family A7 quotes.\n")
+    else:
+        print(f"SCOPE: runs archived before {CLAIM_SCOPE_BEFORE}, which is the "
+              f"population A7's family is a claim about. Symlinked run "
+              f"directories are skipped.\n")
     thr = critical_threshold()
     rows = escalated_without_a_falsifier(thr)
     print(f"critical severity threshold, read from the runner: {thr}")
@@ -239,5 +301,10 @@ def main() -> int:
 
 if __name__ == "__main__":
     from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
-    answer_help(__doc__, __file__)
+    # `takes_no_arguments=False` BECAUSE THIS SCRIPT NOW PARSES ONE, and the
+    # helper's own docstring reserved that switch for the first caller that did.
+    # Without it the refusal fires before main() and `--whole-archive` is
+    # unreachable -- an addition nothing reaches, caught by running it.
+    # `--help` is still answered by the helper, before argparse sees anything.
+    answer_help(__doc__, __file__, takes_no_arguments=False)
     raise SystemExit(main())

@@ -40,6 +40,29 @@ ARCHIVE_ROOTS: tuple[str, ...] = (
     "bench/logs",
     "bench/logs_quarantine",
     "bench/results",
+    # PRESERVED SEAT EVIDENCE IS RUN OUTPUT, added 2026-10-02. It is the
+    # harvested work of a panel seat, copied into the tracked tree so a clone
+    # can reach it, with each file's sha256 recorded before its provenance
+    # header. By this module's own test -- does the location mark the file as
+    # the OUTPUT of a run rather than part of the instrument -- it qualifies
+    # exactly.
+    #
+    # WHY IT IS HERE RATHER THAN PATCHED INTO ONE GUARD. Rescuing the
+    # 2026-09-20 to 2026-09-30 backlog broke 3 guards in one night, each
+    # assuming every .py and .md under a tracked path is live project work: a
+    # seat's test looked like a stray test file, a seat's prose failed the note
+    # standard, and a seat's file with an unterminated string literal failed
+    # the Python floor. All 3 are the same category error, and the third was
+    # about to become a third ad-hoc exemption. This module exists so that
+    # "adding a root here changes every caller at once".
+    #
+    # WHAT IS GIVEN UP, stated rather than discovered later: guards over this
+    # tree stop asking whether a seat's own file parses, cites resolvable
+    # lines, or meets this project's prose standard. That is correct -- editing
+    # it to pass would destroy what makes it evidence -- and it is NOT a hole,
+    # because `test_seat_evidence_reaches_a_clone_2026-10-01.py` pins every
+    # preserved file to the bytes the seat wrote, so live code cannot hide here.
+    "experimental_notes/seat_evidence",
 )
 
 PathLike = Union[str, "os.PathLike[str]"]

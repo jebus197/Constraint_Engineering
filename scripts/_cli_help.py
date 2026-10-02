@@ -93,8 +93,12 @@ def answer_help(doc: str | None, path: str | None = None,
     forms go through, and the text scan is taught to see this call as well.
 
     `takes_no_arguments=False` disables the refusal for a caller that parses its
-    own positionals afterwards. No caller needs it today; it exists so adding one
-    does not require weakening the default.
+    own arguments afterwards. FIRST USED 2026-10-02 by
+    `scripts/escalation_paths_2026-09-11.py`, which gained a `--whole-archive`
+    flag when task A7's predicate family was scoped to a date: without the
+    switch the refusal fires before the script's own parser and the new flag is
+    unreachable. `--help` is still answered here, before the caller's parser
+    sees anything, so the help text cannot drift away from this helper.
     """
     args = sys.argv[1:] if argv is None else argv
     name = pathlib.Path(path or sys.argv[0]).name
