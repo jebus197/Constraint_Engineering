@@ -168,6 +168,21 @@ PINNED_PROSE_TAGGED = sorted(PINNED_2026_09_08 + [
     "commissioning_arm1_panel_20260921T215405Z/C0060",
     "commissioning_arm4_prose_20260922T053349Z/C0003",
     "commissioning_arm4_prose_20260922T053349Z/C0016",
+    # RE-MEASURED 2026-10-02, not re-interpreted. `prose_convergence_run1b`
+    # landed 3 newly tagged entries and the pin went red at 19 against 16.
+    # `test_corpus_is_the_whole_archive_not_a_slice` states the procedure for
+    # exactly this: "If runs are added the numbers below must be re-measured
+    # rather than silently re-interpreted."
+    #
+    # MEASURED BEFORE EXTENDING: 3 gained, 0 LOST. A loss would be the
+    # regression this pin exists to catch; growth is the archive growing. All 3
+    # are `status=CLOSED`, `falsifier_verdict=CONFIRMED`, severity 0.65, 0.65
+    # and 0.69 -- just under CRITICAL_SEVERITY_THRESHOLD, which is the
+    # just-below-critical population the tagger exists to surface, so each tags
+    # for the reason the tagger was built for rather than by accident.
+    "prose_convergence_run1b_2026-10-02_20261002T044234Z/C0008",
+    "prose_convergence_run1b_2026-10-02_20261002T044234Z/C0030",
+    "prose_convergence_run1b_2026-10-02_20261002T044234Z/C0039",
 ])
 
 @_needs_archive

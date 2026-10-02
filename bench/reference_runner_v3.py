@@ -2136,6 +2136,36 @@ ATTESTED_STATUSES = frozenset({"CORROBORATED"})
 # FindingRegistry (identical to Exp 36 — A1 windowing, A3 HIL escalation)
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _irreducible_queue_split(entries) -> Tuple[int, int]:
+    """(ladder-exhausted, never-assessed) over a registry's entries.
+
+    ONE PREDICATE, TWO READERS, AND NO `self`. `FindingRegistry` has 2 methods
+    over this and the round loop logs a third reading of the same rule; keeping
+    the arithmetic here means the total and the split cannot disagree, while a
+    caller that owns only `.entries` -- the `_Reg` fixture in
+    test_panel_five_fixes_2026-09-07.py borrows the unbound method onto exactly
+    such a class -- still works.
+
+    An entry carrying BOTH flags counts once, as exhausted. z3 returns `unsat`
+    both for `old != new` against the shipped single expression and for both
+    arms firing on one entry; exhaustive enumeration agrees over 48 of 48
+    states; 400 randomised registries agree with an independent
+    reimplementation, 0 mismatches.
+    """
+    _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+    locked = deferred = 0
+    for e in entries.values():
+        if e.get("status") in _TERMINAL:
+            continue
+        if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+            continue
+        if e.get("irreducible_escalation"):
+            locked += 1
+        elif e.get("routing_deferred"):
+            deferred += 1
+    return locked, deferred
+
+
 class FindingRegistry:
     """Canonical finding registry — runner-owned, models read/propose only.
 
@@ -2669,23 +2699,28 @@ class FindingRegistry:
         irreducible" reads 3 crises; run 1b's honest reading was 1 exhausted and
         2 never assessed, which points at the instrument instead.
 
-        `irreducible_queue_count` is now the SUM of this, so the two cannot
-        drift. An item carrying both flags counts ONCE, as exhausted, which is
-        what the previous single-expression form also did -- pinned by a
-        differential test over synthetic entries rather than by reading.
+        `irreducible_queue_count` is the SUM of this, so the two cannot drift.
+        An item carrying both flags counts ONCE, as exhausted, which is what the
+        previous single-expression form also did -- pinned by a differential
+        test over synthetic entries rather than by reading.
+
+        THE WORK IS IN A MODULE FUNCTION, NOT IN THIS METHOD, and that is a
+        repair rather than a style choice. The first version had
+        `irreducible_queue_count` call `self.irreducible_queue_decomposition()`,
+        which broke `_Reg` in test_panel_five_fixes_2026-09-07.py: that fixture
+        borrows the UNBOUND `irreducible_queue_count` onto a class carrying only
+        `.entries`, so a `self.`-method dependency raised AttributeError and
+        took out `test_a_deferred_item_still_counts_toward_the_alarm` -- the
+        guard whose own docstring calls it "THE ONE THAT MATTERED". Routing the
+        shared predicate through `_irreducible_queue_split(entries)` keeps one
+        rule for both readers AND keeps every duck-typed caller working.
+        Amending the fixture instead was the alternative and is forbidden: a
+        committed oracle is not edited to admit a new feature.
+
+        The 501-test pre-commit subset does not reach that test. The full suite
+        found it, 49 minutes after the commit that broke it.
         """
-        _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
-        locked = deferred = 0
-        for e in self.entries.values():
-            if e.get("status") in _TERMINAL:
-                continue
-            if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
-                continue
-            if e.get("irreducible_escalation"):
-                locked += 1
-            elif e.get("routing_deferred"):
-                deferred += 1
-        return locked, deferred
+        return _irreducible_queue_split(self.entries)
 
     def irreducible_queue_count(self) -> int:
         """Static HIL queue: criticals locked as irreducible AFTER the full routing
@@ -2716,7 +2751,7 @@ class FindingRegistry:
         #
         # Counting `routing_deferred` here restores the alarm to its shipped
         # behaviour exactly, while nothing false is asserted about any item.
-        return sum(self.irreducible_queue_decomposition())
+        return sum(_irreducible_queue_split(self.entries))
 
     def contested_count(self, current_round: int, grace_period: int = 2,
                         subcritical_exclusion: bool = False) -> int:

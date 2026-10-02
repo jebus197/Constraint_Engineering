@@ -300,11 +300,12 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
-    # `takes_no_arguments=False` BECAUSE THIS SCRIPT NOW PARSES ONE, and the
-    # helper's own docstring reserved that switch for the first caller that did.
-    # Without it the refusal fires before main() and `--whole-archive` is
-    # unreachable -- an addition nothing reaches, caught by running it.
-    # `--help` is still answered by the helper, before argparse sees anything.
-    answer_help(__doc__, __file__, takes_no_arguments=False)
+    # NO `answer_help` HERE, and the comment this replaces said why it had to
+    # go without noticing: "`--help` is still answered by the helper, before
+    # argparse sees anything." That is the defect.
+    # `test_no_script_uses_both` states it plainly -- the helper answers
+    # `--help` first, so argparse's flag list never reaches the reader, and
+    # `--whole-archive` was undocumented to anyone who asked. argparse already
+    # does the job, and `parse_args()` is the FIRST statement in `main()`, so
+    # `--help` still exits before any archive is read and still costs nothing.
     raise SystemExit(main())
