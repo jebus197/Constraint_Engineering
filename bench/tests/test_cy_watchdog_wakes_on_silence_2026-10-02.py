@@ -440,3 +440,210 @@ class TestTheVerdictCanLiveElsewhere:
                   "--outcome-dir", str(rundir)])
         assert "1 round(s) landed" in r.stdout, r.stdout
 
+
+
+def _probe_module():
+    """Import the watchdog so its functions can be CALLED, not described.
+
+    The subprocess tests above cover the end-to-end channel. These call
+    `probe` directly because the property under test is a DIFFERENCE between
+    two argument values (`first=True` vs `first=False`) on identical input,
+    and a differential is the only form of evidence that a narrowing actually
+    narrowed something.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("cyw", str(WD))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+class TestABacklogIsSummarisedNotReplayed:
+    """RE-ARMING MUST NOT FLOOD. Measured on run 1b: arming replayed all 28
+    matching lines of a 42,695-byte log, the notification was cut with
+    "...(truncated)", and because the replay runs oldest-first the lines it
+    dropped were the NEWEST. Re-arming every 30 minutes is by design, so the
+    loss recurred every 30 minutes."""
+
+    def _log_with(self, tmp_path, n):
+        log = tmp_path / "run.log"
+        log.write_text("".join(f"Traceback: historical failure {i}\n"
+                               for i in range(n)), encoding="utf-8")
+        return log
+
+    def test_a_large_backlog_is_summarised_on_the_arming_probe(self, tmp_path, capsys):
+        m = _probe_module()
+        log = self._log_with(tmp_path, 28)
+        m.probe(log, os.getpid(), 0, 0, time.time(), 0, 3600, None, None, first=True)
+        out = capsys.readouterr().out
+        assert "BACKLOG: the log already held 28 problem line(s)" in out, out
+        assert out.count("BACKLOG LINE") == 3, out
+        assert "TROUBLE" not in out, (
+            "the arming probe still replayed the backlog line by line, which "
+            f"is the lossy flood this guards: {out}")
+
+    def test_the_three_named_lines_are_the_NEWEST_not_the_oldest(self, tmp_path, capsys):
+        """THE WHOLE POINT. A truncated flood keeps the oldest and drops the
+        newest; the summary must do the opposite."""
+        m = _probe_module()
+        log = self._log_with(tmp_path, 28)
+        m.probe(log, os.getpid(), 0, 0, time.time(), 0, 3600, None, None, first=True)
+        out = capsys.readouterr().out
+        # ANCHORED TO END-OF-LINE. The first version of this assertion used a
+        # bare `in` and failed: "historical failure 2" is a SUBSTRING of
+        # "historical failure 25", so the test reported the oldest lines as
+        # present when they were absent. Same wrong-predicate shape as the
+        # inventory substring collisions already on this project's record --
+        # the instrument was wrong, not the subject.
+        import re as _re
+        for i in (25, 26, 27):
+            assert _re.search(rf"historical failure {i}$", out, _re.M), (
+                f"newest line {i} missing: {out}")
+        for i in (0, 1, 2):
+            assert not _re.search(rf"historical failure {i}$", out, _re.M), (
+                f"oldest line {i} kept instead of the newest: {out}")
+
+    def test_a_small_backlog_is_STILL_replayed_verbatim(self, tmp_path, capsys):
+        """NOT VACUOUS. 14 regex tests above write ONE line before arming and
+        assert on the event. Summarising at any size would make every one of
+        them assert against a channel nothing reaches."""
+        m = _probe_module()
+        log = self._log_with(tmp_path, 1)
+        m.probe(log, os.getpid(), 0, 0, time.time(), 0, 3600, None, None, first=True)
+        out = capsys.readouterr().out
+        assert "TROUBLE" in out and "BACKLOG" not in out, out
+
+    def test_growth_after_arming_is_never_summarised(self, tmp_path, capsys):
+        """A live crashloop writing 28 lines mid-run must produce 28 events.
+        The summary is an ARMING concession, not a volume cap."""
+        m = _probe_module()
+        log = self._log_with(tmp_path, 28)
+        m.probe(log, os.getpid(), 0, 0, time.time(), 0, 3600, None, None, first=False)
+        out = capsys.readouterr().out
+        assert out.count("TROUBLE") == 28, out
+        assert "BACKLOG" not in out, out
+
+    def test_the_old_behaviour_is_demonstrably_GONE(self, tmp_path, capsys):
+        """MUTATION-STYLE. If `first` changed nothing, these two counts agree
+        and this file would have passed over the defect."""
+        m = _probe_module()
+        log = self._log_with(tmp_path, 28)
+        m.probe(log, os.getpid(), 0, 0, time.time(), 0, 3600, None, None, first=True)
+        armed = capsys.readouterr().out.count("TROUBLE")
+        m.probe(log, os.getpid(), 0, 0, time.time(), 0, 3600, None, None, first=False)
+        live = capsys.readouterr().out.count("TROUBLE")
+        assert armed == 0 and live == 28, (
+            f"arming emitted {armed} and live emitted {live}; equal counts mean "
+            f"the `first` argument is wired to nothing")
+
+    def test_a_post_arm_failure_still_wakes_end_to_end(self, tmp_path):
+        """THE CHANNEL THAT MATTERS, through the real subprocess. A summarised
+        backlog must not cost the live alarm."""
+        log = self._log_with(tmp_path, 8)
+        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+        try:
+            wd = subprocess.Popen(
+                [sys.executable, str(WD), "--log", str(log), "--pid", str(child.pid),
+                 "--stall-seconds", "3600", "--interval", "1"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            time.sleep(2.5)
+            with log.open("a", encoding="utf-8") as fh:
+                fh.write("Traceback (most recent call last):\n")
+                fh.write("RuntimeError: the seat died after the watch armed\n")
+            time.sleep(3.0)
+            child.terminate()
+            child.wait(timeout=10)      # REAP: an unreaped child is a zombie,
+            # and a zombie is covered by its own test below.
+            out, _ = wd.communicate(timeout=30)
+        finally:
+            if child.poll() is None:
+                child.kill()
+                child.wait(timeout=10)
+        assert "BACKLOG: the log already held 8 problem line(s)" in out, out
+        assert "TROUBLE" in out, f"the post-arm crash did not wake it: {out}"
+        assert "after the watch armed" in out, out
+        assert "PROCESS GONE" in out, out
+
+
+class TestProseIsNotAnAlarm:
+    """A token that is also ordinary English is not evidence. Third and fourth
+    instances of the shape, after `0 failed` and `401`-inside-a-timestamp."""
+
+    @pytest.mark.parametrize("prose", [
+        # all six measured in run 1b's own log, all benign
+        "refused. This is NOT a verdict: the finding is neither confirmed nor",
+        "[07:06:47]   corrected copies: 9 accepted, 0 refused, 7 unmatched",
+        "[06:40:09]   gamma_critical: 0.000 (continuous decay-curve diagnostic)",
+        "[06:40:09]   gamma-alt: critical-quiescence too early (round 0 < 3)",
+        "the control cannot reach the target it reads and cannot test whether",
+        "bench/decay_analysis.py:54: OptimizeWarning: Covariance of the "
+        "parameters could not be estimated",
+    ])
+    def test_the_runs_own_explanatory_prose_is_not_an_alarm(self, tmp_path, prose):
+        log = tmp_path / "run.log"
+        log.write_text(prose + "\n", encoding="utf-8")
+        r = _run(["--log", str(log), "--pid", str(os.getpid()),
+                  "--stall-seconds", "3600", "--once", "--interval", "1"])
+        assert "TROUBLE" not in r.stdout, (
+            f"{prose[:60]!r} cried wolf: {r.stdout}")
+
+    @pytest.mark.parametrize("real", [
+        "[06:05:53]   corrected copy REFUSED C0007 from Fable-SIM",
+        "CRITICAL:immune.pipeline:the pipeline aborted",
+        "HALTED_IRREDUCIBLE_QUEUE_ALARM at round 0",
+    ])
+    def test_the_uppercase_machine_token_still_speaks(self, tmp_path, real):
+        """THE ANTI-REGRESSION. Both narrowed tokens have a real uppercase
+        form and both must survive; `(?-i:)` keeps it while dropping prose."""
+        log = tmp_path / "run.log"
+        log.write_text(real + "\n", encoding="utf-8")
+        r = _run(["--log", str(log), "--pid", str(os.getpid()),
+                  "--stall-seconds", "3600", "--once", "--interval", "1"])
+        assert "TROUBLE" in r.stdout, f"{real!r} went silent: {r.stdout}"
+
+    def test_what_the_narrowing_GIVES_UP_is_recorded_as_intended(self, tmp_path):
+        """STATED, NOT DISCOVERED. A line whose only evidence is the bare word
+        "cannot" no longer speaks. This test exists so that the loss is a
+        decision on the record rather than a surprise in six weeks."""
+        log = tmp_path / "run.log"
+        log.write_text("the allocator cannot find a free page\n", encoding="utf-8")
+        r = _run(["--log", str(log), "--pid", str(os.getpid()),
+                  "--stall-seconds", "3600", "--once", "--interval", "1"])
+        assert "TROUBLE" not in r.stdout, r.stdout
+        # the same failure WITH an error token is still caught
+        log.write_text("MemoryError: the allocator cannot find a free page\n",
+                       encoding="utf-8")
+        r2 = _run(["--log", str(log), "--pid", str(os.getpid()),
+                   "--stall-seconds", "3600", "--once", "--interval", "1"])
+        assert "TROUBLE" in r2.stdout, r2.stdout
+
+
+class TestAFinishedRunIsNotAliveBecauseItsPidLingers:
+    """A ZOMBIE PASSES `os.kill(pid, 0)`. An exited process whose parent has
+    not reaped it keeps its pid and accepts signal 0, so the liveness check
+    called a FINISHED run alive. Found by the end-to-end test above hanging
+    for its full timeout waiting for a PROCESS GONE that could not come."""
+
+    def test_an_unreaped_exited_process_is_reported_GONE(self, tmp_path):
+        log = tmp_path / "run.log"
+        log.write_text("starting\n", encoding="utf-8")
+        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+        try:
+            child.terminate()
+            time.sleep(0.5)             # exited, deliberately NOT reaped
+            r = _run(["--log", str(log), "--pid", str(child.pid),
+                      "--stall-seconds", "3600", "--interval", "1"], timeout=30)
+            assert "PROCESS GONE" in r.stdout, (
+                f"a zombie was read as a live run, so the end of a run goes "
+                f"unreported until the stall threshold expires: {r.stdout}")
+        finally:
+            child.wait(timeout=10)
+
+    def test_a_genuinely_running_process_is_NOT_reported_gone(self, tmp_path):
+        """ANTI-FALSE-POSITIVE. The state check must not call a live run dead;
+        `S`, `R`, `SN` and `R+` are all running states."""
+        log = tmp_path / "run.log"
+        log.write_text("starting\n", encoding="utf-8")
+        r = _run(["--log", str(log), "--pid", str(os.getpid()),
+                  "--stall-seconds", "3600", "--once", "--interval", "1"])
+        assert "PROCESS GONE" not in r.stdout, r.stdout

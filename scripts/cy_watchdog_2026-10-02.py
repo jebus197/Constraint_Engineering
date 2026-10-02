@@ -59,9 +59,9 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 # Lines worth waking a model for. Deliberately WIDE: a missed crashloop costs
 # hours, a spurious wake costs one notification.
 TROUBLE = re.compile(
-    r"Traceback|Exception|FATAL|CRITICAL|Segmentation|MemoryError|"
+    r"Traceback|Exception|FATAL|(?-i:CRITICAL)|Segmentation|MemoryError|"
     r"\bKilled\b|OOM|RecursionError|PermissionError|"
-    r"HALTED|ALARM|REFUSED|UNRECORDED_STOP|"
+    r"HALTED|ALARM|(?-i:REFUSED)|UNRECORDED_STOP|"
     # BARE STATUS CODES ARE GONE, and that is a removal with a measurement
     # behind it. `401|403|429` matched inside the timestamp `20261002T064011Z`
     # -- the "4011" of an ordinary "Saved:" line -- so every artefact written
@@ -86,7 +86,37 @@ TROUBLE = re.compile(
     # also matched the lower-case word in "0 failed" — which is how a GREEN
     # result became an alarm. pytest writes the marker in capitals, so
     # requiring capitals here keeps the real signal and drops the false one.
-    r"could not|cannot |(?-i:FAILED)|Error:|"
+    # `could not` AND `cannot ` ARE GONE, on a census of the only live
+    # evidence there is. Over the 476 lines of run 1b's log the 28 matching
+    # lines break down as: `cannot ` 6, `could not` 4 -- and all 10 are
+    # ORDINARY ENGLISH inside the run's own explanatory prose ("the control
+    # cannot reach the target it reads", "the original passage could not be
+    # located", "Covariance of the parameters could not be estimated"). Zero
+    # were failures. The same census indicted two more tokens, both fixed
+    # above by the `(?-i:)` precedent rather than by deletion, because both
+    # have a real UPPERCASE machine form:
+    #
+    #   REFUSED   2 true tokens ("corrected copy REFUSED C0007"), 12 prose
+    #             matches -- three of which read "0 refused", which is the
+    #             zero-count principle below for a third time.
+    #   CRITICAL  0 true tokens, 4 matches inside `gamma_critical` and
+    #             `critical-quiescence`, so it fired EVERY ROUND OF EVERY RUN.
+    #
+    # WHAT IS GIVEN UP: a failure whose only evidence is the phrase "cannot"
+    # or "could not", with no error token anywhere on the line, no longer
+    # wakes anyone. `Error:`, `Traceback`, `Exception`, `PermissionError`,
+    # `MemoryError` and the rest are untouched, and a C-style "fatal error:"
+    # still speaks through `Error:`.
+    #
+    # NOT NARROWED, deliberately: `[1-9]\d*\s+(?:failed|error|errors)` fires
+    # on "Skin barrier (v2): 5 passed, 15 failed out of 20 findings", a routine
+    # per-round census, roughly twice a run. It shares its exact lexical shape
+    # with "3 failed, 9372 passed in 3217.53s", which
+    # `test_a_real_failure_count_still_wakes_the_model` pins as a line that
+    # MUST speak. Separating them needs the phrase "out of N findings", which
+    # is over-fitting to one log. The 2 noise events are the accepted price of
+    # catching a red suite, and saying so beats discovering it again.
+    r"(?-i:FAILED)|Error:|"
     # A COUNT OF ZERO IS NOT TROUBLE. The bare word `failed` matched
     # "8,878 passed, 0 failed" on this watchdog's first live outing, which is a
     # GREEN result reported as an alarm. A channel that cries wolf teaches its
@@ -95,6 +125,24 @@ TROUBLE = re.compile(
     # pytest's uppercase per-test `FAILED` marker above still speaks always.
     r"[1-9]\d*\s+(?:failed|error|errors)\b",
     re.I)
+#: Above this many problem lines ALREADY IN THE LOG when the watch arms, the
+#: first probe summarises them instead of replaying one event each.
+#:
+#: MEASURED, 2026-10-02, on the re-arm of the watch over run 1b: the arming
+#: probe read from byte 0 and emitted an event for all 28 matching lines of a
+#: 42,695-byte log. The notification that carried them was CUT with
+#: "...(truncated)" partway through -- and because the replay runs oldest-first,
+#: the lines it dropped were the NEWEST ones, which are the only ones that
+#: could still need acting on. So the flood was not merely noisy, it was LOSSY
+#: in exactly the direction that matters. Re-arming is by design (one arming
+#: caps at 30 minutes), so this recurred roughly every half hour.
+#:
+#: A small backlog is still replayed verbatim: a watch attached to a log
+#: holding one Traceback should say so plainly, and the regex tests drive that
+#: path, so narrowing it would have made 14 of them assert against a channel
+#: nothing reaches.
+BACKLOG_SUMMARY_THRESHOLD = 5
+
 # Progress markers: worth one line each, because a run that is moving is news
 # after a stall and the absence of them is the stall signal.
 PROGRESS = re.compile(r"ROUND\s+(\d+)|round_(\d+)\.json|CONVERGED|convergence|"
@@ -102,6 +150,23 @@ PROGRESS = re.compile(r"ROUND\s+(\d+)|round_(\d+)\.json|CONVERGED|convergence|"
 
 
 def _alive(pid: int | None) -> bool:
+    """Whether the run is still running -- which is not "does the pid exist".
+
+    A ZOMBIE PASSES `os.kill(pid, 0)`. An exited process whose parent has not
+    yet reaped it keeps its pid in the table and accepts signal 0, so the
+    kill-based check called it ALIVE after it had finished. Found 2026-10-02 by
+    this file's own end-to-end test, which terminated its child and then hung
+    for the full 30 s timeout waiting for a PROCESS GONE that could not come.
+
+    The consequence was degradation, not silence: the log stops growing too, so
+    the stall path eventually speaks -- but `--stall-seconds` later (1200 s as
+    armed) and under the wrong name, reporting a finished run as a hung one.
+    Shells reap background jobs promptly, so the window is normally brief; it is
+    the END of a run, which is exactly the moment this watch exists to catch.
+
+    `ps -o state=` is the same mechanism `_cpu_seconds` already uses, so the
+    cost is one more short-lived process per poll -- at a 60 s cadence, nothing.
+    """
     if not pid:
         return True            # no pid supplied: liveness is judged by the log
     try:
@@ -110,6 +175,14 @@ def _alive(pid: int | None) -> bool:
         return False
     except PermissionError:
         return True            # exists, owned by someone else
+    try:
+        state = subprocess.run(["ps", "-o", "state=", "-p", str(pid)],
+                               capture_output=True, text=True,
+                               timeout=10).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return True            # cannot tell: assume alive, the log will judge
+    if state.startswith("Z"):
+        return False
     return True
 
 
@@ -271,7 +344,8 @@ def say(kind: str, msg: str) -> None:
 def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
           last_change: float, rounds: int, stall_s: int,
           last_cpu: float | None = None,
-          outcome_dir: pathlib.Path | None = None) -> tuple:
+          outcome_dir: pathlib.Path | None = None,
+          first: bool = False) -> tuple:
     """One mechanical check. Returns new state and emits events for what changed."""
     now = time.time()
     exists = log.is_file()
@@ -313,9 +387,20 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
         except OSError as exc:
             say("WATCHDOG", f"cannot read the log ({exc}); treating as stalled")
             chunk = ""
-        for line in chunk.splitlines():
-            if TROUBLE.search(line):
-                say("TROUBLE", line.strip()[:300])
+        matches = [ln.strip()[:300] for ln in chunk.splitlines()
+                   if TROUBLE.search(ln)]
+        if first and len(matches) > BACKLOG_SUMMARY_THRESHOLD:
+            say("BACKLOG", f"the log already held {len(matches)} problem "
+                           f"line(s) written before this watch armed. They are "
+                           f"summarised, not replayed: a replay of that many "
+                           f"gets cut off, and it is the newest lines -- the "
+                           f"only ones still worth acting on -- that get cut. "
+                           f"Read the log for the rest. The 3 most recent:")
+            for mt in matches[-3:]:
+                say("BACKLOG LINE", mt)
+        else:
+            for mt in matches:
+                say("TROUBLE", mt)
         # NOT `last_change = now` HERE. Reading bytes that were already on disk
         # when this watchdog attached is not the log ADVANCING, and treating it
         # as advance is how a watchdog inherits a false assumption of health:
@@ -434,10 +519,12 @@ def main() -> int:
         except (ValueError, OSError):
             pass
 
+    first = True
     while not stop["now"]:
         offset, last_size, last_change, rounds, ended, last_cpu = probe(
             log, pid, offset, last_size, last_change, rounds, args.stall_seconds,
-            last_cpu, outcome_dir)
+            last_cpu, outcome_dir, first=first)
+        first = False
         if ended or args.once:
             break
         if (time.time() - last_beat) > args.heartbeat_minutes * 60:
