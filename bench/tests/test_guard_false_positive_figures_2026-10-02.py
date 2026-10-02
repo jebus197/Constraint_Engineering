@@ -165,6 +165,97 @@ class TestTheNotesStructuralClaims:
             "enters through bench/evaluate.py is stale")
 
 
+class TestTheStaleLabelIsNotRead:
+    """The producer must report the LADDER's verdict, not the entry's label.
+
+    THE ERROR THIS PREVENTS REPEATING, and it is the costliest of 2026-10-02.
+    `_apply_routing` writes `falsifier_code`/`falsifier_verdict` back only on
+    `result.resolved`, so when a ladder ran and did not confirm, the entry keeps
+    a stale pre-routing `UNTOOLABLE` and the real verdict survives only in
+    `routing_history[-1]["verdict"]`. The runner states this in
+    `reconcile_routing_verdict`'s own docstring, and records the same trap
+    firing on `commissioning_arm4_prose_20260922T053349Z`.
+
+    The producer bound `h` to that history, read `rungs_tried` out of it, and
+    printed the ENTRY's `falsifier_verdict` one key away. C0029 therefore read
+    "UNTOOLABLE, no falsifier was written at all" when a falsifier HAD been
+    written and the guard had REFUSED it -- and on the strength of that a TRUE
+    claim (2 of 3 queued criticals integrity-refused) was withdrawn in favour
+    of a false one, in a document asking the founder to rule on that guard.
+
+    A prefix scan is also not evidence: 183 of 221 retained routing bodies sit
+    at the 600-character cap, so `scan_falsifier_source` over retained text
+    reads a prefix. C0029's scan comes back clean and its recorded verdict is
+    INTEGRITY_VIOLATION.
+    """
+
+    def _producer_stdout(self):
+        import subprocess
+        r = subprocess.run([sys.executable, str(PRODUCER)],
+                           capture_output=True, text=True, timeout=900)
+        assert r.returncode == 0, r.stderr[-1500:]
+        return r.stdout
+
+    def test_the_ladder_verdict_is_reported_for_C0029(self):
+        out = self._producer_stdout()
+        line = [l for l in out.splitlines() if "C0029" in l]
+        assert line, f"C0029 is not reported at all: {out[-800:]}"
+        line = line[0]
+        assert "ladder_verdict=INTEGRITY_VIOLATION" in line, (
+            f"the producer is reporting the stale entry label again, which is "
+            f"how a true claim came to be withdrawn: {line}")
+
+    def test_the_stale_entry_label_is_marked_as_stale(self):
+        """Printing it is fine. Printing it UNLABELLED is what misled."""
+        out = self._producer_stdout()
+        line = [l for l in out.splitlines() if "C0029" in l][0]
+        assert "stale unless resolved" in line, line
+
+    def test_a_prefix_scan_states_how_much_it_scanned(self):
+        """A clean scan over a truncated body must not read as a clean body."""
+        out = self._producer_stdout()
+        line = [l for l in out.splitlines() if "C0029" in l][0]
+        assert "retained chars" in line, (
+            f"the scan does not say how many characters it saw, so a clean "
+            f"result over a 600-char prefix reads as a clean body: {line}")
+
+    def test_the_recorded_verdicts_outnumber_what_scanning_detects(self):
+        """THE MEASUREMENT THE CORRECTED RATE RESTS ON. If these ever agree,
+        either the truncation was lifted or the archive changed; recheck the
+        3-of-221 figure before citing it."""
+        import json
+        from bench.falsifier_verify import scan_falsifier_source
+        logs = REPO / "bench" / "logs"
+        seen, recorded, detected, n = set(), 0, 0, 0
+        for r in sorted(logs.rglob("*_report.json")):
+            try:
+                d = json.loads(r.read_text(encoding="utf-8", errors="replace"))
+            except (ValueError, OSError):
+                continue
+            for _cid, e in ((d.get("registry") or {}).get("entries") or {}).items():
+                a = ((e or {}).get("falsifier_code") or "").strip()
+                if a:
+                    seen.add(a)
+        for r in sorted(logs.rglob("*_report.json")):
+            try:
+                d = json.loads(r.read_text(encoding="utf-8", errors="replace"))
+            except (ValueError, OSError):
+                continue
+            for _cid, e in ((d.get("registry") or {}).get("entries") or {}).items():
+                for h in ((e or {}).get("routing_history") or []):
+                    b = (h.get("last_falsifier_code") or "").strip()
+                    if b and b not in seen:
+                        n += 1
+                        if h.get("verdict") == "INTEGRITY_VIOLATION":
+                            recorded += 1
+                        if scan_falsifier_source(b):
+                            detected += 1
+        assert recorded > detected, (
+            f"recorded integrity refusals ({recorded}) no longer exceed what "
+            f"scanning the retained text detects ({detected}) over {n} bodies; "
+            f"the 3-of-221 figure in the note needs re-measuring")
+
+
 class TestTheWitness:
 
     def test_a_refused_body_is_invisible_to_the_sweep(self):
