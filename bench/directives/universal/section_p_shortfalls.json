@@ -267,6 +267,33 @@
       "fixed": true,
       "fix": "panel_brief_validate.py now refuses a brief whose OUTPUT SECTION does not name disagreement as a field (scripts/panel_brief_validate.py). What justifies it is TEMPLATE CONFORMANCE: panel_brief_template.md's output section already asks for 'the strongest disagreement with the brief's own framing' by name and passes the check unchanged, so the defect was a validator permitting divergence from the standard it enforces -- 12 of 95 archived briefs diverged and nothing caught them. The check is SECTION SCOPED because a document-wide regex is defeated by the embedded previous-round replies a star brief carries: the word appears on 7 lines of the defective brief, so a document-wide check PASSES it. Measured over all 95 archived briefs, section scope refuses 12 (12.6316%, Wilson [7.3757%, 20.7921%]) and whole-document 15 (15.7895%, Wilson [9.8085%, 24.4296%]). WHAT IS NOT ESTABLISHED: that naming the field changes what seats return. Over 50 rounds carrying both a brief and replies, 32 of 38 with the field had every seat state a disagreement against 9 of 12 without it, Fisher exact two-sided p = 6.675478e-01 (within-period p = 6.187658e-01), scipy and mpmath agreeing to 1e-9. This entry's first version cited 2 figures, 82.1053% and '1 of 3', and both were false -- measured on 3 briefs read by hand rather than on the archive. Producer: scripts/brief_disagreement_field_effect_2026-10-02.py.",
       "held_by": "bench/tests/test_a_brief_names_disagreement_as_a_field_2026-10-02.py"
+    },
+    {
+      "condition": "P5",
+      "round": "falsifier_supply_and_integrity_r2_2026-10-02",
+      "seat": "cc2",
+      "what": "The reply carries no disagreement section. It is 6,245 characters against fable's 16,650 in the same round, and fable's does carry one.",
+      "cause": [
+        "The reply is an AMENDMENT, not a full round-2 reply. Its own first heading",
+        "is 'AMENDMENT - verdict revised' and its substance is the seat refuting",
+        "ITSELF: 'My earlier \"PART 2 is SOUND in design\" does not survive.' It then",
+        "delivers 4 defects, each with a differential-execution falsifier.",
+        "",
+        "So the round-2 reply is an addendum to the seat's own round-1 reply, which",
+        "DID carry a disagreement section. Section P5 asks each reply to preserve its",
+        "disagreement rather than smooth it to consensus; a reply whose entire content",
+        "is the seat withdrawing its own earlier verdict has no disagreement WITH",
+        "OTHERS to preserve, and recording the self-refutation under a 'disagreements'",
+        "heading would misdescribe it.",
+        "",
+        "MEASURED 2026-10-03 with scripts/panel_condition_compliance_2026-09-10.py:",
+        "carries_disagreement is False for cc2 and True for fable in this round. The",
+        "word 'differ' appears only inside the phrase 'differential-execution",
+        "falsifier', which is a method, not a dissent."
+      ],
+      "fixed": "NOT A DEFECT TO FIX. The dispatcher's brief and the detector are both working; the reply is a genuine amendment. What IS fixed by recording it is the guard's ability to tell this shape from a reply that smoothed its disagreement away.",
+      "test": "bench/tests/test_panel_conditions_are_met_2026-09-10.py :: TestP5DisagreementIsPreserved::test_the_misses_are_the_ones_we_think_they_are",
+      "recorded_at": "2026-10-03T09:14:28+01:00"
     }
   ]
 }

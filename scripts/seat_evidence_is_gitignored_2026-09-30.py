@@ -263,7 +263,36 @@ def unpreserved_by_round(rows: list | None = None) -> dict:
     # and not a loosening: a file present in the working tree becomes reachable
     # on commit, and one present NOWHERE never does. Pending files are reported
     # separately by `main()` rather than hidden.
+    # DELIBERATELY UNPRESERVED IS NOT STRANDED, and the rule is IMPORTED from
+    # the preserver rather than restated here (2026-10-03).
+    #
+    # THE DEFECT THIS CLOSES, measured. On 2026-10-03 this function reported 8
+    # stranded files for `falsifier_supply_and_integrity_r2_2026-10-02` and all
+    # 8 were under `.scratch/`. The founder's instruction is that scratch stays
+    # unpreserved, and `panel_sandbox._should_preserve` implements exactly that
+    # -- so the ratchet was firing on COMPLIANCE with his instruction, and
+    # `scripts/backfill_seat_evidence_2026-10-02.py` could never have cleared
+    # it, because the backfill honours the same exclusion. Counting files the
+    # mechanism is forbidden to rescue makes a guard that can only be silenced
+    # by disobeying a ruling.
+    #
+    # IMPORTED, NOT COPIED: a second copy of the exclusion list is exactly the
+    # producer/consumer pair that `execute-do-not-grep` exists to prevent. If
+    # the preserver's list changes, this follows it by construction.
+    try:
+        import sys as _sys
+        if str(ROOT) not in _sys.path:
+            _sys.path.insert(0, str(ROOT))
+        from bench.panel_sandbox import _should_preserve as _preservable
+    except Exception:                                          # noqa: BLE001
+        # The survey must still work where bench is not importable; in that
+        # case NOTHING is excluded, which over-reports rather than under-reports.
+        def _preservable(rel: str) -> bool:
+            return True
+
     for r in (survey() if rows is None else rows):
+        if not _preservable(r["canon"].as_posix()):
+            continue
         if not r["tracked"] and not r.get("preserved") and not r["in_tree"]:
             out[r["round"]] += 1
     return dict(out)

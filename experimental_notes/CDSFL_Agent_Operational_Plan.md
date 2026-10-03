@@ -1,3 +1,85 @@
+## ★ RESUME POINTER — 2026-10-03T07:49:46+01:00. SUPERSEDES EVERY POINTER BELOW.
+
+**WHERE TO RESUME: the full suite, then the commit, then the 3 simulated runs under full `cy`.**
+Branch `sim/shakedown-2026-09-29`, HEAD at this write `c62ac5a` with the merge and
+8 further changes uncommitted. The runs exist to execute the PROGRAMME OF STUDY
+(`experimental_notes/STUDY_IN_FLIGHT.json`, 8 open measurements, announced on every
+turn by `~/.claude/hooks/study_pulse.py`); clean convergence is the success
+CRITERION, not the purpose.
+
+**THE LAUNCH, unchanged and reproducing arm 4's rules on the prose target:**
+```
+nohup python3 bench/tools/run_simulated_experiment.py \
+  --target bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md \
+  --rounds 8 --domain statistics --name <run name> &
+disown
+```
+`nohup` and `disown` are required; the launcher does not detach itself. The tail
+terminal opens on the founder's own machine via `scripts/local/open_run_tail.sh`
+(osascript + a script FILE, never an inline command string).
+
+**WHAT LANDED SINCE THE 04:48 POINTER.**
+
+1. **THE MERGE ADJUDICATION IS SETTLED AND APPLIED.** cc2 and fable independently
+   decomposed the 2-seat disagreement to the same per-assertion decisions: D-B to
+   cc2 (one widened scope expression, not two readers kept in sync by hand), D-C
+   to BOTH composed on a measured 2x2 (cc2's stamp fix alone leaves A4 at 0 over
+   replayed entries; fable's consumer guard alone leaves `irreducible_escalation`
+   asserting a machine tried when none did), D3 and the spawn-blob token pass to
+   fable, forensics to cc2 wholesale. Applied BY HAND, not wholesale, because 2
+   delivered files had been edited after the sandbox was taken. Verified on the
+   live tree: 3 seat falsifiers exit clean, 94 cc2-side tests pass, 43 fable-side
+   variants pass against the same single file set.
+
+2. **REFUSAL VISIBILITY (his item 6) IS DONE.** `routing_history[].last_falsifier_code_full`
+   keeps the whole refused body beside the deliberate 600-character cut, and the
+   key-access sweep's corpus builder now reads it. Measured by
+   `scripts/refused_falsifier_visibility_2026-10-03.py`: 111 of 983 unique
+   falsifier sources were reachable ONLY through routing history, 11.292%, Wilson
+   [9.4622%, 13.423%]; ALL 111 are truncations; widening adds 0 real rejections
+   and 0 location artefacts. The earlier "23 of 221 / 183 truncated" figure
+   counted routing RECORDS against a top-level key the report does not have.
+
+3. **THE DISCRIMINATION GUARD IS EXTENDED, AND IT RUNS AS A POST-RUN SWEEP.**
+   `invariance_probe` synthesises the variants the control cannot get from a
+   missing corrected copy. It is NOT inline: an overlay build at the real repo
+   root measures 14.034 s, so 2 per probed finding per round is ~187 minutes added
+   per run. `scripts/invariance_sweep_2026-10-03.py` pays it once per distinct
+   falsifier after the run. A first version WAS wired inline on a 1.4-minute
+   projection taken from a 1-file temporary directory -- a 68x underestimate.
+
+4. **C0041: THE RECORD IS NOW LEGIBLE AND THE RULING IS STILL HIS.** A first fix
+   set `verified=False` on a voided instrument. `test_discrimination_control.py`
+   refuted it in its own words -- withholding `verified` is what keeps a finding
+   out of CLOSED -- so that fix had armed `discrimination_control_blocks` by the
+   back door, the exact ruling refused an hour earlier on his 126-of-246
+   measurement. REVERTED. What shipped is `verification_voided` plus a reason,
+   read by no decision.
+
+5. **MEASUREMENT 10 IS ANSWERABLE FOR THE FIRST TIME.** Its missing piece was the
+   DATA: 81 archived reports, 0 carrying a declaration. The launcher now writes
+   `_declared_config` and `_declared_argv`; `scripts/declared_vs_observed_2026-10-03.py`
+   compares 7 declared fields against observable consequences, and UNOBSERVABLE is
+   never counted as agreement.
+
+6. **THE HOOKS CAN NO LONGER DIVERGE SILENTLY.** The desktop compaction alert
+   existed only outside the repository: editing the global hook broke its hard
+   link to `hooks/compaction_watch.py`, leaving the committed copy 0 occurrences
+   of the notification. Re-linked, and
+   `bench/tests/test_every_versioned_hook_is_the_live_one_2026-10-03.py` now holds
+   every hook rather than the 1 that was named by hand.
+
+7. **THE FOUNDER'S CONFIDENCE COMPOSITION IS IMPLEMENTED.** Haiku decides, the
+   syntax arm corroborates and can never block; the arm now reports whether the
+   corroboration label carries information (Fisher, scipy cross-checked against an
+   mpmath exact enumeration) and prints the per-document complementarity table so
+   "identical" is shown rather than asserted.
+
+**STILL OWED:** the repointing experiment (ruling 2), arm 5 (ruling 4, runs with
+the experiment), the extended Haiku set (its 15-document set is regenerable from
+`scripts/claim_classifier_labelled_set_2026-10-01.py --emit-model-set` but was
+never kept), and the full suite + commit before launch.
+
 ## ★ RESUME POINTER — 2026-10-03T04:48 BST. SUPERSEDES EVERY POINTER BELOW.
 
 **WHY THE SIMULATED RUNS EXIST, AND THIS IS THE SENTENCE THAT KEEPS GETTING LOST.**

@@ -51,7 +51,6 @@ for _cand in (pathlib.Path(__file__).resolve().parent,
     if (_cand / "_cli_help.py").is_file():
         sys.path.insert(0, str(_cand))
         break
-from _cli_help import answer_help  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SET_SCRIPT = ROOT / "scripts" / "claim_classifier_labelled_set_2026-10-01.py"
@@ -142,7 +141,7 @@ def dispatch(cli: str, doc_text: str, model: str, timeout: int) -> tuple[str, st
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--set-dir", required=True,
+    ap.add_argument("--set-dir", default=None,
                     help="directory written by claim_classifier_labelled_set --emit-model-set")
     ap.add_argument("--model", default="haiku", help="claude CLI model alias")
     ap.add_argument("--timeout", type=int, default=90)
@@ -152,6 +151,15 @@ def main(argv=None) -> int:
                          "the model answers are data, so a scoring repair must "
                          "not cost a second round of model time")
     a = ap.parse_args(argv)
+
+    # CHECKED AFTER PARSING, NOT DECLARED `required=True`, so that an
+    # UNRECOGNISED flag is reported as unrecognised. argparse resolves a
+    # missing required argument FIRST, so a typo'd flag was answered with
+    # "the following arguments are required" and the real mistake -- a flag
+    # this script does not have -- went unnamed. Behaviour for a genuinely
+    # missing argument is unchanged: argparse still errors with exit 2.
+    if not getattr(a, 'set_dir', None):
+        ap.error("--set-dir is required")
 
     setdir = pathlib.Path(a.set_dir)
     raw_labels = json.loads((setdir / "LABELS_WITHHELD.json").read_text())
@@ -276,6 +284,100 @@ def _score_and_report(rows, docs, a) -> int:
               f"{best_single}: discordant {b}/{c_}, McNemar scipy p = {p_s:.6f}, "
               f"mpmath p = {p_m:.6f} -> {verdict}")
 
+    # ------------------------------------------------------------------
+    # THE FOUNDER'S OWN COMPOSITION, 2026-10-03, AND IT IS NOT OR/AND.
+    #
+    # Verbatim: "so long as the primary classifier (Haiku) triggers,
+    # convergence should not be blocked, while the second might only serve to
+    # increase confidence? Is this even a useful thing to do in this case?"
+    #
+    # That is a THIRD shape. OR and AND both let the syntax arm CHANGE the
+    # decision; his form never does. Haiku decides alone, and the syntax arm
+    # only says whether it corroborates. So the decisions are the model's
+    # decisions by construction -- accuracy, sensitivity and specificity are
+    # identical to the MODEL arm and reporting them again would say nothing.
+    #
+    # THE QUESTION IT CAN ANSWER is whether the confidence label carries
+    # INFORMATION: among the positives Haiku raises, is a corroborated positive
+    # more often right than an uncorroborated one? If yes, a reviewer can rank
+    # by it. If no, the label is decoration and the simplest sufficient answer
+    # is not to add it.
+    #
+    # IT CANNOT BLOCK ANYTHING. The decision function below is the MODEL arm's
+    # predicate verbatim, and that identity is ASSERTED, not described.
+    print("\nCONFIDENCE COMPOSITION (Haiku decides; syntax corroborates only)")
+    decide = arms["MODEL (haiku)"]
+    assert all(decide(r) == (r["model"] == "YES") for r in answered), (
+        "the confidence arm's decision function is not the model's own; it "
+        "could therefore block a decision, which the founder's form forbids")
+    pos = [r for r in answered if decide(r)]
+    corrob = [r for r in pos if syn[r["doc"]]]
+    alone = [r for r in pos if not syn[r["doc"]]]
+    k1 = sum(1 for r in corrob if r["truth"])
+    k2 = sum(1 for r in alone if r["truth"])
+    print(f"    positives raised by Haiku: {len(pos)}")
+    show("    precision, CORROBORATED by syntax", k1, len(corrob))
+    show("    precision, UNCORROBORATED", k2, len(alone))
+    if corrob and alone:
+        from scipy.stats import fisher_exact
+        import mpmath as mp
+        table = [[k1, len(corrob) - k1], [k2, len(alone) - k2]]
+        _, p_sp = fisher_exact(table)
+        # mpmath cross-check of the 2-sided Fisher p by exact enumeration.
+        a_, b_ = table[0]
+        c_, d_ = table[1]
+        n_ = a_ + b_ + c_ + d_
+        r1, c1 = a_ + b_, a_ + c_
+        def pr(x):
+            return (mp.binomial(r1, x) * mp.binomial(n_ - r1, c1 - x)
+                    / mp.binomial(n_, c1))
+        obs = pr(a_)
+        lo = max(0, c1 - (n_ - r1))
+        hi = min(r1, c1)
+        p_mp = float(sum(pr(x) for x in range(lo, hi + 1)
+                         if pr(x) <= obs * (1 + mp.mpf("1e-12"))))
+        print(f"    Fisher exact: scipy p = {p_sp:.6f}, mpmath p = {p_mp:.6f}")
+        verdict = ("INFORMATIVE" if p_sp < 0.05 else
+                   "NOT DEMONSTRATED ON THIS SET")
+        print(f"    the confidence label is {verdict} at alpha = 0.05")
+        results["CONFIDENCE (haiku decides, syntax corroborates)"] = {
+            "positives": len(pos), "corroborated": len(corrob),
+            "uncorroborated": len(alone), "correct_corroborated": k1,
+            "correct_uncorroborated": k2, "fisher_p_scipy": p_sp,
+            "fisher_p_mpmath": p_mp, "verdict": verdict,
+            "decisions_identical_to_model_arm": True}
+    else:
+        print("    one side of the split is empty, so the label cannot be "
+              "tested on this set; this is a SET-SIZE limit, not a verdict.")
+        results["CONFIDENCE (haiku decides, syntax corroborates)"] = {
+            "positives": len(pos), "corroborated": len(corrob),
+            "uncorroborated": len(alone),
+            "verdict": "UNTESTABLE ON THIS SET (a split side is empty)",
+            "decisions_identical_to_model_arm": True}
+
+    # COMPLEMENTARITY, SHOWN RATHER THAN ASSERTED. The founder asked whether
+    # "identical" meant identical in every respect, and whether each arm caught
+    # anything the other missed. This prints the 2x2 of per-document agreement
+    # so the answer is readable off the table instead of taken on trust.
+    print("\nCOMPLEMENTARITY (per-document, model vs syntax)")
+    mm = arms["MODEL (haiku)"]
+    ss = arms["SYNTAX (status quo)"]
+    cells = {"both right": [], "model only": [], "syntax only": [],
+             "both wrong": []}
+    for r in answered:
+        m_ok, s_ok = mm(r) == r["truth"], ss(r) == r["truth"]
+        key = ("both right" if m_ok and s_ok else "model only" if m_ok
+               else "syntax only" if s_ok else "both wrong")
+        cells[key].append(r["doc"])
+    for key in ("both right", "model only", "syntax only", "both wrong"):
+        names = cells[key]
+        print(f"    {key:12s}: {len(names)}"
+              + (f"  {sorted(names)}" if names and len(names) <= 8 else ""))
+    print("    'model only' and 'syntax only' are the discordant pairs; both "
+          "empty means the arms are identical ON THIS SET, which is a fact "
+          "about the set and not about the arms.")
+    results["complementarity"] = {k: sorted(v) for k, v in cells.items()}
+
     if a.out:
         pathlib.Path(a.out).write_text(json.dumps(
             {"rows": rows, "results": results, "no_answer": noans,
@@ -285,8 +387,17 @@ def _score_and_report(rows, docs, a) -> int:
 
 
 if __name__ == "__main__":
-    # This script HAS its own parser, so the helper answers --help and then
-    # stands aside rather than refusing the script's own flags; see
-    # scripts/_cli_help.py, `takes_no_arguments`.
-    answer_help(__doc__, __file__, takes_no_arguments=False)
+    # NO `answer_help` HERE, AND THE REASON IS MEASURED. An earlier version
+    # called it alongside argparse, with a comment claiming the helper "answers
+    # --help and then stands aside". Executed: `--help` printed
+    # `usage: ... [-h]` and the docstring, and `--set-dir` appeared 0 times, so
+    # the reader could not see a single real flag. That is precisely what
+    # `bench/tests/test_fresh_clone_is_actually_run_2026-09-11.py` refuses --
+    # the helper exists for scripts with NO parser, and using it where argparse
+    # already works makes the help text worse.
+    #
+    # THE RULE IT WAS THERE TO HONOUR STILL HOLDS: a `--help` must never cost
+    # money. argparse answers `--help` and exits before `main()` runs, so no
+    # dispatch happens; and an unrecognised flag now exits 2 naming itself
+    # rather than falling through into a paid call.
     raise SystemExit(main())

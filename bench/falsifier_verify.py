@@ -585,6 +585,27 @@ def _looks_home_rooted(text):
     return text.startswith("~") or "$HOME" in text or "${HOME}" in text
 
 
+def _spawn_path_tokens(text):
+    # UNDER shell=True THE BLOB IS THE WHOLE COMMAND LINE (2026-10-03; cc2
+    # demonstrated the hole on 2026-10-02, fable wrote this repair). An
+    # env-rooted path inside `subprocess.run('cat ' + p, shell=True)` passed
+    # the whole-blob checks -- `_resolve("cat /Users/...")` is not a real path
+    # and `_looks_home_rooted` only inspects the string head -- while the
+    # IDENTICAL path as a list element was refused. So every path-like token
+    # the command line carries is tested individually, to the same standard
+    # the list form already meets. Tokens without a path shape are ignored,
+    # which held 0 false refusals over the honest spawn shapes in
+    # bench/tests/test_falsifier_cannot_read_the_key.py.
+    for ch in ";|&<>()":
+        text = text.replace(ch, " ")
+    out = []
+    for raw in text.split():
+        t = raw.strip("'\"")
+        if t and (t.startswith(("~", "$")) or "/" in t):
+            out.append(t)
+    return out
+
+
 def _hook(event, args):
     if _BUSY[0]:
         return
@@ -655,6 +676,14 @@ def _hook(event, args):
                     _emit("D %s\t%s" % (event, text[:300]))
                     _shout("a child process argument")
                     raise PermissionError(_CFG["mark"] + ": spawn refused")
+                # Per-token pass: the whole-blob checks above cannot see a
+                # path embedded after a command word (see _spawn_path_tokens).
+                for tok in _spawn_path_tokens(text):
+                    tpath = _resolve(os.path.expandvars(os.path.expanduser(tok)))
+                    if _looks_home_rooted(tok) or (tpath is not None and _denied(tpath)):
+                        _emit("D %s\t%s" % (event, tok[:300]))
+                        _shout("a child process argument")
+                        raise PermissionError(_CFG["mark"] + ": spawn refused")
     finally:
         _BUSY[0] = False
 

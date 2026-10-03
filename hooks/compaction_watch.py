@@ -40,7 +40,8 @@ standalone token, which is the command that does the restoring. Nothing else cle
 
 MUST ALWAYS EXIT 0. A hook that blocks a prompt is far worse than a missed notice.
 """
-import json, sys, time, pathlib, re, os
+import json
+import subprocess, sys, time, pathlib, re, os
 from datetime import datetime, timezone
 
 STATE = pathlib.Path.home() / ".claude" / ".compaction_watch"
@@ -180,6 +181,45 @@ def _recovery_ran_after(iso_ts: str) -> bool:
     except (OSError, ValueError):
         return False
 
+def _desktop_notify(when_iso, ago):
+    """Fire a macOS notification ONCE per compaction, and never fell the hook.
+
+    THE DEFECT THIS CLOSES, named by the founder on 2026-10-03: he had asked for
+    a compaction alert in macOS notifications and reported it had never worked.
+    Measured that day: **0 hooks emitted a desktop notification at all** -- no
+    `osascript`, no `terminal-notifier`, nothing in the entire hooks directory.
+    It had never been built, so it could never have fired.
+
+    WHAT IS AND IS NOT REACHABLE. No hook runs AT compaction, so a genuine
+    PRE-compaction warning cannot be delivered from here; the earliest moment
+    the event is observable is the next UserPromptSubmit, which is this one.
+    This is therefore a POST-compaction alert, and saying so is better than
+    promising the thing the surface cannot do.
+
+    ONCE PER COMPACTION, NOT ONCE PER TURN. The notice itself repeats every turn
+    until `rs` is issued, by design. A notification that did the same would be
+    42 banners over 10.69 hours -- the measured repeat count of the 2026-09-07
+    compaction -- and would be muted within the hour, which is how an alarm
+    stops being an alarm. The compaction timestamp is the key.
+    """
+    try:
+        state = STATE / "desktop_notified"
+        seen = set()
+        if state.exists():
+            seen = set(state.read_text().split("\n"))
+        if when_iso in seen:
+            return
+        subprocess.run(
+            ["osascript", "-e",
+             'display notification "Context was compacted {} . Issue rs when convenient."'
+             ' with title "Claude Code — CDSFL" subtitle "compaction detected"'.format(ago)],
+            capture_output=True, timeout=10)
+        seen.add(when_iso)
+        state.write_text("\n".join(sorted(x for x in seen if x))[-8000:])
+    except Exception:
+        pass  # an alert must never break the hook that carries the notice
+
+
 def main():
     try:
         payload = json.load(sys.stdin)
@@ -284,6 +324,7 @@ def main():
     # An alarm routed through the party it is monitoring is not an independent
     # alarm. The founder is the one who issues `rs`, so the notice addresses him,
     # and the assistant's instruction follows rather than leads.
+    _desktop_notify(str(newest), ago)
     msg = (f"[compaction] COMPACTION AT {shown} ({ago} ago) "
            f"— `rs` HAS NOT BEEN RUN SINCE.\n"
            f"  GEORGE: issue `rs` when convenient. Until then the assistant is "

@@ -1,0 +1,224 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 10460,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and contents\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03/ bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest/ 2>&1\", \"description\": \"List both seats' evidence directories\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03/ bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest/ -type f | head -60\", \"description\": \"List all evidence files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest/cc2/attempt-1/changes.diff\", \"description\": \"Read cc2's diff\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest\\nfor f in bench/reference_runner_v3.py bench/key_access_forensics.py bench/falsifier_verify.py; do\\n  for seat in cc2 fable; do\\n    if [ -f \\\"$H/$seat/attempt-1/files/$f\\\" ]; then\\n      echo \\\"=== $seat $f : $(diff <(cat $f) $H/$seat/attempt-1/files/$f | wc -l) diff lines ===\\\"\\n    else\\n      echo \\\"=== $s"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest\\ndiff -u bench/reference_runner_v3.py $H/cc2/attempt-1/files/bench/reference_runner_v3.py\", \"description\": \"Diff cc2's reference_runner_v3.py vs pre-merge\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest\\ndiff -u bench/reference_runner_v3.py $H/fable/attempt-1/files/bench/reference_runner_v3.py\", \"description\": \"Diff fable's reference_runner_v3.py vs pre-merge\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest\\ndiff -u bench/key_access_forensics.py $H/cc2/attempt-1/files/bench/key_access_forensics.py\", \"description\": \"Diff cc2's key_access_forensics.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest\\ndiff -u bench/key_access_forensics.py $H/fable/attempt-1/files/bench/key_access_forensics.py; echo ====FALSIFIER_VERIFY====; diff -u bench/falsifier_verify.py $H/fable/attempt-1/files/bench/falsifier_verify.py\", \"description\": \"Diff fable's key_access_forensics.py and falsifier_verify.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest\\ndiff -u bench/falsifier_verify.py \\\"$H/fable/attempt-1/files/bench/falsifier_verify.py\\\"\", \"description\": \"Diff fable's falsifier_verify.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"E=experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03\\ncat $E/cc2/PROVENANCE.json $E/fable/PROVENANCE.json\", \"description\": \"Read both seats' provenance records\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | grep -E \\\"2026-10-0[23]|one_predicate|key_access_advisory|forensics\\\" \", \"description\": \"List relevant tests in pre-merge tree\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest\\ndiff -u bench/tests/test_one_predicate_excludes_and_reports_2026-10-02.py $H/cc2/attempt-1/files/bench/tests/test_one_predicate_excludes_and_reports_2026-10-02.py | head -150\", \"description\": \"Diff cc2's modified committed oracle test (one_predicate)\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/bench/tests/test_one_predicate_excludes_and_reports_2026-10-02.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03/fable/bench/tests/test_a4_scope_guards_2026-10-03.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/bench/tests/test_key_access_advisory_2026-10-02.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03/cc2/bench/tests/test_an_unobserved_refusal_keeps_a4_blocking_2026-10-03.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest\\ndiff -q bench/tests/test_key_access_advisory_2026-10-02.py $H/cc2/attempt-1/files/bench/tests/test_key_access_advisory_2026-10-02.py && echo IDENTICAL\", \"description\": \"Check cc2's advisory test matches tree\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03/cc2/bench/tests/test_forensics_verdict_is_a_fact_about_the_run_2026-10-03.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03/fable/bench/tests/test_forensics_run_root_pin_2026-10-03.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03/fable/bench/tests/test_spawn_blob_tokens_2026-10-03.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03/cc2/bench/tests/falsifier_carveout_drains_a4_2026-10-03.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03/cc2/bench/tests/falsifier_subcritical_refusal_is_silent_2026-10-03.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03/fable/bench/tests/falsifier_star_db_dc_2026-10-03.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def clear_stale_resolution_stamps\\\\|def unverified_critical_count\\\\|def integrity_refused_criticals\\\\|def _integrity_violation_excluded\\\\|def _irreducible_queue_split\\\\|def _apply_routing\\\\|KEY-ACCESS ADVISORY\\\\|def _check_gamma_alt_convergence\\\\|rho_churn\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Locate functions to edit in runner\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/bench/reference_runner_v3.py\", \"offset\": 2717, \"limit\": 115}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/bench/reference_runner_v3.py\", \"offset\": 6630, \"limit\": 200}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/bench/reference_runner_v3.py\", \"offset\": 442, \"limit\": 45}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/bench/reference_runner_v3.py\", \"offset\": 16425, \"limit\": 40}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/bench/reference_runner_v3.py\", \"offset\": 2228, \"limit\": 40}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo/bench/reference_runner_v3.py\", \"old_string\": \"    cleared = []\\n    for flag in (\\\"mechanical_fault\\\", \\\"irreducible_escalation\\\", \\\"hil_escalated\\\"):\", \"new_string\": \"    cleared = []\\n    # `integrity_refused` / `integrity_unobserved` JOIN THE LIST (merge of the\\n    # STAR rou"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport io\\n\\nP = \\\"bench/reference_runner_v3.py\\\"\\nsrc = io.open(P, encoding=\\\"utf-8\\\").read()\\n\\ndef sub(old, new, n=1):\\n    assert src.count(old) == n, (src.count(old), old[:80])\\n    return src.replace(old, new, n)\\n\\n# ---- D3 (fable): stale integrity stamps join the retraction list ----\\nsrc = sub(\\n    '    cleared = []\\\\n    for flag in (\\\"mechanical_fault\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport io\\nP = \\\"bench/reference_runner_v3.py\\\"\\nsrc = io.open(P, encoding=\\\"utf-8\\\").read()\\n\\ndef sub(s, old, new, n=1):\\n    assert s.count(old) == n, (s.count(old), old[:80])\\n    return s.replace(old, new, n)\\n\\n# ---- fable: gamma citation correction (comment only) ----\\nsrc = sub(src,\\n\\\"\\\"\\\"        # THE HALT BOUND NO LONGER SEES A KEY-ACCESS REFUSAL (founde"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport io\\nP = \\\"bench/reference_runner_v3.py\\\"\\nsrc = io.open(P, encoding=\\\"utf-8\\\").read()\\n\\ndef sub(s, old, new, n=1):\\n    assert s.count(old) == n, (s.count(old), old[:80])\\n    return s.replace(old, new, n)\\n\\n# ---- D-B (cc2): widen the ONE wired reader to the A4 counter's own scope ----\\nsrc = sub(src,\\n\\\"\\\"\\\"        asserted over randomised registries, not"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport io\\nP = \\\"bench/reference_runner_v3.py\\\"\\nsrc = io.open(P, encoding=\\\"utf-8\\\").read()\\n\\ndef sub(s, old, new, n=1):\\n    assert s.count(old) == n, (s.count(old), old[:80])\\n    return s.replace(old, new, n)\\n\\n# ---- D-C stamp side (cc2): unobserved refusal joins the equipment branch ----\\nsrc = sub(src,\\n\\\"\\\"\\\"        elif (e.get(\\\"falsifier_verdict\\\") or \\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest\\ncp \\\"$H/cc2/attempt-1/files/bench/key_access_forensics.py\\\" bench/key_access_forensics.py\\ncp \\\"$H/fable/attempt-1/files/bench/falsifier_verify.py\\\" bench/falsifier_verify.py\\npython3 -c \\\"import ast; ast.parse(open('bench/key_access_forensics.py').read()); ast.parse(open('bench/falsifier_verify.py').read());"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_a4_scope_guards_2026-10-03.py <<'EOF'\\n\\\"\\\"\\\"A4 consumer-scope guards (STAR round 2026-10-03; MERGED 2026-10-03).\\n\\nWritten by seat 'fable'; TestDB AMENDED at merge adjudication (seat: fable-3,\\nmerge round 2026-10-03). TestDC and TestD3 are fable's originals, verbatim.\\n\\nThe 2026-10-02 merge asserted its invariant over the PREDICATE\\n(_integrity_violation_exc"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo\\nPYTHONPATH=. python3 bench/tests/falsifier_subcritical_refusal_is_silent_2026-10-03.py; echo \\\"exit=$?\\\"\\necho ================\\nPYTHONPATH=. python3 bench/tests/falsifier_carveout_drains_a4_2026-10-03.py; echo \\\"exit=$?\\\"\", \"description\": \"Run cc2's two falsifiers against the merge\", \"timeout\": 180"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo\\nPYTHONPATH=. python3 bench/tests/falsifier_carveout_drains_a4_2026-10-03.py; echo \\\"exit=$?\\\"\\necho \\\"====\\\"\\nPYTHONPATH=. python3 bench/tests/falsifier_star_db_dc_2026-10-03.py; echo \\\"exit=$?\\\"\", \"description\": \"Run cc2's carveout falsifier and fable's star falsifier\", \"timeout\": 180000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo\\npython3 -m pytest bench/tests/test_one_predicate_excludes_and_reports_2026-10-02.py bench/tests/test_key_access_advisory_2026-10-02.py bench/tests/test_an_unobserved_refusal_keeps_a4_blocking_2026-10-03.py bench/tests/test_forensics_verdict_is_a_fact_about_the_run_2026-10-03.py -q 2>&1 | tail -15\", "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo\\npython3 -m pytest bench/tests/test_a4_scope_guards_2026-10-03.py bench/tests/test_spawn_blob_tokens_2026-10-03.py bench/tests/test_forensics_run_root_pin_2026-10-03.py -q 2>&1 | tail -15\", \"description\": \"Run fable's full test set against the merge\", \"timeout\": 420000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo\\nls bench/tests/ | grep -iE \\\"falsifier_cannot|falsifier_verify|integrity|stale|stamp|irreducible|carve\\\" \", \"description\": \"Find neighbouring committed tests for regression run\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo\\npython3 -m pytest bench/tests/test_key_access_forensics.py bench/tests/test_key_access_decoupled_from_convergence_2026-10-02.py bench/tests/test_scanner_scope_refuses_ancestors_2026-10-02.py bench/tests/test_falsifier_cannot_read_the_key.py bench/tests/test_the_alarm_names_which_kind_2026-09-22.py b"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo\\npython3 -m pytest bench/tests/test_key_access_forensics.py bench/tests/test_key_access_decoupled_from_convergence_2026-10-02.py bench/tests/test_scanner_scope_refuses_ancestors_2026-10-02.py bench/tests/test_falsifier_cannot_read_the_key.py bench/tests/test_the_alarm_names_which_kind_2026-10-02.py b"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo\\npython3 - <<'EOF'\\nimport json, pathlib\\nrun = pathlib.Path(\\\"bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z\\\")\\nfor p in sorted(run.glob(\\\"*.json\\\")):\\n    try:\\n        obj = json.loads(p.read_text())\\n    except Exception:\\n        continue\\n    if isinstance(obj, dict):\\n        "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom statsmodels.stats.proportion import proportion_confint\\nfor k, n, label in [(45,45,\\\"cc2 suite\\\"), (24,24,\\\"fable suite\\\"), (139,139,\\\"regression\\\"), (69,69,\\\"both seat suites\\\")]:\\n    lo, hi = proportion_confint(k, n, alpha=0.05, method=\\\"wilson\\\")\\n    print(f\\\"{label}: {k}/{n} = {k/n:.4f}, Wilson 95% [{lo:.4f}, {hi:.4f}]\\\")\\nEOF\", \"description\": \"Wilson int"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript >/dev/null 2>&1 && timeout 60 wolframscript -code 'With[{n=69,k=69,z=Quantile[NormalDistribution[],0.975]},N[{(k/n + z^2/(2 n) - z Sqrt[(k/n)(1-k/n)/n + z^2/(4 n^2)])/(1+z^2/n),(k/n + z^2/(2 n) + z Sqrt[(k/n)(1-k/n)/n + z^2/(4 n^2)])/(1+z^2/n)},6]]' || echo \\\"WOLFRAM UNAVAILABLE\\\"\", \"description\": \"Wolfram second check of 69/69 Wilson interval\", \"timeout\": 90000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript >/dev/null 2>&1 && wolframscript -code 'With[{n=69,k=69,z=Quantile[NormalDistribution[],0.975]},N[{(k/n + z^2/(2 n) - z Sqrt[(k/n)(1-k/n)/n + z^2/(4 n^2)])/(1+z^2/n),(k/n + z^2/(2 n) + z Sqrt[(k/n)(1-k/n)/n + z^2/(4 n^2)])/(1+z^2/n)},6]]' || echo \\\"WOLFRAM UNAVAILABLE\\\"\", \"description\": \"Wolfram second check (no timeout wrapper)\", \"timeout\": 120000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo\\nhead -40 experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03/fable/scripts/star_q1_contract_2026-10-03.py\", \"description\": \"Inspect fable's star_q1_contract script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo\\ncp bench/reference_runner_v3.py /tmp/runner_merged_backup.py\\n# MUTATION A: strip fable's consumer guard\\npython3 - <<'EOF'\\nimport io\\nP=\\\"bench/reference_runner_v3.py\\\"; s=io.open(P).read()\\ns=s.replace('if e.get(\\\"irreducible_escalation\\\") and not e.get(\\\"integrity_unobserved\\\"):\\\\n              "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo\\necho \\\"== cc2 set ==\\\"; python3 -m pytest bench/tests/test_one_predicate_excludes_and_reports_2026-10-02.py bench/tests/test_key_access_advisory_2026-10-02.py bench/tests/test_an_unobserved_refusal_keeps_a4_blocking_2026-10-03.py bench/tests/test_forensics_verdict_is_a_fact_about_the_run_2026-10-03."
+    }
+  ],
+  "n_tool_calls": 51,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1373.6,
+  "response": "# MERGE ADJUDICATION \u2014 final report\n\n## Verdict\n\n**MERGED AND GREEN.** A single file set is delivered that passes both seats' falsifiers (all 3 exit clean) and both seats' test sets (45 + 24 passed), with 139 neighbouring committed tests unregressed. One of fable's assertions was **wrong, not inconvenient**, and is retired with its superseded text preserved verbatim; everything else composes or resolves per-assertion under the three standards.\n\n## Reasoning\n\nThe two fixes disagree at four sites, and no single rule decides all four \u2014 which is why the first composition attempt (one scope line) only moved cc2's failures 6\u21925. Adjudicated per assertion:\n\n| # | Assertion site | cc2's form | fable's form | Decision | Deciding standard |\n|---|---|---|---|---|---|\n| 1 | **D-B: who names the sub-critical drain** | Widen the one wired reader: `integrity_refused_criticals` gains `or status == \"UNCONFIRMED\"` | Second reader `integrity_refused_subcriticals()` + second advisory line; criticals reader asserted to stay narrow | **cc2** | SIMPLEST SUFFICIENT: both discharge \"no silent exclusion\"; one widened scope expression on the already-wired reader makes \"whatever the counter drops, this names\" hold *by construction*, vs. two scope expressions kept in sync by hand plus a new method and log line. COMPOSABILITY refuses keeping both: no committed measurement shows the two-reader form dominating on any named property, and under the widened reader fable's `integrity_refused_criticals() == []` becomes logically false, not just structural. |\n| 2 | **D-C: where the unobserved carve-out is enforced** | At the stamp: `_apply_routing` routes an unobserved refusal into the equipment-failure branch (`routing_deferred`, never a false `irreducible_escalation`/`hil_*`) | At the consumer: `unverified_critical_count` skip gains `and not integrity_unobserved` | **BOTH (composed)** | COMPOSABILITY, with the demonstration executed: the stamp fix alone cannot reach entries *already* carrying the stale stamp (archived registries written by pre-fix code \u2014 fable's TestDC constructs exactly that state and went red under cc2 alone); the consumer guard alone leaves routing writing false `irreducible_escalation`/`hil_reason` assertions onto the record (cc2's stamp tests went red under fable alone). Mutations A and B below show each half is load-bearing on the merged tree \u2014 neither is an addition nothing reaches. |\n| 3 | **D3: stale `integrity_refused`/`integrity_unobserved` stamps** | \u2014 (not addressed) | Join `clear_stale_resolution_stamps` | **fable** | ADDITIVE: wired (called at both rescue sites), executed by TestD3, conflicts with nothing. |\n| 4 | **Gamma citation in `_irreducible_queue_split`** | \u2014 | Comment correction: run 1b's count-side never held | **fable, minus its figures** | I re-verified against run 1b's own report: `gamma_critical_history [0.0, 0.0, 0.336]` and `novel_critical_history [6, 4, 5]` \u2014 the claim is CONFIRMED, but fable's bracketed figures (\"[.., 4, 8] / [9, 4, 5]\") do **not** match the record and were dropped from the merged comment. |\n| 5 | **Forensics run-root pin** | `trusted_record_names` + `discover_run_root` + allowlist pin gated on `not confined` + **dual-root `_committed_counterpart` lookup** | Same core, plus recorded root added to the `confined` test itself, **no** counterpart fix | **cc2 wholesale** | SIMPLEST SUFFICIENT + the executed measurement: cc2's file passes *both* seats' forensics tests (fable's lacks the counterpart fix, which is why `test_the_audit_channel_survives_relocation` and the 7/0/7 split went red under fable alone). Fable's confined-test widening is pinned by no test \u2014 under ADDITIVE it is an addition nothing reaches, so it is not carried. |\n| 6 | **Spawn-blob token pass in `falsifier_verify.py`** | \u2014 (not delivered) | Per-token path check under `shell=True` | **fable wholesale** | ADDITIVE: only fix for a confirmed defect; `test_falsifier_cannot_read_the_key.py` (in the 139) shows 0 false refusals on honest shapes. |\n\n**The retired assertion.** Fable's `test_a_subcritical_refusal_is_named` asserted `integrity_refused_criticals() == []` for an UNCONFIRMED sub-critical refusal. Once the structure is decided at site 1, that assertion pins the report to a scope *narrower than the counter it exists to mirror* \u2014 the exact shape of defect D-B itself. It is retired in the delivered `test_a4_scope_guards_2026-10-03.py` following the project's own amendment convention (superseded assertions preserved verbatim in the docstring, justification citing the standards); the *intent* of every retired assertion \u2014 drain named, no overstatement \u2014 is re-asserted against the single reader (OPEN sub-crit not named; unobserved not named; verdict-route named). Nothing was silently deleted. The evidence copies under `experimental_notes/seat_evidence/` are untouched.\n\n## Falsifiers and executed results\n\nAll three seat falsifiers, re-executed on the merged tree (tools decide):\n\n```\nfalsifier_subcritical_refusal_is_silent_2026-10-03.py : CLEAN EXIT (0)  \u2014 sev 0.5: A4 1\u21920 AND reported=['C0001']\nfalsifier_carveout_drains_a4_2026-10-03.py            : CLEAN EXIT (0)  \u2014 A4=2, converged refused, no false irreducible stamp\nfalsifier_star_db_dc_2026-10-03.py                    : CLEAN EXIT (0)  \u2014 \"neither claim demonstrated\"\n```\n\nPlus my own mutation falsifiers proving each composed half binds (executed, then reverted):\n- **A** (strip consumer guard): `TestDC::test_the_carveout_reaches_the_a4_consumer` + `test_convergence_is_refused_under_observer_failure` **FAIL** \u2192 guard is load-bearing for archived state.\n- **B** (strip stamp disjunct): `test_an_unobserved_refusal_is_not_called_ladder_exhausted` **FAIL** \u2192 stamp fix is load-bearing for the record's truthfulness.\n- **C** (re-narrow reader): 5 tests **FAIL** across both suites \u2192 the widened scope is pinned from both sides.\n\n## The two summary lines\n\n```\ncc2 set   (test_one_predicate\u2026, test_key_access_advisory\u2026, test_an_unobserved_refusal\u2026, test_forensics_verdict\u2026): 45 passed in 13.08s\nfable set (test_a4_scope_guards\u2026, test_spawn_blob_tokens\u2026, test_forensics_run_root_pin\u2026):                          24 passed in  3.84s\n```\n\nRegression: 139/139 neighbouring committed tests pass. Pass proportions 69/69 and 139/139, Wilson 95% [0.9473, 1.0000] and [0.9731, 1.0000] (statsmodels; the 69/69 interval independently confirmed as {0.947263, 1.} \u2014 computed with Wolfram Language, local Wolfram Engine).\n\n## Files delivered (sandbox tree, real paths)\n\n- `bench/reference_runner_v3.py` \u2014 D3 retraction (fable) + citation correction (fable, figures corrected against the record) + consumer guard (fable) + widened `integrity_refused_criticals` (cc2) + stamp-side equipment-branch disjunct and defer-reason classification (cc2). Composition rationale written at each site.\n- `bench/key_access_forensics.py` \u2014 cc2's version wholesale.\n- `bench/falsifier_verify.py` \u2014 fable's version wholesale.\n- `bench/tests/`: `test_a4_scope_guards_2026-10-03.py` (TestDC/TestD3 verbatim fable; TestDB amended, superseded assertions preserved), plus verbatim copies of `test_an_unobserved_refusal_keeps_a4_blocking_2026-10-03.py`, `test_forensics_verdict_is_a_fact_about_the_run_2026-10-03.py`, `test_forensics_run_root_pin_2026-10-03.py`, `test_spawn_blob_tokens_2026-10-03.py`, and the three falsifier scripts.\n\n## What would refute this merge\n\n1. **An archived registry or a committed measurement** showing the two-reader report form dominating the widened single reader on a named property (e.g., a downstream consumer that must distinguish severity bands and cannot from the ids) \u2014 that would reopen site 1. I looked for any caller or archived artefact consuming a severity-banded advisory and found none.\n2. **A real relocated-scan archive whose target dirs are absolute paths inside the producing repo** \u2014 cc2's forensics would call it confined where fable's would not. I looked: run 1b records *relative* target dirs (resolved against the scanner's root) and exp48 stages outside the repo, so no archived run exercises the difference. If one appears, fable's `_scope_roots`-in-confined-test semantics should be revisited *with a test*.\n3. Any run of the two suites or three falsifiers on this tree producing a different result than quoted \u2014 the commands are above and reproducible.\n\n## Strongest disagreements\n\n**With the brief's framing:** \"a single merged file set that passes BOTH seats' falsifiers\" was achievable; \"passes both seats' *test sets* verbatim\" was **not**, and the brief half-acknowledges this without saying it: fable's `integrity_refused_criticals() == []` and cc2's amended committed oracle `== [\"C2\",\"C3\"]` are logically contradictory on the same input. No merge satisfies both. The deliverable necessarily includes a retirement, and the brief would have been sharper stating that the contradiction, not the incompatibility, is the thing to adjudicate. Also, the brief's \"BOTH readers are wired, so the additive standard does not decide it\" is right but incomplete \u2014 additive is silent, *simplest-sufficient* decides, and composability's \"prefer the single fix where it performs as well\" independently refuses the both-readers escape hatch.\n\n**With fable's fix:** the second reader was structure defending an archived oracle (\"keeps the committed oracle intact\") that cc2 had meanwhile *correctly amended* \u2014 the oracle's narrow scope was itself the pinned defect. Defending a wrong assertion's stability is not a property worth a second scope expression. Separately, fable's citation correction contained unverifiable figures (\"novelty tails [.., 4, 8] / [9, 4, 5]\") that do not match run 1b's record (`novel_critical_history [6, 4, 5]`) \u2014 a corrected citation carrying its own failed citation.\n\n**With cc2's fix:** \"THE FIX IS AT THE STAMP, NOT IN THE COUNTER\" is overstated as an either/or. The stamp fix cannot reach state it didn't write \u2014 archived registries stamped by pre-fix code are exactly the input `unverified_critical_count` will be handed on resume, and cc2's own D3 gap (no retraction of integrity stamps) left that state live. Mutation A proves the consumer guard does real work on the merged tree. cc2 also left the spawn-blob defect it first reported for fable to fix, and shipped no D3 at all.\n\n**Termination:** a further pass over the merged tree (mutations A\u2013C, the 139-test regression sweep, the record-level verification of the citation) produced no new above-threshold findings. Converged.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_3sgt28rz/repo",
+      "built": false
+    }
+  ]
+}

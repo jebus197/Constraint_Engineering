@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import calendar
+import json
 import re
 import subprocess
 import sys
@@ -285,6 +286,63 @@ def _historical_reproduction(want: str, script: Path, brief_path,
     return None
 
 
+
+def _figure_amendment_applies(label, want, brief_path, rel, script, text, repo,
+                              timeout):
+    """Is this figure's failure explained by a RECORDED rule amendment?
+
+    Returns (True, message) only when EVERY condition holds:
+      * the register names this figure label AND this brief;
+      * the superseded and replacement values DIFFER (a record that changes
+        nothing is not an amendment);
+      * the producer's OUTPUT contains the replacement value -- executed, not
+        asserted, so a register entry cannot claim a value the code never prints.
+
+    Anything else returns False and the figure is refused as before. Fails
+    CLOSED: a missing, unreadable or malformed register accepts nothing.
+    """
+    try:
+        regp = REPO / "bench" / "directives" / "universal" / "figure_amendments.json"
+        if not regp.is_file():
+            return False, ""
+        reg = json.loads(regp.read_text(encoding="utf-8"))
+        bp = str(brief_path) if brief_path else ""
+        for a in reg.get("amendments", []):
+            if a.get("figure_label") != label:
+                continue
+            if a.get("brief") and not bp.endswith(str(a["brief"])):
+                continue
+            sup, rep = a.get("superseded_value"), a.get("replacement_value")
+            if not sup or not rep or sup == rep:
+                continue
+            # THE BRIEF MUST ACTUALLY DECLARE THE SUPERSEDED VALUE. Without
+            # this the register launders ANY value for a named figure: the
+            # first version matched on label and brief alone, verified only
+            # that the SUCCESSOR reproduces, and so accepted a brief declaring
+            # 3/640 -- a figure true at NO date. Caught by this project's own
+            # `test_a_figure_that_never_was_true_is_refused_even_archived`,
+            # which is the unsafe direction the as-of ruling exists to hold.
+            if str(want).strip() != str(sup).strip():
+                continue
+            # THE REPLACEMENT IS AN AS-OF VALUE, NOT TODAY'S. The corpus
+            # keeps growing, so the successor of a 2026-09-11 figure reproduces
+            # against the archive AS IT STOOD THEN. Checking it against today's
+            # output would refuse every true amendment the moment the corpus
+            # moved, which is the very defect `--as-of` exists to prevent.
+            # `_historical_reproduction` is reused rather than re-implemented.
+            if _historical_reproduction(str(rep), script, brief_path, text,
+                                        repo, timeout) is None:
+                return False, ""   # the code does not print it: refuse
+            return True, (
+                f"{label!r}: {sup!r} was superseded by {rep!r} on "
+                f"{a.get('ruling_date','?')} — {a.get('ruling','')} The producer "
+                f"{rel} prints the replacement, verified by execution. The "
+                f"archived brief is NOT edited; see "
+                f"bench/directives/universal/figure_amendments.json.")
+        return False, ""
+    except Exception:
+        return False, ""   # fail CLOSED
+
 def check_declared_figures(text: str, repo: Path = REPO,
                            timeout: int = 600, brief_path=None) -> list[str]:
     """Re-execute every declared figure. Empty list means all reproduced.
@@ -407,6 +465,18 @@ def check_declared_figures(text: str, repo: Path = REPO,
                       f"with that date. The record stands as a claim about "
                       f"evidence as of {hist}; re-run {rel} before REUSING "
                       f"this figure.", file=sys.stderr)
+                continue
+            # A RULE CHANGED UNDERNEATH THE RECORD: consult the amendments
+            # register before refusing. `--as-of` pins the DENOMINATOR, so it
+            # cannot absorb a NUMERATOR moved by a ruling. An amendment is
+            # accepted ONLY when the producer actually prints the REPLACEMENT
+            # value -- checked by execution here, never by reading the register.
+            _amended, _amsg = _figure_amendment_applies(
+                label, want, brief_path, rel, script, text, repo, timeout)
+            if _amended:
+                # LOUD BY DESIGN, like the historical path above: a quiet
+                # amendment is how a register rots into an exemption.
+                print(f"panel-brief: AMENDED FIGURE — {_amsg}", file=sys.stderr)
                 continue
             problems.append(
                 f"declared figure {label!r}: the brief says {want!r} and {rel} "

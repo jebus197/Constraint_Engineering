@@ -462,7 +462,17 @@ def clear_stale_resolution_stamps(entry: dict) -> list:
     Returns the names cleared, so the artefact records the retraction.
     """
     cleared = []
-    for flag in ("mechanical_fault", "irreducible_escalation", "hil_escalated"):
+    # `integrity_refused` / `integrity_unobserved` JOIN THE LIST (MERGE round
+    # 2026-10-03; fable's star-round fix, first raised by cc2 on 2026-10-02).
+    # Both call sites fire only after a REPLACEMENT falsifier the runner itself
+    # re-verified CONFIRMED. A verified reading proves the gate passed and
+    # proves the observer installed, so both stamps are then false. Left
+    # standing they excuse the entry from A4 and make
+    # `integrity_refused_criticals` report a tested, confirmed critical as
+    # untested -- an overstatement in the record that exists to prevent
+    # silence. ADDITIVE: it only ever makes a stamp true.
+    for flag in ("mechanical_fault", "irreducible_escalation", "hil_escalated",
+                 "integrity_refused", "integrity_unobserved"):
         if entry.get(flag):
             entry[flag] = False
             cleared.append(flag)
@@ -2235,11 +2245,31 @@ def _irreducible_queue_split(entries) -> Tuple[int, int]:
         if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
             continue
         # THE HALT BOUND NO LONGER SEES A KEY-ACCESS REFUSAL (founder ruling
-        # 2026-10-02). Run 1b is the case this fixes: `gamma_critical` 0.336 >=
-        # 0.30 and `gamma_all` 0.432 at round 2 -- BOTH halves of the two-sided
-        # gate satisfied -- and the run HALTED on a queue of 3 against a bound
-        # of 2, one member being there only because the integrity gate had
-        # refused its falsifier on the vocabulary token `seeded_fault`.
+        # 2026-10-02). Run 1b is the case this fixes: the run HALTED on a
+        # queue of 3 against a bound of 2, one member being there only because
+        # the integrity gate had refused its falsifier on the vocabulary token
+        # `seeded_fault`.
+        #
+        # CITATION CORRECTED (MERGE round 2026-10-03; raised by fable in the
+        # star round, re-measured here against run 1b's own report rather than
+        # against fable's quoted figures, which did not reproduce). The
+        # superseded wording read "`gamma_critical` 0.336 >= 0.30 and
+        # `gamma_all` 0.432 at round 2 -- BOTH halves of the two-sided gate
+        # satisfied". That is FALSE. The second half of the gate is
+        # `gamma_alt_consecutive_zero_crit` consecutive ZERO-new-critical
+        # rounds, not `gamma_all`. Read out of
+        # prose_convergence_run1b_2026-10-02_report.json and runner_state.json:
+        # gamma_critical_history [0.0, 0.0, 0.336], gamma_all_history
+        # [0.0, 0.0, 0.432], novel_critical_history [6, 4, 5] against
+        # `gamma_alt_consecutive_zero_crit` 3, and `gamma_alt_earliest_round` 3
+        # against `halted_at_round` 2. So the gamma side held at round 2 and
+        # the count side never did; the queue did not block an otherwise
+        # satisfied convergence. (fable's note cited novelty tails
+        # "[.., 4, 8] / [9, 4, 5]"; the archive carries [6, 4, 5] and
+        # rho_novelty_counts [18, 6, 9]. The FINDING reproduces, the figures
+        # did not, so the figures here are the measured ones.) The founder's
+        # ruling stands on its own grounds -- a refusal is a reporting event,
+        # not a convergence input -- and does not need the failed citation.
         #
         # THIS CHANGES THE HALT INPUT ONLY, verified by execution rather than by
         # reading: `_check_gamma_alt_convergence` reads the queue for a NOTE
@@ -2738,7 +2768,34 @@ class FindingRegistry:
             # automated loop forever (else the run hits the round cap instead of converging).
             # It is counted separately by irreducible_queue_count() and guarded by the
             # small-queue alarm.
-            if e.get("irreducible_escalation"):
+            #
+            # THE UNOBSERVED CARVE-OUT MUST BE CONSULTED BEFORE THIS SKIP
+            # (MERGE round 2026-10-03; fable's half of the D-C fix). This skip
+            # fired BEFORE `_integrity_violation_excluded` was ever called, so
+            # the carve-out's False return ("no boundary AND no measurement --
+            # keep blocking") was read by nobody on the A4 path.
+            #
+            # IT IS KEPT ALONGSIDE cc2's STAMP FIX IN `_apply_routing`, and the
+            # composition is justified by a MEASUREMENT, not by both being
+            # available: the stamp fix repairs only entries this runner stamps
+            # from now on. A registry RESUMED from a `runner_state.json`
+            # written before today already carries
+            # `irreducible_escalation=True` beside `integrity_unobserved=True`,
+            # `--resume` restores it through
+            # `FindingRegistry.from_dict(ckpt_data["registry"])`, whose whole
+            # body is `reg.entries = data.get("entries", {})` -- the dicts are
+            # rehydrated VERBATIM and no stamp site runs again for an entry
+            # that is not re-routed. Read out of the live object with
+            # `inspect.getsource` and exercised end to end through a real
+            # `from_dict` restore, not read off the page. Against that
+            # archived shape the stamp fix alone leaves A4 at 0 and this guard
+            # alone leaves it blocking. Demonstrated by
+            # bench/tests/test_a4_scope_guards_2026-10-03.py (hand-built
+            # post-routing state, the replay shape) and by
+            # bench/tests/test_an_unobserved_refusal_keeps_a4_blocking_2026-10-03.py
+            # (the REAL `_apply_routing`, the fresh-run shape). Neither fix
+            # passes both files.
+            if e.get("irreducible_escalation") and not e.get("integrity_unobserved"):
                 continue
             # SEVERITY NO LONGER GATES (2026-09-06, founder ruling 23: "Verdict:
             # do it. There are no votes in CDSFL.", with a 2-seat panel converging
@@ -2822,7 +2879,27 @@ class FindingRegistry:
             cid for cid, e in self.entries.items()
             if _integrity_violation_excluded(e)
             and e.get("status") not in _TERMINAL
-            and (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
+            and ((e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
+                 # THE A4 BLOCKER'S OWN SCOPE (MERGE round 2026-10-03; cc2's
+                 # half of the D-B fix). `unverified_critical_count` excludes
+                 # on status alone -- its severity gate went on 2026-09-06 --
+                 # so this reader must see on status alone too, or the two
+                 # disagree about what was excused and a sub-critical refusal
+                 # leaves the gate named in NO report.
+                 #
+                 # ONE READER, NOT TWO. fable proposed a sibling
+                 # `integrity_refused_subcriticals()`. Both discharge the
+                 # requirement, so SIMPLEST SUFFICIENT decides: widening the
+                 # reader that is ALREADY wired returns a strict SUPERSET of
+                 # what it returned before (nothing reported stops being
+                 # reported), needs no second report key and no second log
+                 # line, and makes "whatever the counter drops, this names"
+                 # hold BY CONSTRUCTION rather than by the union of two scopes
+                 # a later edit can drift apart. The method NAME is unchanged
+                 # on purpose: it is quoted verbatim in the
+                 # `integrity_refused_reason` string written onto entries and
+                 # into every archived registry.
+                 or e.get("status") == "UNCONFIRMED")
         )
 
     def irreducible_queue_decomposition(self) -> Tuple[int, int]:
@@ -4379,6 +4456,41 @@ DISC_NONDETERMINISTIC = "INDETERMINATE_NONDETERMINISTIC"  # unstable output
 DISC_BASELINE = "INDETERMINATE_BASELINE"       # apparatus not faithful
 DISC_COPY_UNCHANGED = "INDETERMINATE_COPY_UNCHANGED"  # nothing was corrected
 DISC_ABSENT = "NO_CONTROL"                     # no corrected copy was supplied
+# THE EXTENSION PANEL REVIEW 2026-10-03 ASKED FOR, AND IT IS DELIBERATELY NOT
+# AN ESCALATING OUTCOME YET.
+#
+# The control's reach is bounded by needing a corrected copy: measured 44 of 567
+# falsifier-bearing entries, 7.7601%, Wilson [5.8313%, 10.2575%]. Both panel
+# seats refused a second standalone template (ADDITIVE: an unwired mechanism
+# beside a working one is this project's 11-of-11 failure class) and both named
+# the same additive move -- synthesise the missing side so the guard that works
+# reaches the whole population.
+#
+# WHAT CAN BE SYNTHESISED SOUNDLY. "A copy in which THIS claim is fixed" cannot
+# be built without knowing the claim. What CAN be built is a set of materially
+# different targets, and a falsifier whose verdict NEVER CHANGES across them
+# cannot be reading the target to decide -- which is non-discrimination
+# whatever the claim was. The variants are the real text, the text emptied, and
+# the text duplicated, chosen because the two obvious honest shapes separate on
+# them: a falsifier asserting a defect is PRESENT goes quiet when the text is
+# emptied, and one asserting a fix is present fires when emptied but not when
+# duplicated. Only a verdict independent of content survives all three.
+#
+# IT IS ONE-SIDED AND LABELLED AS SUCH. Invariance demonstrates cannot-fail; a
+# verdict that varies demonstrates nothing, because the variant that changed it
+# need not be the claim under test.
+#
+# WHY IT DOES NOT ESCALATE ON INTRODUCTION. `DISC_FAILED` sets
+# `mechanical_fault`, `escalated` and `hil_escalated`; `DISC_INDETERMINATE`
+# sets `hil_escalated` too. Widening reach from 44 to 567 through either of
+# those would multiply the HIL queue by an unmeasured factor on the first run
+# that used it, and an unusually high irreducible queue is the founder's own
+# named signal of mechanical failure. So this outcome is in NEITHER set: it is
+# recorded, tallied and named in the bundle, and nothing reads it into a
+# convergence condition, a halt bound or a completion status. Promotion to a
+# veto requires its agreement with the real control measured on the overlap
+# where both ran -- registered as a measurement, not left as an intention.
+DISC_INVARIANT = "NO_CONTROL_INVARIANT_SHADOW"
 
 DISC_INDETERMINATE = frozenset({
     DISC_ERROR, DISC_NOT_INTERCEPTED, DISC_NONDETERMINISTIC, DISC_BASELINE,
@@ -5369,6 +5481,66 @@ def _supply_corrected_copies_from_fixes(
     return stats
 
 
+
+def _invariance_variants(real_text: str) -> list[tuple[str, str]]:
+    """Materially different targets a falsifier's verdict should separate on.
+
+    `emptied` removes everything; `duplicated` keeps everything twice. The two
+    honest shapes separate here: a falsifier asserting a DEFECT IS PRESENT goes
+    quiet once the text is gone, and one asserting A FIX IS PRESENT fires once
+    the text is gone but not when it is doubled. A verdict that is the same on
+    all 3 is independent of the target's content.
+    """
+    return [("emptied", ""), ("duplicated", (real_text or "") * 2)]
+
+
+def invariance_probe(
+    fcode: str, root, target_rel: str, real_verdict: str, *, kwargs=None,
+) -> dict:
+    """One-sided cannot-fail probe for falsifiers with NO corrected copy.
+
+    Returns a record; decides nothing and escalates nothing. `invariant` is True
+    only when every variant returns the SAME verdict as the unchanged target,
+    which is non-discrimination whatever the claim was. `invariant` False means
+    the verdict moved, which demonstrates NOTHING about discrimination -- the
+    variant that moved it need not be the claim under test.
+    """
+    from bench.falsifier_verify import reverify_falsifier
+
+    kwargs = kwargs or {}
+    out = {"ran": False, "invariant": None, "real_verdict": real_verdict,
+           "variants": {}, "limit": "one-sided: invariance demonstrates "
+                                    "cannot-fail; variation demonstrates nothing"}
+    try:
+        real_text = (Path(root) / target_rel).read_text(
+            encoding="utf-8", errors="replace")
+    except (OSError, ValueError) as exc:
+        out["detail"] = (f"the target could not be read, so no probe was "
+                         f"possible: {type(exc).__name__}")
+        return out
+    overlays = []
+    try:
+        for label, text in _invariance_variants(real_text):
+            try:
+                ov = _build_discrimination_overlay(Path(root), target_rel, text)
+            except (OSError, ValueError, RuntimeError) as exc:
+                out["variants"][label] = f"OVERLAY_ERROR: {type(exc).__name__}"
+                continue
+            overlays.append(ov)
+            code, _ = _retarget_falsifier(fcode, Path(root), ov)
+            out["variants"][label] = reverify_falsifier(
+                code, repo_root=str(ov), cwd=str(ov), **kwargs)
+        got = [v for v in out["variants"].values()
+               if v in ("CONFIRMED", "REFUTED", "UNTOOLABLE", "ERROR")]
+        out["ran"] = len(got) == len(out["variants"]) and bool(got)
+        if out["ran"]:
+            out["invariant"] = all(v == real_verdict for v in got)
+    finally:
+        for ov in overlays:
+            shutil.rmtree(ov, ignore_errors=True)
+    return out
+
+
 def run_discrimination_control(
     entry: dict, *, repo_root: Optional[str] = None,
     target_rel: str = "", timeout: Optional[int] = None,
@@ -5411,9 +5583,42 @@ def run_discrimination_control(
         rec["detail"] = "no falsifier to control"
         return rec
     if not corrected.strip():
+        # THE WIDENED REACH (panel review 2026-10-03). Until today this returned
+        # here having decided nothing, on 523 of 567 falsifier-bearing entries.
+        # The probe below runs on every one of them and RECORDS; the outcome it
+        # can reach is outside both escalation sets, so no control flow changes.
         rec["detail"] = (
             "no corrected copy was supplied with this falsifier, so the control "
             "did not run and the CONFIRMED verdict is unchecked for discrimination")
+        try:
+            # THE VERDICT ON THE UNCHANGED TARGET IS ALREADY KNOWN. The gate
+            # computes it immediately before calling here and stores it on the
+            # entry, so recomputing it would buy nothing and cost a third
+            # sandbox execution on every probed finding of every round.
+            real_v = (entry.get("falsifier_verdict") or "").strip() or "CONFIRMED"
+            probe = invariance_probe(
+                fcode, Path(repo_root or REPO_ROOT), target_rel, real_v,
+                kwargs=({} if timeout is None else {"timeout": timeout}))
+            rec["invariance_probe"] = probe
+            if probe.get("invariant") is True:
+                rec["outcome"] = DISC_INVARIANT
+                rec["detail"] += (
+                    ". SHADOW PROBE: this falsifier returned the same verdict "
+                    f"({real_v}) against the unchanged target AND against every "
+                    f"synthesised variant {sorted(probe['variants'])}, so its "
+                    "verdict does not depend on the target's content. That is "
+                    "non-discrimination whatever the claim was. RECORDED ONLY: "
+                    "nothing is vetoed, escalated or closed on this.")
+            elif probe.get("ran"):
+                rec["detail"] += (
+                    ". SHADOW PROBE: the verdict moved across synthesised "
+                    "variants, so the falsifier does read its target. This is "
+                    "NOT a demonstration that it discriminates on the claim.")
+        except Exception as exc:  # noqa: BLE001
+            # A shadow instrument may never cost a round. Record and move on.
+            rec["invariance_probe"] = {
+                "ran": False, "invariant": None,
+                "detail": f"the probe itself failed: {type(exc).__name__}"}
         return rec
 
     root = Path(repo_root or REPO_ROOT)
@@ -5585,6 +5790,36 @@ def _apply_discrimination_control(
         if tally is not None:
             tally["no_control"] = tally.get("no_control", 0) + 1
         return DISC_ABSENT
+    # THE REACH BOUND IS REAL AND THE FIX FOR IT IS NOT INLINE. MEASURED TWICE,
+    # 2026-10-03, and the second measurement overturned the first.
+    #
+    # The bound: this early return means `run_discrimination_control` is never
+    # called when no corrected copy was supplied, which is why
+    # `scripts/discrimination_reach_2026-10-03.py` finds 0 entries stamped
+    # NO_CONTROL across the whole archive. The panel's additive move -- the
+    # shadow invariance probe in `invariance_probe`, which synthesises variants
+    # instead of requiring a corrected copy -- genuinely closes it.
+    #
+    # WHY THIS DOES NOT RUN INSIDE A ROUND. The probe needs the falsifier to
+    # read a VARIANT of the target, which requires an overlay, and an overlay
+    # build at the real
+    # repository root measures 14.034 s (numpy and mpmath agreeing, 2 builds of
+    # `bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`), because `panel_sandbox`
+    # recursively scans the clone for surviving secrets. At 2 overlays per probe
+    # and a run of roughly 400 probed findings that is 187 minutes added to
+    # every run -- for a statistic that is recorded and read by nothing in the
+    # convergence path. A first version of this comment projected 1.4 minutes
+    # from a probe timed against a 1-file temporary directory: a 68x
+    # underestimate, and the same "measure one member, assert the universal"
+    # shape this project has recorded 12 times.
+    #
+    # WHERE IT RUNS INSTEAD: `scripts/invariance_sweep_2026-10-03.py`, over a
+    # FINISHED run's registry. Same instrument, same information, once per
+    # distinct falsifier rather than once per finding per round, and it cannot
+    # slow or perturb a run it is not inside. Under the additive standard's
+    # removal clause the named property is wall-clock added to a run, the
+    # measurement is the one above, and the replacement dominates on it while
+    # being equal on information.
 
     # Idempotence: the gate re-runs every round. Re-running the control on an
     # unchanged (falsifier, corrected copy, TARGET) triple costs four sandbox
@@ -5865,7 +6100,94 @@ def apply_falsifier_verdicts(
                 # nothing and is what makes the decision evidence-based.
                 _log(f"    disc: {cid} did not discriminate (recorded, not blocking)")
             registry.resolve(cid, "CONFIRMED", round_idx)
+            # THE GATE USED TO OVERWRITE THE CONTROL'S OWN CORRECTION HERE.
+            #
+            # FOUND 2026-10-03 in the star round, as
+            # `shakedown_2026-09-29/arm1_harvest/C0041`: status CONFIRMED,
+            # `verified=true`, severity 0.8, standing on NON_DISCRIMINATING
+            # after the control had voided its falsifier, with the source model
+            # having withdrawn the claim. The mechanism is 2 lines apart:
+            # `run_discrimination_control`'s applier sets
+            # `entry["verified"] = False` when it voids an instrument, and this
+            # line then set it back to True unconditionally.
+            #
+            # `verified` is not a synonym for the status. Its one documented
+            # meaning, at the CLOSED transition, is "set only ever by an
+            # EXECUTION". A voided instrument executed and was then shown not to
+            # test its claim, so the flag asserts something untrue.
+            #
+            # THIS IS NOT THE BLOCKING RULING THE FOUNDER DEFERRED, and the
+            # difference is measured rather than argued. He refused to arm
+            # `discrimination_control_blocks` on the ground that 126 of 246
+            # fixes do not silence their own falsifier. That objection does not
+            # transfer here, because:
+            #   * the STATUS is untouched -- `registry.resolve(..., "CONFIRMED")`
+            #     above still runs, so CONFIRM-only semantics are unchanged; and
+            #   * the halt bound cannot see this flag at all.
+            #     `unverified_critical_count` skips every entry whose status is
+            #     not UNCONFIRMED and never reads `verified`, so convergence is
+            #     arithmetically unaffected.
+            # Measured exposure, by scripts/verified_on_a_voided_instrument_2026-10-03.py:
+            # 13 of 3208 archived registry entries carry NON_DISCRIMINATING
+            # (0.4052%, Wilson [0.237%, 0.6921%]); all 13 carried verified=true
+            # and a terminal status, 12 of them already CLOSED below critical
+            # severity, and exactly 1 is a critical.
+            #
+            # WHAT IT DOES CHANGE, and both changes are what the founder asked
+            # for on 2026-10-03 ("if a falsifier cannot confirm a fix, then that
+            # fix should be resubmitted via all existing mechanics for
+            # subsequent repair"):
+            #   * the CONFIRMED -> CLOSED transition requires `verified`, so a
+            #     finding standing on a voided instrument no longer closes; and
+            #   * the Bugzilla close-the-loop path requires NOT `verified`, so
+            #     the proposed fix is re-attempted against a sandbox copy with
+            #     ruff, mypy, bandit and the test command -- an existing
+            #     mechanism, newly reachable for exactly this case.
             e["verified"] = True
+            if disc == DISC_FAILED:
+                # `verified` IS LEFT ALONE, AND THAT REVERSES WHAT THIS BLOCK
+                # DID FOR THE FIRST 20 MINUTES OF ITS LIFE.
+                #
+                # The first version set `verified = False` here, reasoning that
+                # the halt bound cannot see the flag -- `unverified_critical_count`
+                # skips any entry whose status is not UNCONFIRMED and never reads
+                # it -- so the correction looked free. That reasoning was true
+                # about the halt bound and WRONG about the consequence.
+                # `bench/tests/test_discrimination_control.py` documents the
+                # mechanism in its own words: "verified=True is what lets
+                # _update_finding_statuses close it next round; withholding it
+                # is what keeps the finding out of CLOSED". Withholding the flag
+                # IS the blocking behaviour. Two committed oracles went red and
+                # named it: the default must leave the verdict untouched, and
+                # the flag must be the ONLY difference between armed and
+                # unarmed. Setting it False here armed
+                # `discrimination_control_blocks` by the back door -- the exact
+                # ruling the founder deferred, and the one refused an hour
+                # earlier on his own 126-of-246 measurement.
+                #
+                # WHAT IS ADDITIVE AND CHANGES NO OUTCOME: say so in the record.
+                # `shakedown_2026-09-29/arm1_harvest/C0041` carried CONFIRMED,
+                # verified=true, severity 0.8 on a NON_DISCRIMINATING falsifier
+                # whose claim its own source model had withdrawn, and nothing in
+                # the entry said the verification had been voided. A reader, and
+                # any later measurement of the tool-verification contract, could
+                # not tell that record from an honest one. The fields below are
+                # read by no decision; they make the contradiction legible, and
+                # they are what makes the founder's deferred ruling decidable on
+                # evidence from a live run rather than on one archived instance.
+                # Exposure: 13 of 3208 archived entries, 0.4052%, Wilson
+                # [0.237%, 0.6921%], producer
+                # scripts/verified_on_a_voided_instrument_2026-10-03.py.
+                e["verification_voided"] = True
+                e["verification_voided_reason"] = (
+                    "the discrimination control voided this falsifier "
+                    "(NO_DISCRIMINATION): it fires just as hard against a "
+                    "corrected copy of the target, so it does not test the "
+                    "claim it is attached to. The CONFIRMED status is left "
+                    "standing, and so is `verified`: withholding either IS the "
+                    "blocking behaviour, which is the founder's open decision "
+                    "and not one to make by wiring. This flag exists so the "
+                    "contradiction is legible rather than silent.")
             tally["CONFIRMED"] += 1
         elif verdict == "REFUTED" and not is_critical:
             # A non-critical refutation is trusted to drop the finding — there is
@@ -6530,6 +6852,27 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
                 # bundle a human has to read is worth more than a complete one
                 # nobody opens; the full body lands on the entry when resolved.
                 "last_falsifier_code": (result.falsifier_code or "")[:600],
+                # THE FULL BODY, ADDITIVE AND ALONGSIDE THE TRUNCATION (founder
+                # ruling 2026-10-03). The 600-character cut above is deliberate
+                # and is KEPT: an evidence bundle a human will actually read is
+                # worth more than a complete one nobody opens. But the
+                # false-positive sweep reads bodies to decide whether the gate
+                # refused HONEST work, and a truncated body can omit the very
+                # access that decides it -- so the sweep was structurally blind
+                # to the population most likely to contain a false positive.
+                #
+                # MEASURED 2026-10-03 by, and reproducible from,
+                # scripts/refused_falsifier_visibility_2026-10-03.py: 221
+                # routing-history records carry a falsifier body, and 111
+                # unique falsifier sources exist ONLY there and nowhere in
+                # `registry.entries.<cid>.falsifier_code` -- 111 of 983 of the
+                # whole archive, 11.292%, Wilson [9.4622%, 13.423%]. All 111
+                # are 600-character truncations, so a clean gate verdict on any
+                # of them was provisional until this field existed. Widening the
+                # sweep to read them adds 0 real rejections and 0 location
+                # artefacts. This field is RECORDING ONLY: nothing reads it into
+                # a convergence condition, a halt bound or a completion status.
+                "last_falsifier_code_full": (result.falsifier_code or ""),
             })
         except Exception as _rh_exc:  # noqa: BLE001 — telemetry must not fell a run
             _log(f"  WARNING: routing_history not recorded for {cid} ({_rh_exc})")
@@ -6650,7 +6993,24 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             e["mechanical_fault"] = False
             registry.resolve(cid, "CONFIRMED", round_idx)
             tally["resolved"] += 1
-        elif (e.get("falsifier_verdict") or "").strip().upper() in EQUIPMENT_FAILURE_VERDICTS:
+        elif ((e.get("falsifier_verdict") or "").strip().upper() in EQUIPMENT_FAILURE_VERDICTS
+              or ((e.get("falsifier_verdict") or "").strip().upper() == INTEGRITY_REFUSED_VERDICT
+                  and e.get("integrity_unobserved"))):
+            # AN UNOBSERVED REFUSAL JOINS THIS BRANCH (MERGE round 2026-10-03;
+            # cc2's half of the D-C fix), for the reason the branch already
+            # gives below. The key-access branch beneath carries `and not
+            # e.get("integrity_unobserved")`, so an UNOBSERVED refusal fell to
+            # the `else` and was stamped `irreducible_escalation` -- which
+            # asserts "a machine tried and failed". When the observer never
+            # installed, no machine tried. Fixing it at the STAMP leaves no
+            # false assertion on the entry and repairs every reader of the
+            # predicate at once; guarding only the counter (fable's half, kept
+            # above) would leave `irreducible_escalation`, `hil_escalated` and
+            # `hil_reason` standing on an entry no ladder ever reached. The
+            # entry still counts toward the irreducible-queue alarm via
+            # `routing_deferred`, exactly as every other equipment failure
+            # does.
+            #
             # NEVER ASSESSED IS NOT IRREDUCIBLE (2026-09-07). THIS IS THE ROUND-0
             # ESCALATION ROOT CAUSE, and it is why nothing has run for 12 days.
             #
@@ -6735,6 +7095,12 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
             _defer_verdict = (e.get("falsifier_verdict") or "MISSING")
             _defer_is_equipment = (
                 str(_defer_verdict).strip().upper() in EQUIPMENT_FAILURE_VERDICTS
+                # An UNOBSERVED integrity refusal IS an equipment failure --
+                # the runtime observer never installed, so nothing was
+                # measured -- and the record must say so even though the
+                # verdict string is not a member of that set (2026-10-03).
+                or (str(_defer_verdict).strip().upper() == INTEGRITY_REFUSED_VERDICT
+                    and bool(e.get("integrity_unobserved")))
             )
             e.setdefault(
                 "routing_defer_reason",
@@ -16439,7 +16805,10 @@ def run_experiment(
         # `_integrity_refused`.
         _integrity_refused = registry.integrity_refused_criticals()
         if _integrity_refused:
-            _log(f"  KEY-ACCESS ADVISORY: {len(_integrity_refused)} critical(s) "
+            # "finding(s)", not "critical(s)": since 2026-10-03 this reader
+            # also names SUB-critical UNCONFIRMED entries, because the A4
+            # blocker drops those too. One line, one scope.
+            _log(f"  KEY-ACCESS ADVISORY: {len(_integrity_refused)} finding(s) "
                  f"excused from BOTH the A4 blocker and the irreducible-queue "
                  f"halt bound because the integrity gate refused their "
                  f"falsifier: {_integrity_refused}. Reporting only (founder "

@@ -20,6 +20,7 @@ across three runs. The one question a human opening the bundle needs answered,
 why these rungs failed on this finding, could not be answered from the artefact.
 """
 
+import ast
 import sys
 from pathlib import Path
 
@@ -128,9 +129,54 @@ class TestTheRoutingEvidenceIsActuallyWritten:
             "without both, 'the ladder was exhausted' cannot be checked")
 
     def test_it_cannot_fell_a_run(self, src):
-        i = src.index('e.setdefault("routing_history", []).append(')
-        assert "except Exception" in src[i:i + 1600]
+        """The write must sit INSIDE a try/except, asserted over the syntax tree.
 
+        TWO FORMS OF THIS GUARD HAVE NOW FAILED FOR UNRELATED REASONS, and both
+        failures were about text rather than about the property.
+
+        FORM 1, a 1,600-character window from the append: broke on 2026-10-03
+        when a comment beside the write pushed `except Exception` past the cut.
+        It reported that the routing-history write could fell a run while the
+        handler sat 2 lines below the window. A guard whose verdict depends on
+        comment length is measuring the comment.
+
+        FORM 2, searching forward for the next `except Exception`: measured
+        VACUOUS the moment it was written. Deleting the real handler still
+        passed, because the search ran on to the next handler anywhere in a
+        960,000-character module. A guard that cannot fail is not a guard --
+        this project's own recorded sentence, and it applied to the repair.
+
+        FORM 3, here: parse the module and ask whether the append statement is
+        lexically inside an `ast.Try` that has at least one handler. No window,
+        no forward search, nothing a comment can move.
+        """
+        tree = ast.parse(src)
+
+        def contains_append(node) -> bool:
+            for n in ast.walk(node):
+                if not isinstance(n, ast.Call):
+                    continue
+                f = n.func
+                if (isinstance(f, ast.Attribute) and f.attr == "append"
+                        and isinstance(f.value, ast.Call)
+                        and isinstance(f.value.func, ast.Attribute)
+                        and f.value.func.attr == "setdefault"
+                        and f.value.args
+                        and isinstance(f.value.args[0], ast.Constant)
+                        and f.value.args[0].value == "routing_history"):
+                    return True
+            return False
+
+        assert contains_append(tree), (
+            "no routing_history append exists in the module at all, so the "
+            "alarm's evidence is written nowhere")
+
+        protected = any(
+            isinstance(n, ast.Try) and n.handlers and contains_append(n)
+            for n in ast.walk(tree))
+        assert protected, (
+            "the routing_history write is not inside any try/except with a "
+            "handler, so a failure writing the record can fell a run")
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

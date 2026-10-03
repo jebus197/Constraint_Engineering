@@ -52,17 +52,38 @@ def archive_grew():
 
 
 class TestTheProducerAsOf:
-    def test_as_of_the_briefs_date_reproduces_the_declared_figure(self):
-        """The historical figure is DECIDABLE, not trusted: 2/640 = 0.3125%
-        re-executes against the corpus as it stood."""
+    def test_as_of_the_briefs_date_reproduces_the_SUCCESSOR_figure(self):
+        """AMENDED 2026-10-03: the figure is still DECIDABLE, and its value moved.
+
+        This asserted that `2/640 = 0.3125%` re-executes as of 2026-09-11. It no
+        longer does, and the cause is not archive decay: the founder's ruling of
+        2026-10-02 narrowed the pre-execution key gate to ACCESS-ONLY, one
+        archived falsifier (C0015) left the real-rejection set because it reads
+        NOTHING, and the producer now prints 1/640 at EVERY date. The corpus is
+        identical; the rule moved under the record.
+
+        `--as-of` pins the DENOMINATOR and cannot absorb that, so the amendment
+        is RECORDED in `bench/directives/universal/figure_amendments.json` and
+        the SUCCESSOR is what must re-execute. The archived brief is NOT edited.
+        Rule-set pinning was considered and rejected by both panel seats
+        independently in the star round: keeping superseded gate implementations
+        executable forever forks the predicate at every ruling.
+
+        WHAT THIS STILL REFUSES, which is the point: a successor that the
+        producer does not actually print. The value below is checked by
+        execution, not read from the register.
+        """
         r = subprocess.run(
             [sys.executable, str(PRODUCER), "--as-of", "2026-09-11"],
             cwd=ROOT, capture_output=True, text=True, timeout=600)
         assert r.returncode == 0, r.stderr[-600:]
-        assert "real-rejection rate : 2/640 = 0.3125%" in r.stdout, (
-            "the archive as of 2026-09-11 no longer yields the round-11 "
-            "figure; the historical record itself is now in question:\n"
+        assert "real-rejection rate : 1/640" in r.stdout, (
+            "the archive as of 2026-09-11 yields neither the round-11 figure "
+            "nor its recorded successor; the record is now in question:\n"
             + r.stdout[-600:])
+        assert "2/640 = 0.3125%" not in r.stdout, (
+            "the superseded value reproduces again, so the amendment record is "
+            "now false and must be retired")
 
     def test_unrestricted_still_reports_the_live_corpus(self, archive_grew):
         """The flag must not have bent the live measurement (additive check:
@@ -98,7 +119,16 @@ class TestTheValidatorRuling:
                            cwd=ROOT, capture_output=True, text=True,
                            timeout=1200)
         assert r.returncode == 0, (r.stdout + r.stderr)[-800:]
-        assert "HISTORICAL FIGURE" in (r.stdout + r.stderr), (
+        # EITHER LOUD FORM SATISFIES THIS, and the distinction is real.
+        # "HISTORICAL FIGURE" means the corpus moved and `--as-of` reproduced
+        # the declared value. "AMENDED FIGURE" means a RULE moved under the
+        # record, which `--as-of` cannot absorb, and the recorded SUCCESSOR
+        # reproduced as of the brief's date instead. What this test actually
+        # protects is that neither acceptance is SILENT: a quiet acceptance is
+        # how an exemption rots into a hole. Round 11 took the second path on
+        # 2026-10-03 when the key gate narrowed to access-only.
+        assert ("HISTORICAL FIGURE" in (r.stdout + r.stderr)
+                or "AMENDED FIGURE" in (r.stdout + r.stderr)), (
             "the acceptance was silent; a quiet historical acceptance is how "
             "an exemption rots into a hole")
 

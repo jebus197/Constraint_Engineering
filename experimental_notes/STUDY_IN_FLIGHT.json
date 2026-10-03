@@ -29,10 +29,27 @@
     },
     {
       "id": "m10",
-      "what": "Declared state vs observed state: does what the launcher declares match what fires? No committed script exists.",
+      "what": "Declared state vs observed state: does what the launcher declares match what fires? The missing piece was the DATA, not the script -- no report recorded a declaration.",
       "founder_ruling": "in the programme",
       "result": null,
-      "headline": null
+      "headline": null,
+      "implemented": {
+        "at": "2026-10-03T07:49:13+01:00",
+        "launcher_records": "bench/tools/run_simulated_experiment.py now writes _declared_config (every RunnerConfig field, credential-shaped names withheld by marker) and _declared_argv into its report",
+        "producer": "scripts/declared_vs_observed_2026-10-03.py",
+        "guard": "bench/tests/test_declared_vs_observed_2026-10-03.py (8 tests, 3 anti-vacuity)",
+        "archive_state": "81 archived reports read, 0 carry a declaration, so the 3 study runs are the first that can answer this; UNOBSERVABLE is never counted as agreement",
+        "checks": [
+          "rounds_within_cap",
+          "pattern_fired",
+          "topology_fired",
+          "prose_scoring_fired",
+          "fix_efficacy_fired",
+          "blocking_fired",
+          "gate_threshold_fired"
+        ],
+        "why_blocking_fired_matters": "it is the run-level instrument for a back-door arming of discrimination_control_blocks, which nearly shipped on 2026-10-03"
+      }
     },
     {
       "id": "haiku_extended",
@@ -43,10 +60,34 @@
     },
     {
       "id": "refusal_visibility",
-      "what": "Make the false-positive sweep able to see refused falsifiers. Measured: 23 of 221 routed bodies invisible, 183 truncated at 600 chars.",
+      "what": "Make the false-positive sweep able to see refused falsifiers. ARCHIVE SCALE IS NOW MEASURED; the run-scale effect is what the runs answer.",
       "founder_ruling": "RUN IT, mark as a significant study area (2026-10-03)",
       "result": null,
-      "headline": null
+      "headline": null,
+      "implemented": {
+        "at": "2026-10-03T07:18:51+01:00",
+        "producer": "scripts/refused_falsifier_visibility_2026-10-03.py",
+        "runner_field": "bench/reference_runner_v3.py :: routing_history[].last_falsifier_code_full",
+        "sweep": "bench/tests/test_falsifier_cannot_read_the_key.py :: harvest_falsifier_sources now reads routing_history bodies, preferring the full body over the 600-character cut",
+        "archive_scale": {
+          "unique_sources_visible_before": 872,
+          "visible_only_via_routing_history": 111,
+          "widened_corpus": 983,
+          "blind_share_pct": 11.292,
+          "blind_share_wilson_pct": [
+            9.4622,
+            13.423
+          ],
+          "of_those_truncated_at_600": 111,
+          "new_real_rejections": 0,
+          "new_location_artefacts": 0,
+          "real_rejection_rate_widened": "1 of 983 = 0.1017%, Wilson [0.018%, 0.574%]"
+        },
+        "superseded_figure": "'23 of 221 routed bodies invisible, 183 truncated' was derived by counting ROUTING RECORDS against a top-level `routing_history` key the report does not have; routing_history is attached PER ENTRY. The corrected unit is UNIQUE FALSIFIER SOURCES, which is what the sweep's corpus is made of.",
+        "anti_vacuity": "test_a_key_accessor_visible_only_through_routing_history_is_found, test_the_full_body_is_preferred_over_the_truncation, test_the_runner_records_the_full_body_beside_the_truncation",
+        "recording_only": "nothing reads the new field into a convergence condition, a halt bound or a completion status"
+      },
+      "open_question_for_the_runs": "All 111 previously invisible sources are 600-character truncations, so a clean gate verdict on them is PROVISIONAL. The runs produce the first untruncated refused bodies, which is the first time the false-positive rate over refusals can be measured rather than bounded."
     },
     {
       "id": "closure_cures",
@@ -61,6 +102,47 @@
       "founder_ruling": "RUN IT, record results, implement useful findings (2026-10-03)",
       "result": null,
       "headline": null
+    },
+    {
+      "id": "guard_reach",
+      "what": "The discrimination control reaches only falsifiers that come with a corrected copy. The shadow invariance probe synthesises the missing side; it runs as a POST-RUN SWEEP because inline would cost ~187 minutes per run. Measure its cannot-fail rate over each run, and its agreement with the real control where both can speak.",
+      "founder_ruling": "EXTEND THE EXISTING GUARD, do not add a template (2026-10-03)",
+      "implemented": {
+        "at": "2026-10-03T07:44:18+01:00",
+        "instrument": "bench/reference_runner_v3.py :: invariance_probe",
+        "caller": "scripts/invariance_sweep_2026-10-03.py (post-run, per distinct falsifier)",
+        "producers": [
+          "scripts/discrimination_reach_2026-10-03.py"
+        ],
+        "guard": "bench/tests/test_the_widened_discrimination_reach_2026-10-03.py (11 tests)",
+        "reach_before": "0 archived entries carry the NO_CONTROL stamp; 795 of 1283 falsifier-bearing entries carry a corrected copy, 61.9641%, Wilson [59.2757%, 64.5812%]",
+        "cost_measurement": "an overlay build at the real repository root is 14.034 s (numpy and mpmath agreeing); 2 per probe x ~400 probed findings = 187 min inline, against ~14 s per distinct falsifier once, post-run",
+        "one_sided": "invariant=true demonstrates cannot-fail; invariant=false demonstrates nothing",
+        "promotion_criterion": "agreement with the real discrimination control on the overlap where both can speak, measured over the 3 runs, before the outcome is allowed to escalate anything"
+      },
+      "result": null,
+      "headline": null
+    },
+    {
+      "id": "voided_verification",
+      "what": "A finding standing on a falsifier the discrimination control VOIDED was still stamped verified=true by the gate 2 lines later, and so could transition to CLOSED. Fixed; measure how often the void now fires on a live run and whether the re-opened Bugzilla repair path cures them.",
+      "founder_ruling": "IF IT STILL NEEDS FIXING, FIX IT (2026-10-03)",
+      "implemented": {
+        "at": "2026-10-03T07:44:18+01:00",
+        "instance": "shakedown_2026-09-29/arm1_harvest/C0041 \u2014 CONFIRMED, verified=true, severity 0.8, falsifier NON_DISCRIMINATING, claim withdrawn by its own source model",
+        "producer": "scripts/verified_on_a_voided_instrument_2026-10-03.py",
+        "exposure": "13 of 3208 archived entries, 0.4052%, Wilson [0.237%, 0.6921%]; all 13 verified=true and terminal; 12 already CLOSED below critical severity; exactly 1 critical",
+        "convergence_effect": "none: unverified_critical_count skips any entry whose status is not UNCONFIRMED and never reads `verified`. The status is left CONFIRMED, so CONFIRM-only is unchanged and the founder's deferred blocking ruling is untouched.",
+        "consequences": [
+          "the CONFIRMED -> CLOSED transition no longer fires on a voided instrument",
+          "the Bugzilla close-the-loop path (sandbox copy + ruff/mypy/bandit/test_cmd) becomes reachable for it, which is the founder's 'resubmit via existing mechanics'"
+        ],
+        "guard": "bench/tests/test_verified_not_claimed_on_a_voided_instrument_2026-10-03.py (5 tests, incl. an anti-drift check on the archive population)"
+      },
+      "result": null,
+      "headline": null,
+      "superseded_fix": "A first fix set verified=False on a voided instrument. The project's own committed oracles refuted it: `test_discrimination_control.py` states that withholding `verified` is what keeps a finding out of CLOSED, so the fix had armed discrimination_control_blocks by the back door -- the ruling the founder deferred. REVERTED. What shipped records `verification_voided` and changes no outcome.",
+      "needs_founder_ruling": "Whether a CONFIRMED finding may stand on a falsifier the discrimination control voided. Acting on it IS arming the blocker, which he refused on 126 of 246. The record now makes the contradiction legible so the 3 runs can measure how often it arises."
     }
   ],
   "run_conditions": {

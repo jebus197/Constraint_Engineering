@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import dataclasses
 import json
 import pathlib
 import shutil
@@ -750,6 +751,46 @@ def main() -> int:
                            cwd=str(REPO), capture_output=True)
             shutil.rmtree(_wt_parent, ignore_errors=True)
     el = time.monotonic() - t0
+
+    # MEASUREMENT 10 HAD NO SCRIPT BECAUSE IT HAD NO DATA (2026-10-03).
+    #
+    # The programme of study's measurement 10 asks whether what the launcher
+    # DECLARES matches what actually FIRES. It had no committed script, and the
+    # reason is upstream of the script: nothing recorded the declaration. The
+    # report carried the runner's results and not one field of the config that
+    # produced them, so "declared" existed only in this file's source and in
+    # whatever argv a human happened to keep. The comparison was unanswerable
+    # from the archive for every run ever made.
+    #
+    # Recorded here as a flat dict of the config the runner was ACTUALLY
+    # constructed with -- not a restatement of the flags, which is the same
+    # mistake one level up. `scripts/declared_vs_observed_2026-10-03.py`
+    # consumes it.
+    #
+    # NOTHING CREDENTIAL-SHAPED IS WRITTEN. Field names are filtered, and the
+    # value of any field whose name names a key, token, secret, password or
+    # environment file is replaced with a marker rather than omitted, so a
+    # reader can tell a withheld field from an absent one.
+    try:
+        _hide = ("key", "token", "secret", "password", "passwd", "credential",
+                 "api", "env_file", "scoring_env")
+        _declared_cfg = {}
+        for _f in dataclasses.fields(cfg):
+            _v = getattr(cfg, _f.name, None)
+            if any(h in _f.name.lower() for h in _hide):
+                _declared_cfg[_f.name] = "<withheld: name matches a credential pattern>"
+            elif isinstance(_v, (str, int, float, bool, type(None))):
+                _declared_cfg[_f.name] = _v
+            elif isinstance(_v, (list, tuple)):
+                _declared_cfg[_f.name] = [x if isinstance(
+                    x, (str, int, float, bool, type(None))) else type(x).__name__
+                    for x in _v]
+            else:
+                _declared_cfg[_f.name] = f"<{type(_v).__name__}>"
+        result["_declared_config"] = _declared_cfg
+        result["_declared_argv"] = list(sys.argv[1:])
+    except Exception as _dc:                                   # noqa: BLE001
+        result["_declared_config_error"] = f"{type(_dc).__name__}: {_dc}"
 
     result["_simulated"] = True
     result["_sim_label_map"] = SHIM.LABEL_MAP

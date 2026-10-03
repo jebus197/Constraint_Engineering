@@ -137,18 +137,45 @@ class TestItIsVersionedAndWired:
             "the hook exists and nothing calls it, and no parked entry preserves "
             "it either, which is the unwired-addition half of the additive standard")
 
-    def test_the_five_existing_hooks_still_run(self):
+    #: Every `UserPromptSubmit` hook, BY NAME. A bare count was the first form
+    #: of this assertion and it had to be edited on 2026-10-03 when
+    #: `study_pulse.py` became the 6th -- at which point a count says only that
+    #: the number changed, not WHICH capability arrived or left. The named set
+    #: fails on a REMOVAL (the thing worth protecting) and on an addition
+    #: nobody recorded here (the additive standard's other half), and it says
+    #: what each one is for so a later reader can tell a loss from a rename.
+    EXPECTED_PROMPT_HOOKS = {
+        "prompt_clock.py",        # the sole mechanism for temporal awareness
+        "mc_commands.py",         # the standing hard constraints, f and sy
+        "compaction_watch.py",    # tells the founder a compaction happened
+        "ffafp_audit.py",         # names which FFAFP steps left no trace
+        "task_list_pulse.py",     # the open/done/blocked counts
+        "study_pulse.py",         # why the runs exist; falls silent when CLOSED
+    }
+
+    def test_the_existing_prompt_hooks_still_run(self):
         s = Path.home() / ".claude" / "settings.json"
         if not s.is_file():
             pytest.skip("no settings.json")
         d = json.loads(s.read_text())
-        # COUNT THE INNER HOOKS, not the matcher entries. The first version of
-        # this assertion counted `len(hooks["UserPromptSubmit"])`, which is 1 --
-        # one matcher holding 5 hooks. It fired during the settings edit and
-        # correctly REFUSED to write, which is a pre-write P-pass doing its job
-        # on a file whose corruption would break every session.
-        n = sum(len(m.get("hooks", [])) for m in d["hooks"]["UserPromptSubmit"])
-        assert n == 5, f"wiring the Stop hook changed the 5 prompt hooks to {n}"
+        # READ THE INNER HOOKS, not the matcher entries. An earlier version
+        # counted `len(hooks["UserPromptSubmit"])`, which is 1 -- one matcher
+        # holding them all. It fired during the settings edit and correctly
+        # REFUSED to write, which is a pre-write P-pass doing its job on a file
+        # whose corruption would break every session.
+        names = {Path(h.get("command", "").split()[-1]).name
+                 for m in d["hooks"]["UserPromptSubmit"]
+                 for h in m.get("hooks", [])}
+        missing = self.EXPECTED_PROMPT_HOOKS - names
+        extra = names - self.EXPECTED_PROMPT_HOOKS
+        assert not missing, (
+            f"a prompt hook that was wired no longer runs: {sorted(missing)}. "
+            "A capability may not leave without a RETIRED entry saying so.")
+        assert not extra, (
+            f"a prompt hook runs that this test does not name: {sorted(extra)}. "
+            "Add it to EXPECTED_PROMPT_HOOKS with a comment saying what it is "
+            "for -- an unrecorded addition is the other half of the additive "
+            "standard.")
 
 
 # ---------------------------------------------------------------------------

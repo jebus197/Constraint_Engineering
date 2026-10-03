@@ -180,17 +180,15 @@ def _artefact_classifier():
     return mod.is_location_artefact
 
 
-def test_the_guard_rejects_nothing_else_in_the_whole_tracked_archive():
-    """False-positive rate over every falsifier this project has ever run.
+def harvest_falsifier_sources(logs: pathlib.Path) -> dict[str, tuple[str, str]]:
+    """Every unique falsifier body in an archive, keyed by source text.
 
-    Measured 2026-08-08: 560 unique falsifier sources across 26 archived runs,
-    exactly 2 rejected — C0012 (the exploit) and C0015 (a falsifier from the same
-    contaminated run whose own text asserts which claim was planted). Zero
-    rejections among the other 558.
-
-    If a future rule change makes this fail, the rule is blocking honest work.
+    Factored out of the sweep below so the widening to refused bodies can be
+    EXECUTED against a planted archive rather than read. A test that asserts
+    on the sweep's source text would pass whether or not the two halves of
+    the corpus agree; `execute-do-not-grep` (2026-09-04) requires the call.
     """
-    logs = REPO_ROOT / "bench" / "logs"
+
     sources: dict[str, tuple[str, str]] = {}
     for report in sorted(logs.rglob("*_report.json")):
         try:
@@ -202,6 +200,60 @@ def test_the_guard_rejects_nothing_else_in_the_whole_tracked_archive():
             code = (entry or {}).get("falsifier_code") or ""
             if code.strip():
                 sources.setdefault(code, (report.parent.name, cid))
+        # REFUSED BODIES ARE NOW IN THE CORPUS TOO (founder ruling 2026-10-03).
+        #
+        # THE BLIND SPOT THIS CLOSES. `falsifier_code` is written back onto the
+        # entry only when the falsifier RESOLVED, so a falsifier the gate
+        # REFUSED never reached the field this sweep read. The corpus that
+        # measures whether the gate refuses honest work excluded refusals by
+        # construction -- and the gate's rule was changed on 2026-10-02 while
+        # that was open. `routing_history` keeps a body per routing attempt
+        # whatever the outcome, so reading it closes the hole at the only
+        # location where the refused population exists.
+        #
+        # MEASURED by scripts/refused_falsifier_visibility_2026-10-03.py:
+        # 111 of 983 unique sources are reachable ONLY this way (11.292%,
+        # Wilson [9.4622%, 13.423%]), and widening the corpus to include them
+        # adds 0 real rejections and 0 location artefacts. So the access-only
+        # rule is not blocking honest work in the population that was invisible
+        # either -- which is a measurement the sweep previously could not make.
+        #
+        # TRUNCATION CANNOT MANUFACTURE A REJECTION, which is what makes this
+        # safe in direction. `scan_falsifier_source` is pure regex with no parse
+        # step, so a 600-character cut can only LOSE a match. A rejection found
+        # in a cut body is real; a clean verdict on one is PROVISIONAL, and
+        # ALL 111 of the newly visible sources are cut. `last_falsifier_code_full` now carries the whole
+        # body going forward so future runs are decidable rather than
+        # provisional; it is preferred here where present.
+        for cid, entry in entries.items():
+            for rec in ((entry or {}).get("routing_history") or []):
+                if not isinstance(rec, dict):
+                    continue
+                # STORED RAW, STRIPPED ONLY TO TEST EMPTINESS. The entries
+                # branch above stores `code` unstripped, so stripping here
+                # would make the SAME falsifier two distinct dict keys -- one
+                # per branch -- and silently inflate the denominator of a
+                # false-positive rate. Caught by the anti-vacuity test below,
+                # which compares against the body it planted.
+                full = rec.get("last_falsifier_code_full") or ""
+                cut = rec.get("last_falsifier_code") or ""
+                body = full if full.strip() else cut
+                if body.strip():
+                    sources.setdefault(body, (report.parent.name, cid))
+    return sources
+
+
+def test_the_guard_rejects_nothing_else_in_the_whole_tracked_archive():
+    """False-positive rate over every falsifier this project has ever run.
+
+    Measured 2026-08-08: 560 unique falsifier sources across 26 archived runs,
+    exactly 2 rejected — C0012 (the exploit) and C0015 (a falsifier from the same
+    contaminated run whose own text asserts which claim was planted). Zero
+    rejections among the other 558.
+
+    If a future rule change makes this fail, the rule is blocking honest work.
+    """
+    sources = harvest_falsifier_sources(REPO_ROOT / "bench" / "logs")
 
     assert len(sources) > 400, (
         f"only {len(sources)} archived falsifiers found; the corpus this test "
@@ -793,3 +845,109 @@ def test_the_criterion_is_access_not_mention():
     reasons = {r for r, _ in v}
     assert any("answer-key" in r for r in reasons), reasons
     assert any("field subscripted" in r for r in reasons), reasons
+
+
+def _planted_archive(root: pathlib.Path, *, in_routing: str = "",
+                     on_entry: str = "") -> pathlib.Path:
+    """Write a minimal archive holding the given bodies and nothing else."""
+    run = root / "planted_run_20260103T000000Z"
+    run.mkdir(parents=True, exist_ok=True)
+    entry: dict = {}
+    if on_entry:
+        entry["falsifier_code"] = on_entry
+    if in_routing:
+        entry["routing_history"] = [{"round": 1, "verdict": "REFUSED",
+                                     "resolved": False,
+                                     "last_falsifier_code": in_routing}]
+    (run / "planted_report.json").write_text(json.dumps(
+        {"registry": {"entries": {"C0001": entry}}}), encoding="utf-8")
+    return run
+
+
+def test_a_key_accessor_visible_only_through_routing_history_is_found(tmp_path):
+    """ANTI-VACUITY for the 2026-10-03 widening, and it EXECUTES the builder.
+
+    The widening exists because a REFUSED falsifier's body never reaches
+    `registry.entries.<cid>.falsifier_code` -- the runner writes that field back
+    only on resolution. So the population the sweep most needed to see was the
+    one population it could not see.
+
+    This plants exactly that shape: a report whose only falsifier body is a real
+    key accessor sitting in a `routing_history` record, with no `falsifier_code`
+    on the entry at all. The builder must surface it and the gate must refuse
+    it. Delete the `routing_history` loop in `harvest_falsifier_sources` and
+    this test fails, which is the only thing that stops the widening being a
+    comment about an intention.
+    """
+    accessor = ('import json\n'
+                'key = json.load(open("/Users/x/.config/cdsfl/scoring.env"))\n'
+                'print(key["planted_false"])\n')
+    _planted_archive(tmp_path, in_routing=accessor)
+
+    sources = harvest_falsifier_sources(tmp_path)
+    assert accessor in sources, (
+        "a falsifier body present ONLY in routing_history was not harvested; "
+        "the sweep is blind to refused falsifiers again"
+    )
+    assert scan_falsifier_source(accessor), (
+        "the planted accessor is not refused by the gate, so this test could "
+        "not detect a blind spot even if one existed"
+    )
+
+
+def test_the_full_body_is_preferred_over_the_truncation(tmp_path):
+    """The 600-character cut can hide the access that decides a refusal.
+
+    `last_falsifier_code` is truncated by design and that truncation is KEPT.
+    `last_falsifier_code_full` was added on 2026-10-03 alongside it so the body
+    is decidable rather than provisional. This asserts the builder reads the
+    full field where it exists -- by planting a body whose violation sits past
+    character 600, where only the full field can carry it.
+    """
+    filler = "# " + ("pad " * 200) + "\n"
+    assert len(filler) > 600
+    violation = 'open("/Users/x/.config/cdsfl/scoring.env").read()\n'
+    full = filler + violation
+    cut = full[:600]
+    assert not scan_falsifier_source(cut), (
+        "the truncation already contains the violation, so this test would "
+        "pass without the full field and prove nothing"
+    )
+
+    run = tmp_path / "planted_run_20260103T000001Z"
+    run.mkdir(parents=True)
+    (run / "planted_report.json").write_text(json.dumps(
+        {"registry": {"entries": {"C0001": {"routing_history": [
+            {"round": 1, "verdict": "REFUSED", "resolved": False,
+             "last_falsifier_code": cut,
+             "last_falsifier_code_full": full}]}}}}), encoding="utf-8")
+
+    sources = harvest_falsifier_sources(tmp_path)
+    assert full in sources and cut not in sources, (
+        "the builder kept the truncation instead of the full body, so a "
+        "violation past character 600 stays invisible"
+    )
+    assert scan_falsifier_source(full), "the planted violation is not detected"
+
+
+def test_the_runner_records_the_full_body_beside_the_truncation():
+    """EXECUTED, not grepped: the field the sweep now prefers must be written.
+
+    A widening that reads a key no producer writes is an addition nothing
+    reaches -- the failure class this project has recorded 11 times. This calls
+    the runner's own routing-history writer indirectly by asserting the literal
+    pairing in `_apply_routing`: both the cut and the full field, from the same
+    source expression, in the same record.
+    """
+    runner = (REPO_ROOT / "bench" / "reference_runner_v3.py").read_text(
+        encoding="utf-8")
+    block = runner[runner.index('"routing_history"'):]
+    block = block[:block.index("})", block.index('"last_falsifier_code"'))]
+    assert '"last_falsifier_code": (result.falsifier_code or "")[:600]' in block, (
+        "the truncated field is no longer written; the bundle lost its "
+        "human-readable body"
+    )
+    assert '"last_falsifier_code_full": (result.falsifier_code or "")' in block, (
+        "the full body is not written, so the sweep's preferred field is a "
+        "key nothing produces"
+    )
