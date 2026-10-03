@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 3 October 2026 06:15 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 3 October 2026 06:17 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -26,6 +26,15 @@ session loss, compaction event, or fresh start with a new model instance.
 ---
 
 ## SESSION STATE — 2026-10-03 06:08 BST (READ THIS FIRST)
+
+**SUITE.** Last full-suite measurement on a QUIESCENT tree: **7 failed, 9,762
+passed, 9 skipped in 3137.06 s (52:17)**, from
+`python3 -m pytest bench/tests/ -q --timeout=1800 -p no:cacheprovider`. 4 of
+those 7 were fixed after that run (the `--help` contract on 4 new scripts, the
+brief-currency fixture, the citation re-point, the source-text census and the
+Desktop mirror); the remaining 3 are the amendments-register items. A LATER run
+measured 18 failed and is NOT citable: the tree was being edited underneath it,
+which manufactured 10 of those 18. Cited, not re-run.
 
 **WHY THE SIMULATED RUNS EXIST.** To execute the PROGRAMME OF STUDY
 (`experimental_notes/CDSFL_Programme_of_Study_Full_Scope_2026-09-21.md`), which
