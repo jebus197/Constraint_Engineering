@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 3 October 2026 06:17 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 3 October 2026 06:19 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -26,6 +26,8 @@ session loss, compaction event, or fresh start with a new model instance.
 ---
 
 ## SESSION STATE — 2026-10-03 06:08 BST (READ THIS FIRST)
+
+**BRANCH.** HEAD `6b3f689` on `sim/shakedown-2026-09-29`. `main` untouched. The founder's 2026-09-30 ruling binds: simulated work goes to the simulation branch, `main` only by agreement.
 
 **SUITE.** Last full-suite measurement on a QUIESCENT tree: **7 failed, 9,762
 passed, 9 skipped in 3137.06 s (52:17)**, from
