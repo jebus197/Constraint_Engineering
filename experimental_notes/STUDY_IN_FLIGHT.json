@@ -25,7 +25,19 @@
       "what": "Paired baseline: pre-window a2a0197 vs HEAD, same target, same seed. THE effectiveness question.",
       "founder_ruling": "RUN IT (2026-10-03)",
       "result": null,
-      "headline": null
+      "headline": null,
+      "design_verified": {
+        "at": "2026-10-03T11:55:58+01:00",
+        "baseline_commit": "a2a0197 (2026-09-06 17:06:24 +0100), the pre-window commit the programme names",
+        "feasibility": "the launcher, the runner and the target all exist at that commit, so a worktree there can run the same experiment",
+        "THE_CONFOUND_THAT_IS_RULED_OUT": "A paired design needs the SAME target in both arms, and this target is rewritten by runs that apply fixes back. Checked: the target is BYTE-IDENTICAL at a2a0197 and HEAD -- 3,498 bytes, and 0 commits between them touch it. So a difference between the arms is attributable to the machinery, not to target drift. Had it differed, the arm would have been uninterpretable and the programme's own specification would have needed amending before running it.",
+        "arms": {
+          "HEAD arm": "study_run1b_2026-10-03_20261003T100439Z, already running -- so the HEAD arm is not run twice",
+          "baseline arm": "the same invocation at a2a0197 in a worktree, SEQUENTIALLY after 1b so neither contends with the other for CPU or perturbs the other's round timings"
+        },
+        "invocation": "python3 bench/tools/run_simulated_experiment.py --target bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md --rounds 8 --domain statistics --name arm5_baseline_a2a0197",
+        "what_it_can_and_cannot_say": "It compares 1 run against 1 run, so it cannot establish a rate. It CAN show whether the figures the fixes were meant to move -- blocked findings, irreducible queue, HIL referrals, rounds to convergence -- moved in the predicted direction on the same target."
+      }
     },
     {
       "id": "m10",
@@ -122,14 +134,38 @@
         "anti_vacuity": "test_a_key_accessor_visible_only_through_routing_history_is_found, test_the_full_body_is_preferred_over_the_truncation, test_the_runner_records_the_full_body_beside_the_truncation",
         "recording_only": "nothing reads the new field into a convergence condition, a halt bound or a completion status"
       },
-      "open_question_for_the_runs": "All 111 previously invisible sources are 600-character truncations, so a clean gate verdict on them is PROVISIONAL. The runs produce the first untruncated refused bodies, which is the first time the false-positive rate over refusals can be measured rather than bounded."
+      "open_question_for_the_runs": "All 111 previously invisible sources are 600-character truncations, so a clean gate verdict on them is PROVISIONAL. The runs produce the first untruncated refused bodies, which is the first time the false-positive rate over refusals can be measured rather than bounded.",
+      "corrections": [
+        {
+          "at": "2026-10-03T13:11:11+01:00",
+          "what_was_overstated": "The justification for stopping run 1 said the citation defect 'starves the finding supply'. Measured afterwards: barrier blocks are NOT all permanent losses. An autoimmune override resurrects findings the barrier rejected -- 3 resurrected and 4 kept locked in run 1, 3 and 5 in run 1b. So the net suppression was smaller than the 12 blocked target citations by an amount that cannot be pinned down, because the override's per-finding selection is not logged.",
+          "what_survives": "The defect was real, fixable, and the fix eliminated it: target citations blocked went 12 -> 0 and quoting captured into paths went 16 of 16 -> 0 of 8. The decision to stop rests on that, not on the magnitude claim.",
+          "a_normalisation_warning": "run 1b shows MORE blocks in absolute terms (22 against 16) because it has more findings and more rounds. Only blocks PER FINDING is a fair comparison, so raw block counts must not be quoted as a before-and-after."
+        }
+      ],
+      "live_confirmation": {
+        "at": "2026-10-03T13:44:58+01:00",
+        "run": "study_run1_2026-10-03_20261003T083519Z (the stopped run, 15 entries survived)",
+        "result": "4 of 4 routing records carry the FULL falsifier body, 0 exist as a truncation only. Wilson [51.0109%, 100%] on n=4, so the interval is wide and the CATEGORICAL claim is what holds: no record is truncation-only.",
+        "why_it_matters": "this is the 2026-10-03 field populating in a real run -- the blind spot that left 111 of 983 archived sources undecidable is closed at the source"
+      }
     },
     {
       "id": "closure_cures",
       "what": "attempt_close asks whether a fix BROKE anything, never whether it CURED the defect: 126 of 246 = 51.2195%, Wilson [45.0027%, 57.3989%]. Measure the cost of promoting the probe from record to veto.",
       "founder_ruling": "pause-and-fix, not record-and-continue (2026-10-03)",
-      "result": null,
-      "headline": null
+      "result": {
+        "at": "2026-10-03T11:34:35+01:00",
+        "producer": "scripts/closure_veto_cost_2026-10-03.py",
+        "population": "920 archived entries carrying a fix-efficacy verdict",
+        "decidable": 572,
+        "do_not_cure": "160 of 572 = 27.9720%, Wilson [24.4499%, 31.7881%]",
+        "cost_of_arming_first_order": "160 of 920 closures withheld = 17.3913%, Wilson [15.0790%, 19.9748%]; 132 sub-critical and 28 critical (3.0435% of all probed, Wilson [2.1140%, 4.3635%])",
+        "indeterminate": "313 of 920 -- 123 no baseline, 155 no falsifier to probe, 35 other -- so the probe is silent on a third of the population",
+        "CORRECTS_AN_EARLIER_FIGURE": "The 126 of 246 = 51.2195% quoted all day as the basis for refusing to arm is a NARROWER WINDOW, not the general rate. Fisher two-sided p = 3.26096e-10 between the two. The archive-wide rate among decidable entries is 27.9720%.",
+        "bound_not_point": "a withheld closure returns to the routing ladder; whether a later round would have cured it did not run, so the net cost is below 160 by an unmeasured amount"
+      },
+      "headline": "Arming the closure veto would withhold 160 of 920 closures archive-wide, 28 of them critical. The rate of fixes that do not cure is 27.9720% among decidable entries, not the 51.2195% carried forward from a narrower window."
     },
     {
       "id": "repointing",
@@ -190,8 +226,91 @@
           "what": "C0002 ended round 1 with NO corrected copy after 3 separate supply attempts were refused, each for a different and correct reason: DeepSeek-SIM's own copy was not verbatim in the target, and ChatGPT-SIM's and Codex-SIM's were refused on OWNERSHIP -- the falsifier under control is DeepSeek-SIM's, and a copy correcting a different claim would mint a mechanical fault against a sound instrument.",
           "why_it_matters": "This is the reach bound arriving live rather than as an archive statistic. The discrimination control cannot speak for C0002 at all, so it falls into the NO_CONTROL population that carried 0 stamps across the whole archive until 2026-10-03. The invariance sweep is the only instrument that will have anything to say about it.",
           "supply_route_that_DID_work": "4 of 5 findings carrying a fix and no copy had one DERIVED from the seat's own proposed fix, 1 declined -- so the derivation route is the one lifting reach, and ownership is what bounds the donation route."
+        },
+        {
+          "at": "2026-10-03T11:34:35+01:00",
+          "run": "study_run1b_2026-10-03_20261003T100439Z",
+          "round": 0,
+          "discrimination_control_census": {
+            "DISCRIMINATES": 6,
+            "NO_DISCRIMINATION": 3,
+            "INDETERMINATE_NOT_INTERCEPTED": 1,
+            "no_control": 2
+          },
+          "what_it_establishes": "The reach gap and the cannot-fail rate, both LIVE rather than as archive statistics. 2 of 12 falsifiers had no corrected copy at all, so the control could not speak for them -- that is the population carrying 0 stamps across the whole archive until 2026-10-03 and the only one the post-run invariance sweep addresses. Of the 10 it COULD decide, 3 could not fail, which matches the panel's 'roughly 1 in 3 of those measured'.",
+          "falsifier_gate": "12 CONFIRMED, 0 REFUTED, 1 -> HIL (run 1 round 0 was 8, 0, 4)",
+          "mechanical_faults_recorded_not_blocking": [
+            "C0001",
+            "C0013",
+            "C0020"
+          ],
+          "why_those_3_matter": "3 live instances of the founder's deferred arming ruling, each escalated to him rather than closed. Until today their records would have said CONFIRMED and verified with nothing marking the verification as voided."
+        },
+        {
+          "at": "2026-10-03T12:53:06+01:00",
+          "run": "study_run1b_2026-10-03_20261003T100439Z",
+          "round": 2,
+          "SIGNAL": "the cannot-fail share of decidable falsifiers jumped from 0 of 6 in round 1 to 5 of 6 in round 2. Census by round: r0 DISCRIMINATES=6 NO_DISCRIMINATION=3 no_control=2; r1 DISCRIMINATES=6; r2 DISCRIMINATES=1 NO_DISCRIMINATION=5 INDETERMINATE_NOT_INTERCEPTED=1.",
+          "two_explanations_not_yet_separable": [
+            {
+              "kind": "MECHANISM",
+              "claim": "as the sandbox target accumulates applied fixes (reported growing 3787 -> 4055 chars at splice time), a corrected copy DERIVED from a proposed fix becomes nearly indistinguishable from an already-fixed target, so the falsifier fires on both and the comparison degenerates",
+              "why_the_existing_guard_would_miss_it": "DISC_COPY_UNCHANGED only refuses a BYTE-IDENTICAL copy, and it fired 0 times in this run"
+            },
+            {
+              "kind": "CONTENT",
+              "claim": "by round 2 the well-specified defects are resolved and the survivors are vaguer claims, which genuinely yield weaker instruments -- a real property, not a fault"
+            }
+          ],
+          "confinement_confirmed": "the target ON DISK is still 3,498 bytes, unchanged, so every splice went to the sandbox copy as designed",
+          "WHY_THE_RUN_WAS_NOT_PAUSED": "A hypothesis is not a fix. The control's record-only default leaves these 5 escalated rather than blocking, so convergence is not obstructed; and the evidence that separates mechanism from content -- the corrected copies and the falsifier bodies -- lands in the registry at run end. Pausing now would cost the run and gain nothing.",
+          "THE_DISCRIMINATOR_TO_RUN_AT_RUN_END": "1) similarity between each NO_DISCRIMINATION entry's corrected copy and the target AS IT STOOD THAT ROUND -- if the copies are near-identical the cause is mechanism; 2) the invariance sweep over the same entries, which asks whether the verdict depends on target content at all. Mechanism predicts high similarity AND invariance; content predicts low similarity with invariance still possible."
         }
-      ]
+      ],
+      "supply_failure_taxonomy": {
+        "at": "2026-10-03T12:14:56+01:00",
+        "observed_in": "study_run1b_2026-10-03_20261003T100439Z, rounds 0 and 1",
+        "why_a_taxonomy": "The reach of the discrimination control is bounded by whether a corrected copy ARRIVES, and the live run shows that is not 1 problem but 3 distinct ones. A single 'supply is poor' figure hides which of them to fix, and they have different remedies.",
+        "modes": [
+          {
+            "mode": "NOT VERBATIM",
+            "detail": "the seat's quoted original passage does not occur in the target character for character, so it cannot be located",
+            "remedy": "a prompt-side instruction; the refusal already states it"
+          },
+          {
+            "mode": "NOT THE OWNER",
+            "detail": "the seat offering the copy does not own the falsifier under control; a copy correcting a different claim would mint a mechanical fault against a sound instrument",
+            "remedy": "none wanted -- this refusal is load-bearing and correct"
+          },
+          {
+            "mode": "UNMATCHED ID",
+            "detail": "the copy is labelled with a finding id that answers to nothing in the registry, e.g. 'DeepSeek-SIM_F006' where the canonical id is a C-number; 3 of these in round 1 alone",
+            "remedy": "mechanical: the registry summary already shows the canonical id, so this is a labelling mismatch rather than a judgement failure and is the cheapest of the 3 to close"
+          }
+        ],
+        "the_route_that_works": "DERIVATION from the seat's own proposed fix: 9 of 12 in round 0 and 3 of 5 in round 1. That route needs no donation from another seat and no verbatim quoting, which is why it is the one lifting reach.",
+        "round_1_counts": "9 accepted, 1 refused, 3 unmatched, 0 re-spliced, 0 dropped"
+      },
+      "round2_discriminator_interim": {
+        "at": "2026-10-03T13:44:58+01:00",
+        "producer": "scripts/run_end_study_harvest_2026-10-03.py",
+        "data": "15 splices across rounds 0-2 of study_run1b",
+        "touched_fraction_by_round": {
+          "0": 0.038481,
+          "1": 0.039056,
+          "2": 0.037497
+        },
+        "spearman": {
+          "rho_scipy": -0.109789,
+          "rho_numpy_on_ranks": -0.132143,
+          "p_two_sided": 0.6969046420787206,
+          "why_the_tools_differ": "scipy averages tied ranks and the numpy cross-check does not; they agree on sign and magnitude but not exactly, so this cross-check is weaker than an exact match"
+        },
+        "verdict": "MECHANISM NOT SUPPORTED. The correction touches a flat fraction of the target across rounds, so the cannot-fail jump at round 2 is better explained by CONTENT -- the surviving claims being vaguer -- than by corrected copies degenerating toward an already-fixed target.",
+        "consequence": "no fix is owed, which retrospectively validates the decision not to pause the run on that signal",
+        "limit": "the touched fraction is a proxy for similarity, not similarity; and an absent trend is weaker evidence than a trend would have been. To be re-run over all 8 rounds at run end.",
+        "FIRST_DESIGN_WAS_UNWORKABLE": "The discriminator first computed a difflib similarity between each entry's corrected_copy and the target text as the entry recorded it. NO SUCH FIELD EXISTS -- entries carry corrected_copy_target_sha, a hash. On real data it returned '0 entries in each group'. Writing it BEFORE run end is what caught that; at run end it would have read as an absent effect rather than an absent field."
+      }
     },
     {
       "id": "voided_verification",
