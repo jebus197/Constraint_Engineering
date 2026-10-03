@@ -526,9 +526,30 @@ class TestTheRejectionClassifier:
         assert "REAL rejections" in r.stdout and "LOCATION ARTEFACTS" in r.stdout
 
     def test_the_real_rejection_count_is_location_independent(self):
-        """2 of 640, in the maintainer's tree and in a clone alike. That
-        invariance IS the finding; the raw rejection count is not."""
+        """The INVARIANCE is the finding; the raw rejection count is not.
+
+        AMENDED 2026-10-02 FROM 2 TO 1, under the founder's access-only ruling,
+        and the amendment is the same one made in
+        `test_falsifier_cannot_read_the_key.py` -- this was the SECOND copy of
+        the same oracle, and it kept the old count after the first was amended.
+        Two places holding one number, repaired once, is the shape this project
+        names `execute-do-not-grep`.
+
+        C0015 leaves the set because it reads nothing: measured, 0 violations,
+        its only key-ish content being the word "planted" inside a message
+        printed to a human. C0012 stays because it genuinely loads and
+        subscripts the key. The criterion, not the count, is pinned by
+        `test_the_criterion_is_access_not_mention`.
+
+        What this test actually asserts is unchanged: whatever the count is, it
+        is the SAME in the maintainer's tree and in a fresh clone, because a
+        rejection that depends on where the checkout sits is a location artefact
+        rather than a finding.
+        """
         mod = _load(REJECTIONS, "rejections")
         sources, real, _artefact = mod.survey()
         assert len(sources) > 400, len(sources)
-        assert len(real) == 2, sorted(w[0] for w in real.values())
+        assert len(real) == 1, sorted(w[0] for w in real.values())
+        cids = {cid for w in real.values() for _run, cid in w[0]}
+        assert cids == {"C0012"}, (
+            f"the surviving rejection is not the exploit: {sorted(cids)}")

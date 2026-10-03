@@ -319,15 +319,37 @@ def main() -> int:
         # recall figure is publishable. Found by adversarial audit; it is the
         # second instance of "the concealment and the detector cancel out", the
         # first having been in this same pairing.
-        from key_access_forensics import scan_run  # type: ignore
+        from key_access_forensics import (  # type: ignore
+            build_end_of_run_advisory, scan_run)
         protected = [a.key.parent]
         protected += [Path(p) for p in os.environ.get("CDSFL_KEY_DIR", "").split(os.pathsep) if p]
         rep = scan_run(a.run_dir, key_dir=protected)
-        compromised = bool(getattr(rep, "confirmed", None))
+        # THE REFUSAL NOW KEYS ON THE ADVISORY CHANNEL (2026-10-02). The
+        # refusal itself is unchanged in force -- a recall figure from a run
+        # whose panel held the key is not a blind detection rate -- but
+        # `rep.confirmed` also contains hits inside source files the harvester
+        # CARRIED into the run directory. Measured on
+        # prose_convergence_run1b_2026-10-02 against the canonical repo root: 7
+        # of 7 residual CONFIRMED hits are carried source and 0 are reads, so
+        # refusing on those refuses on the harvester's own payload. Carried-in
+        # hits are reported in the result instead; nothing is dropped.
+        advisory = build_end_of_run_advisory(rep)
+        compromised = advisory is not None
+        carried_only = [
+            {"file": h.file, "where": h.where, "label": h.label}
+            for h in rep.audit_confirmed
+        ]
     except Exception as exc:  # noqa: BLE001
         print(f"WARNING: forensics could not run ({type(exc).__name__}: {exc}); "
               f"treating the run as UNVERIFIED, not as clean.", file=sys.stderr)
         compromised = True
+        advisory = {"advisory": "FORENSICS COULD NOT RUN", "fires": True,
+                    "weight_on_convergence": 0.0,
+                    "weight_on_completion_status": 0.0,
+                    "locations": [], "advisory_hit_count": 0,
+                    "audit_hit_count": 0, "carried_source_locations": [],
+                    "note": f"{type(exc).__name__}: {exc}"}
+        carried_only = []
 
     if compromised and not a.allow_compromised:
         print("*** REFUSING TO SCORE: key-access evidence in this run (or forensics "
@@ -341,6 +363,12 @@ def main() -> int:
         result["CONTAMINATED"] = ("Forensics report key access in this run. Any "
                                  "recall figure below is detection by a panel that "
                                  "had the seeded set, not a blind detection rate.")
+        result["key_access_advisory"] = advisory
+    # CARRIED-IN SOURCE HITS ARE REPORTED EVEN WHEN THE RUN SCORES, because a
+    # model-authored file delivered at a repository path is exactly where a
+    # bypass would be parked. Reported, never a refusal on its own.
+    if carried_only:
+        result["carried_source_audit"] = carried_only
 
     print(json.dumps(result, indent=2))
     if a.json:

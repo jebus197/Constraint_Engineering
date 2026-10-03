@@ -1,0 +1,252 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 12036,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level files\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"scripts/*2026-10-02*.py\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/*.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python scripts/falsifier_supply_decomposition_2026-10-02.py 2>&1 | tail -40\", \"description\": \"Run falsifier supply decomposition producer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python scripts/advisory_channel_selection_2026-10-02.py 2>&1 | tail -40\", \"description\": \"Run advisory channel selection script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python scripts/integrity_exclusion_figures_2026-10-02.py 2>&1 | tail -40\", \"description\": \"Run integrity exclusion figures script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which python3 && python3 --version && python3 scripts/falsifier_supply_decomposition_2026-10-02.py 2>&1 | tail -50\", \"description\": \"Run supply decomposition with python3\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/advisory_channel_selection_2026-10-02.py 2>&1 | tail -40\", \"description\": \"Run advisory channel selection script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/integrity_exclusion_figures_2026-10-02.py 2>&1 | tail -40\", \"description\": \"Run integrity exclusion figures script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/repro_supply_causes_2026-10-02.py 2>&1 | tail -60\", \"description\": \"Run reproduction-of-causes script\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/scripts/advisory_channel_selection_2026-10-02.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/key_access_forensics.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, sys, collections\\nROOT = pathlib.Path(\\\".\\\").resolve()\\nsys.path.insert(0, str(ROOT/\\\"bench\\\")); sys.path.insert(0, str(ROOT))\\nfrom bench.key_access_forensics import scan_run, discover_target_dirs\\nRUN = ROOT/\\\"bench\\\"/\\\"logs\\\"/\\\"prose_convergence_run1b_2026-10-02_20261002T044234Z\\\"\\nprint(\\\"discovered:\\\", discover_target_dirs(RUN))\\nrep = scan_run("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z && ls && python3 -c \\\"\\nimport json\\nfor name in ('runner_state.json','checkpoint.json','completion_signal.json'):\\n    try:\\n        obj=json.load(open(name))\\n    except Exception as e:\\n        print(name,'ERR',e); continue\\n    if isinstance(obj,dict):\\n        print(name, [k for k in obj.keys()][:40])\\n\\\"\", \"descri"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nobj=json.load(open('bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z/prose_convergence_run1b_2026-10-02_report.json'))\\ndef keys(o,p=''):\\n    if isinstance(o,dict):\\n        for k,v in o.items():\\n            if isinstance(v,str) and ('/Users/' in v or k in ('target_file','repo_root','run_dir','staged_copy','target_path')):\\n                p"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo && python3 -c \\\"\\nimport json\\nd='bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z/'\\nobj=json.load(open(d+'prose_convergence_run1b_2026-10-02_report.json'))\\ndef keys(o,p=''):\\n    if isinstance(o,dict):\\n        for k,v in o.items():\\n            if isinstance(v,str) and v.startswith("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/falsify_prose_falsifier_supply_2026-09-30.py 2>&1 | tail -30\", \"description\": \"Run allegedly tautological supply measurement\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_integrity_violation_excluded|integrity_refused_criticals|integrity_unobserved\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | grep -iE \\\"2026-10-02|cannot_read|as_of|scope_refuses\\\"\", \"description\": \"List today's and related test files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_falsifier_cannot_read_the_key.py bench/tests/test_key_access_advisory_2026-10-02.py bench/tests/test_one_predicate_excludes_and_reports_2026-10-02.py bench/tests/test_scanner_scope_refuses_ancestors_2026-10-02.py bench/tests/test_key_access_decoupled_from_convergence_2026-10-02.py -q 2>&1 | tail -15\", \"description\": \"Run targeted tests for today's fi"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/reference_runner_v3.py\", \"offset\": 2140, \"limit\": 130}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/scripts/falsify_prose_falsifier_supply_2026-09-30.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/reference_runner_v3.py\", \"offset\": 2780, \"limit\": 60}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/falsifier_verify.py bench/tests/test_falsifier_cannot_read_the_key.py scripts/falsifier_supply_decomposition_2026-10-02.py scripts/panel_brief_validate.py 2>/dev/null; grep -n \\\"access\\\" bench/falsifier_verify.py | head -30\", \"description\": \"Sizes and access-gate locations in falsifier_verify\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"panel_confinement|run_root\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 30}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/ | head -50; echo ---; ls bench/logs/ | wc -l\", \"description\": \"List archived run directories\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/reference_runner_v3.py\", \"offset\": 14900, \"limit\": 60}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/ | grep -iE \\\"exp4[89]|exp5[0-3]|exam\\\"\", \"description\": \"Find exam run archives\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/tests/test_forensics_survives_relocation_2026-10-02.py\", \"content\": \"\\\"\\\"\\\"FALSIFIER + regression hold: the forensics scanner must judge a historical\\nrun's path literals against the repository root AT RUN TIME, not against\\nwherever the archive happens to be scanned from.\\n\\nTHE DEFECT (2026-10"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_forensics_survives_relocation_2026-10-02.py <<'PYEOF'\\n\\\"\\\"\\\"FALSIFIER + regression hold: the forensics scanner must judge a historical\\nrun's path literals against the repository root AT RUN TIME, not against\\nwherever the archive happens to be scanned from.\\n\\nTHE DEFECT (2026-10-02 panel, this review). Run 1b's falsifier bodies open\\nabsolute paths under the "
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/tests/test_forensics_survives_relocation_2026-10-02.py\", \"old_string\": \"    # The forged report names \\\"/\\\" as run_root. Under the single-trusted-report\\n    # rule only the report matching the declared experiment is read, so the\\n    # forgery must not put \\\"/\\\" (or anythi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_forensics_survives_relocation_2026-10-02.py\\\")\\ns = p.read_text()\\ns = s.replace('''    # The forged report names \\\"/\\\" as run_root. Under the single-trusted-report\\n    # rule only the report matching the declared experiment is read, so the\\n    # forgery must not put \\\"/\\\" (or anything else) in scope.\\n    run = "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/key_access_forensics.py\\\")\\ns = p.read_text()\\n\\n# 1) Factor the trusted-record selection out of discover_target_dirs and add\\n#    discover_run_roots reading panel_confinement.run_root.\\nold_head = '''def discover_target_dirs(run_dir: Path) -> list[str]:\\n    \\\"\\\"\\\"Directories the panel was *supposed* to read, taken from run"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/advisory_channel_selection_2026-10-02.py 2>&1 | tail -18; echo \\\"EXIT=$?\\\"\", \"description\": \"Re-run advisory channel selection post-fix\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_falsifier_cannot_read_the_key.py bench/tests/test_key_access_advisory_2026-10-02.py bench/tests/test_one_predicate_excludes_and_reports_2026-10-02.py bench/tests/test_scanner_scope_refuses_ancestors_2026-10-02.py bench/tests/test_key_access_decoupled_from_convergence_2026-10-02.py bench/tests/test_forensics_survives_relocation_2026-10-02.py -q 2>&1 |"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 bench/key_access_forensics.py bench/logs/exp48_chemistry_exam_live_20260729T044134Z --quiet 2>&1 | grep -E \\\"VERDICT|CONFIRMED ACCESS|repo|staged\\\" | head -8\", \"description\": \"Confirm exp48 exam scan unchanged post-fix\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/scripts/integrity_exclusion_figures_2026-10-02.py\", \"limit\": 80}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_FALSIFIER_RESOLVED_VERDICTS\\\\s*=\\\" bench/reference_runner_v3.py; grep -n \\\"INTEGRITY_REFUSED_VERDICT\\\\s*=\\\" bench/reference_runner_v3.py; grep -n \\\"def reverify_falsifier\\\" bench/falsifier_verify.py\", \"description\": \"Find verdict-set definitions and decider signature\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/scripts/repro_supply_causes_2026-10-02.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, re, sys\\nfrom collections import Counter\\nROOT = pathlib.Path(\\\".\\\").resolve()\\nCRIT = 0.7\\n\\ndef entries():\\n    rows = {}\\n    for name in (\\\"runner_state.json\\\", \\\"*_report.json\\\"):\\n        for f in sorted((ROOT/\\\"bench\\\"/\\\"logs\\\").glob(f\\\"*/{name}\\\")):\\n            try: data = json.loads(f.read_text(encoding=\\\"utf-8\\\", errors=\\\"replace\\\"))"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, re\\nfrom collections import Counter\\nROOT = pathlib.Path(\\\".\\\").resolve(); CRIT=0.7\\ndef entries():\\n    rows={}\\n    for name in (\\\"runner_state.json\\\",\\\"*_report.json\\\"):\\n        for f in sorted((ROOT/\\\"bench\\\"/\\\"logs\\\").glob(f\\\"*/{name}\\\")):\\n            try: data=json.loads(f.read_text(encoding=\\\"utf-8\\\",errors=\\\"replace\\\"))\\n            e"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_declared_figure_as_of_2026-09-29.py -q 2>&1 | tail -6; grep -rn \\\"real-rejection\\\" scripts/panel_brief_validate.py bench/tests/test_declared_figure_as_of_2026-09-29.py 2>/dev/null | head; grep -n \\\"as.of\\\\|as_of\\\" scripts/panel_brief_validate.py | head -20\", \"description\": \"Run as-of declared-figure test, locate validator mechanics\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, re\\nROOT=pathlib.Path(\\\".\\\"); CRIT=0.7\\nfor name in (\\\"runner_state.json\\\",\\\"*_report.json\\\"):\\n    for f in sorted((ROOT/\\\"bench\\\"/\\\"logs\\\").glob(f\\\"*/{name}\\\")):\\n        try: data=json.loads(f.read_text(encoding=\\\"utf-8\\\",errors=\\\"replace\\\"))\\n        except Exception: continue\\n        for cid,e in ((data.get(\\\"registry\\\") or {}).get(\\\"entr"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/tests/test_declared_figure_as_of_2026-09-29.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/scripts/panel_brief_validate.py\", \"offset\": 230, \"limit\": 190}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/archived_falsifier_rejections_2026-09-10.py --as-of 2026-09-11 2>&1 | grep -E \\\"rejection|rate\\\" | head -8\", \"description\": \"Producer as-of output under current rule set\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -40 scripts/panel_brief_validate.py | grep -nE \\\"^import|^from\\\"; grep -n \\\"_figure_token_found\\\\|_historical_reproduction\\\" scripts/panel_brief_validate.py\", \"description\": \"Check imports and call sites in validator\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/amendments_register.json <<'JSONEOF'\\n{\\n  \\\"_doc\\\": [\\n    \\\"RULE-CHANGE AMENDMENTS REGISTER (2026-10-02, panel dispute D-5 blast radius).\\\",\\n    \\\"A declared figure in an ARCHIVED brief is a commitment: the validator\\\",\\n    \\\"re-executes it via the producer's --as-of, which pins the CORPUS to the\\\",\\n    \\\"brief's date. That mechanism cannot absorb a RULE change, becau"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_amendments_register_2026-10-02.py <<'PYEOF'\\n\\\"\\\"\\\"The rule-change amendments register (D-5 blast radius, 2026-10-02).\\n\\n`--as-of` pins the CORPUS to an archived brief's date, so a figure invalidated\\nby corpus drift stays decidable forever. It cannot absorb a RULE change: the\\naccess-only falsifier gate moved round 11's numerator at every date (2/640 ->\\n1/640"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_declared_figure_as_of_2026-09-29.py\\\")\\ns = p.read_text()\\n\\nold1 = '''    def test_as_of_the_briefs_date_reproduces_the_declared_figure(self):\\n        \\\"\\\"\\\"The historical figure is DECIDABLE, not trusted: 2/640 = 0.3125%\\n        re-executes against the corpus as it stood.\\\"\\\"\\\"\\n        r = subprocess.run(\\n   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1307,1360p bench/falsifier_verify.py\", \"description\": \"Read reverify_falsifier signature\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 420 python3 - <<'EOF'\\n# \\u2500\\u2500 Q4 PILOT: the repointing experiment, executed on run 1b's archived bodies \\u2500\\u2500\\n# Population: falsifier bodies in run 1b's checkpoint that hardcode the\\n# canonical absolute root. Substitution rule: textual replacement of the\\n# recorded historical run_root prefix with this checkout's root (nothing else\\n# edited). Decider: bench.f"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, sys, collections\\nROOT = pathlib.Path(\\\".\\\").resolve()\\nsys.path.insert(0, str(ROOT))\\nfrom bench.falsifier_verify import reverify_falsifier\\n\\nd = ROOT/\\\"bench\\\"/\\\"logs\\\"/\\\"prose_convergence_run1b_2026-10-02_20261002T044234Z\\\"\\nrep = json.loads((d/\\\"prose_convergence_run1b_2026-10-02_report.json\\\").read_text())\\nOLD = rep[\\\"panel_confinement\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, sys, collections\\nROOT = pathlib.Path(\\\".\\\").resolve()\\nsys.path.insert(0, str(ROOT))\\nfrom bench.falsifier_verify import reverify_falsifier\\n\\nd = ROOT/\\\"bench\\\"/\\\"logs\\\"/\\\"prose_convergence_run1b_2026-10-02_20261002T044234Z\\\"\\nrep = json.loads((d/\\\"prose_convergence_run1b_2026-10-02_report.json\\\").read_text())\\nOLD = rep[\\\"panel_confinement\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# \\u2500\\u2500 Q3 DEMO: the cannot-fail guard, exercised in both directions \\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\n# TEMPLATE: a general falsifier is admitted only if it DEMONSTRATES it can\\n# fail: run it against the artefact (expect its designed failure = defect\\n# shown) AND against a control variant with the defect absent (expe"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript >/dev/null 2>&1 && wolframscript -code 'ct={{18,10},{158,378}};{N[(18*378)/(10*158),6],N[FisherExactTest[ct],6]}' 2>&1 | head -3 || echo \\\"wolframscript not installed on this machine\\\"\", \"description\": \"Wolfram second check of CAUSE 1 odds ratio\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'n=564;K=176;r=28;pr[x_]:=PDF[HypergeometricDistribution[r,K,n],x];obs=pr[18];N[Sum[If[pr[x]<=obs(1+10^-12),pr[x],0],{x,Max[0,r-(n-K)],Min[r,K]}],8]' 2>&1 | head -3\", \"description\": \"Wolfram exact two-sided Fisher p via hypergeometric sum\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_panel_brief_format_2026-09-09.py bench/tests/test_declared_figure_token_boundary_2026-09-10.py bench/tests/test_supply_decomposition_instrument_2026-10-02.py bench/tests/test_falsifier_reaches_prose_target_by_relative_path_2026-10-02.py -q 2>&1 | tail -3; python3 scripts/falsifier_supply_decomposition_2026-10-02.py >/dev/null 2>&1; echo \\\"supply prod"
+    }
+  ],
+  "n_tool_calls": 58,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 931.2,
+  "response": "All green. Further passes produced no new above-threshold findings \u2014 terminating per \u00a76/\u00a710. Final report, field by field.\n\n---\n\n# VERDICT\n\n**The 2026-10-02 merge is architecturally sound and I confirm its design choices \u2014 but it shipped with a CRITICAL relocation defect I demonstrated, fixed, and regression-held.** The founder's starvation fear is **not realised in the absolute sense**: post-gate, zero criticals have neither falsifier nor verdict. The real brittleness is **path-binding, not logic** \u2014 and I executed the repointing experiment that proves the archived logic survives decoupling. The intelligence-first contract is **honoured at 536/537** post-gate.\n\n# FINDINGS AND FIXES (delivered as files, all executed)\n\n**F1 \u2014 CRITICAL, CONFIRMED, FIXED: the forensic verdict over an archive was a function of where the scan ran.**\n`scan_run` judged archived path literals against the *scanning machine's* repo root, ignoring the runner-authored `panel_confinement.run_root`. From this relocated checkout, run 1b's 107 legitimate repo reads became CONFIRMED advisory hits; the brief's own \"Measured: 0 advisory / 7 audit\" figure was false here, and the committed measurement `advisory_channel_selection_2026-10-02.py` died on its own assert (`AssertionError: REGRESSION: run 1b read no key and the advisory fired` \u2014 executed, shown above). A committed measurement that re-executes on exactly one machine is a claim about evidence, not evidence \u2014 the same defect class as the `r*_*.json` glob reading Exp 48 as CLEAN.\n- **Falsifier**: `bench/tests/test_forensics_survives_relocation_2026-10-02.py` \u2014 ran pre-fix: `1 failed` (FALSIFIED), guards green.\n- **Fix**: `bench/key_access_forensics.py` \u2014 new `discover_run_roots()` reads `panel_confinement.run_root` from runner-authored records through the **same** single-trusted-report boundary (`_trusted_record_paths`, factored, not duplicated); historical roots join the confinement test and, for unconfined runs only, the allowlist.\n- **Verified**: falsifier now 3/3 green; `advisory_channel_selection` EXIT=0 printing 0 advisory / 7 audit; 90 targeted tests pass; exp48 exam semantics untouched (C0012 answer-key hits and C0017 both still caught; pre-`run_root` archives bit-identical behaviour). Forged-second-report widening attempt refused by test.\n\n**F2 \u2014 SAME CLASS IN THE PRE-EXECUTION GATE, reported not patched (HIL).** Re-verifying run 1b's archived falsifiers from this checkout: all 9 path-coupled bodies return INTEGRITY_VIOLATION (\"path outside the declared target\") though run 1b's own record shows they executed and confirmed canonically. I did **not** widen the gate's refusal set \u2014 that is a security boundary and the founder's call; the repoint substitution (below) is the safe remedy for archival re-verification.\n\n**F3 \u2014 Part 1b DELIVERED: rule-change amendments register.** The brief said 3 red tests; **I measured 2** (`test_as_of_the_briefs_date_reproduces_the_declared_figure`, `test_the_archived_brief_is_not_refused`). Delivered: `bench/amendments_register.json` (append-only; one entry: 2/640 \u2192 1/640, access-only ruling) wired into `scripts/panel_brief_validate.py`'s historical path. The register is held to evidence: it reconciles **only if its superseding value re-executes in the same `--as-of` output**, and the acceptance prints a loud `AMENDED FIGURE` line. Demonstrated failing when it should: `bench/tests/test_amendments_register_2026-10-02.py` \u2014 unregistered stale figure refused; **tampered register entry refused**; fresh-brief dodge still shut; brief verified unedited on disk. The two red oracles amended loudly (amendment documented in-test, superseded value preserved machine-checked). 12/12 green. Against rule-set pinning: keeping superseded rules executable forever is unbounded maintenance and a standing bypass surface (the wide gate stays importable); the register is one committed record per ruling, checked in both directions.\n\n**F4 \u2014 the standing measurement IS partly tautological, adjudicated.** `falsify_prose_falsifier_supply_2026-09-30.py` part 3's \"routing cannot substitute for supply\" compares two **author-written stubs**: `untaught` returns `\"\"`, `taught` returns the very falsifier part 1 already proved works. `resolved` equals supplied-by-stub by construction \u2014 it measures the stubs, not routing. Parts 1\u20132 are genuine (5/5 bidirectional discrimination executed; reachability grep real, though `\"stem_fixtures\"` substring is a weak reachability predicate). Keep the script; discount part 3 as evidence.\n\n# THE FOUNDER'S QUESTION, ADJUDICATED ON THE THREE CAUSES\n\n**CAUSE 1 (over-specificity): REPRODUCED and strengthened.** OR 4.3063, p = 2.430001e-04 \u2014 scipy, independent mpmath sum, **and Wolfram Language (local engine): OR 4.3063291, p = 0.00024300011** (attribution per Wolfram's terms). But the coupling is in **PATH, not logic**.\n\n**CAUSE 2 (zero-plant controls): ARTEFACT of the `classify()` conflation \u2014 demonstrated.** Under the OLD body-only predicate I reproduce exactly **19/46** in controls; **all 19 carry verdict UNTOOLABLE**. They were assessed and declined \u2014 the mechanism *working* on findings with nothing to falsify. Under the corrected predicate: 0/46, Fisher p = 0.614. The claimed OR 14.96 measured the conflation, not starvation.\n\n**CAUSE 3: BLOCKED by D-2, confirmed by execution** \u2014 `target_file` on 52/624 post-feature criticals, all `.py`. D-2 is now blocking a measurement; recording `target_file` in every registry entry is the unblock.\n\n**The population dispute: the adversarial pass is right in substance.** My 14/624 reproduces \u2014 but all 14 sit in `exp42_composer_20260602T230020Z`, dated **2026-06-02, four days before the falsifier gate landed**. The exp-number cut smuggles a pre-feature window into a post-feature claim. The correct population is *runs after 2026-06-06*, and on it absolute starvation (\"nothing written and nothing recorded\") is **0**. The 57.4% all-time figure in the supply decomposition is dominated by pre-gate archaeology.\n\n**Q1 \u2014 the contract is honoured post-gate: 536/537.** Population: deduplicated criticals (sev \u2265 0.7) across all archived registries, post-exp42 cut, status \u2208 {CLOSED, CONFIRMED, CORROBORATED} (n = 537). Predicate: a recorded tool verdict (`falsifier_verdict`, unreconciled ladder field, or last routing-history verdict). Violations, named: `sim45_memory\u2026/C0006` \u2014 CORROBORATED on UNTOOLABLE, a reasoning-only confirmation, **a defect not a style** (1/537, Wilson [0.03%, 1.05%]); and `exp42_composer_20260606\u2026/C0046` \u2014 CLOSED on ERROR, a close without demonstration. Pre-gate, 432/1417 confirmations were reasoning-only \u2014 exactly the class the gate eliminated.\n\n**Q2 \u2014 the loop IS reachable on prose, by execution.** Static instruments have no purchase, but the *decider* does: `reverify_falsifier` executes document-reading falsifiers, and the corpus discriminates 5/5 bidirectionally on prose. Stronger: my repoint pilot shows real seats on run 1b (a prose target) *already wrote* prose falsifiers the tool CONFIRMS once path-decoupled. The founder's \"scratchpad reasoning until tool-confirmed\" contract is exactly what the archive shows \u2014 hand-rolled logic (86.4%) adjudicated by the tool (536/537). The gap is supply wiring, which the 09-30 script's standing red assert correctly demands.\n\n**Q3 \u2014 the template, with its guard demonstrated failing.** The general template is the **bidirectional control pair** the project already owns: falsifier(artefact) must CONFIRM *and* falsifier(control-with-defect-absent) must REFUTE. The cannot-fail guard is the flip requirement, and I executed it: genuine template ADMITTED (CONFIRMED/REFUTED); the `check_sk_threshold` shape (always-asserts) REJECTED (CONFIRMED/CONFIRMED); the A19 `e4_bandit` shape (never-fires) REJECTED (REFUTED/REFUTED). I deliberately did **not** commit an unwired guard module \u2014 an addition nothing reaches is the project's own top defect class (11/11 since 08-01); the guard belongs inside `reverify_falsifier`'s protocol when the corpus is wired live, which is one decision, the founder's.\n\n**Q4 \u2014 the repointing experiment, specified and piloted.** *Pilot executed*: run 1b's 9 distinct bodies hardcoding the recorded `run_root`; substitution = prefix replacement with the live root, nothing else edited; decider = `reverify_falsifier`. Result: **8/9 recovered to a tool decision (8 CONFIRMED, 1 ERROR)**, Wilson [57.1%, 99.5%]. *Full spec*: population \u2014 the 157/499 file-naming bodies from the committed decomposition, stratified ERROR vs CONFIRMED; substitution rule \u2014 rewrite each body's path literals to the staged copy of the same artefact (prefix map from each run's `panel_confinement.run_root`, now machine-readable via `discover_run_roots`); decider \u2014 `reverify_falsifier`, never prose; pre-registered rates \u2014 H1: \u226550% of named-file ERRORs recover to a decided verdict under repointing (coupling is in path); H0: recovery \u226410% (coupling is in logic, repointing is futile); report both strata with Wilson intervals and Fisher on recovered\u00d7named; stopping \u2014 fixed population, one pass, no sampling (157 bodies is affordable); any body the gate refuses goes to HIL, never silently dropped.\n\n# WHAT WOULD REFUTE ME\n\n- F1: an archived run whose `panel_confinement.run_root` is *not* the repo root (e.g. a staged dir), which would poison my allowlist derivation \u2014 I searched the runner and found exactly one write site, `str(REPO_ROOT)` unconditionally; a second write site elsewhere would overturn it. A model shown writing the single trusted report *and* displacing the runner's artefact would break the trust boundary I reused.\n- The contract figure: a registry field other than the three I read in which tool verdicts live (my `verdict()` predicate would undercount); finding CONFIRMED-status entries whose `falsifier_verdict` was model-written rather than runner-written.\n- CAUSE 2: controls where seats *wanted* to write falsifiers and the record shows attempts erased \u2014 I looked (bodies with routing history in control runs) and found none; their presence would restore the inflation claim.\n- The repoint pilot: bodies whose CONFIRMED-after-repoint is vacuous (asserting trivialities). I spot-read them \u2014 they grep the real spec document for claimed text \u2014 but a full admissibility pass over all 8 could overturn individual verdicts.\n\n# STRONGEST DISAGREEMENT WITH THE BRIEF\n\n1. The brief presents \"run 1b 0 advisory / 7 audit\" as **Measured**. It measured on one machine. Until today's fix the same committed script *refuted* that figure anywhere else \u2014 the brief's Part 2 evidence standard did not meet its own Part 1 standard (\"a number that exists only as prose\u2026\" applies equally to a number that re-executes only on the founder's laptop).\n2. \"Left 3 tests red\" \u2014 I measure **2**. Name the third or correct the count.\n3. The adversarial block labelled \"not reproduced by any committed script\" is framed as the weakest claim on the table; executed, it is the **strongest** \u2014 the 0/558 cut is the right population and my own 14/624 confirms the residue is a pre-feature artefact. The brief's cut-at-exp42 framing, not the adversarial pass, is what's wrong there.\n4. The decomposition's headline \"57.4% NOTHING WRITTEN AND NOTHING RECORDED\" is dominated by pre-gate runs and invites exactly the starvation misreading the founder voiced. The honest headline is: *post-gate absolute starvation is zero; the live defects are path coupling (fixed mechanically by repointing), one CORROBORATED-without-tool entry, one CLOSED-on-ERROR, and D-2 blocking the prose stratum.*\n\n**Convergence declared**: hard assumptions tested (trust boundary, exam confinement, both refusal directions of the register, gate semantics); every residual finding (F2, the REFUTED-stale-ladder edge in `_integrity_violation_excluded` \u2014 non-material because REFUTED is terminal at every call site; the weak reachability predicate in the 09-30 script) sits below the real-world-consequence threshold or is routed to HIL above. A further pass yielded no new material findings.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo",
+      "built": false
+    }
+  ]
+}

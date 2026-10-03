@@ -243,6 +243,30 @@
       "fixed": false,
       "fix": "OUTSTANDING AND IT IS THE FOUNDER'S TO SETTLE, because the options change his `pr` protocol rather than any code. (1) Require the field as a NAMED SECTION in the brief, which makes compliance mechanically checkable at the cost of prescribing form. (2) Name the object correctly for a blind parallel round -- disagreement with CC1 or with the brief, since the other seat's reply is unreadable by design. (3) Leave it, on the ground that a seat which refutes the brief's own figure has done the thing the condition exists to protect. No code change is proposed here: the round is archived and cannot be re-run, and widening the guard further would make it match mentions. Recorded 2026-10-01T14:10:24+01:00.",
       "held_by": "bench/tests/test_panel_conditions_are_met_2026-09-10.py"
+    },
+    {
+      "condition": "P5",
+      "round": "integrity_advisory_r2_2026-10-02",
+      "seat": "fable",
+      "what": "The seat stated no disagreement in the STAR round, having stated one in the blind round.",
+      "cause": [
+        "Measured by executing the extractor over both rounds: blind round cc2 True,",
+        "fable True; star round cc2 True, fable False. The blind brief made",
+        "'STRONGEST DISAGREEMENT WITH THIS BRIEF'S OWN FRAMING -- mandatory' an",
+        "OUTPUT FIELD at line 69. The star brief's REQUIRED SECTION 5 replaced that",
+        "output shape with RESOLUTION / WHO WAS RIGHT / EVIDENCE / FIX / WHAT WOULD",
+        "REFUTE THIS / CONFIDENCE and dropped the field, asking for disagreement",
+        "only as prose in the termination section. The single occurrence of the",
+        "phrase in the star brief is at line 456, inside fable's own embedded",
+        "round-1 reply -- so the brief asked for it nowhere in its own body.",
+        "The defect is the BRIEF's, not the seat's: a star round's purpose is to",
+        "reconcile, which makes it the round most able to produce agreement by",
+        "deference, and the one brief that most needed the field is the one that",
+        "lost it."
+      ],
+      "fixed": true,
+      "fix": "panel_brief_validate.py now refuses a brief whose OUTPUT SECTION does not name disagreement as a field (scripts/panel_brief_validate.py). What justifies it is TEMPLATE CONFORMANCE: panel_brief_template.md's output section already asks for 'the strongest disagreement with the brief's own framing' by name and passes the check unchanged, so the defect was a validator permitting divergence from the standard it enforces -- 12 of 95 archived briefs diverged and nothing caught them. The check is SECTION SCOPED because a document-wide regex is defeated by the embedded previous-round replies a star brief carries: the word appears on 7 lines of the defective brief, so a document-wide check PASSES it. Measured over all 95 archived briefs, section scope refuses 12 (12.6316%, Wilson [7.3757%, 20.7921%]) and whole-document 15 (15.7895%, Wilson [9.8085%, 24.4296%]). WHAT IS NOT ESTABLISHED: that naming the field changes what seats return. Over 50 rounds carrying both a brief and replies, 32 of 38 with the field had every seat state a disagreement against 9 of 12 without it, Fisher exact two-sided p = 6.675478e-01 (within-period p = 6.187658e-01), scipy and mpmath agreeing to 1e-9. This entry's first version cited 2 figures, 82.1053% and '1 of 3', and both were false -- measured on 3 briefs read by hand rather than on the archive. Producer: scripts/brief_disagreement_field_effect_2026-10-02.py.",
+      "held_by": "bench/tests/test_a_brief_names_disagreement_as_a_field_2026-10-02.py"
     }
   ]
 }

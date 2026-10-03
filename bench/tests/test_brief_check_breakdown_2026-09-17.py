@@ -60,7 +60,8 @@ tree at its real path.
 State what evidence would overturn your own conclusion.
 
 ## Output
-Return: verdict, reasoning, the falsifier and its executed result.
+Return: verdict, reasoning, the falsifier and its executed result, and the
+strongest disagreement with this brief's own framing.
 
 ## Termination
 Stop when a further pass produces no new above-threshold findings.

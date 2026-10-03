@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 2 October 2026 18:04 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 3 October 2026 06:15 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -22,6 +22,89 @@ session loss, compaction event, or fresh start with a new model instance.
 **THE ACTION THIS RULING IMPLIES, and it is the founder's, not CC1's.** Put the store location and the passphrase in the password manager, together, off this machine. Losing either makes the sealed archive unrecoverable, and the passphrase cannot be reset — the whole point of the design is that nothing running here can reach it. CC1 cannot do this and should not: it would mean handling the passphrase in plain text.
 
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
+
+---
+
+## SESSION STATE — 2026-10-03 06:08 BST (READ THIS FIRST)
+
+**WHY THE SIMULATED RUNS EXIST.** To execute the PROGRAMME OF STUDY
+(`experimental_notes/CDSFL_Programme_of_Study_Full_Scope_2026-09-21.md`), which
+asks whether the fixes of the last 15+ days WORK. Clean convergence is the
+success CRITERION, not the purpose. The founder had to point this out on
+2026-10-03 and he was substantially right: arms 1-4 ran twice each, **arm 5 (the
+paired baseline, the only arm that answers the effectiveness question) has NEVER
+run**, and measurement 10 has no committed script.
+
+**THE GOVERNING RULING, 2026-10-03.** Verbatim: *"in all cases this can be
+reduced to either pausing to fix broken falsifiers, or broken signals causing
+false broken falsifier alarms... We should only need to record genuinely
+unfixable conditions."* So under `cy` a falsifier that fails to confirm its own
+fix is a PAUSE-AND-FIX event, not a record-and-continue one.
+
+**THREE PANEL ROUNDS COMPLETE, ALL FREE (cc2 + fable on claude_cli).**
+`falsifier_supply_and_integrity_2026-10-02` (blind, standards NOT yet in the
+dispatcher), `_r2_` (blind, standards in), `_star_2026-10-03` (star, both blind
+rounds embedded). ROUND 2 WAS NOT BLIND WITH RESPECT TO ROUND 1: every round-2
+sandbox contained round 1's harvested seat evidence, so its richer output cannot
+be attributed to the standards alone. The containment fix is to exclude prior
+rounds' seat evidence from a blind round's sandbox copy.
+
+**THE 3 STANDARDS ARE NOW MECHANICAL.** Measured when the founder asked:
+"additive" 7 occurrences in the dispatcher, "simplest sufficient" 0,
+"composab" 0. All 3 are now in the SYSTEM prompt every seat receives, guarded by
+`bench/tests/test_panel_carries_the_three_standards_2026-10-02.py` (restating
+composability as mere coexistence breaks 3 of its checks).
+
+**THE STAR ROUND CONFIRMED 3 DEFECTS AND REFUTED MY SAFETY HEADLINE.** Before
+the fix, a machine-wide observer failure CONVERGED a run with 0 verified
+criticals (`CRITICAL_QUIESCENCE_CONVERGED` over 2 unobserved criticals). I had
+asserted the invariant over the PREDICATE; the defect lived in a CONSUMER's
+scope. Archive prevalence of the 2 flag-based defects is 0 of 3,246 entries, so
+they are PROSPECTIVE, not historical.
+
+**THE MERGE IS NOT DONE, AND THE ADJUDICATION IS THE FINDING.** Applying cc2's
+fix leaves **8 of fable's falsifiers red**; applying fable's leaves **6 of
+cc2's** red. Neither is sufficient alone, so composition is justified BY
+MEASUREMENT. A first composition (widening the wired reader so its scope matches
+the A4 counter's) took cc2's failures 6 -> 5 and did not converge: the 2 fixes
+disagree per-assertion. Tree REVERTED to pre-merge, byte-verified; both seats'
+work preserved in `bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest`.
+**4 tests are red in the tree and they correctly document the open defect**
+(D-B: the A4 blocker drops a sub-critical refusal that no report names).
+
+**Q1 ANSWERED — the intelligence-first contract IS honoured.** On the 40 run
+directories with falsifier machinery: **0 of 537 accepted criticals lack a tool
+verdict**, Wilson [0%, 0.7103%]. The 42.2581% figure over all 930 is entirely
+pre-machinery (every one of the 393 comes from 17 directories ending at exp41c).
+The earlier 535/537 was mis-denominated: it is the CONFIRMED share of the
+already-adjudicated set.
+
+**HAIKU ARM RESULT.** 13/15 against the syntax arm's 10/15; sensitivity 10/10
+against 5/10; specificity 3/5 against 5/5. The syntax YES set is a strict SUBSET
+of Haiku's, which is the ONLY reason OR-composition equals Haiku alone. The
+founder's proposed shape works on this data: Haiku decides, syntax raises
+confidence — both agree 5/5 correct, and BOTH of Haiku's errors fall in the
+Haiku-alone band. Not significant at n=15 (Fisher p = 0.4697).
+
+**THE LIVE DEFECT IS CLOSURE, NOT THE DISCRIMINATION CONTROL.** `attempt_close`
+asks whether a fix BROKE anything and never whether it CURED the defect: 126 of
+246 = 51.2195%, Wilson [45.0027%, 57.3989%], apply cleanly while their own
+falsifier still demonstrates the defect. The discrimination control rests on the
+same measurement and has fired 8 times ever, all 8 CLOSED, 7 carrying
+NON_DISCRIMINATING. The founder's 2026-08-30 option-A ruling (GATE the silent
+un-confirm) is implemented and correct; ARMING it is refused on that 51.2%.
+
+### OUTSTANDING, IN ORDER
+1. **One free confer round to adjudicate the merge** (founder-authorised
+   2026-10-03): give both seats the 2 incompatible fixes and both failing test
+   sets, and have them decide per assertion under the 3 standards.
+2. The amendments register (founder: ADOPT) — clears 3 red tests.
+3. The false-positive sweep / refusal visibility (founder: run it, mark as a
+   study area). Measured: 23 of 221 routed bodies invisible, 183 truncated at 600 chars.
+4. The Haiku confidence composition (founder: do it, mark as a study area).
+5. Extend the existing general guard, additively (founder).
+6. Build the study mechanism + the post-compaction desktop alert; then launch the
+   3 runs under full `cy`, fixes folded forward.
 
 ---
 

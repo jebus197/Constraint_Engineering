@@ -264,7 +264,23 @@ _OBSERVER_READY_MARK = "OBSERVER-READY"
 _Q = r"\\?[\"']"
 
 # Field names that exist only inside a scoring key. Longest alternatives first.
+# ``seeded_faults`` ADDED 2026-10-02 (founder ruling, access-only gate): it is
+# the build-bot task schema's planted-fault list, so SUBSCRIPTING or .get()-ing
+# it reads the answer for that bench. It is deliberately NOT in
+# :data:`_KEY_FIELDS_KEY_ONLY` below -- the name occurs legitimately throughout
+# this repository's production code and prose (582 occurrences measured
+# 2026-10-02 over the non-log tree), so a bare MENTION of it is not evidence.
 _KEY_FIELDS = (
+    r"planted_false_by_tier|n_planted_false|planted_per_cluster_in_document_order"
+    r"|clean_clusters|difficulty_ladder|difficulty_tier|planted_false|sibling_pairs"
+    r"|tier_counts|verify_tool|contrast_pairs|seeded_faults?"
+)
+
+#: The original key-only field list: names that exist ONLY inside a scoring
+#: key, so even a bare mention in OUTPUT is leak evidence. Used by the output
+#: scan's bare-mention rule; the SOURCE gate no longer refuses on bare mention
+#: of anything (access-only, 2026-10-02).
+_KEY_FIELDS_KEY_ONLY = (
     r"planted_false_by_tier|n_planted_false|planted_per_cluster_in_document_order"
     r"|clean_clusters|difficulty_ladder|difficulty_tier|planted_false|sibling_pairs"
     r"|tier_counts|verify_tool|contrast_pairs"
@@ -277,7 +293,23 @@ _KEY_FIELDS = (
 # nothing but the standard library. Its correctness is pinned instead by
 # bench/tests/test_falsifier_cannot_read_the_key.py, which runs the real Exp 48
 # C0012 source through it.
-_KEY_MATERIAL_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
+# ACCESS-ONLY GATE (founder ruling 2026-10-02: "Just make it accurate... If a
+# key was accessed and read, report it at the end of a run"). The refusal set
+# is split in two:
+#
+#   _KEY_ACCESS_RULES -- evidence that key material is being REACHED: a key
+#       path, a key-internal field indexed out of a loaded object, the key
+#       schema walked, key-named material inside a read construct, a protected
+#       environment variable. These REFUSE execution.
+#   _KEY_VOCAB_RULES  -- the words alone. Measured 2026-10-02: the seed-vocab
+#       rule matched the singular `seeded_fault` INSIDE the plural field name
+#       `seeded_faults` (which production code and honest prose use freely --
+#       0 bare-singular occurrences in the population), producing 10 of the
+#       archive's 14 recorded refusal events and feeding run 1b's round-2 halt.
+#       A bare mention names a thing; it does not read it. Vocabulary no longer
+#       refuses SOURCE; it still withholds OUTPUT (scan_falsifier_output),
+#       because output that PRINTS plant vocabulary is the Exp 48 leak shape.
+_KEY_ACCESS_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"[\w./~$-]*answer[_-]key[\w.-]*\.json"),
      "an answer-key file path"),
     (re.compile(rf"\[\s*{_Q}(?:{_KEY_FIELDS}){_Q}\s*\]"),
@@ -286,21 +318,42 @@ _KEY_MATERIAL_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
      "a key-internal field fetched via .get()"),
     (re.compile(rf"\[\s*{_Q}claims{_Q}\s*\][^\x00]{{0,240}}?{_Q}truth{_Q}"),
      "a claims->truth lookup (the answer-key schema)"),
+    # Key-named material INSIDE a read construct: open('scoring_key.json'),
+    # open('MANIFEST.md').read(). The construct is the access evidence; the
+    # same words outside one no longer refuse.
+    (re.compile(r"\b(?:open|read_text|read_bytes|readlines|loads?|json\.load"
+                r"|cat|head|tail|less|more)\b\s*\(?\s*[^\n)]{0,160}?"
+                rf"(?:(?i:answer[_\- ]?key|scoring[_\- ]?key|scoring[_\- ]?conf)"
+                rf"|\bMANIFEST\b|(?:{_KEY_FIELDS}))"),
+     "key material named inside a read construct"),
+    (re.compile(r"CDSFL_(?:STORE|VAULT|TARGETS|KEY_DIR|LEGACY_STORES|SCORING_CONF)"),
+     "a protected environment variable by name"),
+)
+
+_KEY_VOCAB_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"answer[_\- ]?key", re.I),
      "answer-key vocabulary"),
     (re.compile(r"planted[_\- ]?false"
                 r"|\bplanted\b[^\n]{0,40}\b(?:claim|error|fault|defect|trap)\b", re.I),
      "plant vocabulary (knowledge of which claims were seeded)"),
-    (re.compile(r"seeded[_\- ](?:false|error|fault|claim|defect|set)", re.I),
+    # `\b` APPENDED 2026-10-02: without it, `seeded_fault` matched inside the
+    # plural `seeded_faults` -- the false positive that refused honest run-1b
+    # falsifiers. The boundary fails between `t` and `s`, so the plural no
+    # longer matches while `seeded_false`, `seeded_error` etc. still do.
+    (re.compile(r"seeded[_\- ](?:false|error|fault|claim|defect|set)\b", re.I),
      "seed vocabulary (knowledge of which claims were seeded)"),
     (re.compile(r"scoring[_\- ]?key|scoring[_\- ]?conf", re.I),
      "scoring-key vocabulary"),
-    (re.compile(rf"\b(?:{_KEY_FIELDS})\b"),
+    (re.compile(rf"\b(?:{_KEY_FIELDS_KEY_ONLY})\b"),
      "an answer-key schema field named"),
     (re.compile(r"\bMANIFEST\b"),
      "the target manifest (carries per-target planted counts)"),
-    (re.compile(r"CDSFL_(?:STORE|VAULT|TARGETS|KEY_DIR|LEGACY_STORES|SCORING_CONF)"),
-     "a protected environment variable by name"),
+)
+
+#: Retained name: the OUTPUT scan's rule set (access + vocabulary). Output that
+#: carries key vocabulary is a leak regardless of how the source was written.
+_KEY_MATERIAL_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
+    _KEY_ACCESS_RULES + _KEY_VOCAB_RULES
 )
 
 # Rules that apply to SOURCE only. A traceback in a child's OUTPUT legitimately
@@ -746,7 +799,11 @@ def scan_falsifier_source(
     if not code:
         return []
     violations: list[tuple[str, str]] = []
-    for pattern, reason in _KEY_MATERIAL_RULES + _SOURCE_ONLY_RULES:
+    # ACCESS RULES ONLY (2026-10-02). Vocabulary-only matches stopped being
+    # refusals: naming a schema key is not reading it, and the seed-vocab rule
+    # was refusing honest mentions of the plural field name `seeded_faults`.
+    # The output scan keeps the vocabulary net (a PRINTED plant set is a leak).
+    for pattern, reason in _KEY_ACCESS_RULES + _SOURCE_ONLY_RULES:
         m = pattern.search(code)
         if m:
             violations.append((reason, m.group(0)[:200]))

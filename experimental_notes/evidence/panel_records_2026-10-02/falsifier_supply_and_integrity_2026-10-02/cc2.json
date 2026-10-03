@@ -1,0 +1,372 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 22669,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /home/claude 2>/dev/null || cd ~; pwd; ls\", \"description\": \"Locate working directory\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find / -maxdepth 4 -name \\\"reference_runner_v3.py\\\" -not -path \\\"*/proc/*\\\" 2>/dev/null\", \"description\": \"Find the repo root\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls -la\", \"description\": \"List staged panel repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 600 python3 scripts/falsifier_supply_decomposition_2026-10-02.py 2>&1 | tail -60\", \"description\": \"Run supply decomposition producer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 600 python3 scripts/integrity_exclusion_figures_2026-10-02.py 2>&1 | tail -60\", \"description\": \"Run integrity exclusion figures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 600 python3 scripts/advisory_channel_selection_2026-10-02.py 2>&1 | tail -60\", \"description\": \"Run advisory channel selection\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/falsifier_supply_decomposition_2026-10-02.py 2>&1 | tail -70\", \"description\": \"Run supply decomposition producer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/integrity_exclusion_figures_2026-10-02.py 2>&1 | tail -70\", \"description\": \"Run integrity exclusion figures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/advisory_channel_selection_2026-10-02.py 2>&1 | tail -70\", \"description\": \"Run advisory channel selection\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat -n scripts/advisory_channel_selection_2026-10-02.py\", \"description\": \"Read advisory channel selection script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/key_access_forensics.py bench/falsifier_verify.py bench/reference_runner_v3.py bench/tests/test_falsifier_cannot_read_the_key.py scripts/falsify_prose_falsifier_supply_2026-09-30.py scripts/repro_supply_causes_2026-10-02.py\", \"description\": \"Line counts of artefacts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -12 2>&1; git status --short 2>&1 | head -40\", \"description\": \"Git log and status\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"advisory_confirmed\\\\|audit_confirmed\\\\|carried_verbatim\\\\|CARRIED_SOURCE_SUFFIXES\\\\|def build_end_of_run_advisory\\\\|def scan_run\\\" bench/key_access_forensics.py\", \"description\": \"Grep forensics channel split\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 230,440p bench/key_access_forensics.py\", \"description\": \"Read Hit/Report and advisory builder\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 640,800p bench/key_access_forensics.py\", \"description\": \"Read scan_run\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, sys\\nROOT = pathlib.Path('.').resolve()\\nsys.path.insert(0, str(ROOT/'bench')); sys.path.insert(0, str(ROOT))\\nfrom bench.key_access_forensics import scan_run, discover_target_dirs, resolve_target_dirs\\nRUN = ROOT/'bench'/'logs'/'prose_convergence_run1b_2026-10-02_20261002T044234Z'\\nraw = discover_target_dirs(RUN)\\nprint(\\\"RAW discovered:\\\", raw)\\npr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, sys\\nROOT = pathlib.Path('.').resolve()\\nsys.path.insert(0, str(ROOT/'bench')); sys.path.insert(0, str(ROOT))\\nfrom bench.key_access_forensics import scan_run\\nRUN = ROOT/'bench'/'logs'/'prose_convergence_run1b_2026-10-02_20261002T044234Z'\\nrep = scan_run(RUN, repo_root=ROOT)\\nfor h in rep.advisory_confirmed[:6]:\\n    print(\\\"---\\\", h.file, h.where, "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, sys\\nROOT = pathlib.Path('.').resolve()\\nsys.path.insert(0, str(ROOT/'bench')); sys.path.insert(0, str(ROOT))\\nfrom bench.key_access_forensics import scan_run\\nRUN = ROOT/'bench'/'logs'/'prose_convergence_run1b_2026-10-02_20261002T044234Z'\\nfor label, rr in [(\\\"staged (as delivered)\\\", ROOT),\\n                  (\\\"canonical path string\\\", pathlib.Pat"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/repro_supply_causes_2026-10-02.py 2>&1 | tail -50\", \"description\": \"Run repro supply causes\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_integrity_violation_excluded\\\\|integrity_refused_criticals\\\\|integrity_unobserved\\\" bench/reference_runner_v3.py | head -60\", \"description\": \"Grep integrity predicate\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 120,232p bench/key_access_forensics.py\", \"description\": \"Read CONFIRMED_PATTERNS\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 60,122p bench/key_access_forensics.py\", \"description\": \"Read start of CONFIRMED_PATTERNS\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 800,900p bench/key_access_forensics.py\", \"description\": \"Read rest of scan_run\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"RUN=bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z; ls $RUN | head -30; echo ---; python3 - <<'EOF'\\nimport json, pathlib\\nRUN = pathlib.Path('bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z')\\nfor name in (\\\"runner_state.json\\\",\\\"checkpoint.json\\\",\\\"experiment_chain.json\\\"):\\n    p = RUN/name\\n    if not p.is_file(): continue\\n    d = json.loads(p.read_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, re, collections\\nRUN = pathlib.Path('bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z')\\npat = re.compile(r'/Users/[\\\\w.-]+/[\\\\w .-]+/[\\\\w .-]+')\\ncnt = collections.Counter()\\ndef walk(o, path):\\n    if isinstance(o, dict):\\n        for k,v in o.items(): walk(v, path+\\\"/\\\"+str(k))\\n    elif isinstance(o, list):\\n        for i,v in"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib\\nRUN = pathlib.Path('bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z')\\ndef walk(o, path, out):\\n    if isinstance(o, dict):\\n        for k,v in o.items():\\n            if k=='run_root': out.append((path+\\\"/\\\"+k, v))\\n            walk(v, path+\\\"/\\\"+str(k), out)\\n    elif isinstance(o, list):\\n        for i,v in enumerate(o): walk("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 14900,14950p bench/reference_runner_v3.py\", \"description\": \"Read panel_confinement record\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def discover_target_dirs\\\" bench/key_access_forensics.py; sed -n \\\"$(grep -n 'def discover_target_dirs' bench/key_access_forensics.py | cut -d: -f1),+60p\\\" bench/key_access_forensics.py\", \"description\": \"Read discover_target_dirs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | grep -i \\\"exp48\\\\|exp53\\\\|exp42\\\" | head -20\", \"description\": \"Find archived exam and code runs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 2140,2270p bench/reference_runner_v3.py\", \"description\": \"Read _integrity_violation_excluded\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, sys\\nROOT = pathlib.Path('.').resolve()\\nsys.path.insert(0, str(ROOT/'bench')); sys.path.insert(0, str(ROOT))\\nfrom bench.key_access_forensics import scan_run\\nLOGS = ROOT/'bench'/'logs'\\nfor name in [\\\"exp48_chemistry_exam_live_20260729T044134Z\\\",\\n             \\\"exp42_composer_takeupslack_20260607T154745Z\\\",\\n             \\\"exp53_control_zero_live_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests | grep -i \\\"2026-10-02\\\\|one_predicate\\\\|declared_figure\\\" \", \"description\": \"List today's tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -x -q bench/tests/test_key_access_advisory_2026-10-02.py bench/tests/test_scanner_scope_refuses_ancestors_2026-10-02.py bench/tests/test_one_predicate_excludes_and_reports_2026-10-02.py bench/tests/test_falsifier_cannot_read_the_key.py 2>&1 | tail -30\", \"description\": \"Run today's relevant tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def test\\\" bench/tests/test_key_access_advisory_2026-10-02.py; echo \\\"---- scope refuses ancestors\\\"; grep -n \\\"def test\\\\|run_root\\\\|repo_root\\\" bench/tests/test_scanner_scope_refuses_ancestors_2026-10-02.py | head -40\", \"description\": \"Inspect advisory and scope tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 90,135p bench/tests/test_key_access_advisory_2026-10-02.py; echo \\\"=== scope ancestors header\\\"; sed -n 1,50p bench/tests/test_scanner_scope_refuses_ancestors_2026-10-02.py\", \"description\": \"Read the silence test and the ancestors claim\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,90p bench/tests/test_key_access_advisory_2026-10-02.py\", \"description\": \"Read _scan helper in advisory test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, sys\\nROOT = pathlib.Path('.').resolve()\\nsys.path.insert(0, str(ROOT/'bench')); sys.path.insert(0, str(ROOT))\\nfrom bench.key_access_forensics import scan_run, build_end_of_run_advisory\\nRUN = ROOT/'bench'/'logs'/'prose_convergence_run1b_2026-10-02_20261002T044234Z'\\nCANON = pathlib.Path(\\\"/Users/georgejackson/Developer_Projects/Constraint_Engineerin"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _under\\\\|def _in_scope\\\\|def _norm_path\\\" bench/key_access_forensics.py; sed -n \\\"$(grep -n 'def _norm_path' bench/key_access_forensics.py|cut -d: -f1),+70p\\\" bench/key_access_forensics.py\", \"description\": \"Read scope helpers\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/bench/key_access_forensics.py\", \"offset\": 510, \"limit\": 42}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/bench/key_access_forensics.py\", \"old_string\": \"def discover_target_dirs(run_dir: Path) -> list[str]:\\n    \\\"\\\"\\\"Directories the panel was *supposed* to read, taken from runner-authored\\n    records only (`target_file` / `context_files` / `staged_copy`).\\\"\\\"\\\"\\n    found: set[str]"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat .cdsfl_deny_canonical_writes.sb\", \"description\": \"Read sandbox deny policy\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_kaf.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path('bench/key_access_forensics.py')\\nsrc = p.read_text()\\n\\nOLD = '''def discover_target_dirs(run_dir: Path) -> list[str]:\\n    \\\"\\\"\\\"Directories the panel was *supposed* to read, taken from runner-authored\\n    records only (`target_file` / `context_files` / `staged_copy`).\\\"\\\"\\\"\\n    found: set[str] = set()\\n    # `end"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_scan.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path('bench/key_access_forensics.py')\\nsrc = p.read_text()\\n\\n# 1. roots + confined + allowlist\\nOLD1 = '''    confined = bool(rep.target_dirs) and not any(\\n        _under(d, str(repo_root.resolve())) for d in rep.target_dirs)\\n    allowlist = [str(run_dir), *rep.target_dirs]\\n    if not confined:\\n        allowlist.inse"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, sys\\nROOT = pathlib.Path('.').resolve(); sys.path.insert(0,str(ROOT))\\nfrom bench.key_access_forensics import scan_run, build_end_of_run_advisory\\nL = ROOT/'bench'/'logs'\\nRUN1B = L/'prose_convergence_run1b_2026-10-02_20261002T044234Z'\\nCANON = pathlib.Path(\\\"/Users/georgejackson/Developer_Projects/Constraint_Engineering\\\")\\nprint(\\\"=== run 1b, three"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/advisory_channel_selection_2026-10-02.py 2>&1 | tail -25\", \"description\": \"Re-run the producer after the fix\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_key_access_advisory_2026-10-02.py bench/tests/test_scanner_scope_refuses_ancestors_2026-10-02.py bench/tests/test_falsifier_cannot_read_the_key.py bench/tests/test_one_predicate_excludes_and_reports_2026-10-02.py bench/tests/test_key_access_decoupled_from_convergence_2026-10-02.py bench/tests/test_guard_false_positive_figures_2026-10-02.py bench/t"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/key_access_forensics.py /tmp/kaf_fixed.py\\n# restore pristine from the canonical tree (read-only is fine)\\ncp \\\"/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/key_access_forensics.py\\\" /tmp/kaf_orig.py 2>/dev/null && echo \\\"got pristine\\\" || echo \\\"no canonical copy\\\"\\ndiff -q /tmp/kaf_orig.py /tmp/kaf_fixed.py >/dev/null && echo same || echo differ\", \"d"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /tmp/kaf_orig.py bench/key_access_forensics.py && python3 -m pytest -q bench/tests/test_guard_false_positive_figures_2026-10-02.py bench/tests/test_declared_figure_as_of_2026-09-29.py 2>&1 | tail -12; echo \\\"=== restoring fix ===\\\"; cp /tmp/kaf_fixed.py bench/key_access_forensics.py\", \"description\": \"Check whether the 8 failures pre-exist my fix\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_guard_false_positive_figures_2026-10-02.py 2>&1 | head -80\", \"description\": \"Diagnose guard_false_positive_figures failures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_declared_figure_as_of_2026-09-29.py 2>&1 | head -70\", \"description\": \"Diagnose declared-figure as-of failures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,120p scripts/repro_supply_causes_2026-10-02.py\", \"description\": \"Read repro script population logic\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, collections\\nROOT=pathlib.Path('.')\\nf=ROOT/'bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z/runner_state.json'\\nd=json.loads(f.read_text())\\nents=(d.get('registry') or {}).get('entries') or {}\\nk=list(ents)[0]\\nprint(json.dumps({kk:(str(vv)[:80]) for kk,vv in ents[k].items()}, indent=1))\\nprint(\\\"\\\\nstatus counts:\\\", collections"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/intelligence_first_contract_2026-10-02.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Is the founder's intelligence-first contract honoured? (Q1, Q2, and Cause 2)\\n\\nHIS DESIGN INTENT, verbatim: \\\"a hand-rolled falsifier could be acceptable as a\\nform of 'scratchpad' reasoning method for the models, so long as that reasoning\\nwas either invariably confirmed, or refuted with"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, re\\nfrom collections import Counter\\nROOT=pathlib.Path('.')\\nCRIT=0.7\\nrows={}\\nfor name in (\\\"runner_state.json\\\",\\\"*_report.json\\\"):\\n    for f in sorted((ROOT/\\\"bench\\\"/\\\"logs\\\").glob(f\\\"*/{name}\\\")):\\n        try: data=json.loads(f.read_text(encoding=\\\"utf-8\\\",errors=\\\"replace\\\"))\\n        except Exception: continue\\n        for cid,e in (("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"UNTOOLABLE\\\" bench/falsifier_verify.py bench/reference_runner_v3.py | head -20; echo \\\"=== resolved verdicts set\\\"; grep -n \\\"_FALSIFIER_RESOLVED_VERDICTS\\\\s*=\\\" -A6 bench/reference_runner_v3.py | head -20\", \"description\": \"Check who writes UNTOOLABLE\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_repro.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path('scripts/repro_supply_causes_2026-10-02.py')\\ns = p.read_text()\\n\\nOLD = '''    def verdict(e):\\n        h = e.get(\\\"routing_history\\\") or []\\n        return ((e.get(\\\"falsifier_verdict\\\") or \\\"\\\").strip().upper()\\n                or (e.get(\\\"routing_verdict_unreconciled\\\") or \\\"\\\").strip().upper()\\n                "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts | grep -i \\\"validate_panel_brief\\\\|archived_falsifier_rejections\\\"; echo \\\"---\\\"; grep -n \\\"def \\\\|as-of\\\\|as_of\\\\|amendment\\\" scripts/validate_panel_brief.py 2>/dev/null | head -40\", \"description\": \"Locate validator and producer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 70,110p bench/tests/test_declared_figure_as_of_2026-09-29.py; echo \\\"=== validator path\\\"; grep -n \\\"VALIDATE\\\\s*=\\\\|PRODUCER\\\\s*=\\\\|BRIEF\\\\s*=\\\" bench/tests/test_declared_figure_as_of_2026-09-29.py\", \"description\": \"Find the validator entry point\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"HISTORICAL FIGURE\\\" -B30 scripts/panel_brief_validate.py | head -70\", \"description\": \"Find the historical-figure acceptance path in the validator\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n \\\"$(grep -n 'def _historical_reproduction' scripts/panel_brief_validate.py|cut -d: -f1),+70p\\\" scripts/panel_brief_validate.py; echo \\\"=== call site\\\"; sed -n 397,425p scripts/panel_brief_validate.py\", \"description\": \"Read _historical_reproduction\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"figure:\\\" bench/logs/panel_round11_2026-09-11/BRIEF.md | head; echo \\\"---\\\"; grep -n \\\"real-rejection\\\" bench/logs/panel_round11_2026-09-11/BRIEF.md; echo \\\"--- dirs\\\"; ls bench/directives/universal/ 2>/dev/null | head -20\", \"description\": \"Inspect the round-11 brief declaration\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p bench/directives/universal && cat > bench/directives/universal/rule_amendments.jsonl <<'EOF'\\n{\\\"_comment\\\": \\\"RULE AMENDMENTS REGISTER. See scripts/panel_brief_validate.py:_rule_amendment_reproduction. One object per line. A line whose keys do not satisfy EVERY admissibility condition is REFUSED, not ignored: a register entry is a committed measurement, not a note. Lines beg"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_validate.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path('scripts/panel_brief_validate.py')\\ns = p.read_text()\\n\\nHOOK_FN = '''\\n# \\u2500\\u2500 THE RULE-AMENDMENTS REGISTER \\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np=pathlib.Path('scripts/panel_brief_validate.py'); s=p.read_text()\\ns=s.replace(\\\"import argparse\\\\nimport calendar\\\\n\\\",\\\"import argparse\\\\nimport calendar\\\\nimport json\\\\n\\\",1)\\np.write_text(s); print(\\\"json imported\\\" if \\\"\\\\nimport json\\\\n\\\" in s else \\\"FAILED\\\")\\nEOF\\npython3 scripts/panel_brief_validate.py bench/logs/panel_round11_2026-09-11/BR"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_rule_amendment_register_2026-10-02.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"A figure invalidated by a RULE CHANGE, and the register that must not be a\\nfree pass. (Panel dispute D-5 blast radius; Q5, 2026-10-02.)\\n\\nTHE SITUATION. `bench/logs/panel_round11_2026-09-11/BRIEF.md` declares\\n`real-rejection rate : 2/640 = 0.3125%`. Under the access-only gate the s"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_declared_figure_as_of_2026-09-29.py 2>&1 | tail -8\", \"description\": \"Re-run the as-of test after the register\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 50,66p bench/tests/test_declared_figure_as_of_2026-09-29.py\", \"description\": \"View the test to amend\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_asof.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path('bench/tests/test_declared_figure_as_of_2026-09-29.py')\\ns = p.read_text()\\n\\nOLD1 = '''    def test_as_of_the_briefs_date_reproduces_the_declared_figure(self):\\n        \\\"\\\"\\\"The historical figure is DECIDABLE, not trusted: 2/640 = 0.3125%\\n        re-executes against the corpus as it stood.\\\"\\\"\\\"\\n        r = subpr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"NON_DISCRIMINATING\\\" bench/*.py | head -20; echo \\\"=== context\\\"; sed -n 4415,4440p bench/reference_runner_v3.py\", \"description\": \"Check for an existing discrimination mechanism\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 5600,5680p bench/reference_runner_v3.py\", \"description\": \"Read the discrimination control gate\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, re\\nfrom collections import Counter\\nfrom statsmodels.stats.proportion import proportion_confint\\nROOT=pathlib.Path('.'); CRIT=0.7\\nrows={}\\nfor name in (\\\"runner_state.json\\\",\\\"*_report.json\\\"):\\n    for f in sorted((ROOT/\\\"bench\\\"/\\\"logs\\\").glob(f\\\"*/{name}\\\")):\\n        try: data=json.loads(f.read_text(encoding=\\\"utf-8\\\",errors=\\\"replace\\\"))"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n\\\"\\\"\\\"FALSIFIER: the project's own discrimination control, demonstrated FIRING on\\na cannot-fail falsifier of exactly the two shapes the brief names.\\n\\nPrints FALSIFIED if a cannot-fail falsifier CONFIRMS against both the real\\ntarget and a corrected copy and the control fails to notice. Exits clean\\n(no raise, no FALSIFIED) when the control catches it, which is th"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/disc_falsifier.py <<'PYEOF'\\n\\\"\\\"\\\"FALSIFIER (Q3). Does the project's EXISTING discrimination control separate\\na cannot-fail falsifier from a real one?\\n\\nConvention per the core directives: a falsifier RAISES AssertionError (or prints\\nFALSIFIED) when the defect is real and EXITS CLEANLY when the claim is false.\\n\\nThis script raises if the control fails to separate them."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, sys, json\\nsys.path.insert(0,'.')\\nimport bench.reference_runner_v3 as rr\\n# the two-sided gate's thresholds\\nfor n in dir(rr):\\n    if 'GAMMA' in n.upper() and n.isupper():\\n        print(n, \\\"=\\\", getattr(rr,n))\\nst=json.loads(pathlib.Path('bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z/runner_state.json').read_text())\\nprint(\\\"gamm"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_key_access_advisory_2026-10-02.py bench/tests/test_scanner_scope_refuses_ancestors_2026-10-02.py bench/tests/test_falsifier_cannot_read_the_key.py bench/tests/test_one_predicate_excludes_and_reports_2026-10-02.py bench/tests/test_key_access_decoupled_from_convergence_2026-10-02.py bench/tests/test_supply_decomposition_instrument_2026-10-02.py benc"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"gamma_critical_r2\\\\|gamma_all_r2\\\\|BOTH HALVES\\\\|gate\\\\|queue_bound\\\" scripts/integrity_exclusion_figures_2026-10-02.py | head -20\", \"description\": \"See how the gate figures are sourced\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 75,100p scripts/integrity_exclusion_figures_2026-10-02.py; echo \\\"=== the gate function\\\"; grep -n \\\"def _check_gamma_alt_convergence\\\" -A30 bench/reference_runner_v3.py | grep -n \\\"0\\\\.3\\\\|0\\\\.2\\\\|gamma_all\\\\|gamma_critical\\\\|return\\\" | head -20\", \"description\": \"Inspect the gate figure source and the real gate\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 7490,7530p bench/reference_runner_v3.py; echo \\\"=== thresholds\\\"; grep -n \\\"GAMMA_ALT_MIN\\\\|gamma_all >=\\\\|gamma_critical >=\\\\|TWO_SIDED\\\\|two-sided\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Read the two-sided gate\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, sys\\nsys.path.insert(0,'.')\\nimport bench.reference_runner_v3 as rr\\nd=pathlib.Path('bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z')\\nst=json.loads((d/'runner_state.json').read_text())\\nrep=json.loads(next(d.glob('*_report.json')).read_text())\\nr2=[r for r in rep.get('rounds',[]) if r.get('round')==2][0]\\nprint(\\\"round2 gamma_c"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/falsifier_gate_claim.py <<'PYEOF'\\n\\\"\\\"\\\"FALSIFIER. 'Run 1b halted with BOTH halves of the two-sided gate satisfied'\\nis contradicted by run 1b's own archived state.\\n\\nImports the REAL producer and the REAL runner module; retypes nothing.\\nRaises AssertionError when the defect is present, exits clean otherwise.\\n\\\"\\\"\\\"\\nimport importlib.util, json, pathlib, sys\\nROOT = pat"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -i.bak 's|body = src\\\\[i:i + 4000\\\\]|body = src[i:i + 30000]|' /tmp/falsifier_gate_claim.py && sed -i.bak2 's|assert \\\"zero-new-critical rounds\\\" in body|assert (\\\"zero-new-critical rounds\\\" in body or \\\"zero\\\\\\\\n          NEW genuine critical findings\\\" in body)|' /tmp/falsifier_gate_claim.py && python3 /tmp/falsifier_gate_claim.py; echo \\\"EXIT=$?\\\"\", \"description\": \"Re-run the g"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /tmp/falsifier_gate_claim.py bench/tests/falsifier_run1b_gate_claim_2026-10-02.py\\ncat > /tmp/patch_gate.py <<'PYEOF'\\nimport pathlib\\n# 1. the producer\\np = pathlib.Path('scripts/integrity_exclusion_figures_2026-10-02.py')\\ns = p.read_text()\\nOLD = '''def run_1b_halt():\\n    \\\"\\\"\\\"Run 1b halted with BOTH halves of the two-sided gate satisfied.\\\"\\\"\\\"'''\\nNEW = '''def run_1b_halt():"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q bench/tests/test_key_access_advisory_2026-10-02.py bench/tests/test_one_predicate_excludes_and_reports_2026-10-02.py bench/tests/test_key_access_decoupled_from_convergence_2026-10-02.py bench/tests/test_falsifier_cannot_read_the_key.py bench/tests/test_scanner_scope_refuses_ancestors_2026-10-02.py bench/tests/test_rule_amendment_register_2026-10-02.py bench/tests/"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m ruff check bench/key_access_forensics.py scripts/panel_brief_validate.py scripts/intelligence_first_contract_2026-10-02.py bench/tests/test_rule_amendment_register_2026-10-02.py 2>&1 | tail -20\", \"description\": \"Lint only my new/edited files excluding pre-existing style\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in bench/key_access_forensics.py scripts/panel_brief_validate.py bench/directives/universal/rule_amendments.jsonl bench/tests/test_rule_amendment_register_2026-10-02.py bench/tests/falsifier_run1b_gate_claim_2026-10-02.py scripts/intelligence_first_contract_2026-10-02.py scripts/repro_supply_causes_2026-10-02.py scripts/integrity_exclusion_figures_2026-10-02.py bench/reference_r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript >/dev/null 2>&1 && wolframscript -code 'N[{FisherRatioTest[{{19,27},{34,544}}], 1}]' 2>&1 | head -5 || echo \\\"WOLFRAM ABSENT: wolframscript not on PATH\\\"\", \"description\": \"Attempt a Wolfram second-falsifier check\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'a=19;b=27;c=34;d=544;n=a+b+c+d;r1=a+b;c1=a+c;\\npr[x_]:=(Binomial[c1,x] Binomial[n-c1,r1-x])/Binomial[n,r1];\\nobs=pr[a];\\np2=N[Total[Table[If[pr[x]<=obs,pr[x],0],{x,Max[0,r1-(n-c1)],Min[r1,c1]}]],12];\\n{\\\"sampleOR\\\"->N[(a d)/(b c),8],\\\"twoSidedP\\\"->p2}' 2>&1 | head -5\", \"description\": \"Wolfram second falsifier on the Cause-2 2x2\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nfrom statsmodels.stats.proportion import proportion_confint as W\\nfor k,n,l in [(19,46,'controls no-falsifier'),(44,567,'disc control ran'),(14,44,'NO_DISCRIMINATION among those run'),(21,567,'positively shown to discriminate'),(404,440,'model-reasoned later toolled'),(1,537,'accepted w/o tool'),(43,43,'prose criticals toolled'),(14,624,'neither body nor verdict'),(0,55"
+    }
+  ],
+  "n_tool_calls": 88,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1341.4,
+  "response": "# VERDICT\n\n**Part 2 (the fixes): the integrity predicate is SOUND. Two of the figures declared for it are NOT.** Three CONFIRMED findings, all fixed in the tree.\n\n**Part 1 (the founder's question): the intelligence-first contract IS honoured \u2014 91.8% of model-reasoned criticals were later toolled, 1 of 537 accepted without a tool.** The founder's over-specificity intuition reproduces (OR 4.3063). But the brief's adjudication of Cause 2 is wrong: **Cause 2 reproduces exactly, 19 of 46**, and it is the largest inflation in the starvation figure \u2014 the brief dismissed the cause that matters most.\n\n| # | Finding | Verdict |\n|---|---|---|\n| F1 | The key-access advisory's verdict on an archived run is a function of the **scanner's cwd**, not the run. 107 / 0 / 114 advisory hits from one run directory under three roots. | CONFIRMED |\n| F2 | Cause 2 **does** reproduce (19/46). `repro_supply_causes`'s own `verdict()` counts `UNTOOLABLE` as a tool verdict, which is what refuted it. | CONFIRMED |\n| F3 | \"Run 1b halted with BOTH halves of the two-sided gate satisfied\" is false. `novel_critical_history == [6,4,5]`, `gate_history == [False,False,False]`. | CONFIRMED |\n\n---\n\n# F1 \u2014 the advisory is pinned to the caller, not to the run (CRITICAL)\n\n## Falsifier and executed result\n\n```\n$ python3 scripts/advisory_channel_selection_2026-10-02.py\n  prose_convergence_run1b_2026-10-02\n    CONFIRMED total                 : 114\n    THIS MERGE   advisory / audit   : 107 / 7   fires=True   dropped=0\nAssertionError: REGRESSION: run 1b read no key and the advisory fired\n```\n\nThe committed producer for Part 2's declared figure **aborts on its own regression assertion**, so `THE MERGE DOMINATES BOTH ON THESE INPUTS` and the \"a plant in the same file fires 2\" figure were never computed in the delivered tree. Three roots, one run directory:\n\n```\nA staged tree (as delivered)                     conf= 114 adv= 107 aud=  7 fires=True\nB canonical literal (what the test hardcodes)    conf=   7 adv=   0 aud=  7 fires=False\nC canonical literal, NOT present (CI/other user) conf= 114 adv= 114 aud=  0 fires=True\n```\n\nRow C is worse than row A: with the canonical tree absent, `_committed_counterpart` finds nothing, every `carried_verbatim` flag is lost, and **the audit channel empties to 0** \u2014 the merge's \"nothing is dropped\" property fails in the same move as its silence property. So `run 1b 0 advisory / 7 audit` held at exactly one filesystem location on one machine, and row B is green only because `/Users/georgejackson/Developer_Projects/Constraint_Engineering` physically exists here.\n\n`bench/tests/test_key_access_advisory_2026-10-02.py` had already met this and patched the **test**, hardcoding `CANONICAL_REPO = /Users/georgejackson/...` with a comment explaining why. The producer did not get the same workaround. **Test and committed producer disagreed about the same figure, and the test was green.** That is the Q5 failure class occurring today, by location drift rather than rule change.\n\n## Fix delivered \u2014 `bench/key_access_forensics.py`\n\nThe pin was already in the archive and nothing read it: the runner has written `panel_confinement.run_root` into every report since 2026-09-01 (\"WHERE THE PANEL COULD REACH\", `reference_runner_v3.py:14928`). A recorded field no reader consumes is the additive standard's own failure mode. Added:\n\n- `trusted_record_names()` \u2014 the existing anti-widening rule, factored out so both readers use one predicate.\n- `discover_run_root()` \u2014 reads `panel_confinement.run_root` from **runner-authored records only**, refuses `/`, refuses two disagreeing values, returns `None` for pre-2026-09-01 runs.\n- `scan_run` adds the recorded root **alongside** the live one (never substituted), in the `confined` test, the allowlist, and `_committed_counterpart`.\n- `Report.run_root_recorded`, so a reader can tell a pinned verdict from a cwd-pinned one.\n\n```\n=== run 1b, three roots, AFTER the pin\n  staged copy                  conf=7 adv=0 aud=7 fires=False pinned=True\n  canonical                    conf=7 adv=0 aud=7 fires=False pinned=True\n  a root that does not exist   conf=7 adv=0 aud=7 fires=False pinned=True\n=== the exam case must NOT move\n  exp48  staged     in_scope=False conf=12 adv=12 pinned=None\n  exp48  canonical  in_scope=False conf=12 adv=12 pinned=None\n```\n\nProducer now exits 0 with `THE MERGE DOMINATES BOTH ON THESE INPUTS: True`, run 1b `0 / 7`, the plant firing `2 / 7`. The 2026-07-29 exam hole stays shut (exp48 unchanged, 12 hits, `repo_in_scope=False`). I checked the silence direction: an in-repo key read is still CONFIRMED by `answer[_-]key.*\\.json` and the key-field patterns, which are not allowlist-gated \u2014 so the pin cannot create a false negative.\n\n**120 tests green across the 8 affected files; the 8 pre-existing failures I measured before touching anything are unchanged** (6 are `git ls-files` refusing to census a non-git staged copy \u2014 the fail-loud design working, not a defect).\n\n---\n\n# F2 \u2014 Cause 2 reproduces; the reproducing script refuted it\n\n```\ncontrol entries with NO falsifier body: 19\n  verdict string repro_supply_causes reads: {'UNTOOLABLE': 19}\n  which field it came from: {'falsifier_verdict': 19}\n```\n\n`repro_supply_causes`'s `verdict()` returns any non-empty string. `UNTOOLABLE` is non-empty \u2014 written by `reference_runner_v3.py:5808` when a critical arrives with no falsifier, returned by `reverify_falsifier(\"\")`, and a member of `EQUIPMENT_FAILURE_VERDICTS` **precisely because it is not an adjudication of the claim**. So `nobody` was False for all 19 and the stratum measured 0 of 46.\n\nExcluding the decline, on the same 624 rows, in the committed producer:\n\n```\nCAUSE 2  zero-plant controls: no falsifier at all\n  as first written: a DECLINE counts as a verdict\n    control  no-body  0  other 46   OR = 0.0000  p = 6.144102e-01  -> NOT REPRODUCED\n  corrected: only a TOOL verdict counts as a verdict\n    control  no-body 19  other 27   OR = 11.2593  p = 1.364814e-10  -> REPRODUCED\n```\n\n19/46 = 41.3043%, Wilson [28.2886%, 55.6605%]. scipy, mpmath hypergeometric sum, and **Wolfram Language (local Wolfram Engine)** agree: `sampleOR -> 11.2592592592592592592`, `twoSidedP -> 1.3648143901661857055e-10` \u2014 12 digits.\n\n**Both the brief's conclusion and its explanation are wrong.** The claim is not an artefact of the pre-fix body-only definition: 19/46 holds under *both* definitions once the decline is excluded. The claimed OR 14.9614 / p 6.39737e-12 sits beside my 15.5659 / 2.43e-12 under the tighter whitelist \u2014 same population, same order.\n\n**Substantively: the control stratum is a real inflation.** Zero-plant runs have nothing to falsify, so 19 of 46 criticals correctly declined as UNTOOLABLE is the mechanism *working*. Counting them as starvation is the single largest inflation, and the brief ranked it out.\n\nFixed in `scripts/repro_supply_causes_2026-10-02.py`: both definitions printed, nothing removed, the non-reproduction kept on the record.\n\n---\n\n# F3 \u2014 the halt-bound change's cited evidence does not support it\n\n```\n$ python3 bench/tests/falsifier_run1b_gate_claim_2026-10-02.py\nnovel_critical_history (new genuine criticals per round): [6, 4, 5]\ngate_history (the runner's own record of the gate):       [False, False, False]\n\nFALSIFIED\nAssertionError: BOTH HALVES SATISFIED is false. The COUNT side needs consecutive\nrounds with ZERO new criticals; run 1b recorded [6, 4, 5] -- never zero in any\nround -- and the runner's own gate_history is [False, False, False] ...\n```\n\nThe two halves of `_check_gamma_alt_convergence` are the GAMMA side (`gamma_critical >= gamma_alt_threshold`) and the COUNT side (K consecutive rounds with zero new genuine criticals). **`gamma_all` is a third number, not the second half.** Run 1b never had a zero-critical round. So it would not have converged at round 2 whatever the queue contained, and the queue-of-3-against-2 is not a blocked convergence.\n\nThe founder's ruling is independent and stands; what fails is the citation. Also noted: `_irreducible_queue_split` returns `(0, 0)` on run 1b's *saved* registry with the predicate shipped **and** neutralised \u2014 so the predicate's effect is not demonstrable from the archived end-of-run state either. I did not assert a direction there; I could not compute one.\n\nFixed in `scripts/integrity_exclusion_figures_2026-10-02.py` (header corrected, the two refuting series now printed with the gamma figures) and the `reference_runner_v3.py:2239` comment (wrong citation quoted and corrected, not dropped).\n\n---\n\n# Q1 \u2014 the contract IS honoured\n\n`scripts/intelligence_first_contract_2026-10-02.py` (delivered). Population: 624 deduplicated criticals, severity \u2265 0.7, post-exp42. Predicate: `status_adjudicator != \"tool\"` for \"model-reasoned\"; a tool verdict is any member of `{CONFIRMED, REFUTED, ERROR, TIMEOUT, INTEGRITY_VIOLATION, REFUSED}` on `falsifier_verdict`, `routing_verdict_unreconciled`, **or `routing_history[-1]`** \u2014 reading the ladder residual, because not reading it would reproduce Cause 3 inside the measurement.\n\n```\nmodel-reasoned criticals                        440/624 = 70.5128%\n  ... of which a TOOL later returned a verdict  404/440 = 91.8182%  Wilson [88.8808%, 94.0317%]\naccepted terminal status                        537/624 = 86.0577%\n  ... accepted with NO tool verdict               1/537 =  0.1862%  Wilson [0.0329%, 1.0472%]\n    sim45_memory_20260830T161215Z C0006 CORROBORATED runner model_confirm_quorum (3/2 independent)\n```\n\nThe single offender was confirmed by model quorum \u2014 but `CORROBORATED` is the runner's own quarantine status (`ATTESTED_STATUSES`: \"a model said so, not a tool measured it\u2026 readers MUST NOT count these\"). **So: zero un-quarantined reasoning-only confirmations. The founder's design intent is met, and the 86.3727% hand-rolled rate is not a defect \u2014 hand-rolling in logic is scratchpad reasoning that gets toolled 91.8% of the time.**\n\nOne caveat I will not hide: `status_adjudicator` is recorded on only 184 of 624 (29.4872%), so for 70% the field cannot answer Q1 directly and the 91.8% rests on tool-verdict presence. A field absent on 70% of its population is a weak instrument.\n\n# Q2 \u2014 the loop IS reachable on prose, and this refutes the brief's framing\n\n```\nprose-run criticals 43   code-run criticals 581\n  prose: a TOOL returned a verdict     43/ 43 = 100.0000%  Wilson [91.7990%, 100.0000%]\n  prose: accepted with NO tool verdict  0/ 43 =   0.0000%  Wilson [0.0000%, 8.2010%]\n  code : a TOOL returned a verdict    537/581 =  92.4269%\n  prose vs code, NO tool verdict: OR = 0.0000  p = 6.316256e-02\n```\n\nThe briefing's \"ruff, mypy, bandit and pytest have no purchase on prose\" is true and irrelevant to Q2. Those are the **lint suite**. The adjudicating tool is `reverify_falsifier`, which re-executes a falsifier, and a prose falsifier is Python over text \u2014 `re` and `pathlib` are as general over prose as `ast` is over code. Prose criticals are toolled at 43/43, Wilson lower bound 91.8%, **higher** than code's 92.4%. Q2's premise does not hold.\n\n# Q3 \u2014 I argue AGAINST a new template, and the measurement is the argument\n\nThe general cannot-fail guard already exists: `run_discrimination_control` runs the falsifier against a **corrected** copy and stamps `NON_DISCRIMINATING` when it fires on both. Demonstrated separating both shapes the brief names:\n\n```\n$ python3 bench/tests/falsifier_discrimination_guard_2026-10-02.py\n  hardwired `return True`                    real=CONFIRMED corrected=CONFIRMED -> NON_DISCRIMINATING\n  vacuous: 0 HIGH over an empty metric set   real=CONFIRMED corrected=CONFIRMED -> NON_DISCRIMINATING\n  reads the real target                      real=CONFIRMED corrected=REFUTED   -> DISCRIMINATES\nCLEAN EXIT\n```\n\n(My first draft of this falsifier printed `FALSIFIED` unconditionally and scored the real falsifier as non-discriminating; its own guard caught me. Recorded because it is the hazard under discussion.)\n\nThen the reach, over 567 post-exp42 criticals that have a falsifier body:\n\n```\nDISCRIMINATION CONTROL RAN AT ALL : 44/567 =  7.7601%  Wilson [5.8313%, 10.2575%]\n  NO_DISCRIMINATION among those run: 14/44 = 31.8182%  Wilson [19.9993%, 46.5569%]\n  positively shown to discriminate : 21/567 = 3.7037%  Wilson [2.4350%, 5.5955%]\n  prose: ran 4/33 = 12.1212%   code: ran 40/534 = 7.4906%\n```\n\n**Adding a template while the existing general guard reaches 7.76% of the population is an addition nothing reaches \u2014 the project's own 11-of-11 failure mode.** And 31.8% of the falsifiers it *did* check cannot fail: the hazard is not hypothetical, it is roughly one in three of those measured. The control's reach is bounded by needing a corrected copy. So the additive move is: **when no corrected copy exists, synthesise one by inverting the asserted property**, raising reach toward 567 rather than 44. That extends the guard that works; it does not add a second one beside it.\n\n# Q4 \u2014 the repointing experiment, specified\n\n- **Population.** The 157 of 499 distinct falsifier bodies that name \u22651 concrete file (31.4629%, Wilson [27.5433%, 35.6658%]), restricted to the 18 ERROR + 158 CONFIRMED rows Cause 1 is computed over, so the result is commensurable with OR 4.3063.\n- **Substitution rule.** Mechanical, by AST, never by rewrite: for each path literal *p* resolving under the run's `run_root` (now readable \u2014 F1), substitute *p* \u2192 the same repository-relative path under a freshly staged copy of the target tree. Exactly one substitution class per body; bodies needing \u22652 incompatible classes are logged as NOT REPOINTABLE and counted, never dropped.\n- **Decider.** `reverify_falsifier` on the repointed body, in the staged copy. Tools decide. Prose verdict is not an input.\n- **Pre-registered rates.** H0: repointing does not change the verdict \u2014 `P(ERROR | repointed) = 18/176 = 10.2273%`, Wilson [6.5841%, 15.5257%]. H1 (over-specificity is causal): ERROR falls to the unnamed stratum's `10/388 = 2.5773%`, Wilson [1.4057%, 4.6833%]. Fisher on the resulting 2\u00d72 at \u03b1 = 0.05, scipy against an mpmath hypergeometric sum, Wolfram as second falsifier.\n- **Stopping condition.** All 176 repointable bodies processed, or the Wilson interval on the repointed ERROR rate excludes **both** 10.2273% and 2.5773%, whichever first. A body whose repointed run ERRORs for an unrelated reason (import failure, syntax) is INDETERMINATE and reported, not scored \u2014 otherwise the experiment measures my substitution instead of the coupling.\n- **Why it is the only thing that settles it.** Cause 1 is observational: a body naming a file may ERROR because authors who name files write more fragile falsifiers. Repointing holds the author fixed and moves only the path.\n\n# Q5 \u2014 the rule-amendments register, delivered and demonstrated failing\n\n`--as-of` pins the **denominator**. The access-only ruling changed the **numerator** at every date, so no as-of value reproduces 2/640.\n\nI reject pinning the rule set. Keeping superseded rules alive forks the predicate at each ruling, and the forks are load-bearing **forever** because historical re-execution reaches them \u2014 each a second place the same bug lives, and each a second place every later fix must land. That is this project's own named shape (\"fixed in one place, not its twin\"). It also makes \"we changed our mind about what counts\" invisible: the brief re-executes and no reader learns the rule moved.\n\nDelivered: `bench/directives/universal/rule_amendments.jsonl` + `_rule_amendment_reproduction` in `scripts/panel_brief_validate.py`. **A register entry is a committed measurement, not a note.** Five admissibility conditions; condition 5 is what makes it evidence:\n\n1. an entry for exactly this brief and this declared value;\n2. `superseded` is **present in the archived brief's own text** \u2014 no amending a figure the brief never declared;\n3. `superseded != current` \u2014 an amendment must amend;\n4. `producer` is the script the brief declared \u2014 no redirecting to a friendlier one;\n5. **the named producer, re-executed now with the entry's own `--as-of`, prints `current`.**\n\n```\n$ python3 scripts/panel_brief_validate.py bench/logs/panel_round11_2026-09-11/BRIEF.md\npanel-brief: RULE AMENDMENT \u2014 ... the brief declares 'real-rejection rate : 2/640 = 0.3125%',\nwhich no longer re-executes at ANY date because the RULE changed on 2026-10-02: The integrity\ngate narrowed to ACCESS-ONLY ... The register's successor value 'real-rejection rate : 1/640\n= 0.1562%' WAS re-executed just now ... do NOT reuse this figure.\nEXIT=0\n```\n\nThe brief is **not edited**. The guard is demonstrated failing on all five conditions:\n\n```\n$ python3 -m pytest -q bench/tests/test_rule_amendment_register_2026-10-02.py\n13 passed in 8.13s\n```\n\n\u2014 empty register leaves the validator exactly as strict; another brief's entry does not transfer; an unknown `superseded` is refused; `superseded == current` (the wildcard) is refused; a redirected producer is refused; a `current` that does not re-execute is refused; a malformed entry contributes nothing. One test proves a matching fixture register *does* accept, so the six refusals are refused for their stated reason and not because the harness cannot accept anything.\n\n`test_declared_figure_as_of_2026-09-29.py` amended, not deleted: the superseded value is still named, and the property now asserted is the reconciliation. Both files green, 20 passed.\n\n---\n\n# WHAT WOULD REFUTE ME\n\n- **F1.** If `panel_confinement.run_root` were model-writable. I checked: it is read only through `trusted_record_names`, the rule that already guards `target_file`. If the canonical tree's `scan_run` already did this and the staged copy is stale \u2014 I could not check (no `.git` in the staged tree), and that is my largest residual.\n- **F2.** If `UNTOOLABLE` were ever a tool adjudication. Grepped both producers; it is written for empty input and sits in `EQUIPMENT_FAILURE_VERDICTS`. If the 4 control runs are not genuinely zero-plant, the inflation argument dies \u2014 I identified them by name (`control`/`zero`), inherited from the brief's own producer, and did not verify their configs.\n- **F3.** If the two-sided gate's COUNT side were satisfiable with non-zero `novel_critical_history`. I read the body; I could not fully instantiate `RunnerConfig` to call it, so I rest on `gate_history == [False,False,False]`, the runner's own record.\n- **Q1/Q2.** 43 prose criticals from essentially one run family. A second prose run with a lower toolled rate would weaken Q2 sharply; the Wilson lower bound 91.80% is what I have.\n\n**What I looked for and did not find:** a path by which the pin creates a false negative (none \u2014 the key-path patterns are not allowlist-gated); a reasoning-only CONFIRMED outside quarantine (1 of 537, and it is quarantined); any regression from my six edits (120 targeted tests green, 8 pre-existing failures unchanged, ruff clean on every file I authored).\n\n# STRONGEST DISAGREEMENT WITH THE BRIEF\n\n1. **\"CAUSE 2, zero-plant controls, NOT REPRODUCED\" is wrong, and the brief's explanation for the non-reproduction is also wrong.** It reproduces at 19/46 under both definitions. The brief then asked me to adjudicate whether the stratum is \"a real inflation or an artefact of that conflation\" \u2014 the dichotomy is false. It is a real inflation *and* the non-reproduction was an artefact, of a different conflation than the one named.\n\n2. **Part 2's \"Measured: run 1b 0 advisory / 7 audit\" was not measured in the delivered tree.** The producer aborted. The brief declared five figures for validator re-execution and left this one in prose; it is the one that was false.\n\n3. **The three causes are not competing.** Cause 1 is a minority effect on ERROR among criticals that *have* a falsifier. Cause 2 is about criticals that correctly have none. Cause 3 is about the feedback rendering. They are disjoint strata of one figure, and \"adjudicate, do not average\" is right for a reason the brief does not give: averaging them would double-count the same 624 rows under three incompatible denominators.\n\n4. **The population dispute resolves against the date cut.** `0 of 558` post-2026-06-06, Wilson [0%, 0.6837%], versus `14 of 624` post-exp42, Wilson [1.3411%, 3.7305%] \u2014 the intervals do not overlap, so this is not a rounding disagreement. The date cut drops 89 rows that the feature cut keeps, including undated `panel_*` and `prose_*` directories where the newest runs live, and keeps 51 the feature cut excludes. **For a question about a feature, the feature cut is the population; a date cut answers a question about a calendar and loses the newest runs to do it.** 14/624 is the right figure.\n\n5. **The brief says the access-only ruling \"left 3 tests red\". It left 8.** Six are `test_guard_false_positive_figures_2026-10-02.py` refusing to census a non-git staged copy \u2014 correct fail-loud behaviour, not a defect, but it was not traced either.\n\n# DELIVERED FILES\n\n| Path | Change |\n|---|---|\n| `bench/key_access_forensics.py` | `trusted_record_names`, `discover_run_root`, run-root pin in `scan_run` + `_committed_counterpart`, `Report.run_root_recorded` |\n| `scripts/panel_brief_validate.py` | `RULE_AMENDMENTS`, `_load_rule_amendments`, `_rule_amendment_reproduction`, loud acceptance |\n| `bench/directives/universal/rule_amendments.jsonl` | **new** \u2014 the register, with the round-11 entry |\n| `bench/tests/test_rule_amendment_register_2026-10-02.py` | **new** \u2014 13 tests, all 5 guards demonstrated failing |\n| `bench/tests/falsifier_run1b_gate_claim_2026-10-02.py` | **new** \u2014 F3's falsifier |\n| `bench/tests/falsifier_discrimination_guard_2026-10-02.py` | **new** \u2014 Q3's guard demonstration |\n| `scripts/intelligence_first_contract_2026-10-02.py` | **new** \u2014 Q1/Q2/Cause-2 producer |\n| `scripts/repro_supply_causes_2026-10-02.py` | Cause 2 under both definitions; `UNTOOLABLE` excluded from \"verdict\" |\n| `scripts/integrity_exclusion_figures_2026-10-02.py` | F3 corrected; refuting series printed |\n| `bench/reference_runner_v3.py` | `:2239` citation corrected, quoted not dropped |\n| `bench/tests/test_declared_figure_as_of_2026-09-29.py` | amended to assert the reconciliation; superseded value retained |\n\nAll five producers exit 0 (one did not before). Wolfram Language (local Wolfram Engine) served as second falsifier on F2's 2\u00d72 only; my first Wolfram call used `FisherRatioTest`, the wrong instrument, and verified nothing \u2014 it is not quoted.\n\n**Terminating.** A further pass over the integrity predicate, the A4 blocker, and the 48-combination/400-registry invariant produced no above-threshold finding: the predicate's carve-out ordering is correct, `integrity_unobserved` blocks as documented, and the one-predicate-four-readers invariant holds under execution.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo",
+      "built": false
+    }
+  ]
+}

@@ -1,3 +1,73 @@
+## ★ RESUME POINTER — 2026-10-03T04:48 BST. SUPERSEDES EVERY POINTER BELOW.
+
+**WHY THE SIMULATED RUNS EXIST, AND THIS IS THE SENTENCE THAT KEEPS GETTING LOST.**
+They are not run to see whether they converge. They are run to execute the
+PROGRAMME OF STUDY — `experimental_notes/CDSFL_Programme_of_Study_Full_Scope_2026-09-21.md`
+— which asks whether the fixes of the last 15+ days actually WORK. Clean
+convergence is the success CRITERION, not the purpose. The founder had to point
+out on 2026-10-03 that the study appeared never to have been conducted, and he
+was substantially right: arms 1-4 ran twice each, **arm 5 (the paired baseline,
+the only arm that answers the effectiveness question) has NEVER run**, and
+measurement 10 has no committed script.
+
+**THE FOUNDER'S 6 RULINGS, 2026-10-03 04:45 BST, verbatim in intent:**
+1. ADOPT the amendments register for figures invalidated by a rule change
+   (both seats designed it independently; both rejected rule-set pinning).
+   3 tests are red until it lands.
+2. RUN the repointing experiment, record the results, implement useful findings.
+3. `discrimination_control_blocks`: his 2026-08-30 option-A ruling (GATE the
+   silent un-confirm) is already implemented and correct. ARMING it is refused
+   on the project's own measurement: 126 of 246 fixes do not silence their own
+   falsifier, 51.2%, Wilson [45.0%, 57.4%], p = 0.75 against a coin.
+4. RUN arm 5, the paired baseline, as part of the restarted run.
+5. MERGE the 3 star-round fixes, CONDITIONAL on a/f/sy testing them first.
+6. The refusal-visibility proposal was MINE, not his — withdrawn as his.
+   He asked what running it would achieve; it stands or falls on that answer.
+PLUS: fix the prospective D-B/D-C defects; fix the C0041 record-only finding if
+it still stands; EXTEND the existing general guard (not a new template) where it
+makes the harness more accurate, per the additive standard; build the
+post-compaction desktop alert.
+
+**FOUNDER RULING 2026-10-03 05:50 BST, AND IT GOVERNS THE WHOLE RUN.** Verbatim:
+*"in all cases this can be reduced to either pausing to fix broken falsifiers, or
+broken signals causing false broken falsifier alarms? That is pretty much what we
+have always done... We should only need to record genuinely unfixable conditions,
+and frankly (and I would argue rather obviously) it's rather hard to imagine when
+that could ever be the case."*
+
+So RECORD-AND-MOVE-ON IS NOT THE BEHAVIOUR HE WANTS. Under `cy`, a falsifier that
+fails to confirm its own fix is a PAUSE-AND-FIX event: diagnose whether the
+falsifier is broken or the signal is a false alarm, repair it, then resume. Only
+a genuinely unfixable condition is merely recorded, and he doubts that case
+exists. This supersedes "wired as record, not veto" as the OPERATING posture for
+the monitored runs, while the shadow/veto PROMOTION still needs the measurement.
+
+**THE MEASURED CONTEXT.** `attempt_close` closes on a verification that runs
+ruff, mypy, bandit and a generic test command: it asks whether the fix BROKE
+anything and never whether it CURED the defect its finding claims. 126 of 246
+conclusive outcomes = 51.2195%, Wilson [45.0027%, 57.3989%], are fixes that apply
+cleanly while their own falsifier still demonstrates the defect. The
+discrimination control rests on the SAME measurement and has fired 8 times ever,
+all 8 CLOSED, 7 carrying NON_DISCRIMINATING. Closure is the live mechanism;
+the discrimination control is gated and rare.
+
+**THE HAIKU RESULT, AND THE DESIGN HE PROPOSED THAT THE DATA SUPPORTS.**
+Haiku 13/15 against the syntax arm's 10/15; sensitivity 10/10 against 5/10;
+specificity 3/5 against 5/5. The syntax YES set is a strict SUBSET of Haiku's,
+which is the only reason OR-composition equals Haiku alone. They ARE
+complementary in opposite directions (Haiku right where syntax wrong on 5, the
+reverse on 2). HIS PROPOSED SHAPE WORKS ON THIS DATA: Haiku decides, syntax only
+raises confidence — where both agree, 5 of 5 correct; BOTH of Haiku's errors
+fall in the Haiku-alone band. Not significant at n=15 (Fisher p = 0.4697), which
+is why the extended Haiku arm is a primary focus of the upcoming run.
+
+**STATE.** Panel rounds 1, 2 and star all complete and harvested
+(`bench/logs/falsifier_supply_and_integrity{,_r2,_star}_*`). All 3 star disputes
+CONFIRMED and fixed in seat sandboxes, NOT yet merged. Full suite last measured
+7 failed / 9,762 passed; 4 of those 7 fixed since, 3 remain and are item 1.
+
+---
+
 ## ★ RESUME POINTER — 2026-10-02T04:43:48+01:00. SUPERSEDES EVERY POINTER BELOW.
 
 **WHERE TO RESUME: the 3 simulated convergence runs on the prose target.** The founder's instruction of 2026-10-02: *"start a fresh simulated run on the same target as before with the same rules. Three consecutive experimental runs that cleanly converge while you monitor and actively repair everything under full cy protocol (not some lesser version of this) qualifies as a success."* He chose the prose target over the code target and ruled that A19 is closed first, then the runs start without waiting for him.

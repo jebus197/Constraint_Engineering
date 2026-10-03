@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 2 October 2026 18:04 BST (2026-10-02T18:04:56+01:00)
+Generated: 3 October 2026 06:15 BST (2026-10-03T06:15:26+01:00)
 
 ---
 
@@ -18,31 +18,34 @@ Generated: 2 October 2026 18:04 BST (2026-10-02T18:04:56+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `abef2f2` fix: $HOME was in scope, so the listing that finds the key store was not flagged
-- **Committed:** 2026-10-02 17:58:40 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 15
+- **Last commit (the PARENT of the commit containing this file):** `2a3d6e3` sv: 2 October 2026 — the $HOME hole, the green board, and the watch that starts itself
+- **Committed:** 2026-10-02 18:04:57 +0100
+- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M bench/fingerprints/CC2-SIM.json`
-- `M bench/fingerprints/CC2.json`
-- `M bench/fingerprints/ChatGPT-SIM.json`
-- `M bench/fingerprints/ChatGPT.json`
-- `M bench/fingerprints/Codex-SIM.json`
-- `M bench/fingerprints/Codex.json`
-- `M bench/fingerprints/DeepSeek-SIM.json`
-- `M bench/fingerprints/DeepSeek.json`
-- `M bench/fingerprints/Fable-SIM.json`
-- `M bench/fingerprints/Gemini-SIM.json`
-- `M bench/fingerprints/Gemini.json`
-- `M resources/RECOVERY.md`
-- `?? bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z/`
+- `M  bench/confer_maths_panel_2026-09-05.py`
+- `M  bench/directives/universal/section_p_shortfalls.json`
+- `M  bench/falsifier_verify.py`
+- `M  bench/key_access_forensics.py`
+- `M  bench/reference_runner_v3.py`
+- `M  bench/score_exam.py`
+- `A  bench/tests/test_a_brief_names_disagreement_as_a_field_2026-10-02.py`
+- `M  bench/tests/test_brief_check_breakdown_2026-09-17.py`
+- `M  bench/tests/test_brief_currency_2026-09-10.py`
+- `M  bench/tests/test_brief_refusal_split_2026-09-17.py`
+- `M  bench/tests/test_falsifier_cannot_read_the_key.py`
+- `M  bench/tests/test_fresh_clone_suite_2026-09-10.py`
+- `M  bench/tests/test_guard_false_positive_figures_2026-10-02.py`
+- `A  bench/tests/test_key_access_advisory_2026-10-02.py`
+- `A  bench/tests/test_key_access_decoupled_from_convergence_2026-10-02.py`
+- … and 100 more, not shown (list capped at 15 of 115 — run `git status --porcelain` for the full set)
 
 ---
 
 ## Tests
 
-**9692 tests collected** at 2 October 2026 18:04 BST, HEAD `abef2f2` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**9793 tests collected** at 3 October 2026 06:15 BST, HEAD `2a3d6e3` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -72,6 +75,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `2a3d6e3 sv: 2 October 2026 — the $HOME hole, the green board, and the watch that starts itself`
 - `abef2f2 fix: $HOME was in scope, so the listing that finds the key store was not flagged`
 - `854efaa fix: the full suite found 4 same-day regressions the 501-test subset cannot reach`
 - `199cadb test: the stale-label trap now has a guard that bites`
@@ -81,4 +85,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `dc3921e test: the note's producer was an addition nothing executed`
 - `51efc9b docs: the integrity guard's false-positive test cannot see a false positive`
 - `a0bd8e5 fix: the halt alarm called 2 never-assessed criticals "locked as irreducible"`
-- `33cc895 fix: the alarm channel was 83% ordinary English, and re-arming lost the newest lines`

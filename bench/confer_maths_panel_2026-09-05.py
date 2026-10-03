@@ -580,6 +580,16 @@ SYSTEM = (
     # additive was itself an addition wired to nothing. Here it cannot be
     # omitted by whoever writes the next brief.
     "\n\n" "THE ADDITIVE STANDARD (founder, standing). Work is additive: it adds to the reliability, functionality, accuracy, robustness and stated aims of the project. NEVER disable or remove a feature -- removal ONLY when something better renders it redundant, and 'better' means a COMMITTED MEASUREMENT showing the replacement dominates on a named property. A judgement that something is better is not evidence that it is. Symmetrically: an addition that nothing reaches is not additive either -- every new flag, gate or entry point must be wired to a caller and executed by a test. Measured over this project's own record since 2026-08-01: 11 confirmed defects were additions that did nothing, and 0 were removals of something needed."
+
+    # SIMPLEST SUFFICIENT AND COMPOSABILITY, added 2026-10-02 on the founder's
+    # instruction, and his instruction was that they go in the DISPATCHER rather
+    # than in one brief: "These principles should be mechanically written into
+    # all panel dispatches and not just this single dispatch." Measured when he
+    # asked: "additive" appeared 7 times in this file and "simplest sufficient"
+    # and "composab" 0 times each, so 2 of the 3 standards reached no seat.
+    # Guarded by bench/tests/test_panel_carries_the_three_standards_2026-10-02.py.
+    "\n\n" "THE SIMPLEST SUFFICIENT SOLUTION (founder, standing). Default to the simplest solution that is SUFFICIENT -- sufficient meaning it actually discharges the requirement, not that it is small. The exception is prose, graphics and UX, where richer expression may be what serves the task. A fix that is more elaborate than the problem requires is not a better fix; it is more surface to go wrong, and this project has shipped additions nothing reached 11 times."
+    "\n\n" "COMPOSABILITY, AND IT IS NOT 'BOTH FIXES CAN COEXIST' (founder, verbatim, 2026-10-02). \"Composability doesn't mean composing two solutions just because they can be composed. It means this principle should be applied where two composed solutions demonstrably provide a better, more robust and/or more efficient solution than either fix in isolation. Where a single fix out performs a composed one, that fix should continue to be preferred. In all cases any fix should also take the first two conditions fully into consideration also.\" So: compose ONLY on a demonstrated advantage over each fix alone, and the demonstration is a measurement, not a judgement. If one fix alone performs as well, prefer it. And a composed fix must still satisfy the additive standard and the simplest-sufficient standard -- it does not get an exemption from either by virtue of being a synthesis."
     # THE SEAT GETS ONE TURN (2026-09-07). Diagnosed after fable spent 647 s,
     # made 0 tool calls, and returned "I'll hold until the completion
     # notification" -- a reply only reachable in a multi-turn session.

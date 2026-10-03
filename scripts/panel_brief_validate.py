@@ -529,6 +529,59 @@ def validate(text: str) -> list[str]:
         problems.append(
             "states the output shape: NOT FOUND — the output section names no fields. "
             "A heading with nothing under it is not an output shape.")
+
+    # DISAGREEMENT IS A FIELD, NOT A HOPE, and it must be named in the OUTPUT
+    # section specifically.
+    #
+    # MEASURED 2026-10-02 on the round this check exists for. The blind brief of
+    # `integrity_advisory_2026-10-02` made it a mandatory output field and BOTH
+    # seats carried a disagreement. The STAR brief of
+    # `integrity_advisory_r2_2026-10-02` replaced the output shape with
+    # RESOLUTION / WHO WAS RIGHT / EVIDENCE / FIX / WHAT WOULD REFUTE THIS /
+    # CONFIDENCE and dropped the field; it asked for disagreement only as prose
+    # in the termination section. One of the 2 seats then omitted it, and
+    # `TestP5DisagreementIsPreserved` caught the round.
+    #
+    # WHY THE SCOPE MATTERS, and the first version of this check failed on it. A
+    # whole-document regex is defeated by a star brief, which embeds the previous
+    # round's replies VERBATIM. Measured on the defective brief itself: the word
+    # appears on 7 of its lines, so a document-wide check PASSES it, while its
+    # OUTPUT SECTION names no disagreement at all. Section scoping is the only
+    # form that separates the two.
+    #
+    # WHAT JUSTIFIES THE CHECK: THE TEMPLATE ALREADY REQUIRED THIS. The output
+    # section of `bench/directives/universal/panel_brief_template.md` asks for
+    # "the strongest disagreement with the brief's own framing" by name, and the
+    # template passes this check unchanged. The defect was a validator that
+    # permitted divergence from the standard it exists to enforce: 12 of 95
+    # archived briefs diverged and nothing caught them.
+    #
+    # WHAT DOES NOT JUSTIFY IT, AND THE FIRST VERSION OF THIS COMMENT CLAIMED IT
+    # DID. Whether naming the field changes what seats return is NOT ESTABLISHED.
+    # Measured over 50 rounds carrying both a brief and replies: with the field,
+    # 32 of 38 rounds had every seat state a disagreement; without it, 9 of 12.
+    # Fisher exact two-sided p = 6.675478e-01 (within-period p = 6.187658e-01),
+    # scipy and mpmath agreeing to 1e-9. The 1 round that motivated this check is
+    # consistent with chance, and the check is kept for template conformance
+    # alone.
+    #
+    # THE 2 FIGURES THAT STOOD HERE UNTIL 2026-10-02 WERE BOTH FALSE. They said
+    # a whole-document scope refuses 78 of 95 (82.1053%) and the section scope
+    # "1 of the 3 briefs carrying an output section" -- asserted after looking at
+    # 3 briefs by hand. Measured over all 95: section scope refuses 12
+    # (12.6316%, Wilson [7.3757%, 20.7921%]), whole-document 15 (15.7895%,
+    # Wilson [9.8085%, 24.4296%]). Producer:
+    # scripts/brief_disagreement_field_effect_2026-10-02.py.
+    #
+    # A STAR ROUND IS WHERE THIS MATTERS MOST. Its purpose is to reconcile, so it
+    # is the round most able to produce agreement by deference -- which is not
+    # evidence, and which this project does not accept as confirmation.
+    elif not re.search(r"\bdisagree", body, re.I):
+        problems.append(
+            "requires the seat to state its DISAGREEMENT: NOT FOUND — name "
+            "disagreement as a FIELD in the output section, not as prose "
+            "elsewhere. A round that reconciles is the one most likely to "
+            "converge by deference, and deference is not evidence.")
     return problems
 
 

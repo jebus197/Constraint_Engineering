@@ -1,0 +1,543 @@
+# STAR ROUND — decide the best overall fixes, with every seat's blind work in hand
+
+This is the STAR (blackboard) round. Both blind rounds are over and every reply
+is reproduced below in full. Your job is no longer to review the artefact alone:
+it is to decide, across all of it, WHICH FIXES SHOULD STAND.
+
+## The artefacts under review
+
+`bench/reference_runner_v3.py`, `bench/key_access_forensics.py`,
+`bench/falsifier_verify.py`, `bench/tests/test_falsifier_cannot_read_the_key.py`,
+`scripts/advisory_channel_selection_2026-10-02.py`,
+`scripts/falsifier_supply_decomposition_2026-10-02.py`,
+`scripts/claim_classifier_labelled_set_2026-10-01.py`.
+
+## Use the harness
+
+RUN things. Re-execute any figure you dispute, including every figure quoted in
+the replies below. Use gamma and the two-sided gate for anything touching
+convergence, S_k for anything touching admission, and Wilson intervals with a
+Fisher or McNemar exact test for every proportion. A proportion without an
+interval is not a finding here.
+
+## HOW TO DECIDE, AND THESE ARE FORMAL STANDARDS RATHER THAN SLOGANS
+
+Your SYSTEM prompt carries all 3 in full. Applied to this round specifically:
+
+1. ADDITIVE. A fix may not remove a capability unless a COMMITTED MEASUREMENT
+   shows the replacement dominates on a named property. Equally, a fix nothing
+   reaches is not additive: every change you endorse must be wired to a caller
+   and executed by a test.
+2. SIMPLEST SUFFICIENT. Where 2 fixes both discharge the requirement, the
+   simpler one wins. Sufficient means it actually discharges the requirement,
+   not that it is small.
+3. COMPOSABILITY, which is NOT "these two can coexist". Compose only where the
+   composition DEMONSTRABLY beats each fix in isolation, and show the
+   measurement. Where a single fix performs as well, PREFER THE SINGLE FIX. A
+   composed fix gets no exemption from standards 1 and 2.
+
+For every disputed fix below, state which standard decides it and why.
+
+## WHAT THE BLIND ROUNDS PRODUCED, AND THE 3 THINGS MOST IN DISPUTE
+
+CC1 (the assistant) merged 2 complementary panel fixes on 2026-10-02 and then
+measured its own work. Round 2 refuted part of that. The live disputes:
+
+- D-A. `scripts/advisory_channel_selection_2026-10-02.py` is reported as NOT
+  RELOCATION-INVARIANT: its committed figure "run 1b 0 advisory / 7 audit" is
+  said to be a fact about one machine, and to fail at 107 advisory / 7 audit in
+  another checkout. Settle it by execution in YOUR sandbox and say what the
+  correct, machine-independent measurement is.
+- D-B. `unverified_critical_count` is reported to carry NO severity gate since
+  2026-09-06, while `integrity_refused_criticals` gates at severity >= 0.7, so
+  sub-critical refusals are said to drain from the A4 blocker and appear in no
+  report. Confirm or refute, and if confirmed decide the SIMPLEST SUFFICIENT fix.
+- D-C. The `integrity_unobserved` carve-out is reported not to work as its own
+  docstring claims, because `_apply_routing` stamps `irreducible_escalation`
+  and the counter skips that BEFORE consulting the predicate — so a machine-wide
+  observer failure could still let a run converge with zero verified criticals.
+  This is the safety property of the whole merge. Settle it.
+
+## THE FOUNDER'S QUESTIONS, NOW TO BE ANSWERED ACROSS BOTH ROUNDS
+
+Q1. Is the intelligence-first contract honoured — of findings whose verdict came
+from model reasoning, what proportion were subsequently adjudicated by a tool?
+One round reports 535/537 = 99.63%. Verify or refute it on your own population,
+and name the population and predicate you used.
+Q2. On PROSE targets, what adjudicates reasoning, given ruff, mypy, bandit and
+pytest have no purchase there?
+Q3. Should a general falsifier template be built? The named hazard is a general
+falsifier that CANNOT FAIL, which this project has shipped twice. If you propose
+one, demonstrate its cannot-fail guard failing.
+Q4. Specify the repointing experiment precisely enough to run.
+Q5. How should the record handle a declared figure invalidated by a RULE change
+rather than by corpus drift? Editing the archived record is NOT on the table.
+
+## Produce a fix and test it
+
+A finding without a fix is half an answer. Write a runnable falsifier, EXECUTE
+it, and report the command and its output. Write each fix INTO the sandbox
+repository tree at its real path, so it is delivered as a file rather than left
+in prose.
+
+## What would refute you
+
+State what evidence would overturn your own conclusion, and what you looked for
+that would have changed your mind and did not appear.
+
+## Output
+
+Return, field by field: verdict; reasoning; the falsifier and its executed
+result; for each of D-A, D-B and D-C which standard decides it and the fix you
+endorse; answers to Q1 to Q5; the fix you delivered and where; what would refute
+you; and the strongest disagreement with this brief's own framing AND with the
+other seat's blind replies reproduced below — name where you think they are
+wrong, with evidence.
+
+## Termination
+
+Stop when a further pass produces no new above-threshold findings.
+
+---
+
+# THE BLIND REPLIES, REPRODUCED IN FULL
+
+
+
+## BLIND ROUND 1 (standards NOT yet in the dispatcher) — SEAT CC2
+
+# VERDICT
+
+**Part 2 (the fixes): the integrity predicate is SOUND. Two of the figures declared for it are NOT.** Three CONFIRMED findings, all fixed in the tree.
+
+**Part 1 (the founder's question): the intelligence-first contract IS honoured — 91.8% of model-reasoned criticals were later toolled, 1 of 537 accepted without a tool.** The founder's over-specificity intuition reproduces (OR 4.3063). But the brief's adjudication of Cause 2 is wrong: **Cause 2 reproduces exactly, 19 of 46**, and it is the largest inflation in the starvation figure — the brief dismissed the cause that matters most.
+
+| # | Finding | Verdict |
+|---|---|---|
+| F1 | The key-access advisory's verdict on an archived run is a function of the **scanner's cwd**, not the run. 107 / 0 / 114 advisory hits from one run directory under three roots. | CONFIRMED |
+| F2 | Cause 2 **does** reproduce (19/46). `repro_supply_causes`'s own `verdict()` counts `UNTOOLABLE` as a tool verdict, which is what refuted it. | CONFIRMED |
+| F3 | "Run 1b halted with BOTH halves of the two-sided gate satisfied" is false. `novel_critical_history == [6,4,5]`, `gate_history == [False,False,False]`. | CONFIRMED |
+
+---
+
+# F1 — the advisory is pinned to the caller, not to the run (CRITICAL)
+
+## Falsifier and executed result
+
+```
+$ python3 scripts/advisory_channel_selection_2026-10-02.py
+  prose_convergence_run1b_2026-10-02
+    CONFIRMED total                 : 114
+    THIS MERGE   advisory / audit   : 107 / 7   fires=True   dropped=0
+AssertionError: REGRESSION: run 1b read no key and the advisory fired
+```
+
+The committed producer for Part 2's declared figure **aborts on its own regression assertion**, so `THE MERGE DOMINATES BOTH ON THESE INPUTS` and the "a plant in the same file fires 2" figure were never computed in the delivered tree. Three roots, one run directory:
+
+```
+A staged tree (as delivered)                     conf= 114 adv= 107 aud=  7 fires=True
+B canonical literal (what the test hardcodes)    conf=   7 adv=   0 aud=  7 fires=False
+C canonical literal, NOT present (CI/other user) conf= 114 adv= 114 aud=  0 fires=True
+```
+
+Row C is worse than row A: with the canonical tree absent, `_committed_counterpart` finds nothing, every `carried_verbatim` flag is lost, and **the audit channel empties to 0** — the merge's "nothing is dropped" property fails in the same move as its silence property. So `run 1b 0 advisory / 7 audit` held at exactly one filesystem location on one machine, and row B is green only because `/Users/georgejackson/Developer_Projects/Constraint_Engineering` physically exists here.
+
+`bench/tests/test_key_access_advisory_2026-10-02.py` had already met this and patched the **test**, hardcoding `CANONICAL_REPO = /Users/georgejackson/...` with a comment explaining why. The producer did not get the same workaround. **Test and committed producer disagreed about the same figure, and the test was green.** That is the Q5 failure class occurring today, by location drift rather than rule change.
+
+## Fix delivered — `bench/key_access_forensics.py`
+
+The pin was already in the archive and nothing read it: the runner has written `panel_confinement.run_root` into every report since 2026-09-01 ("WHERE THE PANEL COULD REACH", `reference_runner_v3.py:14928`). A recorded field no reader consumes is the additive standard's own failure mode. Added:
+
+- `trusted_record_names()` — the existing anti-widening rule, factored out so both readers use one predicate.
+- `discover_run_root()` — reads `panel_confinement.run_root` from **runner-authored records only**, refuses `/`, refuses two disagreeing values, returns `None` for pre-2026-09-01 runs.
+- `scan_run` adds the recorded root **alongside** the live one (never substituted), in the `confined` test, the allowlist, and `_committed_counterpart`.
+- `Report.run_root_recorded`, so a reader can tell a pinned verdict from a cwd-pinned one.
+
+```
+=== run 1b, three roots, AFTER the pin
+  staged copy                  conf=7 adv=0 aud=7 fires=False pinned=True
+  canonical                    conf=7 adv=0 aud=7 fires=False pinned=True
+  a root that does not exist   conf=7 adv=0 aud=7 fires=False pinned=True
+=== the exam case must NOT move
+  exp48  staged     in_scope=False conf=12 adv=12 pinned=None
+  exp48  canonical  in_scope=False conf=12 adv=12 pinned=None
+```
+
+Producer now exits 0 with `THE MERGE DOMINATES BOTH ON THESE INPUTS: True`, run 1b `0 / 7`, the plant firing `2 / 7`. The 2026-07-29 exam hole stays shut (exp48 unchanged, 12 hits, `repo_in_scope=False`). I checked the silence direction: an in-repo key read is still CONFIRMED by `answer[_-]key.*\.json` and the key-field patterns, which are not allowlist-gated — so the pin cannot create a false negative.
+
+**120 tests green across the 8 affected files; the 8 pre-existing failures I measured before touching anything are unchanged** (6 are `git ls-files` refusing to census a non-git staged copy — the fail-loud design working, not a defect).
+
+---
+
+# F2 — Cause 2 reproduces; the reproducing script refuted it
+
+```
+control entries with NO falsifier body: 19
+  verdict string repro_supply_causes reads: {'UNTOOLABLE': 19}
+  which field it came from: {'falsifier_verdict': 19}
+```
+
+`repro_supply_causes`'s `verdict()` returns any non-empty string. `UNTOOLABLE` is non-empty — written by `reference_runner_v3.py:5808` when a critical arrives with no falsifier, returned by `reverify_falsifier("")`, and a member of `EQUIPMENT_FAILURE_VERDICTS` **precisely because it is not an adjudication of the claim**. So `nobody` was False for all 19 and the stratum measured 0 of 46.
+
+Excluding the decline, on the same 624 rows, in the committed producer:
+
+```
+CAUSE 2  zero-plant controls: no falsifier at all
+  as first written: a DECLINE counts as a verdict
+    control  no-body  0  other 46   OR = 0.0000  p = 6.144102e-01  -> NOT REPRODUCED
+  corrected: only a TOOL verdict counts as a verdict
+    control  no-body 19  other 27   OR = 11.2593  p = 1.364814e-10  -> REPRODUCED
+```
+
+19/46 = 41.3043%, Wilson [28.2886%, 55.6605%]. scipy, mpmath hypergeometric sum, and **Wolfram Language (local Wolfram Engine)** agree: `sampleOR -> 11.2592592592592592592`, `twoSidedP -> 1.3648143901661857055e-10` — 12 digits.
+
+**Both the brief's conclusion and its explanation are wrong.** The claim is not an artefact of the pre-fix body-only definition: 19/46 holds under *both* definitions once the decline is excluded. The claimed OR 14.9614 / p 6.39737e-12 sits beside my 15.5659 / 2.43e-12 under the tighter whitelist — same population, same order.
+
+**Substantively: the control stratum is a real inflation.** Zero-plant runs have nothing to falsify, so 19 of 46 criticals correctly declined as UNTOOLABLE is the mechanism *working*. Counting them as starvation is the single largest inflation, and the brief ranked it out.
+
+Fixed in `scripts/repro_supply_causes_2026-10-02.py`: both definitions printed, nothing removed, the non-reproduction kept on the record.
+
+---
+
+# F3 — the halt-bound change's cited evidence does not support it
+
+```
+$ python3 bench/tests/falsifier_run1b_gate_claim_2026-10-02.py
+novel_critical_history (new genuine criticals per round): [6, 4, 5]
+gate_history (the runner's own record of the gate):       [False, False, False]
+
+FALSIFIED
+AssertionError: BOTH HALVES SATISFIED is false. The COUNT side needs consecutive
+rounds with ZERO new criticals; run 1b recorded [6, 4, 5] -- never zero in any
+round -- and the runner's own gate_history is [False, False, False] ...
+```
+
+The two halves of `_check_gamma_alt_convergence` are the GAMMA side (`gamma_critical >= gamma_alt_threshold`) and the COUNT side (K consecutive rounds with zero new genuine criticals). **`gamma_all` is a third number, not the second half.** Run 1b never had a zero-critical round. So it would not have converged at round 2 whatever the queue contained, and the queue-of-3-against-2 is not a blocked convergence.
+
+The founder's ruling is independent and stands; what fails is the citation. Also noted: `_irreducible_queue_split` returns `(0, 0)` on run 1b's *saved* registry with the predicate shipped **and** neutralised — so the predicate's effect is not demonstrable from the archived end-of-run state either. I did not assert a direction there; I could not compute one.
+
+Fixed in `scripts/integrity_exclusion_figures_2026-10-02.py` (header corrected, the two refuting series now printed with the gamma figures) and the `reference_runner_v3.py:2239` comment (wrong citation quoted and corrected, not dropped).
+
+---
+
+# Q1 — the contract IS honoured
+
+`scripts/intelligence_first_contract_2026-10-02.py` (delivered). Population: 624 deduplicated criticals, severity ≥ 0.7, post-exp42. Predicate: `status_adjudicator != "tool"` for "model-reasoned"; a tool verdict is any member of `{CONFIRMED, REFUTED, ERROR, TIMEOUT, INTEGRITY_VIOLATION, REFUSED}` on `falsifier_verdict`, `routing_verdict_unreconciled`, **or `routing_history[-1]`** — reading the ladder residual, because not reading it would reproduce Cause 3 inside the measurement.
+
+```
+model-reasoned criticals                        440/624 = 70.5128%
+  ... of which a TOOL later returned a verdict  404/440 = 91.8182%  Wilson [88.8808%, 94.0317%]
+accepted terminal status                        537/624 = 86.0577%
+  ... accepted with NO tool verdict               1/537 =  0.1862%  Wilson [0.0329%, 1.0472%]
+    sim45_memory_20260830T161215Z C0006 CORROBORATED runner model_confirm_quorum (3/2 independent)
+```
+
+The single offender was confirmed by model quorum — but `CORROBORATED` is the runner's own quarantine status (`ATTESTED_STATUSES`: "a model said so, not a tool measured it… readers MUST NOT count these"). **So: zero un-quarantined reasoning-only confirmations. The founder's design intent is met, and the 86.3727% hand-rolled rate is not a defect — hand-rolling in logic is scratchpad reasoning that gets toolled 91.8% of the time.**
+
+One caveat I will not hide: `status_adjudicator` is recorded on only 184 of 624 (29.4872%), so for 70% the field cannot answer Q1 directly and the 91.8% rests on tool-verdict presence. A field absent on 70% of its population is a weak instrument.
+
+# Q2 — the loop IS reachable on prose, and this refutes the brief's framing
+
+```
+prose-run criticals 43   code-run criticals 581
+  prose: a TOOL returned a verdict     43/ 43 = 100.0000%  Wilson [91.7990%, 100.0000%]
+  prose: accepted with NO tool verdict  0/ 43 =   0.0000%  Wilson [0.0000%, 8.2010%]
+  code : a TOOL returned a verdict    537/581 =  92.4269%
+  prose vs code, NO tool verdict: OR = 0.0000  p = 6.316256e-02
+```
+
+The briefing's "ruff, mypy, bandit and pytest have no purchase on prose" is true and irrelevant to Q2. Those are the **lint suite**. The adjudicating tool is `reverify_falsifier`, which re-executes a falsifier, and a prose falsifier is Python over text — `re` and `pathlib` are as general over prose as `ast` is over code. Prose criticals are toolled at 43/43, Wilson lower bound 91.8%, **higher** than code's 92.4%. Q2's premise does not hold.
+
+# Q3 — I argue AGAINST a new template, and the measurement is the argument
+
+The general cannot-fail guard already exists: `run_discrimination_control` runs the falsifier against a **corrected** copy and stamps `NON_DISCRIMINATING` when it fires on both. Demonstrated separating both shapes the brief names:
+
+```
+$ python3 bench/tests/falsifier_discrimination_guard_2026-10-02.py
+  hardwired `return True`                    real=CONFIRMED corrected=CONFIRMED -> NON_DISCRIMINATING
+  vacuous: 0 HIGH over an empty metric set   real=CONFIRMED corrected=CONFIRMED -> NON_DISCRIMINATING
+  reads the real target                      real=CONFIRMED corrected=REFUTED   -> DISCRIMINATES
+CLEAN EXIT
+```
+
+(My first draft of this falsifier printed `FALSIFIED` unconditionally and scored the real falsifier as non-discriminating; its own guard caught me. Recorded because it is the hazard under discussion.)
+
+Then the reach, over 567 post-exp42 criticals that have a falsifier body:
+
+```
+DISCRIMINATION CONTROL RAN AT ALL : 44/567 =  7.7601%  Wilson [5.8313%, 10.2575%]
+  NO_DISCRIMINATION among those run: 14/44 = 31.8182%  Wilson [19.9993%, 46.5569%]
+  positively shown to discriminate : 21/567 = 3.7037%  Wilson [2.4350%, 5.5955%]
+  prose: ran 4/33 = 12.1212%   code: ran 40/534 = 7.4906%
+```
+
+**Adding a template while the existing general guard reaches 7.76% of the population is an addition nothing reaches — the project's own 11-of-11 failure mode.** And 31.8% of the falsifiers it *did* check cannot fail: the hazard is not hypothetical, it is roughly one in three of those measured. The control's reach is bounded by needing a corrected copy. So the additive move is: **when no corrected copy exists, synthesise one by inverting the asserted property**, raising reach toward 567 rather than 44. That extends the guard that works; it does not add a second one beside it.
+
+# Q4 — the repointing experiment, specified
+
+- **Population.** The 157 of 499 distinct falsifier bodies that name ≥1 concrete file (31.4629%, Wilson [27.5433%, 35.6658%]), restricted to the 18 ERROR + 158 CONFIRMED rows Cause 1 is computed over, so the result is commensurable with OR 4.3063.
+- **Substitution rule.** Mechanical, by AST, never by rewrite: for each path literal *p* resolving under the run's `run_root` (now readable — F1), substitute *p* → the same repository-relative path under a freshly staged copy of the target tree. Exactly one substitution class per body; bodies needing ≥2 incompatible classes are logged as NOT REPOINTABLE and counted, never dropped.
+- **Decider.** `reverify_falsifier` on the repointed body, in the staged copy. Tools decide. Prose verdict is not an input.
+- **Pre-registered rates.** H0: repointing does not change the verdict — `P(ERROR | repointed) = 18/176 = 10.2273%`, Wilson [6.5841%, 15.5257%]. H1 (over-specificity is causal): ERROR falls to the unnamed stratum's `10/388 = 2.5773%`, Wilson [1.4057%, 4.6833%]. Fisher on the resulting 2×2 at α = 0.05, scipy against an mpmath hypergeometric sum, Wolfram as second falsifier.
+- **Stopping condition.** All 176 repointable bodies processed, or the Wilson interval on the repointed ERROR rate excludes **both** 10.2273% and 2.5773%, whichever first. A body whose repointed run ERRORs for an unrelated reason (import failure, syntax) is INDETERMINATE and reported, not scored — otherwise the experiment measures my substitution instead of the coupling.
+- **Why it is the only thing that settles it.** Cause 1 is observational: a body naming a file may ERROR because authors who name files write more fragile falsifiers. Repointing holds the author fixed and moves only the path.
+
+# Q5 — the rule-amendments register, delivered and demonstrated failing
+
+`--as-of` pins the **denominator**. The access-only ruling changed the **numerator** at every date, so no as-of value reproduces 2/640.
+
+I reject pinning the rule set. Keeping superseded rules alive forks the predicate at each ruling, and the forks are load-bearing **forever** because historical re-execution reaches them — each a second place the same bug lives, and each a second place every later fix must land. That is this project's own named shape ("fixed in one place, not its twin"). It also makes "we changed our mind about what counts" invisible: the brief re-executes and no reader learns the rule moved.
+
+Delivered: `bench/directives/universal/rule_amendments.jsonl` + `_rule_amendment_reproduction` in `scripts/panel_brief_validate.py`. **A register entry is a committed measurement, not a note.** Five admissibility conditions; condition 5 is what makes it evidence:
+
+1. an entry for exactly this brief and this declared value;
+2. `superseded` is **present in the archived brief's own text** — no amending a figure the brief never declared;
+3. `superseded != current` — an amendment must amend;
+4. `producer` is the script the brief declared — no redirecting to a friendlier one;
+5. **the named producer, re-executed now with the entry's own `--as-of`, prints `current`.**
+
+```
+$ python3 scripts/panel_brief_validate.py bench/logs/panel_round11_2026-09-11/BRIEF.md
+panel-brief: RULE AMENDMENT — ... the brief declares 'real-rejection rate : 2/640 = 0.3125%',
+which no longer re-executes at ANY date because the RULE changed on 2026-10-02: The integrity
+gate narrowed to ACCESS-ONLY ... The register's successor value 'real-rejection rate : 1/640
+= 0.1562%' WAS re-executed just now ... do NOT reuse this figure.
+EXIT=0
+```
+
+The brief is **not edited**. The guard is demonstrated failing on all five conditions:
+
+```
+$ python3 -m pytest -q bench/tests/test_rule_amendment_register_2026-10-02.py
+13 passed in 8.13s
+```
+
+— empty register leaves the validator exactly as strict; another brief's entry does not transfer; an unknown `superseded` is refused; `superseded == current` (the wildcard) is refused; a redirected producer is refused; a `current` that does not re-execute is refused; a malformed entry contributes nothing. One test proves a matching fixture register *does* accept, so the six refusals are refused for their stated reason and not because the harness cannot accept anything.
+
+`test_declared_figure_as_of_2026-09-29.py` amended, not deleted: the superseded value is still named, and the property now asserted is the reconciliation. Both files green, 20 passed.
+
+---
+
+# WHAT WOULD REFUTE ME
+
+- **F1.** If `panel_confinement.run_root` were model-writable. I checked: it is read only through `trusted_record_names`, the rule that already guards `target_file`. If the canonical tree's `scan_run` already did this and the staged copy is stale — I could not check (no `.git` in the staged tree), and that is my largest residual.
+- **F2.** If `UNTOOLABLE` were ever a tool adjudication. Grepped both producers; it is written for empty input and sits in `EQUIPMENT_FAILURE_VERDICTS`. If the 4 control runs are not genuinely zero-plant, the inflation argument dies — I identified them by name (`control`/`zero`), inherited from the brief's own producer, and did not verify their configs.
+- **F3.** If the two-sided gate's COUNT side were satisfiable with non-zero `novel_critical_history`. I read the body; I could not fully instantiate `RunnerConfig` to call it, so I rest on `gate_history == [False,False,False]`, the runner's own record.
+- **Q1/Q2.** 43 prose criticals from essentially one run family. A second prose run with a lower toolled rate would weaken Q2 sharply; the Wilson lower bound 91.80% is what I have.
+
+**What I looked for and did not find:** a path by which the pin creates a false negative (none — the key-path patterns are not allowlist-gated); a reasoning-only CONFIRMED outside quarantine (1 of 537, and it is quarantined); any regression from my six edits (120 targeted tests green, 8 pre-existing failures unchanged, ruff clean on every file I authored).
+
+# STRONGEST DISAGREEMENT WITH THE BRIEF
+
+1. **"CAUSE 2, zero-plant controls, NOT REPRODUCED" is wrong, and the brief's explanation for the non-reproduction is also wrong.** It reproduces at 19/46 under both definitions. The brief then asked me to adjudicate whether the stratum is "a real inflation or an artefact of that conflation" — the dichotomy is false. It is a real inflation *and* the non-reproduction was an artefact, of a different conflation than the one named.
+
+2. **Part 2's "Measured: run 1b 0 advisory / 7 audit" was not measured in the delivered tree.** The producer aborted. The brief declared five figures for validator re-execution and left this one in prose; it is the one that was false.
+
+3. **The three causes are not competing.** Cause 1 is a minority effect on ERROR among criticals that *have* a falsifier. Cause 2 is about criticals that correctly have none. Cause 3 is about the feedback rendering. They are disjoint strata of one figure, and "adjudicate, do not average" is right for a reason the brief does not give: averaging them would double-count the same 624 rows under three incompatible denominators.
+
+4. **The population dispute resolves against the date cut.** `0 of 558` post-2026-06-06, Wilson [0%, 0.6837%], versus `14 of 624` post-exp42, Wilson [1.3411%, 3.7305%] — the intervals do not overlap, so this is not a rounding disagreement. The date cut drops 89 rows that the feature cut keeps, including undated `panel_*` and `prose_*` directories where the newest runs live, and keeps 51 the feature cut excludes. **For a question about a feature, the feature cut is the population; a date cut answers a question about a calendar and loses the newest runs to do it.** 14/624 is the right figure.
+
+5. **The brief says the access-only ruling "left 3 tests red". It left 8.** Six are `test_guard_false_positive_figures_2026-10-02.py` refusing to census a non-git staged copy — correct fail-loud behaviour, not a defect, but it was not traced either.
+
+# DELIVERED FILES
+
+| Path | Change |
+|---|---|
+| `bench/key_access_forensics.py` | `trusted_record_names`, `discover_run_root`, run-root pin in `scan_run` + `_committed_counterpart`, `Report.run_root_recorded` |
+| `scripts/panel_brief_validate.py` | `RULE_AMENDMENTS`, `_load_rule_amendments`, `_rule_amendment_reproduction`, loud acceptance |
+| `bench/directives/universal/rule_amendments.jsonl` | **new** — the register, with the round-11 entry |
+| `bench/tests/test_rule_amendment_register_2026-10-02.py` | **new** — 13 tests, all 5 guards demonstrated failing |
+| `bench/tests/falsifier_run1b_gate_claim_2026-10-02.py` | **new** — F3's falsifier |
+| `bench/tests/falsifier_discrimination_guard_2026-10-02.py` | **new** — Q3's guard demonstration |
+| `scripts/intelligence_first_contract_2026-10-02.py` | **new** — Q1/Q2/Cause-2 producer |
+| `scripts/repro_supply_causes_2026-10-02.py` | Cause 2 under both definitions; `UNTOOLABLE` excluded from "verdict" |
+| `scripts/integrity_exclusion_figures_2026-10-02.py` | F3 corrected; refuting series printed |
+| `bench/reference_runner_v3.py` | `:2239` citation corrected, quoted not dropped |
+| `bench/tests/test_declared_figure_as_of_2026-09-29.py` | amended to assert the reconciliation; superseded value retained |
+
+All five producers exit 0 (one did not before). Wolfram Language (local Wolfram Engine) served as second falsifier on F2's 2×2 only; my first Wolfram call used `FisherRatioTest`, the wrong instrument, and verified nothing — it is not quoted.
+
+**Terminating.** A further pass over the integrity predicate, the A4 blocker, and the 48-combination/400-registry invariant produced no above-threshold finding: the predicate's carve-out ordering is correct, `integrity_unobserved` blocks as documented, and the one-predicate-four-readers invariant holds under execution.
+
+## BLIND ROUND 1 (standards NOT yet in the dispatcher) — SEAT FABLE
+
+All green. Further passes produced no new above-threshold findings — terminating per §6/§10. Final report, field by field.
+
+---
+
+# VERDICT
+
+**The 2026-10-02 merge is architecturally sound and I confirm its design choices — but it shipped with a CRITICAL relocation defect I demonstrated, fixed, and regression-held.** The founder's starvation fear is **not realised in the absolute sense**: post-gate, zero criticals have neither falsifier nor verdict. The real brittleness is **path-binding, not logic** — and I executed the repointing experiment that proves the archived logic survives decoupling. The intelligence-first contract is **honoured at 536/537** post-gate.
+
+# FINDINGS AND FIXES (delivered as files, all executed)
+
+**F1 — CRITICAL, CONFIRMED, FIXED: the forensic verdict over an archive was a function of where the scan ran.**
+`scan_run` judged archived path literals against the *scanning machine's* repo root, ignoring the runner-authored `panel_confinement.run_root`. From this relocated checkout, run 1b's 107 legitimate repo reads became CONFIRMED advisory hits; the brief's own "Measured: 0 advisory / 7 audit" figure was false here, and the committed measurement `advisory_channel_selection_2026-10-02.py` died on its own assert (`AssertionError: REGRESSION: run 1b read no key and the advisory fired` — executed, shown above). A committed measurement that re-executes on exactly one machine is a claim about evidence, not evidence — the same defect class as the `r*_*.json` glob reading Exp 48 as CLEAN.
+- **Falsifier**: `bench/tests/test_forensics_survives_relocation_2026-10-02.py` — ran pre-fix: `1 failed` (FALSIFIED), guards green.
+- **Fix**: `bench/key_access_forensics.py` — new `discover_run_roots()` reads `panel_confinement.run_root` from runner-authored records through the **same** single-trusted-report boundary (`_trusted_record_paths`, factored, not duplicated); historical roots join the confinement test and, for unconfined runs only, the allowlist.
+- **Verified**: falsifier now 3/3 green; `advisory_channel_selection` EXIT=0 printing 0 advisory / 7 audit; 90 targeted tests pass; exp48 exam semantics untouched (C0012 answer-key hits and C0017 both still caught; pre-`run_root` archives bit-identical behaviour). Forged-second-report widening attempt refused by test.
+
+**F2 — SAME CLASS IN THE PRE-EXECUTION GATE, reported not patched (HIL).** Re-verifying run 1b's archived falsifiers from this checkout: all 9 path-coupled bodies return INTEGRITY_VIOLATION ("path outside the declared target") though run 1b's own record shows they executed and confirmed canonically. I did **not** widen the gate's refusal set — that is a security boundary and the founder's call; the repoint substitution (below) is the safe remedy for archival re-verification.
+
+**F3 — Part 1b DELIVERED: rule-change amendments register.** The brief said 3 red tests; **I measured 2** (`test_as_of_the_briefs_date_reproduces_the_declared_figure`, `test_the_archived_brief_is_not_refused`). Delivered: `bench/amendments_register.json` (append-only; one entry: 2/640 → 1/640, access-only ruling) wired into `scripts/panel_brief_validate.py`'s historical path. The register is held to evidence: it reconciles **only if its superseding value re-executes in the same `--as-of` output**, and the acceptance prints a loud `AMENDED FIGURE` line. Demonstrated failing when it should: `bench/tests/test_amendments_register_2026-10-02.py` — unregistered stale figure refused; **tampered register entry refused**; fresh-brief dodge still shut; brief verified unedited on disk. The two red oracles amended loudly (amendment documented in-test, superseded value preserved machine-checked). 12/12 green. Against rule-set pinning: keeping superseded rules executable forever is unbounded maintenance and a standing bypass surface (the wide gate stays importable); the register is one committed record per ruling, checked in both directions.
+
+**F4 — the standing measurement IS partly tautological, adjudicated.** `falsify_prose_falsifier_supply_2026-09-30.py` part 3's "routing cannot substitute for supply" compares two **author-written stubs**: `untaught` returns `""`, `taught` returns the very falsifier part 1 already proved works. `resolved` equals supplied-by-stub by construction — it measures the stubs, not routing. Parts 1–2 are genuine (5/5 bidirectional discrimination executed; reachability grep real, though `"stem_fixtures"` substring is a weak reachability predicate). Keep the script; discount part 3 as evidence.
+
+# THE FOUNDER'S QUESTION, ADJUDICATED ON THE THREE CAUSES
+
+**CAUSE 1 (over-specificity): REPRODUCED and strengthened.** OR 4.3063, p = 2.430001e-04 — scipy, independent mpmath sum, **and Wolfram Language (local engine): OR 4.3063291, p = 0.00024300011** (attribution per Wolfram's terms). But the coupling is in **PATH, not logic**.
+
+**CAUSE 2 (zero-plant controls): ARTEFACT of the `classify()` conflation — demonstrated.** Under the OLD body-only predicate I reproduce exactly **19/46** in controls; **all 19 carry verdict UNTOOLABLE**. They were assessed and declined — the mechanism *working* on findings with nothing to falsify. Under the corrected predicate: 0/46, Fisher p = 0.614. The claimed OR 14.96 measured the conflation, not starvation.
+
+**CAUSE 3: BLOCKED by D-2, confirmed by execution** — `target_file` on 52/624 post-feature criticals, all `.py`. D-2 is now blocking a measurement; recording `target_file` in every registry entry is the unblock.
+
+**The population dispute: the adversarial pass is right in substance.** My 14/624 reproduces — but all 14 sit in `exp42_composer_20260602T230020Z`, dated **2026-06-02, four days before the falsifier gate landed**. The exp-number cut smuggles a pre-feature window into a post-feature claim. The correct population is *runs after 2026-06-06*, and on it absolute starvation ("nothing written and nothing recorded") is **0**. The 57.4% all-time figure in the supply decomposition is dominated by pre-gate archaeology.
+
+**Q1 — the contract is honoured post-gate: 536/537.** Population: deduplicated criticals (sev ≥ 0.7) across all archived registries, post-exp42 cut, status ∈ {CLOSED, CONFIRMED, CORROBORATED} (n = 537). Predicate: a recorded tool verdict (`falsifier_verdict`, unreconciled ladder field, or last routing-history verdict). Violations, named: `sim45_memory…/C0006` — CORROBORATED on UNTOOLABLE, a reasoning-only confirmation, **a defect not a style** (1/537, Wilson [0.03%, 1.05%]); and `exp42_composer_20260606…/C0046` — CLOSED on ERROR, a close without demonstration. Pre-gate, 432/1417 confirmations were reasoning-only — exactly the class the gate eliminated.
+
+**Q2 — the loop IS reachable on prose, by execution.** Static instruments have no purchase, but the *decider* does: `reverify_falsifier` executes document-reading falsifiers, and the corpus discriminates 5/5 bidirectionally on prose. Stronger: my repoint pilot shows real seats on run 1b (a prose target) *already wrote* prose falsifiers the tool CONFIRMS once path-decoupled. The founder's "scratchpad reasoning until tool-confirmed" contract is exactly what the archive shows — hand-rolled logic (86.4%) adjudicated by the tool (536/537). The gap is supply wiring, which the 09-30 script's standing red assert correctly demands.
+
+**Q3 — the template, with its guard demonstrated failing.** The general template is the **bidirectional control pair** the project already owns: falsifier(artefact) must CONFIRM *and* falsifier(control-with-defect-absent) must REFUTE. The cannot-fail guard is the flip requirement, and I executed it: genuine template ADMITTED (CONFIRMED/REFUTED); the `check_sk_threshold` shape (always-asserts) REJECTED (CONFIRMED/CONFIRMED); the A19 `e4_bandit` shape (never-fires) REJECTED (REFUTED/REFUTED). I deliberately did **not** commit an unwired guard module — an addition nothing reaches is the project's own top defect class (11/11 since 08-01); the guard belongs inside `reverify_falsifier`'s protocol when the corpus is wired live, which is one decision, the founder's.
+
+**Q4 — the repointing experiment, specified and piloted.** *Pilot executed*: run 1b's 9 distinct bodies hardcoding the recorded `run_root`; substitution = prefix replacement with the live root, nothing else edited; decider = `reverify_falsifier`. Result: **8/9 recovered to a tool decision (8 CONFIRMED, 1 ERROR)**, Wilson [57.1%, 99.5%]. *Full spec*: population — the 157/499 file-naming bodies from the committed decomposition, stratified ERROR vs CONFIRMED; substitution rule — rewrite each body's path literals to the staged copy of the same artefact (prefix map from each run's `panel_confinement.run_root`, now machine-readable via `discover_run_roots`); decider — `reverify_falsifier`, never prose; pre-registered rates — H1: ≥50% of named-file ERRORs recover to a decided verdict under repointing (coupling is in path); H0: recovery ≤10% (coupling is in logic, repointing is futile); report both strata with Wilson intervals and Fisher on recovered×named; stopping — fixed population, one pass, no sampling (157 bodies is affordable); any body the gate refuses goes to HIL, never silently dropped.
+
+# WHAT WOULD REFUTE ME
+
+- F1: an archived run whose `panel_confinement.run_root` is *not* the repo root (e.g. a staged dir), which would poison my allowlist derivation — I searched the runner and found exactly one write site, `str(REPO_ROOT)` unconditionally; a second write site elsewhere would overturn it. A model shown writing the single trusted report *and* displacing the runner's artefact would break the trust boundary I reused.
+- The contract figure: a registry field other than the three I read in which tool verdicts live (my `verdict()` predicate would undercount); finding CONFIRMED-status entries whose `falsifier_verdict` was model-written rather than runner-written.
+- CAUSE 2: controls where seats *wanted* to write falsifiers and the record shows attempts erased — I looked (bodies with routing history in control runs) and found none; their presence would restore the inflation claim.
+- The repoint pilot: bodies whose CONFIRMED-after-repoint is vacuous (asserting trivialities). I spot-read them — they grep the real spec document for claimed text — but a full admissibility pass over all 8 could overturn individual verdicts.
+
+# STRONGEST DISAGREEMENT WITH THE BRIEF
+
+1. The brief presents "run 1b 0 advisory / 7 audit" as **Measured**. It measured on one machine. Until today's fix the same committed script *refuted* that figure anywhere else — the brief's Part 2 evidence standard did not meet its own Part 1 standard ("a number that exists only as prose…" applies equally to a number that re-executes only on the founder's laptop).
+2. "Left 3 tests red" — I measure **2**. Name the third or correct the count.
+3. The adversarial block labelled "not reproduced by any committed script" is framed as the weakest claim on the table; executed, it is the **strongest** — the 0/558 cut is the right population and my own 14/624 confirms the residue is a pre-feature artefact. The brief's cut-at-exp42 framing, not the adversarial pass, is what's wrong there.
+4. The decomposition's headline "57.4% NOTHING WRITTEN AND NOTHING RECORDED" is dominated by pre-gate runs and invites exactly the starvation misreading the founder voiced. The honest headline is: *post-gate absolute starvation is zero; the live defects are path coupling (fixed mechanically by repointing), one CORROBORATED-without-tool entry, one CLOSED-on-ERROR, and D-2 blocking the prose stratum.*
+
+**Convergence declared**: hard assumptions tested (trust boundary, exam confinement, both refusal directions of the register, gate semantics); every residual finding (F2, the REFUTED-stale-ladder edge in `_integrity_violation_excluded` — non-material because REFUTED is terminal at every call site; the weak reachability predicate in the 09-30 script) sits below the real-world-consequence threshold or is routed to HIL above. A further pass yielded no new material findings.
+
+## BLIND ROUND 2 (all 3 standards in the dispatcher) — SEAT CC2
+
+**18 passed** on their new tests; **76 passed** across my surface plus the amended oracle, so their `falsifier_verify.py` edit does not disturb my fixes. `_path_tokens`/`_TOKEN_RE` is present in the source.
+
+My own probe refuses all three read routes with nothing leaked — but it does **not** independently confirm their layer-4 mechanism, because my probes name the key directory literally and so trip layer 3 first (`src_violations=3` on every arm). Their probe used an env-rooted *relative* path, which is what made layer 3 blind. That distinction is theirs, not mine.
+
+---
+
+# AMENDMENT — verdict revised
+
+**My earlier "PART 2 is SOUND in design" does not survive.** I had written that the merge was *unrefuted-by-me, not verified*. It is now refuted. Four defects, each with a differential-execution falsifier, each fixed and green:
+
+| # | defect | consequence |
+|---|---|---|
+| **D1** | `unverified_critical_count` has had **no severity gate since 2026-09-06**; `integrity_refused_criticals` gates `severity >= 0.7` | sub-critical refusals drained from the A4 blocker **and named in no report** — 970 silent drains over 225,280 entries, 41/4000 randomised |
+| **D2** | the `integrity_unobserved` carve-out returns `False`, which routes entries into `_apply_routing`'s `else` → `irreducible_escalation`, which the counter skips **before** consulting the predicate | a machine-wide observer failure **drains every critical out of A4 and the advisory names none** — `halt_queue 2` against a bound of 2, so the run **can CONVERGE with zero verified criticals**, the exact outcome the carve-out's docstring claims to prevent |
+| **D3** | `clear_stale_resolution_stamps` retracts three stamps and left `integrity_refused` standing | a critical whose falsifier was **replaced and verified CONFIRMED** is still excused, and the advisory overstates |
+| **D4** | the spawn hook resolved each whole argument blob; under `shell=True` the blob *is* the command line, so `cat /x/key.json` normalised to a path under an allowed root and `/bin/sh` inherited no hook | **a falsifier read a protected file** past the access-only gate, the runtime observer and the output scan. The identical path through `open()` was refused |
+
+**D2 is the most serious thing in this review**, and it falsifies the brief's own headline claim directly: *"An `integrity_unobserved` carve-out keeps blocking, so a machine-wide observer failure cannot drain every critical out of A4."* It does drain them — not by failing the predicate, but by routing around the consumer that reads it. The invariant was asserted over the predicate; the defect was in a consumer's **scope**, which is precisely what 48 handpicked combinations (all pinning `severity=0.9`) and a randomised arm that compares the report against *the report's own scope* cannot see.
+
+**Why the shipped invariant missed all four:** no consumer reimplements the predicate — all four call sites genuinely call `_integrity_violation_excluded`, and the halt bound and the irreducible collector gate severity themselves, so the predicate governs them identically over 225,280 entries. The brief's "one predicate decides all three" is **true and insufficient**. One predicate with three different *scopes* is three predicates.
+
+**Fixes** (additive; no gate removed, no test weakened): `integrity_refused_subcriticals()` keyed on the counter's own condition; an `integrity_unobserved and not exhausted` guard placed *before* the irreducible skip, with a releasable valve (`test_the_block_is_releasable`) so a transient fault cannot block forever; two flags added to the retraction list; `_path_tokens()` testing every path the command line carries, with 0 false positives on 6 honest spawn shapes. 18 new tests, 746 on the changed-surface regression set.
+
+**Task 4 is sound and I accept it.** The `{C0012, C0015} → {C0012}` narrowing was measured over all 872 archive sources, not the two named members: exactly **1** source stopped being refused, and C0015's only key-ish content is printed prose. No real detection was dropped.
+
+### What this does to my own conclusions
+
+- **F6 hardens.** I reported that the intelligence-first contract has no backstop re-adjudicating vote-confirmed findings. D1–D3 are three independent routes by which a critical leaves the convergence machinery **without any adjudication at all** — so the missing backstop is not a latent gap, it is load-bearing today.
+- **A pattern across F1, D1, D2 and D4 that is worth naming more than any one of them.** Every one is a *scope* defect in a correct mechanism: the allowlist carried the wrong root, the counter carried the wrong severity floor, the carve-out's return value carried the wrong routing consequence, the path check carried the wrong granularity. None was a wrong algorithm. The project's grid-and-randomise idiom tests predicates thoroughly and **scopes not at all** — all four were found by differential execution or by relocation, never by a combination sweep.
+- **The brief's "48 field combinations and 400 randomised registries" should be read as a measurement of the predicate, not of the invariant it claims.** The honest figure is: 4 consumers, 1 predicate, **2 distinct scopes**, 0 tests comparing a consumer against its counter.
+
+### What would refute this amendment
+
+The four defects are another seat's measurements. I verified that the code exists, that 18 tests pass, that 76 tests across my surface are undisturbed, and that all three read routes are refused end-to-end with nothing leaked — but **I did not independently reproduce the layer-4 isolation, the 970 silent drains, or the zero-verified-criticals convergence**. A re-run of `.scratch/adv/falsify_carveout_drains_a4.py` against a reverted `reference_runner_v3.py` is the single check that would settle D2, and I did not run it. Treat D1–D3 as **PLAUSIBLE pending independent re-execution**, D4 as **CONFIRMED end-to-end but not confirmed at the layer it claims**.
+
+### Termination
+
+Still **not converged**, and now for a stronger reason than before. A further pass produced four above-threshold findings in the artefact the brief invited me to break — so the brief's own stopping condition is not met, and F6's structural defect remains without a delivered fix.
+
+## BLIND ROUND 2 (all 3 standards in the dispatcher) — SEAT FABLE
+
+All pending checks are done; the 7 producer-invisible runs carry zero criticals, so no figure moves. Final report.
+
+---
+
+# VERDICT
+
+**The 2026-10-02 merge is SOUND in design and broken in one place the brief itself declared as measured.** The merged integrity predicate, the advisory/audit split, the access-only gate, the amended oracle, and the `classify()` ordering fix all survive execution and targeted attack (201 tests green across every touched surface). One material defect: **the forensics scanner's scope verdict is machine-dependent, so the brief's "run 1b 0 advisory / 7 audit" was a measurement pinned to one machine** — the committed measurement crashed in this checkout with 107 false advisory hits. Fixed, demonstrated, delivered. On the founder's question: his over-specificity intuition is **real but minority** (reproduced, OR 4.3063); the dominant truth is that starvation is a **legacy artefact of population mis-cutting** — on the correctly cut post-gate population, **0 of 610** criticals lack both falsifier and verdict — and the intelligence-first contract is honoured at **535/537 = 99.63%**, Wilson [98.65%, 99.90%].
+
+# MATERIAL FINDINGS (most severe first)
+
+**F1 — CONFIRMED, FIXED. The scope allowlist is not relocation-invariant; the committed advisory measurement does not re-execute off the founder's machine.**
+Falsifier: ran `scripts/advisory_channel_selection_2026-10-02.py` → `AssertionError: REGRESSION: run 1b read no key and the advisory fired`, 107 advisory / 7 audit against the declared 0 / 7. Cause, verified by inspection of the hits: all 107 are `out-of-scope path opened` on falsifier bodies in `checkpoint.json` opening `/Users/georgejackson/...` — the *original* machine's repo root, compared against the *current* repo root. The 2026-10-02 `resolve_target_dirs` fix repaired relative paths but left absolute recorded literals machine-pinned. A verification instrument whose verdict depends on which machine re-runs it is the Exp-48-scanner shape again: a confident wrong answer, this time in the false-positive direction.
+Fix delivered: `_relocated_counterpart_exists` + `suffix_roots` remap in `bench/key_access_forensics.py` — a literal whose longest existing path-suffix resolves under the current repo root is in scope **only when the repo is already in scope** (code review); OFF for confined exams; protected key paths still lose first; no-counterpart literals stay CONFIRMED (fails toward reporting); content-based signals (answer-key names, key fields, planted sets) never consult scope.
+Executed: new test `bench/tests/test_scanner_scope_is_relocation_invariant_2026-10-02.py` — **red before the fix (2 failed / 3 guard-cases passed), green after**; `advisory_channel_selection` now prints `0 advisory / 7 audit`, the plant still fires (2 advisory), `MERGE DOMINATES BOTH: True`, exit 0; ancestors-refusal and advisory tests still green (27 passed).
+
+**F2 — CONFIRMED, FIXED (Q5). A rule change invalidates an archived declared figure in a way `--as-of` cannot absorb, and 2 tests were red.**
+`archived_falsifier_rejections --as-of 2026-09-11` now prints **1/640 = 0.1562%** against the archived **2/640 = 0.3125%**; `test_as_of_the_briefs_date_reproduces_the_declared_figure` and `test_the_archived_brief_is_not_refused` were red (I found 2 red, not the brief's 3; no third was red in this checkout — if it existed it was repaired before dispatch).
+Ruling delivered, as files: **a committed amendments register, not rule-set pinning.** Pinning the rule set keeps every superseded gate implementation alive forever — unbounded surface, and this project's record (11 additions nothing reached) argues against machinery that only history exercises. Instead: `scripts/figure_amendments_register.json` records (producer, declared, amended, rule-change id, prose); `scripts/panel_brief_validate.py` consults it **only after** the strict check and plain `--as-of` both fail, and accepts **only** the producer printing the registered amended value exactly, as-of the brief's own date, **loudly, naming the rule change**. A third value refuses; a wrong registered value refuses; a missing register fails closed; the mtime dodge stays shut. The archived brief is untouched and still carries `2/640`.
+Executed: `bench/tests/test_figure_amendments_register_2026-10-02.py` — 6/6, including the guard **failing when it should** (wrong amended value → refused; unregistered third value → refused). The genuinely-wrong test was amended to pin the figure *through* the register (with a dated justification in the test body — reported here, not silently repaired): `test_declared_figure_as_of_2026-09-29.py` now 7/7.
+
+**F3 — CONFIRMED, FIXED (D-2). `target_file` absent from the checkpoint blocked Cause 3 outright.**
+Reproduced: Cause 3 stratification computable on 52 of 624 (all `.py`, zero prose) — the REPORT records `target_file`, the CHECKPOINT (`runner_state.json`, which the instruments walk) never did. Fix: the checkpoint dict in `bench/reference_runner_v3.py` now stamps `target_file` and `run_root` (the latter is F1's provenance done properly — an artefact that names its own root needs no suffix guessing). Executed: `bench/tests/test_checkpoint_carries_target_file_2026-10-02.py` — AST-level assertion that the keys are in the *checkpoint* dumps call, plus the supply instrument executed against a synthetic corpus and resolving the new field. 2/2 green. D-2 closes prospectively; the 572 archived criticals stay unstratifiable — no backfill can honestly manufacture that record.
+
+**F4 — CONFIRMED (partial), no code change. The standing measurement `falsify_prose_falsifier_supply_2026-09-30.py` is tautological in exactly one of its three conjuncts.**
+Derivation, not vote: `bench/routing.py:161–165` — falsifier code enters `resolve_via_routing` *only* through `resolve_fn`; `code == "" ⇒ last_verdict = "ERROR"` on every rung. So "no supply ⇒ 0 resolved" is a **theorem of the code**, and the `taught` arm feeds back the fixture falsifier part 1 already proved CONFIRMED, so "corpus supply ⇒ 5/5" is forced given part 1. Part 3 cannot fail while parts 1 and routing import succeed. **But the allegation overreaches as stated**: parts 1 (bidirectional discrimination, 5/5 executed) and 2 (live-path reachability, 0 importers, flips the day wiring lands) are genuinely falsifiable, and the script's verdict is their conjunction. Ruling: keep the script; read part 3 as derivation, not measurement. Removing it would fail the additive standard with no committed measurement showing a replacement dominates.
+
+Below threshold, noted under §8 epistemic marking: 7 archive runs are visible only via `checkpoint.json`, which the supply producers do not glob — executed check: those runs carry **0** criticals ≥ 0.7, so no published figure moves; worth a one-line glob widening someday, not a finding.
+
+# THE ADJUDICATION OF THE THREE CAUSES
+
+**Cause 1 (over-specificity): STANDS, as a minority effect.** Reproduced: 18/28 named among ERROR vs 158/536 among CONFIRMED, OR = 4.3063, scipy p = 2.430001e-04, mpmath agreeing to 1e-9, and **Wolfram Language (local Wolfram Engine): OR = 4.3063291, p = 2.4300011e-04** — three independent instruments agree. But it governs the ERROR bucket (32/1309 = 2.44% of criticals), not the headline.
+
+**Cause 2 (zero-plant controls): DEAD AS STATED, and its mechanism survives relocated.** Executed: control no-body-no-verdict is **0/46** (claimed 19/46), Fisher p = 0.614. The 19 exist — and **all 19 carry verdict UNTOOLABLE**: the pre-fix `classify()` read the body before the verdict and reported assessed-and-declined as never-written, exactly the conflation the same-day fix corrected. The control stratum is **not** a starvation inflation. The surviving signal moved buckets: UNTOOLABLE is **19/46 = 41.30%** Wilson [28.29%, 55.66%] on controls vs **20/578 = 3.46%** [2.25%, 5.28%] live — Fisher OR = 19.63, p = 1.49e-13. On zero-plant targets the instrument *declines*, overwhelmingly. The absence of a falsifier there is the mechanism working, recorded honestly as a declination.
+
+**Cause 3 (prose vs code): WAS unmeasurable; now measurable going forward.** See F3.
+
+**The population dispute (0/558 vs 14/624): BOTH single-axis cuts are wrong; the intersection is right.** Executed: all 14 bare criticals in the exp-number cut come from **one run, `exp42_composer_20260602T230020Z` — four days before the gate landed on 2026-06-06**; the bare date cut conversely sweeps in undated pre-feature `exp36_evidence_latest` (37 bare). Feature presence requires both axes: expno ≥ 42 (or non-exp) ∩ dated ≥ 2026-06-06 → **0 bare of 610**. The adversarial pass's conclusion is correct; its denominator and the brief's are both artefacts. Since the gate landed, no critical has ended a run with neither a falsifier nor a verdict.
+
+# THE QUESTIONS
+
+**Q1 — the contract is honoured, with one dated breach.** Population: 624 post-feature criticals (dedup on run×cid, body-preferring); predicate: status ∈ {CONFIRMED, CLOSED, CORROBORATED} without effective tool verdict CONFIRMED (falsifier_verdict ∥ routing residual ∥ last routing-history verdict). Result: **535/537 = 99.63%**, Wilson [98.65%, 99.90%] tool-adjudicated. The 2: `exp42_composer_20260606T202037Z/C0046` — CLOSED over verdict ERROR, no status mechanism, on the gate's first day — a genuine reasoning-only closure, 1/537; and `sim45_memory/C0006` — `model_confirm_quorum (3/2)` over UNTOOLABLE, but labelled **CORROBORATED**, which `ATTESTED_STATUSES` exists to mark as attested-not-demonstrated, in a simulated run the archive instruments already exclude: by design. The founder's scratchpad framing is the correct description of what the archive shows: 86.4% hand-rolled reasoning, almost invariably terminated by a tool.
+
+**Q2 — what adjudicates prose: the decider executing document-parsing falsifiers, and the loop is reachable — it was reached.** Run 1b, a prose target: **21/21 criticals carry falsifier_verdict CONFIRMED** (35/40 all entries). The stem corpus: 5/5 bidirectional under `reverify_falsifier` itself. "Ruff/mypy/bandit have no purchase on prose" is true and beside the point — the general instrument on prose is regex + sympy/mpmath re-derivation *inside* the falsifier, with the verdict still the executed comparison. What is missing is not reachability but **supply**: 0 live-path modules import the one proven prose pattern, so reaching the loop is per-seat skill, not machinery. The wiring change cc2's script names remains the fix, and it is a founder decision, not mine to land in a review.
+
+**Q3 — the template exists, delivered, and its cannot-fail guard was demonstrated failing.** `bench/falsifier_template.py`: `run_general_falsifier(target, defect_predicate, control_transform)` — target is a *parameter* (repointable, the property the 31.46% file-naming stratum lacks), the predicate delegates to a general instrument, and the **control transform is mandatory**: when `predicate(pristine) == predicate(control)` the template **raises `FalsifierCannotFail`** instead of returning any verdict — vacuity surfaces as ERROR in the ladder, where ERROR already has a remedy, never as a silent verdict. Executed: `bench/tests/test_general_falsifier_template_2026-10-02.py`, 7/7, including the `check_sk_threshold` shape (`lambda s: True`) and the `e4_bandit` shape (measures nothing, answers alike) both **refused by the guard**, plus a sympy-delegating pendulum claim CONFIRMED pristine / REFUTED corrected / repointed without edits.
+
+**Q4 — the repointing experiment, pre-registered.** *Population:* the 158 named-and-CONFIRMED post-feature bodies (Cause-1's named/CONFIRMED cell), precondition: the named file exists in-tree. *Substitution rule:* stage a byte-identical copy of each named file at a fresh path; rewrite in the body only the `FILE_RE`-matched spans resolving to that file; assert the body diff touches nothing else. *Decider:* `falsifier_verify.reverify_falsifier`, two arms — (A) replay unedited (controls for archive rot), (B) repointed. *Pre-registered rates:* H_general — arm-B CONFIRMED rate inside arm-A's Wilson 95% interval; H_specificity — arm-B ERROR excess consistent with OR ≈ 4.3 over the unnamed baseline. *Decision:* Fisher exact on arm × {CONFIRMED, ¬}, two-sided, α = 0.01, OR with CI. *Stopping:* fixed-N, the whole population (the decider is local and cheap); degraded stop — if >20% fail the precondition, publish that rate and no comparison, because the archive is then the finding.
+
+**Q5 — answered under F2:** amendments register, delivered, demonstrated failing when it should; `--as-of` keeps the corpus, the register carries the rule, the record is edited never.
+
+# FIXES DELIVERED (all in the tree, all executed)
+
+1. `bench/key_access_forensics.py` — relocation remap (F1).
+2. `bench/tests/test_scanner_scope_is_relocation_invariant_2026-10-02.py` — 5 tests, red→green shown.
+3. `scripts/figure_amendments_register.json` — the Q5 register.
+4. `scripts/panel_brief_validate.py` — register-consulting historical path, loud, fail-closed.
+5. `bench/tests/test_figure_amendments_register_2026-10-02.py` — 6 tests incl. refusal cases.
+6. `bench/tests/test_declared_figure_as_of_2026-09-29.py` — the rule-broken assertion repinned through the register (reported, dated, not silent).
+7. `bench/reference_runner_v3.py` — checkpoint stamps `target_file` + `run_root` (D-2).
+8. `bench/tests/test_checkpoint_carries_target_file_2026-10-02.py` — writer+reader executed.
+9. `bench/falsifier_template.py` + `bench/tests/test_general_falsifier_template_2026-10-02.py` — Q3.
+
+Regression: 201 tests passed across every touched surface; the three mandated producers re-executed and match the brief's five declared figures exactly (13.6273 / 86.3727 / 31.4629 / 67.4419 / 4.3063).
+
+# WHAT WOULD REFUTE ME
+
+- **F1:** a pre-fix scan of run 1b on the canonical machine also showing 107 advisory hits — then they were real hits, not relocation artefacts. The module's own committed measurement (114→7 against the canonical root) and the hit contents (literals under the recorded original root) say otherwise. Also: a demonstrated exam-run bypass through the suffix remap would refute my fix's safety claim — I attacked it with a confined-exam case and an answer-key literal, and both stayed CONFIRMED.
+- **0/610:** one bare critical ≥ 0.7 in a post-2026-06-06, ≥exp42 registry outside my glob. I looked — the only producer-invisible registries (7 checkpoint-only runs) carry zero criticals.
+- **Q1:** a status field or artefact recording model-attested closure that my predicate misses; I searched `verdicts`/`status_adjudicator`/`status_mechanism` and found the attested channel correctly segregated as CORROBORATED.
+- **Cause 2:** any control-run critical with no body *and no verdict anywhere* — there are none; all 19 carry UNTOOLABLE.
+
+# STRONGEST DISAGREEMENT WITH THE BRIEF
+
+1. **The brief presented "run 1b 0 advisory / 7 audit" as a measurement, and its own committed producer refutes it everywhere except one machine.** The brief's validator re-executed five figures before dispatch but not this one — the exact gap between a figure that is *declared* and one that is *committed* which the project's own figure-validation machinery exists to close. The advisory figures should have been declared as `<!-- figure -->` comments and validated like the rest.
+2. **"Adjudicate: is the control stratum a real inflation" presumes a live question.** It was closed by the same-day `classify()` fix the brief itself describes; the brief should have re-run the claim before listing Cause 2 as open.
+3. **"Decide which population is the right one" offers a false binary.** Neither cut is right; the intersection is, and it vindicates the adversarial pass's conclusion with a corrected denominator (0/610).
+4. **The brief calls the 2026-09-30 script "tautological" without qualification.** One conjunct of three is; the other two are the falsifiable content, and one of them (reachability) is the actionable finding. The right disposition is reinterpretation, not the removal the word invites.
+
+Wolfram attribution: the OR/p cross-check above was computed with Wolfram Language (local Wolfram Engine via `wolframscript`).
+
+**Termination:** a further pass over the merged predicate (48-state + 400-registry invariants re-run), the oracle amendment, the gate, and the producers surfaced no new above-threshold findings. Converged: the hard assumptions tested are enumerated above; every residual observation (checkpoint-only runs, the sim45 attested entry, the third red test I could not find) is below the real-world-consequence threshold and marked as such.

@@ -122,12 +122,21 @@ class TestTheNotesStructuralClaims:
     def test_the_guard_refuses_the_field_on_MERE_MENTION(self):
         """The false positive itself. Naming a schema key is not reading it."""
         from bench.falsifier_verify import scan_falsifier_source
-        hits = scan_falsifier_source(C0035_SHAPE)
-        assert hits, "the refusal the note is about no longer reproduces"
-        assert any(t == "seeded_fault" for _rule, t in hits), hits
+        # INVERTED 2026-10-02 WHEN THE RULING LANDED. Until that day this
+        # asserted the refusal REPRODUCES, because the note's whole subject was
+        # a false positive that still existed. The founder ruled the gate
+        # access-only, the rule was narrowed, and the false positive is gone --
+        # so the property worth pinning is its ABSENCE, with the historical
+        # claim kept here rather than deleted.
+        assert scan_falsifier_source(C0035_SHAPE) == [], (
+            "a falsifier that only NAMES the planted-fault field is refused "
+            "again; the access-only ruling has regressed")
+        # The fixture must still be a mention and not an access, or it has
+        # stopped standing for the case it was built for.
         assert not re.search(r"""\[\s*['"]seeded_faults?['"]\s*\]"""
                              r"""|\.get\(\s*['"]seeded_faults?['"]""", C0035_SHAPE), (
-            "this fixture actually reads the field, so it is not a false positive")
+            "this fixture now READS the field, so it no longer stands for the "
+            "mention case")
 
     def test_a_genuine_read_of_the_field_is_also_refused(self):
         """ANTI-REGRESSION, and the half that must never be weakened: whatever
@@ -139,13 +148,21 @@ class TestTheNotesStructuralClaims:
     def test_the_access_not_mention_discrimination_already_exists_in_the_file(self):
         """The note claims the file already draws this distinction for
         `_KEY_FIELDS`. If it does not, the recommendation loses its precedent."""
-        src = GUARD.read_text(encoding="utf-8")
-        assert "a key-internal field subscripted" in src, src[:0]
-        assert "a key-internal field fetched via .get()" in src
-        from bench.falsifier_verify import _KEY_FIELDS
-        assert "seeded_fault" not in _KEY_FIELDS, (
-            "seeded_faults is now in _KEY_FIELDS, so the note's account of "
-            "which rule fires is stale")
+        from bench.falsifier_verify import _KEY_FIELDS, scan_falsifier_source
+        # UPDATED 2026-10-02. The note argued the file ALREADY drew the
+        # access-not-mention distinction for the answer-key list, and used that
+        # as the precedent for extending it to the planted-fault field. The
+        # extension has now been made, so `seeded_faults` IS in `_KEY_FIELDS`
+        # and the precedent has become the rule. Asserting its ABSENCE would
+        # now assert the fix had not landed.
+        assert re.search(r"seeded_faults\?", _KEY_FIELDS), (
+            "the planted-fault field left the access list, so a falsifier can "
+            "read it again")
+        # EXECUTED, not read: the distinction itself, in both directions.
+        assert scan_falsifier_source(
+            'x = {}\nprint("seeded_faults")\n') == [], "mention is refused"
+        assert scan_falsifier_source(
+            'k = load()\nprint(k["seeded_faults"])\n'), "ACCESS is allowed"
 
     def test_the_guard_has_no_simulated_versus_live_branch(self):
         """The note tells the founder this would fire identically in a paid
@@ -258,19 +275,32 @@ class TestTheStaleLabelIsNotRead:
 
 class TestTheWitness:
 
-    def test_a_refused_body_is_invisible_to_the_sweep(self):
-        """WITNESS TEST. Asserts the DEFECT exists.
+    def test_a_routed_falsifier_body_is_invisible_to_the_sweep(self):
+        """WITNESS TEST. Asserts the DEFECT the founder named still exists.
 
-        GOING RED HERE IS THE GOOD OUTCOME: it means the writeback was repaired
-        so the false-positive sweep can see refusals, which is exactly what the
-        note recommends. On a red result, update
+        HIS RECOMMENDATION, 2026-10-02: make the false-positive sweep able to
+        see refusals BEFORE touching any rule. The rule was changed that day and
+        this was not done, so the sweep's quoted false-positive rate is still
+        computed over a population that structurally excludes the bodies in
+        question.
+
+        REWRITTEN THE SAME DAY, BECAUSE THE ORIGINAL LOOKED IN THE WRONG PLACE
+        and so reported 0. `last_falsifier_code` is not a field on the entry; it
+        is written inside each `routing_history` record
+        (`bench/reference_runner_v3.py`, the `routing_history.append`). Reading
+        it off the entry finds nothing and reads as "the defect is gone".
+
+        MEASURED at the correct path: 221 routing-history records carry a
+        falsifier body, 23 of them belong to entries with no `falsifier_code` at
+        all -- 10.4072%, Wilson [7.0355%, 15.1319%] -- and 183 are truncated at
+        the 600-character cap. GOING RED HERE IS THE GOOD OUTCOME: it means the
+        writeback was repaired. On a red result, update
         `experimental_notes/Integrity_Guard_False_Positive_2026-10-02.md`
         rather than this file.
         """
         import json
-        from bench.falsifier_verify import scan_falsifier_source
         logs = REPO / "bench" / "logs"
-        seen, unseen_refused = set(), 0
+        carried, invisible, truncated = 0, 0, 0
         for report in sorted(logs.rglob("*_report.json")):
             try:
                 data = json.loads(report.read_text(encoding="utf-8", errors="replace"))
@@ -278,22 +308,26 @@ class TestTheWitness:
                 continue
             for _cid, e in ((data.get("registry") or {}).get("entries") or {}).items():
                 e = e or {}
-                a = (e.get("falsifier_code") or "").strip()
-                if a:
-                    seen.add(a)
-        for report in sorted(logs.rglob("*_report.json")):
-            try:
-                data = json.loads(report.read_text(encoding="utf-8", errors="replace"))
-            except (ValueError, OSError):
-                continue
-            for _cid, e in ((data.get("registry") or {}).get("entries") or {}).items():
-                for h in ((e or {}).get("routing_history") or []):
-                    b = (h.get("last_falsifier_code") or "").strip()
-                    if b and b not in seen and scan_falsifier_source(b):
-                        unseen_refused += 1
-        assert unseen_refused > 0, (
-            "no refused falsifier body is invisible to the sweep any more. If "
-            "the writeback was repaired, this is the intended outcome: update "
-            "the note, which currently tells the founder the sweep cannot see "
-            "refusals."
-        )
+                attached = (e.get("falsifier_code") or "").strip()
+                for h in (e.get("routing_history") or []):
+                    body = (h.get("last_falsifier_code") or "").strip()
+                    if not body:
+                        continue
+                    carried += 1
+                    if not attached:
+                        invisible += 1
+                    if len(body) >= 600:
+                        truncated += 1
+        assert carried > 0, (
+            "no routing_history record carries a falsifier body at all, so this "
+            "witness is measuring nothing -- check the accessor before reading "
+            "the result as good news")
+        assert invisible > 0, (
+            f"no routed falsifier body is invisible to the sweep any more "
+            f"({carried} carried, {truncated} truncated). If the writeback was "
+            f"repaired, this is the intended outcome: update the note, which "
+            f"currently tells the founder the sweep cannot see refusals.")
+        assert truncated > 0, (
+            "no body is truncated any more; the 600-character cap the note "
+            "describes has gone, so the note is stale in that respect too")
+

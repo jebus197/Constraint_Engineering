@@ -1,0 +1,185 @@
+# Falsifier supply, the intelligence-first contract, and today's integrity merge
+
+You are reviewing two things at once: a set of fixes landed on 2026-10-02, and a
+standing question from the project's founder that an adversarial investigation
+has just reframed. Both halves are below. Treat them as one review: the fixes
+bear on the question.
+
+## The artefacts under review
+
+- `bench/reference_runner_v3.py` — the merged integrity predicate
+  `_integrity_violation_excluded`, `FindingRegistry.integrity_refused_criticals`,
+  and the end-of-run advisory wiring.
+- `bench/key_access_forensics.py` — the advisory/audit channel split and the
+  `carried_verbatim` classification.
+- `bench/falsifier_verify.py` — the access-only gate.
+- `bench/tests/test_falsifier_cannot_read_the_key.py` — an amended acceptance
+  oracle and its new criterion test.
+- `scripts/falsifier_supply_decomposition_2026-10-02.py` — the supply producer.
+- `scripts/falsify_prose_falsifier_supply_2026-09-30.py` — a standing measurement
+  this review alleges is tautological.
+
+## Use the harness
+
+You must RUN things, not describe them. Execute
+`scripts/falsifier_supply_decomposition_2026-10-02.py`,
+`scripts/advisory_channel_selection_2026-10-02.py` and
+`scripts/integrity_exclusion_figures_2026-10-02.py`, and re-run any figure you
+dispute. Use the mathematical instruments where they bear: gamma and the
+two-sided gate for anything touching convergence, S_k for anything touching
+admission, and Wilson intervals with a Fisher exact test for every proportion
+you report. A proportion without an interval is not a finding here.
+
+## PART 1 — the founder's question, and what the investigation found
+
+His words, verbatim: *"I wonder if it might be the case that our falsifier's are
+sometimes too specific, rather than general? ... The first condition would make
+the harness brittle and prone to breaking due to falsifier starvation ... Our
+primary falsifiers after all are tools, and these tools are already general?"*
+
+And his design intent, verbatim, which reframes the measurement: *"a hand-rolled
+falsifier could be acceptable as a form of 'scratchpad' reasoning method for the
+models, so long as that reasoning was either invariably confirmed, or refuted
+with tools, and providing our machinery instructs the models to keep trying like
+this until their solutions are subsequently confirmed by tools."*
+
+MEASURED BY A COMMITTED PRODUCER, declared here so the validator re-executes
+them before you are dispatched:
+
+<!-- figure: delegation rate | scripts/falsifier_supply_decomposition_2026-10-02.py | 13.6273 -->
+<!-- figure: hand-rolled rate | scripts/falsifier_supply_decomposition_2026-10-02.py | 86.3727 -->
+<!-- figure: names a concrete file | scripts/falsifier_supply_decomposition_2026-10-02.py | 31.4629 -->
+<!-- figure: zero-verdict share among unconfirmed criticals | scripts/integrity_exclusion_figures_2026-10-02.py | 67.4419 -->
+<!-- figure: coupling predicts ERROR | scripts/repro_supply_causes_2026-10-02.py | 4.3063 -->
+
+So: most falsifiers do not reach for a general instrument, and most are not
+bound to a named file either. They are hand-rolled in LOGIC, not in PATH.
+
+REPRODUCTION ATTEMPTED BEFORE DISPATCH, and 2 of the 3 did not survive it.
+Producer: `scripts/repro_supply_causes_2026-10-02.py`.
+
+- CAUSE 1, over-specificity, **REPRODUCED**. A body naming a concrete file
+  ERRORS at OR 4.3063 against 4.3049 claimed, scipy p = 2.430001e-04 with an
+  mpmath hypergeometric sum agreeing to 1e-9; 18 named against 10 unnamed among
+  ERROR, 158 against 378 among CONFIRMED. The founder's intuition has a real
+  minority effect, and this is the one cause that survived an attempt to kill it.
+- CAUSE 2, zero-plant controls, **NOT REPRODUCED**. Claimed 19 of 46; measured
+  0 of 46 with Fisher p = 6.144102e-01. The likely reason is that the claim used
+  the pre-fix "no body" definition, which counted 42 assessed-and-declined
+  findings as never written -- the defect corrected in `classify()` the same day.
+  Adjudicate: is the control stratum a real inflation or an artefact of that
+  conflation?
+- CAUSE 3, prose versus code, **NOT MEASURABLE**. `target_file` is recorded on
+  only 52 of 624 post-feature criticals, all of them `.py` and none prose, so
+  the stratification cannot be computed at all. That is panel dispute D-2, still
+  open, and it is now BLOCKING a measurement rather than merely untidy.
+
+ALSO REPORTED BY THE ADVERSARIAL PASS AND **NOT REPRODUCED BY ANY COMMITTED
+SCRIPT**. Treat every number in this block as a claim about evidence rather than
+evidence, and verify or refute it as part of your review. It is listed because
+it is the strongest case against the framing above, not because it is settled.
+- Post-2026-06-06, 0 of 558 criticals have neither a falsifier nor a verdict. My
+  own population, cut at exp42 rather than by date, gives 14 of 624 = 2.2436%,
+  Wilson [1.3411%, 3.7305%]. The two cuts disagree; decide which population is
+  the right one and say why.
+
+THREE COMPETING CAUSES ARE ON THE TABLE. Adjudicate them, do not average them.
+1. Over-specificity. One reviewer measured that a body naming a concrete file
+   ERRORS at 4.3x the rate of one that does not, Fisher OR 4.3049,
+   p = 0.000251448, which attributes roughly 1 in 7 supply failures to coupling.
+2. The finding has nothing to falsify. Zero-plant control runs show 19 of 46
+   no-body against 4.492% on live targets, Fisher OR 14.9614, p = 6.39737e-12.
+   If that holds, counting controls as starvation is the single largest
+   inflation, and the absence of a falsifier is the mechanism WORKING.
+3. A feedback-channel defect. `_apply_routing` writes `falsifier_code` back only
+   on `result.resolved`, so a ladder run that did not confirm leaves a stale
+   UNTOOLABLE, and `_rejection_lines` renders that into the next round as "write
+   one", when one exists and crashed. The run reads as starvation while a
+   falsifier is produced every round.
+
+QUESTIONS YOU MUST ANSWER, each with executed evidence:
+- Q1. Is the founder's intelligence-first contract actually honoured? That is:
+  of findings whose verdict came from model reasoning, what proportion were
+  subsequently adjudicated by a tool? Name the population and the predicate you
+  used. The project forbids confirmation by model vote, so a reasoning-only
+  CONFIRMED is a defect, not a style.
+- Q2. On PROSE targets the runner's own briefing says ruff, mypy, bandit and
+  pytest "have no purchase on prose". If general tools are INAPPLICABLE on the
+  stratum that starves most, what adjudicates reasoning there, and is the
+  founder's "keep trying until tool-confirmed" loop reachable at all on prose?
+- Q3. Design the general falsifier template, or argue against one. The named
+  hazard: a general falsifier that cannot fail is worse than none. This project
+  has shipped that twice — `check_sk_threshold` hardwired to `return True`
+  passed 321 tests, and A19's `e4_bandit` returned no metrics on prose and
+  reported 0 HIGH forever at the heaviest weight. Any template you propose must
+  carry its own cannot-fail guard, and you must demonstrate that guard failing.
+- Q4. Two reviewers independently proposed a REPOINTING experiment as the only
+  thing that settles over-specificity, because nothing in the archive was ever
+  repointed. Specify it precisely enough to run: population, substitution rule,
+  the decider, the pre-registered rates, and the stopping condition.
+
+## PART 1b — A CONSEQUENCE NOBODY TRACED, AND IT NEEDS A RULING
+
+Applying the access-only ruling left 3 tests red, and they are ONE defect with a
+real question behind it. An ARCHIVED brief,
+`bench/logs/panel_round11_2026-09-11/BRIEF.md`, declares
+`real-rejection rate : 2/640 = 0.3125%`. Under the narrowed gate the rate is
+1/640, so a figure in the HISTORICAL RECORD stopped re-executing — not because
+the corpus moved, but because a RULE changed beneath it, retroactively, for
+every date.
+
+The project already anticipated the corpus case. `--as-of` pins the DENOMINATOR
+to the brief's own date, and `test_declared_figure_as_of_2026-09-29.py` records
+the ruling: "the record is NOT edited, and archived briefs are NOT exempted".
+That mechanism cannot absorb a rule change, because the numerator now differs at
+every date.
+
+This is panel dispute D-5's blast radius, and D-5's own remedy does not cover it:
+committing the CRITERION protects the oracle, but an archived DECLARED FIGURE is
+a second kind of commitment that the amendment breaks.
+
+- Q5. How should the record handle a figure invalidated by a RULE change rather
+  than by corpus drift? Candidates, and you may propose better: make `--as-of`
+  pin the RULE SET as well as the corpus, keeping the superseded rules alive so
+  historical figures stay reproducible forever; or register the rule change in a
+  committed amendments register that the validator consults; or something else.
+  Editing the archived brief is NOT on the table. Whatever you propose, deliver
+  it as a file and demonstrate it failing when it should.
+
+## PART 2 — the fixes, which you should try to break
+
+Landed today, all in the working tree:
+- One predicate decides both the halt bound and the A4 blocker, and the REPORT
+  shares it, so nothing can leave the convergence machinery silently. The
+  invariant is asserted over 48 field combinations and 400 randomised registries.
+- An `integrity_unobserved` carve-out keeps blocking, so a machine-wide observer
+  failure cannot drain every critical out of A4.
+- The advisory fires on model-authored text in a carried file and stays silent on
+  a verbatim copy of our own detector. Measured: run 1b 0 advisory / 7 audit;
+  a plant in the same file fires 2.
+- The access-only gate, and an acceptance oracle amended from {C0012, C0015} to
+  {C0012} with a criterion test that mutates C0015 into an accessor and requires
+  refusal.
+- `classify()` in the supply producer now reads the verdict BEFORE the body; the
+  previous order reported 42 assessed-and-declined findings as never written.
+
+Produce a fix for anything you break. A finding on its own is half an answer.
+Write a runnable falsifier, EXECUTE it, and report the command and its output.
+Write each fix INTO the sandbox repository tree at its real path, so it is
+delivered as a file rather than left in prose.
+
+## What would refute you
+
+State what evidence would overturn your own conclusion, and what you looked for
+that would have changed your mind and did not appear.
+
+## Output
+
+Return, field by field: verdict; reasoning; the falsifier and its executed
+result; the fix you delivered and where; what would refute you; and the
+strongest disagreement with this brief's own framing, including anything above
+you believe is wrong.
+
+## Termination
+
+Stop when a further pass produces no new above-threshold findings.

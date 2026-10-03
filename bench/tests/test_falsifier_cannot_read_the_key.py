@@ -101,7 +101,23 @@ def test_the_real_exp48_c0012_exploit_is_refused():
     reasons = {reason for reason, _ in violations}
     assert len(reasons) >= 3, f"only one line of defence fired: {reasons}"
     assert any("answer-key" in r for r in reasons)
-    assert any("plant" in r or "seed" in r for r in reasons)
+    # AMENDED 2026-10-02 UNDER THE ACCESS-ONLY RULING; THE OLD FORM WAS
+    # NAME-COUPLED. It asserted that some reason STRING contained "plant" or
+    # "seed", which held only while a bare MENTION of a plant field was itself
+    # a refusal. The ruling makes the gate access-only, so the plant field is
+    # caught when it is READ -- and this exploit does read it:
+    # `key["planted_false"]`, caught as "a key-internal field subscripted".
+    # The property worth asserting is that the plant field's ACCESS is one of
+    # the lines of defence, which is what the original was reaching for.
+    assert any("field subscripted" in r for r in reasons), (
+        f"the plant field's ACCESS is no longer a line of defence: {reasons}")
+    # NON-VACUOUS: strip the subscripting and that reason must disappear, so
+    # the assertion above is about this exploit's behaviour, not a constant.
+    without = "\n".join(l for l in exploit.splitlines()
+                         if "planted_false" not in l and 'key["claims"]' not in l)
+    assert not any("field subscripted" in r
+                   for r, _ in scan_falsifier_source(without)), (
+        "the subscript reason fires even with the subscripts removed")
     assert any("outside the declared target" in r for r in reasons)
 
     # The rejection quotes the matched text rather than asserting a violation
@@ -215,8 +231,32 @@ def test_the_guard_rejects_nothing_else_in_the_whole_tracked_archive():
         if not v:
             continue
         (artefacts if is_location_artefact(v) else rejected).add(where)
-    expected = {("exp48_chemistry_exam_live_20260729T044134Z", "C0012"),
-                ("exp48_chemistry_exam_live_20260729T044134Z", "C0015")}
+    # AMENDED 2026-10-02: C0015 LEAVES THIS SET, AND THAT IS A FALSE POSITIVE
+    # CORRECTED RATHER THAN A GUARD WEAKENED.
+    #
+    # The founder's ruling of 2026-10-02 makes the gate ACCESS-ONLY. Measured
+    # on the 2 archived members of this set, by executing the gate over each:
+    #
+    #   C0012: 4 violations, 4 distinct reasons -- an answer-key file path, a
+    #          claims->truth lookup, a key-internal field subscripted, and a
+    #          path outside the declared target. It really does read the key:
+    #          `key = json.load(open(KEY))`, then `key["planted_false"]`.
+    #   C0015: 0 violations. It opens only PATH, the target file it reviews.
+    #          Its ONLY key-ish content is the word "planted" inside a message
+    #          printed to a human: "(planted trap may have been altered)."
+    #
+    # So C0015 was refused for NAMING a plant while reading nothing, which is
+    # this test's own stated failure mode: its docstring says a rule change
+    # that makes this fail means "the rule is blocking honest work", and the
+    # honest work being blocked was C0015 all along.
+    #
+    # PANEL DISPUTE D-5 (2026-10-02) ruled this an amendment to a committed
+    # acceptance oracle and required the protection to be the CRITERION rather
+    # than the list. That criterion is asserted by
+    # `test_the_criterion_is_access_not_mention` below, which also mutates
+    # C0015 INTO an accessor and requires it to be refused -- so this is an
+    # amendment with a guard, not an exemption.
+    expected = {("exp48_chemistry_exam_live_20260729T044134Z", "C0012")}
     assert rejected == expected, (
         f"gate rejected {sorted(rejected)} for reasons that are NOT a stale "
         f"absolute path to this project's own tree; expected exactly "
@@ -714,3 +754,42 @@ def test_a_checkout_named_generically_still_recognises_itself():
         # refused, or the identity check has become "yes" for everything.
         assert not mod._names_this_checkout("/nowhere/at/all/some_other_project"), (
             "the predicate now accepts any path")
+
+
+def test_the_criterion_is_access_not_mention():
+    """D-5's protection: the CRITERION, not the list of refused ids.
+
+    PANEL RULING 2026-10-02, dispute D-5: removing C0015 from the archive
+    oracle above "IS an amendment to a committed acceptance oracle -- 2 of
+    them, neither a weakening -- and the protection is to commit the
+    CRITERION". This is that criterion, executed rather than described.
+
+    THE CRITERION. A falsifier is refused because it ACCESSES key material --
+    loads it, subscripts it, walks its schema, or names a path to it -- and
+    never because it MENTIONS a plant. Both halves are asserted, because a
+    criterion carrying only the permissive half is an exemption.
+    """
+    c12 = _archived_falsifier("C0012")
+    c15 = _archived_falsifier("C0015")
+
+    # ACCESS is refused.
+    assert scan_falsifier_source(c12), "the accessor is no longer refused"
+
+    # MENTION alone is not.
+    assert scan_falsifier_source(c15) == [], (
+        "a falsifier that names a plant but reads nothing is refused again; "
+        "the access-only ruling has regressed")
+    assert "planted" in c15, (
+        "C0015 no longer mentions a plant, so it can no longer stand for the "
+        "mention case and this test needs a new fixture")
+
+    # AND THE PERMISSION DOES NOT TRAVEL: make the SAME file an accessor and it
+    # must be refused. This is what stops the amendment becoming a loophole.
+    turned = c15 + (
+        '\nkey = json.load(open("/Users/x/exp48_answer_key.json"))\n'
+        'print(key["planted_false"])\n')
+    v = scan_falsifier_source(turned)
+    assert v, "C0015 with a real key read added was still allowed through"
+    reasons = {r for r, _ in v}
+    assert any("answer-key" in r for r in reasons), reasons
+    assert any("field subscripted" in r for r in reasons), reasons

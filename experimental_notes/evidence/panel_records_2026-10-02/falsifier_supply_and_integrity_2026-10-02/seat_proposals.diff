@@ -1,0 +1,1895 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-02 22:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/.cdsfl_deny_canonical_writes.sb	2026-10-02 22:30:35
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/directives/universal/rule_amendments.jsonl
+--- /dev/null	2026-10-02 22:53:13
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/bench/directives/universal/rule_amendments.jsonl	2026-10-02 22:42:42
+@@ -0,0 +1,2 @@
++{"_comment": "RULE AMENDMENTS REGISTER. See scripts/panel_brief_validate.py:_rule_amendment_reproduction. One object per line. A line whose keys do not satisfy EVERY admissibility condition is REFUSED, not ignored: a register entry is a committed measurement, not a note. Lines beginning with a _comment key are skipped."}
++{"figure": "archived falsifier rejections that are NOT location artefacts", "brief": "bench/logs/panel_round11_2026-09-11/BRIEF.md", "producer": "scripts/archived_falsifier_rejections_2026-09-10.py", "as_of": "2026-09-11", "superseded": "real-rejection rate : 2/640 = 0.3125%", "current": "real-rejection rate : 1/640 = 0.1562%", "amended": "2026-10-02", "rule": "The integrity gate narrowed to ACCESS-ONLY. The second of the two real rejections was refused on the vocabulary token `seeded_fault`, not on a key access; under the narrowed gate that is no longer a rejection, so the NUMERATOR changed at every date. `--as-of` pins the corpus and cannot absorb that.", "authority": "founder ruling 2026-10-02, access-only gate"}
+
+### cc2:attempt-1:bench/key_access_forensics.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/key_access_forensics.py	2026-10-02 20:06:26
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/bench/key_access_forensics.py	2026-10-02 22:38:09
+@@ -274,6 +274,11 @@
+     # False for an exam run: the panel was confined out of the repository, so
+     # repository reads are out of scope rather than the job.
+     repo_in_scope: bool = True
++    # The repository root the run EXECUTED under, read off its own runner-
++    # authored records (`panel_confinement.run_root`), or None for a run that
++    # predates the field. Recorded on the Report so a reader can tell a verdict
++    # that was pinned to the run from one pinned only to the caller's cwd.
++    run_root_recorded: str | None = None
+ 
+     @property
+     def confirmed(self) -> list[Hit]:
+@@ -516,18 +521,24 @@
+     return _is_benign_home(target)
+ 
+ 
+-def discover_target_dirs(run_dir: Path) -> list[str]:
+-    """Directories the panel was *supposed* to read, taken from runner-authored
+-    records only (`target_file` / `context_files` / `staged_copy`)."""
+-    found: set[str] = set()
+-    # `endswith("_report.json")` was a wildcard a model could satisfy by writing
+-    # one file: `codex_analysis_report.json` declaring a `target_file` of its
+-    # choosing widened the allowlist and turned a COMPROMISED verdict clean.
+-    #
+-    # The runner writes exactly ONE report per run. So a single report is trusted;
+-    # the moment a second appears, only the one whose name matches the declared
+-    # experiment is trusted, and if none matches, none is. Widening the allowlist
+-    # now requires displacing the runner's own artefact rather than adding to it.
++def trusted_record_names(run_dir: Path) -> set[str]:
++    """Names of artefacts in `run_dir` that may widen the scanner's allowlist.
++
++    ONE PREDICATE, TWO READERS (2026-10-02). `discover_target_dirs` and
++    :func:`discover_run_root` both have to answer "was this file written by the
++    runner or by a model", and the answer is load-bearing for both: a record a
++    model can author is a record a model can use to declare itself in scope.
++    Factored out rather than duplicated so the two readers cannot drift.
++
++    `endswith("_report.json")` was a wildcard a model could satisfy by writing
++    one file: `codex_analysis_report.json` declaring a `target_file` of its
++    choosing widened the allowlist and turned a COMPROMISED verdict clean.
++
++    The runner writes exactly ONE report per run. So a single report is trusted;
++    the moment a second appears, only the one whose name matches the declared
++    experiment is trusted, and if none matches, none is. Widening the allowlist
++    requires displacing the runner's own artefact rather than adding to it.
++    """
+     reports = sorted(run_dir.rglob("*_report.json"))
+     allowed_names = set(RUNNER_AUTHORED)
+     if len(reports) == 1:
+@@ -544,6 +555,80 @@
+             if exp:
+                 declared.add(f"{exp}_report.json")
+         allowed_names |= {r.name for r in reports if r.name in declared}
++    return allowed_names
++
++
++def discover_run_root(run_dir: Path) -> str | None:
++    """The repository root the run EXECUTED under, read off the run itself.
++
++    THE DEFECT THIS CLOSES (2026-10-02, this panel). `scan_run`'s scope test
++    compares recorded path literals against a repo root supplied AT SCAN TIME.
++    A run directory is a historical record, but the verdict drawn from it was a
++    function of the caller's filesystem, not of the run. MEASURED on
++    prose_convergence_run1b_2026-10-02 -- one run directory, three roots:
++
++        repo_root = <this sandbox copy>                114 CONFIRMED, 107 advisory
++        repo_root = /Users/.../Constraint_Engineering    7 CONFIRMED,   0 advisory
++        repo_root = the same string, tree absent       114 CONFIRMED, 114 advisory
++
++    So "run 1b read no key, therefore the advisory is silent" held at exactly
++    one filesystem location on exactly one machine. The third row is worse than
++    the first: with the canonical tree absent, `_committed_counterpart` finds
++    nothing, every carried-source hit loses its verbatim flag, and the AUDIT
++    channel empties to 0 -- the merge's "nothing is dropped" property fails in
++    the same move as its silence property.
++
++    `bench/tests/test_key_access_advisory_2026-10-02.py` had already met this
++    and worked around it in the TEST, by hardcoding one user's absolute home
++    path as `CANONICAL_REPO`. That makes the test green on one machine and says
++    nothing about the run; it also did not reach
++    `scripts/advisory_channel_selection_2026-10-02.py`, which passes its own
++    `ROOT` and therefore ABORTS on its own regression assertion in any relocated
++    checkout. Test and committed producer disagreed about the same figure.
++
++    The pin was already in the archive and nothing read it: the runner has
++    recorded `panel_confinement.run_root` in every report since 2026-09-01
++    (`bench/reference_runner_v3.py`, "WHERE THE PANEL COULD REACH"). A recorded
++    field that no reader consumes is the additive standard's own failure mode --
++    an addition nothing reaches. This is the reader.
++
++    TRUST IS NOT WIDENED. The value is taken only from
++    :func:`trusted_record_names`, the same rule that guards `target_file`, so a
++    model-authored artefact declaring `panel_confinement.run_root` cannot widen
++    its own allowlist. Returns None when the run predates the field, when no
++    value is admissible, or when two trusted records disagree -- and every
++    caller then behaves exactly as it did before this function existed.
++    """
++    allowed = trusted_record_names(run_dir)
++    found: set[str] = set()
++    for q in sorted(run_dir.rglob("*.json")):
++        if q.name not in allowed:
++            continue
++        try:
++            obj = json.loads(q.read_text(encoding="utf-8", errors="replace"))
++        except Exception:  # noqa: BLE001
++            continue
++        if not isinstance(obj, dict):
++            continue
++        pc = obj.get("panel_confinement")
++        if not isinstance(pc, dict):
++            continue
++        v = pc.get("run_root")
++        # `/` is not a root, it is the whole filesystem: a value that would
++        # allowlist everything is refused rather than honoured, so this reader
++        # fails TOWARD reporting like the rest of the scanner.
++        if isinstance(v, str) and v and os.path.isabs(v) and _norm_path(v) != "/":
++            found.add(_norm_path(v))
++    # Two different recorded roots means the directory is not the single run it
++    # claims to be. Refuse rather than pick.
++    return next(iter(found)) if len(found) == 1 else None
++
++
++def discover_target_dirs(run_dir: Path) -> list[str]:
++    """Directories the panel was *supposed* to read, taken from runner-authored
++    records only (`target_file` / `context_files` / `staged_copy`)."""
++    found: set[str] = set()
++    allowed_names = trusted_record_names(run_dir)
+     candidates = [p for p in run_dir.rglob("*.json") if p.name in allowed_names]
+     for p in candidates:
+         try:
+@@ -707,11 +792,24 @@
+     # An exam run is recognised by the panel having been confined somewhere other
+     # than this tree — which is exactly the condition under which repo reads stop
+     # being legitimate.
++    # THE RUN'S OWN RECORDED ROOT IS PINNED ALONGSIDE THE LIVE ONE
++    # (2026-10-02). See :func:`discover_run_root` for the three-root
++    # measurement on run 1b. Without this, the scope test compared an archived
++    # run's absolute path literals against whatever root the CALLER happened to
++    # be standing in, so the same run directory produced 0, 107 or 114 advisory
++    # hits depending on where the scanner was invoked from. The recorded root is
++    # ADDED, never substituted: a relocated checkout keeps its own root in scope
++    # too, so a scan of a live run is unchanged.
++    rep.run_root_recorded = discover_run_root(run_dir)
++    roots = [str(repo_root.resolve())]
++    if rep.run_root_recorded and rep.run_root_recorded not in roots:
++        roots.append(rep.run_root_recorded)
+     confined = bool(rep.target_dirs) and not any(
+-        _under(d, str(repo_root.resolve())) for d in rep.target_dirs)
++        _under(d, r) for d in rep.target_dirs for r in roots)
+     allowlist = [str(run_dir), *rep.target_dirs]
+     if not confined:
+-        allowlist.insert(0, str(repo_root.resolve()))
++        for r in reversed(roots):
++            allowlist.insert(0, r)
+     rep.repo_in_scope = not confined
+     protected = [_norm_path(str(k)) for k in key_dirs]
+ 
+@@ -739,13 +837,22 @@
+                 if _counterpart_cache[cand] is not None:
+                     return _counterpart_cache[cand]
+                 continue
++            # EVERY ROOT, NOT JUST THE LIVE ONE. The verbatim test is what
++            # routes a carried self-quote to the AUDIT channel instead of the
++            # advisory, and it needs the committed original. Resolving it only
++            # against the caller's root meant a scan from a relocated checkout
++            # found no counterpart, lost every `carried_verbatim` flag, and
++            # emptied the audit channel to 0 -- measured on run 1b: 7 -> 0.
+             try:
+-                p_cand = repo_root / cand
+-                if p_cand.is_file():
+-                    txt = p_cand.read_text(encoding="utf-8", errors="replace")
+-                    _counterpart_cache[cand] = txt
++                txt = None
++                for _root in roots:
++                    p_cand = Path(_root) / cand
++                    if p_cand.is_file():
++                        txt = p_cand.read_text(encoding="utf-8", errors="replace")
++                        break
++                _counterpart_cache[cand] = txt
++                if txt is not None:
+                     return txt
+-                _counterpart_cache[cand] = None
+             except OSError:
+                 _counterpart_cache[cand] = None
+         return None
+
+### cc2:attempt-1:bench/logs/falsifier_supply_and_integrity_2026-10-02/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/falsifier_supply_and_integrity_2026-10-02/dispatch.log	2026-10-02 22:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/bench/logs/falsifier_supply_and_integrity_2026-10-02/dispatch.log	2026-10-02 22:29:42
+@@ -1,19 +0,0 @@
+-[22:30:35] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo
+-[22:30:35] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo
+-[22:30:35] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo
+-[22:30:35]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo
+-[22:30:35] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo
+-[22:30:35]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo
+-[22:46:06]   [claude-cli:fable] 58 tool call(s) this attempt, 58 in total
+-[22:46:06]   [claude-cli:fable] done (931.2s, 12036 chars)
+-    suite: GREEN at 1cfc30e — 8,878 passed, 0 failed  [recorded at 1cfc30e, HEAD is 2a3d6e3, 72 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 10,781 chars, about 2,695 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo
+-  [fable] ok=True chars=12036 tools=58 931.2s
+-[22:52:56]   [claude-cli:opus] 88 tool call(s) this attempt, 88 in total
+-[22:52:56]   [claude-cli:opus] done (1341.4s, 22669 chars)
+-  [cc2] ok=True chars=22669 tools=88 1341.4s
+-[22:52:56] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-02 21:24:25
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/bench/reference_runner_v3.py	2026-10-02 22:49:26
+@@ -2235,12 +2235,27 @@
+         if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+             continue
+         # THE HALT BOUND NO LONGER SEES A KEY-ACCESS REFUSAL (founder ruling
+-        # 2026-10-02). Run 1b is the case this fixes: `gamma_critical` 0.336 >=
+-        # 0.30 and `gamma_all` 0.432 at round 2 -- BOTH halves of the two-sided
+-        # gate satisfied -- and the run HALTED on a queue of 3 against a bound
+-        # of 2, one member being there only because the integrity gate had
+-        # refused its falsifier on the vocabulary token `seeded_fault`.
++        # 2026-10-02). The ruling is the whole justification and stands on its
++        # own: "convergence should not be blocked ... even if a key was read".
+         #
++        # THE RUN 1b CITATION THIS COMMENT CARRIED WAS WRONG, and it is
++        # corrected rather than quietly dropped (panel, 2026-10-02). It read:
++        # "`gamma_critical` 0.336 >= 0.30 and `gamma_all` 0.432 at round 2 --
++        # BOTH halves of the two-sided gate satisfied -- and the run HALTED on
++        # a queue of 3 against a bound of 2". The two halves of
++        # `_check_gamma_alt_convergence` are the GAMMA side
++        # (`gamma_critical >= gamma_alt_threshold`) and the COUNT side (K
++        # consecutive rounds with ZERO new genuine criticals). `gamma_all` is a
++        # THIRD number, not the second half. Run 1b's own state records
++        # `novel_critical_history == [6, 4, 5]` -- never zero in any round --
++        # and `gate_history == [False, False, False]`. So run 1b would NOT have
++        # converged at round 2 whatever the queue contained, and this run does
++        # not demonstrate the change. The queue of 3 against a bound of 2 and
++        # the `seeded_fault` refusal are both real and both still recorded in
++        # scripts/integrity_exclusion_figures_2026-10-02.py; what they are not
++        # is a blocked convergence. Falsifier:
++        # bench/tests/falsifier_run1b_gate_claim_2026-10-02.py.
++        #
+         # THIS CHANGES THE HALT INPUT ONLY, verified by execution rather than by
+         # reading: `_check_gamma_alt_convergence` reads the queue for a NOTE
+         # string and nothing else, so with gamma pinned at run 1b's values the
+
+### cc2:attempt-1:bench/tests/falsifier_discrimination_guard_2026-10-02.py
+--- /dev/null	2026-10-02 22:53:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/bench/tests/falsifier_discrimination_guard_2026-10-02.py	2026-10-02 22:50:21
+@@ -0,0 +1,61 @@
++"""FALSIFIER (Q3). Does the project's EXISTING discrimination control separate
++a cannot-fail falsifier from a real one?
++
++Convention per the core directives: a falsifier RAISES AssertionError (or prints
++FALSIFIED) when the defect is real and EXITS CLEANLY when the claim is false.
++
++This script raises if the control fails to separate them. It exits clean if the
++separation holds, which is my claim: the general cannot-fail guard already
++exists and works; the defect is that it is UNREACHED, not that it is absent.
++"""
++import pathlib, sys, tempfile
++ROOT = pathlib.Path('.').resolve(); sys.path.insert(0, str(ROOT))
++from bench.falsifier_verify import reverify_falsifier
++
++TARGET = ROOT / "bench" / "logs" / "panel_round11_2026-09-11" / "BRIEF.md"
++FIG = "real-rejection rate : 2/640 = 0.3125%"
++
++# Shape 1: `check_sk_threshold` hardwired to `return True` (passed 321 tests).
++HARDWIRED = '''
++def check_sk_threshold(*a, **k):
++    return True
++assert not check_sk_threshold(), "defect present"
++'''
++# Shape 2: A19's `e4_bandit` -- no metrics on prose, so 0 HIGH forever and the
++# assertion is over an empty set: vacuously satisfied, cannot ever fire.
++VACUOUS = '''
++metrics = []                 # the instrument returned nothing on prose
++assert len([m for m in metrics if m == "HIGH"]) > 0, "defect present"
++'''
++# A falsifier that actually reads the target.
++REAL = f'''
++import pathlib
++t = pathlib.Path({str(TARGET)!r}).read_text()
++assert {FIG!r} not in t, "defect present: the superseded figure is declared"
++'''
++
++real_txt = TARGET.read_text()
++print("THE DISCRIMINATION TEST: run the falsifier against the real target and")
++print("against a CORRECTED copy. A falsifier that returns the same verdict on")
++print("both has told us nothing about the target.\n")
++rows = []
++for name, src in (("hardwired `return True`", HARDWIRED),
++                  ("vacuous: 0 HIGH over an empty metric set", VACUOUS),
++                  ("reads the real target", REAL)):
++    v_real = reverify_falsifier(src)
++    with tempfile.TemporaryDirectory() as td:
++        p = pathlib.Path(td) / TARGET.name
++        p.write_text(real_txt.replace(FIG, "real-rejection rate : 1/640 = 0.1562%"))
++        v_corr = reverify_falsifier(src.replace(str(TARGET), str(p)))
++    out = "NON_DISCRIMINATING" if v_real == v_corr else "DISCRIMINATES"
++    rows.append((name, out))
++    print(f"  {name:42s} real={v_real:10s} corrected={v_corr:10s} -> {out}")
++
++want = ["NON_DISCRIMINATING", "NON_DISCRIMINATING", "DISCRIMINATES"]
++got = [r[1] for r in rows]
++print()
++if got != want:
++    print("FALSIFIED")
++    raise AssertionError(f"the control did not separate them: got {got}, want {want}")
++print("CLEAN EXIT: both cannot-fail shapes are caught, the real falsifier is not.")
++print("So the general guard EXISTS. The defect is its reach, measured separately.")
+
+### cc2:attempt-1:bench/tests/falsifier_run1b_gate_claim_2026-10-02.py
+--- /dev/null	2026-10-02 22:53:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/bench/tests/falsifier_run1b_gate_claim_2026-10-02.py	2026-10-02 22:49:26
+@@ -0,0 +1,49 @@
++"""FALSIFIER. 'Run 1b halted with BOTH halves of the two-sided gate satisfied'
++is contradicted by run 1b's own archived state.
++
++Imports the REAL producer and the REAL runner module; retypes nothing.
++Raises AssertionError when the defect is present, exits clean otherwise.
++"""
++import importlib.util, json, pathlib, sys
++ROOT = pathlib.Path('.').resolve(); sys.path.insert(0, str(ROOT))
++
++spec = importlib.util.spec_from_file_location(
++    "_iefig", ROOT / "scripts" / "integrity_exclusion_figures_2026-10-02.py")
++m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
++import bench.reference_runner_v3 as rr          # the real gate's own module
++
++d = ROOT / "bench" / "logs" / m.RUN_1B
++st = json.loads((d / "runner_state.json").read_text())
++
++claimed = m.run_1b_halt()
++print("the producer's own record of run 1b:", claimed)
++
++# THE TWO HALVES, from the gate's own docstring and body:
++#   (a) gamma_critical >= gamma_alt_threshold         -- the GAMMA side
++#   (b) K consecutive rounds with ZERO new genuine criticals -- the COUNT side
++# `gamma_all` is a THIRD number and is not a half of this gate.
++src = (ROOT / "bench" / "reference_runner_v3.py").read_text()
++i = src.index("def _check_gamma_alt_convergence")
++body = src[i:i + 30000]
++assert ("zero-new-critical rounds" in body or "zero\n          NEW genuine critical findings" in body), \
++    "the gate's COUNT side is not described as I claim; re-read before trusting this"
++
++novel = st.get("novel_critical_history") or []
++gates = st.get("gate_history") or []
++print("novel_critical_history (new genuine criticals per round):", novel)
++print("gate_history (the runner's own record of the gate):      ", gates)
++
++count_side_met = any(n == 0 for n in novel)
++gate_ever_true = any(bool(g) for g in gates)
++
++if not count_side_met and not gate_ever_true:
++    print("\nFALSIFIED")
++    raise AssertionError(
++        "BOTH HALVES SATISFIED is false. The COUNT side needs consecutive "
++        f"rounds with ZERO new criticals; run 1b recorded {novel} -- never "
++        f"zero in any round -- and the runner's own gate_history is {gates}, "
++        "False at every round. `gamma_all`=0.432 is not the second half of "
++        "the two-sided gate. So run 1b would not have converged at round 2 "
++        "whatever the irreducible queue contained, and the halt-bound change "
++        "is not demonstrated by this run.")
++print("\nclean exit: the gate really was satisfied; the claim stands")
+
+### cc2:attempt-1:bench/tests/test_declared_figure_as_of_2026-09-29.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_declared_figure_as_of_2026-09-29.py	2026-09-29 01:52:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/bench/tests/test_declared_figure_as_of_2026-09-29.py	2026-10-02 22:45:17
+@@ -53,16 +53,52 @@
+ 
+ class TestTheProducerAsOf:
+     def test_as_of_the_briefs_date_reproduces_the_declared_figure(self):
+-        """The historical figure is DECIDABLE, not trusted: 2/640 = 0.3125%
+-        re-executes against the corpus as it stood."""
++        """The historical figure is DECIDABLE, not trusted -- but a RULE moved
++        under it, so what is now decidable is the RECONCILIATION.
++
++        AMENDED 2026-10-02, and amended rather than deleted. As written this
++        asserted `real-rejection rate : 2/640 = 0.3125%` at --as-of
++        2026-09-11. That expectation was correct for the rule in force when it
++        was written and is now false AT EVERY DATE: the access-only ruling
++        narrowed the gate, the second of the two real rejections was refused on
++        the vocabulary token `seeded_fault` rather than on a key access, and
++        the NUMERATOR changed. `--as-of` pins the DENOMINATOR and cannot absorb
++        that -- which is the whole of panel dispute D-5's blast radius.
++
++        Deleting the assertion would hide the rule change; keeping it would
++        make a red board permanent. So the superseded value is still named
++        here, and the property under test is the one that is still decidable:
++        the committed rule-amendments register carries this exact superseded
++        value, and its successor value RE-EXECUTES against the same as-of
++        corpus. See bench/tests/test_rule_amendment_register_2026-10-02.py for
++        the 5 conditions, each demonstrated failing.
++        """
++        import importlib.util as _ilu
++        _spec = _ilu.spec_from_file_location("_pbv_asof", VALIDATE)
++        _m = _ilu.module_from_spec(_spec)
++        _spec.loader.exec_module(_m)
++        SUPERSEDED = "real-rejection rate : 2/640 = 0.3125%"
++
+         r = subprocess.run(
+             [sys.executable, str(PRODUCER), "--as-of", "2026-09-11"],
+             cwd=ROOT, capture_output=True, text=True, timeout=600)
+         assert r.returncode == 0, r.stderr[-600:]
+-        assert "real-rejection rate : 2/640 = 0.3125%" in r.stdout, (
++
++        if SUPERSEDED in r.stdout:
++            return          # the rule was restored; the original property holds
++
++        entries = [e for e in _m._load_rule_amendments(None)
++                   if e["superseded"].strip() == SUPERSEDED]
++        assert entries, (
+             "the archive as of 2026-09-11 no longer yields the round-11 "
+-            "figure; the historical record itself is now in question:\n"
++            "figure AND no rule amendment is registered for it, so the "
++            "historical record is broken with nothing accounting for it:\n"
+             + r.stdout[-600:])
++        a = entries[0]
++        assert a["current"].strip() != SUPERSEDED
++        assert a["current"] in r.stdout, (
++            "the register's successor value does not re-execute either, so "
++            "the reconciliation is itself unsupported:\n" + r.stdout[-600:])
+ 
+     def test_unrestricted_still_reports_the_live_corpus(self, archive_grew):
+         """The flag must not have bent the live measurement (additive check:
+@@ -98,9 +134,16 @@
+                            cwd=ROOT, capture_output=True, text=True,
+                            timeout=1200)
+         assert r.returncode == 0, (r.stdout + r.stderr)[-800:]
+-        assert "HISTORICAL FIGURE" in (r.stdout + r.stderr), (
+-            "the acceptance was silent; a quiet historical acceptance is how "
+-            "an exemption rots into a hole")
++        # EITHER LOUD PATH, 2026-10-02. A corpus-drift acceptance announces
++        # HISTORICAL FIGURE; a rule-change acceptance announces RULE AMENDMENT
++        # and additionally names the rule that moved. The property this test
++        # exists to hold is that the acceptance is NOT SILENT, which both
++        # satisfy; requiring the corpus-drift wording specifically would have
++        # made it a test of which mechanism fired.
++        _out = r.stdout + "\n" + r.stderr
++        assert ("HISTORICAL FIGURE" in _out) or ("RULE AMENDMENT" in _out), (
++            "the acceptance was silent; a quiet acceptance is how an "
++            "exemption rots into a hole")
+ 
+     def test_a_fresh_brief_claiming_a_past_date_is_still_refused(
+             self, mod, tmp_path, archive_grew):
+
+### cc2:attempt-1:bench/tests/test_rule_amendment_register_2026-10-02.py
+--- /dev/null	2026-10-02 22:53:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/bench/tests/test_rule_amendment_register_2026-10-02.py	2026-10-02 22:44:10
+@@ -0,0 +1,192 @@
++#!/usr/bin/env python3
++"""A figure invalidated by a RULE CHANGE, and the register that must not be a
++free pass. (Panel dispute D-5 blast radius; Q5, 2026-10-02.)
++
++THE SITUATION. `bench/logs/panel_round11_2026-09-11/BRIEF.md` declares
++`real-rejection rate : 2/640 = 0.3125%`. Under the access-only gate the second
++of those two rejections -- refused on the vocabulary token `seeded_fault`, not
++on a key access -- is no longer a rejection, so the producer prints 1/640 AT
++EVERY DATE. `--as-of` pins the DENOMINATOR; the NUMERATOR is what moved. A
++figure in the historical record stopped re-executing because a rule changed
++beneath it, retroactively, and the record is not editable.
++
++THE NAMED HAZARD IS THAT THE REMEDY CANNOT FAIL. A register the validator
++merely consults is a licence to paper over any discrepancy, and this project
++has shipped a cannot-fail guard twice (`check_sk_threshold` hardwired to
++`return True` passed 321 tests; A19's `e4_bandit` reported 0 HIGH forever).
++So every one of the 5 admissibility conditions is DEMONSTRATED FAILING here,
++each by mutating the register alone and requiring a REFUSAL:
++
++  1. no entry for this brief                    -> refused
++  2. `superseded` absent from the brief's text  -> refused
++  3. `superseded == current` (a wildcard)       -> refused
++  4. `producer` redirected to another script    -> refused
++  5. `current` does not re-execute              -> refused
++
++and the live register ACCEPTS, loudly, while the brief stays unedited.
++
++Run:  python3 -m pytest bench/tests/test_rule_amendment_register_2026-10-02.py -q
++"""
++from __future__ import annotations
++
++import importlib.util
++import json
++import pathlib
++import sys
++
++import pytest
++
++ROOT = pathlib.Path(__file__).resolve().parents[2]
++if str(ROOT) not in sys.path:
++    sys.path.insert(0, str(ROOT))
++
++VALIDATE = ROOT / "scripts" / "panel_brief_validate.py"
++BRIEF = ROOT / "bench" / "logs" / "panel_round11_2026-09-11" / "BRIEF.md"
++PRODUCER = "scripts/archived_falsifier_rejections_2026-09-10.py"
++WANT = "real-rejection rate : 2/640 = 0.3125%"
++CURRENT = "real-rejection rate : 1/640 = 0.1562%"
++LABEL = "archived falsifier rejections that are NOT location artefacts"
++
++pytestmark = pytest.mark.skipif(
++    not BRIEF.is_file() or not VALIDATE.is_file(),
++    reason="round 11's brief or the validator is not in this checkout")
++
++
++@pytest.fixture(scope="module")
++def mod():
++    spec = importlib.util.spec_from_file_location("_pbv", VALIDATE)
++    m = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(m)
++    return m
++
++
++def _entry(**over):
++    e = {"figure": LABEL,
++         "brief": "bench/logs/panel_round11_2026-09-11/BRIEF.md",
++         "producer": PRODUCER,
++         "as_of": "2026-09-11",
++         "superseded": WANT,
++         "current": CURRENT,
++         "amended": "2026-10-02",
++         "rule": "the integrity gate narrowed to access-only"}
++    e.update(over)
++    return e
++
++
++def _register(tmp_path, *entries):
++    p = tmp_path / "amend.jsonl"
++    p.write_text("".join(json.dumps(e) + "\n" for e in entries))
++    return p
++
++
++def _ask(mod, register):
++    """The register's answer for the round-11 figure. None means REFUSED."""
++    return mod._rule_amendment_reproduction(
++        WANT, LABEL, ROOT / PRODUCER, BRIEF, BRIEF.read_text(encoding="utf-8"),
++        ROOT, 600, register=register)
++
++
++# -- the guard working ------------------------------------------------------
++
++def test_the_live_register_accepts_the_round_11_figure(mod):
++    """The committed register, not a fixture: the real file must work."""
++    got = _ask(mod, None)
++    assert got is not None, (
++        "the committed register does not reconcile the round-11 figure; the "
++        "historical record is still broken")
++    assert got["current"] == CURRENT
++    assert got["producer"] == PRODUCER
++
++
++def test_the_archived_brief_is_not_edited(mod):
++    assert WANT in BRIEF.read_text(encoding="utf-8"), (
++        "the archived brief was EDITED, which falsifies the record of what "
++        "the seats were given -- the one fix this ruling forbids")
++
++
++def test_a_fixture_register_matching_the_live_one_also_accepts(mod, tmp_path):
++    """Proves the acceptances below are refused for their stated reason and
++    not because the harness cannot accept anything at all."""
++    assert _ask(mod, _register(tmp_path, _entry())) is not None
++
++
++# -- the 5 conditions, each demonstrated FAILING ----------------------------
++
++def test_1_an_empty_register_leaves_the_validator_exactly_as_strict(mod, tmp_path):
++    p = tmp_path / "empty.jsonl"
++    p.write_text("")
++    assert _ask(mod, p) is None
++
++
++def test_1b_an_entry_for_a_different_brief_does_not_transfer(mod, tmp_path):
++    reg = _register(tmp_path, _entry(brief="bench/logs/panel_round9/BRIEF.md"))
++    assert _ask(mod, reg) is None, (
++        "an amendment registered against another brief was honoured here; "
++        "one entry would then excuse every brief")
++
++
++def test_2_a_superseded_value_the_brief_never_declared_is_refused(mod, tmp_path):
++    reg = _register(tmp_path, _entry(superseded="real-rejection rate : 9/640 = 1.4062%"))
++    assert _ask(mod, reg) is None, (
++        "an amendment was accepted against a figure the brief does not carry")
++
++
++def test_3_an_entry_that_amends_nothing_is_refused(mod, tmp_path):
++    """THE WILDCARD. superseded == current asserts no change, so it is not an
++    amendment; honouring it would accept any figure that stopped reproducing."""
++    reg = _register(tmp_path, _entry(current=WANT))
++    assert _ask(mod, reg) is None
++
++
++def test_4_redirecting_to_a_friendlier_producer_is_refused(mod, tmp_path):
++    """`scripts/orphan_figures_2026-09-10.py` is the brief's OTHER declared
++    producer and supports --as-of; naming it here must not launder the figure."""
++    reg = _register(tmp_path, _entry(producer="scripts/orphan_figures_2026-09-10.py"))
++    assert _ask(mod, reg) is None
++
++
++def test_5_a_current_value_that_does_not_re_execute_is_refused(mod, tmp_path):
++    """THE LOAD-BEARING CONDITION. The register's claim about the NEW value is
++    re-executed, never trusted. Without this the register is a free pass."""
++    reg = _register(tmp_path, _entry(current="real-rejection rate : 7/640 = 1.0938%"))
++    assert _ask(mod, reg) is None
++
++
++def test_5b_a_producer_that_is_not_in_the_tree_is_refused(mod, tmp_path):
++    reg = _register(tmp_path, _entry(producer="scripts/does_not_exist_2026.py"))
++    assert _ask(mod, reg) is None
++
++
++# -- the register's own hygiene ---------------------------------------------
++
++def test_a_malformed_or_incomplete_entry_contributes_nothing(mod, tmp_path):
++    p = tmp_path / "bad.jsonl"
++    p.write_text("not json at all\n"
++                 + json.dumps({"figure": LABEL}) + "\n"      # missing keys
++                 + json.dumps(["a", "list"]) + "\n")
++    assert mod._load_rule_amendments(p) == []
++    assert _ask(mod, p) is None
++
++
++def test_the_committed_register_parses_and_every_entry_is_admissible(mod):
++    entries = mod._load_rule_amendments(None)
++    assert entries, "the committed register has no admissible entry"
++    for e in entries:
++        assert (ROOT / e["producer"]).is_file(), e["producer"]
++        assert (ROOT / e["brief"]).is_file(), e["brief"]
++        assert e["superseded"].strip() != e["current"].strip(), e
++        assert e["superseded"] in (ROOT / e["brief"]).read_text(
++            encoding="utf-8", errors="replace"), e
++
++
++def test_the_validator_accepts_the_brief_and_says_the_rule_moved():
++    """End to end, through the real entry point, and LOUDLY: a silent
++    acceptance is how an exemption rots into a hole."""
++    import subprocess
++    r = subprocess.run([sys.executable, str(VALIDATE), str(BRIEF)],
++                       cwd=ROOT, capture_output=True, text=True, timeout=1800)
++    out = r.stdout + "\n" + r.stderr
++    assert r.returncode == 0, out[-1200:]
++    assert "RULE AMENDMENT" in out, (
++        "the brief was accepted without saying the rule moved")
++    assert "do NOT reuse this figure" in out
+
+### cc2:attempt-1:scripts/integrity_exclusion_figures_2026-10-02.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/integrity_exclusion_figures_2026-10-02.py	2026-10-02 20:49:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/scripts/integrity_exclusion_figures_2026-10-02.py	2026-10-02 22:49:26
+@@ -82,7 +82,26 @@
+ 
+ 
+ def run_1b_halt():
+-    """Run 1b halted with BOTH halves of the two-sided gate satisfied."""
++    """What run 1b's archived state actually records at its halt.
++
++    CORRECTED 2026-10-02 (panel). This read "Run 1b halted with BOTH halves of
++    the two-sided gate satisfied", and run 1b's own state contradicts it. The
++    two halves of `_check_gamma_alt_convergence` are (a) the GAMMA side,
++    `gamma_critical >= gamma_alt_threshold`, and (b) the COUNT side, K
++    consecutive rounds with ZERO new genuine criticals. `gamma_all` is a THIRD
++    number and is not a half of this gate.
++
++    MEASURED in runner_state.json: `novel_critical_history == [6, 4, 5]` -- the
++    COUNT side was never met in any round -- and the runner's own
++    `gate_history == [False, False, False]`. So run 1b would not have converged
++    at round 2 whatever the irreducible queue contained.
++
++    The founder's 2026-10-02 ruling is what justifies removing an integrity
++    refusal from the halt bound, and that ruling stands on its own. What this
++    run does NOT do is demonstrate the change, and the figures below are
++    reported as the halt record rather than as a satisfied gate. Held by
++    bench/tests/falsifier_run1b_gate_claim_2026-10-02.py.
++    """
+     d = ROOT / "bench" / "logs" / RUN_1B
+     rep = json.loads(next(d.glob("*_report.json")).read_text())
+     last = [r for r in rep.get("rounds", []) if r.get("round") == 2]
+@@ -94,9 +113,20 @@
+         "queue_count": alarm.get("count"),
+         "queue_bound": alarm.get("bound"),
+         "alarm_round": alarm.get("round"),
++        # THE TWO SERIES THAT REFUTE "BOTH HALVES SATISFIED". Printed beside
++        # the gamma figures so the record cannot be read as a satisfied gate.
++        "novel_critical_history": _state().get("novel_critical_history"),
++        "gate_history": _state().get("gate_history"),
++        "count_side_met": any(
++            n == 0 for n in (_state().get("novel_critical_history") or [])),
+     }
+ 
+ 
++def _state():
++    return json.loads(
++        (ROOT / "bench" / "logs" / RUN_1B / "runner_state.json").read_text())
++
++
+ def ladder_side_residual():
+     """The D-6 case: how many entries carry an integrity verdict, and where."""
+     d = ROOT / "bench" / "logs" / RUN_1B
+@@ -135,7 +165,7 @@
+     print("  NOT REPRODUCED: the cc2 seat's '156 of 263 (59.32%)'. Same "
+           "direction, different denominator.")
+ 
+-    print("\nRUN 1b HALTED WITH BOTH HALVES OF THE GATE SATISFIED")
++    print("\nRUN 1b's HALT RECORD -- AND THE GATE WAS **NOT** SATISFIED")
+     for k, v in run_1b_halt().items():
+         print(f"  {k:22s}: {v}")
+ 
+
+### cc2:attempt-1:scripts/intelligence_first_contract_2026-10-02.py
+--- /dev/null	2026-10-02 22:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/scripts/intelligence_first_contract_2026-10-02.py	2026-10-02 22:40:19
+@@ -0,0 +1,288 @@
++#!/usr/bin/env python3
++"""Is the founder's intelligence-first contract honoured? (Q1, Q2, and Cause 2)
++
++HIS DESIGN INTENT, verbatim: "a hand-rolled falsifier could be acceptable as a
++form of 'scratchpad' reasoning method for the models, so long as that reasoning
++was either invariably confirmed, or refuted with tools, and providing our
++machinery instructs the models to keep trying like this until their solutions
++are subsequently confirmed by tools."
++
++That makes hand-rolling a PROCESS question, not a supply question: the 86.3727%
++hand-rolled rate measured by `falsifier_supply_decomposition_2026-10-02.py` is
++not itself a defect. The defect would be a critical that reached an ACCEPTED
++terminal status on a model's say-so with no tool ever adjudicating it. The
++runner already records the distinction, per entry, in `status_adjudicator`
++("tool" / "model" / "panel") beside `status_mechanism`, so the contract is
++DECIDABLE from the archive rather than inferable.
++
++THREE MEASUREMENTS, one population:
++
++  Q1  Of criticals ADJUDICATED BY MODEL REASONING, what share were
++      subsequently adjudicated by a tool? And -- the sharper form, because
++      the project forbids confirmation by model vote -- how many reached an
++      accepted terminal status with NO tool verdict anywhere on the entry?
++
++  Q2  The same split restricted to PROSE runs, where the briefing itself says
++      ruff/mypy/bandit/pytest "have no purchase". If the tool-adjudication rate
++      collapses there, the "keep trying until tool-confirmed" loop is not
++      reachable on the stratum that starves most.
++
++  C2  The zero-plant control stratum under BOTH definitions of "no falsifier",
++      on identical rows. The adversarial pass claimed 19 of 46 with the pre-fix
++      body-only definition; `repro_supply_causes` measures 0 of 46 with the
++      verdict-first definition. Printing both on the same rows is what decides
++      whether the control stratum was a real inflation or an artefact of the
++      conflation `classify()` corrected the same day.
++
++Populations are declared, not assumed, and both candidate cuts are printed
++side by side (post-exp42 vs post-2026-06-06) because the brief's own two
++figures -- 0 of 558 and 14 of 624 -- disagree and the disagreement is a
++population choice, not a measurement error.
++
++Every proportion carries a Wilson interval from statsmodels against an
++independent mpmath closed form; every 2x2 carries a Fisher exact from scipy
++against an independent mpmath hypergeometric sum. Disagreement is printed.
++No Wolfram result is used here.
++"""
++from __future__ import annotations
++
++import json
++import pathlib
++import re
++import sys
++from collections import Counter
++
++for _cand in (pathlib.Path(__file__).resolve().parent,
++              *pathlib.Path(__file__).resolve().parents):
++    if (_cand / "_cli_help.py").is_file():
++        sys.path.insert(0, str(_cand))
++        break
++from _cli_help import answer_help  # noqa: E402
++
++ROOT = pathlib.Path(__file__).resolve().parents[1]
++CRIT = 0.7
++
++# A verdict only a TOOL can write. `reverify_falsifier` is the only producer of
++# these strings in the repository; a model proposes a finding, never a verdict.
++TOOL_VERDICTS = {"CONFIRMED", "REFUTED", "ERROR", "TIMEOUT",
++                 "INTEGRITY_VIOLATION", "REFUSED"}
++# Terminal statuses that mean the project ACCEPTED the finding as real.
++ACCEPTED = {"CLOSED", "CONFIRMED", "CORROBORATED"}
++# Dates, for the second candidate population cut.
++DATE_RE = re.compile(r"(20\d{6})T")
++
++
++def wilson(k: int, n: int):
++    from statsmodels.stats.proportion import proportion_confint
++    import mpmath as mp
++    if not n:
++        return 0.0, 0.0, 0.0, 0.0, True
++    lo, hi = proportion_confint(k, n, method="wilson")
++    mp.mp.dps = 40
++    z = mp.mpf("1.959963984540054235524594430520551527955")
++    p, d = mp.mpf(k) / n, 1 + z ** 2 / n
++    c = p + z ** 2 / (2 * n)
++    h = z * mp.sqrt(p * (1 - p) / n + z ** 2 / (4 * n ** 2))
++    mlo, mhi = float((c - h) / d), float((c + h) / d)
++    return float(lo), float(hi), mlo, mhi, abs(lo - mlo) < 1e-9 and abs(hi - mhi) < 1e-9
++
++
++def pct(label: str, k: int, n: int) -> None:
++    lo, hi, mlo, mhi, agree = wilson(k, n)
++    if not n:
++        print(f"    {label:52s} {k:4d} / {n:4d}  (empty stratum: no interval)")
++        return
++    print(f"    {label:52s} {k:4d} / {n:4d} = {100*k/n:8.4f}%  "
++          f"Wilson [{100*lo:7.4f}%, {100*hi:7.4f}%]  agree={agree}")
++
++
++def fisher(a, b, c, d):
++    from scipy.stats import fisher_exact
++    import mpmath as mp
++    odds, p = fisher_exact([[a, b], [c, d]])
++    mp.mp.dps = 50
++    n = a + b + c + d
++    if not n:
++        return odds, p, p
++    r1, c1 = a + b, a + c
++
++    def pr(x):
++        return (mp.binomial(c1, x) * mp.binomial(n - c1, r1 - x)) / mp.binomial(n, r1)
++    obs, tot = pr(a), mp.mpf(0)
++    for x in range(max(0, r1 - (n - c1)), min(r1, c1) + 1):
++        q = pr(x)
++        if q <= obs * (1 + mp.mpf("1e-30")):
++            tot += q
++    return odds, p, float(tot)
++
++
++def entries():
++    """Deduplicated criticals, keyed (run, cid). Identical rule to
++    `repro_supply_causes_2026-10-02.py` so the two are comparable row for row."""
++    rows: dict[tuple[str, str], tuple] = {}
++    for name in ("runner_state.json", "*_report.json"):
++        for f in sorted((ROOT / "bench" / "logs").glob(f"*/{name}")):
++            try:
++                data = json.loads(f.read_text(encoding="utf-8", errors="replace"))
++            except Exception:  # noqa: BLE001
++                continue
++            cfg = data.get("config") or {}
++            tgt = str(cfg.get("target_file") or data.get("target_file") or "")
++            for cid, e in ((data.get("registry") or {}).get("entries") or {}).items():
++                if not isinstance(e, dict) or (e.get("severity") or 0) < CRIT:
++                    continue
++                key = (f.parent.name, cid)
++                body = ((e.get("falsifier_code") or "").strip()
++                        or (e.get("last_falsifier_code") or "").strip())
++                prev = rows.get(key)
++                if prev is None or (not prev[2] and body):
++                    rows[key] = (f.parent.name, tgt, body, e)
++    return rows
++
++
++def expno(r: str):
++    m = re.match(r"exp(\d+)", r)
++    return int(m.group(1)) if m else None
++
++
++def rundate(r: str):
++    m = DATE_RE.search(r)
++    return m.group(1) if m else None
++
++
++def tool_verdict(e) -> str:
++    """The strongest TOOL-written verdict anywhere on the entry.
++
++    Reads the ladder-side residual too. `_apply_routing` writes
++    `falsifier_verdict` back only on `result.resolved`, so a ladder run that
++    did not confirm leaves its real verdict only in `routing_history[-1]` and
++    `routing_verdict_unreconciled` -- which is exactly the feedback-channel
++    defect listed as Cause 3. An entry adjudicated there HAS been toolled, and
++    counting it as untoolled would reproduce the defect inside the measurement.
++    """
++    for v in ((e.get("falsifier_verdict") or ""),
++              (e.get("routing_verdict_unreconciled") or ""),
++              *[(h.get("verdict") or "") for h in reversed(e.get("routing_history") or [])
++                if isinstance(h, dict)]):
++        s = v.strip().upper()
++        if s in TOOL_VERDICTS:
++            return s
++    return ""
++
++
++def adjudicator(e) -> str:
++    a = (e.get("status_adjudicator") or "").strip().lower()
++    return a or "unrecorded"
++
++
++def is_prose(run: str, tgt: str) -> bool:
++    return tgt.lower().endswith((".md", ".txt", ".rst")) or "prose" in run.lower()
++
++
++def main() -> int:
++    rows = entries()
++
++    print("POPULATION -- BOTH CANDIDATE CUTS, because the brief's own two "
++          "figures disagree")
++    post42 = {k: v for k, v in rows.items()
++              if expno(k[0]) is None or expno(k[0]) >= 42}
++    postjun = {k: v for k, v in rows.items()
++               if (rundate(k[0]) or "99999999") > "20260606"}
++    print(f"  all deduplicated criticals (severity >= {CRIT})     : {len(rows)}")
++    print(f"  cut A: post-exp42 (feature cut, by experiment id)   : {len(post42)}")
++    print(f"  cut B: post-2026-06-06 (date cut, undated dropped)  : {len(postjun)}")
++    print(f"  rows in A but not B                                 : "
++          f"{len(set(post42) - set(postjun))}")
++    print(f"  rows in B but not A                                 : "
++          f"{len(set(postjun) - set(post42))}")
++    print("  THE DATE CUT SILENTLY DROPS EVERY UNDATED RUN DIRECTORY, which is")
++    print("  where the panel_* and prose_* runs live. Cut A is the right")
++    print("  population for a question about the FEATURE; cut B answers a")
++    print("  question about a calendar and loses the newest runs to do it.")
++
++    for cut_name, pop in (("A  post-exp42", post42), ("B  post-2026-06-06", postjun)):
++        neither = [k for k, (r, t, b, e) in pop.items()
++                   if not b and not tool_verdict(e)]
++        print(f"\n  cut {cut_name}: criticals with NEITHER a falsifier nor a verdict")
++        pct("neither body nor verdict", len(neither), len(pop))
++
++    pop = post42
++    print("\nQ1  THE INTELLIGENCE-FIRST CONTRACT")
++    print("  recorded adjudicator over the whole population:")
++    for a, n in Counter(adjudicator(e) for (_, _, _, e) in pop.values()).most_common():
++        pct(f"status_adjudicator = {a}", n, len(pop))
++
++    reasoned = {k: v for k, v in pop.items() if adjudicator(v[3]) != "tool"}
++    toolled = [k for k, v in reasoned.items() if tool_verdict(v[3])]
++    print("\n  OF THOSE ADJUDICATED BY MODEL REASONING, subsequently toolled:")
++    pct("model-reasoned criticals, in population", len(reasoned), len(pop))
++    pct("  ... of which a TOOL later returned a verdict", len(toolled), len(reasoned))
++
++    print("\n  THE FORBIDDEN CASE -- accepted on reasoning, never toolled:")
++    forbidden = [k for k, v in pop.items()
++                 if (v[3].get("status") or "").strip().upper() in ACCEPTED
++                 and adjudicator(v[3]) != "tool" and not tool_verdict(v[3])]
++    accepted = [k for k, v in pop.items()
++                if (v[3].get("status") or "").strip().upper() in ACCEPTED]
++    pct("accepted terminal status", len(accepted), len(pop))
++    pct("  ... accepted with NO tool verdict and no tool adjudicator",
++        len(forbidden), len(accepted))
++    if forbidden:
++        print("    offenders (run, cid, status, adjudicator, mechanism):")
++        for k in sorted(forbidden)[:12]:
++            e = pop[k][3]
++            print(f"      {k[0][:44]:46s} {k[1]:7s} "
++                  f"{e.get('status'):12s} {adjudicator(e):10s} "
++                  f"{(e.get('status_mechanism') or '-')}")
++        if len(forbidden) > 12:
++            print(f"      ... and {len(forbidden)-12} more")
++
++    print("\nQ2  THE PROSE STRATUM, where the general instruments have no purchase")
++    pr = {k: v for k, v in pop.items() if is_prose(k[0], v[1])}
++    co = {k: v for k, v in pop.items() if not is_prose(k[0], v[1])}
++    print(f"  prose-run criticals {len(pr)}   code-run criticals {len(co)}")
++    for lbl, s in (("prose", pr), ("code ", co)):
++        pct(f"{lbl}: a TOOL returned a verdict", 
++            sum(1 for v in s.values() if tool_verdict(v[3])), len(s))
++        pct(f"{lbl}: accepted with NO tool verdict",
++            sum(1 for v in s.values()
++                if (v[3].get("status") or "").upper() in ACCEPTED
++                and not tool_verdict(v[3])), len(s))
++    a = sum(1 for v in pr.values() if not tool_verdict(v[3]))
++    b = len(pr) - a
++    c = sum(1 for v in co.values() if not tool_verdict(v[3]))
++    d = len(co) - c
++    if (a + b) and (c + d):
++        o, p, pm = fisher(a, b, c, d)
++        print(f"  prose vs code, NO tool verdict: Fisher OR = {o:.4f}  "
++              f"scipy p = {p:.6e}  mpmath p = {pm:.6e}  agree={abs(p-pm) < 1e-9}")
++
++    print("\nC2  THE CONTROL STRATUM UNDER BOTH DEFINITIONS, on identical rows")
++    runs_ctrl = sorted({k[0] for k in pop if "control" in k[0].lower()
++                        or "zero" in k[0].lower()})
++    print(f"  run directories counted as controls ({len(runs_ctrl)}): {runs_ctrl}")
++    for defn, f in (("PRE-FIX  body only  (the claim's definition)",
++                     lambda b, e: not b),
++                    ("POST-FIX verdict first (classify() as corrected)",
++                     lambda b, e: not b and not tool_verdict(e))):
++        a = b_ = c = d = 0
++        for k, (r, t, body, e) in pop.items():
++            ctrl = ("control" in r.lower() or "zero" in r.lower())
++            nb = f(body, e)
++            if ctrl:
++                a, b_ = a + nb, b_ + (not nb)
++            else:
++                c, d = c + nb, d + (not nb)
++        print(f"  {defn}")
++        print(f"    control  no-falsifier {a:4d}  other {b_:4d}")
++        print(f"    live     no-falsifier {c:4d}  other {d:4d}")
++        if (a + b_) and (c + d):
++            o, p, pm = fisher(a, b_, c, d)
++            print(f"    Fisher OR = {o:.4f}  scipy p = {p:.6e}  "
++                  f"mpmath p = {pm:.6e}  agree={abs(p-pm) < 1e-9}")
++    return 0
++
++
++if __name__ == "__main__":
++    answer_help(__doc__, __file__)
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/panel_brief_validate.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/panel_brief_validate.py	2026-10-02 19:12:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/scripts/panel_brief_validate.py	2026-10-02 22:43:28
+@@ -33,6 +33,7 @@
+ 
+ import argparse
+ import calendar
++import json
+ import re
+ import subprocess
+ import sys
+@@ -283,8 +284,141 @@
+     if _figure_token_found(want, r.stdout + "\n" + r.stderr):
+         return as_of
+     return None
++
++
++# ── THE RULE-AMENDMENTS REGISTER ─────────────────────────────────────────────
++#
++#: A committed register of figures invalidated by a RULE CHANGE rather than by
++#: corpus drift. `--as-of` pins the DENOMINATOR to a brief's own date and that
++#: is the whole of what it can do; when the RULE beneath a figure moves, the
++#: NUMERATOR changes at every date and no as-of value reproduces the archived
++#: number.
++RULE_AMENDMENTS = REPO / "bench" / "directives" / "universal" / "rule_amendments.jsonl"
+ 
++_AMENDMENT_REQUIRED = ("figure", "brief", "producer", "as_of",
++                       "superseded", "current", "rule")
+ 
++
++def _load_rule_amendments(path=None) -> list[dict]:
++    """Admissible register entries. A malformed line contributes nothing."""
++    path = Path(path) if path is not None else RULE_AMENDMENTS
++    out: list[dict] = []
++    if not path.is_file():
++        return out
++    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
++        line = line.strip()
++        if not line or line.startswith("#"):
++            continue
++        try:
++            obj = json.loads(line)
++        except Exception:  # noqa: BLE001
++            continue
++        if not isinstance(obj, dict) or "_comment" in obj:
++            continue
++        if all(isinstance(obj.get(k), str) and obj.get(k) for k in _AMENDMENT_REQUIRED):
++            out.append(obj)
++    return out
++
++
++def _rule_amendment_reproduction(want: str, label: str, script: Path,
++                                 brief_path, text: str, repo: Path,
++                                 timeout: int, register=None):
++    """The register entry iff an archived figure was invalidated by a RULE
++    CHANGE and the register's claim about the NEW value RE-EXECUTES. Else None.
++
++    THE CASE THIS EXISTS FOR (2026-10-02, this panel). The round-11 brief
++    declares `real-rejection rate : 2/640 = 0.3125%`. Under the access-only
++    gate the second of those two rejections -- refused on the vocabulary token
++    `seeded_fault`, not on a key access -- is no longer a rejection, so the
++    producer now prints 1/640 AT EVERY DATE, including 2026-09-11.
++    `_historical_reproduction` therefore cannot help: it pins the CORPUS, and
++    the corpus is not what moved. A figure in the historical record stopped
++    re-executing because a rule changed beneath it, retroactively.
++
++    WHY NOT PIN THE RULE SET TOO -- the other candidate on the table. Keeping
++    every superseded rule alive behind an as-of switch forks the predicate at
++    each ruling and the forks are LOAD-BEARING forever, because historical
++    re-execution reaches them. Each is a second place the same bug can live and
++    a second thing every later fix must be applied to; this project's own
++    record is that a class fixed in one place and not its twin is the shape it
++    keeps finding (`test_scanner_scope_refuses_ancestors_2026-10-02.py`). It
++    also makes "we changed our mind about what counts" invisible: the brief
++    re-executes and no reader learns the rule moved.
++
++    SO THE REGISTER, BUT AS A MEASUREMENT RATHER THAN A NOTE. An entry that
++    the validator merely CONSULTS is a licence to paper over any discrepancy.
++    This one is admissible only on 5 conditions, and condition 5 is the one
++    that makes it evidence:
++
++      1. An entry exists for exactly this brief and this declared value.
++      2. `superseded` is PRESENT in the archived brief's own text -- so an
++         amendment cannot be registered against a figure the brief never
++         declared.
++      3. `superseded != current` -- an amendment must amend. Equal values are
++         not an amendment, they are a wildcard.
++      4. `producer` is the SAME script the brief declared -- so the check
++         cannot be redirected to a more cooperative script.
++      5. The named producer, RE-EXECUTED NOW with the entry's own `--as-of`,
++         prints `current`. The archived figure is accepted because the
++         register's claim about the new value is re-executed, never because
++         the register asserts it.
++
++    Condition 5 is also what keeps the entry from rotting: it breaks the moment
++    anything else moves under the producer, which is the behaviour an exemption
++    can never have.
++
++    THE RECORD IS NOT EDITED and archived briefs are NOT exempted --
++    `test_declared_figure_as_of_2026-09-29.py` records that ruling and this
++    keeps it. The brief keeps its 2/640. An EMPTY register leaves this
++    function returning None for every figure, so the validator is exactly as
++    strict as it was before the register existed.
++    """
++    if brief_path is None:
++        return None
++    brief_path = Path(brief_path)
++    if not brief_path.is_file():
++        return None
++    try:
++        rel_brief = str(brief_path.resolve().relative_to(repo.resolve()))
++    except ValueError:
++        rel_brief = str(brief_path)
++    try:
++        rel_script = str(Path(script).resolve().relative_to(repo.resolve()))
++    except ValueError:
++        rel_script = str(script)
++
++    for a in _load_rule_amendments(register):
++        # 1. this brief, this declared value.
++        if Path(a["brief"]).as_posix() != Path(rel_brief).as_posix():
++            continue
++        if a["superseded"].strip() != want.strip():
++            continue
++        # 2. the superseded value must really be in the archived record.
++        if a["superseded"] not in text:
++            continue
++        # 3. an amendment must amend.
++        if a["superseded"].strip() == a["current"].strip():
++            continue
++        # 4. no redirecting to a friendlier producer.
++        if Path(a["producer"]).as_posix() != Path(rel_script).as_posix():
++            continue
++        # 5. the claim about the NEW value is RE-EXECUTED, not trusted.
++        prod = repo / a["producer"]
++        if not prod.is_file():
++            continue
++        try:
++            r = subprocess.run([sys.executable, str(prod), "--as-of", a["as_of"]],
++                               cwd=repo, capture_output=True, text=True,
++                               timeout=timeout)
++        except subprocess.TimeoutExpired:
++            continue
++        if r.returncode != 0:
++            continue
++        if _figure_token_found(a["current"], r.stdout + "\n" + r.stderr):
++            return a
++    return None
++
++
+ def check_declared_figures(text: str, repo: Path = REPO,
+                            timeout: int = 600, brief_path=None) -> list[str]:
+     """Re-execute every declared figure. Empty list means all reproduced.
+@@ -395,6 +529,23 @@
+         # `rate = 0.29`. A figure must be found in output that was actually
+         # emitted, not in the seam between two streams.
+         if not _figure_token_found(want, r.stdout + "\n" + r.stderr):
++            amend = _rule_amendment_reproduction(
++                want, label, script, brief_path, text, repo, timeout)
++            if amend is not None:
++                # LOUD BY DESIGN, like the historical path, and for the same
++                # reason: a quiet acceptance is how an exemption rots into a
++                # hole. The reader is told the RULE moved, which is the fact
++                # a silent as-of reproduction would have hidden.
++                print(f"panel-brief: RULE AMENDMENT — {label!r}: the brief "
++                      f"declares {want!r}, which no longer re-executes at ANY "
++                      f"date because the RULE changed on {amend['amended'] if amend.get('amended') else 'an unrecorded date'}: "
++                      f"{amend['rule']} The register's successor value "
++                      f"{amend['current']!r} WAS re-executed just now via "
++                      f"{amend['producer']} --as-of {amend['as_of']}. The "
++                      f"archived record stands unedited as a claim about "
++                      f"evidence under the superseded rule; do NOT reuse this "
++                      f"figure.", file=sys.stderr)
++                continue
+             hist = _historical_reproduction(want, script, brief_path, text,
+                                             repo, timeout)
+             if hist is not None:
+
+### cc2:attempt-1:scripts/repro_supply_causes_2026-10-02.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/repro_supply_causes_2026-10-02.py	2026-10-02 22:28:14
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo/scripts/repro_supply_causes_2026-10-02.py	2026-10-02 22:41:47
+@@ -73,6 +73,31 @@
+                 or (e.get("routing_verdict_unreconciled") or "").strip().upper()
+                 or ((h[-1].get("verdict") or "").strip().upper() if h else ""))
+ 
++    # A VERDICT A TOOL WROTE, as against a label the runner stamps when nothing
++    # runnable was supplied.
++    #
++    # THIS IS WHY CAUSE 2 DID NOT REPRODUCE (2026-10-02 panel). `verdict()`
++    # above returns ANY non-empty string, and `UNTOOLABLE` is a non-empty
++    # string: `reference_runner_v3.py` writes it at ~:5808 for a critical that
++    # arrives with no falsifier at all, and `falsifier_verify.reverify_falsifier`
++    # returns it for empty input. It sits in `EQUIPMENT_FAILURE_VERDICTS`
++    # precisely because it is NOT an adjudication of the claim.
++    #
++    # MEASURED: all 19 bodiless criticals in the 4 zero-plant control runs carry
++    # `falsifier_verdict == "UNTOOLABLE"` and nothing else, so `nobody` was
++    # False for every one of them and the control stratum measured 0 of 46. With
++    # the decline excluded it measures 19 of 46 -- the claimed count, exactly --
++    # under BOTH the body-only and the verdict-first definition. The claim was
++    # right and this script's own predicate was what refuted it.
++    #
++    # BOTH FIGURES ARE PRINTED BELOW. The earlier non-reproduction is part of
++    # the record and is not erased by correcting it.
++    DECLINED = {"UNTOOLABLE"}
++
++    def tool_verdict(e):
++        v = verdict(e)
++        return "" if v in DECLINED else v
++
+     # ── CAUSE 1: does naming a concrete file predict ERROR? ────────────────
+     a=b=c=d=0
+     for (run, cid), (r, tgt, body, e) in post.items():
+@@ -92,27 +117,31 @@
+               f"{'REPRODUCED' if abs(o-4.3049) < 0.05 else 'NOT REPRODUCED'}")
+ 
+     # ── CAUSE 2: zero-plant controls ───────────────────────────────────────
+-    a=b=c=d=0
+-    for (run, cid), (r, tgt, body, e) in post.items():
+-        ctrl = ("control" in run.lower() or "zero" in run.lower())
+-        nobody = not body and not verdict(e)
+-        if ctrl: a, b = a + nobody, b + (not nobody)
+-        else:    c, d = c + nobody, d + (not nobody)
+     print("\nCAUSE 2  zero-plant controls: no falsifier at all")
+-    print(f"  control runs  no-body {a:4d}  other {b:4d}")
+-    print(f"  live runs     no-body {c:4d}  other {d:4d}")
+-    if a+b and c+d:
+-        o, p, pm = fisher(a, b, c, d)
+-        print(f"  Fisher OR = {o}  scipy p = {p:.6e}  mpmath p = {pm:.6e}  "
+-              f"agree={abs(p-pm) < 1e-9}")
+-        print(f"  claimed: 19 of 46, OR 14.9614, p = 6.39737e-12 -> "
+-              f"{'REPRODUCED' if (a, b) == (19, 46-19) else 'NOT REPRODUCED (counts differ)'}")
++    for lbl, hasv in (("as first written: a DECLINE counts as a verdict", verdict),
++                      ("corrected: only a TOOL verdict counts as a verdict",
++                       tool_verdict)):
++        a=b=c=d=0
++        for (run, cid), (r, tgt, body, e) in post.items():
++            ctrl = ("control" in run.lower() or "zero" in run.lower())
++            nobody = not body and not hasv(e)
++            if ctrl: a, b = a + nobody, b + (not nobody)
++            else:    c, d = c + nobody, d + (not nobody)
++        print(f"  {lbl}")
++        print(f"    control runs  no-body {a:4d}  other {b:4d}")
++        print(f"    live runs     no-body {c:4d}  other {d:4d}")
++        if a+b and c+d:
++            o, p, pm = fisher(a, b, c, d)
++            print(f"    Fisher OR = {o:.4f}  scipy p = {p:.6e}  mpmath p = {pm:.6e}  "
++                  f"agree={abs(p-pm) < 1e-9}")
++            print(f"    claimed: 19 of 46, OR 14.9614, p = 6.39737e-12 -> "
++                  f"{'REPRODUCED' if (a, b) == (19, 46-19) else 'NOT REPRODUCED (counts differ)'}")
+ 
+     # ── CAUSE 3: prose vs code targets ─────────────────────────────────────
+     a=b=c=d=0
+     for (run, cid), (r, tgt, body, e) in post.items():
+         t = tgt.lower()
+-        nobody = not body and not verdict(e)
++        nobody = not body and not tool_verdict(e)
+         if t.endswith(".md"):   a, b = a + nobody, b + (not nobody)
+         elif t.endswith(".py"): c, d = c + nobody, d + (not nobody)
+     print("\nCAUSE 3  prose vs code targets: no falsifier at all")
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-02 22:53:13
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/.cdsfl_deny_canonical_writes.sb	2026-10-02 22:30:35
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/amendments_register.json
+--- /dev/null	2026-10-02 22:53:13
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/amendments_register.json	2026-10-02 22:40:39
+@@ -0,0 +1,30 @@
++{
++  "_doc": [
++    "RULE-CHANGE AMENDMENTS REGISTER (2026-10-02, panel dispute D-5 blast radius).",
++    "A declared figure in an ARCHIVED brief is a commitment: the validator",
++    "re-executes it via the producer's --as-of, which pins the CORPUS to the",
++    "brief's date. That mechanism cannot absorb a RULE change, because a rule",
++    "changes the numerator at every date: round 11's 2/640 became 1/640 when",
++    "the access-only falsifier gate landed, with the corpus unmoved.",
++    "",
++    "Each entry here registers one such invalidation. The archived brief is",
++    "NEVER edited; the register records what was declared, which ruling",
++    "superseded it, and what the same producer prints as of the same date",
++    "under the CURRENT rules. The validator accepts the archived figure ONLY",
++    "if the registered superseding value itself re-executes -- a register",
++    "entry is a claim about evidence like any other, so a tampered or stale",
++    "entry refuses exactly as an unregistered discrepancy does.",
++    "",
++    "Append-only. An entry is matched on (producer, declared) exactly."
++  ],
++  "amendments": [
++    {
++      "amended_on": "2026-10-02",
++      "ruling": "access-only falsifier gate (founder ruling 2026-10-02): the refusal set narrowed to access evidence, so one of round 11's two 'real rejections' -- a vocabulary-only hit -- is no longer a real rejection at any date",
++      "producer": "scripts/archived_falsifier_rejections_2026-09-10.py",
++      "declared": "real-rejection rate : 2/640 = 0.3125%",
++      "reexecutes_as": "real-rejection rate : 1/640 = 0.1562%",
++      "briefs": ["bench/logs/panel_round11_2026-09-11/BRIEF.md"]
++    }
++  ]
++}
+
+### fable:attempt-1:bench/key_access_forensics.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/key_access_forensics.py	2026-10-02 20:06:26
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/key_access_forensics.py	2026-10-02 22:36:17
+@@ -516,18 +516,22 @@
+     return _is_benign_home(target)
+ 
+ 
+-def discover_target_dirs(run_dir: Path) -> list[str]:
+-    """Directories the panel was *supposed* to read, taken from runner-authored
+-    records only (`target_file` / `context_files` / `staged_copy`)."""
+-    found: set[str] = set()
+-    # `endswith("_report.json")` was a wildcard a model could satisfy by writing
+-    # one file: `codex_analysis_report.json` declaring a `target_file` of its
+-    # choosing widened the allowlist and turned a COMPROMISED verdict clean.
+-    #
+-    # The runner writes exactly ONE report per run. So a single report is trusted;
+-    # the moment a second appears, only the one whose name matches the declared
+-    # experiment is trusted, and if none matches, none is. Widening the allowlist
+-    # now requires displacing the runner's own artefact rather than adding to it.
++def _trusted_record_paths(run_dir: Path) -> list[Path]:
++    """Runner-authored records, and nothing a model could add beside them.
++
++    `endswith("_report.json")` was a wildcard a model could satisfy by writing
++    one file: `codex_analysis_report.json` declaring a `target_file` of its
++    choosing widened the allowlist and turned a COMPROMISED verdict clean.
++
++    The runner writes exactly ONE report per run. So a single report is trusted;
++    the moment a second appears, only the one whose name matches the declared
++    experiment is trusted, and if none matches, none is. Widening the allowlist
++    now requires displacing the runner's own artefact rather than adding to it.
++
++    ONE TRUST BOUNDARY, TWO READERS (2026-10-02): `discover_target_dirs` and
++    `discover_run_roots` both select candidates here, so the historical-root
++    allowlist cannot acquire a laxer rule than the target-dir allowlist.
++    """
+     reports = sorted(run_dir.rglob("*_report.json"))
+     allowed_names = set(RUNNER_AUTHORED)
+     if len(reports) == 1:
+@@ -544,8 +548,50 @@
+             if exp:
+                 declared.add(f"{exp}_report.json")
+         allowed_names |= {r.name for r in reports if r.name in declared}
+-    candidates = [p for p in run_dir.rglob("*.json") if p.name in allowed_names]
+-    for p in candidates:
++    return [p for p in run_dir.rglob("*.json") if p.name in allowed_names]
++
++
++def discover_run_roots(run_dir: Path) -> list[str]:
++    """Repository roots AS THEY WERE AT RUN TIME, from runner-authored records.
++
++    THE SECOND RELOCATION DEFECT (2026-10-02 panel). Run 1b's falsifier bodies
++    open absolute paths under the canonical root the runner recorded in
++    `panel_confinement.run_root`. `scan_run` judged those literals against the
++    CURRENT checkout's root only, so scanning the archive from a relocated
++    checkout (sandbox, second machine, CI) scored 107 legitimate repo reads as
++    CONFIRMED out-of-scope access, fired the advisory, and killed the committed
++    measurement `scripts/advisory_channel_selection_2026-10-02.py` on its own
++    assert. A forensic verdict over an archive must not depend on where the
++    archive is scanned from.
++
++    Only `panel_confinement.run_root` is read, only from trusted records, and
++    the result participates in scope ONLY for an unconfined (code-review) run:
++    `scan_run` keeps a confined exam's historical root out of scope, so
++    confinement semantics are unchanged. Held by
++    bench/tests/test_forensics_survives_relocation_2026-10-02.py.
++    """
++    found: set[str] = set()
++    for p in _trusted_record_paths(run_dir):
++        try:
++            obj = json.loads(p.read_text(encoding="utf-8", errors="replace"))
++        except Exception:  # noqa: BLE001
++            continue
++        if not isinstance(obj, dict):
++            continue
++        pc = obj.get("panel_confinement")
++        v = pc.get("run_root") if isinstance(pc, dict) else None
++        if isinstance(v, str) and v:
++            root = _norm_path(v)
++            if root and root != "/" and os.path.isabs(root):
++                found.add(root)
++    return sorted(found)
++
++
++def discover_target_dirs(run_dir: Path) -> list[str]:
++    """Directories the panel was *supposed* to read, taken from runner-authored
++    records only (`target_file` / `context_files` / `staged_copy`)."""
++    found: set[str] = set()
++    for p in _trusted_record_paths(run_dir):
+         try:
+             obj = json.loads(p.read_text(encoding="utf-8", errors="replace"))
+         except Exception:  # noqa: BLE001 - unparseable artefacts contribute nothing
+@@ -707,11 +753,19 @@
+     # An exam run is recognised by the panel having been confined somewhere other
+     # than this tree — which is exactly the condition under which repo reads stop
+     # being legitimate.
++    # THE REPOSITORY HAS TWO NAMES: the one it has now, and the one it had
++    # when the run executed (`panel_confinement.run_root`, runner-authored).
++    # Path literals in archived artefacts were written against the latter, so
++    # both participate in the confinement test and -- for an unconfined run --
++    # in the allowlist. Judging an archive only against the scanning machine's
++    # root made the verdict a function of where the scan ran: 107 false
++    # CONFIRMED hits on run 1b from a relocated checkout (2026-10-02).
++    roots = sorted({str(repo_root.resolve()), *discover_run_roots(run_dir)})
+     confined = bool(rep.target_dirs) and not any(
+-        _under(d, str(repo_root.resolve())) for d in rep.target_dirs)
++        _under(d, r) for d in rep.target_dirs for r in roots)
+     allowlist = [str(run_dir), *rep.target_dirs]
+     if not confined:
+-        allowlist.insert(0, str(repo_root.resolve()))
++        allowlist[0:0] = roots
+     rep.repo_in_scope = not confined
+     protected = [_norm_path(str(k)) for k in key_dirs]
+ 
+
+### fable:attempt-1:bench/logs/falsifier_supply_and_integrity_2026-10-02/dispatch.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/falsifier_supply_and_integrity_2026-10-02/dispatch.log	2026-10-02 22:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/logs/falsifier_supply_and_integrity_2026-10-02/dispatch.log	2026-10-02 22:29:42
+@@ -1,19 +0,0 @@
+-[22:30:35] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo
+-[22:30:35] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo
+-[22:30:35] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo
+-[22:30:35]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo
+-[22:30:35] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo
+-[22:30:35]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo
+-[22:46:06]   [claude-cli:fable] 58 tool call(s) this attempt, 58 in total
+-[22:46:06]   [claude-cli:fable] done (931.2s, 12036 chars)
+-    suite: GREEN at 1cfc30e — 8,878 passed, 0 failed  [recorded at 1cfc30e, HEAD is 2a3d6e3, 72 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 10,781 chars, about 2,695 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r346vndu/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo
+-  [fable] ok=True chars=12036 tools=58 931.2s
+-[22:52:56]   [claude-cli:opus] 88 tool call(s) this attempt, 88 in total
+-[22:52:56]   [claude-cli:opus] done (1341.4s, 22669 chars)
+-  [cc2] ok=True chars=22669 tools=88 1341.4s
+-[22:52:56] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:bench/tests/test_amendments_register_2026-10-02.py
+--- /dev/null	2026-10-02 22:53:25
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/tests/test_amendments_register_2026-10-02.py	2026-10-02 22:41:04
+@@ -0,0 +1,127 @@
++"""The rule-change amendments register (D-5 blast radius, 2026-10-02).
++
++`--as-of` pins the CORPUS to an archived brief's date, so a figure invalidated
++by corpus drift stays decidable forever. It cannot absorb a RULE change: the
++access-only falsifier gate moved round 11's numerator at every date (2/640 ->
++1/640, corpus unmoved), so a figure in the historical record stopped
++re-executing with the record unedited and un-exempted.
++
++THE REMEDY UNDER TEST. bench/amendments_register.json registers each such
++invalidation: what was declared, which ruling superseded it, and what the same
++producer prints as of the same date under the CURRENT rules. The validator
++accepts the archived figure ONLY when the registered superseding value itself
++re-executes in the same --as-of output. The register is held to evidence like
++everything else, and these tests include both failure directions:
++
++  * an UNREGISTERED stale figure refuses exactly as before, and
++  * a TAMPERED register entry (a superseding value the producer does not
++    print) refuses -- the register is not a whitewash channel.
++
++EXECUTE, DO NOT GREP: every case runs the validator predicate.
++"""
++from __future__ import annotations
++
++import importlib.util
++import json
++import sys
++from pathlib import Path
++
++import pytest
++
++ROOT = Path(__file__).resolve().parents[2]
++VALIDATE = ROOT / "scripts" / "panel_brief_validate.py"
++REGISTER = ROOT / "bench" / "amendments_register.json"
++BRIEF = ROOT / "bench" / "logs" / "panel_round11_2026-09-11" / "BRIEF.md"
++
++
++@pytest.fixture(scope="module")
++def mod():
++    spec = importlib.util.spec_from_file_location("pbv_amend", VALIDATE)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules["pbv_amend"] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++@pytest.fixture()
++def round11_guard():
++    if not BRIEF.is_file():
++        pytest.skip("round 11's brief is not in this checkout")
++    if not REGISTER.is_file():
++        pytest.skip("amendments register absent")
++
++
++def test_the_register_is_wellformed_and_append_only_in_shape():
++    data = json.loads(REGISTER.read_text(encoding="utf-8"))
++    assert isinstance(data.get("amendments"), list) and data["amendments"]
++    for a in data["amendments"]:
++        for k in ("amended_on", "ruling", "producer", "declared",
++                  "reexecutes_as"):
++            assert isinstance(a.get(k), str) and a[k], (k, a)
++
++
++def test_a_registered_rule_change_reconciles_the_archived_brief(
++        mod, round11_guard, capsys):
++    problems = mod.check_declared_figures(
++        BRIEF.read_text(), brief_path=BRIEF)
++    stale = [p for p in problems if "2/640" in p]
++    assert not stale, (
++        f"the registered amendment did not reconcile the archived figure: "
++        f"{stale}")
++    err = capsys.readouterr().err
++    assert "AMENDED FIGURE" in err, (
++        "the acceptance was silent; a quiet amendment is how a rule change "
++        "rots into an exemption")
++    assert "2/640 = 0.3125%" in BRIEF.read_text(), (
++        "the archived brief was EDITED -- the one fix the ruling forbids")
++
++
++def test_an_unregistered_stale_figure_is_still_refused(mod, round11_guard):
++    text = BRIEF.read_text().replace(
++        "real-rejection rate : 2/640 = 0.3125%",
++        "real-rejection rate : 3/640 = 0.4688%")
++    problems = mod.check_declared_figures(text, brief_path=BRIEF)
++    assert any("3/640" in p and "does not print it" in p for p in problems), (
++        f"a figure with no amendment entry passed: {problems}")
++
++
++def test_a_tampered_register_entry_is_refused(
++        mod, round11_guard, tmp_path, monkeypatch):
++    """DEMONSTRATED FAILING WHEN IT SHOULD: an entry whose superseding value
++    the producer does not print must not reconcile anything."""
++    fake_repo = tmp_path  # a register the test owns, not the committed one
++    data = json.loads(REGISTER.read_text(encoding="utf-8"))
++    data["amendments"][0]["reexecutes_as"] = (
++        "real-rejection rate : 640/640 = 100.0000%")
++    (fake_repo / "bench").mkdir()
++    (fake_repo / "bench" / "amendments_register.json").write_text(
++        json.dumps(data))
++    monkeypatch.setattr(
++        mod, "_rule_amendments",
++        lambda repo: json.loads(
++            (fake_repo / "bench" / "amendments_register.json").read_text()
++        )["amendments"])
++    problems = mod.check_declared_figures(
++        BRIEF.read_text(), brief_path=BRIEF)
++    assert any("2/640" in p and "does not print it" in p
++               for p in problems), (
++        "a TAMPERED register entry reconciled the brief -- the register is a "
++        "whitewash channel")
++
++
++def test_a_rule_amendment_on_a_fresh_brief_still_refuses(mod, tmp_path,
++                                                         round11_guard):
++    """The dodge stays shut: a brief written TODAY declaring the superseded
++    figure fails the mtime gate before the register is ever consulted."""
++    import shutil
++    dodge = tmp_path / "BRIEF.md"
++    shutil.copyfile(BRIEF, dodge)  # same text and dates; mtime NOW
++    problems = mod.check_declared_figures(dodge.read_text(), brief_path=dodge)
++    assert any("2/640" in p and "does not print it" in p
++               for p in problems), (
++        f"a freshly written brief re-declared a rule-superseded figure and "
++        f"was not refused: {problems}")
++
++
++if __name__ == "__main__":
++    sys.exit(pytest.main([__file__, "-v"]))
+
+### fable:attempt-1:bench/tests/test_declared_figure_as_of_2026-09-29.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_declared_figure_as_of_2026-09-29.py	2026-09-29 01:52:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/tests/test_declared_figure_as_of_2026-09-29.py	2026-10-02 22:41:59
+@@ -53,16 +53,34 @@
+ 
+ class TestTheProducerAsOf:
+     def test_as_of_the_briefs_date_reproduces_the_declared_figure(self):
+-        """The historical figure is DECIDABLE, not trusted: 2/640 = 0.3125%
+-        re-executes against the corpus as it stood."""
++        """The historical figure is DECIDABLE, not trusted.
++
++        AMENDED 2026-10-02 (access-only gate; D-5 blast radius; reported as a
++        finding by the review panel, not silently repaired). This oracle
++        pinned `2/640 = 0.3125%`, which was true under the rules of its date.
++        The access-only ruling narrowed the refusal set and moved the
++        NUMERATOR at every date -- a rule change, not corpus drift, which
++        `--as-of` cannot absorb. The CURRENT-rule value as of 2026-09-11 is
++        `1/640`, and the superseded declaration is preserved, machine-checked,
++        in bench/amendments_register.json (held by
++        bench/tests/test_amendments_register_2026-10-02.py). Both values stay
++        decidable: this test pins the live rule set, the register pins the
++        superseded one."""
+         r = subprocess.run(
+             [sys.executable, str(PRODUCER), "--as-of", "2026-09-11"],
+             cwd=ROOT, capture_output=True, text=True, timeout=600)
+         assert r.returncode == 0, r.stderr[-600:]
+-        assert "real-rejection rate : 2/640 = 0.3125%" in r.stdout, (
+-            "the archive as of 2026-09-11 no longer yields the round-11 "
++        assert "real-rejection rate : 1/640 = 0.1562%" in r.stdout, (
++            "the archive as of 2026-09-11 no longer yields the access-only "
+             "figure; the historical record itself is now in question:\n"
+             + r.stdout[-600:])
++        import json
++        reg = json.loads((ROOT / "bench" / "amendments_register.json")
++                         .read_text(encoding="utf-8"))
++        assert any(a.get("declared") == "real-rejection rate : 2/640 = 0.3125%"
++                   for a in reg.get("amendments", [])), (
++            "the superseded round-11 declaration left the register -- the "
++            "historical commitment is no longer accounted for anywhere")
+ 
+     def test_unrestricted_still_reports_the_live_corpus(self, archive_grew):
+         """The flag must not have bent the live measurement (additive check:
+@@ -98,7 +116,11 @@
+                            cwd=ROOT, capture_output=True, text=True,
+                            timeout=1200)
+         assert r.returncode == 0, (r.stdout + r.stderr)[-800:]
+-        assert "HISTORICAL FIGURE" in (r.stdout + r.stderr), (
++        # AMENDED 2026-10-02: the round-11 figure is now reconciled through
++        # the rule-change register, so the loud acceptance marker is AMENDED
++        # FIGURE; HISTORICAL FIGURE remains the marker for pure corpus drift.
++        assert ("AMENDED FIGURE" in (r.stdout + r.stderr)
++                or "HISTORICAL FIGURE" in (r.stdout + r.stderr)), (
+             "the acceptance was silent; a quiet historical acceptance is how "
+             "an exemption rots into a hole")
+ 
+
+### fable:attempt-1:bench/tests/test_forensics_survives_relocation_2026-10-02.py
+--- /dev/null	2026-10-02 22:53:25
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/bench/tests/test_forensics_survives_relocation_2026-10-02.py	2026-10-02 22:35:45
+@@ -0,0 +1,110 @@
++"""FALSIFIER + regression hold: the forensics scanner must judge a historical
++run's path literals against the repository root AT RUN TIME, not against
++wherever the archive happens to be scanned from.
++
++THE DEFECT (2026-10-02 panel, this review). Run 1b's falsifier bodies open
++absolute paths under the canonical root `/Users/georgejackson/...`. The runner
++recorded that root in `panel_confinement.run_root` (runner-authored, in the
++single trusted report). `scan_run` ignored it and judged every literal against
++the CURRENT checkout's root, so scanning the same archive from a relocated
++checkout (a sandbox, a second machine, CI) turned 107 legitimate repo reads
++into CONFIRMED advisory hits: the advisory fired, the verdict said
++COMPROMISED, and the committed measurement
++`scripts/advisory_channel_selection_2026-10-02.py` died on its own assert --
++a figure in the record that re-executes on exactly one machine.
++
++THE HOLD. Three properties, all run against a synthetic archive so the test is
++machine-independent:
++  1. A code-review run whose report records a historical run_root is scanned
++     with that root IN SCOPE: a falsifier body opening a file under it is not
++     an access.
++  2. The trust boundary is unchanged: a historical root is read from
++     runner-authored records only; a second, model-authored report naming a
++     permissive run_root widens nothing.
++  3. The exam case is untouched: a confined run (absolute staged target
++     outside every root) keeps the historical root OUT of scope.
++"""
++from __future__ import annotations
++
++import json
++import pathlib
++import sys
++
++ROOT = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(ROOT))
++
++from bench.key_access_forensics import scan_run  # noqa: E402
++
++OLD_ROOT = "/Users/nobody_anywhere/Historical_Checkout/Constraint_Engineering"
++
++
++def _mk_run(tmp, *, experiment="synthetic_code_review", run_root=OLD_ROOT,
++            target_file="bench/some_target.md", extra_report=None):
++    run = tmp / "fake_run"
++    run.mkdir(parents=True, exist_ok=True)
++    (run / f"{experiment}_report.json").write_text(json.dumps({
++        "experiment": experiment,
++        "target_file": target_file,
++        "panel_confinement": {"run_root": run_root},
++    }))
++    (run / "checkpoint.json").write_text(json.dumps({
++        "experiment": experiment,
++        "all_findings": [{
++            "canonical_id": "C0001",
++            "falsifier_code": (
++                "import pathlib\n"
++                f"SPEC = pathlib.Path(\"{run_root}/bench/some_target.md\")"
++                ".read_text()\n"
++                "assert 'claim' in SPEC\n"),
++        }],
++    }))
++    if extra_report:
++        (run / extra_report[0]).write_text(json.dumps(extra_report[1]))
++    return run
++
++
++def test_historical_run_root_is_in_scope_for_a_code_review(tmp_path):
++    rep = scan_run(_mk_run(tmp_path), repo_root=ROOT)
++    bad = [h for h in rep.confirmed
++           if h.label == "out-of-scope path opened or listed"]
++    assert not bad, (
++        "FALSIFIED: a falsifier reading a file under the recorded historical "
++        f"run_root was scored as out-of-scope access: {bad[:3]}")
++
++
++def test_a_model_authored_second_report_widens_nothing(tmp_path):
++    # The forged report names another user's home as run_root. Under the
++    # single-trusted-report rule only the report matching the declared
++    # experiment is read, so the forgery must not put it in scope.
++    run = _mk_run(
++        tmp_path,
++        extra_report=("codex_analysis_report.json",
++                      {"experiment": "forged",
++                       "panel_confinement": {"run_root": "/Users/victim"}}))
++    (run / "r0_seat.json").write_text(json.dumps({
++        "falsifier_code": "open('/Users/victim/secret.json').read()"}))
++    rep = scan_run(run, repo_root=ROOT)
++    hits = [h for h in rep.confirmed if "/Users/victim/secret.json" in h.snippet]
++    assert hits, (
++        "FALSIFIED: a model-authored second report widened the allowlist -- "
++        "an out-of-root read scored clean")
++
++
++def test_a_confined_exam_keeps_the_historical_root_out_of_scope(tmp_path):
++    staged = tmp_path / "staged_exam_dir"
++    staged.mkdir()
++    run = _mk_run(tmp_path, experiment="synthetic_exam",
++                  target_file=str(staged / "exam.md"))
++    rep = scan_run(run, repo_root=ROOT)
++    assert rep.repo_in_scope is False
++    bad = [h for h in rep.confirmed
++           if h.label == "out-of-scope path opened or listed"]
++    assert bad, (
++        "FALSIFIED: a confined exam run treated the historical repo root as "
++        "in scope -- confinement no longer excludes the repository"
++    )
++
++
++if __name__ == "__main__":
++    import pytest
++    raise SystemExit(pytest.main([__file__, "-q"]))
+
+### fable:attempt-1:scripts/panel_brief_validate.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/panel_brief_validate.py	2026-10-02 19:12:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ccj2bjhk/repo/scripts/panel_brief_validate.py	2026-10-02 22:40:39
+@@ -33,6 +33,7 @@
+ 
+ import argparse
+ import calendar
++import json
+ import re
+ import subprocess
+ import sys
+@@ -230,6 +231,9 @@
+ _HISTORICAL_MTIME_SLACK = 48 * 3600
+ 
+ _DATE_RE = re.compile(r"20\d\d-\d\d-\d\d")
++
++#: Repo-relative path of the rule-change amendments register (D-5).
++AMENDMENTS_REGISTER = "bench/amendments_register.json"
+ 
+ 
+ def _historical_reproduction(want: str, script: Path, brief_path,
+@@ -280,9 +284,40 @@
+         return None
+     if r.returncode != 0:
+         return None                    # no --as-of support: refusal stands
+-    if _figure_token_found(want, r.stdout + "\n" + r.stderr):
+-        return as_of
++    out = r.stdout + "\n" + r.stderr
++    if _figure_token_found(want, out):
++        return as_of, None
++    # A RULE CHANGE, NOT CORPUS DRIFT (2026-10-02, D-5 blast radius). --as-of
++    # pins the denominator to the brief's date, but a rule amendment moves the
++    # NUMERATOR at every date: round 11's 2/640 became 1/640 when the
++    # access-only gate landed, with the corpus unmoved. The archived brief is
++    # not edited and not exempted; the discrepancy must instead be REGISTERED
++    # in bench/amendments_register.json, and the register is itself held to
++    # evidence: the entry's superseding value must re-execute in the same
++    # as-of output, so a tampered entry refuses exactly as an unregistered
++    # discrepancy does. Held by
++    # bench/tests/test_amendments_register_2026-10-02.py.
++    for a in _rule_amendments(repo):
++        try:
++            same_producer = (Path(repo) / str(a.get("producer"))).resolve() == script
++        except (OSError, TypeError):
++            continue
++        if (same_producer and a.get("declared") == want
++                and isinstance(a.get("reexecutes_as"), str)
++                and _figure_token_found(a["reexecutes_as"], out)):
++            return as_of, a
+     return None
++
++
++def _rule_amendments(repo: Path) -> list[dict]:
++    """Committed rule-change amendments, or [] when the register is absent."""
++    try:
++        data = json.loads((Path(repo) / AMENDMENTS_REGISTER)
++                          .read_text(encoding="utf-8"))
++    except (OSError, ValueError):
++        return []
++    out = data.get("amendments")
++    return [a for a in out if isinstance(a, dict)] if isinstance(out, list) else []
+ 
+ 
+ def check_declared_figures(text: str, repo: Path = REPO,
+@@ -398,15 +433,28 @@
+             hist = _historical_reproduction(want, script, brief_path, text,
+                                             repo, timeout)
+             if hist is not None:
++                as_of_date, amendment = hist
+                 # LOUD BY DESIGN, and never silenced by --quiet: a quiet
+                 # historical acceptance is how an exemption rots into a hole.
+-                print(f"panel-brief: HISTORICAL FIGURE — {label!r}: {want!r} "
+-                      f"does not re-execute against today's archive, but DOES "
+-                      f"re-execute with --as-of {hist}, the latest date this "
+-                      f"brief carries, and the brief's mtime is consistent "
+-                      f"with that date. The record stands as a claim about "
+-                      f"evidence as of {hist}; re-run {rel} before REUSING "
+-                      f"this figure.", file=sys.stderr)
++                if amendment is None:
++                    print(f"panel-brief: HISTORICAL FIGURE — {label!r}: {want!r} "
++                          f"does not re-execute against today's archive, but DOES "
++                          f"re-execute with --as-of {as_of_date}, the latest date "
++                          f"this brief carries, and the brief's mtime is "
++                          f"consistent with that date. The record stands as a "
++                          f"claim about evidence as of {as_of_date}; re-run {rel} "
++                          f"before REUSING this figure.", file=sys.stderr)
++                else:
++                    print(f"panel-brief: AMENDED FIGURE — {label!r}: {want!r} "
++                          f"was true under the rules of its date and was "
++                          f"superseded by a RULE change, not corpus drift: "
++                          f"{amendment.get('ruling')} (registered "
++                          f"{amendment.get('amended_on')} in "
++                          f"{AMENDMENTS_REGISTER}). As of {as_of_date} the same "
++                          f"producer now prints "
++                          f"{amendment.get('reexecutes_as')!r}, verified in this "
++                          f"run. The archived record stands unedited; do not "
++                          f"REUSE the superseded figure.", file=sys.stderr)
+                 continue
+             problems.append(
+                 f"declared figure {label!r}: the brief says {want!r} and {rel} "

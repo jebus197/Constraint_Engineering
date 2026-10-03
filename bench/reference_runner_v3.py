@@ -1931,6 +1931,20 @@ EQUIPMENT_FAILURE_VERDICTS = frozenset({"ERROR", "UNTOOLABLE"})
 # written for exactly that purpose: "Blocking is a founder decision and stays
 # default-off; the supply must not change that by the back door."
 ROUTABLE_INSTRUMENT_FAULTS = EQUIPMENT_FAILURE_VERDICTS | frozenset({"NON_DISCRIMINATING"})
+
+#: The falsifier-gate refusal verdict, named here so the routing branch that
+#: handles it need not import `bench.falsifier_verify` -- that module is a leaf
+#: by design and the dependency would run the wrong way. Pinned to
+#: `falsifier_verify.INTEGRITY_VIOLATION` by
+#: bench/tests/test_key_access_advisory_2026-10-02.py, so a rename there fails a
+#: test rather than silently un-handling the verdict here.
+#:
+#: DELIBERATELY NOT a member of either set above. It is not an equipment
+#: failure: the instrument did not fail, it was not permitted to read. Adding it
+#: to EQUIPMENT_FAILURE_VERDICTS would stamp `routing_deferred`, which
+#: `irreducible_queue_count` counts and which would halt the run -- the outcome
+#: the 2026-10-02 ruling forbids.
+INTEGRITY_REFUSED_VERDICT = "INTEGRITY_VIOLATION"
 TERMINAL_STATUSES = frozenset(
     {"CONFIRMED", "REFUTED", "CLOSED", "MERGED", "DUPLICATE"})
 
@@ -2136,6 +2150,67 @@ ATTESTED_STATUSES = frozenset({"CORROBORATED"})
 # FindingRegistry (identical to Exp 36 — A1 windowing, A3 HIL escalation)
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _integrity_violation_excluded(e) -> bool:
+    """True when a key-access refusal must not feed the convergence machinery.
+
+    FOUNDER RULING 2026-10-02, verbatim: "convergence should not be blocked and
+    runs should not be terminated even if a key was read. That is a reporting
+    and post run fix issue (as it always has been), not part of the convergence
+    machinery of the schema."
+
+    ONE PREDICATE, FOUR READERS. `_irreducible_queue_split` (the halt bound),
+    `unverified_critical_count` (the A4 blocker), the irreducible-bundle
+    collector and `integrity_refused_criticals` (the REPORT) all call this. The
+    last of those is why it is a function and not 4 conditions: an entry that
+    leaves the counters without appearing in the report would be a SILENT
+    exclusion, which is the one outcome the ruling's own wording forbids
+    ("if no key was accessed, say nothing" -- so if one was, say something).
+    Held by the excluded-implies-reported invariant in
+    bench/tests/test_one_predicate_excludes_and_reports_2026-10-02.py.
+
+    THE CARVE-OUT COMES FIRST, and it is a safety property, not a detail.
+    `reverify_falsifier` also returns INTEGRITY_VIOLATION when the runtime
+    observer never installed -- "no boundary AND no measurement". That is an
+    EQUIPMENT fault, and it is machine-wide when it happens: a broken
+    sitecustomize would make EVERY falsifier return INTEGRITY_VIOLATION, and if
+    this predicate swallowed them all a run could CONVERGE with zero verified
+    criticals. A false convergence on a dead instrument is the exact shape of
+    the 2026-09-09 warning, so `integrity_unobserved` entries keep blocking.
+
+    THE LADDER-SIDE RESIDUAL (D-6, 2026-10-02). `_apply_routing` writes
+    `falsifier_verdict` back only on `result.resolved`, so a refusal reached
+    through the routing ladder leaves the real verdict only in
+    `routing_history[-1]["verdict"]`, with `routing_verdict_unreconciled` as the
+    field that records it. MEASURED in run 1b's saved registry: of 40 entries,
+    exactly 1 carries an integrity verdict anywhere -- C0029, with
+    `routing_verdict_unreconciled == "INTEGRITY_VIOLATION"`,
+    `routing_history[-1]["verdict"] == "INTEGRITY_VIOLATION"`,
+    `routing_deferred` true, and `falsifier_verdict` reading CONFIRMED because a
+    later pass tested it. Nothing reads that field in either seat's fix, so the
+    ladder-side path was covered by neither.
+    """
+    if e.get("integrity_unobserved"):
+        return False
+    if e.get("integrity_refused"):
+        return True
+    _fv = (e.get("falsifier_verdict") or "").strip().upper()
+    if _fv == INTEGRITY_REFUSED_VERDICT:
+        return True
+    # The residual is read ONLY where the primary field is UNRESOLVED, and that
+    # qualifier is not cosmetic. `routing_verdict_unreconciled` is by its nature
+    # a stale record: run 1b's C0029 ends the run carrying
+    # `routing_verdict_unreconciled == "INTEGRITY_VIOLATION"` beside
+    # `falsifier_verdict == "CONFIRMED"`, because a later pass DID test it.
+    # Reading the stale field unconditionally would report that critical as
+    # "excused from the gate" when it had in fact been tested and confirmed --
+    # an overstatement in the very record that exists to prevent silence.
+    if _fv not in _FALSIFIER_RESOLVED_VERDICTS:
+        _ladder = (e.get("routing_verdict_unreconciled") or "").strip().upper()
+        if _ladder == INTEGRITY_REFUSED_VERDICT:
+            return True
+    return False
+
+
 def _irreducible_queue_split(entries) -> Tuple[int, int]:
     """(ladder-exhausted, never-assessed) over a registry's entries.
 
@@ -2158,6 +2233,21 @@ def _irreducible_queue_split(entries) -> Tuple[int, int]:
         if e.get("status") in _TERMINAL:
             continue
         if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+            continue
+        # THE HALT BOUND NO LONGER SEES A KEY-ACCESS REFUSAL (founder ruling
+        # 2026-10-02). Run 1b is the case this fixes: `gamma_critical` 0.336 >=
+        # 0.30 and `gamma_all` 0.432 at round 2 -- BOTH halves of the two-sided
+        # gate satisfied -- and the run HALTED on a queue of 3 against a bound
+        # of 2, one member being there only because the integrity gate had
+        # refused its falsifier on the vocabulary token `seeded_fault`.
+        #
+        # THIS CHANGES THE HALT INPUT ONLY, verified by execution rather than by
+        # reading: `_check_gamma_alt_convergence` reads the queue for a NOTE
+        # string and nothing else, so with gamma pinned at run 1b's values the
+        # gate returns the same verdict at queue 0 and queue 3 alike. Neither
+        # `gamma_critical` nor the zero-new-critical window moves. GAMMA IS
+        # LOAD-BEARING and is untouched here.
+        if _integrity_violation_excluded(e):
             continue
         if e.get("irreducible_escalation"):
             locked += 1
@@ -2683,11 +2773,57 @@ class FindingRegistry:
             # same meaning, one line.
             if e.get("exhausted"):
                 continue
+            # KEY-ACCESS REFUSAL IS NOT A CONVERGENCE INPUT (founder ruling
+            # 2026-10-02). Excusing it from the halt bound ALONE was measured
+            # and is NOT safe: with `irreducible_escalation` no longer stamped,
+            # an UNCONFIRMED critical carrying the refusal falls straight into
+            # this counter and A4 blocks instead. The `exhausted` valve above
+            # requires `len(verdicts) > 0`, and MEASURED over the 57 archived
+            # runner_state registries, 58 of 86 UNCONFIRMED criticals carry ZERO
+            # verdicts -- 67.4419%, Wilson [56.9779%, 76.4143%], statsmodels and
+            # mpmath agreeing to 1e-9. For the majority that valve never opens
+            # and the run burns to `max_rounds`: the shape the 2026-09-09 comment
+            # in `_apply_routing` warns of. So BOTH counters let it go and the
+            # REPORT carries it instead.
+            #
+            # THE SEAT'S OWN FIGURE FOR THIS DID NOT REPRODUCE. cc2 cited "156 of
+            # 263 (59.32%)"; the population here is 86, not 263 -- most likely
+            # the report/state double-count this project already records as
+            # having corrupted 2 measurements in 1 night. The ARGUMENT survives
+            # either reading, since both are a majority, which is why the
+            # argument is kept and the number is replaced. Producer:
+            # scripts/integrity_exclusion_figures_2026-10-02.py.
+            if _integrity_violation_excluded(e):
+                continue
             _fc = (e.get("falsifier_code") or "").strip()
             _fv = (e.get("falsifier_verdict") or "").strip().upper()
             if (not _fc) or _fv not in _FALSIFIER_RESOLVED_VERDICTS:
                 count += 1
         return count
+
+    def integrity_refused_criticals(self) -> List[str]:
+        """Canonical ids of non-terminal criticals excused by a key-access refusal.
+
+        THE PAIRED RECORD, AND IT IS THE HALF THE DESIGN BRIEF DID NOT SPECIFY.
+        `unverified_critical_count` and `irreducible_queue_count` both skip
+        these by the 2026-10-02 ruling, so nothing in the convergence machinery
+        can see them. This reader is the only thing that can, and it exists so
+        that a clean convergence is never reported over an untested critical in
+        silence. An empty list means silent, which is the ruling's own wording.
+
+        IT KEYS ON THE SAME PREDICATE AS THE EXCLUSIONS, not on a flag. Keying
+        it on `integrity_refused` alone -- which is what the first merge of the
+        2 panel fixes did -- leaves anything excluded by VERDICT rather than by
+        the routing branch excluded but unreported. Excluded-implies-reported is
+        asserted over randomised registries, not read off the source.
+        """
+        _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+        return sorted(
+            cid for cid, e in self.entries.items()
+            if _integrity_violation_excluded(e)
+            and e.get("status") not in _TERMINAL
+            and (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
+        )
 
     def irreducible_queue_decomposition(self) -> Tuple[int, int]:
         """The queue split into (ladder-exhausted, never-assessed).
@@ -5680,8 +5816,24 @@ def apply_falsifier_verdicts(
                     e["verified"] = False
                 tally["HIL"] += 1
             continue
+        from bench import falsifier_verify as _fv_mod
+        _n_rej_before = len(_fv_mod.INTEGRITY_REJECTIONS)
         verdict = reverify_falsifier(fcode, repo_root=repo_root)
         e["falsifier_verdict"] = verdict
+        if verdict == _fv_mod.INTEGRITY_VIOLATION:
+            # SAY WHICH KIND (2026-10-02), because the 2 kinds have opposite
+            # consequences. A KEY-ACCESS rejection leaves the convergence
+            # machinery by the founder's ruling; an UNOBSERVED run -- the
+            # runtime observer never installed, so nothing was measured -- is an
+            # equipment fault and must keep blocking, or a machine-wide
+            # sitecustomize fault could let a run converge having verified
+            # nothing. The rejection records appended by THIS call are the
+            # evidence, so they are read rather than the cause being re-derived
+            # from the falsifier's source text.
+            _recs = _fv_mod.INTEGRITY_REJECTIONS[_n_rej_before:]
+            e["integrity_unobserved"] = any(
+                "observer did not install" in (v.get("reason") or "")
+                for r in _recs for v in r.get("violations", []))
         # Recorded on the RUNNER's re-execution result, before any later stage
         # rewrites the verdict field (the discrimination control overwrites it
         # with NON_DISCRIMINATING), because what the ledger documents is what
@@ -6597,6 +6749,37 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
                 f"'Irreducible' would assert a machine tried and failed.",
             )
             tally["deferred"] = tally.get("deferred", 0) + 1
+        elif (e.get("falsifier_verdict") or "").strip().upper() == INTEGRITY_REFUSED_VERDICT \
+                and not e.get("integrity_unobserved"):
+            # A KEY-ACCESS REFUSAL IS A REPORTING EVENT, NOT AN IRREDUCIBLE
+            # FINDING (founder ruling 2026-10-02).
+            #
+            # Before this branch existed, INTEGRITY_VIOLATION was in neither
+            # EQUIPMENT_FAILURE_VERDICTS nor ROUTABLE_INSTRUMENT_FAULTS, so it
+            # fell through to the `else` below and was stamped
+            # `irreducible_escalation` -- "a machine tried and failed", which is
+            # FALSE: the machine was not allowed to try. That stamp put the
+            # finding in the halt bound, and run 1b halted on it at round 2 with
+            # both halves of the convergence gate already satisfied.
+            #
+            # The claim remains UNTESTED and the entry is resolved in NEITHER
+            # direction: no terminal status is written and `escalated` is left
+            # alone, so an ordinary later round may still route it.
+            e["integrity_refused"] = True
+            e.setdefault("integrity_refused_round", round_idx)
+            e.setdefault(
+                "integrity_refused_reason",
+                f"the falsifier was refused by the integrity gate at round "
+                f"{round_idx}, so the CLAIM ITSELF has not been tested. This is "
+                f"a reporting and post-run fix issue: it enters neither the "
+                f"irreducible-queue halt bound nor the A4 convergence blocker. "
+                f"It is reported by "
+                f"FindingRegistry.integrity_refused_criticals().",
+            )
+            tally["integrity_refused"] = tally.get("integrity_refused", 0) + 1
+            _log(f"  INTEGRITY REFUSAL {cid}: falsifier refused by the gate; "
+                 f"reported, NOT counted toward the halt bound or the A4 "
+                 f"blocker (founder ruling 2026-10-02)")
         else:
             # Full routing ladder exhausted (no model wrote a runnable test). LOCK this
             # critical as an irreducible HIL item: handed to the human (the final
@@ -7166,6 +7349,11 @@ def build_irreducible_queue_alarm(
         # text says "read the bundle, not move the line". The bundle was empty,
         # so the only documented way to act on the halt was unavailable.
         if not (e.get("irreducible_escalation") or e.get("routing_deferred")):
+            continue
+        # MATCH `irreducible_queue_count()` EXACTLY (2026-10-02): that count now
+        # excludes key-access refusals, so this collector must too, or the
+        # evidence bundle lists more items than the count that triggered it.
+        if _integrity_violation_excluded(e):
             continue
         if e.get("status") in _TERMINAL:
             continue
@@ -16243,6 +16431,20 @@ def run_experiment(
         # UNCONFIRMED critical-severity candidate (excluded from the
         # settled series) must not let the streak accrue silently, so the
         # count of such candidates is passed in and blocks/logs.
+        # THE PAIRED RECORD FOR THE 2026-10-02 RULING. Both convergence
+        # counters below now skip key-access refusals, so this is the ONLY place
+        # a reader learns that a critical was excused. Logged every round it is
+        # non-empty, so a convergence reached over one of these is reported and
+        # never silent. ZERO weight on any gate: nothing downstream branches on
+        # `_integrity_refused`.
+        _integrity_refused = registry.integrity_refused_criticals()
+        if _integrity_refused:
+            _log(f"  KEY-ACCESS ADVISORY: {len(_integrity_refused)} critical(s) "
+                 f"excused from BOTH the A4 blocker and the irreducible-queue "
+                 f"halt bound because the integrity gate refused their "
+                 f"falsifier: {_integrity_refused}. Reporting only (founder "
+                 f"ruling 2026-10-02) -- the claims remain UNTESTED and this "
+                 f"run's convergence must be read with that stated.")
         _unresolved_crit = registry.unverified_critical_count()
         if _unresolved_crit > 0:
             _log(f"  A4: {_unresolved_crit} unverified critical-severity "
@@ -16267,6 +16469,7 @@ def run_experiment(
             _q_locked = sum(
                 1 for _e in registry.entries.values()
                 if _e.get("irreducible_escalation")
+                and not _integrity_violation_excluded(_e)
                 and _e.get("status") not in _TERM_Q
                 and (_e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD)
             _q_deferred = _irreducible_q - _q_locked
@@ -17397,6 +17600,22 @@ def run_experiment(
     except Exception as _cl_exc:  # noqa: BLE001
         _log(f"  WARNING: claim ledger not attached ({_cl_exc})")
         result["claim_ledger"] = {"written": False, "error": str(_cl_exc)}
+
+    # END-OF-RUN KEY-ACCESS ADVISORY (founder ruling 2026-10-02): silent when
+    # clean, loud when a key was actually read, and ZERO weight on convergence
+    # or completion. It is attached to the report and logged; nothing reads it
+    # back into any gate. Guarded, because reporting must never fell a run --
+    # and the failure path says UNVERIFIED rather than clean, since a scan that
+    # did not run has established nothing.
+    try:
+        from bench.key_access_forensics import end_of_run_advisory
+        _advisory = end_of_run_advisory(logs_dir)
+        if _advisory:
+            result["key_access_advisory"] = _advisory
+            _log(_advisory)
+    except Exception as _ka_exc:  # noqa: BLE001
+        _log(f"  WARNING: key-access advisory could not run ({_ka_exc}); the "
+             f"run is UNVERIFIED for key access, not clean")
 
     # Save report
     report_path = logs_dir / f"{cfg.experiment_name}_report.json"

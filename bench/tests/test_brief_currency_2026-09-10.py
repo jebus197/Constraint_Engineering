@@ -102,7 +102,13 @@ _VALID_BRIEF = (
     # so a fixture brief that omits it is no longer a VALID brief.
     "Write each fix into the sandbox repository tree at its real path, so it is delivered as a file rather than left in prose.\n"
     "State what would refute your answer.\n"
-    "## Output\n\n- verdict\n- fix\n- falsifier_result\n\n"
+    # The disagreement field became a section-scoped check on 2026-10-02: the
+    # TEMPLATE already required it in its output section and the validator did
+    # not enforce it, so 12 of 95 archived briefs diverged with nothing catching
+    # them. A fixture brief that omits it is no longer VALID, which is what this
+    # file's own control test asserts.
+    "## Output\n\n- verdict\n- fix\n- falsifier_result\n"
+    "- strongest disagreement with this brief's own framing\n\n"
     "Stop at diminishing returns.\n")
 
 
