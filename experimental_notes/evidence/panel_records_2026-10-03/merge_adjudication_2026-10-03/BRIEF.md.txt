@@ -1,0 +1,87 @@
+# ADJUDICATE A MERGE: 2 fixes, neither dominates, decide per assertion
+
+Both of you fixed the same 3 confirmed defects in the star round of 2026-10-03.
+Your fixes are INCOMPATIBLE. This round has one deliverable: **a single merged
+file set that passes BOTH seats' falsifiers.** Not an opinion on which is nicer.
+
+## The artefacts under review
+
+- `bench/reference_runner_v3.py`, `bench/key_access_forensics.py`,
+  `bench/falsifier_verify.py` — currently at the PRE-MERGE state, with neither
+  seat's star-round fix applied.
+- Both seats' delivered fixes and tests are in the tree, preserved at
+  `experimental_notes/seat_evidence/falsifier_supply_and_integrity_star_2026-10-03/`
+  and `bench/logs/falsifier_supply_and_integrity_star_2026-10-03/sandbox_harvest/`.
+
+## THE MEASUREMENT THAT MAKES THIS A COMPOSABILITY QUESTION
+
+Each fix was APPLIED and then run against BOTH seats' falsifiers. Executed, not
+read:
+
+- cc2's fix applied alone: **8 of fable's tests RED** —
+  `test_a4_scope_guards_2026-10-03.py` (D-C carve-out reaching the A4 consumer,
+  D-B sub-critical naming, D3 stale-stamp retraction) and
+  `test_spawn_blob_tokens_2026-10-03.py`.
+- fable's fix applied alone: **6 of cc2's tests RED** —
+  `test_one_predicate_excludes_and_reports_2026-10-02.py` (excluded-implies-
+  reported, randomised registries, the A4-drop invariant),
+  `test_key_access_advisory_2026-10-02.py::test_the_excused_critical_is_reported_rather_than_lost`,
+  `test_an_unobserved_refusal_keeps_a4_blocking_2026-10-03.py`,
+  `test_forensics_verdict_is_a_fact_about_the_run_2026-10-03.py`.
+
+So NEITHER is sufficient alone, and the founder's composability standard is
+satisfied for composing: the demonstration exists.
+
+**A FIRST COMPOSITION FAILED AND YOU SHOULD NOT REPEAT IT.** Dropping the
+severity gate from `integrity_refused_criticals` so its scope matches
+`unverified_critical_count` took cc2's failures from 6 to 5. The 2 fixes
+disagree PER ASSERTION, not on one scope line.
+
+## The shape of the disagreement, as far as it is understood
+
+fable widened the SCOPE correctly — `unverified_critical_count` has carried no
+severity gate since 2026-09-06, so it drops sub-critical refusals too — but
+reported them through a SECOND reader, `integrity_refused_subcriticals`. cc2
+argued the simplest sufficient form is to widen the 1 wired reader so that
+"whatever the counter drops, this names" holds BY CONSTRUCTION. BOTH readers are
+wired, so the additive standard does not decide it.
+
+## Use the harness
+
+RUN things. Apply a candidate merge in your sandbox and EXECUTE both test sets.
+Report the command and its output. A claim that a merge works, without the 2 test
+runs behind it, is not an answer. Use gamma and the two-sided gate for anything
+touching convergence and S_k for anything touching admission; report any
+proportion with a Wilson interval.
+
+## HOW TO DECIDE — the 3 formal standards, which are in your SYSTEM prompt
+
+For EVERY assertion where the 2 fixes disagree, name which standard decides it:
+ADDITIVE (nothing removed without a committed measurement; nothing added that
+no caller reaches), SIMPLEST SUFFICIENT (the simpler form wins where both
+discharge the requirement), COMPOSABILITY (compose only on a DEMONSTRATED
+advantage over each alone; prefer the single fix where it performs as well).
+
+## Produce a fix and test it
+
+Deliver the merged files INTO the sandbox repository tree at their real paths.
+Then run BOTH test sets and paste the 2 summary lines. If an assertion in either
+set is WRONG rather than merely inconvenient, say so and justify retiring it
+under the standards — do not silently delete a test to go green.
+
+## What would refute you
+
+State what evidence would overturn your merge, and what you looked for that
+would have changed your mind and did not appear.
+
+## Output
+
+Return, field by field: verdict; reasoning; the falsifier and its executed
+result; the per-assertion adjudication table naming the deciding standard; the
+2 test-suite summary lines after your merge; the files you delivered and where;
+what would refute you; and the strongest disagreement with this brief's framing
+and with the other seat's fix, naming where you think they are wrong.
+
+## Termination
+
+Stop when a further pass produces no new above-threshold findings.

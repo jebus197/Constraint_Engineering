@@ -1,0 +1,72 @@
+{
+  "_what_this_is": [
+    "THE PROGRAMME OF STUDY, IN FLIGHT. This file exists because the study's",
+    "PURPOSE kept being lost: the simulated runs were repeatedly described by",
+    "their success criterion (3 clean convergences) rather than by why they are",
+    "run at all. The founder had to point this out on 2026-10-03, and he was",
+    "substantially right -- arms 1 to 4 had each run twice, arm 5 had NEVER run,",
+    "and arm 5 is the only one that answers the effectiveness question.",
+    "",
+    "A UserPromptSubmit hook reads this file EVERY TURN and injects a 1-line",
+    "reminder naming what is still outstanding. A compaction discards the",
+    "conversation; it does not discard this file. The reminder STOPS by itself",
+    "when every measurement carries a result and a headline -- `status` goes to",
+    "CLOSED -- so the mechanism expires rather than nagging forever.",
+    "",
+    "Full scope: experimental_notes/CDSFL_Programme_of_Study_Full_Scope_2026-09-21.md"
+  ],
+  "status": "OPEN",
+  "opened": "2026-10-03T06:50:54+01:00",
+  "rationale": "To measure whether the fixes of the last 15+ days actually WORK. Clean convergence is the success CRITERION of the runs, NOT their purpose.",
+  "closes_when": "every measurement below has result != null AND headline != null; then set status to CLOSED and the hook falls silent",
+  "measurements": [
+    {
+      "id": "arm5",
+      "what": "Paired baseline: pre-window a2a0197 vs HEAD, same target, same seed. THE effectiveness question.",
+      "founder_ruling": "RUN IT (2026-10-03)",
+      "result": null,
+      "headline": null
+    },
+    {
+      "id": "m10",
+      "what": "Declared state vs observed state: does what the launcher declares match what fires? No committed script exists.",
+      "founder_ruling": "in the programme",
+      "result": null,
+      "headline": null
+    },
+    {
+      "id": "haiku_extended",
+      "what": "Haiku as the decidable-claim classifier at run scale, and the founder's confidence composition (Haiku decides, syntax raises confidence, never blocks).",
+      "founder_ruling": "DO IT, mark as a significant study area (2026-10-03)",
+      "result": null,
+      "headline": null
+    },
+    {
+      "id": "refusal_visibility",
+      "what": "Make the false-positive sweep able to see refused falsifiers. Measured: 23 of 221 routed bodies invisible, 183 truncated at 600 chars.",
+      "founder_ruling": "RUN IT, mark as a significant study area (2026-10-03)",
+      "result": null,
+      "headline": null
+    },
+    {
+      "id": "closure_cures",
+      "what": "attempt_close asks whether a fix BROKE anything, never whether it CURED the defect: 126 of 246 = 51.2195%, Wilson [45.0027%, 57.3989%]. Measure the cost of promoting the probe from record to veto.",
+      "founder_ruling": "pause-and-fix, not record-and-continue (2026-10-03)",
+      "result": null,
+      "headline": null
+    },
+    {
+      "id": "repointing",
+      "what": "The repointing experiment: 2 arms, A replays unedited to control for archive decay, B repoints at a different target. Settles over-specificity.",
+      "founder_ruling": "RUN IT, record results, implement useful findings (2026-10-03)",
+      "result": null,
+      "headline": null
+    }
+  ],
+  "run_conditions": {
+    "success": "3 consecutive CLEAN convergences on the prose target",
+    "fold_forward": "fixes from each converged run are carried into the next, so nothing is rediscovered",
+    "protocol": "full cy: monitor at 60s, pause on anything odd, FFAFP it, fix, resume",
+    "terminal": "tail windows on the founder's own machine via osascript and a script FILE, never in the assistant's pane"
+  }
+}
