@@ -3487,6 +3487,36 @@ def skin_barrier_check(
 
         # Check first citation (most findings cite one location)
         cited_file_raw, cited_line_raw = citations[0]
+
+        # STRIP THE MARKDOWN THE MODEL WROTE AROUND THE PATH (2026-10-03).
+        #
+        # THE DEFECT, OBSERVED LIVE. The citation pattern above captures
+        # `(\S+\.\w+)`, and `\S` is any NON-WHITESPACE character -- so a model
+        # that writes a path the way models write paths, in backticks, has the
+        # backtick captured INTO the path. Resolution then fails at all 3 steps:
+        # the exact match misses, `os.path.basename` cannot strip a backtick so
+        # the basename match misses, and no source path ENDS WITH a
+        # backtick-prefixed name so the suffix match misses.
+        #
+        # MEASURED in study run 1 of 2026-10-03, over its first 2 rounds: 16
+        # findings blocked, every one of them for "Cited file not found", and 12
+        # of the 16 cited THE RUN'S OWN TARGET,
+        # `bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`, by its bare basename in
+        # backticks. The run was stopped on that evidence: a barrier that
+        # discards findings for how they quoted a path starves the finding
+        # supply, which is the thing the programme of study exists to measure.
+        #
+        # WHY A DIRECTORY-QUALIFIED CITATION SURVIVED and a bare one did not:
+        # with a directory present, `os.path.basename` removes the backtick
+        # along with the directory, so `` `bench/evaluate.py `` resolves while
+        # `` `evaluate.py `` does not. The inconsistency is what made the
+        # pattern look harmless for so long.
+        #
+        # THIS DOES NOT WIDEN WHAT COUNTS AS A SOURCE. Resolution stays confined
+        # to `source_set` and `source_basenames` -- the E31-16 rule that a
+        # citation check must not become a file-existence oracle -- and the
+        # `_ambiguous_basenames` guard is untouched. Only the quoting is removed.
+        cited_file_raw = (cited_file_raw or "").strip("`'\"()[]{}<>,;* \t")
         cited_line = int(cited_line_raw) if isinstance(cited_line_raw, str) else cited_line_raw
 
         # Resolve the file path
@@ -3501,8 +3531,28 @@ def skin_barrier_check(
             elif (os.path.basename(cited_file_raw) in source_basenames
                   and os.path.basename(cited_file_raw) not in _ambiguous_basenames):
                 cited_file = source_basenames[os.path.basename(cited_file_raw)]
-            # Try partial path match
-            else:
+            # Try partial path match -- BUT NEVER FOR AN AMBIGUOUS BARE NAME.
+            #
+            # THE BUG#69 GUARD WAS DEFEATED BY THE BRANCH BELOW IT (found
+            # 2026-10-03 by the test written for the quoting fix). When a
+            # basename is ambiguous the `elif` above is skipped, and this
+            # `endswith` loop then matches the FIRST source path ending in that
+            # name -- so `engine.py`, with 2 files of that name in the source
+            # set, resolved to whichever came first in iteration order. The
+            # guard refused to guess and the fallback guessed anyway.
+            #
+            # A citation credited to an arbitrary file of the right name is
+            # worse than a refused citation: the finding passes carrying a
+            # location that may belong to a different file, and the line-range
+            # check below then validates it against the wrong source.
+            #
+            # The suffix match is KEPT, because it does real work on a path that
+            # carries a directory -- matching `bench/evaluate.py` against a
+            # longer absolute path. It is only refused for a BARE name whose
+            # basename is ambiguous, which is the one case where it cannot
+            # distinguish the candidates.
+            elif (os.sep in cited_file_raw or "/" in cited_file_raw
+                  or os.path.basename(cited_file_raw) not in _ambiguous_basenames):
                 for sp_path in source_paths:
                     if str(sp_path).endswith(cited_file_raw):
                         cited_file = str(sp_path)

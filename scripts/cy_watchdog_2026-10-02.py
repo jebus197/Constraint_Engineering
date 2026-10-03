@@ -125,6 +125,46 @@ TROUBLE = re.compile(
     # pytest's uppercase per-test `FAILED` marker above still speaks always.
     r"[1-9]\d*\s+(?:failed|error|errors)\b",
     re.I)
+#: The runner prints the static HIL queue at EVERY round close, and the line
+#: carries the word ALARM whether or not an alarm is warranted:
+#:     static HIL queue: 2 unresolved critical(s) (...) ; HALT ALARM if > 2
+#: It is a THRESHOLD STATEMENT, not an alarm.
+_STATIC_QUEUE = re.compile(
+    r"static HIL queue:\s*(\d+)\s+unresolved critical.*?"
+    r"HALT ALARM if\s*>\s*(\d+)", re.S)
+
+
+def queue_alarm_warranted(line: str):
+    """None if `line` is not the static-queue line; else queue > bound.
+
+    FOURTH PATTERN-CALIBRATION DEFECT IN THIS FILE, AND THE SAME SHAPE AS THE
+    OTHER 3: a pattern matching more than it means, in a channel whose only
+    value is being believed. `ALARM` was matching the CONDITION under which an
+    alarm would fire.
+
+    MEASURED 2026-10-03 over 291 archived log files: 74 lines contain `ALARM` or
+    `HALTED`; 21 of them are this conditional line, and in only 2 of those 21
+    was the queue actually over its bound. So 19 of 74 alarm-channel wakes --
+    25.6757%, Wilson [17.0977%, 36.6544%] -- were this line saying nothing was
+    wrong. Roughly 1 wake in 4.
+
+    NOT DELETED, PROMOTED. The `CRITICAL` token was dropped because it had 0
+    true matches; this one has 2, so dropping it would lose a real signal.
+    Reading the 2 numbers instead gives the channel a precision the word never
+    had: it can now tell a queue AT its bound from one OVER it, which is
+    exactly the distinction the founder's rule turns on -- an unusually high
+    irreducible queue is his named signal of mechanical failure, and "unusually
+    high" is a comparison, not a word.
+    """
+    mt = _STATIC_QUEUE.search(line)
+    if not mt:
+        return None
+    try:
+        return int(mt.group(1)) > int(mt.group(2))
+    except (TypeError, ValueError):       # unparseable: speak, do not guess
+        return True
+
+
 #: Above this many problem lines ALREADY IN THE LOG when the watch arms, the
 #: first probe summarises them instead of replaying one event each.
 #:
@@ -448,8 +488,18 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
         except OSError as exc:
             say("WATCHDOG", f"cannot read the log ({exc}); treating as stalled")
             chunk = ""
-        matches = [ln.strip()[:300] for ln in chunk.splitlines()
-                   if TROUBLE.search(ln)]
+        matches = []
+        for ln in chunk.splitlines():
+            if not TROUBLE.search(ln):
+                continue
+            warranted = queue_alarm_warranted(ln)
+            if warranted is False:
+                # The conditional threshold line with the queue AT or UNDER its
+                # bound. Reported as PROGRESS below rather than as trouble, so
+                # the figure is still visible without crying wolf.
+                say("QUEUE", ln.strip()[:300])
+                continue
+            matches.append(ln.strip()[:300])
         if first and len(matches) > BACKLOG_SUMMARY_THRESHOLD:
             say("BACKLOG", f"the log already held {len(matches)} problem "
                            f"line(s) written before this watch armed. They are "

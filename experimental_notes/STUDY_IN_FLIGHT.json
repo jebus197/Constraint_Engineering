@@ -56,7 +56,42 @@
       "what": "Haiku as the decidable-claim classifier at run scale, and the founder's confidence composition (Haiku decides, syntax raises confidence, never blocks).",
       "founder_ruling": "DO IT, mark as a significant study area (2026-10-03)",
       "result": null,
-      "headline": null
+      "headline": null,
+      "run_on_the_15_document_set": {
+        "at": "2026-10-03T10:59:46+01:00",
+        "producer": "scripts/haiku_claim_boundary_arm_2026-10-03.py",
+        "set_builder": "scripts/claim_classifier_labelled_set_2026-10-01.py --emit-model-set",
+        "record": "experimental_notes/evidence/haiku_claim_boundary_arm_2026-10-03.json",
+        "guard": "bench/tests/test_the_confidence_composition_2026-10-03.py (3 tests)",
+        "cost": "15 serialised dispatches on the Max subscription; no paid seat",
+        "model_arm": "14 of 15 = 93.3333%, Wilson [70.1835%, 98.8133%]; sensitivity 10 of 10 = 100%; specificity 4 of 5 = 80%",
+        "syntax_arm": "10 of 15 = 66.6667%, Wilson [41.7135%, 84.8237%]; sensitivity 5 of 10 = 50%, indistinguishable from a coin",
+        "complementarity": {
+          "both_right": 9,
+          "model_only": [
+            "algorithms_prose",
+            "metrology_prose",
+            "numerical_prose",
+            "statistics_prose",
+            "structural_prose"
+          ],
+          "syntax_only": [
+            "mood_process"
+          ],
+          "both_wrong": 0,
+          "answers_the_founders_question": "YES, the arms are complementary: the syntax arm is right on 1 document Haiku gets wrong. An earlier report said the predictions were identical on all 15 -- what was identical was the OR COMPOSITION's predictions against Haiku alone, not the 2 arms.",
+          "why_it_does_not_rescue_a_composition": "The errors pull opposite ways. On mood_process Haiku says YES and is WRONG (a false positive) while syntax says NO and is right, so OR keeps the false positive (14 of 15, McNemar p = 1.000000) and AND fixes it but destroys all 5 prose positives (10 of 15, p = 0.218750). Neither is justified."
+        },
+        "confidence_composition": {
+          "form": "Haiku decides; syntax corroborates and can never block",
+          "positives_raised": 11,
+          "precision_corroborated": "5 of 5 = 100%, Wilson [56.5518%, 100%]",
+          "precision_uncorroborated": "5 of 6 = 83.3333%, Wilson [43.6497%, 96.9947%]",
+          "fisher_p": 1.0,
+          "verdict": "NOT DEMONSTRATED ON THIS SET at alpha = 0.05"
+        },
+        "still_owed": "the EXTENDED set. 15 documents cannot separate these effects: the complementarity rests on 1 document and the confidence label on a 5-versus-6 split. The builder emits a fixed 15, so extending it means authoring more documents with withheld labels."
+      }
     },
     {
       "id": "refusal_visibility",
@@ -100,8 +135,33 @@
       "id": "repointing",
       "what": "The repointing experiment: 2 arms, A replays unedited to control for archive decay, B repoints at a different target. Settles over-specificity.",
       "founder_ruling": "RUN IT, record results, implement useful findings (2026-10-03)",
-      "result": null,
-      "headline": null
+      "result": {
+        "at": "2026-10-03T09:34:58+01:00",
+        "producer": "scripts/repointing_experiment_2026-10-03.py",
+        "record": "experimental_notes/evidence/repointing_experiment_2026-10-03.json",
+        "guard": "bench/tests/test_repointing_experiment_2026-10-03.py (7 tests)",
+        "population": {
+          "bodies_naming_a_file": 233,
+          "usable": 143,
+          "usable_pct": 61.3734,
+          "unresolvable": 90,
+          "why_unresolvable": "sandbox-relative or ambiguous bare basenames -- a fact about where falsifiers run, not archive decay"
+        },
+        "arm_a_unedited_confirmed": "54 of 56 = 96.4286%, Wilson [87.8812%, 99.0151%]",
+        "arm_b_repointed_confirmed": "49 of 56 = 87.5%, Wilson [76.3745%, 93.8109%]",
+        "fisher": {
+          "p_scipy": 0.16171491735240345,
+          "p_mpmath": 0.16171491735240343,
+          "odds_ratio": 0.25925925925925924,
+          "alpha": 0.01,
+          "two_sided": true
+        },
+        "unscored_reported": 87,
+        "verdict": "NEITHER pre-registered hypothesis is supported",
+        "why_neither": "H_specificity needed p < 0.01 and got 0.1617, so the arms are not separable at this N. H_general needed arm B's rate INSIDE arm A's Wilson interval, and 87.5% sits 0.38 percentage points BELOW arm A's lower bound of 87.8812%.",
+        "precondition_correction": "The first version required every named path to exist literally and reported 203 of 233 failing, 87.1245%, tripping its own degraded stop. Corrected BEFORE any arm ran: sandbox prefixes are stripped and bare basenames resolved only when unique across the tree excluding copies of it. Three successive measurements moved the usable population 43 -> 126 -> 46 -> 143; the 46 was an artefact of agent worktrees making one file look like four."
+      },
+      "headline": "49 of 56 archived falsifiers still fire CONFIRMED when pointed at a file they were never written for -- the generality worry made concrete, though the pre-registered test cannot separate the arms at this N (Fisher p = 0.1617 against alpha 0.01)."
     },
     {
       "id": "guard_reach",
@@ -121,7 +181,17 @@
         "promotion_criterion": "agreement with the real discrimination control on the overlap where both can speak, measured over the 3 runs, before the outcome is allowed to escalate anything"
       },
       "result": null,
-      "headline": null
+      "headline": null,
+      "live_observations": [
+        {
+          "at": "2026-10-03T10:35:49+01:00",
+          "run": "study_run1_2026-10-03_20261003T083519Z",
+          "round": 1,
+          "what": "C0002 ended round 1 with NO corrected copy after 3 separate supply attempts were refused, each for a different and correct reason: DeepSeek-SIM's own copy was not verbatim in the target, and ChatGPT-SIM's and Codex-SIM's were refused on OWNERSHIP -- the falsifier under control is DeepSeek-SIM's, and a copy correcting a different claim would mint a mechanical fault against a sound instrument.",
+          "why_it_matters": "This is the reach bound arriving live rather than as an archive statistic. The discrimination control cannot speak for C0002 at all, so it falls into the NO_CONTROL population that carried 0 stamps across the whole archive until 2026-10-03. The invariance sweep is the only instrument that will have anything to say about it.",
+          "supply_route_that_DID_work": "4 of 5 findings carrying a fix and no copy had one DERIVED from the seat's own proposed fix, 1 declined -- so the derivation route is the one lifting reach, and ownership is what bounds the donation route."
+        }
+      ]
     },
     {
       "id": "voided_verification",

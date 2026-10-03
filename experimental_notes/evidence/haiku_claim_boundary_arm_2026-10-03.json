@@ -1,0 +1,165 @@
+{
+  "rows": [
+    {
+      "doc": "algorithms_intact",
+      "truth": true,
+      "model": "YES",
+      "raw": "YES\nThe graph admits exactly 28 distinct topological orderings under exhaustive enumeration (AL-10)."
+    },
+    {
+      "doc": "algorithms_prose",
+      "truth": true,
+      "model": "YES",
+      "raw": "YES\n\nThe graph admits exactly 28 distinct topological orderings under exhaustive enumeration."
+    },
+    {
+      "doc": "metrology_intact",
+      "truth": true,
+      "model": "YES",
+      "raw": "YES\n\n**CM-02:** The amount of KHP taken is n = m / M = 0.5106 / 204.22 = 2.5002 mmol \u2014 a computational claim (the division and its result are mechanically verifiable)."
+    },
+    {
+      "doc": "metrology_prose",
+      "truth": true,
+      "model": "YES",
+      "raw": "YES\n\nStoichiometric calculations: CM-02 states n = m / M = 0.5106 / 204.22 = 2.5002 mmol; CM-03 states c = 2.5002 / 24.87 = 0.10053 mol/L; CM-04 states relative uncertainties u(m)/m = 0.0392 per cent, etc.; CM-06 states combined relative uncertainty u_c(c)/c = 0.165 per cent; CM-08 states molar masses (propane 44.097 g/mol, etc.); and CM-09 states mass balance for propane combustion where 1.000 + 3.628 = 4.628 kg (in) and 2.994 + 1.634 = 4.628 kg (out). All are verifiable by arithmetic and unit conversion."
+    },
+    {
+      "doc": "mood_aesthetic",
+      "truth": false,
+      "model": "NO",
+      "raw": "NO"
+    },
+    {
+      "doc": "mood_intent",
+      "truth": false,
+      "model": "NO",
+      "raw": "NO"
+    },
+    {
+      "doc": "mood_preference",
+      "truth": false,
+      "model": "NO",
+      "raw": "NO\n\nThe document contains only preference statements and subjective aesthetic judgments. \"Tone drifts toward the defensive\" comes closest to a measurable claim, but it requires the actual documents, an operational definition of \"defensive tone,\" and interpretation of word patterns\u2014it remains a subjective literary assessment framed explicitly as \"a matter of taste.\""
+    },
+    {
+      "doc": "mood_process",
+      "truth": false,
+      "model": "YES",
+      "raw": "YES\n\nMorale is better when the week opens with a decision rather than a discussion."
+    },
+    {
+      "doc": "mood_tone",
+      "truth": false,
+      "model": "NO",
+      "raw": "NO"
+    },
+    {
+      "doc": "numerical_intact",
+      "truth": true,
+      "model": "YES",
+      "raw": "YES\nThe claim in NA-01 that (0.1 + 0.2) - 0.3 equals exactly 2^-54 in IEEE 754 binary64 can be computed and verified."
+    },
+    {
+      "doc": "numerical_prose",
+      "truth": true,
+      "model": "YES",
+      "raw": "YES\n\nThe claim in NA-01 that the difference (0.1 + 0.2) - 0.3 equals exactly 2^-54 (5.551115123125783 x 10^-17) in IEEE 754 binary64 arithmetic."
+    },
+    {
+      "doc": "statistics_intact",
+      "truth": true,
+      "model": "YES",
+      "raw": "YES\n\nThe sample mean for batch 2026-114 is 354.148 MPa and the sample standard deviation (divisor n\u22121) is 6.0901 MPa (ST-01). A program can verify these figures by reading the 25 data points from section 1, computing the statistics, and comparing against the claimed values."
+    },
+    {
+      "doc": "statistics_prose",
+      "truth": true,
+      "model": "YES",
+      "raw": "YES\n\nST-01: For batch 2026-114 the sample mean is 354.148 MPa and the sample standard deviation (n\u22121 form) is 6.0901 MPa, with standard error 1.2180 MPa \u2014 all directly computable from the 25 readings in the table."
+    },
+    {
+      "doc": "structural_intact",
+      "truth": true,
+      "model": "YES",
+      "raw": "YES\n\nThe second moment of area of an annulus with the given constants evaluates to 3.0021 \u00d7 10^6 mm^4 (SM-02), and the elastic critical load equals 457.2 kN (SM-05)."
+    },
+    {
+      "doc": "structural_prose",
+      "truth": true,
+      "model": "YES",
+      "raw": "YES\n\nThe second moment of area I = \u03c0(d_o^4 \u2212 d_i^4) / 64 evaluates to 3.0021 \u00d7 10^6 mm^4 for d_o = 114.3 mm and d_i = 102.3 mm (claim SM-02)."
+    }
+  ],
+  "results": {
+    "MODEL (haiku)": {
+      "tp": 10,
+      "fn": 0,
+      "fp": 1,
+      "tn": 4,
+      "correct": 14,
+      "n": 15
+    },
+    "SYNTAX (status quo)": {
+      "tp": 5,
+      "fn": 5,
+      "fp": 0,
+      "tn": 5,
+      "correct": 10,
+      "n": 15
+    },
+    "COMPOSED or": {
+      "tp": 10,
+      "fn": 0,
+      "fp": 1,
+      "tn": 4,
+      "correct": 14,
+      "n": 15
+    },
+    "COMPOSED and": {
+      "tp": 5,
+      "fn": 5,
+      "fp": 0,
+      "tn": 5,
+      "correct": 10,
+      "n": 15
+    },
+    "CONFIDENCE (haiku decides, syntax corroborates)": {
+      "positives": 11,
+      "corroborated": 5,
+      "uncorroborated": 6,
+      "correct_corroborated": 5,
+      "correct_uncorroborated": 5,
+      "fisher_p_scipy": 1.0,
+      "fisher_p_mpmath": 1.0,
+      "verdict": "NOT DEMONSTRATED ON THIS SET",
+      "decisions_identical_to_model_arm": true
+    },
+    "complementarity": {
+      "both right": [
+        "algorithms_intact",
+        "metrology_intact",
+        "mood_aesthetic",
+        "mood_intent",
+        "mood_preference",
+        "mood_tone",
+        "numerical_intact",
+        "statistics_intact",
+        "structural_intact"
+      ],
+      "model only": [
+        "algorithms_prose",
+        "metrology_prose",
+        "numerical_prose",
+        "statistics_prose",
+        "structural_prose"
+      ],
+      "syntax only": [
+        "mood_process"
+      ],
+      "both wrong": []
+    }
+  },
+  "no_answer": 0,
+  "model": "haiku"
+}
