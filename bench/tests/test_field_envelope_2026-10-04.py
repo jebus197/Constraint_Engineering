@@ -134,6 +134,55 @@ class TestTheGrammarCannotBeBrokenByDecoration:
             f"shape {name!r} read {env.payload!r}, not 0.9 -- a delimiter that "
             f"survives decoration must also hand back the value undecorated")
 
+    @pytest.mark.parametrize("name,header", [
+        ("canonical order", "field=SEVERITY id=F001"),
+        ("reversed order", "id=F001 field=SEVERITY"),
+        ("spaces around the equals", "field = SEVERITY  id = F001"),
+        ("extra inner whitespace", "field=SEVERITY     id=F001"),
+        ("a stray non-attribute token", "field=SEVERITY id=F001 MANDATORY"),
+        ("mixed case keys", "FIELD=SEVERITY Id=F001"),
+        ("lowercase field name", "field=severity id=F001"),
+        ("a space inside a QUOTED field name", 'field="FLAW CLASS" id=F001'),
+        ("a hyphen inside a quoted field name", "field='FLAW-CLASS' id=F001"),
+    ])
+    def test_the_header_is_read_whatever_order_or_spacing_it_uses(self, name, header):
+        """Attribute order and spacing are not load-bearing either.
+
+        A seat writes a header the way it writes anything else. These are the
+        variations the grid in section 4 of the measurement script does not vary,
+        so they are fixed here rather than left to chance -- `Check The Whole Set`:
+        a universal asserted after checking one member is this project's single
+        most-withdrawn claim shape.
+        """
+        text = f"{BEG} {header}>>>0.9{END}"
+        accepted, refusals = fe.extract_field_envelopes(text)
+        assert len(accepted) == 1, (
+            f"{name}: refusals={[r['reason'] for r in refusals]}")
+        expected = "FLAW_CLASS" if "FLAW" in header.upper() else "SEVERITY"
+        assert (accepted[0].field, accepted[0].owner) == (expected, "F001")
+        assert fe.scalar(accepted[0].payload) == "0.9"
+
+    def test_a_space_in_an_UNQUOTED_value_is_refused_loudly(self):
+        """The boundary, documented by execution rather than left to be found.
+
+        A bare attribute value may not contain whitespace, because a parser that
+        allowed it would have to GUESS where the value ends -- which is the whole
+        failure mode this module exists to remove. So `field=FLAW CLASS` is
+        refused and `field="FLAW CLASS"` is accepted. Recorded here because a
+        test built to fix attribute ORDER found this instead, and a boundary
+        nobody has executed is a boundary nobody knows the shape of.
+        """
+        bare = f"{BEG} field=FLAW CLASS id=F001>>>5{END}"
+        accepted, refusals = fe.extract_field_envelopes(bare)
+        assert not accepted
+        assert [r["reason"] for r in refusals] == ["unknown_field"]
+        assert refusals[0]["field"] == "FLAW", (
+            "the refusal must name what it read, so a seat can see that its "
+            "value was cut at the space rather than rejected whole")
+        quoted = f'{BEG} field="FLAW CLASS" id=F001>>>5{END}'
+        got, _ = fe.extract_field_envelopes(quoted)
+        assert [(e.field, fe.scalar(e.payload)) for e in got] == [("FLAW_CLASS", "5")]
+
     def test_the_existing_sentinel_form_really_does_fail_on_some_of_them(self):
         """The control. Without this the comparison above has nothing to beat.
 

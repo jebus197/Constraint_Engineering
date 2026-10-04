@@ -114,8 +114,15 @@ _BEGIN_RE = re.compile(
     + r"(?:[ \t]+(?P<attrs>[^>\n]*?))?[ \t]*>>>"
 )
 
-#: `key=value`, value bare or quoted. A bare value may not contain whitespace or
-#: `>`, which is what keeps the header on one line and unambiguous.
+#: `key=value`, value bare or quoted. A BARE value may not contain whitespace or
+#: `>`, which is what keeps the header on one line and unambiguous: a parser that
+#: allowed a space in a bare value would have to GUESS where the value ends, and
+#: guessing is the failure this module exists to remove. A value that needs a
+#: space is quoted -- `field="FLAW CLASS"` -- and `field=FLAW CLASS` is refused
+#: with `unknown_field` naming what it read, `FLAW`, so a seat can see that its
+#: value was cut at the space. Attribute ORDER and spacing around `=` are free.
+#: Held by `test_the_header_is_read_whatever_order_or_spacing_it_uses` and
+#: `test_a_space_in_an_UNQUOTED_value_is_refused_loudly`.
 _ATTR_RE = re.compile(
     r"""(?P<key>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*"""
     r"""(?:"(?P<dq>[^"]*)"|'(?P<sq>[^']*)'|(?P<bare>[^\s>'"]+))""",
