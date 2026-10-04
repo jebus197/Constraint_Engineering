@@ -209,6 +209,13 @@ from dynamic_management import (
     Finding,
     ModelResponse,
 )
+from field_envelope import (
+    envelope_instruction_block,
+    envelope_telemetry,
+    envelope_verdicts,
+    fields_by_owner,
+    verdict_envelope_instructions,
+)
 from runner_core import (
     falsifier_intake_telemetry,
     source_env,
@@ -1104,6 +1111,26 @@ _INTAKE_TALLY: Dict[str, int] = {}
 def _note_intake(response: str) -> None:
     """Fold 1 reply's parser telemetry into the run tally. Never raises."""
     try:
+        # THE FIELD ENVELOPE'S OWN DENOMINATOR, added 2026-10-04 for exactly the
+        # reason the falsifier tally exists: a reader that keeps no record of
+        # what it passed over cannot be studied by a run, and "the seats are
+        # using the envelope" would otherwise be an assumption rather than a
+        # measurement. Counted on EVERY reply, including the ones carrying no
+        # FALSIFIER label, because adoption is the quantity of interest and a
+        # reply with 0 envelopes is a real observation of it.
+        _INTAKE_TALLY["envelope_replies_examined"] = (
+            _INTAKE_TALLY.get("envelope_replies_examined", 0) + 1)
+        et = envelope_telemetry(response or "")
+        if et["headers_seen"]:
+            _INTAKE_TALLY["envelope_replies_with_a_header"] = (
+                _INTAKE_TALLY.get("envelope_replies_with_a_header", 0) + 1)
+            for k in ("headers_seen", "accepted", "refused"):
+                _INTAKE_TALLY[f"envelope_{k}"] = (
+                    _INTAKE_TALLY.get(f"envelope_{k}", 0) + int(et[k]))
+            for reason, n in (et["refusals_by_reason"] or {}).items():
+                key = f"envelope_refused_{reason}"
+                _INTAKE_TALLY[key] = _INTAKE_TALLY.get(key, 0) + int(n)
+
         t = falsifier_intake_telemetry(response or "")
         if not t["labels_seen"]:
             return
@@ -3416,6 +3443,45 @@ def _parse_verdicts(
     # leaves the tally to distinct models, where it belongs.
     best: dict = {}
     order: List[Tuple[str, str]] = []
+
+    # ── ENVELOPE VERDICTS FIRST, AND THEY ARE NOT OVERWRITTEN (2026-10-04) ──
+    #
+    # `_VERDICT_RE` has to decide, from free prose, whether a capitalised word is
+    # a verdict. It has been widened 4 times to keep up -- blockquote prefixes,
+    # bullet and numbered-list prefixes, bold wrapping, a whitelist of 5 field
+    # labels chosen because the permissive `[A-Z][A-Z_ ]{2,20}:` form promoted 8
+    # of 12 adversarial constructions. Every one of those widenings was necessary
+    # and every one made the pattern a better GUESSER rather than a reader.
+    #
+    # `envelope_verdicts` does not guess. The keyword is the whole payload and it
+    # is COMPARED FOR EQUALITY against the 5 keywords, which is what makes the
+    # `NOT FALSIFIED`-read-as-`FALSIFIED` class impossible through this path: a
+    # payload of `NOT CONFIRM` equals nothing and is simply not a verdict.
+    #
+    # ADDITIVE IN BOTH DIRECTIONS. The regex loop below is unchanged and runs on
+    # every reply, so a seat that writes plain `CONFIRM C0001` is read exactly as
+    # before. A verdict whose envelope ALSO carried evidence is SEALED -- the
+    # loop may not replace that evidence even with a longer string -- because
+    # "keep the longest" is a tie-break between 2 guesses and there is no tie
+    # when one side was declared unambiguously.
+    #
+    # AN ENVELOPE WITH NO `VERDICT_EVIDENCE` IS NOT SEALED, and that asymmetry is
+    # deliberate. Sealing an empty string would DISCARD the prose evidence beside
+    # it, which is a removal: the ambiguity the envelope resolves is *which
+    # verdict on which finding*, not *what the seat wrote about it*. So the
+    # identity comes from the envelope and the evidence may still be filled in
+    # from the line the seat also wrote.
+    _sealed: set = set()
+    for _kw, _cid, _ev in envelope_verdicts(response_text):
+        key = (_kw, _cid)
+        if key not in best:
+            best[key] = _ev
+            order.append(key)
+        elif _ev and len(_ev) > len(best[key]):
+            best[key] = _ev
+        if _ev:
+            _sealed.add(key)
+
     for m in _VERDICT_RE.finditer(response_text):
         description = (m.group(3) or "").strip()
         # Strip trailing markdown format chars (** / __) when the whole
@@ -3425,6 +3491,8 @@ def _parse_verdicts(
         if key not in best:
             best[key] = description
             order.append(key)
+        elif key in _sealed:
+            continue
         elif len(description) > len(best[key]):
             best[key] = description
     return [(k[0], k[1], best[k]) for k in order]
@@ -9736,7 +9804,18 @@ _MACHINE_COMMS_INSTRUCTION = (
     "  CHALLENGE C0001 | [evidence] — the finding or fix is wrong\n"
     "  EXTEND C0001 | [new consequence or edge case]\n"
     "  MERGE C0001 <- [your_finding_id] — same root cause, combining\n"
-    "Reference findings by CANONICAL ID (C0001, C0002, ...) from the registry.\n\n"
+    "Reference findings by CANONICAL ID (C0001, C0002, ...) from the registry.\n"
+    # THE ENVELOPE FORM OF A VERDICT (2026-10-04). Taught beside the plain form,
+    # never instead of it, because the plain form is what 734 recovered verdicts
+    # in the archive are written in and a seat must not be penalised for it. The
+    # envelope exists for the ambiguity the plain form cannot escape: in the
+    # envelope the keyword IS the whole payload and is matched for equality, so
+    # a reading in which `NOT FALSIFIED` counts as containing `FALSIFIED` cannot
+    # arise. If you are unsure whether your prose will read as a verdict, wrap it.
+    "You may instead declare a verdict unambiguously, and it is read exactly as "
+    "written:\n"
+    + verdict_envelope_instructions("  ")
+    + "\n"
 )
 
 _GOOD_ENOUGH_INSTRUCTION = (
@@ -13517,6 +13596,56 @@ def _extract_corroboration_sections_with_ids(
     return out
 
 
+def _norm_owner_key(value: Any) -> str:
+    """Strip everything but alphanumerics, lowercased, for pairing ids."""
+    return re.sub(r'[^a-z0-9]', '', str(value or '').lower())
+
+
+def _corroboration_sections_by_owner(
+    response_text: str,
+) -> Dict[str, Tuple[str, str]]:
+    """``{normalised_owner_id: (section, how)}`` — the ENVELOPE first.
+
+    THIRD READER, AND IT TAKES NOTHING AWAY. The 2 that precede it both stand:
+    `_extract_corroboration_sections` is frozen (callers in the frozen v1 runner,
+    in `scripts/measure_rk_proof_compliance.py`, in 2 committed panel falsifiers
+    and in `test_rk_clip_stops_at_an_arrow_2026-09-22`), and
+    `_extract_corroboration_sections_with_ids` keeps its signature and its
+    callers. This function layers over the second one: an envelope wins where a
+    seat supplied it, and every section the owner-aware prose reader finds is
+    still here underneath.
+
+    WHY AN ENVELOPE IS BETTER HERE THAN ANYWHERE ELSE. Both prose readers have to
+    decide whether the WORD `CORROBORATION` is a header, and the frozen one
+    decides wrong: it splits case-insensitively on the bare word, so on
+    study_run1b round 7 it fired on the JSON key `corroboration_fit` twice and on
+    the prose "independent corroboration" once -- 226 phantom sections on top of
+    109 real ones across that run, 67.4627% of everything it reported. THAT
+    FIGURE IS THE PROJECT'S OWN, from `scripts/rk_pairing_reach_2026-10-03.py`,
+    and it CANNOT be re-derived in a clone: that script reads
+    `bench/logs/<run>/r*_*.json` and `.gitignore` has excluded raw per-model
+    replies since 2026-08-13, so on study_run1b it reads 0 files. The
+    owner-aware reader requires a line-anchored header and so refuses those, but
+    it still has to GUESS THE OWNER, from "the nearest FINDING_ID preceding the
+    header". An envelope carries the owner inside the sentinel, so neither
+    question is asked: `field=CORROBORATION` is a boundary only as a sentinel
+    attribute, and `id=` says whose it is.
+
+    `how` is reported so a caller can say which reader answered, for the same
+    reason the positional fallback is logged: a silent preference is how the
+    positional pairing bug stayed invisible for as long as it did.
+    """
+    out: Dict[str, Tuple[str, str]] = {}
+    for owner, fields in fields_by_owner(response_text).items():
+        body = fields.get("CORROBORATION")
+        if body and body.strip():
+            out.setdefault(_norm_owner_key(owner), (body, 'envelope'))
+    for oid, sec in _extract_corroboration_sections_with_ids(response_text):
+        if oid:
+            out.setdefault(_norm_owner_key(oid), (sec, 'id'))
+    return out
+
+
 def validate_round_rk(
     findings: List[Finding],
     responses: Dict[str, str],
@@ -13541,30 +13670,28 @@ def validate_round_rk(
         # condemned it. Position is RETAINED rather than removed, because a seat
         # that emits no FINDING_ID still has its sections read exactly as before —
         # so this strictly adds a correct path and takes none away.
-        owned = _extract_corroboration_sections_with_ids(text)
-
-        def _norm(v: Any) -> str:
-            return re.sub(r'[^a-z0-9]', '', str(v or '').lower())
-
-        by_id: Dict[str, str] = {}
-        for _oid, _sec in owned:
-            if _oid:
-                by_id.setdefault(_norm(_oid), _sec)
+        # ENVELOPE FIRST, THEN THE OWNER-AWARE PROSE READER, THEN POSITION
+        # (2026-10-04). `_corroboration_sections_by_owner` layers the 2 and
+        # reports which answered, so the preference is visible in the log rather
+        # than silent. Every path that existed before is still reachable.
+        by_id: Dict[str, Tuple[str, str]] = _corroboration_sections_by_owner(text)
+        _norm = _norm_owner_key
 
         def _section_for(idx: int, fid: Any) -> Tuple[Optional[str], str]:
-            """Return (section, how) — how is 'id', 'id_suffix', 'position' or 'none'."""
+            """Return (section, how) — 'envelope', 'id', 'id_suffix', 'position', 'none'."""
             key = _norm(fid)
             if key and key in by_id:
-                return by_id[key], 'id'
+                return by_id[key]
             # a registered finding_id is often the seat alias (Fable-SIM_F609)
             # while the response writes the bare id (F609), so allow containment
             # in either direction, but ONLY when exactly 1 candidate matches --
             # an ambiguous match is not an identification.
             if key:
-                cands = [s for k, s in by_id.items()
+                cands = [v for k, v in by_id.items()
                          if k and (k.endswith(key) or key.endswith(k))]
                 if len(cands) == 1:
-                    return cands[0], 'id_suffix'
+                    return cands[0][0], (
+                        'envelope' if cands[0][1] == 'envelope' else 'id_suffix')
             if idx < len(sections):
                 return sections[idx], 'position'
             return None, 'none'
@@ -15471,7 +15598,16 @@ def run_experiment(
             f"    H/H_max: 0.75 — abstraction level is high (architectural)\n"
             f"    Citations: arXiv:2502.09858, 10.1234/example\n"
             f"  VERIFIED: TRUE if proven, FALSE if assertion\n\n"
-            f"PRIOR REVIEW CONTEXT: Do not re-report issues already present "
+            # TAUGHT BESIDE THE PLAIN FIELDS, NEVER INSTEAD OF THEM (2026-10-04).
+            # The 2 mandatory fields the prose readers find hardest are
+            # CORROBORATION and FALSIFICATION, because both are words that occur
+            # in ordinary sentences and as keys in data structures: the frozen
+            # corroboration reader fired on `corroboration_fit` and on
+            # "independent corroboration" for 226 phantom sections against 109
+            # real ones in one run. Wrapping those 2 removes the question
+            # entirely, so they are the ones named here.
+            + envelope_instruction_block() + "\n"
+            + f"PRIOR REVIEW CONTEXT: Do not re-report issues already present "
             f"in the registry summary. Duplicate findings waste compute. "
             f"Focus on genuinely new issues and regressions.\n\n"
             f"Produce ALL findings. Do not hold back.\n\n"
@@ -18008,8 +18144,23 @@ def run_experiment(
             "labels_seen": 0, "labels_with_a_fence_within_3_lines": 0,
             "blocks_recovered": 0, "recovered_only_by_the_companion": 0,
             "replies_examined": 0,
+            # FIELD ENVELOPE ADOPTION, 2026-10-04. Zeroed here so a run in which
+            # no seat used the envelope reports 0 rather than omitting the keys:
+            # an absent key reads as "not measured", and the whole point of this
+            # block is that the denominator is present.
+            "envelope_replies_examined": 0,
+            "envelope_replies_with_a_header": 0,
+            "envelope_headers_seen": 0, "envelope_accepted": 0,
+            "envelope_refused": 0,
         }
         _pt.update(_INTAKE_TALLY)
+        if _pt["envelope_replies_examined"]:
+            _pt["envelope_adoption_rate_over_replies"] = (
+                _pt["envelope_replies_with_a_header"]
+                / _pt["envelope_replies_examined"])
+        if _pt["envelope_headers_seen"]:
+            _pt["envelope_acceptance_rate_over_headers"] = (
+                _pt["envelope_accepted"] / _pt["envelope_headers_seen"])
         result["intake_parser"] = _pt
         if _pt["labels_with_a_fence_within_3_lines"]:
             _pt["recovery_rate_over_fenced_labels"] = (

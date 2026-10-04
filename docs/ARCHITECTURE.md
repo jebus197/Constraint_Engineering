@@ -262,6 +262,15 @@ of 25 (Fisher exact p = 2.5×10⁻⁵).
 3. Models return findings in structured format
    (parser extracts finding ID, severity, description, evidence, fix,
     ADMISSIBILITY block, NOVELTY block)
+   Five format arms read free prose — JSON array, JSON object, tuple,
+   marker and bare-ID — and a model may additionally wrap any single
+   field in a FIELD ENVELOPE, `<<<CDSFL_FIELD field=... id=...>>> value
+   <<<CDSFL_FIELD_END>>>`, which carries the field name and the owning
+   finding id INSIDE the delimiter. An enveloped field is read exactly
+   as written, with no inference from headings, decoration or position;
+   an envelope is optional and a reply carrying none parses through the
+   five arms unchanged. See `bench/field_envelope.py`, measured by
+   `scripts/field_envelope_measurement_2026-10-04.py`.
 
 4. Findings enter immune pipeline
    (DC -> CT -> B-Cell Complex -> NK -> HT -> RT -> Macrophage -> Ouroboros)

@@ -45,6 +45,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "bench"))
 
+from field_envelope import envelope_instruction_block
 from experiment_11_orchestrator import (
     load_default_config,
     dispatch,
@@ -497,6 +498,15 @@ FINDING_FORMAT = (
     "  DESCRIPTION: what is wrong and why\n"
     "  PROPOSED_FIX: specific fix\n"
     "  VERIFIED: TRUE/FALSE\n\n"
+    # THE ENVELOPE IS TAUGHT HERE OR IT IS UNREACHABLE (2026-10-04). A reader
+    # that nothing can emit for is the additive standard's own failure mode,
+    # and this project's record holds 11 confirmed defects of exactly that
+    # shape. The paragraph is rendered from
+    # `field_envelope.envelope_instruction_block` -- one string for every call
+    # site -- so the form the prompt teaches and the form the parser accepts
+    # cannot drift apart, which is how the sweep prompt and the routing prompt
+    # came to disagree about prose targets on 2026-08-01.
+    + envelope_instruction_block() + "\n"
 )
 
 # Task definitions: (task_key, id_prefix, description, artifact_builder)

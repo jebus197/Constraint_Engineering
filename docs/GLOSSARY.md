@@ -121,6 +121,10 @@ The falsifier source and its verdict are both preserved in a run's report, under
 
 Parameter modelling the probability that a model can successfully deliver findings given its current context state. Degrades with context size but currently modelled as a constant (Gap 4 in the model audit).
 
+### Field envelope
+
+A delimiter for one finding field that carries the field name and the owning finding id inside itself: `<<<CDSFL_FIELD field=SEVERITY id=F001>>>0.9<<<CDSFL_FIELD_END>>>`. It is found by a plain substring scan, so surrounding indentation, bullets, blockquote markers, bold wrapping, line order and position are never read — which is what distinguishes it from a bare field label, a word that can equally be a heading, a key inside a data structure, or a passing mention in a sentence. Optional and preferred: a reply that uses no envelope is parsed by the five free-prose format arms exactly as before, so a model is never penalised for plain fields. Added 2026-10-04 in `bench/field_envelope.py`; measured by `scripts/field_envelope_measurement_2026-10-04.py`.
+
 ### FFAFP (Find-Follow-Analyse-Fix-P-pass)
 
 Five-step intra-model reasoning cycle. (1) Find the issue, its location, and the evidence. (2) Follow consequences through the entire system before touching anything — trace dependencies, interfaces, downstream effects. (3) Analyse dispassionately with available tools (CONFIRMED, UNCERTAIN, or REJECTED). (4) Fix with the simplest sufficient correction addressing root cause and downstream consequences. (5) P-pass: actively try to disprove the fix. Triggered by the `f` metacognitive command. Supersedes the original 3-step FFF (Find-Follow-Fix) and the 4-step FFAF (Find-Follow-Analyse-Fix).

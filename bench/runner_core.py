@@ -36,7 +36,7 @@ import re
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 # Path setup
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -53,6 +53,12 @@ from dynamic_management import (
     ModelSpec,
     CapabilityFingerprint,
     Finding,
+)
+from field_envelope import (
+    FIELD_BEGIN_PREFIX,
+    fields_by_owner,
+    scalar as _envelope_scalar,
+    verdicts_from_fields,
 )
 
 
@@ -1430,6 +1436,241 @@ def falsifier_intake_telemetry(response: str) -> dict:
     }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# FIELD ENVELOPE OVERLAY — the unambiguous reader, consulted first (2026-10-04)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# WHY IT IS AN OVERLAY AND NOT A SIXTH PARSER ARM. The 5 arms above are
+# first-match-wins: a JSON reply returns before the marker arm runs. A field
+# envelope is not a rival FORMAT, it is an unambiguous DELIMITER that a seat may
+# put around any field of any shape -- so a reply can be a JSON array whose
+# CORROBORATION arrives in an envelope, or a markdown reply with 2 findings in
+# prose and a 3rd in envelopes. Making it a 6th arm would force a choice between
+# the two and lose whichever lost. Overlaying keeps both.
+#
+# THE RULE, in one line: an enveloped field WINS, and nothing else is touched.
+# A field the envelope did not supply keeps exactly the value the arms above
+# computed, and a finding the envelope never mentions is byte-identical. Measured
+# over 326 archived seat replies, none of which carry an envelope: 326 of 326
+# parse identically with this overlay in place
+# (`scripts/field_envelope_measurement_2026-10-04.py`, section 3).
+
+#: `dataclasses.replace` rebuilds through `__init__` and therefore DROPS any
+#: attribute set by `object.__setattr__` -- which is how `corroboration_present`
+#: is stored, since it is not a declared field of `Finding`. Overlaying with a
+#: bare `replace` would silently clear it, and a flag that disappears when an
+#: unrelated field is edited is the shape of defect this project keeps finding.
+_FINDING_DECLARED_FIELDS = frozenset(
+    f.name for f in __import__("dataclasses").fields(Finding))
+
+
+def _replace_preserving_extras(f: Finding, **changes: Any) -> Finding:
+    """`dataclasses.replace`, plus the undeclared attributes it would lose."""
+    import dataclasses as _dc
+    extras = {k: v for k, v in vars(f).items()
+              if k not in _FINDING_DECLARED_FIELDS}
+    out = _dc.replace(f, **changes)
+    for k, v in extras.items():
+        object.__setattr__(out, k, v)
+    return out
+
+
+def _norm_fid(value: Any) -> str:
+    """The same normalisation `validate_round_rk` uses to pair ids."""
+    return re.sub(r'[^a-z0-9]', '', str(value or '').lower())
+
+
+def _envelope_field_changes(
+    fields: Dict[str, str],
+) -> Tuple[Dict[str, Any], List[str]]:
+    """Turn one owner's enveloped fields into `Finding` keyword changes.
+
+    Returns ``(changes, rejected)``. A SCALAR THAT DOES NOT PARSE IS REJECTED
+    RATHER THAN COERCED: a severity of `high` or `<0.0 to 1.0>` leaves the
+    severity the arms above computed and is named in `rejected`, because an
+    envelope that silently wrote 0.0 would be worse than no envelope at all.
+    `_normalise_field_labels` already maps the WORD severities this project has
+    actually observed (critical/high/medium/low), so a word reaching here is one
+    nothing recognises.
+    """
+    changes: Dict[str, Any] = {}
+    rejected: List[str] = []
+
+    if "SEVERITY" in fields:
+        try:
+            changes["severity"] = max(
+                0.0, min(1.0, float(_envelope_scalar(fields["SEVERITY"]))))
+        except (TypeError, ValueError):
+            rejected.append("SEVERITY")
+    if "FLAW_CLASS" in fields:
+        changes["flaw_class"] = max(
+            1, min(8, _parse_flaw_class(_envelope_scalar(fields["FLAW_CLASS"]))))
+    if "ABSTRACTION_INDEX" in fields:
+        try:
+            changes["abstraction_index"] = max(0.0, min(1.0, float(
+                _envelope_scalar(fields["ABSTRACTION_INDEX"]))))
+        except (TypeError, ValueError):
+            rejected.append("ABSTRACTION_INDEX")
+    if "DESCRIPTION" in fields:
+        changes["description"] = _bounded_description(fields["DESCRIPTION"])
+    if "PROPOSED_FIX" in fields:
+        changes["proposed_fix"] = fields["PROPOSED_FIX"].strip()
+    if "VERIFIED" in fields:
+        word = _envelope_scalar(fields["VERIFIED"]).upper()
+        if word in ("TRUE", "FALSE"):
+            changes["verified"] = word == "TRUE"
+        else:
+            rejected.append("VERIFIED")
+    if "TARGET_FILE" in fields:
+        changes["target_file"] = _envelope_scalar(fields["TARGET_FILE"])
+    return changes, rejected
+
+
+def _apply_field_envelopes(
+    model_id: str, round_idx: int, response: str, findings: List[Finding],
+) -> List[Finding]:
+    """Overlay enveloped fields onto parsed findings; mint the ones nothing found.
+
+    Three things happen, and each is additive:
+
+    1. OVERLAY. An envelope whose `id=` identifies a finding the arms above
+       already produced replaces that finding's enveloped fields and no others.
+    2. MINT. An envelope set that carries a DESCRIPTION and matches no parsed
+       finding becomes a new finding. DESCRIPTION is the bar because a finding is
+       a CLAIM: an owner carrying only, say, a CORROBORATION envelope is an
+       enrichment for a finding stated in prose, not a finding of its own, and
+       minting one would manufacture a claim the seat never made.
+    3. THE UNSTRUCTURED FALLBACK STANDS DOWN when the envelope read something.
+       That fallback's own precondition is `not findings` -- it exists for a reply
+       that parsed into nothing -- and the existing code already stands it down
+       when the reply carries regex verdicts. Extending the same stand-down to
+       enveloped findings and enveloped verdicts applies its intent rather than
+       withdrawing it: without this, a reply written ENTIRELY in envelopes would
+       be recorded twice, once correctly and once as a severity-0.3 blob of its
+       own raw text.
+
+    `falsification_present` and `corroboration_present` are raised to True by a
+    non-empty FALSIFICATION or CORROBORATION envelope and NEVER lowered, so the
+    marker scan in `_parse_findings_core` cannot lose a positive it already found.
+    """
+    if not response or FIELD_BEGIN_PREFIX not in response:
+        return findings
+    by_owner = fields_by_owner(response)
+    if not by_owner:
+        # Headers present but all refused. `envelope_telemetry` carries the
+        # reasons; a run that logs them tells the seat what to correct.
+        return findings
+
+    # Index the parsed findings by id, and by id with the model prefix removed,
+    # because a seat writes `F001` while the parser mints `CC2_F001`. An
+    # AMBIGUOUS key is not an identification, so a key reached by more than 1
+    # finding is dropped rather than guessed -- the rule `validate_round_rk`
+    # adopted on 2026-10-03 after positional pairing validated the wrong
+    # arithmetic.
+    counts: Dict[str, int] = {}
+    index: Dict[str, int] = {}
+    for i, f in enumerate(findings):
+        fid = str(getattr(f, "finding_id", "") or "")
+        bare = fid[len(model_id) + 1:] if fid.startswith(f"{model_id}_") else fid
+        for key in {_norm_fid(fid), _norm_fid(bare)}:
+            if not key:
+                continue
+            counts[key] = counts.get(key, 0) + 1
+            index.setdefault(key, i)
+    ambiguous = {k for k, n in counts.items() if n > 1}
+
+    out = list(findings)
+    minted = 0
+    for owner, fields in by_owner.items():
+        changes, rejected = _envelope_field_changes(fields)
+        if rejected:
+            # EVERY REFUSAL IS LOUD, which is the convention the corrected-copy
+            # section set and the reason this return value is read rather than
+            # discarded: a rejection list nothing consumes is an addition nothing
+            # reaches. The seat wrote an envelope correctly and put something
+            # unreadable inside it, and that is exactly the case worth saying out
+            # loud, because the envelope was supposed to remove the guesswork.
+            _log(f"  field envelope: {model_id} {owner} -- payload not readable "
+                 f"for {', '.join(rejected)}; the value from the prose parse "
+                 f"stands")
+        has_falsif = bool((fields.get("FALSIFICATION") or "").strip())
+        has_corrob = bool((fields.get("CORROBORATION") or "").strip())
+        key = _norm_fid(owner)
+        idx = None if key in ambiguous else index.get(key)
+
+        if idx is not None:
+            target = out[idx]
+            if changes:
+                # TARGET_FILE is re-inferred when the envelope changed the text
+                # it is inferred FROM, so an enveloped description does not keep
+                # a file guessed off the prose it replaced.
+                if "target_file" not in changes and (
+                        "description" in changes or "proposed_fix" in changes):
+                    changes["target_file"] = _infer_target_file(
+                        changes.get("description", target.description),
+                        changes.get("proposed_fix", target.proposed_fix),
+                        target.target_file)
+                target = _replace_preserving_extras(target, **changes)
+                out[idx] = target
+            if has_falsif:
+                object.__setattr__(target, "falsification_present", True)
+            if has_corrob:
+                object.__setattr__(target, "corroboration_present", True)
+            continue
+
+        if "description" not in changes:
+            continue
+        # THE SAME STRUCTURAL GATE THE 5 ARMS APPLY, mirrored rather than
+        # skipped. `_structurally_valid_fid` is called on the MODEL-WRITTEN id in
+        # every one of arms 1, 1b, 2, 3 and 4 before the prefix is added, and a
+        # mint that bypassed it would be a 6th route to the mangled-id class
+        # documented in `Exp40_Continuation_Postmortem_2026-05-15.md` Anomaly 2.
+        # The OVERLAY path above is deliberately not gated: matching an existing
+        # finding creates no id, so a seat writing a prefixed alias such as
+        # `Fable-SIM_F609` can still enrich a finding that already exists.
+        if not _structurally_valid_fid(owner):
+            continue
+        fid = owner if owner.startswith(f"{model_id}_") else f"{model_id}_{owner}"
+        # AND NEVER MINT A SECOND FINDING UNDER AN ID THAT IS ALREADY TAKEN.
+        # It can only happen when `idx` came back None because the key was
+        # AMBIGUOUS -- 2 parsed findings normalising to the same key -- and
+        # minting then would put a third row under a colliding `finding_id`.
+        # `{f.finding_id: f for f in findings}` silently overwriting on a shared
+        # id is a defect this project has already paid for (Exp 40 continuation,
+        # 2026-05-15), and the panel that produced it also diagnosed it.
+        if any(str(getattr(f, "finding_id", "")) == fid for f in out):
+            continue
+        verified = bool(changes.get("verified", False))
+        new = Finding(
+            finding_id=fid,
+            model_id=model_id,
+            round_idx=round_idx,
+            flaw_class=changes.get("flaw_class", 1),
+            severity=changes.get("severity", 0.5),
+            abstraction_index=changes.get("abstraction_index", 0.5),
+            description=changes["description"],
+            proposed_fix=changes.get("proposed_fix", ""),
+            target_file=changes.get("target_file") or _infer_target_file(
+                changes["description"], changes.get("proposed_fix", "")),
+            # SAME RULE AS THE ARMS ABOVE: self-certification without a
+            # falsification attempt does not count as verified.
+            verified=verified and has_falsif,
+            origin_type="model",
+        )
+        object.__setattr__(new, "falsification_present", has_falsif)
+        object.__setattr__(new, "corroboration_present", has_corrob)
+        out.append(new)
+        minted += 1
+
+    # ONE EXTRACTION, NOT TWO. `by_owner` is already in hand, so the verdict
+    # check reads it rather than re-scanning the reply -- 2 scans of 1 text
+    # are 2 representations of 1 truth with no comparator.
+    if minted or verdicts_from_fields(by_owner):
+        out = [f for f in out
+               if str(getattr(f, "finding_id", "")) != f"{model_id}_UNSTRUCTURED"]
+    return out
+
+
 def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding]:
     """Public finding parser: structured extraction plus falsifier attachment.
 
@@ -1438,9 +1679,14 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     block in the response is attached to ``finding.falsifier_code``. Behaviour
     is byte-identical to the core parser when the response carries no falsifier
     blocks, so existing experiments are unaffected.
+
+    `_apply_field_envelopes` then overlays any `<<<CDSFL_FIELD ...>>>` envelope
+    the reply carried. It returns the list unchanged when there is none, so a
+    seat that never adopts the envelope is parsed exactly as it was before.
     """
     response = _normalise_field_labels(response)
     findings = _parse_findings_core(model_id, round_idx, response)
+    findings = _apply_field_envelopes(model_id, round_idx, response, findings)
     return _attach_falsifiers(findings, response)
 
 
