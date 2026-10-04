@@ -30,20 +30,32 @@ is a three-line partial dated 12 March 2026 and does **not** cover the suite —
 omits `pytest`, among others, so installing from it alone leaves you unable to run
 the verification step below.
 
-Install the full set:
-
-```bash
-pip install anthropic openai scipy numpy sympy pytest google-genai statsmodels \
-            pydantic httpx cryptography z3-solver uncertainties mpmath \
-            mypy ruff bandit coverage
-```
-
-Then let the wizard tell you what is still missing — it checks each package by
-importing it, so its answer is measured rather than declared:
+Install them by running the installer. It IS the installer, not a checker: it offers
+every package in those tables, asks before each install and prints the exact command
+first, and it verifies by importing each one, so its answer is measured rather than
+declared.
 
 ```bash
 python3 scripts/cdsfl_onboard.py
 ```
+
+`--dry-run` reports what is missing and installs nothing. `--help` costs nothing.
+
+> **[Correction 2026-10-03.] THE HAND-TYPED `pip install` LINE THAT USED TO SIT HERE
+> IS GONE, AND ITS REMOVAL IS THE FIX RATHER THAN A TIDY-UP.** It named 18 packages
+> against the installer's 28 — 64.2857% coverage — omitting PuLP, astropy, biopython,
+> crosshair-tool, matplotlib, networkx, pandas, pint, rdkit and scikit-learn. That is
+> not a cosmetic gap: `bench/tests/test_specialist_shadow_cells.py` calls `pytest.fail`
+> on an ImportError for pint, astropy and rdkit, so 3 tests hard-fail for anyone who
+> followed this page, while line 97 below told them "All tests should pass". The
+> installer's tables had changed on 2026-09-17 and this list on 2026-08-15, a 33-day
+> drift that a later edit to this file did not close, because nothing compared the two.
+> **The list is not re-typed here at any length, because a second copy is a second
+> thing to drift.** This section already named the installer's tables as the maintained
+> source 2 paragraphs above and then contradicted itself immediately; the contradiction
+> is what is removed. Guarded by
+> `bench/tests/test_onboarding_route_is_live_2026-10-03.py`, which fails if this page
+> re-acquires a package list that disagrees with the script.
 
 > **[Correction 2026-08-07.]** This section previously said `pip install -r
 > bench/requirements.txt` followed by five extra packages, a union of eight. That

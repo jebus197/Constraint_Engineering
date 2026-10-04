@@ -3928,6 +3928,36 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
     # ── Pre-pass 1: Mark/clear EXHAUSTED on critical/high findings ──
     # Derived fresh each call — not sticky. Requires review activity.
     exhausted_threshold = cfg.exhausted_round_threshold if cfg else 0
+    # CLAMP THE AGE LOCK TO WHAT THE RUN CAN ACTUALLY REACH, AND SAY SO (2026-10-03).
+    #
+    # `round_idx` is 0-based, so in a run of R rounds the maximum attainable age is
+    # R-1, not R. With the shipped default of 8 and `--rounds 8` the condition
+    # `age >= 8` is UNSATISFIABLE: z3 returns `unsat` over the legal domain, a NumPy
+    # enumeration of all 36 legal (round_idx, last_status_change_round) pairs gives
+    # a maximum age of 7, and SymPy gives the general condition T <= R - 1. All 3
+    # agree. Producer: scripts/release_valve_age_lock_2026-10-03.py.
+    #
+    # So the one release path out of the A4 blocker could not fire AT ALL in an
+    # 8-round run, for any finding, at any severity. That is a gate with no path
+    # through it -- the shape this project's additive standard calls an addition
+    # nothing reaches, and it had been shipping.
+    #
+    # CLAMPED RATHER THAN RE-DEFAULTED, because the configured value is the
+    # operator's intent and a run that is simply too short should not silently
+    # acquire a different policy. The clamp is ANNOUNCED: a threshold the run can
+    # never satisfy is a configuration defect, and the log line is how the operator
+    # finds out instead of reading an unexplained non-convergence.
+    if cfg is not None and exhausted_threshold > 0:
+        _max_reachable_age = max(0, int(getattr(cfg, "max_rounds", 0)) - 1)
+        if _max_reachable_age and exhausted_threshold > _max_reachable_age:
+            _log(f"  valve age lock UNREACHABLE as configured: "
+                 f"exhausted_round_threshold={exhausted_threshold} exceeds the "
+                 f"maximum attainable age {_max_reachable_age} in a "
+                 f"{cfg.max_rounds}-round run (round_idx is 0-based), so no "
+                 f"finding could ever be released. Clamped to "
+                 f"{_max_reachable_age} for this run; raise max_rounds or lower "
+                 f"the threshold to remove the clamp.")
+            exhausted_threshold = _max_reachable_age
     for e in registry.entries.values():
         if (e["status"] in EXHAUSTED_VALVE_STATUSES
                 and e["severity"] >= 0.7):
@@ -13347,6 +13377,146 @@ def _extract_corroboration_sections(response_text: str) -> List[str]:
     return sections
 
 
+def record_in_round_withdrawals(registry, responses: Dict[str, str],
+                                round_idx: int) -> Dict[str, Any]:
+    """Record a seat's reasoned withdrawal DURING the round. Blocks nothing.
+
+    FOUNDER RULING, 2026-10-04: *"I said it should simply be a recorded metric, and
+    should not block anything."* And, on the sweep: *"The schema itself is capable of
+    doing what the sweep does inside a run, so why not just do that?"*
+
+    WHY IT MATTERS, measured. `WITHDRAW C0066: reason` was parsed at exactly 1 site in
+    this file, inside `_post_convergence_sweep` (the `reasoned_withdrawal` write at
+    the `_record_computed_evidence` call in that function), and the sweep runs AFTER
+    `converged` is assigned. So on study_run1b both C0066 and C0073 carried
+    `computed_evidence` with `kinds=['reasoned_withdrawal']` -- the seats HAD reviewed
+    them and said so -- and the record of that review did not exist until after the
+    verdict that needed it. Two panel seats each proposed a repair that reads this
+    evidence; neither could have changed a live run, because in a live run the
+    evidence is not there yet. Recording it in-round is what makes either repair
+    capable of mattering, and it is the founder's own proposal.
+
+    WHAT THIS DELIBERATELY DOES NOT DO. It does not retire a finding, change a status,
+    set `exhausted`, or feed `unverified_critical_count`, `contested_count`,
+    `irreducible_queue_count` or the two-sided gate. It writes `computed_evidence`
+    and returns counts. A withdrawal recorded here is information for the human and a
+    metric for the report, exactly as ruled -- never a closure bought with model prose.
+    The sweep's own retirement path is untouched and keeps its severity guard.
+
+    Idempotent within a round: a seat that repeats the same withdrawal in the same
+    round is recorded once, so a re-emission cannot inflate the metric.
+    """
+    stats: Dict[str, Any] = {"recorded": 0, "seen": 0, "skipped_terminal": 0,
+                             "skipped_unknown": 0, "by_model": {}, "ids": []}
+    if not responses:
+        return stats
+    seen_this_round = set()
+    for model_id, resp in (responses or {}).items():
+        if not isinstance(resp, str):
+            continue
+        for m in re.finditer(r"WITHDRAW\s+(C\d{4})\s*:\s*(.{3,300})", resp):
+            cid, reason = m.group(1), m.group(2).strip()
+            stats["seen"] += 1
+            e = getattr(registry, "entries", {}).get(cid)
+            if e is None:
+                stats["skipped_unknown"] += 1
+                continue
+            if e.get("status") in ("MERGED", "CLOSED", "REFUTED", "DUPLICATE"):
+                stats["skipped_terminal"] += 1
+                continue
+            key = (model_id, cid)
+            if key in seen_this_round:
+                continue
+            seen_this_round.add(key)
+            try:
+                _record_computed_evidence(
+                    e, kind="reasoned_withdrawal", by=str(model_id),
+                    detail=reason[:200])
+            except Exception as _w_exc:          # noqa: BLE001 — never kill a round
+                _log(f"  WARNING: in-round withdrawal not recorded for {cid} "
+                     f"({type(_w_exc).__name__})")
+                continue
+            e["withdrawal_round"] = round_idx
+            stats["recorded"] += 1
+            stats["ids"].append(cid)
+            stats["by_model"][str(model_id)] = (
+                stats["by_model"].get(str(model_id), 0) + 1)
+    return stats
+
+
+def _extract_corroboration_sections_with_ids(
+    response_text: str,
+) -> List[Tuple[Optional[str], str]]:
+    """Same sections as `_extract_corroboration_sections`, each with its OWNER.
+
+    WHY THIS EXISTS (2026-10-03). `validate_round_rk` paired sections to findings
+    BY POSITION, on a comment's assumption that "both are in document order".
+    Measured on study_run1b round 7: the 6 seats emitted 3, 27, 8, 29, 6 and 6
+    CORROBORATION sections against 4 registered findings. Positional pairing
+    therefore matched a surviving finding to whichever section happened to come
+    first in the raw text, and any finding whose index exceeded the section count
+    was stamped SKIP regardless of what it had actually written.
+
+    That is not a cosmetic mismatch: it defeats the founder's worked-proofs
+    ruling of 2026-09-06 in BOTH directions. C0073 carried a CORROBORATION block
+    that `_validate_rk_computation` returns PASS on (model_rk 0.49, recomputed
+    0.4851, delta 0.0049) and was stored as SKIP with all 3 values None. Being
+    unproven, it was counted by the A4 blocker and convergence was blocked by a
+    proof the parser would have passed. The opposite error is worse and silent:
+    finding i's claimed R_k checked against finding j's parameters is a PASS that
+    validates the wrong arithmetic.
+
+    `_extract_corroboration_sections` is UNCHANGED and keeps its signature: it
+    has callers in the frozen v1 runner, in `scripts/measure_rk_proof_compliance.py`,
+    in 2 committed panel falsifiers and in `test_rk_clip_stops_at_an_arrow_2026-09-22`.
+    This is a sibling, so nothing that reads the old shape is disturbed.
+
+    The owner is the nearest FINDING_ID *preceding* the CORROBORATION header,
+    which is the order every seat template emits. Returns None for that slot when
+    no id precedes the section, so the caller can fall back rather than guess.
+
+    THE HEADER MUST BE A HEADER, which the original extractor does not require and
+    which is a SECOND defect this function must not inherit. The original splits
+    case-insensitively on the bare word, so on study_run1b round 7 it fired on the
+    JSON key `corroboration_fit` twice and on the prose "independent corroboration"
+    once: 6 "sections" for the Fable seat where only 3 are real, and very probably
+    what inflates the ChatGPT seat to 27 and the DeepSeek seat to 29. An inflated
+    count is not a harmless over-read -- it is what makes positional pairing select
+    the wrong block. The real emitted form is `**CORROBORATION.**` at line start.
+
+    AND THE ID IS DECORATED. Seats write `**FINDING_ID:** F609`, so a pattern that
+    allows only bare `FINDING_ID:` recovers nothing. Measured before this was
+    allowed for: 0 of 6 round-7 responses yielded any owner, including the one that
+    wrote C0073. With decoration permitted the same seat yields F607, F609, F701.
+
+    The original `_extract_corroboration_sections` is deliberately LEFT AS IT IS,
+    phantom sections included, because changing a function with callers in the
+    frozen v1 runner and in committed falsifiers is not this fix's business. This
+    sibling is the corrected reader; the caller prefers it and keeps the original as
+    the fallback, so no existing behaviour is withdrawn.
+    """
+    out: List[Tuple[Optional[str], str]] = []
+    # line-anchored, optional markdown/heading decoration, and the word must be
+    # FOLLOWED by a terminator -- which is what excludes `corroboration_fit`.
+    header = re.compile(
+        r'^[\s>]*[\*\_#]*\s*CORROBORATION[\*\_]*\s*[.:\-]?[\*\_]*\s*$|'
+        r'^[\s>]*[\*\_#]*\s*CORROBORATION[\*\_]*\s*[.:\-][\*\_]*\s*',
+        re.IGNORECASE | re.MULTILINE)
+    fid_re = re.compile(
+        r'FINDING_ID[\*\_\s]*[:=][\*\_\s]*([A-Za-z0-9_\-]+)', re.IGNORECASE)
+    end_re = re.compile(
+        r'\n\s*(?:[\*\_#]*\s*FINDING_ID|[\*\_#]*\s*VERIFIED|---'
+        r'|[\*\_#]*\s*SEVERITY|FIND\s*:|FOLLOW\s*:|\[\s*\{)', re.IGNORECASE)
+    for m in header.finditer(response_text):
+        body = response_text[m.end():]
+        e = end_re.search(body)
+        section = body[:e.start()] if e else body
+        # the LAST FINDING_ID before this header owns the section
+        ids = fid_re.findall(response_text[:m.start()])
+        out.append((ids[-1] if ids else None, section))
+    return out
+
+
 def validate_round_rk(
     findings: List[Finding],
     responses: Dict[str, str],
@@ -13365,12 +13535,52 @@ def validate_round_rk(
         model_findings = [f for f in findings if f.model_id == model_id]
         model_results: List[Tuple[str, str, Optional[float], Optional[float]]] = []
 
-        # Match sections to findings by position (both are in document order)
+        # MATCH BY IDENTITY FIRST, POSITION ONLY AS A FALLBACK (2026-10-03).
+        # The old loop was positional with no fallback and no identity at all;
+        # see `_extract_corroboration_sections_with_ids` for the measurement that
+        # condemned it. Position is RETAINED rather than removed, because a seat
+        # that emits no FINDING_ID still has its sections read exactly as before —
+        # so this strictly adds a correct path and takes none away.
+        owned = _extract_corroboration_sections_with_ids(text)
+
+        def _norm(v: Any) -> str:
+            return re.sub(r'[^a-z0-9]', '', str(v or '').lower())
+
+        by_id: Dict[str, str] = {}
+        for _oid, _sec in owned:
+            if _oid:
+                by_id.setdefault(_norm(_oid), _sec)
+
+        def _section_for(idx: int, fid: Any) -> Tuple[Optional[str], str]:
+            """Return (section, how) — how is 'id', 'id_suffix', 'position' or 'none'."""
+            key = _norm(fid)
+            if key and key in by_id:
+                return by_id[key], 'id'
+            # a registered finding_id is often the seat alias (Fable-SIM_F609)
+            # while the response writes the bare id (F609), so allow containment
+            # in either direction, but ONLY when exactly 1 candidate matches --
+            # an ambiguous match is not an identification.
+            if key:
+                cands = [s for k, s in by_id.items()
+                         if k and (k.endswith(key) or key.endswith(k))]
+                if len(cands) == 1:
+                    return cands[0], 'id_suffix'
+            if idx < len(sections):
+                return sections[idx], 'position'
+            return None, 'none'
+
         for i, f in enumerate(model_findings):
-            if i < len(sections):
-                status, model_rk, recomputed = _validate_rk_computation(sections[i])
-            else:
+            _sec, _how = _section_for(i, getattr(f, "finding_id", None))
+            if _sec is None:
                 status, model_rk, recomputed = "SKIP", None, None
+            else:
+                status, model_rk, recomputed = _validate_rk_computation(_sec)
+            if _how == 'position' and by_id:
+                # Some sections WERE identifiable and this finding still had to
+                # fall back. Say so: a silent fallback is how the positional bug
+                # stayed invisible for as long as it did.
+                _log(f"  R_k pairing: {getattr(f, 'finding_id', '?')} fell back to "
+                     f"POSITION {i} although {len(by_id)} section(s) carried an id")
             model_results.append((f.finding_id, status, model_rk, recomputed))
 
             if status == "WARN":
@@ -14957,6 +15167,9 @@ def run_experiment(
     # critical-only decay, both reported each round, neither gates.
     gamma_all_history: List[float] = []
     gamma_critical_history: List[float] = []
+    # Per-round in-round withdrawal counts (founder ruling 2026-10-04). A METRIC:
+    # reported, never read by any gate, status or counter.
+    round_withdrawals: List[Dict[str, Any]] = []
     gate_history: List[bool] = []
     open_ch_history: List[int] = []
     stall_history: List[Dict[str, int]] = []
@@ -15631,6 +15844,25 @@ def run_experiment(
             break
 
         # R_k recomputation validation (advisory)
+        # IN-ROUND WITHDRAWAL RECORDING (founder ruling 2026-10-04). The sweep
+        # already parses `WITHDRAW Cxxxx: reason`, but it runs after `converged` is
+        # assigned, so on study_run1b the 2 findings that blocked the run carried a
+        # recorded review that did not exist until after the verdict needing it.
+        # This records the same evidence while the run is still going. It is a
+        # METRIC and nothing else: no status moves, no gate input changes, no
+        # finding is retired. Never allowed to kill a round.
+        try:
+            _wd = record_in_round_withdrawals(registry, responses, round_idx)
+            if _wd.get("recorded"):
+                _log(f"  in-round withdrawals recorded: {_wd['recorded']} "
+                     f"({', '.join(sorted(set(_wd['ids'])))}) — REPORTED ONLY, "
+                     f"no status changed and no gate input touched")
+            round_withdrawals.append(_wd)
+        except Exception as _wd_exc:             # noqa: BLE001
+            _log(f"  WARNING: in-round withdrawal recording failed "
+                 f"({type(_wd_exc).__name__}: {_wd_exc})")
+            round_withdrawals.append({"recorded": 0, "error": str(_wd_exc)})
+
         rk_validation = validate_round_rk(findings, responses)
         # THE VERDICT IS NOW KEPT. It used to be counted into one log line and
         # dropped, which is why the severity it grades decided things unchecked.
@@ -16947,6 +17179,35 @@ def run_experiment(
             "raw_counts_per_model": raw_counts_per_model,
             "rho_history": [round(r, 6) for r in rho_history],
             "gamma_history": [round(g, 6) for g in gamma_history],
+            # THE GATE'S OWN SERIES WAS MISSING FROM THE SAVED STATE (2026-10-03).
+            # `gamma_history` is the ALL-SEVERITY curve. The two-sided gate reads
+            # `gamma_critical`, the critical-only curve, and that series was built
+            # here (:15072, appended :16886) and written to the REPORT (:17544) but
+            # never to this checkpoint. Measured across the archive: 76 of 81
+            # directories carrying a state or report file have no
+            # `gamma_critical_history` at all, 93.8272%, Wilson [86.3508%,
+            # 97.3347%], and only 2 of those 76 can recover it from a log line,
+            # 2.6316%, Wilson [0.7247%, 9.0966%]. So 74 archived runs hold the
+            # convergence gate's deciding input in no durable place.
+            #
+            # THE COST WAS NOT HYPOTHETICAL. A replay script fell back to
+            # `gamma_history` when it could not find this key and printed 0.4274
+            # under the label `gamma_critical`; the run's real value was 0.732, and
+            # the wrong figure was reported to the founder repeatedly before the
+            # fable seat caught it in panel round 1. A substitution under the same
+            # name is worse than an absent value, because the absent value is
+            # visible.
+            #
+            # The founder's position is that the registry is the single source of
+            # truth for any experiment a researcher may wish to run. That cannot
+            # hold while the series the gate decides on lives only in a log line.
+            # Producer for the figures above:
+            # scripts/gate_input_is_not_persisted_2026-10-03.py
+            "gamma_critical_history": [round(g, 6) for g in gamma_critical_history],
+            # Founder ruling 2026-10-04: a recorded metric, blocking nothing. It is
+            # persisted so the registry can show that a seat reviewed a finding and
+            # when, which is the evidence study_run1b held only after its verdict.
+            "round_withdrawals": round_withdrawals,
             "gate_history": gate_history,
             "open_ch_history": open_ch_history,
             "stall_history": stall_history,

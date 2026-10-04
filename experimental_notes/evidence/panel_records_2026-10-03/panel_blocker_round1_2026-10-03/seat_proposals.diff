@@ -1,0 +1,1074 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-03 18:43:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo/.cdsfl_deny_canonical_writes.sb	2026-10-03 18:27:37
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/logs/panel_blocker_round1_2026-10-03/panel.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/panel_blocker_round1_2026-10-03/panel.log	2026-10-03 18:43:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo/bench/logs/panel_blocker_round1_2026-10-03/panel.log	2026-10-03 18:26:49
+@@ -1,19 +0,0 @@
+-[18:27:37] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo
+-[18:27:37] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo
+-[18:27:37] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo
+-[18:27:37]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo
+-[18:27:37] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo
+-[18:27:37]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo
+-[18:42:40]   [claude-cli:fable] 52 tool call(s) this attempt, 52 in total
+-[18:42:40]   [claude-cli:fable] done (903.0s, 12283 chars)
+-    suite: GREEN at 1cfc30e — 8,878 passed, 0 failed  [recorded at 1cfc30e, HEAD is 1259b87, 79 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 7,982 chars, about 1,995 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo
+-  [fable] ok=True chars=12283 tools=52 903.0s
+-[18:43:12]   [claude-cli:opus] 47 tool call(s) this attempt, 47 in total
+-[18:43:12]   [claude-cli:opus] done (935.3s, 27511 chars)
+-  [cc2] ok=True chars=27511 tools=47 935.3s
+-[18:43:12] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-03 17:09:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo/bench/reference_runner_v3.py	2026-10-03 18:39:01
+@@ -2159,7 +2159,90 @@
+ # ─────────────────────────────────────────────────────────────────────────────
+ # FindingRegistry (identical to Exp 36 — A1 windowing, A3 HIL escalation)
+ # ─────────────────────────────────────────────────────────────────────────────
++
++#: `computed_evidence` kinds that record a DECLINATION -- the machine computed an
++#: answer and deliberately refused to act on it, handing the reasoning to a human
++#: (founder ruling 2026-08-03 at `_record_computed_evidence`: "the finding stays
++#: open, stays critical, stays a human decision").
++#:
++#: `discrimination_control:*` is deliberately NOT here. That kind records
++#: INSTRUMENT HEALTH, not an answer, and NON_DISCRIMINATING means the instrument
++#: is broken for that finding. Admitting it would be the 2026-09-09 hazard
++#: verbatim: a dead instrument stamping its own victims as "handed off".
++HANDOFF_EVIDENCE_KINDS = frozenset({
++    "reasoned_withdrawal",
++    "critical_refuted_evidence_recorded",
++})
++
++
++def _handed_to_human(e) -> bool:
++    """True when the machine has RECORDED that this entry is a human decision
++    and has NO instrument output still pending on it.
++
++    THE DEFECT THIS CLOSES, FOUND BY EXECUTION 2026-10-03 (panel, study_run1b).
++    `_record_computed_evidence` sets `entry["hil_has_computed_evidence"] = True`.
++    Across the WHOLE repository that key had exactly 1 write site and 0 read
++    sites -- the project's own #1 confirmed-defect class (11 of 11 confirmed
++    defects since 2026-08-01 were additions nothing reached). The machine's own
++    handoff stamp was invisible to the machinery that decides what is pending.
++
++    WHY THAT MATTERS TO A4. `unverified_critical_count`'s contract is
++    "candidates the system gave up on WITHOUT verification ... the convergence
++    count path must not accrue while any of these are PENDING". An entry the
++    machine has recorded as a human decision is NOT pending machine
++    verification; it has reached the designed terminal state. Counting it as
++    pending makes the loop wait for an event that, by the machine's own record,
++    will never arrive -- so the run burns to `max_rounds` instead of closing.
+ 
++    MEASURED on study_run1b_2026-10-03's saved registry: A4 = 2, blockers
++    exactly {C0066 (sev 0.45), C0073 (sev 0.50)}. BOTH carry
++    `computed_evidence[kind='reasoned_withdrawal']` and
++    `hil_has_computed_evidence` True, both have `verdicts == []`, no
++    `routing_history` and no `falsifier_code`. Producer:
++    bench/tests/test_a4_handoff_door_2026-10-03.py.
++
++    SEVERITY IS NOT READ HERE, deliberately (founder ruling 23, 2026-09-06:
++    AUC 0.464 against 0.5 for chance in the deciding band, sigma 0.1419 against
++    a band 0.09 wide, 30.04% of 273 duplicate pairs straddling 0.7). The
++    obvious one-line repair -- skip `severity < 0.7` as
++    `undemonstrated_subcritical_ids()` does -- would put that float back in
++    charge of convergence and is refused.
++
++    WHY THIS CANNOT CAUSE A FALSE CONVERGENCE. Four conjuncts, each of which a
++    broken instrument fails:
++      * `hil_has_computed_evidence` -- only `_record_computed_evidence` writes
++        it, and only when a computation RETURNED an answer;
++      * a kind in HANDOFF_EVIDENCE_KINDS -- instrument-health records
++        (`discrimination_control:*`) are excluded by kind;
++      * `verdicts == []` and no `routing_history` -- anything a model or the
++        ladder is still working on is untouched;
++      * empty `falsifier_code` -- anything carrying a test, resolved or not, is
++        untouched.
++    The door opens ONLY for an entry that nothing ever measured and that the
++    machine has explicitly booked to a human. A wholesale routing failure
++    produces entries with EMPTY `computed_evidence`; those keep blocking.
++
++    EXCLUDED IMPLIES REPORTED, by the same discipline as
++    `_integrity_violation_excluded`: `FindingRegistry.handed_to_human_ids()`
++    keys on THIS predicate, not on a flag, and `_evaluate_gate_conditions` logs
++    it every round. An entry that left the counter without appearing in a log
++    line would be a silent exclusion, which is the one outcome forbidden.
++    """
++    if (e.get("status") or "") != "UNCONFIRMED":
++        return False
++    if not e.get("hil_has_computed_evidence"):
++        return False
++    if e.get("verdicts") or e.get("routing_history"):
++        return False
++    if (e.get("falsifier_code") or "").strip():
++        return False
++    for rec in (e.get("computed_evidence") or []):
++        kind = ((rec or {}).get("kind") or "").split(":")[0]
++        if kind in HANDOFF_EVIDENCE_KINDS:
++            return True
++    return False
++
++
+ def _integrity_violation_excluded(e) -> bool:
+     """True when a key-access refusal must not feed the convergence machinery.
+ 
+@@ -2851,12 +2934,44 @@
+             # argument is kept and the number is replaced. Producer:
+             # scripts/integrity_exclusion_figures_2026-10-02.py.
+             if _integrity_violation_excluded(e):
++                continue
++            # A RECORDED HANDOFF IS NOT A PENDING VERIFICATION (2026-10-03,
++            # panel, study_run1b). The 4 doors above are ALL produced by
++            # machinery gated at `severity >= CRITICAL_SEVERITY_THRESHOLD`:
++            # `irreducible_escalation` by `_apply_routing` (line ~6763),
++            # `exhausted` by `_update_finding_statuses` pre-pass 1 (which also
++            # requires `len(verdicts) > 0`), and both the falsifier verdict and
++            # `_integrity_violation_excluded` by the critical-only falsifier
++            # gate. Ruling 23 removed THIS counter's own severity clause, so it
++            # now counts a population for which NO door is reachable: such an
++            # entry blocks A4 for the life of the run and the run burns to
++            # `max_rounds`.
++            #
++            # EXECUTED, not read. On study_run1b's saved registry, deleting the
++            # `severity >= 0.7` clause from the `exhausted` valve leaves A4 at 2
++            # at round 8, 9, 20 and 100 alike, because `has_reviews` is False
++            # for both blockers -- the valve sets `exhausted` to FALSE, not
++            # True. Widening that valve is an addition nothing reaches.
++            # This door is keyed on the machine's own handoff stamp instead.
++            if _handed_to_human(e):
+                 continue
+             _fc = (e.get("falsifier_code") or "").strip()
+             _fv = (e.get("falsifier_verdict") or "").strip().upper()
+             if (not _fc) or _fv not in _FALSIFIER_RESOLVED_VERDICTS:
+                 count += 1
+         return count
++
++    def handed_to_human_ids(self) -> List[str]:
++        """Canonical ids excused from the A4 blocker by a RECORDED handoff.
++
++        THE PAIRED RECORD. `unverified_critical_count` skips these, so without
++        this reader they would leave the convergence machinery in silence --
++        the one outcome the excluded-implies-reported discipline forbids. Keyed
++        on `_handed_to_human`, the SAME predicate as the exclusion, so the two
++        cannot drift. Read by `_evaluate_gate_conditions` every round.
++        """
++        return sorted(cid for cid, e in self.entries.items()
++                      if _handed_to_human(e))
+ 
+     def integrity_refused_criticals(self) -> List[str]:
+         """Canonical ids of non-terminal criticals excused by a key-access refusal.
+@@ -7607,6 +7722,16 @@
+         _log(f"  residual queue (un-demonstrated sub-criticals, non-gating): "
+              f"{len(residuals)} -> {', '.join(residuals[:8])}"
+              f"{'...' if len(residuals) > 8 else ''}")
++    # EXCLUDED IMPLIES REPORTED (2026-10-03). Entries the A4 blocker lets go on
++    # a RECORDED handoff are named here every round. Empty means nothing was
++    # excused; it is never silence about something that was.
++    _handed = registry.handed_to_human_ids()
++    if _handed:
++        _log(f"  HANDOFF: {len(_handed)} finding(s) excused from the A4 blocker "
++             f"because the machine recorded them as a human decision and no "
++             f"instrument output is pending: {', '.join(_handed[:8])}"
++             f"{'...' if len(_handed) > 8 else ''}. The claims remain UNTESTED "
++             f"and HIL review is required (minimal-HIL, never zero-HIL).")
+     gate_level, gamma_passed = _check_gamma_gate(gamma, round_idx, cfg)
+     if not gamma_passed:
+         failures.append(f"gamma={gamma:.3f} ({gate_level})")
+
+### cc2:attempt-1:bench/tests/test_a4_handoff_door_2026-10-03.py
+--- /dev/null	2026-10-03 18:43:27
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo/bench/tests/test_a4_handoff_door_2026-10-03.py	2026-10-03 18:38:34
+@@ -0,0 +1,283 @@
++"""A4's recorded-handoff door — panel round 1, 2026-10-03 (study_run1b).
++
++EXECUTES THE REAL MODULE against the REAL archived registry. Nothing here
++asserts on source text: every assertion is the return value of a shipped
++function called on a registry rehydrated through `FindingRegistry.from_dict`.
++
++Four properties:
++  1. POSITION A IS INERT. Deleting the `severity >= 0.7` clause from the
++     `exhausted` valve leaves A4 at 2 on study_run1b's registry at every round
++     tested, because `has_reviews` is False for both blockers.
++  2. THE DOOR DRAINS A4 on the real archived state (2 -> 0) and the gate then
++     returns converged.
++  3. THE DOOR IS NOT A DEAD-INSTRUMENT RELEASE. Five adversarial mutants of a
++     released entry each put it straight back in the count.
++  4. EXCLUDED IMPLIES REPORTED over randomised registries.
++
++MUTATION CHECK: reverting the fix fails test_door_drains_a4_on_the_real_run,
++test_excluded_implies_reported and test_predicate_exists_and_is_severity_free
++(AttributeError / count 2 != 0). Test 1 and the mutant test pass either way by
++construction -- that is the point of test 1.
++"""
++import copy
++import importlib.util
++import json
++import random
++import sys
++from pathlib import Path
++
++import pytest
++
++HERE = Path(__file__).resolve()
++REPO = HERE.parents[2]
++RUNNER = REPO / "bench" / "reference_runner_v3.py"
++STATE = (REPO / "bench" / "logs" / "study_run1b_2026-10-03_20261003T100439Z"
++         / "runner_state.json")
++
++
++def _load(name: str, path: Path):
++    spec = importlib.util.spec_from_file_location(name, path)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules[name] = mod
++    spec.loader.exec_module(mod)
++    return mod
++
++
++@pytest.fixture(scope="module")
++def rr3():
++    return _load("rr3_under_test", RUNNER)
++
++
++@pytest.fixture(scope="module")
++def raw_registry():
++    if not STATE.exists():
++        pytest.skip(f"archived registry absent: {STATE}")
++    return json.load(STATE.open())["registry"]
++
++
++def _reg(rr3, raw_registry):
++    return rr3.FindingRegistry.from_dict(copy.deepcopy(raw_registry))
++
++
++# ── 0. the archived state is the state the brief describes ──────────────────
++
++def test_archived_blockers_are_the_two_named(rr3, raw_registry):
++    reg = _reg(rr3, raw_registry)
++    assert len(reg.entries) == 75
++    blockers = [cid for cid, e in reg.entries.items()
++                if e.get("status") == "UNCONFIRMED"
++                and not (e.get("falsifier_code") or "").strip()]
++    assert sorted(blockers) == ["C0066", "C0073"], blockers
++    assert reg.entries["C0066"]["severity"] == 0.45
++    assert reg.entries["C0073"]["severity"] == 0.50
++    # Both BELOW the 0.7 the exhausted valve gates on, and both with zero
++    # verdicts -- the valve's OTHER precondition.
++    for cid in ("C0066", "C0073"):
++        e = reg.entries[cid]
++        assert e["severity"] < 0.7
++        assert e["verdicts"] == []
++        assert "routing_history" not in e
++        assert e.get("hil_has_computed_evidence") is True
++        kinds = {r.get("kind") for r in e.get("computed_evidence") or []}
++        assert "reasoned_withdrawal" in kinds, kinds
++
++
++# ── 1. POSITION A IS INERT (passes with or without the fix, by design) ──────
++
++def test_position_a_severity_clause_removal_does_not_move_a4(rr3, raw_registry,
++                                                             tmp_path):
++    src = RUNNER.read_text()
++    old = ('        if (e["status"] in EXHAUSTED_VALVE_STATUSES\n'
++           '                and e["severity"] >= 0.7):')
++    new = '        if (e["status"] in EXHAUSTED_VALVE_STATUSES):'
++    assert src.count(old) == 1, "exhausted-valve severity clause not found"
++    mutant = tmp_path / "rr3_position_a.py"
++    mutant.write_text(src.replace(old, new))
++    mod = _load("rr3_position_a", mutant)
++
++    cfg = mod.RunnerConfig()
++    for rnd in (8, 9, 20, 100):
++        reg = mod.FindingRegistry.from_dict(copy.deepcopy(raw_registry))
++        # Strip the handoff door so Position A is measured ALONE.
++        for e in reg.entries.values():
++            e.pop("hil_has_computed_evidence", None)
++        mod._update_finding_statuses(reg, rnd, cfg)
++        assert reg.unverified_critical_count() == 2, (
++            f"round {rnd}: Position A alone moved A4")
++        for cid in ("C0066", "C0073"):
++            # The valve set it to FALSE, not True: has_reviews is False.
++            assert reg.entries[cid].get("exhausted") is False
++
++
++# ── 2. the door drains A4 on the real archived state ────────────────────────
++
++def test_predicate_exists_and_is_severity_free(rr3):
++    import inspect
++    assert hasattr(rr3, "_handed_to_human")
++    body = inspect.getsource(rr3._handed_to_human)
++    # Executed form of "severity is not consulted": the predicate's verdict is
++    # invariant under every severity in [0, 1].
++    base = {"status": "UNCONFIRMED", "hil_has_computed_evidence": True,
++            "verdicts": [], "falsifier_code": "",
++            "computed_evidence": [{"kind": "reasoned_withdrawal"}]}
++    verdicts = {rr3._handed_to_human(dict(base, severity=s / 100.0))
++                for s in range(0, 101)}
++    assert verdicts == {True}, verdicts
++    # The predicate's BODY never reaches `e["severity"]`: tracked by executing
++    # it against a dict that raises if severity is touched.
++    class _Trap(dict):
++        def get(self, k, d=None):
++            assert k != "severity", "predicate consulted severity"
++            return dict.get(self, k, d)
++    assert rr3._handed_to_human(_Trap(base)) is True
++    assert body
++
++
++def test_door_drains_a4_on_the_real_run(rr3, raw_registry):
++    reg = _reg(rr3, raw_registry)
++    assert reg.unverified_critical_count() == 0, "A4 did not drain"
++    assert reg.handed_to_human_ids() == ["C0066", "C0073"]
++
++
++def test_gate_after_the_door_round7_blocks_on_the_COUNT_side_not_a4(rr3,
++                                                                    raw_registry):
++    """The brief's premise -- "exactly 2 registry entries hold it" -- is FALSE.
++
++    study_run1b's own round-7 log prints `novel_crit_recent=[1, 0, 0]`: TWO
++    consecutive zero-new-critical rounds against `gamma_alt_consecutive_zero_crit
++    = 3`. So with A4 fully drained the gate STILL refuses at round 7, and the
++    refusal names the count side. A4 was necessary, not sufficient.
++    """
++    reg = _reg(rr3, raw_registry)
++    cfg = rr3.RunnerConfig(falsifier_gate_enabled=True)
++    assert reg.unverified_critical_count() == 0
++    converged, reason = rr3._check_gamma_alt_convergence(
++        round_idx=7, gamma=0.4274,
++        novel_critical_history=[1, 3, 0, 0, 1, 0, 1, 0, 0],  # run 1b, tail [1,0,0]
++        cfg=cfg,
++        unresolved_critical=reg.unverified_critical_count(),
++        contested=reg.contested_count(7, subcritical_exclusion=True),
++        rho_churn=False, irreducible_queue=reg.irreducible_queue_count(),
++        gamma_critical=0.7323, total_findings=len(reg.entries))
++    assert converged is False
++    assert "A4" not in reason, reason
++    assert "zero-new-critical" in reason, reason
++
++
++def test_gate_after_the_door_converges_at_round8_and_a4_is_the_decider(
++        rr3, raw_registry):
++    """One more round (tail [0,0,0]) and the door is EXACTLY what decides.
++
++    max_rounds was 8 (rounds 0..7), so run 1b never got that round. With it:
++    A4 == 0 -> converged; A4 == 2 -> blocked, naming A4. That is the fix's
++    load-bearing measurement.
++    """
++    cfg = rr3.RunnerConfig(falsifier_gate_enabled=True)
++    hist = [1, 3, 0, 0, 1, 0, 1, 0, 0, 0]    # one more round -> tail [0,0,0]
++
++    reg = _reg(rr3, raw_registry)
++    conv_fixed, reason_fixed = rr3._check_gamma_alt_convergence(
++        round_idx=8, gamma=0.4274, novel_critical_history=hist, cfg=cfg,
++        unresolved_critical=reg.unverified_critical_count(),
++        contested=reg.contested_count(8, subcritical_exclusion=True),
++        rho_churn=False, irreducible_queue=reg.irreducible_queue_count(),
++        gamma_critical=0.7323, total_findings=len(reg.entries))
++
++    stripped = _reg(rr3, raw_registry)                 # door closed again
++    for e in stripped.entries.values():
++        e.pop("hil_has_computed_evidence", None)
++    conv_before, reason_before = rr3._check_gamma_alt_convergence(
++        round_idx=8, gamma=0.4274, novel_critical_history=hist, cfg=cfg,
++        unresolved_critical=stripped.unverified_critical_count(),
++        contested=stripped.contested_count(8, subcritical_exclusion=True),
++        rho_churn=False, irreducible_queue=stripped.irreducible_queue_count(),
++        gamma_critical=0.7323, total_findings=len(stripped.entries))
++
++    assert stripped.unverified_critical_count() == 2
++    assert conv_before is False and "A4 BLOCK" in reason_before, reason_before
++    assert conv_fixed is True, reason_fixed
++
++
++# ── 3. NOT a dead-instrument release ───────────────────────────────────────
++
++@pytest.mark.parametrize("mutate,label", [
++    (lambda e: e.update(hil_has_computed_evidence=False), "stamp absent"),
++    (lambda e: e.update(computed_evidence=[
++        {"kind": "discrimination_control:NON_DISCRIMINATING"}]),
++     "instrument-health record only"),
++    (lambda e: e.update(computed_evidence=[]), "empty evidence (dead router)"),
++    (lambda e: e.update(verdicts=[{"model": "X", "verdict": "CONFIRM",
++                                   "round": 7, "evidence": ""}]),
++     "a verdict is pending"),
++    (lambda e: e.update(routing_history=[{"verdict": "UNTOOLABLE"}]),
++     "the ladder ran"),
++    (lambda e: e.update(falsifier_code="assert False"), "a test exists"),
++])
++def test_door_stays_shut_for_every_dead_instrument_shape(rr3, raw_registry,
++                                                         mutate, label):
++    reg = _reg(rr3, raw_registry)
++    mutate(reg.entries["C0066"])
++    assert rr3._handed_to_human(reg.entries["C0066"]) is False, label
++    assert reg.unverified_critical_count() == 1, label
++    assert "C0066" not in reg.handed_to_human_ids(), label
++
++
++def test_door_is_severity_blind_for_a_critical_too(rr3, raw_registry):
++    """A sev-0.95 entry of the same SHAPE is released identically.
++
++    Stated so no later reader mistakes this for a sub-critical carve-out: it is
++    not one, and that is the point. The release is bought by the RECORD, which
++    a broken instrument cannot produce, never by the float.
++    """
++    reg = _reg(rr3, raw_registry)
++    reg.entries["C0066"]["severity"] = 0.95
++    assert reg.unverified_critical_count() == 0
++    assert "C0066" in reg.handed_to_human_ids()
++
++
++# ── 4. excluded implies reported, over randomised registries ───────────────
++
++def test_excluded_implies_reported_randomised(rr3):
++    rng = random.Random(20261003)
++    STATUSES = ["UNCONFIRMED", "OPEN", "CONTESTED", "CLOSED", "REFUTED",
++                "MERGED", "CONFIRMED", "REOPENED", "WITHHELD"]
++    KINDS = ["reasoned_withdrawal", "critical_refuted_evidence_recorded",
++             "discrimination_control:PASS",
++             "discrimination_control:NON_DISCRIMINATING", "other"]
++    for trial in range(400):
++        reg = rr3.FindingRegistry()
++        n = rng.randint(1, 14)
++        for i in range(n):
++            e = {
++                "canonical_id": f"C{i:04d}",
++                "status": rng.choice(STATUSES),
++                "severity": round(rng.random(), 2),
++                "verdicts": ([] if rng.random() < 0.6
++                             else [{"model": "M", "verdict": "CONFIRM",
++                                    "round": 1, "evidence": ""}]),
++                "falsifier_code": "" if rng.random() < 0.6 else "assert False",
++                "falsifier_verdict": rng.choice(["", "CONFIRMED", "REFUTED"]),
++                "computed_evidence": ([] if rng.random() < 0.4 else
++                                      [{"kind": rng.choice(KINDS)}]),
++            }
++            if rng.random() < 0.6:
++                e["hil_has_computed_evidence"] = True
++            if rng.random() < 0.2:
++                e["routing_history"] = [{"verdict": "UNTOOLABLE"}]
++            reg.entries[e["canonical_id"]] = e
++
++        reported = set(reg.handed_to_human_ids())
++        excluded = {cid for cid, e in reg.entries.items()
++                    if rr3._handed_to_human(e)}
++        assert excluded == reported, (trial, excluded ^ reported)
++
++        # And the exclusion is MONOTONE SAFE: A4 with the door is never larger
++        # than A4 without it, and the difference is exactly the reported set
++        # restricted to entries that would otherwise have been counted.
++        with_door = reg.unverified_critical_count()
++        stripped = rr3.FindingRegistry()
++        stripped.entries = copy.deepcopy(reg.entries)
++        for e in stripped.entries.values():
++            e.pop("hil_has_computed_evidence", None)
++        without_door = stripped.unverified_critical_count()
++        assert with_door <= without_door, (trial, with_door, without_door)
+
+### cc2:attempt-1:scripts/a4_handoff_figures_2026-10-03.py
+--- /dev/null	2026-10-03 18:43:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo/scripts/a4_handoff_figures_2026-10-03.py	2026-10-03 18:40:25
+@@ -0,0 +1,116 @@
++#!/usr/bin/env python3
++"""Producer for every figure quoted in the 2026-10-03 panel answer on A4.
++
++Run:  python3 scripts/a4_handoff_figures_2026-10-03.py
++"""
++import copy, importlib.util, json, sys
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parents[1]
++RUNNER = REPO / "bench" / "reference_runner_v3.py"
++STATE = (REPO / "bench/logs/study_run1b_2026-10-03_20261003T100439Z"
++         / "runner_state.json")
++REPORT = (REPO / "bench/logs/study_run1b_2026-10-03_20261003T100439Z"
++          / "study_run1b_2026-10-03_report.json")
++
++spec = importlib.util.spec_from_file_location("rr3_fig", RUNNER)
++rr3 = importlib.util.module_from_spec(spec); sys.modules["rr3_fig"] = rr3
++spec.loader.exec_module(rr3)
++
++RAW = json.load(STATE.open())["registry"]
++REP = json.load(REPORT.open())
++def reg(): return rr3.FindingRegistry.from_dict(copy.deepcopy(RAW))
++
++print("=" * 78)
++print("[1] THE ARCHIVED STATE, read through the real FindingRegistry")
++r = reg()
++print(f"    entries                        = {len(r.entries)}")
++print(f"    A4 unverified_critical_count   = {r.unverified_critical_count()}  (WITH the fix)")
++stripped = reg()
++for e in stripped.entries.values(): e.pop("hil_has_computed_evidence", None)
++print(f"    A4 with the door closed        = {stripped.unverified_critical_count()}  (= a4_before)")
++print(f"    handed_to_human_ids()          = {r.handed_to_human_ids()}")
++print(f"    irreducible_queue_count()      = {r.irreducible_queue_count()}")
++print(f"    contested_count(8, excl=True)  = {r.contested_count(8, subcritical_exclusion=True)}")
++print(f"    contested_count(8, excl=False) = {r.contested_count(8, subcritical_exclusion=False)}")
++print(f"    open_crit_high_count()         = {r.open_crit_high_count()}")
++print(f"    undemonstrated_subcritical_ids = {r.undemonstrated_subcritical_ids()}")
++print(f"    integrity_refused_criticals    = {r.integrity_refused_criticals()}")
++for cid in ("C0066", "C0073"):
++    e = r.entries[cid]
++    print(f"    {cid}: sev={e['severity']} verdicts={len(e['verdicts'])} "
++          f"routing_history={'routing_history' in e} "
++          f"falsifier_code={bool((e.get('falsifier_code') or '').strip())} "
++          f"hil_stamp={e.get('hil_has_computed_evidence')} "
++          f"kinds={sorted({c.get('kind') for c in e.get('computed_evidence') or []})}")
++
++print("=" * 78)
++print("[2] THE BRIEF'S gamma ATTRIBUTION, read out of the report")
++print(f"    gamma_all_history      = {REP['gamma_all_history']}")
++print(f"    gamma_critical_history = {REP['gamma_critical_history']}")
++print(f"    -> gamma_all final      = {REP['gamma_all_history'][-1]}   <-- the brief's 0.4274")
++print(f"    -> gamma_critical final = {REP['gamma_critical_history'][-1]}   <-- the ACTUAL gamma_critical")
++print(f"    gamma_alt_threshold = {REP['convergence_config']['gamma_alt_threshold']}, "
++      f"consecutive_zero_crit = {REP['convergence_config']['gamma_alt_consecutive_zero_crit']}")
++print(f"    max_rounds = {REP['max_rounds']}, stop_reason = {REP.get('stop_reason')}")
++dc = REP["_declared_config"]
++print(f"    declared: falsifier_gate_enabled={dc['falsifier_gate_enabled']}, "
++      f"exhausted_round_threshold={dc['exhausted_round_threshold']}, "
++      f"max_irreducible_queue={dc['max_irreducible_queue']}")
++
++print("=" * 78)
++print("[3] POSITION A, EXECUTED ALONE (severity clause deleted from the valve)")
++src = RUNNER.read_text()
++old = ('        if (e["status"] in EXHAUSTED_VALVE_STATUSES\n'
++       '                and e["severity"] >= 0.7):')
++mut = REPO / "bench" / ".a4_position_a_probe.py"
++mut.write_text(src.replace(old, '        if (e["status"] in EXHAUSTED_VALVE_STATUSES):'))
++sp = importlib.util.spec_from_file_location("rr3_posA", mut)
++mA = importlib.util.module_from_spec(sp); sys.modules["rr3_posA"] = mA
++sp.loader.exec_module(mA); mut.unlink()
++cfg = mA.RunnerConfig(falsifier_gate_enabled=True)
++for rnd in (8, 9, 20, 100):
++    rr = mA.FindingRegistry.from_dict(copy.deepcopy(RAW))
++    for e in rr.entries.values(): e.pop("hil_has_computed_evidence", None)
++    mA._update_finding_statuses(rr, rnd, cfg)
++    print(f"    round={rnd:>3}: A4={rr.unverified_critical_count()}  "
++          f"C0066.exhausted={rr.entries['C0066'].get('exhausted')}  "
++          f"C0073.exhausted={rr.entries['C0073'].get('exhausted')}")
++
++print("=" * 78)
++print("[4] WHY NO PRE-EXISTING DOOR IS REACHABLE for a sub-critical, EXECUTED")
++sub = {"status": "UNCONFIRMED", "severity": 0.5, "verdicts": [],
++       "falsifier_code": "", "falsifier_verdict": ""}
++print(f"    _irreducible_queue_split on one sub-critical UNCONFIRMED entry = "
++      f"{rr3._irreducible_queue_split({'C9': dict(sub, irreducible_escalation=True)})}"
++      f"   (both arms 0: the split skips severity < 0.7)")
++print(f"    same entry at severity 0.9                                     = "
++      f"{rr3._irreducible_queue_split({'C9': dict(sub, severity=0.9, irreducible_escalation=True)})}")
++cfg2 = rr3.RunnerConfig(falsifier_gate_enabled=True)
++for sev in (0.5, 0.69, 0.70, 0.9):
++    rr = rr3.FindingRegistry()
++    rr.entries["C9"] = dict(sub, canonical_id="C9", severity=sev,
++                            last_status_change_round=0,
++                            verdicts=[{"model": "M", "verdict": "CONFIRM",
++                                       "round": 0, "evidence": ""}])
++    rr3._update_finding_statuses(rr, 20, cfg2)
++    print(f"    exhausted valve at severity {sev:<5}: exhausted="
++          f"{rr.entries['C9'].get('exhausted')}  status={rr.entries['C9']['status']}")
++
++print("=" * 78)
++print("[5] THE GATE, with the run's own declared config")
++hist7 = [1, 3, 0, 0, 1, 0, 1, 0, 0]       # run 1b round-7 tail [1, 0, 0]
++hist8 = hist7 + [0]                        # one more round -> tail [0, 0, 0]
++for label, rg, hist, rnd in (("a4_before (door closed), round 7", stripped, hist7, 7),
++                             ("a4_after  (door open),   round 7", reg(), hist7, 7),
++                             ("a4_before (door closed), round 8", stripped, hist8, 8),
++                             ("a4_after  (door open),   round 8", reg(), hist8, 8)):
++    conv, why = rr3._check_gamma_alt_convergence(
++        round_idx=rnd, gamma=0.4274, novel_critical_history=hist, cfg=cfg2,
++        unresolved_critical=rg.unverified_critical_count(),
++        contested=rg.contested_count(rnd, subcritical_exclusion=True),
++        rho_churn=False, irreducible_queue=rg.irreducible_queue_count(),
++        gamma_critical=0.7323, total_findings=len(rg.entries))
++    print(f"    {label}: A4={rg.unverified_critical_count()} converged={conv}")
++    print(f"        {why}")
++print("=" * 78)
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-03 18:43:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo/.cdsfl_deny_canonical_writes.sb	2026-10-03 18:27:37
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/logs/panel_blocker_round1_2026-10-03/panel.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/panel_blocker_round1_2026-10-03/panel.log	2026-10-03 18:43:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo/bench/logs/panel_blocker_round1_2026-10-03/panel.log	2026-10-03 18:26:49
+@@ -1,19 +0,0 @@
+-[18:27:37] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo
+-[18:27:37] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo
+-[18:27:37] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo
+-[18:27:37]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo
+-[18:27:37] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo
+-[18:27:37]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo
+-[18:42:40]   [claude-cli:fable] 52 tool call(s) this attempt, 52 in total
+-[18:42:40]   [claude-cli:fable] done (903.0s, 12283 chars)
+-    suite: GREEN at 1cfc30e — 8,878 passed, 0 failed  [recorded at 1cfc30e, HEAD is 1259b87, 79 commit(s) later]
+-=== maths panel — 2 dispatched seats + CC1 ===
+-    PAID seats:   (brief 7,982 chars, about 1,995 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw1otpir/repo
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo
+-  [fable] ok=True chars=12283 tools=52 903.0s
+-[18:43:12]   [claude-cli:opus] 47 tool call(s) this attempt, 47 in total
+-[18:43:12]   [claude-cli:opus] done (935.3s, 27511 chars)
+-  [cc2] ok=True chars=27511 tools=47 935.3s
+-[18:43:12] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-03 17:09:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo/bench/reference_runner_v3.py	2026-10-03 18:39:15
+@@ -3925,14 +3925,46 @@
+     _bugzilla_attempts_this_call = 0
+     _fix_efficacy_this_call = 0
+ 
+-    # ── Pre-pass 1: Mark/clear EXHAUSTED on critical/high findings ──
++    # ── Pre-pass 1: Mark/clear EXHAUSTED on findings the counters can see ──
+     # Derived fresh each call — not sticky. Requires review activity.
++    #
++    # THE VALVE IS SCOPED TO ITS READERS, PER STATUS (panel, 2026-10-03; run
++    # 1b, C0066/C0073). Two counters honour `exhausted`:
++    #   * open_crit_high_count reads OPEN/CONTESTED/REOPENED/CORROBORATED/
++    #     WITHHELD and gates on severity >= 0.7, so for those statuses the
++    #     valve keeps the same 0.7 scope — widening it there would write a
++    #     flag no reader consults.
++    #   * unverified_critical_count reads UNCONFIRMED and stopped consulting
++    #     severity on 2026-09-06 (founder ruling 23: the float is a vote).
++    #     A valve NARROWER than the counter it releases leaves the sub-0.7
++    #     band of UNCONFIRMED entries blocking A4 with no exit at ANY round:
++    #     routing takes only escalated criticals, the falsifier path needs
++    #     code no model filed, and pre-pass 2 needs a verdict row. Run 1b
++    #     burned to max_rounds on exactly 2 such entries.
++    #
++    # REVIEW ACTIVITY IS READ WHEREVER THE REGISTRY RECORDS IT. The WITHDRAW
++    # door (2026-09-07 ruling: an unproven severity cannot buy a closure)
++    # records a panel assessment as a `computed_evidence` row, not a verdict
++    # row — run 1b's C0066 carries FIVE reasoned withdrawals and an empty
++    # `verdicts`. Counting only `verdicts` makes "requires review activity"
++    # false by channel: the activity happened and was recorded by this
++    # runner's own sweep after a real dispatch. Entries with NO recorded
++    # activity in EITHER channel still never exhaust — the guard is kept.
++    #
++    # BOTH ARMS ARE REQUIRED, BY MEASUREMENT, NOT BY AVAILABILITY. Executed
++    # over the archived run-1b registry, rounds 8..40
++    # (scripts/a4_blocker_arm_isolation_2026-10-03.py): shipped code A4=2 at
++    # every round; severity arm alone A4=2 (has_reviews False); evidence arm
++    # alone A4=2 (severity 0.45/0.50 < 0.7); both arms A4=1 at round 13, 0 at
++    # round 15, statuses still UNCONFIRMED — released to the human, nothing
++    # retired, no vote taken.
+     exhausted_threshold = cfg.exhausted_round_threshold if cfg else 0
+     for e in registry.entries.values():
+         if (e["status"] in EXHAUSTED_VALVE_STATUSES
+-                and e["severity"] >= 0.7):
++                and (e["status"] == "UNCONFIRMED" or e["severity"] >= 0.7)):
+             age = round_idx - e.get("last_status_change_round", 0)
+-            has_reviews = len(e.get("verdicts", [])) > 0
++            has_reviews = (len(e.get("verdicts", [])) > 0
++                           or len(e.get("computed_evidence") or []) > 0)
+             if exhausted_threshold > 0 and age >= exhausted_threshold and has_reviews:
+                 e["exhausted"] = True
+             else:
+
+### fable:attempt-1:bench/tests/test_exhausted_valve_matches_a4_scope_2026-10-03.py
+--- /dev/null	2026-10-03 18:43:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo/bench/tests/test_exhausted_valve_matches_a4_scope_2026-10-03.py	2026-10-03 18:39:35
+@@ -0,0 +1,195 @@
++"""The exhausted valve releases what the A4 counter blocks (panel 2026-10-03).
++
++Run study_run1b_2026-10-03 ended BUDGET-EXHAUSTED with exactly 2 registry
++entries holding the A4 fail-safe: C0066 (severity 0.45) and C0073 (0.50),
++both UNCONFIRMED with verdicts == [] and no falsifier. Since founder ruling
++23 (2026-09-06) unverified_critical_count is severity-free, but every exit
++was not:
++
++  * pre-pass 1's valve required severity >= 0.7  (Position A's site), AND
++  * its has_reviews read ONLY `verdicts`, while the panel's five reasoned
++    withdrawals per entry sat in `computed_evidence`, written by the
++    WITHDRAW door that may not retire an unproven severity
++    (Position B's discriminator).
++
++Executed arm isolation over the archived registry, rounds 8..40
++(scripts/a4_blocker_arm_isolation_2026-10-03.py): shipped code A4=2 forever;
++either arm alone A4=2 forever; both arms A4 -> 1 at round 13, 0 at round 15,
++statuses still UNCONFIRMED. The composition beats each arm alone because
++each arm alone equals doing nothing on this registry.
++
++Mutation map, EXECUTED 2026-10-03 (pre-pass-1 fix reverted by exact hunk
++swap, then restored byte-identical): 4 fail, 5 pass.
++  FAIL test_run1b_blockers_release_at_threshold_age   (A4 stays 2 at r13/15)
++  FAIL test_subcritical_unconfirmed_with_recorded_withdrawal_exhausts
++  FAIL test_severity_arm_alone_is_insufficient   (shipped code never enters
++       the valve for a sub-critical UNCONFIRMED entry, so `exhausted` is
++       POPPED, not False -- the assertion fails on key absence)
++  FAIL test_age_guard_kept                       (same key-absence shape)
++  PASS test_run1b_before_state_is_the_briefed_one (a fact, fix-independent)
++  PASS test_evidence_arm_alone_is_insufficient_without_scope_match
++  PASS test_no_recorded_activity_never_exhausts
++  PASS test_critical_open_path_is_byte_identical
++  PASS test_gate_before_and_after
++"""
++from __future__ import annotations
++
++import copy
++import json
++import pathlib
++import sys
++from types import SimpleNamespace
++
++ROOT = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(ROOT))
++
++from bench import reference_runner_v3 as rv  # noqa: E402
++
++RUN_DIR = ROOT / "bench/logs/study_run1b_2026-10-03_20261003T100439Z"
++STATE = json.loads((RUN_DIR / "runner_state.json").read_text())
++
++CFG = SimpleNamespace(exhausted_round_threshold=8, max_contested_rounds=3,
++                      merge_arbitration_enabled=False, models=[],
++                      test_article="", test_cmd="", fix_efficacy_mode="off")
++
++
++def _rehydrate():
++    return rv.FindingRegistry.from_dict(copy.deepcopy(STATE["registry"]))
++
++
++def _entry(status="UNCONFIRMED", severity=0.45, verdicts=(), evidence=(),
++           changed=0):
++    return {"status": status, "severity": severity,
++            "verdicts": list(verdicts),
++            "computed_evidence": list(evidence),
++            "last_status_change_round": changed,
++            "source_model": "SRC-SIM", "open_since_round": changed,
++            "escalated": False}
++
++
++def _ev():
++    return {"kind": "reasoned_withdrawal", "by": "CC2-SIM", "detail": "x"}
++
++
++def _reg(*entries):
++    r = rv.FindingRegistry()
++    for i, e in enumerate(entries):
++        r.entries[f"C{i:04d}"] = e
++    return r
++
++
++# ── The archived run, through the real registry and the real pre-pass ──
++
++def test_run1b_before_state_is_the_briefed_one():
++    reg = _rehydrate()
++    assert reg.unverified_critical_count() == 2
++    for cid, sev in (("C0066", 0.45), ("C0073", 0.5)):
++        e = reg.entries[cid]
++        assert e["status"] == "UNCONFIRMED"
++        assert e["severity"] == sev
++        assert e["verdicts"] == []
++        assert not (e.get("falsifier_code") or "").strip()
++        assert len(e.get("computed_evidence") or []) >= 1  # withdrawals ON FILE
++
++
++def test_run1b_blockers_release_at_threshold_age():
++    reg = _rehydrate()
++    seen = {}
++    for r in range(8, 16):
++        rv._update_finding_statuses(reg, r, CFG)
++        seen[r] = reg.unverified_critical_count()
++    # exhausted_round_threshold=8: C0066 (UNCONFIRMED since r5) ages out at 13,
++    # C0073 (since r7) at 15. Severity floats played no part.
++    assert seen[12] == 2
++    assert seen[13] == 1
++    assert seen[15] == 0
++    # ADDITIVE both ways: released from the COUNT, not retired. The entries
++    # stay UNCONFIRMED -- the designed HIL hand-off state -- and nothing
++    # upstream was closed, merged or deleted by the release.
++    for cid in ("C0066", "C0073"):
++        assert reg.entries[cid]["status"] == "UNCONFIRMED"
++        assert reg.entries[cid]["exhausted"] is True
++    assert reg.entries["C0069"]["status"] == "CLOSED"  # untouched neighbours
++    assert reg.entries["C0042"]["status"] == "CLOSED"
++
++
++# ── Arm isolation on a minimal synthetic entry (pins BOTH arms) ──
++
++def test_subcritical_unconfirmed_with_recorded_withdrawal_exhausts():
++    reg = _reg(_entry(severity=0.45, evidence=[_ev()], changed=0))
++    rv._update_finding_statuses(reg, 8, CFG)
++    assert reg.entries["C0000"]["exhausted"] is True
++    assert reg.unverified_critical_count() == 0
++
++
++def test_severity_arm_alone_is_insufficient():
++    # verdicts == [] and computed_evidence == []: even with the severity
++    # clause widened, "requires review activity" refuses -- Position A's
++    # repair alone is a no-op on the run-1b shape.
++    reg = _reg(_entry(severity=0.45, changed=0))
++    rv._update_finding_statuses(reg, 40, CFG)
++    assert reg.entries["C0000"]["exhausted"] is False
++    assert reg.unverified_critical_count() == 1
++
++
++def test_evidence_arm_alone_is_insufficient_without_scope_match():
++    # The same withdrawal evidence on a non-UNCONFIRMED sub-critical does
++    # NOT buy an exhausted flag: the valve only widened where its reader
++    # (unverified_critical_count) is severity-free.
++    reg = _reg(_entry(status="OPEN", severity=0.45, evidence=[_ev()],
++                      changed=0))
++    rv._update_finding_statuses(reg, 40, CFG)
++    assert "exhausted" not in reg.entries["C0000"]
++
++
++def test_no_recorded_activity_never_exhausts():
++    reg = _reg(_entry(severity=0.9, changed=0))
++    rv._update_finding_statuses(reg, 40, CFG)
++    assert reg.entries["C0000"]["exhausted"] is False
++    assert reg.unverified_critical_count() == 1
++
++
++def test_age_guard_kept():
++    reg = _reg(_entry(severity=0.45, evidence=[_ev()], changed=0))
++    rv._update_finding_statuses(reg, 7, CFG)  # age 7 < threshold 8
++    assert reg.entries["C0000"]["exhausted"] is False
++    assert reg.unverified_critical_count() == 1
++
++
++def test_critical_open_path_is_byte_identical():
++    # The pre-fix clientele of the valve: OPEN critical with verdict rows.
++    reg = _reg(_entry(status="OPEN", severity=0.8,
++                      verdicts=[{"model": "m", "verdict": "CHALLENGE",
++                                 "round": 1}], changed=0))
++    rv._update_finding_statuses(reg, 8, CFG)
++    assert reg.entries["C0000"]["exhausted"] is True
++    reg2 = _reg(_entry(status="OPEN", severity=0.8, changed=0))
++    rv._update_finding_statuses(reg2, 8, CFG)
++    assert reg2.entries["C0000"]["exhausted"] is False
++
++
++# ── The gate, called, not inferred ──
++
++def test_gate_before_and_after():
++    gcfg = SimpleNamespace(gamma_alt_earliest_round=3,
++                           gamma_alt_consecutive_zero_crit=3,
++                           gamma_alt_threshold=0.3,
++                           max_irreducible_queue=2, rho_threshold=0.25)
++    nch = STATE["novel_critical_history"]
++    # As run: A4=2 blocks.
++    ok, reason = rv._check_gamma_alt_convergence(
++        7, 0.4274, nch, gcfg, unresolved_critical=2, gamma_critical=0.7323)
++    assert not ok and reason.startswith("A4 BLOCK")
++    # HONESTY PIN: the repair does NOT rescue run 1b at its cap. With A4=0
++    # at round 7 the tail is [1, 0, 0] (a novel critical landed at round 5),
++    # so the two-sided gate still refuses -- non-convergence at round 7 was
++    # overdetermined. A test asserting True here would be the closing-sweep
++    # rescue the design forbids.
++    ok, reason = rv._check_gamma_alt_convergence(
++        7, 0.4274, nch, gcfg, unresolved_critical=0, gamma_critical=0.7323)
++    assert not ok and "novel_crit_recent=[1, 0, 0]" in reason
++    # Continuation shape: zero tail + released A4 converges.
++    ok, _ = rv._check_gamma_alt_convergence(
++        9, 0.4274, nch + [0, 0], gcfg, unresolved_critical=0,
++        gamma_critical=0.7323)
++    assert ok
+
+### fable:attempt-1:scripts/a4_blocked_entry_census_2026-10-03.py
+--- /dev/null	2026-10-03 18:43:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo/scripts/a4_blocked_entry_census_2026-10-03.py	2026-10-03 18:40:08
+@@ -0,0 +1,83 @@
++"""Census of A4-counted entries across every archived runner_state.json.
++
++Challenges Position A's figures ("65 runs; 22 with >=1 permanently blocked
++entry; 150 entries; 107 blocked by the severity clause alone") against the
++archive actually present, classifying each A4-counted entry by WHICH valve
++guard stops its release:
++  sev_only : severity < 0.7 but verdicts present  (Position A's repair alone
++             would eventually release it)
++  verd_only: verdicts == [] but severity >= 0.7   (evidence/verdict channel
++             is the blocker; severity clause is NOT)
++  both     : severity < 0.7 AND verdicts == []    (run-1b shape; needs the
++             composed fix)
++Wilson 95% CIs via statsmodels, cross-verified with an mpmath closed form.
++"""
++import glob, json, sys
++from pathlib import Path
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++from bench import reference_runner_v3 as rv
++
++rows, skipped = [], 0
++for sp in sorted(glob.glob('bench/logs/*/runner_state.json')):
++    try:
++        reg = rv.FindingRegistry.from_dict(json.load(open(sp))['registry'])
++        a4 = reg.unverified_critical_count()
++    except Exception:
++        skipped += 1
++        continue
++    counted = []
++    for cid, e in reg.entries.items():
++        if e.get('status') != 'UNCONFIRMED': continue
++        if e.get('irreducible_escalation') and not e.get('integrity_unobserved'): continue
++        if e.get('exhausted'): continue
++        if rv._integrity_violation_excluded(e): continue
++        fc = (e.get('falsifier_code') or '').strip()
++        fv = (e.get('falsifier_verdict') or '').strip().upper()
++        if (not fc) or fv not in rv._FALSIFIER_RESOLVED_VERDICTS:
++            counted.append(e)
++    assert len(counted) == a4, (sp, len(counted), a4)  # census == real counter
++    rows.append((sp, counted))
++
++n_runs = len(rows)
++blocked_runs = sum(1 for _, c in rows if c)
++entries = [e for _, c in rows for e in c]
++sev_only  = sum(1 for e in entries if (e.get('severity') or 0) < 0.7 and e.get('verdicts'))
++verd_only = sum(1 for e in entries if not e.get('verdicts') and (e.get('severity') or 0) >= 0.7)
++both      = sum(1 for e in entries if not e.get('verdicts') and (e.get('severity') or 0) < 0.7)
++neither   = len(entries) - sev_only - verd_only - both
++zero_verd = sum(1 for e in entries if not e.get('verdicts'))
++has_ce    = sum(1 for e in entries if e.get('computed_evidence'))
++fix_rel   = sum(1 for e in entries if e.get('verdicts') or e.get('computed_evidence'))
++
++def wilson_sm(k, n):
++    from statsmodels.stats.proportion import proportion_confint
++    lo, hi = proportion_confint(k, n, alpha=0.05, method='wilson')
++    return 100*lo, 100*hi
++
++def wilson_mp(k, n):
++    import mpmath as mp
++    z = mp.sqrt(2) * mp.erfinv(mp.mpf('0.95'))
++    p = mp.mpf(k)/n
++    den = 1 + z**2/n
++    ctr = p + z**2/(2*n)
++    rad = z*mp.sqrt(p*(1-p)/n + z**2/(4*n**2))
++    return float(100*(ctr-rad)/den), float(100*(ctr+rad)/den)
++
++def show(label, k, n):
++    sl, sh = wilson_sm(k, n); ml, mh = wilson_mp(k, n)
++    assert abs(sl-ml) < 1e-6 and abs(sh-mh) < 1e-6, (label, sl, ml)
++    print(f"{label}: {k}/{n} = {100*k/n:.4f}%  Wilson95 [{sl:.4f}%, {sh:.4f}%] (statsmodels==mpmath to 1e-6)")
++
++print(f"archives readable: {n_runs} (skipped {skipped}) -- the brief said 65")
++show("runs with >=1 A4-counted entry", blocked_runs, n_runs)
++print(f"A4-counted entries total: {len(entries)} -- the brief said 150")
++show("  zero-verdict entries", zero_verd, len(entries))
++show("  severity-clause-ALONE blocked (subcrit, verdicts present)", sev_only, len(entries))
++show("  verdict-channel-ALONE blocked (critical, zero verdicts)", verd_only, len(entries))
++show("  BOTH guards block (run-1b shape)", both, len(entries))
++show("  carrying computed_evidence", has_ce, len(entries))
++show("  releasable by the composed fix (verdicts OR computed_evidence)", fix_rel, len(entries))
++print(f"  blocked by neither valve guard (critical with verdicts; age/threshold holds them): {neither}")
++# The brief's own quoted intervals, recomputed:
++show("brief's 22/65", 22, 65)
++show("brief's 58/86", 58, 86)
+
+### fable:attempt-1:scripts/a4_blocker_arm_isolation_2026-10-03.py
+--- /dev/null	2026-10-03 18:43:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo/scripts/a4_blocker_arm_isolation_2026-10-03.py	2026-10-03 18:36:19
+@@ -0,0 +1,66 @@
++"""Arm-isolation measurement for the run-1b A4 blockers (C0066, C0073).
++
++Builds 4 variants of bench/reference_runner_v3.py's pre-pass 1 by exact
++textual substitution, rehydrates the ARCHIVED run-1b registry through the
++real FindingRegistry for each, and sweeps _update_finding_statuses over
++round_idx 8..40, reading unverified_critical_count() after every call.
++
++Variants:
++  ORIG   : shipped code (severity>=0.7 clause AND has_reviews=verdicts-only)
++  A_ONLY : Position A's repair alone  (severity clause removed; verdicts-only)
++  B_ONLY : Position B's channel alone (computed_evidence counts; severity kept)
++  A_PLUS_B: both arms (the delivered fix)
++"""
++import json, sys, types
++from pathlib import Path
++from types import SimpleNamespace
++
++ROOT = Path(__file__).resolve().parents[1]
++SRC = (ROOT / "bench" / "reference_runner_v3.py").read_text()
++STATE = json.load(open(ROOT / "bench/logs/study_run1b_2026-10-03_20261003T100439Z/runner_state.json"))
++
++SEV = '''        if (e["status"] in EXHAUSTED_VALVE_STATUSES
++                and e["severity"] >= 0.7):'''
++SEV_WIDE = '''        if (e["status"] in EXHAUSTED_VALVE_STATUSES
++                and (e["status"] == "UNCONFIRMED" or e["severity"] >= 0.7)):'''
++REV = '''            has_reviews = len(e.get("verdicts", [])) > 0'''
++REV_WIDE = '''            has_reviews = (len(e.get("verdicts", [])) > 0
++                           or len(e.get("computed_evidence", []) or []) > 0)'''
++
++def build(name, src):
++    mod = types.ModuleType(f"rr_{name}")
++    mod.__file__ = str(ROOT / "bench" / "reference_runner_v3.py")
++    sys.modules[mod.__name__] = mod
++    exec(compile(src, mod.__file__, "exec"), mod.__dict__)
++    return mod
++
++def sweep(mod, rounds=range(8, 41)):
++    reg = mod.FindingRegistry.from_dict(json.loads(json.dumps(STATE["registry"])))
++    cfg = SimpleNamespace(exhausted_round_threshold=8, max_contested_rounds=3,
++                          merge_arbitration_enabled=False, models=[],
++                          test_article="", test_cmd="", fix_efficacy_mode="off")
++    a4_0 = reg.unverified_critical_count()
++    series = {}
++    for r in rounds:
++        mod._update_finding_statuses(reg, r, cfg)
++        series[r] = reg.unverified_critical_count()
++    ex = {c: bool(reg.entries[c].get("exhausted")) for c in ("C0066", "C0073")}
++    stat = {c: reg.entries[c]["status"] for c in ("C0066", "C0073")}
++    return a4_0, series, ex, stat
++
++variants = {
++    "ORIG": SRC,
++    "A_ONLY": SRC.replace(SEV, SEV.replace('\n                and e["severity"] >= 0.7', "").replace('(e["status"]', 'e["status"]').replace('STATUSES)', 'STATUSES')),
++    "B_ONLY": SRC.replace(REV, REV_WIDE),
++    "A_PLUS_B": SRC.replace(SEV, SEV_WIDE).replace(REV, REV_WIDE),
++}
++# sanity: every substitution must have landed
++assert SEV in SRC and REV in SRC
++assert variants["B_ONLY"] != SRC and variants["A_PLUS_B"] != SRC and variants["A_ONLY"] != SRC
++
++for name, src in variants.items():
++    a4_0, series, ex, stat = sweep(build(name, src))
++    rel = [r for r, v in series.items() if v == 0]
++    print(f"{name:9s} A4@start={a4_0} A4@r8={series[8]} A4@r13={series[13]} "
++          f"A4@r15={series[15]} A4@r40={series[40]} first_zero_round={rel[0] if rel else None} "
++          f"exhausted={ex} status={stat}")

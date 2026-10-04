@@ -69,11 +69,36 @@ terminal opens on the founder's own machine via `scripts/local/open_run_tail.sh`
    `bench/tests/test_every_versioned_hook_is_the_live_one_2026-10-03.py` now holds
    every hook rather than the 1 that was named by hand.
 
-7. **THE FOUNDER'S CONFIDENCE COMPOSITION IS IMPLEMENTED.** Haiku decides, the
-   syntax arm corroborates and can never block; the arm now reports whether the
-   corroboration label carries information (Fisher, scipy cross-checked against an
-   mpmath exact enumeration) and prints the per-document complementarity table so
-   "identical" is shown rather than asserted.
+7. **THE FOUNDER'S CONFIDENCE COMPOSITION — BUILT and TESTED in the MEASUREMENT
+   ARM; NOT ENABLED in any runner.** Haiku decides, the syntax arm corroborates
+   and can never block; the arm reports whether the corroboration label carries
+   information (Fisher, scipy cross-checked against an mpmath exact enumeration)
+   and prints the per-document complementarity table so "identical" is shown
+   rather than asserted. Lives in `scripts/haiku_claim_boundary_arm_2026-10-03.py`
+   with `bench/tests/test_the_confidence_composition_2026-10-03.py`, 3 tests
+   passing.
+
+   **IT IS NOT IN `bench/reference_runner_v3.py` AND MUST NOT BE YET, BECAUSE THE
+   EVIDENCE DOES NOT JUSTIFY IT.** The only `haiku` in that file is the ouroboros
+   `reader_backend` default at :10804, which is a different mechanism. Wiring the
+   classifier would be a REPLACEMENT of the syntax arm, and the additive standard
+   requires a committed measurement showing the replacement dominates on a named
+   property. On the 15-document set: Haiku accuracy 14/15 = 93.3333%, Wilson
+   [70.1835%, 98.8133%]; syntax 10/15 = 66.6667%, Wilson [41.7135%, 84.8237%] —
+   intervals overlapping heavily. The discordant pairs are 5 against 1, giving
+   **McNemar exact p = 0.218750**, agreed to 1e-9 by statsmodels `mcnemar`, scipy
+   `binomtest` and an mpmath exact two-sided enumeration. Composition was measured
+   as NOT JUSTIFIED on the same set (`COMPOSED or` equals Haiku alone, McNemar
+   p = 1.000000), and the confidence label was NOT DEMONSTRATED at alpha = 0.05
+   (Fisher p = 1.000000). So Haiku looks better and cannot be shown to be better
+   at n = 15.
+
+   **This entry previously read "IS IMPLEMENTED" with no scope, which is the
+   ambiguous form rule 20 of the note standard bans** — the founder read it as
+   "incorporated into the latest runners" and asked, correctly, whether he could
+   trust that. He could not: the sentence was true of the arm and false of the
+   runner. The extended set under STILL OWED is what would settle the wiring
+   question; until it runs, NOT ENABLED is the correct state, not a gap.
 
 **STILL OWED:** the repointing experiment (ruling 2), arm 5 (ruling 4, runs with
 the experiment), the extended Haiku set (its 15-document set is regenerable from

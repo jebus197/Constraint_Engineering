@@ -1,9 +1,43 @@
 # CDSFL Project Onboarding
 
-Last updated: 3 October 2026 09:28 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 4 October 2026 03:00 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
+
+## FIRST: INSTALL THE TOOLCHAIN. ONE COMMAND.
+
+```bash
+python3 scripts/cdsfl_onboard.py
+```
+
+That is the installer. It asks before every install, printing the exact command first, and it
+offers Homebrew, Python 3.13, the 28 Python packages this project's tool constraint box requires,
+3 system tools (git, jq, gh) and the Wolfram Engine. Nothing is installed without a yes.
+`--dry-run` reports what is missing and installs nothing. `--help` costs nothing and runs no
+checks.
+
+**Wolfram is OPTIONAL and always will be.** Founder ruling 2026-09-28: no user is compelled to
+install Wolfram before running an experiment, and where it IS available it is the SECONDARY
+falsifier run against open-source output, never the primary route. SymPy, z3, SciPy, statsmodels,
+NumPy and mpmath are primary in every case, and the installer offers all of them.
+
+**THE PACKAGE LIST LIVES IN THE INSTALLER, NOT IN PROSE.** `scripts/cdsfl_onboard.py` carries the
+tables; any document that re-types them drifts away from it. Measured 2026-10-03:
+`docs/REPRODUCING.md` listed 18 of the installer's 28 packages, 64.2857%, omitting PuLP, astropy,
+biopython, crosshair-tool, matplotlib, networkx, pandas, pint, rdkit and scikit-learn — and 3 tests
+hard-fail on pint, astropy and rdkit while that same document stated "All tests should pass". The
+script's list had changed on 2026-09-17 and the document's on 2026-08-15, a 33-day gap that a later
+edit to the document did not close, because nothing compared the two. Read the installer, or run it.
+
+**This section did not exist until 2026-10-03, and its absence is why the founder had never been
+able to test whether this document could onboard anyone.** Measured that day: this file named the
+installer 0 times across 2944 lines, its only install pointer sat at line 2812 of 2944 and pointed
+elsewhere, and `START_HERE.md` — the file that calls itself the map for a first-time reader — had 0
+of its 124 lines mentioning install, setup, prerequisite or dependency. The installer itself was
+never the problem: it is 1214 lines, it was added on 2026-04-08, and a probe that replaced
+`subprocess.run` with a recorder caught it dispatching real `pip install` and `brew install`
+commands. The documents simply never routed anyone to it.
 
 ## CURRENT STATE — 2026-09-30 11:04 BST
 
@@ -133,7 +167,7 @@ Closure of residual (d) from the 22 April 2026 founder oversight Q&A. Every runn
 | §17 Feedback Channel directive | `bench/dm/_feedback.py` + `bench/directives/universal/cdsfl_operational.md` §17 | Exp 39 (2026-04-13) |
 | §18 Divergence Channel directive | `bench/dm/_divergence.py` + `bench/directives/universal/cdsfl_operational.md` §18 | Exp 39 (2026-04-13) |
 | F1 SymPy sandbox allow-list | `bench/immune_agents.py:977` | 2026-04-21 |
-| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v3.py:12872` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
+| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v3.py:12902` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
 | B-Cell mathematics specialist | dispatch via `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `bench/cdsfl_registry/domains/immune/mathematics.toml` | Exp 36 era |
 | B-Cell statistics specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/statistics.toml` | Exp 36 era |
 | B-Cell biology specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/biology.toml` | Exp 36 era |

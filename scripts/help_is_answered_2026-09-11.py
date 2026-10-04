@@ -74,6 +74,16 @@ def answers_help(path: pathlib.Path, timeout: int = 180) -> tuple[bool, str]:
         return False, type(exc).__name__
     if r.returncode != 0:
         return False, f"exit {r.returncode}"
+    # IMPORT DEFENSIVELY, because this module is IMPORTED by
+    # bench/tests/test_help_is_answered_2026-09-11.py as well as run directly.
+    # `main()` notes that "scripts/ is sys.path[0] when run directly" and that is
+    # true of the direct path only: under the test the sibling is not importable,
+    # so this raised ModuleNotFoundError on the first probed script that exited 0
+    # and the whole coverage check died before asserting anything. An instrument
+    # that cannot run reports nothing, which is worse than reporting a failure.
+    _here = str(pathlib.Path(__file__).resolve().parent)
+    if _here not in sys.path:
+        sys.path.insert(0, _here)
     from _cli_help import usage_line_present
     if usage_line_present((r.stdout or "") + (r.stderr or "")):
         return True, ""

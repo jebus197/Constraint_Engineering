@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 3 October 2026 09:28 BST (2026-10-03T09:28:49+01:00)
+Generated: 4 October 2026 03:00 BST (2026-10-04T03:00:26+01:00)
 
 ---
 
@@ -18,34 +18,34 @@ Generated: 3 October 2026 09:28 BST (2026-10-03T09:28:49+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `c62ac5a` The study now carries its own reason, and the compaction alert exists at last
-- **Committed:** 2026-10-03 06:53:47 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 1
+- **Last commit (the PARENT of the commit containing this file):** `1259b87` the run-end harvest, and a discriminator that was looking for a field that does not exist
+- **Committed:** 2026-10-03 13:51:00 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 2
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M bench/directives/universal/section_p_shortfalls.json`
-- `M bench/falsifier_verify.py`
-- `M bench/key_access_forensics.py`
-- `M bench/reference_runner_v3.py`
-- `M bench/tests/test_declared_figure_as_of_2026-09-29.py`
-- `A bench/tests/test_declared_vs_observed_2026-10-03.py`
-- `A bench/tests/test_every_versioned_hook_is_the_live_one_2026-10-03.py`
-- `M bench/tests/test_falsifier_cannot_read_the_key.py`
-- `M bench/tests/test_the_alarm_says_how_many_defects_2026-09-02.py`
-- `A bench/tests/test_the_confidence_composition_2026-10-03.py`
-- `A bench/tests/test_the_study_announces_itself_2026-10-03.py`
-- `A bench/tests/test_the_widened_discrimination_reach_2026-10-03.py`
-- `A bench/tests/test_verified_not_claimed_on_a_voided_instrument_2026-10-03.py`
-- `M bench/tests/test_work_not_narrate_hook_2026-09-10.py`
-- `M bench/tools/run_simulated_experiment.py`
-- … and 51 more, not shown (list capped at 15 of 66 — run `git status --porcelain` for the full set)
+- `M  START_HERE.md`
+- `M  bench/fingerprints/CC2-SIM.json`
+- `M  bench/fingerprints/CC2.json`
+- `M  bench/fingerprints/ChatGPT-SIM.json`
+- `M  bench/fingerprints/ChatGPT.json`
+- `M  bench/fingerprints/Codex-SIM.json`
+- `M  bench/fingerprints/Codex.json`
+- `M  bench/fingerprints/DeepSeek-SIM.json`
+- `M  bench/fingerprints/DeepSeek.json`
+- `M  bench/fingerprints/Fable-SIM.json`
+- `M  bench/fingerprints/Gemini-SIM.json`
+- `M  bench/fingerprints/Gemini.json`
+- `A  bench/logs/study_run1_2026-10-03_20261003T083519Z/runner_state.json`
+- `A  bench/logs/study_run1b_2026-10-03_20261003T100439Z/runner_state.json`
+- `A  bench/logs/study_run1b_2026-10-03_20261003T100439Z/study_run1b_2026-10-03_report.json`
+- … and 65 more, not shown (list capped at 15 of 80 — run `git status --porcelain` for the full set)
 
 ---
 
 ## Tests
 
-**9901 tests collected** at 3 October 2026 09:28 BST, HEAD `c62ac5a` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**10027 tests collected** at 4 October 2026 03:00 BST, HEAD `1259b87` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -75,6 +75,9 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `1259b87 the run-end harvest, and a discriminator that was looking for a field that does not exist`
+- `10606f0 the barrier was discarding findings for their quoting, and its ambiguity guard was overridden by the branch below it`
+- `1d51fee sv: the adjudicated merge, refused-body visibility, the widened guard as a post-run sweep, and 23 board failures repaired`
 - `c62ac5a The study now carries its own reason, and the compaction alert exists at last`
 - `a0a2283 sv: name the commit in the session state so A23 passes`
 - `6b3f689 sv: suite citation for the 2026-10-03 session state block (follow-up to cd19903; memory written at 06:09)`
@@ -82,6 +85,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `2a3d6e3 sv: 2 October 2026 — the $HOME hole, the green board, and the watch that starts itself`
 - `abef2f2 fix: $HOME was in scope, so the listing that finds the key store was not flagged`
 - `854efaa fix: the full suite found 4 same-day regressions the 501-test subset cannot reach`
-- `199cadb test: the stale-label trap now has a guard that bites`
-- `bcbe0c1 fix: I read a label the runner documents as stale, and withdrew a true claim`
-- `d8aa279 docs: 3 load-bearing claims in the guard note are refuted by execution`

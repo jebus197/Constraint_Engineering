@@ -43,8 +43,12 @@
       "id": "m10",
       "what": "Declared state vs observed state: does what the launcher declares match what fires? The missing piece was the DATA, not the script -- no report recorded a declaration.",
       "founder_ruling": "in the programme",
-      "result": null,
-      "headline": null,
+      "result": {
+        "AGREE": 5,
+        "DISAGREE": 0,
+        "UNOBSERVABLE": 2
+      },
+      "headline": "ANSWERED FOR THE FIRST TIME on the post-sweep registry of study_run1b_2026-10-03_20261003T100439Z: 5 AGREE, 0 DISAGREE, 2 UNOBSERVABLE. No declaration field was present in the report, so the harvest read the run log. 0 disagreements, but the denominator is 7 of 75 entries, so this is a narrow check, not a clean bill.",
       "implemented": {
         "at": "2026-10-03T07:49:13+01:00",
         "launcher_records": "bench/tools/run_simulated_experiment.py now writes _declared_config (every RunnerConfig field, credential-shaped names withheld by marker) and _declared_argv into its report",
@@ -61,7 +65,9 @@
           "gate_threshold_fired"
         ],
         "why_blocking_fired_matters": "it is the run-level instrument for a back-door arming of discrimination_control_blocks, which nearly shipped on 2026-10-03"
-      }
+      },
+      "answered_at": "2026-10-03T16:48:33+01:00",
+      "answered_from": "study_run1b_2026-10-03_20261003T100439Z/runner_state.json (post-sweep, persisted 16:46:38 BST)"
     },
     {
       "id": "haiku_extended",
@@ -109,8 +115,17 @@
       "id": "refusal_visibility",
       "what": "Make the false-positive sweep able to see refused falsifiers. ARCHIVE SCALE IS NOW MEASURED; the run-scale effect is what the runs answer.",
       "founder_ruling": "RUN IT, mark as a significant study area (2026-10-03)",
-      "result": null,
-      "headline": null,
+      "result": {
+        "routing_records_with_a_body": 25,
+        "carrying_the_full_body": 25,
+        "pct": 100.0,
+        "wilson": [
+          86.6808,
+          100.0
+        ],
+        "truncation_only": 0
+      },
+      "headline": "DEMONSTRATED on study_run1b_2026-10-03_20261003T100439Z: 25 of 25 recorded falsifier bodies retained in full, 0 truncation-only, Wilson [86.6808%, 100.0000%]. The last_falsifier_code_full field works; a refused body is now inspectable rather than cut at 600 characters.",
       "implemented": {
         "at": "2026-10-03T07:18:51+01:00",
         "producer": "scripts/refused_falsifier_visibility_2026-10-03.py",
@@ -148,7 +163,9 @@
         "run": "study_run1_2026-10-03_20261003T083519Z (the stopped run, 15 entries survived)",
         "result": "4 of 4 routing records carry the FULL falsifier body, 0 exist as a truncation only. Wilson [51.0109%, 100%] on n=4, so the interval is wide and the CATEGORICAL claim is what holds: no record is truncation-only.",
         "why_it_matters": "this is the 2026-10-03 field populating in a real run -- the blind spot that left 111 of 983 archived sources undecidable is closed at the source"
-      }
+      },
+      "answered_at": "2026-10-03T16:48:33+01:00",
+      "answered_from": "study_run1b_2026-10-03_20261003T100439Z/runner_state.json (post-sweep, persisted 16:46:38 BST)"
     },
     {
       "id": "closure_cures",
@@ -326,18 +343,107 @@
           "the CONFIRMED -> CLOSED transition no longer fires on a voided instrument",
           "the Bugzilla close-the-loop path (sandbox copy + ruff/mypy/bandit/test_cmd) becomes reachable for it, which is the founder's 'resubmit via existing mechanics'"
         ],
-        "guard": "bench/tests/test_verified_not_claimed_on_a_voided_instrument_2026-10-03.py (5 tests, incl. an anti-drift check on the archive population)"
+        "guard": "bench/tests/test_verified_not_claimed_on_a_voided_instrument_2026-10-03.py (5 tests, incl. an anti-drift check on the archive population)",
+        "RETRACTED_CONSEQUENCE": {
+          "at": "2026-10-03T14:40:54+01:00",
+          "the_false_claim": "'the CONFIRMED -> CLOSED transition no longer fires on a voided instrument' and 'the Bugzilla close-the-loop path becomes reachable for it'.",
+          "why_it_is_false": "Both were written as CONSEQUENCES of a fix that deliberately does not change `verified`. The runner's own comment says the fields are 'read by no decision'; the guard test's docstring says 'No decision reads verification_voided'; and the reason string the code writes says 'The CONFIRMED status is left standing, and so is `verified`'. The claim contradicts 3 texts in the same change.",
+          "measured_refutation": "study_run1b runner_state.json at 62 entries: 1 NON_DISCRIMINATING entry, and it is CLOSED with verified=True and carrying verification_voided. A voided instrument closed exactly as before.",
+          "what_actually_shipped": "legibility ONLY. verification_voided and its reason populate (1 of 1 live), so the contradiction is readable. No outcome changed, which is correct -- changing it IS the arming ruling the founder deferred."
+        }
       },
-      "result": null,
-      "headline": null,
+      "result": {
+        "non_discriminating": [
+          "C0037"
+        ],
+        "carrying_verification_voided": 1,
+        "n": 1,
+        "pct": 100.0,
+        "wilson": [
+          20.6549,
+          100.0
+        ],
+        "carrying_a_reason": 1,
+        "still_marked_verified": [
+          "C0037"
+        ]
+      },
+      "headline": "POPULATED on study_run1b_2026-10-03_20261003T100439Z: 1 of 1 voided entry carries verification_voided with a reason, Wilson [20.6549%, 100.0000%] -- a wide interval because the denominator is 1. `verified` correctly STAYS True: withholding it is the blocking behaviour the founder deferred, and the field exists to make the contradiction legible, not to change the outcome.",
       "superseded_fix": "A first fix set verified=False on a voided instrument. The project's own committed oracles refuted it: `test_discrimination_control.py` states that withholding `verified` is what keeps a finding out of CLOSED, so the fix had armed discrimination_control_blocks by the back door -- the ruling the founder deferred. REVERTED. What shipped records `verification_voided` and changes no outcome.",
-      "needs_founder_ruling": "Whether a CONFIRMED finding may stand on a falsifier the discrimination control voided. Acting on it IS arming the blocker, which he refused on 126 of 246. The record now makes the contradiction legible so the 3 runs can measure how often it arises."
+      "needs_founder_ruling": "Whether a CONFIRMED finding may stand on a falsifier the discrimination control voided. Acting on it IS arming the blocker, which he refused on 126 of 246. The record now makes the contradiction legible so the 3 runs can measure how often it arises.",
+      "answered_at": "2026-10-03T16:48:33+01:00",
+      "answered_from": "study_run1b_2026-10-03_20261003T100439Z/runner_state.json (post-sweep, persisted 16:46:38 BST)"
     }
   ],
   "run_conditions": {
     "success": "3 consecutive CLEAN convergences on the prose target",
     "fold_forward": "fixes from each converged run are carried into the next, so nothing is rediscovered",
     "protocol": "full cy: monitor at 60s, pause on anything odd, FFAFP it, fix, resume",
-    "terminal": "tail windows on the founder's own machine via osascript and a script FILE, never in the assistant's pane"
-  }
+    "terminal": "tail windows on the founder's own machine via osascript and a script FILE, never in the assistant's pane",
+    "study_run1b": {
+      "outcome": "INCOMPLETE, reason UNRECORDED_STOP (the round-cap exit sets no stop reason -- a reporting defect)",
+      "rounds": 8,
+      "findings": 75,
+      "converged": false,
+      "gamma_critical_final": 0.4274,
+      "gamma_alt_threshold": 0.3,
+      "streak_tail": [
+        1,
+        0,
+        0
+      ],
+      "note": "gamma CLEARED its threshold (0.4274 >= 0.3). The run was 1 round short of the 3-consecutive-zero streak: replaying the live gate with one more zero round returns CRITICAL_QUIESCENCE_CONVERGED. So the model and the gate are sound; the blockers are mechanical.",
+      "recorded_at": "2026-10-03T16:48:33+01:00"
+    }
+  },
+  "open_defects": [
+    {
+      "at": "2026-10-03T14:40:54+01:00",
+      "id": "A4-counter-valve-severity-mismatch",
+      "severity": "blocks convergence",
+      "what": "unverified_critical_count() has NO severity test in its body (it skips non-UNCONFIRMED, irreducible_escalation, and exhausted, then counts), while the ONLY site that stamps exhausted=True requires severity >= 0.7. A sub-critical UNCONFIRMED entry can ENTER the A4 counter and has no exit.",
+      "live_instance": "C0042, severity 0.6, 0-character falsifier, emitted round 2 and never given one. Leave-one-out on the live registry: removing it drops A4 from 1 to 0. It blocks the zero-critical streak for every remaining round, so study_run1b CANNOT converge.",
+      "also": "the counter's docstring claims it counts 'severity >= CRITICAL_SEVERITY_THRESHOLD', which the body does not do -- stale since the severity gate was removed on 2026-09-06",
+      "needs": "a founder ruling: counter and valve must share ONE severity predicate",
+      "status": "FOUND, NOT FIXED (founder issued 'd' - discuss before proceeding)"
+    },
+    {
+      "at": "2026-10-03T14:40:54+01:00",
+      "id": "integrity-gate-interpreter-carve-out",
+      "severity": "false refusal of a correct falsifier",
+      "what": "_interpreter_roots() carves out the HARNESS interpreter's directories (3.13). A falsifier that spawns another Python gets the system 3.9, whose stdlib is under /Library and whose user-site is under ~, both in _SANDBOX_DENY_REGIONS = ('~', '/Volumes', '/Library'). Its ordinary import reads are recorded as denials, and ANY denial becomes INTEGRITY_VIOLATION.",
+      "counterfactual_proof": "with the 3.9 roots allowed, the IDENTICAL C0050 falsifier returns CONFIRMED instead of INTEGRITY_VIOLATION",
+      "why_structural": "C0050's falsifier spawns /usr/bin/python3 with `str | None` syntax BECAUSE the defect it demonstrates is that the target prescribes a bare unpinned python3. Any falsifier for that defect class must do this, so the gate is guaranteed to refuse the correct falsifier.",
+      "cost": "C0050 is severity 0.7 -- a critical -- recorded as untested and pushed to a human. Over-reported 34 matched-read lines and 6 banners for 1 finding.",
+      "provenance": "the refuse-rather-than-flag behaviour entered 2026-08-15 in a milestone merge with NO founder ruling cited; the founder confirmed on 2026-10-03 he was never consulted",
+      "needs": "a founder ruling: refuse execution, or run and flag as a reporting metric",
+      "status": "FOUND, NOT FIXED (founder issued 'd' - discuss before proceeding)",
+      "CORRECTION_the_refusal_DOES_block_convergence": {
+        "at": "2026-10-03T15:20:22+01:00",
+        "what_was_said": "that the integrity refusals were not blocking convergence, because the founder's 2026-10-02 carve-out excludes them from the A4 blocker and the halt bound",
+        "why_it_was_wrong": "the carve-out covers the A4 blocker and the halt bound, but NOT the state gate's `contested` term. Leave-one-out on the live registry at 66 entries, round 5: removing C0050 drops contested from 1 to 0 and leaves A4 at 1; removing C0042 leaves contested at 1 and drops A4 to 0. At round 5 the state gate's only remaining blocker was contested=1, novel having already fallen to 0.",
+        "consequence_for_the_fix": "under the founder's ruling -- print a diagnostic, do not refuse -- the finding stops being contested and this obstruction disappears on its own. Had the alternative been chosen (keep refusing, widen the carve-out), `contested` would have had to be named explicitly or the bug would have survived the fix.",
+        "so_the_two_blockers_are": {
+          "A4 quiescence streak": "C0042, sub-critical with no falsifier and no exit",
+          "state gate contested": "C0050, the falsely refused finding"
+        }
+      }
+    },
+    {
+      "name": "A finding can reach UNCONFIRMED without the routing ladder ever serving it, and then blocks convergence for the life of the run",
+      "observed_in": "study_run1b_2026-10-03_20261003T100439Z",
+      "final_state": "A4 = 2 on the post-sweep registry: C0066 (severity 0.45) and C0073 (0.50). Both have 0 verdicts, no routing_history and no falsifier_code. The sweep settled C0067 and C0072 but C0073 arrived in the identical shape, so the sweep is not a net solution.",
+      "why_it_cannot_clear": "unverified_critical_count counts every severity (the gate removed 2026-09-06); the only release, the `exhausted` valve, requires severity >= 0.7 AND verdicts > 0 AND age >= exhausted_round_threshold. Executed: at severity 0.45-0.69 the valve returns exhausted=None at age 50 with any threshold, so A4 stays 1. At 0.70 it returns True and A4 goes to 0.",
+      "second_defect_found_alongside": "exhausted_round_threshold defaults to 8 while the maximum reachable age in an 8-round run is 7 (round_idx is 0-based). z3 returns unsat, NumPy's enumeration of all 36 legal pairs gives max age 7, SymPy gives the general condition T <= R-1. So the valve cannot fire in any 8-round run, independently of severity.",
+      "provenance_question_for_the_founder": "The severity gate was removed from unverified_critical_count in commit 6c10fe4 at 2026-09-06 16:21:48, quoting the founder as 'Verdict: do it. There are no votes in CDSFL.' DECISIONS_AWAITING_YOU_2026-09-06.md item 23 records, at 22:15 the same day: 'ANSWERED 2026-09-06 22:15 AND THE RECOMMENDATION WAS REJECTED. He rejected both removal and the rubric swap and ordered worked proofs instead.' The verbatim quote appears in no tracked file except the code comment and 5 later panel seat_proposals.diff files (earliest 2026-09-11). Decision ledger item 2, which governs, is still OPEN. AWAITING FOUNDER RULING; no code changed.",
+      "measured_consequence": "Restoring the severity gate takes A4 from 3 to 0 on this run's pre-sweep registry; the gate then blocks on contested=2 and the streak.",
+      "producers": [
+        "scripts/release_valve_age_lock_2026-10-03.py",
+        "scripts/a4_blockers_lock_audit_2026-10-03.py",
+        "scripts/gate_replay_on_registry_2026-10-03.py",
+        "scripts/routing_severity_gate_2026-10-03.py"
+      ],
+      "recorded_at": "2026-10-03T16:48:33+01:00"
+    }
+  ]
 }

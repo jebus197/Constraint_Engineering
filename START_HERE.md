@@ -21,7 +21,8 @@ does when it runs.
 ## Where to go, by what you want
 
 | If you want | Read |
-|---|---|
+| --- | --- |
+| **To set this up on your machine** | Run `python3 scripts/cdsfl_onboard.py`. It asks before every install and `--dry-run` installs nothing. |
 | The argument and the theory | [`README.md`](README.md), then [`PAPER.md`](PAPER.md) |
 | What every term and symbol means | [`docs/GLOSSARY.md`](docs/GLOSSARY.md) |
 | How the parts fit together | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |

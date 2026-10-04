@@ -44,7 +44,7 @@ import subprocess
 import sys
 import textwrap
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -1579,6 +1579,22 @@ def _audit_memory_index(mem_dir: Path) -> _MemoryIndexAudit:
     audit.over_long_preambles.sort(reverse=True)
 
     targets = {t for _title, t, _n in audit.entries if t.endswith(".md")}
+    # THE ARCHIVE'S POINTERS COUNT AS POINTERS (2026-10-04). `archive_stale_memory_entries`
+    # moves aged session entries into MEMORY_ARCHIVE.md, and without this the 18 it
+    # moved on its first run were all reported as "name appears nowhere in the index"
+    # — a false orphan each, growing by every future archive pass. The file is still
+    # pointed at, just from the sibling the index itself links to. Reading the archive
+    # here keeps the orphan check honest: a genuinely unreferenced memory still shows.
+    _archive = mem_dir / _MEMORY_ARCHIVE_NAME
+    if _archive.is_file():
+        try:
+            for _ln in _archive.read_text(encoding="utf-8",
+                                          errors="replace").splitlines():
+                for _t, _tgt, _n in _memory_index_pointers(_ln):
+                    if _tgt.endswith(".md"):
+                        targets.add(_tgt)
+        except OSError:
+            pass          # an unreadable archive must not break the audit
     audit.broken = sorted(t for t in targets if not (mem_dir / t).is_file())
 
     # glob() returns [] on a permission denial instead of raising, which
@@ -1809,6 +1825,178 @@ def _print_memory_index_report(audit: _MemoryIndexAudit) -> None:
                 f"      … and {len(audit.over_long) - len(shown)} more, not shown "
                 f"(capped at {len(shown)})"
             )
+
+
+_MEMORY_ARCHIVE_NAME = "MEMORY_ARCHIVE.md"
+
+#: The recent window the index keeps in full. The founder's description of what
+#: MEMORY.md is for, verbatim 2026-10-03: "a resource that keeps all the most
+#: recent and critical project information over a number of days, then trims out
+#: any old/stale stuff before this period after a sv/commit ... its purpose is to
+#: give you a clearer take on ongoing events than your summary often does."
+#:
+#: 30 DAYS IS CHOSEN FROM MEASUREMENT, NOT TASTE. Measured on the live index,
+#: 2026-10-03: the Project State section held 44 non-blank lines, 33 of them
+#: carrying a date in a pointer filename, ages 0 to 118 days, median 38. Window
+#: sweep -- 14d and 21d both archive 19 lines and free 4,367 chars; 30d archives
+#: 18 and frees 3,234; 45d frees 1,810; 60d frees 999. 30d was taken over the
+#: tighter windows for a reason of SUBSTANCE: the 2026-09-06 entries are 27 days
+#: old and carry founder ruling 23, which is under active discussion, so a 21-day
+#: window would archive live material to save 1,133 chars. Size is not the only
+#: variable.
+_MEMORY_WINDOW_DAYS = 30
+
+#: Only this section ages. Standing rules do not become stale by the calendar:
+#: "Feedback (applies to all work)" is 73 lines and 9,066 characters of rules that
+#: apply to every future turn, and archiving `feedback_no_model_voting` because it
+#: is old would be a defect, not housekeeping. The dated session log is what grows
+#: without bound, and it is what the founder described trimming.
+_MEMORY_AGEING_SECTIONS = ("Project State",)
+
+_MEMORY_PTR_RE = re.compile(r"\]\(([^)]+\.md)\)")
+_MEMORY_DATE_IN_NAME_RE = re.compile(r"(20\d\d)-(\d\d)-(\d\d)")
+
+
+def _memory_line_newest_date(line: str):
+    """The newest date recoverable from this line's pointer FILENAMES, or None.
+
+    The filename is used rather than the prose because it is machine-written and
+    uniform, while the prose dates in this index appear as "30 Sep / 1 Oct 2026",
+    "3 Oct" and "2026-09-30" in the same file. Measured 2026-10-03: 68 pointers
+    carry a date in the filename and 106 do not.
+
+    None means NO EVIDENCE OF AGE, and such a line is never archived. Guessing an
+    age from position in the file would archive standing material on a hunch.
+    """
+    best = None
+    for name in _MEMORY_PTR_RE.findall(line):
+        m = _MEMORY_DATE_IN_NAME_RE.search(name)
+        if not m:
+            continue
+        try:
+            d = date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            continue          # 2026-13-45 in a filename is not a date
+        if best is None or d > best:
+            best = d
+    return best
+
+
+def archive_stale_memory_entries(mem_dir: Path, today=None,
+                                 window_days: int = _MEMORY_WINDOW_DAYS,
+                                 dry_run: bool = False) -> dict:
+    """Move aged session entries out of the index into MEMORY_ARCHIVE.md.
+
+    THIS IS THE FIRST FUNCTION IN THIS FILE THAT WRITES UNDER `mem_dir`, and the
+    restraint is deliberate: `_audit_memory_index` carries "READS ONLY -- never
+    writes under mem_dir" and keeps it. Until 2026-10-03 nothing trimmed the index
+    at all. `_check_memory_index_size` could REFUSE a save, and the trim was then
+    done by hand -- 2026-07-03 (26.3K to 17.6K) and 2026-08-06 under ruling 7
+    (24,268 to 21,456 chars). 58 days then passed with no trim, 2026-10-01 bought
+    headroom by GROUPING entries instead, and the index reached 23,255 chars
+    against a 23,750 refuse line: 495 chars and 5 lines of runway. A manual step
+    with no mechanism rots, which is the pattern this project has named repeatedly.
+
+    NOTHING IS DELETED. Lines are appended to a sibling file inside the same
+    memory folder, under a dated heading, so every pointer they carry still
+    resolves and the loader can still be pointed at them. A timestamped backup of
+    the index is written before any change.
+
+    Returns a report dict; `dry_run=True` computes it and writes nothing.
+    """
+    today = today or date.today()
+    index = mem_dir / _MEMORY_INDEX_NAME
+    report = {"ok": False, "moved": 0, "freed_chars": 0, "kept_undated": 0,
+              "archive": None, "backup": None, "reason": "", "moved_titles": []}
+    if not index.is_file():
+        report["reason"] = f"no index at {index}"
+        return report
+
+    try:
+        text = index.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as err:
+        report["reason"] = f"index unreadable — {type(err).__name__}: {err}"
+        return report
+
+    lines = text.splitlines()
+    cutoff = today - timedelta(days=window_days)
+    section = None
+    keep, moved = [], []
+    for line in lines:
+        if line.startswith("## "):
+            section = line[3:].strip()
+            keep.append(line)
+            continue
+        ageing = section in _MEMORY_AGEING_SECTIONS
+        if not ageing or not _MEMORY_BULLET_RE.match(line):
+            keep.append(line)
+            continue
+        when = _memory_line_newest_date(line)
+        if when is None:
+            report["kept_undated"] += 1
+            keep.append(line)
+            continue
+        if when < cutoff:
+            moved.append((when, line))
+        else:
+            keep.append(line)
+
+    report["moved"] = len(moved)
+    report["freed_chars"] = sum(len(l) + 1 for _w, l in moved)
+    report["moved_titles"] = [
+        (w.isoformat(), (_MEMORY_LINK_RE.search(l).group(1)
+                         if _MEMORY_LINK_RE.search(l) else l[:40]))
+        for w, l in sorted(moved)]
+    if not moved:
+        report["ok"] = True
+        report["reason"] = (f"nothing older than {window_days} days in "
+                            f"{', '.join(_MEMORY_AGEING_SECTIONS)}")
+        return report
+    if dry_run:
+        report["ok"] = True
+        report["reason"] = "dry run — nothing written"
+        return report
+
+    archive = mem_dir / _MEMORY_ARCHIVE_NAME
+    stamp = datetime.now().astimezone().isoformat(timespec="seconds")
+    header = (f"\n## Archived {today.isoformat()} — entries older than "
+              f"{window_days} days\n\n"
+              f"Moved out of {_MEMORY_INDEX_NAME} by `archive_stale_memory_entries`"
+              f" at {stamp}. Nothing was deleted; every pointer below still "
+              f"resolves in this folder.\n\n")
+    body = "\n".join(l for _w, l in sorted(moved)) + "\n"
+    try:
+        backup = index.with_suffix(
+            f".backup-{datetime.now().strftime('%Y%m%dT%H%M%S')}.md")
+        backup.write_text(text, encoding="utf-8")
+        report["backup"] = str(backup)
+        if archive.is_file():
+            archive.write_text(archive.read_text(encoding="utf-8") + header + body,
+                               encoding="utf-8")
+        else:
+            archive.write_text(
+                f"# CDSFL Persistent Memory — ARCHIVE\n\n"
+                f"Entries aged out of {_MEMORY_INDEX_NAME} by `sv`. This file is "
+                f"NOT loaded automatically; it exists so the index can stay inside "
+                f"the loader's limits without anything being lost. Every pointer "
+                f"here resolves in this same folder.\n"
+                + header + body, encoding="utf-8")
+        report["archive"] = str(archive)
+        # leave ONE pointer so a reader of the index knows the archive exists
+        marker = f"- Older entries: [{_MEMORY_ARCHIVE_NAME}]({_MEMORY_ARCHIVE_NAME})"
+        out = "\n".join(keep)
+        if _MEMORY_ARCHIVE_NAME not in out:
+            out = out.replace("## Project State",
+                              f"## Project State\n{marker}", 1)
+        index.write_text(out.rstrip() + "\n", encoding="utf-8")
+    except OSError as err:
+        report["reason"] = f"write failed — {type(err).__name__}: {err}"
+        return report
+
+    report["ok"] = True
+    report["reason"] = (f"moved {len(moved)} entry/entries older than "
+                        f"{window_days} days")
+    return report
 
 
 def _check_memory_index_size(audit: _MemoryIndexAudit) -> _Check:
@@ -2520,7 +2708,35 @@ def _preflight_completeness(
     print()
     print("Save-completeness pre-flight (founder rulings 3, 4 and 7, 2026-08-05):")
 
-    audit = _audit_memory_index(_MEMORY_DIR if mem_dir is None else mem_dir)
+    # AGE THE INDEX OUT BEFORE MEASURING IT, so a save is never refused for a
+    # condition this mechanism can clear by itself (2026-10-03, founder
+    # instruction: "Make it mechanical so it functions in the originally
+    # envisaged way after a sv and/or a commit is run").
+    #
+    # IT RUNS BEFORE THE AUDIT DELIBERATELY. `_check_memory_index_size` is the one
+    # check that can refuse, and refusing while holding the means to fix the cause
+    # is the shape this project's own record names: commit f269453, 2026-09-20,
+    # "sv measured, printed, and exited 0 anyway. 7 of its last 13 repairs are that
+    # one shape." Measuring harder was never the missing half.
+    #
+    # It honours `apply`: with apply=False the whole pass is read-only, so this
+    # computes its report and writes nothing, exactly like the tracker case.
+    _mem_dir = _MEMORY_DIR if mem_dir is None else mem_dir
+    _arch = archive_stale_memory_entries(_mem_dir, dry_run=not apply)
+    if _arch.get("moved"):
+        _verb = "would move" if not apply else "moved"
+        print(f"  memory index: {_verb} {_arch['moved']} entry/entries older than "
+              f"{_MEMORY_WINDOW_DAYS} days, freeing {_arch['freed_chars']:,} chars"
+              f" ({_arch['kept_undated']} undated entry/entries kept — an undated "
+              f"pointer carries no evidence of age)")
+        if _arch.get("archive"):
+            print(f"                -> {_arch['archive']}")
+        if _arch.get("backup"):
+            print(f"                backup: {_arch['backup']}")
+    elif not _arch.get("ok"):
+        print(f"  memory index: archive step did not run — {_arch.get('reason')}")
+
+    audit = _audit_memory_index(_mem_dir)
 
     checks = [
         _check_memory_updated(root, mem_dir=mem_dir),

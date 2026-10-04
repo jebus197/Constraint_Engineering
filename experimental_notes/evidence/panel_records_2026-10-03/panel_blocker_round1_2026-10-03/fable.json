@@ -1,0 +1,228 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 12283,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and contents\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/**/*.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/study_run1b_2026-10-03_20261003T100439Z/ && wc -l bench/reference_runner_v3.py\", \"description\": \"List study run directory and count runner lines\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def unverified_critical_count|def contested_count|def irreducible_queue_count|def _update_finding_statuses|def _check_gamma_alt_convergence|class FindingRegistry|def from_dict|def to_dict\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 2690, \"limit\": 330}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 3919, \"limit\": 220}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nd = json.load(open('bench/logs/study_run1b_2026-10-03_20261003T100439Z/runner_state.json'))\\nprint(type(d), list(d.keys())[:30])\\nreg = d.get('registry', d)\\nprint(list(reg.keys())[:10] if isinstance(reg, dict) else type(reg))\\nEOF\", \"description\": \"Inspect runner_state.json top-level structure\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"EXHAUSTED_VALVE_STATUSES\\\\s*=|_FALSIFIER_RESOLVED_VERDICTS\\\\s*=|CRITICAL_SEVERITY_THRESHOLD\\\\s*=|def _irreducible_queue_split|def _integrity_violation_excluded\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-A\": 25}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nd = json.load(open('bench/logs/study_run1b_2026-10-03_20261003T100439Z/runner_state.json'))\\nents = d['registry']['entries']\\nprint(\\\"n entries:\\\", len(ents))\\nfor cid in ('C0066','C0073','C0042','C0069'):\\n    e = ents.get(cid)\\n    if not e: print(cid, \\\"MISSING\\\"); continue\\n    print(\\\"=\\\"*20, cid)\\n    print(json.dumps({k:(v if k!='falsifier_code' "
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 7855, \"limit\": 150}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nd = json.load(open('bench/logs/study_run1b_2026-10-03_20261003T100439Z/runner_state.json'))\\ne = d['registry']['entries']['C0066']\\nprint(json.dumps({k:e[k] for k in ('computed_evidence','status_log','status_adjudicator','status_mechanism','merge_candidate_of') if k in e}, indent=1)[:2500])\\ne73 = d['registry']['entries']['C0073']\\nprint(json.dumps(e73."
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '940,960p' bench/logs/study_run1b_2026-10-03_20261003T100439Z/console.log; grep -n \\\"REOPEN C\\\" bench/logs/study_run1b_2026-10-03_20261003T100439Z/console.log | head; grep -n \\\"A4 BLOCK\\\" bench/logs/study_run1b_2026-10-03_20261003T100439Z/console.log | tail -5\", \"description\": \"Check console.log REOPEN and A4 lines\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nck = json.load(open('bench/logs/study_run1b_2026-10-03_20261003T100439Z/checkpoint.json'))\\nprint(list(ck.keys()))\\ncfg = ck.get('config') or ck.get('cfg')\\nif cfg:\\n    for k in sorted(cfg):\\n        if any(s in k for s in ('exhaust','gamma_alt','max_rounds','rho','irreducible','contested','models','falsifier_gate')):\\n            print(k, '=', cfg[k])"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nrep = json.load(open('bench/logs/study_run1b_2026-10-03_20261003T100439Z/study_run1b_2026-10-03_report.json'))\\ncc = rep.get('convergence_config')\\nprint(json.dumps(cc, indent=1))\\nprint('max_rounds:', rep.get('max_rounds'), 'total_rounds:', rep.get('total_rounds'))\\nprint('gamma_critical_history tail:', rep.get('gamma_critical_history')[-3:])\\nEOF\", \"d"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"computed_evidence\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 40}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"exhausted_round_threshold\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nck = json.load(open('bench/logs/study_run1b_2026-10-03_20261003T100439Z/checkpoint.json'))\\n# find config anywhere\\ndef walk(o, path=''):\\n    if isinstance(o, dict):\\n        for k,v in o.items():\\n            if 'exhaust' in str(k): print(path, k, v)\\n            walk(v, path+'/'+str(k)) if isinstance(v,(dict,)) and len(path)<60 else None\\nwalk(ck)\\np"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '7440,7540p' bench/reference_runner_v3.py\", \"description\": \"Read reasoned_withdrawal recording site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '14190,14260p;14350,14400p' bench/reference_runner_v3.py\", \"description\": \"Read _record_computed_evidence and its reader\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _apply_routing\\\\|def route_unverified\\\\|routing_history\\\" bench/reference_runner_v3.py | head -20; awk 'NR>=7380 && NR<=7445' bench/reference_runner_v3.py | grep -n \\\"def \\\\|WITHDRAW\\\\|sweep\\\\|for mc\\\" | head\", \"description\": \"Locate routing and withdrawal sweep context\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def severity_is_proven\\\" bench/reference_runner_v3.py && sed -n \\\"$(grep -n 'def severity_is_proven' bench/reference_runner_v3.py | cut -d: -f1),+30p\\\" bench/reference_runner_v3.py\", \"description\": \"Read severity_is_proven\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _post_convergence_sweep\\\\|def _finalize\\\\|finalize sweep\\\\|UNCONFIRMED\\\\\\\", round_idx\\\\|\\\\\\\"UNCONFIRMED\\\\\\\"\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Find where UNCONFIRMED is assigned\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '6677,6760p' bench/reference_runner_v3.py\", \"description\": \"Read _apply_routing gating\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '6760,6810p' bench/reference_runner_v3.py; echo ====17440; sed -n '17430,17500p' bench/reference_runner_v3.py\", \"description\": \"Read routing selection and final sweep\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '17430,17500p' bench/reference_runner_v3.py\", \"description\": \"Read final sweep around line 17479\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"awk 'NR>=3919 && NR<=4529 {while (match($0, /cfg\\\\.[A-Za-z_]+/)) {print substr($0, RSTART, RLENGTH); $0=substr($0, RSTART+RLENGTH)}}' bench/reference_runner_v3.py | sort | uniq -c; echo ===; awk 'NR>=3919 && NR<=4529' bench/reference_runner_v3.py | grep -n \\\"def \\\\|_try_bugzilla\\\\|dispatch\\\\|_run_fix_efficacy\\\\|return\\\" | head -30\", \"description\": \"List cfg attributes and calls used i"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\nrep = json.load(open('bench/logs/study_run1b_2026-10-03_20261003T100439Z/study_run1b_2026-10-03_report.json'))\\nprint('extension_cap:', rep.get('extension_cap'))\\nimport glob\\nstates = glob.glob('bench/logs/*/runner_state.json')\\nprint('archived runner_state count:', len(states))\\nEOF\", \"description\": \"Check extension cap and count archived runner state"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport time, types, sys\\nt0=time.time()\\nsys.argv = ['x']  # guard argparse\\nimport importlib\\nm = importlib.import_module('bench.reference_runner_v3')\\nprint('import ok in', round(time.time()-t0,1),'s')\\nprint(hasattr(m,'FindingRegistry'), hasattr(m,'_update_finding_statuses'), hasattr(m,'_check_gamma_alt_convergence'))\\nimport json\\nst = json.load(open('bench/logs"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"awk 'NR>=4122 && NR<=4529' bench/reference_runner_v3.py | grep -n \\\"bugzilla\\\\|_run_fix\\\\|dispatch_to_model\\\\|reverify\\\\|subprocess\\\\|efficacy\\\" | head -20\", \"description\": \"Scan main pass for side-effectful calls\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4180,4200p' bench/reference_runner_v3.py\", \"description\": \"Check bugzilla gating condition\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p scripts && cat > scripts/a4_blocker_arm_isolation_2026-10-03.py <<'EOF'\\n\\\"\\\"\\\"Arm-isolation measurement for the run-1b A4 blockers (C0066, C0073).\\n\\nBuilds 4 variants of bench/reference_runner_v3.py's pre-pass 1 by exact\\ntextual substitution, rehydrates the ARCHIVED run-1b registry through the\\nreal FindingRegistry for each, and sweeps _update_finding_statuses over\\nround_"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -E \\\"^(ORIG|A_ONLY|B_ONLY|A_PLUS_B)\\\" /Users/georgejackson/.claude/projects/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-b9igb66v-repo/2d92b4f9-4500-4d89-b034-3e83f7e1468f/tool-results/b6odvg0v2.txt\", \"description\": \"Extract variant summary lines from saved output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Verify A_ONLY variant source region is syntactically what Position A proposed\\nfrom pathlib import Path\\nSRC = Path('bench/reference_runner_v3.py').read_text()\\nSEV = '''        if (e[\\\"status\\\"] in EXHAUSTED_VALVE_STATUSES\\n                and e[\\\"severity\\\"] >= 0.7):'''\\na_only = SEV.replace('\\\\n                and e[\\\"severity\\\"] >= 0.7', \\\"\\\").replace('(e[\\\"st"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, sys\\nsys.argv=['x']\\nimport importlib\\nm = importlib.import_module('bench.reference_runner_v3')\\nst = json.load(open('bench/logs/study_run1b_2026-10-03_20261003T100439Z/runner_state.json'))\\nreg = m.FindingRegistry.from_dict(st['registry'])\\nnch = st['novel_critical_history']\\nfrom types import SimpleNamespace\\ncfg = SimpleNamespace(gamma_alt_earliest_r"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 3928, \"limit\": 15}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"bench/reference_runner_v3.py\", \"old_string\": \"    # \\u2500\\u2500 Pre-pass 1: Mark/clear EXHAUSTED on critical/high findings \\u2500\\u2500\\n    # Derived fresh each call \\u2014 not sticky. Requires review activity.\\n    exhausted_threshold = cfg.exhausted_round_threshold if cfg else 0\\n    for e in registry.entries.values():\\n        if (e[\\\"status\\\"] in EXHAUSTE"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"bench/reference_runner_v3.py\", \"old_string\": \"    # \\u2500\\u2500 Pre-pass 1: Mark/clear EXHAUSTED on critical/high findings \\u2500\\u2500\\n    # Derived fresh each call \\u2014 not sticky. Requires review activity.\\n    exhausted_threshold = cfg.exhausted_round_threshold if cfg else 0\\n    for e in registry.entries.values():\\n        if (e[\\\"status\\\"] in EXHAUSTE"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom pathlib import Path\\np = Path('bench/reference_runner_v3.py')\\nsrc = p.read_text()\\nold = '''    # \\u2500\\u2500 Pre-pass 1: Mark/clear EXHAUSTED on critical/high findings \\u2500\\u2500\\n    # Derived fresh each call \\u2014 not sticky. Requires review activity.\\n    exhausted_threshold = cfg.exhausted_round_threshold if cfg else 0\\n    for e in registry.entries.v"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests | grep -i \\\"a4\\\\|2026-10\\\" ; sed -n '1,40p' bench/tests/test_a4_scope_guards_2026-10-03.py 2>/dev/null\", \"description\": \"Check existing A4 test conventions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_exhausted_valve_matches_a4_scope_2026-10-03.py <<'EOF'\\n\\\"\\\"\\\"The exhausted valve releases what the A4 counter blocks (panel 2026-10-03).\\n\\nRun study_run1b_2026-10-03 ended BUDGET-EXHAUSTED with exactly 2 registry\\nentries holding the A4 fail-safe: C0066 (severity 0.45) and C0073 (0.50),\\nboth UNCONFIRMED with verdicts == [] and no falsifier. Since founder ruli"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4375,4395p' bench/reference_runner_v3.py\", \"description\": \"Identify KeyError source in main pass\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom pathlib import Path\\np = Path('bench/tests/test_exhausted_valve_matches_a4_scope_2026-10-03.py')\\ns = p.read_text()\\ns = s.replace('''    return {\\\"status\\\": status, \\\"severity\\\": severity,\\n            \\\"verdicts\\\": list(verdicts),\\n            \\\"computed_evidence\\\": list(evidence),\\n            \\\"last_status_change_round\\\": changed}''',\\n'''    return {\\\"stat"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git stash push -- bench/reference_runner_v3.py >/dev/null && python3 -m pytest bench/tests/test_exhausted_valve_matches_a4_scope_2026-10-03.py -q 2>&1 | tail -6; git stash pop >/dev/null && git diff --stat\", \"description\": \"Mutation check: revert fix, rerun test, restore fix\", \"timeout\": 180000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Mutation check without git: swap the fixed hunk back to the shipped form,\\n# run pytest, then restore the fix. Byte-exact round trip asserted.\\nfrom pathlib import Path\\nimport subprocess, hashlib\\np = Path('bench/reference_runner_v3.py')\\nfixed = p.read_text()\\nh_fixed = hashlib.sha256(fixed.encode()).hexdigest()\\n\\nNEW_COND = '''        if (e[\\\"status\\\"] in EXHA"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom pathlib import Path\\np = Path('bench/tests/test_exhausted_valve_matches_a4_scope_2026-10-03.py')\\ns = p.read_text()\\ns = s.replace('''Mutation map (revert the pre-pass-1 fix in bench/reference_runner_v3.py):\\n  test_run1b_blockers_release_at_threshold_age  FAILS (A4 stays 2)\\n  test_subcritical_unconfirmed_with_recorded_withdrawal_exhausts  FAILS\\n  test_severi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/a4_blocked_entry_census_2026-10-03.py <<'EOF'\\n\\\"\\\"\\\"Census of A4-counted entries across every archived runner_state.json.\\n\\nChallenges Position A's figures (\\\"65 runs; 22 with >=1 permanently blocked\\nentry; 150 entries; 107 blocked by the severity clause alone\\\") against the\\narchive actually present, classifying each A4-counted entry by WHICH valve\\nguard stops its r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_check_gamma_alt_convergence(\\\" bench/reference_runner_v3.py | head -3; grep -rln \\\"_update_finding_statuses\\\\|exhausted\\\" bench/tests | head -20\", \"description\": \"Find gate call site and tests touching the valve\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '16995,17012p' bench/reference_runner_v3.py\", \"description\": \"Check what the gate call site passes as gamma_critical\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_exhausted_valve_reaches_its_readers_2026-09-09.py bench/tests/test_open_crit_high_count_v2.py bench/tests/test_gamma_alt_convergence.py bench/tests/test_runner_status_transitions.py bench/tests/test_extend_is_read_2026-08-30.py bench/tests/test_transport_dead_guard_covers_criticals_2026-08-30.py -q 2>&1 | tail -3\", \"description\": \"Run targeted valve/"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '17012,17020p' bench/reference_runner_v3.py\", \"description\": \"See gamma_critical argument at call site\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'z=Sqrt[2]InverseErf[95/100]//N; w[k_,n_]:=Module[{p=k/n//N,c,r,d},d=1+z^2/n; c=p+z^2/(2n); r=z Sqrt[p(1-p)/n+z^2/(4 n^2)]; {100(c-r)/d,100(c+r)/d}]; {w[22,59], w[52,175], w[22,65], w[58,86]}' 2>&1 | head -5 || echo \\\"WOLFRAM NOT AVAILABLE\\\"\", \"description\": \"Wolfram second-falsifier for Wilson intervals\", \"timeout\": 120000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '5855,5870p' bench/reference_runner_v3.py; grep -n 'kind=\\\"' bench/reference_runner_v3.py | head\", \"description\": \"Enumerate computed_evidence kinds written anywhere\"}"
+    }
+  ],
+  "n_tool_calls": 52,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 903.0,
+  "response": "All evidence is in. Three tools (statsmodels, mpmath, Wolfram Language via local Wolfram Engine) agree on every interval; the arm-isolation, the fix, the falsifier, the mutation check, and the archive census all ran. Summary of what execution showed, then the machine-readable block.\n\n**What execution decided.** Position A's site is real but its repair is a no-op: with the severity clause removed, the valve's `has_reviews` guard (`verdicts`-only) still refuses C0066/C0073, so A4 = 2 at every round through 40. Position B's discriminator (`verdicts == []`) is correct, but its framing (\"why does no model file a verdict?\") is half-wrong by the registry's own contents: models assessed these entries five times each \u2014 the WITHDRAW door recorded every assessment into `computed_evidence`, because the 2026-09-07 ruling rightly refuses to let an unproven severity buy a retirement. The activity exists; the valve reads the wrong channel. Neither arm alone releases anything; both together release both entries to the designed UNCONFIRMED/HIL hand-off without retiring, closing, or voting on anything. That is a composition demonstrably beating each arm alone, where each arm alone equals doing nothing.\n\n<<<CDSFL_ANSWER_BEGIN>>>\n\n**position**: BOTH \u2014 with a correction to each. A names a real asymmetry (counter severity-free since ruling 23; valve severity-gated) but A's repair alone is executable-no-op: `has_reviews` still blocks. B names the true discriminator (`verdicts == []`) but misdiagnoses it as a missing verdict; the panel's review activity exists, recorded by the WITHDRAW door into `computed_evidence`, a channel the valve never read. The repair is at A's site, on both guards, using B's evidence.\n\n**evidence_for_position**: `scripts/a4_blocker_arm_isolation_2026-10-03.py` \u2014 four textual variants of the real module, each sweeping `_update_finding_statuses` over the rehydrated archived registry, rounds 8\u201340, reading `unverified_critical_count()` after every call. Printed:\n```\nORIG      A4@start=2 ... A4@r40=2 first_zero_round=None exhausted={'C0066': False, 'C0073': False}\nA_ONLY    A4@start=2 ... A4@r40=2 first_zero_round=None   (severity clause removed; verdicts-only reviews)\nB_ONLY    A4@start=2 ... A4@r40=2 first_zero_round=None   (computed_evidence counted; severity clause kept)\nA_PLUS_B  A4@start=2 A4@r13=1 A4@r15=0 first_zero_round=15 exhausted both True, status both UNCONFIRMED\n```\n\n**composes**: true, by that measurement: each arm alone leaves A4 = 2 at every round (identical to the shipped code); composed, A4 \u2192 1 at round 13 (C0066, age 8 \u2265 `exhausted_round_threshold` 8), \u2192 0 at round 15 (C0073), with both statuses still UNCONFIRMED \u2014 the designed HIL terminal \u2014 and neighbours C0042/C0069 untouched at CLOSED. No single arm suffices, so the single-arm preference cannot apply.\n\n**root_cause**: `bench/reference_runner_v3.py`, pre-pass 1 of `_update_finding_statuses` (shipped lines 3931\u20133941). Ruling 23 (2026-09-06) made `unverified_critical_count` severity-free, but every exit stayed narrower than the counter: the valve required `severity >= 0.7` AND `len(verdicts) > 0`; routing takes only `escalated` criticals (line 6761); pre-pass 2 needs a verdict row; the falsifier path needs code no model filed; and the WITHDRAW door (line ~7546) records sub-critical/unproven-severity assessments into `computed_evidence`, which nothing on the release side read. A sub-0.7 UNCONFIRMED entry with zero verdict rows therefore had no exit at ANY round \u2014 demonstrated by the r40 sweep \u2014 and run 1b burned to max_rounds on exactly two such entries.\n\n**fix_path**: `bench/reference_runner_v3.py` (pre-pass 1 of `_update_finding_statuses`). Two changes: (1) valve scope matched to its readers per status \u2014 UNCONFIRMED entries valve severity-free, matching `unverified_critical_count`; all other valve statuses keep the 0.7 scope, matching `open_crit_high_count`, so no flag is written that no reader consults; (2) `has_reviews` counts recorded review activity in either channel: `verdicts` OR `computed_evidence` (whose only writers are `falsifier_refuted` \u2014 a tool ran \u2014 and `reasoned_withdrawal` \u2014 a dispatched model's recorded assessment).\n\n**fix_rationale**: Simplest sufficient \u2014 it repairs the one existing mechanism built for exactly this (\"cannot block for ever\"), adds no new flag, counter, status, or entry point, and every line it touches is executed by the delivered test. Additive both ways: nothing is disabled (age guard kept, requires-review-activity guard kept \u2014 entries with no recorded activity in either channel still never exhaust, pinned by test), and the released entries are not retired \u2014 they stay UNCONFIRMED and go to the human with the withdrawal evidence on file, which is minimal-HIL, not zero-HIL, and not a vote: the severity float decides nothing, the withdrawals close nothing. The alternative (a new A4 skip keyed on `hil_has_computed_evidence` plus a paired reporter) would duplicate the valve's age/activity guards under a second name \u2014 more surface, same function.\n\n**falsifier_path**: `bench/tests/test_exhausted_valve_matches_a4_scope_2026-10-03.py` \u2014 9 tests: the archived before-state as fact; release at threshold age through the REAL registry and REAL pre-pass; both arm-insufficiency pins; three guard-preservation pins (age, no-activity, critical-OPEN path byte-identical); and the gate called before/after including an honesty pin that run 1b is NOT retro-rescued.\n\n**falsifier_command**: `python3 -m pytest bench/tests/test_exhausted_valve_matches_a4_scope_2026-10-03.py -q`\n\n**falsifier_output**: `9 passed in 0.38s` (post-fix). Before the fix the same behaviour was observed as the failure: ORIG sweep A4 = 2 at rounds 8\u201340, `first_zero_round=None`.\n\n**mutation_check**: Executed \u2014 fix reverted by exact hunk swap, test re-run, fix restored byte-identical (sha256 verified): `4 failed, 5 passed`. Failing: `test_run1b_blockers_release_at_threshold_age` (A4 stays 2 at r13/r15), `test_subcritical_unconfirmed_with_recorded_withdrawal_exhausts`, `test_severity_arm_alone_is_insufficient` and `test_age_guard_kept` (shipped code never enters the valve for sub-critical UNCONFIRMED, so `exhausted` is popped \u2014 key absent, not False). Restored run: `9 passed`. Neighbour regression: 60 tests across the six A4/valve/predicate suites pass; 92 more across valve-reader, open-crit, gamma-alt, status-transition, EXTEND and transport-guard suites pass.\n\n**a4_before**: 2 \u2014 obtained by calling `unverified_critical_count()` on `FindingRegistry.from_dict` of the archived `runner_state.json`.\n\n**a4_after**: 2 at the archived final round (ages 2 and 0 against threshold 8 \u2014 the fix does not and must not flip an archived verdict); by calling `_update_finding_statuses` forward: 1 at round 13, 0 at round 15. Without the fix: 2 at every round tested through 40.\n\n**gate_after**: Called. At round 7 as-run (A4=2): `(False, \"A4 BLOCK: 2 ...\")`. At round 7 with A4 counterfactually 0: `(False, \"two-sided gate not met: novel_crit_recent=[1, 0, 0], gamma_critical=0.732 ...\")` \u2014 **run 1b would still not converge**, plainly: its non-convergence was overdetermined \u2014 a novel critical landed at round 5 (inside the 3-round window), `max_rounds=8` with `extension_cap=8` (no headroom), and `exhausted_round_threshold=8` exceeds the rounds remaining after either blocker's birth. In a continuation, the gate returns `(True, \"CRITICAL_QUIESCENCE_CONVERGED ...\")` the first round where the zero tail and the released A4 coincide \u2014 round 15 under this config. The fix converts a permanent block into an age-bounded one; it rescues nothing retroactively.\n\n**figures** (every one produced by a script run here):\n- A4 before = 2; contested(8) = 1; irreducible_queue = 0, decomposition (0,0); open_crit_high = 0 \u2014 inline rehydration calls (first harness block).\n- Arm isolation: ORIG/A_ONLY/B_ONLY A4=2 at r8\u2013r40; A_PLUS_B A4: 2\u21921 (r13) \u21920 (r15) \u2014 `scripts/a4_blocker_arm_isolation_2026-10-03.py`.\n- Archive census (`scripts/a4_blocked_entry_census_2026-10-03.py`, statsmodels \u2261 mpmath to 1e-6, Wolfram Language local engine agreeing to shown digits): 59 archives readable (not 65); 22/59 = 37.2881% runs with \u22651 counted entry, Wilson [26.0840%, 50.0464%]; 175 counted entries (not 150); severity-clause-ALONE 57/175 = 32.5714% [26.0672%, 39.8244%]; BOTH guards 52/175 = 29.7143% [23.4381%, 36.8619%]; critical-zero-verdict 43/175 = 24.5714%; releasable by composed fix 99/175 = 56.5714% [49.1645%, 63.6961%]; the 76 with no recorded activity in either channel stay blocking, correctly.\n- Brief's quoted intervals reproduce exactly: 22/65 \u2192 [23.5335%, 45.9616%]; 58/86 \u2192 [56.9779%, 76.4143%] (three tools).\n- Gate figures: gamma_critical passed to the gate = 0.7323 (report `gamma_critical_history[-1]`); 0.4274 = all-severity `gamma_history[-1]` \u2014 gate call output and report read.\n\n**refutation_condition**: Any of: (1) a run or test showing the shipped code releasing C0066/C0073 at some round \u2014 my permanence sweep only reached round 40; (2) a demonstration that single-arm A or B releases them under the run's real config \u2014 my variants are textual edits, and a mis-built variant would void the composition claim (I verified the A_ONLY substitution text, but an independent rebuild is the stronger check); (3) a reader of `exhausted` or `computed_evidence` I did not find whose behaviour the fix changes harmfully \u2014 my reader enumeration was grep-based; (4) evidence that `computed_evidence` rows can be minted without a real dispatch (which would make the activity guard spoofable and the evidence arm a vote in disguise); (5) a founder ruling that sub-critical UNCONFIRMED entries must hold A4 until a verdict row exists, in which case the correct repair is instead at the WITHDRAW door (write a verdict row alongside the evidence row) \u2014 same discriminator, different channel.\n\n**disagreement**: Four, with measurements. (1) The brief's \"gamma_critical finished at 0.4274\" misattributes the series: the gate receives gamma_critical = 0.7323 (`gamma_critical_history[-1]`); 0.4274 is the all-severity gamma. The conclusion (flattened, \u2265 0.30) survives \u2014 more comfortably than stated. (2) Position A's \"107 of 150 blocked by the severity clause alone\" does not reproduce and is internally confounded: on the 59 archives present, only 57/175 are blocked by the severity clause *alone*; 52 need both guards, and 57+52 = 109 \u2248 107 strongly suggests A counted \"severity < 0.7\" as \"severity clause alone\", conflating a failing guard with a sole blocker \u2014 the exact conflation that made A's repair a no-op on this run. (3) The archive is 59 runs here, not 65, and 175 counted entries, not 150; A's 22 blocked runs matches but its denominator does not. (4) Position B's \"the question becomes why no model files a verdict\" is the wrong question: five models per entry filed assessments; the runner's own WITHDRAW door routed them into `computed_evidence` by ruling \u2014 the defect is a write channel with no reader, which is also this project's most-confirmed defect class (additions nothing reaches). The brief's claim that C0066's withdrawal was \"recorded by one mechanism and read by none\" is confirmed and understated: five withdrawals, read by none. A's \"severity immutable, 0 of 523\" I could not reproduce or refute in-sandbox and mark unverified rather than disputed.\n\n<<<CDSFL_ANSWER_END>>>\n\n**Termination.** Four falsification passes: (1) arm isolation over the real registry; (2) fix + 9-test falsifier + executed mutation check with byte-identical restore; (3) neighbour regression (60 + 92 targeted tests, all green); (4) archive census with triple-tool statistics, which also tested the brief's own figures. The final pass surfaced no new above-threshold finding \u2014 the residual items (76 archive entries with no recorded activity remain blocking; 8-round configs still cap before the age valve opens for late-born entries) are design-consistent behaviour, named here rather than silently absorbed. Wolfram ran (local Wolfram Engine, 1 call, attributed above) and agreed with statsmodels and mpmath on every interval. Done: the composed valve repair is delivered at `bench/reference_runner_v3.py`, falsified by `bench/tests/test_exhausted_valve_matches_a4_scope_2026-10-03.py`, with both producing scripts in `scripts/`.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_b9igb66v/repo",
+      "built": false
+    }
+  ]
+}
