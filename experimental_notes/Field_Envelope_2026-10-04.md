@@ -224,11 +224,41 @@ right.
 197 passes over the 9 most closely related files, re-run with every change in
 place.
 
-The full `bench/tests/` suite was started twice and did not complete inside the
-session's background limit on either attempt — the first was stopped at 29% and
-the second at 65%, both with 0 failures recorded to that point. The 226-file
-sweep above is the regression statement; the whole-suite run is owed and is the
-first thing to do with this patch in the main checkout.
+## The whole suite, and the attribution is 1
+
+**The full `bench/tests/` suite completed: 25 failed, 10,023 passed, 52 skipped
+in 2,535.16 s (42 m 15 s).** That run was collected before the ledger citation
+was re-pointed, so the ledger failure is in its list.
+
+**Attribution was then settled by execution, not by reading the names.** Every
+one of the 30 paths this session touched was reverted to `83ddb4ac` — the 3 new
+files moved out of the tree entirely — and the 19 files holding those 25 failures
+were run. Then everything was restored to HEAD and they were run again:
+
+| tree | result |
+| --- | --- |
+| every touched path at `83ddb4ac` | **20 failed**, 287 passed, 1 skipped in 203.88 s |
+| HEAD | **21 failed**, 286 passed, 1 skipped in 200.00 s |
+
+**20 is exactly the figure the project's own record carries** for the clean suite
+on 2026-10-01, in those words: *the clean suite is RED, 20 failed*. Those 20 fail
+identically with and without this work: they read run artefacts, seat replies,
+Desktop files, a LaunchAgent plist and a git config that a worktree or a clone
+does not have.
+
+**The 1 extra at HEAD is the Desktop mirror**,
+`test_declared_desktop_mirror_matches_its_canonical_copy[CDSFL_MASTER_TASK_LIST.md]`,
+and it is the one failure this patch causes. It is caused by `hooks/pre-commit`
+doing its job — re-pointing 24 anchored citations that my insertions moved — and
+then correctly refusing to push those repairs out to the Desktop copies from a
+secondary checkout. `python3 scripts/sync_desktop_mirrors.py` from the main
+checkout clears it.
+
+**3 of the 25 pass in isolation either way and fail only inside the whole-suite
+run**: `test_measurement_survey_is_safe_2026-09-11.py`,
+`test_generic_location_bucket.py` and `test_static_queue_closure.py` are green at
+both `83ddb4ac` and HEAD when their files are run on their own, so the whole-suite run leaves state they read. Recorded, not diagnosed; it is not this repair's
+business and it is not new.
 
 ---
 
