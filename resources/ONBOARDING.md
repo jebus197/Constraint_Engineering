@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 4 October 2026 03:00 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 4 October 2026 22:48 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
