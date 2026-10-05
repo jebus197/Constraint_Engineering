@@ -121,7 +121,7 @@ Arm 4's own report records this:
 
 ### And then the free panel found something better: your fix was already built, and dead
 
-`fable` went looking and found **`sk_score_prose_listings`** — declared on `RunnerConfig` ([:1492](bench/reference_runner_v3.py:1492)), threaded into `compute_sk` ([:10881](bench/reference_runner_v3.py:12267)) and **honoured** there ([:10938](bench/reference_runner_v3.py:12267)). It is your third outcome, already written, already wired to the scorer.
+`fable` went looking and found **`sk_score_prose_listings`** — declared on `RunnerConfig` ([:1492](bench/reference_runner_v3.py:1492)), threaded into `compute_sk` ([:10881](bench/reference_runner_v3.py:12375)) and **honoured** there ([:10938](bench/reference_runner_v3.py:12375)). It is your third outcome, already written, already wired to the scorer.
 
 **It could not be reached by any path.** `run_experiment` forced `sk_enabled=False` for every non-Python target *before* the flag's only call site, which sits behind `if cfg.sk_enabled:`. So a Python target never enters the prose branch, and a non-Python target never reaches the evaluator at all. **An addition nothing reaches** — the defect class this project has confirmed 11 times and zero of the opposite kind.
 
@@ -135,7 +135,7 @@ Both free seats derived this independently, and it is the same shape as the R_k 
 
 In `bench/routing.py`, `last_code = code` is assigned **before** the emptiness check. So an `ERROR` carrying a non-empty body *proves* the falsifier was executed and crashed. All 6 UNTOOLABLE entries carry exactly that: verdict `ERROR`, 600 characters of source, `resolved: False`. `_apply_routing` wrote the verdict back **only** on `result.resolved`, so a ladder that ran and did not confirm left the pre-routing label standing for ever.
 
-**The harm, again, is false feedback into the panel being measured.** `_rejection_lines` ([:12594](bench/reference_runner_v3.py:14331)) branches on that field. `ERROR` says *"your test did not run to a verdict… Re-write it so it runs."* `UNTOOLABLE` says *"nothing runnable was attached."* **All 6 were told to attach a falsifier that had already been written and had already crashed.** A seat told the first debugs what it has; a seat told the second starts from nothing.
+**The harm, again, is false feedback into the panel being measured.** `_rejection_lines` ([:12594](bench/reference_runner_v3.py:14562)) branches on that field. `ERROR` says *"your test did not run to a verdict… Re-write it so it runs."* `UNTOOLABLE` says *"nothing runnable was attached."* **All 6 were told to attach a falsifier that had already been written and had already crashed.** A seat told the first debugs what it has; a seat told the second starts from nothing.
 
 **And it explains arm 4's halt** — which I blamed on a routing cap, withdrew, and left with no replacement. `routing_deferred` drove the irreducible queue to 8 against a bound of 2, and the run halted at round 0. The damage was a halted run, not a mis-scored finding.
 

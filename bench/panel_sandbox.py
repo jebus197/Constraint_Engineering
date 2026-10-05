@@ -197,8 +197,129 @@ def _purge_bytecode(dest: Path) -> int:
     return removed
 
 
-def build(repo: Path) -> Path:
+def purge_round_evidence(dest: Path, round_names) -> int:
+    """Remove every artefact of the named panel round(s) from a sandbox copy.
+
+    WHY THIS EXISTS. Panel review runs in star topology: each seat answers BLIND
+    first, and a joint round follows once the blind replies are in. A blind round
+    is only blind if the seat cannot read what the other seat said -- and the
+    sandbox is a whole-repository clone, so the moment round 1's replies are
+    harvested into the tree, every later sandbox carries them.
+
+    THIS HAS ALREADY HAPPENED ONCE AND WAS RECORDED RATHER THAN FIXED. The
+    2026-10-03 session state says of the three-round sequence: "ROUND 2 WAS NOT
+    BLIND WITH RESPECT TO ROUND 1: every round-2 sandbox contained round 1's
+    harvested seat evidence, so its richer output cannot be attributed to the
+    standards alone. The containment fix is to exclude prior rounds' seat evidence
+    from a blind round's sandbox copy." That fix is this function.
+
+    It reproduced again on 2026-10-05: a cc2 blind re-run was dispatched at 04:33
+    after the fable seat's full reply had been harvested into the tree at 03:18,
+    and the sandbox was verified to contain both
+    `experimental_notes/seat_evidence/<round>/fable_FULL_REPLY.md` and the mirrored
+    `experimental_notes/evidence/panel_records_*/<round>/fable.json`. The run was
+    killed rather than allowed to produce a contaminated comparison.
+
+    A POST-COPY PURGE, for the reason `_purge_bytecode` gives: `build` clones with
+    `cp -Rc`, a clone takes everything, and the `ignore=` callable only runs on the
+    fallback path. Filtering at copy time is therefore not available here.
+
+    VERIFIED, NOT ASSUMED, to the same standard as the credential scrub: the caller
+    re-walks for survivors and refuses the sandbox if any remain. A purge that
+    silently missed a file would leave the sandbox looking blind while it is not,
+    which is worse than no purge because it would be trusted.
+    """
+    removed = 0
+    for name in round_names:
+        name = str(name).strip()
+        if not name:
+            continue
+        for q in sorted(dest.rglob(f"*{name}*"), key=lambda z: -len(z.parts)):
+            try:
+                if q.is_dir() and not q.is_symlink():
+                    removed += sum(1 for _ in q.rglob("*") if _.is_file())
+                    shutil.rmtree(q, ignore_errors=True)
+                elif q.exists() or q.is_symlink():
+                    q.unlink(missing_ok=True)
+                    removed += 1
+            except OSError:
+                continue
+    return removed
+
+
+def round_fingerprints(round_dir: Path, n: int = 12, min_len: int = 40) -> list:
+    """Distinctive phrases from a round's seat replies, for CONTENT checking.
+
+    A path check alone cannot establish blindness, and assuming it could is the
+    error this function exists to prevent. Measured 2026-10-05: after purging every
+    path containing the round id, the sandbox still carried the other seat's
+    verdict through `Panel_FULL_RECORD_Fingerprint_Ladder_2026-10-05.md` and
+    `The_Blockers_Were_Shown_As_Settled_2026-10-05.md` -- both written FROM that
+    round, neither named for it. The purge reported 0 survivors and the seat could
+    still read the whole review.
+
+    Phrases are drawn from the replies themselves so the check cannot drift from
+    what was actually said.
+
+    `n` IS 12 WORDS, NOT 6. At 6 the first version returned 0 fingerprints on a
+    real reply and the guard would have passed over nothing: a 6-word English
+    phrase averages about 31 characters, below the 40-character floor that keeps
+    common phrases out, so every candidate was rejected. Caught by its own test.
+    """
+    out = []
+    for q in sorted(round_dir.glob("*.json")):
+        if q.name.endswith(".tools.json"):
+            continue
+        try:
+            d = json.loads(q.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        body = d.get("response") if isinstance(d, dict) else None
+        if not isinstance(body, str) or not body.strip():
+            continue
+        words = body.split()
+        for i in range(0, max(0, len(words) - n), max(1, (len(words) - n) // 24 or 1)):
+            phrase = " ".join(words[i:i + n])
+            if len(phrase) >= min_len and phrase not in out:
+                out.append(phrase)
+    return out
+
+
+def surviving_round_evidence(dest: Path, round_names, blind_text=()) -> list:
+    """What a sandbox can still reach of a round it must be blind to.
+
+    Returns PATHS naming the round plus any file whose CONTENT carries one of
+    `blind_text`. Empty means blind. A caller passing only `round_names` gets the
+    path check alone, which 2026-10-05 showed is NOT sufficient on its own.
+    """
+    out = []
+    for name in round_names:
+        name = str(name).strip()
+        if name:
+            out.extend(dest.rglob(f"*{name}*"))
+    if blind_text:
+        seen = set(out)
+        for q in dest.rglob("*"):
+            if not q.is_file() or q in seen:
+                continue
+            try:
+                if q.stat().st_size > 4_000_000:
+                    continue
+                body = q.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            if any(t in body for t in blind_text):
+                out.append(q)
+                seen.add(q)
+    return out
+
+
+def build(repo: Path, blind_of=(), blind_text=()) -> Path:
     """A throwaway copy of `repo` a seat may write to freely.
+
+    `blind_of` names panel rounds this sandbox must NOT be able to read, so a
+    blind round in star topology is genuinely blind. Default empty: every existing
+    caller behaves exactly as before, which is what makes this additive.
 
     Clone if the filesystem supports it (metadata cost), else copy. Flags are
     cleared immediately: `.env` carries BSD `uchg`, `cp -Rc` preserves it, and an
@@ -230,6 +351,30 @@ def build(repo: Path) -> Path:
             resolved = (link.parent / target).resolve()
             if target.is_absolute() or not str(resolved).startswith(str(dest.resolve()) + os.sep):
                 link.unlink()
+    # PRIOR-ROUND EVIDENCE, before the credential scrub so a refusal below leaves
+    # nothing half-purged. Default empty, so this is inert unless a caller asks.
+    if blind_of or blind_text:
+        if blind_of:
+            purge_round_evidence(dest, blind_of)
+        if blind_text:
+            # CONTENT-BEARING FILES ARE REMOVED TOO, not merely detected. A file
+            # carrying the other seat's verdict defeats blindness whatever it is
+            # called.
+            for q in list(surviving_round_evidence(dest, (), blind_text)):
+                try:
+                    q.unlink(missing_ok=True)
+                except OSError:
+                    continue
+        leaked = surviving_round_evidence(dest, blind_of, blind_text)
+        if leaked:
+            shutil.rmtree(base, ignore_errors=True)
+            raise RuntimeError(
+                f"panel sandbox still exposes {len(leaked)} artefact(s) of the "
+                f"round(s) it must be blind to, e.g. "
+                + ", ".join(sorted(str(q.relative_to(dest)) for q in leaked[:4]))
+                + ". A blind round that can read the other seat's reply is not a "
+                "blind round."
+            )
     # Credentials last, and VERIFIED rather than assumed: a scrub that silently
     # missed a file would leave the sandbox looking safe while it is not, which is
     # worse than no scrub at all because it would be trusted.

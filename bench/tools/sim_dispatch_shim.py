@@ -105,7 +105,47 @@ def _record(label: str, elapsed: float, chars: int, budget: int,
 # than the seats it stands in for biases the rehearsal in the one direction that
 # makes it useless -- it under-finds, and the run looks cleaner than the real one
 # will be. Both entry points now default to opus and both accept an override.
-def make_shim(model: str = "opus", timeout: int = 900):
+#: A MIXED-CAPABILITY LADDER FOR THE STAND-IN SEATS (founder ruling 2026-10-05).
+#:
+#: Until this date every simulated seat was answered by ONE model, defaulting to
+#: `opus`. That had 2 costs. The first is money: measured 2026-10-04, dispatches
+#: carrying a reply went from 6.6959% simulated before 2026-10-01, Wilson [6.0633%,
+#: 7.3894%], to 100% after, Wilson [95.5765%, 100.0000%] -- so Max-plan dispatches
+#: per active day rose 5.7828x even though TOTAL dispatches fell to 0.3872x of the
+#: old rate. Every one of those is the most expensive model available.
+#:
+#: The second cost is FIDELITY, and it runs the opposite way to the comment above
+#: this function. That comment warns that a stand-in WEAKER than the seats it
+#: replaces "under-finds, and the run looks cleaner than the real one will be" --
+#: a sound argument against a uniformly weak bench, and no argument at all against
+#: a mixed one. The real panel is 6 vendors of DIFFERING capability. Six identical
+#: seats removes exactly the diversity the panel exists to exploit, so a uniform
+#: bench is arguably the less faithful rehearsal, not the more faithful one.
+#:
+#: Only model names this project already dispatches are used: `fable` and `opus`,
+#: per the roster in `.claude/CLAUDE.md`. No model id is invented here.
+#:
+#: EMPTY BY DEFAULT, so behaviour is unchanged unless a ladder is asked for.
+SEAT_MODEL_LADDER: dict = {}
+
+#: The ladder the founder described: "some of these sim instances can be cc2, some
+#: can be Opus and some can be Fable", with the schema free to decide placement
+#: later from the per-seat fingerprints in `bench/fingerprints/`. Selected with
+#: `--seat-models ladder`. The assignment below is a STARTING POINT, not a measured
+#: optimum: no run has yet compared it against the uniform bench, and that
+#: comparison is the thing that would justify it.
+DEFAULT_LADDER: dict = {
+    "Fable-SIM": "fable",
+    "Gemini-SIM": "fable",
+    "CC2-SIM": "opus",
+    "Codex-SIM": "opus",
+    "ChatGPT-SIM": "opus",
+    "DeepSeek-SIM": "fable",
+}
+
+
+def make_shim(model: str = "opus", timeout: int = 900,
+              seat_models: dict | None = None):
     """Return a drop-in replacement for ``dispatch_to_model``.
 
     THE SEAM MOVED DOWN ONE LEVEL, 2026-08-30, AND THIS IS WHY
@@ -173,7 +213,12 @@ def make_shim(model: str = "opus", timeout: int = 900):
         budget = int(wall_clock_limit) if wall_clock_limit and wall_clock_limit > 0 else timeout
         try:
             r = subprocess.run(
-                ["claude", "-p", full, "--model", model, "--output-format", "text",
+                # PER-SEAT MODEL. Falls back to the single `model` for any seat the map
+                 # does not name, so an absent or partial map behaves exactly as
+                 # before -- the ladder adds a path and removes none.
+                 ["claude", "-p", full, "--model",
+                  (seat_models or {}).get(label, model),
+                  "--output-format", "text",
                  "--no-session-persistence",
                  # FOUNDER RULING 2026-08-31: "remove personal directives like
                  # this and any disability directives from the directive set fed
@@ -353,9 +398,16 @@ def make_decomposed_shim(dispatch):
     return _dd
 
 
-def install(model: str = "opus", timeout: int = 900):
-    """Patch BOTH dispatch primitives. Returns the originals for restore()."""
-    dispatch = make_shim(model, timeout)
+def install(model: str = "opus", timeout: int = 900,
+            seat_models: dict | None = None):
+    """Patch BOTH dispatch primitives. Returns the originals for restore().
+
+    `seat_models` maps a SIM seat label to the model that answers for it, so a
+    run can use a mixed-capability bench instead of one model for all 6 seats.
+    Absent or partial, every unnamed seat falls back to `model` and behaviour is
+    exactly as before.
+    """
+    dispatch = make_shim(model, timeout, seat_models)
     originals = (R.dispatch_to_model, R._multiturn_fallback,
                  R.decomposed_dispatch)
     R.dispatch_to_model = dispatch

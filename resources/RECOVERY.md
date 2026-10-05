@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 4 October 2026 22:48 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 5 October 2026 23:45 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -22,6 +22,40 @@ session loss, compaction event, or fresh start with a new model instance.
 **THE ACTION THIS RULING IMPLIES, and it is the founder's, not CC1's.** Put the store location and the passphrase in the password manager, together, off this machine. Losing either makes the sealed archive unrecoverable, and the passphrase cannot be reset — the whole point of the design is that nothing running here can reach it. CC1 cannot do this and should not: it would mean handling the passphrase in plain text.
 
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
+
+---
+
+## SESSION STATE — 2026-10-05 23:40 BST (READ THIS FIRST)
+
+**BRANCH.** HEAD `a75382e3` on `sim/shakedown-2026-09-29`, level with its remote. `main` untouched at `b536ff86`. The founder's 2026-09-30 ruling binds: simulated work goes to the simulation branch, `main` only by agreement. **This save was written after a multi-hour internet outage and a reboot that prevented an `sv` at the end of the working session**; the work below existed only in the working tree, the TTS and the preserved panel records until now.
+
+**★★★ THE ROOT CAUSE OF NON-CONVERGENCE WAS FOUND, AND IT WAS NOT IN THE GATE'S ARITHMETIC.** `build_summary` rendered `UNCONFIRMED` findings inside the block headed *"SETTLED ... confirmed, closed, or merged. Do not CHALLENGE or re-describe them."* `UNCONFIRMED` is the ONLY status `unverified_critical_count` counts as an A4 blocker — established by CALLING both over all 12 statuses, not by reading either. So every finding holding a run open was shown to the panel as settled with challenge forbidden. **Measured: 175 of 175 attributed blockers, 100.0000%, Wilson [97.8520%, 100.0000%], across 22 of 59 archived registries.** Blockers attributed by LEAVE-ONE-OUT (a status predicate over-counted); the leave-one-out total and the sum of the counter's own returns agree exactly at 175. Producer `scripts/the_blockers_are_shown_as_settled_2026-10-05.py`. The word was overloaded and only this use was wrong: `gamma_critical` reaches the gate via `_settled_novelty_series`, which already excluded UNCONFIRMED. **The arithmetic was right; the prose sent to the models was wrong.**
+
+**THREE MECHANISMS ROUTED AROUND THE SAME CLASS.** The summary labelled them settled; `_apply_routing` refuses them (requires severity >= 0.7, while the A4 counter has NO severity test in its executable statements — proved by calling it: a lone 0.45 finding returns 1); and `_post_convergence_sweep` was the only servicer and runs after `converged` is assigned. **That is why the closing sweep looked like an afterthought: it was the only mechanism that did not believe the label.** 803 of 1424 residuals sit below the router's threshold, 56.3904%, Wilson [53.8010%, 58.9455%].
+
+**FIXED, AND THE SWEEP'S CAPABILITY IS NOW IN-ROUND.** An `UNRESOLVED` section replaces the mislabelling, and `record_in_round_falsifier_reattachments` brings the sweep's one exclusive capability — the id-addressed `FALSIFIER: <id>` parse — inside the round loop. **Invariant: a finding leaves the blocker count on EXECUTED evidence only; prose is recorded and clears nothing**, which restates the founder's 2026-07-28 anti-gaming guard rather than relaxing it. Monotonicity proved 3 ways (z3 unsat, SymPy bound, 248 transitions executed against the shipped counter). Inert on history by construction: 0 of 3473 archived replies carry the parsed form, Wilson [0.0000%, 0.1105%].
+
+**★★★ THE CAPABILITY LADDER HAS NEVER WORKED IN SIMULATION, TWICE OVER.** Fixed once on 2026-08-30 (a `-SIM` label mismatch left `ranked` EMPTY). Found again 2026-10-05: the order was then right but every seat was answered by the SAME model, so **0 of 6 source seats got a climb between two different models**. A config diff cannot find this — the ladder was armed throughout and inert in fact. **The simulated panel is statistically flat and the real one is not:** real chi-square 280.0138, df 4, p = 2.213221e-59; simulated chi-square 3.0084, df 5, p = 0.6987 (NumPy, scipy and Wolfram agreeing). And `routing.py` contains "fingerprint" exactly ONCE, in its docstring; the code ranks on a frozen June-2026 tuple while `_update_observed_fingerprint` writes a live profile every round that the ladder never reads.
+
+**★★ THE SEAT TIMEOUTS ARE NOT A cc2 PROPERTY.** Mann-Whitney over 64 cc2 and 65 fable successful replies: U = 2258.0, p = 0.4031. Fisher p = 0.7183 overall and 1.0000 recent. **But the rate HAS risen for BOTH** (cc2 4.08% -> 15.00%, fable 2.08% -> 10.00%; Fisher p = 0.046723, Barnard p = 0.044514), and **the failures are not independent**: 3 of the 5 failing rounds lost BOTH seats at near-identical durations (1956.0/1956.2, 902.0/902.0, 18.7/18.8 s), which an independence model puts at p = 1.556646e-07. Both seats share one subscription and were dispatched simultaneously; seats sharing a subscription are now serialised. **Hypothesis with strong correlational support, NOT an interventional result.**
+
+**PANEL: ONE BLIND ROUND AND ONE JOINT ROUND, 0 PAID.** `fingerprint_ladder_review_2026-10-05` (fable 1108.2 s, 74 tool calls; cc2 failed both attempts) and `fpl_star_2026-10-05` (cc2 17,462 chars, 71 tool calls, dispatched alone). Both full replies preserved verbatim under `experimental_notes/seat_evidence/`. **A blind cc2 re-run proved logically impossible** — the brief asks the seat to review that night's code, and that code carried the first seat's findings in its comments. **Blindness has a shelf life: collect every blind reply before writing any of them into the tree.**
+
+**WHAT THE PANEL FOUND AGAINST CC1, ALL VERIFIED.** (1) The source-text census was reported at 80 with none of mine while it was 81 and its guard was RED — measured, tree changed, stale figure reported. (2) `routing_max_rungs=4` was a parity break whose property is not dispatched: `resolve_via_routing` stops at the first CONFIRMED, so rung 3 runs only when rungs 1 and 2 both fail. **CC1 used that execution argument to refute one seat and failed to apply it to itself.** Now opt-in, parity by default. (3) A swallowed failure survived one loop up where `except Exception: continue` escaped a guard that only flags `pass`. (4) A capped list printed without its remainder. All 4 repaired. The joint round also refuted the first seat twice (the `co_consts` mechanism, and the pricing of its proposed mitigation).
+
+**SUITE.** Full board 2026-10-05: **12 failed, 10079 passed, 20 skipped in 4671.86 s**. 3 of the 12 were this session's own and are fixed; 5 were panel-record preservation and are fixed (118 of 118 rounds now mirrored); 1 is 2 modules inside stale agent worktrees with a syntax error, which is an outstanding founder decision; the remainder are long-standing. Targeted verification after the repairs: **677 passed, 0 failed** across every guard touched. Post-reboot re-verification 2026-10-05 23:35: **90 passed, 11 skipped** on the 6 new guard files, monotonicity PASS 3 ways, census 80 of cap 80, headline figure reproduces at 175 of 175.
+
+**16 FILES WERE STAGED THAT CC1 DID NOT STAGE.** All 20 hunks are automatic citation line-number re-points (`:13749` -> `:13980`, `:7375` -> `:7483`) consequent on this session's ~200-line additions to `reference_runner_v3.py` shifting everything below. Benign, but check before any commit.
+
+### OUTSTANDING, FOR THE FOUNDER
+1. Whether `_post_convergence_sweep` should ALSO move to before the verdict. Costs no extra dispatch; changes the 2026-07-28 guard.
+2. Whether `ESCALATED` and `WITHHELD` should also leave the SETTLED block. Neither is a blocker; accuracy rather than convergence.
+3. The severity test's return to the A4 counter — the 2026-09-06 ruling given and never implemented. Confirmed still absent by calling the counter.
+4. Which of the 2 convergence repairs from 2026-10-03 to adopt.
+5. The 3 carry-over gaps: `immune_memory_enabled` (13 of 49 real configs), `hardened_gate_enabled` (4 of 49), `apply_fixes_back_enabled` (1 of 49).
+6. The fingerprint falsification-dimension proposal — `experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md`, with the joint round's attack on it.
+7. The cc2 seat's provenance-attribution repair, deliberately NOT applied: 1370 of 16500 archived entries credit the falsifier to the model that REPORTED the finding rather than the one that WROTE it, 8.3%, in the direction that flatters the models the ladder demotes.
+8. **The Wolfram licence expires 2026-10-08, 3 days from this save** — assume manual renewal; automatic renewal failed the one time it was observed.
 
 ---
 

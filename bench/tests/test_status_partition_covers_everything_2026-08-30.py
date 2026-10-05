@@ -46,9 +46,37 @@ def _partition():
     return out
 
 
-def test_the_three_lists_are_all_present():
+def test_the_three_original_lists_are_all_still_present():
+    """None of the three original buckets may disappear; a FOURTH is allowed.
+
+    AMENDED 2026-10-05, and the amendment does not weaken the guard. This test
+    asserted equality on exactly 3 names, so adding a bucket failed it even
+    though the property the file exists to protect — every status lands in
+    exactly one section — was still satisfied. That property is held by
+    `test_every_status_in_the_vocabulary_is_covered` and
+    `test_the_lists_do_not_overlap`, both of which are generic over
+    `_partition()` and both of which pass over 4 buckets unchanged.
+
+    WHY A FOURTH EXISTS. `unresolved_statuses = ("UNCONFIRMED",)` was split out
+    of `compact_statuses` because `compact` renders under a header reading
+    "SETTLED ... confirmed, closed, or merged. Do not CHALLENGE or re-describe
+    them.", while `unverified_critical_count` counts UNCONFIRMED findings as the
+    A4 blockers holding convergence open. Measured over the archive by
+    `scripts/the_blockers_are_shown_as_settled_2026-10-05.py`: 175 of 175
+    attributed blockers were rendered under SETTLED, 100.0000%, Wilson
+    [97.8520%, 100.0000%]. See
+    `bench/tests/test_a_blocker_is_never_shown_as_settled_2026-10-05.py`.
+
+    Equality is kept as a SUBSET check rather than dropped, so deleting
+    `hidden_statuses` — the failure this test was written against — still fails.
+    """
     p = _partition()
-    assert set(p) == {"full_detail_statuses", "compact_statuses", "hidden_statuses"}, p
+    original = {"full_detail_statuses", "compact_statuses", "hidden_statuses"}
+    missing = sorted(original - set(p))
+    assert not missing, (
+        f"{missing} no longer exist in build_summary's partition; a bucket was "
+        f"removed rather than added, and findings in it are invisible. Found: "
+        f"{sorted(p)}")
 
 
 def test_every_status_in_the_vocabulary_is_covered():

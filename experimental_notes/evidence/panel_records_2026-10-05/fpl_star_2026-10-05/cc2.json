@@ -1,0 +1,309 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 17462,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ast && ls && echo \\\"---\\\" && git log --oneline -3 2>&1 | head -5\", \"description\": \"List repo root\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd; ls ~; ls / 2>/dev/null | head -30\", \"description\": \"Locate working directory\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls && echo \\\"--- git:\\\" && (git status --short 2>&1 | head -30)\", \"description\": \"List sandbox repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep 2026-10-05 ; echo \\\"--- tests new:\\\"; ls bench/tests | grep 2026-10-05\", \"description\": \"List tonight's files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md bench/routing.py bench/tools/sim_dispatch_shim.py bench/tools/run_simulated_experiment.py scripts/competence_provenance.py bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py bench/tests/test_sim_seat_model_ladder_2026-10-05.py 2>&1\", \"description\": \"Line counts of key files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import sys; print(sys.version)\\\"; ls bench/ | head -40\", \"description\": \"Python version and bench listing\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/bench/routing.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests | grep -E \\\"routing_ladder_prefix|measurement_scripts_answer_help\\\" ; echo \\\"--- scripts:\\\"; ls scripts | grep -E \\\"provenance_gate_reads_text\\\"; echo \\\"--- proposal review section:\\\"; grep -n \\\"Fable\\\\|review section\\\\|seat\\\" experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md | head\", \"description\": \"Check for fable seat deliverables\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"routing_max_rungs\\\" --include=*.py --include=*.json --include=*.md . | head -40\", \"description\": \"Find routing_max_rungs references\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"routing_max_rungs\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 60}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '120,200p' bench/tools/sim_dispatch_shim.py\", \"description\": \"Read DEFAULT_LADDER region\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '440,500p' bench/tools/run_simulated_experiment.py\", \"description\": \"Read sim runner config region\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, json, pathlib, re\\nsys.path.insert(0,'.')\\nfrom bench.routing import rank_falsifier_writers\\nfrom bench.tools.sim_dispatch_shim import DEFAULT_LADDER\\nSEATS=[\\\"CC2-SIM\\\",\\\"ChatGPT-SIM\\\",\\\"Codex-SIM\\\",\\\"DeepSeek-SIM\\\",\\\"Gemini-SIM\\\",\\\"Fable-SIM\\\"]\\nprint(f\\\"{'source':<13} {'rungs (budget 4)':<52} models\\\")\\nfor s in SEATS:\\n    r=rank_falsifier_writers(SE"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib\\nhits=[]\\nn=0\\nfor p in pathlib.Path('.').rglob('*.json'):\\n    if '.pytest_cache' in str(p) or 'node_modules' in str(p): continue\\n    try: d=json.loads(p.read_text(encoding='utf-8'))\\n    except Exception: continue\\n    if isinstance(d,dict):\\n        if 'routing_enabled' in d or 'experiment_name' in d:\\n            n+=1\\n            if 'routi"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.routing import resolve_via_routing, rank_falsifier_writers\\nfrom bench.tools.sim_dispatch_shim import DEFAULT_LADDER\\nSEATS=[\\\"CC2-SIM\\\",\\\"ChatGPT-SIM\\\",\\\"Codex-SIM\\\",\\\"DeepSeek-SIM\\\",\\\"Gemini-SIM\\\",\\\"Fable-SIM\\\"]\\n\\ndef run(source, budget, confirm_at):\\n    \\\"\\\"\\\"confirm_at = 1-based rung index that returns CONFIRMED; "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"fable\\\\|opus\\\\|haiku\\\\|sonnet\\\" .claude/CLAUDE.md 2>/dev/null | head -20; echo \\\"=== roster file?\\\"; ls .claude/ 2>/dev/null\", \"description\": \"Check model roster\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '70,95p' .claude/CLAUDE.md\", \"description\": \"Read full model roster table\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.routing import rank_falsifier_writers, DEFAULT_FALSIFIER_STRENGTH\\nfrom bench.tools.sim_dispatch_shim import DEFAULT_LADDER\\nSEATS=[\\\"CC2-SIM\\\",\\\"ChatGPT-SIM\\\",\\\"Codex-SIM\\\",\\\"DeepSeek-SIM\\\",\\\"Gemini-SIM\\\",\\\"Fable-SIM\\\"]\\n# Exp 42 per-vendor falsifier-confirm rates, quoted verbatim in bench/routing.py\\n# lines 34-40. Fa"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/exp45_configs/45_memory_statistics_live.json && python3 -c \\\"\\nimport json; d=json.load(open('bench/exp45_configs/45_memory_statistics_live.json'))\\nprint('routing_max_rungs in real exp45 parity config:', 'routing_max_rungs' in d)\\nprint('routing_enabled:', d.get('routing_enabled'))\\n\\\"\", \"description\": \"Check the named parity reference config\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"except Exception\\\" scripts/the_blockers_are_shown_as_settled_2026-10-05.py; echo \\\"=== probe_errors/counter_errors:\\\"; grep -n \\\"probe_errors\\\\|counter_errors\\\\|lower bound\\\\|complete\\\" scripts/the_blockers_are_shown_as_settled_2026-10-05.py | head -20\", \"description\": \"Inspect A2 repair state\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,200p' bench/tests/test_help_never_acts_2026-09-11.py\", \"description\": \"Read the help-never-acts guard\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, pathlib, importlib.util\\nsys.path.insert(0,'.')\\nspec=importlib.util.spec_from_file_location(\\\"hg\\\",\\\"bench/tests/test_help_never_acts_2026-09-11.py\\\")\\nhg=importlib.util.module_from_spec(spec); spec.loader.exec_module(hg)\\nps=sorted(pathlib.Path('scripts').glob('*_2026-10-05.py'))\\nprint(f\\\"{'script':<52} {'_parse_args':<12} {'answers_help':<13} {'WRITE"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in scripts/*_2026-10-05.py; do out=$(timeout 60 python3 \\\"$f\\\" --help 2>&1); rc=$?; first=$(echo \\\"$out\\\" | head -1); echo \\\"rc=$rc  $(basename $f)  | ${first:0:60}\\\"; done; echo \\\"=== unknown flag:\\\"; for f in scripts/*_2026-10-05.py; do timeout 60 python3 \\\"$f\\\" --no-such-flag >/dev/null 2>&1; echo \\\"rc=$? $(basename $f)\\\"; done\", \"description\": \"Execute --help and an unknown "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"co_names\\\\|co_consts\\\" bench/tests/ | head; echo \\\"=== source-text census cap:\\\"; grep -n \\\"80\\\\|CAP\\\\|census\\\" bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py | head -20\", \"description\": \"Find the co_names tests and the census cap\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in scripts/*_2026-10-05.py; do out=$(python3 \\\"$f\\\" --help 2>&1 | head -1); rc=${PIPESTATUS[0]}; python3 \\\"$f\\\" --help >/dev/null 2>&1; rc=$?; echo \\\"rc=$rc  $(basename $f)  | ${out:0:55}\\\"; done\", \"description\": \"Execute --help on all 9 scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py -q 2>&1 | tail -15; echo \\\"=== the co_names tests:\\\"; grep -n \\\"co_names\\\\|co_consts\\\" bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py\", \"description\": \"Run the A3 co_names tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '220,290p' bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py\", \"description\": \"Read the A3 conversions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Does a co_consts membership test behave as a SUBSTRING test, as the fable seat claims?\\nsrc = '''\\ndef f():\\n    \\\"\\\"\\\"A docstring mentioning round_falsifier_reattachments in prose.\\\"\\\"\\\"\\n    print(\\\"persisting round_falsifier_reattachments now\\\")\\n'''\\nns={}; exec(compile(src,'<m>','exec'),ns)\\nco=ns['f'].__code__\\nprint(\\\"co_consts =\\\", co.co_consts)\\nprint('ex"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/scripts/competence_provenance.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# B4: which RunnerConfig fields do REAL configs arm that the simulated runner never sets?\\nimport ast, json, pathlib, sys, collections\\nsys.path.insert(0,'.')\\nsrc=pathlib.Path('bench/reference_runner_v3.py').read_text(encoding='utf-8')\\ntree=ast.parse(src)\\nfields={}\\nfor n in ast.walk(tree):\\n    if isinstance(n,ast.ClassDef) and n.name==\\\"RunnerConfig\\\":\\n       "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, importlib.util, json, tempfile, pathlib, subprocess\\nspec=importlib.util.spec_from_file_location(\\\"cp\\\",\\\"scripts/competence_provenance.py\\\")\\ncp=importlib.util.module_from_spec(spec); spec.loader.exec_module(cp)\\nprint(\\\"1. falsifier_style is a regex over TEXT. Executed:\\\")\\nfor label,code in [\\n  (\\\"decoy open of /dev/null\\\", 'import json\\\\nassert 1==2"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"routing_model\\\\|resolved_by\\\\|routed_by\\\\|rungs_tried\\\\|model_used\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Check whether registry records the routing writer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '5390,5402p' bench/reference_runner_v3.py; echo \\\"=== measure misattribution in archived reports:\\\"; python3 - <<'EOF'\\nimport json, pathlib, collections\\nn_tot=n_routed=0; pairs=collections.Counter()\\nfor p in pathlib.Path('.').rglob('*_report.json'):\\n    if '.pytest_cache' in str(p): continue\\n    try: d=json.loads(p.read_text(encoding='utf-8'))\\n    except Exception: contin"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"DEFAULT_LADDER\\\" bench/tests/ | grep -v seat_evidence; echo \\\"=== provenance pins:\\\"; grep -rln \\\"competence_provenance\\\" bench/tests/\", \"description\": \"Find tests pinning the ladder map and the provenance script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,90p' bench/tests/test_sim_seat_model_ladder_2026-10-05.py\", \"description\": \"Read the sim seat model ladder test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '90,172p' bench/tests/test_sim_seat_model_ladder_2026-10-05.py\", \"description\": \"Read rest of sim ladder test\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"analyse\\\\|source_model\\\\|falsifier_style\\\\|unsafe\\\\|def test\\\" bench/tests/test_defect_rate_and_competence_provenance_2026-08-23.py | head -40\", \"description\": \"Check what pins analyse()\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# DERIVATION: can ANY 2-model seat map give 6 of 6 mixed AND 6 of 6 correctly\\n# directed at the real default budget of 2? Exhaustive over all 2^6 maps.\\nimport sys, itertools; sys.path.insert(0,'.')\\nfrom bench.routing import rank_falsifier_writers\\nSEATS=[\\\"CC2-SIM\\\",\\\"ChatGPT-SIM\\\",\\\"Codex-SIM\\\",\\\"DeepSeek-SIM\\\",\\\"Gemini-SIM\\\",\\\"Fable-SIM\\\"]\\nSTRENGTH=[\\\"Codex\\\","
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, itertools; sys.path.insert(0,'.')\\nfrom bench.routing import rank_falsifier_writers\\nSEATS=[\\\"CC2-SIM\\\",\\\"ChatGPT-SIM\\\",\\\"Codex-SIM\\\",\\\"DeepSeek-SIM\\\",\\\"Gemini-SIM\\\",\\\"Fable-SIM\\\"]\\nSTRENGTH=[\\\"Codex\\\",\\\"CC2\\\",\\\"ChatGPT\\\",\\\"Gemini\\\",\\\"DeepSeek\\\"]\\ndef base(m): return m[:-4] if m.endswith(\\\"-SIM\\\") else m\\ndef directed(ms): return all(not(ms[i]==\\\"fable\\\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"add_argument\\\\|ArgumentParser\\\\|def main\\\\|args =\\\" bench/tools/run_simulated_experiment.py | head -30\", \"description\": \"Read the launcher's parser\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/scripts/the_ladder_climb_is_measured_on_an_unexecuted_prefix_2026-10-05.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"The rung budget was raised to make a MIXED PREFIX appear. The prefix is not executed.\\n\\nWHAT THIS MEASURES, and why the distinction decides the repair.\\n\\nOn 2026-10-05 the simulated"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_ladder_climb_is_measured_on_an_unexecuted_prefix_2026-10-05.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The rung budget was raised to make a MIXED PREFIX appear. The prefix is not executed.\\n\\nWHAT THIS MEASURES, and why the distinction decides the repair.\\n\\nOn 2026-10-05 the simulated runner was given `routing_max_rungs=4` so that \\\"6 of 6\\nsource seats get a climb"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '200,215p' bench/tools/run_simulated_experiment.py\", \"description\": \"Read seat-models arg for style\"}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/bench/tools/run_simulated_experiment.py\", \"old_string\": \"    ap.add_argument(\\\"--seat-models\\\", choices=(\\\"uniform\\\", \\\"ladder\\\"),\\n                    default=\\\"uniform\\\",\\n                    help=\\\"uniform = one model for all seats (default); \\\"\\n                         \\\"lad"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tools/run_simulated_experiment.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\n\\nOLD_ARG = '''                         \\\"sim_dispatch_shim.DEFAULT_LADDER\\\")\\n'''\\nNEW_ARG = '''                         \\\"sim_dispatch_shim.DEFAULT_LADDER\\\")\\n    # ROUTING RUNG BUDGET -- OPT-IN, BECAUSE A DEEPER LADDER IS A PARITY BREAK.\\n    #\\n "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_ladder_climb_is_measured_on_an_unexecuted_prefix_2026-10-05.py 2>&1 | sed -n '1,16p'; echo \\\"EXIT=${PIPESTATUS[0]}\\\"\", \"description\": \"Re-run producer after the repair\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The rungs the ladder ACTUALLY DISPATCHES must span more than one model, in order.\\n\\nWHAT WAS WRONG, and it was wrong three times over.\\n\\n`bench/routing.py` ranks falsifier writers strongest-first and `resolve_via_routing`\\ntries only the first `routing_max_rungs` of the"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/tools/run_simulated_experiment.py /tmp/rse.bak\\npython3 - <<'PYEOF'\\nimport pathlib\\np=pathlib.Path(\\\"bench/tools/run_simulated_experiment.py\\\"); s=p.read_text()\\nold='''        **({\\\"routing_max_rungs\\\": args.routing_max_rungs}\\n           if args.routing_max_rungs is not None else {}),\\n'''\\nassert s.count(old)==1\\np.write_text(s.replace(old,\\\"\\\"))\\nprint(\\\"MUTATION APPLIED"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '60,105p' bench/tests/test_defect_rate_and_competence_provenance_2026-08-23.py\", \"description\": \"Read the provenance pinning tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/competence_provenance.py\\\"); s = p.read_text(encoding=\\\"utf-8\\\")\\n\\nOLD = '''def analyse(report: pathlib.Path) -> dict:\\n    ents = (json.loads(report.read_text()).get(\\\"registry\\\") or {}).get(\\\"entries\\\") or {}\\n    per = collections.defaultdict(lambda: collections.Counter())\\n    for e in ents.values():\\n        m = e.g"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_provenance_gate_attributes_the_writer_2026-10-05.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The provenance gate credited the falsifier to the model that did NOT write it.\\n\\nWHY THIS EXISTS. `scripts/competence_provenance.py` is the check\\n`bench/routing.py`'s star-marked founder warning names as the thing that must run\\nbefore `DEFAULT_FALSIFIER_STRENGTH` "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"awk 'NR>=5340 && NR<=5400 && /^def |^    def /' bench/reference_runner_v3.py; echo \\\"---\\\"; sed -n '5340,5360p' bench/reference_runner_v3.py | grep -n \\\"def \\\"\", \"description\": \"Find the real function name\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\nfor f, old, new in [\\n  (\\\"bench/tests/test_the_provenance_gate_attributes_the_writer_2026-10-05.py\\\",\\n   \\\"R._falsifier_owner(entry)\\\", \\\"R._corrected_copy_owner(entry)\\\"),\\n  (\\\"bench/tests/test_the_provenance_gate_attributes_the_writer_2026-10-05.py\\\",\\n   \\\"`_falsifier_owner`\\\", \\\"`_corrected_copy_owner`\\\"),\\n  (\\\"bench/tests/test_the_provenan"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py bench/tests/test_sim_seat_model_ladder_2026-10-05.py bench/tests/test_defect_rate_and_competence_provenance_2026-08-23.py bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py bench/tests/test_the_provenance_gate_attributes_the_wr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/source_text_assertions_2026-09-11.py 2>&1 | grep -E \\\"2026-10-05|prefix_is_mixed|provenance_gate_attributes\\\" | head\", \"description\": \"Identify my source-text assertion\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport importlib.util, pathlib, sys\\nsys.path.insert(0,'.')\\nspec=importlib.util.spec_from_file_location(\\\"c\\\",\\\"scripts/source_text_assertions_2026-09-11.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nfns=[k for k in dir(m) if not k.startswith('__')]\\nprint(fns)\\nPYEOF\", \"description\": \"Inspect the census producer API\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport importlib.util, sys\\nsys.path.insert(0,'.')\\nspec=importlib.util.spec_from_file_location(\\\"c\\\",\\\"scripts/source_text_assertions_2026-09-11.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nrows=m.survey()\\nprint(\\\"total:\\\", len(rows))\\nfor r in rows:\\n    if \\\"2026-10-05\\\" in r[0]: print(\\\"  \\\", r)\\nPYEOF\", \"description\": \"Locate m"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport importlib.util, sys\\nsys.path.insert(0,'.')\\nspec=importlib.util.spec_from_file_location(\\\"c\\\",\\\"scripts/source_text_assertions_2026-09-11.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nrows,_=m.survey()\\nfor r in rows:\\n    if \\\"2026-10-05\\\" in str(r[0]): print(\\\"  \\\", r)\\nPYEOF\", \"description\": \"Locate my census entry, fixed\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/aside && mv bench/tests/test_the_provenance_gate_attributes_the_writer_2026-10-05.py /tmp/aside/ && cp bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py /tmp/aside/mine_ladder.py\\npython3 - <<'PYEOF'\\nimport importlib.util, sys\\nsys.path.insert(0,'.')\\nspec=importlib.util.spec_from_file_location(\\\"c\\\",\\\"scripts/source_text_assertions_2026-09-11.py\\\")\\nm"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/aside2 && mv bench/tests/*2026-10-05.py /tmp/aside2/ 2>/dev/null\\npython3 - <<'PYEOF'\\nimport importlib.util, sys\\nsys.path.insert(0,'.')\\nspec=importlib.util.spec_from_file_location(\\\"c\\\",\\\"scripts/source_text_assertions_2026-09-11.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nrows,_=m.survey(); print(\\\"census with ALL 2026-10-05 test files"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '185,225p' bench/tests/test_a_blind_round_is_actually_blind_2026-10-05.py\", \"description\": \"Read the unconverted source-text assertion\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"PANEL_BLIND_OF\\\\|_BLIND_OF\\\\|blind_of\\\" bench/confer_maths_panel_2026-09-05.py | head -20\", \"description\": \"Find the real wiring to assert on\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_a_blind_round_is_actually_blind_2026-10-05.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nOLD = '''class TestTheDispatcherCanAskForIt:\\n    def test_the_env_var_reaches_build(self):\\n        \\\"\\\"\\\"An option nothing can select is an addition nothing reaches.\\\"\\\"\\\"\\n        src = (REPO / \\\"bench\\\" / \\\"confer_maths_pan"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py -q 2>&1 | tail -5; echo \\\"=== mutation-check the new executing checks:\\\"\\ncp bench/confer_maths_panel_2026-09-05.py /tmp/cmp.bak\\npython3 - <<'PYEOF'\\nimport pathlib\\np=pathlib.Path(\\\"bench/confer_maths_panel_2026-09-05.py\\\"); s=p.read_text()\\ns=s.replace(\\\"sandboxes[_n] = panel_sandbox.build(_REPO, blind"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript >/dev/null 2>&1 && wolframscript -code 'rate=<|\\\"Codex\\\"->0.90,\\\"CC2\\\"->0.75,\\\"ChatGPT\\\"->0.67,\\\"Gemini\\\"->0.80,\\\"DeepSeek\\\"->0.28|>; (* budget-4 transition gates, shipped map, per source seat *) t={(1-rate[\\\"Codex\\\"])(1-rate[\\\"ChatGPT\\\"]),(1-rate[\\\"Codex\\\"])(1-rate[\\\"CC2\\\"]),(1-rate[\\\"CC2\\\"])(1-rate[\\\"ChatGPT\\\"]),(1-rate[\\\"Codex\\\"])(1-rate[\\\"CC2\\\"])(1-rate[\\\"ChatG"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat >> experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md <<'MDEOF'\\n\\n---\\n\\n# Panel review \\u2014 seat Sonnet, 2026-10-05 (joint/star round)\\n\\nEvery repository claim below was demonstrated by execution in this turn. Producers:\\n`scripts/the_ladder_climb_is_measured_on_an_unexecuted_prefix_2026-10-05.py`;\\nguards: `bench/tests/test_the_exercised_ladder_pre"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_ladder_climb_is_measured_on_an_unexecuted_prefix_2026-10-05.py --help >/dev/null 2>&1; echo \\\"producer --help rc=$?\\\"\\npython3 -m pytest bench/tests/test_no_bare_or_silently_swallowed_exception_handlers*.py bench/tests/test_help_is_answered_2026-09-11.py -q 2>&1 | tail -6\", \"description\": \"Final guard checks\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest $(ls bench/tests/ | grep -iE \\\"swallow|help_is_answered\\\" | sed 's|^|bench/tests/|' | tr '\\\\n' ' ') -q 2>&1 | tail -8\", \"description\": \"Run swallow and help guards\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py 2>&1 | grep -iE \\\"chi|p *=|p-value|df\\\" | head -8\", \"description\": \"Reproduce the chi-square figures I rely on\"}"
+    }
+  ],
+  "n_tool_calls": 71,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 3207.1,
+  "response": "Both \u03c7\u00b2 figures reproduce exactly. Writing up.\n\n---\n\n# Verdict \u2014 seat Sonnet, 2026-10-05 (joint round)\n\nEvery repository claim below was demonstrated by execution in this turn. Quoted outputs are from those runs. Wolfram Language (local Wolfram Engine, via `wolframscript`) ran as second falsifier on the probability derivation and agreed.\n\n## Part A\n\n**A1 \u2014 the rename is safe; CC1's stated reason is false, and the fable seat is right.** Executed the guard's own `WRITES` matcher and `answers_help` against all 9 of tonight's scripts (the brief says 8; all 9 carry `_parse_args`):\n\n```\nscript                                            _parse_args  answers_help  WRITES   in guard population?\nin_round_clearance_is_monotone_2026-10-05.py      True         True          False    NO - outside population\n...  (all 9 identical)\n```\n\n`test_every_script_that_writes_answers_help` does not \"still cover these scripts\" \u2014 `WRITES=False` for every one, so they are outside its population by construction. The rename is safe because the harm class does not apply, not because coverage persisted. Behaviourally confirmed: `--help` on all 9 \u2192 `rc=0`, `usage:` as first line. This repo has no `.git`, so `tracked_scripts()`' `git ls-files` cannot run here; I applied the matcher directly instead.\n\n**A2 \u2014 repair correct, and the fable seat's run-level finding is already in CC1's tree.** `scripts/the_blockers_are_shown_as_settled_2026-10-05.py` now carries both `probe_errors` and `counter_errors`, and line 325 requires **both** empty before printing the completeness claim. Correct.\n\n**A3 \u2014 `co_names`/`co_consts` is genuinely stronger, and the other seat named the wrong false-pass.** Executed:\n\n```\nco_consts = ('A docstring mentioning round_falsifier_reattachments in prose.', ...)\nexact-membership \"round_falsifier_reattachments\" in co_consts -> False\n```\n\nTuple membership is **element equality, not substring containment**. A docstring or log message *containing* the token does not satisfy the check. CC1's comment (\"a comment, a docstring or a commented-out call cannot satisfy either\") is correct; the fable seat contradicted it and is wrong. The real cases:\n\n- **FALSE PASS (`co_names`)**: the name referenced without a reachable call \u2014 `if False:`, a bare assignment, a call behind a never-true flag. The code object records the reference, not the execution.\n- **FALSE PASS (`co_consts`)**: the *exact* literal in a non-persisting use \u2014 a membership test, a `del`, a key read. Narrower than source-matching, not zero.\n- **FALSE FAIL (both)**: a correct refactor into a helper. Executed: moving the call into a nested function leaves the outer `co_names` as `()`.\n\nSo: one rung up, not a different kind of evidence. Correctly described as a proxy.\n\n**A3, and this is my first above-threshold finding: the repair is INCOMPLETE and its own guard is RED.** CC1 reports \"all 3 were converted\" and the census back at 80. Measured:\n\n```\ncensus with ALL 2026-10-05 test files removed: 80\ncensus with them restored: 81    cap in the guard: 80\nthe 2026-10-05 contributors:\n    ('test_a_blind_round_is_actually_blind_2026-10-05.py', 'test_the_env_var_reaches_build', 203, ['PANEL_BLIND_OF'])\n```\n\nBaseline is exactly 80. Tonight's files add exactly 1 \u2014 a fourth source-text assertion that was never converted. `test_source_text_and_neighbour_audit_2026-09-11.py::test_the_class_has_not_grown_silently` **failed in the delivered tree**, and its failure also trips the DONE-marker check (\"task A6 is marked DONE and names \u2026 a completion claim with no support\"). Neither my files nor the fable seat's contribute. **Repaired**: converted to two executing checks (import with the env var set and read `_BLIND_OF` back; AST-count `panel_sandbox.build` call sites passing `blind_of` against the total, so a *new* unwired call site fails \u2014 a literal count of 2 could not detect that). Mutation-checked: removing `blind_of` from one call site \u2192 `1 failed, 14 passed`. Census now `10 passed`.\n\n**The pinned historical set: right call, and regression detection is not lost.** Substring-matching ids against a rendered block was unsound in both directions. The live status\u2192section map is still derived each run by calling `build_summary`, and the repaired partition is pinned by the executing `test_status_partition_covers_everything_2026-08-30.py`. The script's print alone would be insufficient (it always exits 0); the test is the guard.\n\n## Part B\n\n**B1 \u2014 first-pass-only is insufficient, and so is the randomised audit fraction.** \"A common population by construction\" is false: each model writes first-pass falsifiers for *its own* findings, and the populations differ \u2014 \u03c7\u00b2 = 280.013760, df 4, p = 2.213221e-59, reproduced exactly this turn. It trades a routing confound for a self-selection confound and measures \"demonstrates its own findings\", not \"resolves what others could not\".\n\nThe fable seat's randomised audit fraction is the right *identification* strategy and is **not deployable at this scale** \u2014 the seat did not price it. Routing fires only on un-confirmed criticals, the budget is 2, and rung 1 resolved 6 of 7 on the Exp-42 residual set. A randomised fraction of an already-rare event will not reach any usable minimum-sample threshold within the project's run cadence. Randomisation identifies; it does not estimate.\n\n**My proposal**: the Exp-42 *fixed residual set* already is a common population by construction, not by assumption. Rate as drift detector only \u2192 alarm \u2192 re-run the fixed-residual probe \u2192 only the probe reorders.\n\n**B2 \u2014 not sufficient, and it has a defect in the attribution that nobody raised.** The fable seat's two holes reproduce (I executed both):\n\n```\ndecoy open of /dev/null            -> reads\nthe word open( in a COMMENT        -> reads\ndocstring mentioning read_text     -> reads\nGemini: n=3 confirmed=2 reads=1 detached=2   unsafe -> False\n```\n\n**New, and larger:** `analyse` keyed per-model on `source_model` \u2014 the model that *reported* the finding. When routing resolves a critical the falsifier was written by a **rung**, recorded as `resolved_by_routing`. Measured over the archive:\n\n```\narchived registry entries scanned: 16500\nentries carrying resolved_by_routing: 1370\n   source_model='ChatGPT-SIM'  resolved_by_routing='Codex-SIM'  n=165  <- gate credits 'ChatGPT-SIM'\n   source_model='DeepSeek'     resolved_by_routing='Codex'      n=84   <- gate credits 'DeepSeek'\n```\n\n8.3% of all entries credited the falsifier to the model that **failed** to write a working one \u2014 and in the direction that matters: a strong rung's successful resolutions credited to the weak source model, flattering exactly the models the ladder demotes. The runner already carried the correct precedence in `_corrected_copy_owner`. The proposal's own \u00a71 says \"falsifiers **it** supplied\", which is the rung. **Both repaired** in `scripts/competence_provenance.py`; 13 pinned tests still pass; new guard `test_the_provenance_gate_attributes_the_writer_2026-10-05.py` \u2192 10 passed, including a test asserting agreement with `_corrected_copy_owner` by calling both.\n\nAnswer: **no**. A detached falsifier still passes, because `falsifier_style` is a regex. Only execution-derived provenance closes it.\n\n**B3 \u2014 yes, as a replacement the continuous rate is the worse instrument.** Exp 42 measured the construct directly on a fixed set (0/7 weak, 6/7 rung 1, 7/7 by rung 2). Under the additive standard a measurement of the wrong construct cannot displace a committed measurement of the right one. And \"the shadow ranking does not distort\" is the wrong promotion criterion \u2014 distortion-freedom in shadow is not predictive validity.\n\n**B4 \u2014 yes, there are more, and raising the rung budget is NOT defensible.**\n\n*The budget.* Measured:\n\n```\nconfig-shaped JSON files scanned: 288\nof those pinning routing_max_rungs: 0 []\nRunnerConfig.routing_max_rungs default: 2\n```\n\nRungs 3\u20134 are reachable **only** in simulation, and the literal sat immediately above a block headed *\"PARITY WITH THE REAL exp45 CONFIG \u2026 Every value below differed, and each difference let the simulation behave in a way the run it is compared against structurally could not.\"* It is a new instance of the class that block exists to remove.\n\nAnd the 6-of-6 figure is measured on a list that is never dispatched. Executed `resolve_via_routing`:\n\n```\nconfirms at rung   budget 2                  budget 4\n1                  ['opus']                  ['opus']\n2                  ['opus', 'opus']          ['opus', 'opus']\n3                  ['opus', 'opus']          ['opus', 'opus', 'fable']\n\ncandidate                                    mixed prefix  P(exec) 1st-pass  P(exec) residual\nshipped map, budget 4 (CC1's repair tonight) 6 of 6        2.7542%           0.7857%\n```\n\nRung 3 is dispatched only when rungs 1 **and** 2 both failed. Wolfram Language confirms `0.027541666666666662`. Under the residual rates Exp 42 actually validated (rung 1 \u2192 6/7, rung 2 \u2192 1/1) it buys **0.79%**. CC1 used exactly this execution semantics to falsify the fable seat and did not apply it to its own repair.\n\nCC1 *is* right on one point, and I derived it exhaustively rather than conceding it: over all 64 two-model seat maps, **0** reach 6-of-6 mixed at budget 2, and the monotone ceiling is 5 of 6. So 6-of-6 genuinely needs a deeper budget. That is not the question the repair turns on.\n\n**Repaired additively.** `--routing-max-rungs`, default `None` = the dataclass default. Parity is the default; a run that wants rungs 3+ asks, and the ask is recorded. Nothing removed. Wiring mutation-checked: deleting the pass-through \u2192 `1 failed, 25 passed`. I deliberately did **not** repartition `DEFAULT_LADDER` to the Codex-only map, even though it measures 8.3333% / 11.9048% (3.03\u00d7 and 15.15\u00d7 better, Wolfram-confirmed) \u2014 it moves 2 of 6 seats off the strong model, so it wins on ladder rehearsal and **loses** on per-seat capability fidelity. It does not dominate, so under the founder's removal standard it does not displace the shipped map. The honest residue: a 2-model bench cannot dispatch the ladder's cross-model handoff at parity.\n\n*More inert facilities.* CC1's three reproduce at identical ratios (`immune_memory_enabled` 78/288 \u2248 13/49; `hardened_gate_enabled` 24/288 \u2248 4/49; `apply_fixes_back_enabled` 6/288 \u2248 1/49). Additional: **`panel_cwd` (72 of 288 \u2248 12 of 49)** \u2014 the confinement control the falsifier-integrity directive names as one of its four mechanical defences; `context_files` (78), `wall_clock_cap_s` (270), `target_kind` (36), `exhausted_round_threshold` (18), `gamma_alt_threshold` / `gamma_alt_consecutive_zero_crit` (6). `panel_cwd` is the one above threshold: simulated stand-ins carry Bash and are not confined the way real panel routes are.\n\n*`burst_mode=\"off\"`.* Defensible **today** and for a reason neither CC1 nor the fable seat gave: burst is fingerprint-driven, and the fingerprint store carries no verification or coverage dimension at all, so a simulated burst would plan from context-capacity fields only. Arming it before the fingerprint has the dimension this proposal adds would rehearse a planner reading the wrong inputs. The fable seat's \"no longer defensible as the only state\" is premature by one dependency.\n\n## Disagreement\n\n- **With CC1 on A3 completeness.** \"All 3 were converted\" and \"the census is back at 80\" is wrong. It is 81, a fourth assertion was left unconverted, and the guard being repaired was failing in the delivered tree. Measured with tonight's files removed: exactly 80. This is the finding I weight highest in Part A, because the repair's *own instrument* reported the failure and the report said otherwise.\n- **With CC1 on the rung budget.** Raising it to 4 is a parity break of the class the adjacent block exists to remove, and the property it was raised to achieve is not dispatched: 2.75% / 0.79%. CC1 applied execution semantics to refute one seat and not to itself.\n- **With CC1 on A1's framing.** The sibling guard skips these scripts; it does not cover them.\n- **With the proposal's \u00a72.** Gating on `competence_provenance.py` is necessary and not sufficient, and until tonight the script also credited 1370 archived entries to the wrong model.\n- **With the proposal's \u00a74 promotion criterion.** \"Shadow ranking does not distort\" is not evidence of predictive validity.\n- **With the proposal's open question 3.** Do not bundle with `immune_memory_enabled`. Shared Beta-Binomial machinery is a convenience; the composability standard requires a measurement, and none exists.\n\n## Where the other seat is wrong\n\n- **A3, `co_consts` \u2014 wrong on the mechanism.** \"A docstring can satisfy `co_consts` exactly where a comment cannot satisfy source-matching\" and \"any string literal containing the token satisfies the check\" are both false. Executed: `\"round_falsifier_reattachments\" in co_consts` \u2192 `False` for a docstring and a log message both containing it. Tuple membership is equality. CC1's comment is right and the seat corrected a correct statement into an incorrect one. The real false pass is the *exact* literal in a non-persisting use \u2014 narrower, and still worth naming.\n- **B1 \u2014 right strategy, unpriced.** The randomised audit fraction is the correct identification move and the seat did not ask how many randomised attempts the ladder produces. At `max_rungs=2` with rung 1 resolving 6 of 7, a random subset of an already rare event will not reach a usable sample. Right in principle, not deployable; the fixed-residual probe is.\n- **B4.1 \u2014 correct diagnosis, falsified repair, and CC1's counter is also falsified.** The seat found the real defect (0 of 6 source seats got a cross-model climb) and its fix inverted the direction. CC1 was right to falsify it and then committed the mirror error. Both repairs optimised a prefix neither of them dispatched.\n- **B4.2 \u2014 right and under-stated.** The fingerprint store erasing run provenance is worse than \"which run measured this is unanswerable\": it means a shadow-recorded dimension cannot be *attributed* to a run, so the shadow comparison the proposal's \u00a74 rests on has no unit of analysis. The seat reported the symptom and not that it blocks \u00a74.\n- **B4.3 \u2014 premature.** See `burst_mode` above: the dependency runs the other way.\n- **Right and under-stated on B2.** The seat found the aggregation hole and stopped at the classifier. The attribution defect is 8.3% of the archive and runs in the direction that corrupts the ladder's own ordering.\n- **Its self-reported caveat is correct and applies to me too**: no `.git` in this sandbox, so git-population guards cannot run here. I did not substitute a scratch index; I applied the matchers directly and said so.\n\n## What would refute me\n\n- **A3 incompleteness**: `python3 -m pytest bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py -q` passing on CC1's *pre-my-edit* tree. It did not \u2014 `assert 81 <= 80`.\n- **The rung budget**: a real config pinning `routing_max_rungs > 2`. `test_no_real_config_pins_the_budget` re-measures this every run and fails if one appears. Or: a committed measurement that rungs 1\u20132 fail more often than Exp-42's rates imply, which would raise 2.75% toward usefulness.\n- **The execution argument**: a demonstration that `resolve_via_routing` dispatches a rung after a CONFIRMED. `test_defect_3_the_deep_climb_needs_two_failures_first` asserts it does not.\n- **B2 attribution**: `test_the_archive_population_this_was_measured_on_is_real` failing \u2014 i.e. 0 archived entries carrying `resolved_by_routing`, which would make the defect affect nothing. It finds 1370 of 16500.\n- **B2 classifier limitation**: `TestTheKnownRemainingHole` starting to pass \u2014 then the regex has become behavioural and my \"necessary not sufficient\" verdict is wrong.\n- **`co_consts` correction**: any Python build where `\"x\" in (\"\u2026x\u2026\",)` is `True`. There is none.\n- **My refusal to repartition `DEFAULT_LADDER`**: a measurement showing a 1-strong-seat bench does not degrade panel-capability fidelity \u2014 then the Codex-only map dominates outright and should be adopted.\n\n## Delivered files\n\nNew: `scripts/the_ladder_climb_is_measured_on_an_unexecuted_prefix_2026-10-05.py` (producer; exits 1 if any figure goes stale), `bench/tests/test_the_provenance_gate_attributes_the_writer_2026-10-05.py`.\nModified: `bench/tools/run_simulated_experiment.py` (opt-in `--routing-max-rungs`), `scripts/competence_provenance.py` (`falsifier_owner` + per-confirmation UNSAFE rule), `bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py` (assertions now execute `resolve_via_routing`), `bench/tests/test_a_blind_round_is_actually_blind_2026-10-05.py` (the unconverted assertion), `experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md` (attributed review section).\n\nFinal sweep over the amended tree: **99 passed** across the ladder, provenance, blind-round, source-text-census, sim-seat-ladder and `routing_max_rungs` guards; plus **27 passed** on the swallow and help guards. Two mutation checks performed and restored.\n\n**Termination.** Stopping here. The last pass produced only sub-threshold observations (`falsifier_style`'s regex could also be defeated by `builtins.__dict__[\"open\"]`, which changes nothing about the verdict; `wall_clock_cap_s` parity is a cost difference, not a capability one). The three measured facts I relied on reproduced exactly; I did not independently re-run the Wilson interval, which the other seat did and which my argument does not depend on.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo",
+      "built": false
+    },
+    {
+      "attempt": 2,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo",
+      "built": true
+    }
+  ]
+}

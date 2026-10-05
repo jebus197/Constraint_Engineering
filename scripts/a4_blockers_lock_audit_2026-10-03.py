@@ -5,7 +5,7 @@ The A4 fail-safe (unverified_critical_count, reference_runner_v3.py:2747) blocks
 the zero-critical streak while any UNCONFIRMED critical is pending. The only
 escape is the `exhausted` valve, which needs THREE conditions at once:
 
-    status in EXHAUSTED_VALVE_STATUSES  and  severity >= 0.7
+    status in EXHAUSTED_ELIGIBLE_STATUSES  and  severity >= 0.7
     and  age >= exhausted_round_threshold  and  len(verdicts) > 0
 
 This prints, per blocking entry, which of those are open and which are shut, so

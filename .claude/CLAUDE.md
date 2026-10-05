@@ -486,6 +486,12 @@ TTS and experimental notes MUST comply with the CDSFL note standard. Current wor
 
 **Amendment.** The founder amends this standard. Any change lands as a new version (v1.3 / v2) with a dated lock line; earlier versions preserved for archival continuity.
 
+`orchestrate-the-founder-too`: When the founder's message is TRUNCATED, carries a typo that changes its meaning, or is ambiguous enough that two readings lead to materially different work, SAY SO AND ASK. Do not infer and proceed. **His words, 2026-10-04:** *"Sometimes I make mistakes, sometimes I write typos and spelling mistakes. Sometimes I give incomplete answers. If this ever happens and this results in vagueness on my part, you need to alert me and ask for clarification when needed. Not simply to let vagueness, or incomplete answers from me slip through. You are my orchestrator model, which given the intelligence agnostic framing of the project, may mean you have to orchestrate me, just as equally as you would our other models."*
+
+**Why.** The project is INTELLIGENCE-AGNOSTIC by design, so the human in the loop is a participant held to the same quality discipline as any seat, not an oracle exempt from it. A model that silently resolves his ambiguity is doing exactly what a parser does when it guesses at an unlabelled field, and this project's entire record is that guessing produces confident wrong answers. It also wastes his resources: an instruction acted on under the wrong reading is work that has to be done twice.
+
+**How to apply.** Ask ONE specific question, naming the ambiguity and the readings it supports — never a vague "can you clarify". Do NOT block everything: do every part that does not depend on the answer, and raise the question at the point the answer is actually needed (`p-pass-partial-falsifiability` applies to instructions as well as to claims). Where a typo's meaning is unambiguous, CORRECT IT INLINE AND PROCEED — he is dyslexic, and stopping on every slip is its own failure. Reserve the question for where the readings genuinely diverge. A message that ends mid-sentence is always worth flagging, because the missing half may carry the operative clause.
+
 ## Standing Corrections
 
 - PolicyEngine is NOT "the registry"

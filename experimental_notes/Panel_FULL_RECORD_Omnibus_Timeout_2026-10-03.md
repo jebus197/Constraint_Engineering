@@ -130,7 +130,7 @@ the 90.83% figure.
    `exhausted_round_threshold` defaults to 8 (`:1607`) while `round_idx` is 0-based, so the maximum
    attainable age in an 8-round run is 7. z3 returns `unsat`, a NumPy enumeration of all 36 legal
    pairs gives max age 7, and SymPy gives the general condition `T <= R - 1`. Producer:
-   `scripts/release_valve_age_lock_2026-10-03.py`.
+   `scripts/exhausted_marking_age_lock_2026-10-03.py`.
 6. **Severity proofs are unauditable from the registry.** 44 of 75 stored proofs cannot be
    re-derived from the entry's own stored description, because the description does not retain the
    CORROBORATION block. Checking any proof means going back to the raw seat files. The founder's
@@ -264,7 +264,7 @@ pass found.
 
 Every figure quoted above is reproducible from a committed script, named here so you can re-run and
 challenge it: `scripts/rk_pairing_reach_2026-10-03.py` (the 109 real sections, the 226 phantoms,
-the 95.41% identity reach), `scripts/release_valve_age_lock_2026-10-03.py` (the z3 `unsat`, max age
+the 95.41% identity reach), `scripts/exhausted_marking_age_lock_2026-10-03.py` (the z3 `unsat`, max age
 7, `T <= R - 1`), `scripts/gate_replay_on_registry_2026-10-03.py` (the gate inputs and verdict),
 `scripts/a4_blockers_lock_audit_2026-10-03.py` (the per-blocker lock split),
 `scripts/routing_severity_gate_2026-10-03.py` (the routing-versus-severity association). The

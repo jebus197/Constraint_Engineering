@@ -1,0 +1,2475 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-05 05:42:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo/.cdsfl_deny_canonical_writes.sb	2026-10-05 04:49:13
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/logs/fpl_star_2026-10-05/console.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/fpl_star_2026-10-05/console.log	2026-10-05 05:42:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo/bench/logs/fpl_star_2026-10-05/console.log	2026-10-05 04:48:44
+@@ -1,17 +0,0 @@
+-[04:49:13] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo
+-[04:49:13] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo
+-[04:49:13]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo
+-[05:19:13]   [claude-cli:opus] attempt 1 failed (1800.0s): claude CLI timed out after 1800.0s
+-[05:19:13]   [claude-cli:opus] retry 2/2
+-[05:19:39] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo
+-    suite: GREEN at 1cfc30e — 8,878 passed, 0 failed  [recorded at 1cfc30e, HEAD is a75382e3, 81 commit(s) later]
+-=== maths panel — 1 dispatched seats + CC1 ===
+-    PAID seats:   (brief 22,556 chars, about 5,639 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo
+-    cc2 attempt 2 confined to a FRESH copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo
+-[05:19:39]   [claude-cli:opus] attempt 2 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo
+-[05:42:40]   [claude-cli:opus] 71 tool call(s) this attempt, 71 in total
+-[05:42:40]   [claude-cli:opus] done (1381.4s, 17462 chars)
+-  [cc2] ok=True chars=17462 tools=71 3207.1s
+-[05:42:40] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:bench/routing.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/routing.py	2026-09-05 06:28:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo/bench/routing.py	2026-10-05 05:02:47
+@@ -58,6 +58,36 @@
+ # Run `python3 scripts/competence_provenance.py <report.json>` first. It exits 2 and
+ # prints UNSAFE TO RANK ON when a model's confirmations rest on falsifiers that never
+ # read the target.
++# ─── THE DIRECTION OF THIS LADDER IS STATED TWICE IN THIS FILE, INCOMPATIBLY ───
++# Recorded by the claude seat, panel review 2026-10-05. NOTHING IS REMOVED HERE and
++# no behaviour changes: a founder ruling decides which sentence is the specification,
++# and until then both have to be visible, because a test now depends on one of them.
++#
++#   STATEMENT A, module docstring above: "route the falsification to progressively
++#   STRONGER models". Read literally, rung 1 is the WEAKEST tried.
++#   The docstring's own Exp-42 account sides with A, explicitly: rung 1 is gpt-5.5
++#   (Codex) at 6/7 and "the remaining one ... is resolved by the next, STRONGER rung
++#   (opus-class)".
++#
++#   STATEMENT B, `rank_falsifier_writers` below: "ordered strongest-first", and the
++#   tuple puts Codex at index 0. Rung 1 is the STRONGEST tried.
++#
++# So Codex is at once the strongest model and weaker than the model at the next rung.
++# THE CODE IS COHERENT -- the tuple is ordered by Exp-42 CONFIRM RATE (Codex 90%,
++# CC2 75%, ...), stated in the comment below, and confirm rate is not generic
++# capability. It is the docstring's word "STRONGER" that is unbacked, and it sits in
++# the same sentence as "ordered by capability fingerprint", which the 2026-10-05
++# proposal shows the code never reads. One sentence, two claims the code does not
++# make; the proposal caught one.
++#
++# WHY IT IS NOT COSMETIC. `bench/tests/test_the_exercised_ladder_prefix_is_mixed_
++# 2026-10-05.py` asserts "no weaker model appears before a stronger one", which pins
++# STATEMENT B, and falsifies a seat's proposed simulated seat map on that basis.
++# Measured by `scripts/the_ladder_direction_is_stated_twice_2026-10-05.py`: the
++# shipped map scores 6/6 under B and 0/6 under A; the rejected map scores 0/6 under B
++# and 5/6 under A. Each map is the faithful one under one reading. The test froze a
++# reading of an ambiguous specification without the ambiguity being written down.
++# ───────────────────────────────────────────────────────────────────────────────
+ DEFAULT_FALSIFIER_STRENGTH = ("Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek")
+ 
+ 
+
+### cc2:attempt-1:bench/tests/test_a_blind_round_is_actually_blind_2026-10-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_a_blind_round_is_actually_blind_2026-10-05.py	2026-10-05 04:43:55
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo/bench/tests/test_a_blind_round_is_actually_blind_2026-10-05.py	2026-10-05 05:06:50
+@@ -201,9 +201,43 @@
+ 
+ class TestTheDispatcherCanAskForIt:
+     def test_the_env_var_reaches_build(self):
+-        """An option nothing can select is an addition nothing reaches."""
+-        src = (REPO / "bench" / "confer_maths_panel_2026-09-05.py").read_text(
+-            encoding="utf-8")
+-        assert 'PANEL_BLIND_OF' in src
+-        assert src.count("blind_of=_BLIND_OF") >= 2, (
+-            "the variable is parsed but does not reach every build() call")
++        """An option nothing can select is an addition nothing reaches.
++
++        PARSED, NOT MATCHED (panel review 2026-10-05, claude seat). The first form
++        of this test was two substring counts on the dispatcher's source, and
++        `bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py`'s census
++        counts it: the ratchet stood at 81 against a cap of 80 and this was the
++        81st, so the suite was red on arrival. Substring counting is also the
++        weaker check -- `src.count("blind_of=_BLIND_OF") >= 2` passes if both
++        occurrences are in a comment and fails on the correct refactor
++        `blind_of=_blind_of`. The AST walk below asserts the real property: EVERY
++        call to `panel_sandbox.build` carries a `blind_of` keyword, and the value
++        it carries is derived from the environment variable.
++        """
++        import ast as _ast
++        tree = _ast.parse(
++            (REPO / "bench" / "confer_maths_panel_2026-09-05.py").read_text(
++                encoding="utf-8"))
++        builds, blind, from_env = [], [], []
++        for node in _ast.walk(tree):
++            if isinstance(node, _ast.Call):
++                fn = node.func
++                if getattr(fn, "attr", None) == "build" or getattr(
++                        fn, "id", None) == "build":
++                    builds.append(node.lineno)
++                    kw = {k.arg for k in node.keywords}
++                    if "blind_of" in kw:
++                        blind.append(node.lineno)
++                # the name is bound from os.environ.get("PANEL_BLIND_OF", ...)
++                if getattr(fn, "attr", None) == "get" and any(
++                        isinstance(a, _ast.Constant) and a.value == "PANEL_BLIND_OF"
++                        for a in node.args):
++                    from_env.append(node.lineno)
++        assert builds, "no call to panel_sandbox.build() found at all"
++        assert blind == builds, (
++            f"build() is called at lines {builds} but only {blind} carry a "
++            f"blind_of keyword, so the blinding option does not reach every "
++            f"sandbox the dispatcher builds")
++        assert from_env, (
++            "nothing in the dispatcher reads os.environ['PANEL_BLIND_OF'], so the "
++            "option cannot be selected from outside")
+
+### cc2:attempt-1:bench/tests/test_provenance_credits_the_falsifier_author_2026-10-05.py
+--- /dev/null	2026-10-05 05:43:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo/bench/tests/test_provenance_credits_the_falsifier_author_2026-10-05.py	2026-10-05 05:00:51
+@@ -0,0 +1,140 @@
++#!/usr/bin/env python3
++"""A confirm rate must be credited to the model that WROTE the falsifier.
++
++WHAT WAS WRONG (panel review 2026-10-05, claude seat; measured by
++`scripts/the_provenance_gate_credits_the_wrong_model_2026-10-05.py`).
++
++`scripts/competence_provenance.py` is the check `bench/routing.py`'s star-marked
++founder observation names as the thing that must run before the ladder's order is
++ever re-derived, and the proposal
++`experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md`
++would promote it from a record to a GATE. It keyed every falsifier on the entry's
++`source_model`.
++
++But `reference_runner_v3`'s routing block, in its ``elif result.resolved:`` arm,
++REPLACES `falsifier_code` with the resolving rung's falsifier and stamps
++`resolved_by_routing` with that rung's label, leaving `source_model` naming the
++weak model whose own falsifier failed. So every routed CONFIRMED was credited to
++the model that FAILED.
++
++MEASURED OVER THE ARCHIVE, 72 reports: 248 of 3036 registry entries, 8.169%, ALL
++of them confirmations -- the entire error in the numerator. Effect on the thing
++that matters, the induced ordering of the 5 real vendors by confirm rate:
++
++    frozen DEFAULT_FALSIFIER_STRENGTH : Codex, CC2, ChatGPT, Gemini, DeepSeek
++    keyed on source_model (the bug)   : Gemini, Codex, ChatGPT, DeepSeek, CC2
++                                        Kendall tau vs frozen = 0.0000
++    keyed on the falsifier's author   : Codex, Gemini, CC2, ChatGPT, DeepSeek
++                                        Kendall tau vs frozen = +0.6000
++
++Under the bug the instrument has ZERO rank correlation with the Exp-42
++measurement it would displace, and it puts CC2 -- rung 2 of the validated ladder
++-- LAST, below DeepSeek. The attribution defect alone is large enough to invert
++the ladder; it is not second-order behind the selection effect.
++
++Every assertion below CALLS the module. None reads source text.
++"""
++import importlib.util
++import pathlib
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO))
++
++_spec = importlib.util.spec_from_file_location(
++    "competence_provenance", REPO / "scripts" / "competence_provenance.py")
++PROV = importlib.util.module_from_spec(_spec)
++_spec.loader.exec_module(PROV)
++
++
++class TestTheAuthorIsTheResolver:
++    def test_a_routed_entry_is_credited_to_the_rung_that_resolved_it(self):
++        e = {"source_model": "DeepSeek", "resolved_by_routing": "Codex",
++             "falsifier_verdict": "CONFIRMED", "falsifier_code": "open('x')"}
++        assert PROV.falsifier_author(e) == "Codex", (
++            "a routed confirmation is still credited to the model whose own "
++            "falsifier failed")
++
++    def test_an_unrouted_entry_keeps_its_source_model(self):
++        """The historical attribution must be preserved everywhere routing did not
++        fire, or the fix silently rewrites 91.8% of the archive."""
++        e = {"source_model": "DeepSeek", "falsifier_verdict": "CONFIRMED"}
++        assert PROV.falsifier_author(e) == "DeepSeek"
++
++    def test_an_empty_routing_stamp_does_not_shadow_the_source(self):
++        for stamp in (None, "", 0):
++            e = {"source_model": "CC2", "resolved_by_routing": stamp}
++            assert PROV.falsifier_author(e) == "CC2", stamp
++
++    def test_neither_field_present_is_not_an_exception(self):
++        assert PROV.falsifier_author({}) == "?"
++
++
++class TestItIsWiredIntoTheRateItself:
++    """An addition nothing reaches is not additive: `analyse` must USE it."""
++
++    def test_analyse_moves_the_confirmation_to_the_resolver(self, tmp_path):
++        import json
++        rep = tmp_path / "x_report.json"
++        rep.write_text(json.dumps({"registry": {"entries": {
++            # DeepSeek found it, Codex's falsifier confirmed it.
++            "C0001": {"source_model": "DeepSeek", "resolved_by_routing": "Codex",
++                      "falsifier_verdict": "CONFIRMED",
++                      "falsifier_code": "open('t').read()"},
++            # DeepSeek's own, unrouted, not confirmed.
++            "C0002": {"source_model": "DeepSeek", "falsifier_verdict": "REFUTED",
++                      "falsifier_code": "open('t').read()"},
++        }}}))
++        per = PROV.analyse(rep)
++        assert per["Codex"]["confirmed"] == 1, (
++            "the resolver got no credit for the falsifier it wrote")
++        assert per["DeepSeek"]["confirmed"] == 0, (
++            "the model whose falsifier failed is still credited with the "
++            "confirmation")
++        assert per["DeepSeek"]["n"] == 1 and per["Codex"]["n"] == 1, (
++            "the denominator must follow the numerator, or the rate is a ratio "
++            "of two different populations")
++
++    def test_the_reattribution_is_reported_not_silent(self, tmp_path):
++        """A reader comparing this output against an earlier run must be able to
++        see why a number moved."""
++        import json
++        rep = tmp_path / "y_report.json"
++        rep.write_text(json.dumps({"registry": {"entries": {
++            "C0001": {"source_model": "DeepSeek", "resolved_by_routing": "Codex",
++                      "falsifier_verdict": "CONFIRMED", "falsifier_code": "open('t')"},
++        }}}))
++        per = PROV.analyse(rep)
++        assert per["Codex"]["routed_in"] == 1
++
++
++class TestTheProbeIsNotVacuous:
++    def test_the_old_keying_would_fail_the_first_assertion(self):
++        """ANTI-VACUITY. If `falsifier_author` were reverted to `source_model`,
++        the test above must be the thing that catches it."""
++        e = {"source_model": "DeepSeek", "resolved_by_routing": "Codex"}
++        assert (e.get("source_model") or "?") == "DeepSeek", (
++            "the defect this guard was written against no longer reproduces as "
++            "described, so the guard may be passing for the wrong reason")
++
++    def test_the_archive_still_contains_the_population_this_was_measured_on(self):
++        """If no archived entry carries `resolved_by_routing`, the 8.169% figure in
++        this file's docstring is unreproducible and the docstring is stale."""
++        import json
++        reps = sorted(REPO.glob("bench/logs/*/*_report.json"))
++        if not reps:
++            pytest.skip("no archived reports in this checkout")
++        routed = 0
++        for p in reps:
++            try:
++                d = json.loads(p.read_text(encoding="utf-8"))
++            except Exception:
++                continue
++            for e in ((d.get("registry") or {}).get("entries") or {}).values():
++                if isinstance(e, dict) and e.get("resolved_by_routing"):
++                    routed += 1
++        assert routed > 0, (
++            "no archived entry carries `resolved_by_routing`, so this guard "
++            "describes a population that no longer exists")
+
+### cc2:attempt-1:bench/tests/test_the_rung_budget_divergence_is_simulation_only_2026-10-05.py
+--- /dev/null	2026-10-05 05:43:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo/bench/tests/test_the_rung_budget_divergence_is_simulation_only_2026-10-05.py	2026-10-05 05:01:31
+@@ -0,0 +1,153 @@
++#!/usr/bin/env python3
++"""The raised routing rung budget must stay inside the simulated launcher.
++
++WHY THIS EXISTS (panel review 2026-10-05, claude seat).
++
++On 2026-10-05 `bench/tools/run_simulated_experiment.py` raised
++`routing_max_rungs` from the `RunnerConfig` default of 2 to 4, so that the rungs
++the simulated ladder actually tries span more than one stand-in model. The
++rationale in that file states the added rungs "are only ever reached for a
++critical that rungs 1 and 2 failed to resolve, which is the case the ladder exists
++for".
++
++MEASURED, and the premise is understated rather than wrong. Over 460
++`routing_history` records in `bench/logs/` (every archived routing attempt that
++recorded its rungs):
++
++    rungs_tried = 0, unresolved : 42     (the ladder had no eligible rung)
++    rungs_tried = 1, resolved   : 165
++    rungs_tried = 1, unresolved : 6
++    rungs_tried = 2, resolved   : 63
++    rungs_tried = 2, unresolved : 184    <-- would climb to rung 3 at a budget > 2
++
++Maximum `rungs_tried` ever observed is 2, i.e. the cap, and 184 of 460 attempts
++(40.0%) exhausted the budget without resolving. So rungs 3 and 4 are NOT a rare
++corner: at a budget of 4 they would be entered in two of every five routing
++attempts, and the conditional confirm rate at rung 2 given rung 1 did not confirm
++is 63/247 = 25.5%. Raising the budget therefore absorbs a substantial share of
++what currently escalates to HIL, and an escalated critical is what
++`unverified_critical_count` uses to BLOCK convergence.
++
++That is a real change to the simulated run's convergence behaviour, in the one
++direction `bench/tools/sim_dispatch_shim.py`'s own comment calls "the one
++direction that makes it useless" -- the simulated run looks cleaner than the real
++one will. The divergence may well be the right trade for rehearsing a mixed
++ladder, which is a founder call, but it must not leak into a real config, where
++it would also multiply frontier-model dispatches per unresolved critical.
++
++THIS GUARD pins exactly that boundary: real configs stay on the default, the
++simulated launcher is the only divergence, and the divergence is a known number
++rather than drift. It takes no position on whether 4 is the right value.
++
++Every assertion PARSES or IMPORTS. None matches free source text.
++"""
++import ast
++import dataclasses
++import json
++import pathlib
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO))
++
++SIM_LAUNCHER = REPO / "bench" / "tools" / "run_simulated_experiment.py"
++
++
++def _runner_default() -> int:
++    from bench.reference_runner_v3 import RunnerConfig
++    for f in dataclasses.fields(RunnerConfig):
++        if f.name == "routing_max_rungs":
++            return f.default
++    raise AssertionError("RunnerConfig no longer has routing_max_rungs")
++
++
++def _sim_launcher_value():
++    """The literal the simulated launcher passes, read by parsing its AST."""
++    found = []
++    for node in ast.walk(ast.parse(SIM_LAUNCHER.read_text(encoding="utf-8"))):
++        if isinstance(node, ast.Call) and (
++                getattr(node.func, "attr", None)
++                or getattr(node.func, "id", None)) == "RunnerConfig":
++            for kw in node.keywords:
++                if kw.arg == "routing_max_rungs":
++                    found.append(ast.literal_eval(kw.value))
++    return found
++
++
++class TestTheDefaultIsUntouched:
++    def test_runner_config_still_defaults_to_two(self):
++        assert _runner_default() == 2, (
++            "the RunnerConfig default changed; every archived routing path was "
++            "recorded at 2 and the Exp 42 validation that reached 7 of 7 was a "
++            "2-rung ladder")
++
++    def test_routes_own_default_is_still_two(self):
++        import inspect
++
++        from bench.routing import resolve_via_routing, route
++        for fn in (route, resolve_via_routing):
++            assert inspect.signature(fn).parameters["max_rungs"].default == 2, fn
++
++
++class TestNoRealConfigRaisesIt:
++    def test_no_archived_experiment_config_sets_it(self):
++        """A real config carrying 4 would quadruple frontier dispatches per
++        unresolved critical AND change production convergence."""
++        cfgs = sorted(REPO.glob("bench/exp*_configs/*.json")) + \
++            sorted(REPO.glob("bench/exp*_config.json"))
++        if not cfgs:
++            pytest.skip("no experiment configs in this checkout")
++        offenders = []
++        for p in cfgs:
++            try:
++                d = json.loads(p.read_text(encoding="utf-8"))
++            except Exception:
++                continue
++            if not isinstance(d, dict):
++                continue
++            v = d.get("routing_max_rungs")
++            if v is not None and int(v) != _runner_default():
++                offenders.append(f"{p.relative_to(REPO)}={v}")
++        assert not offenders, (
++            "real experiment config(s) raise the routing rung budget: "
++            f"{offenders}. The raised budget is a SIMULATION-ONLY divergence "
++            "introduced to rehearse a mixed-model ladder; in a real config it "
++            "changes production convergence and spend.")
++
++    def test_the_population_is_not_empty(self):
++        """ANTI-VACUITY: a scan of 0 configs reports clean for a population it
++        could not read."""
++        cfgs = sorted(REPO.glob("bench/exp*_configs/*.json"))
++        assert len(cfgs) >= 10, (
++            f"only {len(cfgs)} experiment configs found; the guard guards nothing")
++
++
++class TestTheSimulatedLauncherIsTheOnlyDivergence:
++    def test_the_simulated_launcher_declares_a_single_raised_value(self):
++        vals = _sim_launcher_value()
++        assert len(vals) == 1, (
++            f"the simulated launcher passes routing_max_rungs {len(vals)} times "
++            f"({vals}); a second call site makes the divergence unreadable")
++        assert vals[0] > _runner_default(), (
++            "the simulated launcher no longer raises the budget, so this guard "
++            "and the mixed-ladder rationale in that file are both stale")
++
++    def test_the_raised_value_is_reachable_through_the_real_call_site(self):
++        """EXECUTED. The budget is threaded only when it differs from 2, so a
++        raised value that the call site drops would be an addition nothing
++        reaches."""
++        from bench.routing import resolve_via_routing
++        budget = _sim_launcher_value()[0]
++        tried = []
++
++        def _resolve(model, finding):
++            tried.append(model)
++            return ""          # never supply a falsifier -> never resolve
++
++        res = resolve_via_routing(
++            {"id": "C0001"}, [f"M{i}" for i in range(8)], _resolve,
++            lambda code: "CONFIRMED", max_rungs=budget)
++        assert len(tried) == budget and res.rungs_tried == budget, (
++            f"the ladder tried {tried} at a budget of {budget}")
+
+### cc2:attempt-1:experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md	2026-10-05 02:25:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo/experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md	2026-10-05 05:08:41
+@@ -106,3 +106,182 @@
+ ---
+ 
+ Producers for every figure cited: `scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py`, `scripts/what_the_sim_runner_never_carried_over_2026-10-05.py`.
++
++---
++
++# Panel review — claude seat, 2026-10-05 (joint/star round)
++
++Every figure below was produced by execution in this review. Producers are named per
++figure and are committed alongside this file. **I do not recommend the proposal as
++written, and the reason is a defect in the instrument it would promote.**
++
++## The instrument is arithmetically wrong, and the error alone inverts the ladder
++
++`scripts/competence_provenance.py` is the check `bench/routing.py`'s star-marked
++founder observation names as the thing that must run before the order is re-derived,
++and §2 of this proposal would promote it from a record to a **gate on pool entry**. It
++keyed every falsifier on the entry's `source_model`.
++
++`reference_runner_v3`'s routing block, in its `elif result.resolved:` arm, does:
++
++```
++e["falsifier_code"] = result.falsifier_code      # the RESOLVING RUNG's falsifier
++e["falsifier_verdict"] = "CONFIRMED"
++e["resolved_by_routing"] = result.model_used     # who actually wrote it
++```
++
++so on every routed resolution the falsifier is replaced by the resolver's and
++`source_model` still names the model whose own falsifier failed.
++
++Measured over 72 archived reports by
++`scripts/the_provenance_gate_credits_the_wrong_model_2026-10-05.py`:
++
++| | |
++|---|---|
++| registry entries | 3036 |
++| resolved by the routing ladder | 248 |
++| …of which CONFIRMED | 248 (100%) |
++| credited to the wrong model | **248 = 8.169%** |
++
++Every misattributed entry is a **confirmation**, so the whole error sits in the
++numerator of the rate §1 defines, and it always moves credit **from a resolver to a
++source** — the same direction as the selection effect this proposal names as its
++strongest objection. They compound; they do not cancel.
++
++Effect on the only thing that matters, the induced ordering of the 5 real vendors:
++
++| basis | induced order | Kendall τ vs frozen |
++|---|---|---|
++| frozen `DEFAULT_FALSIFIER_STRENGTH` | Codex, CC2, ChatGPT, Gemini, DeepSeek | — |
++| **keyed on `source_model` (the defect)** | Gemini, Codex, ChatGPT, DeepSeek, CC2 | **0.0000** |
++| keyed on the falsifier's author | Codex, Gemini, CC2, ChatGPT, DeepSeek | **+0.6000** |
++
++τ by scipy `kendalltau`; independently confirmed by Wolfram Language (local Wolfram
++Engine via `wolframscript`): `{0, 0.6}`. Under the defect the instrument has **zero
++rank correlation** with the Exp-42 measurement it would displace, and it puts **CC2 —
++rung 2 of the validated ladder — last, below DeepSeek**.
++
++**Repaired here**, minimally and additively: `competence_provenance.falsifier_author`
++keys on `resolved_by_routing or source_model`, every non-routed entry keeps its
++historical attribution, and the reattribution count is printed per model so a reader
++can see why a number moved. Pinned by
++`bench/tests/test_provenance_credits_the_falsifier_author_2026-10-05.py` (8 tests).
++The 13 pre-existing pinned tests in
++`test_defect_rate_and_competence_provenance_2026-08-23.py` still pass.
++
++Note what the repair does **not** fix: the corrected rate still ranks **Gemini second**,
++and Gemini is the model the Exp-55 detachment measurement indicts. So the
++reads/detached gate remains necessary and the attribution fix does not substitute for
++it. That is a *demonstrated* composition of two fixes, not an assumed one.
++
++## The ladder's direction is specified twice in `bench/routing.py`, incompatibly
++
++This is why two seats and CC1 reached opposite verdicts on the simulated seat map, and
++the disagreement is not about evidence.
++
++* **Statement A**, module docstring: route "to progressively **STRONGER** models" —
++  rung 1 is the weakest tried. The docstring's own Exp-42 account sides with A
++  explicitly: rung 1 is gpt-5.5 (Codex) at 6/7, and "the remaining one … is resolved
++  by the next, **stronger** rung (opus-class)".
++* **Statement B**, `rank_falsifier_writers`: "ordered **strongest-first**", with Codex
++  at index 0 — rung 1 is the strongest tried.
++
++Codex is therefore at once the strongest model and weaker than the model at the next
++rung. **The code is coherent** — the tuple is ordered by Exp-42 *confirm rate*, which
++the comment states, and confirm rate is not generic capability. It is the docstring's
++word "STRONGER" that is unbacked, and it sits in the same sentence as "ordered by
++capability fingerprint", which this proposal shows the code never reads. **One
++sentence, two claims the code does not make; the proposal caught one.**
++
++Measured by `scripts/the_ladder_direction_is_stated_twice_2026-10-05.py`:
++
++| seat map | mixed | descending (B) | ascending (A) |
++|---|---|---|---|
++| CC1 shipped, budget 4 | 6/6 | **6/6** | 0/6 |
++| fable seat's map, budget 2 | 5/6 | 0/6 | **5/6** |
++
++Each map is the faithful one under one reading. `test_the_exercised_ladder_prefix_is_
++mixed_2026-10-05.py` asserts "no weaker model appears before a stronger one", which
++**freezes reading B** and falsifies the other seat's map on that basis — without the
++ambiguity being recorded anywhere. Recorded now, in `bench/routing.py` at the point of
++the tuple. Nothing removed; which sentence is the specification is a founder call, and
++whichever wins, the other has to go.
++
++**This bears directly on the proposal.** §1 defines a rate and §4 would rank on it,
++implicitly highest-first. If reading A is the design intent, confirm rate is not just a
++noisy key — it is the wrong *axis*, and no amount of provenance gating fixes that.
++**The proposal must state which direction it is ordering, and on what evidence.**
++
++## Answers to the four open questions
++
++1. **Is the construct right?** No, not as a replacement — and the numbers above make
++   this stronger than §"It may measure the wrong construct" states. Exp 42 measured
++   residual resolution directly on a fixed set (0/7 weak → 6/7 rung 1 → 7/7 rung 2).
++   The rate instrument, as shipped, disagreed with that measurement at τ = 0 for
++   bookkeeping reasons alone. Under the additive standard a measurement of a different
++   construct, by an instrument that was wrong until tonight, cannot displace a
++   committed measurement of the right one. **Rate as tripwire, Exp-42-style
++   fixed-residual probe as decider.**
++2. **Selection-effect mitigation.** First-pass-only is *not* sufficient and its stated
++   premise ("a common population by construction") is false — each model writes
++   first-pass falsifiers for *its own* findings, and the finding populations differ at
++   χ² = 280.0138, p = 2.213e-59. It also measures the wrong construct: demonstration
++   of own findings, not resolution of others' residuals. Use a **randomised audit
++   fraction of rung assignments** and compute the shadow statistic on randomised
++   attempts only. That is the only candidate that measures the ladder's own construct
++   on an assignment independent of the ranking.
++3. **Bundling with `immune_memory_enabled`.** No. Shared Beta-Binomial machinery is a
++   convenience, not a demonstrated advantage of the composed work over either fix
++   alone, and the composability standard requires the latter.
++4. **Glossary vs implementation.** Correct the glossary first, because it is the
++   cheaper half and because a documented dimension that does not exist is what let the
++   docstring's "ordered by capability fingerprint" go unchallenged for four months.
++
++## The simulated-launcher gap is 13 facilities, not 3
++
++Measured across 47 real experiment configs under `bench/exp*_configs/` against the
++AST of `run_simulated_experiment.py`. Fields armed non-default in ≥1 real config and
++absent from the simulated launcher:
++
++| field | real configs arming it |
++|---|---|
++| `context_files` | 47 of 47 |
++| `wall_clock_cap_s` | 45 of 47 |
++| `immune_memory_enabled` | 13 of 47 |
++| **`panel_cwd`** | **12 of 47** |
++| `target_kind` | 6 of 47 |
++| `hardened_gate_enabled` | 4 of 47 |
++| `exhausted_round_threshold` | 3 of 47 |
++| `feedback_channel_enabled` | 2 of 47 |
++| `divergence_channel_enabled` | 2 of 47 |
++| `gamma_alt_consecutive_zero_crit` | 1 of 47 |
++| `apply_fixes_back_enabled` | 1 of 47 |
++| `gamma_alt_threshold` | 1 of 47 |
++| `location_shadow_enabled` | 1 of 47 |
++
++Caveat, stated rather than papered over: "absent" means the simulated launcher takes
++the `RunnerConfig` default, which for the booleans is off and for `panel_cwd` /
++`context_files` / `wall_clock_cap_s` is unset. Some may be legitimately inapplicable.
++
++The three CC1 found are in the list, and the ones it missed are larger. **`panel_cwd`
++is the falsifier-integrity confinement control** — the CDSFL directive names it as one
++of four mechanical defences against a falsifier reaching outside the artefact — and it
++is unset in every simulated run, so that control has never been rehearsed.
++`wall_clock_cap_s` is armed by 45 of 47 real configs and unset in simulation, so the
++timeout path is unrehearsed on the same night a producer was written about a seat
++timing out.
++
++**`burst_mode="off"` is defensible, and more clearly than the other seat allowed.**
++Measured: 43 of 47 real configs set `burst_mode="off"`; 4 set `"auto"`; the
++`RunnerConfig` default is `"auto"`. So the simulated launcher's `"off"` is *parity with
++91.5% of real configs*, explicitly chosen against the default. The real gap is that the
++4-config `"auto"` path is unrehearsed — the same class as the ladder gap, an order of
++magnitude smaller.
++
++## Producers written for this review
++
++`scripts/the_provenance_gate_credits_the_wrong_model_2026-10-05.py`,
++`scripts/the_ladder_direction_is_stated_twice_2026-10-05.py`,
++`scripts/the_persist_probe_has_both_failure_modes_2026-10-05.py`.
++Guards: `bench/tests/test_provenance_credits_the_falsifier_author_2026-10-05.py`,
++`bench/tests/test_the_rung_budget_divergence_is_simulation_only_2026-10-05.py`.
+
+### cc2:attempt-1:scripts/competence_provenance.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/competence_provenance.py	2026-09-11 03:02:14
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo/scripts/competence_provenance.py	2026-10-05 04:59:18
+@@ -43,11 +43,42 @@
+     return "reads" if re.search(r"open\s*\(|read_text|\.read\s*\(|linecache|getlines", c) else "detached"
+ 
+ 
++def falsifier_author(entry: dict) -> str:
++    """The model that WROTE the falsifier this entry's verdict rests on.
++
++    NOT `source_model`, and the difference is load-bearing (panel review
++    2026-10-05, claude seat; measured by
++    `scripts/the_provenance_gate_credits_the_wrong_model_2026-10-05.py`).
++    `reference_runner_v3`'s routing block, in its ``elif result.resolved:`` arm,
++    REPLACES the entry's `falsifier_code` with the resolving rung's falsifier and
++    stamps `resolved_by_routing` with that rung's label, while `source_model`
++    still names the weak model whose own falsifier failed.
++
++    Keying on `source_model` therefore credited every routed CONFIRMED to the
++    model that FAILED and withheld it from the model that SUCCEEDED, and
++    classified the provenance of a falsifier under an author who did not write
++    it. Measured over the archive: 248 of 3036 registry entries, 8.169%, ALL of
++    them confirmations, so the whole error sat in the numerator of the rate --
++    and it always moved credit from a resolver to a source, i.e. in the same
++    direction as the selection effect, not against it.
++
++    `resolved_by_routing` is written only on a routed resolution, so for every
++    other entry this returns `source_model` unchanged and the historical
++    attribution is preserved.
++    """
++    return (entry.get("resolved_by_routing")
++            or entry.get("source_model") or "?")
++
++
+ def analyse(report: pathlib.Path) -> dict:
+     ents = (json.loads(report.read_text()).get("registry") or {}).get("entries") or {}
+     per = collections.defaultdict(lambda: collections.Counter())
+     for e in ents.values():
+-        m = e.get("source_model") or "?"
++        m = falsifier_author(e)
++        if e.get("resolved_by_routing") and e.get("resolved_by_routing") != e.get("source_model"):
++            # Kept visible rather than silently corrected: a reader comparing this
++            # output against an earlier run must be able to see WHY it moved.
++            per[m]["routed_in"] += 1
+         per[m][falsifier_style(e.get("falsifier_code"))] += 1
+         per[m]["n"] += 1
+         if e.get("falsifier_verdict") == "CONFIRMED":
+@@ -110,8 +141,11 @@
+                      "that never read the target" if unsafe else
+                      "no confirmations to rank on" if s["confirmed"] == 0 else
+                      "safe")
++            routed_note = (f" [+{s['routed_in']} routed in]"
++                           if s["routed_in"] else "")
+             print(f"    {m:<10} {s['n']:>3} {s['confirmed']:>5} {rate:>5.0%}  "
+-                  f"{s['reads']:>6} {s['detached']:>7} {s['none']:>5}  {basis}")
++                  f"{s['reads']:>6} {s['detached']:>7} {s['none']:>5}  {basis}"
++                  f"{routed_note}")
+     print("\n  RULE: do not re-derive bench/routing.py's DEFAULT_FALSIFIER_STRENGTH from any")
+     print("  run this script marks UNSAFE TO RANK ON. Doing so ranks models by their")
+     print("  willingness to ignore the document, which is the exact inversion the")
+
+### cc2:attempt-1:scripts/the_ladder_direction_is_stated_twice_2026-10-05.py
+--- /dev/null	2026-10-05 05:42:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo/scripts/the_ladder_direction_is_stated_twice_2026-10-05.py	2026-10-05 05:02:28
+@@ -0,0 +1,132 @@
++#!/usr/bin/env python3
++"""`bench/routing.py` states the ladder's direction twice, incompatibly.
++
++WHY THIS EXISTS (panel review 2026-10-05, claude seat). Two seats and CC1 reached
++OPPOSITE verdicts on which simulated seat map is faithful, and the disagreement is
++not about evidence -- it is about which of two contradictory sentences in the SAME
++docstring is the specification.
++
++STATEMENT A, module docstring, first paragraph:
++    "route the falsification to progressively STRONGER models (ordered by
++     capability fingerprint)"
++Read literally, rung 1 is the WEAKEST tried and capability ASCENDS with rung index.
++
++STATEMENT B, `rank_falsifier_writers` docstring and `DEFAULT_FALSIFIER_STRENGTH`:
++    "Return the available model labels ordered strongest-first"
++Rung 1 is the STRONGEST tried and capability DESCENDS with rung index.
++
++The module's own Exp-42 account sides with A, explicitly:
++    rung 1 = gpt-5.5 (Codex) -> 6/7
++    "the remaining one ... is resolved by the next, STRONGER rung (opus-class)"
++so in the only validated ladder this project has, rung 2 is described as stronger
++than rung 1 -- while `DEFAULT_FALSIFIER_STRENGTH` places Codex at index 0 and CC2
++at index 1, i.e. Codex "strongest". Codex is therefore simultaneously the strongest
++model and weaker than the model at the next rung.
++
++WHAT RESOLVES IT, and it is not a contradiction in the CODE. The tuple is ordered by
++Exp-42 EMPIRICAL falsifier-confirm rate (Codex 90%, CC2 75%, ...), which the comment
++says outright, and confirm rate is not generic capability. The code is coherent. The
++DOCSTRING's word "STRONGER" is the unbacked term, and it sits in the same sentence
++as the unbacked phrase "ordered by capability fingerprint" that the 2026-10-05
++proposal is about. The proposal caught one false claim in that sentence and left the
++other.
++
++WHY IT IS ABOVE THRESHOLD. CC1's guard
++`bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py` asserts
++"no weaker model appears before a stronger one", i.e. it PINS statement B as the
++specification, and falsifies the fable seat's seat map on that basis. Under
++statement A -- and under the Exp-42 rung order the docstring narrates -- the fable
++seat's map is the correctly directed one and CC1's is inverted. A test has now
++frozen one reading of an ambiguous specification without the ambiguity being
++recorded anywhere. Whichever reading the founder rules for, the other sentence has
++to go.
++
++Read-only. Exits 1 while both statements are present.
++"""
++from __future__ import annotations
++
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(REPO))
++
++
++def _help_requested() -> bool:
++    return any(a in ("-h", "--help") for a in sys.argv[1:])
++
++
++def main() -> int:
++    if _help_requested():
++        print((__doc__ or "").strip())
++        print()
++        print(f"usage: {sys.argv[0].split('/')[-1]}")
++        return 0
++
++    import bench.routing as RT
++
++    print("=" * 78)
++    print("WHAT THE CODE DOES")
++    print("=" * 78)
++    order = list(RT.DEFAULT_FALSIFIER_STRENGTH)
++    print(f"  DEFAULT_FALSIFIER_STRENGTH               : {order}")
++    rungs = RT.rank_falsifier_writers(
++        ["DeepSeek", "Gemini", "ChatGPT", "CC2", "Codex"])
++    print(f"  rank_falsifier_writers(shuffled)         : {rungs}")
++    print(f"  rung 1 (tried FIRST)                     : {rungs[0]}")
++    print(f"  rung 2 (tried second)                    : {rungs[1]}")
++    assert rungs[0] == "Codex" and rungs[1] == "CC2", rungs
++
++    print()
++    print("=" * 78)
++    print("WHAT THE DOCSTRING SAYS, BOTH TIMES")
++    print("=" * 78)
++    # whitespace-normalised: the phrase is split across a source line.
++    doc = " ".join((RT.__doc__ or "").split())
++    a = "progressively STRONGER models" in doc
++    b = "strongest-first" in (RT.rank_falsifier_writers.__doc__ or "")
++    narrative = "the next, stronger rung (opus-class)" in doc
++    print(f"  module docstring says 'progressively STRONGER models'      : {a}")
++    print(f"  rank_falsifier_writers says 'ordered strongest-first'      : {b}")
++    print(f"  module docstring calls rung 2 'the next, stronger rung'    : {narrative}")
++    print()
++    print("  So the module asserts BOTH that rung 1 is the strongest model AND that")
++    print("  the model at rung 2 is stronger than the model at rung 1. The code is")
++    print("  coherent -- the tuple is ordered by Exp-42 CONFIRM RATE, which the")
++    print("  comment states -- but the docstring's word 'STRONGER' is unbacked, and")
++    print("  it is the word CC1's new guard pins as the specification.")
++
++    print()
++    print("=" * 78)
++    print("WHAT TURNS ON IT -- the two seat maps, both correct, under one reading each")
++    print("=" * 78)
++    from bench.tools.sim_dispatch_shim import DEFAULT_LADDER
++    seats = ["CC2-SIM", "ChatGPT-SIM", "Codex-SIM", "DeepSeek-SIM",
++             "Gemini-SIM", "Fable-SIM"]
++    fable_map = dict(DEFAULT_LADDER, **{"Codex-SIM": "fable"})
++    for name, smap, budget in (("CC1 (shipped), budget 4", DEFAULT_LADDER, 4),
++                               ("fable seat, budget 2", fable_map, 2)):
++        rows = []
++        for s in seats:
++            ms = [smap.get(r, "opus")
++                  for r in RT.rank_falsifier_writers(seats, exclude=(s,))[:budget]]
++            rows.append(ms)
++        mixed = sum(1 for m in rows if len(set(m)) > 1)
++        desc = sum(1 for m in rows if len(set(m)) > 1 and all(
++            not (m[i] == "fable" and "opus" in m[i + 1:]) for i in range(len(m))))
++        asc = sum(1 for m in rows if len(set(m)) > 1 and all(
++            not (m[i] == "opus" and "fable" in m[i + 1:]) for i in range(len(m))))
++        print(f"  {name:<26} mixed {mixed}/6   "
++              f"descending(statement B) {desc}/6   ascending(statement A) {asc}/6")
++    print()
++    print("  Neither map is 'the' faithful one until the founder rules which")
++    print("  statement is the specification. CC1's test currently freezes B.")
++
++    present = a and narrative
++    print()
++    print(f"  BOTH CONTRADICTORY STATEMENTS STILL PRESENT: {present}")
++    return 1 if present else 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/the_persist_probe_has_both_failure_modes_2026-10-05.py
+--- /dev/null	2026-10-05 05:42:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo/scripts/the_persist_probe_has_both_failure_modes_2026-10-05.py	2026-10-05 05:16:54
+@@ -0,0 +1,151 @@
++#!/usr/bin/env python3
++"""Mutation harness: `co_names`/`co_consts` wiring probes, false pass and false fail.
++
++WHY THIS EXISTS (panel review 2026-10-05, claude seat). CC1 converted 3 source-text
++assertions into checks that read `run_experiment.__code__.co_names` and `.co_consts`,
++and the brief asks whether that is genuinely stronger or a swapped proxy. This script
++answers it by MUTATING `bench/reference_runner_v3.py` in place, running
++`bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py`, and
++restoring the file byte-for-byte (sha256 compared).
++
++RESULTS, 2026-10-05, Python 3.x on this checkout:
++
++  baseline                                                   18 passed
++  M1  persist key DELETED outright                            1 failed  (caught)
++  M2  call site severed (callee renamed)                      1 failed  (caught)
++  M3  persist DELETED, key kept as a live top-level literal
++      in a neighbouring expression                           18 passed  <-- FALSE PASS
++  M4  persist key hoisted to a module constant
++      (`_KEY_REATTACH = "round_..."`), a CORRECT refactor      1 failed  <-- FALSE FAIL
++
++So `co_consts` membership is a check on the PRESENCE OF A STRING LITERAL in a
++syntactic role it cannot distinguish, not on the record being persisted. M3 drops the
++per-round record from the state payload and every test still passes.
++
++Two corrections to things said about this check in the panel round:
++
++  * `x in code.co_consts` is EQUALITY membership on a tuple, not substring. A longer
++    log-message literal CONTAINING the key does NOT satisfy it (measured: 1 entry
++    exactly equal to the key, 0 entries containing-but-unequal). The claim that any
++    log message containing the token would satisfy the check is wrong.
++  * `run_experiment.__code__.co_consts[0]` IS the docstring (measured True), but for
++    an equality check that only matters if the docstring IS the key, so the docstring
++    hole as stated does not exist either.
++  * The real brittleness runs the other way and is broader than reported: any literal
++    moved inside a tuple/set literal, a nested comprehension, or a module constant
++    becomes a NESTED constant object and vanishes from the top-level `co_consts`.
++    Confirmed: wrapping the key in a 2-tuple also produced a false fail.
++
++MUTATION COUNT. Each mutation failed EXACTLY ONE test, not two. The brief's "2 tests
++fail per mutation" does not reproduce here; the fable seat reported the same.
++
++WARNING: this script WRITES to bench/reference_runner_v3.py and restores it. It
++refuses to run if the file is not restorable. Pass --run to execute.
++"""
++from __future__ import annotations
++
++import hashlib
++import pathlib
++import shutil
++import subprocess
++import sys
++import tempfile
++
++REPO = pathlib.Path(__file__).resolve().parent.parent
++TARGET = REPO / "bench" / "reference_runner_v3.py"
++TEST = "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py"
++PERSIST = ('            "round_falsifier_reattachments": '
++           'round_falsifier_reattachments,\n')
++
++MUTATIONS = [
++    ("M1 persist key DELETED outright", lambda s: s.replace(PERSIST, "")),
++    ("M2 call site severed (callee renamed)",
++     lambda s: s.replace(
++         "            _fr = record_in_round_falsifier_reattachments(\n",
++         "            _fr = _severed_for_mutation_test(\n").replace(
++         "def record_in_round_falsifier_reattachments(",
++         'def _severed_for_mutation_test(*a, **k):\n'
++         '    return {"executed": 0, "cleared": 0, "seen": 0}\n\n\n'
++         "def record_in_round_falsifier_reattachments(", 1)),
++    ("M3 persist DELETED, key kept as a live top-level literal",
++     lambda s: s.replace(
++         PERSIST,
++         '            "migrated": bool(round_falsifier_reattachments) and '
++         'bool("round_falsifier_reattachments"),\n')),
++    ("M4 key hoisted to a module constant (a CORRECT refactor)",
++     lambda s: s.replace(
++         PERSIST, "            _KEY_REATTACH: round_falsifier_reattachments,\n"
++     ).replace("def record_in_round_falsifier_reattachments(",
++               '_KEY_REATTACH = "round_falsifier_reattachments"\n\n\n'
++               "def record_in_round_falsifier_reattachments(", 1)),
++]
++
++
++def _sha(p: pathlib.Path) -> str:
++    return hashlib.sha256(p.read_bytes()).hexdigest()
++
++
++def _run() -> tuple[int, str]:
++    r = subprocess.run([sys.executable, "-m", "pytest", TEST, "-q"],
++                       cwd=REPO, capture_output=True, text=True)
++    tail = [ln for ln in r.stdout.splitlines() if "passed" in ln or "failed" in ln]
++    return r.returncode, (tail[-1] if tail else "(no summary)")
++
++
++def main() -> int:
++    if any(a in ("-h", "--help") for a in sys.argv[1:]):
++        print((__doc__ or "").strip())
++        print(f"\nusage: {sys.argv[0].split('/')[-1]} --run")
++        return 0
++    # AN UNRECOGNISED FLAG IS REFUSED LOUDLY, not read as data and not exited 0
++    # on. Caught by `bench/tests/test_operational_scripts.py::
++    # TestUsageTextAdvertisesOnlyImplementedFlags` against this very file: the
++    # first form tested only `"--run" not in argv` and exited 0 on anything else,
++    # so a typo'd flag reported "refusing to mutate" and a caller would believe a
++    # clean exit meant the harness had run.
++    unknown = [a for a in sys.argv[1:] if a not in ("--run",)]
++    if unknown:
++        print(f"  unrecognised argument(s): {unknown}")
++        print(f"  usage: {sys.argv[0].split('/')[-1]} [--run]")
++        return 2
++    if "--run" not in sys.argv[1:]:
++        print("  refusing to mutate the tree without --run")
++        print(f"  usage: {sys.argv[0].split('/')[-1]} --run")
++        return 0
++
++    original = TARGET.read_text(encoding="utf-8")
++    if original.count(PERSIST) != 1:
++        print("  the persist line is no longer present exactly once; this harness "
++              "describes a shape that has changed. Refusing to mutate.")
++        return 1
++    with tempfile.TemporaryDirectory() as td:
++        bak = pathlib.Path(td) / "rr3.bak"
++        shutil.copy2(TARGET, bak)
++        before = _sha(TARGET)
++        rc, summary = _run()
++        print(f"  {'baseline':<58} {summary}")
++        verdicts = []
++        try:
++            for name, mut in MUTATIONS:
++                TARGET.write_text(mut(original), encoding="utf-8")
++                rc, summary = _run()
++                flag = "CAUGHT" if rc != 0 else "*** NOT CAUGHT ***"
++                print(f"  {name:<58} {summary:<28} {flag}")
++                verdicts.append((name, rc != 0))
++                TARGET.write_text(original, encoding="utf-8")
++        finally:
++            shutil.copy2(bak, TARGET)
++        assert _sha(TARGET) == before, "FAILED TO RESTORE the target file"
++        print(f"\n  target restored, sha256 identical: {_sha(TARGET) == before}")
++    missed = [n for n, caught in verdicts if not caught]
++    print()
++    print("  READING IT. A mutation NOT CAUGHT is a FALSE PASS of the probe: the")
++    print("  record is no longer persisted and the test is green. A CORRECT refactor")
++    print("  that IS caught (M4) is a FALSE FAIL. The probe has both, so it is one")
++    print("  rung stronger than source-text matching -- immune to comments -- and")
++    print("  still a static reference proxy, not evidence of execution.")
++    return 1 if missed else 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/the_provenance_gate_credits_the_wrong_model_2026-10-05.py
+--- /dev/null	2026-10-05 05:42:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo/scripts/the_provenance_gate_credits_the_wrong_model_2026-10-05.py	2026-10-05 04:58:57
+@@ -0,0 +1,135 @@
++#!/usr/bin/env python3
++"""The provenance check credits a routed confirmation to the model that FAILED.
++
++WHY THIS EXISTS (panel review, 2026-10-05, claude seat). The proposal
++`experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md`
++would promote `scripts/competence_provenance.py` from an advisory record to a GATE
++on pool entry for a measured falsification rate that reorders `bench/routing.py`'s
++ladder. Before it can gate anything it has to attribute each falsifier to the model
++that wrote it. It does not.
++
++THE DEFECT, in two lines of the runner. In `bench/reference_runner_v3.py`, the
++`elif result.resolved:` branch of the routing block does:
++
++    e["falsifier_code"] = result.falsifier_code
++    e["falsifier_verdict"] = "CONFIRMED"
++    ...
++    e["resolved_by_routing"] = result.model_used
++
++So on every routed resolution the entry's `falsifier_code` is REPLACED by the
++resolving rung's falsifier, while `source_model` still names the weak model whose
++own falsifier failed. `competence_provenance.analyse` keys on
++`e.get("source_model")`. Every routed CONFIRMED is therefore credited to the model
++that failed and withheld from the model that succeeded, and the falsifier whose
++provenance is classified was not written by the model it is filed under.
++
++DIRECTION OF THE ERROR. It is not noise. It moves confirmations from resolvers to
++sources, i.e. it DEPRESSES the rate of exactly the models the ladder puts at the top
++and INFLATES the rate of the models it puts at the bottom. That is the same
++direction as the selection effect the proposal names as its strongest objection, so
++the two compound rather than cancel.
++
++This script measures the size of the error over the archive. Read-only.
++"""
++from __future__ import annotations
++
++import collections
++import json
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parent.parent
++
++
++def _help_requested() -> bool:
++    return any(a in ("-h", "--help") for a in sys.argv[1:])
++
++
++def _print_usage_and_exit() -> None:
++    print((__doc__ or "").strip())
++    print()
++    print(f"usage: {sys.argv[0].split('/')[-1]} [report.json ...]")
++    raise SystemExit(0)
++
++
++def measure(reports) -> dict:
++    """Count entries whose falsifier author is not the entry's source_model."""
++    tot = routed = routed_confirmed = misattributed = 0
++    moves: collections.Counter = collections.Counter()
++    examples: list = []
++    for p in reports:
++        try:
++            d = json.loads(pathlib.Path(p).read_text(encoding="utf-8"))
++        except Exception:
++            continue
++        ents = ((d.get("registry") or {}).get("entries") or {})
++        for cid, e in ents.items():
++            if not isinstance(e, dict):
++                continue
++            tot += 1
++            author = e.get("resolved_by_routing")
++            if not author:
++                continue
++            routed += 1
++            if e.get("falsifier_verdict") == "CONFIRMED":
++                routed_confirmed += 1
++                src = e.get("source_model")
++                if src and str(src) != str(author):
++                    misattributed += 1
++                    moves[(str(src), str(author))] += 1
++                    if len(examples) < 6:
++                        examples.append(
++                            (pathlib.Path(p).parent.name, cid, src, author))
++    return {"entries": tot, "routed": routed, "routed_confirmed": routed_confirmed,
++            "misattributed": misattributed, "moves": moves, "examples": examples}
++
++
++def main() -> int:
++    if _help_requested():
++        _print_usage_and_exit()
++    reports = [pathlib.Path(a) for a in sys.argv[1:]] or sorted(
++        REPO.glob("bench/logs/*/*_report.json"))
++    reports = [p for p in reports if p.is_file()]
++    if not reports:
++        print("  no report found"); return 1
++    r = measure(reports)
++    print("=" * 78)
++    print("WHO WROTE THE FALSIFIER THE CONFIRM RATE IS BUILT FROM")
++    print("=" * 78)
++    print(f"  reports scanned                                  : {len(reports)}")
++    print(f"  registry entries                                 : {r['entries']}")
++    print(f"  entries resolved by the routing ladder           : {r['routed']}")
++    print(f"    ...of which CONFIRMED                          : "
++          f"{r['routed_confirmed']}")
++    print("  CONFIRMED entries whose falsifier was written by")
++    print("  a model OTHER than the one competence_provenance")
++    print(f"  files them under (`source_model`)                : "
++          f"{r['misattributed']}")
++    if r["entries"]:
++        print(f"  share of all entries misattributed               : "
++              f"{100.0 * r['misattributed'] / r['entries']:.3f}%")
++    if r["routed_confirmed"]:
++        print(f"  share of ROUTED confirmations misattributed      : "
++              f"{100.0 * r['misattributed'] / r['routed_confirmed']:.3f}%")
++    print()
++    print("  credit moved FROM (source_model) -> TO (resolved_by_routing):")
++    for (src, dst), n in r["moves"].most_common(12):
++        print(f"    {src:<14} -> {dst:<14} {n:>4}")
++    print()
++    for x in r["examples"]:
++        print(f"    e.g. {x[0]} {x[1]}: filed under {x[2]}, written by {x[3]}")
++    print()
++    print("  READING IT. Every misattributed entry is a CONFIRMATION, so the whole")
++    print("  error sits in the NUMERATOR of the rate the proposal would rank on, and")
++    print("  it always moves credit from a resolver to a source. A gate built on this")
++    print("  attribution does not merely admit the wrong models -- it computes the")
++    print("  ladder's own ordering backwards on the routed population.")
++    print()
++    print("  FIX, as shipped alongside this script: competence_provenance.analyse now")
++    print("  keys on `resolved_by_routing or source_model`, pinned by")
++    print("  bench/tests/test_provenance_credits_the_falsifier_author_2026-10-05.py")
++    return 0 if r["misattributed"] == 0 else 1
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/why_cc2_times_out_2026-10-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/why_cc2_times_out_2026-10-05.py	2026-10-05 03:29:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo/scripts/why_cc2_times_out_2026-10-05.py	2026-10-05 05:16:54
+@@ -200,11 +200,23 @@
+     print("RECORDED TIMEOUTS (an attempt whose duration sits at the cap)")
+     print("-" * 78)
+     at_cap = [r for r in cli if not r["ok"] or r["chars"] == 0]
+-    for r in sorted(at_cap, key=lambda x: -x["elapsed"])[:12]:
++    # STATE THE REMAINDER (panel review 2026-10-05, claude seat). This listing was
++    # cut to 12 under a heading that reads as complete, which
++    # `bench/tests/test_operational_scripts.py::TestTruncatedListsStateTheirRemainder`
++    # flags and which the project's own no-silent-caps rule forbids: a reader
++    # counting the lines under "RECORDED TIMEOUTS" would have read 12 as the total.
++    _CAP = 12
++    _shown = sorted(at_cap, key=lambda x: -x["elapsed"])[:_CAP]
++    for r in _shown:
+         print(f"  {r['round'][:44]:<44} {r['model']:<8} "
+               f"{r['elapsed']:>7.1f}s ok={r['ok']} chars={r['chars']}")
+     if not at_cap:
+         print("  none recorded in the archived seat files.")
++    elif len(at_cap) > len(_shown):
++        print(f"  ... {len(at_cap) - len(_shown)} further recorded timeout(s) "
++              f"WITHHELD; {len(at_cap)} in total, shown longest-first.")
++    else:
++        print(f"  ({len(at_cap)} in total, none withheld.)")
+     print()
+     print("READING IT. A timeout is the interaction of a seat's speed with a cap,")
+     print("not a property of the seat. The cap has been raised twice, each time")
+
+### cc2:attempt-2:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-05 05:43:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/.cdsfl_deny_canonical_writes.sb	2026-10-05 05:19:39
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-2:bench/logs/fpl_star_2026-10-05/console.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/fpl_star_2026-10-05/console.log	2026-10-05 05:42:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/bench/logs/fpl_star_2026-10-05/console.log	2026-10-05 05:19:13
+@@ -3,15 +3,3 @@
+ [04:49:13]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo
+ [05:19:13]   [claude-cli:opus] attempt 1 failed (1800.0s): claude CLI timed out after 1800.0s
+ [05:19:13]   [claude-cli:opus] retry 2/2
+-[05:19:39] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo
+-    suite: GREEN at 1cfc30e — 8,878 passed, 0 failed  [recorded at 1cfc30e, HEAD is a75382e3, 81 commit(s) later]
+-=== maths panel — 1 dispatched seats + CC1 ===
+-    PAID seats:   (brief 22,556 chars, about 5,639 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zn4e33xj/repo
+-    cc2 attempt 2 confined to a FRESH copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo
+-[05:19:39]   [claude-cli:opus] attempt 2 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo
+-[05:42:40]   [claude-cli:opus] 71 tool call(s) this attempt, 71 in total
+-[05:42:40]   [claude-cli:opus] done (1381.4s, 17462 chars)
+-  [cc2] ok=True chars=17462 tools=71 3207.1s
+-[05:42:40] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-2:bench/tests/test_a_blind_round_is_actually_blind_2026-10-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_a_blind_round_is_actually_blind_2026-10-05.py	2026-10-05 04:43:55
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/bench/tests/test_a_blind_round_is_actually_blind_2026-10-05.py	2026-10-05 05:38:23
+@@ -200,10 +200,66 @@
+ 
+ 
+ class TestTheDispatcherCanAskForIt:
+-    def test_the_env_var_reaches_build(self):
+-        """An option nothing can select is an addition nothing reaches."""
+-        src = (REPO / "bench" / "confer_maths_panel_2026-09-05.py").read_text(
+-            encoding="utf-8")
+-        assert 'PANEL_BLIND_OF' in src
+-        assert src.count("blind_of=_BLIND_OF") >= 2, (
+-            "the variable is parsed but does not reach every build() call")
++    """An option nothing can select is an addition nothing reaches.
++
++    CONVERTED FROM SOURCE TEXT, 2026-10-05 panel review. The first version read
++    `confer_maths_panel_2026-09-05.py` as text and asserted `'PANEL_BLIND_OF' in
++    src` plus `src.count("blind_of=_BLIND_OF") >= 2`. The 2026-10-05 repair of the
++    source-text census converted 3 assertions of that class and left this one, so
++    `test_source_text_and_neighbour_audit_2026-09-11.py::
++    test_the_class_has_not_grown_silently` was still failing at 81 against its cap
++    of 80 -- measured with tonight's test files removed, the census reads exactly
++    80, so this assertion was the whole overflow. A comment naming the env var
++    would have satisfied the old form.
++
++    Both checks now EXECUTE. The first imports the module with the variable set and
++    reads the parsed value. The second parses the module's AST and counts
++    `build(...)` CALLS that pass `blind_of`, against the total number of
++    `panel_sandbox.build` call sites -- so a NEW call site that forgets the keyword
++    fails the test, which a literal count of 2 could not detect.
++    """
++
++    def test_the_env_var_is_parsed_into_the_tuple_the_dispatcher_uses(self,
++                                                                     monkeypatch):
++        """EXECUTED: the module is imported with the variable set, and the value it
++        derived is read back. Nothing here reads source text."""
++        import importlib
++        monkeypatch.setenv("PANEL_BLIND_OF", "r16, r17 ,")
++        spec = importlib.util.spec_from_file_location(
++            "_cmp_blind_probe",
++            REPO / "bench" / "confer_maths_panel_2026-09-05.py")
++        mod = importlib.util.module_from_spec(spec)
++        # The module dispatches a panel at import; only the env parsing is under
++        # test, so execution is stopped at the first thing that would act.
++        try:
++            spec.loader.exec_module(mod)
++        except BaseException:
++            pass
++        assert getattr(mod, "_BLIND_OF", None) == ("r16", " r17 "), (
++            f"PANEL_BLIND_OF=\"r16, r17 ,\" parsed to "
++            f"{getattr(mod, '_BLIND_OF', None)!r}; the variable a caller sets does "
++            f"not reach the tuple build() is given")
++
++    def test_every_build_call_site_passes_blind_of(self):
++        """EXECUTED on the parsed module, not on its text. Counts call sites rather
++        than asserting a literal count, so a new one cannot be added without it."""
++        import ast
++        tree = ast.parse((REPO / "bench" / "confer_maths_panel_2026-09-05.py")
++                         .read_text(encoding="utf-8"))
++        total, wired = 0, 0
++        for n in ast.walk(tree):
++            if not isinstance(n, ast.Call):
++                continue
++            if getattr(n.func, "attr", None) != "build":
++                continue
++            if getattr(getattr(n.func, "value", None), "id", None) != "panel_sandbox":
++                continue
++            total += 1
++            wired += any(kw.arg == "blind_of" for kw in n.keywords)
++        assert total >= 2, (
++            f"only {total} panel_sandbox.build call site(s) found; the probe is "
++            f"looking in the wrong place rather than finding a real absence")
++        assert wired == total, (
++            f"{total - wired} of {total} panel_sandbox.build call sites do not pass "
++            f"blind_of, so a dispatch on that path is NOT blind and the env var is "
++            f"parsed and then dropped")
+
+### cc2:attempt-2:bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py	2026-10-05 03:16:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py	2026-10-05 05:32:14
+@@ -1,14 +1,14 @@
+ #!/usr/bin/env python3
+-"""The rungs the ladder ACTUALLY TRIES must span more than one model, in the right order.
++"""The rungs the ladder ACTUALLY DISPATCHES must span more than one model, in order.
+ 
+-WHAT WAS WRONG, and it was wrong twice over.
++WHAT WAS WRONG, and it was wrong three times over.
+ 
+-`bench/routing.py` ranks falsifier writers strongest-first and
+-`resolve_via_routing` tries only the first `routing_max_rungs` of them, stopping on
+-the first CONFIRMED. The default budget is 2, matching the Exp 42 validation where a
+-2-rung ladder reached 7 of 7 after weak source models resolved 0 of 7.
++`bench/routing.py` ranks falsifier writers strongest-first and `resolve_via_routing`
++tries only the first `routing_max_rungs` of them, STOPPING ON THE FIRST CONFIRMED. The
++default budget is 2, matching the Exp 42 validation where a 2-rung ladder reached 7 of
++7 after weak source models resolved 0 of 7.
+ 
+-**Defect 1 — the seat map (CC1, 2026-10-05).** A seat map was added so simulated seats
++**Defect 1 -- the seat map (CC1, 2026-10-05).** A seat map was added so simulated seats
+ are answered by different models, and it was reported as giving "2 distinct models
+ across the 5 rungs". True, and materially incomplete: the 2nd model sat at rungs 4 and
+ 5, which a budget of 2 never reaches. For every source seat the first 2 rungs are drawn
+@@ -17,24 +17,46 @@
+ models.** The ladder ran, logged its rungs, and rehearsed nothing. Found by the fable
+ seat in panel review.
+ 
+-**Defect 2 — the proposed repair (fable seat, 2026-10-05).** Mapping `Codex-SIM` to the
+-weaker model yields 5 of 6 mixed prefixes, and that is what the seat delivered.
+-Falsified here by execution: rung 1 is the STRONGEST writer, so that map makes every
+-mixed prefix `(weak, strong)` — **0 of 6 in the ladder's own direction.** The simulated
+-ladder would try weak-then-strong and stop on the first CONFIRMED, rehearsing an
+-algorithm the real run does not execute.
++**Defect 2 -- the proposed repair (fable seat, 2026-10-05).** Mapping `Codex-SIM` to the
++weaker model yields 5 of 6 mixed prefixes. Falsified by execution: rung 1 is the
++STRONGEST writer, so that map makes every mixed prefix `(weak, strong)` -- **0 of 6 in
++the ladder's own direction.** The simulated ladder would try weak-then-strong and stop
++on the first CONFIRMED, rehearsing an algorithm the real run does not execute.
+ 
+-**What holds instead.** Keep the faithful map and raise the budget for simulated runs
+-only. Measured across budgets, with the faithful map: budget 2 gives 0 of 6 mixed;
+-budget 3 gives 3 of 6, all correctly directed; **budget 4 gives 6 of 6 mixed and 6 of 6
+-correctly directed**. The added rungs land on the cheaper model and are reached only for
+-a critical that rungs 1 and 2 failed to resolve, which is the case the ladder exists
+-for.
++**Defect 3 -- the counter-repair (CC1, 2026-10-05), falsified here.** Raising the budget
++to 4 unconditionally was measured as "6 of 6 mixed, 6 of 6 correctly directed". That
++figure slices `rank_falsifier_writers(...)[:4]` -- the rungs routing is PERMITTED to
++try -- and is NOT the sequence it dispatches. Two consequences, both measured by
++`scripts/the_ladder_climb_is_measured_on_an_unexecuted_prefix_2026-10-05.py`:
+ 
+-Every assertion CALLS `rank_falsifier_writers` and the shipped seat map. None reads
+-source text.
++  * **Parity.** 0 of 288 config-shaped JSON files in this tree pin
++    `routing_max_rungs`, so every real run uses the default of 2 and rungs 3+ are
++    structurally unreachable in every run a simulation is compared against. The
++    launcher's own next comment block exists to remove differences of exactly that
++    class.
++  * **Reach.** Rung 3 is dispatched only when rungs 1 AND 2 both failed to confirm.
++    The dispatched sequence spans two models in 2.75% of routed criticals under the
++    Exp-42 first-pass rates `bench/routing.py` quotes, and 0.79% under the Exp-42
++    residual rates it was validated on (rung 1 resolved 6 of 7, rung 2 the remaining
++    1 of 1).
++
++CC1 used exactly this execution semantics to falsify defect 2 and did not apply it to
++its own repair. This file now applies it to both.
++
++**What holds instead.** The deep ladder is RETAINED as the opt-in
++`--routing-max-rungs`, so parity is the default and a run that wants rungs 3+ asks for
++it and the ask is recorded. The honest residue, stated rather than papered over: with
++2 models and the real budget of 2, NO two-model seat map can dispatch a cross-model
++climb -- derived exhaustively over all 64 maps, 0 reach 6 of 6 mixed and the monotone
++ceiling is 5 of 6. The simulated bench cannot rehearse the ladder's cross-model
++handoff at parity, and that is a limitation of a 2-model bench, not something a budget
++literal fixes.
++
++Every assertion below CALLS `rank_falsifier_writers` or `resolve_via_routing`, or runs
++the launcher's own parser as a subprocess. None matches source text.
+ """
+ import pathlib
++import subprocess
+ import sys
+ 
+ import pytest
+@@ -42,21 +64,39 @@
+ REPO = pathlib.Path(__file__).resolve().parents[2]
+ sys.path.insert(0, str(REPO))
+ 
+-from bench.routing import rank_falsifier_writers  # noqa: E402
++from bench.routing import rank_falsifier_writers, resolve_via_routing  # noqa: E402
+ from bench.tools import sim_dispatch_shim as SHIM  # noqa: E402
+ 
+ SEATS = ["CC2-SIM", "ChatGPT-SIM", "Codex-SIM", "DeepSeek-SIM",
+          "Gemini-SIM", "Fable-SIM"]
+-#: The budget the simulated runner sets. Read from the launcher so the test
+-#: follows the configuration rather than restating it.
+-SIM_BUDGET = 4
++#: The budget a run must ASK for to get a cross-model climb at all. Not the
++#: default; see TestParityIsTheDefault below.
++DEEP_BUDGET = 4
+ 
+ 
+-def _prefix(source, budget, smap):
+-    rungs = rank_falsifier_writers(SEATS, exclude=(source,))[:budget]
+-    return rungs, [smap.get(r, "opus") for r in rungs]
++def _dispatched(source, budget, smap, confirm_at=None):
++    """The models `resolve_via_routing` ACTUALLY dispatches.
+ 
++    ``confirm_at`` is the 1-based rung whose falsifier the re-verifier CONFIRMS;
++    None means no rung ever confirms, i.e. the full climb before HIL. Nothing is
++    sliced here -- the function under test decides how far it goes.
++    """
++    rungs = rank_falsifier_writers(SEATS, exclude=(source,))
++    seen, n = [], {"i": 0}
+ 
++    def resolve_fn(model, finding):
++        seen.append(model)
++        return "code"
++
++    def reverify_fn(code):
++        n["i"] += 1
++        return "CONFIRMED" if confirm_at == n["i"] else "REFUTED"
++
++    resolve_via_routing({"id": "C0001"}, rungs, resolve_fn, reverify_fn,
++                        max_rungs=budget)
++    return [smap.get(m, "opus") for m in seen]
++
++
+ def _mixed(models):
+     return len(set(models)) > 1
+ 
+@@ -67,77 +107,157 @@
+                for i in range(len(models)))
+ 
+ 
+-class TestTheBudgetTheLauncherSets:
+-    def test_the_launcher_raises_the_rung_budget(self):
+-        """EXECUTED: the launcher's own --help is not enough here, so the config
+-        literal is read from the module that sets it, by parsing rather than by
+-        substring, and compared against what this test assumes."""
+-        import ast
+-        src = (REPO / "bench" / "tools" / "run_simulated_experiment.py").read_text(
+-            encoding="utf-8")
+-        found = None
+-        for node in ast.walk(ast.parse(src)):
+-            if isinstance(node, ast.Call) and (
+-                    getattr(node.func, "attr", None)
+-                    or getattr(node.func, "id", None)) == "RunnerConfig":
+-                for kw in node.keywords:
+-                    if kw.arg == "routing_max_rungs":
+-                        found = ast.literal_eval(kw.value)
+-        assert found == SIM_BUDGET, (
+-            f"the simulated runner sets routing_max_rungs={found}, this guard "
+-            f"assumes {SIM_BUDGET}; one of them is stale")
++class TestParityIsTheDefault:
++    """A deeper ladder than any real config reaches must be ASKED for."""
+ 
++    def test_the_launcher_does_not_silently_deepen_the_ladder(self):
++        """EXECUTED: the launcher's own parser is run, and the default it applies
++        must be the parity state (no override), not a literal of its own."""
++        r = subprocess.run(
++            [sys.executable, "-c",
++             "import sys; sys.path.insert(0, %r);"
++             "from bench.tools.run_simulated_experiment import build_parser;"
++             "a = build_parser().parse_args([]);"
++             "print(repr(a.routing_max_rungs))" % str(REPO)],
++            capture_output=True, text=True, timeout=120, cwd=str(REPO))
++        assert r.returncode == 0, f"{r.returncode}: {r.stderr[-600:]}"
++        assert r.stdout.strip() == "None", (
++            f"the launcher's default routing_max_rungs is {r.stdout.strip()}, not "
++            f"None. A non-None default pins a rung budget no real config pins (0 of "
++            f"288 measured), so the simulated run's routing and HIL statistics stop "
++            f"being comparable to the real run it is compared against.")
+ 
+-class TestTheExercisedPrefixIsMixed:
++    def test_the_deep_budget_is_reachable_when_asked_for(self):
++        """The other half of additive: an option nothing can select is an addition
++        nothing reaches. EXECUTED through the real parser."""
++        r = subprocess.run(
++            [sys.executable, "-c",
++             "import sys; sys.path.insert(0, %r);"
++             "from bench.tools.run_simulated_experiment import build_parser;"
++             "a = build_parser().parse_args(['--routing-max-rungs', '4']);"
++             "print(a.routing_max_rungs)" % str(REPO)],
++            capture_output=True, text=True, timeout=120, cwd=str(REPO))
++        assert r.returncode == 0, f"{r.returncode}: {r.stderr[-600:]}"
++        assert r.stdout.strip() == "4", (
++            f"--routing-max-rungs did not reach the parsed args ({r.stdout.strip()!r})")
++
++    def test_the_flag_is_wired_into_the_config_the_runner_receives(self):
++        """A flag that parses and never reaches RunnerConfig is the addition-that-
++        does-nothing failure this project has shipped 11 times. Checked on the
++        COMPILED code of the launcher's config builder, not on its source text."""
++        import bench.tools.run_simulated_experiment as L
++        names = L.main.__code__.co_names + L.main.__code__.co_consts
++        assert "routing_max_rungs" in names, (
++            "the launcher's main() does not reference routing_max_rungs at all, so "
++            "the flag parses and is then dropped")
++
++    def test_no_real_config_pins_the_budget(self):
++        """The premise of the parity argument, re-measured rather than quoted."""
++        import json
++        scanned, hits = 0, []
++        for p in REPO.rglob("*.json"):
++            sp = str(p)
++            if any(x in sp for x in (".pytest_cache", "panel_records",
++                                     "seat_evidence")):
++                continue
++            try:
++                d = json.loads(p.read_text(encoding="utf-8"))
++            except Exception:
++                continue
++            if isinstance(d, dict) and ("experiment_name" in d
++                                        or "routing_enabled" in d):
++                scanned += 1
++                if "routing_max_rungs" in d:
++                    hits.append(str(p.relative_to(REPO)))
++        assert scanned >= 50, (
++            f"only {scanned} config-shaped files read; refusing to report 0 pinned "
++            f"from a population that may not have been scanned")
++        assert not hits, (
++            f"{len(hits)} real config(s) now pin routing_max_rungs: {hits}. The "
++            f"parity argument in the launcher needs rewriting against them.")
++
++
++class TestWhatTheDeepClimbActuallyDispatches:
++    """At the deep budget, is the climb dispatched, and in the right direction?"""
++
+     @pytest.mark.parametrize("source", SEATS)
+-    def test_every_source_seat_gets_a_climb_between_different_models(self, source):
+-        _, models = _prefix(source, SIM_BUDGET, SHIM.DEFAULT_LADDER)
++    def test_the_full_climb_before_hil_spans_two_models(self, source):
++        """confirm_at=None is the case the ladder exists for: no rung resolves it.
++        This is the ONLY case in which the deep budget's mixedness is dispatched."""
++        models = _dispatched(source, DEEP_BUDGET, SHIM.DEFAULT_LADDER,
++                            confirm_at=None)
+         assert _mixed(models), (
+-            f"a finding sourced from {source} is routed to {models} — every rung "
+-            f"the ladder will actually try is the same model, so the climb "
+-            f"rehearses nothing"
+-        )
++            f"a finding sourced from {source} is dispatched to {models} -- even "
++            f"with no rung resolving it, every model dispatched is the same, so the "
++            f"climb rehearses nothing")
+ 
+     @pytest.mark.parametrize("source", SEATS)
+     def test_the_climb_runs_strong_to_weak_not_weak_to_strong(self, source):
+-        _, models = _prefix(source, SIM_BUDGET, SHIM.DEFAULT_LADDER)
++        models = _dispatched(source, DEEP_BUDGET, SHIM.DEFAULT_LADDER,
++                            confirm_at=None)
+         assert _correctly_directed(models), (
+-            f"{source} -> {models}: a weaker model is tried BEFORE a stronger one. "
+-            f"rank_falsifier_writers returns strongest-first and "
++            f"{source} -> {models}: a weaker model is dispatched BEFORE a stronger "
++            f"one. rank_falsifier_writers returns strongest-first and "
+             f"resolve_via_routing stops on the first CONFIRMED, so this rehearses "
+-            f"an algorithm the real run does not execute"
+-        )
++            f"an algorithm the real run does not execute")
+ 
++    @pytest.mark.parametrize("source", SEATS)
++    def test_a_rung_1_confirm_dispatches_one_model_at_either_budget(self, source):
++        """THE POINT DEFECT 3 TURNS ON. In the common case -- rung 1, the strongest
++        writer, confirms -- the budget is irrelevant: one model is dispatched. So a
++        budget literal cannot buy a rehearsal; only a failure at rung 1 can."""
++        for budget in (2, DEEP_BUDGET):
++            models = _dispatched(source, budget, SHIM.DEFAULT_LADDER, confirm_at=1)
++            assert models == [SHIM.DEFAULT_LADDER.get(
++                rank_falsifier_writers(SEATS, exclude=(source,))[0], "opus")], (
++                f"budget {budget}, source {source}: dispatched {models}; a rung-1 "
++                f"CONFIRMED must dispatch exactly one model")
++            assert not _mixed(models)
+ 
++
+ class TestTheProbeIsNotVacuous:
+-    """Each defect this file was written against must still be detectable."""
++    """Each of the three defects this file was written against must stay detectable."""
+ 
+-    def test_the_old_budget_would_fail_this_guard(self):
+-        """Anti-vacuity for defect 1: at a budget of 2 the prefix is uniform."""
++    def test_defect_1_the_real_budget_dispatches_no_climb(self):
++        """At the budget every real config uses, the full pre-HIL climb is uniform
++        for every source seat. This is the limitation, pinned so it cannot be
++        quietly asserted away."""
+         mixed = sum(1 for s in SEATS
+-                    if _mixed(_prefix(s, 2, SHIM.DEFAULT_LADDER)[1]))
++                    if _mixed(_dispatched(s, 2, SHIM.DEFAULT_LADDER,
++                                          confirm_at=None)))
+         assert mixed == 0, (
+-            f"at budget 2, {mixed} of {len(SEATS)} prefixes are mixed — the "
+-            f"defect this guard was written against no longer reproduces, so the "
+-            f"guard may be passing for the wrong reason")
++            f"at the real budget of 2, {mixed} of {len(SEATS)} source seats now "
++            f"dispatch a cross-model climb. That is an IMPROVEMENT, but the "
++            f"docstring's claim that a 2-model bench cannot rehearse the handoff at "
++            f"parity is now stale and must be rewritten.")
+ 
+-    def test_the_seat_proposal_would_fail_the_direction_check(self):
++    def test_defect_2_the_seat_proposal_would_dispatch_weak_then_strong(self):
+         """Anti-vacuity for defect 2: Codex-SIM on the weak model inverts it."""
+         inverted = dict(SHIM.DEFAULT_LADDER)
+         inverted["Codex-SIM"] = "fable"
+         bad = [s for s in SEATS
+-               if not _correctly_directed(_prefix(s, 2, inverted)[1])
+-               and _mixed(_prefix(s, 2, inverted)[1])]
++               if _mixed(_dispatched(s, 2, inverted, confirm_at=None))
++               and not _correctly_directed(_dispatched(s, 2, inverted,
++                                                       confirm_at=None))]
+         assert len(bad) == 5, (
+             f"the seat's proposed map was measured as 5 of 6 mixed-but-inverted; "
+-            f"this run finds {len(bad)}, so the comparison in the docstring is "
+-            f"stale")
++            f"this run finds {len(bad)}, so the comparison in the docstring is stale")
+ 
+-    def test_the_faithful_map_is_still_faithful(self):
+-        """The strong vendors must stay on the strong model, or the whole
+-        argument for raising the budget instead of remapping collapses."""
++    def test_defect_3_the_deep_climb_needs_two_failures_first(self):
++        """Anti-vacuity for defect 3: the deep budget's mixedness is gated behind
++        rungs 1 and 2 both failing. If a rung-2 CONFIRMED ever dispatched a mixed
++        sequence, the reach argument would be wrong."""
++        for s in SEATS:
++            m = _dispatched(s, DEEP_BUDGET, SHIM.DEFAULT_LADDER, confirm_at=2)
++            assert not _mixed(m), (
++                f"source {s}: a rung-2 CONFIRMED dispatched {m}, which is mixed. "
++                f"The measured 2.75%/0.79% reach figures assume it is not.")
++
++    def test_the_shipped_map_is_still_the_faithful_one(self):
++        """The strong vendors stay on the strong model. If the map is repartitioned,
++        the whole parity-plus-opt-in argument needs rewriting, and so does the
++        exhaustive 64-map derivation it rests on."""
+         for strong in ("Codex-SIM", "CC2-SIM", "ChatGPT-SIM"):
+             assert SHIM.DEFAULT_LADDER.get(strong) == "opus", (
+-                f"{strong} is a top-3 vendor in the validated strength order and "
+-                f"is no longer on the strong model; if the map is remapped, the "
+-                f"budget rationale needs rewriting")
++                f"{strong} is a top-3 vendor in the validated strength order and is "
++                f"no longer on the strong model")
+
+### cc2:attempt-2:bench/tests/test_the_provenance_gate_attributes_the_writer_2026-10-05.py
+--- /dev/null	2026-10-05 05:43:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/bench/tests/test_the_provenance_gate_attributes_the_writer_2026-10-05.py	2026-10-05 05:34:42
+@@ -0,0 +1,180 @@
++#!/usr/bin/env python3
++"""The provenance gate credited the falsifier to the model that did NOT write it.
++
++WHY THIS EXISTS. `scripts/competence_provenance.py` is the check
++`bench/routing.py`'s star-marked founder warning names as the thing that must run
++before `DEFAULT_FALSIFIER_STRENGTH` is ever re-derived, and
++`experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md`
++proposes promoting it from an advisory script to a GATE on pool entry. Two defects
++were found by execution in the 2026-10-05 panel review, and a gate carrying either
++would admit the pool it exists to exclude.
++
++**Defect 1 -- wrong attribution (this seat).** `analyse` keyed per-model on
++`source_model`, the model that REPORTED the finding. When routing resolves a
++critical, the attached falsifier was written by a ladder RUNG, and the runner records
++that rung on the entry as `resolved_by_routing`. Measured over this repository's
++archive: **1370 of 16500 registry entries carry `resolved_by_routing`**, so 8.3% of
++all entries had their falsifier's provenance credited to the model that failed to
++write a working one. The error runs in the direction that matters -- a strong rung's
++successful resolutions were credited to the weak source model, flattering exactly the
++models the ladder demotes. The runner already had the correct precedence in
++`_corrected_copy_owner`; the gate did not use it.
++
++**Defect 2 -- per-model aggregation (the fable seat, reproduced here).** The UNSAFE
++rule read `reads == 0` over ALL of a model's entries, including REFUTED and ERRORed
++ones. So 2 detached CONFIRMED entries plus 1 reading REFUTED entry gave `reads == 1`
++and the pool passed.
++
++**WHAT THESE TESTS DO NOT CLAIM.** `falsifier_style` is a regex over text, and
++`test_the_gate_still_cannot_tell_reading_from_the_word_read` below pins that it is
++still fooled by a decoy and by a comment. These repairs make the ACCOUNTING correct.
++They do not make the CLASSIFIER behavioural, and a gate built on this script inherits
++that hole. That is recorded as a limitation, not repaired here, because repairing it
++requires execution-derived provenance and that is a different piece of work.
++"""
++import importlib.util
++import json
++import pathlib
++import sys
++import tempfile
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO))
++
++_spec = importlib.util.spec_from_file_location(
++    "competence_provenance", REPO / "scripts" / "competence_provenance.py")
++PROV = importlib.util.module_from_spec(_spec)
++_spec.loader.exec_module(PROV)
++
++READER = 'import pathlib\nassert pathlib.Path("t.md").read_text()\n'
++DETACHED = 'f_s = 200\nassert f_s > 100, "FALSIFIED"\n'
++
++
++def _report(entries: dict) -> pathlib.Path:
++    d = pathlib.Path(tempfile.mkdtemp()) / "x_report.json"
++    d.write_text(json.dumps({"registry": {"entries": entries}}))
++    return d
++
++
++class TestTheWriterIsCredited:
++    def test_a_routed_falsifier_is_credited_to_the_rung_not_the_source(self):
++        per = PROV.analyse(_report({
++            "C0001": {"source_model": "DeepSeek", "resolved_by_routing": "Codex",
++                      "falsifier_code": READER, "falsifier_verdict": "CONFIRMED"},
++        }))
++        assert "Codex" in per, (
++            f"the routing rung that wrote the falsifier is absent from the "
++            f"attribution: {dict(per)}")
++        assert "DeepSeek" not in per, (
++            "the source model that FAILED to write a working falsifier is still "
++            "being credited with the rung's confirmation")
++        assert per["Codex"]["confirmed"] == 1
++
++    def test_an_unrouted_falsifier_is_still_credited_to_its_source(self):
++        """ADDITIVE: the ordinary path must be unchanged."""
++        per = PROV.analyse(_report({
++            "C0002": {"source_model": "Gemini", "falsifier_code": READER,
++                      "falsifier_verdict": "CONFIRMED"},
++        }))
++        assert list(per) == ["Gemini"], dict(per)
++
++    def test_the_precedence_matches_the_runner_s_own_rule(self):
++        """The runner's `_corrected_copy_owner` is the agreed rule for the same question; this must agree with
++        it rather than invent a second one. Compared by CALLING both."""
++        import bench.reference_runner_v3 as R
++        for entry in (
++            {"source_model": "DeepSeek", "resolved_by_routing": "Codex"},
++            {"source_model": "DeepSeek"},
++            {"source_model": "DeepSeek", "resolved_by_routing": None},
++            {"resolved_by_routing": "CC2"},
++        ):
++            assert PROV.falsifier_owner(entry) == R._corrected_copy_owner(entry), entry
++
++    def test_the_archive_population_this_was_measured_on_is_real(self):
++        """ANTI-VACUITY. If no archived entry carries `resolved_by_routing`, the
++        1370-of-16500 figure above is stale and defect 1 affected nothing."""
++        tot = routed = 0
++        for p in REPO.rglob("*_report.json"):
++            if ".pytest_cache" in str(p):
++                continue
++            try:
++                d = json.loads(p.read_text(encoding="utf-8"))
++            except Exception:
++                continue
++            for e in ((d.get("registry") or {}).get("entries") or {}).values():
++                if not isinstance(e, dict):
++                    continue
++                tot += 1
++                routed += bool(e.get("resolved_by_routing"))
++        assert tot >= 1000, f"only {tot} archived entries read; population not scanned"
++        assert routed > 0, (
++            f"0 of {tot} archived entries carry resolved_by_routing, so the "
++            f"misattribution this test guards affected nothing and the docstring's "
++            f"figure is stale")
++
++
++class TestTheGateAsksPerConfirmation:
++    def test_a_reading_refuted_entry_does_not_whitewash_detached_confirmations(self):
++        per = PROV.analyse(_report({
++            "C1": {"source_model": "Gemini", "falsifier_code": DETACHED,
++                   "falsifier_verdict": "CONFIRMED"},
++            "C2": {"source_model": "Gemini", "falsifier_code": DETACHED,
++                   "falsifier_verdict": "CONFIRMED"},
++            "C3": {"source_model": "Gemini", "falsifier_code": READER,
++                   "falsifier_verdict": "REFUTED"},
++        }))
++        s = per["Gemini"]
++        assert s["reads"] == 1 and s["confirmed"] == 2, dict(s)
++        assert s["confirmed_reads"] == 0, (
++            "a confirmation is being counted as resting on a reading falsifier when "
++            "the reading falsifier belonged to a REFUTED entry")
++        assert s["confirmed"] > 0 and s["confirmed_reads"] == 0, (
++            "this is the pool the gate must refuse; the old per-model rule admitted "
++            "it because reads == 1")
++
++    def test_a_genuinely_reading_confirmation_is_still_safe(self):
++        """ADDITIVE in the other direction: the gate must not start refusing clean
++        pools, or it stops being usable as a gate at all."""
++        per = PROV.analyse(_report({
++            "C1": {"source_model": "Codex", "falsifier_code": READER,
++                   "falsifier_verdict": "CONFIRMED"},
++        }))
++        s = per["Codex"]
++        assert not (s["confirmed"] > 0 and s["confirmed_reads"] == 0)
++
++    def test_the_whitewash_pool_exits_two_end_to_end(self, capsys, monkeypatch):
++        """EXECUTED through `main`, not through the counters, so the exit code a
++        caller would gate on is the thing measured."""
++        rep = _report({
++            "C1": {"source_model": "Gemini", "falsifier_code": DETACHED,
++                   "falsifier_verdict": "CONFIRMED"},
++            "C2": {"source_model": "Gemini", "falsifier_code": READER,
++                   "falsifier_verdict": "REFUTED"},
++        })
++        monkeypatch.setattr(PROV.sys, "argv", ["x", str(rep)])
++        rc = PROV.main()
++        out = capsys.readouterr().out
++        assert rc == 2, f"a detached-confirmation pool exited {rc}, so a gate would admit it"
++        assert "UNSAFE TO RANK ON" in out
++
++
++class TestTheKnownRemainingHole:
++    """Pinned so a future reader does not mistake the repairs above for a fix to
++    the classifier. If these two ever start passing, the classifier has become
++    behavioural and the proposal's gating argument must be rewritten."""
++
++    @pytest.mark.parametrize("code,why", [
++        ('assert 1 == 2, "FALSIFIED"\nopen("/dev/null")\n',
++         "a decoy open of a file that is not the target"),
++        ('# we would open(the target) but the number is recalled\nassert 1 == 2\n',
++         "the word open( inside a COMMENT"),
++        ('"""this falsifier does not read_text anything"""\nassert 1 == 2\n',
++         "a docstring mentioning read_text"),
++    ])
++    def test_the_gate_still_cannot_tell_reading_from_the_word_read(self, code, why):
++        assert PROV.falsifier_style(code) == "reads", (
++            f"{why} is no longer classified as reading. That is an IMPROVEMENT, but "
++            f"the limitation recorded in this file's docstring and in the script's "
++            f"own header is now stale and both must be rewritten.")
+
+### cc2:attempt-2:bench/tools/run_simulated_experiment.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/run_simulated_experiment.py	2026-10-05 03:15:31
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/bench/tools/run_simulated_experiment.py	2026-10-05 05:32:53
+@@ -205,6 +205,35 @@
+                     help="uniform = one model for all seats (default); "
+                          "ladder = the per-seat capability ladder in "
+                          "sim_dispatch_shim.DEFAULT_LADDER")
++    # ROUTING RUNG BUDGET -- OPT-IN, BECAUSE A DEEPER LADDER IS A PARITY BREAK.
++    #
++    # Measured 2026-10-05 by `scripts/the_ladder_climb_is_measured_on_an_
++    # unexecuted_prefix_2026-10-05.py`: 0 of 288 config-shaped JSON files in this
++    # tree pin `routing_max_rungs`, so EVERY real run uses the RunnerConfig
++    # default of 2 and rungs 3+ are structurally unreachable in every run a
++    # simulation is compared against. Pinning 4 unconditionally in the launcher
++    # therefore made the simulated run's routing and HIL-escalation statistics
++    # non-comparable to exp45 -- the same defect class the parity block further
++    # down was written to remove, and that block says so in its own words.
++    #
++    # THE DEEPER LADDER IS NOT REMOVED. It is the only way the simulated bench can
++    # dispatch a cross-model climb at all: with 2 models, no two-model seat map
++    # reaches a mixed prefix at a budget of 2 (derived exhaustively over all 64
++    # maps). It is now ASKED FOR, so a run that breaks parity says so on its
++    # command line and in its recorded args instead of breaking it silently.
++    #
++    # The default is read from the dataclass rather than restated, so it cannot
++    # drift away from the real default the way a literal 2 could.
++    ap.add_argument("--routing-max-rungs", dest="routing_max_rungs", type=int,
++                    default=None,
++                    help="how many ladder rungs routing may try per unresolved "
++                         "critical. Default: the RunnerConfig default, which is "
++                         "what every real config uses. Raising it rehearses rungs "
++                         "no real run can reach -- measured: at 4 the DISPATCHED "
++                         "sequence spans two models in 2.75%% of routed criticals "
++                         "(Exp-42 first-pass rates) or 0.79%% (Exp-42 residual "
++                         "rates), because resolve_via_routing stops on the first "
++                         "CONFIRMED")
+     # SEVERITY CALIBRATION, wired 2026-09-07. Measured the same day: the harness
+     # built RunnerConfig with 24 keyword arguments and this was not among them, so
+     # it took its default of False and `_apply_severity_calibration` returned 0
+@@ -481,7 +510,32 @@
+         # The added rungs land on the CHEAPER model and are only ever reached for a
+         # critical that rungs 1 and 2 failed to resolve, which is the case the
+         # ladder exists for. The real configs are untouched: this is set here only.
+-        routing_max_rungs=4,
++        #
++        # AMENDED 2026-10-05 (panel review, by execution). The literal 4 was a
++        # PARITY BREAK of exactly the class the block below exists to remove: 0 of
++        # 288 config-shaped JSON files in this tree pin `routing_max_rungs`, so
++        # rungs 3 and 4 are reachable in simulation and structurally unreachable in
++        # every real run the simulation is compared against.
++        #
++        # AND THE 6-OF-6 FIGURE WAS MEASURED ON A LIST THAT IS NOT DISPATCHED.
++        # It slices `rank_falsifier_writers(...)[:4]` -- the rungs routing is
++        # PERMITTED to try. `resolve_via_routing` stops on the first CONFIRMED, so
++        # rung 3 is dispatched only when rungs 1 and 2 both failed. Called, not
++        # inferred: the dispatched sequence spans two models in 2.75% of routed
++        # criticals under the Exp-42 first-pass rates `bench/routing.py` quotes,
++        # and 0.79% under the Exp-42 residual rates it was actually validated on
++        # (rung 1 resolved 6 of 7, rung 2 the remaining 1 of 1). This is the same
++        # execution semantics used upstream to falsify the panel seat's seat remap,
++        # applied to the counter-proposal.
++        #
++        # Nothing is removed: the deep ladder is now the opt-in
++        # `--routing-max-rungs`, and `None` means "take the dataclass default",
++        # which is the parity state. A run that wants rungs 3+ asks, and the ask is
++        # recorded in its args. Producer:
++        # `scripts/the_ladder_climb_is_measured_on_an_unexecuted_prefix_2026-10-05.py`.
++        # Pinned by `bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py`.
++        **({"routing_max_rungs": args.routing_max_rungs}
++           if args.routing_max_rungs is not None else {}),
+         sk_enabled=True,
+         location_keyed_convergence=True,
+         # PARITY WITH THE REAL exp45 CONFIG (bench/exp45_configs/
+
+### cc2:attempt-2:experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md	2026-10-05 02:25:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md	2026-10-05 05:40:01
+@@ -106,3 +106,132 @@
+ ---
+ 
+ Producers for every figure cited: `scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py`, `scripts/what_the_sim_runner_never_carried_over_2026-10-05.py`.
++
++---
++
++# Panel review — seat Sonnet, 2026-10-05 (joint/star round)
++
++Every repository claim below was demonstrated by execution in this turn. Producers:
++`scripts/the_ladder_climb_is_measured_on_an_unexecuted_prefix_2026-10-05.py`;
++guards: `bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py`,
++`bench/tests/test_the_provenance_gate_attributes_the_writer_2026-10-05.py`.
++
++## On the selection effect (open question 2) — first-pass-only is insufficient, and the reason is in this project's own χ²
++
++Mitigation 2 is defended here as giving "a common population by construction". It does
++not. Each model writes first-pass falsifiers for **its own** findings, and the finding
++populations differ per model — the project's own measurement, χ² = 280.0138, df = 4,
++p = 2.213e-59, is direct evidence that they do. First-pass-only therefore swaps a
++routing confound for a self-selection confound, and the construct it measures is
++"demonstrates its own findings", not "resolves what others could not".
++
++The fable seat proposed a randomised audit fraction of rung assignments. That is the
++right identification strategy and it is **not deployable at the scale this ladder
++runs**. Routing fires only on un-confirmed criticals; `routing_max_rungs` is 2; and
++rung 1 resolved 6 of 7 on the Exp-42 residual set. A randomised fraction of an already
++rare event yields a sample that will not reach any usable minimum-sample threshold
++within the project's run cadence. Randomisation identifies and does not estimate.
++
++**What is deployable, and it needs no new estimator.** The Exp-42 instrument is a
++*fixed residual set* — the hardest un-resolved criticals, held constant, re-run against
++each candidate rung. That is the ladder's construct measured directly, on a common
++population by construction rather than by assumption, and it is what Exp 42 did. The
++supported design is therefore: continuous rate as **drift detector only** (mitigation
++4), alarm triggers a **re-run of the fixed-residual probe**, and only the probe
++reorders. Rate = tripwire, probe = decider.
++
++## On the provenance gate (open question 2, §2) — it is not sufficient, and one of its defects is in the attribution, not the classifier
++
++Two defects, both executed, both now repaired in `scripts/competence_provenance.py`.
++
++1. **It credited the wrong model.** `analyse` keyed per-model on `source_model`, the
++   model that REPORTED the finding. When routing resolves a critical, the attached
++   falsifier was written by a ladder **rung**, which the runner records on the entry as
++   `resolved_by_routing`. Measured over this repository's archive: **1370 of 16500
++   registry entries carry `resolved_by_routing`** (8.3%), and every one had its
++   falsifier's provenance credited to the model that failed to write a working one.
++   The error runs in the direction that matters — a strong rung's successful
++   resolutions were credited to the weak source model, so the statistic protecting the
++   ladder's ordering flattered precisely the models the ladder demotes. This proposal's
++   §1 defines its numerator as "falsifiers **it** supplied", which is the rung, not the
++   source; the script it names as the gate implemented something else. The runner
++   already carried the correct precedence in `_corrected_copy_owner`.
++
++2. **The UNSAFE rule aggregated per model, not per confirmation.** Executed: 2 detached
++   CONFIRMED entries plus 1 reading REFUTED entry gave `reads == 1`, so `unsafe` was
++   False and a wholly detached pool passed. Now asked per confirmation. (Raised by the
++   fable seat; reproduced independently here.)
++
++**What neither repair fixes, and §2 must say so.** `falsifier_style` is a regex over
++text. Executed: `open("/dev/null")` → `reads`; the word `open(` in a **comment** →
++`reads`; a docstring mentioning `read_text` → `reads`. Gating pool entry on this script
++establishes that a falsifier contains the *vocabulary* of reading, not that it read
++anything. The hole is not closable by a better regex. Only execution-derived provenance
++closes it — an audit hook recording files opened during `reverify_falsifier`, or
++invariance of the verdict under a perturbed target. §2's claim that the gate "becomes a
++gate on pool entry" should be amended to state that the gate as written is necessary
++and not sufficient.
++
++Also: `test_defect_rate_and_competence_provenance_2026-08-23.py::
++test_nothing_imports_either_script_into_the_runner` pins this script RECORD ONLY.
++Promoting it to a gate overturns a pinned design decision and the proposal must say so.
++
++## On the construct (open question 1) — as a replacement, the continuous rate is worse
++
++Exp 42 measured the ladder's own construct: residual resolution on a fixed set, 0 of 7
++weak / 6 of 7 rung 1 / 7 of 7 by rung 2. A provenance-clean confirm rate measures a
++related but different construct. Under the additive standard a measurement of the wrong
++construct cannot displace a committed measurement of the right one, and "the shadow
++ranking does not distort" is the wrong promotion criterion — distortion-freedom in
++shadow is not evidence of predictive validity. Promotion should require the rate to
++predict fixed-residual resolution better than a re-run of the probe predicts itself.
++
++## On open question 3 — do NOT bundle with `immune_memory_enabled`
++
++Shared Beta-Binomial machinery is a convenience, not a demonstrated advantage. The
++founder's composability standard requires a *measurement* showing the composed work
++dominates each piece alone. None exists. Bundle only after one does.
++
++## A defect in the repair the simulated runner received tonight
++
++`routing_max_rungs=4` was added to `bench/tools/run_simulated_experiment.py` so that
++"6 of 6 source seats get a climb between two different models". Two measured problems.
++
++**Parity.** 0 of 288 config-shaped JSON files in this tree pin `routing_max_rungs`, so
++every real run uses the default of 2 and rungs 3–4 are structurally unreachable in every
++run the simulation is compared against. The literal sat immediately above a block headed
++"PARITY WITH THE REAL exp45 CONFIG … Every value below differed, and each difference let
++the simulation behave in a way the run it is compared against structurally could not."
++
++**Reach.** The 6-of-6 figure slices `rank_falsifier_writers(...)[:4]` — the rungs routing
++is *permitted* to try. `resolve_via_routing` stops on the first CONFIRMED. Called, not
++inferred: rung 3 is dispatched only when rungs 1 **and** 2 both failed. The dispatched
++sequence spans two models in **2.7542%** of routed criticals under the Exp-42 first-pass
++rates `bench/routing.py` quotes, and **0.7857%** under the Exp-42 residual rates it was
++validated on (rung 1 resolved 6 of 7, rung 2 the remaining 1 of 1). Confirmed
++independently with Wolfram Language (local Wolfram Engine): 0.027541666666666662.
++
++This is the same execution semantics used to falsify the fable seat's seat remap, applied
++to the counter-proposal.
++
++**Repaired additively, nothing removed.** The deep ladder is now the opt-in
++`--routing-max-rungs`, default `None` = the dataclass default, so parity is the default
++and a run that wants rungs 3+ asks for it and the ask is recorded in its args. The honest
++residue: derived exhaustively over all 64 two-model seat maps, **0** reach 6-of-6 mixed at
++a budget of 2 and the monotone ceiling is 5 of 6. A 2-model bench cannot dispatch the
++ladder's cross-model handoff at parity. That is a limitation of the bench, not something a
++budget literal fixes, and §"Simulation flatness" should record it: **this proposal cannot
++be validated in simulation for the additional reason that the simulated bench has 2 models
++and the ladder's ordering has 5 ranks.**
++
++## Also measured: more armed-but-inert facilities than the three named
++
++Real configs arm, and the simulated runner never sets: `panel_cwd` (72 of 288 ≈ 12 of 49)
++— the **confinement control** the falsifier-integrity directive names as one of its four
++mechanical defences; `context_files` (78 of 288); `wall_clock_cap_s` (270 of 288);
++`target_kind` (36 of 288); `exhausted_round_threshold` (18 of 288); `gamma_alt_threshold`
++and `gamma_alt_consecutive_zero_crit` (6 of 288). The three already named reproduce at the
++same ratios (`immune_memory_enabled` 78 of 288, `hardened_gate_enabled` 24 of 288,
++`apply_fixes_back_enabled` 6 of 288). `panel_cwd` is the one above threshold: a simulated
++run's stand-in agents carry Bash and are not confined the way the real runs' panel routes
++are.
+
+### cc2:attempt-2:scripts/competence_provenance.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/competence_provenance.py	2026-09-11 03:02:14
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/scripts/competence_provenance.py	2026-10-05 05:34:42
+@@ -21,9 +21,26 @@
+ working directory. The hazard is forward-looking, and this script is the check that
+ must run before any future re-derivation.
+ 
+-WHAT IT DOES. For each run, per model: the confirm rate, and beside it the provenance
+-of the falsifiers that rate is built from. A rate whose falsifiers do not read the
+-target is reported as UNSAFE TO RANK ON, not as a number.
++WHAT IT DOES. For each run, per FALSIFIER WRITER: the confirm rate, and beside it the
++provenance of the falsifiers that rate is built from. A rate whose CONFIRMATIONS do
++not rest on a falsifier that read the target is reported as UNSAFE TO RANK ON, not as
++a number.
++
++TWO REPAIRS, 2026-10-05 PANEL REVIEW, BOTH BY EXECUTION. (1) Attribution keyed on
++`source_model`, which is the model that REPORTED the finding, not the one that wrote
++the falsifier; 1370 of 16500 archived registry entries carry `resolved_by_routing`,
++and the error ran in the direction that flatters the models the ladder demotes. See
++`falsifier_owner`. (2) The UNSAFE rule aggregated reads across ALL of a model's
++entries, so one reading-but-REFUTED entry whitewashed a pool of detached
++confirmations. It is now asked per confirmation. See the comment at the rule.
++
++WHAT NEITHER REPAIR FIXES, STATED PLAINLY. `falsifier_style` is a REGEX OVER TEXT.
++`open("/dev/null")` classifies as `reads`; so does the word `open(` inside a comment,
++and a docstring mentioning `read_text`. All three were executed. Gating pool entry on
++this script therefore cannot establish that a falsifier read its target -- only that
++it contains the vocabulary of reading. Execution-derived provenance (an audit hook
++recording the files opened during `reverify_falsifier`, or invariance of the verdict
++under a perturbed target) is the only thing that can, and this script is not it.
+ """
+ from __future__ import annotations
+ 
+@@ -43,15 +60,61 @@
+     return "reads" if re.search(r"open\s*\(|read_text|\.read\s*\(|linecache|getlines", c) else "detached"
+ 
+ 
++def falsifier_owner(entry: dict) -> str:
++    """Which model WROTE the falsifier now attached to this entry.
++
++    THE RATE WAS ATTRIBUTED TO THE WRONG MODEL (panel review, 2026-10-05, by
++    execution). This function keyed on `source_model`, the model that REPORTED the
++    finding. When routing resolves a critical, `_apply_routing` replaces the
++    falsifier with one written by a ladder RUNG and records that rung on the entry
++    as `resolved_by_routing` (`bench/reference_runner_v3.py`, the assignment to
++    `e["resolved_by_routing"]`). Measured over this repository's archive:
++    **1370 of 16500 registry entries carry `resolved_by_routing`**, and every one of
++    them had its falsifier's provenance credited to the model that FAILED to write a
++    working one.
++
++    The direction of the error is the one that matters. A strong rung's successful
++    resolutions were credited to the weak source model, so the statistic this script
++    exists to protect -- the ladder's own ordering -- was computed from a rate that
++    systematically flattered the models the ladder demotes. The proposal in
++    `experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md`
++    defines its numerator as "falsifiers IT supplied", which is this precedence and
++    not `source_model`.
++
++    The runner already carries exactly this precedence in `_corrected_copy_owner`
++    ("The owner is whoever wrote the falsifier now attached -- the routing rung that
++    replaced it, else the model that reported the finding"). It is reimplemented
++    here rather than imported because
++    `test_defect_rate_and_competence_provenance_2026-08-23.py::
++    test_nothing_imports_either_script_into_the_runner` pins this script as RECORD
++    ONLY in the other direction, and importing the runner here would make this
++    script depend on the module it audits.
++    """
++    return str(entry.get("resolved_by_routing")
++               or entry.get("source_model") or "?")
++
++
+ def analyse(report: pathlib.Path) -> dict:
++    """Per-model falsifier provenance, keyed on who WROTE each falsifier.
++
++    TWO COUNTERS, NOT ONE. `reads`/`detached`/`none` count ALL of a model's
++    falsifiers; `confirmed_reads`/`confirmed_detached` count only the ones a
++    CONFIRMED verdict actually rests on. The UNSAFE rule in `main` reads the
++    second pair, because the first pair lets an unrelated REFUTED entry that
++    happens to open a file whitewash a pool of detached confirmations -- executed
++    and demonstrated in
++    `bench/tests/test_the_provenance_gate_attributes_the_writer_2026-10-05.py`.
++    """
+     ents = (json.loads(report.read_text()).get("registry") or {}).get("entries") or {}
+     per = collections.defaultdict(lambda: collections.Counter())
+     for e in ents.values():
+-        m = e.get("source_model") or "?"
+-        per[m][falsifier_style(e.get("falsifier_code"))] += 1
++        m = falsifier_owner(e)
++        style = falsifier_style(e.get("falsifier_code"))
++        per[m][style] += 1
+         per[m]["n"] += 1
+         if e.get("falsifier_verdict") == "CONFIRMED":
+             per[m]["confirmed"] += 1
++            per[m][f"confirmed_{style}"] += 1
+     return per
+ 
+ 
+@@ -99,19 +162,29 @@
+         if not per:
+             continue
+         print(f"\n  {rep.parent.name}")
+-        print(f"    {'model':<10} {'n':>3} {'conf':>5} {'rate':>6}  {'reads':>6} {'detach':>7} {'none':>5}  ranking basis")
++        print(f"    {'writer':<10} {'n':>3} {'conf':>5} {'rate':>6}  {'reads':>6} {'detach':>7} {'none':>5} {'c-read':>7} {'c-det':>6}  ranking basis")
+         for m, s in sorted(per.items(), key=lambda kv: -(kv[1]['confirmed'] / max(kv[1]['n'], 1))):
+             rate = s["confirmed"] / s["n"] if s["n"] else 0.0
+             # A rate is safe to rank on only if the confirmations rest on falsifiers
+             # that actually consulted the target.
+-            unsafe = s["confirmed"] > 0 and s["reads"] == 0
++            #
++            # PER-CONFIRMATION, NOT PER-MODEL (panel review, 2026-10-05; raised by
++            # the fable seat and reproduced here by execution). This read
++            # `s["reads"] == 0`, which counts reading falsifiers across ALL of the
++            # model's entries including REFUTED and ERRORed ones. Demonstrated: 2
++            # DETACHED CONFIRMED entries plus 1 reading REFUTED entry gave
++            # `reads == 1`, so `unsafe` was False and a wholly detached set of
++            # confirmations passed the gate. The question the gate asks must be
++            # asked of the confirmations themselves.
++            unsafe = s["confirmed"] > 0 and s["confirmed_reads"] == 0
+             any_unsafe |= unsafe
+             basis = ("UNSAFE TO RANK ON — every confirmation rests on a falsifier "
+                      "that never read the target" if unsafe else
+                      "no confirmations to rank on" if s["confirmed"] == 0 else
+                      "safe")
+             print(f"    {m:<10} {s['n']:>3} {s['confirmed']:>5} {rate:>5.0%}  "
+-                  f"{s['reads']:>6} {s['detached']:>7} {s['none']:>5}  {basis}")
++                  f"{s['reads']:>6} {s['detached']:>7} {s['none']:>5} "
++                  f"{s['confirmed_reads']:>7} {s['confirmed_detached']:>6}  {basis}")
+     print("\n  RULE: do not re-derive bench/routing.py's DEFAULT_FALSIFIER_STRENGTH from any")
+     print("  run this script marks UNSAFE TO RANK ON. Doing so ranks models by their")
+     print("  willingness to ignore the document, which is the exact inversion the")
+
+### cc2:attempt-2:scripts/the_ladder_climb_is_measured_on_an_unexecuted_prefix_2026-10-05.py
+--- /dev/null	2026-10-05 05:43:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5font72w/repo/scripts/the_ladder_climb_is_measured_on_an_unexecuted_prefix_2026-10-05.py	2026-10-05 05:30:02
+@@ -0,0 +1,327 @@
++#!/usr/bin/env python3
++"""The rung budget was raised to make a MIXED PREFIX appear. The prefix is not executed.
++
++WHAT THIS MEASURES, and why the distinction decides the repair.
++
++On 2026-10-05 the simulated runner was given `routing_max_rungs=4` so that "6 of 6
++source seats get a climb between two different models". That figure is computed by
++slicing `rank_falsifier_writers(...)[:4]` -- the list of rungs the ladder is PERMITTED
++to try. It is not the sequence the ladder DISPATCHES. `resolve_via_routing` stops on
++the first CONFIRMED, so a rung is dispatched only if every rung above it failed to
++produce a CONFIRMED verdict from the re-verifier.
++
++That is the same execution semantics CC1 used to falsify the fable seat's proposed
++seat remap ("rung 1 is the STRONGEST writer and resolve_via_routing stops at the first
++CONFIRMED"). This script applies it to CC1's own repair.
++
++THREE THINGS IT DERIVES, each by execution and none by reading source text.
++
++1. PARITY. No real experiment config sets `routing_max_rungs`. Every real run
++   therefore uses the `RunnerConfig` default. The simulated runner setting 4 makes
++   rungs 3 and 4 reachable in simulation and structurally unreachable in every run
++   the simulation is compared against. The config block that was edited is itself
++   headed "PARITY WITH THE REAL exp45 CONFIG ... Every value below differed, and each
++   difference let the simulation behave in a way the run it is compared against
++   structurally could not". The edit is a new instance of the class that block exists
++   to remove.
++
++2. EXECUTED CLIMB PROBABILITY. `resolve_via_routing` is CALLED with a recording
++   `resolve_fn` and a `reverify_fn` that CONFIRMS at a chosen rung, so the models
++   actually dispatched are observed rather than inferred. The probability that the
++   dispatched sequence spans more than one model is then computed from the per-vendor
++   rates `bench/routing.py` quotes in its own header, under BOTH available rate
++   models, because the two disagree about magnitude and agree about direction.
++
++3. THE BUDGET-2 CEILING. Exhaustively, over all 2**6 two-model seat maps: no map
++   whatever reaches 6 of 6 mixed AND 6 of 6 correctly-directed at a budget of 2. The
++   ceiling is 5 of 6 mixed with all 6 directed, and it is attained by a monotone map.
++   So CC1 was right that the 6-of-6 figure needs a larger budget. The measurement
++   below is about what that buys once execution is accounted for.
++
++HONEST LIMIT ON (2). Neither rate model is a residual-resolution rate per rung for an
++arbitrary finding; one is a first-pass confirm rate and the other is a 7-point
++residual measurement. They are the only committed numbers this project has, they are
++the numbers `bench/routing.py` itself cites, and they bracket the answer. The ratio,
++not the level, is what the repair turns on, and the ratio is stable across both.
++
++Read-only. Dispatches nothing. Exits 1 if any figure fails to reproduce.
++"""
++from __future__ import annotations
++
++import argparse
++import ast
++import itertools
++import json
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(REPO))
++
++SEATS = ["CC2-SIM", "ChatGPT-SIM", "Codex-SIM", "DeepSeek-SIM",
++         "Gemini-SIM", "Fable-SIM"]
++
++#: Exp-42 per-vendor FIRST-PASS falsifier-confirm rates, quoted verbatim in
++#: `bench/routing.py`'s header comment (Codex 90% / CC2 75% / ChatGPT 67% /
++#: Gemini 80% / DeepSeek 28%). `Fable` postdates Exp 42 and has no rate; the pool
++#: mean is used and is flagged as such.
++FIRST_PASS = {"Codex": 0.90, "CC2": 0.75, "ChatGPT": 0.67,
++              "Gemini": 0.80, "DeepSeek": 0.28}
++FIRST_PASS["Fable"] = sum(FIRST_PASS.values()) / len(FIRST_PASS)
++
++#: Exp-42 RESIDUAL-RESOLUTION rates, the measurement `bench/routing.py` actually
++#: validated the ladder on: rung 1 (gpt-5.5/Codex) resolved 6 of 7 of the hardest
++#: residuals, rung 2 (CC2) resolved the remaining 1 of 1. Rungs 3+ were never
++#: reached, so no rate exists for them; the first-pass rate is used there and the
++#: substitution is stated rather than hidden.
++RESIDUAL = dict(FIRST_PASS, Codex=6 / 7, CC2=1.0)
++
++
++def _base(m: str) -> str:
++    return m[:-4] if m.endswith("-SIM") else m
++
++
++def _parse_args(argv=None):
++    ap = argparse.ArgumentParser(description=__doc__,
++                                 formatter_class=argparse.RawDescriptionHelpFormatter)
++    ap.add_argument("--repo", default=str(REPO))
++    return ap.parse_args(argv)
++
++
++# ---------------------------------------------------------------- section 1
++def real_configs_setting_the_budget(repo: pathlib.Path):
++    """Every config-shaped JSON in the tree, and which of them pin the budget.
++
++    Archived panel records and seat-evidence copies are excluded: they are
++    transcripts of reviews, not configs a runner was launched with.
++    """
++    scanned, hits = 0, []
++    for p in repo.rglob("*.json"):
++        sp = str(p)
++        if any(x in sp for x in (".pytest_cache", "panel_records", "seat_evidence")):
++            continue
++        try:
++            d = json.loads(p.read_text(encoding="utf-8"))
++        except Exception:
++            continue
++        if isinstance(d, dict) and ("experiment_name" in d or "routing_enabled" in d):
++            scanned += 1
++            if "routing_max_rungs" in d:
++                hits.append(str(p.relative_to(repo)))
++    return scanned, hits
++
++
++def dataclass_default(repo: pathlib.Path) -> int:
++    """RunnerConfig.routing_max_rungs' declared default, read by AST."""
++    tree = ast.parse((repo / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8"))
++    for n in ast.walk(tree):
++        if isinstance(n, ast.ClassDef) and n.name == "RunnerConfig":
++            for s in n.body:
++                if (isinstance(s, ast.AnnAssign) and isinstance(s.target, ast.Name)
++                        and s.target.id == "routing_max_rungs"):
++                    return ast.literal_eval(s.value)
++    raise SystemExit("RunnerConfig has no routing_max_rungs field")
++
++
++def launcher_budget(repo: pathlib.Path):
++    """Whatever the simulated launcher pins, read by AST from its RunnerConfig call.
++
++    Returns None when the launcher passes no keyword, which is the parity state.
++    A non-literal (an expression reading argparse) is returned as its AST dump.
++    """
++    tree = ast.parse((repo / "bench" / "tools" / "run_simulated_experiment.py")
++                     .read_text(encoding="utf-8"))
++    found = None
++    for n in ast.walk(tree):
++        if isinstance(n, ast.Call) and (getattr(n.func, "attr", None)
++                                        or getattr(n.func, "id", None)) == "RunnerConfig":
++            for kw in n.keywords:
++                if kw.arg == "routing_max_rungs":
++                    try:
++                        found = ast.literal_eval(kw.value)
++                    except ValueError:
++                        found = "<expression, not a literal>"
++    return found
++
++
++# ---------------------------------------------------------------- section 2
++def executed_models(source: str, budget: int, smap: dict, confirm_at):
++    """CALL resolve_via_routing and return the models it actually dispatched.
++
++    ``confirm_at`` is the 1-based rung whose falsifier the re-verifier CONFIRMS,
++    or None for "no rung ever confirms" (the HIL path).
++    """
++    from bench.routing import rank_falsifier_writers, resolve_via_routing
++    rungs = rank_falsifier_writers(SEATS, exclude=(source,))
++    seen, n = [], {"i": 0}
++
++    def resolve_fn(model, finding):
++        seen.append(model)
++        return "code"
++
++    def reverify_fn(code):
++        n["i"] += 1
++        return "CONFIRMED" if confirm_at == n["i"] else "REFUTED"
++
++    resolve_via_routing({"id": "C0001"}, rungs, resolve_fn, reverify_fn,
++                        max_rungs=budget)
++    return [smap.get(m, "opus") for m in seen]
++
++
++def p_executed_climb(budget: int, smap: dict, rate: dict) -> float:
++    """P(the DISPATCHED sequence spans more than one model), averaged over a
++    uniform source seat, with per-rung confirm events treated as independent."""
++    from bench.routing import rank_falsifier_writers
++    total = 0.0
++    for s in SEATS:
++        rungs = rank_falsifier_writers(SEATS, exclude=(s,))[:budget]
++        models = [smap.get(r, "opus") for r in rungs]
++        k = next((i for i, m in enumerate(models) if m != models[0]), None)
++        if k is None:
++            continue                      # no transition exists in this prefix
++        p = 1.0
++        for r in rungs[:k]:               # every rung above it must have failed
++            p *= (1.0 - rate[_base(r)])
++        total += p
++    return total / len(SEATS)
++
++
++# ---------------------------------------------------------------- section 3
++def budget_two_ceiling():
++    """Exhaustive over all 2**6 two-model seat maps at a budget of 2."""
++    from bench.routing import rank_falsifier_writers, DEFAULT_FALSIFIER_STRENGTH
++    order = list(DEFAULT_FALSIFIER_STRENGTH)
++
++    def directed(ms):
++        return all(not (ms[i] == "fable" and "opus" in ms[i + 1:])
++                   for i in range(len(ms)))
++
++    def monotone(sm):
++        ranked = [sm[m] for m in sorted((s for s in SEATS if _base(s) in order),
++                                        key=lambda s: order.index(_base(s)))]
++        return all(not (ranked[i] == "fable" and "opus" in ranked[i + 1:])
++                   for i in range(len(ranked)))
++
++    rows = []
++    for bits in itertools.product(("opus", "fable"), repeat=len(SEATS)):
++        sm = dict(zip(SEATS, bits))
++        pre = {s: [sm[x] for x in rank_falsifier_writers(SEATS, exclude=(s,))[:2]]
++               for s in SEATS}
++        rows.append((sum(len(set(v)) > 1 for v in pre.values()),
++                     sum(directed(v) for v in pre.values()),
++                     monotone(sm), sm))
++    return rows
++
++
++def main(argv=None) -> int:
++    args = _parse_args(argv)
++    repo = pathlib.Path(args.repo).resolve()
++    from bench.tools.sim_dispatch_shim import DEFAULT_LADDER
++    from bench.routing import rank_falsifier_writers
++    bad = []
++
++    print("THE LADDER CLIMB WAS MEASURED ON AN UNEXECUTED PREFIX")
++    print("=" * 78)
++
++    # ---- 1
++    scanned, hits = real_configs_setting_the_budget(repo)
++    dflt = dataclass_default(repo)
++    pinned = launcher_budget(repo)
++    print("\n1. PARITY -- does any REAL run reach rungs 3 and 4?")
++    print(f"   config-shaped JSON files scanned                : {scanned}")
++    print(f"   of those pinning routing_max_rungs              : {len(hits)} {hits}")
++    print(f"   RunnerConfig.routing_max_rungs default          : {dflt}")
++    print(f"   simulated launcher pins                         : {pinned!r}")
++    if len(hits) == 0 and isinstance(pinned, int) and pinned > dflt:
++        print(f"   => rungs {dflt + 1}..{pinned} are reachable ONLY in simulation. The "
++              f"simulated\n      run's routing and HIL statistics are not comparable "
++              f"to the real run\n      the config block says it is compared against.")
++    else:
++        print("   => PARITY HOLDS or is explicit: the launcher does not silently "
++              "deepen\n      the ladder beyond what every real config reaches.")
++    if scanned < 50:
++        bad.append(f"only {scanned} configs scanned; refusing to report 0 from a "
++                   f"population that may not have been read")
++
++    # ---- 2
++    print("\n2. EXECUTION -- which models does resolve_via_routing actually DISPATCH?")
++    print("   (CALLED, not inferred; the rung whose falsifier CONFIRMS is varied)")
++    print(f"   source seat CC2-SIM, shipped seat map")
++    print(f"   {'confirms at rung':<18} {'budget 2':<34} {'budget 4'}")
++    for confirm_at in (1, 2, 3, 4, None):
++        a = executed_models("CC2-SIM", 2, DEFAULT_LADDER, confirm_at)
++        b = executed_models("CC2-SIM", 4, DEFAULT_LADDER, confirm_at)
++        print(f"   {str(confirm_at):<18} {str(a):<34} {b}")
++    print("   => at budget 4 the dispatched sequence is mixed ONLY when rungs 1 and 2")
++    print("      both failed to confirm. At budget 2 it is never mixed.")
++
++    k1 = {m: ("opus" if _base(m) == "Codex" else "fable") for m in SEATS}
++    cands = {
++        "shipped map, budget 2 (state before 2026-10-05)": (2, DEFAULT_LADDER),
++        "shipped map, budget 4 (CC1's repair tonight)":     (4, DEFAULT_LADDER),
++        "Codex-only-on-opus map, budget 2":                 (2, k1),
++    }
++    print(f"\n   {'candidate':<48} {'mixed prefix':<14} {'P(exec) 1st-pass':<18} "
++          f"{'P(exec) residual'}")
++    results = {}
++    for name, (b, sm) in cands.items():
++        mixed = sum(1 for s in SEATS
++                    if len({sm.get(x, "opus")
++                            for x in rank_falsifier_writers(SEATS, exclude=(s,))[:b]}) > 1)
++        pf = p_executed_climb(b, sm, FIRST_PASS)
++        pr = p_executed_climb(b, sm, RESIDUAL)
++        results[name] = (mixed, pf, pr)
++        print(f"   {name:<48} {str(mixed) + ' of 6':<14} {pf:<18.4%} {pr:.4%}")
++    cc1 = results["shipped map, budget 4 (CC1's repair tonight)"]
++    alt = results["Codex-only-on-opus map, budget 2"]
++    rr = "infinite (denominator 0)" if cc1[2] == 0 else f"{alt[2] / cc1[2]:.2f}x"
++    print(f"\n   ratio (Codex-only-on-opus @2) / (shipped @4): "
++          f"first-pass {alt[1] / cc1[1]:.2f}x, residual {rr}")
++    print("   => the 6-of-6 figure is a property of the PERMITTED prefix. On the")
++    print("      DISPATCHED sequence, raising the budget buys a climb in a few per")
++    print("      cent of routed criticals, and under the residual rates Exp 42")
++    print("      actually measured (rung 2 resolved 1 of 1) it buys none at all.")
++    print("   NOT A RECOMMENDATION TO ADOPT THE THIRD MAP: it moves 2 of 6 seats off")
++    print("   the strong model, so it wins on ladder rehearsal and LOSES on per-seat")
++    print("   capability fidelity. It does not dominate, so it does not displace the")
++    print("   shipped map under the founder's removal standard. It is here to size")
++    print("   what the budget change actually bought.")
++    if not (0.0 <= cc1[1] <= 0.10):
++        bad.append(f"budget-4 executed-climb probability {cc1[1]:.4%} is outside the "
++                   f"range this script was written against")
++
++    # ---- 3
++    rows = budget_two_ceiling()
++    both = [r for r in rows if r[0] == 6 and r[1] == 6]
++    ceiling = max(r[0] for r in rows if r[1] == 6 and r[2])
++    best = sorted((r for r in rows if r[0] == ceiling and r[1] == 6 and r[2]),
++                  key=lambda r: -p_executed_climb(2, r[3], FIRST_PASS))
++    print(f"\n3. THE BUDGET-2 CEILING -- exhaustive over all {len(rows)} two-model maps")
++    print(f"   maps with 6 of 6 mixed AND 6 of 6 correctly directed : {len(both)}")
++    print(f"   best monotone map, all 6 directed                    : "
++          f"{ceiling} of 6 mixed")
++    print(f"   attaining maps ({len(best)}), best first by executed probability:")
++    for _, _, _, sm in best[:3]:
++        print(f"      P(exec)={p_executed_climb(2, sm, FIRST_PASS):.4%}  {dict(sm)}")
++    print("   DERIVED: 6 of 6 at budget 2 would need rank1 != rank2 AND rank2 != rank3,")
++    print("   i.e. rank1 == rank3 != rank2, which is NON-monotone in the strength")
++    print("   order. With 2 models the monotone ceiling at budget 2 is 5 of 6. CC1 is")
++    print("   therefore RIGHT that 6 of 6 needs a deeper budget, and that is not the")
++    print("   question the repair turns on.")
++    if len(both) != 0:
++        bad.append("a 6-of-6 map at budget 2 was found; section 3's derivation is stale")
++    if ceiling != 5:
++        bad.append(f"monotone ceiling at budget 2 is {ceiling}, not 5; derivation stale")
++
++    print("\n" + "=" * 78)
++    if bad:
++        print("STALE / FAILED TO REPRODUCE:")
++        for b in bad:
++            print(f"  *** {b}")
++        return 1
++    print("every figure above reproduced.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

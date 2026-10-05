@@ -259,7 +259,13 @@ class TestThePopulationStepIsExecuted:
 
         class StubSandbox:
             @staticmethod
-            def build(_repo):
+            def build(_repo, blind_of=()):
+                # `blind_of` ADDED 2026-10-05, and this stub signature is load-
+                # bearing: it broke the moment the real `build` grew the keyword,
+                # which is the proof that this test exercises the REAL call rather
+                # than a restatement of it. Accepted and ignored here — what this
+                # test measures is one sandbox per seat, not containment, which is
+                # held by test_a_blind_round_is_actually_blind_2026-10-05.py.
                 d = tmp_path / f"seat_{len(built)}" / "repo"
                 d.mkdir(parents=True)
                 built.append(d)

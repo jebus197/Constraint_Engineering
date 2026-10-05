@@ -2820,7 +2820,7 @@ class FindingRegistry:
             # Wilson [0.0%, 4.2%]. Convergence can only get harder, never easier.
             #
             # The float survives as QUEUE ORDERING, which is what it is fit for.
-            # THE RELEASE VALVE THAT ALREADY EXISTS (2026-09-07, panel cc2).
+            # THE `exhausted` RELEASE PATH THAT ALREADY EXISTS (2026-09-07, panel cc2).
             # `exhausted` is set by _update_finding_statuses at
             # exhausted_round_threshold and is ALREADY honoured by the sibling
             # counter open_crit_high_count (line 1969), whose comment reads "this
@@ -2834,11 +2834,11 @@ class FindingRegistry:
             # 2026-10-02). Excusing it from the halt bound ALONE was measured
             # and is NOT safe: with `irreducible_escalation` no longer stamped,
             # an UNCONFIRMED critical carrying the refusal falls straight into
-            # this counter and A4 blocks instead. The `exhausted` valve above
+            # this counter and A4 blocks instead. The `exhausted` marking above
             # requires `len(verdicts) > 0`, and MEASURED over the 57 archived
             # runner_state registries, 58 of 86 UNCONFIRMED criticals carry ZERO
             # verdicts -- 67.4419%, Wilson [56.9779%, 76.4143%], statsmodels and
-            # mpmath agreeing to 1e-9. For the majority that valve never opens
+            # mpmath agreeing to 1e-9. For the majority that marking never applies
             # and the run burns to `max_rounds`: the shape the 2026-09-09 comment
             # in `_apply_routing` warns of. So BOTH counters let it go and the
             # REPORT carries it instead.
@@ -3063,15 +3063,55 @@ class FindingRegistry:
         # panel can still act on. ESCALATED and WITHHELD are compact: the panel
         # should know they exist and that they are not its to settle.
         full_detail_statuses = ("OPEN", "CONTESTED", "REOPENED", "CORROBORATED")
-        compact_statuses = ("CONFIRMED", "UNCONFIRMED", "CLOSED", "MERGED",
+        # UNCONFIRMED LEFT `compact_statuses` ON 2026-10-05, AND THE REASON IS A
+        # MEASUREMENT, NOT A PREFERENCE.
+        #
+        # `compact` is rendered under the header "SETTLED ... These findings are
+        # confirmed, closed, or merged. Do not CHALLENGE or re-describe them."
+        # UNCONFIRMED is the ONE status that `unverified_critical_count` counts as
+        # an A4 convergence blocker -- established by CALLING both, not by reading
+        # either: of the 12 statuses in FINDING_STATUS_VOCABULARY, UNCONFIRMED is
+        # the only one that is simultaneously rendered under SETTLED and returns a
+        # non-zero A4 count.
+        #
+        # So every finding holding a run open was shown to the panel as settled,
+        # with challenge explicitly forbidden. Measured over the archive by
+        # `scripts/the_blockers_are_shown_as_settled_2026-10-05.py`, attributing
+        # blockers by LEAVE-ONE-OUT on each real registry rather than by a
+        # status predicate (a status predicate over-counted: it found blockers in
+        # runs whose A4 count was 0): **175 of 175 attributed blockers were
+        # rendered under SETTLED, 100.0000%, Wilson [97.8520%, 100.0000%]**, in 22
+        # of 59 archived registries, 37.2881%, Wilson [26.0840%, 50.0464%]. The
+        # leave-one-out total and the sum of the counter's own returns agree
+        # exactly at 175, so the attribution carries no interaction slack.
+        #
+        # THE WORD WAS OVERLOADED AND ONLY THIS USE WAS WRONG. `gamma_critical`
+        # reaches the gate through `_settled_novelty_series`, which partitions on
+        # `_NON_NOVEL_TERMINAL_STATUSES` and reads neither `compact_statuses` nor
+        # `build_summary`. That path already excludes UNCONFIRMED from "settled"
+        # and is correct; `test_a4_verifier_failsafe.py` records exactly that.
+        # The arithmetic and the prose disagreed about one word, and the prose was
+        # the wrong one.
+        #
+        # CONSEQUENCE THIS EXPLAINS. 0 of 3473 archived round replies carry an
+        # id-addressed `FALSIFIER: Cxxxx` block
+        # (`scripts/in_round_falsifiers_are_discarded_2026-10-05.py`), and 316 of
+        # 803 sub-critical residuals were never offered to a model in-round
+        # (`scripts/why_the_blockers_were_never_offered_2026-10-05.py`). The panel
+        # was not failing to clear these findings. It was told not to.
+        unresolved_statuses = ("UNCONFIRMED",)
+        compact_statuses = ("CONFIRMED", "CLOSED", "MERGED",
                             "ESCALATED", "WITHHELD")
         hidden_statuses = ("REFUTED", "DUPLICATE")
         _uncovered = sorted(set(FINDING_STATUS_VOCABULARY) - set(full_detail_statuses)
+                            - set(unresolved_statuses)
                             - set(compact_statuses) - set(hidden_statuses))
         if _uncovered:                                    # pragma: no cover
             _log(f"  ** STATUS PARTITION INCOMPLETE: {_uncovered} would be "
                  f"invisible to the panel **")
         full_detail = [e for e in self.entries.values() if e["status"] in full_detail_statuses]
+        unresolved = [e for e in self.entries.values()
+                      if e["status"] in unresolved_statuses]
         compact = [e for e in self.entries.values() if e["status"] in compact_statuses]
         hidden_count = sum(1 for e in self.entries.values() if e["status"] in hidden_statuses)
 
@@ -3125,7 +3165,14 @@ class FindingRegistry:
             "Findings already CLOSED below: do not re-describe them.",
             "",
             f"Total: {len(self.entries)} canonical findings",
-            f"Active: {len(full_detail)} | Settled: {len(compact)} | Hidden: {hidden_count}",
+            # UNRESOLVED IS NAMED HERE BECAUSE THE BUCKETS MUST SUM. Splitting
+            # UNCONFIRMED out of `compact` on 2026-10-05 left this line reporting
+            # Active 0 + Settled 1 for a 2-finding registry, so a panel reading
+            # the counts would conclude 1 finding had vanished. The 4 buckets
+            # plus any status outside the partition now reconcile to Total, and
+            # `test_the_summary_counts_reconcile` holds that by execution.
+            f"Active: {len(full_detail)} | UNRESOLVED (blocking): {len(unresolved)}"
+            f" | Settled: {len(compact)} | Hidden: {hidden_count}",
             f"Open CRIT/HIGH: {self.open_crit_high_count()} | "
             f"CLOSED: {closed_count} ({bugzilla_verified_count} via programmatic fix-verification)",
             "",
@@ -3171,6 +3218,67 @@ class FindingRegistry:
                 lines.append(
                     f"  {e['canonical_id']} (sev {e['severity']:.2f}) "
                     f"[{e['status']}] {e['description'][:80]}"
+                )
+            lines.append("")
+        # THE UNRESOLVED SECTION — THE CLOSING SWEEP'S OFFER, MOVED IN-ROUND.
+        #
+        # `_post_convergence_sweep` was the only machinery in the schema that
+        # offered these findings back to the panel, and it runs AFTER `converged`
+        # is assigned, so nothing it resolves can reach the gate. Its one
+        # capability the round loop lacked was the id-addressed re-attachment
+        # parse: `FALSIFIER: <id>` + a fenced block, which lets a model attach a
+        # runnable falsifier to ANY named finding. That parse had exactly 1 site
+        # repo-wide, inside the sweep
+        # (`scripts/sweep_channels_are_post_verdict_2026-10-05.py`).
+        #
+        # Asking for it HERE costs no extra dispatch: this summary already reaches
+        # every model every round. The alternative designs were a per-round panel
+        # pass (rounds x seats extra dispatches) and parsing replies the runner
+        # already receives -- the latter is dead, because 0 of 3473 archived
+        # replies carry the form, so it is produced only when something asks.
+        #
+        # THE INVARIANT THAT KEEPS THIS IN SPEC, and it is the founder's
+        # anti-gaming guard restated rather than relaxed: a finding leaves the
+        # blocker count on EXECUTED evidence only. A falsifier offered here is
+        # run by `reverify_falsifier`; prose is recorded and clears nothing, which
+        # is already how `record_in_round_withdrawals` behaves. Convergence
+        # therefore cannot be bought with an assertion.
+        if unresolved:
+            lines.append(
+                f"--- UNRESOLVED ({len(unresolved)}) "
+                f"(THESE HOLD CONVERGENCE OPEN — ACT ON THEM) ---")
+            lines.append(
+                "These findings are NOT settled. Each was filed, was not "
+                "independently confirmed, and carries no runnable demonstration, "
+                "so the convergence fail-safe counts every one of them as a "
+                "blocker. They are the findings standing between this run and "
+                "its conclusion."
+            )
+            lines.append(
+                "To resolve one, attach a RUNNABLE falsifier addressed by its id:"
+            )
+            lines.append("    FALSIFIER: <ID>")
+            lines.append("    ```python")
+            lines.append("    # code that EXECUTES and either asserts the defect")
+            lines.append("    # or prints FALSIFIED when it is demonstrated")
+            lines.append("    ```")
+            lines.append(
+                "The runner executes it. A demonstration resolves the finding; a "
+                "run that shows the claim is sound is recorded against it. "
+                "Reasoned prose alone (WITHDRAW <ID>: reason) is RECORDED but "
+                "resolves nothing — only executed evidence clears a blocker."
+            )
+            for e in sorted(unresolved, key=lambda x: -x["severity"])[:self.MAX_FULL_DETAIL_OPEN]:
+                lines.append(
+                    f"  {e['canonical_id']} (sev {e['severity']:.2f}) "
+                    f"[{e['source_model']}] {e['description'][:120]}"
+                )
+                for _line in _rejection_lines(e):
+                    lines.append(f"    {_line}")
+            if len(unresolved) > self.MAX_FULL_DETAIL_OPEN:
+                lines.append(
+                    f"  (+{len(unresolved) - self.MAX_FULL_DETAIL_OPEN} more unresolved, "
+                    f"lower severity, withheld to bound context)"
                 )
             lines.append("")
         if compact:
@@ -3876,12 +3984,12 @@ def export_finding_catalogue(
     return records
 
 
-#: Statuses the `exhausted` valve must cover: the UNION of the statuses its 2
+#: Statuses the `exhausted` marking must cover: the UNION of the statuses its 2
 #: readers examine. NOT a hand-kept list -- a list that drifts from its readers
-#: is how the valve died.
+#: is how the `exhausted` marking died.
 #:
 #: FOUND 2026-09-09, cc2 in panel review, and extended by 1 status on
-#: verification. The valve was added 2026-09-07 so an unresolvable critical
+#: verification. The `exhausted` marking was added 2026-09-07 so an unresolvable critical
 #: "cannot block for ever", and it has NEVER EXECUTED for 2 of the 6 statuses
 #: its readers look at. `_update_finding_statuses` set it for OPEN, CONTESTED,
 #: CORROBORATED and WITHHELD and did `e.pop("exhausted", None)` for everything
@@ -3897,18 +4005,18 @@ def export_finding_catalogue(
 #: ITS ONLY TEST WAS A SOURCE GREP. `test_panel_five_fixes_2026-09-07.py:78`
 #: asserted the string `e.get("exhausted")` appears in the counter's body -- that
 #: the line EXISTS. It passed against dead code for 2 days, which is precisely
-#: the `execute-do-not-grep` ruling, in the guard for this very valve.
+#: the `execute-do-not-grep` ruling, in the guard for this very marking.
 #:
 #: WHY IT BECAME LOAD-BEARING ON 2026-09-09. The empty-ladder repair makes
 #: `routing_deferred` the terminal state of every escalated critical in a 1-seat
 #: arm, because that arm's ladder is empty every round forever. `routing_deferred`
-#: is deliberately NOT excluded from the A4 blocker -- this valve was its bound.
+#: is deliberately NOT excluded from the A4 blocker -- this marking was its bound.
 #: Measured: an UNCONFIRMED deferred critical gives A4 = 2 with an irreducible
 #: queue of 2, which is AT the alarm bound rather than over it, so the run can
 #: neither converge nor halt and burns to `max_rounds`. An OPEN one gives A4 = 0,
 #: so the hazard needs the falsifier gate to have moved the finding to
 #: UNCONFIRMED first -- which is exactly what an UNTOOLABLE verdict does.
-EXHAUSTED_VALVE_STATUSES = (
+EXHAUSTED_ELIGIBLE_STATUSES = (
     # read by open_crit_high_count
     "OPEN", "CONTESTED", "REOPENED", "CORROBORATED", "WITHHELD",
     # read by unverified_critical_count
@@ -3935,7 +4043,7 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
     # `age >= 8` is UNSATISFIABLE: z3 returns `unsat` over the legal domain, a NumPy
     # enumeration of all 36 legal (round_idx, last_status_change_round) pairs gives
     # a maximum age of 7, and SymPy gives the general condition T <= R - 1. All 3
-    # agree. Producer: scripts/release_valve_age_lock_2026-10-03.py.
+    # agree. Producer: scripts/exhausted_marking_age_lock_2026-10-03.py.
     #
     # So the one release path out of the A4 blocker could not fire AT ALL in an
     # 8-round run, for any finding, at any severity. That is a gate with no path
@@ -3950,7 +4058,7 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
     if cfg is not None and exhausted_threshold > 0:
         _max_reachable_age = max(0, int(getattr(cfg, "max_rounds", 0)) - 1)
         if _max_reachable_age and exhausted_threshold > _max_reachable_age:
-            _log(f"  valve age lock UNREACHABLE as configured: "
+            _log(f"  `exhausted` age lock UNREACHABLE as configured: "
                  f"exhausted_round_threshold={exhausted_threshold} exceeds the "
                  f"maximum attainable age {_max_reachable_age} in a "
                  f"{cfg.max_rounds}-round run (round_idx is 0-based), so no "
@@ -3959,7 +4067,7 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                  f"the threshold to remove the clamp.")
             exhausted_threshold = _max_reachable_age
     for e in registry.entries.values():
-        if (e["status"] in EXHAUSTED_VALVE_STATUSES
+        if (e["status"] in EXHAUSTED_ELIGIBLE_STATUSES
                 and e["severity"] >= 0.7):
             age = round_idx - e.get("last_status_change_round", 0)
             has_reviews = len(e.get("verdicts", [])) > 0
@@ -13377,6 +13485,129 @@ def _extract_corroboration_sections(response_text: str) -> List[str]:
     return sections
 
 
+def record_in_round_falsifier_reattachments(
+        registry, responses: Dict[str, str], round_idx: int,
+        repo_root=None) -> Dict[str, Any]:
+    """Accept an id-addressed RUNNABLE falsifier from a round reply and EXECUTE it.
+
+    WHY THIS EXISTS. `_post_convergence_sweep` held exactly one capability the round
+    loop did not: the parse of
+
+        FALSIFIER: C0066
+        ```python
+        ...runnable code...
+        ```
+
+    which lets a model attach a falsifier to ANY named finding, several in one reply.
+    That pattern had 1 site repo-wide, inside the sweep, and the sweep runs after
+    `converged` is assigned, so nothing it resolved could reach the gate. Measured by
+    `scripts/sweep_channels_are_post_verdict_2026-10-05.py`: of the sweep's 5
+    disposition channels, 0 were exclusive to it EXCEPT this parse.
+
+    WHY THE PANEL NEVER SUPPLIED ONE IN-ROUND. It was told not to. UNCONFIRMED
+    findings -- the only status `unverified_critical_count` treats as an A4 blocker --
+    were rendered under a header reading "SETTLED ... confirmed, closed, or merged.
+    Do not CHALLENGE or re-describe them." Measured over the archive by
+    `scripts/the_blockers_are_shown_as_settled_2026-10-05.py`: **175 of 175
+    attributed blockers, 100.0000%, Wilson [97.8520%, 100.0000%]**. `build_summary`
+    now renders them under UNRESOLVED and asks for this form explicitly.
+
+    THE INVARIANT, which is the founder's 2026-07-28 anti-gaming guard restated and
+    not relaxed: a finding leaves the blocker count on EXECUTED evidence only.
+    `reverify_falsifier` runs the code. Model prose clears nothing -- that is
+    `record_in_round_withdrawals`, which is a metric and moves no status. So
+    convergence cannot be bought with an assertion, only with a demonstration.
+
+    DISPOSITIONS, mirroring the sweep exactly so the two cannot drift:
+      * CONFIRMED -> the finding resolves to CONFIRMED and `verified` is set. This is
+        the case that can move the gate, and it requires code that ran.
+      * REFUTED and severity < CRITICAL_SEVERITY_THRESHOLD -> resolves REFUTED.
+      * REFUTED and severity >= threshold -> RECORDED as computed evidence and
+        nothing is cleared. Founder ruling 2026-08-03: a critical is never retired by
+        a refutation, because 2 of 3 REFUTED criticals in Exp 42 were themselves
+        wrong. The verdict still travels to the human rather than being discarded.
+      * anything else (ERROR, no verdict) -> left in the unresolved queue, counted.
+
+    STRICTLY INERT ON EVERY HISTORICAL RUN, BY CONSTRUCTION. 0 of 3473 archived
+    round-reply files carry this form -- `scripts/in_round_falsifiers_are_discarded_2026-10-05.py`,
+    Wilson [0.0000%, 0.1105%] -- so this parser cannot change any archived result and
+    can only act where the new UNRESOLVED ask succeeds in eliciting one.
+
+    Idempotent within a round per (model, id), so a seat repeating itself cannot
+    double-count or re-execute. Never raises into the round loop.
+    """
+    from bench.falsifier_verify import reverify_falsifier
+    stats: Dict[str, Any] = {
+        "seen": 0, "executed": 0, "cleared": 0, "withdrawn": 0,
+        "critical_refuted_recorded": 0, "no_verdict": 0,
+        "skipped_terminal": 0, "skipped_unknown": 0, "skipped_not_unresolved": 0,
+        "by_model": {}, "ids": [], "cleared_ids": []}
+    if not responses:
+        return stats
+    seen_this_round = set()
+    for model_id, resp in (responses or {}).items():
+        if not isinstance(resp, str) or not resp:
+            continue
+        for m in re.finditer(
+                r"FALSIFIER:\s*(C\d{4})\s*```(?:python)?\s*\n(.*?)```",
+                resp, re.S):
+            cid, code = m.group(1), m.group(2).strip()
+            stats["seen"] += 1
+            if not code:
+                continue
+            e = getattr(registry, "entries", {}).get(cid)
+            if e is None:
+                stats["skipped_unknown"] += 1
+                continue
+            if e.get("status") in ("MERGED", "CLOSED", "REFUTED", "DUPLICATE"):
+                stats["skipped_terminal"] += 1
+                continue
+            key = (model_id, cid)
+            if key in seen_this_round:
+                continue
+            seen_this_round.add(key)
+            try:
+                verdict = reverify_falsifier(code, repo_root=repo_root)
+            except Exception as _fx:             # noqa: BLE001 — never kill a round
+                _log(f"  WARNING: in-round falsifier for {cid} did not run "
+                     f"({type(_fx).__name__})")
+                continue
+            stats["executed"] += 1
+            stats["ids"].append(cid)
+            stats["by_model"][str(model_id)] = (
+                stats["by_model"].get(str(model_id), 0) + 1)
+            _sev = float(e.get("severity") or 0.0)
+            if verdict == "CONFIRMED":
+                e["falsifier_code"] = code
+                e["falsifier_verdict"] = "CONFIRMED"
+                e["verified"] = True
+                clear_stale_resolution_stamps(e)
+                e["resolved_in_round"] = str(model_id)
+                e["resolved_in_round_idx"] = round_idx
+                registry.resolve(cid, "CONFIRMED", round_idx)
+                stats["cleared"] += 1
+                stats["cleared_ids"].append(cid)
+            elif verdict == "REFUTED" and _sev < CRITICAL_SEVERITY_THRESHOLD:
+                e["falsifier_verdict"] = "REFUTED"
+                e["withdrawn_in_round"] = str(model_id)
+                e["resolved_in_round_idx"] = round_idx
+                registry.resolve(cid, "REFUTED", round_idx)
+                stats["withdrawn"] += 1
+            elif verdict == "REFUTED":
+                try:
+                    _record_computed_evidence(
+                        e, kind="falsifier_refuted", by=str(model_id),
+                        detail="an in-round runnable falsifier ran and did NOT "
+                               "demonstrate the defect; the claim may be sound",
+                        falsifier=code[:2000])
+                except Exception:               # noqa: BLE001
+                    pass
+                stats["critical_refuted_recorded"] += 1
+            else:
+                stats["no_verdict"] += 1
+    return stats
+
+
 def record_in_round_withdrawals(registry, responses: Dict[str, str],
                                 round_idx: int) -> Dict[str, Any]:
     """Record a seat's reasoned withdrawal DURING the round. Blocks nothing.
@@ -15170,6 +15401,10 @@ def run_experiment(
     # Per-round in-round withdrawal counts (founder ruling 2026-10-04). A METRIC:
     # reported, never read by any gate, status or counter.
     round_withdrawals: List[Dict[str, Any]] = []
+    # Per-round record of id-addressed falsifiers EXECUTED in-round. Kept
+    # beside the withdrawals so a reader can tell the two apart: these moved
+    # statuses on executed evidence, those moved nothing.
+    round_falsifier_reattachments: List[Dict[str, Any]] = []
     gate_history: List[bool] = []
     open_ch_history: List[int] = []
     stall_history: List[Dict[str, int]] = []
@@ -15862,6 +16097,41 @@ def run_experiment(
             _log(f"  WARNING: in-round withdrawal recording failed "
                  f"({type(_wd_exc).__name__}: {_wd_exc})")
             round_withdrawals.append({"recorded": 0, "error": str(_wd_exc)})
+
+        # IN-ROUND FALSIFIER RE-ATTACHMENT — THE CLOSING SWEEP'S ONE EXCLUSIVE
+        # CAPABILITY, NOW REACHABLE WHILE THE GATE CAN STILL SEE IT.
+        #
+        # Unlike the withdrawal recorder above, this one CAN move a status — but
+        # only on a verdict from code that RAN. `reverify_falsifier` executes the
+        # supplied block; prose reaches nothing here. That is the founder's
+        # 2026-07-28 anti-gaming guard preserved rather than relaxed: convergence
+        # is still unbuyable with an assertion.
+        #
+        # Inert on every archived run by construction: 0 of 3473 archived replies
+        # carry the form it parses, Wilson [0.0000%, 0.1105%]. It can only act
+        # where the new UNRESOLVED section succeeds in eliciting one.
+        try:
+            _fr = record_in_round_falsifier_reattachments(
+                registry, responses, round_idx, repo_root=str(REPO_ROOT))
+            if _fr.get("executed"):
+                _log(f"  in-round falsifiers EXECUTED: {_fr['executed']} "
+                     f"-> cleared {_fr['cleared']}, withdrawn {_fr['withdrawn']}, "
+                     f"critical-refuted recorded "
+                     f"{_fr['critical_refuted_recorded']}, no verdict "
+                     f"{_fr['no_verdict']}")
+                if _fr.get("cleared_ids"):
+                    _log(f"    resolved in-round on EXECUTED evidence: "
+                         f"{', '.join(sorted(set(_fr['cleared_ids'])))}")
+            elif _fr.get("seen"):
+                _log(f"  in-round falsifier labels seen: {_fr['seen']}, "
+                     f"0 executed (unknown id {_fr['skipped_unknown']}, "
+                     f"terminal {_fr['skipped_terminal']})")
+            round_falsifier_reattachments.append(_fr)
+        except Exception as _fr_exc:             # noqa: BLE001
+            _log(f"  WARNING: in-round falsifier re-attachment failed "
+                 f"({type(_fr_exc).__name__}: {_fr_exc})")
+            round_falsifier_reattachments.append({"executed": 0,
+                                                  "error": str(_fr_exc)})
 
         rk_validation = validate_round_rk(findings, responses)
         # THE VERDICT IS NOW KEPT. It used to be counted into one log line and
@@ -17208,6 +17478,7 @@ def run_experiment(
             # persisted so the registry can show that a seat reviewed a finding and
             # when, which is the evidence study_run1b held only after its verdict.
             "round_withdrawals": round_withdrawals,
+            "round_falsifier_reattachments": round_falsifier_reattachments,
             "gate_history": gate_history,
             "open_ch_history": open_ch_history,
             "stall_history": stall_history,

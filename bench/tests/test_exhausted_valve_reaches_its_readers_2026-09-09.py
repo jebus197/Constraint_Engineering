@@ -40,7 +40,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
 from bench.reference_runner_v3 import (  # noqa: E402
-    EXHAUSTED_VALVE_STATUSES, FindingRegistry, RunnerConfig,
+    EXHAUSTED_ELIGIBLE_STATUSES, FindingRegistry, RunnerConfig,
     _update_finding_statuses,
 )
 
@@ -90,7 +90,7 @@ def test_the_valve_population_covers_every_reader_status():
     """DERIVED, not hand-kept. A list that drifts from its readers is how the
     valve died in the first place."""
     needed = {s for v in READER_STATUSES.values() for s in v}
-    missing = sorted(needed - set(EXHAUSTED_VALVE_STATUSES))
+    missing = sorted(needed - set(EXHAUSTED_ELIGIBLE_STATUSES))
     assert not missing, (
         f"{missing} are examined by a reader of `exhausted` but are not in the "
         f"valve's population, so the flag is stripped before that reader runs")

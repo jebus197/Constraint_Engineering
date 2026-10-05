@@ -1,0 +1,258 @@
+# The routing ladder ordering, and 3 repairs
+
+Record written 2026-10-05T04:33:33+01:00.
+
+**This is the seats' own output, reproduced in full.** The Personalisation directive requires external review output preserved *"in full and in unfiltered format"* and says *"Never summarise in place of the full output"*. Any summary elsewhere is downstream of this file, not a substitute for it.
+
+Round dispatched 2026-10-05 02:28:50 BST on the 2 free claude_cli seats, 0 paid dispatches.
+
+PURPOSE. Two questions were put to the panel. Part A asked whether 3 repairs made the same night were correct and whether any of them weakened an existing guard. Part B asked the panel to attack a proposal to add a provenance-gated falsification dimension to the capability fingerprint and key the routing ladder on it.
+
+OUTCOME. One seat returned a full review; the other produced nothing.
+
+The fable seat completed in 1108.2 s with 74 tool calls and 12,711 characters. It found 3 real faults and corrected 2 statements. It established that a claimed coverage relationship did not exist (the sibling guard never examines the renamed scripts, because none of them writes anything); that a swallowed-failure repair was incomplete, the same defect class surviving one loop further out where `except Exception: continue` escaped a guard that only flags handlers whose body is `pass`; and that the seat map added that night did not fix the routing ladder at all, because only the first 2 rungs are ever tried and all 3 vendors supplying them were mapped to the same model, giving 0 of 6 source seats a climb between different models.
+
+The seat's own repair for that third fault was then falsified under FFAFP. Mapping the strongest vendor seat onto the weaker model yields 5 of 6 mixed prefixes but 0 of 6 in the ladder's own direction, because rung 1 is the strongest writer and routing stops at the first confirmation. Two further corrections surfaced while checking it: an earlier calculation of 6 of 6 had been made against a map that was never shipped, caught by a newly written guard failing; and the shipped map had the measured-weakest vendor on the strong model, contradicting the project's own validated ordering. The repair that holds moves that weakest vendor to the weaker model and raises the rung budget to 4 for simulated runs only, giving 6 of 6 mixed and 6 of 6 correctly directed.
+
+On the proposal, the seat rejected the recommended correction for the selection effect using the project's own chi-squared measurement, demonstrated twice that the provenance condition is defeated by text alone, and proposed a better composition in which the frozen order remains the decider, the provenance-clean confirm proportion acts only as a drift alarm, and only a re-run of the original fixed problem set may reorder anything.
+
+The cc2 seat failed both attempts, producing 0 characters and 0 tool calls across 3628.5 s. Investigation established that this seat is not slower than the other (Mann-Whitney p = 0.4031) and does not fail more often than it (Fisher p = 0.7183, Barnard p = 0.6179), but that the failure rate for BOTH free seats has risen significantly (Fisher p = 0.046723, Barnard p = 0.044514) and that seat failures are not independent: 3 of the 5 failing rounds lost both seats at near-identical durations, which an independence model puts at p = 1.556646e-07. Both seats authenticate against the same subscription and were dispatched simultaneously. Seats sharing a subscription are now serialised.
+
+LIMITATION. With one seat lost, this round carries no inter-seat disagreement, so the no-compelled-convergence discipline could not operate as designed. A re-run of the cc2 seat alone was dispatched afterwards for comparison.
+
+## Seats and cost
+
+2 seat(s): `cc2`, `fable`. **0 paid dispatches**, enforced by `PANEL_ONLY=cc2,fable`.
+
+## The brief, as dispatched
+
+<!-- verbatim-begin: the brief as dispatched -->
+
+# Review brief — the routing ladder's ordering, and 3 repairs made tonight
+
+You are reviewing work done on 2026-10-05 by CC1. Two things are asked of you, and the
+second matters more than the first. Your task is to find what is WRONG, not to confirm
+what is right. Disagreement is preserved as information; do not converge for the sake
+of converging.
+
+## Part A — 3 repairs. Are they correct, and did any of them weaken a guard?
+
+The full suite finished with 11 failures. 3 were attributable to CC1's own work the
+same night and have been repaired:
+
+1. **A name collision.** 8 new scripts under `scripts/*_2026-10-05.py` each defined a
+   local function called `answer_help` that built an `argparse` parser.
+   `bench/tests/test_fresh_clone_is_actually_run_2026-09-11.py` flags any script
+   containing both `answer_help(` and `ArgumentParser`, because the project's shared
+   `_cli_help.answer_help` answers `--help` first and would hide argparse's flag list.
+   REPAIR: the local function was renamed to `_parse_args` in all 8.
+   QUESTION: does the sibling guard
+   `bench/tests/test_help_never_acts_2026-09-11.py::test_every_script_that_writes_answers_help`
+   still cover these scripts after the rename? Its matcher only flags scripts that
+   WRITE something, and its message says "or give the script a parser". CC1 concluded
+   the rename is safe because these scripts are read-only and all carry parsers.
+   Check that conclusion by execution rather than by reading.
+
+2. **A swallowed exception.** `scripts/the_blockers_are_shown_as_settled_2026-10-05.py`
+   had `except Exception: pass` inside the leave-one-out loop that attributes
+   convergence blockers. REPAIR: failures are now collected into `probe_errors` and
+   reported, and the printed attribution says whether it is complete or a lower bound.
+
+3. **Source-text assertions.** `bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py`
+   caps the census of source-text assertions at 80; CC1's new tests took it to 83.
+   REPAIR: all 3 were converted to EXECUTING checks rather than deleted. Two now read
+   `run_experiment.__code__.co_names` and `co_consts`; one now runs the launcher's
+   `--help` as a subprocess and also asserts an unknown `--seat-models` value is
+   REFUSED. Each conversion was mutation-checked and 2 tests fail per mutation.
+   QUESTION: is reading `co_names`/`co_consts` genuinely stronger than matching source
+   text, or has CC1 swapped one proxy for another? Name the cases where it would give
+   a FALSE PASS or a FALSE FAIL.
+
+A separate instrument defect was found and repaired during this work: the script that
+produced the headline figure "175 of 175 blockers rendered as SETTLED" had been
+substring-matching finding ids against the rendered SETTLED block. After the defect it
+measured was repaired, it returned 21 of 175 instead. It now tests membership in a
+pinned historical status set and reproduces 175 of 175 exactly.
+QUESTION: is pinning the historical set the right call, or does it make the script
+unable to detect a future regression of the same class?
+
+## Part B — the proposal. Attack it.
+
+Read `experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md`
+in full. Summary of the situation it addresses:
+
+`bench/routing.py` says in its docstring that it routes to stronger models "ordered by
+capability fingerprint". That is the ONLY occurrence of the word fingerprint in the
+file. The code ranks on `DEFAULT_FALSIFIER_STRENGTH`, a frozen tuple of vendor names
+derived from Exp 42 in June 2026. Separately, `_update_observed_fingerprint` writes a
+live per-model profile every round, consumed by `burst_planner.py`. The glossary
+defines that profile as (D, v-bar, A, C) including a verification score; the 15 fields
+actually written contain no verification score and no coverage dimension.
+
+The proposal adds a provenance-gated falsification rate to the fingerprint, records it
+in shadow, and promotes it to the ladder only on evidence, retaining the frozen order
+as prior and cold-start fallback.
+
+Specific questions, and please answer each explicitly:
+
+1. **The selection effect.** The ladder routes findings the weak models could not
+   resolve to the strong models, so a strong model is measured against a harder
+   population. CC1 states this as the strongest objection and recommends measuring on
+   FIRST-PASS falsifiers only. Is that sufficient? Does it measure the wrong construct?
+   Propose a better mitigation if you have one.
+
+2. **The provenance gate.** On Exp 55, Gemini scored 2 of 2 CONFIRMED with both
+   falsifiers DETACHED (reading nothing, restating the document from memory), while
+   DeepSeek scored 0 of 2 with genuine readers that ERRORed on a missing file. A naive
+   confirm-rate ranking inverts the correct order. Is gating pool entry on
+   `scripts/competence_provenance.py` sufficient to prevent that, or can a detached
+   falsifier still pass provenance?
+
+3. **Is the construct right at all?** Confirm rate measures whether a model can
+   DEMONSTRATE a defect. The ladder's job is to resolve findings others could not.
+   Exp 42 measured the latter directly on a fixed residual set. Is a continuous rate
+   actually a worse instrument than the frozen measurement it would replace?
+
+4. **Anything CC1 has missed.** Other schema facilities for exploiting mixed-capability
+   panels that are armed in config but inert in fact, or present in the real runners and
+   absent from `bench/tools/run_simulated_experiment.py`. CC1 found 3 such gaps:
+   `immune_memory_enabled` (13 of 49 real configs), `hardened_gate_enabled` (4 of 49),
+   `apply_fixes_back_enabled` (1 of 49). Are there more? Is `burst_mode="off"` in the
+   simulated runner defensible, given burst is fingerprint-driven?
+
+## Measured facts you may rely on, with their producers
+
+- Real panel finding rates differ: chi-square 280.0138, df 4, p = 2.213e-59.
+  Simulated panel does not: chi-square 3.0084, df 5, p = 0.6987. NumPy and scipy agree;
+  Wolfram independently confirms both. Producer:
+  `scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py`.
+- A uniform simulated panel presents 1 distinct model across the 5 rungs the ladder
+  returns; the shipped seat map presents 2. Producer:
+  `scripts/what_the_sim_runner_never_carried_over_2026-10-05.py`.
+- 0 of 3473 archived round replies carry an id-addressed falsifier, Wilson
+  [0.0000%, 0.1105%]. Producer: `scripts/in_round_falsifiers_are_discarded_2026-10-05.py`.
+
+Verify any of these you doubt. If a figure does not reproduce, say so plainly — that is
+the most useful thing you can return.
+
+## Required output
+
+State your position per question. Include a section headed `## Disagreement` with a
+real body naming where you disagree with CC1 or with the other seat; "none" is not an
+answer unless you genuinely have none, and say so explicitly if that is the case.
+Where you make a claim about this repository, run something that demonstrates it and
+quote the output.
+
+## Deliver your fix as a FILE, at its real path
+
+Any repair you propose must be WRITTEN INTO THE SANDBOX REPOSITORY TREE at the real
+path it belongs at — for example `bench/routing.py`, or a new test under `bench/tests/`.
+A fix left in prose, or written to scratch space, is destroyed at teardown and is not
+delivered. If you propose a change to the proposal document itself, write the amended
+file. Also write any script you used to check a claim, so the check can be re-run.
+
+## State what would REFUTE you
+
+For each position you take, state explicitly what evidence would overturn it. A
+position with no refutation condition is an opinion, not a finding. Be concrete: name
+the measurement, the file, or the command whose output would change your answer.
+
+## Termination criterion
+
+Stop when further work produces no new above-threshold findings — this project's own
+diminishing-returns criterion. A finding is above threshold if missing it could cause a
+real-world failure, an unsafe condition, or a wrong experimental conclusion. Do not
+generate findings to fill space, do not nitpick style, and do not re-litigate design
+choices that are merely not your preference. If you reach that point early, say so and
+stop; an early stop with a stated reason is a better answer than padding.
+
+
+<!-- verbatim-end -->
+
+## Seat: cc2
+
+Route `claude_cli`, 0 recorded tool call(s).
+
+<!-- verbatim-begin: cc2 (panel fingerprint_ladder_review_2026-10-05) -->
+
+(this seat returned no response text)
+
+<!-- verbatim-end -->
+
+## Seat: fable
+
+Route `claude_cli`, 74 recorded tool call(s).
+
+<!-- verbatim-begin: fable (panel fingerprint_ladder_review_2026-10-05) -->
+
+All green. I've reached the diminishing-returns point — further passes produce only sub-threshold observations. Final report.
+
+---
+
+# Verdict — seat Fable, 2026-10-05
+
+Every repository claim below was demonstrated by execution in this turn; outputs quoted are from those runs.
+
+## Part A — the 3 repairs
+
+**A1. The rename (`answer_help` → `_parse_args` in 8 scripts): CORRECT, no guard weakened — but CC1's coverage conclusion is misstated.** Executed, not read: `test_fresh_clone_is_actually_run_2026-09-11.py::TestTheHelperIsNotUsedWhereArgparseAlreadyWorks` and all of `test_help_never_acts_2026-09-11.py` pass (12 passed). However, the sibling guard `test_every_script_that_writes_answers_help` does **not** "still cover these scripts" — it never examines them. Applying its own `WRITES` matcher to all 8: `WRITES=False` for every one, so they are **outside its population by design**, not covered-and-passing. Actual coverage was `test_help_is_answered_2026-09-11.py::TestTheWiringIsReal` — population membership confirmed for all 8 — but that vouches them **structurally** (source mentions `argparse`), and `answers_help` counts an `ArgumentParser` constructed anywhere, including inside a function nothing calls. A defined-but-never-called parser would pass every static guard while `--help` ran the measurement. I executed `--help` on all 8: `rc=0`, `usage:` first line, tree clean. **Delivered:** `bench/tests/test_measurement_scripts_answer_help_2026-10-05.py` — executes `--help` (exit 0 + usage line) and `--no-such-flag` (exit 2) on all 9 scripts (8 + my new one). 18 passed.
+
+**A2. The swallowed exception: repair correct, and the same defect class survives one loop up — now fixed.** The leave-one-out `probe_errors` repair is sound (re-run: `probes that raised: 0`, 175/175 reproduces). But line 240–241 retained `except Exception: continue` around `reg.unverified_critical_count()` at the **run** level: a registry the counter cannot score vanished from the attribution with no trace while staying in `runs_total`, and the script still printed "the attribution is complete, not a lower bound" — a completeness claim computed from `probe_errors` alone. The suite's swallow-guard (`test_no_bare_or_silently_swallowed_exception_handlers`) only flags handlers whose entire body is `pass`, so `continue` escapes it. **Delivered:** fix in `scripts/the_blockers_are_shown_as_settled_2026-10-05.py` — `counter_errors` collected and reported; the completeness line now requires both lists empty. Re-run: 175/175 exact, guard suite passes.
+
+**A3. `co_names`/`co_consts`: genuinely stronger than source text, but still a static reference proxy — one rung down, not a different kind of evidence.** It is immune to comments and commented-out code (a real improvement). Cases, precisely:
+
+- **FALSE PASS (`co_names`):** the name referenced inside `run_experiment` without a reachable call — dead branch (`if False:`), a bare assignment, or a call behind a never-true flag. The compiled code object records the *reference*, not the *execution*.
+- **FALSE PASS (`co_consts`):** `run_experiment`'s **docstring is `co_consts[0]`**, and any string literal (a log message) containing `"round_falsifier_reattachments"` satisfies the check after the persist line is deleted. A docstring can satisfy `co_consts` exactly where a comment cannot satisfy source-matching — the same defect class, narrower aperture.
+- **FALSE FAIL (both):** a *correct* refactor moving the call or the persist into a helper (module-level or nested — nested code objects have their own `co_names`; the check does not recurse) breaks both tests. That is the "guards break on CORRECT changes" failure the census message warns about, at lower frequency.
+
+I mutation-checked both probes myself: severing the call → `test_the_round_loop_calls_it` FAILED; deleting the persist key → `test_its_record_is_persisted` FAILED; restored, 4 passed. Note: **each mutation failed exactly 1 test, not the "2 tests fail per mutation" stated** — either CC1's mutations were coarser or the claim is overstated; the probes do catch their mutations either way. The call site is real and unconditional (line 16114). Verdict: acceptable conversions, correctly described as proxies; the behavioural form (this file's own `verdict` fixture pattern) remains the stronger standard where feasible.
+
+**The pinned historical set: the right call.** The substring match was unsound in both directions (an id inside a `merged_into` pointer or another finding's description matched spuriously; the claim was always about status membership). Regression detection is **not** lost: the live status→section map is derived each run by calling `build_summary`, and — decisive — the repaired partition is pinned by an executing test, `test_status_partition_covers_everything_2026-08-30.py` (5 passed). The script's live print alone would be insufficient (it always exits 0); the test is what guards the regression.
+
+## Part B — the proposal
+
+**B1. First-pass-only is NOT sufficient, and its stated premise is false.** "A common population by construction" is wrong: each model writes first-pass falsifiers for *its own findings*, and the finding populations differ per model — χ² = 280.0138, p = 2.213e-59 (reproduced) is direct evidence. First-pass-only trades the routing confound for a self-selection confound, and it measures *demonstration of own findings*, not the ladder's construct (*resolution of others' residuals*). **Better mitigation: randomise a small audit fraction of rung assignments** and compute the shadow statistic on randomised attempts only — the only option that measures the ladder's own construct on an assignment independent of the ranking. Covariate modelling (option 3) cannot identify without the overlap randomisation provides.
+
+**B2. The provenance gate is NOT sufficient. Demonstrated, twice.** `falsifier_style` is a source-text regex: `open("/dev/null")` as a decoy → classified `reads`; the word `open(` **in a comment** → classified `reads` (both executed). And the UNSAFE rule aggregated per *model*: 2 detached CONFIRMED + 1 reading REFUTED → `unsafe=False` (executed). A detached falsifier passes the gate by containing the vocabulary of reading. **Delivered:** per-confirmation accounting in `scripts/competence_provenance.py` (Exp 55 still exits 2 with `UNSAFE TO RANK ON`; all 13 pinned tests pass), plus the demonstration script. The regex hole cannot be fixed by text: gating requires **execution-derived provenance** (audit-hook recording of files opened during `reverify_falsifier`, or perturbed-target invariance — a verdict that doesn't change when the target does is detached by measurement). Also: `test_nothing_imports_either_script_into_the_runner` pins this script as RECORD ONLY; promoting it to a gate overturns a pinned design decision and must say so.
+
+**B3. Yes — as a replacement, the continuous rate is the worse instrument.** Exp 42 measured the ladder's actual construct (residual resolution: 0/7 weak, 6/7 rung 1, 7/7 rung 2); a provenance-clean confirm rate measures a related but different one. Under the additive standard, a measurement of the wrong construct cannot displace a committed measurement of the right one. The supported composition: frozen order stays the decider; the shadow rate runs as **CUSUM drift detection**; an alarm triggers **re-running an Exp-42-style fixed-residual probe**; only that reorders. Rate = tripwire, probe = decider — "tools decide" applied to the ranking itself.
+
+**B4. Yes, there is more, and one item I repaired:**
+1. **The exercised ladder prefix was uniform even with the mixed bench armed.** `routing_max_rungs=2`; the top rungs are always drawn from {Codex-SIM, CC2-SIM, ChatGPT-SIM}; `DEFAULT_LADDER` mapped all three to `opus` → **0 of 6 source seats got a climb between two different models** (executed). "2 distinct models across the 5 rungs" was true and materially incomplete. **Delivered:** `Codex-SIM → fable` in `sim_dispatch_shim.py` (5 of 6 mixed — the maximum with CC2-SIM pinned to `opus`; derivation in the test docstring), pinned by `bench/tests/test_routing_ladder_prefix_is_mixed_2026-10-05.py` with an anti-vacuity probe asserting the old map reads 0/6. All 18 pre-existing ladder tests still pass.
+2. **The fingerprint store erases run provenance on every save.** All 11 files in `bench/fingerprints/` — real and `-SIM` alike — carry `experiment=study_run1b_2026-10-03`, one timestamp (executed), because `_save_fingerprints` writes back every loaded profile. The proposal's dimension would be persisted in a store where "which run measured this" is already unanswerable. Also no key contract: routing normalises `-SIM`, fingerprint consumers don't; the proposal must name the lookup key.
+3. **`burst_mode="off"`: defensible as the parity default, no longer defensible as the only state.** Burst is fingerprint-driven; with a mixed bench now available, permanently-off burst leaves the burst planner in exactly the never-rehearsed state the routing ladder occupied before 2026-08-30.
+
+All of this is written into the proposal file as an attributed review section.
+
+**Measured facts:** all three reproduce exactly (χ² 280.013760 / 3.008403; p 2.213221e-59 / 0.6987; 0 of 3473, Wilson [0.0000%, 0.1105%]). Wolfram second check (local Wolfram Engine via `wolframscript`, attribution: Wolfram Language): Wilson upper bound 0.11048702870671313% — agrees.
+
+## Disagreement
+
+- **With CC1 on A1:** "the sibling guard still covers these scripts" is the wrong description. It skips them (`WRITES=False`); the rename is safe because the harm class doesn't apply, not because coverage persists. Coverage was structural-only until tonight's executing test.
+- **With CC1 on B1:** mitigation 2's "common population by construction" is false, per the project's own χ² measurement. I reject first-pass-only as the recommendation and propose the randomised audit fraction.
+- **With the proposal's promotion path (B3):** "shadow ranking does not distort" is the wrong promotion criterion; promotion should go alarm → fixed-residual probe → reorder. I also reject bundling with `immune_memory_enabled` absent a measured advantage of the composed work — shared machinery is a convenience, not a demonstration.
+- **With the brief's framing of A3:** "2 tests fail per mutation" did not reproduce; my two mutations each failed exactly 1 test.
+
+## What would refute me
+
+- **A1:** output of `python3 -m pytest bench/tests/test_help_never_acts_2026-09-11.py` showing the 8 scripts in `test_every_script_that_writes_answers_help`'s offender-candidate set (i.e. `WRITES` matching them).
+- **A2:** a demonstration that `unverified_critical_count` cannot raise on any archived registry shape — then the run-level handler is dead code and my fix guards nothing (it still costs nothing).
+- **A3:** a mutation of `reference_runner_v3.py` that removes the *reachable* call yet keeps both wiring tests green without touching the test file — that would upgrade my "proxy" verdict to "broken proxy".
+- **B2:** section 1 of `scripts/the_provenance_gate_reads_text_not_behaviour_2026-10-05.py` failing to reproduce (it self-reports staleness via exit 1).
+- **B3:** a committed measurement where the provenance-clean rate predicts residual-set resolution better than the Exp-42 probe predicts itself on re-run.
+- **B4.1:** `rank_falsifier_writers` yielding a mixed 2-prefix under the old map — re-run section 4 with `Codex-SIM: opus` (the anti-vacuity test does exactly this and asserts 0/6).
+
+## Delivered files
+
+Modified: `scripts/competence_provenance.py`, `scripts/the_blockers_are_shown_as_settled_2026-10-05.py`, `bench/tools/sim_dispatch_shim.py`, `experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md` (appended review). New: `bench/tests/test_routing_ladder_prefix_is_mixed_2026-10-05.py`, `bench/tests/test_measurement_scripts_answer_help_2026-10-05.py`, `scripts/the_provenance_gate_reads_text_not_behaviour_2026-10-05.py`. Final guard sweep over the amended tree: 50 passed (help guards, swallow guard, source-text census, help-is-answered), plus 18 + 4 + 18 + 36 + 13 on the targeted files.
+
+**Termination:** stopping here under the diminishing-returns criterion. The last pass (status-partition pinning check) produced confirmation, not a new finding; remaining observations (e.g. `n_attrib = [0]` as a 1-element list, the producer's "any of them in executable code: True" line) are below threshold. One caveat on my own evidence: this sandbox had no `.git`, so git-population guards ran against a scratch index I built from the working tree — in the real checkout the populations are the committed set, which CC1 should confirm includes tonight's files.
+
+<!-- verbatim-end -->
+
+## Where the raw record lives
+
+`bench/logs/fingerprint_ladder_review_2026-10-05/` holds the brief, every seat reply, the tool logs and `seat_proposals.diff`. That directory is excluded by `.gitignore:41`, so a byte-identical copy is committed under `experimental_notes/evidence/`, verified by sha256 and checked on every suite run by `bench/tests/test_panel_records_are_preserved_2026-09-11.py`.
+
+
+Written under CDSFL note standard v1.7 (26 August 2026).

@@ -197,6 +197,22 @@ def build_parser() -> argparse.ArgumentParser:
     # function signatures and a bare literal in a third file.
     ap.add_argument("--model", default="opus",
                     help="stand-in model for the simulated seats (default: opus)")
+    # MIXED-CAPABILITY BENCH (founder ruling 2026-10-05). "ladder" selects
+    # SHIM.DEFAULT_LADDER; "uniform" (the default) keeps one model for every
+    # seat, which is the behaviour every run before this date had.
+    ap.add_argument("--routing-max-rungs", type=int, default=None,
+                    help="how many ladder rungs routing may try per unresolved "
+                         "critical. Default: the RunnerConfig default (parity with "
+                         "the real configs, none of which pins it). Raising it is "
+                         "a SIMULATION-ONLY divergence and is recorded as an ask: "
+                         "rungs beyond the 2nd are dispatched only when every "
+                         "earlier rung has failed, so a deeper budget buys a "
+                         "cross-model climb on a small fraction of findings.")
+    ap.add_argument("--seat-models", choices=("uniform", "ladder"),
+                    default="uniform",
+                    help="uniform = one model for all seats (default); "
+                         "ladder = the per-seat capability ladder in "
+                         "sim_dispatch_shim.DEFAULT_LADDER")
     # SEVERITY CALIBRATION, wired 2026-09-07. Measured the same day: the harness
     # built RunnerConfig with 24 keyword arguments and this was not among them, so
     # it took its default of False and `_apply_severity_calibration` returned 0
@@ -449,6 +465,47 @@ def main() -> int:
         max_rounds=args.rounds,
         falsifier_gate_enabled=True,
         routing_enabled=True,
+        # THE RUNG BUDGET IS OPT-IN AND DEFAULTS TO PARITY. REVERTED 2026-10-05.
+        #
+        # This was briefly set to an unconditional 4, to make the simulated
+        # capability ladder span more than one model: with the default budget of 2,
+        # every source seat's first 2 rungs come from {Codex-SIM, CC2-SIM,
+        # ChatGPT-SIM} and a faithful seat map puts all 3 on the same model, so
+        # 0 of 6 source seats got a climb between different models.
+        #
+        # THE cc2 SEAT FALSIFIED THAT REPAIR, and it was right on two counts.
+        #
+        # 1. PARITY. 0 of 288 config-shaped files pin `routing_max_rungs`; the
+        #    dataclass default is 2. Rungs 3 and 4 would be reachable ONLY in
+        #    simulation — and the literal sat directly beneath the block headed
+        #    "PARITY WITH THE REAL exp45 CONFIG ... Every value below differed, and
+        #    each difference let the simulation behave in a way the run it is
+        #    compared against structurally could not." It was a new instance of
+        #    the class that block exists to remove.
+        #
+        # 2. THE PROPERTY WAS MEASURED ON A PREFIX THAT IS NOT DISPATCHED.
+        #    `resolve_via_routing` stops at the first CONFIRMED. Verified by
+        #    execution: a run confirming at rung 1 dispatches ['A'] and nothing
+        #    else; only an all-rungs-fail run dispatches 4. So rung 3 executes only
+        #    when rungs 1 AND 2 have both failed — the seat priced it at 2.7542%
+        #    first-pass and 0.7857% on the residual rates Exp 42 validated.
+        #
+        #    The seat's own words, and they are fair: CC1 "used exactly this
+        #    execution semantics to falsify the fable seat and did not apply it to
+        #    its own repair." The 6-of-6 figure counted prefixes, not dispatches.
+        #
+        # WHAT IS KEPT. The seat derived exhaustively that over all 64 two-model
+        # seat maps, 0 reach 6-of-6 mixed at budget 2 and the ceiling is 5 of 6, so
+        # a deeper budget IS genuinely required for that property. It is therefore
+        # offered rather than imposed: `--routing-max-rungs` records the ask, and
+        # the default is the dataclass default, which is parity.
+        #
+        # The `DeepSeek-SIM -> fable` correction in the seat map STANDS: DeepSeek
+        # ranks last in DEFAULT_FALSIFIER_STRENGTH on a measured 28% confirm rate,
+        # so the strong model was the unfaithful assignment.
+        routing_max_rungs=(args.routing_max_rungs
+                           if args.routing_max_rungs is not None
+                           else R.RunnerConfig.routing_max_rungs),
         sk_enabled=True,
         location_keyed_convergence=True,
         # PARITY WITH THE REAL exp45 CONFIG (bench/exp45_configs/
@@ -587,7 +644,11 @@ def main() -> int:
         return _orig_gai(host, port, *a, **kw)
 
     _sock.getaddrinfo = _no_paid
-    original = SHIM.install(model=args.model, timeout=args.timeout)
+    _seat_map = SHIM.DEFAULT_LADDER if args.seat_models == "ladder" else None
+    if _seat_map:
+        print(f"    seats   MIXED LADDER {_seat_map}", flush=True)
+    original = SHIM.install(model=args.model, timeout=args.timeout,
+                            seat_models=_seat_map)
     t0 = time.monotonic()
     # SEATS GET A DISPOSABLE WORKTREE, NOT THE LIVE REPO (2026-09-08).
     #

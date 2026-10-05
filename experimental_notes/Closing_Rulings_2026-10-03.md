@@ -61,7 +61,7 @@ The narrow brief worked: 1224 words, both seats done in 903s and 935s. The omnib
 
 **Onboarding route.** Installer at the top of `resources/ONBOARDING.md` (named 0 times in 2944 lines before); setup row in `START_HERE.md` (0 of 124 lines mentioned it); the drifted 18-of-28 package list removed from `docs/REPRODUCING.md` rather than corrected. Guard: `bench/tests/test_onboarding_route_is_live_2026-10-03.py`, 9 tests, reads the installer's tables by execution, mutation-checked (3 of 9 fail when the route is removed).
 
-**Two instrument defects.** `scripts/help_is_answered_2026-09-11.py` imported `_cli_help` inside a function on the assumption that `scripts/` is `sys.path[0]` — true when run, false when the test imports it, so the coverage check died before asserting. Fixed; it then caught `release_valve_age_lock_2026-10-03.py` running its whole measurement on `--help`, now wired to `answer_help`. 27 tests pass. Four other new scripts were caught by `test_operational_scripts.py` for not rejecting unknown flags loudly; fixed, 8 cases pass.
+**Two instrument defects.** `scripts/help_is_answered_2026-09-11.py` imported `_cli_help` inside a function on the assumption that `scripts/` is `sys.path[0]` — true when run, false when the test imports it, so the coverage check died before asserting. Fixed; it then caught `exhausted_marking_age_lock_2026-10-03.py` running its whole measurement on `--help`, now wired to `answer_help`. 27 tests pass. Four other new scripts were caught by `test_operational_scripts.py` for not rejecting unknown flags loudly; fixed, 8 cases pass.
 
 ---
 

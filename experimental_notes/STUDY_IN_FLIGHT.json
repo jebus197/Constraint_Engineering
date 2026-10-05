@@ -335,7 +335,7 @@
       "founder_ruling": "IF IT STILL NEEDS FIXING, FIX IT (2026-10-03)",
       "implemented": {
         "at": "2026-10-03T07:44:18+01:00",
-        "instance": "shakedown_2026-09-29/arm1_harvest/C0041 \u2014 CONFIRMED, verified=true, severity 0.8, falsifier NON_DISCRIMINATING, claim withdrawn by its own source model",
+        "instance": "shakedown_2026-09-29/arm1_harvest/C0041 — CONFIRMED, verified=true, severity 0.8, falsifier NON_DISCRIMINATING, claim withdrawn by its own source model",
         "producer": "scripts/verified_on_a_voided_instrument_2026-10-03.py",
         "exposure": "13 of 3208 archived entries, 0.4052%, Wilson [0.237%, 0.6921%]; all 13 verified=true and terminal; 12 already CLOSED below critical severity; exactly 1 critical",
         "convergence_effect": "none: unverified_critical_count skips any entry whose status is not UNCONFIRMED and never reads `verified`. The status is left CONFIRMED, so CONFIRM-only is unchanged and the founder's deferred blocking ruling is untouched.",
@@ -373,6 +373,40 @@
       "needs_founder_ruling": "Whether a CONFIRMED finding may stand on a falsifier the discrimination control voided. Acting on it IS arming the blocker, which he refused on 126 of 246. The record now makes the contradiction legible so the 3 runs can measure how often it arises.",
       "answered_at": "2026-10-03T16:48:33+01:00",
       "answered_from": "study_run1b_2026-10-03_20261003T100439Z/runner_state.json (post-sweep, persisted 16:46:38 BST)"
+    },
+    {
+      "id": "in_round_clearance",
+      "what": "Does the in-round falsifier re-attachment actually clear A4 blockers while the gate can still see it, and does the UNRESOLVED section elicit the id-addressed form at all? Baseline for the elicitation half is 0 of 3473 archived round replies, Wilson [0.0000%, 0.1105%].",
+      "founder_ruling": "build the closing sweep machinery into the schema rather than leave it as an afterthought (2026-10-04)",
+      "result": null,
+      "headline": null,
+      "implemented": {
+        "at": "2026-10-05T00:44:03+01:00",
+        "why": "UNCONFIRMED is the only status unverified_critical_count treats as an A4 blocker, and build_summary rendered it inside the SETTLED block under 'confirmed, closed, or merged. Do not CHALLENGE or re-describe them.' So every blocker was shown to the panel as settled, with challenge forbidden: 175 of 175 attributed blockers, 100.0000%, Wilson [97.8520%, 100.0000%], across 22 of 59 archived registries.",
+        "instruments": [
+          "bench/reference_runner_v3.py :: FindingRegistry.build_summary (UNRESOLVED section)",
+          "bench/reference_runner_v3.py :: record_in_round_falsifier_reattachments"
+        ],
+        "producers": [
+          "scripts/the_blockers_are_shown_as_settled_2026-10-05.py",
+          "scripts/sweep_channels_are_post_verdict_2026-10-05.py",
+          "scripts/in_round_falsifiers_are_discarded_2026-10-05.py",
+          "scripts/the_counter_and_the_router_disagree_2026-10-05.py",
+          "scripts/why_the_blockers_were_never_offered_2026-10-05.py",
+          "scripts/in_round_clearance_is_monotone_2026-10-05.py"
+        ],
+        "guards": [
+          "bench/tests/test_a_blocker_is_never_shown_as_settled_2026-10-05.py (15 tests, 6 red against the parent)",
+          "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py (17 tests, 2 mutations each caught 2)"
+        ],
+        "invariant": "a finding leaves the blocker count on EXECUTED evidence only; prose is recorded and clears nothing. Monotonicity proved 3 ways: z3 unsat, a SymPy bound, and 248 transitions executed against the shipped counter.",
+        "inert_on_history": "0 of 3473 archived round replies carry the parsed form, so the parser cannot change any archived result and can only act where the new UNRESOLVED section elicits a falsifier.",
+        "what_it_can_and_cannot_say": "A single run can show whether the form is elicited at all and whether any blocker clears in-round. It cannot establish a rate, and it cannot attribute a convergence to this mechanism alone, because other repairs land in the same window."
+      },
+      "open_for_the_founder": [
+        "Whether _post_convergence_sweep should ALSO move to before the verdict is recorded. That changes the 2026-07-28 guard 'runs strictly after the verdict', which is yours to relax, and costs no extra dispatch because the sweep already runs.",
+        "Whether ESCALATED and WITHHELD should leave the SETTLED block too. Both are rendered as 'confirmed, closed, or merged' and neither is; neither is an A4 blocker, so this is correctness rather than convergence."
+      ]
     }
   ],
   "run_conditions": {
@@ -438,7 +472,7 @@
       "provenance_question_for_the_founder": "The severity gate was removed from unverified_critical_count in commit 6c10fe4 at 2026-09-06 16:21:48, quoting the founder as 'Verdict: do it. There are no votes in CDSFL.' DECISIONS_AWAITING_YOU_2026-09-06.md item 23 records, at 22:15 the same day: 'ANSWERED 2026-09-06 22:15 AND THE RECOMMENDATION WAS REJECTED. He rejected both removal and the rubric swap and ordered worked proofs instead.' The verbatim quote appears in no tracked file except the code comment and 5 later panel seat_proposals.diff files (earliest 2026-09-11). Decision ledger item 2, which governs, is still OPEN. AWAITING FOUNDER RULING; no code changed.",
       "measured_consequence": "Restoring the severity gate takes A4 from 3 to 0 on this run's pre-sweep registry; the gate then blocks on contested=2 and the streak.",
       "producers": [
-        "scripts/release_valve_age_lock_2026-10-03.py",
+        "scripts/exhausted_marking_age_lock_2026-10-03.py",
         "scripts/a4_blockers_lock_audit_2026-10-03.py",
         "scripts/gate_replay_on_registry_2026-10-03.py",
         "scripts/routing_severity_gate_2026-10-03.py"

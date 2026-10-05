@@ -13,6 +13,21 @@ Measures finding depth: formality times information density times generalisation
 
 Immune pipeline cell type. Stage 3 verification agent. B Cell v1 uses SymPy for mathematical claim verification. B Cell v2 adds AST (Abstract Syntax Tree) analysis and Z3 SMT (Satisfiability Modulo Theories) solver for formal verification. Produces structured verdicts.
 
+### `exhausted` marking
+
+The flag `_update_finding_statuses` sets on a finding that has persisted for
+`exhausted_round_threshold` rounds with recorded review activity, which causes
+`unverified_critical_count` (the A4 convergence blocker) to skip it. `EXHAUSTED_ELIGIBLE_STATUSES`
+names the statuses it may apply to. It is the one release path out of the A4 blocker.
+
+**Do not call this "the release valve".** That phrase entered the codebase from a panel
+seat's comment in commit `2ef96a15` on 2026-09-09, spread to 12 identifier sites and 10
+comments, and was never defined here — so it read as project vocabulary while being nobody's
+agreed term. Founder ruling 2026-10-05: use the formal name, or the fully technical form,
+never a coined one. Renamed throughout the live tree on that date; the archived seat replies
+and `experimental_notes/seat_evidence/` keep the old wording because they are a record of
+what was actually written.
+
 ### Blackboard
 
 Communication topology where models share state through a central FindingRegistry rather than direct messaging. Models see only the registry summary, not each other's raw output. See also Star topology.
@@ -67,6 +82,54 @@ critical is never retired by a refutation — CONFIRM-only stands, because on
 Exp 42 two of three REFUTED verdicts on criticals were themselves wrong — but the
 computation is no longer discarded. The finding and the evidence reach the human
 together. Founder ruling, 2026-08-03. See `_record_computed_evidence`.
+
+### `UNRESOLVED` section (round summary)
+
+The block of the per-round registry summary that names the findings holding
+convergence open, and asks the panel to resolve them by attaching a runnable
+falsifier addressed by finding id. Distinct from the `SETTLED` block, which names
+findings that are genuinely confirmed, closed or merged and tells the panel not to
+challenge them.
+
+It exists because those two sets were conflated. `UNCONFIRMED` is the one status
+that `unverified_critical_count` treats as an A4 convergence blocker, and it was
+rendered inside `SETTLED` under the text "These findings are confirmed, closed, or
+merged. Do not CHALLENGE or re-describe them." Measured over the archive by
+`scripts/the_blockers_are_shown_as_settled_2026-10-05.py`, attributing blockers by
+leave-one-out against each real registry: 175 of 175 attributed blockers were
+rendered under `SETTLED`, 100.0000%, Wilson [97.8520%, 100.0000%], across 22 of 59
+archived registries. The panel was not failing to clear those findings; it was
+instructed not to touch them.
+
+The word was overloaded and only that use was wrong: `gamma_critical` reaches the
+gate through `_settled_novelty_series`, which partitions on
+`_NON_NOVEL_TERMINAL_STATUSES` and already excluded `UNCONFIRMED` from "settled".
+The arithmetic and the prose disagreed about one word, and the prose was wrong.
+Added 2026-10-05. See `FindingRegistry.build_summary`.
+
+### In-round falsifier re-attachment
+
+The acceptance and execution of an id-addressed `FALSIFIER: <id>` plus fenced code
+block supplied in an ordinary round reply, rather than only during the post-verdict
+closing sweep. It is the one capability `_post_convergence_sweep` held that the round
+loop did not, and because the sweep runs after `converged` is assigned, nothing it
+resolved could reach the convergence gate.
+
+The governing invariant, which restates the founder's 2026-07-28 anti-gaming guard
+rather than relaxing it: **a finding leaves the blocker count on executed evidence
+only.** `reverify_falsifier` runs the supplied code; reasoned prose is recorded and
+clears nothing. Convergence therefore cannot be bought with an assertion. Criticals
+remain CONFIRM-only — a refutation is recorded as Computed Evidence and retires
+nothing.
+
+Monotonicity is proved rather than assumed, since the structural guarantee of
+running after the verdict is given up: `record_in_round_falsifier_reattachments` can
+only remove blockers from `unverified_critical_count`, never add one. Verified three
+independent ways by
+`scripts/in_round_clearance_is_monotone_2026-10-05.py` — z3 unsat, a SymPy bound,
+and 248 transitions executed against the shipped counter. Added 2026-10-05. See
+`record_in_round_falsifier_reattachments`, and `record_in_round_withdrawals` for the
+prose channel that deliberately moves nothing.
 
 ### CT Cell (Cytotoxic T Cell)
 

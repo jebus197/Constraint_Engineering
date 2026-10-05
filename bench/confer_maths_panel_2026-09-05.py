@@ -133,7 +133,7 @@ def fresh_sandbox_for_attempt(name: str, attempt: int) -> "str | None":
                 seen.append({"attempt": attempt, "path": path, "built": False})
             set_panel_cwd(path)
             return path
-    path = str(panel_sandbox.build(_REPO))          # outside the lock: 6.53 s
+    path = str(panel_sandbox.build(_REPO, blind_of=_BLIND_OF, blind_text=_blind_text_for(_BLIND_OF)))  # outside the lock: 6.53 s
     with _SEAT_SANDBOX_LOCK:
         _SEAT_SANDBOXES[name] = path
         _SEAT_ATTEMPTS.setdefault(name, []).append(
@@ -275,6 +275,35 @@ def resolve_brief(argv=None) -> None:
 import os as _os
 from pathlib import Path as _Path
 _ONLY = _os.environ.get("PANEL_ONLY", "")
+#: Rounds this dispatch must be BLIND to, comma-separated. Panel review runs in
+#: star topology -- each seat answers blind, then a joint round follows once the
+#: blind replies are in -- and a sandbox is a whole-repository clone, so a blind
+#: round stops being blind the moment an earlier round's replies are harvested
+#: into the tree. Recorded as unfixed on 2026-10-03 ("ROUND 2 WAS NOT BLIND WITH
+#: RESPECT TO ROUND 1"); it recurred on 2026-10-05 and is now purged and VERIFIED
+#: by `panel_sandbox.build(..., blind_of=...)`, which refuses the sandbox rather
+#: than returning one that merely looks blind.
+_BLIND_OF = tuple(x for x in _os.environ.get("PANEL_BLIND_OF", "").split(",") if x.strip())
+
+
+def _blind_text_for(rounds):
+    """Distinctive phrases from the named rounds' replies.
+
+    A PATH PURGE ALONE IS NOT BLINDNESS, and assuming it was is the error this
+    exists to stop. Measured 2026-10-05: after purging every path containing the
+    round id, the sandbox still carried the other seat's whole verdict through
+    `Panel_FULL_RECORD_Fingerprint_Ladder_2026-10-05.md` and
+    `The_Blockers_Were_Shown_As_Settled_2026-10-05.md`, neither of which is named
+    for the round. The purge reported 0 survivors and the seat could read
+    everything. Phrases are taken from the replies themselves so the check cannot
+    drift from what was actually said.
+    """
+    out = []
+    for r in rounds:
+        d = _REPO / "bench" / "logs" / str(r).strip()
+        if d.is_dir():
+            out.extend(panel_sandbox.round_fingerprints(d))
+    return tuple(out)
 # 6 SEATS, AND GEMINI IS BACK (founder ruling, 2026-09-20). Verbatim: *"There is
 # no reason why you shouldn't include Gemini! Gemini has traditionally been
 # present for most of the project. If you dropped it in a runner for the
@@ -563,6 +592,14 @@ SYSTEM = (
     "structured Popperian falsification and a multi-model panel to find defects in "
     "STEM artefacts. Biological component names are ANALOGY ONLY -- module names, "
     "not biology.\n\n"
+    "NAME THINGS BY THEIR FORMAL NAME. Use the identifier, function or file as it "
+    "appears in the code, the term as docs/GLOSSARY.md defines it, or the standard "
+    "software-engineering term for the construct. DO NOT COIN A LABEL. A coined "
+    "label reads as project vocabulary to the next reader and is nobody's agreed "
+    "term: measured 2026-10-05, one seat's phrase 'release valve' spread from a "
+    "single comment to 12 identifier sites and 10 comments while appearing 0 times "
+    "in the glossary. If no formal name exists, describe the mechanism in full "
+    "rather than naming it, and say that you are doing so.\n\n"
     "CDSFL's founding principle is TOOLS DECIDE, NOT VOTES. A finding is confirmed "
     "when a tool independently re-executes a falsifier, never by model agreement. "
     "Hold yourself to it: prefer a claim you can check to one that sounds right. "
@@ -958,16 +995,71 @@ def main() -> int:
     # left the proposals diff unattributable.
     sandboxes = {}
     for _n, _m, _r in MODELS:
-        sandboxes[_n] = panel_sandbox.build(_REPO)
+        sandboxes[_n] = panel_sandbox.build(_REPO, blind_of=_BLIND_OF, blind_text=_blind_text_for(_BLIND_OF))
         _SEAT_SANDBOXES[_n] = str(sandboxes[_n])
         print(f"    {_n} confined to its own copy: {sandboxes[_n]}")
     # Kept for any caller still reading it; every seat now uses its OWN.
     sandbox = next(iter(sandboxes.values()))
     _PANEL_SANDBOX_CWD = str(sandbox)
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(MODELS)) as pool:
-            futs = {pool.submit(dispatch, n, m, r): n for n, m, r in MODELS}
-            results = [f.result() for f in concurrent.futures.as_completed(futs)]
+        # SEATS SHARING ONE SUBSCRIPTION ARE SERIALISED AMONG THEMSELVES.
+        #
+        # Every `claude_cli` seat authenticates against the SAME Max subscription,
+        # and until 2026-10-05 all seats were submitted to a pool sized to the
+        # whole roster, so both free seats hit `claude -p` in the same instant.
+        #
+        # THE EVIDENCE THAT THIS IS THE BINDING CONSTRAINT, measured by
+        # `scripts/why_cc2_times_out_2026-10-05.py`:
+        #  * The 2 seats are NOT different in speed. Mann-Whitney over 64 cc2 and
+        #    65 fable successful replies: U = 2258.0, p = 0.4031, with an
+        #    independent rank computation agreeing. Medians 809.5s and 720.7s.
+        #  * cc2 is NOT failing more than fable. Fisher p = 0.7183 overall and
+        #    1.0000 on recent rounds; Barnard 0.6179 and 0.8396. The founder's
+        #    report of "cc2 timing out" is real as an observation and wrong as an
+        #    attribution: BOTH free seats roughly tripled (cc2 4.08% -> 15.00%,
+        #    fable 2.08% -> 10.00%).
+        #  * Failures are NOT independent across seats. 3 of the 5 failing rounds
+        #    lost BOTH seats at near-identical durations -- 1956.0/1956.2,
+        #    902.0/902.0, 18.7/18.8 seconds. Against an independence model at the
+        #    measured per-seat rate, 3 of 5 such rounds gives a binomial
+        #    p = 1.556646e-07. A shared cause is the only thing that produces
+        #    matched failure times in two separate processes.
+        #  * The failure rate HAS risen: Fisher p = 0.046723, Barnard p = 0.044514.
+        #
+        # STATUS: HYPOTHESIS WITH STRONG CORRELATIONAL SUPPORT, NOT AN
+        # INTERVENTIONAL RESULT. Contention explains matched failure times, the
+        # rise as briefs grew heavier, and tonight's shape (fable 74 tool calls and
+        # 12,711 chars; cc2 0 tool calls and 0 chars across 2 full 1800s attempts).
+        # It has NOT been tested by running a panel both ways. The measurement that
+        # would settle it is in the study programme; until it runs, this change is
+        # a scheduling change with a stated reason, not a demonstrated cure.
+        #
+        # ADDITIVE: no seat is dropped and no capability is removed. Seats on other
+        # routes still run concurrently with each other and with the serialised
+        # group, so a mixed roster is no slower than before. The cost is wall clock
+        # for the free panel only, bounded by the sum rather than the max of 2
+        # seats, against a measured ~1 in 8 recent loss of a whole seat.
+        _shared = [(n, m, r) for n, m, r in MODELS if r == "claude_cli"]
+        _independent = [(n, m, r) for n, m, r in MODELS if r != "claude_cli"]
+
+        def _run_shared_group():
+            """One subscription, one at a time, in roster order."""
+            out = []
+            for n, m, r in _shared:
+                out.append(dispatch(n, m, r))
+            return out
+
+        results = []
+        _workers = max(1, len(_independent) + (1 if _shared else 0))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=_workers) as pool:
+            futs = []
+            if _shared:
+                futs.append(pool.submit(_run_shared_group))
+            for n, m, r in _independent:
+                futs.append(pool.submit(dispatch, n, m, r))
+            for f in concurrent.futures.as_completed(futs):
+                got = f.result()
+                results.extend(got if isinstance(got, list) else [got])
     finally:
         _PANEL_SANDBOX_CWD = None
         set_panel_cwd(None)
