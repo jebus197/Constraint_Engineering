@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 5 October 2026 23:45 BST (2026-10-05T23:45:06+01:00)
+Generated: 5 October 2026 23:48 BST (2026-10-05T23:48:54+01:00)
 
 ---
 
@@ -18,34 +18,19 @@ Generated: 5 October 2026 23:45 BST (2026-10-05T23:45:06+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `a75382e3` sv: panel round 1 verified locally, the parser envelope delivered on a local branch, and the honest cost of the agent dispatches
-- **Committed:** 2026-10-04 22:48:29 +0100
+- **Last commit (the PARENT of the commit containing this file):** `fe268ecb` sv: state save 5 October 2026 23:45 BST
+- **Committed:** 2026-10-05 23:45:06 +0100
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M  .claude/CLAUDE.md`
-- `M  bench/confer_maths_panel_2026-09-05.py`
-- `A  bench/logs/fingerprint_ladder_review_2026-10-05/sandbox_harvest/cc2/attempt-1/files/.scratch/ps/synthetic_run/x_report.json`
-- `M  bench/panel_sandbox.py`
-- `M  bench/reference_runner_v3.py`
-- `A  bench/tests/test_a_blind_round_is_actually_blind_2026-10-05.py`
-- `A  bench/tests/test_a_blocker_is_never_shown_as_settled_2026-10-05.py`
-- `M  bench/tests/test_exhausted_valve_reaches_its_readers_2026-09-09.py`
-- `A  bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py`
-- `M  bench/tests/test_panel_seats_are_independent_2026-09-11.py`
-- `A  bench/tests/test_shared_subscription_seats_are_serialised_2026-10-05.py`
-- `A  bench/tests/test_sim_seat_model_ladder_2026-10-05.py`
-- `M  bench/tests/test_status_partition_covers_everything_2026-08-30.py`
-- `A  bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py`
-- `M  bench/tools/run_simulated_experiment.py`
-- … and 88 more, not shown (list capped at 15 of 103 — run `git status --porcelain` for the full set)
+- `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**10157 tests collected** at 5 October 2026 23:45 BST, HEAD `a75382e3` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**10157 tests collected** at 5 October 2026 23:48 BST, HEAD `fe268ecb` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -75,6 +60,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `fe268ecb sv: state save 5 October 2026 23:45 BST`
 - `a75382e3 sv: panel round 1 verified locally, the parser envelope delivered on a local branch, and the honest cost of the agent dispatches`
 - `83ddb4ac sv: the withdrawal is recorded in-round as a metric, the gate's own series is persisted, and the memory index trims itself`
 - `1259b87f the run-end harvest, and a discriminator that was looking for a field that does not exist`
@@ -84,4 +70,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `a0a22836 sv: name the commit in the session state so A23 passes`
 - `6b3f6897 sv: suite citation for the 2026-10-03 session state block (follow-up to cd19903; memory written at 06:09)`
 - `cd19903a sv: 3 panel rounds, the Haiku arm, and an adjudication neither seat's fix wins`
-- `2a3d6e3e sv: 2 October 2026 — the $HOME hole, the green board, and the watch that starts itself`
