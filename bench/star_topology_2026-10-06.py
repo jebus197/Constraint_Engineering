@@ -63,6 +63,14 @@ def seat_reply_words(round_dir: pathlib.Path, seat: str) -> int:
         d = json.loads(f.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return 0
+    if not isinstance(d, dict):
+        # A ROUND DIRECTORY HOLDS JSON OF SEVERAL SHAPES, and the archive proved it.
+        # Scanning the real `bench/logs` tree raised "AttributeError: 'list' object
+        # has no attribute 'get'" on a sidecar whose top level is a LIST. The
+        # fixtures in the guard were all well-formed replies, so none of them could
+        # have found this: a predicate that only ever meets tidy input is untested
+        # against the archive it will actually run over.
+        return 0
     for k in _REPLY_KEYS:
         v = d.get(k)
         if isinstance(v, str) and v.split():
@@ -106,6 +114,73 @@ def sibling_rounds_on_the_same_question(logs: pathlib.Path,
         if landed_seats(d):
             out.append(d.name)
     return out
+
+
+#: How much of another round's reply must appear verbatim in this brief before the
+#: round is a JOINT round. Long enough that ordinary shared vocabulary cannot reach it.
+_QUOTE_SPAN = 240
+
+
+def quotes_other_rounds(logs: pathlib.Path, round_name: str) -> list:
+    """Rounds whose landed reply this round's brief QUOTES verbatim.
+
+    THE ROUND KIND MUST NOT BE INFERRED FROM THE DECLARATION IT REQUIRES, and the
+    first version of this module made exactly that mistake: it called a round JOINT
+    when `PANEL_JOINT_OF` was set and BLIND otherwise. So forgetting the variable
+    silently downgraded the joint check to the blind one -- and the blind check then
+    passed trivially, because a joint brief is never byte-identical to a blind brief
+    and therefore has no siblings. The gate the founder asked to be unskippable could
+    be skipped by omission, which is the commonest way a control is skipped.
+
+    Measured on the 2026-10-06 joint round: its brief carries both blind replies in
+    full, so a containment test finds them and the kind is decided by what the brief
+    IS rather than by what the operator remembered to declare.
+
+    `_QUOTE_SPAN` characters of contiguous reply text is the threshold. Shared
+    project vocabulary ("gamma_critical", "the frozen tuple") runs to tens of
+    characters, not hundreds, so it cannot trip this.
+    """
+    me = logs / round_name
+    brief = me / "BRIEF.md"
+    if not brief.is_file():
+        return []
+    text = brief.read_text(encoding="utf-8", errors="replace")
+    out = []
+    for d in sorted(logs.iterdir()):
+        if not d.is_dir() or d.name == round_name:
+            continue
+        for seat in sorted(landed_seats(d)):
+            f = d / f"{seat}.json"
+            try:
+                reply = json.loads(f.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            body = ""
+            for k in _REPLY_KEYS:
+                v = reply.get(k)
+                if isinstance(v, str) and v.strip():
+                    body = v
+                    break
+            if len(body) < _QUOTE_SPAN:
+                continue
+            # Sample a few interior spans; a brief that carries the reply will
+            # contain any of them, and one that merely shares vocabulary will not.
+            hit = False
+            for frac in (0.25, 0.5, 0.75):
+                i = int(len(body) * frac)
+                span = body[i:i + _QUOTE_SPAN]
+                if len(span) == _QUOTE_SPAN and span in text:
+                    hit = True
+                    break
+            if hit:
+                out.append(d.name)
+                break
+    return out
+
+
+def round_kind(logs: pathlib.Path, round_name: str) -> str:
+    """"joint" if this brief quotes another round's reply, else "blind"."""
+    return "joint" if quotes_other_rounds(logs, round_name) else "blind"
 
 
 def check_blind_round(logs: pathlib.Path, round_name: str, blind_of) -> str | None:

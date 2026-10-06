@@ -112,8 +112,23 @@ class TestTheRecoveryReportPrintsBoth:
             "answers only the numbered-experiment question")
 
     def test_both_blocks_are_labelled_so_they_cannot_be_confused(self):
-        src = (REPO / "scripts" / "cdsfl_recover.py").read_text(encoding="utf-8")
-        assert "NEWEST RUN (by modification date" in src
-        assert "LATEST EXPERIMENT (highest exp<N>" in src, (
-            "the LATEST EXPERIMENT heading does not say it is the highest number "
-            "rather than the newest, which is exactly how the 2 got confused")
+        """EXECUTED, not read: the report is RUN and its OUTPUT inspected.
+
+        What matters is what a person recovering state actually sees. A source
+        match would pass on a heading that some branch never prints.
+        """
+        import subprocess
+        r = subprocess.run(
+            [sys.executable, str(REPO / "scripts" / "cdsfl_recover.py")],
+            cwd=str(REPO), capture_output=True, text=True, timeout=600)
+        out = r.stdout
+        assert "NEWEST RUN (by modification date" in out, (
+            "the recovery report does not PRINT the newest-run block")
+        assert "LATEST EXPERIMENT (highest exp<N>" in out, (
+            "the printed LATEST EXPERIMENT heading does not say it is the highest "
+            "number rather than the newest, which is exactly how the 2 got "
+            "confused")
+        assert out.index("NEWEST RUN (by modification date") < out.index(
+            "LATEST EXPERIMENT (highest exp<N>"), (
+            "the newest run is printed AFTER the highest-numbered experiment, so a "
+            "reader still meets the stale answer first")

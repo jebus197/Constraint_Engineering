@@ -180,7 +180,11 @@ class TestAgainstTonightsRealRounds:
         """
         logs = REPO / "bench" / "logs"
         a = "capability_ladder_design_blind_2026-10-06"
-        b = "capability_ladder_design_blind_cc2_2026-10-06"
+        # RENAMED 2026-10-06: the original name carried the bare vendor token "CC2"
+        # in a path segment, which the simulated-naming guard forbids as a provenance
+        # failure. A stale name here does not FAIL -- it SKIPS, so the regression
+        # quietly stops being tested, which is worse than failing.
+        b = "capability_ladder_design_blind_round2_2026-10-06"
         if not (logs / a / "BRIEF.md").is_file() or not (logs / b / "BRIEF.md").is_file():
             pytest.skip("the 2026-10-06 ladder rounds are no longer on disk")
         assert ST.brief_fingerprint(logs / a) == ST.brief_fingerprint(logs / b), (
@@ -247,3 +251,84 @@ class TestNoSecondDefinition:
         assert ok == bool(ST.landed_seats(a)), (
             "the watchdog and the star-topology module disagree about whether the "
             "same round landed")
+
+
+class TestTheKindIsDetectedNotDeclared:
+    """THE GATE WAS SKIPPABLE BY OMISSION, which is how controls are usually skipped.
+
+    The first version called a round JOINT when `PANEL_JOINT_OF` was set and BLIND
+    otherwise. Forgetting the variable therefore downgraded a joint round to the blind
+    check -- and the blind check passed trivially, because a joint brief is never
+    byte-identical to a blind brief and so has no siblings. The round kind is now read
+    off what the brief CONTAINS.
+    """
+
+    def test_a_brief_quoting_another_rounds_reply_is_joint(self, ST, tmp_path):
+        body = ("A measured position about the routing ladder and its cost index. "
+                * 20)
+        _round(tmp_path, "blind_a", "QUESTION", {"fable": body})
+        _round(tmp_path, "joint", "JOINT BRIEF\n\n" + body)
+        assert ST.round_kind(tmp_path, "joint") == "joint"
+        assert ST.quotes_other_rounds(tmp_path, "joint") == ["blind_a"]
+
+    def test_a_brief_that_quotes_nobody_is_blind(self, ST, tmp_path):
+        _round(tmp_path, "blind_a", "QUESTION",
+               {"fable": "a long measured position " * 20})
+        _round(tmp_path, "other", "A WHOLLY DIFFERENT QUESTION")
+        assert ST.round_kind(tmp_path, "other") == "blind"
+
+    def test_shared_vocabulary_alone_does_not_make_a_round_joint(self, ST, tmp_path):
+        """ANTI-FALSE-POSITIVE. Project terms run to tens of characters, not
+        hundreds, so they must not trip the containment test -- otherwise every
+        brief becomes a joint round and the gate refuses everything."""
+        _round(tmp_path, "blind_a", "QUESTION",
+               {"fable": "gamma_critical and the frozen tuple and v-bar " * 20})
+        _round(tmp_path, "other",
+               "A brief mentioning gamma_critical, the frozen tuple and v-bar.")
+        assert ST.round_kind(tmp_path, "other") == "blind", (
+            "shared project vocabulary was enough to classify a round as joint")
+
+    def test_an_unanswered_round_cannot_be_quoted(self, ST, tmp_path):
+        """A round with no landed reply has nothing to quote, so it cannot make a
+        later brief joint."""
+        _round(tmp_path, "failed", "QUESTION", {"cc2": ""})
+        _round(tmp_path, "joint", "JOINT BRIEF with plenty of other text " * 20)
+        assert ST.quotes_other_rounds(tmp_path, "joint") == []
+
+    def test_the_dispatcher_decides_the_kind_by_detection(self):
+        src = PANEL.read_text(encoding="utf-8")
+        assert "ST.round_kind(" in src, (
+            "the dispatcher does not call round_kind, so the kind is still inferred "
+            "from the declaration it is supposed to require")
+        i = src.index("def _refuse_if_topology_is_skipped")
+        body = src[i:i + 3000]
+        assert "PANEL_JOINT_OF=" in body, (
+            "a refused joint round is not told how to declare its parents")
+
+
+class TestTheArchiveShapesAreTolerated:
+    def test_a_list_shaped_json_does_not_crash_the_predicate(self, ST, tmp_path):
+        """FOUND BY SCANNING THE REAL ARCHIVE, not by a fixture. A sidecar whose top
+        level is a LIST raised "AttributeError: 'list' object has no attribute 'get'".
+        Every fixture in this file was a well-formed reply, so none could find it."""
+        d = _round(tmp_path, "r", "Q")
+        (d / "sidecar.json").write_text("[1, 2, 3]", encoding="utf-8")
+        assert ST.seat_reply_words(d, "sidecar") == 0
+        assert ST.landed_seats(d) == set()
+
+    def test_a_scalar_json_does_not_crash_either(self, ST, tmp_path):
+        d = _round(tmp_path, "r", "Q")
+        (d / "n.json").write_text("42", encoding="utf-8")
+        assert ST.seat_reply_words(d, "n") == 0
+
+    def test_the_live_archive_scans_without_raising(self, ST):
+        """The condition that actually bit: walk every real round."""
+        logs = REPO / "bench" / "logs"
+        if not logs.is_dir():
+            pytest.skip("no bench/logs on this checkout")
+        n = 0
+        for d in sorted(logs.iterdir()):
+            if d.is_dir():
+                ST.landed_seats(d)
+                n += 1
+        assert n > 0, "no round directories scanned, so this guard is vacuous"

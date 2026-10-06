@@ -178,11 +178,53 @@ class TestTheLauncherActuallyRunsIt:
             "script an operator must remember to run rather than a gate")
 
     def test_the_launcher_passes_its_own_resolved_seat_models(self):
-        src = (REPO / "bench" / "tools" / "run_simulated_experiment.py").read_text(
-            encoding="utf-8")
-        assert "--seat-models={args.seat_models}" in src, (
-            "the launcher lets the POST re-derive seat-models from a declared "
-            "default, which is wrong the moment the flag is overridden")
+        """EXECUTED, not read. The launcher is CALLED and the argv it hands POST is
+        captured, because a source match proves only that the module describes
+        itself consistently -- it cannot catch a producer and a consumer that
+        disagree."""
+        sys.path.insert(0, str(REPO / "bench" / "tools"))
+        import importlib
+        mod = importlib.import_module("run_simulated_experiment")
+        seen = {}
+
+        class _Args:
+            seat_models = "ladder"
+            expect_uniform_ladder = False
+
+        import importlib.util as _iu
+        real_spec = _iu.spec_from_file_location
+        captured = []
+
+        def _fake_exec(mod_obj):
+            mod_obj.main = lambda argv: captured.append(list(argv)) or 0
+
+        # Intercept the POST module the launcher loads, and record its argv.
+        class _FakeSpec:
+            def __init__(self, loader):
+                self.loader = loader
+
+        def _spec(name, path):
+            sp = real_spec(name, path)
+            orig = sp.loader.exec_module
+
+            def exec_module(m):
+                orig(m)
+                m.main = lambda argv: (captured.append(list(argv)), 0)[1]
+            sp.loader.exec_module = exec_module
+            return sp
+
+        _iu.spec_from_file_location = _spec
+        try:
+            rc = mod._run_post(["A-SIM", "B-SIM"], _Args())
+        finally:
+            _iu.spec_from_file_location = real_spec
+        assert captured, "the launcher never invoked the POST module's main()"
+        argv = captured[-1]
+        assert "--seat-models=ladder" in argv, (
+            f"the launcher did not pass its RESOLVED seat-models value; argv was "
+            f"{argv}. Letting POST re-derive it from a declared default is wrong "
+            f"the moment the flag is overridden.")
+        assert rc == 0
 
     def test_a_post_that_cannot_load_is_not_a_pass(self):
         """The trap re-set one level up: swallowing an import error and booting."""

@@ -1,0 +1,252 @@
+# JOINT ROUND — the capability ladder as a measured statistic
+
+This is the JOINT round of a star-topology panel. Both blind rounds are in. You are
+reading the other seat's position for the first time. You wrote one of the 2 positions
+below; the other you have not seen.
+
+NO COMPELLED CONVERGENCE. Do not move toward the other seat to be agreeable. Where you
+are now persuaded, say so and say by which specific argument or figure. Where you still
+disagree, hold the position and name what would settle it. Disagreement that survives
+this round is preserved as information, not smoothed away. Changing your mind for a
+stated reason and refusing to change it for a stated reason are equally good outcomes;
+changing it for no stated reason is the only bad one.
+
+## What already agrees, blind, and therefore counts
+
+Both seats independently rejected the original brief's use of the heterogeneity figure
+(chi-square 280.0138, df 4, p = 2.213221e-59) as support for a fingerprint-driven
+ladder, on the ground that it measures per-round FINDING RATE — productivity — and not
+falsification capability. Both noted that ranking on it would put first the model that
+Exp 55 showed confirming 2 of 2 with detached falsifiers. You reached this separately.
+Treat it as established and do not re-argue it.
+
+Both also retained `DEFAULT_FALSIFIER_STRENGTH` as a tie-break and cold-start ordering
+rather than deleting it, and both said plainly that this is weaker than the founder's
+ruling that the system should not care what a model is called.
+
+## The 5 questions this round exists to settle
+
+**J1 — MINIMUM SAMPLE. You disagree, and it is a derivation against a safeguard.**
+One position sets a minimum sample of 5 before the statistic may rank, with a Jeffreys
+posterior and a cold start at 0.500 placed between measured-strong and measured-weak.
+The other derives that NO minimum sample is needed, because under exhaustion every rung
+is tried regardless of its estimate, so a bad estimate can only misorder COST and can
+never exclude a rung — and therefore the statistic gates nothing and needs no
+`severity_is_proven` analogue. Is the derivation sound? If it is, the minimum sample is
+not a safeguard but a cost; if it is not, say exactly which step fails.
+
+**J2 — ORDER-INVARIANCE. One seat derives it; the other's design may depend on its
+being false.** The claim: because `resolve_via_routing` stops at the first CONFIRMED,
+P(resolve) = 1 - prod(1 - p_i) is symmetric in the rungs, so with the cap removed the
+ladder's ORDER cannot change WHICH findings resolve, only what they cost. Verified by
+SymPy over all 24 orderings of 5 rungs, by NumPy enumeration, and by Wolfram Language
+with residual 0. If that holds, ranking on capability at all is a cost optimisation and
+the cost-minimising order is p_i/c_i descending. Does the other position survive
+order-invariance, or does it reduce to the same index rule?
+
+**J3 — THE SELECTION EFFECT. Two different fixes, and they may not compose.** One
+position conditions on the ITEM, using same-finding decisive pairs: rung k+1 attempts
+exactly what rungs 1..k failed, so difficulty cancels because the item is identical. The
+other conditions on LADDER DEPTH, arguing the selection is fully observed because
+`routing_history.rungs_tried` records why a finding reached a model, and that selection
+on observables means conditioning removes the bias so randomisation buys nothing. Are
+these the same fix in different coordinates, complementary, or incompatible? Composability
+means one mechanism whose parts cannot be separated without loss, not 2 fixes that can
+coexist.
+
+**J4 — THE GAMMA COUPLING, which only one seat raised and which is now BLOCKING.**
+Measured over 14 archived runs: flipping every unresolved critical to CONFIRMED moves
+`gamma_critical` DOWN in 9, up in 3, unchanged in 2, and 2 of 14 cross the
+`gamma_critical >= 0.30` arm DOWNWARD — `exp40_gate` 0.3018 to 0.2328,
+`commissioning_arm1_panel` 0.3236 to 0.1883. 14.29%, Wilson [4.0094%, 39.9414%];
+statsmodels, a closed form and Wolfram Language agree to 7 significant figures. The
+stated mechanism: unresolved criticals skew LATE (mean round 18.00 against a registry
+mean of 13.31; 6.50 against 3.19), and late mass steepens a cumulative curve, raising
+beta and lowering gamma = 1 - beta. This has been INDEPENDENTLY RE-RUN against the live
+archive by the operator and reproduced exactly.
+
+GAMMA IS LOAD-BEARING in this project and the founder has a standing directive against
+demoting it. So: is the measurement right, is the mechanism the right explanation, and
+is the recording-only remedy (log `gamma_critical` a second way while the gate keeps
+reading what it reads today) the correct minimal step? If exhaustion makes convergence
+harder, say what follows for the founder's ruling that the problem should run until
+resolved or the ladder is exhausted.
+
+**J5 — THE DENOMINATOR AND THE `-SIM` POOLING.** One seat reports that the 2026-10-06
+provenance repair, which credits the falsifier's AUTHOR rather than the filer, is
+correct but still omits the FILER'S FAILURE from the filer's denominator, inverting 5 of
+11 ranks (45.45%, Wilson [21.27%, 71.99%]). It separately reports that
+`rank_falsifier_writers._base` strips the `-SIM` suffix, which would pool a simulated
+model's history into a live run's estimate — Codex-SIM 71.50% against Codex 27.94%,
+non-overlapping intervals. Does the other seat accept both? The second is a provenance
+hazard of the class this project treats as most serious.
+
+## Conditions
+
+Tools decide, not votes. Every figure you assert carries its producing script and a
+confidence interval for any proportion. Where a claim can be checked in Wolfram, check
+it there as the SECOND falsifier with the open-source tools primary, and state plainly
+if Wolfram failed to evaluate rather than quoting an unevaluated result. Do not add an
+unwired module: this project has 11 confirmed defects that were additions nothing
+reached. One-shot dispatch; you will not be re-invoked.
+
+## Output shape — return exactly these fields
+
+- `## J1` through `## J5` — one section per question above, each answered explicitly and
+  separately. Open each with a single word, PERSUADED or HOLDING, then the reason.
+- `## What changed my mind` — every point where the other position moved you, naming the
+  specific argument or figure that did it. "Nothing" is an acceptable answer if true.
+- `## What I still hold, and why` — positions you keep, with what would settle each.
+- `## Measurements` — every figure with its Wilson interval and the 2 tools that agree.
+  State plainly if a Wolfram call failed to evaluate rather than quoting it.
+- `## Delivered files` — paths written into the sandbox tree, or none.
+- `## Residual disagreement` — what a reader should carry forward as unsettled. This is
+  the most valuable field in the round; do not empty it to look agreeable.
+
+---
+
+## POSITION A (blind round, seat 1)
+
+## Position
+
+**1 — What the ladder should rank on.** The glossary's own promised-but-never-written verification dimension `v-bar`: P(admissible CONFIRMED | re-verified falsifier attempt written by model m), credited to the model that **wrote** the falsifier (`resolved_by_routing or source_model` — the runner's own `_falsifier_owner` rule at `reference_runner_v3.py:5437`), where admissible means `reverify_falsifier` returned CONFIRMED **and** the falsifier read the target (the `competence_provenance.py` provenance class), never INTEGRITY_VIOLATION or NON_DISCRIMINATING. Estimator: Jeffreys Beta(1/2,1/2) posterior over admissible **routed** attempts; rank by posterior mean; minimum sample n_min = 5 before the routed posterior alone crosses a non-overlap boundary; no history → prior mean 0.500, ranking the unknown writer between measured-strong and measured-weak — a strict generalisation of `rank_falsifier_writers`' existing ranked+extras rule. Vendor names appear nowhere in the arithmetic; the `-SIM` base normalisation is kept. On a 1-model panel the posterior is the prior and the ladder is the single writer (see Q6 for the route-back-to-self conflict).
+
+**2 — The selection effect.** Condition on the item, not the population. The ladder generates same-finding pairs for free: rung k+1 attempts exactly what rungs 1..k failed, so (B confirms what A failed) is a decisive pairwise win at **any** difficulty mix — difficulty cancels because the item is identical. Decisive pairs order writers inside credible-interval overlap, where selection bias actually bites; both-fail ties are excluded (they inform about the finding, not the pair). First-attempts-only stays rejected; the random audit is right in principle but not deployable as primary — routing fires on 8.3% of archived entries (1370/16500, Wilson95 [0.0789, 0.0873]), and an audit fraction of that stream starves. Instead, the always-on round-stratum falsifier gate (every model's own falsifiers, re-verified every round, selection-free) is the **drift alarm**; the frozen tuple is demoted from decider to deterministic tie-breaker, because its own evidence was never rung-separated: at Exp-42's n≈20 per model, the top-4 Wilson intervals all overlap (Codex [0.699,0.972], CC2 [0.531,0.888], ChatGPT [0.433,0.819], Gemini [0.584,0.919]); only DeepSeek-last [0.145,0.519] is separated.
+
+**3 — Removing the rung cap.** Exhaustion is roster-bounded by construction: one attempt per distinct feasible writer per finding **content-revision** (re-admission only when the finding changed — corrected copy, new evidence), then HIL. Cross-round retry stays confined to transport faults. The spend guard is the Q4 per-finding routing token budget, with budget exhaustion recorded under `routing_deferred_reason` so it can never masquerade as model failure and contaminate v-bar. I proved mechanically that the founder's ruling is currently **inexpressible**: `int(getattr(cfg, "routing_max_rungs", 2) or 2)` coerces both 0 and None to 2, and 0/288 configs pin the field (Wilson95 [0.0000, 0.0132]). Delivered: `max_rungs=None` exhaustion sentinel in `resolve_via_routing` and corrected runner wiring, default 2 unchanged — byte-identical until a config opts in.
+
+**4 — Resource-aware routing.** Yes, as a **feasibility filter, never a ranking term**. Stage 1 ranks purely on v-bar; stage 2 walks the ranked list and skips a rung only when the live fingerprint says the attempt can't fit (`measured_attention_span`/`compression_threshold` — fields `burst_planner.py` already consumes, so this composes with a demonstrated consumer rather than adding a parallel structure) or can't be afforded (estimated attempt cost > remaining budget/quota). Every skip is recorded with its reason. Cost can veto but never score, so a cheap model can never become the default answer — it is only reached when stronger rungs are infeasible, and the record says so.
+
+**5 — Reproducibility.** A separate step, **mechanical, owned by the harness**. `reverify_falsifier` already is reproduction-by-tool; for the STEM-calculator goal, a shipped result carries a replay bundle (falsifier + inputs + environment pin) the runner re-executes N=2 times in fresh scratch; non-reproducing verdicts route to HIL as nondeterministic. Models must not attest their own reproduction — that is a vote. The human audits provenance and forensics; HIL re-derivation is the terminal rung only.
+
+**6 — What's missed.** (a) **The brief's own heterogeneity figure does not license the current fingerprint.** p = 2.21e-59 is on *finding rate* — productivity. The live fingerprint's only discriminating statistic today is that productivity, and ranking on it puts Gemini first (3.646 findings/round, highest of 5) — the model Exp 55 showed confirming 2/2 with detached falsifiers. Wiring the ladder to the fingerprint **as currently written** reproduces exactly the inversion `competence_provenance.py` exists to prevent; the fingerprint must gain admissibility-gated v-bar first. (b) **Crediting was wrong at the measurement layer**: every archived `resolved_by_routing` entry disagrees with the `source_model` key by construction (`route()` excludes the source) — measured 248/248 on the pre-refresh archive slice, 17/17 (Wilson95 [0.8157, 1.0000]) on the current one; `scripts/competence_provenance.py` repaired. (c) **The archive cannot back-derive the statistic**: 100% of multi-rung routing records (87/87 pre-refresh; 12/12, Wilson95 [0.7575, 1.0000], current) carry only the last rung's label — per-writer denominators and pairs were unrecordable; `RoutingResult.attempts` closes this forward. (d) **No-model-voting compliance**: v-bar is built solely from tool verdicts plus mechanical admissibility, and is gated the way `severity_is_proven` gates A4 — an unproven confirmation never enters the numerator; an integrity violation quarantines the writer's statistic (UNSAFE TO RANK ON, enforced at update time). (e) **A real conflict to decide by human, not by code**: the founder's route-back-to-itself ruling vs. exp56's 1-seat arm, whose **pre-registered** reportable outcome depends on the existing empty-ladder `routing_deferred` path. I did not patch it; silently implementing the ruling would change a pre-registered outcome mid-experiment.
+
+## The quantity
+
+v-bar(m): posterior mean (k + ½)/(n + 1) of Beta(½ + k, ½ + n − k), k = admissible CONFIRMED, n = admissible routed attempts by writer m, 95% equal-tailed CrI from Beta quantiles. Round-stratum evidence enters only as a weak prior capped at 2 pseudo-observations (c = min(0.1, 2/n_round)). Order inside CrI overlap: (1) same-finding decisive pairs when ≥5 connect the two writers, (2) the frozen tuple as tie-break, (3) label sort — fully deterministic. Minimum sample n_min = 5; cold start = mean 0.500, CrI [0.002, 0.998], placed between measured-strong and measured-weak. 1-model panel: posterior = prior, ladder = the single writer, stopping rule = exhausted after its attempt → HIL.
+
+## What it does to gamma
+
+`gamma_critical` is estimated over the **settled** critical series and the two-sided gate also requires no unverified critical pending. This design changes settlement, not discovery: exhaustion settles criticals that today stall at rung 2, so the pending side of the gate opens earlier, and convergence is reached by resolving more criticals — never by discarding them. The statistic reads tool verdicts and is read only by rung order: one-way coupling, nothing written into the critical series or either gate side. `test_routing_cannot_flatten_gamma_2026-09-09` passed unchanged on the patched tree (pre-refresh run; the file was removed by the mid-dispatch sandbox re-staging, noted below).
+
+## Measurements
+
+All computed by `scripts/ladder_statistic_demonstration_2026-10-06.py`; every proportion by statsmodels + closed-form Wilson (asserted to agree); posteriors by closed form + scipy.stats.beta; third check via Wolfram Language (local Wolfram Engine): Wilson lower bound for 248/248 → 0.9847465, Jeffreys mean 6/7 → 0.8125, CrI [0.4992, 0.9841] — all agree with the Python tools.
+
+- Routed-resolution crediting disagrees with `source_model`: 248/248 = 100% (Wilson95 [0.9847, 1.0000]) pre-refresh; 17/17 (Wilson95 [0.8157, 1.0000]) current slice.
+- Multi-rung records lacking per-rung attempts: 87/87 (Wilson95 [0.9577, 1.0000]) pre-refresh; 12/12 (Wilson95 [0.7575, 1.0000]) current.
+- Routing share of archive: 1370/16500 = 8.30% (Wilson95 [0.0789, 0.0873]).
+- Configs pinning `routing_max_rungs`: 0/288 (Wilson95 [0.0000, 0.0132]); `int(0 or 2) = 2` proven live.
+- Exp-42 order's rung separation at n=20: top-4 intervals overlap (values in Position 2); only DeepSeek separated.
+- Heterogeneity re-run: real panel χ² = 280.0138, df 4, p = 2.213221e-59; simulated χ² = 3.0084, df 5, p = 0.6987 (NumPy + scipy agree) — on **finding rate**, not falsification capability.
+- Tests: 74 targeted tests passed pre-refresh (9 routing/provenance files); after the harness re-staged the sandbox mid-dispatch (03:35, removing most test files and shrinking `bench/logs/`), my delivered test file still passes 6/6 against the patched modules.
+
+## Delivered files
+
+- `experimental_notes/Proposal_Capability_Ladder_Measured_Statistic_2026-10-06.md` — the full design.
+- `scripts/ladder_statistic_demonstration_2026-10-06.py` — re-runnable evidence for every figure above.
+- `bench/routing.py` — additive: `RoutingResult.attempts` per-rung (model, verdict); `max_rungs=None` exhaustion sentinel; default behaviour byte-identical.
+- `bench/reference_runner_v3.py` — `routing_history.attempts` telemetry; `routing_max_rungs` null/0 → exhaustion sentinel (default 2 unchanged).
+- `scripts/competence_provenance.py` — crediting repaired to the falsifier's writer.
+- `bench/tests/test_routing_attempts_and_exhaustion_2026-10-06.py` — 6 tests wiring every new surface.
+
+## What would refute me
+
+Per position, as committed in the proposal doc: (1) a paired same-roster run where the v-bar-ordered ladder resolves fewer routed criticals per dispatch than the frozen order (compare `routing_history.attempts` success-at-rung-1 across arms); (2) a pairwise ranking disagreeing with the marginal routed posterior on interval-separated writers; (3) any `max_rungs=None` run producing > |roster|−1 attempts per finding revision (check `rungs_tried` vs `rungs_available`); (4) >5% wrongful skips once skip reasons are recorded; (5) a shipped result whose N=2 replay diverges but HIL finds the verdict correct; (6) a provenance-admissible ranking from a clean run still inverting a known-strong/weak pair — would show admissibility gating is insufficient. For the crediting claim specifically: a single archived entry where `resolved_by_routing == source_model` refutes the by-construction argument (`python3 scripts/ladder_statistic_demonstration_2026-10-06.py`, part 1).
+
+## Disagreement
+
+I disagree with two things the brief leans toward. First, with reading the p = 2.2e-59 heterogeneity as evidence that the live fingerprint can drive the ladder: that statistic measures productivity, and the most productive model on it is the one Exp 55 caught confirming with detached falsifiers — wiring the ladder to the current fingerprint would be the measured inversion, not the measured ladder. Second, with the implied choice among the three Q2 options: all three accept that the deciding sample is the routed stream's marginal rate, and the correct move is to change the *conditioning* (same-finding pairs), not the sampling. I also deliberately did **not** implement the founder's route-back-to-self for 1-seat panels, despite the verbatim ruling, because it collides with exp56's pre-registered outcome — that is a human decision, and a seat implementing it silently would be convergence to instruction rather than to evidence. The frozen tuple is retained as tie-breaker, not deleted: demotion is justified by a committed measurement (interval overlap at n=20); deletion is not, since no replacement yet has a single recorded routed attempt — the additive standard cuts both ways.
+
+Stopping here: the remaining observations (e.g. the 0.85 Jaccard dedup threshold being a non-tool decider) are already flagged and withheld from merge in the runner — below the material threshold.
+
+---
+
+## POSITION B (blind round, seat 2)
+
+All four scripts execute and answer `--help`. Written to the sandbox tree.
+
+## Position
+
+**1 — What the ladder should rank on.** The probability that a falsifier written by model *m* for a finding at ladder depth *d* is re-executed by `reverify_falsifier` with verdict `CONFIRMED`, counted **per attempt** (not per entry), restricted to falsifiers that actually read the target (`competence_provenance.falsifier_style == "reads"`), and **stratified on ladder depth**. It has no glossary name and I have not coined one — it is described in full, and it is neither `rho` (a round's novel/raw yield, not a writer's success) nor `S_k` (which classifies a fix that does not exist at routing time). Estimator, minimum sample, cold start and the 1-model case are in `## The quantity`. The prior question is settled first by derivation: `resolve_via_routing` stops at the first `CONFIRMED`, so with the cap removed `P(resolve) = 1 − ∏(1−p_i)` is **symmetric in the rungs** — order cannot change *which* findings resolve, only what they cost. The founder's two rulings are coupled: removing the cap is what makes an imperfect measurement safe.
+
+**2 — The selection effect.** Condition on ladder depth; neither of the three earlier proposals. The selection is *fully observed* — a finding reaches a model at depth *d* because *d* rungs already failed, and `routing_history.rungs_tried` records it. Selection on observables means conditioning removes the bias, so randomisation buys nothing. The audit-fraction proposal also isn't deployable (routing fires on unresolved criticals only; single-digit *n* per model per run). Keeping the frozen order as decider is the status quo plus a dashboard, and keeps exactly what the founder ruled against. And the stated rejection of *first-attempts-only* **does not follow from its citation**: p = 2.213221e-59 comes from a chi-square on the 5 real models' per-round *finding counts*; it is not a comparison of first-attempt vs routed populations. I reproduced the figure — it is right, the inference drawn from it is not. The real reason to reject it is that it discards the routed trials, which are the population the decision concerns.
+
+**3 — Removing the rung cap.** What bounds spend is not a cap but a **finite attempt lattice plus non-repetition**: a rung is a `(model, aid_level)` pair, each pair attempted at most once *per finding across the whole run*, so the remaining set strictly decreases and the process terminates. Stopping rule: **CONFIRMED, or the lattice is exhausted. No count.** Worst case `3 × |roster|` dispatches per finding *for the run* — against today's cap of 2 *per round, re-paid every round*, so the capped design is not obviously cheaper. Two guards, both loud: a global token ledger that **halts with a named reason** (as `HALTED_IRREDUCIBLE_QUEUE_ALARM` does) rather than silently capping, and `rung_unfunded` recorded as an outcome that leaves the finding unresolved and in the irreducible queue — never a skip that looks like a failure.
+
+**4 — Resource-aware routing.** Yes, and as the *denominator of one objective*, not a second competing input. I derive that the expected-cost-minimising order for stop-at-first-success is `p_i/c_i` descending — so capability and budget are already one ratio and it is an optimum, not a compromise. A cheap model does not become the default **because the ladder exhausts**: first means *cheapest place to look first*, and the strong rung still runs when the probe fails. That guarantee is structural (order-invariance), not a tuning choice, so it cannot be tuned away. Load balancing falls out free: a model near its ceiling has its effective `c_m` raised and drifts down the order, degrading smoothly.
+
+**5 — Reproducibility.** A separate step, performed by the harness. Not the models — a model attesting its own falsifier reproduces is a vote, and is the shape of the Exp 48 failure. Not primarily the human — 6194 archived entries across 131 artefacts; a control that doesn't run isn't a control. `reverify_falsifier` already gives one independent execution; what is missing is small: **execute twice in two fresh processes, record `sha256` of target and falsifier bytes with both verdicts, and treat disagreement as `NONDETERMINISTIC` — an instrument fault, not a finding verdict — routed to HIL.** The human's role is that residue plus `rung_unfunded`. That is the "both", correctly apportioned.
+
+**6 — What we missed.** Nine items in the document; the four that matter most: the empty ladder is wider than the 1-seat case (executed: a roster of two identical labels also yields `[]`, which is the founder's *"all the models are the same"* case); **`gamma_critical` is not invariant to routing depth**, so `routing_max_rungs` is an undeclared input to the convergence gate; the 2026-10-06 provenance repair is correct but still loses the filer's **failure** from the denominator, inverting 5 of 11 ranks; and `rank_falsifier_writers._base` strips `-SIM`, which would pool a simulated model's history into a live run's estimate.
+
+## The quantity
+
+**Formula.** `p̂(m,d) = (k(m,d) + ½) / (n(m,d) + 1)` — Jeffreys (Beta(½,½)) posterior mean. `k` = CONFIRMED re-executions, `n` = provenance-clean attempts at depth `d`. Jeffreys, not Laplace: it is the binomial reference prior, its interval behaviour matches the Wilson interval this project mandates, and it returns ½ at `n=0` without asserting anything.
+
+**Inputs.** `routing_history` (`model_used`, `verdict`, `rungs_tried` — present since 2026-10-03, 294 rung records today, which is thin and I say so), `falsifier_code` / `last_falsifier_code_full` for the provenance filter, and `resolved_by_routing` for authorship. Cost `c_m` = mean tokens per routing dispatch; roster median at `n=0`.
+
+**Ranking.** `p̂(m,d)/c_m` descending; ties and all-cold-start break on position in `DEFAULT_FALSIFIER_STRENGTH`.
+
+**Minimum sample: none — derived, not conceded.** A minimum sample is required of a statistic that *gates*. This one does not: under exhaustion every rung is tried regardless of its estimate, so a bad estimate can only misorder cost. That dissolves the blocker `RunnerConfig.routing_max_rungs` names for itself ("0 of 10 model pairs separate, all Fisher p ≥ 0.306"). **It also answers the A4 question directly: `p̂` opens no gate, so it needs no `severity_is_proven` analogue — it is not a number that admits or exempts anything.** The one place a number here *could* gate is cost, so: **cost may reorder a rung and may never remove one.**
+
+**Cold start.** `n=0` → `p̂=½`, `c_m` = roster median → an unknown model enters at median `p/c` and is ordered among equals by cost, i.e. tried as a cheap probe, never excluded. This replaces today's behaviour, which appends unknown models in *roster order*.
+
+**1-model panel.** A rung is `(model, aid_level)`, and `exclude` drops *pairs already attempted on this finding*, not models. Three levels: 0 = as today; 1 = plus the previous rung's falsifier source and traceback (`last_falsifier_code_full` already records exactly this, 221 records); 2 = plus worked examples (`routing.py`'s own docstring: 0/5 → 1/3, so not a no-op). A 1-seat roster gets a 3-rung ladder that exhausts, which is what the founder's ruling asks for and what the code currently refuses.
+
+## What it does to gamma
+
+**I predicted the wrong sign and my own measurement refuted me. The true direction is the dangerous one.** `_settled_novelty_series` skips `UNCONFIRMED` (it is in `_NON_NOVEL_TERMINAL_STATUSES`) and does not skip `CONFIRMED`, so a critical the ladder resolves *enters* the critical novelty series at its `open_since_round`. I expected back-fill at early rounds to raise `gamma_critical`. Over 14 archived runs with ≥3 rounds, flipping every unresolved critical to CONFIRMED moves it **down in 9, up in 3, unchanged in 2**, and **2 of 14 cross the `gamma_critical ≥ 0.30` arm downward** — `exp40_gate` 0.3018 → 0.2328, `commissioning_arm1_panel` 0.3236 → 0.1883. The mechanism is in the data: unresolved criticals skew **late** (9 of 14 runs), because an unresolved critical is one the ladder has not reached yet, and adding mass to the late end of a cumulative curve steepens it, raising β and lowering γ = 1 − β.
+
+So: **removing the cap is not a pure spend question**, which is how both the founder's ruling and `routing.py`'s own comment frame it. It moves one arm of the two-sided gate in the direction that makes convergence *harder* — a run that passes today can stop passing — while the count arm does not move, because the resolution lands in an earlier bucket. I am **not** proposing to change `_NON_NOVEL_TERMINAL_STATUSES`: that would alter gamma for every archived run on my judgement, and the additive standard wants a committed measurement first. The simplest sufficient step is **recording-only** — log `gamma_critical` a second way with `UNCONFIRMED` treated as novel, so the coupling is visible per round while the gate keeps reading exactly what it reads today.
+
+## Measurements
+
+Every proportion with its Wilson 95% interval; every computed claim with ≥2 agreeing tools.
+
+| figure | value | Wilson 95% | tools |
+|---|---|---|---|
+| P(resolve) distinct values over 5! ladder orders, exhausted | 1 (0.998812000000 = closed form) | — | SymPy (24/24 orders), NumPy enumeration, **Wolfram Language** (residual 0) |
+| …under cap = 2 | 10 distinct, [0.7624, 0.9800] | — | SymPy (20/24 change), NumPy |
+| `E[cost](a,b)−E[cost](b,a)` | `Q(c_a p_b − c_b p_a)`, residual 0 | — | SymPy, **Wolfram Language** |
+| `p/c` order vs true optimum, 4000 random 5-rung rosters | worst gap 0.000e+00 | — | NumPy exhaustive permutation search |
+| strongest-first suboptimal | 3637/4000 = 90.93% | [89.99%, 91.78%] | NumPy; closed form + statsmodels |
+| cheapest-first suboptimal | 3525/4000 = 88.13% | [87.08%, 89.09%] | NumPy; closed form + statsmodels |
+| index rule under position-dependent cost | loses 1.6393% (probe fires) | — | NumPy |
+| runs crossing the 0.30 gamma arm downward | 2/14 = 14.29% | [4.01%, 39.94%] | repo's own `_estimate_gamma`; closed form + statsmodels |
+| unresolved criticals skew later than registry mean | 9/14 = 64.29% | [38.76%, 83.66%] | same |
+| rank inversions, entry-level vs attempt-level | 5/11 = 45.45% | [21.27%, 71.99%] | closed form + statsmodels |
+| `resolved_by_routing` entries naming a different model | 458/458 = 100% of 6194 entries | [99.17%, 100%] | archive scan, two globs |
+| model pairs separating, pooled clean cell | 43/55 = 78.18% | [65.63%, 87.05%] | Wilson non-overlap; closed form + statsmodels |
+| DeepSeek 12/16 vs Gemini 1/8 (clean critical cell) | Fisher p = 0.00780724, OR 21.0 | DS [50.50%, 89.82%]; Gem [2.24%, 47.09%] | scipy, independent hypergeometric enumeration, **Wolfram Language** (9 s.f.) |
+| CC2 39/41 vs Codex 42/46 | Fisher p = 0.679555 — **no separation** | CC2 [83.86%, 98.65%]; Cx [79.68%, 96.57%] | same three |
+| Codex-SIM vs Codex, attempt level | 71.50% vs 27.94%, non-overlapping | [67.04%,75.57%] / [24.97%,31.12%] | closed form + statsmodels |
+| SIM/LIVE separating in the *clean* cell | 2 of 5 vendors (3 overlap) | per-vendor in script output | same |
+
+Wolfram ran locally and computed (attribution: Wolfram Language, local Wolfram Engine via `wolframscript`). One Wolfram call **failed to verify** and I am not quoting it: `FisherExactTest` returned unevaluated, so I re-expressed the test as an explicit hypergeometric sum, which did compute and agreed to 9 significant figures.
+
+Executed, not read: `rank_falsifier_writers(['CC2'], exclude=('CC2',)) → []`; `(['CC2','CC2'], exclude=('CC2',)) → []`; `(['Codex','ChatGPT'], exclude=('Codex',)) → ['ChatGPT']`; `resolve_via_routing(..., max_rungs=0)` dispatches all 4 rungs, `max_rungs=2` dispatches 2. 15 fingerprint fields confirmed field-by-field: 9 from the initialiser + 6 from `_compute_attention_metrics`; `D_decay` supplies glossary `D`, `total_findings` plausibly `A`, and **`v̄` (verification) and `C` (coverage) are absent**. The brief's claim that `competence_provenance.py` credits the filer is **stale in this tree** — `falsifier_author` was repaired on 2026-10-06 and now prefers `resolved_by_routing`; the residual defect is the denominator, not the credit.
+
+## Delivered files
+
+- `docs/CAPABILITY_LADDER_MEASURED_2026-10-06.md` — the design, with derivations, the nine missed items, and a per-position refutation table.
+- `scripts/ladder_order_is_cost_only_2026-10-06.py` — order-invariance and the `p/c` index rule; SymPy + NumPy brute force + live assumption probes. Exit 0.
+- `scripts/the_ladder_statistic_loses_the_filers_failure_2026-10-06.py` — entry-level vs attempt-level accounting, Wilson + statsmodels. Exit 1 (inversions found).
+- `scripts/routing_exhaustion_raises_gamma_critical_2026-10-06.py` — gamma_critical vs routing depth over 14 archived runs, using the runner's own `_settled_novelty_series` and `_estimate_gamma`. Exit 1 (gate arm crossed). **Its docstring retains my refuted hypothesis rather than editing it out.**
+- `scripts/provenance_clean_cell_contradicts_frozen_ladder_2026-10-06.py` — the cell a re-derived ladder must come from; Fisher two ways, SIM vs LIVE. Exit 1.
+
+All four answer `--help` without measuring. **No `bench/` module is added**: an unwired estimator would be the 12th of this project's 11 confirmed additions-that-nothing-reached. The design lands at `routing.py`'s one call site with tests that exercise it, or not at all.
+
+## What would refute me
+
+Per-position table in the document; the load-bearing ones: **order-invariance** falls if `scripts/ladder_order_is_cost_only_2026-10-06.py` exits non-zero, or if any path sets `resolved=True` without a `CONFIRMED` from `reverify_fn`. **The `p/c` rule** falls if the brute force shows a non-zero gap, or if rung cost grows with ladder position — already demonstrated to break it by 1.6393%, so my own aid levels 1–2 must be measured *against* R2, not assumed under it. **The single most falsifiable claim in the design:** a measured run where cheapest-first ordering resolves *fewer* criticals than strongest-first under exhaustion. By order-invariance that is impossible, so such a run refutes the whole design. **The gamma coupling** falls if that script reports 0 crossings in either direction. **The denominator claim** falls at 0 rank inversions. **The 1-model fix** falls if aid levels 1–2 confirm at `p̂` indistinguishable from level 0 — which would make the self-ladder an addition nothing reaches, the failure mode I am warning about. **Keeping the frozen tuple** falls to any committed measurement showing a `p̂`-derived order dominating it on resolutions-per-token in a live run.
+
+## Disagreement
+
+**With the founder, partially, on vendor names.** The ruling is *"the system shouldn't care at all what a model is called."* I am not deleting `DEFAULT_FALSIFIER_STRENGTH` and I think deleting it now would be wrong. At `n = 0` every model has `p̂ = ½` and the ratio ranks purely on cost; something has to break that tie, and the frozen tuple is the only ladder in this project with a validated end-to-end result (Exp 42's hardest residuals, 7/7 across two rungs). The additive standard permits removal only on a committed measurement showing the replacement dominates, and that measurement does not exist: my own contradiction of the tuple (Fisher p = 0.0078) comes from a cell that pools runs, targets and difficulties and is confounded by the very selection effect question 2 is about. So the tuple is demoted to tie-break and cold start, and the system stops caring about names the moment it has data — which is a weaker claim than the ruling, and I'd rather say so than pretend otherwise.
+
+**With the brief, on one cited figure.** The rejection of first-attempts-only is supported by p = 2.213221e-59, which measures something else entirely. The proposal should still be rejected, for a different reason.
+
+**With myself, recorded because the check is the point.** I predicted exhaustion would *raise* `gamma_critical`; the archive says it falls. I also expected the word-overlap duplicate path (`confirmed_duplicate` → `escalated = False` on bare Jaccard ≥ 0.85) to deadlock a finding permanently out of the ladder. It does not — `escalated` is re-set to `True` at several sites including the falsifier-gate path, so a later round can re-escalate. Both were claims that sounded right and one tool call each dissolved.
+
+**Early stop, with reason.** I stopped here rather than extending to the depth-stratified estimate on live data: `routing_history` carries 294 rung records in total, so per-`(model, depth)` cells are single-digit and the estimate would be prior-dominated. That is a measurement to make after a routing-enabled run with the cap removed, not a number to manufacture now.

@@ -1099,12 +1099,31 @@ def _refuse_if_topology_is_skipped(models) -> int:
     round_name = _logs_dir().name
     roster = [n for n, _m, _r in models]
 
-    if _JOINT_OF:
+    # THE KIND IS DETECTED, NOT DECLARED. Reading it off `PANEL_JOINT_OF` meant that
+    # forgetting the variable silently downgraded a joint round to the blind check --
+    # which then passed trivially, because a joint brief is never byte-identical to a
+    # blind brief and so has no siblings. The gate the founder asked to be unskippable
+    # was skippable by omission, which is the commonest way a control is skipped.
+    # `round_kind` decides from what the brief CONTAINS: a brief carrying another
+    # round's reply verbatim is a joint brief.
+    kind = ST.round_kind(logs_root, round_name).upper()
+    if kind == "JOINT":
+        quoted = ST.quotes_other_rounds(logs_root, round_name)
+        declared = {x.strip() for x in (_JOINT_OF or ()) if str(x).strip()}
+        undeclared = [q for q in quoted if q not in declared]
+        if undeclared:
+            print("REFUSED: this brief quotes the replies of round(s) "
+                  f"{undeclared}, so it is a JOINT round and must declare what it "
+                  "follows.\n"
+                  f"  this round: {round_name}\n"
+                  f"  declared  : {sorted(declared) or '(nothing)'}\n"
+                  f"  Re-run with: PANEL_JOINT_OF={','.join(quoted)}", flush=True)
+            print("    to dispatch anyway, deliberately: PANEL_SKIP_TOPOLOGY=1",
+                  flush=True)
+            return 4
         refusal = ST.check_joint_round(logs_root, round_name, _JOINT_OF, roster)
-        kind = "JOINT"
     else:
         refusal = ST.check_blind_round(logs_root, round_name, _BLIND_OF)
-        kind = "BLIND"
     if refusal:
         print(refusal, flush=True)
         print("    to dispatch anyway, deliberately: PANEL_SKIP_TOPOLOGY=1",

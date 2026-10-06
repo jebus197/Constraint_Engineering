@@ -129,11 +129,35 @@ class TestTheCensusIsCurrent:
         m = _load(CENSUS, "census_live")
         rows, total = m.survey()
         assert total > 4000, f"only {total} test functions scanned"
-        assert len(rows) <= 80, (
-            f"{len(rows)} source-text assertions, up from the 70 measured on "
-            f"2026-09-11. Re-read scripts/source_text_assertions_2026-09-11.py's "
-            f"docstring before raising this number: 4 guards of this class broke "
-            f"on CORRECT changes in a single day.")
+        # 82, RAISED FROM 80 ON 2026-10-06, AND THE RAISE IS JUSTIFIED HERE BECAUSE
+        # THIS RATCHET'S CONTRACT ASKS FOR THAT RATHER THAN FOR A PIN. 4 new
+        # source-text assertions arrived with the POST, star-topology and
+        # pre-verdict-sweep guards. 2 WERE CONVERTED TO EXECUTING CHECKS rather than
+        # counted: the launcher's argv to the POST is now captured by CALLING the
+        # launcher, and the recovery report's 2 labelled blocks are now asserted on
+        # its printed OUTPUT, including their order, so a reader cannot meet the
+        # stale answer first. Both are strictly better tests than the source matches
+        # they replaced.
+        #
+        # THE 2 THAT REMAIN CANNOT EXECUTE, and that is a property of where they sit:
+        # `test_the_gate_inputs_are_captured_at_the_real_verdict` and
+        # `test_a_difference_is_logged_loudly` in
+        # test_pre_verdict_sweep_shadow_2026-10-06.py both assert on the
+        # pre-verdict sweep shadow, which lives inline in `run_experiment`'s main
+        # round loop and cannot be reached without dispatching a whole experiment.
+        # Their companion assertions in the same file DO execute: the convergence
+        # gate is called twice with different unresolved-critical counts to prove the
+        # shadow can detect a difference at all, and the shadow's placement in the
+        # sweep's `else` branch is checked by walking the AST rather than by matching
+        # text.
+        assert len(rows) <= 82, (
+            f"{len(rows)} source-text assertions, up from the 82 recorded on "
+            f"2026-10-06 and the 70 measured on 2026-09-11. Re-read "
+            f"scripts/source_text_assertions_2026-09-11.py's docstring before "
+            f"raising this number: 4 guards of this class broke on CORRECT changes "
+            f"in a single day. Prefer CONVERTING an assertion to one that executes "
+            f"over raising this ceiling; 2 of the 4 added on 2026-10-06 were "
+            f"converted that way.")
 
     def test_the_census_runs(self):
         r = subprocess.run([sys.executable, str(CENSUS)], cwd=ROOT,
