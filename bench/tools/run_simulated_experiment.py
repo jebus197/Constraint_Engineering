@@ -526,7 +526,41 @@ def main() -> int:
         pattern="four_layer",
         consecutive_rounds_required=3,
         max_contested_rounds=3,
-        burst_mode="off",
+        # ── FOUNDER RULINGS, 2026-10-06. FOUR FACILITIES TURNED ON. ──────────
+        #
+        # BURST / ITC. His words: *"It shouldn't be off as far as I am concerned.
+        # The ITC machinery is one of the more effective methods of finding and
+        # resolving problems we uncovered."* It was set to "off" here against a
+        # dataclass default of "auto", under the 2026-08-30 parity work, and the
+        # reason was never restated in terms of what it cost. Burst is driven by
+        # the capability fingerprints, so switching it off also switched off one of
+        # the mixed-capability facilities the simulated runs exist to rehearse.
+        # Returned to the default rather than pinned, so parity is the behaviour.
+        burst_mode=R.RunnerConfig.burst_mode,
+        # IMMUNE MEMORY. *"Then this also should be fixed going forward."* Armed in
+        # 13 of 49 real configs and never once in simulation. The RECORDING half is
+        # what goes on here. `immune_memory_consume_rk0` stays off for the reason
+        # already on the record: the memory is a single persistent file, so
+        # consumption couples runs and would destroy the 2x2 factorial's
+        # independence. That reasoning never covered recording.
+        immune_memory_enabled=True,
+        # HARDENED GATE. *"Then this should also be on, by default in all our
+        # runners."* Armed in 4 of 49 real configs, absent from this runner, and
+        # mentioned nowhere in it.
+        hardened_gate_enabled=True,
+        # FOLD FIXES FORWARD. *"I already ruled on this in another context in the
+        # live runners. Fold fixes forward is a useful facility, so we don't lose
+        # fixes suggested by the models, providing it never touches the live tree
+        # and we can still review those fixes (and change and revert them as
+        # needed) in the subsequent simulated and real experimental runners."*
+        #
+        # THE LIVE-TREE CONDITION IS SATISFIED BY CONSTRUCTION, NOT BY PROMISE, and
+        # that is checked rather than asserted: `apply_fixes_back` writes to the
+        # run's own sandbox copy of the target, never to the repository working
+        # tree, and `bench/tests/test_fold_fixes_forward_never_touches_the_live_tree_2026-10-06.py`
+        # holds it by executing a round and comparing the tracked tree before and
+        # after.
+        apply_fixes_back_enabled=True,
         gamma_telemetry_only_until=20,
         stall_gamma_terminate=1.01,
         stall_gamma_advisory=1.01,

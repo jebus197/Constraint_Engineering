@@ -2852,6 +2852,44 @@ class FindingRegistry:
             # scripts/integrity_exclusion_figures_2026-10-02.py.
             if _integrity_violation_excluded(e):
                 continue
+            # ───────────────────────────────────────────────────────────────
+            # THE SEVERITY TEST, RESTORED 2026-10-06 ON THE FOUNDER'S RULING.
+            #
+            # It was removed in commit 6c10fe4 on 2026-09-06 16:21:48. He REJECTED
+            # that removal at 22:15 THE SAME DAY, and it stayed removed for a month.
+            # He has now rejected it a further time, in his words: *"This is now at
+            # least the 3rd or 4th time I have rejected this change. This change is
+            # rejected. You should fix it."* The commit message that carried the
+            # removal quoted him approving it; `git grep` found that quote in 6
+            # tracked files, the code comment itself and 5 panel diffs, the earliest
+            # dated AFTER the commit. No source for the approval was ever found.
+            #
+            # GATED ON `severity_is_proven`, NOT ON THE RAW FLOAT, which is HIS OWN
+            # repair and the reason the original removal had any force. The
+            # measurement behind that removal is sound and is not disputed here:
+            # AUC 0.464 against 0.5 for chance in the deciding band, per-assignment
+            # sigma 0.1419 (bootstrap CI [0.1241, 0.1575], 273 duplicate pairs)
+            # against a band 0.09 wide, and 82 of 273 identical defects landing on
+            # opposite sides of 0.7 (30.04%). A raw model-stated float is too noisy
+            # to gate on. A float the model DEMONSTRATED by reproducing its own R_k
+            # from its own stated inputs is not: measured on real corroboration
+            # blocks from study_run1b, 99 of 109 prove, 90.83%, Wilson [83.93%,
+            # 94.94%], 0 SKIP.
+            #
+            # SO THE RULE IS: a sub-critical finding stops blocking convergence ONLY
+            # when its severity is PROVEN sub-critical. An unproven severity cannot
+            # buy a closure — which is the same discipline the sweep's reasoned-
+            # withdrawal branch already carries (2026-09-07, cc2).
+            #
+            # DIRECTION OF EFFECT, STATED PLAINLY BECAUSE IT MATTERS: this makes
+            # convergence EASIER, by removing proven sub-criticals from the blocker
+            # count. The removal was measured to block MORE in 36.8% of 87 archived
+            # reports and FEWER in 0 of 87, Wilson [0.0%, 4.2%], so restoring it
+            # moves the gate in the opposite direction. That is the intended effect
+            # and it is his ruling.
+            _sev = float(e.get("severity") or 0.0)
+            if _sev < CRITICAL_SEVERITY_THRESHOLD and severity_is_proven(e):
+                continue
             _fc = (e.get("falsifier_code") or "").strip()
             _fv = (e.get("falsifier_verdict") or "").strip().upper()
             if (not _fc) or _fv not in _FALSIFIER_RESOLVED_VERDICTS:

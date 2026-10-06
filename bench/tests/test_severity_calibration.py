@@ -33,6 +33,7 @@ if _project_root not in sys.path:
 
 from bench.dm._types import Finding
 from bench.reference_runner_v3 import (
+    severity_is_proven,
     CRITICAL_SEVERITY_THRESHOLD,
     FindingRegistry,
     RunnerConfig,
@@ -181,7 +182,7 @@ class TestDemotionRetainsAndRecords:
         assert "LATENT" in e["calibration_reason"]
         assert e["calibration_round"] == 6
 
-    def test_demotion_retains_the_finding_but_no_longer_clears_the_fail_safe(self):
+    def test_a_proven_demotion_retains_the_finding_and_clears_the_fail_safe(self):
         """CONTRACT CHANGED 2026-09-06, founder ruling 23.
 
         The retention half of this test is unchanged and still matters: a demoted
@@ -201,8 +202,16 @@ class TestDemotionRetainsAndRecords:
         assert reg.unverified_critical_count() == 1
         cfg = _cfg(severity_calibration_enabled=True)
         assert _apply_severity_calibration(reg, cfg, round_idx=6) == 1
-        assert reg.unverified_critical_count() == 1, (
-            "a severity demotion cleared the A4 fail-safe -- the model vote is back")
+        # RESTORED 2026-10-06. This asserted == 1 ("the model vote is back") under
+        # the 2026-09-06 removal the founder rejected the same day and has now
+        # rejected again. A PROVEN demotion is not a vote: `_apply_severity_
+        # calibration` will not demote an entry whose severity carries no worked
+        # proof, so reaching this line at all means the number reproduced from the
+        # model's own stated inputs. `test_an_unproven_demotion_cannot_clear_the_
+        # fail_safe` holds the other half.
+        assert reg.unverified_critical_count() == 0, (
+            "a PROVEN sub-critical demotion did not clear the A4 fail-safe, so the "
+            "severity test is not reaching the counter")
         assert cid in reg.entries          # retention is unchanged
         assert reg.entries[cid]["severity_original"] == 0.9
 
@@ -287,25 +296,107 @@ class TestEndToEndUnblocksConvergence:
         assert converged is False
         assert "A4 BLOCK" in reason
 
-    def test_calibration_no_longer_unblocks_convergence(self):
-        """CONTRACT CHANGED 2026-09-06, founder ruling 23.
+    def test_calibration_unblocks_convergence_when_the_severity_is_PROVEN(self):
+        """CONTRACT RESTORED 2026-10-06 ON THE FOUNDER'S RULING.
 
-        This test previously asserted that demoting a latent critical's severity
-        cleared the A4 block and let the gate converge. It cannot any more, and the
-        reason is worth stating: severity calibration is a MODEL adjusting a MODEL's
-        number in order to open a gate. That is the same vote ruling 23 abolished,
-        one level down. Calibration still runs, still records what it changed, and
-        still serves queue ordering and reporting -- it simply no longer decides
-        convergence. Only a tool verdict does that now.
+        THE HISTORY MATTERS, BECAUSE THIS TEST ENCODED A REJECTED RULING FOR A
+        MONTH. The severity test was removed from `unverified_critical_count` in
+        commit 6c10fe4 on 2026-09-06 16:21:48 under "founder ruling 23", and this
+        test was rewritten the same day to assert the post-removal behaviour. The
+        founder REJECTED that removal at 22:15 THAT SAME DAY. He re-rejected it on
+        2026-10-06: *"This is now at least the 3rd or 4th time I have rejected this
+        change. This change is rejected. You should fix it."*
+
+        THE OBJECTION THIS TEST CARRIED WAS REAL AND IS NOW ANSWERED BY MECHANISM,
+        NOT BY OVERRULING IT. Its wording was that calibration is "a MODEL adjusting
+        a MODEL's number in order to open a gate ... the same vote ruling 23
+        abolished, one level down", and `no-model-voting` is a standing project
+        rule. The answer is that BOTH sides now gate on `severity_is_proven`:
+        `_apply_severity_calibration` refuses to demote an entry whose severity
+        carries no worked proof that reproduces, and the restored test in
+        `unverified_critical_count` exempts a sub-critical only when its severity is
+        proven. Measured by execution against this file's own fixture: with a proof
+        (status PASS, model_rk 0.31 recomputed 0.31) the demotion runs and A4 goes
+        1 -> 0; with the proof stripped, 0 are demoted, severity stays 0.80 and A4
+        stays 1. A model cannot open the gate by asserting a number. It can open it
+        by DEMONSTRATING one, which is the repair the founder specified when he
+        rejected the removal ("worked proofs instead").
+
+        `test_an_unproven_demotion_cannot_clear_the_fail_safe` below holds that
+        distinction directly, so the property this test used to protect is still
+        protected — by the test that actually measures it.
         """
         reg, cid = self._registry_blocked_by_one_latent_critical()
         cfg = _cfg(severity_calibration_enabled=True)
         assert _apply_severity_calibration(reg, cfg, round_idx=6) == 1
         assert reg.entries[cid]["severity_calibrated"] is True
         assert reg.entries[cid]["severity_original"] == 0.8
-        # The demotion happened, and it did NOT clear the fail-safe.
+        # The demotion happened on a PROVEN severity, so it DOES clear the
+        # fail-safe. That is the restored contract.
+        assert reg.unverified_critical_count() == 0, (
+            "a PROVEN severity demotion did not clear the A4 block")
+
+    def test_an_already_subcritical_unproven_finding_still_blocks(self):
+        """THE COUNTER-LEVEL ANTI-VOTE PROPERTY, and the first version of this
+        file did not test it.
+
+        Mutation-checked and FOUND WANTING: replacing `severity_is_proven(e)` with
+        a bare `_sev < CRITICAL_SEVERITY_THRESHOLD` — which reopens exactly the
+        model-vote hole the old contract feared — left all 19 tests GREEN. The
+        reason is that `_apply_severity_calibration` refuses to demote an unproven
+        entry, so no test reached the counter with a sub-critical UNPROVEN finding.
+        A finding can arrive that way without calibration touching it: the model
+        simply states 0.45 and never proves it.
+
+        So this goes straight at the counter: a sub-critical severity that the
+        model merely ASSERTED must keep blocking, and only a severity it
+        DEMONSTRATED may stop blocking.
+        """
+        reg = FindingRegistry()
+        base = {
+            "canonical_id": "C0001", "status": "UNCONFIRMED", "severity": 0.45,
+            "verified": False, "verdicts": [], "description": "asserted, not proven",
+            "source_model": "SIM", "proposed_fix": "", "open_since_round": 0,
+            "last_status_change_round": 0, "computed_evidence": [],
+            "routing_history": [], "falsifier_code": "", "falsifier_verdict": "",
+        }
+        reg.entries = {"C0001": dict(base)}
+        assert severity_is_proven(reg.entries["C0001"]) is False
         assert reg.unverified_critical_count() == 1, (
-            "severity calibration cleared an A4 block -- the model vote is back")
+            "a sub-critical severity the model only ASSERTED stopped blocking — "
+            "the gate is reading the raw float, so a model can open it by naming "
+            "a number it never computed")
+
+        proven = dict(base)
+        proven["severity_proof"] = {"status": "PASS", "model_rk": 0.31,
+                                    "recomputed_rk": 0.31}
+        reg.entries = {"C0001": proven}
+        assert severity_is_proven(reg.entries["C0001"]) is True
+        assert reg.unverified_critical_count() == 0, (
+            "a PROVEN sub-critical still blocks, so the restored severity test is "
+            "not reaching the counter at all")
+
+    def test_an_unproven_demotion_cannot_clear_the_fail_safe(self):
+        """THE HALF THE OLD CONTRACT WAS PROTECTING, held directly.
+
+        `no-model-voting` is a standing project rule, and the test this replaced
+        feared the restored severity path reopens it. It does not, and the reason is
+        mechanical rather than argued: `_apply_severity_calibration` refuses to
+        demote an entry whose severity carries no worked proof. Strip the proof and
+        nothing moves — no demotion, no change in severity, no change in the count.
+        """
+        reg, cid = self._registry_blocked_by_one_latent_critical()
+        reg.entries[cid].pop("severity_proof", None)
+        reg.entries[cid]["severity_proof_history"] = []
+        assert severity_is_proven(reg.entries[cid]) is False, (
+            "the fixture still proves its severity, so this test asserts nothing")
+        before = reg.unverified_critical_count()
+        cfg = _cfg(severity_calibration_enabled=True)
+        assert _apply_severity_calibration(reg, cfg, round_idx=6) == 0, (
+            "an UNPROVEN severity was demoted — a model opened the gate by "
+            "asserting a number, which is the vote this rule forbids")
+        assert reg.entries[cid]["severity"] == 0.8
+        assert reg.unverified_critical_count() == before == 1
 
     def test_a_tool_verdict_clears_what_calibration_cannot(self):
         reg, cid = self._registry_blocked_by_one_latent_critical()

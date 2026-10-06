@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Does routing serve only criticals while A4 counts every severity?
 
-`_apply_routing` (bench/reference_runner_v3.py:6815) skips any entry below
+`_apply_routing` (bench/reference_runner_v3.py:6853) skips any entry below
 CRITICAL_SEVERITY_THRESHOLD. `unverified_critical_count` (:2747) has had NO
 severity gate since founder ruling 23 (2026-09-06). If both hold, a finding
 below 0.7 can never be served a falsifier, can never be released by the

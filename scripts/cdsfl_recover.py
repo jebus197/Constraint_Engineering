@@ -83,6 +83,7 @@ DESKTOP_MIRRORS = {
 from cdsfl_utils import (
     git_state,
     latest_experiment,
+    newest_run,
     read_section,
     repo_root,
     test_count,
@@ -902,8 +903,33 @@ def main() -> None:
                 print("  !! LOOKUP FAILED: resources/ONBOARDING.md exists but has no")
                 print("     '## Current State' section. Saved state is UNKNOWN, not empty.")
 
+    # --- NEWEST RUN (by date), BEFORE the numbered-experiment block ---
+    #
+    # A RECOVERING AGENT ASKS "WHAT RAN LAST", AND UNTIL 2026-10-06 THIS REPORT
+    # ANSWERED A DIFFERENT QUESTION. `latest_experiment()` selects the highest
+    # experiment NUMBER among directories matching `exp(\d+)`, so on 2026-10-05 a
+    # restore named exp55_v3_control from 23 August while study_run1b from 3
+    # October sat on disk -- 6-week-old state read as current. Measured: 37 of 81
+    # run directories carrying a report or runner_state are invisible to that
+    # picker, 45.6790%, Wilson [35.2733%, 56.4760%]. Both are printed now, because
+    # both are real: the newest run is what you were doing, the numbered experiment
+    # is the formal arc.
+    _newest = newest_run()
+    print("\n## NEWEST RUN (by modification date -- what ran LAST)\n")
+    if _newest:
+        print(f"  Run: {_newest['name']}")
+        print(f"  Modified: {_newest['modified']}")
+        print(f"  Carries runner_state.json: {_newest['has_runner_state']}")
+        print(f"  Log dir: {_newest['log_dir']}")
+        if not _newest["is_numbered_experiment"]:
+            print("  NOTE: this is NOT an exp<N> directory, so the LATEST EXPERIMENT")
+            print("        block below CANNOT see it. The 2 blocks answer different")
+            print("        questions and may legitimately name different runs.")
+    else:
+        print("  (no run directory carries a report or runner_state.json)")
+
     # --- LATEST EXPERIMENT ---
-    print("\n## LATEST EXPERIMENT\n")
+    print("\n## LATEST EXPERIMENT (highest exp<N>, NOT necessarily the newest)\n")
     exp = latest_experiment()
     if exp:
         print(f"  Experiment: {exp['name']}")

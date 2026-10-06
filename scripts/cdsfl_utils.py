@@ -142,6 +142,59 @@ def test_count() -> Optional[int]:
         return None
 
 
+def newest_run() -> Optional[dict[str, Any]]:
+    r"""The most RECENT run directory under bench/logs, whatever it is called.
+
+    WHY THIS EXISTS BESIDE `latest_experiment`, WHICH IS KEPT UNCHANGED. On
+    2026-10-05 a state restore reported `exp55_v3_control` from 23 August as the
+    latest experiment while the newest run on disk was `study_run1b` from 3
+    October, so an agent rebuilding context after an interruption read 6-week-old
+    state as current. The founder raised it; it has 2 compounding causes.
+
+      1. `latest_experiment` only considers directories matching `exp(\d+)`.
+         MEASURED: of 81 run directories carrying a report or a `runner_state.json`,
+         **37 are invisible to it — 45.6790%, Wilson [35.2733%, 56.4760%]**
+         (statsmodels and a scipy closed form agreeing). Every commissioning arm,
+         prose-convergence run, `sim45` and `study_run*` falls in that 37.
+      2. Among what survives, it selects by the highest experiment NUMBER, not by
+         date. That is deliberate for its 3 callers, which want the newest FORMAL
+         experiment, so the behaviour is not changed here.
+
+    So this is additive: `latest_experiment` keeps its contract and its callers,
+    and a recovering agent gets the question it actually asked — what ran last.
+    Producer for the figures above:
+    `scripts/the_recovery_picker_cannot_see_most_runs_2026-10-06.py`.
+    """
+    logs_dir = repo_root() / "bench" / "logs"
+    if not logs_dir.is_dir():
+        return None
+    best: Optional[tuple[float, Path]] = None
+    for d in logs_dir.iterdir():
+        if not d.is_dir() or d.name.startswith("_"):
+            continue
+        has_state = (d / "runner_state.json").is_file()
+        has_report = any(d.glob("*_report.json"))
+        if not (has_state or has_report):
+            continue
+        try:
+            mt = d.stat().st_mtime
+        except OSError:
+            continue
+        if best is None or mt > best[0]:
+            best = (mt, d)
+    if best is None:
+        return None
+    import datetime as _dt
+    mt, d = best
+    return {
+        "name": d.name,
+        "log_dir": str(d),
+        "modified": _dt.datetime.fromtimestamp(mt).isoformat(timespec="seconds"),
+        "has_runner_state": (d / "runner_state.json").is_file(),
+        "is_numbered_experiment": bool(re.match(r"exp(\d+)", d.name)),
+    }
+
+
 def latest_experiment() -> Optional[dict[str, Any]]:
     """Find and parse the latest experiment from bench/logs/."""
     logs_dir = repo_root() / "bench" / "logs"
