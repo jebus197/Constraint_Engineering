@@ -56,6 +56,30 @@ A person should choose once, from 3 named profiles, and only then be offered ind
 
 Individual controls stay available behind the profile choice, because a researcher who wants one facility from Full without the rest should not have to take all of it. The profile is the default path, not a cage.
 
+## Clearing and exporting an experiment's records
+
+Founder ruling, 6 October 2026: a researcher may want to clear an experiment's records or to keep them, and that is their decision rather than the designer's. Clear therefore offers a sub-choice of Archive or Delete, and Archive points at one clear location where archived results are kept. The intent is a familiar environment, close to a standard desktop operating system. Whether that paradigm extends to the rest of the interface is not yet decided.
+
+The unit is one experiment. That already matches how runs are stored on disk: across 324 run directories there are 59 carrying a registry and no registry is shared between runs, so per-experiment is the existing boundary rather than a new one.
+
+Export fits the current design with no structural change. Every field an exported entry needs to stand on its own, which is its identifier, status, severity, originating model, the round it opened in, and its description, is present in all 3,158 archived entries. Export-all and export-one are serialisations of something already serialised per experiment.
+
+Archiving is cheap, and that is worth knowing before anyone designs around size. The 324 run directories hold 0.696 GiB in total. The median run is 0.2 MiB and the mean 2.2 MiB, and exactly 1 of the 324 exceeds 100 MiB, which is 0.3086 percent with a 95 percent interval of 0.0545 to 1.7273 percent. Keeping everything costs very little. The genuinely large artefacts are the per-seat sandbox copies, which live outside these directories and are the only thing that would need a size policy.
+
+### The one engineering consequence, and it is the reason Delete needs care
+
+Every run stores its derived measurements outside its registry rather than inside it. All 59 runs that carry a registry also carry separately stored series for the decay curve, the gate history, the churn history and the novelty counts. Deleting an experiment's entries therefore leaves those numbers standing with nothing behind them. On a real example, a clear would remove 75 entries and leave 5 series intact, and the experiment would continue to report a decay figure it can no longer derive.
+
+A desktop operating system does not actually have this problem, which is why the metaphor needs one addition rather than a caveat. Deleting a document there does not leave a stale summary of that document elsewhere, still claiming to be current. Here it would. So an archive or a delete must take the experiment's evidence together with the numbers derived from it, as one unit. Then Delete is honest, because what disappears is the whole claim rather than only its support, and Archive is honest for the same reason.
+
+### Where archived results should go
+
+A location already exists at the path CDSFL_archive on the desktop, created on 19 August 2026 for the project's own encrypted evidence store. The interface should either adopt that location deliberately or choose a visibly distinct one. Two different things both called the archive, in a design whose stated aim is familiarity, is the one outcome to avoid.
+
+### What follows for recording failures
+
+The same ruling makes a sibling ledger the natural home for dispatch failures. A failure is an event about the run rather than a finding about the target, and the convergence gate is handed how many registry entries exist, so recording failures as entries would feed them to the decay measure. Held in their own per-experiment ledger, nothing is derived from them, which means clearing them is safe whichever sub-choice the researcher makes, and the record a researcher needs in order to retrace every step is still kept.
+
 ## The one thing this brief needs ruled on
 
 The 6 switches enabled nowhere: each is retained, scheduled for a study, or retired. Retirement under the additive standard needs a committed measurement showing something better makes it redundant, so the honest default is retained-and-scheduled unless there is a reason otherwise. That is a single decision taken 6 times, and it is the only question in this document.
