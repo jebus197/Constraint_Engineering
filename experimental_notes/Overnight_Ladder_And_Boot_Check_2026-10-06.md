@@ -58,6 +58,18 @@ The right remedy was already proposed, and it was built. Each seat is now asked 
 
 The star topology is now enforced rather than remembered. Two rounds asking the same question have a byte identical brief, so a checksum over the brief finds them with nothing to label and nothing to forget. A round dispatched without being made blind to a sibling that has already answered is refused, with the exact command to fix it printed. Tested against the real situation: the second seat's dispatch would have been refused had the blindness setting been forgotten, and the refusal costs no network because it runs before anything is sent.
 
+THE ALIVENESS PROBE NOW RUNS IN EVERY RUNNER, AND A BRIEF COULD NAME A FIELD NOTHING WOULD READ
+
+The aliveness probe was the founder's own proposal, and on his instruction it is adopted by every runner rather than the panel dispatcher alone. The experiment runner now asks each real seat to print Ready before round 1. All 5 routes the runner dispatches on have an explicit probe, plus a 6th, and a route nobody wrote a probe for raises an error rather than passing unchecked.
+
+A simulated seat is skipped rather than failed, and that distinction matters in both directions. The simulated dispatch works by replacing the real call functions, so probing a simulated seat would measure the replacement and report a healthy route where no route exists, and a false pass is worse than no check at all. Treating an unprobeable seat as dead would refuse every simulated run. Checked by running it: an all-simulated roster proceeds, an empty roster proceeds, and a dead real route refuses and names the seat without ever reducing the roster.
+
+On cost, since a probe is itself a dispatch and no paid dispatch happens without authorisation: the probe fires only for a seat the run is already authorised to send a full brief to, immediately before doing so, with a 16 token ceiling against that brief's thousands. It adds no seat and reaches no route the run was not already going to use, so it spends strictly less than the run it guards.
+
+Separately, and found by making the mistake: a brief could declare its disagreement field in a form that nothing would ever recognise. The joint brief asked for a field called Residual disagreement. The detector that checks whether a reply preserved its disagreement matches a heading only when the word opens the line, so a qualifier in front of it is invisible. Both seats disagreed at length and the round was recorded as having lost its disagreement.
+
+The real fault was that the brief checker was weaker than the reply detector. The checker tested for the word anywhere, which Residual disagreement satisfies. Two tests about the same field, each correct on its own terms, disagreeing about what counts. The repair imports the detector's own definition rather than restating it, so the two cannot drift apart again. The first attempt at that repair was itself wrong, because applying the reply pattern directly to a brief refused correct briefs and passed the standard template only by accident; each candidate line is now reduced to the heading a seat would actually write before the test is applied. Verified in both directions: the standard template passes, the earlier blind brief passes, and the joint brief is refused with a message naming the exact problem.
+
 ## THE TEST SUITE
 
 A full run took 58 minutes 43 seconds and returned 10210 passed, 26 failed, 20 skipped.
