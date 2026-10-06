@@ -259,11 +259,15 @@ class TestThePopulationStepIsExecuted:
 
         class StubSandbox:
             @staticmethod
-            def build(_repo, blind_of=()):
-                # `blind_of` ADDED 2026-10-05, and this stub signature is load-
+            def build(_repo, blind_of=(), blind_text=()):
+                # `blind_of` ADDED 2026-10-05, `blind_text` ADDED the same day and
+                # accepted here on 2026-10-06. This stub signature is load-
                 # bearing: it broke the moment the real `build` grew the keyword,
                 # which is the proof that this test exercises the REAL call rather
-                # than a restatement of it. Accepted and ignored here — what this
+                # than a restatement of it. A TypeError here is the stub doing its
+                # job, and the correct response is to accept the new keyword, never
+                # to loosen the stub to `**kwargs` — that would make it stop
+                # noticing. Accepted and ignored here — what this
                 # test measures is one sandbox per seat, not containment, which is
                 # held by test_a_blind_round_is_actually_blind_2026-10-05.py.
                 d = tmp_path / f"seat_{len(built)}" / "repo"

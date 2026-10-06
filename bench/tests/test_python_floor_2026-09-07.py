@@ -72,8 +72,22 @@ def _sources() -> list[Path]:
     out = []
     for p in sorted(REPO.rglob("*.py")):
         rel = p.relative_to(REPO).as_posix()
+        # `.claude/worktrees/` EXCLUDED 2026-10-06. These are transient per-agent
+        # git worktrees, excluded from the repository by `.git/info/exclude` and
+        # removed by the host's own worktree cleanup, so nothing in them is shipped
+        # code this floor can be a property of. They also carry harvested SEAT
+        # OUTPUT: the 2 files that failed this scan are copies of one seat-written
+        # script with an unterminated string literal at line 157, which is a
+        # faithful record of what a model produced and must not be edited to make a
+        # scan pass. A floor test over untracked scratch copies measures the agent
+        # harness, not the project.
+        #
+        # It stays SCOPED to that directory rather than becoming "skip anything
+        # untracked", because an untracked file in `bench/` or `scripts/` is exactly
+        # the half-finished module this scan should catch before it is committed.
         if (rel.startswith(".git/") or is_archived_run_output(rel)
-                or "__pycache__" in rel):
+                or "__pycache__" in rel
+                or rel.startswith(".claude/worktrees/")):
             continue
         out.append(p)
     return out

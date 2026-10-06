@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import pathlib
 import subprocess
 import sys
 from pathlib import Path
@@ -636,9 +637,47 @@ def _p4_undelivered(dirs, mod) -> list[str]:
             continue
         if not any((d / f"{s}.json").is_file() for s in mod.SEATS):
             continue
+        # A ROUND IN WHICH EVERY SEAT RETURNED 0 CHARACTERS PRODUCED NO FIX, SO
+        # THERE IS NO FIX TO DELIVER (narrowed 2026-10-06, in the same idiom as the
+        # HTTP-seat narrowing above: a round that was never ABLE to deliver has not
+        # FAILED to).
+        #
+        # Measured on panel_convergence_blockers_2026-10-03, which this narrowing
+        # exists for: both free seats returned ok=False with 0 characters, at 1956.0
+        # and 1956.2 seconds -- 0.2 seconds apart in 2 separate processes after
+        # unequal work (37 tool calls and 11). Only a cause outside both processes
+        # produces matched times like that, and the shared Max subscription is the
+        # recorded candidate. Asking that round for a delivered file asks a round
+        # that produced nothing to have produced something.
+        #
+        # THIS CANNOT EXCUSE A PROSE-ONLY ROUND, which is the thing P4 exists to
+        # catch. The narrowing fires only when NO seat returned any text at all; a
+        # seat that answered in prose and delivered no file is still reported, and
+        # the falsifiers below build exactly that round with a non-empty response
+        # and must still refuse it.
+        if not _any_seat_answered(d, mod):
+            continue
         if not mod.source_files(d):
             out.append(d.name)
     return out
+
+
+def _any_seat_answered(d, mod) -> bool:
+    """Did any seat in this round return a non-empty reply?
+
+    Delegates to `bench/star_topology_2026-10-06.py`, which owns the single
+    definition of a landed reply, rather than re-deriving emptiness here: a
+    producer and a consumer that each define a predicate correctly can still
+    disagree, and this project has that failure on record.
+    """
+    import importlib.util as _iu
+    import sys as _sys
+    _p = pathlib.Path(__file__).resolve().parents[1] / "star_topology_2026-10-06.py"
+    spec = _iu.spec_from_file_location("cdsfl_star_topology_p4", _p)
+    m = _iu.module_from_spec(spec)
+    _sys.modules["cdsfl_star_topology_p4"] = m
+    spec.loader.exec_module(m)
+    return any(m.seat_reply_words(d, s) > 0 for s in mod.SEATS)
 
 
 class TestP4DeliveryIsAStandingCondition:
