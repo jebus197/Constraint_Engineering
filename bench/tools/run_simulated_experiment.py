@@ -37,6 +37,21 @@ for p in (str(REPO), str(REPO / "bench")):
         sys.path.insert(0, p)
 
 import reference_runner_v3 as R                       # noqa: E402
+
+#: The dataclass defaults this launcher wants to pass EXPLICITLY, captured at import
+#: time rather than read off `R.RunnerConfig` at the call.
+#:
+#: WHY AT IMPORT. `burst_mode` is passed explicitly so the preflight POST can see the
+#: facility as deliberately set rather than silently defaulted. Reading it as
+#: `R.RunnerConfig.burst_mode` inside `main()` broke
+#: `test_the_simulated_launcher_sets_both_lists`, which runs this launcher in a fresh
+#: subprocess with BOTH config constructors REPLACED by interceptors in order to
+#: compare the 2 model lists they receive -- so by the time `main()` ran,
+#: `R.RunnerConfig` was a function and had no attributes at all
+#: ("AttributeError: 'function' object has no attribute 'burst_mode'"). Captured here,
+#: the value is read before any caller can intercept the class, and the launcher stops
+#: depending on the class still being a class when it builds its config.
+_RUNNER_DEFAULT_BURST_MODE = R.RunnerConfig.burst_mode
 from bench.tools import sim_dispatch_shim as SHIM     # noqa: E402
 
 #: Named with the mandatory ``-SIM`` suffix AT SOURCE (founder ruling
@@ -208,6 +223,21 @@ def build_parser() -> argparse.ArgumentParser:
                          "rungs beyond the 2nd are dispatched only when every "
                          "earlier rung has failed, so a deeper budget buys a "
                          "cross-model climb on a small fraction of findings.")
+    # CDSFL POST, wired 2026-10-06 on the founder's BIOS analogy. Verbatim: *"on a
+    # bios screen when 'booting up' it prints a simple message against each check,
+    # which is just 'pass or fail'. If a test passes then the next check fails, the
+    # system is halted, giving the user an opportunity to investigate."*
+    #
+    # It runs AFTER the roster resolves -- so it checks the panel actually being
+    # dispatched, not a default -- and BEFORE any dispatch, so a halt costs nothing.
+    ap.add_argument("--ignore-post", action="store_true",
+                    help="proceed even if the preflight POST halts (the BIOS "
+                         "F1-to-continue). The failure is still printed and is "
+                         "recorded in the run's console log.")
+    ap.add_argument("--expect-uniform-ladder", action="store_true",
+                    help="this run deliberately uses --seat-models uniform as a "
+                         "control arm, so POST reports the non-climbing ladder as "
+                         "PASS instead of halting.")
     ap.add_argument("--seat-models", choices=("uniform", "ladder"),
                     default="uniform",
                     help="uniform = one model for all seats (default); "
@@ -348,6 +378,38 @@ class _Tee:
         return getattr(self._stream, name)
 
 
+def _run_post(seats, args) -> int:
+    """Run the preflight POST against the roster this run will actually dispatch.
+
+    Imported by path rather than as a module, because `scripts/` is not a package
+    and the check is deliberately runnable on its own as the operator's BIOS screen.
+
+    A POST that cannot be LOADED is a failure, not a pass. The previous version of
+    the check mapped its own exceptions to a 3rd state that did not set the exit
+    code, so a broken check booted; the same trap would be re-set here by swallowing
+    an ImportError and continuing.
+    """
+    import importlib.util
+    path = REPO / "scripts" / "preflight_health_check_2026-10-06.py"
+    try:
+        spec = importlib.util.spec_from_file_location("cdsfl_post", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+    except Exception as exc:  # noqa: BLE001
+        print(f"    POST could not be loaded from {path}: "
+              f"{type(exc).__name__}: {exc}", flush=True)
+        print("    A health check that cannot run has not passed.", flush=True)
+        return 2
+    # PASS THE RESOLVED VALUE, never let POST re-derive it. POST falls back to
+    # reading this file's declared default, which is wrong the moment a caller
+    # overrides it on the command line.
+    argv = [f"--seats={','.join(seats)}",
+            f"--seat-models={args.seat_models}"]
+    if getattr(args, "expect_uniform_ladder", False):
+        argv.append("--expect-uniform-ladder")
+    return mod.main(argv)
+
+
 def main() -> int:
     args = build_parser().parse_args()
 
@@ -438,6 +500,7 @@ def main() -> int:
         print(f"    FATAL: {exc}", flush=True)
         return 2
 
+
     models = [R.ModelConfig(label=v, model_id="sim", api="sim",
                             role="player_manager" if i == 0 else "player",
                             system_prompt_path=str(cdsfl_path),
@@ -503,9 +566,25 @@ def main() -> int:
         # The `DeepSeek-SIM -> fable` correction in the seat map STANDS: DeepSeek
         # ranks last in DEFAULT_FALSIFIER_STRENGTH on a measured 28% confirm rate,
         # so the strong model was the unfaithful assignment.
+        # EXHAUST THE LADDER IN SIMULATION. Founder ruling 2026-10-06: *"I don't
+        # think there should be a cap at all ... the problem should run until it is
+        # either resolved, or the ladder is exhausted. (No more models to try.)"*
+        #
+        # 0 means exhaust. It is set HERE and not in the dataclass default, which
+        # stays at 2, because that default governs the 49 real configs — none of
+        # which pins the value — and his own methodology is that the simulated runs
+        # exist "so that functionality can be exercised cheaply before money is
+        # spent on the full paid panel". So the behaviour he ruled is measured here
+        # first and promoted on evidence.
+        #
+        # The cost is bounded by the thing that made the old cap nearly free:
+        # `resolve_via_routing` stops at the first CONFIRMED, so a deeper budget
+        # spends a dispatch only on a finding every earlier rung already failed.
+        # Verified by execution: with 5 rungs and a rung-1 CONFIRMED, exhaustion
+        # dispatches exactly 1.
         routing_max_rungs=(args.routing_max_rungs
                            if args.routing_max_rungs is not None
-                           else R.RunnerConfig.routing_max_rungs),
+                           else 0),
         sk_enabled=True,
         location_keyed_convergence=True,
         # PARITY WITH THE REAL exp45 CONFIG (bench/exp45_configs/
@@ -536,7 +615,7 @@ def main() -> int:
         # the capability fingerprints, so switching it off also switched off one of
         # the mixed-capability facilities the simulated runs exist to rehearse.
         # Returned to the default rather than pinned, so parity is the behaviour.
-        burst_mode=R.RunnerConfig.burst_mode,
+        burst_mode=_RUNNER_DEFAULT_BURST_MODE,
         # IMMUNE MEMORY. *"Then this also should be fixed going forward."* Armed in
         # 13 of 49 real configs and never once in simulation. The RECORDING half is
         # what goes on here. `immune_memory_consume_rk0` stays off for the reason
@@ -805,6 +884,28 @@ def main() -> int:
     else:
         print(f"    panel confined to a disposable worktree: {_wt}", flush=True)
     cfg.panel_cwd = str(_wt)
+
+    # ───────────────── CDSFL POST ─────────────────
+    # An addition nothing reaches is not additive, so the check is CALLED rather
+    # than left as a script an operator may remember to run.
+    #
+    # IT GATES THE DISPATCH, NOT THE CONFIG BUILD, and the first placement got that
+    # wrong. Called immediately after the roster resolved, it returned before the
+    # launcher had built its `RunnerConfig` -- which broke
+    # `test_the_simulated_launcher_sets_both_lists`, a guard that drives this
+    # launcher precisely to compare the 2 model lists it builds and needs it to get
+    # that far. POST's purpose is to stop a RUN from dispatching against a facility
+    # that is inert, not to stop the launcher from assembling its own state, and a
+    # gate placed earlier than its purpose requires takes legitimate callers with
+    # it. Here it is the last thing before `run_experiment`, so nothing is
+    # dispatched on a RED board and everything upstream still runs.
+    _post_rc = _run_post(seats, args)
+    if _post_rc != 0:
+        if not args.ignore_post:
+            return _post_rc
+        print("    POST FAILED and --ignore-post was given: proceeding anyway.",
+              flush=True)
+        print("    The failure above is part of this run's record.", flush=True)
 
     try:
         # THE CORE DIRECTIVE, NOT "" (Fable, second-pass review 2026-08-30).

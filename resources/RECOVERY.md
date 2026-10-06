@@ -1734,7 +1734,7 @@ under cy monitoring. This is the GENERALISATION test: does the location-keyed tw
 converge a SECOND module? (Codex CLI is restored as of 2 July — its June rate-limit expired —
 so `pr`/`c` are blocked only by the same missing OpenRouter/Gemini/DeepSeek keys.)
 
-**Still open (in the program plan, each with a test gate):** the latent-tagger that makes
+**Still open (in the programme plan, each with a test gate):** the latent-tagger that makes
 severity calibration live; ouroboros loop-close (papers→models; full-text chain + Sci-Hub built);
 Stage-6 calibrator into the live equation; directive-pruning EXECUTION (the measurement found the
 real dispatched directive is ~50K with 43.7K appended UNPRUNED outside the prune path — the

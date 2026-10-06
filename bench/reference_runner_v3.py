@@ -6997,7 +6997,11 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
         # byte-identical, which is the point of a gated feature, and the opt-in
         # path is exercised by
         # bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py.
-        _rungs = int(getattr(cfg, "routing_max_rungs", 2) or 2)
+        # `or 2` REMOVED 2026-10-06: it coerced 0 back to 2, so "exhaust the
+        # ladder" was inexpressible through config. 0 now reaches `route` and means
+        # exhaust, per the founder's ruling.
+        _raw = getattr(cfg, "routing_max_rungs", 2)
+        _rungs = 2 if _raw is None else int(_raw)
         _route_kw = {} if _rungs == 2 else {"max_rungs": _rungs}
         result = route(
             finding, models, confirmed, resolve_fn, reverify_falsifier,
@@ -17411,6 +17415,20 @@ def run_experiment(
                     total_findings=len(registry.entries),
                 )
             )
+            # CAPTURED FOR THE PRE-VERDICT SWEEP SHADOW, which replays this gate
+            # against the SWEPT ledger after the sweep has run. Capturing beats
+            # re-deriving these at sweep time: they are round-local, and a shadow
+            # that guessed at them would measure a gate nobody ran.
+            _gate_inputs_at_verdict = dict(
+                round_idx=round_idx, gamma=gamma,
+                novel_critical_history=list(novel_critical_history),
+                contested=registry.contested_count(
+                    round_idx,
+                    subcritical_exclusion=bool(
+                        getattr(cfg, 'falsifier_gate_enabled', False))),
+                rho_churn=rho_churn, irreducible_queue=_irreducible_q,
+                gamma_critical=gamma_critical,
+            )
         if gamma_alt_converged and not converged:
             _log(f"  γ-alt: {gamma_alt_reason}")
             converged = True
@@ -18136,6 +18154,73 @@ def run_experiment(
             _log(f"  WARNING: post-convergence sweep failed ({_sw_exc})")
             result["post_convergence_sweep"] = {"error": str(_sw_exc)}
         else:
+            # ─── PRE-VERDICT SWEEP SHADOW (founder's ruling, 2026-10-06) ───
+            # HIS POSITION, verbatim: *"The closing sweep is part of the
+            # convergence mechanics of the schema ... It is not just an
+            # 'afterthought'"*, and *"Doing it your way just makes the closing
+            # sweep an unfalsifiable loose cannon"*. His instruction was to run the
+            # closing sweep BEFORE the verdict and keep the existing one in
+            # parallel until the new one is tested.
+            #
+            # THIS IS THE TEST, not the move. Reordering the sweep ahead of the
+            # verdict changes what `converged` means on every run, which is the
+            # highest-blast-radius edit available in this file. So instead the gate
+            # is REPLAYED here against the swept ledger, with the inputs captured
+            # at the real verdict, and both answers are recorded. Nothing about
+            # this run's verdict changes.
+            #
+            # WHAT IT MEASURES, and why the question is not rhetorical. The block
+            # above records that the sweep "ATTACHES falsifiers and resolves
+            # findings" while the verdict "is already recorded above", and that 2
+            # per-round passes never see its results -- already costing 15 entries
+            # recorded as carrying no falsifier of which 11 do, a set identical to
+            # the one the sweep cleared. If the replayed gate ever disagrees with
+            # the recorded verdict, then sweep ORDERING decided a convergence
+            # outcome, and the reorder is justified by evidence rather than by
+            # argument. If it never disagrees across runs, it is not.
+            try:
+                _gi = locals().get("_gate_inputs_at_verdict")
+                if _gi:
+                    _swept_unresolved = registry.unverified_critical_count()
+                    _swept_total = len(registry.entries)
+                    _shadow_conv, _shadow_reason = _check_gamma_alt_convergence(
+                        _gi["round_idx"], _gi["gamma"],
+                        _gi["novel_critical_history"], cfg,
+                        unresolved_critical=_swept_unresolved,
+                        contested=_gi["contested"],
+                        rho_churn=_gi["rho_churn"],
+                        irreducible_queue=_gi["irreducible_queue"],
+                        gamma_critical=_gi["gamma_critical"],
+                        total_findings=_swept_total,
+                    )
+                    result["pre_verdict_sweep_shadow"] = {
+                        "recorded_converged": bool(converged),
+                        "recorded_reason": conv_reason,
+                        "replayed_converged": bool(_shadow_conv),
+                        "replayed_reason": _shadow_reason,
+                        "verdict_would_differ": bool(_shadow_conv) != bool(converged),
+                        "unresolved_critical_after_sweep": _swept_unresolved,
+                        "total_findings_after_sweep": _swept_total,
+                        "note": ("The gate replayed against the SWEPT ledger. This "
+                                 "run's verdict is unchanged; this records what the "
+                                 "verdict would have been had the closing sweep run "
+                                 "before it."),
+                    }
+                    if result["pre_verdict_sweep_shadow"]["verdict_would_differ"]:
+                        _log("  PRE-VERDICT SWEEP SHADOW: the verdict WOULD DIFFER "
+                             f"if the sweep ran first — recorded={converged}, "
+                             f"replayed={_shadow_conv} ({_shadow_reason})")
+                    else:
+                        _log("  pre-verdict sweep shadow: verdict unchanged by "
+                             "sweep ordering")
+                else:
+                    result["pre_verdict_sweep_shadow"] = {
+                        "error": "gate inputs were not captured this run; the "
+                                 "hardened-gate path bypasses the gamma-alt call "
+                                 "site, so no replay is possible"}
+            except Exception as _sh_exc:  # noqa: BLE001 — a shadow must never kill a run
+                result["pre_verdict_sweep_shadow"] = {
+                    "error": f"{type(_sh_exc).__name__}: {_sh_exc}"}
             # Exp 46 lesson (2026-07-28): the last round checkpoint predates
             # the sweep — persist the post-sweep registry so the saved state
             # matches the report and the per-item audit trail survives exit.

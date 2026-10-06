@@ -1,3 +1,118 @@
+## ★ RESUME POINTER — 2026-10-06T04:35:04+01:00. SUPERSEDES EVERY POINTER BELOW.
+
+**Written at the founder's explicit request during an intermittent internet outage:** *"You
+should take careful notes of where you are at and retry with a script over a few minute
+intervals until they resolve themselves cleanly. I will look at the sate of play in the
+morning."* He is asleep from 03:46.
+
+**WHERE TO RESUME: finish the 2 panel FULL RECORDs, run the joint round, then commit.**
+Branch `sim/shakedown-2026-09-29`, HEAD `413902a2`. The working tree is DIRTY and the
+commit is BLOCKED — see THE COMMIT IS BLOCKED below. Nothing in this window is committed yet.
+
+### THE COMMIT IS BLOCKED, AND THE BLOCK IS CORRECT
+
+`bench/tests/test_panel_rounds_have_a_full_record_2026-09-11.py` refuses while any
+dispatched panel round has no FULL RECORD note naming it. 2 rounds are outstanding:
+`capability_ladder_design_blind_2026-10-06` (fable, landed) and
+`capability_ladder_design_blind_cc2_2026-10-06` (cc2, re-dispatching). Build each with:
+
+```
+python3 scripts/make_panel_full_record_2026-09-11.py <round_dir> '<title>' <Out_Name.md> < context.txt
+```
+
+A commit was also refused earlier for a stale panel mirror, which was ALSO correct: the
+mirror had been taken mid-run and `fable.json` appeared seconds later. Re-run
+`python3 scripts/mirror_panel_records_2026-09-11.py` after cc2 lands, because the
+mid-run mirror of cc2's round will read DIVERGED.
+
+**A commit message must go in a FILE.** `git commit -m "...backticks..."` is run through
+zsh double quotes, which executes the backticks as command substitution and mangles the
+message. Use `git commit -F <file>` with a quoted heredoc.
+
+### PANEL STATE — star topology, blind round each, 0 paid dispatches
+
+- **fable blind round: LANDED.** 1693 words, 50 tool calls, 751.2 s, `ok: True`. Reply at
+  `bench/logs/capability_ladder_design_blind_2026-10-06/fable.json` under the `response`
+  key (NOT `reply`, which does not exist and reads as 0 characters).
+- **cc2 blind round: FIRST ATTEMPT FAILED ON THE OUTAGE.** `ok: False`, response EMPTY,
+  2423.7 s across 2 dispatcher attempts. `scripts/panel_round_watchdog_2026-10-06.py`
+  re-dispatched it at 04:32:09, attempt 1 of 8, interval 180 s. Progress is in the round's
+  own `watchdog_status.json`.
+- **Blindness is VERIFIED BY MEASUREMENT on the re-dispatched sandbox**, not assumed from the
+  flag: 0 files carry any of 4 distinctive fable phrases, and fable's round directory is
+  purged from the sandbox copy of `experimental_notes/evidence/panel_records_2026-10-06`,
+  while the live tree carries it in 4 files. This matters because a dispatcher RETRY builds
+  a FRESH sandbox from the live tree at retry time, and the live tree now holds fable's
+  whole reply.
+- **DO NOT write fable's reply into the tree until cc2's blind reply is collected.**
+  Blindness has a shelf life. The phrase purge would catch a FULL RECORD, but the ordering
+  rule is the cheaper guarantee.
+- A seat's sandbox is otherwise FROZEN: 2 files created after the build are absent from it,
+  and the only thing newer inside is its own kernel deny profile. fable's claim that its
+  sandbox was "re-staged mid-dispatch" is therefore UNREPRODUCED as stated; what does happen
+  is that a RETRY builds a new sandbox (cc2's attempt 2 shows `built: true` at a new path).
+
+### IN THE TREE, UNCOMMITTED, EACH WITH AN EXECUTING GUARD
+
+1. **Severity test RESTORED** in `FindingRegistry.unverified_critical_count`, gated on
+   `severity_is_proven`. A worked proof demotes and clears the A4 block; strip the proof and
+   0 demote, severity stays 0.80, A4 stays 1.
+2. **4 facilities enabled in the simulated launcher** — burst mode, immune memory, hardened
+   gate, fold-fixes-forward. Guard: `test_fold_fixes_forward_never_touches_the_live_tree_2026-10-06.py`.
+3. **The rung cap is gone in simulation.** `routing_max_rungs=0` now MEANS exhaust; the
+   `int(getattr(cfg, ..., 2) or 2)` coercion that made 0 unreachable is removed. Dataclass
+   default stays 2 for parity with 49 real configs.
+4. **The provenance gate credits the falsifier's AUTHOR**, not the filer. 210 of 210 routed
+   entries named a different model: 100.0000%, Wilson [98.2036%, 100.0000%]; 6.6498% of all
+   3158 entries, Wilson [5.8324%, 7.5725%].
+5. **The recovery report names what ran LAST.** Verified live: it now reports
+   `study_run1b_2026-10-03` rather than `exp55_v3_control` from 23 August. 37 of 81 run
+   directories were invisible to the old picker, 45.6790%, Wilson [35.2733%, 56.4760%].
+6. **CDSFL POST**, rebuilt on his BIOS ruling: PASS or FAIL per check, halt at the first
+   failure, `--all` for a full diagnostic listing, wired INTO the launcher so it gates a
+   run. A check that RAISES is now a FAIL — the previous 3-state version mapped it to AMBER
+   and exited 0, so a broken guard booted. 18 tests.
+7. **`scripts/panel_round_watchdog_2026-10-06.py`** — re-dispatches a FREE panel round until
+   a non-empty reply lands. Reads `FREE_SEATS` from the dispatcher itself and REFUSES any
+   paid seat, because an unattended retry loop must never spend money.
+8. **`scripts/post_semantics_2026-10-06.py`** — the evidence for the POST design: the
+   crashed-check defect by execution, the check order as a topological order by z3 plus an
+   independent index scan, and the halt cost by SymPy against a NumPy simulation agreeing on
+   2000 of 2000 trials.
+
+### ★ NEEDS HIS RULING — THE LADDER STILL CANNOT CLIMB
+
+`run_simulated_experiment.py` consults the capability ladder ONLY under
+`--seat-models ladder`, and that flag DEFAULTS TO `uniform`, which answers every seat with
+1 model. This is cause 2 of 2 in the project record for the inert ladder and it was never
+fixed at the launcher; the 2026-10-05 repair was the rung-budget opt-in. **The default is
+deliberately NOT changed**, because it alters what the simulation dispatches against his Max
+subscription. POST halts on it and names it. His call: change the default, or keep uniform and
+pass `--expect-uniform-ladder` for control arms.
+
+Separately: the simulated ladder maps 6 seats onto only 2 distinct backing models
+(`opus`, `fable`), so even in `ladder` mode it discriminates between 2 behaviours, not 6.
+
+### STILL TO DO, UNSUPERVISED
+
+- Aliveness test: seats get up to 3 attempts to print `Ready!` before work is passed.
+- Star topology built INTO the confer machinery so blind-then-joint cannot be skipped.
+- UX design brief: toggles for ITC, burst and every major schema feature, each with an
+  explanation and a recommendation. Create it if no such brief exists.
+- The 8 remaining full-suite failures.
+- The `sample_target.py` leak, which did NOT reproduce in isolation and needs a full-suite run.
+- Closing sweep before the verdict, kept in parallel with the existing one until tested.
+
+### WAITING ON HIM
+
+- The seat-models default above.
+- Which of the 2 convergence repairs from 3 October.
+- The WITHHELD status question.
+- The fingerprint proposal's 4 open questions.
+- Reproducibility design.
+- Why `rs` is not reliably self-triggered after compaction — he parked this for discussion
+  once the sequence completes.
+
 ## ★ RESUME POINTER — 2026-10-03T07:49:46+01:00. SUPERSEDES EVERY POINTER BELOW.
 
 **WHERE TO RESUME: the full suite, then the commit, then the 3 simulated runs under full `cy`.**

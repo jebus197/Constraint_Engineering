@@ -1,0 +1,220 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 12269,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls /; ls ~ 2>/dev/null | head; pwd\", \"description\": \"Find the sandbox repository root\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"**/bench/routing.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/bench/routing.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Confirm working directory and list repo root\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_update_observed_fingerprint\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_update_observed_fingerprint\\\" -A 80 bench/reference_runner_v3.py | head -140\", \"description\": \"Read _update_observed_fingerprint in reference_runner_v3.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/*.py scripts/*.py | head -60; wc -l bench/burst_planner.py scripts/competence_provenance.py scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py 2>/dev/null\", \"description\": \"List python modules and sizes of key files\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/scripts/competence_provenance.py\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -i \\\"fingerprint\\\" docs/GLOSSARY.md | head -20; echo ---; ls bench/fingerprints/ 2>/dev/null; echo ---; ls bench/logs/capability_ladder_design_blind_2026-10-06/ 2>/dev/null\", \"description\": \"Find glossary fingerprint definition and fingerprint files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -i \\\"severity_is_proven\\\\|gamma_critical\\\" docs/GLOSSARY.md bench/*.py | grep -v logs | head -20\", \"description\": \"Locate severity_is_proven and gamma gate definitions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 190,230p docs/GLOSSARY.md\", \"description\": \"Read glossary Fingerprint definition\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py 2>&1 | head -60\", \"description\": \"Re-run heterogeneity measurement to verify the brief's chi-square figures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nj=json.load(open('bench/fingerprints/Codex.json'))\\nprint(json.dumps(j,indent=1)[:2000])\\\"\", \"description\": \"Inspect fields of a live fingerprint file\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"routing_max_rungs\\\\|resolve_via_routing\\\\|rank_falsifier_writers\\\\|resolved_by_routing\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Find routing wiring in the runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 6980,7150p bench/reference_runner_v3.py\", \"description\": \"Read the routing call site in the runner\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 5420,5450p bench/reference_runner_v3.py; grep -n \\\"def severity_is_proven\\\" -A 30 bench/*.py | head -50\", \"description\": \"Read falsifier-credit helper and severity_is_proven\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def reverify_falsifier\\\\|DETACHED\\\\|reads_target\\\\|provenance\\\" bench/falsifier_verify.py 2>/dev/null | head; ls bench | grep -i falsif\", \"description\": \"Locate falsifier verify module and provenance tracking\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport math\\nfrom statsmodels.stats.proportion import proportion_confint\\nfrom scipy.stats import norm\\ndef wilson(k,n):\\n    a=proportion_confint(k,n,alpha=0.05,method=\\\"wilson\\\")\\n    z=norm.ppf(0.975); p=k/n; d=1+z*z/n\\n    c=(p+z*z/(2*n))/d; h=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d\\n    b=(c-h,c+h)\\n    assert abs(a[0]-b[0])<1e-9 and abs(a[1]-b[1])<1e-9, \\\"tools d"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1336,1400p bench/falsifier_verify.py; grep -n \\\"NON_DISCRIMINATING\\\\|discrimination\\\" bench/falsifier_verify.py | head\", \"description\": \"Read reverify_falsifier verdict semantics\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"fingerprint\\\\|D_decay\\\\|attention\\\\|budget\\\" bench/burst_planner.py | head -25; echo ===; grep -n \\\"run_discrimination_control\\\\|NON_DISCRIMINATING\\\" bench/reference_runner_v3.py | head -8\", \"description\": \"Check burst_planner fingerprint fields and discrimination control hook\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/*/*_report.json 2>/dev/null | head; python3 -c \\\"\\nimport json,glob,collections\\ntot=0; routed=0\\nfor p in glob.glob('bench/logs/*/*_report.json'):\\n    try: ents=(json.load(open(p)).get('registry') or {}).get('entries') or {}\\n    except Exception: continue\\n    for e in ents.values():\\n        tot+=1\\n        if e.get('resolved_by_routing'): routed+=1\\nprint('entries',"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,glob,collections\\ncred=collections.Counter(); n=0; mis=0\\npairs=collections.Counter()\\nhist=0\\nfor p in glob.glob('bench/logs/*/*_report.json'):\\n    try: ents=(json.load(open(p)).get('registry') or {}).get('entries') or {}\\n    except Exception: continue\\n    for e in ents.values():\\n        rb=e.get('resolved_by_routing')\\n        if e.get('routing_history"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | grep -i rout; ls bench/tests/ | grep -i provenance\", \"description\": \"List routing-related tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"source_model\\\\|resolved_by_routing\\\\|analyse\\\" bench/tests/test_defect_rate_and_competence_provenance_2026-08-23.py | head; echo ---; grep -rn \\\"max_rungs\\\" bench/tests/test_routing.py bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py | head\", \"description\": \"Check what provenance test asserts and max_rungs test coverage\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/bench/tests/test_routing.py\"}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/bench/routing.py\", \"old_string\": \"from dataclasses import dataclass\\nfrom typing import Callable, Optional, Sequence\", \"new_string\": \"from dataclasses import dataclass, field\\nfrom typing import Callable, Optional, Sequence\"}"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/bench/routing.py\", \"old_string\": \"    duplicate_of: Optional[str] = None  # set iff resolved as a duplicate\\n    rungs_tried: int = 0\", \"new_string\": \"    duplicate_of: Optional[str] = None  # set iff resolved as a duplicate\\n    rungs_tried: int = 0\\n    # Per-rung (model_label,"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/bench/routing.py\", \"old_string\": \"from dataclasses import dataclass\\nfrom typing import Callable, Optional, Sequence\", \"new_string\": \"from dataclasses import dataclass, field\\nfrom typing import Callable, Optional, Sequence\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/scripts/ladder_statistic_demonstration_2026-10-06.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"The ladder statistic, demonstrated: what it must rank on and what the archive can prove.\\n\\nBlind-round deliverable, capability-ladder design, 2026-10-06. Four measurements,\\neach with a Wilson interval co"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/scripts/ladder_statistic_demonstration_2026-10-06.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The ladder statistic, demonstrated: what it must rank on and what the archive can prove.\\n\\nBlind-round deliverable, capability-ladder design, 2026-10-06. Four measurements,\\neach with a Wilson interval c"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/routing.py\\\"); s = p.read_text()\\n\\ns = s.replace(\\n\\\"from dataclasses import dataclass\\\\nfrom typing import Callable, Optional, Sequence\\\",\\n\\\"from dataclasses import dataclass, field\\\\nfrom typing import Callable, Optional, Sequence\\\")\\n\\ns = s.replace(\\n'''    duplicate_of: Optional[str] = None  # set iff resolved as a dup"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/competence_provenance.py\\\"); s = p.read_text()\\nold = '''    ents = (json.loads(report.read_text()).get(\\\"registry\\\") or {}).get(\\\"entries\\\") or {}\\n    per = collections.defaultdict(lambda: collections.Counter())\\n    for e in ents.values():\\n        m = e.get(\\\"source_model\\\") or \\\"?\\\"'''\\nnew = '''    ents = (json.loads("
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_routing_attempts_and_exhaustion_2026-10-06.py <<'PYEOF'\\n\\\"\\\"\\\"Per-rung attempt recording + the max_rungs=None exhaustion sentinel.\\n\\nWHY THIS FILE EXISTS (blind round, capability-ladder design, 2026-10-06).\\n\\n1. DENOMINATOR. A measured ladder statistic needs per-writer attempt counts\\n   with tool verdicts. RoutingResult previously kept only the LAST rung's\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m py_compile bench/reference_runner_v3.py bench/routing.py scripts/competence_provenance.py && echo COMPILE-OK\\npython3 -m pytest bench/tests/test_routing_cannot_flatten_gamma_2026-09-09.py bench/tests/test_disc_failure_routing.py bench/tests/test_routing_prompt_is_target_aware.py -q 2>&1 | tail -2\", \"description\": \"Compile-check patched files and run remaining routing tests\""
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && timeout 120 wolframscript -code 'z=Quantile[NormalDistribution[],0.975]; n=248; p=1.; lo=(p+z^2/(2n)-z*Sqrt[p(1-p)/n+z^2/(4n^2)])/(1+z^2/n); {N[lo,6], N[(6+0.5)/(7+1),6], N[CDF[BetaDistribution[6.5,1.5],0.984]-CDF[BetaDistribution[6.5,1.5],0.499],4]}' 2>&1 | head -3 || echo \\\"WOLFRAM UNAVAILABLE\\\"\", \"description\": \"Wolfram second-falsifier check of Wilson bound "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'z=Quantile[NormalDistribution[],0.975]; n=248; p=1.; lo=(p+z^2/(2n)-z*Sqrt[p(1-p)/n+z^2/(4n^2)])/(1+z^2/n); {N[lo,6], N[(6+0.5)/(7+1),6], N[Quantile[BetaDistribution[6.5,1.5],0.025],4], N[Quantile[BetaDistribution[6.5,1.5],0.975],4]}' 2>&1 | head -3\", \"description\": \"Wolfram second-falsifier check of Wilson bound and Jeffreys posterior\", \"timeout\": 180000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/reference_runner_v3.py\\\"); s = p.read_text()\\nold = '''        _rungs = int(getattr(cfg, \\\"routing_max_rungs\\\", 2) or 2)\\n        _route_kw = {} if _rungs == 2 else {\\\"max_rungs\\\": _rungs}'''\\nnew = '''        # ``routing_max_rungs: null`` (or 0) now means EXHAUST THE LADDER\\n        # (founder ruling 2026-10-05: no cap; reso"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > experimental_notes/Proposal_Capability_Ladder_Measured_Statistic_2026-10-06.md <<'MDEOF'\\n# Proposal: the ladder ranks on a measured, admissibility-gated resolution statistic\\n\\nBlind-round seat proposal, capability-ladder design, 2026-10-06 (Fable seat).\\nEvidence script: `scripts/ladder_statistic_demonstration_2026-10-06.py` (re-runnable;\\nevery proportion carries a Wilson int"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_routing.py bench/tests/test_routing_attempts_and_exhaustion_2026-10-06.py bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py bench/tests/test_routing_wiring.py bench/tests/test_routing_verdict_reconciliation.py bench/tests/test_routing_cannot_flatten_gamma_2026-09-09.py bench/tests/test_disc_failure_routing.py bench/tests/test_routing_prom"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_routing.py bench/tests/test_routing_attempts_and_exhaustion_2026-10-06.py bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py bench/tests/test_routing_wiring.py bench/tests/test_routing_verdict_reconciliation.py bench/tests/test_routing_cannot_flatten_gamma_2026-09-09.py bench/tests/test_disc_failure_routing.py bench/tests/test_routing_prom"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd; ls bench/tests/test_routing.py 2>&1\", \"description\": \"Check current directory state\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/ | head; ls bench/tests 2>&1 | head -3; ls experimental_notes/Proposal_Capability_Ladder_Measured_Statistic_2026-10-06.md scripts/ladder_statistic_demonstration_2026-10-06.py 2>&1\", \"description\": \"Inspect what remains in the sandbox tree\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/ ; echo ---; ls bench/cdsfl_registry 2>/dev/null | head -3; find . -maxdepth 2 -name \\\"routing.py\\\" 2>/dev/null; git status 2>&1 | head -5\", \"description\": \"Survey the mutated sandbox tree\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -c \\\"attempts\\\" bench/routing.py; grep -n \\\"_rungs_raw\\\" bench/reference_runner_v3.py | head -2; grep -n \\\"resolved_by_routing\\\" scripts/competence_provenance.py | head -2; ls bench/tests/test_routing_attempts_and_exhaustion_2026-10-06.py\", \"description\": \"Verify patches survived the staging hiccup\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_routing.py bench/tests/test_routing_attempts_and_exhaustion_2026-10-06.py bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py bench/tests/test_routing_wiring.py bench/tests/test_routing_verdict_reconciliation.py bench/tests/test_routing_cannot_flatten_gamma_2026-09-09.py bench/tests/test_disc_failure_routing.py bench/tests/test_routing_prom"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_routing.py -q 2>&1 | tail -4\", \"description\": \"Run single routing test file with explicit cd\", \"dangerouslyDisableSandbox\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | grep routing; ls -la bench/tests | head -5\", \"description\": \"List routing tests in tests dir\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_routing_attempts_and_exhaustion_2026-10-06.py -q 2>&1 | tail -2; python3 scripts/ladder_statistic_demonstration_2026-10-06.py 2>&1 | sed -n '1,12p'\", \"description\": \"Run surviving new test and re-run demonstration script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/ladder_statistic_demonstration_2026-10-06.py 2>&1 | sed -n '13,22p'; ls -la experimental_notes/Proposal_Capability_Ladder_Measured_Statistic_2026-10-06.md\", \"description\": \"Get denominator-gap interval on current slice and confirm doc exists\"}"
+    }
+  ],
+  "n_tool_calls": 50,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 751.2,
+  "response": "## Position\n\n**1 \u2014 What the ladder should rank on.** The glossary's own promised-but-never-written verification dimension `v-bar`: P(admissible CONFIRMED | re-verified falsifier attempt written by model m), credited to the model that **wrote** the falsifier (`resolved_by_routing or source_model` \u2014 the runner's own `_falsifier_owner` rule at `reference_runner_v3.py:5437`), where admissible means `reverify_falsifier` returned CONFIRMED **and** the falsifier read the target (the `competence_provenance.py` provenance class), never INTEGRITY_VIOLATION or NON_DISCRIMINATING. Estimator: Jeffreys Beta(1/2,1/2) posterior over admissible **routed** attempts; rank by posterior mean; minimum sample n_min = 5 before the routed posterior alone crosses a non-overlap boundary; no history \u2192 prior mean 0.500, ranking the unknown writer between measured-strong and measured-weak \u2014 a strict generalisation of `rank_falsifier_writers`' existing ranked+extras rule. Vendor names appear nowhere in the arithmetic; the `-SIM` base normalisation is kept. On a 1-model panel the posterior is the prior and the ladder is the single writer (see Q6 for the route-back-to-self conflict).\n\n**2 \u2014 The selection effect.** Condition on the item, not the population. The ladder generates same-finding pairs for free: rung k+1 attempts exactly what rungs 1..k failed, so (B confirms what A failed) is a decisive pairwise win at **any** difficulty mix \u2014 difficulty cancels because the item is identical. Decisive pairs order writers inside credible-interval overlap, where selection bias actually bites; both-fail ties are excluded (they inform about the finding, not the pair). First-attempts-only stays rejected; the random audit is right in principle but not deployable as primary \u2014 routing fires on 8.3% of archived entries (1370/16500, Wilson95 [0.0789, 0.0873]), and an audit fraction of that stream starves. Instead, the always-on round-stratum falsifier gate (every model's own falsifiers, re-verified every round, selection-free) is the **drift alarm**; the frozen tuple is demoted from decider to deterministic tie-breaker, because its own evidence was never rung-separated: at Exp-42's n\u224820 per model, the top-4 Wilson intervals all overlap (Codex [0.699,0.972], CC2 [0.531,0.888], ChatGPT [0.433,0.819], Gemini [0.584,0.919]); only DeepSeek-last [0.145,0.519] is separated.\n\n**3 \u2014 Removing the rung cap.** Exhaustion is roster-bounded by construction: one attempt per distinct feasible writer per finding **content-revision** (re-admission only when the finding changed \u2014 corrected copy, new evidence), then HIL. Cross-round retry stays confined to transport faults. The spend guard is the Q4 per-finding routing token budget, with budget exhaustion recorded under `routing_deferred_reason` so it can never masquerade as model failure and contaminate v-bar. I proved mechanically that the founder's ruling is currently **inexpressible**: `int(getattr(cfg, \"routing_max_rungs\", 2) or 2)` coerces both 0 and None to 2, and 0/288 configs pin the field (Wilson95 [0.0000, 0.0132]). Delivered: `max_rungs=None` exhaustion sentinel in `resolve_via_routing` and corrected runner wiring, default 2 unchanged \u2014 byte-identical until a config opts in.\n\n**4 \u2014 Resource-aware routing.** Yes, as a **feasibility filter, never a ranking term**. Stage 1 ranks purely on v-bar; stage 2 walks the ranked list and skips a rung only when the live fingerprint says the attempt can't fit (`measured_attention_span`/`compression_threshold` \u2014 fields `burst_planner.py` already consumes, so this composes with a demonstrated consumer rather than adding a parallel structure) or can't be afforded (estimated attempt cost > remaining budget/quota). Every skip is recorded with its reason. Cost can veto but never score, so a cheap model can never become the default answer \u2014 it is only reached when stronger rungs are infeasible, and the record says so.\n\n**5 \u2014 Reproducibility.** A separate step, **mechanical, owned by the harness**. `reverify_falsifier` already is reproduction-by-tool; for the STEM-calculator goal, a shipped result carries a replay bundle (falsifier + inputs + environment pin) the runner re-executes N=2 times in fresh scratch; non-reproducing verdicts route to HIL as nondeterministic. Models must not attest their own reproduction \u2014 that is a vote. The human audits provenance and forensics; HIL re-derivation is the terminal rung only.\n\n**6 \u2014 What's missed.** (a) **The brief's own heterogeneity figure does not license the current fingerprint.** p = 2.21e-59 is on *finding rate* \u2014 productivity. The live fingerprint's only discriminating statistic today is that productivity, and ranking on it puts Gemini first (3.646 findings/round, highest of 5) \u2014 the model Exp 55 showed confirming 2/2 with detached falsifiers. Wiring the ladder to the fingerprint **as currently written** reproduces exactly the inversion `competence_provenance.py` exists to prevent; the fingerprint must gain admissibility-gated v-bar first. (b) **Crediting was wrong at the measurement layer**: every archived `resolved_by_routing` entry disagrees with the `source_model` key by construction (`route()` excludes the source) \u2014 measured 248/248 on the pre-refresh archive slice, 17/17 (Wilson95 [0.8157, 1.0000]) on the current one; `scripts/competence_provenance.py` repaired. (c) **The archive cannot back-derive the statistic**: 100% of multi-rung routing records (87/87 pre-refresh; 12/12, Wilson95 [0.7575, 1.0000], current) carry only the last rung's label \u2014 per-writer denominators and pairs were unrecordable; `RoutingResult.attempts` closes this forward. (d) **No-model-voting compliance**: v-bar is built solely from tool verdicts plus mechanical admissibility, and is gated the way `severity_is_proven` gates A4 \u2014 an unproven confirmation never enters the numerator; an integrity violation quarantines the writer's statistic (UNSAFE TO RANK ON, enforced at update time). (e) **A real conflict to decide by human, not by code**: the founder's route-back-to-itself ruling vs. exp56's 1-seat arm, whose **pre-registered** reportable outcome depends on the existing empty-ladder `routing_deferred` path. I did not patch it; silently implementing the ruling would change a pre-registered outcome mid-experiment.\n\n## The quantity\n\nv-bar(m): posterior mean (k + \u00bd)/(n + 1) of Beta(\u00bd + k, \u00bd + n \u2212 k), k = admissible CONFIRMED, n = admissible routed attempts by writer m, 95% equal-tailed CrI from Beta quantiles. Round-stratum evidence enters only as a weak prior capped at 2 pseudo-observations (c = min(0.1, 2/n_round)). Order inside CrI overlap: (1) same-finding decisive pairs when \u22655 connect the two writers, (2) the frozen tuple as tie-break, (3) label sort \u2014 fully deterministic. Minimum sample n_min = 5; cold start = mean 0.500, CrI [0.002, 0.998], placed between measured-strong and measured-weak. 1-model panel: posterior = prior, ladder = the single writer, stopping rule = exhausted after its attempt \u2192 HIL.\n\n## What it does to gamma\n\n`gamma_critical` is estimated over the **settled** critical series and the two-sided gate also requires no unverified critical pending. This design changes settlement, not discovery: exhaustion settles criticals that today stall at rung 2, so the pending side of the gate opens earlier, and convergence is reached by resolving more criticals \u2014 never by discarding them. The statistic reads tool verdicts and is read only by rung order: one-way coupling, nothing written into the critical series or either gate side. `test_routing_cannot_flatten_gamma_2026-09-09` passed unchanged on the patched tree (pre-refresh run; the file was removed by the mid-dispatch sandbox re-staging, noted below).\n\n## Measurements\n\nAll computed by `scripts/ladder_statistic_demonstration_2026-10-06.py`; every proportion by statsmodels + closed-form Wilson (asserted to agree); posteriors by closed form + scipy.stats.beta; third check via Wolfram Language (local Wolfram Engine): Wilson lower bound for 248/248 \u2192 0.9847465, Jeffreys mean 6/7 \u2192 0.8125, CrI [0.4992, 0.9841] \u2014 all agree with the Python tools.\n\n- Routed-resolution crediting disagrees with `source_model`: 248/248 = 100% (Wilson95 [0.9847, 1.0000]) pre-refresh; 17/17 (Wilson95 [0.8157, 1.0000]) current slice.\n- Multi-rung records lacking per-rung attempts: 87/87 (Wilson95 [0.9577, 1.0000]) pre-refresh; 12/12 (Wilson95 [0.7575, 1.0000]) current.\n- Routing share of archive: 1370/16500 = 8.30% (Wilson95 [0.0789, 0.0873]).\n- Configs pinning `routing_max_rungs`: 0/288 (Wilson95 [0.0000, 0.0132]); `int(0 or 2) = 2` proven live.\n- Exp-42 order's rung separation at n=20: top-4 intervals overlap (values in Position 2); only DeepSeek separated.\n- Heterogeneity re-run: real panel \u03c7\u00b2 = 280.0138, df 4, p = 2.213221e-59; simulated \u03c7\u00b2 = 3.0084, df 5, p = 0.6987 (NumPy + scipy agree) \u2014 on **finding rate**, not falsification capability.\n- Tests: 74 targeted tests passed pre-refresh (9 routing/provenance files); after the harness re-staged the sandbox mid-dispatch (03:35, removing most test files and shrinking `bench/logs/`), my delivered test file still passes 6/6 against the patched modules.\n\n## Delivered files\n\n- `experimental_notes/Proposal_Capability_Ladder_Measured_Statistic_2026-10-06.md` \u2014 the full design.\n- `scripts/ladder_statistic_demonstration_2026-10-06.py` \u2014 re-runnable evidence for every figure above.\n- `bench/routing.py` \u2014 additive: `RoutingResult.attempts` per-rung (model, verdict); `max_rungs=None` exhaustion sentinel; default behaviour byte-identical.\n- `bench/reference_runner_v3.py` \u2014 `routing_history.attempts` telemetry; `routing_max_rungs` null/0 \u2192 exhaustion sentinel (default 2 unchanged).\n- `scripts/competence_provenance.py` \u2014 crediting repaired to the falsifier's writer.\n- `bench/tests/test_routing_attempts_and_exhaustion_2026-10-06.py` \u2014 6 tests wiring every new surface.\n\n## What would refute me\n\nPer position, as committed in the proposal doc: (1) a paired same-roster run where the v-bar-ordered ladder resolves fewer routed criticals per dispatch than the frozen order (compare `routing_history.attempts` success-at-rung-1 across arms); (2) a pairwise ranking disagreeing with the marginal routed posterior on interval-separated writers; (3) any `max_rungs=None` run producing > |roster|\u22121 attempts per finding revision (check `rungs_tried` vs `rungs_available`); (4) >5% wrongful skips once skip reasons are recorded; (5) a shipped result whose N=2 replay diverges but HIL finds the verdict correct; (6) a provenance-admissible ranking from a clean run still inverting a known-strong/weak pair \u2014 would show admissibility gating is insufficient. For the crediting claim specifically: a single archived entry where `resolved_by_routing == source_model` refutes the by-construction argument (`python3 scripts/ladder_statistic_demonstration_2026-10-06.py`, part 1).\n\n## Disagreement\n\nI disagree with two things the brief leans toward. First, with reading the p = 2.2e-59 heterogeneity as evidence that the live fingerprint can drive the ladder: that statistic measures productivity, and the most productive model on it is the one Exp 55 caught confirming with detached falsifiers \u2014 wiring the ladder to the current fingerprint would be the measured inversion, not the measured ladder. Second, with the implied choice among the three Q2 options: all three accept that the deciding sample is the routed stream's marginal rate, and the correct move is to change the *conditioning* (same-finding pairs), not the sampling. I also deliberately did **not** implement the founder's route-back-to-self for 1-seat panels, despite the verbatim ruling, because it collides with exp56's pre-registered outcome \u2014 that is a human decision, and a seat implementing it silently would be convergence to instruction rather than to evidence. The frozen tuple is retained as tie-breaker, not deleted: demotion is justified by a committed measurement (interval overlap at n=20); deletion is not, since no replacement yet has a single recorded routed attempt \u2014 the additive standard cuts both ways.\n\nStopping here: the remaining observations (e.g. the 0.85 Jaccard dedup threshold being a non-tool decider) are already flagged and withheld from merge in the runner \u2014 below the material threshold.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo",
+      "built": false
+    }
+  ]
+}

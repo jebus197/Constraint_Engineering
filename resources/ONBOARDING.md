@@ -167,7 +167,7 @@ Closure of residual (d) from the 22 April 2026 founder oversight Q&A. Every runn
 | §17 Feedback Channel directive | `bench/dm/_feedback.py` + `bench/directives/universal/cdsfl_operational.md` §17 | Exp 39 (2026-04-13) |
 | §18 Divergence Channel directive | `bench/dm/_divergence.py` + `bench/directives/universal/cdsfl_operational.md` §18 | Exp 39 (2026-04-13) |
 | F1 SymPy sandbox allow-list | `bench/immune_agents.py:977` | 2026-04-21 |
-| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v3.py:13048` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
+| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v3.py:13052` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
 | B-Cell mathematics specialist | dispatch via `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `bench/cdsfl_registry/domains/immune/mathematics.toml` | Exp 36 era |
 | B-Cell statistics specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/statistics.toml` | Exp 36 era |
 | B-Cell biology specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/biology.toml` | Exp 36 era |
@@ -413,7 +413,7 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
   OpenAlex fallback + Unpaywall→Sci-Hub full-text, cite-original + Semantic Scholar key wired from
   `.env`, 95.7s→1.8s); `pytest.ini` global timeout + network marker; stale finding-id test fixed.
   **Adversarially-verified shadow-mode survey** mapped which subsystems are live vs decoration.
-  **STILL OPEN (program plan `experimental_notes/CDSFL_Remediation_Program_2026-06-09.md`):**
+  **STILL OPEN (programme plan `experimental_notes/CDSFL_Remediation_Program_2026-06-09.md`):**
   ouroboros loop-close (papers→models), Stage-6 calibrator into the live equation, severity
   calibration (never built), directive-pruning panel, macrophage/load-balancer promote-or-retire,
   dm consolidation — each with an integration-test gate. Lesson: unit-green ≠ integration-live.

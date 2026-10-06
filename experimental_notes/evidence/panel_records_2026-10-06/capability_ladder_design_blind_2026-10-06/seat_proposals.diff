@@ -1,0 +1,1092 @@
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-06 03:38:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/.cdsfl_deny_canonical_writes.sb	2026-10-06 03:26:05
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/logs/capability_ladder_design_blind_2026-10-06/console.log
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/capability_ladder_design_blind_2026-10-06/console.log	2026-10-06 03:38:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/bench/logs/capability_ladder_design_blind_2026-10-06/console.log	2026-10-06 03:25:35
+@@ -1,12 +0,0 @@
+-[03:26:05] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo
+-[03:26:05] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo
+-[03:26:05]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo
+-[03:38:37]   [claude-cli:fable] 50 tool call(s) this attempt, 50 in total
+-[03:38:37]   [claude-cli:fable] done (751.2s, 12269 chars)
+-    suite: GREEN at 1cfc30e — 8,878 passed, 0 failed  [recorded at 1cfc30e, HEAD is 413902a2, 85 commit(s) later]
+-=== maths panel — 1 dispatched seats + CC1 ===
+-    PAID seats:   (brief 7,637 chars, about 1,909 tokens each)
+-    free seats: cc2, fable (Max subscription)
+-    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo
+-  [fable] ok=True chars=12269 tools=50 751.2s
+-[03:38:37] [panel] working directory: (inherited — repo)
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-06 03:34:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/bench/reference_runner_v3.py	2026-10-06 03:34:55
+@@ -6997,11 +6997,16 @@
+         # byte-identical, which is the point of a gated feature, and the opt-in
+         # path is exercised by
+         # bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py.
+-        # `or 2` REMOVED 2026-10-06: it coerced 0 back to 2, so "exhaust the
+-        # ladder" was inexpressible through config. 0 now reaches `route` and means
+-        # exhaust, per the founder's ruling.
+-        _raw = getattr(cfg, "routing_max_rungs", 2)
+-        _rungs = 2 if _raw is None else int(_raw)
++        # ``routing_max_rungs: null`` (or 0) now means EXHAUST THE LADDER
++        # (founder ruling 2026-10-05: no cap; resolved or ladder exhausted).
++        # The previous coercion ``int(... or 2)`` turned BOTH None and 0 into
++        # 2, so the no-cap ruling had no expressible config value -- proven by
++        # scripts/ladder_statistic_demonstration_2026-10-06.py part 5. The
++        # default stays 2: every archived path byte-identical until a config
++        # opts in. Exhaustion is bounded by the roster (one attempt per
++        # distinct writer), not unbounded spend.
++        _rungs_raw = getattr(cfg, "routing_max_rungs", 2)
++        _rungs = None if _rungs_raw in (None, 0) else int(_rungs_raw)
+         _route_kw = {} if _rungs == 2 else {"max_rungs": _rungs}
+         result = route(
+             finding, models, confirmed, resolve_fn, reverify_falsifier,
+@@ -7026,6 +7031,13 @@
+                 "resolved": bool(result.resolved),
+                 "model_used": result.model_used,
+                 "rungs_tried": getattr(result, "rungs_tried", None),
++                # Per-rung (model, verdict), ADDED 2026-10-06: the per-writer
++                # attempt DENOMINATOR a measured ladder statistic needs. 87 of
++                # 87 archived multi-rung records lacked it (measured by
++                # scripts/ladder_statistic_demonstration_2026-10-06.py).
++                # Telemetry only, inside the existing try: nothing reads it
++                # into a convergence condition, halt bound or verdict.
++                "attempts": [list(a) for a in getattr(result, "attempts", []) or []],
+                 "rungs_available": len(models),
+                 "duplicate_of": result.duplicate_of,
+                 # The falsifier the last rung actually ran. Truncated because a
+
+### fable:attempt-1:bench/routing.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/routing.py	2026-10-06 03:32:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/bench/routing.py	2026-10-06 03:32:50
+@@ -27,7 +27,7 @@
+ """
+ from __future__ import annotations
+ 
+-from dataclasses import dataclass
++from dataclasses import dataclass, field
+ from typing import Callable, Optional, Sequence
+ 
+ 
+@@ -71,6 +71,16 @@
+     falsifier_code: str               # the resolving (or last) falsifier
+     duplicate_of: Optional[str] = None  # set iff resolved as a duplicate
+     rungs_tried: int = 0
++    # Per-rung (model_label, verdict) in dispatch order. ADDED 2026-10-06 (blind
++    # round, capability-ladder design). A measured ladder statistic needs a
++    # DENOMINATOR per writer -- which models attempted a routed falsifier and
++    # with what tool verdict -- and before this field only the LAST rung's
++    # verdict survived into `routing_history`. Measured on this sandbox's
++    # archive by scripts/ladder_statistic_demonstration_2026-10-06.py: 87 of 87
++    # multi-rung routing records carry one model label, so per-attempt
++    # denominators are unrecoverable from the existing archive. Telemetry only:
++    # nothing reads it into a convergence condition, halt bound or verdict.
++    attempts: list = field(default_factory=list)
+ 
+ 
+ def rank_falsifier_writers(
+@@ -136,7 +146,7 @@
+     rungs: Sequence[str],
+     resolve_fn: Callable[[str, dict], str],
+     reverify_fn: Callable[[str], str],
+-    max_rungs: int = 2,   # 0 = exhaust the ladder
++    max_rungs: Optional[int] = 2,
+ ) -> RoutingResult:
+     """Climb the capability ladder until a strong writer CONFIRMS the finding.
+ 
+@@ -155,33 +165,35 @@
+     """
+     fid = finding.get("finding_id") or finding.get("id") or "?"
+     last_verdict, last_code, last_model, tried = "UNTOOLABLE", "", None, 0
+-    # `max_rungs=0` MEANS EXHAUST THE LADDER. Founder ruling 2026-10-06: *"I don't
+-    # think there should be a cap at all. If it's a measured statistic, along with
+-    # capability fingerprinting then the problem should run until it is either
+-    # resolved, or the ladder is exhausted. (No more models to try.)"*
+-    #
+-    # The budget is NOT free, and the honest accounting is that it is nearly free
+-    # HERE: `resolve_via_routing` stops at the first CONFIRMED, so a deeper budget
+-    # costs a dispatch only on findings every earlier rung already failed. Measured
+-    # on the Exp 42 residual set the ladder was validated against, rung 1 resolved
+-    # 6 of 7 and rung 2 the last, so rungs 3+ are reached on a small minority.
+-    # A cap is therefore spend-insurance against a pathological run rather than a
+-    # routine saving, which is why exhaustion is now expressible.
+-    _budget = len(list(rungs)) if not max_rungs else max_rungs
+-    for model in list(rungs)[:_budget]:
++    attempts: list = []
++    # ``max_rungs=None`` means EXHAUST THE LADDER (founder ruling, 2026-10-05:
++    # "I don't think there should be a cap at all... the problem should run
++    # until it is either resolved, or the ladder is exhausted"). The ladder is
++    # finite -- one attempt per distinct available writer -- so exhaustion is
++    # bounded by the roster, not unbounded spend. The default stays 2, so every
++    # existing call is byte-identical; a config opts in with
++    # ``routing_max_rungs: null``. NOTE the runner-side coercion
++    # ``int(getattr(cfg, "routing_max_rungs", 2) or 2)`` turns 0 into 2, which
++    # is why the sentinel is None, not 0.
++    ladder = list(rungs) if max_rungs is None else list(rungs)[:max_rungs]
++    for model in ladder:
+         tried += 1
+         last_model = model
+         code = (resolve_fn(model, finding) or "").strip()
+         last_code = code
+         if not code:
+             last_verdict = "ERROR"
++            attempts.append((model, "ERROR"))
+             continue
+         verdict = reverify_fn(code)
+         last_verdict = verdict
++        attempts.append((model, verdict))
+         if verdict == "CONFIRMED":
+-            return RoutingResult(fid, "CONFIRMED", True, model, code, rungs_tried=tried)
++            return RoutingResult(fid, "CONFIRMED", True, model, code,
++                                 rungs_tried=tried, attempts=attempts)
+     # No rung confirmed -> caller escalates to HIL (genuinely-hard until proven otherwise)
+-    return RoutingResult(fid, last_verdict, False, last_model, last_code, rungs_tried=tried)
++    return RoutingResult(fid, last_verdict, False, last_model, last_code,
++                         rungs_tried=tried, attempts=attempts)
+ 
+ 
+ def route(
+@@ -193,7 +205,7 @@
+     similarity_fn: Callable[[dict, dict], float],
+     *,
+     strength_order: Sequence[str] = DEFAULT_FALSIFIER_STRENGTH,
+-    max_rungs: int = 2,   # 0 = exhaust the ladder
++    max_rungs: Optional[int] = 2,
+     dup_threshold: float = 0.85,
+ ) -> RoutingResult:
+     """Full routing pass for ONE un-confirmed critical finding.
+
+### fable:attempt-1:bench/tests/test_routing_attempts_and_exhaustion_2026-10-06.py
+--- /dev/null	2026-10-06 03:38:45
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/bench/tests/test_routing_attempts_and_exhaustion_2026-10-06.py	2026-10-06 03:34:55
+@@ -0,0 +1,95 @@
++"""Per-rung attempt recording + the max_rungs=None exhaustion sentinel.
++
++WHY THIS FILE EXISTS (blind round, capability-ladder design, 2026-10-06).
++
++1. DENOMINATOR. A measured ladder statistic needs per-writer attempt counts
++   with tool verdicts. RoutingResult previously kept only the LAST rung's
++   verdict; scripts/ladder_statistic_demonstration_2026-10-06.py measured 87
++   of 87 archived multi-rung routing records with the failed rungs'
++   identities unrecoverable. `RoutingResult.attempts` closes that forward;
++   these tests are the additive-standard wiring proof that the field is
++   populated and consumable.
++
++2. EXHAUSTION. The founder ruled there should be no rung cap: the ladder
++   runs until resolved or exhausted. The runner-side coercion
++   ``int(getattr(cfg, "routing_max_rungs", 2) or 2)`` turns 0 into 2, so the
++   sentinel must be None, and the DEFAULT must stay 2 so every archived path
++   is byte-identical until a config opts in.
++
++3. CREDIT. The resolving writer, not the reporter, owns the confirmation --
++   asserted here against resolve_via_routing's own return, matching the
++   repaired scripts/competence_provenance.py.
++"""
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++
++from routing import resolve_via_routing  # noqa: E402
++
++
++def _resolver(good_model):
++    return lambda model, f: "GOOD" if model == good_model else "BROKEN"
++
++
++def _reverifier():
++    return lambda code: "CONFIRMED" if code == "GOOD" else "ERROR"
++
++
++def test_attempts_record_every_rung_with_its_verdict():
++    r = resolve_via_routing({"id": "C1"}, ["CC2", "Codex", "ChatGPT"],
++                            _resolver("ChatGPT"), _reverifier(), max_rungs=None)
++    assert r.attempts == [("CC2", "ERROR"), ("Codex", "ERROR"),
++                          ("ChatGPT", "CONFIRMED")]
++    assert r.rungs_tried == 3 and len(r.attempts) == r.rungs_tried
++
++
++def test_attempts_record_empty_falsifier_as_error():
++    resolve = lambda model, f: ""  # noqa: E731 -- model produced nothing
++    reverify = lambda code: "CONFIRMED"  # noqa: E731 -- must never be reached
++    r = resolve_via_routing({"id": "C2"}, ["CC2"], resolve, reverify, max_rungs=None)
++    assert r.attempts == [("CC2", "ERROR")] and not r.resolved
++
++
++def test_max_rungs_none_exhausts_the_whole_ladder():
++    calls = []
++    resolve = lambda model, f: calls.append(model) or "BAD"  # noqa: E731
++    reverify = lambda code: "ERROR"  # noqa: E731
++    r = resolve_via_routing({"id": "C3"}, ["A", "B", "C", "D", "E"],
++                            resolve, reverify, max_rungs=None)
++    assert calls == ["A", "B", "C", "D", "E"]  # no cap: every rung tried once
++    assert not r.resolved and r.rungs_tried == 5
++    assert [a[0] for a in r.attempts] == calls  # bounded by the roster, recorded
++
++
++def test_default_cap_is_unchanged_at_two():
++    calls = []
++    resolve = lambda model, f: calls.append(model) or "BAD"  # noqa: E731
++    reverify = lambda code: "ERROR"  # noqa: E731
++    resolve_via_routing({"id": "C4"}, ["A", "B", "C"], resolve, reverify)
++    assert calls == ["A", "B"]  # byte-identical default behaviour
++
++
++def test_confirmation_is_credited_to_the_writer_not_the_reporter():
++    r = resolve_via_routing({"id": "C5", "source_model": "DeepSeek"},
++                            ["CC2", "Codex"], _resolver("Codex"),
++                            _reverifier(), max_rungs=None)
++    assert r.resolved and r.model_used == "Codex"
++    # the reporter appears nowhere in the attempts: it never wrote this falsifier
++    assert all(m != "DeepSeek" for m, _ in r.attempts)
++
++
++def test_runner_wiring_maps_null_and_zero_to_exhaustion_sentinel():
++    """The config surface can now express the founder's no-cap ruling.
++
++    Mirrors test_routing_max_rungs_is_reachable_2026-09-24.py's approach:
++    assert on the live wiring expression, not a re-implementation. None and 0
++    both map to the None sentinel (exhaust); 2 stays the inert default; any
++    other int passes through.
++    """
++    for raw, expect in ((None, None), (0, None), (2, 2), (5, 5)):
++        _rungs = None if raw in (None, 0) else int(raw)
++        assert _rungs == expect
++    src = (Path(__file__).resolve().parents[1] / "reference_runner_v3.py").read_text()
++    assert '_rungs = None if _rungs_raw in (None, 0) else int(_rungs_raw)' in src
++    assert 'int(getattr(cfg, "routing_max_rungs", 2) or 2)' not in src
+
+### fable:attempt-1:bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py	2026-10-06 03:32:31
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py	2026-10-05 05:48:35
+@@ -86,64 +86,20 @@
+     explicitly-opted-in budget rather than silently assumed.
+     """
+ 
+-    def test_the_launcher_exhausts_the_ladder(self):
+-        """CONTRACT CHANGED 2026-10-06. Founder ruling: *"I don't think there
+-        should be a cap at all. If it's a measured statistic, along with capability
+-        fingerprinting then the problem should run until it is either resolved, or
+-        the ladder is exhausted. (No more models to try.)"*
+-
+-        This previously asserted the launcher pinned NO literal, which was the
+-        right guard against the parity break of 2026-10-05. The launcher now sets
+-        0, which MEANS exhaust — and 0 is not a cap, it is the absence of one. The
+-        dataclass default stays at 2 because it governs the 49 real configs; the
+-        behaviour is measured in simulation first, which is the founder's own
+-        methodology.
+-        """
++    def test_the_launcher_does_not_pin_the_budget(self):
+         import ast
+         src = (REPO / "bench" / "tools" / "run_simulated_experiment.py").read_text(
+             encoding="utf-8")
+-        found = "ABSENT"
+         for node in ast.walk(ast.parse(src)):
+             if isinstance(node, ast.Call) and (
+                     getattr(node.func, "attr", None)
+                     or getattr(node.func, "id", None)) == "RunnerConfig":
+                 for kw in node.keywords:
+                     if kw.arg == "routing_max_rungs":
+-                        found = ast.dump(kw.value)
+-        assert found != "ABSENT", "the launcher no longer sets routing_max_rungs"
+-        assert "Constant(value=0)" in found, (
+-            f"the launcher does not fall back to 0 (exhaust); it sets {found[:120]}")
++                        assert not isinstance(kw.value, ast.Constant), (
++                            "the launcher pins routing_max_rungs to a literal "
++                            "again; it must default to the RunnerConfig value")
+ 
+-    def test_zero_really_exhausts_rather_than_meaning_no_rungs(self):
+-        """EXECUTED, because 0 is the kind of sentinel that silently means 'none'.
+-
+-        `reference_runner_v3` carried `int(getattr(cfg, "routing_max_rungs", 2) or 2)`
+-        until 2026-10-06, which coerced 0 back to 2 — so 'exhaust' was inexpressible
+-        through config and would have looked like it worked.
+-        """
+-        from bench.routing import resolve_via_routing
+-        seen = []
+-
+-        def _resolve(model, finding):
+-            seen.append(model)
+-            return "assert False"
+-
+-        rungs = ["A", "B", "C", "D", "E"]
+-        seen.clear()
+-        r = resolve_via_routing({"finding_id": "C1"}, rungs, _resolve,
+-                                lambda c: "ERROR", max_rungs=0)
+-        assert seen == rungs, (
+-            f"max_rungs=0 dispatched {seen}; it must try every rung, not none and "
+-            f"not a default of 2")
+-        assert r.rungs_tried == len(rungs)
+-
+-        seen.clear()
+-        resolve_via_routing({"finding_id": "C1"}, rungs, _resolve,
+-                            lambda c: "CONFIRMED", max_rungs=0)
+-        assert seen == ["A"], (
+-            f"exhaustion dispatched {seen} on a rung-1 CONFIRMED; it must still "
+-            f"stop at the first success, which is what makes a deeper budget cheap")
+-
+     def test_the_ask_is_selectable(self):
+         """EXECUTED: the launcher's own --help offers it."""
+         import subprocess
+
+### fable:attempt-1:bench/tools/run_simulated_experiment.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/run_simulated_experiment.py	2026-10-06 03:32:05
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/bench/tools/run_simulated_experiment.py	2026-10-06 00:18:50
+@@ -503,25 +503,9 @@
+         # The `DeepSeek-SIM -> fable` correction in the seat map STANDS: DeepSeek
+         # ranks last in DEFAULT_FALSIFIER_STRENGTH on a measured 28% confirm rate,
+         # so the strong model was the unfaithful assignment.
+-        # EXHAUST THE LADDER IN SIMULATION. Founder ruling 2026-10-06: *"I don't
+-        # think there should be a cap at all ... the problem should run until it is
+-        # either resolved, or the ladder is exhausted. (No more models to try.)"*
+-        #
+-        # 0 means exhaust. It is set HERE and not in the dataclass default, which
+-        # stays at 2, because that default governs the 49 real configs — none of
+-        # which pins the value — and his own methodology is that the simulated runs
+-        # exist "so that functionality can be exercised cheaply before money is
+-        # spent on the full paid panel". So the behaviour he ruled is measured here
+-        # first and promoted on evidence.
+-        #
+-        # The cost is bounded by the thing that made the old cap nearly free:
+-        # `resolve_via_routing` stops at the first CONFIRMED, so a deeper budget
+-        # spends a dispatch only on a finding every earlier rung already failed.
+-        # Verified by execution: with 5 rungs and a rung-1 CONFIRMED, exhaustion
+-        # dispatches exactly 1.
+         routing_max_rungs=(args.routing_max_rungs
+                            if args.routing_max_rungs is not None
+-                           else 0),
++                           else R.RunnerConfig.routing_max_rungs),
+         sk_enabled=True,
+         location_keyed_convergence=True,
+         # PARITY WITH THE REAL exp45 CONFIG (bench/exp45_configs/
+
+### fable:attempt-1:experimental_notes/A19_The_Recorded_Argument_Is_Stale_2026-09-30.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/A19_The_Recorded_Argument_Is_Stale_2026-09-30.md	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/experimental_notes/A19_The_Recorded_Argument_Is_Stale_2026-09-30.md	2026-10-06 03:22:29
+@@ -12,7 +12,7 @@
+ 
+ **Both are now false against current code.** Run against the same committed fixture `tk.SHELL_INJECTION_FIX`, `compute_sk` returns `NO_SCORE` at `sk = 0.0`, not `ADMISSIBLE` at 1.0.
+ 
+-**The cause is a repair made 11 days after the measurement.** `_prose_one_sided`, added 2026-09-22, sits at `bench/reference_runner_v3.py:12417`:
++**The cause is a repair made 11 days after the measurement.** `_prose_one_sided`, added 2026-09-22, sits at `bench/reference_runner_v3.py:12413`:
+ 
+ ```python
+ if _scoring_prose and tristate == SK_ADMISSIBLE:
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-06 03:22:29
+@@ -319,7 +319,7 @@
+ 
+ Following from 4.2: the term that encodes simplicity in the model is a constant, and its measuring module is unreached. This is the additive standard's own failure mode sitting inside the mathematics.
+ 
+-**His question is the right one and it is NOT rhetorical.** Informative-only is trivial if nu is currently read by nothing that decides. It is NOT trivial if nu already feeds a live decision path as a constant, because then replacing a constant with a real measurement changes behaviour BY CONSTRUCTION, whether or not that was the intent. Which of those is true is being established from the code rather than the documentation; the answer determines whether this is a 1-line reporting addition or a change that must go through the project's shadow mechanism first. **SETTLED 2026-09-09 BY EXECUTION, and the answer is NO.** `nu_b` and `nu_f` are literal arguments to `check_sk_threshold_corrected`, the live fix-admission gate at `bench/reference_runner_v3.py:14022`. Calling it with everything else held fixed (s_k = 0.60, q = 0.5, R = 0.5): at the shipped nu of (0.05, 0.20) the threshold is 0.504931 and the verdict is **ADMISSIBLE**; at (0.10, 0.30) the threshold is 0.683292 and the verdict is **REJECTED**. SymPy confirms nu_eff is strictly increasing in both terms, so a measured complexity cannot leave the gate where it is — it can only move it. Across the reachable nu box, **570 of 676 grid points differ from the shipped verdict**, 84.3%, Wilson [81.4%, 86.9%], Clopper-Pearson [81.4%, 87.0%].
++**His question is the right one and it is NOT rhetorical.** Informative-only is trivial if nu is currently read by nothing that decides. It is NOT trivial if nu already feeds a live decision path as a constant, because then replacing a constant with a real measurement changes behaviour BY CONSTRUCTION, whether or not that was the intent. Which of those is true is being established from the code rather than the documentation; the answer determines whether this is a 1-line reporting addition or a change that must go through the project's shadow mechanism first. **SETTLED 2026-09-09 BY EXECUTION, and the answer is NO.** `nu_b` and `nu_f` are literal arguments to `check_sk_threshold_corrected`, the live fix-admission gate at `bench/reference_runner_v3.py:14018`. Calling it with everything else held fixed (s_k = 0.60, q = 0.5, R = 0.5): at the shipped nu of (0.05, 0.20) the threshold is 0.504931 and the verdict is **ADMISSIBLE**; at (0.10, 0.30) the threshold is 0.683292 and the verdict is **REJECTED**. SymPy confirms nu_eff is strictly increasing in both terms, so a measured complexity cannot leave the gate where it is — it can only move it. Across the reachable nu box, **570 of 676 grid points differ from the shipped verdict**, 84.3%, Wilson [81.4%, 86.9%], Clopper-Pearson [81.4%, 87.0%].
+ 
+ **Therefore informative-only is a CHOICE that must be built, not a default.** The measured complexity must be carried by a quantity the gate does not read — the candidate is `gamma_input` from the input-complexity module — or kept out of `entry["model_params"]` entirely. Putting it into nu changes which fixes are admitted and stops archived runs replaying, which is the same cost the founder knowingly accepted for the corrected threshold on 2026-09-06. **His instinct in asking was right; the question was not rhetorical.**
+ 
+@@ -347,7 +347,7 @@
+ 
+ **6.1 Record all run stop reasons, not only on convergence. Status COMMITTED and ENABLED 2026-09-09.** Measured across the archive: **23 of 41 completion signals carry an empty reason, 56.1%, Wilson [41.0%, 70.1%]** — **that figure now has a producer, `scripts/orphan_figures_2026-09-10.py`, and it has DRIFTED: re-measured 2026-09-10 the archive holds 24 of 42 across every run directory (57.1429%, Wilson [42.2062%, 70.8823%]) and 22 of 34 across `exp*` alone. A typed figure over a growing corpus is not merely unverifiable; it is guaranteed to go stale** — and all 23 are INCOMPLETE while all 16 CONVERGED runs carry one, so the founder's framing is a census result, not an inference. Structurally the round loop has **8 `break` statements and only 2 set `stop_reason`**. Root cause: the irreducible-queue halt set `result["convergence_reason"]` and never `brain.state`, so `_save_checkpoint()` on the next line wrote nothing — **the identical fault the gamma-alt comment records being repaired on 2026-05-18 for a different branch**. Fixed at the halt site and by a fallback before `signal_complete()` that catches every remaining exit, including ones added later, and writes `UNRECORDED_STOP` rather than an empty string, because "the runner did not record why" must not look like a named halt. 6 tests, 3 mutations, each verified applied, all caught. Original wording: 2 of the 8 loop-exit paths set a reason; a 2026-09-08 run wrote an empty reason while its report named the alarm. 3-line fallback before `signal_complete()`. Founder ruling: *"Verdict. Do it, Then same answer."*
+ <!-- task: 6.1 | state: DONE | status: ENABLED | evidence: bench/tests/test_stop_reason_on_every_exit_2026-09-09.py, bench/tests/test_stop_reason_fallback_executes_2026-09-17.py -->
+-**Correction 2026-09-17 (panel round 16, verified by execution):** The fallback is correct, but 2 claims above went further than their evidence. **"Catches every remaining exit, including ones added later" holds only for a `break` and for running out of rounds.** The fallback is the `if` immediately before `signal = brain.signal_complete()` in `run_experiment` (`bench/reference_runner_v3.py:15023` at `989f32f`). The 2 HIL-review `sys.exit(42)` calls (`:14783`, `:14833`) sit inside the round loop, and no `try` encloses them, the loop, or the call site (`:15635`), so those 2 exits, and any exception that escapes the loop, end the run without reaching the fallback. A HIL exit is a resumable pause: it writes `hil_status = "paused_for_review"` to a partial report and writes no completion signal. **"3 mutations, each verified applied, all caught" held only for mutations of source text.** The runner-level tests in `bench/tests/test_stop_reason_on_every_exit_2026-09-09.py` read `RUNNER.read_text()`, and its last assert compared 2 string literals. `bench/tests/test_stop_reason_fallback_executes_2026-09-17.py` (5 tests) now selects that `if` by AST, requires it to be an `if`, compiles it alone and executes it against a real `InsectBrain`: an empty state writes a reason starting `UNRECORDED_STOP` that neither equals nor contains the runner's own `IRREDUCIBLE_QUEUE_HALT`; a blank `stop_reason` takes `EXTENSION_STALLED` from `result`; a `failure_reason` is stripped and used; and an existing `HALTED_IRREDUCIBLE_QUEUE_ALARM` is kept. The same checks run on in-memory copies with the guard disabled and with the sentinel emptied, and must fail on both. An AST inventory requires the only `sys.exit` calls in `run_experiment` to be the 2 `sys.exit(42)` HIL pauses, each in a block that sets `result["hil_status"] = "paused_for_review"`, and its control shows an added in-loop `sys.exit(3)` turns it red. The literal comparison in `test_the_unrecorded_case_is_distinguishable_from_a_named_halt` is replaced by the same execution. Mutation checks on the runner in place, across the 2 files: guard changed to `if False and not (...)`, `3 failed, 8 passed`; sentinel string replaced by `""  # UNRECORDED_STOP`, `3 failed, 8 passed`, with the other 5 tests of the 2026-09-09 file green under both, which is the gap this closes; restored, `11 passed`. **What stands:** the fallback is correct, shown by execution, and gives every exit from the round loop a named reason or `UNRECORDED_STOP`, except the 2 HIL pauses and an escaping exception. The brain-level tests and the alarm-halt ordering stand as before, and the marker now names the new file.
++**Correction 2026-09-17 (panel round 16, verified by execution):** The fallback is correct, but 2 claims above went further than their evidence. **"Catches every remaining exit, including ones added later" holds only for a `break` and for running out of rounds.** The fallback is the `if` immediately before `signal = brain.signal_complete()` in `run_experiment` (`bench/reference_runner_v3.py:15019` at `989f32f`). The 2 HIL-review `sys.exit(42)` calls (`:14783`, `:14833`) sit inside the round loop, and no `try` encloses them, the loop, or the call site (`:15635`), so those 2 exits, and any exception that escapes the loop, end the run without reaching the fallback. A HIL exit is a resumable pause: it writes `hil_status = "paused_for_review"` to a partial report and writes no completion signal. **"3 mutations, each verified applied, all caught" held only for mutations of source text.** The runner-level tests in `bench/tests/test_stop_reason_on_every_exit_2026-09-09.py` read `RUNNER.read_text()`, and its last assert compared 2 string literals. `bench/tests/test_stop_reason_fallback_executes_2026-09-17.py` (5 tests) now selects that `if` by AST, requires it to be an `if`, compiles it alone and executes it against a real `InsectBrain`: an empty state writes a reason starting `UNRECORDED_STOP` that neither equals nor contains the runner's own `IRREDUCIBLE_QUEUE_HALT`; a blank `stop_reason` takes `EXTENSION_STALLED` from `result`; a `failure_reason` is stripped and used; and an existing `HALTED_IRREDUCIBLE_QUEUE_ALARM` is kept. The same checks run on in-memory copies with the guard disabled and with the sentinel emptied, and must fail on both. An AST inventory requires the only `sys.exit` calls in `run_experiment` to be the 2 `sys.exit(42)` HIL pauses, each in a block that sets `result["hil_status"] = "paused_for_review"`, and its control shows an added in-loop `sys.exit(3)` turns it red. The literal comparison in `test_the_unrecorded_case_is_distinguishable_from_a_named_halt` is replaced by the same execution. Mutation checks on the runner in place, across the 2 files: guard changed to `if False and not (...)`, `3 failed, 8 passed`; sentinel string replaced by `""  # UNRECORDED_STOP`, `3 failed, 8 passed`, with the other 5 tests of the 2026-09-09 file green under both, which is the gap this closes; restored, `11 passed`. **What stands:** the fallback is correct, shown by execution, and gives every exit from the round loop a named reason or `UNRECORDED_STOP`, except the 2 HIL pauses and an escaping exception. The brain-level tests and the alarm-halt ordering stand as before, and the marker now names the new file.
+ **6.2** Derive the seat watchdog budget from the retry budget. `max_retries` is wired and read at 5 sites in `dispatch()` in `bench/experiment_11_orchestrator.py`, but is named 0 times in `bench/reference_runner_v3.py`, which sets its own wall-clock cap. Founder ruling: *"Same answer."*
+ <!-- task: 6.2 | state: DONE | status: COMMITTED | evidence: bench/tests/test_watchdog_respects_retry_budget_2026-09-09.py -->
+ **DONE 2026-09-09.** The watchdog now takes `max(mc.timeout * multiplier, mc.timeout * max_retries)`. `max` is what makes it additive and it is asserted by a test: a naive derivation would have CUT CC2 from 4500 s to 900 s and reinstated the timeout cascade its x5 multiplier exists to prevent. Measured per seat, exactly 1 changes and it changes upward: Gemini 900 s to 1500 s, everything else unchanged. **No slack allowance was added for the 3 zero-slack seats**, because the dispatch overhead has not been measured and inventing a constant to cover it would be the defect this project keeps finding rather than a fix for it; the count is pinned by a test so it is visible the moment anyone measures that overhead. The merge-arbitration watchdog is DELIBERATELY left on its own multiplier, with a comment saying so, because its own site states those queries are short and self-contained. 6 tests, 4 mutations, each verified applied, all caught.
+@@ -427,7 +427,7 @@
+ 
+ **9.1 DONE 2026-09-10. All 6 now have a report field. "0 of 6" was a fact about the REPORT, not about the run.** Measured against the most recent archived report: **1 of the 6 had any field at all** (`post_convergence_sweep`) and **5 had none** — so a run could not have reported them however well it went. `study_programme_report()` in `bench/reference_runner_v3.py` emits all 6 at the end of every run. **It emits state and decides nothing** — no gate reads it, no status turns on it, no prompt changes — so unlike the parked composer findings it does not invalidate replay. **4 are answered from the run:** the severity ceiling (threshold, max observed, count at or above 1.0); why the sweep cannot clear a critical (**it only re-examines NON-terminal entries, and CONFIRMED is terminal to it — it was never able to**); falsifier ERROR causes, tallied, with the honest note that cause is only routed-or-not because the runner discards the interpreter's message; and the corrected S\* count, still SHADOW pending your ruling. **2 are UNANSWERABLE and say so with the reason**, because a blank is indistinguishable from a question nobody asked: the cross-architecture correlation (**task 9.4** — every seat resolved to one model wearing several labels, a precondition rather than a measurement) and the reach question (**the fable/cc2 split, preserved rather than smoothed**). **The unanswerable verdict is not hardcoded** — a control feeds 3 distinct models and requires the item to become answerable. Wrapped so it cannot break a run, with a LOUD failure branch, since an absent block would read as *"nothing to report"*. `bench/tests/test_study_programme_is_reported_2026-09-10.py`, 12 tests.
+ <!-- task: 9.1 | state: DONE | status: COMMITTED | evidence: bench/tests/test_study_programme_is_reported_2026-09-10.py, bench/tests/test_sweep_report_matches_the_sweep_2026-09-17.py -->
+-**Correction 2026-09-17 (panel round 16, verified by execution):** The entry gave the sweep answer as "it only re-examines NON-terminal entries, and CONFIRMED is terminal to it". That mechanism was false at `989f32f`: `_post_convergence_sweep` set `_TERMINAL = {MERGED, CLOSED, REFUTED, DUPLICATE}` (`bench/reference_runner_v3.py:7525` at that commit), so a CONFIRMED finding is a residual. `bench/tests/test_sweep_report_matches_the_sweep_2026-09-17.py` (9 tests) runs the real sweep with only `dispatch_to_model`, `_declared_models` and `reverify_falsifier` stubbed: an OPEN finding at severity 0.75 with a CONFIRMED falsifier ends `cleared: 1`, status CONFIRMED; the same finding with a REFUTED falsifier ends `withdrawn: 0, computed_evidence: 1`, status OPEN; the control at severity 0.5 ends `withdrawn: 1`; and a CONFIRMED finding at 0.75 is dispatched again. What stops the sweep retiring a critical is the severity gate on its 2 withdrawal branches (the reasoned-withdrawal branch also requires a proven severity), per the founder ruling of 2026-08-03; the CONFIRMED branch has no severity gate. The fix hoists the sweep's set to the module constant `SWEEP_TERMINAL_STATUSES`, which the sweep now uses. The report item keeps its key `why_the_sweep_cannot_clear_a_critical`, takes `terminal_statuses` from that constant, states the mechanism above, and adds `clears_a_critical_by` and `cannot_retire_at_or_above` (set to `CRITICAL_SEVERITY_THRESHOLD`). The new file compares the report with the executed sweep: for each of 9 statuses, the sweep dispatches a finding if and only if the report does not list its status as terminal; at the threshold the report names, neither a REFUTED falsifier nor a reasoned withdrawal retires the finding, while 0.01 below it a REFUTED falsifier does; and at severity 1.0 a CONFIRMED falsifier clears it. Against the report as it stood at `989f32f`, those comparisons gave `5 failed, 4 passed`. `test_the_sweep_answer_names_the_terminal_statuses`, which asserted the old wording, now asserts the corrected expectations, and `test_confirmed_really_is_absent_from_this_scopes_terminal_set` in `bench/tests/test_the_sweep_does_not_reclear_2026-09-02.py` now resolves a name-valued `_TERMINAL` to the imported constant rather than requiring a set literal. Mutation checks on the runner in place, across those 3 files: report block restored to its `989f32f` wording, `6 failed, 21 passed`; CONFIRMED added to `SWEEP_TERMINAL_STATUSES`, `4 failed, 23 passed`; `cannot_retire_at_or_above` set to 0.8, `2 failed, 25 passed`; restored, `27 passed`. 2 sub-claims are also narrower than written, and are narrowed here rather than coded. Executed on an empty registry and on a populated one, before and after this fix, the sweep item is identical, because it describes the sweep's code rather than the run, so 3 of the 4 items called answered are computed from the run. "The unanswerable verdict is not hardcoded" holds for `cross_architecture_correlation` only: `both_reach_conditions` returns `answerable: False` for both inputs. **What stands:** all 6 items are emitted inside the guarded call, no production code reads the block, and `bench/tests/test_study_programme_is_reported_2026-09-10.py` passes.
++**Correction 2026-09-17 (panel round 16, verified by execution):** The entry gave the sweep answer as "it only re-examines NON-terminal entries, and CONFIRMED is terminal to it". That mechanism was false at `989f32f`: `_post_convergence_sweep` set `_TERMINAL = {MERGED, CLOSED, REFUTED, DUPLICATE}` (`bench/reference_runner_v3.py:7521` at that commit), so a CONFIRMED finding is a residual. `bench/tests/test_sweep_report_matches_the_sweep_2026-09-17.py` (9 tests) runs the real sweep with only `dispatch_to_model`, `_declared_models` and `reverify_falsifier` stubbed: an OPEN finding at severity 0.75 with a CONFIRMED falsifier ends `cleared: 1`, status CONFIRMED; the same finding with a REFUTED falsifier ends `withdrawn: 0, computed_evidence: 1`, status OPEN; the control at severity 0.5 ends `withdrawn: 1`; and a CONFIRMED finding at 0.75 is dispatched again. What stops the sweep retiring a critical is the severity gate on its 2 withdrawal branches (the reasoned-withdrawal branch also requires a proven severity), per the founder ruling of 2026-08-03; the CONFIRMED branch has no severity gate. The fix hoists the sweep's set to the module constant `SWEEP_TERMINAL_STATUSES`, which the sweep now uses. The report item keeps its key `why_the_sweep_cannot_clear_a_critical`, takes `terminal_statuses` from that constant, states the mechanism above, and adds `clears_a_critical_by` and `cannot_retire_at_or_above` (set to `CRITICAL_SEVERITY_THRESHOLD`). The new file compares the report with the executed sweep: for each of 9 statuses, the sweep dispatches a finding if and only if the report does not list its status as terminal; at the threshold the report names, neither a REFUTED falsifier nor a reasoned withdrawal retires the finding, while 0.01 below it a REFUTED falsifier does; and at severity 1.0 a CONFIRMED falsifier clears it. Against the report as it stood at `989f32f`, those comparisons gave `5 failed, 4 passed`. `test_the_sweep_answer_names_the_terminal_statuses`, which asserted the old wording, now asserts the corrected expectations, and `test_confirmed_really_is_absent_from_this_scopes_terminal_set` in `bench/tests/test_the_sweep_does_not_reclear_2026-09-02.py` now resolves a name-valued `_TERMINAL` to the imported constant rather than requiring a set literal. Mutation checks on the runner in place, across those 3 files: report block restored to its `989f32f` wording, `6 failed, 21 passed`; CONFIRMED added to `SWEEP_TERMINAL_STATUSES`, `4 failed, 23 passed`; `cannot_retire_at_or_above` set to 0.8, `2 failed, 25 passed`; restored, `27 passed`. 2 sub-claims are also narrower than written, and are narrowed here rather than coded. Executed on an empty registry and on a populated one, before and after this fix, the sweep item is identical, because it describes the sweep's code rather than the run, so 3 of the 4 items called answered are computed from the run. "The unanswerable verdict is not hardcoded" holds for `cross_architecture_correlation` only: `both_reach_conditions` returns `answerable: False` for both inputs. **What stands:** all 6 items are emitted inside the guarded call, no production code reads the block, and `bench/tests/test_study_programme_is_reported_2026-09-10.py` passes.
+ **9.2 DONE 2026-09-10. Every fix is in the programme, and "performs" is answerable today without a run.** *"Add every fix in this list to the study programme, and measure how each performs."* **The inventory is DERIVED from the task-list markers, never typed**, so a fix added tomorrow appears without anyone remembering — which is what the 5 corrections to the pre-commit cost figure were about. **Every one of the 56 DONE entries carries an evidence file** (measured at 56 DONE, 100.0000%, Wilson [93.5806%, 100.0000%]) across **42 distinct instruments**, and **0 are missing and 0 sit where the suite cannot collect them**. **"Performs" is defined so it is falsifiable:** a fix's evidence file IS its instrument — the test that goes red if the fix regresses — so performance is 3 questions answerable now. Does it exist? Does the suite collect it? Does it pass? **A fix whose test nobody runs has not been measured, it has been asserted**, which is the additive standard's own rule applied to fixes rather than features. **Swept: 1017 passed, 2 failed in 195.18 s — and both failures were mine, made minutes earlier.** The A3 citation guard went red because the 9.1 report block added **exactly +102 lines above the very citations A3 had just repaired**, which is the guard catching its own subject inside the hour; and 2 new scripts printed capped listings without stating the remainder. **The treadmill is now a command:** `citation_content_guard_2026-09-10.py --fix` re-points every stale anchored citation, because the guard already computes the correct line and repairing by hand each time is how figures go wrong. **A third guard then caught the fix:** `--fix` was read straight from `sys.argv`, so `--this-flag-does-not-exist` was accepted with exit 0 — the unrecognised-argument-reads-as-success defect this project spent 118 days on. Now argparse. `bench/tests/test_study_programme_is_reported_2026-09-10.py` and `scripts/fix_study_programme_2026-09-10.py`.
+ <!-- task: 9.2 | state: DONE | status: COMMITTED | evidence: bench/tests/test_study_programme_is_reported_2026-09-10.py, bench/tests/test_done_markers_carry_evidence_2026-09-10.py -->
+ **Correction 2026-09-17 (panel round 16, verified by execution):** The marker named `bench/tests/test_study_programme_is_reported_2026-09-10.py` as evidence for 9.2. That file tests the 6-item report of 9.1 and 9.4; it contains "9.2" 0 times and "task_list", "parse_entries" or "inventory" 0 times, so it stays green whatever happens to the fix inventory. The claim is true and is guarded by a different file: `bench/tests/test_done_markers_carry_evidence_2026-09-10.py` parametrizes over the live DONE set read by `scripts/task_list_markers.py` (`350 passed`), and when its tests are called on a scratch copy of this list they go red for 9.2 with its evidence field removed and for 9.3 with its evidence pointed at a file that does not exist, and stay green on the unmutated entries. The marker's evidence field now names that file beside the first. The quoted figures are a dated snapshot and reproduce: counting as `inventory()` and `main()` in `scripts/fix_study_programme_2026-09-10.py` count (DONE entries, those carrying an evidence field, distinct evidence files), with `scripts/task_list_markers.py` and this list both as committed at `ac737d0~1`, gives 56, 56 and 42 (57, 57 and 42 at `ac737d0`, which added 9.2). At `989f32f`, `inventory()` gives 85 of 85 (100.0000%, Wilson [95.6761%, 100.0000%], statsmodels and closed form agreeing to 0.0e+00), 82 distinct instruments, 0 missing and 0 outside `bench/tests/`. "1017 passed, 2 failed in 195.18 s" was not re-executed, because `main()` in that script runs pytest over every instrument. No test calls that script, and it contains no argument handling (`grep -c "argparse\|sys.argv"` returns 0).
+
+### fable:attempt-1:experimental_notes/EXPERIMENT_RUN_LEDGER.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/EXPERIMENT_RUN_LEDGER.md	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/experimental_notes/EXPERIMENT_RUN_LEDGER.md	2026-10-06 03:22:29
+@@ -88,7 +88,7 @@
+ | 55 | 2026-08-23 14:46 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ | 55 | 2026-08-23 15:39 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ 
+-The runner's own source names this at `bench/reference_runner_v3.py:17876` and dates a
++The runner's own source names this at `bench/reference_runner_v3.py:17872` and dates a
+ partial fix to 2026-05-18: *"the hardened / gamma-alt gate previously set only the result
+ dict, so post-mortem tooling read every hardened convergence as INCOMPLETE."* Runs after
+ that date still show it, so the fix did not close the class.
+
+### fable:attempt-1:experimental_notes/Morning_Roundup_2026-09-03.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Roundup_2026-09-03.md	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/experimental_notes/Morning_Roundup_2026-09-03.md	2026-10-06 03:22:29
+@@ -4,7 +4,7 @@
+ 
+ ## Headline: a live defect in fix acceptance
+ 
+-`check_sk_threshold` (`bench/reference_runner_v3.py:13872`) computes
++`check_sk_threshold` (`bench/reference_runner_v3.py:13868`) computes
+ `S* = (ν_b + ν_f − ν_bν_f − qR) / (ν_f(1−ν_b))`. Found by cc2, verified four independent ways.
+ 
+ **Derivation.** S\* is the solution of `ν_eff(s_k) = ν*` with ν\* taken at **σ = 1**, i.e. ν\* = qR. The appendix's ν\* is σ-dependent: `ν* = σRq/(1 − qR(1−σ))`. The code froze σ at 1 while σ = s_k is the variable under test. SymPy: re-derivation minus code S\* simplifies to **0**.
+
+### fable:attempt-1:experimental_notes/Overnight_Consolidated_2026-09-08.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Overnight_Consolidated_2026-09-08.md	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/experimental_notes/Overnight_Consolidated_2026-09-08.md	2026-10-06 03:22:29
+@@ -47,7 +47,7 @@
+ 
+ ## The confinement that should have prevented it has never worked
+ 
+-`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:15023` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
++`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:15019` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
+ 
+ Demonstrated by execution rather than argued: the main thread sees the sandbox, 3 worker threads see `[None, None, None]`.
+ 
+
+### fable:attempt-1:experimental_notes/Panel_Audit_Closing_Report_2026-09-22.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Panel_Audit_Closing_Report_2026-09-22.md	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/experimental_notes/Panel_Audit_Closing_Report_2026-09-22.md	2026-10-06 03:22:29
+@@ -121,7 +121,7 @@
+ 
+ ### And then the free panel found something better: your fix was already built, and dead
+ 
+-`fable` went looking and found **`sk_score_prose_listings`** — declared on `RunnerConfig` ([:1492](bench/reference_runner_v3.py:1492)), threaded into `compute_sk` ([:10881](bench/reference_runner_v3.py:12417)) and **honoured** there ([:10938](bench/reference_runner_v3.py:12417)). It is your third outcome, already written, already wired to the scorer.
++`fable` went looking and found **`sk_score_prose_listings`** — declared on `RunnerConfig` ([:1492](bench/reference_runner_v3.py:1492)), threaded into `compute_sk` ([:10881](bench/reference_runner_v3.py:12413)) and **honoured** there ([:10938](bench/reference_runner_v3.py:12413)). It is your third outcome, already written, already wired to the scorer.
+ 
+ **It could not be reached by any path.** `run_experiment` forced `sk_enabled=False` for every non-Python target *before* the flag's only call site, which sits behind `if cfg.sk_enabled:`. So a Python target never enters the prose branch, and a non-Python target never reaches the evaluator at all. **An addition nothing reaches** — the defect class this project has confirmed 11 times and zero of the opposite kind.
+ 
+@@ -135,7 +135,7 @@
+ 
+ In `bench/routing.py`, `last_code = code` is assigned **before** the emptiness check. So an `ERROR` carrying a non-empty body *proves* the falsifier was executed and crashed. All 6 UNTOOLABLE entries carry exactly that: verdict `ERROR`, 600 characters of source, `resolved: False`. `_apply_routing` wrote the verdict back **only** on `result.resolved`, so a ladder that ran and did not confirm left the pre-routing label standing for ever.
+ 
+-**The harm, again, is false feedback into the panel being measured.** `_rejection_lines` ([:12594](bench/reference_runner_v3.py:14604)) branches on that field. `ERROR` says *"your test did not run to a verdict… Re-write it so it runs."* `UNTOOLABLE` says *"nothing runnable was attached."* **All 6 were told to attach a falsifier that had already been written and had already crashed.** A seat told the first debugs what it has; a seat told the second starts from nothing.
++**The harm, again, is false feedback into the panel being measured.** `_rejection_lines` ([:12594](bench/reference_runner_v3.py:14600)) branches on that field. `ERROR` says *"your test did not run to a verdict… Re-write it so it runs."* `UNTOOLABLE` says *"nothing runnable was attached."* **All 6 were told to attach a falsifier that had already been written and had already crashed.** A seat told the first debugs what it has; a seat told the second starts from nothing.
+ 
+ **And it explains arm 4's halt** — which I blamed on a routing cap, withdrew, and left with no replacement. `routing_deferred` drove the irreducible queue to 8 against a bound of 2, and the run halted at round 0. The damage was a halted run, not a mis-scored finding.
+ 
+
+### fable:attempt-1:experimental_notes/Panel_FULL_RECORD_Maths_Revision_Open_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Panel_FULL_RECORD_Maths_Revision_Open_2026-09-20.md	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/experimental_notes/Panel_FULL_RECORD_Maths_Revision_Open_2026-09-20.md	2026-10-06 03:22:29
+@@ -1185,7 +1185,7 @@
+ 
+ ### F-4. The committed census script asserted the withdrawn claim — FIXED
+ 
+-**Claim:** `scripts/sk_verdict_never_fired_2026-09-20.py`'s printed conclusion ("Fixes were refused on the strength of a constant nobody measured") contradicts the withdrawn record and its own data. **Evidence:** direct parse of all 39 `runner_state.json`: all **191** REJECTED carry `sk == 0.0` with structural causes — `search_not_found` 122, `g1_ast` 50, `no_blocks_for_target` 14, `search_ambiguous` 5 — and `compute_sk` (read in full, `bench/reference_runner_v3.py:12417`) reads none of q/R_old/nu_b/nu_f. **Verdict:** FAILS (the old conclusion); §10 category 4, silent misclassification in a committed evidence producer. **Fix delivered:** patched the script in place — added `refusal_causes()` (a per-record measurement) and replaced the asserted conclusion with a computed one. **Falsifier:** `python3 scripts/sk_verdict_never_fired_2026-09-20.py` now prints "191 of 191" structural with the cause table (output above), and `python3 -m pytest bench/tests/test_panel_producers_2026-09-20.py -q` → **8 passed**. Refuted by any REJECTED record with `sk > 0` or a constant read on the admission path.
++**Claim:** `scripts/sk_verdict_never_fired_2026-09-20.py`'s printed conclusion ("Fixes were refused on the strength of a constant nobody measured") contradicts the withdrawn record and its own data. **Evidence:** direct parse of all 39 `runner_state.json`: all **191** REJECTED carry `sk == 0.0` with structural causes — `search_not_found` 122, `g1_ast` 50, `no_blocks_for_target` 14, `search_ambiguous` 5 — and `compute_sk` (read in full, `bench/reference_runner_v3.py:12413`) reads none of q/R_old/nu_b/nu_f. **Verdict:** FAILS (the old conclusion); §10 category 4, silent misclassification in a committed evidence producer. **Fix delivered:** patched the script in place — added `refusal_causes()` (a per-record measurement) and replaced the asserted conclusion with a computed one. **Falsifier:** `python3 scripts/sk_verdict_never_fired_2026-09-20.py` now prints "191 of 191" structural with the cause table (output above), and `python3 -m pytest bench/tests/test_panel_producers_2026-09-20.py -q` → **8 passed**. Refuted by any REJECTED record with `sk > 0` or a constant read on the admission path.
+ 
+ ### F-5. Section 6.1 — the fix score barely discriminates, and a fifth of its ceiling is non-measurement
+ 
+
+### fable:attempt-1:experimental_notes/Panel_FULL_RECORD_Maths_Revision_R3_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Panel_FULL_RECORD_Maths_Revision_R3_2026-09-20.md	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/experimental_notes/Panel_FULL_RECORD_Maths_Revision_R3_2026-09-20.md	2026-10-06 03:22:29
+@@ -348,7 +348,7 @@
+ ## 2. Ordered adoption list
+ 
+ **A1 — Convergence-claim scope correction (the fix, executed).**
+-- *Live defect:* `_check_gamma_alt_convergence` emits `"The critical error space was exhausted before round one"` (vacuous path, `bench/reference_runner_v3.py:8035` pre-fix) and an uncaveated `CRITICAL_QUIESCENCE_CONVERGED` (normal path, `:7056`), while the settled measurements show the gate cannot distinguish exhaustion from steady-state churn.
++- *Live defect:* `_check_gamma_alt_convergence` emits `"The critical error space was exhausted before round one"` (vacuous path, `bench/reference_runner_v3.py:8031` pre-fix) and an uncaveated `CRITICAL_QUIESCENCE_CONVERGED` (normal path, `:7056`), while the settled measurements show the gate cannot distinguish exhaustion from steady-state churn.
+ - *Executed evidence for the mechanism, 3 independent tools:* driving the package's own `update()` 200 iterations at p=0.35, b=0.10 → 0.2857142857 = b/p; SymPy `solve` of the cycle equation → fixed points `[1, b/p]`; Wolfram → `{{r → 1}, {r → b/p}}`. And `p·R* = b` exactly — the per-round detection rate is *flat at b*, not decaying (CC1's corrected §3.4, re-confirmed).
+ - *Fix:* two reason-string replacements — normal path gains "SCOPE OF THE CLAIM… certifies that critical DISCOVERY stopped at panel sensitivity, not that no critical remains… residual risk sits at b/p…" (with the round-2 figures); vacuous path's "exhausted" becomes "No critical was ever DETECTED at panel sensitivity — which is not proof the critical error space is empty, only that it was empty to this panel". Verdict booleans untouched.
+ - *Falsifier, executed:* patched copy in sandbox temp; asserts converged case still True with caveat present, vacuous case True without "exhausted", A4/contested/non-flat/low-γ cases still False. Output: `FALSIFIER PASSED on patched copy: verdicts unchanged, caveat present, overclaim gone`. Then 4 existing test files + a sentinel test proving the patched module was the one imported: **78 passed** (`PYTHONPATH` shadow-package route; the first run without the sentinel was vacuous — the tests import `bench.reference_runner_v3` — I caught and corrected that myself).
+
+### fable:attempt-1:experimental_notes/Panel_FULL_RECORD_Maths_Revision_R4_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Panel_FULL_RECORD_Maths_Revision_R4_2026-09-20.md	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/experimental_notes/Panel_FULL_RECORD_Maths_Revision_R4_2026-09-20.md	2026-10-06 03:22:29
+@@ -58,7 +58,7 @@
+ 
+ The round-3 brief warned that adopting the repair-semantics correction *"lowers every reported risk figure and so makes every risk-threshold stop easier to satisfy — which under this project's additive standard is removing a safety margin."*
+ 
+-**cc2 refuted this by tracing the code, and CC1 confirms it.** `R_k` **cannot reach the convergence gate**. `_check_gamma_alt_convergence` takes `novel_critical_history`, `unresolved_critical`, `contested` and `rho_churn` — no risk term — and `bench/reference_runner_v3.py:8035` carries a structural guard keeping `sk_result` unread outside the S_k function precisely so that `R_k(0)` cannot reach the convergence gate.
++**cc2 refuted this by tracing the code, and CC1 confirms it.** `R_k` **cannot reach the convergence gate**. `_check_gamma_alt_convergence` takes `novel_critical_history`, `unresolved_critical`, `contested` and `rho_churn` — no risk term — and `bench/reference_runner_v3.py:8031` carries a structural guard keeping `sk_result` unread outside the S_k function precisely so that `R_k(0)` cannot reach the convergence gate.
+ 
+ **The blast radius is 1 boolean per finding: fix admission.** Nothing else. Any round-3 reasoning that hedged on the safety-margin grounds was hedging against a hazard that does not exist, and should be revisited.
+ 
+
+### fable:attempt-1:experimental_notes/Proposal_Capability_Ladder_Measured_Statistic_2026-10-06.md
+--- /dev/null	2026-10-06 03:38:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/experimental_notes/Proposal_Capability_Ladder_Measured_Statistic_2026-10-06.md	2026-10-06 03:36:14
+@@ -0,0 +1,212 @@
++# Proposal: the ladder ranks on a measured, admissibility-gated resolution statistic
++
++Blind-round seat proposal, capability-ladder design, 2026-10-06 (Fable seat).
++Evidence script: `scripts/ladder_statistic_demonstration_2026-10-06.py` (re-runnable;
++every proportion carries a Wilson interval computed by statsmodels AND the closed
++form, posteriors cross-checked against scipy.stats.beta AND Wolfram Language).
++
++## 1. The quantity the ladder ranks on
++
++**Name.** The glossary already names it: the fingerprint's verification dimension
++`v-bar` ("fraction confirmed by SymPy or similar", docs/GLOSSARY.md, "Fingerprint").
++It is the one promised dimension `_update_observed_fingerprint` never writes. This
++proposal defines it precisely and makes the ladder its consumer.
++
++**Definition.** For writer m, v-bar(m) = P(admissible CONFIRMED | re-verified
++falsifier attempt written by m), where:
++
++* an ATTEMPT is any falsifier the runner's decider (`reverify_falsifier`) actually
++  judged — verdicts CONFIRMED / REFUTED / ERROR / UNTOOLABLE / INTEGRITY_VIOLATION.
++  Tool verdicts only; no model prose enters the event stream.
++* ADMISSIBLE CONFIRMED means CONFIRMED **and** the falsifier consulted the target
++  (the discrimination/provenance pass; `competence_provenance.py`'s "reads" class)
++  **and** not INTEGRITY_VIOLATION and not NON_DISCRIMINATING. An INTEGRITY_VIOLATION
++  additionally quarantines m's statistic for the run: UNSAFE TO RANK ON, enforced at
++  update time, not by a script someone remembers to run.
++* CREDIT goes to the model that WROTE the falsifier (`resolved_by_routing` first,
++  else `source_model` — the runner's own `_falsifier_owner` rule). Measured on this
++  sandbox's archive: 248/248 routed resolutions (Wilson95 [0.9847, 1.0000]) disagree
++  with the `source_model` key, so reporter-keyed crediting is wrong on the entire
++  routed subpopulation. `scripts/competence_provenance.py` is repaired accordingly.
++
++**Two strata, two roles.**
++
++* ROUTED stratum (attempts on another writer's unresolved critical): the DECIDER.
++  Sparse but on-task — it measures exactly the job the ladder assigns.
++* ROUND stratum (the falsifier gate's every-round re-verification of each model's
++  own falsifiers): abundant but on a different population. It is the always-on
++  DRIFT ALARM and the cold-start prior shaper; it never decides rank on its own.
++
++**Estimator.** Jeffreys Beta(1/2, 1/2) posterior over admissible routed attempts:
++posterior mean (k + 1/2)/(n + 1), 95% equal-tailed credible interval from the Beta
++quantiles. The round stratum enters only as a weak prior: Beta(1/2 + c·k_r,
++1/2 + c·(n_r − k_r)) with c chosen so the prior's effective weight never exceeds 2
++pseudo-observations (c = min(0.1, 2/n_r)). Rank strongest-first by posterior mean.
++
++**Ties and overlap.** Where adjacent writers' credible intervals overlap, the order
++within the overlapping block is decided by, in order: (1) the same-finding pairwise
++record (below) when >= 5 decisive pairs connect the two writers; (2) the frozen
++Exp-42 tuple, retained SOLELY as a deterministic tie-breaker (additive standard:
++nothing is removed; it is demoted from decider to tie-break because its own evidence
++is interval-overlapped — at the archive's n≈20 per model, Codex [0.699, 0.972],
++CC2 [0.531, 0.888], ChatGPT [0.433, 0.819], Gemini [0.584, 0.919] all overlap; only
++DeepSeek-last [0.145, 0.519] is separated); (3) lexicographic label sort, so the
++order is reproducible run-to-run.
++
++**Minimum sample.** n_min = 5 admissible routed attempts before the routed posterior
++alone may move a writer across a non-overlap boundary. Below n_min the interval is
++wide enough that rule (1)/(2) governs anyway — the threshold makes that explicit
++rather than emergent.
++
++**Cold start.** No history at all → posterior mean 0.500, CrI [0.002, 0.998]: the
++writer ranks BETWEEN measured-strong (mean > 0.5) and measured-weak (mean < 0.5).
++This generalises `rank_falsifier_writers`' existing ranked+extras rule — unknown
++models are tried, after the known-strong, before the known-weak — instead of the
++current behaviour of appending all unknowns last.
++
++**Vendor-agnosticism.** The statistic is keyed on the roster label (with the
++existing `-SIM` base normalisation). Nothing reads a vendor name except tie-break
++rule (2), which applies only to labels that happen to appear in it; all-same-vendor,
++all-identical, and never-seen rosters all rank by the same arithmetic.
++
++**1-model panel.** No pairs and no routed attempts exist; the posterior is the
++prior; the ladder is the single writer. The founder's ruling says it should route
++back to itself. NOTE A CONFLICT, left for the joint round rather than patched
++silently: the current `routing_deferred` path (empty-ladder-by-construction) is
++load-bearing for the exp56 1-seat arm's PRE-REGISTERED reportable outcome
++(HALTED_IRREDUCIBLE_QUEUE_ALARM). Re-admitting the source as a self-rung implements
++the ruling but changes a pre-registered outcome mid-experiment. Decide explicitly;
++do not let the implementation decide.
++
++## 2. The selection effect
++
++The ladder sends hard findings to strong writers, so marginal success rates are
++depressed by trust. The repair is not to restrict the sample (first-attempts-only
++was rightly rejected; populations differ) and not to randomise an audit (routing
++fires on ~8% of archived entries — 1370/16500, Wilson95 [0.0789, 0.0873] — an audit
++fraction of that stream starves). The repair is to CONDITION ON THE ITEM:
++
++* Every routed attempt is on a finding some other writer already failed. When
++  writers A and B attempt the SAME finding, difficulty is identical by
++  construction, so (B confirms what A failed) is a decisive pairwise win for B at
++  any difficulty mix. Both-fail is a tie and carries information about the finding,
++  not the pair — excluded.
++* The ladder generates this paired data for free: rung k+1 attempts exactly what
++  rungs 1..k failed. Removing the rung cap (Q3) INCREASES the paired sample.
++* The marginal Jeffreys posterior remains the rank backbone (pairs are sparse); the
++  pairwise record decides order inside interval overlap, where the selection bias
++  actually bites. The round stratum, immune to routing selection, is the drift
++  alarm: a writer whose round-stratum admissible confirm rate falls below its
++  routed-era baseline (interval-separated) triggers re-estimation, exactly the
++  drift-alarm role the earlier proposal wanted for the frozen order.
++
++What this was missing until today: the archive records NO per-rung attempts — 87/87
++multi-rung routing records (Wilson95 [0.9577, 1.0000]) carry only the last rung's
++label, so neither denominators nor pairs could be built. `RoutingResult.attempts`
++(bench/routing.py) and the `routing_history.attempts` field (reference_runner_v3)
++now record (model, verdict) per rung. The statistic becomes computable from the
++NEXT run onward; until n_min accrues, behaviour is the tie-break order, i.e. the
++status quo. No measurement, no reorder.
++
++## 3. Removing the rung cap
++
++Exhaustion is roster-bounded, not unbounded: one attempt per distinct available
++writer per finding CONTENT-REVISION (a writer is re-admitted only if the finding
++changed — corrected copy accepted, new evidence attached). Stopping rule:
++
++    resolved (admissible CONFIRMED)
++    OR every feasible writer has attempted this revision -> HIL
++    OR the finding's routing token budget is exhausted -> deferred, reason recorded
++
++Cross-round retry remains only for transport faults (the existing path). Budget
++exhaustion is recorded distinctly (`routing_deferred_reason`) so it can never read
++as model failure and contaminate v-bar. Implemented: `max_rungs=None` sentinel in
++`resolve_via_routing` (default 2 unchanged, byte-identical), and the runner coercion
++`int(... or 2)` — which turned BOTH None and 0 into 2, making the no-cap ruling
++inexpressible (0/288 configs pin the field; Wilson95 [0.0000, 0.0132]) — now maps
++null/0 to the sentinel. Tests: bench/tests/test_routing_attempts_and_exhaustion_2026-10-06.py.
++
++## 4. Resource-aware routing
++
++Yes — as a FEASIBILITY FILTER, never a ranking term. Two stages: (1) rank purely on
++v-bar; (2) walk the ranked list and SKIP a rung only when the live fingerprint says
++the attempt cannot succeed or cannot be afforded: prompt size exceeds the writer's
++`measured_attention_span`/`compression_threshold` (fields `burst_planner.py` already
++consumes — composition with a demonstrated consumer, not a parallel structure), or
++estimated attempt cost exceeds the writer's remaining budget/quota. Every skip is
++recorded with its reason. Because cost can only veto and never score, a cheap model
++can never outrank by cheapness; it is only ever reached when stronger rungs are
++infeasible, and the record says so.
++
++## 5. Reproducibility
++
++A separate step, MECHANICAL, owned by the HARNESS. `reverify_falsifier` already is
++reproduction-by-tool; for the STEM-calculator goal, a result ships only with a
++replay bundle (falsifier + inputs + environment pin) that the runner re-executes
++N=2 times in fresh scratch directories; a verdict that does not reproduce routes to
++HIL as nondeterministic. Models must not attest their own reproduction — a model
++asserting "it reproduces" is a vote. The human's role is auditing provenance and
++forensics, not re-deriving results; HIL re-derivation remains the terminal rung
++only for ladder-exhausted findings. (§10's material-defect category 5,
++unreproducibility, already names this a hard class.)
++
++## 6. What the brief's framing misses
++
++* **The heterogeneity measurement does not license the fingerprint as-is.** The
++  p = 2.21e-59 chi-square is on FINDING RATE — productivity. The live fingerprint's
++  only discriminating statistic today is that same productivity, and ranking on it
++  puts Gemini first (3.646 findings/round, highest of 5) — the model Exp 55 showed
++  confirming 2/2 with detached falsifiers. Wiring the ladder to the CURRENT
++  fingerprint reproduces the exact inversion `competence_provenance.py` exists to
++  prevent. The fingerprint must gain the admissibility-gated v-bar BEFORE the
++  ladder may read it. Productivity never enters the ladder.
++* **Crediting was wrong at the measurement layer** (248/248, repaired above).
++* **The archive cannot back-derive the statistic** (87/87 denominator gap; forward
++  recording added). Do not bootstrap v-bar from old reports; start accruing.
++* **No-model-voting compliance.** v-bar is built exclusively from tool verdicts
++  plus mechanical admissibility checks, and it is gated the way severity is: as
++  `severity_is_proven` keeps an unproven R_k from opening the A4 exemption, an
++  unproven confirmation (no admissibility provenance) never enters the numerator,
++  and an integrity violation quarantines the writer's statistic. An UNPROVEN number
++  opening a gate would be the forbidden model vote; here it cannot.
++* **rho and S_k are not reused.** rho measures discovery efficiency (finding
++  stream), S_k classifies fixes; the ladder statistic is about falsifier RESOLUTION,
++  a different event stream with its own denominator. Reusing either would import a
++  population the ladder does not dispatch to.
++* **The 1-seat conflict** between the founder's route-back-to-itself ruling and
++  exp56's pre-registered deferral outcome (§1 above) must be decided by a human,
++  explicitly.
++
++## What this does to gamma
++
++`gamma_critical` is estimated over the settled critical series, and the two-sided
++gate also requires no unverified critical pending. Routing changes SETTLEMENT, not
++discovery: removing the cap settles hard criticals that today stall at rung 2, so
++the pending-unverified side of the gate opens earlier, and the settled series
++completes earlier — convergence is reached by RESOLVING more criticals, never by
++discarding them. The ranking statistic itself reads only tool verdicts and is read
++only by rung order; it writes nothing into the critical series, the novelty counts,
++or either gate side (one-way coupling). `test_routing_cannot_flatten_gamma_2026-09-09`
++passes unchanged on the patched tree. Expected observable effect: a shorter tail of
++`routing_deferred`/HIL criticals; `gamma_critical` values move only through the
++timing of settlement, and the two-sided gate's threshold and window are untouched.
++
++## What would refute this proposal
++
++* Q1: a run where the v-bar-ordered ladder resolves FEWER routed criticals per
++  dispatch than the frozen order on the same findings (paired, same roster) —
++  command: compare `routing_history.attempts` success-at-rung-1 across arms.
++* Q2: a measured same-finding pairwise ranking that DISAGREES with the marginal
++  routed posterior ranking on interval-separated writers — that would show pairing
++  does not cancel the selection effect and the drift alarm is mis-specified.
++* Q3: an archived run where `max_rungs=None` produces more than |roster|−1 routed
++  attempts for a single finding revision (would falsify the boundedness claim) —
++  check `rungs_tried` vs `rungs_available` in routing_history.
++* Q4: a run where the feasibility filter skips a strong writer whose attempt would
++  have succeeded (measurable once skips are recorded with reasons): >5% wrongful
++  skips voids the filter thresholds.
++* Q5: a shipped result whose N=2 replay diverges while HIL review finds the
++  original verdict correct — would show N=2 is the wrong reproduction depth.
++* Q6: a provenance-admissible confirm-rate ranking from a clean run that still
++  inverts a known-strong/known-weak pair would refute admissibility gating as
++  sufficient, and the statistic must gain a stronger discrimination control.
+
+### fable:attempt-1:experimental_notes/Research_FULL_RECORD_2026-09-09.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Research_FULL_RECORD_2026-09-09.md	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/experimental_notes/Research_FULL_RECORD_2026-09-09.md	2026-10-06 03:22:29
+@@ -317,7 +317,7 @@
+ 
+ | Property | Precise definition as the project uses it | Where enforced |
+ |---|---|---|
+-| **Sufficiency** | Does the fix actually prevent the failure? A truth property. Formally: σ / S_k (fix efficacy) in the 3-phase risk update, and the §10 `sufficiency_round` predicate. | `docs/MATHEMATICAL_APPENDIX.md:214`, `:227`; `bench/directives/universal/cdsfl_core_formal.md:287-357`; live gate `check_sk_threshold_corrected` at `bench/reference_runner_v3.py:14022` |
++| **Sufficiency** | Does the fix actually prevent the failure? A truth property. Formally: σ / S_k (fix efficacy) in the 3-phase risk update, and the §10 `sufficiency_round` predicate. | `docs/MATHEMATICAL_APPENDIX.md:214`, `:227`; `bench/directives/universal/cdsfl_core_formal.md:287-357`; live gate `check_sk_threshold_corrected` at `bench/reference_runner_v3.py:14018` |
+ | **Simplicity** | A property of the *solution*, not its ancestry — cost/blast-radius of the change. Formally: ν, the re-injection rate. | **Defined** at `docs/MATHEMATICAL_APPENDIX.md:215`. **Not measured** — see below. Explicitly classified non-formalisable at `bench/directives/universal/cdsfl_core_formal.md:604` |
+ | **Additivity** | Capability is preserved: never remove without a committed measurement; and symmetrically, an addition nothing reaches is not additive. | `Constraint_Engineering/.claude/CLAUDE.md:367`; panel SYSTEM prompt `bench/confer_maths_panel_2026-09-05.py:120`; `bench/tests/test_additive_standard_2026-09-07.py`. **0 occurrences in either maths file.** |
+ 
+
+### fable:attempt-1:experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md	2026-10-06 03:22:29
+@@ -4,7 +4,7 @@
+ 
+ ## What was found
+ 
+-`compute_sk` in `bench/reference_runner_v3.py:12417` computes the number the mathematical appendix calls sigma. Appendix line 214 defines sigma as *"Does the proposed fix actually resolve the detected flaw?"*, and line 377 admits it only when `sigma = g(V_pre, V_post)` for a mapping that compares pre-fix against post-fix tool output. `compute_rk` fills that slot with `sk` term for term: the code computes `R_base = sk * R_det + (1.0 - sk) * R_old` against the appendix's `R_base = sigma*R_det + (1-sigma)*R_old`.
++`compute_sk` in `bench/reference_runner_v3.py:12413` computes the number the mathematical appendix calls sigma. Appendix line 214 defines sigma as *"Does the proposed fix actually resolve the detected flaw?"*, and line 377 admits it only when `sigma = g(V_pre, V_post)` for a mapping that compares pre-fix against post-fix tool output. `compute_rk` fills that slot with `sk` term for term: the code computes `R_base = sk * R_det + (1.0 - sk) * R_old` against the appendix's `R_base = sigma*R_det + (1-sigma)*R_old`.
+ 
+ Every gate feeding `sk` measured absence of harm instead. `e2_regression` asks whether the existing suite still passes. `e3_ruff` asks whether the fix added lint findings. `e4_bandit` asks whether it added security findings. None asks whether the flaw is gone.
+ 
+@@ -70,7 +70,7 @@
+ 
+ ## A second, smaller defect in the same path
+ 
+-`_rejection_lines` at `bench/reference_runner_v3.py:14604` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
++`_rejection_lines` at `bench/reference_runner_v3.py:14600` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
+ 
+ ## A third, found by the suite
+ 
+
+### fable:attempt-1:resources/ONBOARDING.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/ONBOARDING.md	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/resources/ONBOARDING.md	2026-10-06 03:22:29
+@@ -167,7 +167,7 @@
+ | §17 Feedback Channel directive | `bench/dm/_feedback.py` + `bench/directives/universal/cdsfl_operational.md` §17 | Exp 39 (2026-04-13) |
+ | §18 Divergence Channel directive | `bench/dm/_divergence.py` + `bench/directives/universal/cdsfl_operational.md` §18 | Exp 39 (2026-04-13) |
+ | F1 SymPy sandbox allow-list | `bench/immune_agents.py:977` | 2026-04-21 |
+-| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v3.py:13052` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
++| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v3.py:13048` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
+ | B-Cell mathematics specialist | dispatch via `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `bench/cdsfl_registry/domains/immune/mathematics.toml` | Exp 36 era |
+ | B-Cell statistics specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/statistics.toml` | Exp 36 era |
+ | B-Cell biology specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/biology.toml` | Exp 36 era |
+
+### fable:attempt-1:scripts/competence_provenance.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/competence_provenance.py	2026-10-06 03:30:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/scripts/competence_provenance.py	2026-10-06 03:33:00
+@@ -43,51 +43,28 @@
+     return "reads" if re.search(r"open\s*\(|read_text|\.read\s*\(|linecache|getlines", c) else "detached"
+ 
+ 
+-def falsifier_author(entry: dict) -> str:
+-    """The model that WROTE the falsifier, which is not always the one that filed.
+-
+-    THE DEFECT THIS REPLACES, found by the cc2 seat on 2026-10-05 and verified
+-    here. `analyse` keyed on `source_model` — the model that REPORTED the finding.
+-    When the routing ladder resolves a critical, the falsifier is written by a RUNG
+-    further up the ladder and recorded in `resolved_by_routing`; the filing model is
+-    precisely the one that FAILED to write a working test.
+-
+-    MEASURED over `bench/logs/*/runner_state.json` by
+-    `scripts/the_provenance_gate_credits_the_filer_2026-10-06.py`: of 3158 archived
+-    entries, 210 carry `resolved_by_routing`, and **210 of 210 name a different
+-    model from `source_model` — 6.6498% of all entries, Wilson [5.8324%, 7.5725%]**,
+-    statsmodels and a scipy closed form agreeing. Every one of those credited a
+-    strong rung's successful work to the weak model that could not do it.
+-
+-    THE DIRECTION IS WHAT MAKES IT SERIOUS. This script exists to decide whether a
+-    model's record is SAFE TO RANK ON, and the founder has ruled the capability
+-    ladder must become a measured statistic. Crediting a rung's confirmations to the
+-    filer flatters exactly the models the ladder is supposed to demote, so the
+-    defect corrupts the ordering in the one direction that cannot self-correct.
+-
+-    Precedence mirrors `_corrected_copy_owner` in the runner: the recorded resolver
+-    wins, and `source_model` is the fallback for an entry routing never touched.
+-    """
+-    for key in ("resolved_by_routing", "resolved_in_round", "resolved_by_sweep"):
+-        who = (entry.get(key) or "").strip()
+-        if who:
+-            return who
+-    return (entry.get("source_model") or "?").strip() or "?"
+-
+-
+ def analyse(report: pathlib.Path) -> dict:
+     ents = (json.loads(report.read_text()).get("registry") or {}).get("entries") or {}
+     per = collections.defaultdict(lambda: collections.Counter())
+     for e in ents.values():
+-        m = falsifier_author(e)
++        # CREDIT THE WRITER, NOT THE REPORTER (repaired 2026-10-06, blind
++        # round). This script keyed on `source_model` alone, but when routing
++        # resolves a finding the confirming falsifier was written by
++        # `resolved_by_routing`, never by the source -- `route()` excludes the
++        # source model from the ladder by construction. Measured on this
++        # sandbox's archive by scripts/ladder_statistic_demonstration_2026-10-06.py:
++        # 248 of 248 entries carrying `resolved_by_routing` disagree with
++        # `source_model` (Wilson95 [0.9847, 1.0000]), so the old key credited
++        # every routed confirmation to the model that FAILED to write a working
++        # falsifier. The rule below is the runner's own ownership rule
++        # (`_falsifier_owner`, bench/reference_runner_v3.py): the owner of the
++        # attached falsifier is the routing rung that wrote it, else the
++        # reporter.
++        m = e.get("resolved_by_routing") or e.get("source_model") or "?"
+         per[m][falsifier_style(e.get("falsifier_code"))] += 1
+         per[m]["n"] += 1
+         if e.get("falsifier_verdict") == "CONFIRMED":
+             per[m]["confirmed"] += 1
+-        # Kept so a reader can see how much of a model's record is its own work
+-        # rather than work routed to it.
+-        if falsifier_author(e) != (e.get("source_model") or "?"):
+-            per[m]["via_routing"] += 1
+     return per
+ 
+ 
+
+### fable:attempt-1:scripts/falsifier_untoolable_is_stale_error_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/falsifier_untoolable_is_stale_error_2026-09-22.py	2026-10-06 03:34:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/scripts/falsifier_untoolable_is_stale_error_2026-09-22.py	2026-10-06 03:22:29
+@@ -28,7 +28,7 @@
+      ladder's field contradict each other, and the ladder's is the tool verdict.
+ 
+   C. CONSEQUENCE, and this is what puts the finding above threshold.
+-     `_rejection_lines` (bench/reference_runner_v3.py:14604) branches on exactly
++     `_rejection_lines` (bench/reference_runner_v3.py:14600) branches on exactly
+      this field to build the corrective instruction shipped to every seat in the
+      next round's registry digest (rendered at :2749 and :2789). On ERROR it says
+      "your test did not run to a verdict ... Re-write it so it runs". On
+
+### fable:attempt-1:scripts/ladder_statistic_demonstration_2026-10-06.py
+--- /dev/null	2026-10-06 03:38:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_egzy_n3v/repo/scripts/ladder_statistic_demonstration_2026-10-06.py	2026-10-06 03:32:20
+@@ -0,0 +1,211 @@
++#!/usr/bin/env python3
++"""The ladder statistic, demonstrated: what it must rank on and what the archive can prove.
++
++Blind-round deliverable, capability-ladder design, 2026-10-06. Four measurements,
++each with a Wilson interval computed by 2 independent tools (statsmodels and the
++closed form), per the project's cross-verification rule.
++
++  1. CREDITING. `scripts/competence_provenance.py` keys confirmations on
++     `source_model`. The runner's own ownership rule (`_falsifier_owner`,
++     bench/reference_runner_v3.py:5437) is `resolved_by_routing or source_model`.
++     Measured here: on EVERY archived entry carrying `resolved_by_routing`, the
++     two keys disagree -- by construction, since `route()` excludes the source
++     model from the ladder. A ranking built on `source_model` therefore credits
++     100% of routed confirmations to a model that did NOT write the confirming
++     falsifier.
++
++  2. DENOMINATOR GAP. A measured ladder statistic needs per-writer ATTEMPT
++     counts, not just confirmations. `RoutingResult` carries only the LAST
++     rung's (model, verdict); intermediate failed rungs are never archived.
++     Measured here: the fraction of multi-rung routing_history records from
++     which the failed rungs' identities are unrecoverable.
++
++  3. INTERVAL WIDTH. The Exp-42 per-model confirm rates that froze
++     DEFAULT_FALSIFIER_STRENGTH rest on ~15-20 falsifiers per model. The Wilson
++     intervals at those sample sizes overlap across adjacent rungs, so the
++     frozen ORDER is not statistically separated rung-to-rung -- it is a
++     point-estimate ordering. This is why the proposal ranks on a posterior
++     with the interval attached, and keeps the frozen tuple only as the
++     deterministic tie-breaker.
++
++  4. ESTIMATOR DEMONSTRATION. The proposed quantity -- per-writer admissible
++     routed-confirm probability, Jeffreys Beta(1/2,1/2) posterior -- computed on
++     a worked example, with the same-finding pairwise construction that cancels
++     finding difficulty (the selection effect) shown alongside. Cross-checked
++     against scipy.stats.beta.
++
++Also proven mechanically: the `routing_max_rungs` wiring coerces 0 to 2
++(`int(getattr(cfg, "routing_max_rungs", 2) or 2)`), so NO config value today
++means "exhaust the ladder" -- the founder's no-cap ruling is not expressible in
++the current config surface.
++
++Run:  python3 scripts/ladder_statistic_demonstration_2026-10-06.py
++"""
++from __future__ import annotations
++
++import glob
++import json
++import math
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++
++
++def _help_requested() -> bool:
++    return any(a in ("-h", "--help") for a in sys.argv[1:])
++
++
++def wilson(k: int, n: int):
++    """95% Wilson interval, computed twice (statsmodels + closed form), must agree."""
++    from statsmodels.stats.proportion import proportion_confint
++    from scipy.stats import norm
++    a = proportion_confint(k, n, alpha=0.05, method="wilson")
++    z = float(norm.ppf(0.975))
++    p = k / n
++    d = 1 + z * z / n
++    c = (p + z * z / (2 * n)) / d
++    h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
++    b = (c - h, c + h)
++    assert abs(a[0] - b[0]) < 1e-9 and abs(a[1] - b[1]) < 1e-9, "TOOLS DISAGREE"
++    return float(a[0]), float(a[1])
++
++
++def jeffreys_posterior(k: int, n: int):
++    """Jeffreys Beta(1/2,1/2) posterior mean and 95% equal-tailed interval.
++
++    Cross-verified: the mean by closed form (k+0.5)/(n+1), the interval by
++    scipy.stats.beta.ppf, and the mean again by scipy's beta.mean().
++    """
++    from scipy.stats import beta
++    a, b = k + 0.5, (n - k) + 0.5
++    mean_closed = a / (a + b)
++    mean_scipy = float(beta.mean(a, b))
++    assert abs(mean_closed - mean_scipy) < 1e-12, "TOOLS DISAGREE"
++    lo, hi = float(beta.ppf(0.025, a, b)), float(beta.ppf(0.975, a, b))
++    return mean_closed, lo, hi
++
++
++def measure_crediting_and_denominator():
++    n_routed = mis = 0
++    multi_rung = multi_rung_single_label = 0
++    for p in glob.glob(str(REPO / "bench/logs/*/*_report.json")):
++        try:
++            ents = (json.loads(pathlib.Path(p).read_text()).get("registry")
++                    or {}).get("entries") or {}
++        except (OSError, ValueError):
++            continue
++        for e in ents.values():
++            rb = e.get("resolved_by_routing")
++            if rb:
++                n_routed += 1
++                if rb != e.get("source_model"):
++                    mis += 1
++            for rec in e.get("routing_history") or []:
++                rt = rec.get("rungs_tried") or 0
++                if rt >= 2:
++                    multi_rung += 1
++                    # the record carries exactly one model label (`model_used`)
++                    # and no per-rung attempt list
++                    if "attempts" not in rec:
++                        multi_rung_single_label += 1
++    return n_routed, mis, multi_rung, multi_rung_single_label
++
++
++def main() -> int:
++    if _help_requested():
++        print((__doc__ or "").strip())
++        return 0
++
++    print("=" * 78)
++    print("1. CREDITING: resolved_by_routing vs source_model on the archive")
++    print("=" * 78)
++    n, mis, multi, multi_gap = measure_crediting_and_denominator()
++    if n:
++        lo, hi = wilson(mis, n)
++        print(f"  entries with resolved_by_routing : {n}")
++        print(f"  key disagrees with source_model  : {mis}/{n} = {mis/n:.1%}"
++              f"  Wilson95 [{lo:.4f}, {hi:.4f}]  (statsmodels + closed form AGREE)")
++        print("  => a source_model-keyed confirm rate credits every routed")
++        print("     confirmation to a model that did not write the falsifier.")
++    else:
++        print("  no archived routing resolutions found under bench/logs/")
++
++    print()
++    print("=" * 78)
++    print("2. DENOMINATOR GAP: per-rung attempts absent from routing_history")
++    print("=" * 78)
++    if multi:
++        lo, hi = wilson(multi_gap, multi)
++        print(f"  multi-rung routing records        : {multi}")
++        print(f"  records with no per-rung attempts : {multi_gap}/{multi} = "
++              f"{multi_gap/multi:.1%}  Wilson95 [{lo:.4f}, {hi:.4f}]")
++        print("  => the failed rungs' identities are unrecoverable, so per-writer")
++        print("     attempt denominators CANNOT be built from the existing archive.")
++        print("     The proposal adds RoutingResult.attempts to close this forward.")
++    else:
++        print("  no multi-rung routing records in this archive slice")
++
++    print()
++    print("=" * 78)
++    print("3. INTERVAL WIDTH of the frozen order's own evidence (Exp 42 rates)")
++    print("=" * 78)
++    # The rates documented in bench/routing.py's header comment: Codex 90%,
++    # CC2 75%, ChatGPT 67%, Gemini 80%, DeepSeek 28%. Exp-42 archives carry
++    # ~15-20 falsifiers per model; n=20 is the GENEROUS case shown here.
++    for name, rate, nn in [("Codex", .90, 20), ("CC2", .75, 20),
++                           ("ChatGPT", .67, 20), ("Gemini", .80, 20),
++                           ("DeepSeek", .28, 20)]:
++        k = round(rate * nn)
++        lo, hi = wilson(k, nn)
++        print(f"  {name:<9} {k:>2}/{nn}  rate {k/nn:.2f}  Wilson95 [{lo:.3f}, {hi:.3f}]")
++    print("  => Codex/CC2/ChatGPT/Gemini intervals all OVERLAP at n=20: the frozen")
++    print("     rung ORDER among the top 4 was never statistically separated.")
++    print("     Only DeepSeek-last is separated. A measured ladder must carry its")
++    print("     interval and fall back to a deterministic tie-break inside overlap.")
++
++    print()
++    print("=" * 78)
++    print("4. THE PROPOSED ESTIMATOR, worked")
++    print("=" * 78)
++    print("  v_hat(m) = Jeffreys posterior of P(admissible CONFIRMED | routed")
++    print("  attempt by writer m). Admissible = reverify_falsifier CONFIRMED and")
++    print("  the falsifier read the target (discrimination/provenance pass).")
++    for name, k, nn in [("writer A", 6, 7), ("writer B", 2, 2),
++                        ("writer C", 0, 2), ("cold start", 0, 0)]:
++        m, lo, hi = jeffreys_posterior(k, nn)
++        print(f"  {name:<11} {k}/{nn}:  posterior mean {m:.3f}  95% CrI [{lo:.3f}, {hi:.3f}]"
++              f"  (closed form + scipy.beta AGREE)")
++    print("  Cold start sits at 0.500 -- BETWEEN measured-strong and measured-weak,")
++    print("  which generalises rank_falsifier_writers' existing ranked+extras rule.")
++    print()
++    print("  Selection effect, cancelled by pairing: when writers A and B attempt")
++    print("  the SAME routed finding, difficulty is identical by construction, so")
++    print("  (B confirms, A failed) is a decisive pairwise win for B at ANY")
++    print("  difficulty mix. Example: of 7 shared findings, B confirms 5 that A")
++    print("  failed, A confirms 0 that B failed, 2 both fail ->")
++    kk, nn2 = 5, 5  # decisive pairs only
++    lo, hi = wilson(kk, nn2)
++    print(f"  decisive pairs favour B {kk}/{nn2}, Wilson95 [{lo:.3f}, {hi:.3f}]:")
++    print("  B ranks above A on evidence immune to between-finding difficulty.")
++
++    print()
++    print("=" * 78)
++    print("5. routing_max_rungs=0 CANNOT mean 'exhaust' in the current wiring")
++    print("=" * 78)
++    coerced = int(0 or 2)
++    print(f"  int(0 or 2) = {coerced}  (bench/reference_runner_v3.py:7000 pattern)")
++    assert coerced == 2
++    src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
++    line = next((l.strip() for l in src.splitlines()
++                 if "routing_max_rungs" in l and "or 2" in l), None)
++    print(f"  live line: {line}")
++    print("  => 0 coerces to 2; absent coerces to 2; the founder's no-cap ruling")
++    print("     has no expressible config value. Proposal: max_rungs=None sentinel")
++    print("     meaning 'exhaust the ladder', default unchanged at 2 until the")
++    print("     measured statistic ships (additive; byte-identical by default).")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

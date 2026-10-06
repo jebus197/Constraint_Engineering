@@ -43,15 +43,51 @@ def falsifier_style(code: str) -> str:
     return "reads" if re.search(r"open\s*\(|read_text|\.read\s*\(|linecache|getlines", c) else "detached"
 
 
+def falsifier_author(entry: dict) -> str:
+    """The model that WROTE the falsifier, which is not always the one that filed.
+
+    THE DEFECT THIS REPLACES, found by the cc2 seat on 2026-10-05 and verified
+    here. `analyse` keyed on `source_model` — the model that REPORTED the finding.
+    When the routing ladder resolves a critical, the falsifier is written by a RUNG
+    further up the ladder and recorded in `resolved_by_routing`; the filing model is
+    precisely the one that FAILED to write a working test.
+
+    MEASURED over `bench/logs/*/runner_state.json` by
+    `scripts/the_provenance_gate_credits_the_filer_2026-10-06.py`: of 3158 archived
+    entries, 210 carry `resolved_by_routing`, and **210 of 210 name a different
+    model from `source_model` — 6.6498% of all entries, Wilson [5.8324%, 7.5725%]**,
+    statsmodels and a scipy closed form agreeing. Every one of those credited a
+    strong rung's successful work to the weak model that could not do it.
+
+    THE DIRECTION IS WHAT MAKES IT SERIOUS. This script exists to decide whether a
+    model's record is SAFE TO RANK ON, and the founder has ruled the capability
+    ladder must become a measured statistic. Crediting a rung's confirmations to the
+    filer flatters exactly the models the ladder is supposed to demote, so the
+    defect corrupts the ordering in the one direction that cannot self-correct.
+
+    Precedence mirrors `_corrected_copy_owner` in the runner: the recorded resolver
+    wins, and `source_model` is the fallback for an entry routing never touched.
+    """
+    for key in ("resolved_by_routing", "resolved_in_round", "resolved_by_sweep"):
+        who = (entry.get(key) or "").strip()
+        if who:
+            return who
+    return (entry.get("source_model") or "?").strip() or "?"
+
+
 def analyse(report: pathlib.Path) -> dict:
     ents = (json.loads(report.read_text()).get("registry") or {}).get("entries") or {}
     per = collections.defaultdict(lambda: collections.Counter())
     for e in ents.values():
-        m = e.get("source_model") or "?"
+        m = falsifier_author(e)
         per[m][falsifier_style(e.get("falsifier_code"))] += 1
         per[m]["n"] += 1
         if e.get("falsifier_verdict") == "CONFIRMED":
             per[m]["confirmed"] += 1
+        # Kept so a reader can see how much of a model's record is its own work
+        # rather than work routed to it.
+        if falsifier_author(e) != (e.get("source_model") or "?"):
+            per[m]["via_routing"] += 1
     return per
 
 

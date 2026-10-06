@@ -86,19 +86,63 @@ class TestTheBudgetIsOptInAndDefaultsToParity:
     explicitly-opted-in budget rather than silently assumed.
     """
 
-    def test_the_launcher_does_not_pin_the_budget(self):
+    def test_the_launcher_exhausts_the_ladder(self):
+        """CONTRACT CHANGED 2026-10-06. Founder ruling: *"I don't think there
+        should be a cap at all. If it's a measured statistic, along with capability
+        fingerprinting then the problem should run until it is either resolved, or
+        the ladder is exhausted. (No more models to try.)"*
+
+        This previously asserted the launcher pinned NO literal, which was the
+        right guard against the parity break of 2026-10-05. The launcher now sets
+        0, which MEANS exhaust — and 0 is not a cap, it is the absence of one. The
+        dataclass default stays at 2 because it governs the 49 real configs; the
+        behaviour is measured in simulation first, which is the founder's own
+        methodology.
+        """
         import ast
         src = (REPO / "bench" / "tools" / "run_simulated_experiment.py").read_text(
             encoding="utf-8")
+        found = "ABSENT"
         for node in ast.walk(ast.parse(src)):
             if isinstance(node, ast.Call) and (
                     getattr(node.func, "attr", None)
                     or getattr(node.func, "id", None)) == "RunnerConfig":
                 for kw in node.keywords:
                     if kw.arg == "routing_max_rungs":
-                        assert not isinstance(kw.value, ast.Constant), (
-                            "the launcher pins routing_max_rungs to a literal "
-                            "again; it must default to the RunnerConfig value")
+                        found = ast.dump(kw.value)
+        assert found != "ABSENT", "the launcher no longer sets routing_max_rungs"
+        assert "Constant(value=0)" in found, (
+            f"the launcher does not fall back to 0 (exhaust); it sets {found[:120]}")
+
+    def test_zero_really_exhausts_rather_than_meaning_no_rungs(self):
+        """EXECUTED, because 0 is the kind of sentinel that silently means 'none'.
+
+        `reference_runner_v3` carried `int(getattr(cfg, "routing_max_rungs", 2) or 2)`
+        until 2026-10-06, which coerced 0 back to 2 — so 'exhaust' was inexpressible
+        through config and would have looked like it worked.
+        """
+        from bench.routing import resolve_via_routing
+        seen = []
+
+        def _resolve(model, finding):
+            seen.append(model)
+            return "assert False"
+
+        rungs = ["A", "B", "C", "D", "E"]
+        seen.clear()
+        r = resolve_via_routing({"finding_id": "C1"}, rungs, _resolve,
+                                lambda c: "ERROR", max_rungs=0)
+        assert seen == rungs, (
+            f"max_rungs=0 dispatched {seen}; it must try every rung, not none and "
+            f"not a default of 2")
+        assert r.rungs_tried == len(rungs)
+
+        seen.clear()
+        resolve_via_routing({"finding_id": "C1"}, rungs, _resolve,
+                            lambda c: "CONFIRMED", max_rungs=0)
+        assert seen == ["A"], (
+            f"exhaustion dispatched {seen} on a rung-1 CONFIRMED; it must still "
+            f"stop at the first success, which is what makes a deeper budget cheap")
 
     def test_the_ask_is_selectable(self):
         """EXECUTED: the launcher's own --help offers it."""

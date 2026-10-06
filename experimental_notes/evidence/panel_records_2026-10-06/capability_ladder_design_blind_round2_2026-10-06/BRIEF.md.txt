@@ -1,0 +1,131 @@
+# Design brief — what should decide which model is asked to do the hardest work?
+
+This is a BLIND round. Answer independently. A joint round follows once every blind
+reply is in. Your task is to find what is WRONG and to propose what should be built,
+not to confirm what exists.
+
+## The situation, measured
+
+`bench/routing.py` routes an unresolved critical finding to progressively stronger
+models. It ranks on `DEFAULT_FALSIFIER_STRENGTH = ("Codex","CC2","ChatGPT","Gemini",
+"DeepSeek")` — a frozen 5-tuple of VENDOR NAMES derived from Exp 42 in June 2026 and
+never re-derived. Its own docstring says it orders "by capability fingerprint"; the
+word `fingerprint` appears exactly ONCE in that file, in that docstring, and the code
+reads no fingerprint.
+
+Separately `_update_observed_fingerprint` writes a live per-model profile every round,
+consumed by `burst_planner.py`. The glossary defines that profile as (D, v-bar, A, C)
+including a VERIFICATION score. The 15 fields actually written contain **no
+verification score and no coverage dimension** — only context capacity and raw
+productivity.
+
+Measured facts you may rely on (verify any you doubt; producers named):
+- Real panel finding rates differ: chi-square 280.0138, df 4, p = 2.213221e-59.
+  Simulated panel does not: chi-square 3.0084, df 5, p = 0.6987.
+  `scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py`
+- `routing_max_rungs` defaults to 2; 0 of 288 config files pin it. `resolve_via_routing`
+  STOPS at the first CONFIRMED, so rung 3 runs only when rungs 1 and 2 both failed.
+- `competence_provenance.py` credits a confirmation to the model that REPORTED the
+  finding, not the one that WROTE the falsifier: 1370 of 16500 archived entries carry
+  `resolved_by_routing`, 8.3% credited to the model that failed to write a working test.
+- On Exp 55 one model scored 2 of 2 CONFIRMED with falsifiers that opened nothing and
+  restated the document from memory; another scored 0 of 2 with genuine readers that
+  ERRORed. A naive confirm-rate ranking inverts the correct order.
+
+## The founder's ruling, verbatim
+
+*"The routing ladder should be a measured statistic, not simply a list of named vendors
+based on what you, or I may have read about them on the internet. In that sense, our
+runners shouldn't care if a particularly named vendor model is available or not. It
+should just shunt data around the system based on the performance of all models
+(regardless if they are simulated or real) that may be available to the system."*
+
+*"The system shouldn't care at all what a model is called, only what it can be
+statistically demonstrated to have done, as per its capability fingerprint. So it
+shouldn't matter if all the models are different, or all the models are the same, or if
+they are all models from a single vendor, or even a single model operating on its own
+(in which case the ladder would just route the issue back to itself and would have
+another go at resolving it by using the rest of the machinery of the harness.)"*
+
+*"I don't think there should be a cap at all. If it's a measured statistic, along with
+capability fingerprinting then the problem should run until it is either resolved, or
+the ladder is exhausted. (No more models to try.)"*
+
+On resources: *"cost in terms of tokens required and tokens that will be used over any
+given problem set. That then becomes an issue of load balancing... Problems then get
+routed to models with enough capability, AND sufficient resources given the opening
+problem set, rather than risking exhausting models due to poor resource/problem
+allocation."*
+
+On reproducibility: the project's goal is a STEM calculator — problem in, definitive
+repeatable answer out. He asks whether reproducibility should be a separate step
+performed by the models, by the human, or both.
+
+## Answer these, each explicitly
+
+1. **What should the ladder rank on?** Name the quantity, its estimator, its minimum
+   sample, and what happens to a model with no history. It must be vendor-agnostic and
+   must degrade sensibly to a 1-model panel.
+2. **The selection effect.** The ladder sends HARD findings to strong models, so their
+   success rate is depressed by being trusted. Earlier proposals: measure first attempts
+   only (rejected — populations differ at p = 2.2e-59); randomise an audit fraction
+   (right identification, but routing fires rarely — is it deployable?); keep the frozen
+   order as decider with the rate only as a drift alarm. Which, or what else?
+3. **Removing the rung cap.** The founder wants exhaustion, not a fixed budget. What
+   stops that becoming unbounded spend, and what is the correct stopping rule?
+4. **Resource-aware routing.** Should token budget enter the routing decision alongside
+   capability? If so, how, without making a cheap model the default answer?
+5. **Reproducibility.** Should it be a separate verification step? Whose?
+6. **What have we missed?** Anything in this design that cannot work, or that conflicts
+   with the project's additive standard or its no-model-voting rule.
+
+## Deliver your proposal as a FILE
+
+Write any design or repair INTO the sandbox repository tree at its real path, plus any
+script you used to check a claim, so it can be re-run. Prose left in the reply is
+destroyed at teardown.
+
+## State what would REFUTE you
+
+For each position, name the measurement, file or command whose output would change
+your answer. A position with no refutation condition is an opinion.
+
+## Termination
+
+Stop when further work produces no new above-threshold findings — a finding is above
+threshold if missing it could cause a real-world failure or a wrong experimental
+conclusion. An early stop with a stated reason beats padding.
+
+Include a section headed `## Disagreement` with a real body.
+
+## The mathematical instruments this question touches, and what they should tell you
+
+**gamma** is the decay curve and is LOAD-BEARING — an active convergence condition, not
+a report. The two-sided gate requires BOTH `gamma_critical >= 0.30` AND K consecutive
+zero-new-critical rounds. A routing change that alters which findings get resolved
+alters the critical series, so it moves gamma. Say what your design does to gamma.
+
+**severity** decides in 22 distinct functions across 33 live sites and weights L_n. The
+A4 fail-safe now exempts a sub-critical finding ONLY when `severity_is_proven` holds —
+the model reproduced its own R_k from its own stated inputs. Any capability statistic
+you propose must say whether it is gated the same way, because an UNPROVEN number
+opening a gate is the model vote this project forbids.
+
+**Wilson** intervals are required on every proportion you report, and every computed
+claim must be cross-verified with at least 2 tools. A capability estimator built on
+small per-model samples lives or dies on its interval width — state it.
+
+**rho** is discovery efficiency and **S_k** classifies a FIX, not a claim. If your
+estimator reuses either, say which and why it is the right construct.
+
+## Output shape — return exactly these fields
+
+- `## Position` — one paragraph per numbered question, 1 through 6, each answered
+  explicitly and separately.
+- `## The quantity` — the estimator in full: formula, inputs, minimum sample, cold-start
+  behaviour, and its behaviour on a 1-model panel.
+- `## What it does to gamma` — the effect on the critical series and the two-sided gate.
+- `## Measurements` — every figure with its Wilson interval and the 2 tools that agree.
+- `## Delivered files` — paths written into the sandbox tree.
+- `## What would refute me` — per position.
+- `## Disagreement` — a real body; "none" only if you genuinely have none, said so.

@@ -285,6 +285,11 @@ _ONLY = _os.environ.get("PANEL_ONLY", "")
 #: than returning one that merely looks blind.
 _BLIND_OF = tuple(x for x in _os.environ.get("PANEL_BLIND_OF", "").split(",") if x.strip())
 
+#: THE JOINT ROUND'S DECLARED PARENTS. A joint round's brief is NOT byte-identical to
+#: the blind briefs -- it carries their replies -- so it cannot be grouped by brief
+#: hash and must name what it follows. Enforced in `_refuse_if_topology_is_skipped`.
+_JOINT_OF = tuple(x for x in _os.environ.get("PANEL_JOINT_OF", "").split(",") if x.strip())
+
 
 def _blind_text_for(rounds):
     """Distinctive phrases from the named rounds' replies.
@@ -698,6 +703,42 @@ def dispatch(name, model_id, route):
             # 1800s, raised from 900 on 2026-09-07: BOTH seats hit the 900 s wall
             # with 0 chars on a brief that asked them to run archive-scanning
             # work. The clock, not the task, was the binding constraint.
+            #
+            # 1800s RETAINED. A raise to 3600 was made and REVERTED within the
+            # hour on 2026-10-06, and the reversal is recorded because the
+            # reasoning that produced it was wrong in an instructive way.
+            #
+            # WHAT WAS CLAIMED: that the 1800 s clock was the binding constraint on
+            # the cc2 seat, inferred from a timed-out attempt that had made 88 tool
+            # calls at a measured 20.455 s per call while still working.
+            #
+            # WHAT REFUTED IT, the same night: the identical brief then completed in
+            # 1020.0 s with 2581 words, having made 49 tool calls at 20.816 s per
+            # call. 49 calls is what the brief actually needs, and 1800 s leaves 76%
+            # headroom over the 1020 s it took. The clock was never binding.
+            #
+            # WHAT WAS ACTUALLY HAPPENING, and it is a diagnostic signature worth
+            # keeping. The per-call RATE was stable across all 3 attempts -- 20.455
+            # and 20.816 s per call -- so the seat was never slowed down. The call
+            # COUNT changed: 88 and still unfinished during the founder's reported
+            # network outages at about 04:22 and 05:03, against 49 to a complete
+            # answer once the link was stable. A seat on a degraded route keeps
+            # issuing tool calls at its normal speed and never converges, because
+            # the calls themselves are failing and being retried. fable, for
+            # comparison, answered in 751.2 s with 50 calls at 15.024 s per call.
+            #
+            # SO A LONGER TIMEOUT IS THE WRONG LEVER AND WOULD HAVE MADE IT WORSE:
+            # it lets a degraded round churn for an hour instead of 30 minutes. The
+            # remedy for a dead or degraded route is to detect it BEFORE the brief
+            # is sent -- `_refuse_if_a_seat_is_not_alive`, which established the
+            # route in 5.91 s -- and to re-dispatch when it recovers, which
+            # `scripts/panel_round_watchdog_2026-10-06.py` does.
+            #
+            # THE CONTENTION HYPOTHESIS BELOW IS NOT REFUTED EITHER, and the earlier
+            # version of this comment wrongly said it was. Those 2 failures happened
+            # while the seats were serialised, but they also happened during network
+            # outages, so they are not a clean test of contention. The block below
+            # still correctly describes itself as uninterventional.
             # THE SUBSTANCE TEST WAS BUILT AND NEVER PASSED HERE.
             # accept_reply_or_work (experiment_11_orchestrator.py:781) exists for
             # exactly this and takes the sandbox path: it accepts a SHORT reply
@@ -934,6 +975,147 @@ def _refuse_if_the_suite_state_is_unknown() -> None:
                       override_env="PANEL_SUITE_UNCHECKED", paid_seats=paid_n)
 
 
+def _load_aliveness():
+    """Load the dated aliveness module. importlib because the filename carries a date."""
+    import importlib.util, sys as _sys
+    _p = Path(__file__).resolve().parent / "seat_aliveness_2026-10-06.py"
+    spec = importlib.util.spec_from_file_location("cdsfl_seat_aliveness", _p)
+    m = importlib.util.module_from_spec(spec)
+    _sys.modules["cdsfl_seat_aliveness"] = m   # dataclasses need this registered
+    spec.loader.exec_module(m)
+    return m
+
+
+def _probe_caller(model_id, route, prompt, timeout):
+    """A 0-argument caller for 1 seat, over the SAME route the round will use.
+
+    Reusing the dispatcher's own call functions is the point: a probe that took a
+    different path would establish the liveness of something other than the route
+    about to carry the brief.
+    """
+    def _call() -> str:
+        if route == "claude_cli":
+            return call_claude_cli(model_id=model_id, system_prompt=None,
+                                   user_prompt=prompt, max_tokens=16,
+                                   timeout=timeout, max_retries=1)
+        if route in ("deepseek", "moonshot"):
+            _fn = call_deepseek if route == "deepseek" else call_moonshot
+            return _fn(model_id, None, prompt, max_tokens=16, timeout=timeout,
+                       max_retries=1)
+        return call_openrouter(model_id, None, prompt, max_tokens=16,
+                               timeout=timeout, max_retries=1)
+    return _call
+
+
+def _refuse_if_a_seat_is_not_alive(models) -> int:
+    """Ask every seat to print Ready! before the brief is built or sent.
+
+    THE FOUNDER'S ASK, 2026-10-06: *"perhaps we should build a simple 'aliveness
+    test', where the models get up to 3 attempts, by simply asking it to print
+    'Ready!'"*
+
+    MEASURED THE SAME NIGHT, which is why it runs HERE rather than after the
+    sandboxes: the cc2 seat consumed 2423.7 seconds and returned 0 words because
+    the network had dropped. Everything between this line and the dispatch --
+    6.53 seconds and 606 MB of sandbox per seat, the brief build, the whole reply
+    window -- was spent to discover a fact a 1-word probe establishes in seconds.
+
+    A DEAD SEAT REFUSES THE ROUND; IT IS NEVER DROPPED FROM THE ROSTER, because
+    skipping a model is benching it and that is forbidden. The watchdog then
+    retries cheaply, which is the composition the founder asked for.
+
+    Returns 0 to proceed, or a non-zero exit code.
+    """
+    if _os.environ.get("PANEL_SKIP_ALIVENESS"):
+        print("    aliveness probe SKIPPED because PANEL_SKIP_ALIVENESS is set",
+              flush=True)
+        return 0
+    try:
+        AL = _load_aliveness()
+    except Exception as exc:  # noqa: BLE001
+        # A probe that cannot be LOADED has not passed. Same trap as the POST.
+        print(f"    REFUSED: the aliveness probe could not be loaded: "
+              f"{type(exc).__name__}: {exc}", flush=True)
+        return 2
+    callers = {n: _probe_caller(m, r, AL.PROBE_PROMPT, AL.DEFAULT_TIMEOUT_S)
+               for n, m, r in models}
+    print(f"    aliveness probe: asking {len(callers)} seat(s) to print "
+          f"{AL.PROBE_TOKEN.capitalize()}!, up to {AL.DEFAULT_ATTEMPTS} attempts "
+          f"each, serialised", flush=True)
+    results = AL.probe_roster(callers, attempts=AL.DEFAULT_ATTEMPTS,
+                              timeout=AL.DEFAULT_TIMEOUT_S)
+    for n, r in results.items():
+        print(f"      {n}: {'ALIVE' if r.alive else 'NO ANSWER'}  "
+              f"({r.elapsed_s}s, {r.detail})", flush=True)
+    refusal = AL.refusal_for(results)
+    if refusal:
+        print(refusal, flush=True)
+        print("    to dispatch anyway, deliberately: PANEL_SKIP_ALIVENESS=1",
+              flush=True)
+        return 3
+    return 0
+
+
+def _load_star():
+    """Load the dated star-topology module. importlib because of the date in the name."""
+    import importlib.util, sys as _sys
+    _p = Path(__file__).resolve().parent / "star_topology_2026-10-06.py"
+    spec = importlib.util.spec_from_file_location("cdsfl_star_topology", _p)
+    m = importlib.util.module_from_spec(spec)
+    _sys.modules["cdsfl_star_topology"] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+def _refuse_if_topology_is_skipped(models) -> int:
+    """Blind round first, joint round second — checked, not remembered.
+
+    THE FOUNDER'S RULING, 2026-10-06: *"I didn't just state it as a 'preference', I
+    stated that it should be built into all confer round machinery going forward so
+    it couldn't be skipped."*
+
+    IT RUNS BEFORE THE ALIVENESS PROBE because it reads local files and costs no
+    network. A round that must be refused should be refused for free.
+
+    2 checks, and the grouping key for the first is the BRIEF ITSELF. Rounds asking
+    the same question have a byte-identical BRIEF.md, so sha256 over the brief finds
+    the siblings with nothing for an operator to label or forget. A sibling that
+    holds a LANDED reply and is not named in PANEL_BLIND_OF is a refusal, because its
+    reply is reachable from this seat's sandbox copy of the tree.
+
+    Returns 0 to proceed, or a non-zero exit code.
+    """
+    if _os.environ.get("PANEL_SKIP_TOPOLOGY"):
+        print("    star topology check SKIPPED because PANEL_SKIP_TOPOLOGY is set",
+              flush=True)
+        return 0
+    try:
+        ST = _load_star()
+    except Exception as exc:  # noqa: BLE001
+        print(f"    REFUSED: the star-topology check could not be loaded: "
+              f"{type(exc).__name__}: {exc}", flush=True)
+        return 2
+    logs_root = _logs_dir().parent
+    round_name = _logs_dir().name
+    roster = [n for n, _m, _r in models]
+
+    if _JOINT_OF:
+        refusal = ST.check_joint_round(logs_root, round_name, _JOINT_OF, roster)
+        kind = "JOINT"
+    else:
+        refusal = ST.check_blind_round(logs_root, round_name, _BLIND_OF)
+        kind = "BLIND"
+    if refusal:
+        print(refusal, flush=True)
+        print("    to dispatch anyway, deliberately: PANEL_SKIP_TOPOLOGY=1",
+              flush=True)
+        return 4
+    sibs = ST.sibling_rounds_on_the_same_question(logs_root, round_name)
+    print(f"    star topology: {kind} round; {len(sibs)} answered sibling(s) on the "
+          f"same brief, all declared", flush=True)
+    return 0
+
+
 def main() -> int:
     # BIND THE BRIEF HERE, not at import. See `resolve_brief`.
     resolve_brief()
@@ -982,6 +1164,16 @@ def main() -> int:
     # bad path) and was never called. Runway 0C.9 has carried this at HIGH since
     # then, describing the confinement half as unbuilt when in fact it was built
     # and unwired -- the project's most repeated failure shape.
+    # ─────── STAR TOPOLOGY, checked first because it costs no network ───────
+    _topo_rc = _refuse_if_topology_is_skipped(MODELS)
+    if _topo_rc:
+        return _topo_rc
+
+    # ─────────── ALIVENESS PROBE, before anything expensive ───────────
+    _alive_rc = _refuse_if_a_seat_is_not_alive(MODELS)
+    if _alive_rc:
+        return _alive_rc
+
     global _PANEL_SANDBOX_CWD
     baseline = panel_sandbox.fingerprint(_REPO)
     # THE CONTROL PLANE IS OUTSIDE THE REPO AND WAS UNWATCHED (2026-09-07).

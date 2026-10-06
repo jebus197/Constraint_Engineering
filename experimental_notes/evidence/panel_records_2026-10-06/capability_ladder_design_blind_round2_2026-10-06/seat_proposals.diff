@@ -1,0 +1,1958 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-06 06:01:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo/.cdsfl_deny_canonical_writes.sb	2026-10-06 05:44:32
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/logs/capability_ladder_design_blind_cc2_2026-10-06/cc2.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/capability_ladder_design_blind_cc2_2026-10-06/cc2.json	2026-10-06 06:01:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo/bench/logs/capability_ladder_design_blind_cc2_2026-10-06/cc2.json	2026-10-06 05:27:51
+@@ -1,216 +1,375 @@
+ {
+   "model": "cc2",
+   "route": "claude_cli",
+-  "ok": true,
+-  "chars": 16745,
++  "ok": false,
++  "error": "RuntimeError: Claude CLI call failed after 2 attempts for opus. Last error: claude CLI timed out after 1800.0s",
+   "tool_calls": [
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"pwd && ls && git -C . log --oneline -5 2>/dev/null | head -20\", \"description\": \"Orient in repo\"}"
++      "input_preview": "{\"command\": \"pwd && ls && git log --oneline -3 2>/dev/null | head -5\", \"description\": \"Orient in repo\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"ls bench/ 2>/dev/null | head -60; echo \\\"---SCRIPTS---\\\"; ls scripts/ 2>/dev/null | head -40; echo \\\"---DOCS---\\\"; ls docs/ 2>/dev/null | head -30\", \"description\": \"List key dirs\"}"
++      "input_preview": "{\"command\": \"ls /home/user 2>/dev/null; find / -maxdepth 4 -name \\\"routing.py\\\" -path \\\"*bench*\\\" 2>/dev/null | head\", \"description\": \"Locate bench/routing.py\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"wc -l bench/routing.py && cat bench/routing.py\", \"description\": \"Read routing.py\"}"
++      "input_preview": "{\"command\": \"wc -l bench/routing.py bench/burst_planner.py bench/competence_provenance.py 2>&1\", \"description\": \"Size key files\"}"
+     },
+     {
+       "name": "Bash",
+       "input_preview": "{\"command\": \"grep -rn \\\"_update_observed_fingerprint\\\" --include=*.py | head -20\", \"description\": \"Find fingerprint writer\"}"
+     },
+     {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/routing.py\"}"
++    },
++    {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"_update_observed_fingerprint|observed_fingerprint\", \"output_mode\": \"files_with_matches\"}"
++    },
++    {
++      "name": "Agent",
++      "input_preview": "{\"description\": \"Survey prior fingerprint-ladder proposals\", \"subagent_type\": \"Explore\", \"prompt\": \"In the repo at /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo, read these files and summarise the SUBSTANTIVE technical content (proposed estimators, formulas, named defects, rejected options and WHY rejected):\\n\\n- experimental_notes/Proposal_Fingerprint_Falsific"
++    },
++    {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/experimental_notes/Proposal_Fingerprint_Falsification_Dimension_2026-10-05.md\"}"
++    },
++    {
++      "name": "Agent",
++      "input_preview": "{\"description\": \"Map fingerprint writer and consumers\", \"subagent_type\": \"Explore\", \"prompt\": \"In the repo at /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo:\\n\\n1. Find `_update_observed_fingerprint` in bench/reference_runner_v3.py. Quote the function in full, and list EXACTLY the field names it writes.\\n2. Find where that profile is persisted (path/filename) an"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"grep -rn \\\"_update_observed_fingerprint\\\" . 2>/dev/null | head -20\", \"description\": \"Find fingerprint writer\"}"
++      "input_preview": "{\"command\": \"ls -la /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo; ls -la /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/experimental_notes | head -60\"}"
+     },
+     {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/experimental_notes/Panel_FULL_RECORD_Fingerprint_Ladder_2026-10-05.md\"}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"grep -rn \\\"fingerprint\\\" docs/GLOSSARY.md | head -30\", \"description\": \"Glossary fingerprint\"}"
++      "input_preview": "{\"command\": \"ls -la /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo && echo \\\"---BENCH---\\\" && ls -la /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench 2>/dev/null && echo \\\"---SCRIPTS---\\\" && ls -la /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/scripts 2>/dev/null && echo \\\"---DOCS---\\\" "
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"grep -rni \\\"fingerprint\\\" docs/GLOSSARY.md | head -40; echo \\\"=== glossary size ===\\\"; wc -l docs/GLOSSARY.md\", \"description\": \"Glossary fingerprint case-insensitive\"}"
++      "input_preview": "{\"command\": \"wc -l /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/experimental_notes/Panel_FULL_RECORD_Fingerprint_Ladder_Star_2026-10-05.md /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/experimental_notes/Panel_FULL_RECORD_Fingerprint_Ladder_2026-10-05.md\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"sed -n '1428,1520p' bench/run_exp35_policy_engine.py\", \"description\": \"Read fingerprint writer exp35\"}"
++      "input_preview": "{\"command\": \"ls scripts | grep -i -E \\\"sim_panel|heterog|routing|ladder|fingerprint\\\" \", \"description\": \"List relevant scripts\"}"
+     },
+     {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"_update_observed_fingerprint\", \"output_mode\": \"content\", \"-n\": true}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"sed -n '190,240p' docs/GLOSSARY.md\", \"description\": \"Glossary Fingerprint section\"}"
++      "input_preview": "{\"command\": \"grep -rn \\\"routing_max_rungs\\\" --include \\\"*.py\\\" --include \\\"*.json\\\" --include \\\"*.md\\\" . 2>/dev/null | grep -v \\\"/logs/\\\" | head -30\", \"description\": \"Find routing_max_rungs sites\"}"
+     },
+     {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/experimental_notes/Panel_FULL_RECORD_Fingerprint_Ladder_Star_2026-10-05.md\"}"
++    },
++    {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"fingerprint\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench\", \"output_mode\": \"count\", \"-i\": true, \"head_limit\": 40}"
++    },
++    {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/reference_runner_v3.py\", \"offset\": 9700, \"limit\": 150}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"sed -n '1875,1960p' bench/run_exp36_evidence.py\", \"description\": \"exp36 fingerprint writer\"}"
++      "input_preview": "{\"command\": \"ls /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench | grep -iE \\\"burst_planner|competence_provenance|fingerprint\\\"; echo \\\"---scripts---\\\"; ls /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/scripts | grep -iE \\\"competence|provenance|fingerprint|burst\\\"; echo \\\"---docs---\\\"; ls /private/var/folders/cc/scptwd_s4"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"grep -rn \\\"fingerprint\\\" bench/reference_runner_v3.py | head -40; echo \\\"=== wc ===\\\"; wc -l bench/reference_runner_v3.py bench/burst_planner.py 2>/dev/null\", \"description\": \"fingerprint in reference_runner_v3\"}"
++      "input_preview": "{\"command\": \"grep -n \\\"fingerprint\\\\|DEFAULT_FALSIFIER_STRENGTH\\\\|v_falsif\\\\|provenance\\\" bench/routing.py | head -50; echo \\\"---LEN---\\\"; wc -l bench/routing.py\"}"
+     },
+     {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"FINGERPRINT_DIR\\\\s*=\", \"output_mode\": \"content\", \"-n\": true}"
++    },
++    {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"v_falsif|falsif_rate|provenance_clean|falsification_rate|v_falsification\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo\", \"output_mode\": \"content\", \"head_limit\": 30}"
++    },
++    {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"fingerprint\", \"output_mode\": \"content\", \"-n\": true, \"-i\": true, \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/docs/GLOSSARY.md\", \"-C\": 6}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"sed -n '9660,9900p' bench/reference_runner_v3.py\", \"description\": \"Read real fingerprint writer\"}"
++      "input_preview": "{\"command\": \"ls -la /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/fingerprints; echo \\\"---\\\"; wc -l /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/burst_planner.py /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/scripts/competence_provenance.py\", \"description\": \"Check fingerprint"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"ls bench/fingerprints/ 2>/dev/null; echo \\\"=== sample ===\\\"; for f in bench/fingerprints/*.json; do echo \\\"--- $f\\\"; python3 -c \\\"\\nimport json,sys\\nd=json.load(open('$f'))\\no=d.get('observed',{})\\nprint('keys',len(o))\\nfor k,v in o.items():\\n    if isinstance(v,list): print(' ',k,'len',len(v))\\n    else: print(' ',k,v)\\n\\\"; done 2>/dev/null | head -80\", \"description\": \"Inspect finger"
++      "input_preview": "{\"command\": \"sed -n 1,120p bench/routing.py\"}"
+     },
+     {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/burst_planner.py\"}"
++    },
++    {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"_load_fingerprints|load_fingerprints|observed_fingerprint|fingerprints/|FINGERPRINT_DIR\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench\", \"output_mode\": \"content\", \"glob\": \"*.py\", \"head_limit\": 40}"
++    },
++    {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/scripts/competence_provenance.py\"}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"grep -n \\\"routing\\\\.\\\\|from bench.routing\\\\|import routing\\\\|rank_falsifier_writers\\\\|resolve_via_routing\\\\|routing_max_rungs\\\\|routing\\\\.route\\\" bench/reference_runner_v3.py | head -40\", \"description\": \"Find routing call sites\"}"
++      "input_preview": "{\"command\": \"grep -rn \\\"strength_order=\\\\|rank_falsifier_writers(\\\\|resolve_via_routing(\\\" --include=*.py bench/*.py bench/tools/*.py | grep -v \\\"^bench/routing.py\\\" | head -30\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"sed -n '1440,1480p' bench/reference_runner_v3.py\", \"description\": \"cfg routing_max_rungs\"}"
++      "input_preview": "{\"command\": \"ls bench/tests | grep -i \\\"2026-10-05\\\" ; echo \\\"---\\\"; ls bench/fingerprints 2>/dev/null; echo \\\"---keys---\\\"; python3 -c \\\"\\nimport json,glob\\nfor f in sorted(glob.glob('bench/fingerprints/*.json'))[:3]:\\n    d=json.load(open(f)); print(f, sorted(d.keys()) if isinstance(d,dict) else type(d))\\n\\\"\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"sed -n '6840,7140p' bench/reference_runner_v3.py\", \"description\": \"Read routing call site\"}"
++      "input_preview": "{\"command\": \"python3 scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py 2>&1 | tail -40\", \"description\": \"Reproduce heterogeneity chi-squares\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"ls configs/*.json 2>/dev/null | wc -l && grep -ln \\\"routing_max_rungs\\\" configs/* 2>/dev/null | wc -l && grep -ln \\\"routing_enabled\\\" configs/* 2>/dev/null | wc -l\", \"description\": \"Count configs pinning routing_max_rungs\"}"
++      "input_preview": "{\"command\": \"cat bench/fingerprints/DeepSeek.json && echo \\\"=====SIM=====\\\" && cat bench/fingerprints/Fable-SIM.json\", \"description\": \"Read persisted fingerprint JSON files\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"wc -l scripts/competence_provenance.py && sed -n '1,90p' scripts/competence_provenance.py\", \"description\": \"Read competence_provenance head\"}"
++      "input_preview": "{\"command\": \"sed -n '1,80p' scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py\", \"description\": \"Read heterogeneity script head\"}"
+     },
+     {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"burst_planner|should_burst|plan_phases|D_decay\", \"output_mode\": \"content\", \"-n\": true, \"glob\": \"!**/{.claude,bench/logs,experimental_notes,.scratch,.mutants}/**\", \"head_limit\": 80}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"sed -n '90,159p' scripts/competence_provenance.py\", \"description\": \"Rest of competence_provenance\"}"
++      "input_preview": "{\"command\": \"grep -rn \\\"strength_order\\\\|rank_falsifier_writers\\\\|resolve_via_routing\\\" bench --include=\\\"*.py\\\" | grep -v \\\"bench/logs/\\\" | grep -v \\\"^bench/routing.py\\\" | head -40; echo \\\"=== fingerprint observed keys ===\\\"; python3 -c \\\"\\nimport json; d=json.load(open('bench/fingerprints/Codex.json')); print(sorted(d['observed'].keys())); print(d['experiment'], d['timestamp'])\\\"\"}"
+     },
+     {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/reference_runner_v3.py\", \"offset\": 15255, \"limit\": 60}"
++    },
++    {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"_load_fingerprints\\\\(|observed_fingerprints|OBSERVED_FINGERPRINTS\", \"output_mode\": \"content\", \"-n\": true, \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/reference_runner_v3.py\"}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"ls scripts/ | grep -i \\\"sim_panel_is_not_hetero\\\\|provenance_gate_credits\\\" ; echo \\\"---\\\"; cat scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py 2>/dev/null | head -80\", \"description\": \"Read heterogeneity script\"}"
++      "input_preview": "{\"command\": \"sed -n '80,200p' scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py\", \"description\": \"Read rest of heterogeneity script\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"grep -rn \\\"unverified_critical_count\\\" bench/*.py bench/dm/*.py 2>/dev/null | head -20; echo \\\"=== gamma_critical def ===\\\"; grep -rn \\\"gamma_critical\\\" bench/dm/_convergence.py | head -20\", \"description\": \"Find unverified_critical_count and gamma_critical\"}"
++      "input_preview": "{\"command\": \"ls bench/fingerprints/ && echo \\\"---\\\" && cat bench/fingerprints/Codex.json 2>/dev/null || cat \\\"$(ls bench/fingerprints/*.json | head -1)\\\"\", \"description\": \"Inspect fingerprint files\"}"
+     },
+     {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"INITIAL_FINGERPRINTS|class CapabilityFingerprint\", \"output_mode\": \"content\", \"-n\": true, \"-A\": 10, \"glob\": \"bench/{reference_runner_v3.py,runner_core.py}\", \"head_limit\": 60}"
++    },
++    {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"max_successful_prompt_chars|prompt_chars_history|max_failed_prompt_chars|avg_findings_per_round|rounds_participated|max_successful_context_chars\", \"output_mode\": \"content\", \"-n\": true, \"glob\": \"bench/{*.py,tests/*.py}\", \"head_limit\": 70}"
++    },
++    {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/reference_runner_v3.py\", \"offset\": 9660, \"limit\": 42}"
++    },
++    {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/runner_core.py\", \"offset\": 138, \"limit\": 60}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"timeout 300 python3 scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py 2>&1 | tail -40\", \"description\": \"Reproduce heterogeneity figures\"}"
++      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,glob,pathlib\\nfor p in sorted(glob.glob('bench/fingerprints/*.json')):\\n    j=json.load(open(p)); o=j['observed']\\n    print(f\\\\\\\"{pathlib.Path(p).stem:<14} keys={len(o)} qac={o.get('quality_at_capacity')} D={o.get('D_decay')} tf={o.get('total_findings')} rp={o.get('rounds_participated')} fm={o.get('failure_modes')}\\\\\\\")\\nprint()\\nprint('observed field names"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"python3 scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py 2>&1 | tail -45\", \"description\": \"Reproduce heterogeneity figures\"}"
++      "input_preview": "{\"command\": \"grep -rln \\\"resolved_by_routing\\\" --include \\\"*.py\\\" . | grep -v worktrees | head -20\", \"description\": \"Find resolved_by_routing producers\"}"
+     },
+     {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"bench/fingerprints|fingerprints/|FINGERPRINT_DIR\", \"output_mode\": \"content\", \"-n\": true, \"glob\": \"{bench/*.py,bench/tests/*.py,scripts/*.py,explorer/**/*.py}\", \"head_limit\": 40}"
++    },
++    {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/run_exp17_immune.py\", \"offset\": 388, \"limit\": 110}"
++    },
++    {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/docs/GLOSSARY.md\", \"offset\": 195, \"limit\": 10}"
++    },
++    {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/reference_runner_v3.py\", \"offset\": 9849, \"limit\": 30}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"sed -n '2740,2790p' bench/reference_runner_v3.py\", \"description\": \"unverified_critical_count body\"}"
++      "input_preview": "{\"command\": \"grep -rn \\\"rank_falsifier_writers\\\\|resolve_via_routing\\\\|routing_max_rungs\\\" bench/reference_runner_v3.py | head -20\"}"
+     },
+     {
+-      "name": "Write",
+-      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo/scripts/ladder_order_is_cost_only_2026-10-06.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"What a routing-ladder ORDER can and cannot change, derived not asserted.\\n\\nTHE QUESTION. The founder has ruled that `bench/routing.py`'s ladder must become a\\nmeasured statistic rather than `DEFAULT_FALSIFIER_"
++      "name": "Bash",
++      "input_preview": "{\"command\": \"ls bench/logs | wc -l; ls experimental_notes/evidence | head -30; echo ---; find . -path ./bench/logs -prune -o -name \\\"*.jsonl\\\" -print 2>/dev/null | grep -v worktrees | head -20\", \"description\": \"Locate archive data\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"touch scripts/_wtest_$$ && echo WRITABLE && rm scripts/_wtest_$$\", \"description\": \"Test write permission in scripts dir\"}"
++      "input_preview": "{\"command\": \"sed -n '1,60p' bench/tests/test_provenance_credits_the_falsifier_author_2026-10-06.py\", \"description\": \"Read provenance credit test\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"mkdir -p /tmp/cdsfl_w && cat > scripts/ladder_order_is_cost_only_2026-10-06.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"What a routing-ladder ORDER can and cannot change, derived not asserted.\\n\\nTHE QUESTION. The founder has ruled that `bench/routing.py`'s ladder must become a\\nmeasured statistic rather than `DEFAULT_FALSIFIER_STRENGTH`, a frozen 5-tuple of\\nvendor names, and that th"
++      "input_preview": "{\"command\": \"ls bench/logs/*/runner_state.json 2>/dev/null | wc -l; f=$(ls bench/logs/*/runner_state.json | head -1); echo $f; python3 -c \\\"\\nimport json,sys\\nj=json.load(open('$f'))\\nprint(type(j), list(j.keys())[:30] if isinstance(j,dict) else len(j))\\n\\\"\", \"description\": \"Inspect runner_state structure\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"which wolframscript >/dev/null 2>&1 && wolframscript -code 'With[{p={p1,p2,p3,p4}}, Module[{walk,f}, walk[o_]:=Total[Table[Product[1-o[[j]],{j,1,i-1}]*o[[i]],{i,1,Length[o]}]]; f=Simplify[walk[p]-(1-Times@@(1-p))]; Print[{\\\"R1 closed form residual:\\\",f}]; Print[{\\\"R1 distinct over perms:\\\",Length[DeleteDuplicates[Simplify/@(walk/@Permutations[p])]]}]; Print[{\\\"R2 transposition residua"
++      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nj=json.load(open('bench/logs/commissioning_arm1_panel_20260921T215405Z/runner_state.json'))\\nr=j['registry']\\nprint(type(r), len(r))\\nif isinstance(r,dict):\\n    k=list(r)[0]; print('key',k); print(json.dumps(r[k])[:1500])\\nelif isinstance(r,list):\\n    print(json.dumps(r[0])[:1500])\\n\\\"\", \"description\": \"Inspect registry entry\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"ls bench/logs/ | wc -l; ls bench/logs/*/runner_state.json 2>/dev/null | wc -l; ls bench/logs/*/*_report.json 2>/dev/null | wc -l\", \"description\": \"Count archive artefacts\"}"
++      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,glob,collections\\nkeys=collections.Counter(); verd=collections.Counter(); n=0\\nfor p in glob.glob('bench/logs/*/runner_state.json'):\\n    try: j=json.load(open(p))\\n    except Exception: continue\\n    for fid,e in (j.get('registry',{}).get('entries',{}) or {}).items():\\n        if not isinstance(e,dict): continue\\n        n+=1; keys.update(e.keys()); verd[e."
+     },
+     {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/reference_runner_v3.py\", \"offset\": 17030, \"limit\": 55}"
++    },
++    {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"class CapabilityFingerprint\", \"output_mode\": \"content\", \"-n\": true, \"-A\": 12, \"glob\": \"bench/*.py\", \"head_limit\": 30}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"cat > scripts/the_ladder_statistic_loses_the_filers_failure_2026-10-06.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The competence statistic the ladder would rank on counts ENTRIES, not ATTEMPTS.\\n\\nWHAT WAS ALREADY FIXED, AND WHY THAT FIX IS HALF OF ONE.\\n`scripts/competence_provenance.py:falsifier_author` was repaired on 2026-10-06 so an\\nentry resolved by the routing ladder is credi"
++      "input_preview": "{\"command\": \"grep -n \\\"resolved_by_routing\\\" bench/reference_runner_v3.py | head -20; echo \\\"=== provenance ===\\\"; grep -n \\\"resolved_by_routing\\\\|source_model\\\\|def \\\" scripts/competence_provenance.py | head -40\", \"description\": \"Check provenance credit rule in code\"}"
+     },
+     {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"CapabilityFingerprint\", \"output_mode\": \"content\", \"-n\": true, \"-A\": 8, \"glob\": \"{bench/cdsfl*.py,bench/core*.py,bench/*types*.py,bench/runner_core.py}\", \"head_limit\": 30}"
++    },
++    {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/scripts/competence_provenance.py\", \"offset\": 36, \"limit\": 60}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"python3 scripts/the_ladder_statistic_loses_the_filers_failure_2026-10-06.py 2>&1 | head -40\", \"description\": \"Show tables\"}"
++      "input_preview": "{\"command\": \"grep -rn \\\"resolved_in_round\\\\|resolved_by_sweep\\\" --include \\\"*.py\\\" . | grep -v worktrees | grep -v \\\"bench/logs\\\" | head\", \"description\": \"Check resolved_in_round producers\"}"
+     },
+     {
++      "name": "Read",
++      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/runner_core.py\", \"offset\": 44, \"limit\": 14}"
++    },
++    {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"class CapabilityFingerprint\", \"output_mode\": \"content\", \"-n\": true, \"-A\": 14, \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/dynamic_management.py\"}"
++    },
++    {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"CapabilityFingerprint\", \"output_mode\": \"content\", \"-n\": true, \"-A\": 16, \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/dynamic_management.py\", \"head_limit\": 25}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"cat > /tmp/cdsfl_w/clean_cell.py <<'PYEOF'\\n\\\"\\\"\\\"How big is the PROVENANCE-CLEAN falsification cell, per model?\\n\\nThe pooled rate in the sister script is contaminated: it counts every registry\\nentry, including ones that never required a falsifier. The cell the ladder must\\nrank on is narrower: entries where a falsifier BODY exists, and where that body\\nactually READS the target (co"
++      "input_preview": "{\"command\": \"sed -n '25,35p' bench/dynamic_management.py && echo \\\"=== DEF ===\\\" && grep -rn \\\"class CapabilityFingerprint\\\" --include=*.py . | grep -v worktrees | grep -v logs | grep -v scratch\", \"description\": \"Find CapabilityFingerprint class definition\"}"
+     },
+     {
++      "name": "Grep",
++      "input_preview": "{\"pattern\": \"class CapabilityFingerprint\", \"output_mode\": \"content\", \"-n\": true, \"-A\": 16, \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo/bench/dm/_types.py\"}"
++    },
++    {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"cat > /tmp/cdsfl_w/fisher.py <<'PYEOF'\\nfrom scipy import stats\\nimport math\\nfrom statsmodels.stats.contingency_tables import Table2x2\\ndef test(name_a,ka,na,name_b,kb,nb):\\n    tab=[[ka,na-ka],[kb,nb-kb]]\\n    odds,p=stats.fisher_exact(tab)\\n    # second tool: statsmodels 2x2 (chi2 / log-OR CI) + exact via hypergeom sum\\n    t=Table2x2(tab, shift_zeros=True)\\n    try: p2=float(t.tes"
++      "input_preview": "{\"command\": \"sed -n '1,45p' bench/tests/test_routing_cannot_flatten_gamma_2026-09-09.py; echo \\\"=== CALL SITE ===\\\"; sed -n '6980,7030p' bench/reference_runner_v3.py\", \"description\": \"Read gamma test and routing call site\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"wolframscript -code 'Print[{\\\"DeepSeek 12/16 vs Gemini 1/8 Fisher two-sided p:\\\", N[FisherExactTest[{{12,4},{1,7}}],8]}]; Print[{\\\"CC2 39/41 vs Codex 42/46:\\\", N[FisherExactTest[{{39,2},{42,4}}],8]}]; Print[{\\\"Codex 42/46 vs Gemini 1/8:\\\", N[FisherExactTest[{{42,4},{1,7}}],8]}]' 2>&1 | head -10\", \"description\": \"Wolfram second falsifier on Fisher tests\"}"
++      "input_preview": "{\"command\": \"sed -n '6900,6985p' bench/reference_runner_v3.py\", \"description\": \"Read routing loop guard\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"grep -rn \\\"gamma_critical\\\" bench/*.py bench/dm/*.py 2>/dev/null | head -25; echo \\\"=== two-sided gate ===\\\"; grep -rn \\\"0.30\\\\|GAMMA_CRITICAL_MIN\\\\|gamma_crit\\\" bench/dm/*.py 2>/dev/null | head -20\", \"description\": \"Locate gamma_critical gate\"}"
++      "input_preview": "{\"command\": \"grep -rn \\\"shadow\\\" bench/routing.py bench/reference_runner_v3.py | grep -i \\\"ladder\\\\|falsif\\\\|rank\\\" | head -10; echo \\\"=== beta-binom / immune memory armed? ===\\\"; grep -rn \\\"immune_memory_enabled\\\" bench/tools/run_simulated_experiment.py bench/reference_runner_v3.py | head -10\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"wolframscript -code 'fisher[a_,b_,c_,d_]:=Module[{n=a+b+c+d,r1=a+b,c1=a+c,pmf,obs,xs},pmf[x_]:=PDF[HypergeometricDistribution[r1,c1,n],x];obs=pmf[a];xs=Range[Max[0,r1+c1-n],Min[r1,c1]];Total[Select[pmf/@xs,#<=obs+10^-15&]]];Print[{\\\"DeepSeek 12/16 vs Gemini 1/8 :\\\",N[fisher[12,4,1,7],9]}];Print[{\\\"CC2 39/41 vs Codex 42/46     :\\\",N[fisher[39,2,42,4],9]}];Print[{\\\"Codex 42/46 vs Gemini"
++      "input_preview": "{\"command\": \"grep -rn \\\"_apply_routing\\\" bench/reference_runner_v3.py | head; echo \\\"===\\\"; sed -n 6990,7020p bench/reference_runner_v3.py\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"sed -n '2250,2290p' bench/reference_runner_v3.py; echo \\\"=== conv_loc 430-455 ===\\\"; sed -n '430,455p' bench/convergence_location.py\", \"description\": \"Read gamma notes\"}"
++      "input_preview": "{\"command\": \"grep -rn \\\"routing-max-rungs\\\\|routing_max_rungs\\\" bench/tools/run_simulated_experiment.py | head -20\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"grep -n \\\"_settled_novelty_series\\\" bench/reference_runner_v3.py | head; echo \\\"---\\\"; python3 - <<'PY'\\nimport re,io\\nsrc=open('bench/reference_runner_v3.py',encoding='utf-8').read()\\ni=src.find('def _settled_novelty_series')\\nprint(src[i:i+4200])\\nPY\", \"description\": \"Read _settled_novelty_series\"}"
++      "input_preview": "{\"command\": \"sed -n 6853,6990p bench/reference_runner_v3.py | grep -n \\\"models\\\\|rank\\\\|route\\\\b\\\\|import\\\" | head -30\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"grep -n \\\"_NON_NOVEL_TERMINAL_STATUSES\\\" bench/reference_runner_v3.py | head -5; python3 - <<'PY'\\nsrc=open('bench/reference_runner_v3.py',encoding='utf-8').read()\\ni=src.find('_NON_NOVEL_TERMINAL_STATUSES')\\nprint(src[i-2500:i+700])\\nPY\", \"description\": \"Read _NON_NOVEL_TERMINAL_STATUSES\"}"
++      "input_preview": "{\"command\": \"sed -n 185,219p bench/routing.py\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"sed -n '8630,8645p' bench/reference_runner_v3.py\", \"description\": \"Exact contents of _NON_NOVEL_TERMINAL_STATUSES\"}"
++      "input_preview": "{\"command\": \"grep -n \\\"falsifier_owner\\\\|per-confirmation\\\\|UNSAFE TO RANK\\\\|resolved_by_routing\\\" scripts/competence_provenance.py | head -20; echo \\\"=== tests exist? ===\\\"; ls bench/tests | grep -iE \\\"provenance_gate_attributes|routing_ladder_prefix_is_mixed|measurement_scripts_answer_help\\\"; echo \\\"=== scripts delivered? ===\\\"; ls scripts | grep -E \\\"provenance_gate_reads_text|ladder_climb_is_m"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"python3 - <<'PY'\\nsrc=open('bench/reference_runner_v3.py',encoding='utf-8').read()\\ni=src.find('def _estimate_gamma')\\nprint(src[i:i+2600])\\nPY\", \"description\": \"Read _estimate_gamma\"}"
++      "input_preview": "{\"command\": \"grep -rn \\\"shadow\\\" bench/routing.py | head; echo \\\"=== fingerprint-keyed ladder anywhere? ===\\\"; grep -rln \\\"strength_order=\\\" bench scripts 2>/dev/null | grep -v logs | head\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"cat > scripts/routing_exhaustion_raises_gamma_critical_2026-10-06.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Removing the rung cap raises gamma_critical, and gamma_critical GATES convergence.\\n\\nTHE MECHANISM, stated before it is measured.\\n  * `_settled_novelty_series` (bench/reference_runner_v3.py) builds the critical\\n    novelty series by bucketing entries on `open_since_round`, "
++      "input_preview": "{\"command\": \"sed -n 40,90p scripts/competence_provenance.py; echo \\\"=== RECORD ONLY pin ===\\\"; grep -rn \\\"nothing_imports_either_script\\\" bench/tests/*.py | head -3\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport re,pathlib\\np=pathlib.Path('scripts/routing_exhaustion_raises_gamma_critical_2026-10-06.py')\\ns=p.read_text()\\n# two-sided crossings + round-distribution diagnostic\\ns=s.replace('''        rows.append((pathlib.Path(p).parent.name, max_round + 1, flipped,\\n                     g_before, g_after, crit_before, crit_after))''',\\n'''        _fl_rounds = [e.get(\\\"op"
++      "input_preview": "{\"command\": \"grep -n \\\"SIM\\\\|opus\\\\|fable\\\\|LADDER\\\" bench/tools/sim_dispatch_shim.py | sed -n 1,40p\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path('scripts/routing_exhaustion_raises_gamma_critical_2026-10-06.py')\\ns=p.read_text()\\ns=s.replace('''    print(\\\"  runs where the 0.30 arm CLOSES     : %d  <-- a run that converges today\\\")\\n    print(\\\"                                         would stop converging\\\" % ())''',\\n'''    print(\\\"  runs where the 0.30 arm CLOSES     : %d\\\" % "
++      "input_preview": "{\"command\": \"grep -rln \\\"Fingerprint_Falsification_Dimension\\\\|measured ladder\\\\|must become a measured statistic\\\" experimental_notes/*.md | head -15\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys, math\\nsys.path.insert(0,'.')\\nfrom bench.routing import rank_falsifier_writers, resolve_via_routing, DEFAULT_FALSIFIER_STRENGTH\\nprint(\\\"1-seat ladder  :\\\", rank_falsifier_writers(['CC2'], exclude=('CC2',)))\\nprint(\\\"2-seat ladder  :\\\", rank_falsifier_writers(['Codex','ChatGPT'], exclude=('Codex',)))\\nprint(\\\"all-same vendor:\\\", rank_falsifier_writers(['C"
++      "input_preview": "{\"command\": \"grep -n -B3 -A12 \\\"measured statistic\\\" experimental_notes/The_Blockers_Were_Shown_As_Settled_2026-10-05.md | head -40\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"grep -n '\\\\[\\\"escalated\\\"\\\\] *= *True\\\\|escalated.*=.*True' bench/reference_runner_v3.py | head -12\", \"description\": \"Check what sets escalated back to True\"}"
++      "input_preview": "{\"command\": \"grep -n -A8 \\\"Fingerprint_Falsification_Dimension\\\" experimental_notes/The_Blockers_Were_Shown_As_Settled_2026-10-05.md | head -30\"}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"cat > docs/CAPABILITY_LADDER_MEASURED_2026-10-06.md <<'MDEOF'\\n# The routing ladder as a measured statistic \\u2014 design, with the derivation\\n\\n**Seat:** fable (blind round, 2026-10-06). **Status:** design + 3 executable measurement\\nscripts. **No runtime behaviour is changed by this document.**\\n\\nA note on vocabulary, per the panel's naming directive. The central quantity below ha"
++      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,glob,collections\\n# Does any archive retain PER-MODEL falsifiers for the SAME canonical finding?\\nstrata=collections.Counter(); multi=0; tot=0\\nalias_models=collections.Counter()\\nfor p in glob.glob('bench/logs/*/runner_state.json'):\\n    try: j=json.load(open(p))\\n    except Exception: continue\\n    for cid,e in (j.get('registry',{}).get('entries',{}) or {}"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"cat > scripts/provenance_clean_cell_contradicts_frozen_ladder_2026-10-06.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The provenance-clean critical cell contradicts DEFAULT_FALSIFIER_STRENGTH's tail.\\n\\n`bench/routing.py` ranks on DEFAULT_FALSIFIER_STRENGTH = (\\\"Codex\\\",\\\"CC2\\\",\\\"ChatGPT\\\",\\n\\\"Gemini\\\",\\\"DeepSeek\\\"), frozen from Exp 42 in June 2026. This script measures, over every\\nar"
++      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,glob,collections\\n# per-model falsifier verdict counts, credited to the AUTHOR\\nimport importlib.util,pathlib\\nspec=importlib.util.spec_from_file_location('cp','scripts/competence_provenance.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nper=collections.defaultdict(collections.Counter)\\nfor p in glob.glob('bench/logs/*/runner_stat"
+     },
+     {
+       "name": "Bash",
+-      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path('docs/CAPABILITY_LADDER_MEASURED_2026-10-06.md')\\ns=p.read_text()\\nold=\\\"\\\"\\\"That normalisation is right for *ordering a simulated roster* and wrong for\\n*estimating `p_hat`*, because the two populations separate enormously at attempt level:\\n`Codex-SIM` 306/428 = 71.50% [67.04%, 75.57%] vs `Codex` 228/816 = 27.94%\\n[24.97%, 31.12%] \\u2"
++      "input_preview": "{\"command\": \"ls bench/logs/commissioning_arm1_panel_20260921T215405Z/ | head -40\", \"description\": \"List a run dir\"}"
++    },
++    {
++      "name": "Bash",
++      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections,itertools,math\\nimport importlib.util\\nfrom statsmodels.stats.proportion import proportion_confint\\nfrom scipy.stats import fisher_exact\\nspec=importlib.util.spec_from_file_location('cp','scripts/competence_provenance.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nper=collections.defaultdict(collections.Counte"
++    },
++    {
++      "name": "Bash",
++      "input_preview": "{\"command\": \"grep -n \\\"NON_DISCRIMINATING\\\" bench/*.py | head -20; echo \\\"=== corrected copy verdict fields ===\\\"; python3 -c \\\"\\nimport json,glob,collections\\nk=collections.Counter()\\nfor p in glob.glob('bench/logs/*/runner_state.json'):\\n    try: j=json.load(open(p))\\n    except Exception: continue\\n    for cid,e in (j.get('registry',{}).get('entries',{}) or {}).items():\\n        if isinstance(e"
++    },
++    {
++      "name": "Bash",
++      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections,itertools,importlib.util\\nfrom statsmodels.stats.proportion import proportion_confint\\nfrom scipy.stats import fisher_exact\\nspec=importlib.util.spec_from_file_location('cp','scripts/competence_provenance.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nvals=collections.Counter(); per=collections.defaultdict(col"
++    },
++    {
++      "name": "Bash",
++      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json,glob,collections,itertools,importlib.util\\nfrom statsmodels.stats.proportion import proportion_confint\\nfrom scipy.stats import fisher_exact\\nspec=importlib.util.spec_from_file_location('cp','scripts/competence_provenance.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nper=collections.defaultdict(collections.Counter)\\nfor p in "
+     }
+   ],
+-  "n_tool_calls": 49,
+-  "stopped_reason": null,
+-  "tool_iterations": null,
+-  "elapsed_s": 1020.0,
+-  "response": "All four scripts execute and answer `--help`. Written to the sandbox tree.\n\n## Position\n\n**1 \u2014 What the ladder should rank on.** The probability that a falsifier written by model *m* for a finding at ladder depth *d* is re-executed by `reverify_falsifier` with verdict `CONFIRMED`, counted **per attempt** (not per entry), restricted to falsifiers that actually read the target (`competence_provenance.falsifier_style == \"reads\"`), and **stratified on ladder depth**. It has no glossary name and I have not coined one \u2014 it is described in full, and it is neither `rho` (a round's novel/raw yield, not a writer's success) nor `S_k` (which classifies a fix that does not exist at routing time). Estimator, minimum sample, cold start and the 1-model case are in `## The quantity`. The prior question is settled first by derivation: `resolve_via_routing` stops at the first `CONFIRMED`, so with the cap removed `P(resolve) = 1 \u2212 \u220f(1\u2212p_i)` is **symmetric in the rungs** \u2014 order cannot change *which* findings resolve, only what they cost. The founder's two rulings are coupled: removing the cap is what makes an imperfect measurement safe.\n\n**2 \u2014 The selection effect.** Condition on ladder depth; neither of the three earlier proposals. The selection is *fully observed* \u2014 a finding reaches a model at depth *d* because *d* rungs already failed, and `routing_history.rungs_tried` records it. Selection on observables means conditioning removes the bias, so randomisation buys nothing. The audit-fraction proposal also isn't deployable (routing fires on unresolved criticals only; single-digit *n* per model per run). Keeping the frozen order as decider is the status quo plus a dashboard, and keeps exactly what the founder ruled against. And the stated rejection of *first-attempts-only* **does not follow from its citation**: p = 2.213221e-59 comes from a chi-square on the 5 real models' per-round *finding counts*; it is not a comparison of first-attempt vs routed populations. I reproduced the figure \u2014 it is right, the inference drawn from it is not. The real reason to reject it is that it discards the routed trials, which are the population the decision concerns.\n\n**3 \u2014 Removing the rung cap.** What bounds spend is not a cap but a **finite attempt lattice plus non-repetition**: a rung is a `(model, aid_level)` pair, each pair attempted at most once *per finding across the whole run*, so the remaining set strictly decreases and the process terminates. Stopping rule: **CONFIRMED, or the lattice is exhausted. No count.** Worst case `3 \u00d7 |roster|` dispatches per finding *for the run* \u2014 against today's cap of 2 *per round, re-paid every round*, so the capped design is not obviously cheaper. Two guards, both loud: a global token ledger that **halts with a named reason** (as `HALTED_IRREDUCIBLE_QUEUE_ALARM` does) rather than silently capping, and `rung_unfunded` recorded as an outcome that leaves the finding unresolved and in the irreducible queue \u2014 never a skip that looks like a failure.\n\n**4 \u2014 Resource-aware routing.** Yes, and as the *denominator of one objective*, not a second competing input. I derive that the expected-cost-minimising order for stop-at-first-success is `p_i/c_i` descending \u2014 so capability and budget are already one ratio and it is an optimum, not a compromise. A cheap model does not become the default **because the ladder exhausts**: first means *cheapest place to look first*, and the strong rung still runs when the probe fails. That guarantee is structural (order-invariance), not a tuning choice, so it cannot be tuned away. Load balancing falls out free: a model near its ceiling has its effective `c_m` raised and drifts down the order, degrading smoothly.\n\n**5 \u2014 Reproducibility.** A separate step, performed by the harness. Not the models \u2014 a model attesting its own falsifier reproduces is a vote, and is the shape of the Exp 48 failure. Not primarily the human \u2014 6194 archived entries across 131 artefacts; a control that doesn't run isn't a control. `reverify_falsifier` already gives one independent execution; what is missing is small: **execute twice in two fresh processes, record `sha256` of target and falsifier bytes with both verdicts, and treat disagreement as `NONDETERMINISTIC` \u2014 an instrument fault, not a finding verdict \u2014 routed to HIL.** The human's role is that residue plus `rung_unfunded`. That is the \"both\", correctly apportioned.\n\n**6 \u2014 What we missed.** Nine items in the document; the four that matter most: the empty ladder is wider than the 1-seat case (executed: a roster of two identical labels also yields `[]`, which is the founder's *\"all the models are the same\"* case); **`gamma_critical` is not invariant to routing depth**, so `routing_max_rungs` is an undeclared input to the convergence gate; the 2026-10-06 provenance repair is correct but still loses the filer's **failure** from the denominator, inverting 5 of 11 ranks; and `rank_falsifier_writers._base` strips `-SIM`, which would pool a simulated model's history into a live run's estimate.\n\n## The quantity\n\n**Formula.** `p\u0302(m,d) = (k(m,d) + \u00bd) / (n(m,d) + 1)` \u2014 Jeffreys (Beta(\u00bd,\u00bd)) posterior mean. `k` = CONFIRMED re-executions, `n` = provenance-clean attempts at depth `d`. Jeffreys, not Laplace: it is the binomial reference prior, its interval behaviour matches the Wilson interval this project mandates, and it returns \u00bd at `n=0` without asserting anything.\n\n**Inputs.** `routing_history` (`model_used`, `verdict`, `rungs_tried` \u2014 present since 2026-10-03, 294 rung records today, which is thin and I say so), `falsifier_code` / `last_falsifier_code_full` for the provenance filter, and `resolved_by_routing` for authorship. Cost `c_m` = mean tokens per routing dispatch; roster median at `n=0`.\n\n**Ranking.** `p\u0302(m,d)/c_m` descending; ties and all-cold-start break on position in `DEFAULT_FALSIFIER_STRENGTH`.\n\n**Minimum sample: none \u2014 derived, not conceded.** A minimum sample is required of a statistic that *gates*. This one does not: under exhaustion every rung is tried regardless of its estimate, so a bad estimate can only misorder cost. That dissolves the blocker `RunnerConfig.routing_max_rungs` names for itself (\"0 of 10 model pairs separate, all Fisher p \u2265 0.306\"). **It also answers the A4 question directly: `p\u0302` opens no gate, so it needs no `severity_is_proven` analogue \u2014 it is not a number that admits or exempts anything.** The one place a number here *could* gate is cost, so: **cost may reorder a rung and may never remove one.**\n\n**Cold start.** `n=0` \u2192 `p\u0302=\u00bd`, `c_m` = roster median \u2192 an unknown model enters at median `p/c` and is ordered among equals by cost, i.e. tried as a cheap probe, never excluded. This replaces today's behaviour, which appends unknown models in *roster order*.\n\n**1-model panel.** A rung is `(model, aid_level)`, and `exclude` drops *pairs already attempted on this finding*, not models. Three levels: 0 = as today; 1 = plus the previous rung's falsifier source and traceback (`last_falsifier_code_full` already records exactly this, 221 records); 2 = plus worked examples (`routing.py`'s own docstring: 0/5 \u2192 1/3, so not a no-op). A 1-seat roster gets a 3-rung ladder that exhausts, which is what the founder's ruling asks for and what the code currently refuses.\n\n## What it does to gamma\n\n**I predicted the wrong sign and my own measurement refuted me. The true direction is the dangerous one.** `_settled_novelty_series` skips `UNCONFIRMED` (it is in `_NON_NOVEL_TERMINAL_STATUSES`) and does not skip `CONFIRMED`, so a critical the ladder resolves *enters* the critical novelty series at its `open_since_round`. I expected back-fill at early rounds to raise `gamma_critical`. Over 14 archived runs with \u22653 rounds, flipping every unresolved critical to CONFIRMED moves it **down in 9, up in 3, unchanged in 2**, and **2 of 14 cross the `gamma_critical \u2265 0.30` arm downward** \u2014 `exp40_gate` 0.3018 \u2192 0.2328, `commissioning_arm1_panel` 0.3236 \u2192 0.1883. The mechanism is in the data: unresolved criticals skew **late** (9 of 14 runs), because an unresolved critical is one the ladder has not reached yet, and adding mass to the late end of a cumulative curve steepens it, raising \u03b2 and lowering \u03b3 = 1 \u2212 \u03b2.\n\nSo: **removing the cap is not a pure spend question**, which is how both the founder's ruling and `routing.py`'s own comment frame it. It moves one arm of the two-sided gate in the direction that makes convergence *harder* \u2014 a run that passes today can stop passing \u2014 while the count arm does not move, because the resolution lands in an earlier bucket. I am **not** proposing to change `_NON_NOVEL_TERMINAL_STATUSES`: that would alter gamma for every archived run on my judgement, and the additive standard wants a committed measurement first. The simplest sufficient step is **recording-only** \u2014 log `gamma_critical` a second way with `UNCONFIRMED` treated as novel, so the coupling is visible per round while the gate keeps reading exactly what it reads today.\n\n## Measurements\n\nEvery proportion with its Wilson 95% interval; every computed claim with \u22652 agreeing tools.\n\n| figure | value | Wilson 95% | tools |\n|---|---|---|---|\n| P(resolve) distinct values over 5! ladder orders, exhausted | 1 (0.998812000000 = closed form) | \u2014 | SymPy (24/24 orders), NumPy enumeration, **Wolfram Language** (residual 0) |\n| \u2026under cap = 2 | 10 distinct, [0.7624, 0.9800] | \u2014 | SymPy (20/24 change), NumPy |\n| `E[cost](a,b)\u2212E[cost](b,a)` | `Q(c_a p_b \u2212 c_b p_a)`, residual 0 | \u2014 | SymPy, **Wolfram Language** |\n| `p/c` order vs true optimum, 4000 random 5-rung rosters | worst gap 0.000e+00 | \u2014 | NumPy exhaustive permutation search |\n| strongest-first suboptimal | 3637/4000 = 90.93% | [89.99%, 91.78%] | NumPy; closed form + statsmodels |\n| cheapest-first suboptimal | 3525/4000 = 88.13% | [87.08%, 89.09%] | NumPy; closed form + statsmodels |\n| index rule under position-dependent cost | loses 1.6393% (probe fires) | \u2014 | NumPy |\n| runs crossing the 0.30 gamma arm downward | 2/14 = 14.29% | [4.01%, 39.94%] | repo's own `_estimate_gamma`; closed form + statsmodels |\n| unresolved criticals skew later than registry mean | 9/14 = 64.29% | [38.76%, 83.66%] | same |\n| rank inversions, entry-level vs attempt-level | 5/11 = 45.45% | [21.27%, 71.99%] | closed form + statsmodels |\n| `resolved_by_routing` entries naming a different model | 458/458 = 100% of 6194 entries | [99.17%, 100%] | archive scan, two globs |\n| model pairs separating, pooled clean cell | 43/55 = 78.18% | [65.63%, 87.05%] | Wilson non-overlap; closed form + statsmodels |\n| DeepSeek 12/16 vs Gemini 1/8 (clean critical cell) | Fisher p = 0.00780724, OR 21.0 | DS [50.50%, 89.82%]; Gem [2.24%, 47.09%] | scipy, independent hypergeometric enumeration, **Wolfram Language** (9 s.f.) |\n| CC2 39/41 vs Codex 42/46 | Fisher p = 0.679555 \u2014 **no separation** | CC2 [83.86%, 98.65%]; Cx [79.68%, 96.57%] | same three |\n| Codex-SIM vs Codex, attempt level | 71.50% vs 27.94%, non-overlapping | [67.04%,75.57%] / [24.97%,31.12%] | closed form + statsmodels |\n| SIM/LIVE separating in the *clean* cell | 2 of 5 vendors (3 overlap) | per-vendor in script output | same |\n\nWolfram ran locally and computed (attribution: Wolfram Language, local Wolfram Engine via `wolframscript`). One Wolfram call **failed to verify** and I am not quoting it: `FisherExactTest` returned unevaluated, so I re-expressed the test as an explicit hypergeometric sum, which did compute and agreed to 9 significant figures.\n\nExecuted, not read: `rank_falsifier_writers(['CC2'], exclude=('CC2',)) \u2192 []`; `(['CC2','CC2'], exclude=('CC2',)) \u2192 []`; `(['Codex','ChatGPT'], exclude=('Codex',)) \u2192 ['ChatGPT']`; `resolve_via_routing(..., max_rungs=0)` dispatches all 4 rungs, `max_rungs=2` dispatches 2. 15 fingerprint fields confirmed field-by-field: 9 from the initialiser + 6 from `_compute_attention_metrics`; `D_decay` supplies glossary `D`, `total_findings` plausibly `A`, and **`v\u0304` (verification) and `C` (coverage) are absent**. The brief's claim that `competence_provenance.py` credits the filer is **stale in this tree** \u2014 `falsifier_author` was repaired on 2026-10-06 and now prefers `resolved_by_routing`; the residual defect is the denominator, not the credit.\n\n## Delivered files\n\n- `docs/CAPABILITY_LADDER_MEASURED_2026-10-06.md` \u2014 the design, with derivations, the nine missed items, and a per-position refutation table.\n- `scripts/ladder_order_is_cost_only_2026-10-06.py` \u2014 order-invariance and the `p/c` index rule; SymPy + NumPy brute force + live assumption probes. Exit 0.\n- `scripts/the_ladder_statistic_loses_the_filers_failure_2026-10-06.py` \u2014 entry-level vs attempt-level accounting, Wilson + statsmodels. Exit 1 (inversions found).\n- `scripts/routing_exhaustion_raises_gamma_critical_2026-10-06.py` \u2014 gamma_critical vs routing depth over 14 archived runs, using the runner's own `_settled_novelty_series` and `_estimate_gamma`. Exit 1 (gate arm crossed). **Its docstring retains my refuted hypothesis rather than editing it out.**\n- `scripts/provenance_clean_cell_contradicts_frozen_ladder_2026-10-06.py` \u2014 the cell a re-derived ladder must come from; Fisher two ways, SIM vs LIVE. Exit 1.\n\nAll four answer `--help` without measuring. **No `bench/` module is added**: an unwired estimator would be the 12th of this project's 11 confirmed additions-that-nothing-reached. The design lands at `routing.py`'s one call site with tests that exercise it, or not at all.\n\n## What would refute me\n\nPer-position table in the document; the load-bearing ones: **order-invariance** falls if `scripts/ladder_order_is_cost_only_2026-10-06.py` exits non-zero, or if any path sets `resolved=True` without a `CONFIRMED` from `reverify_fn`. **The `p/c` rule** falls if the brute force shows a non-zero gap, or if rung cost grows with ladder position \u2014 already demonstrated to break it by 1.6393%, so my own aid levels 1\u20132 must be measured *against* R2, not assumed under it. **The single most falsifiable claim in the design:** a measured run where cheapest-first ordering resolves *fewer* criticals than strongest-first under exhaustion. By order-invariance that is impossible, so such a run refutes the whole design. **The gamma coupling** falls if that script reports 0 crossings in either direction. **The denominator claim** falls at 0 rank inversions. **The 1-model fix** falls if aid levels 1\u20132 confirm at `p\u0302` indistinguishable from level 0 \u2014 which would make the self-ladder an addition nothing reaches, the failure mode I am warning about. **Keeping the frozen tuple** falls to any committed measurement showing a `p\u0302`-derived order dominating it on resolutions-per-token in a live run.\n\n## Disagreement\n\n**With the founder, partially, on vendor names.** The ruling is *\"the system shouldn't care at all what a model is called.\"* I am not deleting `DEFAULT_FALSIFIER_STRENGTH` and I think deleting it now would be wrong. At `n = 0` every model has `p\u0302 = \u00bd` and the ratio ranks purely on cost; something has to break that tie, and the frozen tuple is the only ladder in this project with a validated end-to-end result (Exp 42's hardest residuals, 7/7 across two rungs). The additive standard permits removal only on a committed measurement showing the replacement dominates, and that measurement does not exist: my own contradiction of the tuple (Fisher p = 0.0078) comes from a cell that pools runs, targets and difficulties and is confounded by the very selection effect question 2 is about. So the tuple is demoted to tie-break and cold start, and the system stops caring about names the moment it has data \u2014 which is a weaker claim than the ruling, and I'd rather say so than pretend otherwise.\n\n**With the brief, on one cited figure.** The rejection of first-attempts-only is supported by p = 2.213221e-59, which measures something else entirely. The proposal should still be rejected, for a different reason.\n\n**With myself, recorded because the check is the point.** I predicted exhaustion would *raise* `gamma_critical`; the archive says it falls. I also expected the word-overlap duplicate path (`confirmed_duplicate` \u2192 `escalated = False` on bare Jaccard \u2265 0.85) to deadlock a finding permanently out of the ladder. It does not \u2014 `escalated` is re-set to `True` at several sites including the falsifier-gate path, so a later round can re-escalate. Both were claims that sounded right and one tool call each dissolved.\n\n**Early stop, with reason.** I stopped here rather than extending to the depth-stratified estimate on live data: `routing_history` carries 294 rung records in total, so per-`(model, depth)` cells are single-digit and the estimate would be prior-dominated. That is a measurement to make after a routing-enabled run with the cap removed, not a number to manufacture now.",
++  "n_tool_calls": 88,
++  "elapsed_s": 3258.3,
++  "response": "",
+   "attempts": [
+     {
+       "attempt": 1,
+-      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo",
++      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_n1ic5kg9/repo",
+       "built": false
++    },
++    {
++      "attempt": 2,
++      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_r5u58xzo/repo",
++      "built": true
+     }
+   ]
+ }
+\ No newline at end of file
+
+### cc2:attempt-1:bench/logs/capability_ladder_design_blind_cc2_2026-10-06/watchdog_dispatch.out
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/capability_ladder_design_blind_cc2_2026-10-06/watchdog_dispatch.out	2026-10-06 06:01:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo/bench/logs/capability_ladder_design_blind_cc2_2026-10-06/watchdog_dispatch.out	2026-10-06 05:43:07
+@@ -47,11 +47,3 @@
+     aliveness probe: asking 1 seat(s) to print Ready!, up to 3 attempts each, serialised
+ [05:43:07]   [claude-cli:opus] done (5.9s, 6 chars)
+       cc2: ALIVE  (5.91s, answered on attempt 1 of 3)
+-[05:44:32] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo
+-[05:44:32] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo
+-[05:44:32]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo
+-[06:01:32]   [claude-cli:opus] 49 tool call(s) this attempt, 49 in total
+-[06:01:32]   [claude-cli:opus] done (1019.9s, 16745 chars)
+-    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo
+-  [cc2] ok=True chars=16745 tools=49 1020.0s
+-[06:01:32] [panel] working directory: (inherited — repo)
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-06 06:00:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo/bench/reference_runner_v3.py	2026-10-06 03:34:18
+@@ -17414,20 +17414,6 @@
+                     # returned nothing" when the critical series is all-zero.
+                     total_findings=len(registry.entries),
+                 )
+-            )
+-            # CAPTURED FOR THE PRE-VERDICT SWEEP SHADOW, which replays this gate
+-            # against the SWEPT ledger after the sweep has run. Capturing beats
+-            # re-deriving these at sweep time: they are round-local, and a shadow
+-            # that guessed at them would measure a gate nobody ran.
+-            _gate_inputs_at_verdict = dict(
+-                round_idx=round_idx, gamma=gamma,
+-                novel_critical_history=list(novel_critical_history),
+-                contested=registry.contested_count(
+-                    round_idx,
+-                    subcritical_exclusion=bool(
+-                        getattr(cfg, 'falsifier_gate_enabled', False))),
+-                rho_churn=rho_churn, irreducible_queue=_irreducible_q,
+-                gamma_critical=gamma_critical,
+             )
+         if gamma_alt_converged and not converged:
+             _log(f"  γ-alt: {gamma_alt_reason}")
+@@ -18153,73 +18139,6 @@
+         except Exception as _sw_exc:  # noqa: BLE001 — sweep must never kill the report
+             _log(f"  WARNING: post-convergence sweep failed ({_sw_exc})")
+             result["post_convergence_sweep"] = {"error": str(_sw_exc)}
+-            # ─── PRE-VERDICT SWEEP SHADOW (founder's ruling, 2026-10-06) ───
+-            # HIS POSITION, verbatim: *"The closing sweep is part of the
+-            # convergence mechanics of the schema ... It is not just an
+-            # 'afterthought'"*, and *"Doing it your way just makes the closing
+-            # sweep an unfalsifiable loose cannon"*. His instruction was to run the
+-            # closing sweep BEFORE the verdict and keep the existing one in
+-            # parallel until the new one is tested.
+-            #
+-            # THIS IS THE TEST, not the move. Reordering the sweep ahead of the
+-            # verdict changes what `converged` means on every run, which is the
+-            # highest-blast-radius edit available in this file. So instead the gate
+-            # is REPLAYED here against the swept ledger, with the inputs captured
+-            # at the real verdict, and both answers are recorded. Nothing about
+-            # this run's verdict changes.
+-            #
+-            # WHAT IT MEASURES, and why the question is not rhetorical. The block
+-            # above records that the sweep "ATTACHES falsifiers and resolves
+-            # findings" while the verdict "is already recorded above", and that 2
+-            # per-round passes never see its results -- already costing 15 entries
+-            # recorded as carrying no falsifier of which 11 do, a set identical to
+-            # the one the sweep cleared. If the replayed gate ever disagrees with
+-            # the recorded verdict, then sweep ORDERING decided a convergence
+-            # outcome, and the reorder is justified by evidence rather than by
+-            # argument. If it never disagrees across runs, it is not.
+-            try:
+-                _gi = locals().get("_gate_inputs_at_verdict")
+-                if _gi:
+-                    _swept_unresolved = registry.unverified_critical_count()
+-                    _swept_total = len(registry.entries)
+-                    _shadow_conv, _shadow_reason = _check_gamma_alt_convergence(
+-                        _gi["round_idx"], _gi["gamma"],
+-                        _gi["novel_critical_history"], cfg,
+-                        unresolved_critical=_swept_unresolved,
+-                        contested=_gi["contested"],
+-                        rho_churn=_gi["rho_churn"],
+-                        irreducible_queue=_gi["irreducible_queue"],
+-                        gamma_critical=_gi["gamma_critical"],
+-                        total_findings=_swept_total,
+-                    )
+-                    result["pre_verdict_sweep_shadow"] = {
+-                        "recorded_converged": bool(converged),
+-                        "recorded_reason": conv_reason,
+-                        "replayed_converged": bool(_shadow_conv),
+-                        "replayed_reason": _shadow_reason,
+-                        "verdict_would_differ": bool(_shadow_conv) != bool(converged),
+-                        "unresolved_critical_after_sweep": _swept_unresolved,
+-                        "total_findings_after_sweep": _swept_total,
+-                        "note": ("The gate replayed against the SWEPT ledger. This "
+-                                 "run's verdict is unchanged; this records what the "
+-                                 "verdict would have been had the closing sweep run "
+-                                 "before it."),
+-                    }
+-                    if result["pre_verdict_sweep_shadow"]["verdict_would_differ"]:
+-                        _log("  PRE-VERDICT SWEEP SHADOW: the verdict WOULD DIFFER "
+-                             f"if the sweep ran first — recorded={converged}, "
+-                             f"replayed={_shadow_conv} ({_shadow_reason})")
+-                    else:
+-                        _log("  pre-verdict sweep shadow: verdict unchanged by "
+-                             "sweep ordering")
+-                else:
+-                    result["pre_verdict_sweep_shadow"] = {
+-                        "error": "gate inputs were not captured this run; the "
+-                                 "hardened-gate path bypasses the gamma-alt call "
+-                                 "site, so no replay is possible"}
+-            except Exception as _sh_exc:  # noqa: BLE001 — a shadow must never kill a run
+-                result["pre_verdict_sweep_shadow"] = {
+-                    "error": f"{type(_sh_exc).__name__}: {_sh_exc}"}
+         else:
+             # Exp 46 lesson (2026-07-28): the last round checkpoint predates
+             # the sweep — persist the post-sweep registry so the saved state
+
+### cc2:attempt-1:docs/CAPABILITY_LADDER_MEASURED_2026-10-06.md
+--- /dev/null	2026-10-06 06:01:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo/docs/CAPABILITY_LADDER_MEASURED_2026-10-06.md	2026-10-06 06:00:05
+@@ -0,0 +1,428 @@
++# The routing ladder as a measured statistic — design, with the derivation
++
++**Seat:** fable (blind round, 2026-10-06). **Status:** design + 3 executable measurement
++scripts. **No runtime behaviour is changed by this document.**
++
++A note on vocabulary, per the panel's naming directive. The central quantity below has
++no name in `docs/GLOSSARY.md` and I have deliberately **not coined one**. Where it must
++be referred to, it is described in full: *the probability that a falsifier written by
++model m for a finding at ladder depth d is re-executed by
++`bench.falsifier_verify.reverify_falsifier` with verdict `CONFIRMED`*. The symbols
++`p`, `c` below are the standard symbols of the sequential-search literature, not project
++labels. It is **not** `rho` (discovery efficiency, novel/raw per round) and **not**
++`S_k` (which classifies a FIX, not a claim); neither is reused and neither is suitable —
++`rho` measures a round's yield, not a writer's success, and `S_k` is downstream of a
++patch that does not exist at routing time.
++
++---
++
++## 0. The result that reorganises the whole question
++
++Derived in `scripts/ladder_order_is_cost_only_2026-10-06.py`; SymPy symbolic,
++exhaustive NumPy permutation enumeration, and Wolfram Language (local Wolfram Engine)
++all agree.
++
++**R1 — order-invariance under exhaustion.** `resolve_via_routing` stops at the first
++`CONFIRMED`. With the cap removed (`max_rungs=0`), the probability a finding is resolved
++is
++
++    P(resolve) = 1 - prod_i (1 - p_i)
++
++which is **symmetric in the rungs**. Checked symbolically over all 4! orderings
++(0 of 24 change it) and numerically over all 5! = 120 orderings of the Exp-42 quoted
++rates (1 distinct value, 0.998812000000, equal to the closed form to 1e-12). With the
++current default `max_rungs=2`, 20 of 24 orderings **do** change it, numerically spanning
++P(resolve) in [0.7624, 0.9800].
++
++> **Therefore: once the cap is removed, ladder ORDER cannot change WHICH findings get
++> resolved. It can only change what they COST.** Under the cap, order *is* a correctness
++> question. The founder's two rulings — measure the ladder, and remove the cap — are
++> not independent: removing the cap is what makes getting the measurement imperfectly
++> right *safe*.
++
++**R2 — the cost-minimising order is the index rule.** With per-rung dispatch cost `c_i`
++and stop-at-first-success, `E[cost] = sum_i c_{s(i)} prod_{j<i} (1 - p_{s(j)})` is
++minimised by sorting on `p_i / c_i` descending. Derived by adjacent transposition: for
++two adjacent rungs reached with probability `Q`,
++
++    E[cost](a,b) - E[cost](b,a) = Q*(c_a*p_b - c_b*p_a)
++
++(SymPy residual 0; Wolfram residual 0), which is `<= 0` exactly when
++`p_a/c_a >= p_b/c_b`; and the surviving-miss factor `(1-p_a)(1-p_b)` is symmetric, so
++the suffix is unchanged. `p/c` induces a total order, so the sorted sequence is the
++global optimum. Brute-forced over 4000 random 5-rung rosters with a 200x token-cost
++spread: worst relative gap from the true optimum **0.000e+00**, while
++**strongest-first is suboptimal in 3637/4000** rosters and **cheapest-first in
++3525/4000**. Both naive policies lose; the ratio does not.
++
++**Honest limit, probed rather than hidden.** R2 needs *position-independent* cost. The
++same script shows the index rule losing 1.6393% to the optimum once cost grows with
++depth — which is exactly what happens if a later rung is handed the earlier rung's
++falsifier and traceback (the aid proposed in §3 for a single-seat roster). So R2 is an
++exact optimum for the ladder as it dispatches **today**, and a heuristic for the ladder
++I propose. Stated, not claimed away.
++
++---
++
++## 1. What the ladder should rank on
++
++**The quantity.** The probability that a falsifier written by model `m`, for a finding
++at ladder depth `d`, is re-executed by `reverify_falsifier` with verdict `CONFIRMED`,
++restricted to falsifiers whose provenance is clean. Three restrictions, each load-bearing:
++
++1. **Attempt-level, not entry-level.** Each `(model, finding, round)` dispatch is one
++   Bernoulli trial. A filer whose falsifier failed and whose finding was routed away
++   keeps that **failure** in its denominator.
++2. **Provenance-clean only.** Counted only when
++   `competence_provenance.falsifier_style(code) == "reads"`. This is the existing gate,
++   reused rather than re-invented; without it Exp 55 ranks models by willingness to
++   ignore the document.
++3. **Stratified on ladder depth `d`** = number of rungs that already failed on this
++   finding. See §2.
++
++**The estimator.** Jeffreys posterior mean of a binomial rate:
++
++    p_hat(m,d) = (k(m,d) + 1/2) / (n(m,d) + 1)
++
++`k` = CONFIRMED re-executions, `n` = clean attempts. Jeffreys (Beta(1/2,1/2)) rather
++than Laplace because it is the reference prior for a binomial, it is the prior whose
++interval behaviour matches the Wilson interval this project requires, and it yields
++`p_hat = 1/2` at `n = 0` without asserting anything.
++
++**Cost.** `c_m` = mean total tokens per routing dispatch for `m`, from the same archive;
++`c_m = ` roster median at `n = 0`.
++
++**Ranking.** `p_hat(m,d) / c_m`, descending. Ties, and the all-cold-start case, break on
++position in `DEFAULT_FALSIFIER_STRENGTH` — see §6 on why that tuple is **kept**.
++
++**Minimum sample: none, and that is a derived conclusion, not a concession.** A minimum
++sample is required of a statistic that **gates**. This one does not gate: by R1, under
++exhaustion every rung is tried regardless of its estimate, so the estimate can only
++misorder cost. The config comment at `RunnerConfig.routing_max_rungs` names its own
++blocker as "0 of 10 model pairs separate (all Fisher p >= 0.306)" and defers the whole
++design on it. **That blocker is dissolved by R1, not by better data.** It is also
++partly dissolved by data: on the pooled archive's provenance-clean critical cell,
++43 of 55 model pairs separate at 95% (Wilson non-overlap), 78.18%, Wilson
++[65.63%, 87.05%].
++
++**Cold start.** `n = 0` gives `p_hat = 1/2` and `c_m` = roster median, so an unknown
++model enters at the median `p/c` and is ordered among equals by cost. A brand-new model
++is therefore tried as a **cheap probe**, early if cheap and later if expensive, and is
++never excluded. This replaces `rank_falsifier_writers`'s current behaviour, which
++appends unknown models in **roster order** — an arbitrary tiebreak masquerading as a
++ranking.
++
++**One-model panel.** This is where the current code contradicts the founder's ruling
++outright, and I verified it by execution rather than by reading:
++
++```
++rank_falsifier_writers(['CC2'],        exclude=('CC2',))  ->  []
++rank_falsifier_writers(['CC2','CC2'],  exclude=('CC2',))  ->  []
++rank_falsifier_writers(['Codex','ChatGPT'], exclude=('Codex',)) -> ['ChatGPT']
++```
++
++The founder's ruling: *"even a single model operating on its own (in which case the
++ladder would just route the issue back to itself and would have another go at resolving
++it by using the rest of the machinery of the harness.)"* The code instead stamps
++`routing_deferred` with reason "routing ladder empty by construction". Note the second
++line above: the ladder is empty for **any roster whose every seat shares the finding's
++source label**, which is the founder's *"all the models are the same"* case, not only
++the 1-seat case.
++
++**The fix, and it is the simplest sufficient one.** A rung is not a model; it is a pair
++`(model, aid_level)`, and `exclude` drops *pairs already attempted on this finding*,
++not models. Three aid levels, ordered, each already supported by machinery that exists:
++
++| `aid_level` | what the rung is given | evidence it is not a no-op |
++|---|---|---|
++| 0 | the finding + target, as today | the current path |
++| 1 | plus the previous rung's falsifier source and its traceback | `routing_history.last_falsifier_code_full` already records exactly this, for 221 records |
++| 2 | plus worked falsifier examples | `routing.py`'s own docstring: teaching lifted the weak model 0/5 -> 1/3 |
++
++A 1-seat roster therefore has a 3-rung ladder, not a 0-rung one, and it exhausts.
++`p_hat` is estimated per `(model, aid_level)`, so aid level 1 and 2 earn their position
++rather than being assumed better.
++
++---
++
++## 2. The selection effect
++
++**My answer: condition on ladder depth. Do not randomise, and do not keep the frozen
++order as the decider.**
++
++The selection is **fully observed**. A finding reaches model `m` at depth `d` because
++`d` rungs ahead of it failed — `d` is the ladder's own counter, already recorded in
++`routing_history.rungs_tried`. When assignment depends only on observed covariates,
++conditioning on them removes the bias; this is selection on observables, and it needs no
++randomisation. `p_hat(m, d)` compares models **at the same depth**, i.e. on findings of
++the same demonstrated difficulty. The strong model's depressed marginal rate is a
++mixture artefact of being used at high `d`; the conditional rates are not depressed.
++
++On the three earlier proposals:
++
++- *First attempts only* — rejected, but **the stated reason does not support the
++  rejection.** The cited `p = 2.213221e-59` comes from
++  `scripts/the_sim_panel_is_not_heterogeneous_2026-10-05.py`, which tests whether one
++  finding-rate explains the 5 real models' per-round finding **counts**. It is not a
++  comparison of the first-attempt and routed populations and says nothing about them.
++  I reproduced that script: the figure is right, the inference drawn from it is not.
++  The correct reason to reject first-attempts-only is simpler: it discards every routed
++  trial, and routed trials are precisely the population the ladder's decision concerns.
++  It answers a different question accurately.
++- *Randomised audit fraction* — right identification of the problem, **not deployable
++  and not needed.** Not deployable: routing fires on unresolved criticals only, so the
++  audit stratum would accrue single-digit `n` per model per run. Not needed: there is
++  nothing left for randomisation to buy once you condition on `d`, because `d` is the
++  entire assignment mechanism.
++- *Frozen order as decider, rate as drift alarm* — rejected. It is the status quo with a
++  dashboard bolted on, and by R1 the rate is safe to decide with once the cap is gone.
++  Worse, it keeps the thing the founder specifically ruled against: *"our runners
++  shouldn't care if a particularly named vendor model is available or not."*
++
++**Gating, and the A4 question asked explicitly.** `p_hat` **opens no gate.** It permutes
++a sequence whose outcome is permutation-invariant (R1). It therefore does **not** need
++`severity_is_proven`-style proof, because it is not a number that admits or exempts
++anything — and that is the whole reason the design is built around exhaustion. The one
++place a number here *could* open a gate is cost: a rung skipped for want of budget is a
++gate. So, normatively: **cost may reorder a rung and may never remove one.** §4.
++
++---
++
++## 3. Removing the rung cap
++
++**What stops unbounded spend is not a cap, it is a finite lattice plus a
++non-repetition rule.** The attempt lattice for a finding is
++`{(model, aid_level) : model in roster} x {0,1,2}`, of size `3 * |roster|`. Record every
++attempted pair in `routing_history` (which already carries `model_used` and
++`rungs_tried`) and **never repeat one, across rounds as well as within a round**. The
++remaining set is then strictly decreasing, so the process terminates. That is the
++stopping rule:
++
++> **A finding stops routing when it is CONFIRMED, or when its attempt lattice is
++> exhausted. There is no count.**
++
++Per finding the worst case is `3 * |roster|` dispatches *over the whole run*, not per
++round — today's cap of 2 is per `route()` call and is therefore re-paid every round,
++which is worth noticing: the capped design is not obviously the cheaper one.
++
++Two guards, and both must be loud:
++
++1. **A global token ledger that HALTS, never silently caps.** When the run's routing
++   spend crosses a declared bound, halt with a named reason, exactly as
++   `HALTED_IRREDUCIBLE_QUEUE_ALARM` does. A silent cap is the defect
++   `routing_max_rungs = 2` already was: 23 routing-enabled configs, 0 pinning the value,
++   rungs 3+ unreachable by construction in every archived run, and the project's own
++   comment admitting "what does rung 3 buy" was unmeasured rather than known.
++2. **`rung_unfunded` is an outcome, not a skip.** A rung the budget cannot fund is
++   recorded as such and the finding stays unresolved and counts toward the irreducible
++   queue. It must never look like a tried-and-failed rung.
++
++---
++
++## 4. Resource-aware routing
++
++**Yes, and it must enter as the denominator of a single objective, not as a second
++competing input.** R2 shows the cost-minimising order is `p/c` descending — capability
++and budget are already one ratio, and it is the *optimum* of the expected-cost
++objective, not a compromise between two.
++
++**Why this does not make a cheap model the default answer.** Because the ladder
++exhausts. Putting a cheap weak model first costs one cheap dispatch and, by R1, removes
++nothing: the expensive strong rung still runs when the probe fails. "First" under
++exhaustion means *cheapest place to look first*, not *the answer*. The structural
++guarantee is R1; it is not a tuning choice, so it cannot be tuned away.
++
++**Load balancing** then falls out of the same objective without new machinery: `c_m` is
++per-model, so a model near its budget ceiling has its effective `c_m` raised and drifts
++down the order — degrading smoothly instead of being cut off. Combined with the
++`rung_unfunded` rule, no model is ever silently removed.
++
++---
++
++## 5. Reproducibility
++
++**A separate verification step, performed by the harness. Not by the models, and not
++primarily by the human.**
++
++- **Not the models.** A model attesting that its own falsifier reproduces is a vote, and
++  the falsifier-integrity directive forbids asserting a verdict you did not compute. It
++  is also the exact shape of the Exp 48 failure.
++- **Not primarily the human.** The archive I measured holds 6194 registry entries across
++  131 artefacts. Per-finding human reproduction does not scale, and a control that does
++  not run is not a control.
++- **The harness.** `reverify_falsifier` already re-executes independently, which is one
++  run. Reproducibility needs **two**, and what is missing is small and concrete:
++  1. re-execute the stored falsifier **twice**, in two fresh processes;
++  2. record `sha256(target_bytes)`, `sha256(falsifier_bytes)`, and both verdicts;
++  3. equal verdicts -> `reproducible: true`; **unequal -> `NONDETERMINISTIC`, which is
++     an instrument fault, not a finding verdict**, and goes to HIL.
++
++The human's role is the residue: adjudicating `NONDETERMINISTIC` and `rung_unfunded`.
++That is the "both" the founder asked about, correctly apportioned — the tool does the
++volume, the human does the irreducible part. This also matters for the STEM-calculator
++goal: *problem in, definitive repeatable answer out* is a claim about the pair
++(answer, reproduction), and a routing ladder that resolves a critical with a
++single-execution verdict has not established the second half.
++
++Note one way routing makes this harder: `resolve_fn` dispatches with
++`enable_tools=True`, so a rung's falsifier is authored inside a tool loop that may have
++left state. Re-execution must be of the **final falsifier text in a clean process**,
++which is what `reverify_falsifier` does — so the existing decider is right and only the
++second execution is absent.
++
++---
++
++## 6. What this design, and the brief, have missed
++
++**(a) The empty ladder is wider than the 1-seat case.** Executed:
++`rank_falsifier_writers(['CC2','CC2'], exclude=('CC2',)) -> []`. The founder's
++*"all the models are the same"* roster has no ladder at all. §1.
++
++**(b) gamma_critical is NOT invariant to routing depth — measured, and my own first
++hypothesis about it was wrong.** `scripts/routing_exhaustion_raises_gamma_critical_2026-10-06.py`.
++`_settled_novelty_series` skips `UNCONFIRMED` (it is in `_NON_NOVEL_TERMINAL_STATUSES`)
++and does not skip `CONFIRMED`, so a critical the ladder resolves **enters** the critical
++novelty series at its `open_since_round`. I predicted gamma would rise. Over 14 archived
++runs with >= 3 rounds, flipping every unresolved critical to CONFIRMED moves
++`gamma_critical` **down in 9, up in 3, unchanged in 2**, and **2 of 14 cross the
++`gamma_critical >= 0.30` arm downward** (14.29%, Wilson [4.01%, 39.94%]):
++`exp40_gate` 0.3018 -> 0.2328 and `commissioning_arm1_panel` 0.3236 -> 0.1883. The
++mechanism is in the data: unresolved criticals skew **late** (9 of 14 runs have their
++unresolved-critical mean `open_since_round` above the registry mean, 64.29%, Wilson
++[38.76%, 83.66%]) because an unresolved critical is one the ladder has not reached yet,
++and adding mass to the late end of a cumulative curve steepens it, raising beta and
++lowering `gamma = 1 - beta`.
++
++Consequence: **removing the rung cap is not a pure spend question**, which is how both
++the founder's ruling and `routing.py`'s own comment frame it. It is a change to one arm
++of the convergence gate, in the direction that makes convergence *harder*, so a run that
++passes today can stop passing — and the count arm does not move, because the resolution
++lands in an earlier bucket. I am **not** proposing to change `_NON_NOVEL_TERMINAL_STATUSES`:
++that would alter gamma for every archived run on my judgement, and the additive standard
++requires a committed measurement first. The simplest sufficient step is **recording-only**:
++compute and log `gamma_critical` a second way, with `UNCONFIRMED` treated as novel, so the
++coupling is visible per round while the gate keeps reading exactly what it reads today.
++Then rule on it with data.
++
++**(c) The competence statistic still loses the filer's failure.**
++`scripts/the_ladder_statistic_loses_the_filers_failure_2026-10-06.py`. The
++2026-10-06 repair to `competence_provenance.falsifier_author` is correct and I do not
++dispute it. But `analyse()` iterates **entries** and assigns each to exactly one model,
++so a routed entry leaves the filer's record entirely — the filer loses a numerator it
++should not have had *and* a denominator it should keep. Over 6194 archived entries, 458
++carry `resolved_by_routing` and 458 of 458 name a different model from `source_model`.
++Entry-level and attempt-level accounting produce **5 rank inversions across the 11
++models in both orders** (45.45%, Wilson [21.27%, 71.99%]); at entry level `CC2-SIM`
++leads, at attempt level `Codex-SIM` does. The founder's ruling is to rank on "what a
++model can be statistically demonstrated to have done", and a model that tried and failed
++did something the current statistic cannot see.
++
++**(d) The frozen tuple's last two rungs are in the wrong order, by a separating
++measurement.** On the provenance-clean critical cell (`severity >= 0.7`, falsifier reads
++the target): `DeepSeek` 12/16 = 75.00% [50.50%, 89.82%] vs `Gemini` 1/8 = 12.50%
++[2.24%, 47.09%], Fisher exact **p = 0.00780724** — scipy, an independent
++hypergeometric-enumeration recomputation, and Wolfram Language all agreeing to 9
++significant figures. `DEFAULT_FALSIFIER_STRENGTH` places Gemini **ahead of** DeepSeek.
++Meanwhile the top of the tuple does **not** separate: `CC2` 39/41 vs `Codex` 42/46,
++Fisher p = 0.679555 (same three tools). So the measured picture is: the ladder can tell
++strong from weak and cannot order within the strong group — which is exactly the regime
++R1 says is harmless. **Caveat I am not going to bury:** this cell pools across runs,
++targets and difficulties, so it is confounded by precisely the selection effect §2 is
++about. It is sufficient to show the frozen order is *contradicted*; it is not sufficient
++to install a replacement order. Installing one requires the depth-stratified estimate.
++
++**(e) A simulated seat's history must not decide a live run's ladder.**
++`rank_falsifier_writers._base` strips `-SIM` so a simulated label "ranks as its vendor".
++That normalisation is right for *ordering a simulated roster* and wrong for
++*estimating `p_hat`*. At attempt level over all entries the two populations separate by
++a wide margin — `Codex-SIM` 306/428 = 71.50% [67.04%, 75.57%] vs `Codex` 228/816 =
++27.94% [24.97%, 31.12%], non-overlapping by 36 percentage points. **On the narrower
++provenance-clean cell the picture is weaker and I report it as measured, not as it
++would be convenient:** 2 of 5 vendors separate (`CC2` SIM 97.58% [93.93, 99.05] n=165
++vs LIVE 85.11% [72.31, 92.59] n=47; `DeepSeek` SIM 87.76% [75.76, 94.27] n=49 vs LIVE
++57.14% [39.07, 73.49] n=28) and 3 overlap, Codex among them. So the hazard is
++demonstrated but not uniform. It is still decisive for the design, because pooling is
++irreversible once done and the sample sizes are lopsided — 428 simulated trials against
++816 live for Codex alone. **`p_hat` must be keyed on the full label, `-SIM` included.**
++The fingerprint files already are (`Codex.json` and `Codex-SIM.json` are separate); the
++ladder's normalisation is the one place that would pool them.
++
++**(f) Keep `DEFAULT_FALSIFIER_STRENGTH`; demote it.** The additive standard permits
++removal only on a committed measurement showing the replacement dominates. No such
++measurement exists — (d)'s cell is confounded, and the frozen tuple is the only ladder
++with a validated end-to-end result (Exp 42's hardest residuals, 7/7 across 2 rungs). So
++it stays, as the cold-start and tie-break ordering, where it is doing work no measured
++statistic can do at `n = 0`. This is a partial disagreement with the founder's framing,
++stated in §Disagreement of the reply.
++
++**(g) What `_update_observed_fingerprint` actually writes, against the glossary.** 15
++fields, verified field by field: 9 from the initialiser (`max_successful_context_chars`,
++`max_failed_context_chars`, `max_successful_prompt_chars`, `max_failed_prompt_chars`,
++`prompt_chars_history`, `failure_modes`, `total_findings`, `rounds_participated`,
++`avg_findings_per_round`) plus 6 from `_compute_attention_metrics`
++(`measured_attention_span`, `compression_threshold`, `quality_at_capacity`,
++`decomposition_recommended`, `attention_ratio`, `D_decay`). The glossary defines the
++profile as `(D, v-bar, A, C)` with `v-bar` a **verification score** and `C` a
++**coverage** dimension. `D_decay` supplies `D`; `total_findings` is a plausible `A`;
++`v-bar` and `C` are **absent**. So the ladder could not read the capability it needs
++from the fingerprint even if it tried — this design's `p_hat` *is* the missing `v-bar`,
++and `C` remains unbuilt and is out of scope here. The docstring claim "ordered by
++capability fingerprint" should be corrected to describe what the code does until the
++code does it; a docstring that describes an intention is how this disagreement went
++unnoticed from June to October.
++
++**(h) The word-overlap duplicate path.** `confirmed_duplicate` returns `resolved=True`
++on a bare Jaccard >= 0.85 and the caller sets `escalated = False`. The merge itself is
++correctly withheld with `merge_blocked_reason` "a similarity score is not a tool
++verdict". I checked whether this deadlocks the finding out of the ladder permanently and
++**it does not**: `escalated` is re-set to `True` at several sites including the
++falsifier-gate path, so a later round can re-escalate it. I had expected a deadlock and
++there isn't one; recorded because the check is the point.
++
++**(i) What I did not read, deliberately.**
++`bench/logs/capability_ladder_design_blind_cc2_2026-10-06/seat_proposals.diff` exists in
++this tree and is a prior round's material for **this** exam. Under the falsifier-integrity
++directive that is inadmissible and I did not open it. It should not be in a blind round's
++sandbox: a blind round whose sandbox contains the other seats' proposals is not blind,
++and the next seat may not stop to notice. That is a staging defect in the harness, not
++in this design.
++
++---
++
++## Delivered files
++
++| path | what it is | re-run |
++|---|---|---|
++| `docs/CAPABILITY_LADDER_MEASURED_2026-10-06.md` | this design | — |
++| `scripts/ladder_order_is_cost_only_2026-10-06.py` | R1 + R2, SymPy + NumPy brute force + assumption probes | `python3 scripts/ladder_order_is_cost_only_2026-10-06.py` (exit 0) |
++| `scripts/the_ladder_statistic_loses_the_filers_failure_2026-10-06.py` | entry-level vs attempt-level accounting, Wilson + statsmodels | `python3 scripts/the_ladder_statistic_loses_the_filers_failure_2026-10-06.py` (exit 1 = inversions found) |
++| `scripts/routing_exhaustion_raises_gamma_critical_2026-10-06.py` | gamma_critical vs routing depth over 14 archived runs | `python3 scripts/routing_exhaustion_raises_gamma_critical_2026-10-06.py` (exit 1 = gate arm crossed) |
++| `scripts/provenance_clean_cell_contradicts_frozen_ladder_2026-10-06.py` | the cell a re-derived ladder must come from: Wilson + Fisher two ways, SIM vs LIVE | `python3 scripts/provenance_clean_cell_contradicts_frozen_ladder_2026-10-06.py` (exit 1 = frozen order contradicted) |
++
++Each script answers `--help` without measuring, per the project's rule that a `--help`
++must never cost anything.
++
++**No `bench/` module is added.** An unwired estimator module would be the project's most
++common defect — 11 confirmed additions that nothing reached since 2026-08-01 — and would
++be the 12th. The design lands when it lands at `routing.py`'s one call site with the
++tests that exercise it, not before.
++
++---
++
++## What would refute each position
++
++| position | what would refute it |
++|---|---|
++| R1 / order-invariance | `scripts/ladder_order_is_cost_only_2026-10-06.py` exiting non-zero; or any path in `resolve_via_routing` setting `resolved=True` without a `CONFIRMED` from `reverify_fn`; or a cap surviving in config |
++| R2 / `p/c` ordering | the same script's brute force showing a non-zero gap; or a rung cost that depends on ladder position — already demonstrated to break R2 at 1.6393%, so aid levels 1-2 must be measured against R2, not assumed under it |
++| §1 estimator | a measurement showing depth-stratified cells with `n` so small that the Jeffreys mean is dominated by the prior **and** that the resulting misordering costs more tokens than the ordering saves. Command: the attempt-level script restricted to `routing_history` records (294 today — thin, and I say so) |
++| §1 one-model panel | `rank_falsifier_writers(['CC2'], exclude=('CC2',))` returning a non-empty list; or a measurement showing aid levels 1-2 confirm at `p_hat` indistinguishable from aid level 0, which would make the self-ladder an addition nothing reaches |
++| §2 condition-on-depth | a measurement showing `p_hat(m,d)` still ordered by marginal usage after conditioning — i.e. that `d` is not the whole assignment mechanism. Any routing path that selects a rung on something other than ladder order and `exclude` refutes it |
++| §3 stopping rule | a `routing_history` record showing the same `(finding, model, aid_level)` attempted twice; or a run whose routing spend exceeds `3 * |roster|` dispatches per finding |
++| §4 cost in the objective | a measured run where cheapest-first ordering resolves **fewer** criticals than strongest-first under exhaustion. By R1 that is impossible, so such a run refutes R1 and the whole design with it. This is the design's single most falsifiable claim |
++| §5 reproducibility | a sweep of `routing_history.last_falsifier_code_full` re-executing every stored falsifier twice and finding 0 verdict disagreements — which would make the second execution an addition nothing reaches |
++| (b) gamma coupling | `scripts/routing_exhaustion_raises_gamma_critical_2026-10-06.py` reporting 0 runs crossing the 0.30 arm in either direction |
++| (c) denominator | the same script reporting 0 rank inversions between entry-level and attempt-level |
++| (d) tuple order | `scripts/competence_provenance.py` marking the pooled cell UNSAFE TO RANK ON; or the depth-stratified cell reversing the DeepSeek/Gemini sign |
++| (e) SIM pooling | all 5 vendors' SIM/LIVE Wilson intervals overlapping in the provenance-clean cell — today 2 of 5 separate, 3 overlap, so the claim rests on the lopsided denominators as much as on the gap. Command: `scripts/provenance_clean_cell_contradicts_frozen_ladder_2026-10-06.py` |
++| (f) keep the tuple | any committed measurement showing a `p_hat`-derived order dominating the frozen tuple on resolutions-per-token in a live run. That measurement does not exist today; when it does, the tuple should go |
+
+### cc2:attempt-1:resources/ONBOARDING.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/ONBOARDING.md	2026-10-06 05:47:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo/resources/ONBOARDING.md	2026-10-06 03:34:49
+@@ -413,7 +413,7 @@
+   OpenAlex fallback + Unpaywall→Sci-Hub full-text, cite-original + Semantic Scholar key wired from
+   `.env`, 95.7s→1.8s); `pytest.ini` global timeout + network marker; stale finding-id test fixed.
+   **Adversarially-verified shadow-mode survey** mapped which subsystems are live vs decoration.
+-  **STILL OPEN (programme plan `experimental_notes/CDSFL_Remediation_Program_2026-06-09.md`):**
++  **STILL OPEN (program plan `experimental_notes/CDSFL_Remediation_Program_2026-06-09.md`):**
+   ouroboros loop-close (papers→models), Stage-6 calibrator into the live equation, severity
+   calibration (never built), directive-pruning panel, macrophage/load-balancer promote-or-retire,
+   dm consolidation — each with an integration-test gate. Lesson: unit-green ≠ integration-live.
+
+### cc2:attempt-1:resources/RECOVERY.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/RECOVERY.md	2026-10-06 05:47:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo/resources/RECOVERY.md	2026-10-06 03:22:28
+@@ -1734,7 +1734,7 @@
+ converge a SECOND module? (Codex CLI is restored as of 2 July — its June rate-limit expired —
+ so `pr`/`c` are blocked only by the same missing OpenRouter/Gemini/DeepSeek keys.)
+ 
+-**Still open (in the programme plan, each with a test gate):** the latent-tagger that makes
++**Still open (in the program plan, each with a test gate):** the latent-tagger that makes
+ severity calibration live; ouroboros loop-close (papers→models; full-text chain + Sci-Hub built);
+ Stage-6 calibrator into the live equation; directive-pruning EXECUTION (the measurement found the
+ real dispatched directive is ~50K with 43.7K appended UNPRUNED outside the prune path — the
+
+### cc2:attempt-1:scripts/ladder_order_is_cost_only_2026-10-06.py
+--- /dev/null	2026-10-06 06:01:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo/scripts/ladder_order_is_cost_only_2026-10-06.py	2026-10-06 05:50:16
+@@ -0,0 +1,294 @@
++#!/usr/bin/env python3
++"""What a routing-ladder ORDER can and cannot change, derived not asserted.
++
++THE QUESTION. The founder has ruled that `bench/routing.py`'s ladder must become a
++measured statistic rather than `DEFAULT_FALSIFIER_STRENGTH`, a frozen 5-tuple of
++vendor names, and that the rung cap should be removed so a finding "runs until it is
++either resolved, or the ladder is exhausted".
++
++THE TWO RESULTS THIS SCRIPT ESTABLISHES, each by symbolic derivation AND by
++exhaustive numeric enumeration over permutations (two independent instruments):
++
++  R1. ORDER-INVARIANCE OF RESOLUTION. `resolve_via_routing` stops at the first
++      CONFIRMED. If the ladder is EXHAUSTED (max_rungs=0), the probability a
++      finding is resolved is
++          P(resolve) = 1 - prod_i (1 - p_i)
++      which is SYMMETRIC in the rungs. No permutation of the ladder changes it.
++      => Once the cap is removed, ladder ORDER cannot change WHICH findings get
++         resolved. It can only change what they COST.
++
++      This is load-bearing. It means the selection effect that depresses a strong
++      model's observed confirm rate (hard findings are sent to it BECAUSE it is
++      trusted) can misorder the ladder without costing a single resolution. The
++      ordering problem is demoted from a correctness problem to a cost problem.
++      That demotion is valid ONLY with exhaustion; with today's default cap of 2,
++          P(resolve | cap k) = 1 - prod_{i<=k} (1 - p_i)
++      is NOT symmetric, so under a cap the order IS a correctness question.
++
++  R2. THE COST-MINIMISING ORDER IS THE INDEX RULE p_i / c_i, DESCENDING.
++      With per-rung dispatch cost c_i (tokens) and stop-at-first-success,
++          E[cost] = sum_i c_{s(i)} * prod_{j<i} (1 - p_{s(j)})
++      is minimised by sorting rungs on p_i / c_i descending. Proved below by the
++      adjacent-transposition argument and checked by brute force.
++
++      => Capability and token budget do NOT need to be two inputs fighting each
++         other. They are one ratio, and it is the optimum of a single objective.
++         A cheap model does not become "the default answer": it becomes a cheap
++         first PROBE, and because the ladder exhausts, the expensive strong model
++         still runs when the probe fails (R1).
++
++WHAT WOULD REFUTE R1. Any code path that resolves a finding without a CONFIRMED
++from `reverify_fn`, or any cap on rungs. `bench/routing.py:resolve_via_routing`
++returns `resolved=True` only on `verdict == "CONFIRMED"`; the DUPLICATE early
++return in `route()` bypasses the ladder entirely and is outside R1's scope.
++WHAT WOULD REFUTE R2. Costs that depend on POSITION in the ladder, or rung
++outcomes that are not independent. Both are probed explicitly below.
++
++Run:  python3 scripts/ladder_order_is_cost_only_2026-10-06.py
++Exit: 0 all derivations hold; 1 any check failed.
++"""
++from __future__ import annotations
++
++import itertools
++import sys
++
++
++def _help_requested() -> bool:
++    return any(a in ("-h", "--help") for a in sys.argv[1:])
++
++
++# -----------------------------------------------------------------------------
++# R1 -- resolution probability is symmetric under exhaustion
++# -----------------------------------------------------------------------------
++
++def r1_symbolic():
++    """SymPy: P(resolve) under exhaustion is invariant under every permutation."""
++    import sympy as sp
++    out = []
++    p = sp.symbols("p1 p2 p3 p4", positive=True)
++
++    def p_resolve(order):
++        miss = sp.Integer(1)
++        total = sp.Integer(0)
++        for pi in order:
++            total += miss * pi
++            miss *= (1 - pi)
++        return sp.expand(total)
++
++    base = p_resolve(p)
++    closed = sp.expand(1 - sp.prod([1 - pi for pi in p]))
++    ok_closed = sp.simplify(base - closed) == 0
++    out.append("  closed form 1-prod(1-p_i) matches the walk  : %s" % ok_closed)
++
++    perms = list(itertools.permutations(p))
++    bad = [o for o in perms if sp.simplify(p_resolve(o) - base) != 0]
++    out.append("  permutations of 4 rungs checked             : %d" % len(perms))
++    out.append("  permutations changing P(resolve)            : %d" % len(bad))
++
++    def p_resolve_cap(order, k):
++        miss, total = sp.Integer(1), sp.Integer(0)
++        for pi in list(order)[:k]:
++            total += miss * pi
++            miss *= (1 - pi)
++        return sp.expand(total)
++
++    base2 = p_resolve_cap(p, 2)
++    bad2 = [o for o in perms if sp.simplify(p_resolve_cap(o, 2) - base2) != 0]
++    out.append("  with cap=2, permutations that DO change it  : %d "
++               "(a cap makes order a correctness question)" % len(bad2))
++    return out, (ok_closed and not bad and bool(bad2))
++
++
++def r1_numeric():
++    """Independent instrument: exhaustive float enumeration, no SymPy."""
++    import numpy as np
++    rows, ok = [], True
++    ps = [0.9, 0.28, 0.67, 0.8, 0.75]           # Exp-42 quoted rates, 5 rungs
++    vals = set()
++    for order in itertools.permutations(ps):
++        miss, tot = 1.0, 0.0
++        for pi in order:
++            tot += miss * pi
++            miss *= (1 - pi)
++        vals.add(round(tot, 12))
++    closed = 1.0 - float(np.prod([1 - x for x in ps]))
++    rows.append("  distinct P(resolve) over 5! = 120 orders    : %d" % len(vals))
++    rows.append("  that value                                 : %.12f" % sorted(vals)[0])
++    rows.append("  closed form 1-prod(1-p_i)                  : %.12f" % closed)
++    ok &= (len(vals) == 1 and abs(sorted(vals)[0] - closed) < 1e-12)
++
++    capped = set()
++    for order in itertools.permutations(ps):
++        miss, tot = 1.0, 0.0
++        for pi in order[:2]:
++            tot += miss * pi
++            miss *= (1 - pi)
++        capped.add(round(tot, 12))
++    rows.append("  distinct P(resolve) with cap=2             : %d spanning [%.4f, %.4f]"
++                % (len(capped), min(capped), max(capped)))
++    ok &= len(capped) > 1
++    return rows, ok
++
++
++# -----------------------------------------------------------------------------
++# R2 -- the cost-minimising order is p/c descending
++# -----------------------------------------------------------------------------
++
++def expected_cost(order_pc):
++    """E[tokens] for stop-at-first-success over (p, c) rungs, in ladder order."""
++    miss, total = 1.0, 0.0
++    for p_i, c_i in order_pc:
++        total += miss * c_i
++        miss *= (1 - p_i)
++    return total
++
++
++def r2_symbolic():
++    """The adjacent-transposition inequality, derived in SymPy.
++
++    For two adjacent rungs a, b at positions k, k+1 reached with probability Q,
++        E[cost](a,b) - E[cost](b,a) = Q * (p_b c_a - p_a c_b)
++    which is <= 0 -- a-first at least as cheap -- exactly when p_a/c_a >= p_b/c_b.
++    Everything after position k+1 is unchanged because the surviving-miss factor
++    (1-p_a)(1-p_b) is symmetric in a and b. So an improving adjacent swap exists
++    whenever the sequence is not sorted by p/c descending, and because p/c induces
++    a total order on the rungs, the sorted sequence is the global optimum.
++    """
++    import sympy as sp
++    out = []
++    pa, pb, ca, cb, Q = sp.symbols("p_a p_b c_a c_b Q", positive=True)
++    ab = Q * (ca + (1 - pa) * cb)
++    ba = Q * (cb + (1 - pb) * ca)
++    diff = sp.simplify(sp.expand(ab - ba))
++    out.append("  E[cost](a,b) - E[cost](b,a)                 = %s" % diff)
++    target = sp.simplify(diff - Q * (pb * ca - pa * cb))
++    out.append("  equals Q*(p_b c_a - p_a c_b)?               : %s" % (target == 0))
++    suffix = sp.simplify((1 - pa) * (1 - pb) - (1 - pb) * (1 - pa))
++    out.append("  surviving-miss factor symmetric in a,b      : %s" % (suffix == 0))
++    cond = sp.simplify(sp.expand((pa / ca - pb / cb) * ca * cb - (pa * cb - pb * ca)))
++    out.append("  p_a/c_a >= p_b/c_b  <=>  p_a c_b >= p_b c_a : %s" % (cond == 0))
++    return out, (target == 0 and suffix == 0 and cond == 0)
++
++
++def r2_bruteforce():
++    """Exhaustive: for many random rosters, does p/c-descending attain the min?"""
++    import numpy as np
++    rng = np.random.default_rng(20261006)          # fixed seed: no Date/Random drift
++    rows, ok = [], True
++    worst_gap, trials, n_rungs = 0.0, 4000, 5
++    strength_first_losses = 0
++    cheapest_first_losses = 0
++    for _ in range(trials):
++        p = rng.uniform(0.05, 0.95, n_rungs)
++        c = rng.uniform(1_000, 200_000, n_rungs)   # token costs, 200x spread
++        rungs = list(zip(p.tolist(), c.tolist()))
++        best = min(expected_cost(o) for o in itertools.permutations(rungs))
++        idx = sorted(rungs, key=lambda r: -(r[0] / r[1]))
++        got = expected_cost(idx)
++        worst_gap = max(worst_gap, abs(got - best) / best)
++        if expected_cost(sorted(rungs, key=lambda r: -r[0])) > best * (1 + 1e-12):
++            strength_first_losses += 1
++        if expected_cost(sorted(rungs, key=lambda r: r[1])) > best * (1 + 1e-12):
++            cheapest_first_losses += 1
++    rows.append("  random rosters tested                      : %d x %d rungs"
++                % (trials, n_rungs))
++    rows.append("  worst relative gap, p/c order vs optimum   : %.3e" % worst_gap)
++    rows.append("  rosters where STRONGEST-FIRST is suboptimal : %d/%d"
++                % (strength_first_losses, trials))
++    rows.append("  rosters where CHEAPEST-FIRST is suboptimal  : %d/%d"
++                % (cheapest_first_losses, trials))
++    ok &= worst_gap < 1e-9
++    ok &= strength_first_losses > 0 and cheapest_first_losses > 0
++    return rows, ok
++
++
++# -----------------------------------------------------------------------------
++# Counterexample probes: the conditions R2 depends on
++# -----------------------------------------------------------------------------
++
++def r2_assumption_probes():
++    """R2 needs position-independent costs. Show it BREAKS when they are not.
++
++    This is the honest half. The routing prompt is rebuilt per rung from the same
++    finding today, so cost is position-independent. But if a later rung is handed
++    the previous rung's falsifier and traceback -- which is exactly the aid this
++    design proposes so a 1-model panel can route to itself -- cost grows with
++    depth and the index rule stops being exact.
++    """
++    rows, ok = [], True
++
++    def cost_posdep(order):
++        miss, total = 1.0, 0.0
++        for d, (p_i, c_i) in enumerate(order):
++            total += miss * c_i * (1 + 0.5 * d)
++            miss *= (1 - p_i)
++        return total
++
++    rungs = [(0.9, 100_000.0), (0.30, 2_000.0), (0.5, 20_000.0)]
++    best = min(cost_posdep(o) for o in itertools.permutations(rungs))
++    idx = sorted(rungs, key=lambda r: -(r[0] / r[1]))
++    gap = (cost_posdep(idx) - best) / best
++    rows.append("  position-DEPENDENT cost: p/c gap vs optimum : %.4f%% (%s)"
++                % (gap * 100.0,
++                   "index rule no longer exact" if gap > 1e-9 else "still exact"))
++    ok &= gap > 1e-9       # we WANT this to break, to prove the probe is live
++    rows.append("  consequence: with depth-growing prompts the index rule is a")
++    rows.append("  heuristic, not an optimum. State it as such; do not claim R2")
++    rows.append("  for a ladder that accumulates context across rungs.")
++    return rows, ok
++
++
++def main():
++    if _help_requested():
++        print((__doc__ or "").strip())
++        print("\nusage: %s" % sys.argv[0].split("/")[-1])
++        return 0
++
++    all_ok = True
++    print("=" * 78)
++    print("R1  RESOLUTION PROBABILITY IS ORDER-INVARIANT UNDER EXHAUSTION")
++    print("=" * 78)
++    rows, ok = r1_symbolic()
++    print("  [SymPy, symbolic]")
++    for r in rows:
++        print(r)
++    all_ok &= ok
++    rows, ok = r1_numeric()
++    print("  [NumPy, exhaustive enumeration]")
++    for r in rows:
++        print(r)
++    all_ok &= ok
++
++    print()
++    print("=" * 78)
++    print("R2  THE COST-MINIMISING LADDER ORDER IS p_i / c_i DESCENDING")
++    print("=" * 78)
++    rows, ok = r2_symbolic()
++    print("  [SymPy, adjacent-transposition derivation]")
++    for r in rows:
++        print(r)
++    all_ok &= ok
++    rows, ok = r2_bruteforce()
++    print("  [NumPy, exhaustive permutation search over random rosters]")
++    for r in rows:
++        print(r)
++    all_ok &= ok
++
++    print()
++    print("=" * 78)
++    print("ASSUMPTION PROBES (these are SUPPOSED to break)")
++    print("=" * 78)
++    rows, ok = r2_assumption_probes()
++    for r in rows:
++        print(r)
++    all_ok &= ok
++
++    print()
++    print("=" * 78)
++    print("VERDICT: %s" % ("ALL DERIVATIONS HOLD" if all_ok else "A CHECK FAILED"))
++    print("=" * 78)
++    return 0 if all_ok else 1
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/provenance_clean_cell_contradicts_frozen_ladder_2026-10-06.py
+--- /dev/null	2026-10-06 06:01:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo/scripts/provenance_clean_cell_contradicts_frozen_ladder_2026-10-06.py	2026-10-06 05:59:39
+@@ -0,0 +1,177 @@
++#!/usr/bin/env python3
++"""The provenance-clean critical cell contradicts DEFAULT_FALSIFIER_STRENGTH's tail.
++
++`bench/routing.py` ranks on DEFAULT_FALSIFIER_STRENGTH = ("Codex","CC2","ChatGPT",
++"Gemini","DeepSeek"), frozen from Exp 42 in June 2026. This script measures, over every
++archived registry in `bench/logs/`, the cell that ladder would have to be re-derived
++from: entries whose falsifier actually READS the target
++(`competence_provenance.falsifier_style == "reads"`), attributed to the model that WROTE
++the falsifier (`competence_provenance.falsifier_author`), restricted to CRITICAL
++severity. Wilson 95% intervals (closed form cross-checked against statsmodels) and
++Fisher exact tests (scipy, cross-checked against an independent hypergeometric
++enumeration) on the pairs that decide the ladder's order.
++
++WHAT IT SHOWS, and the caveat that limits it. The TAIL of the frozen tuple is
++contradicted at 95%: DeepSeek outperforms Gemini and the tuple places Gemini first.
++The HEAD does not separate: CC2 and Codex are statistically indistinguishable, as are
++ChatGPT and Codex. It also shows the `-SIM` and live populations of the same vendor
++separating by a wide margin, which is why a capability estimate must be keyed on the
++FULL label and not on the base vendor name.
++CAVEAT: this cell pools across runs, targets and difficulties, so it is confounded by
++the ladder's own selection effect. It is enough to show the frozen order is
++CONTRADICTED. It is NOT enough to install a replacement order -- that needs the
++depth-stratified estimate described in docs/CAPABILITY_LADDER_MEASURED_2026-10-06.md.
++
++ADMISSIBILITY. Reads only `bench/logs/` artefacts. No scoring key, no answer file, no
++planted-defect manifest.
++
++Run:  python3 scripts/provenance_clean_cell_contradicts_frozen_ladder_2026-10-06.py
++Exit: 0 if no pair separates against the frozen order; 1 if the frozen order is
++      contradicted by a separating pair.
++"""
++from __future__ import annotations
++
++import collections
++import glob
++import json
++import math
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO))
++
++
++def wilson(k, n, z=1.959963984540054):
++    if n == 0:
++        return (0.0, 1.0, float("nan"))
++    p = k / n
++    d = 1.0 + z * z / n
++    c = (p + z * z / (2 * n)) / d
++    h = (z / d) * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
++    return (max(0.0, c - h), min(1.0, c + h), p)
++
++
++def fisher_two_ways(ka, na, kb, nb):
++    """scipy's fisher_exact and an independent hypergeometric enumeration."""
++    from scipy import stats
++    tab = [[ka, na - ka], [kb, nb - kb]]
++    odds, p_scipy = stats.fisher_exact(tab)
++    N, K, n1 = na + nb, ka + kb, na
++    lo, hi = max(0, K + n1 - N), min(K, n1)
++    pmf = {x: stats.hypergeom.pmf(x, N, K, n1) for x in range(lo, hi + 1)}
++    obs = pmf[ka]
++    p_manual = float(sum(q for q in pmf.values() if q <= obs + 1e-15))
++    return float(p_scipy), p_manual, float(odds)
++
++
++def main():
++    if any(a in ("-h", "--help") for a in sys.argv[1:]):
++        print((__doc__ or "").strip())
++        print("\nusage: %s" % sys.argv[0].split("/")[-1])
++        return 0
++
++    from scripts.competence_provenance import falsifier_style, falsifier_author
++    from bench.routing import DEFAULT_FALSIFIER_STRENGTH
++
++    paths = (sorted(glob.glob(str(REPO / "bench" / "logs" / "*" / "runner_state.json")))
++             + sorted(glob.glob(str(REPO / "bench" / "logs" / "*" / "*_report.json"))))
++    crit = collections.defaultdict(collections.Counter)
++    allsev = collections.defaultdict(collections.Counter)
++    total = 0
++    for p in paths:
++        try:
++            j = json.loads(pathlib.Path(p).read_text(encoding="utf-8", errors="replace"))
++        except (OSError, ValueError):
++            continue
++        reg = j.get("registry") or j
++        ents = reg.get("entries") if isinstance(reg, dict) else None
++        if not isinstance(ents, dict):
++            continue
++        for e in ents.values():
++            if not isinstance(e, dict):
++                continue
++            total += 1
++            if falsifier_style(e.get("falsifier_code")) != "reads":
++                continue
++            m = falsifier_author(e)
++            ok = e.get("falsifier_verdict") == "CONFIRMED"
++            allsev[m]["n"] += 1
++            allsev[m]["k"] += ok
++            if (e.get("severity") or 0.0) >= 0.7:
++                crit[m]["n"] += 1
++                crit[m]["k"] += ok
++
++    print("  frozen ladder order        : %s" % " > ".join(DEFAULT_FALSIFIER_STRENGTH))
++    print("  artefacts read             : %d" % len(paths))
++    print("  registry entries scanned   : %d" % total)
++
++    for title, data in (("ALL severities, falsifier READS the target", allsev),
++                        ("CRITICAL only (severity >= 0.7), falsifier READS the target", crit)):
++        print()
++        print("=" * 86)
++        print(title)
++        print("=" * 86)
++        print("  %-13s %4s %4s %8s  %-24s %7s" %
++              ("model", "k", "n", "rate", "Wilson 95%", "width"))
++        for m, s in sorted(data.items(), key=lambda kv: -kv[1]["n"]):
++            lo, hi, pt = wilson(s["k"], s["n"])
++            print("  %-13s %4d %4d %7.2f%%  [%7.2f%%, %7.2f%%]  %6.2f pp"
++                  % (m, s["k"], s["n"], 100 * pt, 100 * lo, 100 * hi, 100 * (hi - lo)))
++
++    print()
++    print("=" * 86)
++    print("THE PAIRS THAT DECIDE THE LADDER (critical cell)")
++    print("=" * 86)
++    pairs = [("DeepSeek", "Gemini"), ("CC2", "Codex"), ("ChatGPT", "Codex"),
++             ("CC2", "DeepSeek"), ("Codex", "Gemini")]
++    contradicted = 0
++    pos = {m: i for i, m in enumerate(DEFAULT_FALSIFIER_STRENGTH)}
++    for a, b in pairs:
++        if a not in crit or b not in crit:
++            print("  %-10s vs %-10s : absent from this archive" % (a, b))
++            continue
++        sa, sb = crit[a], crit[b]
++        ps, pm, odds = fisher_two_ways(sa["k"], sa["n"], sb["k"], sb["n"])
++        sep = ps < 0.05
++        # does the measured direction contradict the frozen order?
++        better = a if sa["k"] / sa["n"] > sb["k"] / sb["n"] else b
++        worse = b if better == a else a
++        frozen_says = better if pos.get(better, 99) < pos.get(worse, 99) else worse
++        bad = sep and frozen_says != better
++        contradicted += bool(bad)
++        print("  %-10s %2d/%-3d  vs  %-10s %2d/%-3d  Fisher p=%.6g "
++              "(manual-hypergeom %.6g, AGREE=%s) OR=%.3f  %s"
++              % (a, sa["k"], sa["n"], b, sb["k"], sb["n"], ps, pm,
++                 abs(ps - pm) < 1e-12, odds,
++                 ("CONTRADICTS FROZEN ORDER <<<" if bad else
++                  "separates, frozen order agrees" if sep else "does not separate")))
++
++    print()
++    print("  --SIM vs LIVE, same vendor, attempt denominators from the same cell:")
++    for base in ("Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek"):
++        s, l = allsev.get(base + "-SIM"), allsev.get(base)
++        if not s or not l:
++            continue
++        slo, shi, sp = wilson(s["k"], s["n"])
++        llo, lhi, lp = wilson(l["k"], l["n"])
++        print("    %-9s SIM %5.2f%% [%5.2f,%5.2f] n=%-4d  LIVE %5.2f%% [%5.2f,%5.2f] n=%-4d  %s"
++              % (base, 100 * sp, 100 * slo, 100 * shi, s["n"],
++                 100 * lp, 100 * llo, 100 * lhi, l["n"],
++                 "SEPARATE" if (slo > lhi or llo > shi) else "overlap"))
++
++    print()
++    print("=" * 86)
++    if contradicted:
++        print("THE FROZEN ORDER IS CONTRADICTED by %d separating pair(s) in this cell."
++              % contradicted)
++        print("It is NOT thereby replaced: this cell pools runs, targets and")
++        print("difficulties and is confounded by the ladder's own selection effect.")
++    else:
++        print("No separating pair contradicts the frozen order in this cell.")
++    print("=" * 86)
++    return 1 if contradicted else 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/routing_exhaustion_raises_gamma_critical_2026-10-06.py
+--- /dev/null	2026-10-06 06:01:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo/scripts/routing_exhaustion_raises_gamma_critical_2026-10-06.py	2026-10-06 05:55:26
+@@ -0,0 +1,196 @@
++#!/usr/bin/env python3
++"""Routing depth MOVES gamma_critical, so routing_max_rungs gates convergence.
++
++HYPOTHESIS AS FIRST WRITTEN, AND ITS REFUTATION BY THIS SCRIPT. The original title
++of this file predicted the move was UPWARD. The archive refutes that: gamma_critical
++FALLS in most runs, because an unresolved critical is one the ladder has not reached
++yet and is therefore skewed LATE, not early. The refutation is kept in place rather
++than edited out, because the measured direction is the dangerous one: a run that
++passes the 0.30 arm today can FAIL it once the ladder is exhausted.
++
++THE MECHANISM, stated before it is measured.
++  * `_settled_novelty_series` (bench/reference_runner_v3.py) builds the critical
++    novelty series by bucketing entries on `open_since_round`, SKIPPING any entry
++    whose status is in `_NON_NOVEL_TERMINAL_STATUSES` = {MERGED, DUPLICATE,
++    UNCONFIRMED, REFUTED}. UNCONFIRMED is in that set.
++  * `gamma_critical = _estimate_gamma(critical_series)` = max(0, min(1, 1 - beta))
++    where beta is the log-log slope of the CUMULATIVE critical count against round
++    index.
++  * `_apply_routing` resolves a critical by setting falsifier_verdict=CONFIRMED.
++    CONFIRMED is NOT in `_NON_NOVEL_TERMINAL_STATUSES`.
++
++  So a critical that the ladder resolves STOPS being skipped and ENTERS the series
++  at the round it was opened -- which is an EARLY round, because it has been sitting
++  unresolved. Back-filling the early end of a cumulative curve flattens it, lowers
++  beta, and RAISES gamma_critical. The founder's ruling removes the rung cap so that
++  more criticals get resolved. More resolution therefore pushes gamma_critical up.
++
++WHY THAT IS ABOVE THRESHOLD. `gamma_critical >= 0.30` is one of the two arms of the
++convergence gate (`CRITICAL_QUIESCENCE_CONVERGED`, reference_runner_v3 ~:8238). The
++other arm is K consecutive zero-new-critical rounds, which is NOT moved by resolving
++an old critical, because the resolution lands in an EARLIER bucket. So the change is
++one-sided: exhaustion loosens the gamma arm and leaves the count arm alone. A run can
++therefore cross the gamma threshold because the INSTRUMENT got better at resolving
++old criticals, not because discovery depleted. gamma is documented in this project as
++"LOAD-BEARING ... an active convergence condition, not a report", so a routing change
++that moves it is a change to the convergence condition.
++
++This script does not argue the direction. It measures it on every archived registry
++that has enough rounds, using the runner's OWN `_settled_novelty_series` and
++`_estimate_gamma`, and reports how many runs CROSS 0.30 purely from flipping
++unresolved criticals to CONFIRMED.
++
++ADMISSIBILITY. Reads only `bench/logs/*/runner_state.json` and imports the runner.
++No scoring key, no answer file, no planted-defect manifest.
++
++Run:  python3 scripts/routing_exhaustion_raises_gamma_critical_2026-10-06.py
++Exit: 0 if gamma_critical never rises (claim refuted); 1 if it rises (claim stands).
++"""
++from __future__ import annotations
++
++import copy
++import glob
++import json
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO))
++
++
++def main():
++    if any(a in ("-h", "--help") for a in sys.argv[1:]):
++        print((__doc__ or "").strip())
++        print("\nusage: %s" % sys.argv[0].split("/")[-1])
++        return 0
++
++    from bench.reference_runner_v3 import (
++        _settled_novelty_series, _estimate_gamma,
++        _NON_NOVEL_TERMINAL_STATUSES, CRITICAL_SEVERITY_THRESHOLD,
++    )
++    print("  CRITICAL_SEVERITY_THRESHOLD        : %s" % CRITICAL_SEVERITY_THRESHOLD)
++    print("  _NON_NOVEL_TERMINAL_STATUSES       : %s"
++          % sorted(_NON_NOVEL_TERMINAL_STATUSES))
++    print("  UNCONFIRMED skipped by gamma?      : %s"
++          % ("UNCONFIRMED" in _NON_NOVEL_TERMINAL_STATUSES))
++    print("  CONFIRMED skipped by gamma?        : %s"
++          % ("CONFIRMED" in _NON_NOVEL_TERMINAL_STATUSES))
++
++    class Reg:
++        def __init__(self, entries):
++            self.entries = entries
++
++    rows = []
++    for p in sorted(glob.glob(str(REPO / "bench" / "logs" / "*" / "runner_state.json"))):
++        try:
++            j = json.loads(pathlib.Path(p).read_text(encoding="utf-8", errors="replace"))
++        except (OSError, ValueError):
++            continue
++        ents = ((j.get("registry") or {}).get("entries")) or {}
++        if not isinstance(ents, dict) or not ents:
++            continue
++        rounds = [e.get("open_since_round") for e in ents.values()
++                  if isinstance(e, dict) and isinstance(e.get("open_since_round"), int)]
++        if not rounds:
++            continue
++        max_round = max(rounds)
++        if max_round + 1 < 3:          # _estimate_gamma needs >= 3 rounds
++            continue
++
++        base_entries = {k: dict(v) for k, v in ents.items() if isinstance(v, dict)}
++        _, crit_before = _settled_novelty_series(Reg(base_entries), max_round)
++        g_before = _estimate_gamma(crit_before)
++
++        # The counterfactual the founder's ruling creates: the ladder, exhausted
++        # instead of capped at 2 rungs, resolves criticals that are currently
++        # UNCONFIRMED. Flip exactly those.
++        after = copy.deepcopy(base_entries)
++        flipped = 0
++        for e in after.values():
++            if (e.get("status") == "UNCONFIRMED"
++                    and (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD):
++                e["status"] = "CONFIRMED"
++                flipped += 1
++        if flipped == 0:
++            continue
++        _, crit_after = _settled_novelty_series(Reg(after), max_round)
++        g_after = _estimate_gamma(crit_after)
++        _fl_rounds = [e.get("open_since_round") for e in base_entries.values()
++                      if e.get("status") == "UNCONFIRMED"
++                      and (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
++                      and isinstance(e.get("open_since_round"), int)]
++        _all_rounds = [e.get("open_since_round") for e in base_entries.values()
++                       if isinstance(e.get("open_since_round"), int)]
++        _mf = sum(_fl_rounds) / len(_fl_rounds) if _fl_rounds else 0.0
++        _ma = sum(_all_rounds) / len(_all_rounds) if _all_rounds else 0.0
++        rows.append((pathlib.Path(p).parent.name, max_round + 1, flipped,
++                     g_before, g_after, crit_before, crit_after, _mf, _ma))
++
++    print()
++    print("=" * 96)
++    print("EFFECT OF RESOLVING UNRESOLVED CRITICALS ON gamma_critical")
++    print("=" * 96)
++    print("  %-42s %4s %4s %7s %7s %8s %6s %6s %s"
++          % ("run", "rnds", "flip", "gamma_0", "gamma_1", "delta",
++             "mean_r", "mean_r", "0.30 arm"))
++    print("  %-42s %4s %4s %7s %7s %8s %6s %6s %s"
++          % ("", "", "", "", "", "", "flip", "all", ""))
++    up = down = same = 0
++    cross_up = cross_down = 0
++    for name, nr, fl, g0, g1, cb, ca, mf, ma in sorted(rows, key=lambda r: -(r[4] - r[3])):
++        d = g1 - g0
++        cross = ""
++        if g0 < 0.30 <= g1:
++            cross_up += 1
++            cross = "OPENS <<<"
++        elif g1 < 0.30 <= g0:
++            cross_down += 1
++            cross = "CLOSES <<<"
++        if d > 1e-12:
++            up += 1
++        elif d < -1e-12:
++            down += 1
++        else:
++            same += 1
++        print("  %-42s %4d %4d %7.4f %7.4f %+8.4f %6.2f %6.2f %s"
++              % (name[:42], nr, fl, g0, g1, d, mf, ma, cross))
++    print()
++    print("  runs measured                      : %d" % len(rows))
++    print("  gamma_critical ROSE                : %d" % up)
++    print("  gamma_critical FELL                : %d" % down)
++    print("  gamma_critical unchanged           : %d" % same)
++    print("  runs where the 0.30 arm OPENS      : %d" % cross_up)
++    print("  runs where the 0.30 arm CLOSES     : %d" % cross_down)
++    print("    (a run that passes the gamma arm today would STOP passing it)")
++    _sl = [r for r in rows if r[7] > r[8]]
++    print("  runs where unresolved criticals skew LATER than the")
++    print("  registry mean open_since_round     : %d of %d" % (len(_sl), len(rows)))
++    if rows:
++        worst = min(rows, key=lambda r: r[4] - r[3])
++        print()
++        print("  largest single move: %s" % worst[0])
++        print("    critical series BEFORE : %s" % worst[5])
++        print("    critical series AFTER  : %s" % worst[6])
++        print("    gamma_critical %.4f -> %.4f" % (worst[3], worst[4]))
++
++    print()
++    print("=" * 96)
++    print("WHAT WAS MEASURED, including the refutation of this script's own first")
++    print("hypothesis. The docstring above predicted gamma_critical would RISE, on the")
++    print("reasoning that unresolved criticals sit in EARLY rounds. The archive says")
++    print("otherwise and the mechanism is the mean-round column: an unresolved critical")
++    print("is one the ladder has NOT yet got to, which skews it LATE, and adding mass to")
++    print("the late end of a cumulative curve STEEPENS it, raising beta and LOWERING")
++    print("gamma = 1 - beta. The prediction was wrong; the coupling is real and its sign")
++    print("is the more dangerous one.")
++    print()
++    print("CONCLUSION EITHER WAY: gamma_critical is NOT invariant to routing depth, so")
++    print("`routing_max_rungs` is an undeclared input to the convergence gate. Removing")
++    print("the cap is therefore not a pure spend question, which is how the founder's")
++    print("ruling and routing.py's own comment both frame it.")
++    print("=" * 96)
++    return 1 if (cross_up + cross_down) > 0 else 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/the_ladder_statistic_loses_the_filers_failure_2026-10-06.py
+--- /dev/null	2026-10-06 06:01:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_phjof9g3/repo/scripts/the_ladder_statistic_loses_the_filers_failure_2026-10-06.py	2026-10-06 05:51:26
+@@ -0,0 +1,236 @@
++#!/usr/bin/env python3
++"""The competence statistic the ladder would rank on counts ENTRIES, not ATTEMPTS.
++
++WHAT WAS ALREADY FIXED, AND WHY THAT FIX IS HALF OF ONE.
++`scripts/competence_provenance.py:falsifier_author` was repaired on 2026-10-06 so an
++entry resolved by the routing ladder is credited to `resolved_by_routing` -- the rung
++that WROTE the working falsifier -- rather than to `source_model`, the model that
++filed the finding and failed to demonstrate it. That repair is correct and this script
++does not dispute it.
++
++THE RESIDUAL DEFECT. `analyse()` iterates ENTRIES and assigns each entry to exactly
++ONE model. So when a weak filer's falsifier fails and a strong rung resolves it, the
++entry leaves the filer's record ENTIRELY -- the filer loses a numerator it should
++never have had AND a denominator it SHOULD keep. A failed falsifier is a failed
++ATTEMPT, and the founder's ruling is that the ladder rank on "what a model can be
++statistically demonstrated to have done". A model that tried and failed did
++something, and the current statistic cannot see it.
++
++The direction is the same one the original defect had: it flatters the models the
++ladder is supposed to demote. Pre-fix the filer banked a false success; post-fix the
++filer simply does not record the failure. In both cases its rate is computed over a
++population that excludes its failures.
++
++WHAT THIS SCRIPT MEASURES, over every archived `runner_state.json` and
++`*_report.json` in `bench/logs/`:
++  A. entry-level (what `competence_provenance.analyse` computes today), and
++  B. attempt-level: every (model, finding) falsification ATTEMPT is one Bernoulli
++     trial. A routed entry contributes a FAILURE to its `source_model` and a
++     success-or-failure to each rung named in `routing_history`.
++Both with Wilson 95% intervals, cross-verified by statsmodels and a closed form.
++Then it asks the only question that matters for the founder's ruling: does the
++RANK ORDER differ between A and B?
++
++ADMISSIBILITY. This reads only `bench/logs/` run artefacts and `bench/routing.py`.
++It opens no scoring key, no answer file and no planted-defect manifest.
++
++Run:  python3 scripts/the_ladder_statistic_loses_the_filers_failure_2026-10-06.py
++Exit: 0 if A and B agree on rank order; 1 if the defect changes the ladder.
++"""
++from __future__ import annotations
++
++import collections
++import glob
++import json
++import math
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO))
++
++
++def wilson(k, n, z=1.959963984540054):
++    """Wilson score interval, closed form. Returns (lo, hi, centre)."""
++    if n == 0:
++        return (0.0, 1.0, float("nan"))
++    p = k / n
++    d = 1.0 + z * z / n
++    c = (p + z * z / (2 * n)) / d
++    h = (z / d) * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
++    return (max(0.0, c - h), min(1.0, c + h), p)
++
++
++def wilson_statsmodels(k, n):
++    from statsmodels.stats.proportion import proportion_confint
++    lo, hi = proportion_confint(k, n, alpha=0.05, method="wilson")
++    return float(lo), float(hi)
++
++
++def _entries(path: pathlib.Path):
++    try:
++        j = json.loads(path.read_text(encoding="utf-8", errors="replace"))
++    except (OSError, ValueError):
++        return {}
++    reg = j.get("registry") or j
++    ents = reg.get("entries") if isinstance(reg, dict) else None
++    return ents if isinstance(ents, dict) else {}
++
++
++def main():
++    if any(a in ("-h", "--help") for a in sys.argv[1:]):
++        print((__doc__ or "").strip())
++        print("\nusage: %s" % sys.argv[0].split("/")[-1])
++        return 0
++
++    paths = [pathlib.Path(p) for p in
++             sorted(glob.glob(str(REPO / "bench" / "logs" / "*" / "runner_state.json")))
++             + sorted(glob.glob(str(REPO / "bench" / "logs" / "*" / "*_report.json")))]
++
++    # A: entry-level, replicating competence_provenance.analyse's attribution.
++    entry_lvl = collections.defaultdict(collections.Counter)
++    # B: attempt-level.
++    att_lvl = collections.defaultdict(collections.Counter)
++
++    n_entries = 0
++    n_routed = 0
++    n_routed_differs = 0
++    n_history = 0
++
++    for p in paths:
++        for e in _entries(p).values():
++            if not isinstance(e, dict):
++                continue
++            n_entries += 1
++            src = (e.get("source_model") or "").strip()
++            rbr = (e.get("resolved_by_routing") or "").strip()
++            confirmed = e.get("falsifier_verdict") == "CONFIRMED"
++
++            # ---- A: one entry, one owner (current behaviour) ----
++            owner = rbr or src or "?"
++            entry_lvl[owner]["n"] += 1
++            if confirmed:
++                entry_lvl[owner]["k"] += 1
++
++            # ---- B: one attempt, one trial ----
++            if src:
++                # The filer attempted a falsifier. It succeeded only if the entry
++                # was NOT routed away and the verdict is CONFIRMED.
++                att_lvl[src]["n"] += 1
++                if confirmed and not rbr:
++                    att_lvl[src]["k"] += 1
++            if rbr:
++                n_routed += 1
++                if rbr != src:
++                    n_routed_differs += 1
++            # Every rung the ladder actually dispatched is an attempt, whether or
++            # not it won. routing_history is the only place this is recorded.
++            hist = e.get("routing_history")
++            seen_rungs = set()
++            if isinstance(hist, list):
++                for h in hist:
++                    if not isinstance(h, dict):
++                        continue
++                    m = (h.get("model_used") or "").strip()
++                    if not m:
++                        continue
++                    n_history += 1
++                    key = (m, h.get("round"))
++                    if key in seen_rungs:
++                        continue
++                    seen_rungs.add(key)
++                    att_lvl[m]["n"] += 1
++                    if (h.get("verdict") or "").upper() == "CONFIRMED":
++                        att_lvl[m]["k"] += 1
++            elif rbr:
++                # Resolved by a rung with no history recorded (pre-2026-10-03
++                # archives): still an attempt that succeeded.
++                att_lvl[rbr]["n"] += 1
++                att_lvl[rbr]["k"] += 1
++
++    print("=" * 78)
++    print("ARCHIVE SCANNED")
++    print("=" * 78)
++    print("  artefacts read                        : %d" % len(paths))
++    print("  registry entries                      : %d" % n_entries)
++    print("  entries carrying resolved_by_routing  : %d" % n_routed)
++    print("    of those, resolver != source_model  : %d" % n_routed_differs)
++    print("  routing_history rung records           : %d" % n_history)
++
++    def table(title, data):
++        print()
++        print("=" * 78)
++        print(title)
++        print("=" * 78)
++        print("  %-12s %6s %6s %8s  %-22s %s"
++              % ("model", "k", "n", "rate", "Wilson 95% (closed form)", "statsmodels AGREE"))
++        rows = []
++        for m, s in data.items():
++            k, n = s["k"], s["n"]
++            lo, hi, pt = wilson(k, n)
++            if n:
++                slo, shi = wilson_statsmodels(k, n)
++                agree = abs(slo - lo) < 1e-9 and abs(shi - hi) < 1e-9
++            else:
++                agree = True
++            rows.append((m, k, n, pt, lo, hi, agree))
++        rows.sort(key=lambda r: (-(r[3] if r[3] == r[3] else -1), r[0]))
++        for m, k, n, pt, lo, hi, agree in rows:
++            print("  %-12s %6d %6d %7.2f%%  [%7.4f%%, %7.4f%%]  %s"
++                  % (m, k, n, 100 * pt, 100 * lo, 100 * hi, "YES" if agree else "NO"))
++        return [r[0] for r in rows], rows
++
++    order_a, rows_a = table("A.  ENTRY-LEVEL  (what competence_provenance.analyse computes)",
++                            entry_lvl)
++    order_b, rows_b = table("B.  ATTEMPT-LEVEL (every dispatched falsification is one trial)",
++                            att_lvl)
++
++    print()
++    print("=" * 78)
++    print("DOES THE DEFECT MOVE THE LADDER?")
++    print("=" * 78)
++    common = [m for m in order_a if m in order_b]
++    pos_b = {m: i for i, m in enumerate(order_b)}
++    seq = [pos_b[m] for m in common]
++    inversions = sum(1 for i in range(len(seq)) for j in range(i + 1, len(seq))
++                     if seq[i] > seq[j])
++    print("  entry-level order   : %s" % " > ".join(order_a))
++    print("  attempt-level order : %s" % " > ".join(order_b))
++    print("  models in both      : %d" % len(common))
++    print("  rank inversions between A and B : %d" % inversions)
++
++    # The decisive question for the design: do any two models SEPARATE at 95%?
++    print()
++    print("  PAIRWISE SEPARATION AT 95% (attempt-level, Wilson non-overlap):")
++    sep = 0
++    pairs = 0
++    rb = {r[0]: r for r in rows_b}
++    ms = [m for m in order_b if rb[m][2] >= 1]
++    for i in range(len(ms)):
++        for j in range(i + 1, len(ms)):
++            a, b = rb[ms[i]], rb[ms[j]]
++            pairs += 1
++            if a[4] > b[5] or b[4] > a[5]:
++                sep += 1
++                print("    SEPARATES: %-12s [%.4f, %.4f]  vs  %-12s [%.4f, %.4f]"
++                      % (a[0], a[4], a[5], b[0], b[4], b[5]))
++    print("    pairs tested: %d   pairs separating: %d" % (pairs, sep))
++    if sep == 0:
++        print("    NO PAIR SEPARATES. A point-estimate ranking would be ranking noise.")
++
++    print()
++    print("=" * 78)
++    print("VERDICT")
++    print("=" * 78)
++    if inversions:
++        print("  REFUTED: entry-level and attempt-level accounting disagree on the")
++        print("  ladder order. The statistic the founder's ruling would rank on is")
++        print("  sensitive to this choice, so the choice must be made explicitly.")
++    else:
++        print("  The two accountings agree on order in this archive. The defect is")
++        print("  real in the denominator but has not yet inverted a rank here.")
++    return 1 if inversions else 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

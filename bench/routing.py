@@ -136,7 +136,7 @@ def resolve_via_routing(
     rungs: Sequence[str],
     resolve_fn: Callable[[str, dict], str],
     reverify_fn: Callable[[str], str],
-    max_rungs: int = 2,
+    max_rungs: int = 2,   # 0 = exhaust the ladder
 ) -> RoutingResult:
     """Climb the capability ladder until a strong writer CONFIRMS the finding.
 
@@ -155,7 +155,20 @@ def resolve_via_routing(
     """
     fid = finding.get("finding_id") or finding.get("id") or "?"
     last_verdict, last_code, last_model, tried = "UNTOOLABLE", "", None, 0
-    for model in list(rungs)[:max_rungs]:
+    # `max_rungs=0` MEANS EXHAUST THE LADDER. Founder ruling 2026-10-06: *"I don't
+    # think there should be a cap at all. If it's a measured statistic, along with
+    # capability fingerprinting then the problem should run until it is either
+    # resolved, or the ladder is exhausted. (No more models to try.)"*
+    #
+    # The budget is NOT free, and the honest accounting is that it is nearly free
+    # HERE: `resolve_via_routing` stops at the first CONFIRMED, so a deeper budget
+    # costs a dispatch only on findings every earlier rung already failed. Measured
+    # on the Exp 42 residual set the ladder was validated against, rung 1 resolved
+    # 6 of 7 and rung 2 the last, so rungs 3+ are reached on a small minority.
+    # A cap is therefore spend-insurance against a pathological run rather than a
+    # routine saving, which is why exhaustion is now expressible.
+    _budget = len(list(rungs)) if not max_rungs else max_rungs
+    for model in list(rungs)[:_budget]:
         tried += 1
         last_model = model
         code = (resolve_fn(model, finding) or "").strip()
@@ -180,7 +193,7 @@ def route(
     similarity_fn: Callable[[dict, dict], float],
     *,
     strength_order: Sequence[str] = DEFAULT_FALSIFIER_STRENGTH,
-    max_rungs: int = 2,
+    max_rungs: int = 2,   # 0 = exhaust the ladder
     dup_threshold: float = 0.85,
 ) -> RoutingResult:
     """Full routing pass for ONE un-confirmed critical finding.
