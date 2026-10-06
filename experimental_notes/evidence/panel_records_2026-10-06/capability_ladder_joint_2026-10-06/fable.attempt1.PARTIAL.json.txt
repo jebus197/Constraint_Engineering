@@ -1,0 +1,20 @@
+{
+  "_THIS_IS_A_PARTIAL_RECOVERY": {
+    "what": "The FIRST joint-round dispatch of the fable seat. It returned 0 words and ended in a BrokenPipeError. The re-dispatch OVERWROTE fable.json and destroyed the original record.",
+    "recovered_from": "seat_proposals.diff, hunk 'fable:attempt-1'. The seat's sandbox was built at 07:32:34, BEFORE the overwrite, so its copy still held the failed file and the end-of-run diff captured it.",
+    "why_only_partial": "The diff does NOT preserve the file byte-for-byte: long tool-call input previews are truncated, so the '+' side does not parse as JSON (fails at line 93). The scalar fields below ARE recovered verbatim from the diff; the full tool_calls array is NOT recoverable and is recorded here as lost.",
+    "recovered_at": "2026-10-06T08:31+01:00",
+    "not_recoverable": [
+      "the complete tool_calls array (19 calls; previews truncated in the diff)"
+    ],
+    "prevented_from_recurring_by": "_preserve_prior_attempt in bench/confer_maths_panel_2026-09-05.py moves a prior reply to <stem>.attemptN.json before a re-dispatch writes, so no future attempt is overwritten and no later recovery depends on a sandbox accident."
+  },
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": false,
+  "error": "BrokenPipeError: [Errno 32] Broken pipe",
+  "n_tool_calls": 19,
+  "elapsed_s": 435.9,
+  "response": "",
+  "_measured_at_the_time": "ok=False, response 0 words, 19 tool calls, 435.9 s, 1 attempt recorded where a timeout receives 2 \u2014 the error is the bare exception rather than the dispatcher's retry wrapper, so it escaped outside call_claude_cli's retry loop."
+}

@@ -879,7 +879,11 @@ def dispatch(name, model_id, route):
                "tool_calls": tool_log, "n_tool_calls": len(tool_log),
                "elapsed_s": round(time.time() - t0, 1), "response": "",
                "attempts": list(_SEAT_ATTEMPTS.get(name, []))}
-    (_logs_dir() / f"{name}.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
+    _reply_path = _logs_dir() / f"{name}.json"
+    # EVERY ATTEMPT IS KEPT, not just the one that happened to succeed.
+    _preserve_prior_attempt(_reply_path)
+    _preserve_prior_attempt(_logs_dir() / f"{name}.tools.json")
+    _reply_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
     # A seat that hit the cap says so ON THE CONSOLE LINE, not only in the
     # JSON, because the console line is what an operator reads during a round.
     _stopped = out.get("stopped_reason")
@@ -1133,6 +1137,59 @@ def _refuse_if_topology_is_skipped(models) -> int:
     print(f"    star topology: {kind} round; {len(sibs)} answered sibling(s) on the "
           f"same brief, all declared", flush=True)
     return 0
+
+
+def _preserve_prior_attempt(path):
+    """Move an existing reply aside before a re-dispatch overwrites it.
+
+    THE FOUNDER'S RULING, 2026-10-06: *"We need to ensure all failures are
+    recorded, both here in the review rounds and more formally in the registry in
+    both the simulated and real experimental branches ... The purpose of recording
+    failures is that a researcher should be able to retrace all their steps to
+    understand exactly what happened."*
+
+    WHAT WAS LOST, MEASURED. On 2026-10-06 the fable seat's first joint dispatch
+    returned 0 words after 435.9 s and 19 tool calls, ending in
+    `BrokenPipeError: [Errno 32] Broken pipe`. The re-dispatch OVERWROTE
+    `fable.json`, and the surviving file records `attempts: [{"attempt": 1}]` with
+    `ok: true` -- so the round's own artefacts assert a clean single-attempt
+    success and the failure is gone. Its only traces were an incidental mention in
+    `seat_proposals.diff` and an unversioned scratch log. A researcher retracing
+    that round would find no evidence the first dispatch ever happened.
+
+    THIS IS THE SAME CLASS AS THE 2026-10-03 SHORTFALL recorded in
+    section_p_shortfalls.json, whose cause had to be reconstructed from matched
+    elapsed times because nothing else survived. A retry that erases what it
+    replaces makes the next such reconstruction impossible.
+
+    The prior file becomes `<stem>.attempt<N>.json`, which no reader mistakes for a
+    seat: `star_topology.landed_seats` skips any stem containing a dot, and
+    `panel_condition_compliance.SEATS` is a fixed tuple looked up by exact name.
+    The mirror copies whole directories, so preserved attempts reach the tracked
+    record like everything else.
+
+    Returns the path it moved the file to, or None if there was nothing to move.
+    """
+    path = Path(path)
+    if not path.is_file():
+        return None
+    n = 1
+    while True:
+        # `.json.txt`, NOT `.json`. THE SUFFIX IS LOAD-BEARING and the first
+        # version got it wrong: a preserved `fable.attempt1.json` was counted as a
+        # reply by the Section P guard while the compliance script did not count
+        # it, and the 2 populations diverged by exactly 1 (145 against 144). The
+        # project already has the convention -- `experimental_notes/evidence/`
+        # stores seat-written code as `.py.txt` and briefs as `.md.txt` precisely
+        # so an archival copy stays out of the scanners that walk live artefacts.
+        dest = path.with_name(f"{path.stem}.attempt{n}{path.suffix}.txt")
+        if not dest.exists():
+            break
+        n += 1
+    path.rename(dest)
+    print(f"    preserved the prior attempt as {dest.name} "
+          f"(a re-dispatch must not erase what it replaces)", flush=True)
+    return dest
 
 
 def main() -> int:
