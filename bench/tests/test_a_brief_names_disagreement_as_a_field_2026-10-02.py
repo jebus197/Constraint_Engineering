@@ -126,3 +126,64 @@ class TestTheScopeIsTheWholePoint:
         assert i != -1 and j != -1 and j > i, (
             "the disagreement check moved out of the section-scoped block; a "
             "document-wide version passes the brief it exists to refuse")
+
+
+class TestTheFieldMustBeReadableByTheDetector:
+    """A BRIEF COULD DECLARE A FIELD NOTHING WOULD EVER RECOGNISE.
+
+    Found 2026-10-06 by writing one. The joint round's brief asked for
+    `## Residual disagreement`, which satisfies the validator's loose `\\bdisagree`
+    search and is INVISIBLE to `carries_disagreement`, whose heading alternative
+    requires the word to open the line. Both seats disagreed substantively and the
+    round was recorded as having lost its disagreement.
+
+    The validator's predicate was WEAKER than the detector's: 2 predicates about
+    the same field, each individually correct, disagreeing about what counts. The
+    repair binds the validator to the detector's own imported definition rather
+    than widening the detector, because the 2026-10-02 entry records that widening
+    makes it match mentions as well as assertions.
+    """
+
+    def _validate(self, text, tmp_path):
+        import importlib.util
+        import sys
+        p = tmp_path / "BRIEF.md"
+        p.write_text(text, encoding="utf-8")
+        spec = importlib.util.spec_from_file_location(
+            "pbv_under_test", REPO / "scripts" / "panel_brief_validate.py")
+        m = importlib.util.module_from_spec(spec)
+        sys.modules["pbv_under_test"] = m
+        spec.loader.exec_module(m)
+        return m
+
+    def test_a_qualified_heading_is_refused(self, tmp_path):
+        m = self._validate("x", tmp_path)
+        body = "- `## Residual disagreement` — a real body, not 'none'.\n"
+        assert not m._field_the_detector_can_read(body), (
+            "`## Residual disagreement` was accepted, and the reply detector "
+            "cannot match it, so every seat's reply would be recorded as having "
+            "lost its disagreement")
+
+    def test_the_canonical_heading_is_accepted(self, tmp_path):
+        m = self._validate("x", tmp_path)
+        assert m._field_the_detector_can_read("- `## Disagreement` — a real body\n")
+        assert m._field_the_detector_can_read(
+            "- the strongest disagreement with the brief's own framing\n")
+
+    def test_the_validator_and_the_detector_share_one_definition(self, tmp_path):
+        """ANTI-DRIFT. The pattern must be IMPORTED, never copied."""
+        src = (REPO / "scripts" / "panel_brief_validate.py").read_text(
+            encoding="utf-8")
+        assert "panel_condition_compliance_2026-09-10.py" in src, (
+            "the validator does not import the detector's definition, so the 2 "
+            "predicates can drift apart again")
+        assert "DISAGREEMENT_RE" in src
+
+    def test_the_live_template_still_passes(self, tmp_path):
+        m = self._validate("x", tmp_path)
+        tpl = (REPO / "bench" / "directives" / "universal"
+               / "panel_brief_template.md")
+        if not tpl.is_file():
+            pytest.skip("the template is not on this checkout")
+        assert m._field_the_detector_can_read(tpl.read_text(encoding="utf-8")), (
+            "the canonical template would now be refused by its own validator")

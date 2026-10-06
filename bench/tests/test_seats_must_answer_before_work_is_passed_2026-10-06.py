@@ -194,3 +194,85 @@ class TestTheProbeIsCheap:
         assert "max_tokens=16" in body, (
             "the probe does not cap its output, so a confused seat could return a "
             "full essay to a 1-word question")
+
+
+class TestEveryRunnerAdoptsIt:
+    """THE FOUNDER'S RULING, 2026-10-06: *"the simple aliveness probe was my idea,
+    right? We should adopt this for all our runners going forward too."*
+
+    It was his idea. The panel dispatcher got it first; this holds the second half,
+    the experiment runner in reference_runner_v3.
+    """
+
+    def test_the_experiment_runner_calls_the_probe(self):
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
+        calls = [n for n in ast.walk(ast.parse(src)) if isinstance(n, ast.Call)
+                 and (getattr(n.func, "id", None)
+                      or getattr(n.func, "attr", None))
+                 == "_refuse_if_a_route_is_dead"]
+        assert calls, (
+            "reference_runner_v3 never calls the aliveness probe, so the ruling "
+            "reaches the panel dispatcher only")
+
+    def test_a_simulated_seat_is_SKIPPED_not_failed(self, AL):
+        """A FALSE GREEN IS WORSE THAN NO CHECK, and the inverse error would be
+        worse still: treating an unprobeable seat as dead refuses every simulated
+        run. The simulated dispatch is installed by monkeypatching the real call
+        functions, so a probe would be answered by the shim."""
+        assert AL.caller_for("sim", "anything") is None
+        assert "sim" in AL.UNPROBEABLE_APIS
+
+        class _M:
+            def __init__(self, label):
+                self.label, self.api, self.model_id = label, "sim", "sim"
+        results, skipped = AL.probe_models([_M("A-SIM"), _M("B-SIM")])
+        assert results == {} and skipped == ["A-SIM", "B-SIM"]
+        assert AL.refusal_for(results) is None, (
+            "an all-simulated roster was refused, which would block every "
+            "simulated run")
+
+    def test_an_all_simulated_run_proceeds(self):
+        """EXECUTED against the real runner, not reasoned about."""
+        import bench.reference_runner_v3 as R
+
+        class _EC:
+            def __init__(self, models):
+                self.models = models
+        sim = [R.ModelConfig(label=f"{n}-SIM", model_id="sim", api="sim",
+                             role="player", system_prompt_path="x",
+                             timeout=60, max_retries=1)
+               for n in ("A", "B")]
+        cfg = R.RunnerConfig(experiment_name="t", models=["A-SIM", "B-SIM"])
+        assert R._refuse_if_a_route_is_dead(_EC(sim), cfg) is None
+
+    def test_an_empty_roster_proceeds(self):
+        import bench.reference_runner_v3 as R
+
+        class _EC:
+            models = []
+        assert R._refuse_if_a_route_is_dead(_EC(), None) is None
+
+    def test_every_real_route_has_a_probe_caller(self, AL):
+        """An unknown route must NOT pass unprobed. The runner dispatches on these
+        5 api values (bench/decomposed_dispatch.py), so each needs a caller."""
+        for api in ("claude_cli", "openrouter", "deepseek", "google",
+                    "codex_exec"):
+            assert AL.caller_for(api, "m") is not None, (
+                f"api {api!r} has no aliveness caller, so a run on that route "
+                f"would start unprobed")
+
+    def test_an_unknown_route_raises_rather_than_passing(self, AL):
+        """A route nobody wrote a probe for must fail loudly, not silently pass."""
+        c = AL.caller_for("some_new_vendor_api", "m")
+        assert c is not None, "an unknown api returned None, which means 'skip'"
+        with pytest.raises(Exception) as ei:
+            c()
+        assert "no aliveness route" in str(ei.value)
+
+    def test_a_probe_that_cannot_load_refuses_in_the_runner(self):
+        src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
+        i = src.index("def _refuse_if_a_route_is_dead")
+        body = src[i:i + 3000]
+        assert "REFUSED_ALIVENESS_UNAVAILABLE" in body, (
+            "a probe that fails to load does not refuse the run, so a broken "
+            "probe passes")

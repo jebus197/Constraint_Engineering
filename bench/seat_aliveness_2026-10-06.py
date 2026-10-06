@@ -142,3 +142,83 @@ def claude_cli_caller(model_id: str, timeout: int = DEFAULT_TIMEOUT_S):
             max_retries=1,   # the probe does its OWN attempts; see probe_seat
         )
     return _call
+
+
+#: api -> whether a probe is meaningful. "sim" is NOT probeable: the simulated
+#: dispatch is installed by monkeypatching the real call functions, so a probe would
+#: be answered by the shim and would report a green route where no route exists.
+#: A false green is worse than no check.
+UNPROBEABLE_APIS = frozenset({"sim"})
+
+
+def caller_for(api: str, model_id: str | None,
+               timeout: int = DEFAULT_TIMEOUT_S):
+    """A 0-argument caller for one seat over the route the RUN will use, or None.
+
+    None means "do not probe this seat", which the callers must distinguish from
+    "this seat failed" -- reporting an unprobeable seat as dead would refuse every
+    simulated run.
+
+    ADOPTED FOR ALL RUNNERS ON THE FOUNDER'S RULING, 2026-10-06: *"the simple
+    aliveness probe was my idea, right? We should adopt this for all our runners
+    going forward too."* It was wired into the panel dispatcher first, where it was
+    measured establishing a route in 5.91 s against the 3258 s a failed round took
+    to establish the same fact.
+
+    ON SPEND, because a probe IS a dispatch and the standing rule is that no paid
+    dispatch happens without the founder's express authorisation. The probe fires
+    only for a seat the run is ALREADY authorised to dispatch with a full brief,
+    immediately before doing so, and costs a 16-token ceiling against that brief's
+    thousands. It adds no seat and reaches no route the run was not already going
+    to use, so it spends strictly less than the run it guards. It does not and must
+    not carry its own authorisation to dispatch anything.
+    """
+    if not api or api in UNPROBEABLE_APIS:
+        return None
+
+    def _call() -> str:
+        from experiment_11_orchestrator import (
+            call_claude_cli, call_codex, call_deepseek, call_gemini,
+            call_moonshot, call_openrouter)
+        kw = dict(max_tokens=16, timeout=timeout, max_retries=1)
+        if api == "claude_cli":
+            return call_claude_cli(model_id=model_id or "opus",
+                                   system_prompt=None,
+                                   user_prompt=PROBE_PROMPT, **kw)
+        if api == "openrouter":
+            return call_openrouter(model_id, None, PROBE_PROMPT, **kw)
+        if api == "deepseek":
+            return call_deepseek(model_id, None, PROBE_PROMPT, **kw)
+        if api == "google":
+            return call_gemini(model_id, None, PROBE_PROMPT, **kw)
+        if api == "moonshot":
+            return call_moonshot(model_id, None, PROBE_PROMPT, **kw)
+        if api == "codex_exec":
+            # Different signature: no model_id, directives in place of a system
+            # prompt. Threaded explicitly rather than through **kw so a signature
+            # change here fails loudly instead of silently dropping the prompt.
+            return call_codex(PROBE_PROMPT, "", timeout, 1)
+        raise RuntimeError(
+            f"no aliveness route for api {api!r}; add one rather than letting an "
+            f"unknown route pass unprobed")
+    return _call
+
+
+def probe_models(models, attempts: int = DEFAULT_ATTEMPTS,
+                 timeout: int = DEFAULT_TIMEOUT_S):
+    """Probe a list of ModelConfig-like objects. Returns (results, skipped).
+
+    `results` maps the probed seats' labels to AliveResult; `skipped` lists the
+    labels whose route is not probeable. Serialised, for the reason in
+    `probe_roster`.
+    """
+    callers, skipped = {}, []
+    for m in models:
+        label = getattr(m, "label", str(m))
+        c = caller_for(getattr(m, "api", ""), getattr(m, "model_id", None),
+                       timeout=timeout)
+        if c is None:
+            skipped.append(label)
+            continue
+        callers[label] = c
+    return probe_roster(callers, attempts=attempts, timeout=timeout), skipped

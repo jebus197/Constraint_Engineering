@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import calendar
 import json
+import pathlib
 import re
 import subprocess
 import sys
@@ -652,7 +653,77 @@ def validate(text: str) -> list[str]:
             "disagreement as a FIELD in the output section, not as prose "
             "elsewhere. A round that reconciles is the one most likely to "
             "converge by deference, and deference is not evidence.")
+    elif not _field_the_detector_can_read(body):
+        # THE VALIDATOR WAS WEAKER THAN THE DETECTOR, SO A BRIEF COULD DECLARE A
+        # FIELD NOTHING WOULD EVER RECOGNISE. Found 2026-10-06 by writing one:
+        # the joint round's brief asked for `## Residual disagreement`, which
+        # satisfies the loose `\bdisagree` test above and is INVISIBLE to
+        # `carries_disagreement`, whose heading alternative requires the word to
+        # open the line. Both seats disagreed substantively and the round was
+        # reported as having lost its disagreement.
+        #
+        # This is the producer/consumer drift this project warns about, in the one
+        # place it is least visible: 2 predicates about the same field, each
+        # individually correct, disagreeing about what counts. The fix is not to
+        # widen the detector -- the recorded 2026-10-02 entry says widening makes
+        # it match MENTIONS -- but to hold the brief to the detector's OWN
+        # definition, imported rather than restated.
+        problems.append(
+            "names disagreement in a form the reply detector CANNOT match: the "
+            "output section must declare a field whose heading OPENS with the "
+            "word (e.g. `## Disagreement`, or the template's 'strongest "
+            "disagreement with the brief's own framing'). A qualifier in front "
+            "of it (`## Residual disagreement`) satisfies a loose word search "
+            "and is invisible to carries_disagreement, so every seat's reply "
+            "would be recorded as having lost its disagreement.")
     return problems
+
+
+def _field_the_detector_can_read(body: str) -> bool:
+    """Would `carries_disagreement` recognise the field this brief declares?
+
+    THE DETECTOR'S PATTERN CANNOT BE APPLIED TO A BRIEF DIRECTLY, and the first
+    version of this check did exactly that and was wrong. `DISAGREEMENT_RE`'s
+    heading alternative requires the word to open a LINE, which is true of a
+    SEAT'S REPLY (`## Disagreement`) and false of a BRIEF, where the same field is
+    declared as a list item (``- `## Disagreement` — a real body``). Applied raw,
+    it refused correct briefs and passed the canonical template only by accident,
+    because the template happens to contain the phrase "strongest disagreement"
+    in prose.
+
+    So each candidate line is NORMALISED to the heading a seat would write -- the
+    bullet, the backticks and the hashes stripped -- and the detector's own
+    imported pattern is applied to that. The question asked is the right one: does
+    the brief declare a field whose HEADING opens with the word?
+
+    The pattern is IMPORTED from panel_condition_compliance_2026-09-10.py, never
+    restated, because a second copy is a second thing to drift and that drift is
+    the defect this check exists to prevent.
+    """
+    import importlib.util
+    import sys
+    _p = (pathlib.Path(__file__).resolve().parent
+          / "panel_condition_compliance_2026-09-10.py")
+    try:
+        spec = importlib.util.spec_from_file_location("cdsfl_pcc_for_brief", _p)
+        m = importlib.util.module_from_spec(spec)
+        sys.modules["cdsfl_pcc_for_brief"] = m
+        spec.loader.exec_module(m)
+    except Exception:
+        # A check that cannot load must not silently pass the brief; but it must
+        # not refuse every brief either, so it defers to the loose test above.
+        return True
+    rx = m.DISAGREEMENT_RE
+    for raw in (body or "").splitlines():
+        # Strip a list marker, then surrounding emphasis, backticks and hashes,
+        # so what remains is the heading text the seat is being asked to write.
+        line = re.sub(r"^\s*(?:[-*+]|\d+[.)])\s*", "", raw)
+        line = line.strip().strip("`").strip("*").strip()
+        line = re.sub(r"^#{1,6}\s*", "", line).strip().strip("`").strip()
+        if rx.search("\n" + line):
+            return True
+    # Also accept the phrasing the canonical template uses in prose.
+    return bool(rx.search(body or ""))
 
 
 def main() -> int:

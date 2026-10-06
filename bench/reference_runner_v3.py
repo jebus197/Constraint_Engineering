@@ -15020,6 +15020,72 @@ def attach_survival_ledger(result: Dict[str, Any], ledger=None) -> Dict[str, Any
     return result
 
 
+def _refuse_if_a_route_is_dead(exp_config, cfg):
+    """Ask every real seat to print Ready! before the experiment starts.
+
+    THE FOUNDER'S RULING, 2026-10-06: *"the simple aliveness probe was my idea,
+    right? We should adopt this for all our runners going forward too."* It was his
+    idea, and this is the second half of adopting it: the panel dispatcher got it
+    first, and this is the experiment runner.
+
+    WHY IT EARNS ITS PLACE HERE TOO. Measured on 2026-10-06, a seat on a degraded
+    route consumed 2423.7 s and then 1800 s and returned 0 words both times, while
+    the probe established a working route in 5.91 s. A runner discovers the same
+    fact at the END of a round rather than before round 1, and a round is far more
+    expensive than a panel reply.
+
+    SIMULATED SEATS ARE SKIPPED, NOT FAILED. The simulated dispatch is installed by
+    monkeypatching the real call functions, so probing a seat whose api is "sim"
+    measures the shim and would report a green route where no route exists. A false
+    green is worse than no check, and treating an unprobeable seat as dead would
+    refuse every simulated run.
+
+    A DEAD SEAT REFUSES THE RUN AND IS NEVER DROPPED, because skipping a model is
+    benching it and that is forbidden.
+
+    Returns None to proceed, or a result dict recording the refusal.
+    """
+    if os.environ.get("CDSFL_SKIP_ALIVENESS"):
+        _log("  aliveness probe SKIPPED because CDSFL_SKIP_ALIVENESS is set")
+        return None
+    models = list(getattr(exp_config, "models", []) or [])
+    if not models:
+        return None
+    try:
+        import importlib.util as _iu
+        import sys as _sys
+        _p = Path(__file__).resolve().parent / "seat_aliveness_2026-10-06.py"
+        spec = _iu.spec_from_file_location("cdsfl_seat_aliveness_runner", _p)
+        AL = _iu.module_from_spec(spec)
+        _sys.modules["cdsfl_seat_aliveness_runner"] = AL
+        spec.loader.exec_module(AL)
+    except Exception as exc:  # noqa: BLE001
+        # A probe that cannot be LOADED has not passed. Same trap one level up.
+        _log(f"  REFUSED: the aliveness probe could not be loaded: "
+             f"{type(exc).__name__}: {exc}")
+        return {"status": "REFUSED_ALIVENESS_UNAVAILABLE",
+                "error": f"{type(exc).__name__}: {exc}"}
+    results, skipped = AL.probe_models(models)
+    if skipped:
+        _log(f"  aliveness probe: {len(skipped)} simulated seat(s) not probeable "
+             f"(no route to test): {skipped}")
+    if not results:
+        return None
+    _log(f"  aliveness probe: asked {len(results)} seat(s) to print "
+         f"{AL.PROBE_TOKEN.capitalize()}!, up to {AL.DEFAULT_ATTEMPTS} attempts, "
+         f"serialised")
+    for n, r in results.items():
+        _log(f"    {n}: {'ALIVE' if r.alive else 'NO ANSWER'} "
+             f"({r.elapsed_s}s, {r.detail})")
+    refusal = AL.refusal_for(results)
+    if refusal:
+        _log(refusal)
+        _log("  to dispatch anyway, deliberately: CDSFL_SKIP_ALIVENESS=1")
+        return {"status": "REFUSED_DEAD_ROUTE", "error": refusal,
+                "dead_seats": [n for n, r in results.items() if not r.alive]}
+    return None
+
+
 def run_experiment(
     exp_config: ExperimentConfig,
     cdsfl_text: str,
@@ -15074,6 +15140,11 @@ def run_experiment(
     _log(f"EXPERIMENT: {cfg.experiment_name}")
     _log(f"  Topology: {topo_desc}")
     _log(f"  Pattern: {cfg.pattern}")
+
+    # ─────── ALIVENESS PROBE, before round 1 (founder's ruling 2026-10-06) ───────
+    _alive = _refuse_if_a_route_is_dead(exp_config, cfg)
+    if _alive is not None:
+        return _alive
     _log(f"  Max rounds: {cfg.max_rounds} (extension to {cfg.extension_cap})")
     _log(f"  Convergence: state-based, earliest R{cfg.earliest_stop_round}")
     # NORMALISED ONCE, HERE, before any consumer reads it. Eight sites consume

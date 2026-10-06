@@ -421,6 +421,66 @@
       "fix": "PARTIALLY FIXED, AND THE REMAINDER IS NAMED. The free seats are serialised among themselves since 2026-10-05, so they no longer hit the subscription in the same instant. Independently, the 2026-10-06 aliveness probe refuses a round whose route does not answer, and scripts/panel_round_watchdog_2026-10-06.py re-dispatches a free round until a non-empty reply lands, refusing outright to dispatch any paid seat. What is NOT demonstrated is that serialisation cures the empty reply; that measurement needs a panel run both ways and is in the study programme.",
       "held_by": "bench/tests/test_panel_conditions_are_met_2026-09-10.py",
       "recorded_at": "2026-10-06T07:20:09+01:00"
+    },
+    {
+      "condition": "P5",
+      "round": "capability_ladder_joint_2026-10-06",
+      "seat": "cc2",
+      "what": "The reply is not recognised as carrying a disagreement although it disagreed substantively: 4194 words, HOLDING against the other position's derivation on the minimum sample, with a quantified refutation. The round is the opposite of smoothed to consensus: the 2 seats CROSSED positions.",
+      "cause": [
+        "THE OPERATOR'S BRIEF RENAMED THE FIELD, and the defect is a producer and a",
+        "consumer disagreeing about the same field while each is individually correct.",
+        "",
+        "The joint brief asked for `## Residual disagreement`. `carries_disagreement`",
+        "in scripts/panel_condition_compliance_2026-09-10.py matches a heading whose",
+        "alternative requires the word to OPEN the line, so a qualifier in front of it",
+        "is invisible. Measured by calling the detector on both replies: False and",
+        "False, while a plain token search finds disagree, disagreement and Residual",
+        "in each.",
+        "",
+        "AND THE BRIEF VALIDATOR PASSED IT, which is the real finding. It tested",
+        "`re.search(r'\\\\bdisagree', body)` -- a loose word search that `## Residual",
+        "disagreement` satisfies. So the validator's predicate was WEAKER than the",
+        "detector's, and a brief could declare a disagreement field that nothing would",
+        "ever recognise. This is the same SHAPE as the recorded",
+        "integrity_advisory_r2_2026-10-02 entry, where a star brief dropped the field",
+        "from its output shape; that entry's fix added the validator check, and this",
+        "one shows the check was too loose to close the gap it was built for."
+      ],
+      "fixed": true,
+      "fix": "scripts/panel_brief_validate.py now holds the brief to the detector's OWN definition, importing DISAGREEMENT_RE from panel_condition_compliance_2026-09-10.py rather than restating the pattern, so a brief whose declared field the detector cannot read is REFUSED with a message naming the qualifier problem. Verified both ways by execution: the joint brief is now refused, and bench/directives/universal/panel_brief_template.md still passes all 8 required sections. The detector was deliberately NOT widened, because the 2026-10-02 entry records that widening makes it match mentions as well as assertions.",
+      "held_by": "bench/tests/test_a_brief_names_disagreement_as_a_field_2026-10-02.py",
+      "recorded_at": "2026-10-06T07:52:47+01:00"
+    },
+    {
+      "condition": "P5",
+      "round": "capability_ladder_joint_2026-10-06",
+      "seat": "fable",
+      "what": "The reply is not recognised as carrying a disagreement although it disagreed substantively: 2220 words, PERSUADED on the minimum sample and withdrawing its own floor, while HOLDING that order-invariance is not structural under aid levels and making that blocking. The round is the opposite of smoothed to consensus: the 2 seats CROSSED positions.",
+      "cause": [
+        "THE OPERATOR'S BRIEF RENAMED THE FIELD, and the defect is a producer and a",
+        "consumer disagreeing about the same field while each is individually correct.",
+        "",
+        "The joint brief asked for `## Residual disagreement`. `carries_disagreement`",
+        "in scripts/panel_condition_compliance_2026-09-10.py matches a heading whose",
+        "alternative requires the word to OPEN the line, so a qualifier in front of it",
+        "is invisible. Measured by calling the detector on both replies: False and",
+        "False, while a plain token search finds disagree, disagreement and Residual",
+        "in each.",
+        "",
+        "AND THE BRIEF VALIDATOR PASSED IT, which is the real finding. It tested",
+        "`re.search(r'\\\\bdisagree', body)` -- a loose word search that `## Residual",
+        "disagreement` satisfies. So the validator's predicate was WEAKER than the",
+        "detector's, and a brief could declare a disagreement field that nothing would",
+        "ever recognise. This is the same SHAPE as the recorded",
+        "integrity_advisory_r2_2026-10-02 entry, where a star brief dropped the field",
+        "from its output shape; that entry's fix added the validator check, and this",
+        "one shows the check was too loose to close the gap it was built for."
+      ],
+      "fixed": true,
+      "fix": "scripts/panel_brief_validate.py now holds the brief to the detector's OWN definition, importing DISAGREEMENT_RE from panel_condition_compliance_2026-09-10.py rather than restating the pattern, so a brief whose declared field the detector cannot read is REFUSED with a message naming the qualifier problem. Verified both ways by execution: the joint brief is now refused, and bench/directives/universal/panel_brief_template.md still passes all 8 required sections. The detector was deliberately NOT widened, because the 2026-10-02 entry records that widening makes it match mentions as well as assertions.",
+      "held_by": "bench/tests/test_a_brief_names_disagreement_as_a_field_2026-10-02.py",
+      "recorded_at": "2026-10-06T07:52:47+01:00"
     }
   ]
 }
