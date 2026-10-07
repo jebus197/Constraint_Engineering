@@ -46,4 +46,14 @@ The natural repair is to stop looking for one rule and use two, one for each dec
 
 Nothing has been built. One thing blocks it, and it is a measurement rather than a design decision. Both rules need an estimate of how likely a given model is to crack *this particular* finding. What the project's records support is how often each model succeeds across findings in general, which cannot tell a research-grade problem apart from a typographical error. Without that distinction, the selection step would pick the same 2 models for the hardest problem in the archive as for the easiest. That is exactly where the three earlier proposals stopped, and it is where this one stops too.
 
+## Correction: the founder's own earlier ruling already dissolves half of this
+
+Trying to break the argument turned up something better than a confirmation. The weak point was this: if a model that fails with an error does not use up one of the 2 attempts, then a later model gets reached instead, and which models were consulted would depend on who happened to fail. That would wreck the whole separation. Tested by running the real routing code with deliberately failing models: it does not happen. The limit is applied by taking the first 2 off the list, so a failure inside that pair buys nothing.
+
+But the same few lines of code quote a ruling made on the 6th of October: that there should be no limit at all, and a finding should keep going until it is either resolved or the list of models is exhausted. That setting is already built and works. Run with no limit, all 5 models are consulted instead of 2.
+
+That changes the conclusion. If every model is consulted, the choice of which models to ask is no longer a choice, so the chance of nobody succeeding becomes a fixed number that no ordering can affect. Only the cost question remains, and the cost question is solved. **So the tension dissolves under the founder's own ruling, and the 2 attempt limit is what keeps it alive.** The missing measurement is needed only if the limit stays.
+
+What is still outstanding is that the ruling is not in effect: the limit still defaults to 2 and not one of the 47 configuration files turns it off. That is a wiring job, not a question of design.
+
 Written under CDSFL note standard v1.7 (26 August 2026).

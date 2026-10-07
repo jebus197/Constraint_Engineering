@@ -75,4 +75,14 @@ Under this split, the founder's instruction to escalate from the cheapest upward
 - `bench/tests/test_two_objectives_cannot_share_one_key_2026-10-07.py` — COMMITTED, 12 tests, all passing. Every test CALLS the producing functions rather than asserting on their text. Two are mutations: one asserts that a probability-only key is not spend-optimal, the other that a cost-only key is not coverage-optimal. A guard that passed against the wrong comparator would establish nothing.
 - The two-rule split — PROPOSED. Nothing is wired, and nothing should be until the conditioning question is answered.
 
+## Correction from the P-pass: the founder's own ruling dissolves the selection half
+
+The falsification attempt against the decomposition was to ask whether an ERRORED rung frees its slot for a later seat. If it did, the realised set would depend on which seats errored rather than on the order, and coverage would stop being order-invariant. OBSERVED by execution: it does not. `route` applies the budget as a slice, `list(rungs)[:_budget]`, so an errored rung is already inside the slice and its `continue` buys no replacement. With the cap at 2 and rung 1 erroring, the seats dispatched are still exactly the first 2. The decomposition survives.
+
+**The same lines carry a ruling that changes the conclusion.** `bench/routing.py` quotes the founder verbatim, 2026-10-06: *"I don't think there should be a cap at all. If it's a measured statistic, along with capability fingerprinting then the problem should run until it is either resolved, or the ladder is exhausted. (No more models to try.)"* And `max_rungs=0` is already wired to mean exhaust: executed against the live ladder, it dispatches all 5 rungs rather than 2.
+
+Under exhaustion the tried set is the whole ladder. `prod(1 - p_i)` is then a **constant**, verified over all 120 permutations as 1 distinct value, so the selection question disappears and only expected spend remains — which is exactly the problem the cross-multiplied comparator solves optimally. **So the tension is dissolved by the founder's ruling, and the cap of 2 is what keeps it alive.** The conditioned estimate of `p` is required only if the cap stays.
+
+What remains OBSERVED and unresolved is that the ruling is not in force: `routing_max_rungs` still defaults to 2 and 0 of 47 configuration files set it to 0. That is a wiring gap, not a design question. Guards: 5 further tests in `bench/tests/test_two_objectives_cannot_share_one_key_2026-10-07.py`, 17 in total, all calling `route` with stub seats and no spend.
+
 Written under CDSFL note standard v1.7 (26 August 2026).

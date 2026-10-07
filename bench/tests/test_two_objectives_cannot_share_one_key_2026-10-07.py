@@ -131,3 +131,89 @@ class TestTheLiveConfigurationIsWhatWeThinkItIs:
             parts = rel.split("/")
             assert "logs" not in parts and "worktrees" not in parts, (
                 f"{rel} is a harvested copy, not live code")
+
+
+class TestExhaustionDissolvesTheSelectionQuestion:
+    """P-PASS, 2026-10-07: the attempt to BREAK the decomposition, and what it found.
+
+    The decomposition assumes the tried set is "the first K rungs in the order".
+    If an ERRORED rung did not consume its slot, a later seat would be reached
+    instead and the realised SET would depend on which seats errored -- at which
+    point coverage stops being order-invariant and the whole split collapses.
+
+    It does not collapse: `route` applies the budget as a SLICE,
+    `list(rungs)[:_budget]`, so an errored rung is already inside the slice and
+    `continue` does not buy a replacement.
+
+    THE SAME LINES CARRY THE FOUNDER'S RULING OF 2026-10-06, verbatim in
+    `bench/routing.py`: *"I don't think there should be a cap at all. If it's a
+    measured statistic, along with capability fingerprinting then the problem
+    should run until it is either resolved, or the ladder is exhausted."*
+
+    Under `max_rungs=0` the tried set IS the whole ladder. Coverage is then a
+    CONSTANT, the selection question disappears, and only spend remains -- which
+    is exactly the problem the cross-multiplied key solves optimally. So his
+    ruling dissolves the tension; the cap of 2 is what keeps it alive.
+
+    These tests CALL `route` with stub seats. No network, no spend.
+    """
+
+    @staticmethod
+    def _route(max_rungs, erroring=()):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("rt_pp", REPO / "bench" / "routing.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["rt_pp"] = mod
+        spec.loader.exec_module(mod)
+        ladder = list(mod.DEFAULT_FALSIFIER_STRENGTH)
+        seen = []
+
+        def resolve(model, _f):
+            seen.append(model)
+            return "" if model in erroring else "assert False"
+
+        res = mod.route(
+            {"id": "PP", "description": "d", "model": "Nobody", "falsifier_code": ""},
+            ladder, [], resolve, lambda _c: "REFUTED", lambda _a, _b: 0.0,
+            max_rungs=max_rungs, self_rung_enabled=False)
+        return ladder, seen, res
+
+    def test_an_errored_rung_does_not_free_a_slot(self):
+        """The falsification attempt. If this fails, the decomposition is wrong."""
+        ladder, seen, _ = self._route(2, erroring=("Codex",))
+        assert seen == ladder[:2], (
+            "an errored rung bought a replacement, so the realised set depends on "
+            "WHO errored and coverage is no longer order-invariant")
+
+    def test_two_errors_still_consume_exactly_two_rungs(self):
+        """Both of the 2 available slots error, and no 3rd seat is reached.
+
+        The erroring set is read from the ladder this call actually uses, so the
+        test cannot pass because it named seats that were never on it.
+        """
+        ladder, _, _ = self._route(2)
+        ladder2, seen, res = self._route(2, erroring=tuple(ladder[:2]))
+        assert ladder2 == ladder
+        assert len(seen) == 2 and res.rungs_tried == 2, (seen, res.rungs_tried)
+        assert seen == ladder[:2]
+
+    def test_the_cap_truncates_to_exactly_K(self):
+        ladder, seen, res = self._route(2)
+        assert seen == ladder[:2] and res.rungs_tried == 2
+        assert len(ladder) > 2, "with no truncation there is no selection question"
+
+    def test_max_rungs_zero_reaches_every_rung(self):
+        """His ruling, executed: 0 means exhaust, not 'try nothing'."""
+        ladder, seen, res = self._route(0)
+        assert seen == ladder, (seen, ladder)
+        assert res.rungs_tried == len(ladder)
+
+    def test_under_exhaustion_coverage_is_constant_so_only_spend_remains(self, M):
+        """The set is fixed, so prod(1-p_i) cannot be influenced by any ordering."""
+        from fractions import Fraction
+        import itertools as it
+        ladder, seen, _ = self._route(0)
+        p = {s: Fraction(50 + 7 * i, 100) for i, s in enumerate(ladder)}
+        vals = {M.failure_probability(o, p) for o in it.permutations(seen)}
+        assert len(vals) == 1, (
+            "coverage varied under exhaustion, which would mean the set is not fixed")
