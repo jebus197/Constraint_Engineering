@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 7 October 2026 11:58 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 7 October 2026 14:39 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -39,7 +39,23 @@ never the problem: it is 1214 lines, it was added on 2026-04-08, and a probe tha
 `subprocess.run` with a recorder caught it dispatching real `pip install` and `brew install`
 commands. The documents simply never routed anyone to it.
 
-## CURRENT STATE — 2026-09-30 11:04 BST
+## CURRENT STATE — 2026-10-07 14:37 BST
+
+**BRANCH, because it decides whether a commit is legitimate.** HEAD `20ec400a` on `sim/shakedown-2026-09-29`; `main` untouched at `b536ff86`. Founder ruling 2026-09-30 still governs: simulated runs commit ONLY to a simulated branch, and the canonical branch moves by his agreement or after a real experimental run.
+
+**The schema now boots like a machine.** CDSFL POST prints pass or fail against each row and halts at the first failure, on the founder's ruling that this gives a user the chance to investigate. Dropping the earlier 3-state scheme exposed a defect of exactly the class the check exists for: the middle state never set an exit code, so a check whose own code RAISED was recorded as indeterminate and the experiment launched anyway at exit 0.
+
+**Seats now prove they are alive before any work is passed to them.** Each real seat answers a 1-word probe, up to 3 attempts. A route was established in 5.91 s against the 3258.3 s a failed round took to establish the same fact. Simulated seats are skipped rather than failed, because the shim would answer and report a green route where none exists, and a dead seat refuses the round rather than being dropped — skipping a model is benching it, which this project does not do.
+
+**The try-order question turns out to be 2 questions.** Under a rung cap the ladder must decide WHICH seats are tried and IN WHAT SEQUENCE, and those have different optima: the probability that nobody resolves a finding depends only on the set, while expected spend depends only on the order. No single sort key is the optimum of both, which is why 3 successive proposals each answered one half. Verified in SymPy, z3 and exact rational arithmetic, with a worked case where the spend-optimal pair is 4.75 times likelier to leave the finding unresolved. The selection half is the one that bites: the ladder is 5 rungs, the cap is 2, and 0 of 47 configs change it, so 3 seats are never asked.
+
+**A measurement instrument was the weak point twice in one day.** A provenance classifier scored 740 of 1078 archived falsifiers as never reaching their target because it looked for file-opening while the project's own directive requires an import; and a freshly written script reported "0 config files" because it searched a directory that has never existed. Both failed toward the comfortable answer. The standing lesson — check the predicate before the result — is now carried by executing guards rather than by prose.
+
+**The 4 long-standing suite failures are closed**, confirmed by a targeted re-run returning 35 passed and 0 failed. The last complete board remains the 2026-10-06 run: 10,210 passed, 26 failed, 20 skipped.
+
+**Standing policy, adopted 2026-09-30 and still in force:** the panel reviews a design BEFORE it is built.
+
+## CURRENT STATE — 2026-09-30 11:04 BST (SUPERSEDED by the block above)
 
 **FIRST, THE BRANCH, because it decides whether a commit is legitimate.** Founder ruling 2026-09-30: simulated runs commit ONLY to a simulated branch; the canonical branch moves by his agreement or after a real experimental run. **HEAD `79aa4ec` before this save, on `sim/shakedown-2026-09-29`, which is pushed to `origin/sim/shakedown-2026-09-29` so simulated results survive this machine. `main` = `a94a7bb` = `origin/main`, untouched.** Working tree clean. Full detail, including the 1 authorised-but-pending crossing of the `.claude/CLAUDE.md` Wolfram correction to `main`, is in the 2026-09-30 SESSION STATE block of `resources/RECOVERY.md`.
 

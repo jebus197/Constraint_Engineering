@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 7 October 2026 11:58 BST (2026-10-07T11:58:02+01:00)
+Generated: 7 October 2026 14:39 BST (2026-10-07T14:39:03+01:00)
 
 ---
 
@@ -18,19 +18,20 @@ Generated: 7 October 2026 11:58 BST (2026-10-07T11:58:02+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `37a99a11` sv: the overnight ladder, boot check and panel work, with the gamma coupling open
-- **Committed:** 2026-10-07 11:52:56 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
+- **Last commit (the PARENT of the commit containing this file):** `20ec400a` the try-order question has two objectives, and no single key optimises both
+- **Committed:** 2026-10-07 14:34:29 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 1
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
+- `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**10302 tests collected** at 7 October 2026 11:58 BST, HEAD `37a99a11` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**10349 tests collected** at 7 October 2026 14:39 BST, HEAD `20ec400a` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -60,13 +61,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `37a99a11 sv: the overnight ladder, boot check and panel work, with the gamma coupling open`
-- `e41c7955 record the founder's clear/archive/delete ruling, with what it costs and what it would orphan`
-- `1fb40808 a retry no longer erases the attempt it replaces, and 2 zombie waiters are killed`
-- `4634c6b9 overnight note: the all-runner probe adoption and the unreadable-field finding`
-- `5b27084c the aliveness probe is adopted by every runner, and a brief could declare a field nothing would read`
-- `765946c4 the joint round: the 2 seats CROSSED, and 7 pre-existing suite failures closed`
-- `e0c9d252 the joint gate was skippable by omission, and 2 source-text assertions now execute`
-- `b01bab1e CDSFL POST, the aliveness probe, enforced star topology, and a gamma coupling that needs a ruling`
-- `413902a2 sv follow-up: the citation fixer re-pointed ONBOARDING after sv staged`
-- `4e0199d1 sv: the severity test is restored on his 4th rejection, and 4 facilities that were off in simulation are on`
+- `20ec400a the try-order question has two objectives, and no single key optimises both`
+- `1a4b0c07 the panel overturned the brief's own evidence: 68.65% of archived falsifiers are misclassified`
+- `e8d67c96 a measured number per model fails the founder's test exactly as cheapest-first does`
+- `96a22dd1 morning report: all 12 items of the work order closed, with 4 panel lessons offered for decision`
+- `914b2945 gamma is not demoted, and the evidence does not yet support changing it either way`
+- `ca796865 the 6 dormant switches are decided: 0 retire, 5 retain, 1 scheduled`
+- `46617574 the runner now serialises seats that share one credential, as the panel already did`
+- `e3d6a8e9 the last 4 suite failures, each fixed at its root cause rather than re-baselined`
+- `462b2775 the filer's failure now counts in its own denominator, so an empty record stops reading as a perfect one`
+- `e228a214 the ladder climbs 4 measured models and its last rung points back at the source`

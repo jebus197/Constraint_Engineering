@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 7 October 2026 11:58 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 7 October 2026 14:39 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,27 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-07 14:37 BST (READ THIS FIRST)
+
+**BRANCH.** HEAD `20ec400a` on `sim/shakedown-2026-09-29`. `main` untouched at `b536ff86`. Working tree clean.
+
+**★★★ THE TRY-ORDER TENSION IS NOT DISSOLVED, AND THE REASON IS STRUCTURAL.** The founder observed that none of the 3 proposals dissolved it — his capability-ascending ladder, CC1's measured-with-name-fallback comparator, Astra's value-over-cost estimator. He was right. The falsifier ladder under a rung cap attaches **2 objectives to 2 different decisions**, and they have different optima, so no single sort key can be the optimum of both:
+
+- **COVERAGE**, `P(no seat resolves) = prod(1 - p_i)` over the seats tried. **ORDER-INVARIANT** — a property of the SET. Verified over all 120 permutations symbolically in SymPy with 0 mismatches, and over exact `Fraction` arithmetic yielding 1 distinct value.
+- **SPEND**, `E[cost to first CONFIRMED] = sum_j c_j prod_{i<j}(1 - p_i)`. **ORDER-DEPENDENT**, minimised by the cross-multiplied key `p_i*c_j >= p_j*c_i`. z3 returns `unsat` on a counterexample search in BOTH directions; brute force over 400 random instances attains the global optimum 400 of 400 times, Wilson [99.0488%, 100.0000%].
+
+Every proposal so far answered the SEQUENCING question and left the SELECTION question undecided. Worked instance under the live cap: the coverage-optimal pair leaves a finding unresolved with probability 0.18, the spend-optimal pair 0.855 — a factor of 4.75. **Among free seats `E[spend]` is identically 0 for every order**, so the ordering objective there is not wrong but vacuous: 1 distinct value across 6 orders. Producer: `bench/why_one_ordering_cannot_serve_both_objectives_2026-10-07.py`. Guard: `bench/tests/test_two_objectives_cannot_share_one_key_2026-10-07.py` (12), of which 2 are mutations asserting a probability-only key is not spend-optimal and a cost-only key is not coverage-optimal.
+
+**MEASURED ON THE LIVE TREE, and it is the selection question that bites.** `routing_max_rungs` defaults to **2** and **0 of 47** experiment configs pin it, Wilson [0.0000%, 7.5558%]. `DEFAULT_FALSIFIER_STRENGTH` is **5 rungs**, so **3 seats are never asked at all** and the order decides which of the 10 possible pairs is tried. Routing is effectively on in **23 of 47** configs once the legacy alias `take_up_slack_enabled` is honoured (the literal `routing_enabled` key appears in only 5), and the order can matter in **22 of 23** of those, Wilson [79.0088%, 99.2283%]. Exactly **1 rung is free** (CC2); **`fable` is free and is not on the ladder at all** — recorded as a fact for his ruling, not asserted as a defect.
+
+**★ 2 PREDICATES IN CC1's OWN SCRIPT WERE WRONG, both failing toward a comfortable answer.** It globbed `bench/configs`, a directory that has never existed, and reported "0 config files" — indistinguishable from "no config pins the cap"; the real configs are in `bench/expNN_configs/`, and **the denominator is 47, not the 49 quoted to the founder earlier the same day**. It also discovered `FREE_SEATS` by walking `bench/**/*.py` with last-match-wins and landed on a **sandbox harvest copy under `bench/logs/`** rather than live code. Both are the `my_instruments_are_the_weak_point` shape: check the predicate before the result. Both are recorded in the module docstring and both are now guarded.
+
+**THE 4 STANDING SUITE FAILURES ARE CLOSED.** The targeted re-run of the live archive provenance audit, the 2 discrimination-archive classification tests and the canonical-config write guard returns **35 passed, 0 failed in 52.93 s**, against the 4 failed / 27 passed recorded in the 11:52 block. Pre-commit subset at `20ec400a`: 501 passed in 42.07 s. **A subset is not a board** — the last complete board is the 2026-10-06 figure of 10,210 passed, 26 failed, 20 skipped in 3523.73 s, and a fresh full board was running when this block was written.
+
+**ALSO SETTLED EARLIER TODAY.** `competence_provenance.falsifier_style` misclassifies **740 of 1078 archived falsifiers**, 68.6456%, Wilson [65.8141%, 71.3448%], as detached because it tests for file-opening while the directive requires an IMPORT; only 20 are genuinely detached. This invalidated CC1's earlier "nothing can be ranked" claim. The obvious repair is also wrong: on a PROSE target an import reaches nothing, so crediting imports would inflate exactly the Exp 55 case the founder's 2026-08-23 warning names. **One rule cannot serve both target types** — open, and the classifier repair is unbuilt.
+
+**OPEN FOR HIS RULING, carried forward:** the paired exhaustion-versus-cap run; `hil_review`'s ON path, which has never executed; the 4 panel lessons for the runners; the `falsifier_style` repair conditioned on target type; and now the selection-versus-sequencing split and whether `fable` joins the ladder.
 
 ## SESSION STATE — 2026-10-07 11:52 BST (READ THIS FIRST)
 
