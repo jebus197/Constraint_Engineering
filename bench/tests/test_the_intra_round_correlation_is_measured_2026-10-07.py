@@ -122,3 +122,117 @@ class TestTheHazardShrinksButSurvives:
         assert d["distinguishable_from_the_count_alone"] is False, (
             "if the count alone could separate the 2 causes, recording the live "
             "roster would be optional and this whole line of work unnecessary")
+
+
+class TestThePooledFigureIsConfounded:
+    """P-PASS of the measurement itself, 2026-10-07.
+
+    The pooled rho of 0.405989 measures 2 things at once: that some ROUNDS go
+    quiet, and that some EXPERIMENTS are quieter than others. The second is an
+    ecological confound. It also mixes simulated runs with real ones, and the
+    simulation shim is far more correlated than live seats.
+
+        pooled, all runs          rho = 0.405989
+        within-experiment         rho = 0.236014   (inflation 1.7202)
+        simulated runs only       rho = 0.681094
+        real runs only            rho = 0.275298
+
+    So the earlier correction OVER-corrected: at the de-confounded values the
+    6-seat-to-4-seat factor is 1.7766 to 1.9258 for a real run, not the 1.4291
+    the pooled figure gave and not the 8.49986 first briefed.
+    """
+
+    def test_the_within_experiment_estimator_exists_and_is_lower(self, M):
+        """If pooling did not inflate, the confound would not matter."""
+        import json
+        import glob
+        per = []
+        for f in sorted(glob.glob("bench/logs/**/*report*.json", recursive=True)):
+            try:
+                d = json.load(open(f))
+            except Exception:
+                continue
+            if not isinstance(d, dict):
+                continue
+            rounds, reg = d.get("rounds"), d.get("registry")
+            if not isinstance(rounds, list) or not isinstance(reg, dict):
+                continue
+            entries = (reg.get("entries")
+                       if isinstance(reg.get("entries"), dict) else reg)
+            if not isinstance(entries, dict):
+                continue
+            raised = {}
+            for e in entries.values():
+                if not isinstance(e, dict):
+                    continue
+                try:
+                    sev = float(e.get("severity") or 0.0)
+                except (TypeError, ValueError):
+                    continue
+                if sev < M.CRITICAL:
+                    continue
+                r, m = e.get("open_since_round"), M._norm(e.get("source_model"))
+                if r is None or not m:
+                    continue
+                try:
+                    raised.setdefault(int(r), set()).add(m)
+                except (TypeError, ValueError):
+                    continue
+            rs = []
+            for rec in rounds:
+                if not isinstance(rec, dict):
+                    continue
+                resp = rec.get("models_responded")
+                if not isinstance(resp, list) or len(resp) < 2:
+                    continue
+                try:
+                    rn = int(rec.get("round"))
+                except (TypeError, ValueError):
+                    continue
+                rset = {M._norm(x) for x in resp}
+                rs.append((len(rset), len(rset & raised.get(rn, set()))))
+            if rs:
+                per.append(rs)
+
+        assert hasattr(M, "rho_within_experiment"), (
+            "the de-confounded estimator is missing, so the honest figure has "
+            "no producer")
+        within, kept = M.rho_within_experiment(per)
+        pooled, _q, _p = M.rho_pairwise([r for rs in per for r in rs])
+        assert kept >= 20, f"only {kept} reports carried enough rounds"
+        assert within < pooled, (
+            f"within-experiment {within:.6f} is not below pooled {pooled:.6f}; "
+            "if pooling did not inflate rho this whole correction is spurious")
+        assert pooled / within > 1.3, (
+            f"inflation only {pooled / within:.4f}; at that level the pooled "
+            "figure would have been close enough to report")
+
+    def test_the_deconfounded_factor_is_larger_than_the_pooled_one(self, M):
+        """The correction moves the hazard back UP, which is the honest direction."""
+        C = _load("corr_dec",
+                  "bench/the_spurious_convergence_ratio_depends_on_correlation"
+                  "_2026-10-07.py")
+        pooled_factor = C.ratio_exact_beta_binomial(0.4060, q=0.2337)
+        real_factor = C.ratio_exact_beta_binomial(0.2753, q=0.2462)
+        assert real_factor > pooled_factor, (
+            f"real-run factor {real_factor:.4f} should exceed the pooled "
+            f"{pooled_factor:.4f}; a lower rho means a larger factor")
+        assert 1.0 < real_factor < 3.0, real_factor
+
+    def test_simulated_runs_are_more_correlated_than_real_ones(self):
+        """Recorded as a FACT about the shim, with consequences for simulation.
+
+        A simulated arm whose seats are 0.6811 correlated cannot rehearse the
+        roster hazard a real run faces at 0.2753: the simulation is ALREADY in
+        the regime where the hazard nearly vanishes, factor 1.1280 against
+        1.7766. Simulation will therefore under-report this class of defect.
+        """
+        C = _load("corr_sim",
+                  "bench/the_spurious_convergence_ratio_depends_on_correlation"
+                  "_2026-10-07.py")
+        sim = C.ratio_exact_beta_binomial(0.6811, q=0.2086)
+        real = C.ratio_exact_beta_binomial(0.2753, q=0.2462)
+        assert sim < real, (sim, real)
+        assert real / sim > 1.3, (
+            "if simulation and reality gave the same factor, a simulated arm "
+            "would rehearse this hazard faithfully; it does not")

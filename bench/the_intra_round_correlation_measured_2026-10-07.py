@@ -108,6 +108,36 @@ def collect_rounds(root: Path) -> list[tuple[int, int]]:
     return out, seen_reports
 
 
+def rho_within_experiment(per_report) -> tuple[float, int]:
+    """Pair-weighted mean of the per-report rho. THE HONEST ESTIMATOR.
+
+    P-PASS 2026-10-07, which caught the pooled figure out. Pooling every round
+    from every report together measures 2 things at once: that some ROUNDS are
+    quiet and that some EXPERIMENTS are quieter than others. The second is an
+    ecological confound and it inflates the answer.
+
+    MEASURED: pooled rho = 0.405989 against a within-experiment rho of 0.236014,
+    an inflation of 1.7202. The pooled figure also mixes simulated runs, whose
+    rho is 0.681094 against 0.275298 for real ones -- the shim produces far more
+    correlated behaviour than live seats do, so including it inflates the answer
+    a second time.
+
+    `per_report` is an iterable of per-report round lists.
+    """
+    num = den = 0.0
+    kept = 0
+    for rounds in per_report:
+        if len(rounds) < 3:
+            continue
+        r, _q, pairs = rho_pairwise(rounds)
+        if r != r or not pairs:
+            continue
+        num += r * pairs
+        den += pairs
+        kept += 1
+    return ((num / den) if den else float("nan"), kept)
+
+
 def rho_pairwise(rounds: list[tuple[int, int]]) -> tuple[float, float, int]:
     """ICC for binary data from within-round pairs. Returns (rho, q, n_pairs)."""
     both = pairs = raises = seats = 0
