@@ -7068,9 +7068,30 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
                  f"(a falsifier was written and crashed; the panel is now told "
                  f"to FIX it, not to write one)")
         if e.pop("_error_route_pending", None):
-            if len(_routing_attempts) > _n0:
+            # AN EMPTY LADDER IS DEFERRED EVEN IF A MODEL WAS REACHED, and that
+            # ordering is the fix. `len(_routing_attempts) > _n0` asks "did we get
+            # to anyone", which until 2026-10-06 answered "no" exactly when the
+            # ladder was empty. The self-rung dispatches to the finding's OWN
+            # source precisely in that case, so the count now says a model was
+            # reached and the branch fell through to `error_routed` -- "retry a
+            # later round". Retrying later is futile here: `route` excludes the
+            # source from the ranked list, so a roster that carries no other writer
+            # carries none in any round, forever. The deferral is what puts the
+            # finding in `irreducible_queue_count` and lets
+            # HALTED_IRREDUCIBLE_QUEUE_ALARM fire, which the exp56 1-seat arm
+            # pre-registers as its reportable outcome.
+            _unresolved = (not result.resolved
+                           and result.verdict != "DUPLICATE")
+            _empty = getattr(result, "ladder_was_empty", False)
+            _reached_someone = len(_routing_attempts) > _n0
+            # The empty-ladder case is tested FIRST and no longer falls out of the
+            # chain: an earlier attempt at this fix used a bare `pass` here, which
+            # left the branch doing nothing at all because the stamp lives in the
+            # third arm. The finding was deferred by some other path and carried NO
+            # reason, which is the one thing this guard refuses.
+            if _reached_someone and not (_empty and _unresolved):
                 e["error_routed"] = True
-            elif not result.resolved and result.verdict != "DUPLICATE":
+            elif _unresolved:
                 # AN EMPTY LADDER IS NOT A DEAD TRANSPORT, and conflating them
                 # silenced this arm's own reportable outcome (fable, panel review
                 # 2026-09-09; confirmed here by execution before being applied).
@@ -7099,12 +7120,26 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
                 # ladder with any rung increments `tried` before dispatching, so 0
                 # means the ladder was empty. The DUPLICATE early return also
                 # carries 0 and is excluded by the branch condition above.
-                if getattr(result, "rungs_tried", 0) == 0:
+                # READ THE FACT, NOT THE PROXY. This was `rungs_tried == 0`,
+                # which was an exact discriminator while every rung came from the
+                # ranked list. The self-rung of 2026-10-06 dispatches precisely
+                # WHEN that list is empty, so `rungs_tried` becomes 1 and this
+                # branch silently stopped firing -- costing the finding its
+                # `routing_deferred` stamp, its place in `irreducible_queue_count`,
+                # and therefore the alarm that the exp56 1-seat arm pre-registers
+                # as its reportable outcome. `ladder_was_empty` records the fact
+                # directly and survives further changes to how rungs are counted.
+                if getattr(result, "ladder_was_empty", False) or (
+                        getattr(result, "rungs_tried", 0) == 0):
                     e["routing_deferred"] = True
+                    _self = getattr(result, "model_used", None)
                     e["routing_deferred_reason"] = (
                         "routing ladder empty by construction: the roster "
                         "carries no writer other than this finding's own source "
-                        "model, so no rung exists to try in any round")
+                        "model, so no rung exists to try in any round"
+                        + (f"; the source model {_self} was given one further "
+                           f"attempt with its previous verdict attached and did "
+                           f"not resolve it" if _self else ""))
                     _log(f"  ROUTING LADDER EMPTY {cid}: no writer available "
                          f"besides its own source; deferred rather than retried, "
                          f"so it still counts toward the irreducible queue")

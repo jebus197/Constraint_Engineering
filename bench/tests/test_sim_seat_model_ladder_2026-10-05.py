@@ -67,9 +67,21 @@ class TestThePremiseIsAlive:
         assert "CC2-SIM" in SHIM.DEFAULT_LADDER
 
     def test_only_models_this_project_already_dispatches_are_named(self):
-        """No invented model id. The roster in .claude/CLAUDE.md lists `opus` for
-        cc2 and `fable` for fable; nothing else may appear here without a ruling."""
-        allowed = {"opus", "fable"}
+        """No invented model id. EVERY ENTRY WAS PROBED BEFORE IT WAS ALLOWED.
+
+        Widened 2026-10-07 from {opus, fable} on the founder's ruling that the
+        simulated runs "can involve a mix of models from Anthropic". The previous
+        comment said "nothing else may appear here without a ruling"; this is that
+        ruling, and the admission test is a DISPATCH rather than a belief: each id
+        was sent through the aliveness probe at a 16-token ceiling on 2026-10-07 and
+        answered -- opus 6.60 s, fable 5.69 s, sonnet 7.24 s, haiku 3.97 s.
+
+        `opusplan` answered too and is deliberately NOT allowed: it is a routing
+        alias serving different models for planning and execution, so the record
+        could not say which model replied, and provenance is precisely what the
+        founder does want a name to carry.
+        """
+        allowed = {"opus", "fable", "sonnet", "haiku"}
         unknown = set(SHIM.DEFAULT_LADDER.values()) - allowed
         assert not unknown, (
             f"the ladder names model id(s) this project does not dispatch: {unknown}"
@@ -94,16 +106,31 @@ class TestUniformIsUnchanged:
 
 
 class TestTheLadderActuallyChangesTheDispatch:
-    def test_fable_seat_is_answered_by_fable(self, monkeypatch):
-        got = _model_for(monkeypatch, "Fable-SIM", model="opus",
-                         seat_models=SHIM.DEFAULT_LADDER)
-        assert got == "fable", (
-            f"Fable-SIM dispatched as {got!r}; the ladder is not reaching the command"
-        )
+    def test_every_seat_is_answered_by_the_model_the_map_names(self, monkeypatch):
+        """THE PROPERTY IS FAITHFULNESS, NOT A NAME COINCIDENCE.
 
-    def test_cc2_seat_is_answered_by_opus(self, monkeypatch):
-        assert _model_for(monkeypatch, "CC2-SIM", model="fable",
-                          seat_models=SHIM.DEFAULT_LADDER) == "opus"
+        Until 2026-10-07 this was 2 tests asserting that the seat labelled Fable
+        was answered by `fable` and the seat labelled CC2 by `opus`. Those passed
+        because the map happened to pair like with like, so they could not tell a
+        faithfully applied map from a lucky one -- and they encoded exactly the
+        assumption the founder has now ruled against: "the only thing that should
+        impact on capability is measured capability. A models name should have
+        little to do with it."
+
+        The map is now an arbitrary round-robin, so the seat label and the backing
+        model are deliberately decoupled, and the only thing worth asserting is
+        that the dispatch honours whatever the map says. That holds under any
+        remap, and it still fails if the ladder stops reaching the command.
+        """
+        for seat, expected in sorted(SHIM.DEFAULT_LADDER.items()):
+            # Start from a model the map does NOT name, so a pass cannot come from
+            # the default leaking through.
+            other = "haiku" if expected != "haiku" else "opus"
+            got = _model_for(monkeypatch, seat, model=other,
+                             seat_models=SHIM.DEFAULT_LADDER)
+            assert got == expected, (
+                f"{seat} dispatched as {got!r} but the map names {expected!r}; "
+                f"the ladder is not reaching the command")
 
     def test_the_bench_is_genuinely_mixed(self, monkeypatch):
         got = {lbl: _model_for(monkeypatch, lbl, model="opus",
@@ -170,3 +197,53 @@ class TestTheLauncherCanSelectIt:
         import inspect
         assert "seat_models" in inspect.signature(SHIM.install).parameters
         assert "seat_models" in inspect.getsource(SHIM.install)
+
+
+class TestTheLadderCanActuallyDiscriminate:
+    """A MAP WITH 1 DISTINCT MODEL IS NOT A LADDER, and a map with 2 is barely one.
+
+    The founder's ruling is that routing should rank on MEASURED capability. A
+    statistic can only separate behaviours the roster actually contains, so the
+    simulated ladder's job is to supply real variety for the measurement to find.
+    Until 2026-10-07 it mapped 6 seats onto 2 models, so it could distinguish 2
+    behaviours however many seats were dispatched.
+    """
+
+    def test_the_ladder_carries_at_least_3_distinct_models(self):
+        distinct = set(SHIM.DEFAULT_LADDER.values())
+        assert len(distinct) >= 3, (
+            f"the simulated ladder resolves to {len(distinct)} distinct model(s) "
+            f"{sorted(distinct)}; a measured capability statistic cannot separate "
+            f"more behaviours than the roster contains")
+
+    def test_no_single_model_answers_most_of_the_roster(self):
+        """One model holding the majority would make the measurement mostly a
+        measurement of that model."""
+        from collections import Counter
+        c = Counter(SHIM.DEFAULT_LADDER.values())
+        top, n = c.most_common(1)[0]
+        assert n <= len(SHIM.DEFAULT_LADDER) / 2, (
+            f"{top!r} answers {n} of {len(SHIM.DEFAULT_LADDER)} seats")
+
+    def test_the_launcher_now_defaults_to_the_ladder(self):
+        """His ruling, and the reason the ladder was inert: the flag defaulted to
+        uniform, so the map above was never consulted."""
+        import ast
+        import pathlib as _pl
+        src = (_pl.Path(__file__).resolve().parents[1] / "tools"
+               / "run_simulated_experiment.py").read_text(encoding="utf-8")
+        for node in ast.walk(ast.parse(src)):
+            if not (isinstance(node, ast.Call)
+                    and getattr(node.func, "attr", None) == "add_argument"):
+                continue
+            flags = [a.value for a in node.args
+                     if isinstance(a, ast.Constant) and isinstance(a.value, str)]
+            if "--seat-models" not in flags:
+                continue
+            for kw in node.keywords:
+                if kw.arg == "default":
+                    assert ast.literal_eval(kw.value) == "ladder", (
+                        "the launcher still defaults to uniform, so the ladder is "
+                        "consulted by nothing")
+                    return
+        raise AssertionError("--seat-models not found in the launcher")

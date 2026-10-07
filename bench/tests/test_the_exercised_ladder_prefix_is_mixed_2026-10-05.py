@@ -202,14 +202,37 @@ class TestTheExercisedPrefixIsMixed:
 class TestTheProbeIsNotVacuous:
     """Each defect this file was written against must still be detectable."""
 
-    def test_the_old_budget_would_fail_this_guard(self):
-        """Anti-vacuity for defect 1: at a budget of 2 the prefix is uniform."""
+    def test_a_degenerate_map_would_fail_this_guard(self):
+        """Anti-vacuity, REBUILT 2026-10-07 because its premise expired well.
+
+        It used to assert that at a budget of 2 the REAL map yields 0 mixed
+        prefixes, on the ground that the shipped ladder was uniform over any short
+        prefix. That stopped reproducing when the ladder widened from 2 distinct
+        models to 4: every seat now gets a mixed prefix even at budget 2, which is
+        the improvement the widening was for. An anti-vacuity probe that depends on
+        the real map being broken stops working the moment the map is fixed, and
+        would then quietly pass on nothing.
+
+        So the degenerate case is CONSTRUCTED here instead of borrowed from
+        production. The probe now owns its own failure, and it keeps working however
+        the shipped ladder is remapped.
+        """
+        degenerate = {s: "opus" for s in SHIM.DEFAULT_LADDER}
+        mixed = sum(1 for s in SEATS if _mixed(_prefix(s, 2, degenerate)[1]))
+        assert mixed == 0, (
+            f"a map in which every seat resolves to 1 model still yields {mixed} "
+            f"mixed prefix(es), so `_mixed` is not measuring what it claims and "
+            f"this guard could pass on a uniform ladder")
+
+    def test_the_real_map_now_mixes_where_the_degenerate_one_cannot(self):
+        """The other half: the probe must also show the real map PASSING, or it
+        proves only that a broken map is broken."""
         mixed = sum(1 for s in SEATS
                     if _mixed(_prefix(s, 2, SHIM.DEFAULT_LADDER)[1]))
-        assert mixed == 0, (
-            f"at budget 2, {mixed} of {len(SEATS)} prefixes are mixed — the "
-            f"defect this guard was written against no longer reproduces, so the "
-            f"guard may be passing for the wrong reason")
+        assert mixed == len(SEATS), (
+            f"only {mixed} of {len(SEATS)} seats get a mixed prefix at budget 2 "
+            f"under the shipped ladder; it resolves to "
+            f"{sorted(set(SHIM.DEFAULT_LADDER.values()))}")
 
     def test_the_seat_proposal_would_fail_the_direction_check(self):
         """Anti-vacuity for defect 2: Codex-SIM on the weak model inverts it."""
@@ -218,16 +241,34 @@ class TestTheProbeIsNotVacuous:
         bad = [s for s in SEATS
                if not _correctly_directed(_prefix(s, 2, inverted)[1])
                and _mixed(_prefix(s, 2, inverted)[1])]
-        assert len(bad) == 5, (
-            f"the seat's proposed map was measured as 5 of 6 mixed-but-inverted; "
-            f"this run finds {len(bad)}, so the comparison in the docstring is "
-            f"stale")
+        # 4 of 6, RE-MEASURED 2026-10-07 after the ladder widened from 2 distinct
+        # models to 4. It was 5 of 6 against the old 2-model map. The figure is the
+        # probe's subject, not a target: what it establishes is that the direction
+        # check CAN still fail on a deliberately inverted map, so a passing run of
+        # the real guard means something. Re-measure it rather than adjust it if
+        # the map changes again.
+        assert len(bad) == 4, (
+            f"an inverted map was measured as 4 of 6 mixed-but-inverted on the "
+            f"2026-10-07 ladder; this run finds {len(bad)}, so the figure is stale "
+            f"and the direction check's falsifiability needs re-establishing")
 
-    def test_the_faithful_map_is_still_faithful(self):
-        """The strong vendors must stay on the strong model, or the whole
-        argument for raising the budget instead of remapping collapses."""
-        for strong in ("Codex-SIM", "CC2-SIM", "ChatGPT-SIM"):
-            assert SHIM.DEFAULT_LADDER.get(strong) == "opus", (
-                f"{strong} is a top-3 vendor in the validated strength order and "
-                f"is no longer on the strong model; if the map is remapped, the "
-                f"budget rationale needs rewriting")
+    def test_the_map_names_only_probed_models(self):
+        """WHAT THIS TEST USED TO ASSERT WAS THE DEFECT THE FOUNDER OBJECTED TO.
+
+        It required Codex-SIM, CC2-SIM and ChatGPT-SIM to sit on `opus` because
+        they are "top-3 vendors in the validated strength order" -- a capability
+        claim keyed on a vendor NAME, written into the suite. His ruling of
+        2026-10-07: "the only thing that should impact on capability is measured
+        capability. A models name should have little to do with it, beyond
+        recording this." The map is now an arbitrary round-robin and carries no
+        such claim, so the assertion it replaced cannot be restored without
+        reintroducing what he ruled out.
+
+        What remains worth asserting is that no id reaches the map unprobed.
+        """
+        allowed = {"opus", "fable", "sonnet", "haiku"}
+        unknown = set(SHIM.DEFAULT_LADDER.values()) - allowed
+        assert not unknown, (
+            f"the ladder names model id(s) that were never dispatched to: "
+            f"{sorted(unknown)}. Every id here was probed on 2026-10-07 before it "
+            f"was written in; an unprobed id is a guess about a route.")

@@ -113,7 +113,23 @@ def test_an_empty_ladder_stamps_routing_deferred(mini_repo, monkeypatch):
     _apply_routing(reg, 4, _roster("CC2"), cfg=_cfg(["CC2"]),
                    repo_root=str(mini_repo))
     e = reg.entries["C0001"]
-    assert dispatched == [], f"an empty ladder must dispatch to nobody, got {dispatched}"
+    # CONTRACT CHANGED 2026-10-06 BY RULING, AND THE CHANGE IS NARROW. This read
+    # `dispatched == []` -- an empty ladder dispatched to nobody. The founder:
+    # *"even with all our models being the same ... at least one rung on the ladder
+    # should point back to the original model and say, 'your solution didn't work'
+    # or 'your falsifier is broken' please fix"*. So an empty ladder now dispatches
+    # EXACTLY ONCE, to the finding's own source, carrying the verdict its earlier
+    # attempt earned -- which is a different question, not a blind retry.
+    #
+    # WHAT THIS FILE EXISTS TO PROTECT IS UNTOUCHED, and the assertions below are
+    # the proof: the deferral still fires, it still says why, and the finding still
+    # reaches the irreducible queue where the alarm can see it. The failure this
+    # guard was written against was a DEAD TRANSPORT -- a round that silently
+    # dropped the finding. One dispatch that is recorded, followed by the same
+    # deferral, is the opposite of that.
+    assert dispatched == ["CC2"], (
+        f"the empty ladder should dispatch exactly once, to the finding's own "
+        f"source model with the previous verdict attached; got {dispatched}")
     assert e.get("routing_deferred") is True, (
         "an empty ladder must be deferred; retried as a dead transport it never "
         "enters the irreducible-queue count and the alarm cannot fire")

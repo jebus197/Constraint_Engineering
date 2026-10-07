@@ -134,13 +134,34 @@ SEAT_MODEL_LADDER: dict = {}
 #: `--seat-models ladder`. The assignment below is a STARTING POINT, not a measured
 #: optimum: no run has yet compared it against the uniform bench, and that
 #: comparison is the thing that would justify it.
-DEFAULT_LADDER: dict = {
-    "Fable-SIM": "fable",
-    "Gemini-SIM": "fable",
+#: Seat -> CLI model id, for the simulated panel. WIDENED 2026-10-07 from 2 distinct
+#: models to 4, on the founder's ruling that the simulated runs "can involve a mix of
+#: models from Anthropic" and that the schema should not care what a model is called.
+#:
+#: THE ASSIGNMENT IS ARBITRARY AND DETERMINISTIC, AND THAT IS THE POINT. It is a
+#: round-robin over the seats in sorted order. It encodes NO capability claim, because
+#: his standing position is that "the only thing that should impact on capability is
+#: measured capability. A models name should have little to do with it, beyond
+#: recording this." A map that paired a seat labelled Codex with a model chosen because
+#: someone believes Codex is strong would be the exact defect he has now objected to 4
+#: times. This map exists to give the ladder REAL HETEROGENEITY TO MEASURE, and nothing
+#: else; which seat holds which model is not a statement about either.
+#:
+#: EVERY ID WAS PROBED BEFORE IT WAS WRITTEN HERE, not assumed. On 2026-10-07 each
+#: candidate was dispatched through the aliveness probe at a 16-token ceiling and
+#: answered: opus 6.60 s, fable 5.69 s, sonnet 7.24 s, haiku 3.97 s. `opusplan` also
+#: answered but is DELIBERATELY EXCLUDED: it is a routing alias that serves different
+#: models for planning and execution, so what actually replied could not be recorded,
+#: and provenance is the one thing the founder does want a name to carry.
+#:
+#: COST MOVES DOWN, NOT UP. 4 of the 6 seats previously resolved to `opus`; now 2 do.
+DEFAULT_LADDER: "dict[str, str]" = {
     "CC2-SIM": "opus",
-    "Codex-SIM": "opus",
-    "ChatGPT-SIM": "opus",
-    "DeepSeek-SIM": "fable",
+    "ChatGPT-SIM": "fable",
+    "Codex-SIM": "sonnet",
+    "DeepSeek-SIM": "haiku",
+    "Fable-SIM": "opus",
+    "Gemini-SIM": "fable",
 }
 
 

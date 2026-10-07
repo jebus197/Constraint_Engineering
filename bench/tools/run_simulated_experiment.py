@@ -238,8 +238,16 @@ def build_parser() -> argparse.ArgumentParser:
                     help="this run deliberately uses --seat-models uniform as a "
                          "control arm, so POST reports the non-climbing ladder as "
                          "PASS instead of halting.")
+    # DEFAULT CHANGED uniform -> ladder, 2026-10-07, ON THE FOUNDER'S RULING. His
+    # words: "The simulated runs can involve a mix of models from Anthropic ... why
+    # should the schema, or capability fingerprints, or the ladder care about model
+    # names at all?" Under `uniform` every seat was answered by ONE model, which is
+    # cause 2 of 2 in the project record for the inert ladder and was never fixed at
+    # the launcher. With `ladder` the 6 seats resolve to 4 distinct models, each
+    # probed before it was wired. `uniform` remains available as a deliberate
+    # control arm and nothing is removed.
     ap.add_argument("--seat-models", choices=("uniform", "ladder"),
-                    default="uniform",
+                    default="ladder",
                     help="uniform = one model for all seats (default); "
                          "ladder = the per-seat capability ladder in "
                          "sim_dispatch_shim.DEFAULT_LADDER")

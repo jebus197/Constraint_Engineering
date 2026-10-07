@@ -71,6 +71,19 @@ class RoutingResult:
     falsifier_code: str               # the resolving (or last) falsifier
     duplicate_of: Optional[str] = None  # set iff resolved as a duplicate
     rungs_tried: int = 0
+    #: True iff `rank_falsifier_writers` returned NOTHING -- the roster carries no
+    #: writer other than this finding's own source model.
+    #:
+    #: ADDED 2026-10-06 BECAUSE THE SELF-RUNG BROKE ITS PROXY. The runner used
+    #: `rungs_tried == 0` to mean "the ladder was empty by construction", which was
+    #: exact while every rung came from the ranked list. The self-rung dispatches
+    #: when that list is empty, so `rungs_tried` becomes 1 and the discriminator
+    #: silently stopped firing -- the finding then missed `routing_deferred`, never
+    #: entered `irreducible_queue_count`, and HALTED_IRREDUCIBLE_QUEUE_ALARM could
+    #: not fire. That alarm is the pre-registered reportable outcome of the exp56
+    #: 1-seat arm. A proxy that was exact under the old mechanics is the first
+    #: thing a new mechanic breaks, so the fact is recorded directly instead.
+    ladder_was_empty: bool = False
 
 
 def rank_falsifier_writers(
@@ -137,6 +150,7 @@ def resolve_via_routing(
     resolve_fn: Callable[[str, dict], str],
     reverify_fn: Callable[[str], str],
     max_rungs: int = 2,   # 0 = exhaust the ladder
+    self_rung: str | None = None,
 ) -> RoutingResult:
     """Climb the capability ladder until a strong writer CONFIRMS the finding.
 
@@ -167,6 +181,7 @@ def resolve_via_routing(
     # 6 of 7 and rung 2 the last, so rungs 3+ are reached on a small minority.
     # A cap is therefore spend-insurance against a pathological run rather than a
     # routine saving, which is why exhaustion is now expressible.
+    _ladder_empty = not list(rungs)
     _budget = len(list(rungs)) if not max_rungs else max_rungs
     for model in list(rungs)[:_budget]:
         tried += 1
@@ -179,9 +194,69 @@ def resolve_via_routing(
         verdict = reverify_fn(code)
         last_verdict = verdict
         if verdict == "CONFIRMED":
-            return RoutingResult(fid, "CONFIRMED", True, model, code, rungs_tried=tried)
+            return RoutingResult(fid, "CONFIRMED", True, model, code, rungs_tried=tried,
+                                 ladder_was_empty=_ladder_empty)
+    # ───────────── THE LAST RUNG POINTS BACK AT THE SOURCE ─────────────
+    # FOUNDER'S RULING, 2026-10-06: *"even with all our models being the same ... at
+    # least one rung on the ladder should point back to the original model and say,
+    # 'your solution didn't work' or 'your falsifier is broken' please fix"*.
+    #
+    # WHY IT IS NOT A BLIND RETRY, which is the obvious objection. The source model
+    # already failed on this finding, so asking it the same question again would be
+    # the definition of expecting a different answer. It is not asked the same
+    # question: it is handed the VERDICT its own attempt earned and the code that
+    # earned it, which is information it did not have the first time. That is the
+    # same thing the ladder gives a stronger rung, applied to the only rung left.
+    #
+    # IT FIRES ONLY WHEN THE LADDER IS OTHERWISE EXHAUSTED, so it costs 1 dispatch on
+    # findings that would otherwise reach a human unresolved -- which is the more
+    # expensive outcome. On a 1-model roster, where `rank_falsifier_writers` returns
+    # an empty list by construction, this is the ONLY rung there has ever been.
+    #
+    # The existing empty-ladder path is NOT removed: if this rung also fails, the
+    # finding still defers and still reaches the irreducible queue, which is what
+    # `test_empty_ladder_is_not_a_dead_transport_2026-09-09.py` holds.
+    if self_rung and self_rung != last_model:
+        tried += 1
+        last_model = self_rung
+        code = (resolve_fn(self_rung, _with_routing_feedback(
+            finding, last_verdict, last_code)) or "").strip()
+        if code:
+            last_code = code
+            verdict = reverify_fn(code)
+            last_verdict = verdict
+            if verdict == "CONFIRMED":
+                return RoutingResult(fid, "CONFIRMED", True, self_rung, code,
+                                     rungs_tried=tried,
+                                     ladder_was_empty=_ladder_empty)
+        else:
+            last_verdict = "ERROR"
+
     # No rung confirmed -> caller escalates to HIL (genuinely-hard until proven otherwise)
-    return RoutingResult(fid, last_verdict, False, last_model, last_code, rungs_tried=tried)
+    return RoutingResult(fid, last_verdict, False, last_model, last_code,
+                         rungs_tried=tried, ladder_was_empty=_ladder_empty)
+
+
+def _with_routing_feedback(finding: dict, verdict: str, code: str) -> dict:
+    """A copy of the finding carrying what the previous attempt earned.
+
+    THE FEEDBACK IS THE WHOLE POINT OF THE SELF-RUNG. Without it the source model is
+    asked an identical question it has already failed. `routing_feedback` is the
+    field a caller's `resolve_fn` puts in front of the model; a caller that ignores
+    it turns the self-rung into the blind retry this is explicitly not.
+    """
+    out = dict(finding)
+    out["routing_feedback"] = {
+        "previous_verdict": verdict,
+        "previous_falsifier": code,
+        "instruction": (
+            "An earlier attempt on THIS finding did not resolve it. The verdict it "
+            "earned and the falsifier that earned it are above. Either the fix did "
+            "not cure the defect or the falsifier did not demonstrate it. Identify "
+            "which, and correct that specific failure rather than restating the "
+            "original answer."),
+    }
+    return out
 
 
 def route(
@@ -195,6 +270,7 @@ def route(
     strength_order: Sequence[str] = DEFAULT_FALSIFIER_STRENGTH,
     max_rungs: int = 2,   # 0 = exhaust the ladder
     dup_threshold: float = 0.85,
+    self_rung_enabled: bool = True,
 ) -> RoutingResult:
     """Full routing pass for ONE un-confirmed critical finding.
 
@@ -203,7 +279,16 @@ def route(
          duplicate (never escalate a confirmed defect to HIL).
       2. Ladder — route to progressively stronger writers (excluding the finding's
          own source model, which already failed) with the tool loop; CONFIRMED wins.
-      3. Caller escalates to HIL only if neither step resolves it.
+      3. Self-rung — when every other rung is exhausted, hand the finding back to
+         its OWN source model together with the verdict its earlier attempt earned,
+         so it is asked a different question rather than the same one.
+      4. Caller escalates to HIL only if none of these resolves it.
+
+    ``self_rung_enabled`` defaults True on the founder's ruling of 2026-10-06:
+    *"Nor is there any harm in turning it on and leaving it on."* Set it False for a
+    pre-registered arm whose declared outcome depends on the empty-ladder deferral --
+    `bench/exp56_configs/d9_single_model_with_agents.json` is the one such arm, and
+    it has not yet run.
     """
     fid = finding.get("finding_id") or finding.get("id") or "?"
 
@@ -216,4 +301,6 @@ def route(
         available_models, strength_order=strength_order,
         exclude=(source,) if source else (),
     )
-    return resolve_via_routing(finding, rungs, resolve_fn, reverify_fn, max_rungs=max_rungs)
+    return resolve_via_routing(
+        finding, rungs, resolve_fn, reverify_fn, max_rungs=max_rungs,
+        self_rung=source if (self_rung_enabled and source) else None)
