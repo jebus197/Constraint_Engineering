@@ -86,8 +86,26 @@ def analyse(report: pathlib.Path) -> dict:
             per[m]["confirmed"] += 1
         # Kept so a reader can see how much of a model's record is its own work
         # rather than work routed to it.
-        if falsifier_author(e) != (e.get("source_model") or "?"):
+        src = e.get("source_model") or "?"
+        if m != src:
             per[m]["via_routing"] += 1
+            # ★ THE FILER'S FAILURE GOES IN THE FILER'S DENOMINATOR.
+            #
+            # Until 2026-10-07 a routed entry credited the resolver with an attempt
+            # and gave the FILER nothing at all -- not a confirmation, and not the
+            # failed attempt either. So a model that files findings it never
+            # resolves accumulates NO denominator, and an empty record reads as a
+            # perfect one. The 2026-10-06 repair fixed the numerator (the
+            # confirmation goes to the model that WROTE the falsifier) and left
+            # this half open; the cc2 seat identified it and measured the
+            # consequence as 5 of 11 ranks inverted.
+            #
+            # Routing fires only on a critical its source did not resolve, so a
+            # routed entry IS a recorded failed attempt by the filer. Counting it
+            # is not a penalty: it is the attempt that actually happened.
+            per[src]["n"] += 1
+            per[src]["filed_and_failed"] += 1
+            per[src][falsifier_style(e.get("falsifier_code"))] += 0
     return per
 
 

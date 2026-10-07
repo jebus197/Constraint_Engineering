@@ -22,7 +22,7 @@ His instruction: run `sv`, then work his `#` responses, then everything else sti
 | 6 | Free-seat contention | Fix if it can be fixed | OPEN |
 | 7 | Remaining suite failures | Do the work | OPEN — 4 confirmed |
 | 8 | 6 switches enabled nowhere | Investigate and do the work | OPEN |
-| 9 | Provenance denominator, 5 of 11 rank inversions | Fix it | OPEN |
+| 9 | Provenance denominator | Fix it | **DONE** — filer's failure counted; 2 of 11 ranks move |
 | 10 | ITC left unswitchable, reported when it fires | Agreed | ACCEPTED, no code owed |
 | 11 | Minimum sample | "No work to do here? Fine if so" | CLOSED, no code owed |
 | 12 | Panel lessons applicable to the runners | Decide them, put in the morning report | OPEN |

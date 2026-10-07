@@ -136,3 +136,68 @@ class TestTheProbeIsNotVacuous:
         assert routed > 0, (
             "0 archived entries carry resolved_by_routing, so the mis-attribution "
             "affects nothing and this guard is measuring a hypothetical")
+
+
+class TestTheFilersFailureIsInItsOwnDenominator:
+    """AN EMPTY RECORD MUST NOT READ AS A PERFECT ONE.
+
+    The 2026-10-06 repair fixed the NUMERATOR: a routed confirmation is credited to
+    the model that wrote the falsifier, not to the one that filed the finding. It
+    left the other half open, which the cc2 seat identified and the founder ruled on
+    ("Verdict. Fix it."): the filer received NOTHING on a routed entry -- not the
+    confirmation, and not the failed attempt either. A model that files criticals it
+    never resolves therefore accumulated no denominator at all.
+
+    Routing fires only on a critical its source did not resolve, so a routed entry
+    IS a recorded failed attempt by the filer. Counting it is not a penalty; it is
+    the attempt that happened.
+
+    Measured over the archive by `scripts/the_filers_failure_was_missing_2026-10-07.py`:
+    2 of 11 models change rank, 18.1818%, Wilson [5.1368%, 47.6981%], and the
+    simulated models' confirm rates fall by roughly 0.2 to 0.3 absolute once their
+    failures are counted.
+    """
+
+    def test_the_filer_gets_an_attempt_it_did_not_confirm(self, report):
+        p = report([_entry("Filer-SIM", resolved_by="Resolver-SIM")])
+        per = PROV.analyse(p)
+        assert per["Resolver-SIM"]["confirmed"] == 1
+        assert per["Filer-SIM"]["n"] == 1, (
+            "the filing model carries no attempt for a finding it failed to "
+            "resolve, so an empty record reads as a perfect one")
+        assert per["Filer-SIM"]["confirmed"] == 0, (
+            "the filer was credited with a confirmation it did not produce")
+
+    def test_a_filer_that_never_resolves_has_a_real_denominator(self, report):
+        """The shape that made the omission matter: file many, resolve none."""
+        p = report([_entry("Filer-SIM", resolved_by="Resolver-SIM")
+                    for _ in range(5)])
+        per = PROV.analyse(p)
+        assert per["Filer-SIM"]["n"] == 5 and per["Filer-SIM"]["confirmed"] == 0
+        rate = per["Filer-SIM"]["confirmed"] / per["Filer-SIM"]["n"]
+        assert rate == 0.0, f"a model that resolved nothing scores {rate}"
+
+    def test_an_unrouted_entry_is_counted_once_not_twice(self):
+        """ANTI-DOUBLE-COUNT. When the author IS the filer there is one attempt,
+        and crediting it twice would invent a denominator."""
+        import json as _json
+        import pathlib as _pl
+        import tempfile as _tf
+        with _tf.TemporaryDirectory() as td:
+            p = _pl.Path(td) / "r.json"
+            p.write_text(_json.dumps({"registry": {"entries": {
+                "C1": {"source_model": "Solo-SIM",
+                       "falsifier_verdict": "CONFIRMED",
+                       "falsifier_code": "open('t').read()"}}}}), encoding="utf-8")
+            per = PROV.analyse(p)
+            assert per["Solo-SIM"]["n"] == 1, (
+                f"an unrouted entry counted {per['Solo-SIM']['n']} attempts")
+
+    def test_the_producer_runs_and_answers_help_for_nothing(self):
+        import subprocess
+        import sys as _sys
+        s = REPO / "scripts" / "the_filers_failure_was_missing_2026-10-07.py"
+        assert s.is_file(), "the producing script is not committed beside the figure"
+        r = subprocess.run([_sys.executable, str(s), "--help"], cwd=str(REPO),
+                           capture_output=True, text=True, timeout=120)
+        assert r.returncode == 0 and "usage:" in r.stdout
