@@ -14,7 +14,7 @@ His instruction: run `sv`, then work his `#` responses, then everything else sti
 
 | # | Item | His verdict | State |
 |---|---|---|---|
-| 1 | Gamma coupling / "recording only" | Challenged as gamma demotion; `rg` issued on gamma demotion | OPEN |
+| 1 | Gamma coupling / "recording only" | Challenged as gamma demotion | **ANALYSED** — nothing demoted; the evidence does not support a change either way |
 | 2 | `--seat-models` default uniform | Turn it on. Simulated runs can carry real distinct Anthropic models | **DONE** — default is `ladder`; 4 probed models |
 | 3 | Ladder must route back to the source model when no better rung exists | Turn it on and leave it on | **DONE** — self-rung, on by default, carries the prior verdict |
 | 4 | Boot check outstanding repairs | Fix if not already done | **DONE** — POST green, 5 of 5 |
