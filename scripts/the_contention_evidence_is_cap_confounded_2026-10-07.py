@@ -57,8 +57,39 @@ ROUNDS_LOSING_A_SEAT = 5
 PER_SEAT_RECENT_LOSS = 0.15
 
 
-def at_a_cap(t: float, tol: float = 0.10) -> bool:
-    """True if a duration sits within tol of any cap the panel has used."""
+#: Durations EXPLAINED BY THE RECORD rather than by a tolerance. P-PASS
+#: 2026-10-08: the first version classified a duration as a cap hit when it sat
+#: within 10% of a cap, and 1956.0 s is +8.67% of the 1800 s cap -- inside the
+#: window only because the window was chosen that way. Tighten the tolerance
+#: below 8.67% and 2 of the 3 co-failures become "genuine", restoring most of
+#: the contention case. So the classification could not rest on the tolerance.
+#:
+#: THE RECORD SETTLES IT. `elapsed_s` on a seat file is CUMULATIVE ACROSS
+#: ATTEMPTS, and the companion `.tools.json` carries the per-attempt breakdown.
+#: For panel_convergence_blockers_2026-10-03, measured from those files:
+#:   cc2   : total 1956.0 s, 2 attempts, attempt 2 = 110.4 s with 37 tool calls
+#:   fable : total 1956.2 s, 2 attempts, attempt 2 = 110.8 s with 11 tool calls
+#: So attempt 1 consumed about 1845 s in both cases -- the 1800 s cap in force on
+#: that date, confirmed from git at commit cd19903a, plus process overhead. Both
+#: seats were capped on attempt 1, which is precisely the shared-deadline
+#: arithmetic this script is about.
+CAP_EXPLAINED_BY_RECORD = {
+    # round -> (total_s, attempt_2_s, cap_in_force, source of the breakdown)
+    "panel_convergence_blockers_2026-10-03":
+        (1956.0, 110.4, 1800, "cc2.tools.json / fable.tools.json per_attempt"),
+}
+
+
+def at_a_cap(t: float, tol: float = 0.10, round_name: str | None = None) -> bool:
+    """True if a duration is explained by a cap.
+
+    Prefers the ARCHIVED per-attempt record over the tolerance. The tolerance
+    remains for durations with no breakdown on disk, and is reported as such.
+    """
+    if round_name and round_name in CAP_EXPLAINED_BY_RECORD:
+        total, a2, cap, _src = CAP_EXPLAINED_BY_RECORD[round_name]
+        if abs(t - total) < 1.0:
+            return abs((t - a2) - cap) / cap <= 0.05   # attempt 1 sat at the cap
     return any(abs(t - c) / c <= tol for c in CAPS)
 
 
@@ -68,7 +99,7 @@ def classify():
         both.setdefault(rnd, []).append((seat, t))
     pairs = {r: v for r, v in both.items() if len(v) == 2}
     genuine = {r: v for r, v in pairs.items()
-               if not all(at_a_cap(t) for _s, t in v)}
+               if not all(at_a_cap(t, round_name=r) for _s, t in v)}
     return pairs, genuine
 
 
@@ -84,7 +115,7 @@ def main() -> int:
         near = min(CAPS, key=lambda c: abs(t - c))
         print(f"  {rnd:40s} {seat:6s} {t:8.1f}s  nearest {near:5d}  "
               f"{100 * (t - near) / near:+7.2f}%  "
-              f"{'AT THE CAP' if at_a_cap(t, a.tol) else 'NOT at a cap'}")
+              f"{'AT THE CAP' if at_a_cap(t, a.tol, round_name=rnd) else 'NOT at a cap'}")
 
     pairs, genuine = classify()
     print()
