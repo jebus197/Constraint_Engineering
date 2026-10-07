@@ -1,0 +1,79 @@
+# How should CDSFL decide which model gets which problem?
+
+A free 2-seat blind round. 0 paid dispatches. You are blind to the other seat.
+
+## The situation, as it actually stands
+
+CDSFL routes an unresolved critical finding to another model via a "capability ladder". Today that ladder is `DEFAULT_FALSIFIER_STRENGTH = ("Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek")` -- a FROZEN TUPLE OF VENDOR NAMES, strongest first, derived from Exp 42 confirm rates. `resolve_via_routing` tries rung 1 first and stops at the first CONFIRMED.
+
+The founder's standing ruling: **"the only thing that should impact on capability is measured capability. A models name should have little to do with it, beyond recording this."** He has stated this 5 times across 2 days.
+
+## What is measured, and it is worse than it looks
+
+Over 3,158 archived registry entries, the RAW per-model confirm rates are Codex 0.2818, Gemini 0.2644, ChatGPT 0.1567, CC2 0.1510, DeepSeek 0.1382.
+
+**That ranking is contaminated and the project already knew the mechanism.** `bench/routing.py` carries a founder observation of 2026-08-23 warning against re-deriving the order without checking falsifier provenance, and names the signature: on Exp 55, Gemini scored 2 of 2 CONFIRMED with falsifiers that never opened their target, while DeepSeek scored 0 of 2 with genuine readers that errored. Re-deriving from that run "promotes Gemini to FIRST and demotes DeepSeek to LAST -- ranking the models by their willingness to ignore the evidence".
+
+**Filtered to provenance-clean attempts (the falsifier demonstrably READS its target), the archive supports almost nothing:**
+
+| model | clean attempts | rate | Wilson 95% |
+|---|---|---|---|
+| CC2 | 35 | 0.6000 | [0.4357, 0.7445] |
+| Codex | 37 | 0.5946 | [0.4349, 0.7365] |
+
+Gemini, ChatGPT and DeepSeek have FEWER THAN 20 provenance-clean attempts in the entire archive. The 2 models that qualify have almost perfectly overlapping intervals.
+
+Power: separating 2 models differing by 0.15 at 80% power needs **173 clean attempts each**; by 0.20, **97 each**. We have 35 and 37.
+
+## The founder's tension, which is the real question
+
+He asks why a ladder should escalate from weakest upward: *"Why put for example a highly complex problem, like the Riemann hypothesis, to a model like DeepSeek (or even Haiku) when its resources are better suited to dealing with less complex problems? Can you see the tension?"*
+
+Computed (SymPy and NumPy agreeing) over 3 configurations whose task-conditioned success probabilities are cheap (0.70 easy / 0.02 hard, cost 1), mid (0.75 / 0.25, cost 4), strong (0.80 / 0.60, cost 10), the FIRST model tried on a HARD task is:
+
+- cheapest-first: **cheap**
+- strongest-first: **strong**
+- index rule p/c on a single GLOBAL p per model: **cheap** -- the same mistake as cheapest-first
+- index rule on a TASK-CONDITIONED p: **mid**, with cheap LAST
+
+So a measured statistic that is one number per model reproduces exactly the failure the founder objects to. Only conditioning on the task removes it.
+
+## What already exists and may already answer this
+
+`adaptive_distributed_compute_design_spec.md` (the Astra spec) specifies, in section 6:
+
+- 6.1: the allocation question is "which admissible next pass is expected to reduce canonical residual risk most, per unit of constrained resource?", with `q̂ = η̂ · d̂ · p̂` where **d̂ and p̂ are task-, class-, tool- and configuration-conditioned** and must carry an uncertainty interval.
+- 6.4: `score(m,u) = ĝ_mu / (c_mu + λ_t·t_mu + λ_h·h_mu) + β·e_mu`, with an exploration term `e_mu = sqrt(log(1+N_u)/(1+n_mu))` on a SEPARATE budget.
+- 6.5: `x_mu = 0` when a configuration lacks a required tool, authority, role or independence condition -- a hard feasibility exclusion, not a low rank. Force-assignment is prohibited: an infeasible allocation must never be reported as successful.
+- 6.6: greedy marginal-value-per-cost is an inspectable BASELINE, not a theorem; the complete objective is not guaranteed submodular.
+
+The founder warns that the spec's author is an unbound model and "not immune to churn", so the spec is a candidate answer to be falsified, not an authority.
+
+## The 5 questions
+
+**Q1 — Does the Astra section 6 policy actually resolve the founder's tension, or does it relocate it?** The score is value-over-cost with task-conditioned value. State precisely what has to be true for it to never route a hard problem to a weak model, and whether those conditions hold in this repository today.
+
+**Q2 — What is the smallest honest estimator we can field NOW, given 35 and 37 provenance-clean attempts and nothing else?** A per-(model, task-class) table is unfillable at this volume. Name what collapses to, what its cold-start behaviour is, and what it must NOT claim.
+
+**Q3 — The frozen tuple's retirement condition.** CC1's proposal is that the tuple stops being consulted for a PAIR of models as soon as both have enough provenance-clean attempts for their intervals to separate, and breaks ties only until then. Is that right, is the threshold stated correctly, and does it degrade safely at 500 models as well as at 5?
+
+**Q4 — Try-order direction.** Under exhaustion one seat derived that order cannot change WHICH findings resolve, only cost, making strongest-first suboptimal in 90.93% of random rosters. Under a CAP, order does decide which resolve. The cap is now removed in simulation. Does that settle the direction, and what breaks if the cap returns?
+
+**Q5 — What has everyone missed?** Including anything in this brief that is wrong.
+
+## Conditions
+
+**A FINDING ON ITS OWN IS HALF AN ANSWER: require a fix.** For every defect you identify, state the specific correction -- the function, the formula, the threshold -- not merely that something is wrong. Where the correction is a design decision rather than a patch, say what you would build and what it must refuse to claim. A fix you have not tried to break is a hypothesis, so attach what would falsify it.
+
+**TERMINATION CRITERION: stop at diminishing returns.** Stop when a further pass produces no new finding above the materiality threshold, and say so explicitly in your reply rather than padding to fill the output shape. This project's own objective is a robust working answer, not an exhaustive enumeration; a long list of minor observations is not progress and one defect that decides whether the design works is. If you stop early, name the specific mechanism you judged already adequately examined.
+
+Tools decide, not votes. Every figure carries its producing script and a confidence interval for any proportion. Check in Wolfram as a SECOND falsifier where possible, with the open-source tools primary, and say plainly if a Wolfram call failed to evaluate. Do NOT add an unwired module: this project has 11 confirmed defects that were additions nothing reached. One-shot dispatch; you will not be re-invoked.
+
+## Output shape — return exactly these fields
+
+- `## Q1` through `## Q5` — one section each, answered explicitly and separately.
+- `## The estimator` — the smallest thing you would field now, in full: inputs, formula, cold start, and what it refuses to claim.
+- `## Measurements` — every figure with its Wilson interval and the 2 tools that agree.
+- `## Delivered files` — paths written into the sandbox tree, or none.
+- `## What would refute me` — per position.
+- `## Disagreement` — a real body; "none" only if you genuinely have none, said so.
