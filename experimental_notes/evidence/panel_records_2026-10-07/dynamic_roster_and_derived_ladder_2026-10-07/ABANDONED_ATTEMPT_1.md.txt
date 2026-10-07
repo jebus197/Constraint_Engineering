@@ -1,0 +1,19 @@
+# Attempt 1 was withdrawn before any seat answered
+
+2026-10-07 23:10 BST
+
+Dispatched 23:04:48. Both seats passed the aliveness probe on attempt 1 (cc2 7.17 s, fable 4.46 s) and began work at 23:05:51. The run was stopped at 23:10, roughly 4 minutes in, and **0 seat replies had landed** — the directory held only BRIEF.md.
+
+## Why it was stopped
+
+The brief stated the spurious-convergence factor of 8.49986 as a property of the convergence gate. It is an upper bound that holds only when the seats are independent, and seats in a round share a byte-identical brief and the same target, so they are not. With a shared per-round latent factor the same quantity falls to 1.9200 at a correlation of 0.3. The seats would have been reviewing a design against an overstated hazard.
+
+The founder caught this: *"Then the panel is reading the wrong thing!"* The prior reasoning for letting the round finish — that the brief's sha256 is the star-topology grouping key, so a mid-flight rewrite would make the recorded brief differ from the one the seats received — weighed a mechanism above correctness, and was wrong. With 0 replies landed there was no blind round to protect.
+
+## What replaced it
+
+BRIEF.md in this same directory, amended to state the bound as a bound, to carry the correlation sweep, and to ask the seats how the correlation could be measured from the archive. The withdrawal is recorded here rather than erased, so the sequence can be retraced.
+
+Producer of the correction: bench/the_spurious_convergence_ratio_depends_on_correlation_2026-10-07.py
+
+Written under CDSFL note standard v1.7 (26 August 2026).

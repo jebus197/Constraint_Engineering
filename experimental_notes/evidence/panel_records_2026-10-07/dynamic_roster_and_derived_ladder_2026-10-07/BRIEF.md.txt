@@ -1,0 +1,115 @@
+# Derived-capability routing with a dynamic roster: review the design and fix what is broken
+
+## What you are reviewing
+
+A design, not yet built, for how CDSFL should allocate falsification work across an arbitrary number of models. Four artefacts carry the analysis, all committed and all runnable:
+
+- `bench/why_one_ordering_cannot_serve_both_objectives_2026-10-07.py`
+- `bench/allocation_by_measured_capability_2026-10-07.py`
+- `bench/a_shrinking_roster_converges_sooner_2026-10-07.py`
+- `bench/routing.py`, which holds the live ladder and `rank_falsifier_writers`
+
+Run each of them. Do not take the figures below on trust; they are reproducible and several of them were wrong on their first attempt.
+
+## The founder's requirements, verbatim where possible
+
+He has stated 9. The first 7 are from earlier today, the last 2 from tonight.
+
+1. Roster size is arbitrary: *"It could be 5, or 6, or 70, or 500, or 1."*
+2. No cap on ladder depth: *"I don't think there should be a cap at all ... the problem should run until it is either resolved, or the ladder is exhausted."*
+3. Allocation by measured capability, never by name: *"the only thing that should impact on capability is measured capability. A models name should have little to do with it, beyond recording this."*
+4. Never hand a model work it cannot do: *"there is still no point handing a cheaper model work it is unlikely to be able to do."*
+5. Bidirectional: *"A ladder is bidirectional. It goes both up and down ... if a weaker model gets better at doing a job ... it should be able to climb the routing ladder, based on its demonstrated improvement in capability. Conversely if a stronger model proves less able ... it should be able to climb down."*
+6. A success is not a capability gain: *"what we need to guard against is simply counting when a model is successful as an 'improvement in capability'. The only measure of improved capability is actual observed capability."*
+7. Efficiency with the researcher waiting: *"problem in (by the researcher, who then waits) -> problem computed efficiently by the models -> solution out."*
+8. Any model dropping out must not block the run: *"if a model drops off the list (say due to my Max subscription limits, or a technical issue with that model), it should not block an experimental run until completion, or convergence. The system should be able to adapt dynamically in those circumstances."* And, correcting the scope: *"Not just 'that' model, but 'any model'."*
+9. Readmission, which is his correction of this brief's first draft: *"Benching a model is setting it aside permanently. A model might come back if it recovers from a technical issue, or a network outage. They are different conditions."*
+
+Requirement 9 is the one to read most carefully, because the first draft of this brief got it wrong. It asserted a contradiction between requirement 8 and his standing rule against benching. There is no contradiction. Benching is a permanent policy choice and is forbidden. A technical fault or a network outage is transient and the model may return. The code conflates the two, in its own words: `refusal_for` in `bench/seat_aliveness_2026-10-06.py` documents itself as returning *"a REFUSAL rather than a filtered roster, because dropping a seat is benching it and the standing rule forbids that."*
+
+## The proposed design
+
+Three parts, each with its justification.
+
+**Part A, remove the cap.** With no limit on depth every seat is eventually reached, so the probability that nobody resolves a finding is taken over the whole roster and becomes a constant. The question "which seats do we try" then has no content. This is the founder's own ruling and `max_rungs=0` is already wired to mean exhaust.
+
+**Part B, order by a derived key.** Expected cost to the first CONFIRMED verdict is the sum over j of c_j times the product over i before j of (1 minus p_i). Seat i belongs before seat j exactly when p_i times c_j is at least p_j times c_i. Because this is a comparison over 2 measured numbers rather than a stored list, it is roster-size agnostic and bidirectional by construction: raise a seat's measured capability and it rises, lower it and it falls, with no tuple to edit.
+
+**Part C, use a lower confidence bound rather than a point estimate.** A seat with 1 success from 1 attempt has a point estimate of 1.0 and outranks a seat at 60 of 70. Its Wilson lower bound is 0.206549 against 0.756616, and a newcomer needs 12 consecutive successes before its lower bound can pass. A seat with no measurements has a lower bound of 0 and sorts last, then climbs on evidence, so no placement decision is needed for a new model.
+
+## What the design does NOT yet solve, and what you must fix
+
+Two requirements fail, and a third hazard was found while measuring them. The founder asked specifically what the unsolved ones are and how to repair them. Answer that.
+
+**Unsolved 1, requirement 7.** Cost in Part B is money alone, while the researcher pays in time. On a hard finding with 4 weak cheap seats at a 2 percent resolve rate and 1 strong seat at 80 percent costing 100, ordering by money puts the strong seat last: 4.80396 expected dispatches against 1.776318, to save spend by a factor of 1.0485. Pricing each dispatch in waiting as well as money reorders the same key with no new rule, crossing to capability-first at a latency weight of 2. Is that the right repair? Is a single scalar weight sufficient, or must cost be a vector the researcher sets per task?
+
+**Unsolved 2, requirement 6.** The guard belongs to the estimator, not the ordering, and nothing in the repository currently estimates capability this way. State what the estimator must record per attempt, and what happens on the first attempt a new model ever makes.
+
+**The hazard, and it is the serious one.** Adapting dynamically to a dropped seat makes spurious convergence more likely, and the two-sided gate cannot see it. The gate requires gamma_critical at or above 0.30 AND K consecutive rounds with 0 new criticals. The second condition gets easier as the roster shrinks, because fewer seats generate fewer findings.
+
+**READ THE NEXT PARAGRAPH BEFORE THE NUMBERS. THE FIRST VERSION OF THIS BRIEF OVERSTATED THIS HAZARD AND WAS WITHDRAWN BEFORE ANY SEAT ANSWERED IT.** It reported a single factor as though it were a property of the gate. That figure assumes the seats are INDEPENDENT, which is the most favourable possible case for the claim, and the seats in a round are not independent: every one of them receives a byte-identical brief and the same target, so a round is plausibly productive or barren for all of them together.
+
+**What is actually established.** With a per-seat-per-round new-critical probability of 0.3 and K of 3, the chance of K consecutive quiet rounds arising by chance alone rises as the roster shrinks, and the size of that rise depends on the intra-round correlation. Under independence the factor going from 6 seats to 4 is 8.49986 and from 6 to 2 is 72.247616; SymPy, mpmath and exact rational arithmetic agree, and Wolfram Language independently returns 8.49985975231408 for the first. With a shared per-round latent factor the same 6-to-4 factor falls to 3.8236 at a correlation of 0.1, 1.9200 at 0.3 and 1.4043 at 0.5, by exact integration, with a Monte Carlo simulation agreeing to within 10 percent at the midpoint.
+
+**So the direction is robust and the magnitude is not.** The factor exceeds 1 at every correlation tested, so a shrinking roster always goes quiet sooner, and independence is the upper bound so no correlation can inflate it. But the magnitude moves by a factor of 7.7915 across a plausible range, on a parameter this project has never measured.
+
+**The correlation is measurable and nobody has measured it.** Per-round, per-seat findings are recorded, so the intra-round correlation is an empirical quantity rather than one anyone has to assume. Treat its absence as one of the findings, and say how you would measure it from the archive.
+
+**Note carefully what this does NOT weaken.** The reason to record the live roster beside the quiet-round count does not depend on the magnitude at all, because the two causes are indistinguishable from the count whatever the correlation is. The factor sets how urgent the repair is, not whether it is needed. If you think that reasoning is wrong, say so — it is the load-bearing step.
+
+Dropout is not an edge case. At a per-seat-per-round failure probability of 0.01 over a 10-round 6-seat run, the chance of losing at least 1 seat is 0.452843, and at 0.02 it is 0.702447; a simulation, a closed form and scipy's binomial agree.
+
+z3 establishes that the observed count alone cannot separate the 2 causes: 0 new criticals from a healthy panel and 0 from a depleted one are the same integer, and the search for a distinguishing value returns unsat. Recording the live roster beside the count makes them formally separable, because a round cannot be both intact and degraded.
+
+## What the repository actually does today, measured
+
+Verify each of these by execution before accepting it.
+
+- The aliveness probe runs ONCE, before round 1, and `_refuse_if_a_route_is_dead` makes the runner return without starting. There is no re-probe anywhere, so a seat that drops out at one moment and recovers minutes later can never rejoin.
+- Mid-run the system already adapts in 2 places: a failed ladder rung is logged and the ladder advances, and in the post-convergence sweep *"a dead model just skips its turn"*.
+- Per-round responders ARE recorded as `models_responded`, and the per-round response files are described in the code as the ground truth of who answered.
+- A RESUME refuses on a partial round, a guard added after an OpenRouter-402 cascade left a checkpoint holding responses from 2 of 5 models.
+- The convergence gate consults none of this. `active_models` appears exactly once in the whole active runner, inside that resume guard, so the dynamic-roster hook exists as a field name that nothing maintains.
+- `rank_falsifier_writers` already appends models absent from the strength tuple AFTER the ranked ones, so the tuple is a priority prefix rather than an allowlist. A new model is therefore already tried, just last.
+- The 47 experiment configuration files declare 5 display names and 0 Fable. Fable was added to the ladder tonight at the last position, on evidence, and no config reaches it yet.
+
+## Required: fixes, not only findings
+
+For each problem you raise, propose a fix. A finding without a repair is half a contribution. Specifically:
+
+1. Name the third state the design needs between "available" and "benched", and say how a transiently unavailable seat is re-probed and readmitted mid-run without that becoming benching by another name.
+2. Say what the convergence record must carry so a degraded convergence cannot be reported as a clean one, and whether a degraded run should converge at all.
+3. Decide whether the derived key should replace `DEFAULT_FALSIFIER_STRENGTH` entirely or sit beside it, and what happens on the very first run when no seat has any measurement.
+4. Say what a researcher adding or removing a model must do, given that a design brief for the user interface already exists at `experimental_notes/CDSFL_UX_Vision_Sketch_2026-03-28.md`.
+5. Kimi K3 is wired against the Moonshot endpoint and is expensive; the founder wants it held in reserve for the hardest work. Say how "hardest" is decided without a human classifying every finding by hand.
+
+Write and EXECUTE a falsifier for each fix you propose, and deliver each fix as a file in your sandbox repository tree at its real path. A fix you have not run is a hypothesis.
+
+## Output
+
+Return these fields by name.
+
+- VERDICT on the design as a whole: sound, sound with repairs, or unsound.
+- FINDINGS, each with the file and the line, and each marked OBSERVED with the command that shows it, or HYPOTHESISED with what would settle it.
+- FIXES, one per finding, each delivered as a file and each with the falsifier you executed and its output.
+- YOUR STRONGEST DISAGREEMENT with this brief's own framing. The brief has been wrong twice today already: it asserted a contradiction between 2 of the founder's rulings that does not exist, and an earlier version reported 49 configuration files where there are 47. Assume it is still wrong somewhere and say where.
+- WHAT WOULD REFUTE YOUR OWN POSITION, stated as a measurement someone else could run.
+- CONFIDENCE, with the evidence that sets it.
+
+## Termination
+
+Stop when every requirement above has either a fix with an executed falsifier or an explicit statement that it cannot be met and why. Stop early if 2 consecutive passes over your own answer produce no new finding above the threshold of real-world consequence. Do not pad: a short answer with executed evidence beats a long one without.
+
+<!-- figure: spurious_convergence_6_to_4 | bench/a_shrinking_roster_converges_sooner_2026-10-07.py | 8.49986 -->
+<!-- figure: dropout_probability_1pc | bench/a_shrinking_roster_converges_sooner_2026-10-07.py | 0.452843 -->
+<!-- figure: newcomer_wilson_lower_bound | bench/allocation_by_measured_capability_2026-10-07.py | 0.206549 -->
+<!-- figure: veteran_wilson_lower_bound | bench/allocation_by_measured_capability_2026-10-07.py | 0.756616 -->
+<!-- figure: expected_calls_money_order | bench/allocation_by_measured_capability_2026-10-07.py | 4.80396 -->
+<!-- figure: expected_calls_capability_order | bench/allocation_by_measured_capability_2026-10-07.py | 1.776318 -->
+<!-- figure: money_fold_worse | bench/allocation_by_measured_capability_2026-10-07.py | 1.0485 -->
+<!-- figure: spurious_convergence_6_to_2 | bench/a_shrinking_roster_converges_sooner_2026-10-07.py | 72.247616 -->
+<!-- figure: dropout_probability_2pc | bench/a_shrinking_roster_converges_sooner_2026-10-07.py | 0.702447 -->
+<!-- figure: ratio_at_correlation_0p1 | bench/the_spurious_convergence_ratio_depends_on_correlation_2026-10-07.py | 3.8236 -->
+<!-- figure: ratio_at_correlation_0p3 | bench/the_spurious_convergence_ratio_depends_on_correlation_2026-10-07.py | 1.9200 -->
+<!-- figure: ratio_at_correlation_0p5 | bench/the_spurious_convergence_ratio_depends_on_correlation_2026-10-07.py | 1.4043 -->
+<!-- figure: ratio_collapse_across_correlation | bench/the_spurious_convergence_ratio_depends_on_correlation_2026-10-07.py | 7.7915 -->
