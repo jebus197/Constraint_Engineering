@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 6 October 2026 03:22 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 7 October 2026 11:52 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,28 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-07 11:52 BST (READ THIS FIRST)
+
+**BRANCH.** HEAD `e41c7955` on `sim/shakedown-2026-09-29`, level with its remote. `main` untouched at `b536ff86`. Everything below is committed; nothing is held in a working tree.
+
+**★★★ CDSFL POST — THE SCHEMA NOW BOOTS LIKE A MACHINE.** The founder's ruling: pass or fail against each row, halt at the first failure, "giving the user an opportunity to investigate". Wired INTO `run_simulated_experiment.py` so it gates the DISPATCH (not the config build — an earlier placement broke `test_the_simulated_launcher_sets_both_lists`, which drives the launcher to compare its own 2 model lists). Dropping the 3-state scheme exposed a defect of the class the check exists for: AMBER never set the exit code, so **a check whose own code RAISED was mapped to AMBER and the experiment launched anyway at exit 0**. Measured by injecting a raising check into the old version. z3 holds the row order against the declared dependencies with an independent index scan that must agree. Producer: `scripts/post_semantics_2026-10-06.py`. Guard: `test_post_halts_at_the_first_failure_2026-10-06.py` (18).
+
+**★★★ THE GAMMA COUPLING — THE ONE THING STILL AWAITING HIS RULING.** Resolving unresolved criticals moves `gamma_critical` **DOWN in 9 of 14 archived runs, up in 3, unchanged in 2, and 2 of 14 cross the 0.30 arm DOWNWARD** (`exp40_gate` 0.3018 → 0.2328; `commissioning_arm1_panel` 0.3236 → 0.1883). 14.2857%, Wilson [4.0094%, 39.9414%]; statsmodels, a closed form and Wolfram Language agree to 7 significant figures. Mechanism visible in the data: resolved criticals carry a LATER mean round (18.00 against 13.31; 6.50 against 3.19), and late mass steepens a cumulative curve, raising beta and lowering gamma. Found by the cc2 seat, which predicted the OPPOSITE sign and was refuted by its own measurement; **re-run independently against the live archive by CC1 and reproduced exactly**. Producer: the seat's `routing_exhaustion_raises_gamma_critical_2026-10-06.py`, preserved under `experimental_notes/seat_evidence/`. **Exhaustion is ENABLED in simulation, so this is live.** The founder has CHALLENGED the recording-only remedy as gamma demotion and asked whether the ladder ORDER is the real fault; that challenge is open and is the first item of the 2026-10-07 work order.
+
+**★★★ THE LADDER STILL CANNOT CLIMB, AND HE HAS NOW RULED.** `run_simulated_experiment.py:697` consults the ladder only under `--seat-models ladder`, and the flag DEFAULTS TO `uniform`. His ruling of 2026-10-06: turn it on, and a 1-model roster should still route back to the source model saying the solution or the falsifier did not work. Not yet implemented — first item of the 2026-10-07 work order alongside the gamma challenge.
+
+**ALIVENESS PROBE, IN EVERY RUNNER ON HIS RULING.** Each real seat prints `Ready!` before any brief, up to 3 attempts. Measured: a route established in **5.91 s** against the **3258.3 s** a failed round took to establish the same fact. Simulated seats are SKIPPED, not failed (the shim would answer and report a green route where none exists). A dead seat REFUSES the round and is never dropped, because skipping a model is benching it. `bench/seat_aliveness_2026-10-06.py`; guards (23).
+
+**STAR TOPOLOGY, ENFORCED NOT REMEMBERED.** The grouping key is the BRIEF: rounds asking the same question carry a byte-identical `BRIEF.md`. A blind round not declared blind to an already-answered sibling is REFUSED before any network call. The round KIND is DETECTED from whether the brief quotes another round's reply — reading it off `PANEL_JOINT_OF` meant forgetting the variable silently downgraded a joint round to the blind check. `bench/star_topology_2026-10-06.py`; guards (32).
+
+**A RETRY NO LONGER ERASES WHAT IT REPLACES.** A re-dispatch overwrote `<seat>.json`; the fable seat's first joint dispatch (0 words, 435.9 s, 19 tool calls, BrokenPipeError) was destroyed and survived only because the sandbox predated the overwrite. Prior replies now move to `<stem>.attemptN.json.txt` — the `.txt` matters, because a bare `.json` was counted as a reply by the Section P guard and the populations diverged by exactly 1 (145 against 144).
+
+**PANEL: 2 BLIND ROUNDS AND A JOINT ROUND, 0 PAID.** Both blind rounds landed (1693 and 2581 words). **In the joint round the 2 seats CROSSED**: the seat that derived no minimum sample is needed moved to holding one is justified, and the seat that proposed the floor withdrew it. Both independently named the shared token ledger as the operative cause. Both also, blind, rejected the brief's heterogeneity figure (chi-square 280.0138, df 4, p = 2.213221e-59) as measuring FINDING RATE rather than falsification capability.
+
+**SUITE.** 2026-10-06 full board: **10210 passed, 26 failed, 20 skipped in 3523.73 s**, from `python3 -m pytest bench/tests/ -q`. 22 of the 26 are closed, each with a measured cause recorded in `bench/directives/universal/section_p_shortfalls.json` rather than excused. **4 remain**, re-confirmed 2026-10-07: the live archive provenance audit, 2 discrimination-archive classification tests, and the canonical-config write guard. Re-run those 4 with `python3 -m pytest bench/tests/test_archive_age_is_provenance_not_mtime_2026-09-29.py bench/tests/test_discrimination_archive_failure_classification.py bench/tests/test_seat_cannot_write_the_canonical_tree_2026-10-01.py -q`.
+
+**THE CURRENT WORK ORDER IS IN `experimental_notes/WORK_IN_FLIGHT_2026-10-07.md`**, which carries his per-item verdicts and is updated as each item closes. Read it before resuming.
 
 ## SESSION STATE — 2026-10-05 23:40 BST (READ THIS FIRST)
 

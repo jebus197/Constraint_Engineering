@@ -1,0 +1,38 @@
+# Work in flight — founder's TTS responses of 2026-10-06
+
+Opened 2026-10-07T11:51:36+01:00. **This file is the resume pointer for the current work order.** It is updated as each item closes, so an interrupted session can restart from it without re-reading the conversation. Branch `sim/shakedown-2026-09-29`; `main` untouched.
+
+## The work order, verbatim in substance
+
+His instruction: run `sv`, then work his `#` responses, then everything else still outstanding, then a morning report in the usual Desktop location carrying any decisions still needed. Do not stop while work remains that does not need his attention. Internet is unstable until about 10 October, so every step is committed as it lands rather than batched.
+
+## His standing position, which governs several items at once
+
+**Capability is MEASURED capability. A model's name records who did what and decides nothing else.** Stated twice in the responses and again afterwards. Several items below are the same ruling applied in different places.
+
+## Items
+
+| # | Item | His verdict | State |
+|---|---|---|---|
+| 1 | Gamma coupling / "recording only" | Challenged as gamma demotion; `rg` issued on gamma demotion | OPEN |
+| 2 | `--seat-models` default uniform | Turn it on. Simulated runs can carry real distinct Anthropic models | OPEN |
+| 3 | Ladder must route back to the source model when no better rung exists | Turn it on and leave it on | OPEN |
+| 4 | Boot check outstanding repairs | Fix if not already done | OPEN |
+| 5 | Network-degradation lessons into the runners | Incorporate | OPEN |
+| 6 | Free-seat contention | Fix if it can be fixed | OPEN |
+| 7 | Remaining suite failures | Do the work | OPEN — 4 confirmed |
+| 8 | 6 switches enabled nowhere | Investigate and do the work | OPEN |
+| 9 | Provenance denominator, 5 of 11 rank inversions | Fix it | OPEN |
+| 10 | ITC left unswitchable, reported when it fires | Agreed | ACCEPTED, no code owed |
+| 11 | Minimum sample | "No work to do here? Fine if so" | CLOSED, no code owed |
+| 12 | Panel lessons applicable to the runners | Decide them, put in the morning report | OPEN |
+
+## Questions he asked that the morning report must answer
+
+1. Why would gamma become a recorded statistic, when it is foundational? Is the ladder order inverted, and is that the real fault?
+2. What is the outstanding question, in plain English, and has he already answered it?
+3. Are the joint-round seat verdicts in, and was it Fable that was outstanding? **Answer: yes, both are in. Fable returned 2220 words on its second dispatch.**
+
+## Recovery
+
+Everything committed and pushed per item. `git log --oneline` on the branch is the record of what landed. This table is updated in the same commit as the work it describes.
