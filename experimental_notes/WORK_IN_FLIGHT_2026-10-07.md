@@ -25,7 +25,9 @@ His instruction: run `sv`, then work his `#` responses, then everything else sti
 | 9 | Provenance denominator | Fix it | **DONE** — filer's failure counted; 2 of 11 ranks move |
 | 10 | ITC left unswitchable, reported when it fires | Agreed | ACCEPTED, no code owed |
 | 11 | Minimum sample | "No work to do here? Fine if so" | CLOSED, no code owed |
-| 12 | Panel lessons applicable to the runners | Decide them, put in the morning report | OPEN |
+| 12 | Panel lessons applicable to the runners | Decide them, put in the morning report | **DONE** — 2 applied, 4 offered for decision |
+
+## ALL 12 ITEMS ARE CLOSED. The morning report is at `~/Desktop/CDSFL_tts/Morning_Report_2026-10-07.txt`.
 
 ## Questions he asked that the morning report must answer
 
