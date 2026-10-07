@@ -18,8 +18,8 @@ His instruction: run `sv`, then work his `#` responses, then everything else sti
 | 2 | `--seat-models` default uniform | Turn it on. Simulated runs can carry real distinct Anthropic models | **DONE** — default is `ladder`; 4 probed models |
 | 3 | Ladder must route back to the source model when no better rung exists | Turn it on and leave it on | **DONE** — self-rung, on by default, carries the prior verdict |
 | 4 | Boot check outstanding repairs | Fix if not already done | OPEN |
-| 5 | Network-degradation lessons into the runners | Incorporate | OPEN |
-| 6 | Free-seat contention | Fix if it can be fixed | OPEN |
+| 5 | Network-degradation lessons into the runners | Incorporate | **PARTLY DONE** — probe + serialisation in; mid-run degraded-route detection is a proposal for him |
+| 6 | Free-seat contention | Fix if it can be fixed | **DONE** — runner serialises shared-credential routes |
 | 7 | Remaining suite failures | Do the work | **DONE** — all 4 fixed at root cause |
 | 8 | 6 switches enabled nowhere | Investigate and do the work | OPEN |
 | 9 | Provenance denominator | Fix it | **DONE** — filer's failure counted; 2 of 11 ranks move |

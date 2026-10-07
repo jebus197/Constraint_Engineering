@@ -10207,8 +10207,59 @@ def _apply_back_promote(registry, round_idx: int) -> Optional[str]:
     return src
 
 
+#: One lock per SHARED CREDENTIAL, so seats authenticating against the same
+#: subscription cannot hit it at the same instant.
+#:
+#: THE RUNNER WAS NOT SERIALISED AND THE PANEL WAS. The panel fixed this on
+#: 2026-10-05 after a round where BOTH free seats returned 0 characters at 1956.0
+#: and 1956.2 seconds -- 0.2 seconds apart in 2 separate processes, after unequal
+#: work (37 tool calls and 11). Independent failures do not land that close after
+#: unequal work; only a cause outside both processes does, and both seats ride one
+#: Max subscription. The founder's verdict, 2026-10-06: "Then if it can be fixed,
+#: you almost certainly should."
+#:
+#: `run_experiment` dispatches with `ThreadPoolExecutor(max_workers=len(eligible))`
+#: in 2 places, so every seat went out at once. That was harmless while the
+#: simulated roster resolved to ONE model, and stopped being harmless on 2026-10-07
+#: when the ladder widened to 4 distinct CLI models -- widening the ladder is what
+#: made this contention reachable in simulation at all.
+#:
+#: ADDITIVE AND CHEAP: no seat is dropped, and routes that do NOT share a credential
+#: still run fully concurrently with each other and with the serialised group, so a
+#: mixed roster is no slower than before. The cost is wall clock on the shared group
+#: only, bounded by the sum rather than the max of its members.
+#:
+#: NOT A DEMONSTRATED CURE, and the panel's own comment says the same of its
+#: version: contention explains the matched failure times and has NOT been tested by
+#: running a panel both ways. This is a scheduling change with a stated reason.
+_SHARED_CREDENTIAL_ROUTES = frozenset({"claude_cli"})
+_SHARED_CREDENTIAL_LOCK = threading.Lock()
+
+
 @_records_seat_completion
 def _dispatch_single_model(
+    mc: ModelConfig, mgr: DynamicManager, prompt: str,
+    cdsfl_text: str, full_code: str, round_idx: int,
+    pattern_name: str, domain: str, logs_dir: Path,
+    enable_tools: bool = True,
+) -> Tuple[List[Finding], Optional[str]]:
+    """Dispatch one seat, serialising the routes that share one credential.
+
+    The lock is held across the WHOLE dispatch rather than only the first call,
+    because the tool loop keeps using the same credential for as long as the seat
+    is working.
+    """
+    if getattr(mc, "api", None) in _SHARED_CREDENTIAL_ROUTES:
+        with _SHARED_CREDENTIAL_LOCK:
+            return _dispatch_single_model_inner(
+                mc, mgr, prompt, cdsfl_text, full_code, round_idx,
+                pattern_name, domain, logs_dir, enable_tools)
+    return _dispatch_single_model_inner(
+        mc, mgr, prompt, cdsfl_text, full_code, round_idx,
+        pattern_name, domain, logs_dir, enable_tools)
+
+
+def _dispatch_single_model_inner(
     mc: ModelConfig, mgr: DynamicManager, prompt: str,
     cdsfl_text: str, full_code: str, round_idx: int,
     pattern_name: str, domain: str, logs_dir: Path,
