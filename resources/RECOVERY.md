@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 7 October 2026 11:52 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 7 October 2026 11:58 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -43,7 +43,7 @@ session loss, compaction event, or fresh start with a new model instance.
 
 **PANEL: 2 BLIND ROUNDS AND A JOINT ROUND, 0 PAID.** Both blind rounds landed (1693 and 2581 words). **In the joint round the 2 seats CROSSED**: the seat that derived no minimum sample is needed moved to holding one is justified, and the seat that proposed the floor withdrew it. Both independently named the shared token ledger as the operative cause. Both also, blind, rejected the brief's heterogeneity figure (chi-square 280.0138, df 4, p = 2.213221e-59) as measuring FINDING RATE rather than falsification capability.
 
-**SUITE.** 2026-10-06 full board: **10210 passed, 26 failed, 20 skipped in 3523.73 s**, from `python3 -m pytest bench/tests/ -q`. 22 of the 26 are closed, each with a measured cause recorded in `bench/directives/universal/section_p_shortfalls.json` rather than excused. **4 remain**, re-confirmed 2026-10-07: the live archive provenance audit, 2 discrimination-archive classification tests, and the canonical-config write guard. Re-run those 4 with `python3 -m pytest bench/tests/test_archive_age_is_provenance_not_mtime_2026-09-29.py bench/tests/test_discrimination_archive_failure_classification.py bench/tests/test_seat_cannot_write_the_canonical_tree_2026-10-01.py -q`.
+**SUITE.** 2026-10-06 full board: **10,210 passed, 26 failed, 20 skipped in 3523.73 s**, from `python3 -m pytest bench/tests/ -q`. 22 of the 26 are closed, each with a measured cause recorded in `bench/directives/universal/section_p_shortfalls.json` rather than excused. **4 failed, 27 passed** on the targeted re-run of 2026-10-07, which is the same 4 and no regression: the live archive provenance audit, 2 discrimination-archive classification tests, and the canonical-config write guard. Re-run those 4 with `python3 -m pytest bench/tests/test_archive_age_is_provenance_not_mtime_2026-09-29.py bench/tests/test_discrimination_archive_failure_classification.py bench/tests/test_seat_cannot_write_the_canonical_tree_2026-10-01.py -q`.
 
 **THE CURRENT WORK ORDER IS IN `experimental_notes/WORK_IN_FLIGHT_2026-10-07.md`**, which carries his per-item verdicts and is updated as each item closes. Read it before resuming.
 
