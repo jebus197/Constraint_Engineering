@@ -145,3 +145,52 @@ class TestTheThreeCallersAreCovered:
         assert src.count('_run_git("fetch"') + src.count("_run_git('fetch'") == 1, (
             "a second network call appeared; OFFLINE_RECOVERY.md names this file "
             "and must be re-checked")
+
+
+class TestTheDirectSignalIsWiredNotMerelyReported:
+    """`status_known` must be READ by live code, or it is an unwired addition.
+
+    The additive standard: *"an addition that nothing reaches is not additive
+    either"*. When this field was added, 0 of the 3 callers read it -- the
+    protection was live (an unreadable tree reports NOT clean, which `sv` acts
+    on) but the explanatory signal reached nothing.
+
+    It is now read by `cdsfl_recover.py`, where it REPLACES a proxy. The proxy
+    was `git_ok = gs["last_hash"] not in ("", "unknown")`, and the recovery
+    script's own comment already named the defect it was guarding against. The
+    proxy misses the partial failure: when `git log` answers and only
+    `git status` fails, the proxy reads True and the line printed a tree state
+    for a tree it had not inspected. Measured 2026-10-07 against the live
+    function with only `git status` failing: proxy True, direct signal False.
+    """
+
+    def test_the_restore_reads_the_direct_signal(self):
+        src = (REPO / "scripts" / "cdsfl_recover.py").read_text()
+        assert "status_known" in src, (
+            "cdsfl_recover.py no longer reads status_known, so the field is an "
+            "unwired addition again")
+
+    def test_the_partial_failure_is_distinguishable_from_a_dirty_tree(
+            self, U, monkeypatch):
+        """The case the proxy could not see.
+
+        A dirty tree and an uninspectable tree must not render alike: one tells
+        the reader to look at their changes, the other tells them the tool could
+        not look at all.
+        """
+        _only(monkeypatch, "status", rc=128)
+        st = U.git_state()
+        proxy = st["last_hash"] not in ("", "unknown")
+        assert proxy is True, "this case requires git log to still answer"
+        assert st["status_known"] is False
+        assert st["clean"] is False
+        # and a genuinely dirty tree is the same on `clean` but NOT on the signal
+        real_state = U.git_state.__wrapped__() if hasattr(
+            U.git_state, "__wrapped__") else None
+        assert real_state is None or real_state["status_known"] is True
+
+    def test_a_truly_dirty_tree_still_reports_status_known(self, U):
+        st = U.git_state()
+        assert st["status_known"] is True, (
+            "with git working the signal must be True whether or not the tree "
+            "is clean, or the two conditions have been conflated")

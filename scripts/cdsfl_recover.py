@@ -843,7 +843,16 @@ def main() -> None:
     print(f"  Last commit: {gs['last_hash']} {gs['last_message']}")
     print(f"  Committed: {gs['last_date']}")
     print(f"  Remote: {gs['remote_sync']}")
-    if git_ok:
+    # `status_known` is the DIRECT signal, added 2026-10-07, and it replaces the
+    # `git_ok` PROXY for this one line. The proxy reads `last_hash`, so it misses
+    # the case where `git log` answers and only `git status` fails: `git_ok` is
+    # then True, and before `git_state` read the status return code this branch
+    # printed "Working tree: clean" for a tree it had not managed to inspect.
+    # Measured 2026-10-07 by failing only `git status` against the live function.
+    # The proxy is KEPT for the other lines, where a missing commit is what it
+    # genuinely detects.
+    status_known = gs.get("status_known", git_ok)
+    if status_known:
         print(f"  Working tree: {'clean' if gs['clean'] else 'DIRTY'}")
     else:
         print("  Working tree: UNKNOWN — 'clean' here would be a guess, because a")
