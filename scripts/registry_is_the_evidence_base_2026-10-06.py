@@ -128,8 +128,15 @@ def main(argv=None) -> int:
           f"{100*k/n:.4f}%  Wilson [{100*lo:.4f}%, {100*hi:.4f}%]")
     print(f"  runs already holding a series with NO entries behind it: "
           f"{len(series_but_no_entries)}")
-    for r in series_but_no_entries[:5]:
+    _SHOWN = 5
+    for r in series_but_no_entries[:_SHOWN]:
         print(f"      {r}")
+    # A list cut to N under a heading that reads as complete is a silent
+    # falsehood, so the remainder is NAMED rather than dropped. Guarded by
+    # bench/tests/test_operational_scripts.py::TestTruncatedListsStateTheirRemainder.
+    if len(series_but_no_entries) > _SHOWN:
+        print(f"      ... and {len(series_but_no_entries) - _SHOWN} more not shown "
+              f"(of {len(series_but_no_entries)} total)")
     print("  If the series live OUTSIDE the registry, clearing the registry leaves")
     print("  every stored number standing with nothing behind it. The run would")
     print("  still report a gamma it can no longer derive.")

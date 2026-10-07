@@ -113,15 +113,46 @@ class TestTheLiveConfigurationIsWhatWeThinkItIs:
         assert d["seats_never_asked"] > 0, (
             "with no truncation the question is sequencing, not selection")
 
-    def test_a_free_seat_is_missing_from_the_ladder(self, M):
-        """Recorded as a FACT, not asserted as desirable.
+    def test_every_free_seat_is_now_on_the_ladder(self, M):
+        """UPDATED 2026-10-07 after the founder ruled: *"Then yes we should add it."*
 
-        `fable` is free and is not a rung. Whether it should be is the founder's
-        ruling; this test fails if the fact changes, so the note cannot go stale.
+        The previous form asserted `fable` was ABSENT, and it failed the moment
+        the ladder changed -- which is what it was written to do. The fact has
+        moved, so the assertion moves with it rather than being deleted: no free
+        seat may now be missing from the ladder.
         """
         d = M.claim_the_cap_truncates_the_ladder()
-        assert d["free_seats_absent_from_the_ladder"] == ["fable"], d
-        assert d["free_rungs"] == ["CC2"], d
+        assert d["free_seats_absent_from_the_ladder"] == [], d
+        assert d["free_rungs"] == ["CC2", "Fable"], d
+        assert d["ladder_length"] == 6, d
+
+    def test_the_added_rung_displaces_no_capped_dispatch(self, M):
+        """Adding a 6th rung must not change which 2 seats a capped run tries.
+
+        Fable sits LAST because its lower confidence bound on resolve-rate is
+        0.0000 on 0 attempts. An early placement would burn a capped rung on a
+        seat no config declares, since `resolve_fn` returns "" for an undeclared
+        label while `route` still consumes that slice position.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "rt_disp", REPO / "bench" / "routing.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["rt_disp"] = mod
+        spec.loader.exec_module(mod)
+        ladder = list(mod.DEFAULT_FALSIFIER_STRENGTH)
+        assert ladder[-1] == "Fable", f"Fable must sort last on 0 evidence: {ladder}"
+        seen = []
+
+        def resolve(model, _f):
+            seen.append(model)
+            return "assert False"
+
+        mod.route({"id": "D", "description": "d", "model": "Nobody",
+                   "falsifier_code": ""},
+                  ladder, [], resolve, lambda _c: "REFUTED", lambda _a, _b: 0.0,
+                  max_rungs=2, self_rung_enabled=False)
+        assert seen == ladder[:2] == ["Codex", "CC2"], seen
 
     def test_free_seats_are_read_from_live_code_not_a_log_copy(self, M):
         d = M.claim_the_cap_is_live()

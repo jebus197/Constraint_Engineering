@@ -41,13 +41,35 @@ def _run_git_rc(*args: str, cwd: Optional[Path] = None) -> tuple[int, str]:
     as a number is a zero — which is how a failed `rev-list` used to render
     as "up to date".
     """
-    result = subprocess.run(
-        ["git", *args],
-        cwd=cwd or repo_root(),
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=cwd or repo_root(),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        # A git call that could not RUN is reported exactly as one that RAN AND
+        # FAILED: a non-zero code and no stdout. Callers already handle that --
+        # `git_state` degrades `remote_sync` to a sensible string on a non-zero
+        # fetch -- so this closes a gap rather than adding a behaviour.
+        #
+        # MEASURED 2026-10-07, by substituting each failure mode into the live
+        # function: a fetch exiting non-zero SURVIVED, while `TimeoutExpired`
+        # (a flaky link reaching the 30 s cap) and `OSError` (interface down)
+        # both CRASHED with a traceback. `git_state` is called by 3 live
+        # scripts -- cdsfl_recover.py (`rs`), cdsfl_sv.py (`sv`) and
+        # cdsfl_qc.py (`qc`) -- all of which fetch unconditionally, so recovery
+        # was least available in the circumstance that makes it necessary.
+        # 11 of the 25 failures on the 2026-10-07 full board were this 1 cause,
+        # 44.0000% of them, Wilson [26.6656%, 62.9327%]; the same 10 tests pass
+        # with the link up, which is what establishes the cause as
+        # network-conditional rather than a code regression.
+        #
+        # The pattern matches `test_count()` below, which has degraded on these
+        # same 3 exceptions since it was written.
+        return 1, ""
     return result.returncode, result.stdout.strip()
 
 
@@ -61,9 +83,30 @@ def git_state() -> dict[str, Any]:
     root = repo_root()
 
     branch = _run_git("branch", "--show-current", cwd=root)
-    status_raw = _run_git("status", "--porcelain", cwd=root)
-    uncommitted = [line.strip() for line in status_raw.splitlines() if line.strip()]
-    is_clean = len(uncommitted) == 0
+
+    # A STATUS THAT COULD NOT RUN MUST NEVER READ AS A CLEAN TREE.
+    # `git status --porcelain` prints NOTHING for a clean tree, so an empty
+    # stdout from a FAILED call is byte-identical to success on a clean tree.
+    # Measured 2026-10-07 with git made unreachable: `clean` came back True and
+    # `uncommitted` empty, so "I cannot see the tree" rendered as "the tree is
+    # clean" -- a failure that does not look like a failure, which is the class
+    # this project has lost a convergence to before.
+    #
+    # The return code is the only thing that separates the two, so it is read
+    # here rather than inferred from the output. On failure the state is
+    # reported as NOT clean, under `p-pass-ambiguity-default`: an unverifiable
+    # tree is treated as the unsafe case, so `sv` refuses rather than saving
+    # against a tree it could not inspect. The type of `clean` is unchanged, so
+    # no caller has to learn a third value.
+    st_rc, status_raw = _run_git_rc("status", "--porcelain", cwd=root)
+    if st_rc != 0:
+        uncommitted = ["!! git status could not run -- WORKING TREE STATE UNKNOWN"]
+        is_clean = False
+        status_known = False
+    else:
+        uncommitted = [line.strip() for line in status_raw.splitlines() if line.strip()]
+        is_clean = len(uncommitted) == 0
+        status_known = True
 
     last_log = _run_git("log", "--oneline", "-1", cwd=root)
     last_hash = last_log.split()[0] if last_log else "unknown"
@@ -111,6 +154,7 @@ def git_state() -> dict[str, Any]:
 
     return {
         "branch": branch,
+        "status_known": status_known,
         "clean": is_clean,
         "uncommitted": uncommitted,
         "last_hash": last_hash,

@@ -58,7 +58,31 @@ from typing import Callable, Optional, Sequence
 # Run `python3 scripts/competence_provenance.py <report.json>` first. It exits 2 and
 # prints UNSAFE TO RANK ON when a model's confirmations rest on falsifiers that never
 # read the target.
-DEFAULT_FALSIFIER_STRENGTH = ("Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek")
+# FABLE ADDED 2026-10-07 ON THE FOUNDER'S RULING: *"Then why not name the model?
+# Is it Fable? Then yes we should add it."* It is a FREE seat on `claude_cli` and
+# was the only seat in the panel roster absent from this ladder.
+#
+# ITS POSITION IS DERIVED FROM EVIDENCE, NOT CHOSEN BY NAME, which is the whole
+# point of his standing rule that *"the only thing that should impact on
+# capability is measured capability"*. Fable has 0 attributed falsifiers in the
+# archive, so its lower confidence bound on resolve-rate is 0.0000 and it sorts
+# LAST. It climbs as it earns attempts -- a seat needs 12 consecutive successes
+# before its Wilson lower bound can pass a seat sitting at 60 of 70, which is the
+# arithmetic form of his guard that *"simply counting when a model is successful"*
+# is not an improvement in capability.
+#
+# PLACING IT LAST IS ALSO THE SAFE PLACEMENT, and that is measured rather than
+# assumed. `resolve_fn` returns "" for any label absent from the config's own
+# `models` roster, and the rung is still CONSUMED -- `route` slices
+# `list(rungs)[:_budget]`. No config declares Fable today (46 CC2, 46 Codex,
+# 46 ChatGPT, 45 Gemini, 45 DeepSeek, 0 Fable across the 47 files), so an early
+# placement would burn one of the 2 capped rungs on a seat that cannot answer.
+# Last, it costs nothing under the cap and is reached under exhaustion.
+#
+# THE OTHER HALF IS NOT DONE AND IS THE FOUNDER'S TO RULE ON: until a config
+# lists Fable in `models`, this rung is reachable only where a roster declares
+# it. Changing 23 routed configs alters what real experiments dispatch.
+DEFAULT_FALSIFIER_STRENGTH = ("Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek", "Fable")
 
 
 @dataclass
