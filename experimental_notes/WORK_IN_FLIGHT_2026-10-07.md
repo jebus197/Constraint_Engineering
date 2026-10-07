@@ -20,7 +20,7 @@ His instruction: run `sv`, then work his `#` responses, then everything else sti
 | 4 | Boot check outstanding repairs | Fix if not already done | OPEN |
 | 5 | Network-degradation lessons into the runners | Incorporate | OPEN |
 | 6 | Free-seat contention | Fix if it can be fixed | OPEN |
-| 7 | Remaining suite failures | Do the work | OPEN — 4 confirmed |
+| 7 | Remaining suite failures | Do the work | **DONE** — all 4 fixed at root cause |
 | 8 | 6 switches enabled nowhere | Investigate and do the work | OPEN |
 | 9 | Provenance denominator | Fix it | **DONE** — filer's failure counted; 2 of 11 ranks move |
 | 10 | ITC left unswitchable, reported when it fires | Agreed | ACCEPTED, no code owed |

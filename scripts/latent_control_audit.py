@@ -284,6 +284,8 @@ def _simulated_run_dirs() -> set:
     """
     sim: set = set()
     for fp in LOGS.glob("**/*.json"):
+        if _is_seat_scratch(fp):
+            continue
         try:
             d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
         except Exception:                                 # noqa: BLE001
@@ -291,6 +293,29 @@ def _simulated_run_dirs() -> set:
         if isinstance(d, dict) and _is_simulated(d, fp):
             sim.add(fp.parent)
     return sim
+
+
+#: Path segments that mark a file as SEAT-WRITTEN SCRATCH rather than an archive run.
+#:
+#: ADDED 2026-10-07. The audit globbed `bench/logs/**/*.json` and so walked into
+#: `sandbox_harvest/`, where the harvester preserves whatever a panel seat wrote
+#: inside its own sandbox. One such file --
+#: `fingerprint_ladder_review_2026-10-05/sandbox_harvest/cc2/attempt-1/files/
+#: .scratch/ps/synthetic_run/x_report.json` -- is a seat's SYNTHETIC report, written
+#: by a model to test something, and the audit admitted it as an archive report. Its
+#: directory name carries no timestamp, so it had no recorded provenance, and a tool
+#: whose entire purpose is to refuse inferred dates was reporting an UNKNOWN age it
+#: had created for itself.
+#:
+#: The harvest is deliberately preserved and must not be deleted -- it is often the
+#: only copy of what a seat produced. It simply is not the archive, and a seat's
+#: synthetic fixture is not a sighting of a control firing in the field.
+_SEAT_SCRATCH_SEGMENTS = ("sandbox_harvest", ".scratch", "seat_evidence")
+
+
+def _is_seat_scratch(fp) -> bool:
+    """True for a file preserved FROM a seat's sandbox rather than written BY a run."""
+    return any(seg in _SEAT_SCRATCH_SEGMENTS for seg in fp.parts)
 
 
 #: Date formats that appear in this archive's run directory names. Measured
@@ -371,6 +396,8 @@ def _archive() -> tuple[list, int]:
     # `_simulated_run_dirs` for the 4 files this closes and what they cost.
     sim_dirs = _simulated_run_dirs()
     for fp in LOGS.glob("**/*.json"):
+        if _is_seat_scratch(fp):
+            continue
         # EXCLUDE SIMULATED RUNS FROM THE WITNESS SET.
         #
         # THE LINE THIS REPLACES WAS A DEAD CONDITIONAL -- `if <cond>: pass` --

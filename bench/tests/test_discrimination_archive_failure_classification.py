@@ -123,3 +123,67 @@ def test_classifier_keeps_the_two_measured_unscored_populations_separate():
     assert no_applicable == 67
     assert errored == 30
     assert counts["search_block_matches_no_stored_target_version"] == 9
+
+
+class TestAbbreviatedShasAreMatchedByPrefix:
+    """AN ABBREVIATED SHA'S LENGTH IS A PROPERTY OF THE REPOSITORY, NOT THE COMMIT.
+
+    MEASURED 2026-10-07. `_versions` reads shas from `git log --format=%h`, which
+    git abbreviates to whatever length the repository currently needs for
+    uniqueness. All 97 archived rows store a 7-character `baseline_sha` from when
+    they were written; this clone has since grown enough that git emits 8, so
+    `83dd7ab` is now reported as `83dd7ab4`.
+
+    Every equality comparison therefore failed. `baseline` fell back to the empty
+    string, every archived proposed fix "did not apply", and 30 rows collapsed from
+    their 2 real causes (17 + 13) into the single coarse
+    `errored_route_had_no_effective_patch`. Nothing about the archive or the commits
+    changed: the repository crossed the threshold where git lengthens its
+    abbreviation, and a comparison against an auto-sized value silently inverted.
+
+    The 2 tests above would have gone green again on their own the moment someone
+    re-measured EXPECTED_CAUSE_COUNTS against the broken classification, which is
+    how a defect becomes a baseline. These hold the mechanism instead.
+    """
+
+    def test_a_shorter_stored_sha_still_finds_its_version(self):
+        """The exact condition that broke: stored 7, emitted 8."""
+        import importlib.util as _iu
+        import sys as _sys
+        spec = _iu.spec_from_file_location(
+            "dca_prefix_probe", REPO / "scripts/discrimination_control_archive.py")
+        m = _iu.module_from_spec(spec)
+        _sys.modules["dca_prefix_probe"] = m
+        spec.loader.exec_module(m)
+        versions = m._versions("bench/cdsfl_registry/composer.py")
+        assert versions, "no stored versions, so this probe measures nothing"
+        full = versions[0][0]
+        assert len(full) >= 7, full
+        short = full[:7]
+        found = next((txt for sha, txt in versions
+                      if short and (sha.startswith(short) or short.startswith(sha))),
+                     None)
+        assert found is not None, (
+            f"a 7-character stored sha {short!r} does not match the emitted "
+            f"{full!r}; abbreviated shas must be compared by prefix")
+
+    def test_the_emitted_length_is_not_assumed(self):
+        """ANTI-REGRESSION. If %h were pinned to 7 the defect would hide again, and
+        the next growth step would reopen it. The guard must hold whatever git emits."""
+        import subprocess as _sp
+        out = _sp.run(["git", "log", "--all", "--format=%h", "-5", "--",
+                       "bench/cdsfl_registry/composer.py"],
+                      cwd=REPO, capture_output=True, text=True).stdout.split()
+        assert out, "no commits touch the probe target"
+        lengths = {len(s) for s in out}
+        assert lengths, "no shas emitted"
+        # The point is not WHICH length git picks; it is that the classifier must
+        # not depend on it. Recorded so a future reader sees what this clone emits.
+        assert all(4 <= n <= 40 for n in lengths), lengths
+
+    def test_the_classifier_matches_by_prefix_not_equality(self):
+        src = (REPO / "scripts/discrimination_control_archive.py").read_text(
+            encoding="utf-8")
+        assert "sha.startswith(_want) or _want.startswith(sha)" in src, (
+            "the baseline lookup no longer matches abbreviated shas by prefix; an "
+            "equality test silently empties every baseline when git lengthens %h")

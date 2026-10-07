@@ -32,6 +32,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 import pytest
 
@@ -90,18 +91,61 @@ class TestTheCanonicalTreeIsNotWritable:
             "README.md changed under a confined seat")
 
     def test_git_cannot_write_the_canonical_config(self):
-        """The 2026-09-06 escape edited TRACKED FILES. git must be refused too."""
-        with tempfile.TemporaryDirectory() as box:
-            r = _run_confined(
-                f"git -C '{REPO}' config --local cdsfl.escapeprobe 1",
-                pathlib.Path(box))
-        combined = (r.stdout + r.stderr).lower()
-        assert "not permitted" in combined or r.returncode != 0, combined[:300]
-        got = subprocess.run(
-            ["git", "-C", str(REPO), "config", "--local", "--get",
-             "cdsfl.escapeprobe"], capture_output=True, text=True)
-        assert got.stdout.strip() == "", (
-            "a confined seat wrote the canonical git config")
+        """The 2026-09-06 escape edited TRACKED FILES. git must be refused too.
+
+        THE PROBE KEY IS UNIQUE PER RUN, AND THAT IS A REPAIR RATHER THAN A
+        DECORATION. It was the fixed key `cdsfl.escapeprobe`, and the test never
+        removed it. So a single historical lapse wrote a value that stayed in
+        `.git/config` and failed this test on EVERY later run, for ever, while the
+        confinement itself was working perfectly.
+
+        Measured 2026-10-07: `cdsfl.escapeprobe` was present with value `1` and
+        `.git/config` was last written on 2026-10-04 -- 3 days earlier -- while a
+        live probe in the same minute was refused with "could not lock config file
+        .git/config: Operation not permitted", exit 255, and left nothing behind.
+        The guard was reporting a 3-day-old artefact of its own making as a current
+        containment breach, which is the most expensive kind of false alarm: it
+        makes a working control look broken.
+
+        A unique key cannot collide with residue, so the assertion is about THIS
+        run. The value is removed afterwards either way, so the test stops
+        accumulating state in the repository it is checking.
+        """
+        key = f"cdsfl.escapeprobe{int(time.time() * 1000)}"
+        try:
+            with tempfile.TemporaryDirectory() as box:
+                r = _run_confined(
+                    f"git -C '{REPO}' config --local {key} 1",
+                    pathlib.Path(box))
+            combined = (r.stdout + r.stderr).lower()
+            assert "not permitted" in combined or r.returncode != 0, combined[:300]
+            got = subprocess.run(
+                ["git", "-C", str(REPO), "config", "--local", "--get", key],
+                capture_output=True, text=True)
+            assert got.stdout.strip() == "", (
+                f"a confined seat wrote the canonical git config ({key})")
+        finally:
+            subprocess.run(["git", "-C", str(REPO), "config", "--local",
+                            "--unset", key], capture_output=True, text=True)
+
+    def test_the_probe_would_be_visible_if_it_landed(self):
+        """ANTI-VACUITY. The assertion above passes when the key is absent, and a
+        key is absent when nothing wrote it OR when the read is broken. This writes
+        one UNCONFINED and confirms the same read sees it, so an always-empty read
+        cannot masquerade as containment."""
+        key = f"cdsfl.readcheck{int(time.time() * 1000)}"
+        try:
+            subprocess.run(["git", "-C", str(REPO), "config", "--local", key, "1"],
+                           capture_output=True, text=True, check=True)
+            got = subprocess.run(
+                ["git", "-C", str(REPO), "config", "--local", "--get", key],
+                capture_output=True, text=True)
+            assert got.stdout.strip() == "1", (
+                "the read used by the containment assertion cannot see a value "
+                "that IS there, so that assertion proves nothing")
+        finally:
+            subprocess.run(["git", "-C", str(REPO), "config", "--local",
+                            "--unset", key], capture_output=True, text=True)
 
 
 class TestWhatASeatMustStillBeAbleToDo:

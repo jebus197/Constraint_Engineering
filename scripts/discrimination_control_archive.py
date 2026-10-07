@@ -388,7 +388,29 @@ def classify_route_a_failures(record_path: str | pathlib.Path = OUT) -> dict:
         fix = (entry.get("proposed_fix") or "").strip()
         blocks = _fix_blocks(fix)
         versions = _versions(target)
-        baseline = next((txt for sha, txt in versions if sha == row.get("baseline_sha")), "")
+        # MATCH ABBREVIATED SHAs BY PREFIX, NEVER BY EQUALITY.
+        #
+        # THE BUG THIS FIXES, measured 2026-10-07. `_versions` reads shas from
+        # `git log --format=%h`, and %h is ABBREVIATED TO WHATEVER LENGTH THE
+        # REPOSITORY CURRENTLY NEEDS for uniqueness. All 97 archived rows store a
+        # 7-character `baseline_sha` from when they were written; this clone has
+        # since grown enough that git emits 8 (`83dd7ab` is now `83dd7ab4`). Every
+        # equality therefore failed, `baseline` fell back to the empty string, every
+        # proposed fix "did not apply", and 30 rows collapsed from their 2 real
+        # causes into `errored_route_had_no_effective_patch`.
+        #
+        # Nothing about the archive or the commits changed: the repository crossed
+        # the threshold where git lengthens its abbreviation, and a comparison
+        # against an auto-sized value silently inverted. Verified by execution --
+        # `_apply_fix` applies the same fix to the same baseline cleanly
+        # (60,331 -> 60,755 characters) when the baseline is actually found.
+        #
+        # A prefix test is the correct comparison for abbreviated shas and survives
+        # any future lengthening in either direction.
+        _want = (row.get("baseline_sha") or "").strip()
+        baseline = next(
+            (txt for sha, txt in versions
+             if _want and (sha.startswith(_want) or _want.startswith(sha))), "")
         cause = ""
         detail = ""
 
