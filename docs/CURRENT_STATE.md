@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 7 October 2026 14:39 BST (2026-10-07T14:39:03+01:00)
+Generated: 7 October 2026 14:41 BST (2026-10-07T14:41:40+01:00)
 
 ---
 
@@ -18,20 +18,19 @@ Generated: 7 October 2026 14:39 BST (2026-10-07T14:39:03+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `20ec400a` the try-order question has two objectives, and no single key optimises both
-- **Committed:** 2026-10-07 14:34:29 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 1
+- **Last commit (the PARENT of the commit containing this file):** `955fdf89` sv: the try-order tension is not dissolved because it is two questions, and both of my own predicates were wrong
+- **Committed:** 2026-10-07 14:39:03 +0100
+- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**10349 tests collected** at 7 October 2026 14:39 BST, HEAD `20ec400a` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**10349 tests collected** at 7 October 2026 14:41 BST, HEAD `955fdf89` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -61,6 +60,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `955fdf89 sv: the try-order tension is not dissolved because it is two questions, and both of my own predicates were wrong`
 - `20ec400a the try-order question has two objectives, and no single key optimises both`
 - `1a4b0c07 the panel overturned the brief's own evidence: 68.65% of archived falsifiers are misclassified`
 - `e8d67c96 a measured number per model fails the founder's test exactly as cheapest-first does`
@@ -70,4 +70,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `46617574 the runner now serialises seats that share one credential, as the panel already did`
 - `e3d6a8e9 the last 4 suite failures, each fixed at its root cause rather than re-baselined`
 - `462b2775 the filer's failure now counts in its own denominator, so an empty record stops reading as a perfect one`
-- `e228a214 the ladder climbs 4 measured models and its last rung points back at the source`

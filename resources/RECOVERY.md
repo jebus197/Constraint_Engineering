@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 7 October 2026 14:39 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 7 October 2026 14:41 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -40,7 +40,7 @@ Every proposal so far answered the SEQUENCING question and left the SELECTION qu
 
 **★ 2 PREDICATES IN CC1's OWN SCRIPT WERE WRONG, both failing toward a comfortable answer.** It globbed `bench/configs`, a directory that has never existed, and reported "0 config files" — indistinguishable from "no config pins the cap"; the real configs are in `bench/expNN_configs/`, and **the denominator is 47, not the 49 quoted to the founder earlier the same day**. It also discovered `FREE_SEATS` by walking `bench/**/*.py` with last-match-wins and landed on a **sandbox harvest copy under `bench/logs/`** rather than live code. Both are the `my_instruments_are_the_weak_point` shape: check the predicate before the result. Both are recorded in the module docstring and both are now guarded.
 
-**THE 4 STANDING SUITE FAILURES ARE CLOSED.** The targeted re-run of the live archive provenance audit, the 2 discrimination-archive classification tests and the canonical-config write guard returns **35 passed, 0 failed in 52.93 s**, against the 4 failed / 27 passed recorded in the 11:52 block. Pre-commit subset at `20ec400a`: 501 passed in 42.07 s. **A subset is not a board** — the last complete board is the 2026-10-06 figure of 10,210 passed, 26 failed, 20 skipped in 3523.73 s, and a fresh full board was running when this block was written.
+**THE 4 STANDING SUITE FAILURES ARE CLOSED.** The targeted re-run of the live archive provenance audit, the 2 discrimination-archive classification tests and the canonical-config write guard returns **35 passed, 0 failed in 52.93 s**, against the 4 failed / 27 passed recorded in the 11:52 block. Re-run it with `python3 -m pytest bench/tests/test_archive_age_is_provenance_not_mtime_2026-09-29.py bench/tests/test_discrimination_archive_failure_classification.py bench/tests/test_seat_cannot_write_the_canonical_tree_2026-10-01.py -q`, and the pre-commit subset with `python3 -m pytest bench/tests/ -q` for the full board. Pre-commit subset at `20ec400a`: 501 passed in 42.07 s. **A subset is not a board** — the last complete board is the 2026-10-06 figure of 10,210 passed, 26 failed, 20 skipped in 3523.73 s, and a fresh full board was running when this block was written.
 
 **ALSO SETTLED EARLIER TODAY.** `competence_provenance.falsifier_style` misclassifies **740 of 1078 archived falsifiers**, 68.6456%, Wilson [65.8141%, 71.3448%], as detached because it tests for file-opening while the directive requires an IMPORT; only 20 are genuinely detached. This invalidated CC1's earlier "nothing can be ranked" claim. The obvious repair is also wrong: on a PROSE target an import reaches nothing, so crediting imports would inflate exactly the Exp 55 case the founder's 2026-08-23 warning names. **One rule cannot serve both target types** — open, and the classifier repair is unbuilt.
 
