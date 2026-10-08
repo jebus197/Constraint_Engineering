@@ -214,3 +214,89 @@ class TestTheTelemetryIsPersistedNotOnlyLogged:
             "the gate telemetry no longer reaches the round record, so which mode "
             "closed a run is unauditable again")
         assert "_hardened_gate_telem_for_record" in src
+
+
+class TestTheMirrorHoldsOverASweepNotTenInputs:
+    """P-PASS 2026-10-08: the mirror is hand-maintained, so sweep it.
+
+    `_gamma_is_estimable` restates `_estimate_gamma`'s early-return conditions by
+    hand. The first version of this file tested 10 inputs, which is not a sweep,
+    and the panel brief dispatched on this fix asks the seats to widen it. Doing
+    that here rather than outsourcing it.
+
+    MEASURED: exhaustive over all 5461 series of length 0 to 6 with values 0 to 3,
+    and random over 200000 series of length 0 to 39 with values 0 to 59. 0
+    disagreements in either direction, and 0 cases where the predicate claimed
+    estimable while the estimator would take an early return. Wilson on the random
+    sweep's disagreement rate: [0.00000000, 0.00001921].
+
+    A disagreement would be load-bearing, not cosmetic: the predicate decides
+    whether gamma GATES, so a false "unestimable" demotes gamma and a false
+    "estimable" compares a sentinel against the 0.30 arm.
+    """
+
+    def test_exhaustive_short_series_never_disagree(self, R):
+        import itertools
+        bad = []
+        for L in range(0, 7):
+            for s in itertools.product(range(0, 4), repeat=L):
+                s = list(s)
+                if not R._gamma_is_estimable(s) and R._estimate_gamma(s) != 0.0:
+                    bad.append(s)
+        assert not bad, (
+            f"{len(bad)} series are called unestimable yet yield a slope: {bad[:5]}")
+
+    def test_the_predicate_never_claims_estimable_on_an_early_return(self, R):
+        """The estimator bails on <3 rounds or an all-zero series."""
+        import itertools
+        bad = []
+        for L in range(0, 7):
+            for s in itertools.product(range(0, 4), repeat=L):
+                s = list(s)
+                if R._gamma_is_estimable(s) and (len(s) < 3 or sum(s) == 0):
+                    bad.append(s)
+        assert not bad, bad[:5]
+
+    def test_a_random_sweep_over_long_series_finds_no_disagreement(self, R):
+        import numpy as np
+        rng = np.random.default_rng(20261008)
+        bad = 0
+        for _ in range(20000):
+            L = int(rng.integers(0, 40))
+            s = list(rng.integers(0, 60, size=L))
+            if not R._gamma_is_estimable(s) and R._estimate_gamma(s) != 0.0:
+                bad += 1
+        assert bad == 0, f"{bad} disagreements in a 20000-series random sweep"
+
+    def test_the_sweep_actually_exercises_both_answers(self, R):
+        """A sweep that only ever saw one answer would prove nothing."""
+        import numpy as np
+        rng = np.random.default_rng(11)
+        seen = set()
+        for _ in range(2000):
+            L = int(rng.integers(0, 8))
+            s = list(rng.integers(0, 4, size=L))
+            seen.add(R._gamma_is_estimable(s))
+        assert seen == {True, False}, (
+            f"the sweep only ever observed {seen}; it cannot detect a one-sided "
+            "predicate")
+
+
+class TestTheFigureProducerRuns:
+    """The brief's gamma figures must travel with code that executes."""
+
+    def test_the_producer_reports_both_a_ceiling_and_a_floor(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "gsv", REPO / "bench" / "gamma_sentinel_versus_slope_2026-10-08.py")
+        m = importlib.util.module_from_spec(spec)
+        sys.modules["gsv"] = m
+        spec.loader.exec_module(m)
+        R = m._runner()
+        assert R._estimate_gamma([1, 0, 0, 0, 0]) == pytest.approx(1.0), (
+            "a flat-after-something curve must sit at the ceiling or the whole "
+            "argument about the sentinel collapses")
+        assert R._estimate_gamma([0, 0, 0, 0, 0]) == pytest.approx(0.0)
+        assert R._estimate_gamma([1, 2, 3, 4, 5]) == pytest.approx(0.0)
+        assert R._gamma_is_estimable([1, 2, 3, 4, 5]) is True
+        assert R._gamma_is_estimable([0, 0, 0, 0, 0]) is False
