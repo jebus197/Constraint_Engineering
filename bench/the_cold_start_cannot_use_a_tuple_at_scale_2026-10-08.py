@@ -87,14 +87,29 @@ def claim_cold_start_has_a_measured_price() -> dict:
 
 def claim_the_tuple_coverage_collapses(sizes=(6, 7, 70, 700, 7000)) -> dict:
     """The share of the roster a 6-name tuple can order."""
+    # NO CONFIDENCE INTERVAL HERE, AND THE FIRST VERSION WRONGLY HAD ONE.
+    # Caught by the cc2 seat, 2026-10-08: *"the brief applies Wilson intervals to
+    # three deterministic quantities ... An interval on a quantity with no
+    # estimator reads as measured uncertainty to the next reader and is nobody's
+    # uncertainty."* It is right. A 6-name tuple ordering 6 of 70 seats is EXACT
+    # RATIONAL ARITHMETIC -- 6/70 = 3/35 -- with no sample, no estimator and no
+    # uncertainty to report. The share is given as an exact fraction instead, so a
+    # later reader cannot mistake arithmetic for a measurement.
+    #
+    # WHERE AN INTERVAL DOES STILL BELONG, so this correction is not overapplied:
+    # on genuinely MEASURED rates -- the intra-round correlation, the per-seat
+    # per-round critical rate, the share of archived routing records that had more
+    # than 1 rung available. Those are samples of observed runs and their
+    # intervals stand.
+    from fractions import Fraction
     out = {}
     for n in sizes:
         ordered = min(TUPLE_LEN, n)
-        lo, hi = wilson(ordered, n)
         out[n] = {"ordered_by_the_tuple": ordered,
+                  "share_exact": str(Fraction(ordered, n)),
                   "share": round(ordered / n, 6),
                   "share_pct": round(100 * ordered / n, 4),
-                  "wilson_on_the_share": (round(lo, 6), round(hi, 6)),
+                  "is_a_measurement": False,
                   "ordered_by_nothing_but_input_order": n - ordered}
     return out
 

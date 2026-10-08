@@ -1,0 +1,152 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 16743,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /home/user 2>/dev/null; pwd; ls\", \"description\": \"Locate repo root\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/the_*2026-10-08.py\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/routing.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py bench/routing.py\", \"description\": \"Line counts of artefacts\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 600 python3 bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py 2>&1 | tail -40\", \"description\": \"Run promotion ladder artefact\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/routing.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py 2>&1 | tail -45\", \"description\": \"Run promotion ladder artefact\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py 2>&1 | tail -30\", \"description\": \"Run cold-start artefact\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport re,collections\\ns=open('bench/experiment_11_orchestrator.py').read()\\nhits=re.findall(r'model_id\\\\s*[=:]\\\\s*[\\\"\\\\']([^\\\"\\\\']+)[\\\"\\\\']',s)\\nprint(\\\"assigned-literal occurrences:\\\",len(hits))\\nc=collections.Counter(hits)\\nprint(\\\"distinct:\\\",len(c))\\nfor k,v in c.items(): print(f\\\"  {k}: {v}\\\")\\nprint(\\\"total 'model_id' tokens:\\\", len(re.findall(r'\\\\bmodel_id\\\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport math\\nfrom scipy.stats import binom\\nZ=1.959963984540054\\ndef wilson(k,n,z=Z):\\n    if n==0: return (0.0,0.0)\\n    p=k/n; d=1+z*z/n; c=(p+z*z/(2*n))/d\\n    h=(z/d)*math.sqrt(p*(1-p)/n+z*z/(4*n*n)); return (max(0.,c-h),min(1.,c+h))\\ndef kstar(n,f,z=Z):\\n    for k in range(n+1):\\n        if wilson(k,n,z)[0]>f: return k\\n    return None\\n\\nR=5; beta=0.05; f=0.50"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport math\\nfrom scipy.stats import binom\\nimport numpy as np\\nZ=1.959963984540054\\ndef wilson(k,n,z=Z):\\n    if n==0: return (0.0,0.0)\\n    p=k/n; d=1+z*z/n; c=(p+z*z/(2*n))/d\\n    h=(z/d)*math.sqrt(p*(1-p)/n+z*z/(4*n*n)); return (max(0.,c-h),min(1.,c+h))\\ndef kstar(n,f,z=Z):\\n    for k in range(n+1):\\n        if wilson(k,n,z)[0]>f: return k\\n    return None\\nR=5\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport math\\nimport numpy as np\\nfrom scipy.stats import binom, norm\\ndef wilson(k,n,z):\\n    if n==0: return (0.0,0.0)\\n    p=k/n; d=1+z*z/n; c=(p+z*z/(2*n))/d\\n    h=(z/d)*math.sqrt(p*(1-p)/n+z*z/(4*n*n)); return (max(0.,c-h),min(1.,c+h))\\ndef kstar(n,f,z):\\n    for k in range(n+1):\\n        if wilson(k,n,z)[0]>f: return k\\n    return None\\nrng=np.random.default_r"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport math, numpy as np\\nfrom scipy.stats import binom\\nZ=1.959963984540054\\ndef wilson(k,n,z):\\n    if n==0: return (0.0,0.0)\\n    p=k/n; d=1+z*z/n; c=(p+z*z/(2*n))/d\\n    h=(z/d)*math.sqrt(p*(1-p)/n+z*z/(4*n*n)); return (max(0.,c-h),min(1.,c+h))\\nrng=np.random.default_rng(11)\\nf=0.50; W=19\\n# DEGRADATION: 100 attempts at 0.90, then true rate drops to 0.30. Attemp"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'N[{9/10}^5, 10]' ; echo \\\"exit=$?\\\"\", \"description\": \"Check wolframscript availability\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/promotion_gate.py\", \"content\": \"\\\"\\\"\\\"Promotion gate for the rung ladder \\u2014 parameters DERIVED, not chosen.\\n\\nWHAT THIS REPLACES. `bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py`\\nmeasures two promotion criteria and reports both as inadequate:\\n\\n  * promote on ONE suc"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"touch bench/.__w 2>&1 && echo WRITABLE && rm bench/.__w; ls -ld . bench; echo \\\"---\\\"; ls /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/\", \"description\": \"Check writability of staged repo\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/promotion_gate.py bench/test_promotion_gate.py 2>&1 | head\", \"description\": \"Check for name collisions\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/promotion_gate.py <<'PYEOF'\\n\\\"\\\"\\\"Promotion gate for the rung ladder - parameters DERIVED, not chosen.\\n\\nWHAT THIS REPLACES. `bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py`\\nmeasures two promotion criteria and reports both as inadequate:\\n\\n  * promote on ONE success per rung: a model with true per-rung resolve rate\\n    p=0.90 reaches the top of a"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/test_promotion_gate.py <<'PYEOF'\\n\\\"\\\"\\\"Falsifiers for bench/promotion_gate.py and for 3 figures in the 2026-10-08 brief.\\n\\nEvery test imports the REAL target module. Nothing is retyped.\\nRun: python3 -m pytest bench/test_promotion_gate.py -q\\n\\\"\\\"\\\"\\nfrom __future__ import annotations\\n\\nimport importlib.util\\nimport math\\nfrom pathlib import Path\\n\\nimport numpy as np\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport re,pathlib\\np=pathlib.Path(\\\"bench/test_promotion_gate.py\\\"); s=p.read_text()\\ns=s.replace('assert abs(a[70][\\\"share\\\"] - 6 / 70) < 1e-12',\\n            'assert abs(a[70][\\\"share\\\"] - 6 / 70) < 1e-6   # artefact rounds to 6dp')\\np.write_text(s)\\nEOF\\ncat > bench/model_identity.py <<'PYEOF'\\n\\\"\\\"\\\"Opaque model identifiers derived from the dispatch-determining "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/stream_idle_timeout.py <<'PYEOF'\\n\\\"\\\"\\\"Harvesting a model's output: an idle timeout on the stream, with a ceiling.\\n\\nOPEN QUESTION 6. The founder's position is that output should be harvested when a\\nmodel is done rather than at an arbitrary wall clock. An idle timeout on the\\nstream implements that: the clock measures time since the last byte, so a slow\\nbut progressing"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np=pathlib.Path(\\\"bench/stream_idle_timeout.py\\\"); s=p.read_text()\\ns=s.replace('''def derive_ceiling(observed_durations, kill_budget: float, z: float = 1.959963984540054) -> float:''',\\n'''def min_samples_for_ceiling(kill_budget: float, z: float = 1.959963984540054) -> int:\\n    \\\"\\\"\\\"Observed legitimate runs needed before a ceiling can be placed bel"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\nfor f,a,b in [(\\\"bench/stream_idle_timeout.py\\\",\\\"At kill_budget=0.05 that is m >= 74; at 0.20, m >= 16.\\\",\\\"At kill_budget=0.05 that is m >= 73; at 0.20, m >= 16.\\\"),\\n              (\\\"bench/test_stream_idle_timeout.py\\\",\\\"assert (m05, m20) == (74, 16)\\\",\\\"assert (m05, m20) == (73, 16)\\\")]:\\n    p=pathlib.Path(f); s=p.read_text(); assert a in s, f; "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib,re\\np=pathlib.Path(\\\"bench/test_rotation_composes_with_the_rung_ladder.py\\\"); s=p.read_text()\\nold_start=s.index(\\\"def _dispatch_counts\\\")\\nold_end=s.index(\\\"def test_rotation_and_the_rung_ladder_act_on_DIFFERENT_axes_so_they_compose\\\")\\nnew='''def _dispatch_counts(order_fn, cap=CAP, early_stop=True, seed=31337):\\n    \\\"\\\"\\\"Attempts per model over N_F"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np=pathlib.Path(\\\"bench/test_rotation_composes_with_the_rung_ladder.py\\\"); s=p.read_text()\\ns=s.replace('''def _rotate(i):\\n    j = i % len(MODELS)\\n    return MODELS[j:] + MODELS[:j]''',\\n'''def _rotate(i, step=1):\\n    \\\"\\\"\\\"Rotation by `step` roster positions per finding.\\n\\n    step=1 is the obvious implementation. step=CAP is the one that actuall"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/test_promotion_gate.py bench/test_model_identity.py bench/test_stream_idle_timeout.py bench/test_rotation_composes_with_the_rung_ladder.py -q 2>&1 | tail -5; echo \\\"=== files ===\\\"; ls -l bench/promotion_gate.py bench/model_identity.py bench/stream_idle_timeout.py bench/test_*.py 2>/dev/null | grep -E \\\"promotion_gate|model_identity|stream_idle|rotation_compose"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'bt[n_,k_,p_]:=N[Sum[Binomial[n,j] p^j (1-p)^(n-j),{j,k,n}],12]; {bt[19,14,9/10], bt[19,14,9/10]^5, bt[10,9,9/10]^5, N[(19/20)^(1/5),12], N[Quantile[NormalDistribution[0,1],1-5/100/172],10]}'; echo \\\"exit=$?\\\"\", \"description\": \"Wolfram cross-check of derived figures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"model_id[ ]*[=:][ ]*[\\\\\\\"']\\\" bench/experiment_11_orchestrator.py | head -14; echo \\\"---\\\"; grep -n \\\"wilson_on_the_share\\\\|for n in range(2, max_n\\\" bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py\", \"description\": \"Line numbers for model_id and cold-start findings\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/experiment_11_orchestrator.py\", \"offset\": 124, \"limit\": 80}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat >> bench/test_model_identity.py <<'PYEOF'\\n\\n\\ndef test_the_briefs_model_id_diagnosis_names_the_WRONG_mechanism():\\n    \\\"\\\"\\\"CORRECTION. The brief says `model_id` \\\"collides\\\". It SPLITS.\\n\\n    The brief's count comes from matching the `model_id` SUFFIX, which also\\n    captures `secondary_model_id`. Separated by field:\\n      * `model_id=`           : 6 occurrences, 6 distinct "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/test_promotion_gate.py bench/test_model_identity.py bench/test_stream_idle_timeout.py bench/test_rotation_composes_with_the_rung_ladder.py -q 2>&1 | tail -3\", \"description\": \"Final full falsifier run\"}"
+    }
+  ],
+  "n_tool_calls": 33,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1001.0,
+  "response": "All 35 falsifiers pass. Wolfram (local Wolfram Engine, exit 0, `Out` values present) independently confirmed `0.9^5`, the n=19/k=14 binomial tail, `(0.95)^(1/5)`, and the derived window z.\n\n## VERDICT\n\n**Sound with repairs.** The three load-bearing design decisions survive falsification: opaque content-addressed identifiers, a rung ladder that *places* rather than excludes, and measured difficulty from resolution depth. Four of the brief's own diagnoses are wrong, and two of its figures are unreachable as stated.\n\n## FINDINGS\n\n**F1 \u2014 OBSERVED \u2014 the brief's central claim \"the obvious repair over-corrects\" is an invalid comparison.** `bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py:71-73`. The bound gate is compared to the one-success rule on true-positive rate alone, while their false-positive rates differ by 8 orders of magnitude (3.125e-02 vs 1.430e-10 at p=0.50). Two points on different ROC curves cannot be ordered. Scanned over n\u226430 and floor\u2208[0.05,0.95], **138 bound-gate parameterisations beat the one-success rule on *both* rates simultaneously**; cheapest is n=4, floor=0.20, k\\*=3 \u2192 TPR 0.764459 vs 0.590490, FPR 2.980e-03 vs 3.125e-02. The defect is the parameterisation, not the mechanism.\n`python3 -m pytest bench/test_promotion_gate.py -k dominates -s`\n\n**F2 \u2014 OBSERVED \u2014 why n=10/floor=0.50 fails specifically.** Same file, `:85-88`. It forces k\\*=9, an implied point-estimate threshold of **exactly 0.90 = the good model's true rate**, putting the test at its own coin-flip point. That is the entire source of 0.736 per rung and 0.21611302 overall.\n\n**F3 \u2014 OBSERVED \u2014 power is non-monotone in n, so no closed form may be used.** `successes_required` steps, so n=16 gives Q(0.90)=0.982996 while n=18 gives 0.971806 \u2014 *more attempts, worse power*. Any derivation must scan.\n\n**F4 \u2014 OBSERVED \u2014 re-testing a fixed-z gate is an uncorrected sequential test.** The absorbing rung must go, but naive re-reading replaces it with a worse fault: a p=0.50 model clears a floor of 0.50 somewhere in 190 attempts with probability **0.6468**, Wilson [0.6318, 0.6614], against a single-shot 0.0318. Bidirectionality without a multiplicity correction admits models on noise.\n\n**F5 \u2014 OBSERVED \u2014 `rungs_tried` is right-censored and is not a difficulty label as claimed.** `bench/routing.py:209` (`_budget = len(list(rungs)) if not max_rungs else max_rungs`) and `:321` (DUPLICATE returns `rungs_tried=0`). Measured against the real `route`: a finding whose true depth is 4 reports `rungs_tried=2` under the default `max_rungs=2`, indistinguishable from one resolved at rung 2. The artefact's claim 4 (`:139-162`) validates this by AST-scanning *field names* \u2014 it never executes `route`, so it would report `records_resolution_depth: True` whatever the values are.\n\n**F6 \u2014 OBSERVED \u2014 Wilson intervals on deterministic quantities, twice.** `bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py:97` puts Wilson [0.039877, 0.174657] on `min(6,N)/N`, which is exactly 6/70 on every evaluation \u2014 no estimator, no sampling variability, no referent. The brief repeats the error on its own figure 5: the starved set under a fixed order and a fixed cap is identical across independent seeds, so \"Wilson [0.5520, 0.9530]\" on 10/12 has no referent either.\n\n**F7 \u2014 OBSERVED \u2014 \"the measured price of cold start\" is a modal estimate with ~50% power.** `:55-62` evaluates separation at `round(p*n)`, the modal outcome. Achieved separation probability at the artefact's own n: **0.507** at gap 0.40 (n=21), **0.474** at gap 0.20 (n=88). The true 80%-power n is 37, 67, 155, 650 \u2014 **1.63\u00d7\u20131.86\u00d7 the reported price**.\n\n**F8 \u2014 OBSERVED \u2014 the brief's `model_id` diagnosis names the wrong mechanism.** `bench/experiment_11_orchestrator.py:131,168,188,192,200`. The brief's \"12 occurrences, 10 distinct, so it collides\" comes from matching the `model_id` *suffix*, which also captures `secondary_model_id`. Separated: `model_id=` is 6 occurrences, **6 distinct \u2014 no collision**; `secondary_model_id=` is 6/5 distinct, and the repeat (`gpt-5.5`, lines 188 and 200) reaches the same api, so it is one model named once, which is correct. The real defect is the opposite \u2014 a **split**: 4 models carried under two strings each (`opus`, `gpt-5.5`, `gemini-3.1-pro-preview`, `deepseek-v4-pro`), so a string-keyed record divides one model's evidence in two. The brief's conclusion (`model_id` cannot key a capability record) stands; its stated reason does not.\n\n**F9 \u2014 OBSERVED \u2014 the brief's figure 5 \"66 or 67\" is unreachable by the obvious rotation.** 800 slots over 12 models is 12\u00b766+8, so the maximally even allocation is 8 models at 67 and 4 at 66. A contiguous window advanced by **1** gives {66, 67, 68}, spread 2. Only advancing the offset by **`cap`** gives {66, 67}. The figure is right about the target and silent about the step size that reaches it.\n\n**F10 \u2014 OBSERVED \u2014 \"identical dispatch cost\" is false under the real routing semantics.** `resolve_via_routing` returns on first CONFIRMED (`bench/routing.py:220`). Attempts *offered* are equal (800 either way); attempts *dispatched* are **579 for 270 resolved under rotation vs 444 for 396 resolved under strength order**. Rotation costs 30% more dispatches and resolves 32% fewer findings at the same cap. It buys coverage, and it is not free.\n\n## FIXES\n\n### `bench/promotion_gate.py` + `bench/test_promotion_gate.py` (F1\u2013F5)\n\nThe parameters are **derived from a stated false-negative target**, not chosen.\n\nRungs are independent gates, so P(top) = Q^R. Requiring Q^R \u2265 1\u2212\u03b2 gives the per-rung requirement Q \u2265 (1\u2212\u03b2)^(1/R). At \u03b2=0.05, R=5: **Q \u2265 0.9897937816869885** \u2014 the per-rung gate must be far tighter than the end-to-end target, which is the compounding the one-success rule ignores. Scanning n for the smallest value where P(Binom(n,0.90) \u2265 k\\*(n,0.50)) \u2265 that:\n\n```\nattempts_per_rung: 19       successes_per_rung: 14\nper_rung_pass_achieved: 0.9914069792621538\np_reaches_top: 0.9577669784926826        attempts_to_climb: 95\n```\n\nSo **n=19, k\\*=14, floor 0.50** \u2014 not 10, and 19 is the smallest such n (the falsifier checks every smaller n). The floor stays 0.50 because \"resolves more than it fails\" is a semantically grounded rung threshold; `derive_attempts_per_rung` refuses (`ValueError`) rather than returning a number when p_good \u2264 floor.\n\nFor bidirectionality, `RungRecord` is a sliding window re-read on every attempt: promote on Wilson **lower** bound > floor, demote on Wilson **upper** bound < floor. No absorbing state, **no re-test schedule at all** \u2014 the re-test is the ordinary dispatch stream. The window z is derived from the multiplicity of W\u22121+1 overlapping decisions over a horizon: Bonferroni gives **z = 3.440148** (Wolfram-confirmed), at which measured FP(p=0.50 over 190) = **0.0185 \u2264 0.05** and TP(p=0.90 over 190) = **1.0000** \u2014 the correction costs the capable model nothing.\n\nWindow versus pooled record was **measured, not judged** (composability rule). On a 0.90 \u2192 0.30 capability drop, attempts to demote: **window median 20.0, never-detected 0.0000; pooled median 298.0, never-detected 0.0007**. The window dominates on the named property at no cost, so it is used alone \u2014 the two are *not* composed.\n\n```\n  138 gates dominate one-success on both rates; cheapest cost=20 n=4 floor=0.2 k*=3 TPR=0.764459 FPR=2.980e-03\n  n=10 gate FPR at p=0.50: 1.430e-10 vs one-success 3.125e-02\n  derived n=19 k*=14 P(top|0.90)=0.957767 cost=95\n  non-monotone: n=16 Q=0.982996 > n=18 Q=0.971806\n  P(p=0.50 promoted somewhere in 190) at z=1.96: 0.6468 Wilson [0.6318, 0.6614]\n  derived z=3.440148 (k*=17): FP=0.0185 <= 0.05; TP(p=0.90)=1.0000\n  demote after 0.90->0.30: window median 20.0 never 0.0000; pooled 298.0 never 0.0007\n  promote -> demote -> re-promote on one record, no schedule needed\n  capped: rungs_tried=2 -> depth=2 censored=True | exhausted: rungs_tried=4 -> depth=4 censored=False\n  share at N=70 is exactly 6/70=0.085714 every evaluation, yet Wilson [0.039877, 0.174657]\n  gap=0.40: artefact n=21, achieved separation probability 0.507\n```\n\n`observed_difficulty(result, max_rungs)` returns `(depth, censored)`, so a capped depth enters any ordering as a **lower bound** and never as an equality.\n\n### `bench/model_identity.py` + `bench/test_model_identity.py` (F8, Q2, Q4)\n\n`model_uid = \"m-\" + blake2b(canonical(dispatch_determining_fields))[:16]`. Canonicalisation sorts keys and normalises integral floats, so dict order and `8192` vs `8192.0` cannot split one configuration; only the 8 fields that change the output distribution enter, so an edited comment or display name cannot split it either. All 8 move the uid; 5 instances differing only in temperature stay 5 records; no vendor substring appears in any uid.\n\n```\n  12 literal model_id assignments, 10 distinct; colliding: {'opus': 2, 'gpt-5.5': 2}\n  primary model_id: 6 occurrences, 6 distinct   secondary_model_id: 6 occurrences, 5 distinct\n  SPLIT: one model under 2 strings ['deepseek-v4-pro','gemini-3.1-pro-preview','gpt-5.5','opus']\n  one configuration listed twice -> 1 uid(s), indices [[0, 1]]\n  m-035a1e68596b3c53 -> m-4585533de252e2ec (both records retained)\n  cost of starting over: 95 attempts (19/rung x 5 rungs)\n```\n\n### `bench/stream_idle_timeout.py` + `bench/test_stream_idle_timeout.py` (Q6)\n\nIdle timeout on the stream, **plus** a ceiling \u2014 and the composition is justified by measurement, not by coexistence. Idle-only never ends a hung process that keeps talking (a 0.2 s retry-print loop under a 1.0 s idle cap runs to the ceiling, 13 lines); ceiling-only kills slow-but-working (1.5 s cap, `DONE` lost). Composed: slow work \u2192 `exit`, chatty hang \u2192 `ceiling`, silent hang \u2192 `idle` at 1.01 s. Block buffering is defeated by forcing `PYTHONUNBUFFERED=1` in the child and treating process exit, not stream silence, as end-of-stream \u2014 otherwise the idle timer reads a healthy buffered writer as idle.\n\nThe ceiling is derived, and the **sample size needed to derive it is itself derived**: the one-sided allowance on the (1\u2212kill_budget) quantile must be smaller than kill_budget, giving m > z\u00b2q(1\u2212q)/kill_budget\u00b2 \u2192 **m \u2265 73 at kill_budget=0.05, m \u2265 16 at 0.20**. Below that the function returns the observed maximum \u2014 erring long, which preserves work. (My first version silently saturated; the falsifier caught it.)\n\n```\n  silent hang: idle at 1.01s\n  chatty hang (prints every 0.2s, idle cap 1.0s): ceiling at 2.51s, 13 lines\n  block-buffered writer under idle cap 1.0s: exit at 1.87s, 6 lines\n  composed: slow work -> exit; chatty hang -> ceiling\n  runs needed before a ceiling sits below the observed max: 73 at 0.05, 16 at 0.20\n  m=400: ceiling 37.11s < max 84.0s; would kill 0.0275 of legitimate runs\n```\n\n### `bench/test_rotation_composes_with_the_rung_ladder.py` (F6, F9, F10, Q3, Q5)\n\n```\n  identifier order, cap 2: 10 of 12 models at 0 attempts; starved set identical across seeds: True\n  attempts OFFERED -- rotate by 1: [66,67,68] (spread 2); rotate by CAP=2: [66,67] (spread 1)\n  attempts DISPATCHED (first-CONFIRMED stop) -- rotation 579 for 270 resolved;\n                                                identifier order 444 for 396 resolved\n  rung-2 holders (window 19, k*=14): ['m00','m01','m04']\n  rung-2 dispatches: [267, 267, 0, 0, 266, 0, 0, 0, 0, 0, 0, 0]\n  ladder 1.103 dispatches/finding | rotation 2.035 | reversed ladder 4.225\n```\n\n## OPEN QUESTIONS\n\n1. **No** \u2014 a failure at rung r+1 does not touch rung r's record; the falsifier shows a model at 18/19 still promotes, so one unlucky failure caps nothing. What stops accumulation is that **a rung is held, not granted**: the same window record that promoted demotes when the upper bound falls below the floor.\n2. **New identifier at 0 attempts**, and it is forced rather than chosen \u2014 the vendor slug is a dispatch-determining field, so the content address changes. Cost: **95 attempts** to re-climb at \u03b2=0.05. What is lost is the prior record, which stays attached to the old identifier; that is what makes a regression visible as two records rather than one moving average. Inheriting it would assert the new release is at least as capable as the old \u2014 the judgement the founder's rule forbids.\n3. **Both, and rungs are still needed.** Eligibility becomes unbounded, but `resolve_via_routing` returns on first CONFIRMED, so order decides cost: **1.103 dispatches per finding under strength order, 2.035 under rotation, 4.225 reversed**. Rung order is worth 3.8\u00d7 against its inverse. Rungs govern priority, and priority is where the money is.\n4. The **canonicalised dispatch-determining configuration** \u2014 provider endpoint, model slug, and every sampling/system/tool parameter \u2014 hashed. Not the roster entry (splits one config listed twice) and not the vendor name (merges two configs of one model). Five instances differing only in temperature stay five records; the same config in two files is one.\n5. **They compose, on different axes**: rungs decide eligibility, rotation decides order among eligible ties. Verified mechanically \u2014 rotation never hands rung-2 work to a non-holder, and the ladder reinstates no starvation among holders. But rotation is **not free** (F10), so it belongs at the *tie-break* only, which is where the brief put it.\n6. **Idle timeout is right, and insufficient alone.** It breaks on a chatty hang and on block-buffered output; both are fixed above.\n\n## YOUR STRONGEST DISAGREEMENT WITH THIS BRIEF'S FRAMING\n\n**\"And the obvious repair over-corrects.\"** This is the brief's pivot, and it is a single-point comparison across two operating curves. The bound gate's false-positive rate at n=10 is 1.43e-10 against the one-success rule's 3.125e-02 \u2014 the gate was not over-correcting, it was *mis-parameterised*, and 138 parameterisations dominate the rule it supposedly loses to on **both** error rates at once. The brief then instructs: \"derive them from a stated false-negative target rather than choosing them\" \u2014 which is correct, and which, once done, yields n=19 at P(top|0.90)=0.9578. The brief had the cure in its own next sentence and filed the diagnosis under the wrong heading.\n\nSecondary: the brief applies Wilson intervals to three deterministic quantities (tuple share, starved-model count, and by extension any fixed-order/fixed-cap allocation). An interval on a quantity with no estimator reads as measured uncertainty to the next reader and is nobody's uncertainty.\n\n## WHAT WOULD REFUTE MY OWN POSITION\n\n1. **p_good=0.90 is inherited from `bench/routing.py`'s Exp-42 note, not re-measured.** Run `scripts/competence_provenance.py` over the Exp-42 report and re-estimate the top-of-roster per-finding resolve rate. If the true p_good is \u2264 0.75, n=19 against floor 0.50 collapses (Q(0.75)=0.57, P(top)=0.06) and the floor, not n, is the parameter to move.\n2. **Rung attempts are independent in my model.** If a model's successes at a rung are positively correlated (same finding family, shared prompt), the effective n is smaller than 19 and every figure here is optimistic. Measure the intra-model intra-rung success autocorrelation on logged `RoutingResult` streams; if the lag-1 correlation exceeds ~0.2, n must be inflated by the design effect 1+(n\u22121)\u03c1.\n3. **The window/pooled comparison used one drop profile (0.90 \u2192 0.30 after 100 attempts).** Sweep the drop magnitude and onset. If a shallow drop (0.90 \u2192 0.60) is detected no faster by the window than by pooling, pooling is simpler and should win.\n\n## CONFIDENCE\n\n**High on the arithmetic, medium on the calibration.**\n\nHigh: 35 falsifiers executed against the real modules, zero retyped targets; four figures independently confirmed by Wolfram Language (local Wolfram Engine) at exit 0 with `Out` values present; F1, F5, F8, F9, F10 are deterministic and reproduce exactly on re-run; F6's deterministic-interval claim is shown by identical output across independent seeds.\n\nMedium on calibration, for one reason I can name: `p_good=0.90` and `floor=0.50` are inherited rather than re-measured here, and n=19 is sensitive to both (n=16 and n=18 bracket the requirement non-monotonically). The *method* \u2014 scan n against (1\u2212\u03b2)^(1/R) \u2014 is settled; the *number* moves with p_good, and refutation (1) above is the measurement that would move it.\n\nTwo honest limits. The rung-2 falsifier shows m02 (true p\u22480.77) failing the gate while m04 (p\u22480.62) passed: W=19 is calibrated to separate 0.90 from 0.50 and does **not** reliably order models in between \u2014 per F7, separating a 0.15 gap needs roughly 155\u2013350 attempts, not 19. And `derive_window_z`'s Bonferroni bound is conservative (measured 0.0185 against a 0.05 target), so it is tighter than necessary; it errs in the direction a bound should, but a measured-crossing calibration would recover power if the climb cost ever matters.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo",
+      "built": false
+    }
+  ]
+}

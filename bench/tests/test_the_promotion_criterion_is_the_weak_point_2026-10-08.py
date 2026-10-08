@@ -163,3 +163,47 @@ class TestDepthIsRecordedAndTruncatedByTheCap:
         assert max(tried) <= 2, (
             f"depth now reaches {max(tried)}, so the cap has been lifted; update "
             "this assertion to the new range rather than removing it")
+
+
+class TestDepthIsCensoredAndTheCheckMustExecute:
+    """The difficulty check now CALLS route. It used to scan field names.
+
+    CONDEMNED BY THE cc2 SEAT, 2026-10-08: *"The artefact's claim 4 validates this
+    by AST-scanning FIELD NAMES -- it never executes `route`, so it would report
+    `records_resolution_depth: True` whatever the values are."* That is
+    `execute-do-not-grep`, committed by CC1 in a script used to brief a panel.
+
+    AND THE SEAT'S SUBSTANTIVE FINDING, confirmed by execution against the real
+    `route`: `rungs_tried` is RIGHT-CENSORED. A finding of true depth 4 reports 2
+    under `max_rungs=2`, and a finding genuinely resolved at rung 2 also reports 2.
+    The 2 are indistinguishable, so depth orders difficulty only where the ladder
+    ran to exhaustion. Under a cap it is a LOWER BOUND.
+
+    This matters for the founder's rung ladder, which needs difficulty as its
+    input: the cap must lift before recorded depth can supply it.
+    """
+
+    def test_the_check_calls_route_rather_than_reading_it(self):
+        src = (REPO / "bench"
+               / "the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py").read_text()
+        body = src[src.index("def claim_difficulty_can_be_measured_not_judged"):
+                   src.index("def main()")]
+        assert "RT.route(" in body, (
+            "the difficulty claim no longer executes route, so it has reverted to "
+            "asserting that a field name exists")
+        assert "ast.walk" not in body, (
+            "an AST scan is back in the difficulty claim; a field name present is "
+            "not a value recorded")
+
+    def test_a_capped_depth_is_indistinguishable_from_an_honest_one(self, M):
+        d = M.claim_difficulty_can_be_measured_not_judged()
+        assert d["reported_under_cap_2"] == d["a_genuine_rung_2_resolution_reports"]
+        assert d["censored_and_honest_are_indistinguishable"] is True, d
+
+    def test_exhaustion_recovers_the_true_depth(self, M):
+        d = M.claim_difficulty_can_be_measured_not_judged()
+        assert d["reported_under_exhaustion"] == d["true_depth"], d
+        assert d["resolved_under_exhaustion"] is True
+        assert d["depth_is_a_label_only_under_exhaustion"] is True, (
+            "if a capped run also recovered the true depth, the censoring would "
+            "not matter and the cap would not block the rung ladder")

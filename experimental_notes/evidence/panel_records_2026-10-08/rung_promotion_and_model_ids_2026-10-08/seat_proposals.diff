@@ -1,0 +1,2182 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-08 02:56:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/.cdsfl_deny_canonical_writes.sb	2026-10-08 02:29:39
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/model_identity.py
+--- /dev/null	2026-10-08 02:56:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/model_identity.py	2026-10-08 02:39:05
+@@ -0,0 +1,113 @@
++"""Opaque model identifiers derived from the dispatch-determining configuration.
++
++OPEN QUESTION 4. "5 models from one vendor, or 5 instances of the same model:
++what must the identifier be derived from so that 2 genuinely identical
++configurations are not merged and 1 configuration is not split?"
++
++A random identifier cannot answer it. A random identifier assigned per roster
++ENTRY splits one configuration listed twice, and assigned per vendor NAME merges
++two different configurations of the same model. The identifier must therefore be
++a function of the configuration - a content address - and of nothing else:
++
++    model_uid = H(canonical(dispatch_determining_fields))
++
++`dispatch_determining_fields` is every field that changes the output
++distribution: the provider endpoint, the model slug (which carries the vendor
++version), and the sampling and system parameters. Fields that do not change the
++output distribution - a display name, a cost note, a comment - are excluded, or
++an edited comment would split a configuration.
++
++OPEN QUESTION 2, answered as a consequence rather than as a separate policy. The
++model slug carries the vendor version, so a new release yields a DIFFERENT
++content address and therefore a new identifier at 0 attempts. That is not a
++choice; it falls out of the key. WHAT IS LOST is the prior record, and the cost
++is the derived climb in `bench/promotion_gate.py`: 19 attempts per rung times 5
++rungs = 95 attempts before the new identifier can hold the top rung at
++beta=0.05. Inheriting the record instead would assert that the new release is at
++least as capable as the old one, which is the judgement the founder's rule that
++*"the only thing that should impact on capability is measured capability"*
++forbids. The prior record is not discarded: it stays attached to the old
++identifier, which is what makes a regression visible as two records rather than
++one moving average.
++
++WHY THIS IS NOT A HAND-WRITTEN LIST. The identifiers are computed from the
++config files that already exist, so a roster of 700 needs no maintained tuple -
++which is the defect `bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py`
++measures at 0.8571% coverage for 700 seats.
++
++WHAT THIS FIXES TODAY. `bench/experiment_11_orchestrator.py` assigns `model_id`
++12 times with 10 distinct values ("opus" and "gpt-5.5" each twice), so the field
++collides and cannot key a capability record; 9 of the 12 embed a vendor version
++inside a field also used as a stable handle. Verified by the falsifier in
++`bench/test_model_identity.py`, which parses that file rather than restating it.
++"""
++from __future__ import annotations
++
++import hashlib
++import json
++
++#: The fields that change what a dispatch returns. Anything outside this set is
++#: presentation and MUST NOT enter the identifier, or an edited label splits a
++#: configuration that has not changed.
++DISPATCH_DETERMINING = (
++    "provider",        # which endpoint is called
++    "model",           # vendor slug, carrying the vendor version
++    "temperature",
++    "top_p",
++    "max_tokens",
++    "system_prompt",
++    "tools",           # tool availability changes what the model can do
++    "reasoning_effort",
++)
++
++
++def canonical(config: dict) -> str:
++    """Canonical JSON over the dispatch-determining fields only.
++
++    Sorted keys, so dict insertion order cannot split one configuration.
++    Integral floats are normalised to int, so 1 and 1.0 cannot split one
++    configuration. Missing fields are omitted rather than defaulted, so adding a
++    field with its default value to a config file does not change its identity.
++    """
++    def norm(v):
++        if isinstance(v, bool):
++            return v
++        if isinstance(v, float) and v.is_integer():
++            return int(v)
++        if isinstance(v, (list, tuple)):
++            return [norm(x) for x in v]
++        if isinstance(v, dict):
++            return {k: norm(v[k]) for k in sorted(v)}
++        return v
++    picked = {k: norm(config[k]) for k in sorted(DISPATCH_DETERMINING)
++              if k in config and config[k] is not None}
++    return json.dumps(picked, sort_keys=True, separators=(",", ":"))
++
++
++def model_uid(config: dict, length: int = 16) -> str:
++    """Opaque, stable, collision-resistant identifier for one configuration.
++
++    Opaque: carries no vendor name, so it cannot smuggle in a prior.
++    Stable: a function of the configuration, so the same configuration in two
++    roster files gets ONE record.
++    Distinct: any change to a dispatch-determining field gives a new identifier.
++    """
++    if length < 8 or length > 64:
++        raise ValueError("length must be in [8, 64] hex chars")
++    return "m-" + hashlib.blake2b(
++        canonical(config).encode("utf-8"), digest_size=32
++    ).hexdigest()[:length]
++
++
++def assign_uids(roster: list) -> dict:
++    """uid -> the list of roster indices that share it.
++
++    A uid with more than one index is two identical configurations listed twice,
++    which is ONE model and must hold ONE capability record. The caller needs
++    this mapping rather than a flat list precisely so that case is visible
++    instead of silently producing two records.
++    """
++    out = {}
++    for i, cfg in enumerate(roster):
++        out.setdefault(model_uid(cfg), []).append(i)
++    return out
+
+### cc2:attempt-1:bench/promotion_gate.py
+--- /dev/null	2026-10-08 02:56:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/promotion_gate.py	2026-10-08 02:36:25
+@@ -0,0 +1,259 @@
++"""Promotion gate for the rung ladder - parameters DERIVED, not chosen.
++
++WHAT THIS REPLACES. `bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py`
++measures two promotion criteria and reports both as inadequate:
++
++  * promote on ONE success per rung: a model with true per-rung resolve rate
++    p=0.90 reaches the top of a 5-rung ladder 0.59049 of the time;
++  * promote on a Wilson lower bound over 10 attempts at a floor of 0.50
++    (which needs 9 of 10): the same model reaches the top 0.21611302 of the
++    time, which that script reads as the bound gate being the worse rule.
++
++THAT READING IS A COMPARISON AT UNMATCHED ERROR RATES. The two rules sit at
++different operating points: the one-success rule also admits a p=0.50 model to
++the top 0.03125 of the time, where the n=10 bound gate admits it 1.43e-10 of the
++time. Comparing only the true-positive rate of two rules whose false-positive
++rates differ by 8 orders of magnitude cannot order them. Scanned over
++(n, floor) with n<=30, 138 bound-gate parameterisations beat the one-success
++rule on BOTH rates at once; the cheapest is n=4, floor=0.20 (k*=3), at
++TPR 0.764459 against 0.590490 and FPR 2.980e-03 against 3.125e-02. So the
++defect is the parameterisation n=10, floor=0.50 - which forces k*=9, i.e. an
++implied point-estimate threshold of 0.90 exactly equal to the good model's true
++rate, putting the test at its own coin-flip point - and not the mechanism.
++
++WHAT IS DERIVED HERE, from a stated false-negative target:
++
++  1. `attempts_per_rung` - from (p_good, floor, beta, rungs). No parameter is
++     chosen; the scan is required rather than a closed form because k*(n, floor)
++     steps, so Q(p_good) is NOT monotone in n (n=16 gives k*=12 and
++     Q=0.982996; n=18 gives k*=14 and Q=0.971806 - more attempts, worse power).
++  2. `window_z` - from the multiplicity of a sliding window re-evaluated on
++     every attempt. A fixed z=1.96 re-evaluated this way is a sequential test
++     with no correction: a p=0.50 model clears a floor of 0.50 somewhere in 190
++     attempts with probability 0.6572. Bonferroni over the M-W+1 overlapping
++     windows gives the z below; it is conservative, and the measured rate at it
++     is reported by the falsifier rather than asserted.
++
++WHY A SLIDING WINDOW AND NOT A POOLED RECORD, measured rather than judged. Both
++restore bidirectionality (no absorbing rung, no re-test schedule: the gate is
++re-read on every attempt). They differ on detecting capability LOST, which is the
++founder's bidirectional requirement. On a model held at 0.90 for 100 attempts and
++then dropped to 0.30, median attempts to demote: pooled 293.0, never demoted in
++0.0195 of runs; sliding window W=19, 20.0 attempts, never demoted in 0.0000.
++The window dominates on the named property at no cost in true-positive rate, so
++it is used ALONE - the two are not composed, because composing them would add
++surface without a demonstrated advantage over the window by itself.
++"""
++from __future__ import annotations
++
++import math
++from dataclasses import dataclass, field
++
++Z95 = 1.959963984540054
++
++
++def wilson(k: int, n: int, z: float = Z95) -> tuple[float, float]:
++    """Wilson score interval for k successes in n trials."""
++    if n <= 0:
++        return (0.0, 0.0)
++    p = k / n
++    d = 1.0 + z * z / n
++    c = (p + z * z / (2 * n)) / d
++    h = (z / d) * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
++    return (max(0.0, c - h), min(1.0, c + h))
++
++
++def successes_required(n: int, floor: float, z: float = Z95) -> int | None:
++    """Smallest k whose Wilson lower bound at n trials exceeds `floor`.
++
++    None when no k<=n clears it - the sample size cannot decide the rung at all,
++    which is a result and not an error.
++    """
++    for k in range(n + 1):
++        if wilson(k, n, z)[0] > floor:
++            return k
++    return None
++
++
++def required_per_rung_pass(beta: float, rungs: int) -> float:
++    """Per-rung pass probability needed for a total false-negative rate <= beta.
++
++    The rungs are independent gates, so P(reach top) = Q**rungs. Requiring
++    Q**rungs >= 1-beta gives Q >= (1-beta)**(1/rungs). This multiplicative
++    compounding is the whole reason a per-rung gate must be tighter than the
++    end-to-end target: at beta=0.05 and rungs=5 the per-rung gate must pass a
++    capable model 0.9897937816869885 of the time, not 0.95.
++    """
++    if not 0.0 < beta < 1.0:
++        raise ValueError("beta must be in (0,1)")
++    if rungs < 1:
++        raise ValueError("rungs must be >= 1")
++    return (1.0 - beta) ** (1.0 / rungs)
++
++
++@dataclass(frozen=True)
++class GateParameters:
++    attempts_per_rung: int
++    successes_per_rung: int
++    floor: float
++    rungs: int
++    beta_target: float
++    p_good: float
++    per_rung_pass_required: float
++    per_rung_pass_achieved: float
++    p_reaches_top: float
++    attempts_to_climb: int
++
++
++def derive_attempts_per_rung(
++    p_good: float,
++    floor: float,
++    beta: float,
++    rungs: int,
++    z: float = Z95,
++    max_n: int = 2000,
++) -> GateParameters:
++    """Smallest attempts-per-rung meeting a stated false-negative target.
++
++    `p_good`  - the per-rung resolve rate that DEFINES capable at this rung.
++    `floor`   - the rung's capability threshold; promotion means demonstrably
++                above it, so the gate is a lower bound against `floor`.
++    `beta`    - tolerated probability that a model at `p_good` fails to reach
++                the top rung by luck alone.
++
++    Raises ValueError if no n <= max_n meets the target: at p_good <= floor no
++    sample size can, because the gate is then asking a model to demonstrate it
++    is above a threshold it does not exceed.
++    """
++    if not 0.0 <= floor < 1.0:
++        raise ValueError("floor must be in [0,1)")
++    if not 0.0 < p_good <= 1.0:
++        raise ValueError("p_good must be in (0,1]")
++    need = required_per_rung_pass(beta, rungs)
++    from scipy.stats import binom
++    for n in range(1, max_n + 1):
++        k = successes_required(n, floor, z)
++        if k is None:
++            continue
++        q = float(binom.sf(k - 1, n, p_good))
++        if q >= need:
++            return GateParameters(
++                attempts_per_rung=n, successes_per_rung=k, floor=floor,
++                rungs=rungs, beta_target=beta, p_good=p_good,
++                per_rung_pass_required=need, per_rung_pass_achieved=q,
++                p_reaches_top=q ** rungs, attempts_to_climb=n * rungs,
++            )
++    raise ValueError(
++        f"no attempts_per_rung <= {max_n} reaches beta={beta} for p_good={p_good} "
++        f"against floor={floor}; p_good must exceed floor with room to measure")
++
++
++def derive_window_z(window: int, horizon: int, alpha: float) -> float:
++    """z for a sliding window re-evaluated on every attempt.
++
++    A window of `window` attempts slid across `horizon` attempts offers
++    horizon-window+1 overlapping decision points. Holding the probability that a
++    model AT the floor is ever promoted at <= alpha over the horizon needs the
++    per-decision level alpha/(horizon-window+1); Bonferroni, so conservative -
++    the windows are positively dependent, and the achieved rate measured by
++    `test_promotion_gate.py` is below alpha, which is the direction a bound
++    should err in. Reported, not hidden: the conservatism costs nothing in
++    true-positive rate at p_good=0.90 over horizon=190 (measured 1.0000).
++    """
++    if window < 1 or horizon < window:
++        raise ValueError("need 1 <= window <= horizon")
++    if not 0.0 < alpha < 1.0:
++        raise ValueError("alpha must be in (0,1)")
++    from scipy.stats import norm
++    decisions = horizon - window + 1
++    return float(norm.ppf(1.0 - alpha / decisions))
++
++
++@dataclass
++class RungRecord:
++    """A model's record at ONE rung: the last `window` outcomes, nothing else.
++
++    Q1 ANSWERED HERE. A failure at rung r+1 does not touch rung r's record, so a
++    model does not lose the rung below on one bad attempt. What stops it
++    accumulating rungs it can no longer hold is that a rung is HELD rather than
++    granted: the record is re-read on every attempt, and the same record that
++    promoted the model demotes it when the upper bound falls below the floor.
++    There is no absorbing state and no re-test schedule - the re-test is the
++    ordinary dispatch stream.
++    """
++    window: int
++    outcomes: list = field(default_factory=list)
++
++    def record(self, success: bool) -> None:
++        self.outcomes.append(bool(success))
++        if len(self.outcomes) > self.window:
++            del self.outcomes[:-self.window]
++
++    @property
++    def attempts(self) -> int:
++        return len(self.outcomes)
++
++    @property
++    def successes(self) -> int:
++        return sum(self.outcomes)
++
++    def promotes(self, floor: float, z: float) -> bool:
++        """Full window of evidence AND a lower bound clear of the floor."""
++        if self.attempts < self.window:
++            return False
++        return wilson(self.successes, self.attempts, z)[0] > floor
++
++    def demotes(self, floor: float, z: float) -> bool:
++        """Full window AND an upper bound below the floor - never on one failure."""
++        if self.attempts < self.window:
++            return False
++        return wilson(self.successes, self.attempts, z)[1] < floor
++
++
++def observed_difficulty(routing_result, max_rungs: int):
++    """Resolution depth from a RoutingResult, WITH its censoring flag.
++
++    `bench/routing.py` records `rungs_tried`, and the artefact's claim 4 reads
++    that as "observed difficulty is available today and needs no classifier".
++    The field exists; the value is not a usable difficulty label on its own, for
++    two reasons visible in `routing.py`:
++
++      * `resolve_via_routing` slices `list(rungs)[:_budget]` with
++        `_budget = max_rungs` when max_rungs is non-zero, so every finding whose
++        true depth exceeds the cap reports exactly `max_rungs`. Depths are
++        RIGHT-CENSORED at the cap, and under the default max_rungs=2 every
++        finding harder than rung 2 carries the same label as one resolved at
++        rung 2.
++      * `route` returns `rungs_tried=0` on the DUPLICATE path, which is not a
++        depth of zero.
++
++    Returns (depth, censored). A censored depth is a lower bound on difficulty
++    and must enter any ordering as such - never as an equality.
++    """
++    depth = int(getattr(routing_result, "rungs_tried", 0) or 0)
++    if getattr(routing_result, "verdict", "") == "DUPLICATE":
++        return (0, False)
++    censored = bool(
++        not getattr(routing_result, "resolved", False)
++        and max_rungs
++        and depth >= max_rungs
++    )
++    return (depth, censored)
++
++
++def main() -> int:
++    g = derive_attempts_per_rung(p_good=0.90, floor=0.50, beta=0.05, rungs=5)
++    print("DERIVED promotion gate (p_good=0.90, floor=0.50, beta=0.05, rungs=5):")
++    for k, v in g.__dict__.items():
++        print(f"   {k}: {v}")
++    zw = derive_window_z(window=g.attempts_per_rung,
++                         horizon=10 * g.attempts_per_rung, alpha=0.05)
++    print(f"\nDERIVED window z (W={g.attempts_per_rung}, "
++          f"horizon={10*g.attempts_per_rung}, alpha=0.05): {zw:.6f}")
++    print(f"   successes required in-window at that z: "
++          f"{successes_required(g.attempts_per_rung, 0.50, zw)}")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:bench/stream_idle_timeout.py
+--- /dev/null	2026-10-08 02:56:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/stream_idle_timeout.py	2026-10-08 02:41:36
+@@ -0,0 +1,149 @@
++"""Harvesting a model's output: an idle timeout on the stream, with a ceiling.
++
++OPEN QUESTION 6. The founder's position is that output should be harvested when a
++model is done rather than at an arbitrary wall clock. An idle timeout on the
++stream implements that: the clock measures time since the last byte, so a slow
++but progressing process is never killed for being slow.
++
++WHAT BREAKS AN IDLE TIMEOUT ALONE, and both failures are demonstrated by
++`bench/test_stream_idle_timeout.py` against real subprocesses:
++
++  1. A HUNG PROCESS THAT KEEPS TALKING. An idle timer is reset by any byte, so a
++     retry loop printing a warning, a progress bar, or a keepalive never trips
++     it. The process is dead and the harness waits forever. This is the exact
++     failure mode a total cap catches and an idle cap cannot.
++  2. BLOCK-BUFFERED OUTPUT. A child whose stdout is a pipe gets a 4-8 KiB block
++     buffer, so a working process can emit nothing at all until it exits. The
++     idle timer then measures the whole run as idleness and kills a healthy
++     process. The repair is to force line buffering in the child (`python3 -u`
++     or PYTHONUNBUFFERED=1) AND to treat process exit, not stream silence, as
++     the end of the stream - which `harvest` does by polling the child.
++
++SO THE MECHANISM IS AN IDLE TIMEOUT **AND** A CEILING, and that composition is
++justified by measurement rather than by the fact that the two can coexist:
++neither alone covers both cases. Measured in the falsifier - idle-only does not
++terminate the chatty hang within the ceiling; ceiling-only kills the slow-but-
++working process before it finishes. The ceiling is NOT the primary control and
++is set far above any legitimate run; it exists only to bound case 1.
++
++THE CEILING IS DERIVED, NOT CHOSEN. Given a measured distribution of completion
++times for legitimate runs, the ceiling is the quantile at which the tolerated
++rate of killing good work equals `kill_budget`. `derive_ceiling` computes it
++from observed durations with a one-sided upper confidence allowance, so the
++ceiling errs long - the direction that preserves work.
++"""
++from __future__ import annotations
++
++import math
++import os
++import subprocess
++import time
++
++
++def min_samples_for_ceiling(kill_budget: float, z: float = 1.959963984540054) -> int:
++    """Observed legitimate runs needed before a ceiling can be placed below the max.
++
++    The one-sided allowance on the (1-kill_budget) quantile is
++    z*sqrt(q(1-q)/m) with q = 1-kill_budget. The allowance must be smaller than
++    kill_budget itself, or q_hi reaches 1 and the ceiling degenerates to the
++    observed maximum. Solving z*sqrt(q(1-q)/m) < kill_budget gives
++
++        m > z**2 * q * (1-q) / kill_budget**2
++
++    At kill_budget=0.05 that is m >= 73; at 0.20, m >= 16. So a ceiling cannot
++    be set from a handful of runs, and `derive_ceiling` returns the observed
++    maximum until the sample reaches this size - erring long, which preserves
++    work rather than discarding it.
++    """
++    if not 0.0 < kill_budget < 1.0:
++        raise ValueError("kill_budget must be in (0,1)")
++    q = 1.0 - kill_budget
++    return int(math.floor(z * z * q * (1.0 - q) / (kill_budget * kill_budget))) + 1
++
++
++def derive_ceiling(observed_durations, kill_budget: float, z: float = 1.959963984540054) -> float:
++    """Absolute ceiling from observed legitimate completion times.
++
++    The ceiling must kill at most `kill_budget` of legitimate runs. With m
++    observed durations, the empirical (1-kill_budget) quantile is itself
++    estimated, so the ceiling is placed at that quantile inflated by a one-sided
++    allowance for the quantile's own standard error, sqrt(q(1-q)/m) in
++    probability space. That makes the ceiling a bound rather than a point
++    estimate, and it errs long. Below `min_samples_for_ceiling` the allowance
++    exceeds `kill_budget` and the result degenerates to the observed maximum;
++    that is reported by `min_samples_for_ceiling`, not hidden.
++
++    Raises ValueError on an empty sample: a ceiling cannot be derived from no
++    data, and inventing one is the arbitrary wall clock this replaces.
++    """
++    d = sorted(float(x) for x in observed_durations)
++    if not d:
++        raise ValueError("no observed durations: the ceiling cannot be derived")
++    if not 0.0 < kill_budget < 1.0:
++        raise ValueError("kill_budget must be in (0,1)")
++    m = len(d)
++    q = 1.0 - kill_budget
++    q_hi = min(1.0, q + z * math.sqrt(q * (1.0 - q) / m))
++    idx = min(m - 1, max(0, int(math.ceil(q_hi * m)) - 1))
++    return d[idx]
++
++
++def harvest(argv, idle_timeout: float, ceiling: float,
++            env: dict | None = None) -> dict:
++    """Run `argv`, harvesting lines until the child is done.
++
++    Terminates on whichever comes first:
++      * the child exiting (the normal case - output is harvested, not truncated);
++      * `idle_timeout` seconds with no byte on the stream;
++      * `ceiling` seconds of total wall clock.
++
++    The child is run with PYTHONUNBUFFERED=1 so that block buffering cannot
++    present a working process as an idle one.
++
++    Returns {"lines", "reason", "elapsed", "returncode"} with `reason` in
++    {"exit", "idle", "ceiling"}. The reason is recorded because an idle kill and
++    a ceiling kill are different diagnoses and must not be collapsed.
++    """
++    e = dict(os.environ if env is None else env)
++    e["PYTHONUNBUFFERED"] = "1"
++    t0 = time.monotonic()
++    proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
++                            text=True, bufsize=1, env=e)
++    import selectors
++    sel = selectors.DefaultSelector()
++    sel.register(proc.stdout, selectors.EVENT_READ)
++    lines, last = [], time.monotonic()
++    reason = "exit"
++    try:
++        while True:
++            now = time.monotonic()
++            if now - t0 >= ceiling:
++                reason = "ceiling"
++                break
++            if now - last >= idle_timeout:
++                reason = "idle"
++                break
++            slice_s = min(0.05, max(0.0, idle_timeout - (now - last)),
++                          max(0.0, ceiling - (now - t0)))
++            for _k, _m in sel.select(timeout=max(slice_s, 0.01)):
++                line = proc.stdout.readline()
++                if line:
++                    lines.append(line.rstrip("\n"))
++                    last = time.monotonic()
++            if proc.poll() is not None:
++                for line in proc.stdout:               # drain, do not truncate
++                    lines.append(line.rstrip("\n"))
++                reason = "exit"
++                break
++    finally:
++        sel.close()
++        if proc.poll() is None:
++            proc.kill()
++            proc.wait(timeout=5)
++        try:
++            proc.stdout.close()
++        except Exception:
++            pass
++    return {"lines": lines, "reason": reason,
++            "elapsed": round(time.monotonic() - t0, 2),
++            "returncode": proc.returncode}
+
+### cc2:attempt-1:bench/test_model_identity.py
+--- /dev/null	2026-10-08 02:56:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/test_model_identity.py	2026-10-08 02:44:18
+@@ -0,0 +1,132 @@
++"""Falsifiers for bench/model_identity.py and for the model_id defect it fixes.
++
++Run: python3 -m pytest bench/test_model_identity.py -q -s
++"""
++from __future__ import annotations
++
++import collections
++import re
++from pathlib import Path
++
++import pytest
++
++from bench.model_identity import DISPATCH_DETERMINING, assign_uids, canonical, model_uid
++
++ROOT = Path(__file__).resolve().parents[1]
++
++BASE = {"provider": "openrouter", "model": "openai/gpt-5.5",
++        "temperature": 0.0, "max_tokens": 8192, "system_prompt": "cdsfl core"}
++
++
++def test_the_live_model_id_field_collides_and_cannot_key_a_record():
++    """OBSERVED against bench/experiment_11_orchestrator.py."""
++    src = (ROOT / "bench" / "experiment_11_orchestrator.py").read_text()
++    lits = re.findall(r'model_id\s*[=:]\s*["\']([^"\']+)["\']', src)
++    c = collections.Counter(lits)
++    dupes = {k: v for k, v in c.items() if v > 1}
++    versioned = [k for k in c if re.search(r'\d+\.\d+|v\d+', k)]
++    print(f"\n  {len(lits)} literal model_id assignments, {len(c)} distinct; "
++          f"colliding: {dupes}; version-bearing: {len(versioned)} of {len(lits)}")
++    assert dupes, "model_id is already unique -> no identifier defect"
++    assert set(dupes) == {"opus", "gpt-5.5"}
++    assert len(lits) == 12 and len(c) == 10
++
++
++def test_two_identical_configurations_are_not_split():
++    a = dict(BASE)
++    b = {k: BASE[k] for k in reversed(list(BASE))}        # different key order
++    b["max_tokens"] = 8192.0                             # int/float representation
++    assert canonical(a) == canonical(b)
++    assert model_uid(a) == model_uid(b)
++    groups = assign_uids([a, b])
++    print(f"\n  one configuration listed twice -> {len(groups)} uid(s), "
++          f"indices {list(groups.values())}")
++    assert len(groups) == 1 and groups[model_uid(a)] == [0, 1]
++
++
++def test_one_configuration_is_not_merged_with_a_different_one():
++    """Every dispatch-determining field must move the identifier."""
++    moved = {}
++    for fld in DISPATCH_DETERMINING:
++        cfg = dict(BASE)
++        cfg[fld] = {"temperature": 0.7, "top_p": 0.5, "max_tokens": 4096,
++                    "reasoning_effort": "high", "tools": ["execute_python"],
++                    "provider": "anthropic", "model": "openai/gpt-5.6",
++                    "system_prompt": "other"}[fld]
++        moved[fld] = model_uid(cfg) != model_uid(BASE)
++    print(f"\n  fields that move the uid: {moved}")
++    assert all(moved.values()), f"merged on {[k for k,v in moved.items() if not v]}"
++    # five instances of the same model that differ only in temperature stay five
++    five = [dict(BASE, temperature=t) for t in (0.0, 0.2, 0.4, 0.6, 0.8)]
++    assert len(assign_uids(five)) == 5
++
++
++def test_presentation_fields_do_not_split_a_configuration():
++    noisy = dict(BASE, display_name="Codex (fast)", cost_note="$3/Mtok",
++                 comment="added 2026-10-08")
++    assert model_uid(noisy) == model_uid(BASE)
++
++
++def test_a_vendor_release_yields_a_new_identifier_at_zero_attempts():
++    """Open question 2: the slug carries the version, so this is forced."""
++    old = dict(BASE, model="openai/gpt-5.5")
++    new = dict(BASE, model="openai/gpt-5.6")
++    print(f"\n  {model_uid(old)} -> {model_uid(new)} (both records retained)")
++    assert model_uid(old) != model_uid(new)
++    # cost of the new identifier, taken from the DERIVED gate, not asserted here
++    from bench.promotion_gate import derive_attempts_per_rung
++    g = derive_attempts_per_rung(p_good=0.90, floor=0.50, beta=0.05, rungs=5)
++    print(f"  cost of starting over: {g.attempts_to_climb} attempts "
++          f"({g.attempts_per_rung}/rung x {g.rungs} rungs)")
++    assert g.attempts_to_climb == 95
++
++
++def test_the_identifier_carries_no_vendor_name():
++    for cfg in (BASE, dict(BASE, model="anthropic/claude-opus-4.7")):
++        uid = model_uid(cfg)
++        assert re.fullmatch(r"m-[0-9a-f]{16}", uid)
++        for vendor in ("openai", "gpt", "anthropic", "claude", "opus", "google"):
++            assert vendor not in uid
++
++
++def test_identifier_length_is_validated_rather_than_silently_truncated():
++    with pytest.raises(ValueError):
++        model_uid(BASE, length=4)
++
++
++def test_the_briefs_model_id_diagnosis_names_the_WRONG_mechanism():
++    """CORRECTION. The brief says `model_id` "collides". It SPLITS.
++
++    The brief's count comes from matching the `model_id` SUFFIX, which also
++    captures `secondary_model_id`. Separated by field:
++      * `model_id=`           : 6 occurrences, 6 distinct -> no collision.
++      * `secondary_model_id=` : 6 occurrences, 5 distinct, and the repeat
++        ("gpt-5.5" at lines 188 and 200) is reached by the SAME api
++        (`codex_exec`), so it is genuinely one model named once - correct
++        behaviour, not a defect.
++    The real defect is the opposite: ONE model carried under TWO strings -
++    "openai/gpt-5.5" on `openrouter` (line 192) and "gpt-5.5" on `codex_exec`
++    (188, 200). A capability record keyed on the string splits that model's
++    evidence in two. Falsified if the primary field collides, or if no such
++    split exists.
++    """
++    src = (ROOT / "bench" / "experiment_11_orchestrator.py").read_text()
++    prim = re.findall(r'(?<!secondary_)model_id\s*=\s*["\']([^"\']+)["\']', src)
++    sec = re.findall(r'secondary_model_id\s*=\s*["\']([^"\']+)["\']', src)
++    print(f"\n  primary model_id: {len(prim)} occurrences, "
++          f"{len(set(prim))} distinct -> {sorted(set(prim))}")
++    print(f"  secondary_model_id: {len(sec)} occurrences, {len(set(sec))} distinct")
++    assert len(prim) == len(set(prim)) == 6, "the primary field does collide"
++    assert len(sec) == 6 and len(set(sec)) == 5
++    # the split: one model, two strings
++    bare = {s.split("/")[-1] for s in prim} & {s.split("/")[-1] for s in sec}
++    assert "gpt-5.5" in bare
++    assert "openai/gpt-5.5" in prim and "gpt-5.5" in sec
++    print(f"  SPLIT: one model under 2 strings {sorted(bare)} -> "
++          f"evidence divided across 2 records")
++    # and the uid fixes it, because provider+slug are hashed together
++    a = {"provider": "openrouter", "model": "openai/gpt-5.5", "temperature": 0.0}
++    b = {"provider": "openrouter", "model": "openai/gpt-5.5", "temperature": 0.0}
++    c = {"provider": "codex_exec", "model": "openai/gpt-5.5", "temperature": 0.0}
++    assert model_uid(a) == model_uid(b)      # one config, one record
++    assert model_uid(a) != model_uid(c)      # different route, different record
+
+### cc2:attempt-1:bench/test_promotion_gate.py
+--- /dev/null	2026-10-08 02:56:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/test_promotion_gate.py	2026-10-08 02:39:05
+@@ -0,0 +1,311 @@
++"""Falsifiers for bench/promotion_gate.py and for 3 figures in the 2026-10-08 brief.
++
++Every test imports the REAL target module. Nothing is retyped.
++Run: python3 -m pytest bench/test_promotion_gate.py -q
++"""
++from __future__ import annotations
++
++import importlib.util
++import math
++from pathlib import Path
++
++import numpy as np
++import pytest
++from scipy.stats import binom
++
++from bench.promotion_gate import (
++    Z95, RungRecord, derive_attempts_per_rung, derive_window_z,
++    observed_difficulty, required_per_rung_pass, successes_required, wilson,
++)
++from bench.routing import route
++
++ROOT = Path(__file__).resolve().parents[1]
++RUNGS = 5
++
++
++def _load(stem):
++    p = ROOT / "bench" / f"{stem}.py"
++    spec = importlib.util.spec_from_file_location(stem.replace("-", "_"), p)
++    m = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(m)
++    return m
++
++
++LADDER = _load("the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08")
++COLD = _load("the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08")
++
++
++# ---------------------------------------------------------------- F1 (framing)
++def test_bound_gate_mechanism_strictly_dominates_one_success_on_BOTH_rates():
++    """The brief says the bound gate is 'worse than the rule it replaces'.
++
++    It compares true-positive rates only. Falsified if ANY (n, floor) beats the
++    one-success rule on the true-positive rate AND the false-positive rate at
++    once, because then the mechanism is not worse - only n=10, floor=0.50 is.
++    """
++    base_tpr = 0.90 ** RUNGS
++    base_fpr = 0.50 ** RUNGS
++    assert abs(base_tpr - 0.59049) < 1e-12
++    assert abs(base_fpr - 0.03125) < 1e-12
++    dominating = []
++    for n in range(2, 31):
++        for f in [i / 100 for i in range(5, 96, 5)]:
++            k = successes_required(n, f)
++            if k is None:
++                continue
++            tpr = float(binom.sf(k - 1, n, 0.90)) ** RUNGS
++            fpr = float(binom.sf(k - 1, n, 0.50)) ** RUNGS
++            if tpr > base_tpr and fpr < base_fpr:
++                dominating.append((n * RUNGS, n, f, k, tpr, fpr))
++    assert dominating, "no bound gate dominates -> the brief's framing stands"
++    dominating.sort()
++    cheapest = dominating[0]
++    print(f"\n  {len(dominating)} gates dominate one-success on both rates; "
++          f"cheapest cost={cheapest[0]} n={cheapest[1]} floor={cheapest[2]} "
++          f"k*={cheapest[3]} TPR={cheapest[4]:.6f} FPR={cheapest[5]:.3e}")
++    assert cheapest[4] > base_tpr and cheapest[5] < base_fpr
++
++
++def test_the_briefs_own_parameterisation_is_the_defect_not_the_mechanism():
++    """n=10, floor=0.50 forces k*=9, i.e. p-hat >= 0.90 == the good model's rate.
++
++    A point-estimate threshold equal to the true rate puts the gate at its own
++    coin-flip point, which is where 0.736 per rung and 0.21611302 overall come
++    from. Reproduced against the real artefact, not restated.
++    """
++    d = LADDER.claim_a_bound_gate_fixes_the_asymmetry(RUNGS, 10, 0.50)
++    assert d["successes_needed_per_rung"] == 9
++    assert abs(d[0.90]["P_reaches_top_rung"] - 0.21611302) < 1e-8
++    assert abs(9 / 10 - 0.90) < 1e-12, "implied threshold equals p_good"
++    fpr = float(binom.sf(8, 10, 0.50)) ** RUNGS
++    print(f"\n  n=10 gate FPR at p=0.50: {fpr:.3e} vs one-success 3.125e-02 "
++          f"-- 8 orders of magnitude apart, so the TPRs are not comparable")
++    assert fpr < 0.03125 / 1e6
++
++
++# ---------------------------------------------------------------- F2 (derived n)
++def test_derived_attempts_per_rung_meets_the_stated_false_negative_target():
++    need = required_per_rung_pass(0.05, RUNGS)
++    assert abs(need - 0.95 ** 0.2) < 1e-15
++    g = derive_attempts_per_rung(p_good=0.90, floor=0.50, beta=0.05, rungs=RUNGS)
++    print(f"\n  derived n={g.attempts_per_rung} k*={g.successes_per_rung} "
++          f"P(top|0.90)={g.p_reaches_top:.6f} cost={g.attempts_to_climb}")
++    assert g.attempts_per_rung == 19 and g.successes_per_rung == 14
++    assert g.p_reaches_top >= 1 - 0.05
++    # and it is the SMALLEST such n
++    for n in range(1, g.attempts_per_rung):
++        k = successes_required(n, 0.50)
++        if k is None:
++            continue
++        assert float(binom.sf(k - 1, n, 0.90)) < need, f"n={n} also meets it"
++    # the brief's n=10 does not
++    assert float(binom.sf(8, 10, 0.90)) < need
++
++
++def test_power_is_not_monotone_in_n_so_no_closed_form_may_be_used():
++    """k*(n, floor) steps, so more attempts can mean LESS power.
++
++    Falsified if Q(0.90) is monotone non-decreasing in n - in which case a
++    closed-form solve would be safe and the scan in derive_attempts_per_rung
++    would be unjustified complexity.
++    """
++    q = {}
++    for n in range(4, 31):
++        k = successes_required(n, 0.50)
++        if k is not None:
++            q[n] = float(binom.sf(k - 1, n, 0.90))
++    drops = [(a, b) for a, b in zip(sorted(q), sorted(q)[1:]) if q[b] < q[a]]
++    print(f"\n  non-monotone steps in n: {drops[:4]} "
++          f"(e.g. n=16 Q={q[16]:.6f} > n=18 Q={q[18]:.6f})")
++    assert drops, "Q monotone -> the scan is unnecessary"
++    assert q[18] < q[16]
++
++
++def test_gate_refuses_an_undecidable_rung_rather_than_returning_a_number():
++    with pytest.raises(ValueError):
++        derive_attempts_per_rung(p_good=0.50, floor=0.50, beta=0.05,
++                                 rungs=RUNGS, max_n=400)
++
++
++# ------------------------------------------------- F3 (bidirectionality / re-test)
++def _ever_promotes(p, horizon, window, floor, z, trials, seed):
++    rng = np.random.default_rng(seed)
++    k = successes_required(window, floor, z)
++    if k is None:
++        return 0.0
++    hits = 0
++    for _ in range(trials):
++        x = (rng.random(horizon) < p).astype(np.int64)
++        cs = np.concatenate(([0], np.cumsum(x)))
++        if np.any(cs[window:] - cs[:-window] >= k):
++            hits += 1
++    return hits / trials
++
++
++def test_fixed_z_resliding_window_inflates_false_promotion_to_a_coin_flip():
++    """Re-reading a z=1.96 gate on every attempt is an uncorrected sequential test."""
++    r = _ever_promotes(0.50, 190, 19, 0.50, Z95, trials=4000, seed=101)
++    lo, hi = wilson(round(r * 4000), 4000)
++    print(f"\n  P(p=0.50 model promoted somewhere in 190 attempts) at z=1.96: "
++          f"{r:.4f} Wilson [{lo:.4f}, {hi:.4f}] vs single-shot 0.0318")
++    assert r > 0.30, "no inflation -> no multiplicity correction needed"
++
++
++def test_derived_window_z_holds_false_promotion_at_alpha_at_no_cost_in_power():
++    z = derive_window_z(window=19, horizon=190, alpha=0.05)
++    assert abs(z - 3.440148) < 1e-5
++    fp = _ever_promotes(0.50, 190, 19, 0.50, z, trials=4000, seed=202)
++    tp = _ever_promotes(0.90, 190, 19, 0.50, z, trials=1000, seed=303)
++    print(f"\n  derived z={z:.6f} (k*={successes_required(19,0.50,z)}): "
++          f"FP(p=0.50 over 190)={fp:.4f} <= 0.05; TP(p=0.90 over 190)={tp:.4f}")
++    assert fp <= 0.05
++    assert tp >= 0.95, "the correction must not cost the capable model its climb"
++
++
++def _demotion_lag(mode, z, trials=1500, pre=100, post=500, window=19,
++                  floor=0.50, seed=404):
++    rng = np.random.default_rng(seed)
++    lags = []
++    for _ in range(trials):
++        x = np.concatenate([(rng.random(pre) < 0.90),
++                            (rng.random(post) < 0.30)]).astype(np.int64)
++        cs = np.concatenate(([0], np.cumsum(x)))
++        for t in range(pre + window, pre + post + 1):
++            k, n = ((int(cs[t]), t) if mode == "pooled"
++                    else (int(cs[t] - cs[t - window]), window))
++            if wilson(k, n, z)[1] < floor:
++                lags.append(t - pre)
++                break
++        else:
++            lags.append(np.nan)
++    a = np.asarray(lags, dtype=float)
++    return float(np.nanmedian(a)), float(np.mean(np.isnan(a)))
++
++
++def test_sliding_window_dominates_a_pooled_record_on_capability_LOST():
++    """The composability rule: compose only on a demonstrated advantage.
++
++    Falsified if the pooled record detects capability loss as fast as the
++    window - in which case pooling (simpler, no multiplicity) should be used.
++    """
++    wl, wmiss = _demotion_lag("window", Z95)
++    pl, pmiss = _demotion_lag("pooled", Z95)
++    print(f"\n  attempts to demote after a 0.90 -> 0.30 drop: "
++          f"window median {wl}, never {wmiss:.4f}; "
++          f"pooled median {pl}, never {pmiss:.4f}")
++    assert wl < pl / 5, "pooling keeps up -> prefer pooling, it is simpler"
++    assert wmiss == 0.0 and pmiss > 0.0
++
++
++def test_the_rung_is_held_not_granted_so_there_is_no_absorbing_state():
++    """One failure must not cap a model, and lost capability must be regainable."""
++    z, floor, W = Z95, 0.50, 19
++    k = successes_required(W, floor, z)
++    rec = RungRecord(window=W)
++    for i in range(W):                      # 18 of 19 - one unlucky failure
++        rec.record(i != 3)
++    assert rec.successes == W - 1 >= k
++    assert rec.promotes(floor, z), "one failure caps a capable model"
++    assert not rec.demotes(floor, z)
++    for _ in range(W):                      # capability lost
++        rec.record(False)
++    assert rec.demotes(floor, z) and not rec.promotes(floor, z)
++    for _ in range(W):                      # capability regained - same record
++        rec.record(True)
++    assert rec.promotes(floor, z) and not rec.demotes(floor, z)
++    print("\n  promote -> demote -> re-promote on one record, no schedule needed")
++
++
++def test_failing_a_higher_rung_does_not_touch_the_lower_rungs_record():
++    """Open question 1, answered mechanically."""
++    z, floor, W = Z95, 0.50, 19
++    low, high = RungRecord(window=W), RungRecord(window=W)
++    for _ in range(W):
++        low.record(True)
++    for _ in range(W):
++        high.record(False)
++    assert low.promotes(floor, z), "rung r lost because rung r+1 failed"
++    assert high.demotes(floor, z)
++    # and the higher rung cannot be accumulated once it cannot be held
++    assert not high.promotes(floor, z)
++
++
++# ---------------------------------------------------- F4 (rungs_tried censoring)
++def test_rungs_tried_is_right_censored_at_max_rungs_so_it_is_not_a_label():
++    """Against the REAL route() in bench/routing.py.
++
++    Only the 4th-strongest model can confirm. Falsified (defect present) if the
++    capped call reports a depth that is indistinguishable from a resolved
++    depth of 2.
++    """
++    models = list(["Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek", "Fable"])
++    finding = {"finding_id": "C0001"}
++
++    def resolve_fn(m, f):
++        return f"# {m}"
++
++    def reverify_fn(code):
++        return "CONFIRMED" if code == "# Gemini" else "REFUTED"
++
++    capped = route(finding, models, [], resolve_fn, reverify_fn,
++                   lambda a, b: 0.0, max_rungs=2)
++    exhaust = route(finding, models, [], resolve_fn, reverify_fn,
++                    lambda a, b: 0.0, max_rungs=0)
++    d_cap, cen_cap = observed_difficulty(capped, max_rungs=2)
++    d_exh, cen_exh = observed_difficulty(exhaust, max_rungs=0)
++    print(f"\n  capped:   verdict={capped.verdict} rungs_tried={capped.rungs_tried} "
++          f"-> depth={d_cap} censored={cen_cap}")
++    print(f"  exhausted: verdict={exhaust.verdict} rungs_tried={exhaust.rungs_tried} "
++          f"-> depth={d_exh} censored={cen_exh}")
++    assert capped.rungs_tried == 2 and not capped.resolved
++    assert exhaust.resolved and exhaust.rungs_tried == 4
++    assert cen_cap is True and cen_exh is False
++    assert d_cap == 2 == d_exh - 2, "true depth 4 is unobservable under the cap"
++
++
++def test_duplicate_path_reports_depth_zero_which_is_not_a_difficulty():
++    r = route({"finding_id": "C0002", "title": "x"},
++              ["Codex"], [{"finding_id": "C0003", "title": "x"}],
++              lambda m, f: "code", lambda c: "CONFIRMED",
++              lambda a, b: 1.0)
++    assert r.verdict == "DUPLICATE" and r.rungs_tried == 0
++    assert observed_difficulty(r, max_rungs=2) == (0, False)
++
++
++# ----------------------------------------------- F5/F6 (cold-start artefact)
++def test_wilson_interval_on_the_tuple_share_has_no_sampling_referent():
++    """min(6,N)/N is a deterministic ratio, not an estimated proportion.
++
++    Falsified if the artefact reports a non-degenerate interval on a quantity
++    that does not vary across repeated evaluation.
++    """
++    a = COLD.claim_the_tuple_coverage_collapses()
++    b = COLD.claim_the_tuple_coverage_collapses()
++    assert a == b, "the quantity varies -> an interval could be meaningful"
++    lo, hi = a[70]["wilson_on_the_share"]
++    print(f"\n  share at N=70 is exactly 6/70={6/70:.6f} on every evaluation, "
++          f"yet the artefact reports Wilson [{lo}, {hi}]")
++    assert abs(a[70]["share"] - 6 / 70) < 1e-6   # artefact rounds to 6dp
++    assert hi - lo > 0.1, "degenerate interval -> no misapplication"
++
++
++def test_cold_start_price_is_a_modal_estimate_with_about_50_percent_power():
++    """`attempts_to_separate` evaluates at round(p*n) - the modal outcome.
++
++    So the reported attempts have no power margin. Falsified if the achieved
++    probability of separation at the artefact's own n reaches 0.80.
++    """
++    rng = np.random.default_rng(505)
++    out = {}
++    for gap in (0.40, 0.20):
++        hi, lo = 0.60 + gap / 2, 0.60 - gap / 2
++        n = COLD.attempts_to_separate(hi, lo)
++        kh = rng.binomial(n, hi, 3000)
++        kl = rng.binomial(n, lo, 3000)
++        power = float(np.mean([wilson(int(x), n)[0] > wilson(int(y), n)[1]
++                               for x, y in zip(kh, kl)]))
++        out[gap] = (n, power)
++        print(f"\n  gap={gap:.2f}: artefact n={n}, achieved separation "
++              f"probability {power:.3f}")
++    for gap, (n, power) in out.items():
++        assert power < 0.80, f"gap={gap} already powered at n={n}"
+
+### cc2:attempt-1:bench/test_rotation_composes_with_the_rung_ladder.py
+--- /dev/null	2026-10-08 02:56:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/test_rotation_composes_with_the_rung_ladder.py	2026-10-08 02:42:51
+@@ -0,0 +1,181 @@
++"""Open questions 3 and 5, answered against bench/routing.py's real mechanics.
++
++Q5: does rotation compose with the rung ladder, or do they conflict?
++Q3: with the depth cap removed, does the ladder govern PRIORITY only, and does
++    it then still need rungs?
++
++Run: python3 -m pytest bench/test_rotation_composes_with_the_rung_ladder.py -q -s
++"""
++from __future__ import annotations
++
++import numpy as np
++
++from bench.promotion_gate import Z95, RungRecord, successes_required, wilson
++from bench.routing import rank_falsifier_writers, resolve_via_routing
++
++N_FINDINGS = 400
++MODELS = [f"m{i:02d}" for i in range(12)]
++CAP = 2
++# true per-finding resolve rate by model, descending; the ladder cannot see these
++TRUE_P = {m: p for m, p in zip(MODELS, np.linspace(0.92, 0.10, len(MODELS)))}
++
++
++def _dispatch_counts(order_fn, cap=CAP, early_stop=True, seed=31337):
++    """Attempts per model over N_FINDINGS.
++
++    `early_stop=True` reproduces `resolve_via_routing`, which returns on the
++    first CONFIRMED. `early_stop=False` counts attempts OFFERED, which is the
++    accounting under which the brief's "identical dispatch cost" holds.
++    """
++    counts = {m: 0 for m in MODELS}
++    rng = np.random.default_rng(seed)
++    resolved = 0
++    for i in range(N_FINDINGS):
++        order = order_fn(i)
++        for m in order[:cap]:
++            counts[m] += 1
++            if rng.random() < TRUE_P[m]:
++                resolved += 1
++                if early_stop:
++                    break
++    return counts, resolved
++
++
++def _rotate(i, step=1):
++    """Rotation by `step` roster positions per finding.
++
++    step=1 is the obvious implementation. step=CAP is the one that actually
++    produces the brief's even allocation - see the falsifier below.
++    """
++    j = (i * step) % len(MODELS)
++    return MODELS[j:] + MODELS[:j]
++
++
++def test_deterministic_identifier_order_starves_the_roster_DETERMINISTICALLY():
++    """The brief reports 10 of 12 starved with 'Wilson [0.5520, 0.9530]'.
++
++    The count is right and the interval has no referent: which models are
++    starved is fixed by the order and the cap, not sampled. Falsified if
++    repeated runs disagree on the starved set, in which case an interval could
++    be meaningful.
++    """
++    a, _ = _dispatch_counts(lambda i: MODELS, seed=1)
++    b, _ = _dispatch_counts(lambda i: MODELS, seed=2)
++    starved_a = {m for m in MODELS if a[m] == 0}
++    starved_b = {m for m in MODELS if b[m] == 0}
++    print(f"\n  identifier order, cap {CAP}: {len(starved_a)} of {len(MODELS)} models "
++          f"at 0 attempts; starved set identical across independent seeds: "
++          f"{starved_a == starved_b}")
++    assert starved_a == starved_b, "varies -> an interval would have a referent"
++    assert len(starved_a) == 10
++    assert a[MODELS[0]] == N_FINDINGS, "the first-ranked model takes every finding"
++
++
++def test_rotation_removes_the_starvation_but_NOT_at_identical_cost():
++    """CORRECTION TO THE BRIEF'S FIGURE 5.
++
++    "rotation gave every model 66 or 67 at identical dispatch cost" holds only
++    under attempts-OFFERED accounting. `resolve_via_routing` returns on the
++    first CONFIRMED, so putting a weak model first makes rung 1 fail more often
++    and rung 2 fire more often. Falsified if rotation's real dispatch total
++    equals the identifier order's.
++    """
++    step1, _ = _dispatch_counts(lambda i: _rotate(i, 1), early_stop=False)
++    stepc, _ = _dispatch_counts(lambda i: _rotate(i, CAP), early_stop=False)
++    det_off, _ = _dispatch_counts(lambda i: MODELS, early_stop=False)
++    print(f"\n  attempts OFFERED -- rotate by 1: {sorted(set(step1.values()))} per "
++          f"model (spread {max(step1.values())-min(step1.values())}); "
++          f"rotate by CAP={CAP}: {sorted(set(stepc.values()))} "
++          f"(spread {max(stepc.values())-min(stepc.values())})")
++    # 800 slots over 12 models = 12*66 + 8, so the maximally even allocation IS
++    # 8 models at 67 and 4 at 66. A contiguous window advanced by 1 does not
++    # reach it; advanced by CAP it does.
++    assert sum(stepc.values()) == N_FINDINGS * CAP == 800
++    assert set(stepc.values()) == {66, 67}, "the brief's 66/67 figure"
++    assert set(step1.values()) == {66, 67, 68}, \
++        "rotate-by-1 is already even -> the step size does not matter"
++    assert sum(step1.values()) == sum(det_off.values()), "offered cost is equal"
++
++    rot, rres = _dispatch_counts(lambda i: _rotate(i, CAP), early_stop=True)
++    det, dres = _dispatch_counts(lambda i: MODELS, early_stop=True)
++    print(f"  attempts DISPATCHED (first-CONFIRMED stop, real routing.py) -- "
++          f"rotation {sum(rot.values())} for {rres} resolved; "
++          f"identifier order {sum(det.values())} for {dres} resolved")
++    assert min(rot.values()) > 0, "rotation must still remove starvation"
++    assert sum(rot.values()) > sum(det.values()), \
++        "equal cost -> the brief's figure 5 needs no correction"
++    assert rres < dres, "and rotation also resolves fewer under the same cap"
++
++
++def test_rotation_and_the_rung_ladder_act_on_DIFFERENT_axes_so_they_compose():
++    """Rungs decide ELIGIBILITY; rotation decides ORDER among eligible ties.
++
++    Falsified if either control is nullified by the other: if rotation lets a
++    model below a rung receive that rung's findings, or if the ladder reinstates
++    starvation among models that ARE eligible.
++    """
++    z, floor, W = Z95, 0.50, 19
++    k = successes_required(W, floor, z)
++    # rungs held: top 6 models hold rung 2, all 12 hold rung 0
++    held = {}
++    rng = np.random.default_rng(4242)
++    for m in MODELS:
++        rec = RungRecord(window=W)
++        for _ in range(W):
++            rec.record(rng.random() < TRUE_P[m])
++        held[m] = 2 if rec.promotes(floor, z) else 0
++    eligible_r2 = [m for m in MODELS if held[m] >= 2]
++    counts = {m: 0 for m in MODELS}
++    for i in range(N_FINDINGS):                      # rung-2 findings only
++        pool = eligible_r2
++        order = pool[i % len(pool):] + pool[:i % len(pool)]
++        for m in order[:CAP]:
++            counts[m] += 1
++    print(f"\n  rung-2 holders (window {W}, k*={k}): {eligible_r2}")
++    print(f"  rung-2 dispatches: {[counts[m] for m in MODELS]}")
++    assert eligible_r2, "no model holds the rung -> the gate is vacuous here"
++    assert all(counts[m] == 0 for m in MODELS if held[m] < 2), \
++        "rotation handed rung-2 work to a model that does not hold rung 2"
++    assert min(counts[m] for m in eligible_r2) > 0, \
++        "the ladder reinstated starvation among eligible models"
++    # the weak models are PLACED, not excluded: they still hold rung 0
++    assert all(held[m] >= 0 for m in MODELS)
++
++
++def test_with_the_cap_removed_rung_ORDER_still_earns_its_keep():
++    """Q3: eligibility becomes unbounded, so does order still matter?
++
++    `resolve_via_routing` returns on the FIRST CONFIRMED, so order decides how
++    many dispatches a resolution costs. Falsified if ladder order costs no fewer
++    dispatches than rotation order with the cap removed - in which case rungs
++    would govern nothing once eligibility is universal.
++    """
++    rng = np.random.default_rng(555)
++    results = {}
++    for name, order_fn in (
++        ("ladder (strongest first)", lambda i: MODELS),
++        ("rotation only", lambda i: MODELS[i % len(MODELS):] + MODELS[:i % len(MODELS)]),
++        ("reversed ladder", lambda i: MODELS[::-1]),
++    ):
++        total, unresolved = 0, 0
++        for i in range(N_FINDINGS):
++            order = order_fn(i)
++            calls = {"n": 0}
++
++            def resolve_fn(m, f, _c=calls):
++                _c["n"] += 1
++                return f"code-{m}"
++
++            def reverify_fn(code, _rng=rng):
++                m = code.split("-", 1)[1]
++                return "CONFIRMED" if _rng.random() < TRUE_P[m] else "REFUTED"
++
++            r = resolve_via_routing({"finding_id": f"C{i}"}, order,
++                                    resolve_fn, reverify_fn, max_rungs=0)
++            total += calls["n"]
++            unresolved += 0 if r.resolved else 1
++        results[name] = (total / N_FINDINGS, unresolved)
++        print(f"\n  {name}: {total/N_FINDINGS:.3f} dispatches per finding, "
++              f"{unresolved} unresolved of {N_FINDINGS}")
++    assert results["ladder (strongest first)"][0] < results["rotation only"][0]
++    assert results["rotation only"][0] < results["reversed ladder"][0]
+
+### cc2:attempt-1:bench/test_stream_idle_timeout.py
+--- /dev/null	2026-10-08 02:56:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/test_stream_idle_timeout.py	2026-10-08 02:41:36
+@@ -0,0 +1,119 @@
++"""Falsifiers for bench/stream_idle_timeout.py. Real subprocesses, no mocks.
++
++Run: python3 -m pytest bench/test_stream_idle_timeout.py -q -s
++"""
++from __future__ import annotations
++
++import sys
++
++import pytest
++
++from bench.stream_idle_timeout import (
++    derive_ceiling, harvest, min_samples_for_ceiling)
++
++SLOW_BUT_WORKING = (
++    "import time,sys\n"
++    "for i in range(8):\n"
++    "    print('line', i); time.sleep(0.4)\n"
++    "print('DONE')\n")
++
++CHATTY_HANG = (
++    "import time\n"
++    "while True:\n"
++    "    print('retrying...'); time.sleep(0.2)\n")
++
++SILENT_HANG = "import time\nwhile True: time.sleep(5)\n"
++
++BLOCK_BUFFERED = (          # would emit nothing until exit without -u/UNBUFFERED
++    "import sys,time\n"
++    "for i in range(6):\n"
++    "    sys.stdout.write('x%d\\n' % i); time.sleep(0.3)\n")
++
++
++def _run(src, idle, ceiling):
++    return harvest([sys.executable, "-c", src], idle_timeout=idle, ceiling=ceiling)
++
++
++def test_idle_timeout_does_not_kill_a_slow_but_working_process():
++    r = _run(SLOW_BUT_WORKING, idle=1.0, ceiling=30.0)
++    print(f"\n  slow-but-working under idle cap: {r['reason']} at {r['elapsed']}s, "
++          f"{len(r['lines'])} lines, last={r['lines'][-1]!r}")
++    assert r["reason"] == "exit" and r["lines"][-1] == "DONE"
++
++
++def test_a_total_cap_alone_kills_that_same_working_process():
++    """The founder's objection to an arbitrary wall clock, demonstrated."""
++    r = _run(SLOW_BUT_WORKING, idle=30.0, ceiling=1.5)
++    print(f"\n  same process under a 1.5s total cap: {r['reason']} at "
++          f"{r['elapsed']}s, {len(r['lines'])} lines (work discarded)")
++    assert r["reason"] == "ceiling" and "DONE" not in r["lines"]
++
++
++def test_idle_timeout_catches_a_silent_hang_fast():
++    r = _run(SILENT_HANG, idle=1.0, ceiling=30.0)
++    print(f"\n  silent hang: {r['reason']} at {r['elapsed']}s")
++    assert r["reason"] == "idle" and r["elapsed"] < 3.0
++
++
++def test_idle_timeout_ALONE_never_catches_a_hung_process_that_keeps_talking():
++    """WHAT BREAKS THE IDLE TIMEOUT. Falsified if the idle cap trips here."""
++    r = _run(CHATTY_HANG, idle=1.0, ceiling=2.5)
++    print(f"\n  chatty hang (prints every 0.2s, idle cap 1.0s): {r['reason']} at "
++          f"{r['elapsed']}s, {len(r['lines'])} lines -- only the ceiling ends it")
++    assert r["reason"] == "ceiling", "idle cap tripped -> no ceiling needed"
++    assert len(r["lines"]) > 5
++
++
++def test_block_buffering_is_defeated_so_a_working_child_is_not_read_as_idle():
++    r = _run(BLOCK_BUFFERED, idle=1.0, ceiling=30.0)
++    print(f"\n  block-buffered writer under idle cap 1.0s: {r['reason']} at "
++          f"{r['elapsed']}s, {len(r['lines'])} lines")
++    assert r["reason"] == "exit" and len(r["lines"]) == 6
++
++
++def test_the_composition_is_justified_because_neither_control_covers_both_cases():
++    idle_only_on_chatty = _run(CHATTY_HANG, idle=1.0, ceiling=2.5)["reason"]
++    ceiling_only_on_slow = _run(SLOW_BUT_WORKING, idle=30.0, ceiling=1.5)["reason"]
++    both_on_slow = _run(SLOW_BUT_WORKING, idle=1.0, ceiling=30.0)["reason"]
++    both_on_chatty = _run(CHATTY_HANG, idle=1.0, ceiling=2.5)["reason"]
++    print(f"\n  idle-only on chatty hang: {idle_only_on_chatty} (not 'idle')")
++    print(f"  ceiling-only on slow work: {ceiling_only_on_slow} (work lost)")
++    print(f"  composed: slow work -> {both_on_slow}; chatty hang -> {both_on_chatty}")
++    assert idle_only_on_chatty != "idle"      # idle alone misses case 1
++    assert ceiling_only_on_slow == "ceiling"  # ceiling alone misses case 2
++    assert both_on_slow == "exit" and both_on_chatty == "ceiling"
++
++
++def test_the_sample_size_needed_to_place_a_ceiling_is_itself_derived():
++    m05 = min_samples_for_ceiling(0.05)
++    m20 = min_samples_for_ceiling(0.20)
++    print(f"\n  runs needed before a ceiling sits below the observed max: "
++          f"{m05} at kill_budget=0.05, {m20} at 0.20")
++    assert (m05, m20) == (73, 16)
++    # closed form cross-check
++    z = 1.959963984540054
++    assert m05 == int((z * z * 0.95 * 0.05) / 0.05 ** 2) + 1
++
++
++def test_below_that_sample_size_the_ceiling_errs_long_rather_than_guessing():
++    small = [2.0, 2.4, 3.1, 3.3, 4.0, 4.1, 5.2, 6.0, 8.1, 9.0,
++             10.0, 11.5, 12.0, 14.0, 21.0, 22.0, 30.0, 41.0, 55.0, 90.0]
++    c = derive_ceiling(small, kill_budget=0.05)
++    print(f"\n  m={len(small)} < {min_samples_for_ceiling(0.05)}: ceiling {c}s "
++          f"= observed max {max(small)}s (errs long, preserves work)")
++    assert c == max(small)
++
++
++def test_at_an_adequate_sample_size_the_ceiling_sits_strictly_below_the_max():
++    import numpy as np
++    rng = np.random.default_rng(909)
++    obs = list(np.round(rng.lognormal(mean=2.0, sigma=0.8, size=400), 2))
++    c = derive_ceiling(obs, kill_budget=0.05)
++    loose = derive_ceiling(obs, kill_budget=0.20)
++    killed = float(np.mean(np.asarray(obs) > c))
++    print(f"\n  m={len(obs)}: ceiling {c}s < max {max(obs)}s; "
++          f"fraction of legitimate runs it would kill {killed:.4f} <= 0.05; "
++          f"kill_budget=0.20 gives the tighter {loose}s")
++    assert c < max(obs) and loose < c and killed <= 0.05
++    with pytest.raises(ValueError):
++        derive_ceiling([], kill_budget=0.05)
+
+### cc2:attempt-1:bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py	2026-10-08 02:50:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py	2026-10-08 02:03:13
+@@ -87,29 +87,14 @@
+ 
+ def claim_the_tuple_coverage_collapses(sizes=(6, 7, 70, 700, 7000)) -> dict:
+     """The share of the roster a 6-name tuple can order."""
+-    # NO CONFIDENCE INTERVAL HERE, AND THE FIRST VERSION WRONGLY HAD ONE.
+-    # Caught by the cc2 seat, 2026-10-08: *"the brief applies Wilson intervals to
+-    # three deterministic quantities ... An interval on a quantity with no
+-    # estimator reads as measured uncertainty to the next reader and is nobody's
+-    # uncertainty."* It is right. A 6-name tuple ordering 6 of 70 seats is EXACT
+-    # RATIONAL ARITHMETIC -- 6/70 = 3/35 -- with no sample, no estimator and no
+-    # uncertainty to report. The share is given as an exact fraction instead, so a
+-    # later reader cannot mistake arithmetic for a measurement.
+-    #
+-    # WHERE AN INTERVAL DOES STILL BELONG, so this correction is not overapplied:
+-    # on genuinely MEASURED rates -- the intra-round correlation, the per-seat
+-    # per-round critical rate, the share of archived routing records that had more
+-    # than 1 rung available. Those are samples of observed runs and their
+-    # intervals stand.
+-    from fractions import Fraction
+     out = {}
+     for n in sizes:
+         ordered = min(TUPLE_LEN, n)
++        lo, hi = wilson(ordered, n)
+         out[n] = {"ordered_by_the_tuple": ordered,
+-                  "share_exact": str(Fraction(ordered, n)),
+                   "share": round(ordered / n, 6),
+                   "share_pct": round(100 * ordered / n, 4),
+-                  "is_a_measurement": False,
++                  "wilson_on_the_share": (round(lo, 6), round(hi, 6)),
+                   "ordered_by_nothing_but_input_order": n - ordered}
+     return out
+ 
+
+### cc2:attempt-1:bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py	2026-10-08 02:54:25
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ev_7kpti/repo/bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py	2026-10-08 02:26:59
+@@ -137,72 +137,28 @@
+ 
+ 
+ def claim_difficulty_can_be_measured_not_judged() -> dict:
+-    """Is recorded depth a usable difficulty label? CALL `route` and find out.
++    """The rung a finding was ACTUALLY resolved at is a measured difficulty label.
+ 
+-    THE FIRST VERSION OF THIS FUNCTION WAS CONDEMNED BY THE cc2 SEAT, 2026-10-08,
+-    and it was right: *"The artefact's claim 4 validates this by AST-scanning
+-    FIELD NAMES -- it never executes `route`, so it would report
+-    `records_resolution_depth: True` whatever the values are."* That is the
+-    `execute-do-not-grep` defect, committed in a script used to brief a panel.
+-
+-    AND THE SEAT'S SUBSTANTIVE FINDING IS THE ONE THAT MATTERS: `rungs_tried` is
+-    RIGHT-CENSORED. Under a cap, a finding whose true depth is 4 reports 2, which
+-    is indistinguishable from one genuinely resolved at rung 2. So depth is a
+-    difficulty label only where the ladder was allowed to run to exhaustion, and
+-    elsewhere it is a LOWER BOUND. This version calls the real `route` under both
+-    regimes and reports the censoring rather than asserting the field exists.
++    The founder's ladder needs tasks ordered by difficulty BEFORE a new model is
++    placed, while both panel seats argued difficulty is emergent and retrospective
++    -- a finding is hard because everything better already failed. Those are
++    reconcilable: resolution DEPTH is recorded per finding, so past depth labels
++    future difficulty with no human judgement and no vendor name.
+     """
+-    import importlib.util
+-    import sys as _sys
++    import ast
+     from pathlib import Path
+-
+     root = Path(__file__).resolve().parents[1]
+-    spec = importlib.util.spec_from_file_location(
+-        "rt_depth", root / "bench" / "routing.py")
+-    RT = importlib.util.module_from_spec(spec)
+-    _sys.modules["rt_depth"] = RT
+-    spec.loader.exec_module(RT)
+-
+-    ladder = list(RT.DEFAULT_FALSIFIER_STRENGTH)
+-    finding = {"id": "D1", "description": "d", "model": "Nobody",
+-               "falsifier_code": ""}
+-
+-    def run(max_rungs: int, resolve_at: int):
+-        """Resolve only when the `resolve_at`-th rung is reached."""
+-        seen = []
+-
+-        def resolve(model, _f):
+-            seen.append(model)
+-            return "assert True" if len(seen) >= resolve_at else "assert False"
+-
+-        def reverify(code):
+-            return "CONFIRMED" if code == "assert True" else "REFUTED"
+-
+-        r = RT.route(finding, ladder, [], resolve, reverify,
+-                     lambda _a, _b: 0.0, max_rungs=max_rungs,
+-                     self_rung_enabled=False)
+-        return r.rungs_tried, r.resolved
+-
+-    true_depth = 4
+-    capped_depth, capped_resolved = run(2, true_depth)
+-    exhaust_depth, exhaust_resolved = run(0, true_depth)
+-    # a finding GENUINELY resolved at rung 2, under the same cap
+-    honest_depth, _ = run(2, 2)
+-
++    src = (root / "bench" / "routing.py").read_text()
++    fields = set()
++    for node in ast.walk(ast.parse(src)):
++        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
++            fields.add(node.target.id)
+     return {
+-        "true_depth": true_depth,
+-        "reported_under_cap_2": capped_depth,
+-        "resolved_under_cap_2": capped_resolved,
+-        "reported_under_exhaustion": exhaust_depth,
+-        "resolved_under_exhaustion": exhaust_resolved,
+-        "a_genuine_rung_2_resolution_reports": honest_depth,
+-        "censored_and_honest_are_indistinguishable":
+-            capped_depth == honest_depth,
+-        "depth_is_a_label_only_under_exhaustion":
+-            exhaust_depth == true_depth and capped_depth != true_depth,
+-        "verdict": ("depth is a LOWER BOUND under a cap and an exact label only "
+-                    "under exhaustion, so the cap must lift before depth can "
+-                    "order difficulty"),
++        "routing_result_fields": sorted(fields),
++        "records_resolution_depth": "rungs_tried" in fields,
++        "records_which_model_resolved": "model_used" in fields,
++        "implication": ("rungs_tried is already recorded per finding, so observed "
++                        "difficulty is available today and needs no classifier"),
+     }
+ 
+ 
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-08 02:56:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rx5tzlsd/repo/.cdsfl_deny_canonical_writes.sb	2026-10-08 02:46:20
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/idle_timeout_needs_a_backstop_2026-10-08.py
+--- /dev/null	2026-10-08 02:56:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rx5tzlsd/repo/bench/idle_timeout_needs_a_backstop_2026-10-08.py	2026-10-08 02:53:00
+@@ -0,0 +1,89 @@
++#!/usr/bin/env python3
++"""An idle timeout on the stream is right -- and insufficient alone. Two
++adversaries break idle-only harvesting, and both are demonstrated live:
++
++  1. HEARTBEAT: a process emitting 1 byte/s never goes idle, so an idle-only
++     policy runs it FOREVER. A total-cap backstop is required.
++  2. BLOCK BUFFERING: a genuinely working child writing to a pipe without
++     flushing emits NOTHING until its stdio buffer fills, so an idle-only
++     policy kills a working process. The stream must be unbuffered (python -u
++     or a pty) or the idle clock measures the buffer, not the model.
++
++The composed policy (idle timeout + generous total cap + unbuffered stream) is
++justified under the composability rule because each component alone FAILS a
++demonstrated case: total-alone killed the brief's slow-but-working process at
++5.0 s that completed at 8.1 s under idle; idle-alone never terminates the
++heartbeat, measured below. Composition is the measurement, not a judgement.
++
++Run: python3 bench/idle_timeout_needs_a_backstop_2026-10-08.py
++Exits non-zero / prints FALSIFIED iff either adversary fails to break idle-only.
++"""
++import os
++import select
++import subprocess
++import sys
++import time
++
++fails = []
++
++
++def check(name, cond, detail=""):
++    print(f"  {'PASS' if cond else 'FALSIFIED'}: {name} {detail}")
++    if not cond:
++        fails.append(name)
++
++
++def idle_harvest(cmd, idle_cap, total_cap=None):
++    """Harvest stdout; kill when no bytes for idle_cap (or total_cap exceeded).
++    Returns (bytes_read, elapsed, why)."""
++    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
++    fd, buf, t0, last = p.stdout.fileno(), b"", time.monotonic(), time.monotonic()
++    why = "eof"
++    while True:
++        now = time.monotonic()
++        if total_cap and now - t0 >= total_cap:
++            why = "total_cap"; break
++        if now - last >= idle_cap:
++            why = "idle_cap"; break
++        r, _, _ = select.select([fd], [], [], 0.05)
++        if r:
++            chunk = os.read(fd, 65536)
++            if not chunk:
++                break
++            buf += chunk; last = time.monotonic()
++        if p.poll() is not None and not select.select([fd], [], [], 0)[0]:
++            break
++    p.kill(); p.wait()
++    return buf, time.monotonic() - t0, why
++
++
++# ---- adversary 1: heartbeat never goes idle; only the total cap stops it ----
++hb = [sys.executable, "-u", "-c",
++      "import time\n"
++      "while True: print('.', flush=True); time.sleep(0.5)"]
++_, el, why = idle_harvest(hb, idle_cap=2.0, total_cap=6.0)
++print(f"  heartbeat: stopped by {why} at {el:.1f}s (idle cap 2.0s never fired)")
++check("idle-only never terminates a heartbeat; total cap is the backstop",
++      why == "total_cap" and el >= 5.9)
++
++# ---- adversary 2: block buffering makes a WORKING process look idle ----
++worker_src = ("import sys, time\n"
++              "for i in range(6): print('line', i); time.sleep(0.5)\n"
++              "print('DONE')\n")
++buffered = [sys.executable, "-c", worker_src]          # pipe => block-buffered
++buf_b, el_b, why_b = idle_harvest(buffered, idle_cap=2.0)
++unbuffered = [sys.executable, "-u", "-c", worker_src]  # -u => line-visible
++buf_u, el_u, why_u = idle_harvest(unbuffered, idle_cap=2.0)
++print(f"  buffered worker: {len(buf_b)}B seen, stopped by {why_b} at {el_b:.1f}s")
++print(f"  unbuffered same: {len(buf_u)}B seen, stopped by {why_u} at {el_u:.1f}s")
++check("block buffering starves the idle clock and kills a working process",
++      why_b == "idle_cap" and b"DONE" not in buf_b)
++check("the identical worker completes once the stream is unbuffered",
++      b"DONE" in buf_u and why_u in ("eof",))
++
++print()
++if fails:
++    print("FALSIFIED:", fails)
++    raise SystemExit(1)
++print("BOTH ADVERSARIES CONFIRMED -- idle timeout is the right primary, and it "
++      "requires an unbuffered stream plus a total-cap backstop.")
+
+### fable:attempt-1:bench/model_identity.py
+--- /dev/null	2026-10-08 02:56:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rx5tzlsd/repo/bench/model_identity.py	2026-10-08 02:52:31
+@@ -0,0 +1,69 @@
++#!/usr/bin/env python3
++"""Capability records keyed by a configuration digest, not a random identifier.
++
++THE FOUNDER'S WORDS (2026-10-08): *"the only way to tell them apart is through a
++randomly assigned model ID"*. The need is real -- `model_id` in
++bench/experiment_11_orchestrator.py has 12 occurrences with only 10 distinct
++values (`opus` and `gpt-5.5` each appear twice), so the project has no stable
++unique key for a capability record today. But RANDOM assignment is the wrong
++derivation, and the defect is measurable: 2 instances of a genuinely identical
++configuration would receive 2 different random identifiers, their attempt
++records would never pool, and each would pay the full cold-start price
++separately -- the measured price is 21 attempts at a 0.40 capability gap and
++350 at 0.10 (bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py),
++so splitting doubles wall-clock rounds to separation for no benefit.
++
++THE RULE. Two levels, because they answer different questions:
++
++  capability_key  = SHA-256 digest of the canonical JSON of every field that
++                    changes the model's OUTPUT DISTRIBUTION. Same distribution
++                    -> same key -> records pool (exchangeable, statistically
++                    valid). Any distribution-changing difference -> new key at
++                    0 attempts. A vendor release changes `model_version`, so it
++                    gets a new key AUTOMATICALLY -- which is the founder's own
++                    bidirectional rule ("No new model is inherently trusted")
++                    enforced by construction rather than by policy.
++  instance_id     = random token for DISPATCH bookkeeping only (which process,
++                    which slot). Never keys a capability record.
++
++The digest carries no vendor prior: it orders nothing and smuggles nothing --
++it is opaque to sorting, exactly as the founder wants, while still merging what
++is identical and splitting what is not.
++"""
++from __future__ import annotations
++
++import hashlib
++import json
++import secrets
++
++#: Every field that changes what the model emits. Extend ONLY with fields that
++#: change the output distribution; cosmetic fields (display name, owner,
++#: billing tag) must stay out or identical configs will wrongly split.
++DISTRIBUTION_FIELDS = (
++    "provider",        # e.g. "openrouter", "claude_cli" -- the harness differs
++    "model_version",   # FULL vendor string, e.g. "openai/gpt-5.5-2026-08-01"
++    "temperature",
++    "top_p",
++    "max_tokens",
++    "system_prompt",   # hashed into the digest via its text
++    "tool_set",        # sorted tool names
++    "quantisation",    # e.g. "fp8", None for vendor-hosted
++)
++
++
++def capability_key(config: dict) -> str:
++    """Deterministic digest over distribution-affecting fields only."""
++    canon = {}
++    for f in DISTRIBUTION_FIELDS:
++        v = config.get(f)
++        if f == "tool_set" and v is not None:
++            v = sorted(v)
++        canon[f] = v
++    blob = json.dumps(canon, sort_keys=True, separators=(",", ":"),
++                      ensure_ascii=True)
++    return hashlib.sha256(blob.encode()).hexdigest()[:16]
++
++
++def instance_id() -> str:
++    """Random token for dispatch bookkeeping. NEVER keys a capability record."""
++    return secrets.token_hex(8)
+
+### fable:attempt-1:bench/promotion_gate.py
+--- /dev/null	2026-10-08 02:56:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rx5tzlsd/repo/bench/promotion_gate.py	2026-10-08 02:51:20
+@@ -0,0 +1,124 @@
++#!/usr/bin/env python3
++"""A calibrated, bidirectional, non-absorbing promotion gate for the rung ladder.
++
++WHAT THIS REPLACES. The founder's promote-on-one-success rule (2026-10-08) is
++broken under BOTH of its possible readings:
++  * absorbing (one attempt per rung ever): a p=0.90 model is kept below the top
++    40.951% of the time by luck alone (1 - 0.9**5);
++  * with retries (stay on a rung = keep receiving its tasks): every model with
++    p > 0 reaches the top with probability 1 (geometric waits per rung), so the
++    rule excludes NOTHING and the ladder is a monotone ratchet.
++And the obvious Wilson-floor repair at (n=10, floor=0.50) requires 9/10 per rung
++and admits a p=0.90 model to the top only 21.6% of the time -- worse. Both
++failures have the same root: the parameters were CHOSEN, not derived.
++
++THE DESIGN. Each rung holds a per-rung attempt record (this is also the
++difficulty stratification: attempts at rung r are never pooled with attempts at
++rung r'). Three rules:
++
++  PROMOTE  after a block of n_gate attempts at the candidate rung with
++           successes >= k_gate.
++  DEMOTE   when, over the sliding window of the last W_demote attempts at the
++           HELD rung, successes <= j_demote.
++  STAY     otherwise. Blocks repeat indefinitely: failure is never absorbing,
++           which restores the founder's bidirectional rule, and demotion is
++           evidence-driven, which stops the ratchet.
++
++EVERY PARAMETER IS DERIVED FROM A STATED ERROR TARGET, never chosen:
++
++  Promotion gate (n_gate, k_gate): smallest n admitting a threshold k with
++      P(Bin(n, p_good) >= k) >= (1 - BETA_TOTAL) ** (1/R)     [good pass rate]
++      P(Bin(n, p_bad ) >= k) <= ALPHA_TOP ** (1/R)            [bad  pass rate]
++  so that per CAMPAIGN (one gate block per rung, R rungs) a p_good model tops
++  out with prob >= 1 - BETA_TOTAL and a p_bad model with prob <= ALPHA_TOP.
++
++  Demotion window (W_demote, j_demote): smallest W admitting a threshold j with
++      P(Bin(W, p_good) <= j) <= HOLD_SAFETY       [healthy model not demoted]
++      P(Bin(W, p_drop) <= j) >= DROP_DETECT       [degraded model caught]
++
++With retries a p_bad model still eventually passes any fixed gate (pass prob
++per block is positive), so the honest guarantee is ERGODIC, not absolute: the
++demotion rule bounds the fraction of time a bad model OCCUPIES a rung it cannot
++hold. The falsifier measures that occupancy directly.
++
++Run: python3 bench/test_promotion_gate_2026-10-08.py
++"""
++from __future__ import annotations
++
++from dataclasses import dataclass, field
++
++# ------------------------- stated targets (the inputs) -------------------------
++R_RUNGS = 5          # ladder depth used throughout the 2026-10-08 brief
++P_GOOD = 0.90        # per-rung success rate of a model that SHOULD top out
++P_BAD = 0.50         # per-rung success rate of a model that should NOT
++P_DROP = 0.40        # post-degradation rate the demotion rule must catch
++BETA_TOTAL = 0.05    # P(good model fails to top out per campaign) <= 5%
++ALPHA_TOP = 0.001    # P(bad model tops out per campaign)          <= 0.1%
++HOLD_SAFETY = 1e-3   # P(healthy model demoted per window)         <= 0.1%
++DROP_DETECT = 0.95   # P(degraded model demoted per window)        >= 95%
++
++
++def derive_promotion_gate(r_rungs: int = R_RUNGS, p_good: float = P_GOOD,
++                          p_bad: float = P_BAD, beta_total: float = BETA_TOTAL,
++                          alpha_top: float = ALPHA_TOP,
++                          n_max: int = 200) -> tuple[int, int]:
++    """Smallest (n, k): promote on >= k successes in a block of n attempts."""
++    from scipy.stats import binom
++    q_good_req = (1.0 - beta_total) ** (1.0 / r_rungs)
++    q_bad_max = alpha_top ** (1.0 / r_rungs)
++    for n in range(1, n_max + 1):
++        for k in range(n, 0, -1):
++            good = float(binom.sf(k - 1, n, p_good))
++            bad = float(binom.sf(k - 1, n, p_bad))
++            if good >= q_good_req and bad <= q_bad_max:
++                return n, k
++    raise ValueError("no gate within n_max; targets are jointly infeasible")
++
++
++def derive_demotion_window(p_good: float = P_GOOD, p_drop: float = P_DROP,
++                           hold_safety: float = HOLD_SAFETY,
++                           drop_detect: float = DROP_DETECT,
++                           w_max: int = 400) -> tuple[int, int]:
++    """Smallest (W, j): demote on <= j successes in the last W held-rung attempts."""
++    from scipy.stats import binom
++    for w in range(1, w_max + 1):
++        for j in range(w):
++            healthy = float(binom.cdf(j, w, p_good))
++            degraded = float(binom.cdf(j, w, p_drop))
++            if healthy <= hold_safety and degraded >= drop_detect:
++                return w, j
++    raise ValueError("no window within w_max; targets are jointly infeasible")
++
++
++@dataclass
++class RungLadderState:
++    """Per-model ladder state. Records are PER RUNG -- never pooled across
++    rungs, so a model's record is difficulty-stratified by construction and
++    attempts harvested at the back of a deep routing order (hard residuals)
++    cannot poison its easy-rung record."""
++    rung: int = 0
++    gate_attempts: int = 0
++    gate_successes: int = 0
++    held_window: list = field(default_factory=list)   # 1/0, most recent last
++
++    def observe_gate(self, success: bool, n_gate: int, k_gate: int,
++                     r_rungs: int) -> None:
++        """One attempt at the CANDIDATE rung (rung+1 tasks)."""
++        self.gate_attempts += 1
++        self.gate_successes += int(success)
++        if self.gate_attempts == n_gate:
++            if self.gate_successes >= k_gate and self.rung < r_rungs:
++                self.rung += 1
++                self.held_window = []
++            self.gate_attempts = 0
++            self.gate_successes = 0          # block over; next block is fresh
++
++    def observe_held(self, success: bool, w_demote: int, j_demote: int) -> None:
++        """One attempt at the HELD rung (its routine work)."""
++        self.held_window.append(int(success))
++        if len(self.held_window) > w_demote:
++            self.held_window.pop(0)
++        if (len(self.held_window) == w_demote
++                and sum(self.held_window) <= j_demote and self.rung > 0):
++            self.rung -= 1
++            self.held_window = []
+
+### fable:attempt-1:bench/test_model_identity_2026-10-08.py
+--- /dev/null	2026-10-08 02:56:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rx5tzlsd/repo/bench/test_model_identity_2026-10-08.py	2026-10-08 02:52:31
+@@ -0,0 +1,85 @@
++#!/usr/bin/env python3
++"""Falsifier for bench/model_identity.py. Imports the real module.
++
++FAILS iff: identical configurations split, differing ones merge, a vendor
++release inherits a record, cosmetic fields split a key, or pooling fails to
++beat split records on the measured cold-start price.
++"""
++import math
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++from bench.model_identity import capability_key, instance_id  # noqa: E402
++
++fails = []
++
++
++def check(name, cond, detail=""):
++    print(f"  {'PASS' if cond else 'FALSIFIED'}: {name} {detail}")
++    if not cond:
++        fails.append(name)
++
++
++base = {"provider": "openrouter", "model_version": "openai/gpt-5.5-2026-08-01",
++        "temperature": 0.2, "top_p": 1.0, "max_tokens": 8192,
++        "system_prompt": "You are a falsifier writer.",
++        "tool_set": ["execute_python", "read_file"], "quantisation": None}
++
++# 1. two genuinely identical configurations are NOT split
++check("identical configs merge", capability_key(base) == capability_key(dict(base)))
++# ... even when the tool list order differs (same set)
++reordered = dict(base, tool_set=["read_file", "execute_python"])
++check("tool order does not split", capability_key(base) == capability_key(reordered))
++# ... and even when a cosmetic field differs
++cosmetic = dict(base, display_name="Codex", billing_tag="exp56")
++check("cosmetic fields do not split", capability_key(base) == capability_key(cosmetic))
++
++# 2. one configuration is not merged with a different one
++for f, v in [("temperature", 0.7), ("model_version", "openai/gpt-5.5-2026-11-01"),
++             ("system_prompt", "You are a reviewer."), ("provider", "claude_cli")]:
++    check(f"{f} change splits", capability_key(dict(base, **{f: v})) != capability_key(base))
++
++# 3. a vendor release gets a NEW key at 0 attempts, by construction
++release = dict(base, model_version="openai/gpt-6.0-2026-12-01")
++check("vendor release -> new key", capability_key(release) != capability_key(base))
++
++# 4. random instance ids are dispatch-only and DO split -- which is the defect
++#    random capability keys would have: demonstrate the pooling advantage.
++check("instance ids differ per call (dispatch-only)", instance_id() != instance_id())
++Z = 1.959963984540054
++def wilson(k, n):
++    if n == 0: return (0.0, 0.0)
++    p, d = k / n, 1 + Z * Z / n
++    c = (p + Z * Z / (2 * n)) / d
++    h = (Z / d) * math.sqrt(p * (1 - p) / n + Z * Z / (4 * n * n))
++    return (max(0.0, c - h), min(1.0, c + h))
++def rounds_to_separate(p_hi, p_lo, instances):
++    """Rounds of 1 attempt per instance until pooled hi-LB clears pooled lo-UB."""
++    for r in range(2, 4001):
++        n = r * instances
++        if wilson(round(p_hi * n), n)[0] > wilson(round(p_lo * n), n)[1]:
++            return r
++    return None
++pooled, split = rounds_to_separate(0.8, 0.4, 2), rounds_to_separate(0.8, 0.4, 1)
++print(f"  rounds to separate 0.8 from 0.4: pooled(2 instances)={pooled}, split={split}")
++check("pooling beats split records on cold-start rounds", pooled < split,
++      f"({pooled} < {split})")
++
++# 5. the live defect this replaces: model_id collides in the orchestrator
++src = (Path(__file__).resolve().parents[1] / "bench" /
++       "experiment_11_orchestrator.py").read_text()
++import re
++vals = re.findall(r'(?:secondary_)?model_id="([^"]+)"', src)
++dups = {v for v in vals if vals.count(v) > 1}
++print(f"  orchestrator model_id values: {len(vals)} occurrences, "
++      f"{len(set(vals))} distinct, duplicated: {sorted(dups)}")
++check("the collision the digest replaces is real",
++      len(vals) == 12 and len(set(vals)) == 10 and dups == {"opus", "gpt-5.5"})
++
++print()
++if fails:
++    print("FALSIFIED:", fails)
++    raise AssertionError(fails)
++print("ALL CHECKS PASS -- digest merges the identical, splits the different, "
++      "and a vendor release starts at 0 attempts by construction.")
+
+### fable:attempt-1:bench/test_promotion_gate_2026-10-08.py
+--- /dev/null	2026-10-08 02:56:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rx5tzlsd/repo/bench/test_promotion_gate_2026-10-08.py	2026-10-08 02:51:46
+@@ -0,0 +1,108 @@
++#!/usr/bin/env python3
++"""Falsifier for bench/promotion_gate.py. Imports the real module.
++
++FAILS (AssertionError / prints FALSIFIED) iff the derived gate misses its
++stated targets or the ladder dynamics contradict them. Exits cleanly iff the
++gate does what bench/promotion_gate.py claims.
++"""
++import math
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++from bench.promotion_gate import (  # noqa: E402  -- the REAL target module
++    ALPHA_TOP, BETA_TOTAL, DROP_DETECT, HOLD_SAFETY, P_BAD, P_DROP, P_GOOD,
++    R_RUNGS, RungLadderState, derive_demotion_window, derive_promotion_gate)
++
++from scipy.stats import binom
++import numpy as np
++
++fails = []
++
++
++def check(name, cond, detail=""):
++    print(f"  {'PASS' if cond else 'FALSIFIED'}: {name} {detail}")
++    if not cond:
++        fails.append(name)
++
++
++# ---- 1. the derived gate hits the per-campaign targets (closed form) ----
++n_gate, k_gate = derive_promotion_gate()
++q_good = float(binom.sf(k_gate - 1, n_gate, P_GOOD))
++q_bad = float(binom.sf(k_gate - 1, n_gate, P_BAD))
++top_good = q_good ** R_RUNGS
++top_bad = q_bad ** R_RUNGS
++print(f"derived gate: n={n_gate}, k={k_gate}; per-rung pass good={q_good:.6f} "
++      f"bad={q_bad:.6f}; per-campaign top good={top_good:.6f} bad={top_bad:.2e}")
++check("good model tops out >= 1-beta", top_good >= 1 - BETA_TOTAL,
++      f"({top_good:.6f} vs {1-BETA_TOTAL})")
++check("bad model tops out <= alpha", top_bad <= ALPHA_TOP,
++      f"({top_bad:.2e} vs {ALPHA_TOP})")
++# minimality: no smaller n admits any k meeting both targets
++qg_req, qb_max = (1 - BETA_TOTAL) ** (1 / R_RUNGS), ALPHA_TOP ** (1 / R_RUNGS)
++smaller_works = any(
++    binom.sf(k - 1, n, P_GOOD) >= qg_req and binom.sf(k - 1, n, P_BAD) <= qb_max
++    for n in range(1, n_gate) for k in range(1, n + 1))
++check("n_gate is minimal", not smaller_works)
++# the brief's (10, floor 0.50 -> 9/10) gate is dominated by this one for the
++# good model AND for the bad model -- committed measurement for replacing it:
++old_good = float(binom.sf(8, 10, P_GOOD)) ** R_RUNGS
++old_bad = float(binom.sf(8, 10, P_BAD)) ** R_RUNGS
++check("derived gate dominates 9/10-floor gate on good admission",
++      top_good > old_good, f"({top_good:.4f} vs {old_good:.4f})")
++
++# ---- 2. the derived demotion window hits its targets ----
++w_dem, j_dem = derive_demotion_window()
++healthy = float(binom.cdf(j_dem, w_dem, P_GOOD))
++degraded = float(binom.cdf(j_dem, w_dem, P_DROP))
++print(f"derived demotion: W={w_dem}, j={j_dem}; "
++      f"P(demote|healthy)={healthy:.2e} P(demote|degraded)={degraded:.4f}")
++check("healthy model survives window", healthy <= HOLD_SAFETY)
++check("degraded model caught", degraded >= DROP_DETECT)
++
++# ---- 3. simulate the full ladder: non-absorbing + ergodic occupancy ----
++rng = np.random.default_rng(20261008)
++
++
++def run(p, blocks=400):
++    """Alternate: one gate block at the candidate rung, then W held attempts."""
++    s = RungLadderState()
++    occupancy = np.zeros(R_RUNGS + 1)
++    for _ in range(blocks):
++        for _ in range(n_gate):
++            s.observe_gate(rng.random() < p, n_gate, k_gate, R_RUNGS)
++        for _ in range(w_dem):
++            s.observe_held(rng.random() < p, w_dem, j_dem)
++        occupancy[s.rung] += 1
++    return s, occupancy / occupancy.sum()
++
++
++trials = 300
++good_top_frac = np.mean([run(P_GOOD, blocks=40)[1][R_RUNGS] > 0 for _ in range(trials)])
++check("good model reaches top despite early bad luck (non-absorbing)",
++      good_top_frac >= 0.99, f"(reached in {good_top_frac:.3f} of {trials} runs)")
++
++_, occ_bad = run(P_BAD, blocks=1000)
++top_occ_bad = float(occ_bad[R_RUNGS - 1] + occ_bad[R_RUNGS])
++print(f"  p={P_BAD} long-run occupancy by rung: {np.round(occ_bad, 3).tolist()}")
++check("bad model's occupancy of top two rungs is bounded", top_occ_bad <= 0.05,
++      f"(occupies top-2 {top_occ_bad:.4f} of blocks)")
++
++# ---- 4. bidirectionality: a model that degrades 0.9 -> 0.4 descends ----
++s = RungLadderState()
++for _ in range(200):     # climb as a 0.9 model
++    for _ in range(n_gate):
++        s.observe_gate(rng.random() < P_GOOD, n_gate, k_gate, R_RUNGS)
++rung_before = s.rung
++for _ in range(50):      # degrade to 0.4; only held-rung work now
++    for _ in range(w_dem):
++        s.observe_held(rng.random() < P_DROP, w_dem, j_dem)
++check("degraded model descends (bidirectional)",
++      rung_before >= R_RUNGS - 1 and s.rung < rung_before,
++      f"(rung {rung_before} -> {s.rung})")
++
++print()
++if fails:
++    print("FALSIFIED:", fails)
++    raise AssertionError(fails)
++print("ALL CHECKS PASS -- the derived gate meets every stated target.")
+
+### fable:attempt-1:bench/test_rungs_tried_is_left_censored_2026-10-08.py
+--- /dev/null	2026-10-08 02:56:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rx5tzlsd/repo/bench/test_rungs_tried_is_left_censored_2026-10-08.py	2026-10-08 02:53:49
+@@ -0,0 +1,66 @@
++#!/usr/bin/env python3
++"""Falsifier: `rungs_tried` under strongest-first routing is a LEFT-CENSORED
++difficulty label, not the measured difficulty the 2026-10-08 brief claims.
++
++Imports the REAL bench/routing.py and drives resolve_via_routing with a
++deterministic capability model: model strength s, finding difficulty d,
++confirm iff s >= d. Strongest-first means every finding the strongest model
++can confirm gets rungs_tried == 1 REGARDLESS of how easy it is, so the label
++cannot distinguish any two difficulties below the top model's ceiling.
++
++FAILS (AssertionError) iff rungs_tried DOES separate sub-ceiling difficulties
++under strongest-first order -- i.e. iff the brief's reconciliation claim holds
++as stated. Exits cleanly iff the label is censored as this falsifier claims,
++and shows the weakest-first order recovers the full difficulty ranking.
++"""
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++from bench.routing import resolve_via_routing  # noqa: E402  -- REAL module
++
++STRENGTH = {"M5": 5, "M4": 4, "M3": 3, "M2": 2, "M1": 1}   # M5 strongest
++LADDER_STRONG_FIRST = ["M5", "M4", "M3", "M2", "M1"]
++LADDER_WEAK_FIRST = list(reversed(LADDER_STRONG_FIRST))
++
++
++def resolve_fn(model, finding):
++    # deterministic: a model emits a working falsifier iff strong enough
++    return "ok" if STRENGTH[model] >= finding["difficulty"] else "broken"
++
++
++def reverify_fn(code):
++    return "CONFIRMED" if code == "ok" else "REFUTED"
++
++
++def depths(ladder):
++    out = {}
++    for d in (1, 2, 3, 4, 5):
++        r = resolve_via_routing({"finding_id": f"F{d}", "difficulty": d},
++                                ladder, resolve_fn, reverify_fn, max_rungs=0)
++        out[d] = (r.rungs_tried, r.resolved)
++    return out
++
++
++strong = depths(LADDER_STRONG_FIRST)
++weak = depths(LADDER_WEAK_FIRST)
++print(f"  strongest-first rungs_tried by true difficulty: "
++      f"{ {d: v[0] for d, v in strong.items()} }")
++print(f"  weakest-first   rungs_tried by true difficulty: "
++      f"{ {d: v[0] for d, v in weak.items()} }")
++
++# Under strongest-first, every difficulty M5 can handle resolves at rung 1.
++censored = {v[0] for d, v in strong.items() if d <= 5}
++assert censored == {1}, (
++    "FALSIFIED: strongest-first rungs_tried separated sub-ceiling "
++    f"difficulties ({censored}) -- the brief's claim would stand")
++# Under weakest-first, rungs_tried IS the difficulty rank (depth d needs the
++# d-th weakest model), at the cost of d-1 wasted dispatches per finding.
++assert all(weak[d][0] == d for d in (1, 2, 3, 4, 5)), "weak-first not rank"
++wasted = sum(weak[d][0] - 1 for d in (1, 2, 3, 4, 5))
++print(f"  weakest-first recovers the full ranking at the cost of {wasted} "
++      f"extra dispatches over 5 findings (strongest-first: 0 extra)")
++print("CONFIRMED: rungs_tried is left-censored at 1 under the live "
++      "strongest-first order; it measures difficulty ONLY above the top "
++      "model's ceiling. The brief's reconciliation holds only for the "
++      "minority of findings the strongest rung fails (1 of 7 in Exp 42).")
+
+### fable:attempt-1:bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py	2026-10-08 02:50:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rx5tzlsd/repo/bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py	2026-10-08 02:54:10
+@@ -87,29 +87,19 @@
+ 
+ def claim_the_tuple_coverage_collapses(sizes=(6, 7, 70, 700, 7000)) -> dict:
+     """The share of the roster a 6-name tuple can order."""
+-    # NO CONFIDENCE INTERVAL HERE, AND THE FIRST VERSION WRONGLY HAD ONE.
+-    # Caught by the cc2 seat, 2026-10-08: *"the brief applies Wilson intervals to
+-    # three deterministic quantities ... An interval on a quantity with no
+-    # estimator reads as measured uncertainty to the next reader and is nobody's
+-    # uncertainty."* It is right. A 6-name tuple ordering 6 of 70 seats is EXACT
+-    # RATIONAL ARITHMETIC -- 6/70 = 3/35 -- with no sample, no estimator and no
+-    # uncertainty to report. The share is given as an exact fraction instead, so a
+-    # later reader cannot mistake arithmetic for a measurement.
+-    #
+-    # WHERE AN INTERVAL DOES STILL BELONG, so this correction is not overapplied:
+-    # on genuinely MEASURED rates -- the intra-round correlation, the per-seat
+-    # per-round critical rate, the share of archived routing records that had more
+-    # than 1 rung available. Those are samples of observed runs and their
+-    # intervals stand.
+-    from fractions import Fraction
+     out = {}
+     for n in sizes:
+         ordered = min(TUPLE_LEN, n)
++        # NO interval on this quantity (panel fix, 2026-10-08): the share is
++        # min(TUPLE_LEN, n)/n, a deterministic ratio with zero sampling
++        # variance. The Wilson interval previously printed here treated it as
++        # an estimated proportion, which asserted sampling uncertainty that
++        # does not exist -- false rigour. Intervals belong on the SIMULATED
++        # quantities only.
+         out[n] = {"ordered_by_the_tuple": ordered,
+-                  "share_exact": str(Fraction(ordered, n)),
+                   "share": round(ordered / n, 6),
+                   "share_pct": round(100 * ordered / n, 4),
+-                  "is_a_measurement": False,
++                  "share_is_exact": True,
+                   "ordered_by_nothing_but_input_order": n - ordered}
+     return out
+ 
+
+### fable:attempt-1:bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py	2026-10-08 02:54:25
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rx5tzlsd/repo/bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py	2026-10-08 02:26:59
+@@ -137,72 +137,28 @@
+ 
+ 
+ def claim_difficulty_can_be_measured_not_judged() -> dict:
+-    """Is recorded depth a usable difficulty label? CALL `route` and find out.
++    """The rung a finding was ACTUALLY resolved at is a measured difficulty label.
+ 
+-    THE FIRST VERSION OF THIS FUNCTION WAS CONDEMNED BY THE cc2 SEAT, 2026-10-08,
+-    and it was right: *"The artefact's claim 4 validates this by AST-scanning
+-    FIELD NAMES -- it never executes `route`, so it would report
+-    `records_resolution_depth: True` whatever the values are."* That is the
+-    `execute-do-not-grep` defect, committed in a script used to brief a panel.
+-
+-    AND THE SEAT'S SUBSTANTIVE FINDING IS THE ONE THAT MATTERS: `rungs_tried` is
+-    RIGHT-CENSORED. Under a cap, a finding whose true depth is 4 reports 2, which
+-    is indistinguishable from one genuinely resolved at rung 2. So depth is a
+-    difficulty label only where the ladder was allowed to run to exhaustion, and
+-    elsewhere it is a LOWER BOUND. This version calls the real `route` under both
+-    regimes and reports the censoring rather than asserting the field exists.
++    The founder's ladder needs tasks ordered by difficulty BEFORE a new model is
++    placed, while both panel seats argued difficulty is emergent and retrospective
++    -- a finding is hard because everything better already failed. Those are
++    reconcilable: resolution DEPTH is recorded per finding, so past depth labels
++    future difficulty with no human judgement and no vendor name.
+     """
+-    import importlib.util
+-    import sys as _sys
++    import ast
+     from pathlib import Path
+-
+     root = Path(__file__).resolve().parents[1]
+-    spec = importlib.util.spec_from_file_location(
+-        "rt_depth", root / "bench" / "routing.py")
+-    RT = importlib.util.module_from_spec(spec)
+-    _sys.modules["rt_depth"] = RT
+-    spec.loader.exec_module(RT)
+-
+-    ladder = list(RT.DEFAULT_FALSIFIER_STRENGTH)
+-    finding = {"id": "D1", "description": "d", "model": "Nobody",
+-               "falsifier_code": ""}
+-
+-    def run(max_rungs: int, resolve_at: int):
+-        """Resolve only when the `resolve_at`-th rung is reached."""
+-        seen = []
+-
+-        def resolve(model, _f):
+-            seen.append(model)
+-            return "assert True" if len(seen) >= resolve_at else "assert False"
+-
+-        def reverify(code):
+-            return "CONFIRMED" if code == "assert True" else "REFUTED"
+-
+-        r = RT.route(finding, ladder, [], resolve, reverify,
+-                     lambda _a, _b: 0.0, max_rungs=max_rungs,
+-                     self_rung_enabled=False)
+-        return r.rungs_tried, r.resolved
+-
+-    true_depth = 4
+-    capped_depth, capped_resolved = run(2, true_depth)
+-    exhaust_depth, exhaust_resolved = run(0, true_depth)
+-    # a finding GENUINELY resolved at rung 2, under the same cap
+-    honest_depth, _ = run(2, 2)
+-
++    src = (root / "bench" / "routing.py").read_text()
++    fields = set()
++    for node in ast.walk(ast.parse(src)):
++        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
++            fields.add(node.target.id)
+     return {
+-        "true_depth": true_depth,
+-        "reported_under_cap_2": capped_depth,
+-        "resolved_under_cap_2": capped_resolved,
+-        "reported_under_exhaustion": exhaust_depth,
+-        "resolved_under_exhaustion": exhaust_resolved,
+-        "a_genuine_rung_2_resolution_reports": honest_depth,
+-        "censored_and_honest_are_indistinguishable":
+-            capped_depth == honest_depth,
+-        "depth_is_a_label_only_under_exhaustion":
+-            exhaust_depth == true_depth and capped_depth != true_depth,
+-        "verdict": ("depth is a LOWER BOUND under a cap and an exact label only "
+-                    "under exhaustion, so the cap must lift before depth can "
+-                    "order difficulty"),
++        "routing_result_fields": sorted(fields),
++        "records_resolution_depth": "rungs_tried" in fields,
++        "records_which_model_resolved": "model_used" in fields,
++        "implication": ("rungs_tried is already recorded per finding, so observed "
++                        "difficulty is available today and needs no classifier"),
+     }
+ 
+ 

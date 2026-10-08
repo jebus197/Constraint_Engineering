@@ -189,3 +189,60 @@ class TestTheSearchIsMinimalAndTheRungCountIsNotFree:
         assert many["attempts_per_rung"] * 12 > few["attempts_per_rung"] * 2, (
             "total climbing cost did not rise with rung count; if rungs were free "
             "the count would not be a design decision")
+
+
+class TestAnIntervalBelongsOnlyOnAMeasurement:
+    """A confidence interval on exact arithmetic is nobody's uncertainty.
+
+    FOUND BY THE cc2 SEAT, 2026-10-08, against CC1's own brief and scripts: *"the
+    brief applies Wilson intervals to three deterministic quantities (tuple share,
+    starved-model count, and by extension any fixed-order/fixed-cap allocation). An
+    interval on a quantity with no estimator reads as measured uncertainty to the
+    next reader and is nobody's uncertainty."*
+
+    It is right. A 6-name tuple ordering 6 of 70 seats is 3/35 exactly; the
+    starvation count under a deterministic rule is the same on every run with every
+    seed. Neither is sampled.
+
+    THE CORRECTION MUST NOT BE OVERAPPLIED, which is what these tests hold. An
+    interval still belongs on the genuinely measured rates: the intra-round
+    correlation, the per-seat per-round critical rate, and the share of archived
+    routing records with more than 1 rung available. Those are samples of observed
+    runs.
+    """
+
+    def test_the_tuple_share_is_reported_as_exact_not_estimated(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "cold", REPO / "bench" / "the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py")
+        m = importlib.util.module_from_spec(spec)
+        sys.modules["cold"] = m
+        spec.loader.exec_module(m)
+        d = m.claim_the_tuple_coverage_collapses()
+        for n, row in d.items():
+            assert "wilson_on_the_share" not in row, (
+                f"n={n} still carries an interval on exact arithmetic")
+            assert row["is_a_measurement"] is False
+            assert "share_exact" in row
+
+    def test_the_share_really_is_deterministic(self):
+        """MUTATION: if it varied, an interval would have been appropriate."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "cold2", REPO / "bench" / "the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py")
+        m = importlib.util.module_from_spec(spec)
+        sys.modules["cold2"] = m
+        spec.loader.exec_module(m)
+        a = m.claim_the_tuple_coverage_collapses((70,))
+        b = m.claim_the_tuple_coverage_collapses((70,))
+        assert a == b, "the share varied between calls, so it IS sampled"
+        from fractions import Fraction
+        assert a[70]["share_exact"] == str(Fraction(6, 70))
+
+    def test_an_interval_is_retained_where_the_quantity_is_sampled(self):
+        """The archive share of multi-rung records is a sample and keeps its interval."""
+        src = (REPO / "bench" / "tests"
+               / "test_the_promotion_criterion_is_the_weak_point_2026-10-08.py").read_text()
+        assert "wilson(multi, n)" in src, (
+            "the interval was stripped from a genuinely measured archive share; "
+            "the correction has been overapplied")

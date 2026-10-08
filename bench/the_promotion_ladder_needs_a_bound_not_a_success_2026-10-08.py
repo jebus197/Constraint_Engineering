@@ -137,28 +137,72 @@ def claim_the_absorbing_rung_contradicts_bidirectionality(trials: int = 20000,
 
 
 def claim_difficulty_can_be_measured_not_judged() -> dict:
-    """The rung a finding was ACTUALLY resolved at is a measured difficulty label.
+    """Is recorded depth a usable difficulty label? CALL `route` and find out.
 
-    The founder's ladder needs tasks ordered by difficulty BEFORE a new model is
-    placed, while both panel seats argued difficulty is emergent and retrospective
-    -- a finding is hard because everything better already failed. Those are
-    reconcilable: resolution DEPTH is recorded per finding, so past depth labels
-    future difficulty with no human judgement and no vendor name.
+    THE FIRST VERSION OF THIS FUNCTION WAS CONDEMNED BY THE cc2 SEAT, 2026-10-08,
+    and it was right: *"The artefact's claim 4 validates this by AST-scanning
+    FIELD NAMES -- it never executes `route`, so it would report
+    `records_resolution_depth: True` whatever the values are."* That is the
+    `execute-do-not-grep` defect, committed in a script used to brief a panel.
+
+    AND THE SEAT'S SUBSTANTIVE FINDING IS THE ONE THAT MATTERS: `rungs_tried` is
+    RIGHT-CENSORED. Under a cap, a finding whose true depth is 4 reports 2, which
+    is indistinguishable from one genuinely resolved at rung 2. So depth is a
+    difficulty label only where the ladder was allowed to run to exhaustion, and
+    elsewhere it is a LOWER BOUND. This version calls the real `route` under both
+    regimes and reports the censoring rather than asserting the field exists.
     """
-    import ast
+    import importlib.util
+    import sys as _sys
     from pathlib import Path
+
     root = Path(__file__).resolve().parents[1]
-    src = (root / "bench" / "routing.py").read_text()
-    fields = set()
-    for node in ast.walk(ast.parse(src)):
-        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
-            fields.add(node.target.id)
+    spec = importlib.util.spec_from_file_location(
+        "rt_depth", root / "bench" / "routing.py")
+    RT = importlib.util.module_from_spec(spec)
+    _sys.modules["rt_depth"] = RT
+    spec.loader.exec_module(RT)
+
+    ladder = list(RT.DEFAULT_FALSIFIER_STRENGTH)
+    finding = {"id": "D1", "description": "d", "model": "Nobody",
+               "falsifier_code": ""}
+
+    def run(max_rungs: int, resolve_at: int):
+        """Resolve only when the `resolve_at`-th rung is reached."""
+        seen = []
+
+        def resolve(model, _f):
+            seen.append(model)
+            return "assert True" if len(seen) >= resolve_at else "assert False"
+
+        def reverify(code):
+            return "CONFIRMED" if code == "assert True" else "REFUTED"
+
+        r = RT.route(finding, ladder, [], resolve, reverify,
+                     lambda _a, _b: 0.0, max_rungs=max_rungs,
+                     self_rung_enabled=False)
+        return r.rungs_tried, r.resolved
+
+    true_depth = 4
+    capped_depth, capped_resolved = run(2, true_depth)
+    exhaust_depth, exhaust_resolved = run(0, true_depth)
+    # a finding GENUINELY resolved at rung 2, under the same cap
+    honest_depth, _ = run(2, 2)
+
     return {
-        "routing_result_fields": sorted(fields),
-        "records_resolution_depth": "rungs_tried" in fields,
-        "records_which_model_resolved": "model_used" in fields,
-        "implication": ("rungs_tried is already recorded per finding, so observed "
-                        "difficulty is available today and needs no classifier"),
+        "true_depth": true_depth,
+        "reported_under_cap_2": capped_depth,
+        "resolved_under_cap_2": capped_resolved,
+        "reported_under_exhaustion": exhaust_depth,
+        "resolved_under_exhaustion": exhaust_resolved,
+        "a_genuine_rung_2_resolution_reports": honest_depth,
+        "censored_and_honest_are_indistinguishable":
+            capped_depth == honest_depth,
+        "depth_is_a_label_only_under_exhaustion":
+            exhaust_depth == true_depth and capped_depth != true_depth,
+        "verdict": ("depth is a LOWER BOUND under a cap and an exact label only "
+                    "under exhaustion, so the cap must lift before depth can "
+                    "order difficulty"),
     }
 
 
