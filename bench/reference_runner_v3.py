@@ -9255,24 +9255,78 @@ def _check_hardened_convergence(
     # THE BEHAVIOURAL CHANGE THIS MAKES, which is the point: a run with
     # cum_critical below the floor but a genuinely estimable gamma below theta
     # used to converge on the window alone. It no longer does.
+    # THE FOUNDER'S SECOND CHALLENGE, 2026-10-08: *"if gamma remains unestimable,
+    # how can gamma ever hit the 0.30 mark ...? Isn't this gamma demotion by
+    # another name?"* He was right about the first version of this branch, which
+    # merely RENAMED the demotion as "unestimable" and left the behaviour alone.
+    #
+    # THE ANSWER ALREADY EXISTED IN THE SIBLING GATE and is imported here rather
+    # than invented a second time. `_check_gamma_alt_convergence` handles the same
+    # situation under the name VACUOUS CURVE, and `test_vacuous_gamma_curve.py`
+    # states the principle: gamma is not demoted, its ESTIMATOR'S DOMAIN is
+    # narrowed, and the narrowing carries 2 guards. Both are mirrored below.
+    #
+    #   * cumulative critical over the WHOLE history must be zero. A constant-rate
+    #     series has a positive cumulative count and stays blocked -- that is the
+    #     case this must never be confused with, because it drives the estimator to
+    #     the same ~0.0 for the opposite reason.
+    #   * the panel must have produced findings of SOME severity. Otherwise
+    #     "nothing was critical" is indistinguishable from "nothing came back" --
+    #     a dead panel, or a severity classifier that never fires -- and that path
+    #     REFUSES convergence rather than granting it.
+    #
+    # So there is no case left in which gamma is excused without a guard. Where a
+    # curve exists, gamma gates. Where no curve exists, 2 conditions must hold and
+    # one of them can refuse.
     _g_estimable = _gamma_is_estimable(crit_s)
+    _total_findings = len(getattr(registry, "entries", {}) or {})
     telem["gamma_crit_estimable"] = _g_estimable
+    telem["total_findings"] = _total_findings
     if cum_crit < cfg.gamma_crit_min_cumulative:
-        telem["mode"] = "sparsity_gamma_gated" if _g_estimable else "sparsity_gamma_unestimable"
-        _g_ok = (g_crit >= theta) if _g_estimable else True
-        telem["gamma_crit_gated"] = bool(_g_estimable)
+        if not _g_estimable and cum_crit == 0:
+            # No curve exists at all. Guarded vacuity, never a bare pass.
+            if _total_findings > 0 and zero_crit_ok:
+                telem["mode"] = "vacuous_curve_converged"
+                telem["gamma_crit_gated"] = False
+                return True, (
+                    f"HARDENED_CONVERGED (VACUOUS CURVE): zero critical findings "
+                    f"across the ENTIRE run over {_total_findings} finding(s) of "
+                    f"some severity, so the critical decay curve does not exist "
+                    f"and γ_crit={g_crit:.3f} is UNDEFINED rather than low. The "
+                    f"{W}-round zero-novel-critical condition holds at R{round_idx}. "
+                    f"REVIEW THIS RUN: a clean target and a broken severity "
+                    f"classifier look alike from here [γ_all diag={g_all:.3f}]"), telem
+            if _total_findings == 0:
+                telem["mode"] = "vacuous_curve_refused_dead_panel"
+                telem["gamma_crit_gated"] = False
+                return False, (
+                    f"hardened REFUSED at R{round_idx}: zero critical findings "
+                    f"across the entire run AND the panel produced NO findings of "
+                    f"any severity. That is a dead panel or a broken review, not an "
+                    f"exhausted error space, so the vacuous-curve path does NOT "
+                    f"apply. Diagnose the dispatch [γ_all diag={g_all:.3f}]"), telem
+            telem["mode"] = "vacuous_curve_window_unmet"
+            telem["gamma_crit_gated"] = False
+            return False, (
+                f"hardened not met (vacuous curve, cum_crit=0, "
+                f"{_total_findings} finding(s) of some severity): the {W}-round "
+                f"zero-novel-critical window is not satisfied at R{round_idx} "
+                f"[γ_all diag={g_all:.3f}]"), telem
+        # A curve exists, or the pool is non-zero. GAMMA GATES.
+        telem["mode"] = "sparsity_gamma_gated"
+        telem["gamma_crit_gated"] = True
+        _g_ok = g_crit >= theta
         if zero_crit_ok and _g_ok:
             return True, (
-                f"HARDENED_CONVERGED (sparse pool): cum_critical="
+                f"HARDENED_CONVERGED (sparse pool, gamma GATED): cum_critical="
                 f"{cum_crit} < {cfg.gamma_crit_min_cumulative}; "
-                f"γ_crit={g_crit:.3f} "
-                f"{'GATED and met' if _g_estimable else 'NOT ESTIMABLE (sentinel 0.0), window decides alone'}"
-                f"; {W} consecutive settled zero-novel-critical rounds met at "
-                f"R{round_idx} [γ_all diag={g_all:.3f}]"), telem
+                f"γ_crit={g_crit:.3f} >= θ={theta:.3f}; {W} consecutive settled "
+                f"zero-novel-critical rounds met at R{round_idx} "
+                f"[γ_all diag={g_all:.3f}]"), telem
         _why = []
         if not zero_crit_ok:
             _why.append("zero-crit window not satisfied")
-        if _g_estimable and not _g_ok:
+        if not _g_ok:
             _why.append(f"γ_crit={g_crit:.3f} < θ={theta:.3f} and gamma GATES here")
         return False, (
             f"hardened not met (sparse pool, cum_crit={cum_crit}): "

@@ -128,17 +128,45 @@ def test_sparse_pool_gates_on_gamma_when_it_is_estimable():
     assert ok is (g >= _cfg().gamma_alt_threshold), (g, ok, reason)
 
 
-def test_sparse_pool_with_an_unestimable_gamma_lets_the_window_decide():
-    """The clean case. gamma returns its sentinel, so it cannot gate."""
+def test_a_clean_target_converges_under_guarded_vacuity():
+    """No critical curve exists, AND the panel demonstrably produced findings.
+
+    UPDATED 2026-10-08. The first version passed `_Reg([0,0,0,0])` with no
+    non-critical findings, which builds an EMPTY registry -- so it was modelling a
+    DEAD PANEL and calling it a clean target. The gate now refuses that case, and
+    the test was wrong rather than the gate. A clean target means the panel worked
+    and nothing it found was critical, which is what the non-critical series below
+    supplies.
+    """
     crit = [0, 0, 0, 0]
     ok, reason, telem = rr._check_hardened_convergence(
-        3, _Reg(crit), _cfg())
+        3, _Reg(crit, noncrit_per_round=[5, 4, 5, 4]), _cfg())
     assert rr._gamma_is_estimable(crit) is False
-    assert telem["mode"] == "sparsity_gamma_unestimable"
+    assert telem["mode"] == "vacuous_curve_converged", telem
     assert telem["gamma_crit_gated"] is False
+    assert telem["total_findings"] == 18, telem
     assert ok is True, (
-        "a clean all-zero critical series must still converge, or the programme "
-        f"of study cannot meet its own success criterion: {reason}")
+        "a clean all-zero critical series over a working panel must still "
+        f"converge, or the programme of study cannot meet its own success "
+        f"criterion: {reason}")
+    assert "REVIEW THIS RUN" in reason
+
+
+def test_a_dead_panel_is_refused_not_converged():
+    """The guard that makes the narrowing a domain restriction, not a demotion.
+
+    Zero criticals AND zero findings of any severity is a dead panel or a broken
+    severity classifier, not an exhausted error space.
+    """
+    crit = [0, 0, 0, 0]
+    ok, reason, telem = rr._check_hardened_convergence(
+        3, _Reg(crit), _cfg())          # EMPTY registry: nothing came back
+    assert ok is False, (
+        "a run whose panel returned nothing at all converged; that is the "
+        "failure-looks-like-success shape this project keeps paying for")
+    assert telem["mode"] == "vacuous_curve_refused_dead_panel", telem
+    assert telem["total_findings"] == 0
+    assert "dead panel" in reason
 
 
 def test_sparse_pool_blocks_when_zero_crit_not_met():

@@ -66,12 +66,20 @@ class _Cfg:
     gamma_crit_loo_tol = 1.0
 
 
-def _gate(R, crit, cfg=None):
+class _Reg:
+    """A registry stub carrying a findings count, which is the second guard."""
+
+    def __init__(self, n_findings: int = 18):
+        self.entries = {f"C{i:04d}": {} for i in range(n_findings)}
+
+
+def _gate(R, crit, cfg=None, findings: int = 18):
     """Drive the real gate with a chosen settled critical series."""
     orig = R._settled_novelty_series
     try:
         R._settled_novelty_series = lambda _reg, _r: (crit, crit)
-        return R._check_hardened_convergence(len(crit), object(), cfg or _Cfg())
+        return R._check_hardened_convergence(
+            len(crit), _Reg(findings), cfg or _Cfg())
     finally:
         R._settled_novelty_series = orig
 
@@ -95,15 +103,58 @@ class TestTheMirrorCannotDrift:
         assert R._gamma_is_estimable([0, 0, 0]) is False
 
 
-class TestCleanConvergenceSurvives:
-    """The programme of study's success criterion must not be broken by the fix."""
+class TestVacuityIsGuardedNotGranted:
+    """THE FOUNDER'S SECOND CHALLENGE, 2026-10-08: *"if gamma remains unestimable,
+    how can gamma ever hit the 0.30 mark ...? Isn't this gamma demotion by another
+    name?"*
+
+    He was right about the first version, which renamed the demotion as
+    "unestimable" and left the behaviour unguarded. The answer already existed in
+    the sibling gate as VACUOUS CURVE, with 2 guards, and is imported rather than
+    re-invented: cumulative critical over the WHOLE history must be zero, and the
+    panel must have produced findings of SOME severity. The second guard can
+    REFUSE, which is what makes the narrowing a domain restriction rather than a
+    demotion.
+    """
 
     @pytest.mark.parametrize("series", [[0, 0, 0], [0, 0, 0, 0, 0], [0] * 8])
-    def test_an_all_zero_critical_series_still_converges(self, R, series):
-        ok, why, telem = _gate(R, series)
+    def test_a_clean_target_converges_when_the_panel_demonstrably_worked(
+            self, R, series):
+        ok, why, telem = _gate(R, series, findings=18)
         assert ok is True, (why, telem)
-        assert telem["mode"] == "sparsity_gamma_unestimable", telem
+        assert telem["mode"] == "vacuous_curve_converged", telem
         assert telem["gamma_crit_gated"] is False
+        assert "UNDEFINED rather than low" in why
+        assert "REVIEW THIS RUN" in why, (
+            "the residual ambiguity between a clean target and a broken severity "
+            "classifier must be stated in the reason, not hidden")
+
+    @pytest.mark.parametrize("series", [[0, 0, 0], [0, 0, 0, 0, 0]])
+    def test_a_dead_panel_is_REFUSED(self, R, series):
+        """The guard the first version lacked. This is the load-bearing test."""
+        ok, why, telem = _gate(R, series, findings=0)
+        assert ok is False, (
+            "a run whose panel produced NO findings of any severity converged; "
+            "that is a dead panel rendered as an exhausted error space")
+        assert telem["mode"] == "vacuous_curve_refused_dead_panel", telem
+        assert "dead panel" in why
+
+    def test_the_window_still_binds_under_vacuity(self, R):
+        ok, why, telem = _gate(R, [0, 0], findings=18)
+        assert ok is False
+        assert telem["mode"] == "vacuous_curve_window_unmet", telem
+
+    def test_a_constant_rate_series_never_reaches_the_vacuous_path(self, R):
+        """The opposite situation that drives the estimator to the same ~0.0.
+
+        A constant arrival rate is the WORST case and must never be confused with
+        the best one. Its cumulative count is positive, so it is excluded by the
+        first guard.
+        """
+        series = [2, 2, 2, 2, 2, 2]
+        ok, _why, telem = _gate(R, series, findings=30)
+        assert ok is False
+        assert not str(telem.get("mode", "")).startswith("vacuous"), telem
 
 
 class TestGammaNowGatesWhereItDidNot:
@@ -148,8 +199,12 @@ class TestTheDemotionLanguageIsGone:
     def test_every_sparse_outcome_names_its_mode(self, R):
         for series in ([0, 0, 0], [5, 0, 0, 0], [1, 3, 0, 0, 0]):
             _ok, _why, telem = _gate(R, series)
-            assert telem.get("mode", "").startswith("sparsity_gamma_"), telem
+            mode = telem.get("mode", "")
+            assert mode.startswith(("sparsity_gamma_", "vacuous_curve_")), telem
             assert "gamma_crit_estimable" in telem
+            assert "total_findings" in telem, (
+                "the second guard's input must be on the record, or a reader "
+                "cannot tell a clean target from a dead panel")
 
 
 class TestTheTelemetryIsPersistedNotOnlyLogged:
