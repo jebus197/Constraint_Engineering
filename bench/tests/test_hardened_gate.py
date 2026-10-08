@@ -97,20 +97,57 @@ def test_conjunction_blocks_when_late_critical_appears():
     assert telem["zero_crit_ok"] is False
 
 
-def test_sparsity_fallback_converges_on_count_only():
-    crit = [2, 1, 0, 0, 0]              # cum=3 < 8 -> sparsity fallback
+# ─────── UPDATED 2026-10-08 ON THE FOUNDER'S RULING, NOT DELETED ───────
+# His words: *"Gamma should remain active in all cases. Fix it."* The 2 tests
+# below used to assert the behaviour the ruling removes -- one of them was named
+# `test_sparsity_fallback_converges_on_count_only` and required the phrase
+# "reported-not-gated" to appear in the reason. They were guarding the defect.
+#
+# They are rewritten to the new truth rather than removed, so the behaviour they
+# cover stays covered: a sparse pool now GATES on gamma wherever gamma is
+# estimable, and only where the estimator returns its 0.0 sentinel -- too few
+# rounds, an all-zero series, fewer than 2 usable log points, a degenerate fit --
+# does the zero-critical window decide alone. The mode names which case.
+#
+# WHY THE SENTINEL CASE MUST SURVIVE: a CLEAN run has an all-zero critical series
+# by construction, and 3 consecutive clean convergences on the prose target is the
+# programme of study's success criterion. Gating on a sentinel is not gating on
+# gamma; it would make a clean target unable to converge.
+
+def test_sparse_pool_gates_on_gamma_when_it_is_estimable():
+    crit = [2, 1, 0, 0, 0]              # cum=3 < 8, and gamma IS estimable here
     ok, reason, telem = rr._check_hardened_convergence(
         4, _Reg(crit), _cfg())
-    assert ok is True
-    assert telem["mode"] == "sparsity_fallback"
-    assert "reported-not-gated" in reason
+    assert rr._gamma_is_estimable(crit) is True
+    assert telem["mode"] == "sparsity_gamma_gated"
+    assert telem["gamma_crit_gated"] is True
+    assert "reported-not-gated" not in reason, (
+        "the phrase that named the demotion is back in a sparse-pool reason")
+    # the outcome follows gamma, not the count alone
+    g = rr._estimate_gamma(crit)
+    assert ok is (g >= _cfg().gamma_alt_threshold), (g, ok, reason)
 
 
-def test_sparsity_fallback_blocks_when_zero_crit_not_met():
+def test_sparse_pool_with_an_unestimable_gamma_lets_the_window_decide():
+    """The clean case. gamma returns its sentinel, so it cannot gate."""
+    crit = [0, 0, 0, 0]
+    ok, reason, telem = rr._check_hardened_convergence(
+        3, _Reg(crit), _cfg())
+    assert rr._gamma_is_estimable(crit) is False
+    assert telem["mode"] == "sparsity_gamma_unestimable"
+    assert telem["gamma_crit_gated"] is False
+    assert ok is True, (
+        "a clean all-zero critical series must still converge, or the programme "
+        f"of study cannot meet its own success criterion: {reason}")
+
+
+def test_sparse_pool_blocks_when_zero_crit_not_met():
     crit = [2, 1, 0, 1, 0]             # cum=4 < 8; last 3 = [0,1,0]
     ok, reason, telem = rr._check_hardened_convergence(
         4, _Reg(crit), _cfg())
-    assert ok is False and telem["mode"] == "sparsity_fallback"
+    assert ok is False
+    assert telem["mode"].startswith("sparsity_gamma_")
+    assert "window not satisfied" in reason
 
 
 def test_gamma_all_is_diagnostic_only_never_gates():
