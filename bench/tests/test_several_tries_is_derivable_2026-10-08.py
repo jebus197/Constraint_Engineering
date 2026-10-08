@@ -120,3 +120,72 @@ class TestTheAnalogyBreaksOnRelativePromotion:
     def test_the_season_length_is_the_right_order(self, M):
         d = M.claim_the_football_season_is_the_right_order_of_magnitude()
         assert d["same_order_of_magnitude"] is True, d
+
+
+class TestTheSearchIsMinimalAndTheRungCountIsNotFree:
+    """P-PASS 2026-10-08, 2 attacks on the derivation itself.
+
+    ATTACK 1: `derive_rung_sample` takes the FIRST feasible (n, k) rather than
+    proving it minimal. Exhaustive search confirms n = 19 IS the true minimum at 5
+    rungs, and the feasible k-set at that n is contiguous -- in fact a single
+    value, 11 -- so scanning k upward returns the smallest feasible one. The
+    monotonicity the search relies on holds: the pass rate falls in k for both the
+    good and the weak model, so the feasible set is an interval.
+
+    ATTACK 2, AND IT FOUND SOMETHING NOT ASKED FOR. The founder never specified a
+    rung count. As rungs increase the PER-RUNG sample falls, because each rung's
+    share of the error budget loosens as the n-th root, but the TOTAL cost of
+    climbing rises:
+
+        2 rungs   n=26  k=17   52 attempts to the top
+        3 rungs   n=21  k=13   63
+        5 rungs   n=19  k=11   95
+        8 rungs   n=15  k= 8  120
+       12 rungs   n=12  k= 6  144
+       20 rungs   n=11  k= 5  220
+
+    So rung count is a real trade-off and not a free parameter: few rungs are
+    cheap to climb but discriminate difficulty coarsely, many rungs discriminate
+    finely but cost 4.2 times as much to climb at 20 against 2. It connects to the
+    cap: `rungs_tried` cannot exceed the cap, so at a cap of 2 the difficulty label
+    has at most 3 levels, and a fine-grained ladder needs the cap lifted FIRST.
+    """
+
+    def test_the_returned_sample_is_the_true_minimum(self, M):
+        from scipy.stats import binom
+        p_good, p_bad, fn, fp, rungs = 0.80, 0.50, 0.05, 0.01, 5
+        a = (1 - fn) ** (1.0 / rungs)
+        b = fp ** (1.0 / rungs)
+
+        def ok(n, k):
+            return (float(binom.sf(k - 1, n, p_good)) >= a
+                    and float(binom.sf(k - 1, n, p_bad)) <= b)
+
+        true_min = next(n for n in range(1, 200)
+                        if any(ok(n, k) for k in range(1, n + 1)))
+        got = M.derive_rung_sample()["attempts_per_rung"]
+        assert got == true_min, (got, true_min)
+
+    def test_the_feasible_success_count_is_an_interval(self, M):
+        """The search scans k upward, which is only valid if the set is contiguous."""
+        from scipy.stats import binom
+        d = M.derive_rung_sample()
+        n, rungs = d["attempts_per_rung"], 5
+        a, b = (1 - 0.05) ** (1 / rungs), 0.01 ** (1 / rungs)
+        ks = [k for k in range(1, n + 1)
+              if float(binom.sf(k - 1, n, 0.80)) >= a
+              and float(binom.sf(k - 1, n, 0.50)) <= b]
+        assert ks, "no feasible k at the returned n"
+        assert ks == list(range(min(ks), max(ks) + 1)), ks
+        assert d["successes_required"] == min(ks), (d["successes_required"], ks)
+
+    def test_more_rungs_cost_more_in_total_even_as_each_gets_cheaper(self, M):
+        few = M.derive_rung_sample(rungs=2)
+        many = M.derive_rung_sample(rungs=12)
+        assert few["feasible"] and many["feasible"]
+        assert many["attempts_per_rung"] < few["attempts_per_rung"], (
+            "per-rung sample did not fall as rungs rose, so the budget is not "
+            "being divided as the derivation assumes")
+        assert many["attempts_per_rung"] * 12 > few["attempts_per_rung"] * 2, (
+            "total climbing cost did not rise with rung count; if rungs were free "
+            "the count would not be a design decision")
