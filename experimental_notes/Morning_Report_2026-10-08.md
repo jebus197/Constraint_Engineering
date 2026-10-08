@@ -63,4 +63,34 @@ A 4th free panel was dispatched at 04:32 on the gamma fix itself, with both seat
 
 Every panel round is preserved: records mirrored 124 of 124, seat-written files harvested, and a FULL RECORD note per round carrying both replies unfiltered.
 
+## The 4th panel landed: both seats found the same 2 critical defects in the gamma fix
+
+APPENDED 2026-10-08 10:50 BST. The body above was written at 04:34 and said "Its result is not in this report". It is now.
+
+Both free seats returned on the first attempt, 0 paid. cc2 answered with 14,244 characters, 2,110 words and 64 tool calls in 1427.2 s; fable with 11,575 characters, 1,668 words and 49 tool calls in 833.6 s. All 52 committed guards passed unmodified under both seats.
+
+**The verdicts.** cc2: *"sound in its central claim, unsound as shipped — needs repairs, not reversion."* fable: *"sound with repairs."* They converged independently on the same 2 critical defects, which is the strongest form of agreement a blind round can produce.
+
+**F1, both seats, critical.** The fix imported the sibling gate's 2 vacuity guards and left behind the 2 blocks that stand in front of them — the A4 unverified-critical fail-safe and the contested block. So the 2 gates returned opposite verdicts on identical registries, and in the unsafe direction: `UNCONFIRMED` is an unresolved status the novelty filter strips from the settled series, so an unverified critical drives `cum_crit` down and pushes a run INTO the vacuous branch rather than blocking it. `unverified_critical_count`'s own docstring forbids exactly that. cc2 demonstrated 6 untested critical claims converging where the sibling refused with "A4 BLOCK", and measured that A4 alone would not close the gap, so both blocks are needed — a measurement rather than a judgement, per the composability rule. fable traced the dependency chain and found no intervening recheck once convergence is promoted. Archive exposure is 0 of 69 runs, scanned independently by both seats, so it is a forward hazard rather than a retroactive miscount.
+
+**F2, both seats, critical.** The full branch's leave-one-round-out loop gated on the 0.0 sentinel. Dropping the only non-zero round of a single-burst series leaves an all-zero subseries, the estimator returns its sentinel, and a maximal-depletion run — gamma 1.0000 with the window met — was permanently refused at any horizon. That contradicted the fix's own stated principle in the branch directly beside the one it repaired. fable supplied what cc2 could not: archive exposure of 6 of 69 runs with that shape, naming exp38_ouroboros, exp39_0_gate, exp42_composer and 2 sim45_canary runs.
+
+**F3 and F4, fable, both low.** A refusal text that asserted a slope where gamma was a sentinel; the verdict could not flip, but the record claimed a measurement it did not have. And 2 stale docstrings, one describing the mode name of the version the founder rejected. fable's phrasing is kept in the correction because it names a failure this project has recorded twice: a stale guarantee in a docstring is how a rejected position acquires authority here.
+
+**All 4 are repaired and committed** at `40c4a154`. F2 was fixed from cc2's falsifier before fable's reply landed. F1 is derived in-gate rather than passed as parameters, which is fable's correction of its own first repair after its falsifier caught that a caller can omit a defaulted parameter and reopen the hole. 133 tests pass across 9 affected guard files.
+
+**Both seats verified the hand-maintained mirror far harder than the author had**: 0 failures over 1,195,703 series and over 21,845 exhaustive series respectively, and both derived that the one condition the predicate omits needs of order a million rounds to bite against a maximum of 21.
+
+## Also landed after the body above was written
+
+**The ladder-depth default is now EXHAUST**, which was the founder's ruling of 2026-10-06 and reached nothing until now. A trap was found before the edit rather than after: the runner OMITS the `max_rungs` keyword at the default in order to protect 8 narrow test stubs, so flipping only the config default would have passed the keyword on every run and broken all 8. A first attempt read the function default through `inspect.signature(route)`, which raises an error under exactly those stubs. A module constant referenced by both signatures and the call site fixes both, and a test fails if the patchable approach returns.
+
+Measured cost, over 305 archived routing records: 143 hit the cap of 2 and 103 of those were abandoned unresolved. Per-rung conditional resolve rates are 0.3902 at rung 1 and 0.2797 at rung 2, so 4 further rungs recover roughly 46 to 75 of the 103 for about 209 extra dispatches. And the rate beyond depth 2 has never been measured because the cap prevented it, which is the strongest argument for the ruling and was not the reason given for it.
+
+**Preservation figure corrected**: panel records are mirrored 125 of 125, not the 124 stated above, which was accurate when written.
+
+## What this leaves outstanding
+
+3 items from the founder's list are still unbuilt: the absolute full-roster false-quiet rate of 0.1159; the ordering-versus-feasibility split in both runners; and resetting the dispatch caps and retry budget from the measured distribution, together with replacing the shared-credential lock with a short stagger. The 4 decisions listed in the body above are unchanged.
+
 Written under CDSFL note standard v1.7 (26 August 2026).
