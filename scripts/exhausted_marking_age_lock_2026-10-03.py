@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Why the EXHAUSTED release valve cannot fire in an 8-round run.
 
-The valve in `_update_finding_statuses` (bench/reference_runner_v3.py:4091-3938)
+The valve in `_update_finding_statuses` (bench/reference_runner_v3.py:4111-3938)
 frees a stuck critical finding from the A4 blocker when THREE locks all open:
 
     status in EXHAUSTED_ELIGIBLE_STATUSES  and  severity >= 0.7

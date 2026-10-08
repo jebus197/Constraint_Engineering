@@ -90,10 +90,20 @@ class TestFreeSeatsCollapseTheOrderingQuestion:
 
 
 class TestTheLiveConfigurationIsWhatWeThinkItIs:
-    def test_the_cap_is_2_and_nothing_overrides_it(self, M):
+    def test_the_cap_default_is_now_exhaust(self, M):
+        """UPDATED 2026-10-08: the founder's no-cap ruling is now in force.
+
+        This test previously asserted the default was 2, which was true and was the
+        defect: his ruling of 2026-10-06 was expressible but expressed nowhere, so
+        0 of 47 configs set it. The selection-versus-sequencing finding this file
+        exists for is UNAFFECTED -- under exhaustion the selection question simply
+        disappears, which is the result the file already records.
+        """
         d = M.claim_the_cap_is_live()
-        assert d["routing_max_rungs_default"] == 2, d
-        assert d["configs_pinning_the_cap"] == 0, d
+        assert d["routing_max_rungs_default"] == 0, d
+        assert d["configs_pinning_the_cap"] == 0, (
+            "a config now pins the cap; if that is deliberate the ruling has an "
+            "exception and this test should say which config and why")
         assert d["experiment_configs"] > 0, (
             "0 configs found means the search is broken, not that none exist -- "
             "this is the exact defect the first version of the script had")

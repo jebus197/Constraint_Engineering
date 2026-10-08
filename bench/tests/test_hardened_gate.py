@@ -15,6 +15,18 @@ Contract:
   - Default-off: existing experiments keep the legacy γ-alt OR gate
     unchanged (covered by the existing γ-alt tests, re-run in the
     sweep).
+
+SUPERSEDED CONTRACT REMOVED 2026-10-08. This docstring stated that gamma is
+"reported-not-gated" in the sparse branch. That contract no longer exists: the
+founder ruled on 2026-10-08 that gamma remains active in all cases, and the fable
+seat found this text still asserting the removed behaviour. A stale guarantee in a
+docstring is how a rejected position acquires authority here.
+
+What now holds: gamma GATES wherever a curve is estimable. Where no curve exists,
+guarded vacuity applies -- cumulative critical over the whole history must be zero
+AND the panel must have produced findings of some severity, and the second guard
+refuses. The sibling gate's A4 and contested preconditions are derived in-gate and
+can refuse before any convergence path.
 """
 from __future__ import annotations
 

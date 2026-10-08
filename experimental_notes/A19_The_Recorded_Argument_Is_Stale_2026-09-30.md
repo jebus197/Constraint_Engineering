@@ -12,7 +12,7 @@ Every figure below was computed twice with independent tools. Producers: `script
 
 **Both are now false against current code.** Run against the same committed fixture `tk.SHELL_INJECTION_FIX`, `compute_sk` returns `NO_SCORE` at `sk = 0.0`, not `ADMISSIBLE` at 1.0.
 
-**The cause is a repair made 11 days after the measurement.** `_prose_one_sided`, added 2026-09-22, sits at `bench/reference_runner_v3.py:12618`:
+**The cause is a repair made 11 days after the measurement.** `_prose_one_sided`, added 2026-09-22, sits at `bench/reference_runner_v3.py:12740`:
 
 ```python
 if _scoring_prose and tristate == SK_ADMISSIBLE:

@@ -82,6 +82,18 @@ from typing import Callable, Optional, Sequence
 # THE OTHER HALF IS NOT DONE AND IS THE FOUNDER'S TO RULE ON: until a config
 # lists Fable in `models`, this rung is reachable only where a roster declares
 # it. Changing 23 routed configs alters what real experiments dispatch.
+#: THE LADDER DEPTH DEFAULT, in ONE place so the function signatures and the
+#: runner's omit-at-default condition cannot drift apart. 0 means EXHAUST.
+#:
+#: WHY A CONSTANT RATHER THAN READING THE SIGNATURE, found by a failing test on
+#: 2026-10-08: the runner's call site needs to know this value to decide whether to
+#: pass the keyword at all, and a first attempt read it with
+#: `inspect.signature(route)`. That raises KeyError the moment a test monkeypatches
+#: `route` with a narrow stub -- which is precisely the case the omit-at-default
+#: logic exists to protect. A module constant is immune to patching and keeps the
+#: 2 defaults in lockstep by construction.
+DEFAULT_MAX_RUNGS = 0
+
 DEFAULT_FALSIFIER_STRENGTH = ("Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek", "Fable")
 
 
@@ -173,7 +185,7 @@ def resolve_via_routing(
     rungs: Sequence[str],
     resolve_fn: Callable[[str, dict], str],
     reverify_fn: Callable[[str], str],
-    max_rungs: int = 2,   # 0 = exhaust the ladder
+    max_rungs: int = DEFAULT_MAX_RUNGS,   # 0 = EXHAUST (founder's ruling 2026-10-06)
     self_rung: str | None = None,
 ) -> RoutingResult:
     """Climb the capability ladder until a strong writer CONFIRMS the finding.
@@ -292,7 +304,7 @@ def route(
     similarity_fn: Callable[[dict, dict], float],
     *,
     strength_order: Sequence[str] = DEFAULT_FALSIFIER_STRENGTH,
-    max_rungs: int = 2,   # 0 = exhaust the ladder
+    max_rungs: int = DEFAULT_MAX_RUNGS,   # 0 = EXHAUST (founder's ruling 2026-10-06)
     dup_threshold: float = 0.85,
     self_rung_enabled: bool = True,
 ) -> RoutingResult:

@@ -55,7 +55,7 @@ asked to converge with the other seat.
 ## Founder rulings that are NOT open for you to revisit
 
 1. **Ruling 23, 2026-09-06 — severity is not a vote.** `unverified_critical_count`
-   (`bench/reference_runner_v3.py:2747`) had its `severity >= CRITICAL_SEVERITY_THRESHOLD` gate
+   (`bench/reference_runner_v3.py:2767`) had its `severity >= CRITICAL_SEVERITY_THRESHOLD` gate
    removed because `severity` is a float the SOURCE MODEL assigns. Measured then: AUC 0.464 against
    0.5 for chance inside the deciding band, per-assignment sigma 0.1419 over 273 duplicate pairs
    scored by 2 models, against a band 0.09 wide, and 82 of 273 identical defects landing on

@@ -1472,7 +1472,27 @@ class RunnerConfig:
     #: pairs separate (all Fisher p >= 0.306). The named trigger for revisiting
     #: it is provenance-clean cells across 3 or more LIVE runs with at least 1
     #: pair separating at alpha 0.05.
-    routing_max_rungs: int = 2
+    #: 0 = EXHAUST THE LADDER, and 0 is now the DEFAULT. Founder's ruling,
+    #: 2026-10-06, restated several times since: *"I don't think there should be a
+    #: cap at all. If it's a measured statistic, along with capability
+    #: fingerprinting then the problem should run until it is either resolved, or
+    #: the ladder is exhausted. (No more models to try.)"* It had been expressible
+    #: but never expressed -- 0 of 47 configs set it -- so the ruling reached
+    #: nothing.
+    #:
+    #: WHAT THE CAP WAS COSTING, measured over 305 archived routing records:
+    #: 143 (46.8852%, Wilson [41.3583%, 52.4896%]) exhausted the cap of 2, and 103
+    #: of those were ABANDONED UNRESOLVED. Per-rung conditional resolve rates are
+    #: 0.3902 at rung 1, Wilson [0.3314, 0.4524], and 0.2797 at rung 2, Wilson
+    #: [0.2127, 0.3583] -- declining with depth, as harder findings survive. Over 4
+    #: further rungs that recovers roughly 46 to 75 of the 103 for about 209 extra
+    #: dispatches, 192.6 to 227.1, worst case 412. So 2 to 4 extra dispatches per
+    #: finding recovered.
+    #:
+    #: AND THE RATE BEYOND DEPTH 2 HAS NEVER BEEN MEASURED, because the cap
+    #: prevented it. That circularity is the strongest argument for the ruling and
+    #: was not the reason given for it.
+    routing_max_rungs: int = 0
     # Code-location novelty series (2026-06-08). Computes a per-round critical-novelty
     # series keyed by target-file code location (the verified fix for the cross-round
     # dedup failure) alongside the ID-proxy count, logging both.
@@ -7026,9 +7046,20 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
         # `or 2` REMOVED 2026-10-06: it coerced 0 back to 2, so "exhaust the
         # ladder" was inexpressible through config. 0 now reaches `route` and means
         # exhaust, per the founder's ruling.
-        _raw = getattr(cfg, "routing_max_rungs", 2)
-        _rungs = 2 if _raw is None else int(_raw)
-        _route_kw = {} if _rungs == 2 else {"max_rungs": _rungs}
+        # THE OMIT-AT-DEFAULT CONDITION TRACKS THE DEFAULT RATHER THAN THE
+        # LITERAL 2, flipped with it on 2026-10-08. Hard-coding 2 here would mean
+        # that once the config default became 0 the keyword was passed on EVERY
+        # run, which breaks the 8 narrow `fake_route` stubs across 4 files that the
+        # comment above is careful to protect.
+        #
+        # IT READS A MODULE CONSTANT, NOT `inspect.signature(route)`. The first
+        # attempt read the signature and raised KeyError the moment a test
+        # monkeypatched `route` with a narrow stub -- the exact case this logic
+        # exists to protect. Caught by test_routing_max_rungs_is_reachable.
+        from bench.routing import DEFAULT_MAX_RUNGS as _fn_default
+        _raw = getattr(cfg, "routing_max_rungs", _fn_default)
+        _rungs = _fn_default if _raw is None else int(_raw)
+        _route_kw = {} if _rungs == _fn_default else {"max_rungs": _rungs}
         result = route(
             finding, models, confirmed, resolve_fn, reverify_falsifier,
             _routing_similarity, **_route_kw,
@@ -9282,6 +9313,60 @@ def _check_hardened_convergence(
     _total_findings = len(getattr(registry, "entries", {}) or {})
     telem["gamma_crit_estimable"] = _g_estimable
     telem["total_findings"] = _total_findings
+
+    # ─────── THE 2 PRECONDITIONS THAT GUARD THE VACUITY GUARDS ───────
+    # FOUND INDEPENDENTLY BY BOTH FREE SEATS, 2026-10-08, against the fix committed
+    # hours earlier. The vacuous-curve logic was imported from
+    # `_check_gamma_alt_convergence` -- but the sibling reaches its vacuous branch
+    # only BEHIND its A4 fail-safe and its contested block. The import took the
+    # guards and left their preconditions, so the 2 gates returned OPPOSITE
+    # verdicts on identical registries.
+    #
+    # AND THE DIRECTION IS UNSAFE, which is what makes it critical rather than
+    # untidy. `UNCONFIRMED` is an unresolved status that `_NON_NOVEL_TERMINAL_STATUSES`
+    # strips from the settled series, so an unverified critical does not merely fail
+    # to block -- it drives `cum_crit` DOWN and pushes the run INTO the vacuous
+    # branch. The censoring runs toward convergence. `unverified_critical_count`'s
+    # own docstring forbids exactly this: such a critical "would vanish from the
+    # count and let the streak accrue".
+    #
+    # DERIVED IN-GATE RATHER THAN PASSED IN, and that is the fable seat's
+    # correction of its OWN first repair: it first added them as parameters
+    # defaulting to 0, and its own falsifier caught that a caller can omit them,
+    # reopening the hole. In-gate derivation is the form no caller can forget. The
+    # registry methods are the same ones the sibling's call site uses, so there is
+    # no second derivation to drift.
+    #
+    # ARCHIVE EXPOSURE: 0 of 69 archived runs (scanned by both seats
+    # independently), so this is a FORWARD hazard rather than a retroactive
+    # miscount. A stub registry without these readers falls back to prior
+    # behaviour, which keeps every existing test honest.
+    try:
+        _unresolved_crit = int(registry.unverified_critical_count())
+    except Exception:                                        # noqa: BLE001
+        _unresolved_crit = 0
+    try:
+        _contested = int(registry.contested_count(
+            round_idx,
+            subcritical_exclusion=bool(getattr(cfg, "falsifier_gate_enabled", False))))
+    except Exception:                                        # noqa: BLE001
+        _contested = 0
+    telem["unresolved_critical"] = _unresolved_crit
+    telem["contested"] = _contested
+    if _unresolved_crit > 0:
+        telem["mode"] = "a4_blocked"
+        return False, (
+            f"hardened REFUSED at R{round_idx}: A4 BLOCK, {_unresolved_crit} "
+            f"unverified critical-severity candidate(s) pending with no resolved "
+            f"falsifier. They are excluded from the settled series, so they would "
+            f"otherwise push this run toward convergence rather than block it. HIL "
+            f"review required [γ_crit={g_crit:.3f}, γ_all diag={g_all:.3f}]"), telem
+    if _contested > 0:
+        telem["mode"] = "contested_blocked"
+        return False, (
+            f"hardened REFUSED at R{round_idx}: {_contested} contested finding(s) "
+            f"still in dispute, so the critical picture is not settled "
+            f"[γ_crit={g_crit:.3f}, γ_all diag={g_all:.3f}]"), telem
     if cum_crit < cfg.gamma_crit_min_cumulative:
         if not _g_estimable and cum_crit == 0:
             # No curve exists at all. Guarded vacuity, never a bare pass.
@@ -9327,27 +9412,64 @@ def _check_hardened_convergence(
         if not zero_crit_ok:
             _why.append("zero-crit window not satisfied")
         if not _g_ok:
-            _why.append(f"γ_crit={g_crit:.3f} < θ={theta:.3f} and gamma GATES here")
+            # F3, fable seat: when cum_crit > 0 but gamma is UNESTIMABLE -- e.g.
+            # criticals only in the final round -- this text asserted a slope that
+            # is a sentinel. The verdict cannot flip (a sentinel 0.0 never passes
+            # theta) but the RECORD was claiming a measurement it does not have.
+            _why.append(
+                f"γ_crit={g_crit:.3f} < θ={theta:.3f} and gamma GATES here"
+                if _g_estimable else
+                f"γ_crit={g_crit:.3f} is the SENTINEL, not a slope (no estimable "
+                f"curve), so it cannot meet θ={theta:.3f}")
         return False, (
             f"hardened not met (sparse pool, cum_crit={cum_crit}): "
             + "; ".join(_why)
             + f" [γ_all diag={g_all:.3f}]"), telem
 
     telem["mode"] = "full"
+    # ─────── THE SENTINEL IS SKIPPED HERE TOO, NOT COMPARED TO THETA ───────
+    # FOUND BY THE cc2 SEAT, 2026-10-08, against the fix committed hours earlier:
+    # `_gamma_is_estimable` was added and then applied in 1 of the 4 places the
+    # estimator meets a threshold. These 2 loops call `_estimate_gamma` on SHORTER
+    # sub-series and compare the result to theta raw -- and shorter is where the
+    # sentinel is MOST likely, not least. By this fix's own standard, gating on a
+    # sentinel is not gating on gamma, so it was the same defect one branch over,
+    # running in the opposite direction.
+    #
+    # THE FALSE NEGATIVE IT CREATED, demonstrated by the seat: a run that found
+    # every critical in round 0 and nothing in 5 clean rounds since -- MAXIMAL
+    # diminishing returns, the case that most deserves to converge -- has a
+    # drop-one sub-series of [0,0,0,0,0], which is all-zero and yields the
+    # sentinel 0.0. That drove `loo_min` to 0.0, `loo_ok` to False, and refused the
+    # run, burning its budget to max_rounds. The sibling gate converged on the
+    # identical data.
+    #
+    # A sub-series whose gamma is NOT ESTIMABLE carries no evidence either way, so
+    # it is skipped. Skipping is not weakening: a sub-series that IS estimable and
+    #低 still fails the check, and if NO sub-series is estimable the loops fall
+    # through to the headline gamma, which gates.
     # (B) sustained over consecutive prior settled recomputes
     sustained = g_crit >= theta
+    _sustain_checked = 0
     for k in range(1, max(1, cfg.gamma_crit_sustain_rounds)):
         prior = crit_s[: len(crit_s) - k]
-        if len(prior) < 2 or _estimate_gamma(prior) < theta:
+        if len(prior) < 2 or not _gamma_is_estimable(prior):
+            continue            # no curve in this sub-series: no evidence, skip
+        _sustain_checked += 1
+        if _estimate_gamma(prior) < theta:
             sustained = False
             break
     # (B) leave-one-round-out robustness
     loo_min = g_crit
+    _loo_checked = 0
     for i in range(len(crit_s)):
         loo = crit_s[:i] + crit_s[i + 1:]
-        if len(loo) >= 2:
+        if len(loo) >= 2 and _gamma_is_estimable(loo):
+            _loo_checked += 1
             loo_min = min(loo_min, _estimate_gamma(loo))
     loo_ok = loo_min >= (theta - cfg.gamma_crit_loo_tol)
+    telem.update(sustain_subseries_checked=_sustain_checked,
+                 loo_subseries_checked=_loo_checked)
     gamma_crit_ok = (g_crit >= theta) and sustained and loo_ok
     telem.update(sustained=sustained, loo_min=round(loo_min, 4),
                  loo_ok=loo_ok, gamma_crit_ok=gamma_crit_ok)

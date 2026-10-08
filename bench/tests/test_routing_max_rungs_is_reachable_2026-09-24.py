@@ -47,16 +47,47 @@ class _Res:
     duplicate_of = None
 
 
-def test_the_field_exists_and_defaults_to_two():
-    assert R.RunnerConfig().routing_max_rungs == 2, (
-        "the default must stay 2 so every routing-enabled config already on disk "
-        "is byte-identical until one opts in")
+# ─────── UPDATED 2026-10-08 ON THE FOUNDER'S RULING, NOT DELETED ───────
+# These assertions pinned the default at 2 so that "every routing-enabled config
+# already on disk is byte-identical until one opts in". That was the right property
+# while the cap was the intended default. It no longer is.
+#
+# HIS RULING, 2026-10-06 and restated several times since: *"I don't think there
+# should be a cap at all. If it's a measured statistic, along with capability
+# fingerprinting then the problem should run until it is either resolved, or the
+# ladder is exhausted."* It was expressible but never expressed -- 0 of 47 configs
+# set it -- so the ruling reached nothing, which is the addition-nothing-reaches
+# failure this project has 11 confirmed instances of.
+#
+# WHAT THE CAP WAS COSTING, measured over 305 archived routing records: 143 hit the
+# cap and 103 of those were ABANDONED UNRESOLVED. Per-rung conditional resolve rates
+# are 0.3902 at rung 1 and 0.2797 at rung 2, so 4 further rungs recover roughly 46
+# to 75 of the 103 for about 209 extra dispatches.
+#
+# The BYTE-IDENTICAL property is deliberately given up; the OMIT-AT-DEFAULT property
+# that protects the 8 narrow stubs is kept, by making the condition track the
+# signature instead of the literal 2.
+
+def test_the_field_exists_and_defaults_to_exhaust():
+    assert R.RunnerConfig().routing_max_rungs == 0, (
+        "the default must be 0, meaning exhaust the ladder, per the founder's "
+        "ruling; a positive default is a cap he has ruled against")
 
 
-def test_routes_own_default_is_unchanged():
-    """ANTI-REGRESSION: the field is an ADDITION, and nothing was removed."""
+def test_routes_own_default_matches_the_config_default():
+    """They must agree, or the omit-at-default logic silently caps or uncaps.
+
+    This is the coupling that made a naive flip dangerous: the call site omits the
+    keyword when the config equals the FUNCTION default, so if the 2 drift apart
+    the runner either passes a cap it was not asked for or omits one it was.
+    """
     import inspect
-    assert inspect.signature(RT.route).parameters["max_rungs"].default == 2
+    fn_default = inspect.signature(RT.route).parameters["max_rungs"].default
+    assert fn_default == 0
+    assert fn_default == R.RunnerConfig().routing_max_rungs, (
+        f"route() defaults to {fn_default} while the config defaults to "
+        f"{R.RunnerConfig().routing_max_rungs}; the omit-at-default condition "
+        "cannot be correct for both")
 
 
 class _MC:
@@ -104,19 +135,21 @@ def test_the_configured_value_is_what_route_receives(monkeypatch):
 
 
 def test_at_the_default_the_real_call_site_passes_no_keyword(monkeypatch):
-    """The other half, also executed: default 2 must keep the call
-    byte-identical, or the 8 narrow fake_route stubs break."""
+    """The property that protects the 8 narrow fake_route stubs, and it SURVIVES
+    the flip because the omit condition now tracks the signature rather than 2."""
     seen = _drive_real_apply_routing(monkeypatch)
     assert "max_rungs" not in seen, (
-        f"routing_max_rungs=2 leaked the keyword into route(): {seen!r}")
+        f"the default leaked the keyword into route(): {seen!r}")
 
 
 def test_at_the_default_no_keyword_is_passed_at_all():
     """The narrow stubs in 4 other test files depend on this, and so does the
     claim that archived behaviour is untouched."""
-    for value, expect_keyword in ((2, False), (3, True), (5, True)):
-        rungs = int(value or 2)
-        kw = {} if rungs == 2 else {"max_rungs": rungs}
+    import inspect
+    fn_default = inspect.signature(RT.route).parameters["max_rungs"].default
+    for value, expect_keyword in ((fn_default, False), (2, True), (3, True), (5, True)):
+        rungs = int(value)
+        kw = {} if rungs == fn_default else {"max_rungs": rungs}
         assert ("max_rungs" in kw) is expect_keyword, (
             f"routing_max_rungs={value} produced {kw!r}")
 
