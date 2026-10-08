@@ -1,0 +1,204 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 18606,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ANTML/ 2>/dev/null; pwd; ls\", \"description\": \"Locate repository root\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la ~ 2>/dev/null | head -30; echo \\\"---\\\"; find / -maxdepth 3 -name \\\"bench\\\" -type d 2>/dev/null | head\", \"description\": \"Find bench directory\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | head -50; echo \\\"=== bench 2026-10-08 ===\\\"; ls bench/ | grep 2026-10-08\", \"description\": \"List scripts and bench producers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -15 2>/dev/null; echo \\\"---status---\\\"; git status --short 2>/dev/null | head -20\", \"description\": \"Check git state\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep -i \\\"derivable\\\\|division\\\\|ladder\\\\|relegat\\\\|promot\\\" \", \"description\": \"Find division/ladder scripts\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py bench/what_several_tries_has_to_mean_2026-10-08.py bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py\", \"description\": \"Line counts\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kaibonzp/repo/scripts/the_division_count_is_derivable_2026-10-08.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"time python3 scripts/the_division_count_is_derivable_2026-10-08.py 2>&1 | tail -40\", \"description\": \"Run derivable script\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"nohup python3 scripts/the_division_count_is_derivable_2026-10-08.py --sweep > /tmp/sweep_out.txt 2>&1 &\\necho started\", \"description\": \"Start sweep in background\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /tmp/sweep_out.txt | tail -20; echo \\\"=== still running? ===\\\"; pgrep -fl \\\"derivable\\\" | head\", \"description\": \"Check sweep progress\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 bench/what_several_tries_has_to_mean_2026-10-08.py 2>&1 | tail -45\", \"description\": \"Run several-tries producer\", \"timeout\": 320000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 bench/what_several_tries_has_to_mean_2026-10-08.py 2>&1 | tail -50\", \"description\": \"Run several-tries producer\", \"timeout\": 400000}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kaibonzp/repo/scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Monotonicity of the division-cost curve is a THEOREM, and the proof is Neyman-Pearson.\\n\\nWHAT THIS FILE CLAIMS, AGAINST THE 2026-10-08 BRIEF.\\n\\nThe brief reports that the merge construction -- collaps"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -ld . scripts bench && touch scripts/_wtest.tmp && echo WRITABLE && rm scripts/_wtest.tmp\", \"description\": \"Test write permission\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Monotonicity of the division-cost curve is a THEOREM, and the proof is Neyman-Pearson.\\n\\nWHAT THIS FILE CLAIMS, AGAINST THE 2026-10-08 BRIEF.\\n\\nThe brief reports that the merge construction -- collapse 2 adjacent promotion\\ngates into 1 gate on the concatenated attempts -- \\\"is not"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"time python3 scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py 2>&1 | tail -60\", \"description\": \"Run merge-lemma script\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /tmp/sweep_out.txt | tail -20; echo \\\"=== running? ===\\\"; pgrep -f \\\"derivable\\\" >/dev/null && echo YES || echo NO\", \"description\": \"Check sweep\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/dm/ 2>/dev/null | head -40; echo \\\"=== routing ===\\\"; find . -name \\\"routing*\\\" -o -name \\\"*routing*.py\\\" | grep -v __pycache__ | head -10\", \"description\": \"Find routing module\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find . -path ./bench/logs -prune -o -name \\\"routing.py\\\" -print 2>/dev/null; echo \\\"---\\\"; grep -rn \\\"DEFAULT_MAX_RUNGS\\\" --include=*.py . | grep -v \\\"bench/logs\\\" | head -10\", \"description\": \"Locate routing.py and DEFAULT_MAX_RUNGS\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"promot\\\\|rung\\\" --include=*.py bench/ | grep -v \\\"bench/logs\\\\|__pycache__\\\\|tests/\\\" | head -20\", \"description\": \"Find promotion machinery\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"DEFAULT_MAX_RUNGS|def .*rung|def .*promot\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kaibonzp/repo/bench/routing.py\", \"output_mode\": \"content\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/*.py | head -60; echo \\\"=== capability ===\\\"; ls bench/ | grep -i \\\"capab\\\\|ladder\\\\|league\\\\|divis\\\"\", \"description\": \"List bench modules\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def \\\\|^[A-Z_]* =\\\" bench/allocation_by_measured_capability_2026-10-07.py | head -40\", \"description\": \"Inspect capability allocation module\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def \\\\|^[A-Z_]* = \\\" bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py | head -30\", \"description\": \"Inspect promotion ladder module\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kaibonzp/repo/bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py\", \"offset\": 139, \"limit\": 75}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'N[2*(ArcSin[Sqrt[9/10]]-ArcSin[Sqrt[1/2]]), 12]' 2>&1 | head -5; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram second falsifier on arcsine span\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_division_count_is_derived_from_resolution_2026-10-08.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"T IS derivable at the start of an experiment, and the derivation is resolution,\\nnot cost.\\n\\nTHE FOUNDER'S QUESTION, 2026-10-08: can the number of leagues \\\"be mathematically\\nderived at the start of an experiment, based on the relative complexity of the\\ntask, and the a"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"time python3 scripts/the_division_count_is_derived_from_resolution_2026-10-08.py 2>&1 | tail -80\", \"description\": \"Run derivation script\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch1.py <<'PYEOF'\\nimport re, pathlib\\np = pathlib.Path(\\\"scripts/the_division_count_is_derived_from_resolution_2026-10-08.py\\\")\\nsrc = p.read_text()\\n\\n# --- 1. add z_place and a mode to T_derived / N_required -------------------\\nold = '''def T_derived(N: float, d_phi: float, pc_min: float = PC_MIN,\\n              pw_max: float = PW_MAX, serial: bool = True,\\n          "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch2.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/the_division_count_is_derived_from_resolution_2026-10-08.py\\\")\\nsrc = p.read_text()\\n\\n# ---- replace claim 1 with the Anscombe repair ----------------------------\\nstart = src.index(\\\"# ---------------------------------------------------------------- claim 1\\\")\\nend = src.index(\\\"# ----------------------------"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch3.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/the_division_count_is_derived_from_resolution_2026-10-08.py\\\")\\nsrc = p.read_text()\\n\\n# claim 2: report both modes\\nold = '''    rows = []\\n    for N in (19, 22, 25, 30, 48, 60, 100, 200, 500, 2000, 20000):\\n        rows.append({\\\"N\\\": N,\\n                     \\\"T_serial\\\": T_derived(N, d, serial=True),\\n     "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/ 2>/dev/null | wc -l; find bench -name \\\"*routing*record*\\\" -o -name \\\"*routing*.json*\\\" 2>/dev/null | head -5; echo \\\"=== 305 records ===\\\"; grep -rln \\\"rungs_tried\\\" bench --include=*.py 2>/dev/null | head; echo \\\"=== outcome fields in routing.py ===\\\"; grep -n \\\"resolved\\\\|UNRESOLVED\\\\|exhaust\\\\|status\\\" bench/routing.py | head -25\", \"description\": \"Survey archived ro"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Relegation: the statistic, the window, the decision rule, and what stops it\\ndemoting a capable model for being handed the hard problems.\\n\\nTHE FOUNDER'S HALF THAT IS UNBUILT, 2026-10-08: *\\\"just as teams and players can be\\npromoted over time through a period of sustain"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"time python3 scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py 2>&1 | tail -70\", \"description\": \"Run relegation script\", \"timeout\": 600000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch4.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py\\\")\\nsrc = p.read_text()\\n\\n# ---- insert the Rasch residual next to the stratified one ---------------\\nanchor = \\\"def cusum_down(z_seq: list, k_ref: float, h: float) -> dict:\\\"\\nins = '''def rasch_residuals(stream: list, theta_floor: float) -> list:\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch5.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py\\\")\\nsrc = p.read_text()\\n\\nold = '''    print(\\\"\\\\\\\\n== 3. stratification is the hard-problem guard ==\\\")\\n    (d3,) = claim_stratification_is_what_stops_the_hard_problem_demotion(h)\\n    for k in (\\\"rounds\\\", \\\"top_model_raw_resolve_rate\\\", \\\"top_mode"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch6.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py\\\")\\nsrc = p.read_text()\\n\\nanchor = \\\"def main() -> int:\\\"\\nnew6 = '''# --------------------------------------------------------------- claim 6\\ndef claim_escalated_items_carry_almost_no_relegation_information(\\n        h: float, k_ref: float = 0.5, se"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pgrep -f \\\"derivable\\\" >/dev/null && echo \\\"STILL RUNNING\\\" || echo DONE; tail -15 /tmp/sweep_out.txt\", \"description\": \"Check sweep result\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'z=NProbability[x<=#,x\\\\[Distributed]NormalDistribution[]]&; {N[2*InverseCDF[NormalDistribution[],1-0.05/2],10], N[(0.927295218002*Sqrt[2000])/(2*InverseCDF[NormalDistribution[],1-0.025]),10], N[(1-0.0474258731776)/Sqrt[0.0474258731776*(1-0.0474258731776)],10]}' 2>&1 | head -5; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram second falsifier on z and credit values\", \"ti"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py\\\")\\ns = p.read_text()\\nold = '''\\\"is 0.3338 on an easy item against 5.9948 on a hard one, so \\\"'''\\nnew = '''\\\"is 0.2231 at difficulty -3 against 4.4817 at +3 \\\"\\n                    \\\"(Wolfram Language, local Wolfram Engine: 4.481689070336), so \\\"'''\\nassert old"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/fastgrid.py <<'PYEOF'\\n\\\"\\\"\\\"Answer the brief's 2 sweep questions over 36 settings instead of 6, fast.\\\"\\\"\\\"\\nimport importlib.util, sys, math, pathlib\\nroot = pathlib.Path(\\\".\\\").resolve()\\nspec = importlib.util.spec_from_file_location(\\n    \\\"dd\\\", root/\\\"scripts\\\"/\\\"the_division_count_is_derivable_2026-10-08.py\\\")\\nM = importlib.util.module_from_spec(spec); sys.modules[\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/inv.py <<'PYEOF'\\nimport importlib.util, sys, math, pathlib, itertools\\nroot = pathlib.Path(\\\".\\\").resolve()\\nspec = importlib.util.spec_from_file_location(\\n    \\\"dd\\\", root/\\\"scripts\\\"/\\\"the_division_count_is_derivable_2026-10-08.py\\\")\\nM = importlib.util.module_from_spec(spec); sys.modules[\\\"dd\\\"]=M; spec.loader.exec_module(M)\\nsys.path.insert(0, str(root/\\\"scripts\\\"))\\n"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py\\\")\\nsrc = p.read_text()\\nanchor = \\\"def main() -> int:\\\"\\nnew = '''def claim_the_deterministic_curve_ACTUALLY_INVERTS() -> dict:\\n    \\\"\\\"\\\"THE BRIEF'S OWN QUESTION, ANSWERED IN THE AFFIRMATIVE.\\n\\n    The brief asks of its robustness sweep \\\"whether any setting produces an\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'cap=(1-(1/10)^2)*(1-CDF[BinomialDistribution[8,9/10],5]); wk=(1-(7/10)^2)*(1-CDF[BinomialDistribution[8,3/10],5]); g=(1/100-(1-CDF[BinomialDistribution[10,3/10],7]))/PDF[BinomialDistribution[10,3/10],7]; pw=(1-CDF[BinomialDistribution[10,9/10],7])+g*PDF[BinomialDistribution[10,9/10],7]; N[{cap,wk,g,pw},12]' 2>&1 | head -5; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfra"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pgrep -f derivable >/dev/null && echo \\\"SWEEP STILL RUNNING\\\" || tail -14 /tmp/sweep_out.txt\", \"description\": \"Final sweep check\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py scripts/the_division_count_is_derived_from_resolution_2026-10-08.py scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py; do python3 \\\"$f\\\" >/dev/null 2>&1; echo \\\"$f exit=$?\\\"; done\", \"description\": \"Confirm all three deliverables exit 0\", \"timeout\": 600000}"
+    }
+  ],
+  "n_tool_calls": 46,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1827.0,
+  "response": "## Verdict\n\n**UNSOUND** on the brief's headline arithmetic; sound on its \u00a73 framing and on the withdrawal it already made.\n\nThree parts of the brief's position stand: the `smallest_gate` withdrawal is correct (identical-gate costs *are* upper bounds); \u00a73's crux is correct (attempts price certification, not placement); and the committed-figure withdrawals in \u00a74 reproduce. Two parts fail with executed witnesses:\n\n1. **\"0 downward steps, 0 inversions \u2026 so 'as few divisions as possible' IS right on the attempts metric\"** \u2014 false. At capable 0.90 / weak 0.30, end-to-end budget (0.95, 0.01), per-gate cap 14: **3 divisions cost 10 attempts, 2 cost 11.** Exhaustive enumeration, not a pruned DP. The brief's 0 inversions is a single-rate-pair result at (0.90, 0.50).\n2. **\"Monotonicity currently rests on a SCAN, not a proof\"** \u2014 false in both directions at once. In the deterministic threshold family it is not unproven, it is **false**. In the randomised threshold family it is a **theorem**, and the modelling step is not \"arbitrary tests\" but the standard completion of the binomial test family that Neyman\u2013Pearson is stated over.\n\nAnd the derivation the founder asked for exists: **T is derivable in closed form**, validated 6/6 against the brief's own exact binomial DP.\n\n---\n\n## Findings\n\n**F1 \u2014 The deterministic division-cost curve inverts. (OBSERVED, CRITICAL)**\n`scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py` claim 7. Two witnesses by exhaustive enumeration of all 1-gate and 2-gate ladders:\n\n| rates | budget | cost(T=2) | cost(T=3) |\n|---|---|---|---|\n| 0.90 / 0.30 | (0.95, 0.010) | 11 \u2014 `[(11,8)]` | **10** \u2014 `[(2,1),(8,6)]` |\n| 0.95 / 0.30 | (0.90, 0.050) | 5 \u2014 `[(5,4)]` | **4** \u2014 `[(2,1),(2,2)]` |\n\nWitness 1 end-to-end: capable 0.9522891279, weak 0.0057590271, both inside budget. scipy vs mpmath 8.674e-19. Wolfram Language (local Wolfram Engine, exit 0) returns 0.9522891279 and 0.0057590271 to 12 digits.\n`python3 scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py`\n\nA third inversion and 5 free divisions appear over a 48-setting grid (3 inversions total, 30 feasible / 18 infeasible). **A division is better than free at witness 1** \u2014 which refutes \"as few divisions as possible\" on the brief's own metric.\n\n**F2 \u2014 Monotonicity is a theorem under randomised threshold gates. (OBSERVED, CRITICAL)**\nSame file, claims 2\u20134. The merge lemma holds at **0 of 4000** pairs failing (worst power slack \u22124.44e-16, worst size excess 8.67e-19), and **all 801** of the brief's deterministic failures are repaired by randomisation alone. The Neyman\u2013Pearson premise is checked: `d/dS log L = log(9)` at the brief's rates (SymPy), and z3 returns `unsat` on the search for capable > weak with non-positive log-ratio slope \u2014 so the family has monotone likelihood ratio and the most powerful test of size exactly \u03b1 is a randomised threshold on the total success count. Proof of both lemma and theorem is in the file's docstring.\n\nThe mechanism is visible in F1: at witness 1 the merged randomised gate on n=10 achieves power 0.9834296545 at size exactly 0.01, while the best **deterministic** gate on n=10 reaches only 0.9298091736 \u2014 short of the 0.95 floor. That gap *is* the inversion. Wolfram confirms \u03b3 = 0.9342258766 and power 0.9834296545 to 12 digits.\n\n**F3 \u2014 T is derivable; the attempts objective cannot derive it. (OBSERVED, CRITICAL)**\n`scripts/the_division_count_is_derived_from_resolution_2026-10-08.py`. On the attempts objective the optimum is degenerate \u2014 T = 2 always \u2014 so it can only ever return \"as few as possible\". The derivation is resolution:\n\n- **Relative complexity** = the span the task set induces in the roster's measured resolve rates, in arcsine coordinates: \u0394\u03c6 = 2(arcsin\u221ap_hi \u2212 arcsin\u221ap_lo). Measurable before the ladder exists, from the resolve-rate records promotion already uses. A task set everyone solves and one nobody solves both give \u0394\u03c6 \u2192 0 and support exactly 1 division.\n- **Available resources** = N, attempts of evidence per model = B/R. No other roster term enters.\n- **T** = 1 + max{t : t \u2264 (\u0394\u03c6\u221aN / z(t+1))^\u03ba}, \u03ba = 1 pooled, 2/3 serial.\n\n\u0394\u03c6 = 0.927295218002 at the brief's rates (Wolfram Language, local Wolfram Engine). **Validation: 6/6 agreement with the brief's exact binomial DP** on all its sweep settings including both it marks infeasible \u2014 \"some rate pairs are infeasible at any division count\" now has a formula: \u0394\u03c6\u221aN < z_sum(2). **Tightness: at N = 2000 the derived T = 11 holds the per-boundary error at 0.04475 \u2264 0.05 and T = 12 fails at 0.06625.** Wolfram independently gives the bound 10.5792512465 \u2192 T = 11.\n\n**F4 \u2014 Certification and placement have different error algebras, and the brief prices the one that does not bind. (OBSERVED, HIGH)**\nSame file, claim 4. The scan curve rises 2.4615 attempts per division \u2014 linear. Placement needs N \u221d (T\u22121)\u00b3 serial. Placement exceeds certification **from T = 3**, and by T = 5 the ratio is 45.75\u00d7 (25 attempts against 1143.7). Certification lets per-gate error be loose because the weak model need fail only one gate, so z_sum *shrinks* with T (3.971 at T=2 \u2192 1.962 at T=22); placement gets no such help.\n\n**F5 \u2014 The natural relegation statistic violates the founder's guard. (OBSERVED, CRITICAL)**\n`scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py` claims 3\u20134. Per-item stratification (Cochran\u2013Mantel\u2013Haenszel / conditional logit) is the obvious statistic and it fails: escalation sends a division only the items everything below it failed, so the stratum varies **iff the model succeeds**. Measured: 228 of 400 observations dropped as degenerate, and every survivor carries the identical residual **2.236068 = \u221a5**. Correlation with skill is `nan` across skills [0,1,2,3] \u2014 the statistic is literally a success count. Repaired with the Rasch (1-parameter item-response) residual on measured difficulty: residuals [0.0098, 0.3846, 1.2046, 1.8272], correlation **0.991**.\n\n**F6 \u2014 Escalated items carry ~14\u00d7 less relegation information than calibrated ones. (OBSERVED, HIGH)**\nSame file, claim 6. Fisher information per Rasch observation is p(1\u2212p), which collapses as p \u2192 0; at the division floor, escalated items sit at p = 0.017986, information 0.017663 against 0.25 at p = \u00bd \u2014 a **14.15\u00d7 penalty**. Measured consequence: a 1.5-logit decline is undetected at calibration shares 0.00, 0.05, 0.10 and 0.20, and detected only from **0.40** (crossing at observation 60). A stable model is never demoted at any share. So relegation has a derived resource precondition the attempts-optimal ladder does not price.\n\n**F7 \u2014 My own derived transient-outage bound is unsafe as stated. (OBSERVED, MEDIUM)**\nSame file, claim 2. L_min = \u2308h/(2\u2212k_ref)\u2309 = 3 holds only while sd \u2264 \u00bd. The standardised residual is unbounded below as the cohort grows (worst z = \u221214.1421 at cohort 200), and a run of L_min\u22121 observations demotes at cohort 20 and 200. Safe only with z Winsorised at \u22122.0, where all 5 cohort sizes hold. Reported rather than quoted.\n\n**F8 \u2014 The brief's own sweep contains a free division it does not quote. (OBSERVED, MEDIUM)**\n`python3 scripts/the_division_count_is_derivable_2026-10-08.py --sweep` completed at ~22 min: 6 settings, 4 feasible, 0 inversions, and **1 free step** \u2014 \"wide gap, slack budget\" gives `[19, 19, 23, 26, 30, 33, 37, 40]`, so a 3rd division costs nothing. The brief says \"a free division should be taken\"; its own producer found one. My 48-setting grid finds 5.\n\n**F9 \u2014 Whether a per-gate ceiling alone breaks monotonicity: HYPOTHESISED, not shown.**\nMy predicted counterexample failed. Claim 6 scans per-gate ceilings 2\u201312 at (0.90, 0.50) and finds **0 inversions**. It did surface something else: under a tight ceiling the *low* division counts go infeasible (at ceiling 7, T=2\u20265 are infeasible and T=6 costs 34) \u2014 so a per-gate cap imposes a **lower** bound on T, and \"as few as possible\" is unavailable there for a second, independent reason. Settled by: find an inversion at a ceiling where a1+a2 exceeds it, or prove monotonicity holds under a cap in the randomised family.\n\n---\n\n## Fix\n\nThree files, all at real paths, all exit 0, each carrying its own falsifier with output pasted above.\n\n| file | fixes | falsifier |\n|---|---|---|\n| `scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py` | F1, F2, F9 | reproduces the brief's 801 exactly, then 0/4000 under randomisation; exhaustive 2-gate enumeration for the inversions; SymPy + z3 on the MLR premise; scipy/mpmath to 4.06e-11; Wolfram on 4 values |\n| `scripts/the_division_count_is_derived_from_resolution_2026-10-08.py` | F3, F4 | 6/6 against the brief's exact DP; tightness simulation (within at T, over at T+1); Wolfram on \u0394\u03c6 and the T bound |\n| `scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py` | F5, F6, F7 | Brook\u2013Evans ARL Markov chain (ARL0 = 500.0 at h = 4.400221, ARL at \u22121\u03c3 = 9.16); 3 rules on one stream; the calibration-share sweep; Winsorising check |\n\n**Each file falsified one of its own claims and was repaired, not reverted:**\n- Claim 1 of the derivation file: plain arcsine spread 0.4955 at N=19 (not stabilised) \u2192 Anscombe's small-sample form gives 0.0805, asymptotics give 0.0201 at N=200. The consequence is stated in the file: T_derived is optimistic at small N.\n- Claim 6 of the derivation file: v1 sized the per-boundary error from the end-to-end product, giving an 80% target at T=22, and returned `within=False` at both T and T+1 \u2014 the tool saying the criterion was wrong. Repaired with `z_place`; now TIGHT.\n- Claim 3/4 of the relegation file: F5 above.\n- Claim 2 of the relegation file: F7 above.\n\n**Relegation specification, in standard names only:**\n- **Statistic** \u2014 Rasch residual (y \u2212 p)/\u221a(p(1\u2212p)), p = \u03c3(\u03b8_floor \u2212 b), difficulty b from `routing.rungs_tried` under exhaustion. That label is exact only under exhaustion (established by `bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py` claim 4, which calls `route`), and `routing.DEFAULT_MAX_RUNGS = 0` is exhaust \u2014 so relegation is buildable now and was not before the cap lifted.\n- **Window** \u2014 none. A fixed trailing window must trade detecting a small sustained drop against detecting it soon. Page's CUSUM has no window; the only window is n_min before arming.\n- **Rule** \u2014 one-sided CUSUM S_k = max(0, S_{k\u22121} \u2212 z_k \u2212 k_ref), demote at S_k \u2265 h, with h solved from a target ARL0 by Brook\u2013Evans. Promotion is the mirror CUSUM at the same h, so symmetry is structural rather than a second mechanism.\n- **Transient vs decline** \u2014 excluded by *type*, not threshold: only a resolved-or-refuted dispatch yields a y. A timeout, lapsed licence or empty reply produces no observation, so the CUSUM does not update. This is the founder's \"harvest when the model is done\" position as a statistical property: a seat that has not finished has not produced a datum. Plus F7's Winsorised increment bound.\n- **Hard problems** \u2014 difficulty is a covariate, so a failure on a hard item is *expected* and barely debited (0.2231 at difficulty +3 against 4.4817 for a success there; Wolfram: 4.481689070336).\n- **Not deployed.** I have not wired a flag into `bench/routing.py`. Two parameters must be measured first and are not in this tree: the residual sd from an archived per-model-per-item outcome corpus, and the empirical outage-length distribution that sets h. Per the additive standard, an unwired flag would be the 12th addition nothing reaches.\n\n**Q4 \u2014 success count vs capability, three measured mechanisms:** the decision reads a Wilson *lower bound*, so a perfect 19/19 gives 0.831821 and does not clear a 0.9 floor (50 attempts needed); credit is by surprise (1\u2212p)/sd, so an easy win earns 0.2231 against 4.4817 for a hard one; and the same CUSUM runs both ways. Measured anti-guard: raw success count correlates 0.9939 with skill *only because* my simulation held item selection fixed \u2014 under escalation the raw count is what drove the unstratified rule to demote the strongest model at observation 106.\n\n**Q5 \u2014 roster 700 and 1:** the formula has no roster term; R enters only via N = B/R. At B = 14000: R=700 \u2192 T=2, R=70 \u2192 T=3, R=6 \u2192 T=6, R=1 \u2192 T=10 serial / 28 pooled, R=7000 \u2192 T=1 (no ladder). T\u22121 falls as R^(\u22121/3) serial. The structure survives both. Relegation does not survive R=1 unchanged: the cohort comparator yields **0 observations of 200** \u2014 correct degenerate behaviour, silent rather than wrong \u2014 and the Rasch rule survives because difficulty is a recorded number, giving 200 observations, no demotion of a stable model, and crossing at 12 on a genuine decline. The limit at R=1 is intrinsic: a self-referenced comparator cannot separate a capability drop from a task-set shift.\n\n---\n\n## Disagreement\n\n**My strongest disagreement is with the brief's choice to treat monotonicity as an open question about proof technique.** It frames the issue as \"monotonicity rests on a SCAN, not a proof\" and asks for a proof, a counterexample, or a modelling decision. That framing concedes too much and asks too little, because it never names the gate family precisely \u2014 and once named, the question dissolves in opposite directions:\n\n- Deterministic success-count thresholds: monotonicity is **false**, witness above, `cost(3) = 10 < cost(2) = 11`.\n- Randomised thresholds: monotonicity is a **theorem**, by Neyman\u2013Pearson in four lines.\n\nThe brief's own measurement was the clue and it was read as a negative result. 801 of 4000 failures is not evidence that the AND test is unbeatable; it is the signature of a discrete test family unable to hit the required significance level. All 801 are repaired by randomisation alone, and the repair is not a new modelling liberty \u2014 a randomised threshold is the standard completion of the binomial test family, far narrower than the \"arbitrary tests\" the brief says a proof would need.\n\n**Second disagreement: the brief frames \u00a73 as \"what the attempts metric does not price\" \u2014 a caveat.** It is not a caveat, it is the answer to the founder's question. The attempts objective returns T = 2 for every input; a function constant in its arguments cannot be a derivation. \u00a73's observation is the whole load-bearing content and it is placed in a section headed by what the metric *fails* to do.\n\n**Figures I contradict:**\n- \"0 downward steps, 0 inversions\" \u2014 `python3 scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py` (claim 7), 2 confirmed by exhaustive enumeration, 3 over a 48-setting grid.\n- \"'as few divisions as possible' IS right on the attempts metric, and a single gate at 19 attempts is the floor\" \u2014 same command. At (0.90, 0.30) a third division is cheaper than a second.\n- \"A robustness sweep \u2026 Run it and report what you find\" \u2014 it completed: 0 inversions over its 6 settings, but **1 free division** at \"wide gap, slack budget\", `[19, 19, 23, \u2026]`. The brief says a free division should be taken and its own producer found one.\n\n**Where I agree against my own interest:** the `smallest_gate` withdrawal is correct, the corrected 13-point curve reproduces exactly, and the 4-division witness `[(2,1),(2,1),(18,14)]` at 22 attempts verifies (capable 0.9524672012, weak 0.0086860657, scipy/mpmath 0.000e+00).\n\n---\n\n## What would refute me\n\n1. **A deterministic-family inversion that randomisation does not repair.** Extend claim 7's exhaustive enumeration to 3-gate ladders over a wider rate grid and find a case where `cost(T) > cost(T+1)` *and* the Neyman\u2013Pearson randomised gate on the summed attempts fails the capable floor. That breaks my theorem, because the merge would then be unavailable even with randomisation. `python3 scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py`, extend `claim_the_deterministic_curve_ACTUALLY_INVERTS` to `combinations_with_replacement(gates, 3)`.\n\n2. **Randomised promotion gates ruled out on grounds I have not considered.** My theorem needs a gate that may pass a boundary case with probability \u03b3 (0.9342258766 at witness 1). If the project rules that a promotion decision must be deterministic given the attempt record \u2014 a defensible reproducibility position, and one the falsifier-integrity directive arguably implies \u2014 then monotonicity is **false**, not a theorem, and the division count must be scanned exactly as the brief says. This is a modelling decision and I do not get to make it. It is the single most likely way my central claim falls.\n\n3. **The derivation refuted at a setting where it disagrees with the exact DP.** Run `claim_the_closed_form_agrees_with_the_exact_dp` over a larger grid than its 6 settings. Any disagreement cell breaks the closed form. The infeasible cells are the dangerous ones: `python3 scripts/the_division_count_is_derived_from_resolution_2026-10-08.py` \u2014 add rate pairs near the feasibility boundary where \u0394\u03c6\u221aN \u2248 z_sum(2).\n\n4. **The tightness result is a seed artefact.** `claim_the_derived_T_is_tight_in_simulation` uses `seed=3`, `trials=4000`, one N. If T = 12 comes in under 0.05 at other seeds, or T = 11 comes in over, the formula is conservative or optimistic rather than tight. Sweep seeds 0\u201350 and N \u2208 {500, 1000, 2000, 5000}.\n\n5. **The 0.40 calibration share is an artefact of my simulated difficulty distribution.** `claim_escalated_items_carry_almost_no_relegation_information` draws difficulty as `gauss(0, 2)` and accepts on 5-model cohort failure. The real escalation distribution is measurable from archived routing records and I did not measure it \u2014 I could not find a per-model-per-item corpus in this tree. If the real distribution is less extreme, the required share drops and F6 shrinks from a precondition to a tuning note. `python3 scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py`, replace the synthetic draw with the archived difficulty histogram.\n\n6. **F5 overstated.** If a real dispatch stream has cohort outcomes that are *not* uniformly 0 on escalated items \u2014 because escalation is probabilistic, or cohorts overlap across divisions \u2014 the per-item stratified residual recovers variation and is not degenerate. My \u221a5 collapse is exact only when the cohort always fails. Measure the fraction of real escalated dispatches where the cohort outcome is non-constant; if it is well above 0, the CMH statistic is viable and my Rasch repair is unnecessary complexity under the simplest-sufficient standard.\n\n**One tool note:** every Wolfram call ran on the local Wolfram Engine, exited 0, printed no `Name::tag`, and returned no `$Failed`/`$Aborted`. Four values were cross-checked there (\u0394\u03c6, 2z, the T bound at N=2000, and the inversion witness's four quantities); all agreed with SciPy/mpmath to the digits quoted. Wolfram was never the only source for any claim.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kaibonzp/repo",
+      "built": false
+    }
+  ]
+}

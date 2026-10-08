@@ -1,0 +1,164 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 13415,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls ~ 2>/dev/null; pwd; ls\", \"description\": \"List home and current directory\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts bench | head -80\", \"description\": \"List scripts and bench directories\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench | grep -i \\\"2026-10\\\" ; echo ---; ls scripts | grep -i \\\"2026-10\\\"\", \"description\": \"List October 2026 dated files\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_szgb1udb/repo/scripts/the_division_count_is_derivable_2026-10-08.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_division_count_is_derivable_2026-10-08.py 2>&1 | tail -40\", \"description\": \"Run division-count derivable script\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py 2>&1 | tail -40\", \"description\": \"Run bounded/not-monotone bench script\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 bench/what_several_tries_has_to_mean_2026-10-08.py 2>&1 | tail -40\", \"description\": \"Run what-several-tries bench script\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_division_count_is_derivable_2026-10-08.py --sweep 2>&1 | tail -25\", \"description\": \"Run division-count script with robustness sweep\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"DEFAULT_MAX_RUNGS\\\" --include=*.py -l . | head; echo ---; ls explorer bench/cdsfl_registry 2>/dev/null | head -30\", \"description\": \"Locate routing module and registry\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks/br5abmbjk.output\", \"description\": \"Read bounded/not-monotone script output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks/b3a93zjg0.output\", \"description\": \"Read what-several-tries output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks/bdy12rv2k.output 2>/dev/null\", \"description\": \"Read derivable-script output\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sleep 20; cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks/bdy12rv2k.output 2>/dev/null | tail -45\", \"description\": \"Wait and read derivable-script output\", \"dangerouslyDisableSandbox\": false}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"DEFAULT_MAX_RUNGS\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 20}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -80 bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py; echo ====; head -60 scripts/why_a_global_capability_number_fails_2026-10-07.py\", \"description\": \"Read promotion-ladder and capability scripts headers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/division_count_blind_2026-10-08/ 2>/dev/null; sed -n '1,80p' scripts/why_a_global_capability_number_fails_2026-10-07.py\", \"description\": \"List this round's log dir and read capability script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks/bdy12rv2k.output 2>/dev/null | tail -50; echo \\\"---sweep---\\\"; cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks/bua1zwkj6.output"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd_s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks/bdy12rv2k.output\\\" 2>/dev/null; ls /private/tmp/claude-501/ 2>/dev/null | head\", \"description\": \"Check derivable-script progress\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks/bdy12rv2k.output\\\"\", \"description\": \"Read derivable-script output\"}"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_szgb1udb/repo/scripts/the_division_count_derivation_and_a_monotonicity_counterexample_2026-10-08.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"The division count IS derivable, monotonicity is NOT a theorem, and feasibility\\nis a resource ceiling, not a separation threshold.\\n\\nSEAT CONTRIBUTION, blind round 2026-1"
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_szgb1udb/repo/scripts/the_division_count_derivation_and_a_monotonicity_counterexample_2026-10-08.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"The division count IS derivable, monotonicity is NOT a theorem, and feasibility\\nis a resource ceiling, not a separation threshold.\\n\\nSEAT CONTRIBUTION, blind round 2026-1"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"printf '# write-test\\\\n' > scripts/.write_test && ls -la scripts/.write_test && rm scripts/.write_test && echo OK\", \"description\": \"Test write access to repo scripts dir via shell\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_division_count_derivation_and_a_monotonicity_counterexample_2026-10-08.py << 'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The division count IS derivable, monotonicity is NOT a theorem, and feasibility\\nis a resource ceiling, not a separation threshold.\\n\\nSEAT CONTRIBUTION, blind round 2026-10-08, on the founder's question: *\\\"if that can\\nbe mathematically derived at the"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport re\\np = \\\"scripts/the_division_count_derivation_and_a_monotonicity_counterexample_2026-10-08.py\\\"\\nsrc = open(p).read()\\n\\nold3 = src[src.index(\\\"def derive_division_count\\\"):src.index(\\\"# -- claim 4\\\")]\\nnew3 = '''def derive_division_count(n: int, p_lo: float, p_hi: float, z: float = Z95) -> int:\\n    g = lambda p: math.asin(math.sqrt(p))\\n    return 1 + "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'N[{1 - CDF[BinomialDistribution[5, 9/10], 3], 1 - CDF[BinomialDistribution[5, 1/2], 3], (9/10)*(1 - CDF[BinomialDistribution[3, 9/10], 1]), (1/2)*(1 - CDF[BinomialDistribution[3, 1/2], 1])}, 10]' 2>&1\", \"description\": \"Wolfram second-falsifier check of counterexample probabilities\", \"timeout\": 180000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks/bua1zwkj6.output\\\" 2>/dev/null | sed -n '/== 5/,$p'\", \"description\": \"Read sweep section of background run\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks/bua1zwkj6.output\\\" 2>/dev/null; ps aux | grep -c \\\"the_division_count_is_derivable\\\"\", \"description\": \"Check sweep run progress\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport importlib.util\\nspec = importlib.util.spec_from_file_location('dc', 'scripts/the_division_count_is_derivable_2026-10-08.py')\\nm = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nc = m.optimal_costs(0.9, 0.5, 0.85, 0.26, max_div=7, maxa=12, maxtot=40)\\nprint('optimal costs by division count at (0.9, 0.5, 0.85, 0.26):', c)\\nseq = [c[T] for T in s"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61821a7/tasks/bua1zwkj6.output\\\" 2>/dev/null; cat \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks/bua1zwkj6.output\\\" 2>/dev/null\", \"descripti"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport importlib.util, random, math\\nspec = importlib.util.spec_from_file_location('dc', 'scripts/the_division_count_is_derivable_2026-10-08.py')\\nm = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nrng = random.Random(11)\\ninv = tested = 0\\nexamples = []\\nfor _ in range(60):\\n    cap = rng.uniform(0.7, 0.95); weak = rng.uniform(0.3, cap - 0.15"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\np = \\\"scripts/the_division_count_derivation_and_a_monotonicity_counterexample_2026-10-08.py\\\"\\nsrc = open(p).read()\\nold = \\\"def main() -> int:\\\\n    print(\\\\\\\"== 1.\\\"\\nnew = '''def claim_inversions_are_common_not_a_corner_case(budgets: int = 60,\\n                                                  seed: int = 11) -> dict:\\n    \\\"\\\"\\\"Random-budget scan: what fracti"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_division_count_derivation_and_a_monotonicity_counterexample_2026-10-08.py --budget-scan 2>&1 | sed -n '/== 5/,$p'\", \"description\": \"Execute the committed budget scan\", \"run_in_background\": true}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"D=\\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks\\\"; wc -c \\\"$D/bua1zwkj6.output\\\" \\\"$D/bvjc0ng8t.output\\\" 2>/dev/null; cat \\\"$D/bua1zwkj6.output\\\" 2>/dev/null\", \"description\": \"Check both background outputs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"D=\\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks\\\"; for f in bua1zwkj6 bvjc0ng8t; do echo \\\"== $f ==\\\"; cat \\\"$D/$f.output\\\" 2>/dev/null; done\", \"description\": \"Final poll of background outputs\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import time; time.sleep(150)\\\"; D=\\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks\\\"; for f in bua1zwkj6 bvjc0ng8t; do echo \\\"== $f ==\\\"; cat \\\"$D/$f.output\\\" 2>/dev/null; done\", \"description\": \"Wait 150s then poll background outputs\", \"timeout\": 200000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import time; time.sleep(240)\\\"; D=\\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-szgb1udb-repo/d9890ff6-0909-406f-bec2-471ca61818a7/tasks\\\"; cat \\\"$D/bua1zwkj6.output\\\" 2>/dev/null\", \"description\": \"Wait 240s then poll committed sweep output\", \"timeout\": 300000}"
+    }
+  ],
+  "n_tool_calls": 36,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1305.4,
+  "response": "All evidence is in except the committed `--sweep` run, which had not returned after ~20 minutes of wall-clock (it buffers until completion); my committed budget scan reuses the same dynamic program and answers both questions the sweep was built for, so I report from that and say so. Final answer:\n\n---\n\n## Verdict\n\n**SOUND WITH REPAIRS.** The withdrawal of the identical-gate non-monotonicity claim is correct and reproduces exactly (`optimum curve: [19, 21, 22, 25, 28, 30, 33, 36, 38, 41, 42, 45, 48]`, witness `[(2,1),(2,1),(18,14)]` at 22 attempts, capable 0.9524672012, weak 0.0086860657, scipy\u2212mpmath diff 0.000e+00, Wolfram concurring to 10 digits). But two of the brief's general conclusions drawn from it are false, and I have executed counterexamples to both: monotonicity is **not** a theorem at other budgets (so \"as few divisions as possible\" is not right in general, only at the committed budget), and \"some rate pairs are INFEASIBLE at any division count\" is a resource-ceiling artefact, not a separation property. The founder's question has a positive answer: **T is derivable at experiment start**, from 2 measured quantities, by the formula and scan below.\n\n## Findings\n\n**F1 \u2014 OBSERVED, CRITICAL. Monotonicity fails inside the threshold family; the question \"theorem or scan\" is settled: scan, and per-budget.**\nAt budget (cap 0.9, weak 0.5, pc_min 0.85, pw_max 0.26): exhaustive enumeration shows **no single threshold gate with \u2264 4 attempts is feasible** (all 10 candidates checked), the cheapest single gate is (5,4) at 5 attempts (capable 0.91854, weak 0.1875), yet the 2-gate ladder **[(1,1),(3,2)] costs 4 attempts** and is feasible (capable 0.8748 \u2265 0.85, weak 0.25 \u2264 0.26). So cost(3)=4 < cost(2)=5. Verified by scipy, exact mpmath at 50 digits, and Wolfram Language (local Wolfram Engine, via wolframscript): `{0.91854, 0.1875, 0.8748, 0.25}` to 10 digits. The brief's own committed DP, pointed at this budget, concurs: `{2: 5, 3: 4, 4: 6, 5: 7, 6: 9, 7: 11}` \u2014 one downward step, and **3 divisions is the strict optimum**, so \"a single gate is the floor\" is budget-specific, not general.\nCommand: `python3 scripts/the_division_count_derivation_and_a_monotonicity_counterexample_2026-10-08.py` (claim 1).\nWhy it inverts: the discrete (attempts, successes) grid of a single gate misses the budget box that a product of two gates' operating points can hit \u2014 exactly the mechanism the 801/4000 merge failures hinted at. The merge-lemma scan was the right suspicion but understated: not only is that proof route closed, the proposition is false.\nThe other half of question 2 also closes: **within arbitrary tests monotonicity IS a theorem, trivially** \u2014 the AND of two gates on their concatenated attempt blocks is itself an admissible test with identical pass probabilities, so collapsing adjacent gates preserves cost and feasibility exactly, giving cost(T) \u2264 cost(T+1). No Neyman\u2013Pearson machinery needed. The modelling decision (threshold-only vs arbitrary gates) therefore fully determines the answer, and under the threshold family actually in use, it is a scan.\n\n**F2 \u2014 OBSERVED, HIGH. Inversions are ~1 budget in 5, not a corner case; free divisions exist.**\n60 random budgets through the committed DP (`optimal_costs`, unchanged): 48 feasible, **9 with a downward step, rate 0.1875, Wilson (0.1019, 0.3194)**. One example also answers the brief's \"free division\" question affirmatively: budget (0.943, 0.696, 0.817, 0.312) has curve [(2,8),(3,5),(4,5),(5,5)] \u2014 divisions 4 and 5 are **FREE**.\nCommand: `python3 scripts/the_division_count_derivation_and_a_monotonicity_counterexample_2026-10-08.py --budget-scan` (executed; output above).\n\n**F3 \u2014 OBSERVED, MEDIUM. \"Infeasible at any division count\" is the ceiling binding, not the rate pair.**\n(0.85, 0.75) \u2014 reported infeasible by the sweep's settings \u2014 is feasible at a **single gate of 253 attempts** (s=206; capable 0.950388, weak 0.009481; scipy = mpmath to <1e\u221212). For any cap > weak the exact minimal single-gate attempts track the sample-size law `A* \u2248 ((z_w\u221a(w(1\u2212w)) + z_c\u221a(c(1\u2212c)))/(c\u2212w))\u00b2`, worst relative error 0.158 over a 5-pair grid; required attempts scale as (c\u2212w)\u207b\u00b2, so separation **prices** attempts and never forbids them. Infeasibility in the sweep is MAX_ATTEMPTS_PER_GATE=24 / MAX_TOTAL_ATTEMPTS=60 binding (`scripts/the_division_count_is_derivable_2026-10-08.py` lines 50\u201351) \u2014 which is the correct way to say \"available resources bound the answer\", but it must be said as a ceiling, not as a property of the task. Command: claim 2 of my script.\n\n**F4 \u2014 OBSERVED, HIGH (the answer to the founder's question). T is derivable, and from exactly the 2 quantities he named.**\nDivisions are difficulty strata, and a stratum boundary is real only if a model's window of attempts can statistically place it on one side. One-sample classification between adjacent rates p\u2081, p\u2082 with n attempts separates at per-side error \u03a6(\u2212z) iff arcsin\u221ap\u2082 \u2212 arcsin\u221ap\u2081 \u2265 z/\u221an (variance-stabilising transform, Var(arcsin\u221ap\u0302) \u2248 1/(4n)). Hence:\n\n  **T(n, p_lo, p_hi) = 1 + floor( (arcsin\u221ap_hi \u2212 arcsin\u221ap_lo) \u00b7 \u221an / z )**\n\n- \"Relative complexity\" = the measured resolve-rate span [p_lo, p_hi] the task mix induces over the roster \u2014 rates, not names, per the founder's standing rule.\n- \"Available resources\" = n, attempts per model per assessment window (total attempt budget \u00f7 roster \u00f7 windows).\n- Checked with NO normal approximation against an exact-binomial greedy packing: agreement within 1 stratum at every n \u2208 {19, 38, 80, 150, 300}, both non-decreasing. At n=19 over [0.5, 0.9]: **T=2**. At n=80: T=3. T grows as \u221an \u2014 finite always, exactly as he requires.\nMy first draft used the 2-sample gap z/\u221a(2n); **its own falsifier rejected it** (exact separation failed at 4 of 5 n values) and the 1-sample form replaced it. That correction is recorded in the file.\nThe full derivation is then two-sided: the resolution formula gives the number of *supportable* divisions (the placement value the attempts metric does not price \u2014 \u00a73's crux); the per-budget DP scan prices the climb and picks T\\* = argmin cost among T \u2264 T_resolution. Both halves are computable in seconds at experiment start. What must be measured first: p_lo, p_hi (archived resolve rates on the task mix \u2014 the archive's provenance-clean attempt counts are currently the binding constraint, per `scripts/why_a_global_capability_number_fails_2026-10-07.py`'s own note), and the attempt budget.\n\n**F5 \u2014 OBSERVED, MEDIUM. Relegation: statistic, window, rule, and the hard-problem guard \u2014 built and falsified.**\nRule delivered: **demote iff an exact one-sided sign test over discordant pairs against the division-peer majority, on the SAME last n scored tasks, rejects parity at 0.05** (`binomtest(n21, n12+n21, 0.5, alternative=\"less\")`). Window is attempt-indexed (n=40 scored attempts), never wall-clock \u2014 honouring \"harvest when done\". Transient outage vs sustained decline: an attempt returning no artefact is an aliveness event (`bench/seat_aliveness_2026-10-06.py` channel) and never enters the denominator \u2014 an outage produces no evidence, not failures. The hard-problem guard is the pairing itself: when the stream hardens, model and peers fall **together**, parity holds, nobody is demoted. Executed: under a difficulty shift the absolute-floor rule demotes a capable model (the founder's feared defect, demonstrated) while the sign test does not; both demote a genuinely degraded model. My first draft conditioned on peer success with independent Bernoullis; **its own falsifier rejected it** (conditioning carries no information without pairing) and the comparative form replaced it. Command: claim 4 of my script.\n\n**F6 \u2014 HYPOTHESISED, LOW. The committed `--sweep` did not return within my turn** (>20 min wall-clock; `tail` buffering hides partial output). Its two questions are answered by F2/F3 with the same instrument; what would settle its own 6 settings is simply letting `python3 scripts/the_division_count_is_derivable_2026-10-08.py --sweep` run to completion \u2014 if any of its 4 feasible settings shows a downward or flat step, it corroborates F2 from inside the committed producer.\n\n**F7 \u2014 OBSERVED, LOW. `bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py` still prints its withdrawn headline** (\"the cost curve is NOT monotone \u2026 has to be SCANNED\", reproduced in my run). By F1 its *conclusion* (scan) is right for the wrong reason (identical-gate artefact). Per the additive standard it should not be deleted; it needs a pointer to the corrected producer. I did not patch a committed producer's conclusions unilaterally in a blind round \u2014 flagged for the joint round.\n\n## Fix\n\nFile delivered at `scripts/the_division_count_derivation_and_a_monotonicity_counterexample_2026-10-08.py` \u2014 5 claims, each a self-executing falsifier (asserts raise on failure): (1) the inversion counterexample, triple-verified; (2) the no-ceiling feasibility proof and the (c\u2212w)\u207b\u00b2 sample-size law; (3) the T derivation with exact-binomial cross-check; (4) the peer-paired relegation rule with the difficulty-shift demonstration; (5) the 60-budget inversion-rate scan behind `--budget-scan` (same off-by-default pattern as the committed producer's `--sweep`, for the 600 s validator ceiling). Executed output is pasted in full above; final line both runs: `all falsifiers passed`. Two of my own draft claims were **killed by their own falsifiers and repaired** (F4, F5) \u2014 the file documents both repairs. Attribution carried in-file for the Wolfram-derived values.\n\n## Disagreement\n\n1. **\"So 'as few divisions as possible' IS right on the attempts metric, and a single gate at 19 attempts is the floor\" \u2014 WRONG as a general claim.** It holds at (0.95, 0.01) and fails at (0.85, 0.26), where the optimum is 3 divisions, and at ~19% of random budgets (Wilson 0.10\u20130.32). The correct statement: the division count must come from a per-budget scan, which is cheap and deterministic \u2014 the brief's withdrawal over-corrected, and the withdrawn file's \"has to be SCANNED\" conclusion was accidentally right. Command: `python3 scripts/the_division_count_derivation_and_a_monotonicity_counterexample_2026-10-08.py`.\n2. **\"Some rate pairs are INFEASIBLE at any division count\" \u2014 wrong framing.** Infeasibility is the attempts ceiling binding; every cap > weak pair is feasible at finite attempts, scaling as (c\u2212w)\u207b\u00b2. Command: claim 2, same file.\n3. **\"Whether gates may be arbitrary tests \u2026 a modelling decision nobody has made\" \u2014 the decision matters less than the brief implies in one direction and more in the other.** With arbitrary tests, monotonicity is a 2-line theorem (AND-merge is admissible); but choosing threshold gates doesn't merely demote monotonicity to a scan result \u2014 it makes it **false** at measurable rates. The joint round should make the modelling decision explicitly; I recommend keeping deterministic threshold gates (auditable, reproducible \u2014 \"tools decide\" favours a gate a tool can re-execute) and accepting the per-budget scan as the derivation.\n\n## What would refute me\n\n- **F1:** exhibit any (a \u2264 4, s) with `scipy.stats.binom.sf(s-1, a, 0.9) \u2265 0.85` and `binom.sf(s-1, a, 0.5) \u2264 0.26` \u2014 one line of scipy; my enumeration says none exists. Or show the budget (0.85, 0.26) is outside the admissible budget region by a **committed** constraint, with the committed DP showing 0 inversions over that whole region \u2014 that would demote F1 from load-bearing to out-of-scope without falsifying it.\n- **F2:** rerun `--budget-scan` with other seeds; if the inversion rate collapses toward 0 outside seed 11's draws, my \"not a corner case\" claim dies (the fixed-seed assertion `inv >= 1` would still pass \u2014 the claim at risk is the rate, not the witness).\n- **F4:** show the exact greedy strata count and the formula diverging by \u2265 2 at some (n, p_lo, p_hi) \u2014 claim 3's assertion is the command; or show the task mix induces rate spans that are not stable enough between windows for [p_lo, p_hi] to be measurable at experiment start, which would turn \"derivable\" into \"derivable only after a calibration window\".\n- **F5:** build a shared-task-effect simulation (correlated successes, not iid given rates) where the sign test's false-demotion rate on a capable model exceeds 0.05, or where it misses genuine degradation the absolute rule catches; and for roster 1 the rule has **no comparator** \u2014 if the joint round rejects my proposed fallback (archived task-class base rates as the synthetic peer), relegation at M=1 is unspecified and my Q5 answer is incomplete.\n\nOn the remaining decision questions: **roster 700** \u2014 the structure survives: T is roster-free in the formula; resources enter as n = budget/700 per window, shrinking T as \u221an automatically; an occupancy cap T \u2264 floor(M/min-occupancy) is the only roster-coupled term. **Roster 1** \u2014 the ladder degrades gracefully to a measured difficulty rating (strata are task strata, not model strata; promotion by Wilson lower bound still works), with the one comparator gap stated above. **Success-count guard (Q4)** \u2014 mechanical, not aspirational: nothing updates capability except (successes, attempts) pairs on a named task class; promotion requires the Wilson **lower** bound to clear the next division's floor, relegation requires the sign test to reject parity against peers; a bare count has no denominator and can clear neither. That is the founder's guard as arithmetic.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_szgb1udb/repo",
+      "built": false
+    }
+  ]
+}

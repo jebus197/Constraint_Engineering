@@ -1,0 +1,498 @@
+### PROVENANCE NOTE, CC1, 2026-10-08
+#
+# This diff was harvested LATE. The dispatcher was killed before its own harvest
+# step ran, so the normal attribution path did not execute. `panel_sandbox.changes`
+# compares a sandbox against the LIVE tree, and CC1 edited that tree heavily after
+# this sandbox was built at 13:43 -- so a raw harvest listed 11 file(s) whose
+# differences are CC1's OWN later edits, which would have been recorded as the
+# seat's work. That is the provenance failure this project's no-fake-labels rule
+# exists to prevent, so only files ABSENT from the live tree are included below:
+# those can only have been created inside the sandbox by the seat.
+#
+# EXCLUDED, attribution not establishable from this sandbox alone:
+#   bench/confer_maths_panel_2026-09-05.py
+#   bench/directives/universal/unvalidated_paid_dispatchers.json
+#   bench/panel_sandbox.py
+#   bench/tests/test_a_retry_never_erases_the_attempt_it_replaces_2026-10-06.py
+#   bench/tests/test_fresh_sandbox_per_attempt_2026-09-17.py
+#   bench/tests/test_panel_seats_are_independent_2026-09-11.py
+#   bench/tests/test_the_free_seats_are_staggered_not_serialised_2026-10-08.py
+#   bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py
+#   docs/GLOSSARY.md
+#   experimental_notes/CDSFL_Agent_Operational_Plan.md
+#   resources/MEMORY_EXCLUSIONS.md
+#
+# INCLUDED, created by the seat: 3 file(s).
+#
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-08 14:51:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_unrvlf_s/repo/.cdsfl_deny_canonical_writes.sb	2026-10-08 11:43:14
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/tests/falsifier_the_division_scan_costs_are_not_optima_2026-10-08.py
+--- /dev/null	2026-10-08 14:52:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_unrvlf_s/repo/bench/tests/falsifier_the_division_scan_costs_are_not_optima_2026-10-08.py	2026-10-08 11:57:59
+@@ -0,0 +1,61 @@
++#!/usr/bin/env python3
++"""FALSIFIER for the finding: the committed division scan's per-T costs are not
++optima for the division count, and its non-monotonicity verdict is an artifact
++of the identical-gates restriction in `smallest_gate`.
++
++Imports the REAL target module (never a retyped copy) and uses the target's OWN
++`_sf_mpmath` to verify, end to end, a 4-division (3-gate) heterogeneous ladder
++costing 22 attempts against the target's reported 30 under the target's own
++end-to-end budget constants.
++
++Semantics (cdsfl_core, Runnable Falsifiers): raises AssertionError / prints
++FALSIFIED iff the defect is genuinely present -- i.e. iff a feasible cheaper
++ladder exists at a T where the scan also reports a feasible cost. Exits cleanly
++if the cheaper ladder is infeasible or not cheaper (defect absent).
++
++Run: python3 bench/tests/falsifier_the_division_scan_costs_are_not_optima_2026-10-08.py
++"""
++import importlib.util
++import pathlib
++
++TARGET = pathlib.Path(__file__).resolve().parents[1] / \
++    "the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py"
++
++spec = importlib.util.spec_from_file_location("target_scan", TARGET)
++scan = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(scan)
++
++# The target's own report for 4 divisions (3 gates), its own budget constants.
++reported = scan.claim_the_cost_of_climbing_is_bounded()
++cost_4_divisions = reported["total_attempts_by_tier_count"][4]
++
++# Heterogeneous candidate: 2 near-free gates + 1 strong gate, 22 attempts total.
++ladder = [(2, 1), (2, 1), (18, 14)]
++total = sum(a for a, _ in ladder)
++
++# End-to-end pass probabilities via the TARGET'S OWN exact mpmath tail.
++e2e_cap = 1.0
++e2e_weak = 1.0
++for a, s in ladder:
++    e2e_cap *= scan._sf_mpmath(s, a, scan.CAPABLE_RATE)
++    e2e_weak *= scan._sf_mpmath(s, a, scan.WEAK_RATE)
++
++feasible = (e2e_cap >= scan.P_CAPABLE_REACHES_TOP_MIN
++            and e2e_weak <= scan.P_WEAK_REACHES_TOP_MAX)
++cheaper = total < cost_4_divisions
++
++print(f"target reports 4 divisions cost {cost_4_divisions} attempts")
++print(f"candidate ladder {ladder}: {total} attempts, "
++      f"e2e capable {e2e_cap:.6f} (need >= {scan.P_CAPABLE_REACHES_TOP_MIN}), "
++      f"e2e weak {e2e_weak:.6f} (allow <= {scan.P_WEAK_REACHES_TOP_MAX})")
++print(f"feasible under the target's own budget: {feasible}; cheaper: {cheaper}")
++
++if feasible and cheaper:
++    print("FALSIFIED")
++    raise AssertionError(
++        f"the scan's cost for 4 divisions ({cost_4_divisions}) is not the "
++        f"optimum: ladder {ladder} meets the same end-to-end budget at {total} "
++        f"attempts, verified by the target's own _sf_mpmath. The per-T costs "
++        f"are upper bounds under the identical-gates restriction, and the "
++        f"non-monotonicity verdict inherits that restriction.")
++print("defect absent: candidate not feasible-and-cheaper; scan figure stands")
+
+### fable:attempt-1:bench/the_cost_curve_is_monotone_once_gates_may_differ_2026-10-08.py
+--- /dev/null	2026-10-08 14:51:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_unrvlf_s/repo/bench/the_cost_curve_is_monotone_once_gates_may_differ_2026-10-08.py	2026-10-08 11:57:45
+@@ -0,0 +1,377 @@
++#!/usr/bin/env python3
++"""The non-monotone cost curve is an artifact of forcing every gate to be identical.
++
++WHAT THE COMMITTED SCAN CLAIMED. `bench/the_division_count_is_bounded_and_the_
++cost_is_not_monotone_2026-10-08.py` reports, per division count T, the fewest
++total attempts meeting the end-to-end budget (capable rate 0.90 reaches the top
++with probability >= 0.95; weak rate 0.50 with probability <= 0.01), and concludes
++that the cost curve "is NOT monotone in the number of divisions, so the tier
++count has to be SCANNED; neither 'as few as possible' nor 'as many as the bound
++allows' is right".
++
++THE RESTRICTION THAT CONCLUSION RESTS ON. `smallest_gate` forces every gate in a
++ladder to be the SAME (attempts, successes) pair. The end-to-end budget only
++constrains the PRODUCTS of per-gate pass probabilities, so heterogeneous gates
++are admissible, and the restriction is load-bearing: this file computes the
++EXACT optimum over heterogeneous threshold gates (bi-criteria dynamic programme
++over (log pass_capable, log pass_weak) Pareto frontiers, exact in the gate menu,
++with every recovered optimum re-verified end-to-end by an mpmath sum at 50 dps)
++and finds:
++
++  gates  divisions  committed(homogeneous)  exact(heterogeneous)
++    1        2              19                    19
++    2        3              28                    21
++    3        4              30                    22
++    4        5              36                    25
++    5        6              40                    28
++    6        7              48                    30
++    7        8              49                    33
++    8        9              56                    36
++    9       10              63                    38
++   10       11              70                    41
++   11       12              66                    42
++   12       13              72                    45
++   13       14              52                    48
++
++  - STRICTLY MONOTONE NON-DECREASING. 0 downward steps, 0 inversions. The
++    committed scan's 2 downward steps and 6 inversions are integer artifacts of
++    the identical-gates restriction (e.g. the 72 -> 52 drop from 13 to 14
++    divisions happens because 0.01**(1/12) = 0.6813 falls just below the
++    (4,2)-gate weak pass rate 0.6875 while 0.01**(1/13) = 0.7017 clears it).
++  - The committed figures are UPPER BOUNDS, not optima: dearer at every T >= 3,
++    by up to 29 attempts (T=11: 70 against 41).
++  - "As few as possible" IS right on the attempts metric: 2 divisions at 19.
++    Each added division costs ~2.4 attempts at the optimum, not the 11-53
++    excess the homogeneous scan shows.
++
++WHY MONOTONICITY IS A DERIVATION AND NOT JUST A SCAN RESULT. Under admissible
++per-gate decision rules (any deterministic function of the gate's own
++attempts), any ladder with T gates can be converted to one with T-1 gates at
++IDENTICAL total attempts and IDENTICAL end-to-end error: merge 2 adjacent gates
++(a1, rule1) and (a2, rule2) into 1 gate on a1+a2 attempts whose rule is
++"rule1 passes on the first a1 AND rule2 passes on the last a2" -- the pass
++probabilities multiply exactly as they did in series. Hence cost(T) <=
++cost(T+1) for every T, with floor cost(2): by the Neyman-Pearson lemma the most
++powerful single-gate test of rate 0.90 against 0.50 is a threshold on the
++success count, which is the (19, 15) gate. The dynamic programme above confirms
++monotonicity holds even restricted to threshold gates.
++
++WHAT SURVIVES OF THE COMMITTED SCAN, STATED PLAINLY. Its headline -- a single
++gate is cheapest on attempts, and tiers can only be justified by the value of
++work done DURING the climb -- survives and is STRENGTHENED to a derivation.
++What does not survive is the non-monotonicity verdict and the per-T costs as
++properties of the division count.
++
++AND THE STRUCTURAL FACT THAT REFRAMES THE TIER QUESTION. Every exact optimum
++concentrates discrimination at exactly 1 strong gate; the other gates are
++(2,1)/(3,1) formalities a 0.50-rate model passes 75-87.5% of the time. So on
++the attempts metric a T-division ladder DEGENERATES into 1 real gate plus T-2
++nominal ones: end-to-end error is met, but intermediate PLACEMENT is near
++worthless. If divisions exist for routing -- putting each model at the highest
++division whose floor rate it demonstrably meets -- the binding constraint is
++not climb cost but RATE RESOLUTION: how many disjoint rate bands in [0.50,
++0.95] a per-decision sample of n attempts can distinguish at error 0.05 both
++sides. This file prices that too: n=19 supports 2 divisions; 4 divisions in
++[0.50, 0.95] require n in the region of a football season or more. The
++division count is therefore bought by sample size per decision, not by the
++climb budget -- which also answers the roster-size question: bands are
++properties of the rate axis, so the count is unchanged at roster 700 and the
++ladder degenerates to 1 division (0 gates, 0 qualification attempts) at roster
++1, a case the committed scan's TIER_RANGE starting at 2 cannot represent.
++
++NO MODEL NAMES ANYWHERE IN THIS FILE. Capability is a rate.
++
++Run: python3 bench/the_cost_curve_is_monotone_once_gates_may_differ_2026-10-08.py
++"""
++from __future__ import annotations
++
++import importlib.util
++import math
++import pathlib
++
++CAPABLE_RATE = 0.90
++WEAK_RATE = 0.50
++P_CAPABLE_REACHES_TOP_MIN = 0.95
++P_WEAK_REACHES_TOP_MAX = 0.01
++LN_NEED = math.log(P_CAPABLE_REACHES_TOP_MIN)
++LN_ALLOW = math.log(P_WEAK_REACHES_TOP_MAX)
++MAX_GATE_ATTEMPTS = 60
++MAX_TOTAL_ATTEMPTS = 80
++GATE_RANGE = range(1, 14)          # 1..13 gates = 2..14 divisions, the scan's range
++
++_SCAN_PATH = pathlib.Path(__file__).with_name(
++    "the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py")
++
++
++def _load_committed_scan():
++    """Import the REAL committed scan module -- never a retyped copy."""
++    spec = importlib.util.spec_from_file_location("committed_scan", _SCAN_PATH)
++    mod = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(mod)
++    return mod
++
++
++def _gate_menu() -> list:
++    """Every threshold gate (a, s) with per-gate pass_capable >= 0.95.
++
++    Any single gate below 0.95 sinks the capable product on its own, because
++    every factor is <= 1 -- so this filter loses no feasible ladder.
++    """
++    from scipy.stats import binom
++    menu = []
++    for a in range(1, MAX_GATE_ATTEMPTS + 1):
++        for s in range(1, a + 1):
++            pg = float(binom.sf(s - 1, a, CAPABLE_RATE))
++            if pg < P_CAPABLE_REACHES_TOP_MIN:
++                break                      # pg strictly decreases in s
++            pw = float(binom.sf(s - 1, a, WEAK_RATE))
++            menu.append((a, s, math.log(pg), math.log(pw)))
++    return menu
++
++
++def _pareto(points):
++    """Keep (lg, lw, ladder) tuples not dominated (want lg high, lw low)."""
++    points.sort(key=lambda t: (-t[0], t[1]))
++    out, best_lw = [], float("inf")
++    for lg, lw, lad in points:
++        if lw < best_lw - 1e-15:
++            out.append((lg, lw, lad))
++            best_lw = lw
++    return out
++
++
++def exact_heterogeneous_optima() -> dict:
++    """Exact min total attempts per gate count, gates free to differ.
++
++    Bi-criteria DP: frontier[g][b] = Pareto set of (sum log pg, sum log pw)
++    over ladders of exactly g gates and b total attempts. Exact within the
++    threshold-gate menu; optima re-verified end-to-end by mpmath at 50 dps.
++    """
++    menu = _gate_menu()
++    frontier = {0: [(0.0, 0.0, ())]}
++    best = {}
++    for g in GATE_RANGE:
++        new = {}
++        for b_prev, pts in frontier.items():
++            for a, s, lg, lw in menu:
++                b = b_prev + a
++                if b > MAX_TOTAL_ATTEMPTS:
++                    continue
++                bucket = new.setdefault(b, [])
++                for plg, plw, lad in pts:
++                    nlg = plg + lg
++                    if nlg < LN_NEED - 1e-12:
++                        continue           # future factors only lower it
++                    bucket.append((nlg, plw + lw, lad + ((a, s),)))
++        frontier = {b: _pareto(v) for b, v in new.items()}
++        for b in sorted(frontier):
++            hits = [lad for lg, lw, lad in frontier[b]
++                    if lg >= LN_NEED - 1e-12 and lw <= LN_ALLOW + 1e-12]
++            if hits:
++                best[g] = {"gates": g, "divisions": g + 1,
++                           "total_attempts": b, "ladder": hits[0]}
++                break
++    return best
++
++
++def _exact_e2e(ladder, rate) -> float:
++    """End-to-end pass probability, exact mpmath sum at 50 dps. TOOL 2."""
++    import mpmath as mp
++    with mp.workdps(50):
++        p = mp.mpf(rate)
++        tot = mp.mpf(1)
++        for a, s in ladder:
++            tot *= sum(mp.binomial(a, k) * p ** k * (1 - p) ** (a - k)
++                       for k in range(s, a + 1))
++        return float(tot)
++
++
++def claim_committed_costs_are_upper_bounds_not_optima() -> dict:
++    """The committed scan's per-T costs, against the exact optimum."""
++    scan = _load_committed_scan()
++    committed = scan.claim_the_cost_of_climbing_is_bounded()[
++        "total_attempts_by_tier_count"]
++    exact = exact_heterogeneous_optima()
++    rows, all_verified = {}, True
++    for g, r in exact.items():
++        t = g + 1
++        eg = _exact_e2e(r["ladder"], CAPABLE_RATE)
++        ew = _exact_e2e(r["ladder"], WEAK_RATE)
++        ok = eg >= P_CAPABLE_REACHES_TOP_MIN and ew <= P_WEAK_REACHES_TOP_MAX
++        all_verified &= ok
++        rows[t] = {"committed": committed[t], "exact": r["total_attempts"],
++                   "excess": committed[t] - r["total_attempts"],
++                   "ladder": r["ladder"],
++                   "e2e_capable": round(eg, 6), "e2e_weak": round(ew, 6),
++                   "mpmath_feasible": ok}
++    return {
++        "rows": rows,
++        "mpmath_verifies_every_optimum": all_verified,
++        "committed_is_optimal_only_at": sorted(
++            t for t, r in rows.items() if r["excess"] == 0),
++        "max_excess": max(r["excess"] for r in rows.values()),
++    }
++
++
++def claim_the_exact_curve_is_monotone() -> dict:
++    """THE CORRECTION: optimised cost is monotone non-decreasing in divisions."""
++    exact = exact_heterogeneous_optima()
++    costs = {g + 1: r["total_attempts"] for g, r in exact.items()}
++    ts = sorted(costs)
++    diffs = [costs[b] - costs[a] for a, b in zip(ts, ts[1:])]
++    inversions = [(a, b) for i, a in enumerate(ts) for b in ts[i + 1:]
++                  if costs[b] < costs[a]]
++    return {
++        "costs": costs,
++        "steps_down": sum(1 for d in diffs if d < 0),
++        "inversions_more_tiers_cost_less": len(inversions),
++        "is_monotone_non_decreasing": all(d >= 0 for d in diffs),
++        "mean_increment_per_added_division": round(
++            (costs[ts[-1]] - costs[ts[0]]) / (ts[-1] - ts[0]), 3),
++        "verdict": ("once gates may differ, the cost curve IS monotone "
++                    "non-decreasing: 2 divisions is cheapest at 19 attempts and "
++                    "each added division costs ~2.4 attempts; 'as few as "
++                    "possible' is right ON THIS METRIC, and the committed "
++                    "non-monotonicity was the homogeneity restriction talking"),
++    }
++
++
++def claim_the_merge_construction_bounds_cost() -> dict:
++    """Derivation check: merging 2 gates preserves attempts and end-to-end error.
++
++    Under admissible per-gate rules, gates (a1,s1),(a2,s2) in series equal 1
++    composite gate on a1+a2 attempts ruling 'threshold s1 on the first a1 AND
++    threshold s2 on the last a2'. Pass probabilities multiply identically, so
++    cost(T) <= cost(T+1) for all T -- monotonicity by construction.
++    """
++    g1, g2 = (2, 1), (19, 15)
++    series_cap = _exact_e2e([g1, g2], CAPABLE_RATE)
++    series_weak = _exact_e2e([g1, g2], WEAK_RATE)
++    # The composite AND-rule's pass probability IS the product, by independence
++    # of disjoint attempt blocks; recompute each factor separately and multiply.
++    comp_cap = _exact_e2e([g1], CAPABLE_RATE) * _exact_e2e([g2], CAPABLE_RATE)
++    comp_weak = _exact_e2e([g1], WEAK_RATE) * _exact_e2e([g2], WEAK_RATE)
++    return {
++        "merged_pair": (g1, g2),
++        "series_equals_composite_capable": math.isclose(
++            series_cap, comp_cap, rel_tol=0, abs_tol=1e-15),
++        "series_equals_composite_weak": math.isclose(
++            series_weak, comp_weak, rel_tol=0, abs_tol=1e-15),
++        "attempts_preserved": g1[0] + g2[0],
++        "consequence": "cost(T) <= cost(T+1) under admissible per-gate rules",
++    }
++
++
++def claim_discrimination_concentrates_at_one_gate() -> dict:
++    """In every exact optimum, exactly 1 gate rejects a weak model more often
++    than it passes it; the rest are formalities. Tiers bought on the attempts
++    metric are nominal tiers."""
++    from scipy.stats import binom
++    exact = exact_heterogeneous_optima()
++    out = {}
++    for g, r in exact.items():
++        strong = [(a, s) for a, s in r["ladder"]
++                  if float(binom.sf(s - 1, a, WEAK_RATE)) < 0.5]
++        out[g + 1] = {"strong_gates": len(strong),
++                      "nominal_gates": len(r["ladder"]) - len(strong)}
++    return {
++        "per_division_count": out,
++        "every_optimum_has_exactly_1_strong_gate": all(
++            v["strong_gates"] == 1 for v in out.values()),
++    }
++
++
++def claim_divisions_are_bought_by_sample_size_not_by_the_climb(
++        alpha: float = 0.05, band_low: float = 0.50,
++        band_high: float = 0.95) -> dict:
++    """How many divisions the EVIDENCE supports at per-decision sample n.
++
++    Adjacent division floor rates r < r' are distinguishable at n attempts if
++    some threshold k has P(X>=k | r) <= alpha and P(X<k | r') <= alpha. The
++    greedy chain from band_low counts the maximum distinguishable divisions.
++    """
++    from scipy.stats import binom
++
++    def next_band(r, n):
++        for i in range(1, 1001):
++            rp = r + i / 1000
++            if rp > 0.999:
++                return None
++            for k in range(n + 1):
++                if (binom.sf(k - 1, n, r) <= alpha
++                        and binom.cdf(k - 1, n, rp) <= alpha):
++                    return round(rp, 3)
++        return None
++
++    per_n = {}
++    for n in (9, 19, 38, 76, 114, 150, 300):
++        bands, r = [band_low], band_low
++        while True:
++            rp = next_band(r, n)
++            if rp is None or rp > band_high:
++                break
++            bands.append(rp)
++            r = rp
++        per_n[n] = {"divisions_supported": len(bands), "band_floors": bands}
++    return {
++        "alpha_each_side": alpha,
++        "rate_interval": [band_low, band_high],
++        "per_sample_size": per_n,
++        "divisions_at_the_19_attempt_rule": per_n[19]["divisions_supported"],
++        "verdict": ("the division count is bought by per-decision sample size, "
++                    "not by the climb budget; it is a property of the rate axis "
++                    "and is therefore unchanged at roster 700, and the ladder "
++                    "degenerates to 1 division with 0 gates at roster 1"),
++    }
++
++
++def main() -> int:
++    print("== 1. the committed per-T costs are upper bounds, not optima ==")
++    d1 = claim_committed_costs_are_upper_bounds_not_optima()
++    for t in sorted(d1["rows"]):
++        r = d1["rows"][t]
++        print(f"   {t:2d} divisions: committed {r['committed']:3d} -> exact "
++              f"{r['exact']:3d} (excess {r['excess']:2d})  "
++              f"[capable {r['e2e_capable']:.4f}, weak {r['e2e_weak']:.4f}, "
++              f"mpmath {r['mpmath_feasible']}]")
++    print(f"   committed matches the optimum only at divisions: "
++          f"{d1['committed_is_optimal_only_at']}")
++    print(f"   max excess: {d1['max_excess']} attempts")
++    print(f"   mpmath verifies every optimum: "
++          f"{d1['mpmath_verifies_every_optimum']}")
++
++    print("\n== 2. and the exact curve is monotone ==")
++    d2 = claim_the_exact_curve_is_monotone()
++    for k in ("costs", "steps_down", "inversions_more_tiers_cost_less",
++              "is_monotone_non_decreasing",
++              "mean_increment_per_added_division"):
++        print(f"   {k}: {d2[k]}")
++    print(f"   {d2['verdict']}")
++
++    print("\n== 3. the merge construction, checked ==")
++    d3 = claim_the_merge_construction_bounds_cost()
++    for k, v in d3.items():
++        print(f"   {k}: {v}")
++
++    print("\n== 4. optimised tiers are nominal tiers ==")
++    d4 = claim_discrimination_concentrates_at_one_gate()
++    print(f"   every optimum has exactly 1 strong gate: "
++          f"{d4['every_optimum_has_exactly_1_strong_gate']}")
++
++    print("\n== 5. what actually buys divisions: sample size per decision ==")
++    d5 = claim_divisions_are_bought_by_sample_size_not_by_the_climb()
++    for n, r in d5["per_sample_size"].items():
++        print(f"   n={n:3d}: {r['divisions_supported']} divisions "
++              f"{r['band_floors']}")
++    print(f"   {d5['verdict']}")
++
++    ok = (d1["mpmath_verifies_every_optimum"]
++          and d2["is_monotone_non_decreasing"]
++          and d3["series_equals_composite_capable"]
++          and d3["series_equals_composite_weak"])
++    print(f"\n   ALL CHECKS PASS: {ok}")
++    return 0 if ok else 1
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

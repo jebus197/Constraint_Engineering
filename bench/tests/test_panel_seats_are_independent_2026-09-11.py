@@ -259,7 +259,7 @@ class TestThePopulationStepIsExecuted:
 
         class StubSandbox:
             @staticmethod
-            def build(_repo, blind_of=(), blind_text=()):
+            def build(_repo, blind_of=(), blind_text=(), own_round=None):
                 # `blind_of` ADDED 2026-10-05, `blind_text` ADDED the same day and
                 # accepted here on 2026-10-06. This stub signature is load-
                 # bearing: it broke the moment the real `build` grew the keyword,
@@ -270,6 +270,13 @@ class TestThePopulationStepIsExecuted:
                 # noticing. Accepted and ignored here — what this
                 # test measures is one sandbox per seat, not containment, which is
                 # held by test_a_blind_round_is_actually_blind_2026-10-05.py.
+                #
+                # `own_round` ADDED 2026-10-08, and the stub broke exactly as this
+                # comment predicted it should -- which is the proof the live call
+                # site genuinely passes it rather than merely declaring it. The
+                # keyword is accepted and ignored here; what it protects against
+                # (a RETRY sandbox carrying the co-seat's landed reply) is held by
+                # test_a_blind_round_is_blind_of_its_own_coseat_2026-10-08.py.
                 d = tmp_path / f"seat_{len(built)}" / "repo"
                 d.mkdir(parents=True)
                 built.append(d)
@@ -282,6 +289,14 @@ class TestThePopulationStepIsExecuted:
         monkeypatch.setitem(g, "sandboxes", None)
         monkeypatch.setitem(g, "sandbox", None)
         monkeypatch.setitem(g, "_PANEL_SANDBOX_CWD", None)
+        # `LOGS` MUST BE BOUND, because the live call site now names the round the
+        # sandbox is for. A22 moved that binding out of import time, so a test that
+        # imports the module without running `main()` leaves it None and
+        # `_logs_dir()` raises -- by design, since the alternative is passing
+        # `own_round=None` and silently disabling the co-seat purge. Failing open
+        # on a containment control is worse than failing loudly, so the test binds
+        # it rather than the dispatcher tolerating its absence.
+        monkeypatch.setitem(g, "LOGS", tmp_path / "logs" / "a_round_2026-10-08")
         mod._SEAT_SANDBOXES.clear()
         try:
             exec(compile(_population_statements(PANEL.read_text(encoding="utf-8")),

@@ -56,7 +56,14 @@
     },
     "bench/confer_enforcement_prose_pr_2026-08-19.py": {
       "reads_brief": true,
-      "reason": "OPEN EXEMPTION, NOT A DECISION. Reads a BRIEF.md from disk and sends it to paid seats with no format check. Found 2026-09-17 in panel round 16; no ruling yet routes it through panel_brief_validate or retires it, so it is a second route by which a paid review can bypass the brief format."
+      "reason": "OPEN EXEMPTION, NOT A DECISION. Reads a BRIEF.md from disk and sends it to paid seats with no format check. Found 2026-09-17 in panel round 16; no ruling yet routes it through panel_brief_validate or retires it. WIDENED 2026-10-08 on the founder's instruction that the panel-launch controls \"need to be carried over to paid panel reviews too\": measured, this file bypasses 5 controls, not 1. It carries NO star-topology check (so a paid blind round could be dispatched with a sibling's reply reachable), NO own_round co-seat purge (so a paid retry could be handed the other seat's landed reply -- the fault that occurred live on 2026-10-08), NO dispatch stagger (so paid seats sharing one credential collide at establishment), and NO joint-round debt check (so a paid blind round can be opened while an earlier one still owes its joint half). Held by bench/tests/test_paid_review_dispatchers_carry_the_controls_2026-10-08.py, which RATCHETS: this set may not grow.",
+      "controls_bypassed": [
+        "panel_brief_validate",
+        "star topology check",
+        "own_round co-seat purge",
+        "dispatch stagger",
+        "joint-round debt check"
+      ]
     },
     "bench/confer_exp38_fitness.py": {
       "reads_brief": false,
@@ -180,7 +187,14 @@
     },
     "bench/confer_stage1_audit_pr_2026-08-18.py": {
       "reads_brief": true,
-      "reason": "OPEN EXEMPTION, NOT A DECISION. Reads a BRIEF.md from disk and sends it to paid seats with no format check. Found 2026-09-17 in panel round 16; no ruling yet routes it through panel_brief_validate or retires it, so it is a second route by which a paid review can bypass the brief format."
+      "reason": "OPEN EXEMPTION, NOT A DECISION. Reads a BRIEF.md from disk and sends it to paid seats with no format check. Found 2026-09-17 in panel round 16; no ruling yet routes it through panel_brief_validate or retires it. WIDENED 2026-10-08 on the founder's instruction that the panel-launch controls \"need to be carried over to paid panel reviews too\": measured, this file bypasses 5 controls, not 1. It carries NO star-topology check (so a paid blind round could be dispatched with a sibling's reply reachable), NO own_round co-seat purge (so a paid retry could be handed the other seat's landed reply -- the fault that occurred live on 2026-10-08), NO dispatch stagger (so paid seats sharing one credential collide at establishment), and NO joint-round debt check (so a paid blind round can be opened while an earlier one still owes its joint half). Held by bench/tests/test_paid_review_dispatchers_carry_the_controls_2026-10-08.py, which RATCHETS: this set may not grow.",
+      "controls_bypassed": [
+        "panel_brief_validate",
+        "star topology check",
+        "own_round co-seat purge",
+        "dispatch stagger",
+        "joint-round debt check"
+      ]
     },
     "bench/confer_stage6_full.py": {
       "reads_brief": false,
@@ -196,7 +210,14 @@
     },
     "bench/confer_track_record_pr_2026-08-22.py": {
       "reads_brief": true,
-      "reason": "OPEN EXEMPTION, NOT A DECISION. Reads a BRIEF.md from disk and sends it to paid seats with no format check. Found 2026-09-17 in panel round 16; no ruling yet routes it through panel_brief_validate or retires it, so it is a second route by which a paid review can bypass the brief format."
+      "reason": "OPEN EXEMPTION, NOT A DECISION. Reads a BRIEF.md from disk and sends it to paid seats with no format check. Found 2026-09-17 in panel round 16; no ruling yet routes it through panel_brief_validate or retires it. WIDENED 2026-10-08 on the founder's instruction that the panel-launch controls \"need to be carried over to paid panel reviews too\": measured, this file bypasses 5 controls, not 1. It carries NO star-topology check (so a paid blind round could be dispatched with a sibling's reply reachable), NO own_round co-seat purge (so a paid retry could be handed the other seat's landed reply -- the fault that occurred live on 2026-10-08), NO dispatch stagger (so paid seats sharing one credential collide at establishment), and NO joint-round debt check (so a paid blind round can be opened while an earlier one still owes its joint half). Held by bench/tests/test_paid_review_dispatchers_carry_the_controls_2026-10-08.py, which RATCHETS: this set may not grow.",
+      "controls_bypassed": [
+        "panel_brief_validate",
+        "star topology check",
+        "own_round co-seat purge",
+        "dispatch stagger",
+        "joint-round debt check"
+      ]
     },
     "bench/cx_efficiency_confer_r2.py": {
       "reads_brief": false,
@@ -229,6 +250,10 @@
     "bench/run_exp11_phase6.py": {
       "reads_brief": false,
       "reason": "Calls a paid transport with a prompt built in code: no string constant in it names BRIEF.md. Recorded as found at 989f32f on 2026-09-17, not re-reviewed."
+    },
+    "bench/seat_aliveness_2026-10-06.py": {
+      "reads_brief": false,
+      "reason": "NOT A BRIEF AT ALL, which is why validation does not apply. Its only prompt is the 7-word module constant PROBE_PROMPT, 'Reply with exactly one word: Ready!', dispatched with max_tokens=16 and max_retries=1. panel_brief_validate checks a REVIEW brief -- headings, figure provenance, the standards clause -- and a fixed 7-word liveness ping has none of those to check, so routing it through the validator would refuse every probe rather than catch anything. ON SPEND, which is the property the registry exists to protect: the probe adds no seat and reaches no route the run was not already authorised to dispatch with a full brief moments later, and it cannot authorise anything itself. Added 2026-10-08 after the guard flagged it; the file dates from 2026-10-06, when the aliveness probe was wired into the panel dispatcher on the founder's ruling, and the registry entry was the step that was missed. Task 5.2 was left marked DONE naming a test this file was failing, which the suite itself reports as a completion claim with no support."
     },
     "bench/smoke_test_routing.py": {
       "reads_brief": false,

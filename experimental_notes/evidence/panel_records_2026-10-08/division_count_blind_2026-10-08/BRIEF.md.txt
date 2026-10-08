@@ -1,0 +1,174 @@
+# Can the number of divisions be DERIVED from task complexity and available resources?
+
+You are one seat of a 2-seat panel, answering BLIND. You cannot see the other seat's
+reply and it cannot see yours. A joint round follows once both blind replies are in,
+and in it each of you will see the other's answer. Disagreement between you is the
+output this round exists to produce, not a problem to be smoothed away: a round that
+agrees by deference has produced nothing.
+
+Work in the sandbox repository tree you have been given. RUN things. Every figure
+below names the script that produces it, and you are expected to execute those
+scripts and contradict them where they are wrong. The tool output is the evidence.
+
+**A previous attempt at this round was discarded, and you should know why.** It was
+dispatched as a lone blind round with no joint round planned — which is not star
+topology — and one seat's retry was handed the other seat's landed reply because the
+sandbox builder had no way to purge a co-seat's artefacts. Both faults are fixed and
+held by tests. Nothing from that round is in your tree.
+
+---
+
+## 1. The founder's framing, in his own words
+
+**Capability is a MEASURED RATE. Model names are not a measure of anything.** He has
+said this 4 times. The roster size is arbitrary and the schema must not care:
+
+> "the system should be able to cope with 5, or 6, or 70, or 700 models (or whatever),
+> and that the only goal is to use all the available resources efficiently to effect
+> the best outcome in all cases."
+
+**The divisions are FINITE:**
+
+> "we clearly don't have infinit[e] divisions, we have division 1, division 2,
+> division 3, the Premier League. So the number of possible leagues is finite. The
+> position each team or player operate[s] in within these bou[nd]s is also finite."
+> ... "We also have the Vauxhall conference and the other lower leagues. But either
+> way the number is bounded, not infinite."
+
+**THE QUESTION HE IS NOW ASKING, 2026-10-08, and it is the centre of this round:**
+
+> "I get that doesn't settle how many leagues there should be, and if that can be
+> mathematically derived at the start of an experiment, based on the relative
+> complexity of the task, and the available resources? That is probably a question you
+> should ask the next panel."
+
+**AND THE SYMMETRIC HALF, which is unbuilt:**
+
+> "just as teams and players can be promoted over time through a period of sustained
+> performance, clearly they can be demoted by the opposite framing. If they demonstrate
+> sustained degradation, they can face relagation to a lower league, and a lower rung
+> on the ladder."
+
+With his standing guard on what may count as evidence of change:
+
+> "what we need to guard against is simply counting when a model is successful as an
+> 'improvement in capability'. The only measure of improved capability is actual
+> observed capability (and the converse.)"
+
+And on seat timeouts: "A full response is always preferable", and results should be
+harvested when a model is done rather than at an arbitrary wall-clock limit.
+
+---
+
+## 2. Where the arithmetic actually stands, including a claim of mine that is WITHDRAWN
+
+`bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py` prices
+the climb. Climbing T divisions means clearing T-1 promotion gates in series; the
+end-to-end budget is held fixed across the scan — a model whose true resolve rate is
+0.90 reaches the top with probability at least 0.95, one at 0.50 with probability at
+most 0.01 — so the comparison is about division count and nothing else.
+
+**ITS HEADLINE CONCLUSION WAS WRONG AND IS WITHDRAWN.** That file claims the cost curve
+is not monotone and therefore that the division count must be scanned. The claim is an
+artefact of its own `smallest_gate`, which forces every gate in a ladder to the SAME
+(attempts, successes) pair. The budget constrains only the PRODUCTS of per-gate pass
+probabilities, so heterogeneous gates are admissible and the identical-gate costs are
+upper bounds rather than optima. Optimised properly over heterogeneous threshold gates
+the curve is monotone non-decreasing:
+
+    divisions  2   3   4   5   6   7   8   9  10  11  12  13  14
+    attempts  19  21  22  25  28  30  33  36  38  41  42  45  48
+
+against the identical-gate figures 19, 28, 30, 36, 40, 48, 49, 56, 63, 70, 66, 72, 52.
+**0 downward steps, 0 inversions.** A concrete witness: for 4 divisions the ladder
+[(2,1), (2,1), (18,14)] costs <!-- figure: four divisions optimum | scripts/the_division_count_is_derivable_2026-10-08.py | optimum: 22 --> 22 attempts with end-to-end capable 0.9524672012 and weak 0.0086860657, both inside the budget, against the committed 30. scipy and mpmath agree to 0.000e+00 and Wolfram Language (local Wolfram Engine) returns the same 2 values to 10 digits.
+
+**So "as few divisions as possible" IS right on the attempts metric, and a single gate
+at 19 attempts is the floor.** That inverts what the previous brief asked you to assess.
+
+**AND ONE SUPPORT FOR THAT RESULT DOES NOT SURVIVE, which is a live disagreement rather
+than a settled point.** The monotonicity can be argued from a merge construction:
+collapse 2 adjacent gates into 1 composite rule on the concatenated attempts and total
+attempts and end-to-end error are preserved, so cost(T) <= cost(T+1). Tested over 4000
+random gate pairs, **801 of them have NO single threshold gate on a1+a2 attempts that
+dominates the AND of the 2 separate gates on both criteria** — so the merge is not a
+lemma within the threshold family. It holds only if a ladder's gates may be arbitrary
+tests rather than success-count thresholds, which is a modelling decision nobody has
+made. Monotonicity therefore currently rests on a SCAN, not a proof.
+
+**A robustness sweep over other rate pairs and budgets is available and is NOT quoted
+here, deliberately.** `scripts/the_division_count_is_derivable_2026-10-08.py --sweep`
+runs it; it is slow, so it is off by default. Run it and report what you find rather
+than taking a number from this brief. Two things worth looking for: whether any
+setting produces an inversion, which would settle question 2 immediately; and whether
+any setting makes an extra division FREE, because the price of a division depends on
+the gap between the capable and weak rates and a free division should be taken. Note
+also that some rate pairs are INFEASIBLE at any division count — below a certain
+separation no ladder meets the budget — which is itself part of the answer to his
+question.
+
+---
+
+## 3. What the attempts metric does not price, and why that is the crux
+
+Total attempts treats every attempt as overhead. It is not. A model sitting in a lower
+division is DOING THAT DIVISION'S WORK while it climbs, and that work has value; a model
+in front of a single gate performs 19 attempts of pure qualification and produces nothing
+a researcher can use. Nothing in the repository measures the value of work done during
+the climb. Relatedly, the attempts-optimal ladders concentrate all discrimination in one
+strong gate and make the rest formalities, which buys end-to-end certification and
+near-zero intermediate PLACEMENT — and placement is what a routing ladder exists for.
+
+Two committed producers price a 5-level ladder at 95, 36 and 25 attempts respectively
+under the same end-to-end budget, because they price different quantities. Run
+`bench/what_several_tries_has_to_mean_2026-10-08.py` and the scan above and compare.
+
+---
+
+## 4. Figures previously carried to a panel that are WITHDRAWN
+
+Reason from the corrected values. Several were found by seats.
+
+1. The per-seat-per-round critical rate was assumed 0.3; measured it is **0.233740**, Wilson [0.215572, 0.252945], exact binomial p = 5.6e-11 against the assumption.
+2. A spurious-convergence factor of **8.49986** was stated as a gate property; it is an upper bound under independence. At the measured intra-round correlation 0.4060 the 6-seat-to-4-seat factor is **1.4291**.
+3. A sensitivity span of **7.7915** spans correlation 0 to 0.8; over the quoted 0.1 to 0.5 it is 6.053.
+4. "Rotation costs identical dispatches" is **WITHDRAWN**: 579 dispatches for 270 resolved against 444 for 396.
+5. Pooled correlation is confounded **1.7202x** by between-experiment variation; simulated runs give 0.681 against 0.275 live.
+6. The tier-cost figures "52 to 182 attempts", "7 tiers cost 91 where 5 cost 95" and "4 divisions a local optimum at 68" **do not reproduce**. The scan gives 19 to 72; 7 divisions cost 48 and 5 cost 36; 4 cost 30 and are not a local minimum because 3 cost 28. They were computed with no committed producer.
+
+---
+
+## 5. Also live, since you may reason from the convergence gate
+
+- **Gamma gates wherever a slope exists**, including the sparse branch where it previously went reported-only. Gamma is load-bearing in this project and is NOT up for demotion.
+- **The gate's 2 arms are positively DEPENDENT, measured.** The real gate, called on all 23 archived premature quiet windows, fired on **23 of 23**, Wilson [0.856883, 1.0], with gamma above 0.30 in every one. Gamma is systematically higher inside a quiet run, median 0.45905 against 0.3975, Mann-Whitney one-sided p = 0.025542, because quiet rounds are what flatten the curve gamma measures. Producer: `bench/the_false_quiet_rate_is_not_the_gates_rate_2026-10-08.py`. A dependent second arm is still a second arm; what it cannot do is cover the other arm's false-positive rate.
+- **The ladder-depth default is exhaust**, `routing.DEFAULT_MAX_RUNGS = 0`. Over 305 archived routing records 143 hit the old cap of 2 and 103 were abandoned unresolved.
+
+---
+
+## 6. What to decide
+
+1. **Can the division count be DERIVED at the start of an experiment from task complexity and available resources?** This is his question and it is the one that matters. If it can, give the derivation: name what "relative complexity" is as a measurable quantity, name what "available resources" bounds, and produce T as a function of them. If it cannot be derived, prove that and say what must be measured first.
+2. **Is monotonicity a theorem or a scan result?** Either supply a proof valid within the threshold family, or show a counterexample, or establish that gates may be arbitrary tests and justify that modelling choice.
+3. **RELEGATION, which is unbuilt.** Name the statistic, the window and the decision rule by which sustained degradation demotes a model — and the mechanism that distinguishes sustained decline from a transient outage, remembering that no model is ever benched and a transient fault is a different condition. State what stops a run of failures on hard problems from demoting a capable model, given that a model high on the ladder is handed the problems everything below it failed.
+4. **What stops a success count being mistaken for improved capability?** His explicit guard, and it needs a mechanism.
+5. **Does the structure survive a roster of 700? And of 1?**
+
+## 7. Output
+
+Return these fields, each with a real body. A heading with nothing under it is not an answer.
+
+- `## Verdict` — SOUND, SOUND WITH REPAIRS, or UNSOUND, on the position set out above.
+- `## Findings` — each labelled OBSERVED (name the run, file and line) or HYPOTHESISED (say what would settle it), each with a severity, each with the command that shows it.
+- `## Fix` — deliver each fix as a file at its real path in the sandbox repository tree, with an executed falsifier beside it and the falsifier's actual output pasted. A fix you have not tried to break is a hypothesis, not a fix. Repair rather than revert where both are available.
+- `## Disagreement` — your strongest disagreement with this brief's own framing, named as a disagreement. If a figure above is wrong, say which and show the command.
+- `## What would refute me` — the measurement or command that would overturn your own verdict, stated so someone else could run it and defeat you.
+
+## 8. Termination
+
+Stop when further passes produce no new above-threshold findings — above threshold means
+missing it could cause real-world failure. Do not nitpick, do not generate findings for
+their own sake, do not police style. Diminishing returns is the stop criterion, not the
+clock. Take the time you need for a full response.
+
+Numbers in digits, never in words. No model names where a rate will do.

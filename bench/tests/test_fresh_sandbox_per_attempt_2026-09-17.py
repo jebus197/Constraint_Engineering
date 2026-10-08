@@ -140,6 +140,22 @@ class TestTheDispatcherBuildsOnePerAttempt:
         spec.loader.exec_module(mod)
         assert mod.MODELS == []
         monkeypatch.setattr(mod, "_REPO", repo)
+        # `LOGS` MUST BE BOUND, ADDED 2026-10-08. `fresh_sandbox_for_attempt` now
+        # passes `own_round=_logs_dir().name` so a RETRY sandbox cannot carry the
+        # co-seat's landed reply -- the fault that occurred live on 2026-10-08,
+        # where cc2's attempt-2 sandbox held fable's whole 12,299 character answer.
+        #
+        # A22 moved this binding out of import time, so a test that imports the
+        # module without running `main()` leaves it None and `_logs_dir()` raises.
+        # THAT IS THE DESIGNED BEHAVIOUR AND IT IS NOT LOOSENED HERE: the only
+        # alternative is for the dispatcher to pass `own_round=None` when it
+        # cannot resolve the round, which would silently disable a containment
+        # control. A control that fails open is worse than none, because it is
+        # trusted. FOLLOW confirms the live path is safe: the sole caller is the
+        # `on_attempt` hook at confer_maths_panel_2026-09-05.py:874, inside
+        # dispatch, which runs only after `resolve_brief()`.
+        monkeypatch.setattr(mod, "LOGS", repo / "bench" / "logs" / "probe_2026-10-08",
+                            raising=False)
         mod._SEAT_SANDBOXES.clear()
         mod._SEAT_ATTEMPTS.clear()
         return mod

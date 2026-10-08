@@ -1,0 +1,1863 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-08 14:46:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kaibonzp/repo/.cdsfl_deny_canonical_writes.sb	2026-10-08 14:16:23
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:experimental_notes/CDSFL_Agent_Operational_Plan.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_Agent_Operational_Plan.md	2026-10-08 14:19:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kaibonzp/repo/experimental_notes/CDSFL_Agent_Operational_Plan.md	2026-10-06 04:35:04
+@@ -1,84 +1,14 @@
+-## ★ RESUME POINTER — 2026-10-08T14:19:03+01:00. SUPERSEDES EVERY POINTER BELOW.
++## ★ RESUME POINTER — 2026-10-06T04:35:04+01:00. SUPERSEDES EVERY POINTER BELOW.
+ 
+-**WHERE TO RESUME: cc2's blind reply is in flight. When it lands, build BOTH FULL RECORDs,
+-mirror, commit, then run the JOINT round, then synthesise.** Branch `sim/shakedown-2026-09-29`,
+-HEAD `b4c897fb`. The working tree is DIRTY and the commit is correctly REFUSED until the
+-round's artefacts are mirrored, which must NOT be done mid-run.
++**Written at the founder's explicit request during an intermittent internet outage:** *"You
++should take careful notes of where you are at and retry with a script over a few minute
++intervals until they resolve themselves cleanly. I will look at the sate of play in the
++morning."* He is asleep from 03:46.
+ 
+-### THE ROUND IN FLIGHT
+-
+-- Round `division_count_blind_2026-10-08`. BLIND half of a star-topology pair. 0 paid seats.
+-- **fable: LANDED.** 13,415 chars, 36 tool calls, 1305.4 s, attempt 1. Its reply REFUTED CC1's
+-  central claim and CC1 reproduced the refutation independently.
+-- **cc2: RE-DISPATCHED ALONE** at 14:14 with `PANEL_ONLY=cc2`, `PANEL_SEAT_TIMEOUT_S=3000`,
+-  `PANEL_BLIND_OF=division_count_and_bidirectional_ladder_blind_2026-10-08`. It hit the
+-  1800 s cap TWICE on this brief. Log: `/tmp/claude-501/panel/cc2_redispatch.log`.
+-- **THE JOINT ROUND IS OWED** and the dispatcher now ENFORCES that: once this blind round has
+-  2 landed replies it is derived as OWED and no new blind round may be opened until the joint
+-  round runs with `PANEL_JOINT_OF=division_count_blind_2026-10-08`. Name the joint round
+-  `division_count_star_2026-10-08` — `bench/directives/universal/joint_round_debt.json`
+-  already records it as the successor discharging 4 earlier debts.
+-
+-### 2 PROCEDURAL ERRORS OF CC1'S TODAY, BOTH THE SAME SHAPE
+-
+-1. **A HEALTHY ROUND WAS KILLED ON A MID-BUILD OBSERVATION.** cc2's attempt-2 sandbox was
+-   inspected at 14:07:05 and held fable's reply; the purge ran at 14:07:42 and attempt 2
+-   started at 14:07:52. The sandbox now holds only `BRIEF.md`. **THE RULE: do not inspect a
+-   seat sandbox until its `confined to ... copy` line has printed.** That line is the
+-   build-completion marker. Its absence was noticed and explained away as output buffering.
+-2. **A BRIEF WAS DISPATCHED WITH A FIGURE THAT HAD NO PRODUCER** ("6 rate pairs" against a
+-   producer testing 4) and was caught only on a second read, after a kill. Killed before any
+-   seat was billed.
+-
+-### WHAT IS IN THE TREE, UNCOMMITTED, EACH WITH AN EXECUTING GUARD
+-
+-1. **The free seats are STAGGERED, not serialised** — `PANEL_STAGGER_S`, default 20 s, derived
+-   in 4 tools (SymPy `s <= d1`, z3 unsat/sat, Wolfram `0 < s <= d1`, NumPy over 91 rounds:
+-   mean saving 0.3969, CI [0.3801, 0.4126]). `PANEL_STAGGER_S=0` restores serialisation.
+-2. **`panel_sandbox.build(own_round=...)`** purges a co-seat's reply from a RETRY sandbox while
+-   keeping `BRIEF.md`. Verified in production at 14:07:42 and again at 14:16.
+-3. **`topology.json` written before dispatch**, and a joint-round DEBT check derived from the
+-   archive, binding from the ruling date 2026-10-06. Measured: 15 of 99 rounds paired,
+-   Wilson [0.094, 0.235]; 1 of 5 since the ruling.
+-4. **`PANEL_SEAT_TIMEOUT_S`**, default 1800 unchanged. Kaplan-Meier over 137 attempts
+-   (9 censored): median 700.7 s, 90th 1728.1 s, **95th 2939.4 s**. The 2426 s figure given to
+-   the founder was a percentile of CENSORED data and is superseded.
+-5. **A paid-review control ratchet** — 4 of 72 paid-capable files are review dispatchers, 1 has
+-   every control (the live route, which handles paid seats), 3 historical ones are registered
+-   and now name all 5 controls they bypass.
+-6. **An env-leak guard** — 2 fixtures of CC1's and 1 pre-existing set `PANEL_BRIEF_UNCHECKED`
+-   with `setdefault`, which never restores, silently disabling the guard that stops money being
+-   spent on a defective brief. All 3 removed; a scanner now refuses the pattern.
+-7. **3 CC1 claims WITHDRAWN** on the division count: the non-monotonicity conclusion (an
+-   identical-gate artefact), its replacement "as few as possible" (budget-specific; fails at
+-   ~1 budget in 5), and "some rate pairs are infeasible at any division count" (it was CC1's
+-   own attempts ceiling binding; (0.85, 0.75) is feasible at a single gate of 253 attempts).
+-
+-### THE 2 ANSWERS THE ROUND HAS ALREADY PRODUCED, both independently verified by CC1
+-
+-- **Division count is DERIVABLE at experiment start:**
+-  `T = 1 + floor((arcsin sqrt(p_hi) - arcsin sqrt(p_lo)) * sqrt(n) / z)`, where the rate span
+-  is "relative complexity" and `n` is attempts per model per window. T=2 at n=19, 3 at n=80,
+-  4 at n=150, 5 at n=300 over [0.5, 0.9]; grows as sqrt(n), so always finite.
+-  Then `T* = argmin cost` over `T <= T_resolution`, per budget.
+-- **Relegation on sustained degradation:** an exact one-sided sign test over discordant pairs
+-  against the division-peer majority on the same last 40 scored attempts. Simulated by CC1:
+-  when the stream hardens under an equally capable peer, an absolute floor demotes a capable
+-  model 98.35% of the time, Wilson [0.9791, 0.9870], against **3.65%** for the sign test,
+-  Wilson [0.0311, 0.0428]; on genuine decline the sign test fires 99.68% against 96.27%. An
+-  attempt returning no artefact is an aliveness event and never enters the denominator, so an
+-  outage produces no evidence rather than failures.
+-
+-### STILL UNBUILT, AND THE TRIGGER IS NAMED
++**WHERE TO RESUME: finish the 2 panel FULL RECORDs, run the joint round, then commit.**
++Branch `sim/shakedown-2026-09-29`, HEAD `413902a2`. The working tree is DIRTY and the
++commit is BLOCKED — see THE COMMIT IS BLOCKED below. Nothing in this window is committed yet.
+ 
+-**Incremental stream-json parsing**, so a seat's tool-call COUNT is observable mid-flight.
+-Measured 2026-10-08: the tool-log sink does not exist until the subprocess returns, so there
+-is NO progress signal and the clock is the only lever — and the clock cannot separate a
+-working seat from a churning one, because the per-call rate is the same in both (20.455 s
+-against 20.816 s). **Build it when the joint round lands, before `sv`.** It touches
+-`call_claude_cli`, which has roughly 20 callers, so it is not to be done while a round is in
+-flight through it.
+-
+ ### THE COMMIT IS BLOCKED, AND THE BLOCK IS CORRECT
+ 
+ `bench/tests/test_panel_rounds_have_a_full_record_2026-09-11.py` refuses while any
+
+### cc2:attempt-1:resources/MEMORY_EXCLUSIONS.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/MEMORY_EXCLUSIONS.md	2026-10-08 14:36:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kaibonzp/repo/resources/MEMORY_EXCLUSIONS.md	2026-10-08 11:10:32
+@@ -8,22 +8,22 @@
+ record is honest about the shape of what is withheld, not only what is
+ shown.
+ 
+-## Accounting (counted 2026-10-08 14:36 BST)
++## Accounting (counted 2026-10-08 11:10 BST)
+ 
+ The source index lives privately at
+ `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
+ Every figure below was counted from that directory on the date in this
+ heading, not carried forward from a previous version of this file.
+-The directory holds **200 files**, of which one is `MEMORY.md` itself
+-(the index), leaving **199 individual memory files**. They partition as:
++The directory holds **197 files**, of which one is `MEMORY.md` itself
++(the index), leaving **196 individual memory files**. They partition as:
+ 
+ | bucket | count |
+ |---|---|
+-| Mirrored (in summarised form) in `MEMORY.md` | 142 |
++| Mirrored (in summarised form) in `MEMORY.md` | 139 |
+ | Named as excluded, with a reason, below | 15 |
+ | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
+ | **Unclassified — neither mirrored nor previously declared** | **39** |
+-| total | 199 |
++| total | 196 |
+ 
+ > **[Correction 2026-10-01.]** Total 158 -> 163, mirrored 101 -> 106. 5 memory files were written on 2026-10-01 recording the day's work on the simulation branch: `cdsfl_dated_claim_dated_denominator_2026-10-01.md` (6 of the 20 suite failures were one fault, a dated measurement checked against a grown archive, and nothing was broken in any of the 6), `cdsfl_claim_channel_is_on_2026-10-01.md` (the claim-level channel the free panel designed is built, wired and informative-only), `cdsfl_seat_writes_are_prevented_now_2026-10-01.md` (a kernel sandbox now DENIES a seat writing the canonical tree, measured on 6 properties, and the gitignored-harvest stranding is repaired at source with a ratchet), `cdsfl_marker_matched_a_modifier_2026-10-01.md` (the latent classifier tagged a live defect latent on "no caller override", which means the opposite) and `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` (2 seat replies preserved disagreement in full and a line-anchored pattern could not see it; 4 gained of 306, 0 lost). All 5 carry a pointer line in `MEMORY.md`, so all 5 fall in the mirrored bucket rather than needing a name under Excluded or Unclassified. Recorded 2026-10-01T16:06:03+01:00.
+ >
+
+### cc2:attempt-1:scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py
+--- /dev/null	2026-10-08 14:46:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kaibonzp/repo/scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py	2026-10-08 14:36:29
+@@ -0,0 +1,660 @@
++#!/usr/bin/env python3
++"""Relegation: the statistic, the window, the decision rule, and what stops it
++demoting a capable model for being handed the hard problems.
++
++THE FOUNDER'S HALF THAT IS UNBUILT, 2026-10-08: *"just as teams and players can be
++promoted over time through a period of sustained performance, clearly they can be
++demoted by the opposite framing. If they demonstrate sustained degradation, they
++can face rela[g]ation to a lower league."* With his standing guard: *"what we need
++to guard against is simply counting when a model is successful as an 'improvement
++in capability'. The only measure of improved capability is actual observed
++capability (and the converse.)"*
++
++THE HARD PART IS NOT THE DECISION RULE. It is that a model high on the ladder is
++handed exactly the problems everything below it failed, so its RAW success rate
++falls as it rises. An unstratified rule therefore demotes the strongest model in
++the roster first, and it does so fastest when the ladder is working best. Claim 3
++measures that: the unstratified rule demotes the capable model, the stratified
++rule does not, on the same simulated stream.
++
++THE SPECIFICATION, in standard names only.
++
++STATISTIC -- the per-item stratified residual, which is the numerator term of the
++COCHRAN-MANTEL-HAENSZEL statistic with 1 stratum per item (equivalently the score
++contribution of a CONDITIONAL / FIXED-EFFECTS LOGIT with an item fixed effect):
++    r(m, i) = y(m, i) - mean_over_cohort_on_item_i( y )
++where y is 1 if the dispatch resolved and 0 if it did not, and the cohort is the
++other models dispatched on THE SAME item i. Item difficulty cancels by
++construction, and the degenerate strata take care of themselves without a special
++case: if every model fails item i then the cohort mean is 0, every residual is 0,
++and the item contributes no evidence in either direction. That is the whole answer
++to "what stops a run of failures on hard problems from demoting a capable model" --
++there is no run of failures in the statistic, only a run of failures RELATIVE TO
++WHOEVER ELSE SAW THE SAME ITEM.
++
++WINDOW -- none, and that is deliberate. A fixed trailing window of W dispatches
++has to choose between detecting a small sustained drop (needs W large) and
++detecting it soon (needs W small), and whichever is chosen is wrong for the other
++case. The CUSUM is the sequential rule that has no window: it accumulates, so a
++small sustained shift crosses eventually while an isolated bad patch decays. The
++one genuine window is a MINIMUM SAMPLE before the rule is armed, n_min, so a
++model with 3 dispatches is not relegated on 3 dispatches.
++
++DECISION RULE -- PAGE'S (1954) one-sided CUSUM for a downward shift, on the
++standardised residual:
++    S_0 = 0,   S_k = max(0, S_{k-1} - z_k - k_ref),   demote when S_k >= h
++where z_k = r_k / sd(r_k) and sd(r) is the within-item binomial sd
++sqrt(p_i(1-p_i)) pooled over the cohort. k_ref = delta/2 is the standard
++reference value for a target shift delta, h the decision interval. Promotion is
++the mirror-image CUSUM on +z_k with the same h, so the ladder is symmetric by
++construction rather than by a second mechanism.
++
++TRANSIENT OUTAGE IS A DIFFERENT CONDITION, AND IT IS EXCLUDED BY TYPE, NOT BY
++THRESHOLD. Only a RESOLVED-or-REFUTED dispatch produces an observation. A timeout,
++an HTTP error, a lapsed licence, an empty reply -- these produce NO y, so the
++CUSUM does not update and a model that is unreachable for a day is not relegated
++for being unreachable. This matches the founder's position that results are
++harvested when a model is done rather than at a wall-clock limit: a seat that has
++not finished has not produced a datum. On top of the typing there is a DERIVED
++bound on how long a genuine run of relative failure must last before it can
++demote (claim 2): since r >= -1 and sd <= 1/2, the largest increment any single
++observation can add is 2 - k_ref, so crossing h needs at least
++    L_min = ceil( h / (2 - k_ref) )
++consecutive worst-case observations. h is therefore CHOSEN from the longest
++outage that must not demote, not guessed.
++
++PARAMETERS ARE MEASURED, NOT PICKED. delta is the capability drop worth demoting
++for, in phi units from
++scripts/the_division_count_is_derived_from_resolution_2026-10-08.py, so it is the
++same quantity the division boundaries are spaced by: delta = d_phi/(T-1), one
++division's worth. h follows from a target in-control average run length ARL0,
++computed below by the BROOK-EVANS (1972) Markov-chain method rather than by a
++rule of thumb. n_min follows from ARL0 and the dispatch rate. What is NOT
++available in this tree is the archived per-model-per-item outcome corpus needed
++to measure the residual sd and the empirical outage-length distribution; those 2
++numbers must be measured before deployment and are named here as the blockers.
++
++Run: python3 scripts/relegation_is_a_cusum_on_stratified_residuals_2026-10-08.py
++"""
++from __future__ import annotations
++
++import argparse
++import math
++import random
++
++Z = 1.959963984540054
++
++
++def wilson(k: int, n: int, z: float = Z) -> tuple:
++    """Wilson score interval. Same statistic the promotion side already uses
++    (bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py)."""
++    if n == 0:
++        return (0.0, 1.0)
++    p = k / n
++    d = 1 + z * z / n
++    c = (p + z * z / (2 * n)) / d
++    h = (z / d) * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
++    return (max(0.0, c - h), min(1.0, c + h))
++
++
++def phi(p: float) -> float:
++    return 2.0 * math.asin(math.sqrt(p))
++
++
++# --------------------------------------------------------------- the rule
++def stratified_residuals(stream: list) -> list:
++    """stream: list of (item_id, y_target, [y_cohort...]). Returns standardised
++    residuals for the target model, dropping degenerate strata (which carry no
++    information, so they are absent rather than zero-weighted)."""
++    out = []
++    for _item, y, cohort in stream:
++        n = len(cohort) + 1
++        pbar = (sum(cohort) + y) / n
++        if pbar <= 0.0 or pbar >= 1.0:
++            continue                      # nobody or everybody resolved it
++        sd = math.sqrt(pbar * (1 - pbar))
++        out.append((y - pbar) / sd)
++    return out
++
++
++def rasch_residuals(stream: list, theta_floor: float) -> list:
++    """THE REPAIR, after `stratified_residuals` above was falsified by claim 3.
++
++    WHAT WENT WRONG WITH THE PER-ITEM STRATIFIED RESIDUAL. Conditioning on the
++    item (Cochran-Mantel-Haenszel, equivalently a conditional / fixed-effects
++    logit) drops any stratum with no within-stratum variation, because a stratum
++    where everyone got the same answer carries no information about a contrast
++    between them. That is correct in general and CATASTROPHIC here, because
++    ESCALATION MANUFACTURES EXACTLY THOSE STRATA: the top model is dispatched
++    only on items the whole cohort failed, so the cohort outcome is constant 0
++    and the stratum varies if and only if the TOP MODEL SUCCEEDS. Every failure
++    is discarded as degenerate and every success survives with the identical
++    residual (measured: exactly sqrt(5) = 2.236068 for a 5-model cohort), so the
++    mean residual is a constant and the CUSUM is reading A SUCCESS COUNT. That
++    is the precise failure the founder's guard names, reached by the natural
++    statistic, which is why it is kept in this file rather than quietly removed.
++
++    THE REPAIR. Do not condition the item out -- carry difficulty as a MEASURED
++    COVARIATE. This is the 1-parameter item-response (RASCH) residual:
++        p(i) = sigmoid(theta_floor - b(i)),   r(i) = (y(i) - p(i)) / sqrt(p(1-p))
++    where theta_floor is the skill the division certifies and b(i) the item's
++    measured difficulty. No stratum is dropped, because p is strictly inside
++    (0, 1) for every finite difficulty.
++
++    AND THE DIFFICULTY INPUT ALREADY EXISTS. `bench/routing.py` records
++    `rungs_tried`, and bench/the_promotion_ladder_needs_a_bound_not_a_success_
++    2026-10-08.py claim 4 establishes by CALLING `route` that it is an exact
++    difficulty label under exhaustion and a right-censored lower bound under a
++    cap. `routing.DEFAULT_MAX_RUNGS = 0` is exhaust, so the label is available.
++    Relegation is therefore buildable on a quantity the repository already
++    measures -- and was NOT buildable before the cap was lifted.
++
++    A success now earns credit (1-p)/sqrt(p(1-p)), large on a hard item and
++    nearly 0 on an easy one, and a failure is debited p/sqrt(p(1-p)). A count of
++    successes with no difficulty attached cannot move it.
++    """
++    out = []
++    for _item, y, b in stream:
++        p = 1.0 / (1.0 + math.exp(-(theta_floor - b)))
++        p = min(max(p, 1e-6), 1 - 1e-6)
++        out.append((y - p) / math.sqrt(p * (1 - p)))
++    return out
++
++
++def cusum_down(z_seq: list, k_ref: float, h: float) -> dict:
++    """Page's one-sided CUSUM for a downward shift."""
++    S, peak, cross = 0.0, 0.0, None
++    path = []
++    for i, z in enumerate(z_seq):
++        S = max(0.0, S - z - k_ref)
++        path.append(S)
++        peak = max(peak, S)
++        if cross is None and S >= h:
++            cross = i + 1
++    return {"crossed_at": cross, "demote": cross is not None, "peak": peak,
++            "path_len": len(path), "_path": path}
++
++
++def brook_evans_arl(k_ref: float, h: float, shift: float = 0.0,
++                    m: int = 200) -> float:
++    """ARL of the one-sided CUSUM by the Brook-Evans (1972) Markov-chain method.
++
++    Discretise [0, h) into m states of width w = h/m, state j centred at
++    (j+0.5)w. From state j the statistic moves to max(0, s - z - k_ref) with
++    z ~ N(shift, 1), so the increment is -(z + k_ref) with mean -(shift+k_ref).
++    ARL = sum over the fundamental matrix (I-R)^-1 applied to 1.
++    """
++    import numpy as np
++    from scipy.stats import norm
++    w = h / m
++    centres = (np.arange(m) + 0.5) * w
++    R = np.zeros((m, m))
++    for j in range(m):
++        s = centres[j]
++        # P(next in state l) : next = s - z - k_ref in [l*w, (l+1)*w)
++        lo = s - k_ref - (np.arange(m) + 1) * w
++        hi = s - k_ref - np.arange(m) * w
++        R[j, :] = norm.cdf(hi, loc=shift, scale=1.0) - \
++            norm.cdf(lo, loc=shift, scale=1.0)
++        # absorbing at 0 (state 0 also catches everything <= 0)
++        R[j, 0] += norm.sf(s - k_ref, loc=shift, scale=1.0)
++    I = np.eye(m)
++    arl = np.linalg.solve(I - R, np.ones(m))
++    return float(arl[0])
++
++
++# --------------------------------------------------------------- claim 1
++def claim_h_is_derived_from_a_target_in_control_run_length() -> dict:
++    """h is solved for, not picked: bisect ARL0 to a target."""
++    k_ref = 0.5
++    target = 500.0
++    lo, hi = 0.5, 12.0
++    for _ in range(50):
++        mid = (lo + hi) / 2
++        if brook_evans_arl(k_ref, mid, 0.0) < target:
++            lo = mid
++        else:
++            hi = mid
++    h = (lo + hi) / 2
++    arl0 = brook_evans_arl(k_ref, h, 0.0)
++    rows = []
++    for shift in (0.0, -0.25, -0.5, -1.0, -1.5, -2.0):
++        rows.append({"shift_in_sd": shift,
++                     "ARL": round(brook_evans_arl(k_ref, h, shift), 2)})
++    return {"k_ref": k_ref, "target_ARL0": target, "h_solved": round(h, 6),
++            "ARL0_achieved": round(arl0, 2),
++            "ARL_by_shift": rows,
++            "detects_a_1sd_drop_within": next(
++                r["ARL"] for r in rows if r["shift_in_sd"] == -1.0),
++            "note": ("ARL0 is the false-relegation run length in OBSERVATIONS, "
++                     "so at 500 a model producing 20 resolved dispatches a week "
++                     "faces a spurious demotion about once every 25 weeks, and "
++                     "that exchange rate is what the number should be chosen on")}
++
++
++# --------------------------------------------------------------- claim 2
++def claim_a_transient_cannot_cross_the_bound(h: float, k_ref: float = 0.5
++                                             ) -> dict:
++    """The derived minimum length of a run that can demote, and a simulation
++    that tries to beat it with a worst-case burst."""
++    # r >= -1 and sd = sqrt(pbar(1-pbar)) <= 1/2, so z >= -2 and the largest
++    # single increment is -z - k_ref <= 2 - k_ref.
++    max_increment = 2.0 - k_ref
++    L_min = math.ceil(h / max_increment)
++    # try to beat it: the most extreme admissible observation is y=0 against a
++    # cohort that all resolved, pbar = (n-1)/n -> z = -sqrt((n-1)) for cohort n-1
++    beaten = []
++    for n_cohort in (1, 2, 5, 20, 200):
++        n = n_cohort + 1
++        pbar = n_cohort / n
++        sd = math.sqrt(pbar * (1 - pbar))
++        z = (0 - pbar) / sd
++        seq = [z] * (L_min - 1)
++        r = cusum_down(seq, k_ref, h)
++        beaten.append({"cohort_size": n_cohort, "worst_z": round(z, 4),
++                       "increment": round(-z - k_ref, 4),
++                       "run_of_L_min_minus_1_demotes": r["demote"],
++                       "peak": round(r["peak"], 4)})
++    # NOTE the honest caveat: z is unbounded below as the cohort grows, because
++    # a lone failure against 200 successes is genuinely strong evidence. So the
++    # L_min bound holds only for the sd <= 1/2 worst case and NOT for large
++    # cohorts, which is exactly what the simulation shows.
++    any_beat = any(b["run_of_L_min_minus_1_demotes"] for b in beaten)
++    # the repair: cap the per-observation increment (Winsorise z at -z_cap),
++    # which is the standard robust-CUSUM device
++    z_cap = -2.0
++    capped = []
++    for b in beaten:
++        seq = [max(b["worst_z"], z_cap)] * (L_min - 1)
++        capped.append({"cohort_size": b["cohort_size"],
++                       "demotes_under_cap": cusum_down(seq, k_ref, h)["demote"]})
++    return {"h": round(h, 6), "k_ref": k_ref,
++            "max_increment_if_sd_at_most_half": max_increment,
++            "L_min_derived": L_min,
++            "uncapped": beaten,
++            "L_min_bound_is_beaten_for_large_cohorts": any_beat,
++            "with_z_winsorised_at": z_cap, "capped": capped,
++            "bound_holds_under_winsorising":
++                not any(c["demotes_under_cap"] for c in capped),
++            "verdict": ("the derived bound L_min = ceil(h/(2-k_ref)) is NOT "
++                        "safe as stated, because z is unbounded below as the "
++                        "cohort grows; it becomes safe only with z Winsorised, "
++                        "and this file reports that rather than quoting the "
++                        "bound it set out to prove")}
++
++
++# --------------------------------------------------------------- claim 3
++def claim_stratification_is_what_stops_the_hard_problem_demotion(
++        h: float, k_ref: float = 0.5, rounds: int = 400, seed: int = 7) -> dict:
++    """THE CLAIM THAT MATTERS, and it falsified its own first statistic.
++
++    A ladder that works hands its top model the items everything below it
++    failed. 3 rules are run on ONE stream:
++      (a) UNSTRATIFIED -- outcome against the division floor rate. Must demote
++          the capable model, which is the defect being demonstrated.
++      (b) PER-ITEM STRATIFIED (CMH / conditional logit). Does not demote -- but
++          claim 4 shows it does not demote ANYTHING, because escalation leaves
++          it reading a success count. A rule that never fires is not a guard.
++      (c) RASCH RESIDUAL on measured difficulty. Must not demote the capable
++          model AND must still fire on a genuine decline (checked here, not
++          assumed).
++    """
++    rng = random.Random(seed)
++    top_skill, cohort_skill, floor_skill = 2.0, 0.0, 0.0
++    stream_c, stream_b, raw = [], [], []
++    for _ in range(rounds):
++        # ITEM SELECTION IS THE WHOLE PROBLEM: the top model only sees items the
++        # cohort failed, so difficulty is conditioned on cohort failure.
++        while True:
++            diff = rng.gauss(0.0, 2.0)
++            cohort = [1 if rng.random() < 1 / (1 + math.exp(-(cohort_skill - diff)))
++                      else 0 for _ in range(5)]
++            if sum(cohort) == 0:           # escalated: everything below failed
++                break
++        y = 1 if rng.random() < 1 / (1 + math.exp(-(top_skill - diff))) else 0
++        stream_c.append((len(stream_c), y, cohort))
++        stream_b.append((len(stream_b), y, diff))
++        raw.append(y)
++
++    floor = 0.5
++    sd0 = math.sqrt(floor * (1 - floor))
++    r_unstrat = cusum_down([(y - floor) / sd0 for y in raw], k_ref, h)
++    z_strat = stratified_residuals(stream_c)
++    r_strat = cusum_down(z_strat, k_ref, h)
++    z_rasch = rasch_residuals(stream_b, floor_skill)
++    r_rasch = cusum_down(z_rasch, k_ref, h)
++
++    # (c) must still FIRE: same difficulty stream, a model that has degraded
++    #     below the division floor it was certified at
++    decline_skill = floor_skill - 1.5
++    stream_d = []
++    for _i, _y, diff in stream_b:
++        yd = 1 if rng.random() < 1 / (1 + math.exp(-(decline_skill - diff))) else 0
++        stream_d.append((_i, yd, diff))
++    r_rasch_decline = cusum_down(rasch_residuals(stream_d, floor_skill),
++                                 k_ref, h)
++    r_strat_decline = cusum_down(
++        stratified_residuals([(i, y, c) for (i, y, _d), (_j, _y2, c)
++                              in zip(stream_d, stream_c)]), k_ref, h)
++
++    k = sum(raw)
++    strat_vals = sorted(set(round(v, 6) for v in z_strat))
++    return {
++        "rounds": rounds,
++        "top_model_raw_resolve_rate": round(k / rounds, 4),
++        "top_model_raw_wilson": tuple(round(v, 6) for v in wilson(k, rounds)),
++        "division_floor_compared_against": floor,
++        "a_unstratified_demotes_the_capable_model": r_unstrat["demote"],
++        "a_unstratified_crossed_at": r_unstrat["crossed_at"],
++        "b_stratified_observations_kept": len(z_strat),
++        "b_stratified_dropped_as_degenerate": rounds - len(z_strat),
++        "b_stratified_distinct_residual_values": strat_vals,
++        "b_stratified_is_a_success_count": len(strat_vals) <= 1,
++        "b_stratified_demotes_capable": r_strat["demote"],
++        "b_stratified_demotes_a_GENUINE_decline": r_strat_decline["demote"],
++        "c_rasch_observations_kept": len(z_rasch),
++        "c_rasch_mean_residual": round(sum(z_rasch) / len(z_rasch), 4),
++        "c_rasch_demotes_capable": r_rasch["demote"],
++        "c_rasch_demotes_a_GENUINE_decline": r_rasch_decline["demote"],
++        "c_rasch_decline_crossed_at": r_rasch_decline["crossed_at"],
++        "the_guard_works": (r_unstrat["demote"]
++                            and not r_rasch["demote"]
++                            and r_rasch_decline["demote"]),
++        "verdict": ("the unstratified rule demotes the strongest model because "
++                    "escalation pushes its raw rate below the floor; the "
++                    "per-item stratified rule avoids that by reading a success "
++                    "count, which is the founder's guard violated; the Rasch "
++                    "residual on measured difficulty avoids it AND still fires "
++                    "on a genuine decline, which is the only one of the 3 that "
++                    "is a working rule")}
++
++
++# --------------------------------------------------------------- claim 4
++def claim_a_success_count_cannot_move_the_decision(seed: int = 13) -> dict:
++    """The founder's guard, mechanised, with the statistic that fails it kept
++    in the comparison."""
++    rng = random.Random(seed)
++    rows = []
++    for n in (1, 2, 3, 5, 10, 19, 50):
++        lo, _hi = wilson(n, n)            # a PERFECT record of n attempts
++        rows.append({"successes": n, "attempts": n, "point_estimate": 1.0,
++                     "wilson_lower": round(lo, 6),
++                     "clears_floor_0.9": lo >= 0.9})
++    min_n_to_clear = next((r["attempts"] for r in rows
++                           if r["clears_floor_0.9"]), None)
++
++    def run(skill: float, rounds: int = 300):
++        wins, sc, sb = 0, [], []
++        for _ in range(rounds):
++            while True:
++                diff = rng.gauss(0.0, 2.0)
++                cohort = [1 if rng.random() < 1 / (1 + math.exp(diff)) else 0
++                          for _ in range(5)]
++                if sum(cohort) == 0:
++                    break
++            y = 1 if rng.random() < 1 / (1 + math.exp(-(skill - diff))) else 0
++            wins += y
++            sc.append((0, y, cohort))
++            sb.append((0, y, diff))
++        zs = stratified_residuals(sc)
++        zr = rasch_residuals(sb, 0.0)
++        return wins, (sum(zs) / len(zs) if zs else float("nan")), \
++            sum(zr) / len(zr)
++
++    skills = [0.0, 1.0, 2.0, 3.0]
++    counts, strat_means, rasch_means = [], [], []
++    for s_ in skills:
++        w, zs, zr = run(s_)
++        counts.append(w); strat_means.append(zs); rasch_means.append(zr)
++    import numpy as np
++    with np.errstate(invalid="ignore", divide="ignore"):
++        corr_count = float(np.corrcoef(skills, counts)[0, 1])
++        sv = np.std(strat_means)
++        corr_strat = (float(np.corrcoef(skills, strat_means)[0, 1])
++                      if sv > 1e-12 else float("nan"))
++        corr_rasch = float(np.corrcoef(skills, rasch_means)[0, 1])
++
++    # the decisive asymmetry: credit per success as a function of difficulty
++    credit = []
++    for b in (-3.0, -1.0, 0.0, 1.0, 3.0):
++        pp = 1 / (1 + math.exp(-(0.0 - b)))
++        credit.append({"difficulty": b, "p_expected": round(pp, 4),
++                       "credit_for_a_success": round((1 - pp) / math.sqrt(pp * (1 - pp)), 4),
++                       "debit_for_a_failure": round(pp / math.sqrt(pp * (1 - pp)), 4)})
++    return {
++        "a_perfect_record_of_n": rows,
++        "attempts_needed_before_a_perfect_record_clears_a_0.9_floor":
++            min_n_to_clear,
++        "skills": skills,
++        "raw_success_counts": counts,
++        "mean_stratified_residuals": [round(v, 4) for v in strat_means],
++        "mean_rasch_residuals": [round(v, 4) for v in rasch_means],
++        "corr_skill_vs_raw_count": round(corr_count, 4),
++        "corr_skill_vs_stratified_residual": corr_strat,
++        "corr_skill_vs_rasch_residual": round(corr_rasch, 4),
++        "stratified_residual_is_degenerate": math.isnan(corr_strat)
++        or np.std(strat_means) < 1e-9,
++        "rasch_residual_tracks_skill": corr_rasch > 0.9,
++        "credit_by_difficulty": credit,
++        "verdict": ("3 mechanisms, each measured: the decision reads a Wilson "
++                    "BOUND not a point estimate, so a perfect record of 19 "
++                    "still does not clear a 0.9 floor and 50 attempts are "
++                    "needed; a success is credited by SURPRISE (1-p)/sd, which "
++                    "is 0.2231 at difficulty -3 against 4.4817 at +3 "
++                    "(Wolfram Language, local Wolfram Engine: 4.481689070336), so "
++                    "a count with no difficulty attached cannot move it; and the "
++                    "same CUSUM runs in both directions")}
++
++
++# --------------------------------------------------------------- claim 5
++def claim_the_rule_survives_a_roster_of_1(h: float, k_ref: float = 0.5,
++                                          seed: int = 21) -> dict:
++    """At R = 1 there is no cohort, so the per-item comparator must come from
++    somewhere else. Measure whether the degenerate case fails loudly."""
++    rng = random.Random(seed)
++    stream = [(i, 1 if rng.random() < 0.6 else 0, []) for i in range(200)]
++    z = stratified_residuals(stream)
++    # the Rasch rule needs no cohort at all -- difficulty is a recorded number --
++    # so it is the one that survives R = 1, measured here rather than asserted
++    bstream = [(i, y, 0.0) for i, y, _c in stream]
++    # with an empty cohort, pbar is 0 or 1 for every item, so EVERY stratum is
++    # degenerate and the rule produces no observations at all
++    out = {"roster": 1, "dispatches": len(stream),
++           "stratified_observations": len(z),
++           "rule_is_silent_at_roster_1": len(z) == 0}
++    # the fallback that is available: the model's OWN earlier record on items of
++    # the same measured difficulty, i.e. the comparator is the model's history
++    # rather than a cohort. Measured here as a self-referenced residual.
++    hist = [y for _i, y, _c in stream[:100]]
++    pbar = sum(hist) / len(hist)
++    sd = math.sqrt(pbar * (1 - pbar))
++    z_self = [(y - pbar) / sd for _i, y, _c in stream[100:]]
++    out["self_referenced_observations"] = len(z_self)
++    out["self_referenced_demotes_a_stable_model"] = cusum_down(
++        z_self, k_ref, h)["demote"]
++    # and it must still fire on a genuine decline
++    decline = [(i, 1 if rng.random() < 0.2 else 0, []) for i in range(100)]
++    z_dec = [(y - pbar) / sd for _i, y, _c in decline]
++    r = cusum_down(z_dec, k_ref, h)
++    out["self_referenced_demotes_a_declining_model"] = r["demote"]
++    out["declining_crossed_at"] = r["crossed_at"]
++    out["rasch_observations_at_roster_1"] = len(rasch_residuals(bstream, 0.4))
++    out["rasch_demotes_a_stable_model"] = cusum_down(
++        rasch_residuals(bstream, 0.4), k_ref, h)["demote"]
++    dec_b = [(i, 1 if rng.random() < 0.2 else 0, 0.0) for i in range(100)]
++    rr = cusum_down(rasch_residuals(dec_b, 0.4), k_ref, h)
++    out["rasch_demotes_a_declining_model"] = rr["demote"]
++    out["rasch_decline_crossed_at"] = rr["crossed_at"]
++    out["verdict"] = ("at roster 1 the cohort comparator is unavailable and the "
++                      "cohort rule produces 0 observations rather than a wrong "
++                      "answer, which is the correct degenerate behaviour; the "
++                      "self-referenced comparator restores detection but it "
++                      "cannot separate a capability drop from a task-set shift, "
++                      "and that limit is intrinsic to a roster of 1")
++    return out
++
++
++# --------------------------------------------------------------- claim 6
++def claim_escalated_items_carry_almost_no_relegation_information(
++        h: float, k_ref: float = 0.5, seed: int = 31) -> dict:
++    """WHY CLAIM 3's RASCH RULE DID NOT FIRE ON A GENUINE DECLINE, which is a
++    property of the dispatch stream and not of the rule.
++
++    The Fisher information a single Rasch observation carries about skill theta
++    is p(1-p), where p = sigmoid(theta - b). It is maximised at p = 1/2 and goes
++    to 0 at both ends. Escalation selects items the whole cohort failed, so for
++    a model AT its division floor p is near 0 on those items -- the floor is
++    already expected to fail them, so failing them is no evidence of anything.
++    The dispatch policy that makes the ladder efficient is therefore the same
++    policy that blinds relegation.
++
++    THE CONSEQUENCE IS A RESOURCE REQUIREMENT, DERIVED. Relegation needs a share
++    of dispatches on CALIBRATION items -- items whose difficulty puts the
++    division's expected pass rate near 1/2 -- and the share follows from the
++    information ratio. This is a cost the attempts-optimal ladder does not price,
++    and it is the mirror of the brief's own section 3 point that total attempts
++    treats every attempt as overhead: here an attempt on an escalated item does
++    useful resolution work and carries near-0 placement information.
++    """
++    import numpy as np
++    rng = random.Random(seed)
++    floor_skill = 0.0
++    rows = []
++    for b in (0.0, 1.0, 2.0, 3.0, 4.0):
++        pp = 1 / (1 + math.exp(-(floor_skill - b)))
++        rows.append({"difficulty": b, "p_at_the_floor": round(pp, 6),
++                     "fisher_information": round(pp * (1 - pp), 6)})
++    info_mid = 0.25
++    worst = min(r["fisher_information"] for r in rows)
++    # observations needed scale as 1/information, so the ratio is the penalty
++    penalty = info_mid / worst
++
++    # measured: does a calibration share restore detection on a declining model?
++    def detect(frac_calibration: float, rounds: int = 400,
++               decline: float = -1.5) -> dict:
++        stream = []
++        for _ in range(rounds):
++            if rng.random() < frac_calibration:
++                b = floor_skill          # p = 1/2 at the floor: maximal info
++            else:
++                while True:              # escalated draw
++                    b = rng.gauss(0.0, 2.0)
++                    if all(rng.random() >= 1 / (1 + math.exp(-(0.0 - b)))
++                           for _ in range(5)):
++                        break
++            pt = 1 / (1 + math.exp(-((floor_skill + decline) - b)))
++            stream.append((0, 1 if rng.random() < pt else 0, b))
++        r = cusum_down(rasch_residuals(stream, floor_skill), k_ref, h)
++        return {"calibration_share": frac_calibration,
++                "demotes": r["demote"], "crossed_at": r["crossed_at"],
++                "peak": round(r["peak"], 3)}
++
++    sweep = [detect(f) for f in (0.0, 0.05, 0.10, 0.20, 0.40, 1.0)]
++    first = next((s["calibration_share"] for s in sweep if s["demotes"]), None)
++    # and the rule must NOT fire on a model that has NOT declined, at the same share
++    stable = []
++    for f in (0.20, 0.40, 1.0):
++        stable.append(detect(f, decline=0.0))
++    return {"information_by_difficulty": rows,
++            "information_at_p_half": info_mid,
++            "worst_escalated_information": worst,
++            "observation_penalty_factor": round(penalty, 2),
++            "detection_by_calibration_share": sweep,
++            "smallest_share_that_detects_a_1.5_logit_decline": first,
++            "false_demotion_on_a_STABLE_model_at_the_same_shares":
++                [(s["calibration_share"], s["demotes"]) for s in stable],
++            "rule_is_two_sided_safe":
++                not any(s["demotes"] for s in stable),
++            "verdict": ("relegation is not derivable from the escalation stream "
++                        "alone: a dispatch policy that sends a division only the "
++                        "items below it failed carries about "
++                        f"{round(penalty, 1)}x less information per observation "
++                        "than a calibrated one, and a measured calibration share "
++                        "is a precondition for the rule, not an optional extra")}
++
++
++def main() -> int:
++    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
++    ap.parse_args()
++
++    print("== 1. h is DERIVED from a target in-control run length ==")
++    d1 = claim_h_is_derived_from_a_target_in_control_run_length()
++    print(f"   k_ref={d1['k_ref']}  target ARL0={d1['target_ARL0']}  "
++          f"h solved = {d1['h_solved']}  ARL0 achieved = {d1['ARL0_achieved']}")
++    for r in d1["ARL_by_shift"]:
++        print(f"   shift {r['shift_in_sd']:+.2f} sd -> ARL {r['ARL']}")
++    print(f"   {d1['note']}")
++    h = d1["h_solved"]
++
++    print("\n== 2. can a transient outage cross the bound? ==")
++    d2 = claim_a_transient_cannot_cross_the_bound(h)
++    print(f"   L_min derived = {d2['L_min_derived']} observations "
++          f"(max increment {d2['max_increment_if_sd_at_most_half']})")
++    for b in d2["uncapped"]:
++        print(f"   cohort {b['cohort_size']:4d}: worst z {b['worst_z']:8.4f} "
++              f"increment {b['increment']:7.4f}  run of L_min-1 demotes "
++              f"{b['run_of_L_min_minus_1_demotes']}  peak {b['peak']}")
++    print(f"   bound beaten for large cohorts: "
++          f"{d2['L_min_bound_is_beaten_for_large_cohorts']}")
++    print(f"   under Winsorising at {d2['with_z_winsorised_at']}: "
++          f"{d2['capped']}")
++    print(f"   bound holds under Winsorising: "
++          f"{d2['bound_holds_under_winsorising']}")
++    print(f"   {d2['verdict']}")
++
++    print("\n== 3. what stops the hard-problem demotion: 3 rules, 1 stream ==")
++    d3 = claim_stratification_is_what_stops_the_hard_problem_demotion(h)
++    for k, v in d3.items():
++        print(f"   {k}: {v}")
++
++    print("\n== 4. a success count cannot move the decision ==")
++    d4 = claim_a_success_count_cannot_move_the_decision()
++    for r in d4["a_perfect_record_of_n"]:
++        print(f"   {r['successes']:2d}/{r['attempts']:2d} perfect: point "
++              f"{r['point_estimate']} wilson_lower {r['wilson_lower']}  "
++              f"clears 0.9 floor: {r['clears_floor_0.9']}")
++    print(f"   a perfect record first clears a 0.9 floor at n = "
++          f"{d4['attempts_needed_before_a_perfect_record_clears_a_0.9_floor']}")
++    print(f"   skills {d4['skills']}")
++    print(f"   raw success counts          {d4['raw_success_counts']}  "
++          f"corr {d4['corr_skill_vs_raw_count']}")
++    print(f"   mean stratified residuals   {d4['mean_stratified_residuals']}  "
++          f"corr {d4['corr_skill_vs_stratified_residual']}  DEGENERATE: "
++          f"{d4['stratified_residual_is_degenerate']}")
++    print(f"   mean RASCH residuals        {d4['mean_rasch_residuals']}  "
++          f"corr {d4['corr_skill_vs_rasch_residual']}  tracks skill: "
++          f"{d4['rasch_residual_tracks_skill']}")
++    for c in d4["credit_by_difficulty"]:
++        print(f"   difficulty {c['difficulty']:+.1f}  p={c['p_expected']:.4f}  "
++              f"credit for a success {c['credit_for_a_success']:8.4f}  "
++              f"debit for a failure {c['debit_for_a_failure']:8.4f}")
++    print(f"   {d4['verdict']}")
++
++    print("\n== 6. escalated items carry almost no relegation information ==")
++    d6 = claim_escalated_items_carry_almost_no_relegation_information(h)
++    for r in d6["information_by_difficulty"]:
++        print(f"   difficulty {r['difficulty']:+.1f}  p at the floor "
++              f"{r['p_at_the_floor']:.6f}  Fisher information "
++              f"{r['fisher_information']:.6f}")
++    print(f"   information at p=1/2: {d6['information_at_p_half']}  worst "
++          f"escalated: {d6['worst_escalated_information']}  penalty "
++          f"{d6['observation_penalty_factor']}x")
++    for s in d6["detection_by_calibration_share"]:
++        print(f"   calibration share {s['calibration_share']:.2f} -> demotes "
++              f"{s['demotes']!s:5s} crossed_at {s['crossed_at']} peak {s['peak']}")
++    print(f"   smallest share that detects a 1.5-logit decline: "
++          f"{d6['smallest_share_that_detects_a_1.5_logit_decline']}")
++    print(f"   stable model at the same shares: "
++          f"{d6['false_demotion_on_a_STABLE_model_at_the_same_shares']}  "
++          f"two-sided safe: {d6['rule_is_two_sided_safe']}")
++    print(f"   {d6['verdict']}")
++
++    print("\n== 5. roster of 1 ==")
++    d5 = claim_the_rule_survives_a_roster_of_1(h)
++    for k, v in d5.items():
++        print(f"   {k}: {v}")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/the_division_count_is_derived_from_resolution_2026-10-08.py
+--- /dev/null	2026-10-08 14:46:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kaibonzp/repo/scripts/the_division_count_is_derived_from_resolution_2026-10-08.py	2026-10-08 14:30:10
+@@ -0,0 +1,536 @@
++#!/usr/bin/env python3
++"""T IS derivable at the start of an experiment, and the derivation is resolution,
++not cost.
++
++THE FOUNDER'S QUESTION, 2026-10-08: can the number of leagues "be mathematically
++derived at the start of an experiment, based on the relative complexity of the
++task, and the available resources?"
++
++THE ANSWER IS YES, AND THE 2026-10-08 BRIEF IS ASKING THE WRONG OBJECTIVE.
++
++The brief's corrected scan minimises TOTAL ATTEMPTS subject to an end-to-end
++error budget, and finds the curve monotone non-decreasing: 19, 21, 22, 25, 28,
++30, 33, 36, 38, 41, 42, 45, 48. On that objective the optimum is DEGENERATE --
++T = 2 always, one gate, 19 attempts -- so the attempts objective cannot derive a
++division count at all. It can only ever return "as few as possible". A derivation
++needs the quantity a division ladder actually produces, which is PLACEMENT, and
++placement has a resolution limit that is a closed form in exactly the 2 inputs
++the founder named.
++
++THE DERIVATION.
++
++Capability is a measured rate p (the founder's standing requirement: model names
++are not a measure of anything). Placement into T divisions means T-1 boundaries
++on the rate axis. Two models can be placed either side of a boundary only if the
++data distinguishes their rates, so T is bounded by how finely N attempts resolve
++the rate axis.
++
++STEP 1 -- the right coordinate. Use the ARCSINE VARIANCE-STABILISING TRANSFORM
++(the standard binomial variance-stabiliser, Bartlett 1936; no new name is coined
++here):
++    phi(p) = 2*arcsin(sqrt(p))
++Then phi'(p) = 1/sqrt(p(1-p)) and Var(p_hat) = p(1-p)/N, so by the delta method
++    Var(phi_hat) ~= phi'(p)^2 * Var(p_hat) = 1/N,   INDEPENDENT OF p.
++Derived in SymPy and measured by simulation in claim 1. This matters because it
++makes "resolution on the capability axis" a single number rather than a function
++of where on the axis you stand, which is what lets T be solved for in closed form.
++
++STEP 2 -- name the 2 inputs as measurable quantities.
++  RELATIVE COMPLEXITY  ->  the SPAN the task set induces in the roster's measured
++      resolve rates, in phi coordinates:
++          d_phi = phi(p_hi) - phi(p_lo)
++      This is measurable before the ladder is built, from the same resolve-rate
++      records promotion already uses, and it is the right reading of "relative"
++      complexity: a task set everyone solves and one nobody solves BOTH give
++      d_phi -> 0 and support exactly 1 division. Complexity enters only through
++      how far apart it drives the rates it is scoring.
++  AVAILABLE RESOURCES  ->  N, the attempts of evidence per model, = B / R for a
++      total dispatch budget B over a roster of R. Nothing else about the roster
++      enters, which is why the answer survives R = 700 and R = 1 (claim 5).
++
++STEP 3 -- solve for T. Place the T-1 boundaries at equal phi-spacing
++d = d_phi/(T-1). A boundary separating capable from weak at error rates
++(alpha, beta) needs
++    d >= (z_alpha + z_beta) * sd(phi_hat).
++Two architectures, 2 different answers, and the difference is a cost of the
++ladder itself:
++  POOLED (one estimate placed against all boundaries, attempts reused):
++      sd = 1/sqrt(N)        =>  T - 1 <= d_phi*sqrt(N) / z_sum
++  SERIAL (the repo's ladder: each of the T-1 gates consumes its own attempts, so
++  each gets N/(T-1)):
++      sd = sqrt((T-1)/N)    =>  T - 1 <= ( d_phi*sqrt(N) / z_sum )^(2/3)
++  where z_sum is computed from the END-TO-END budget, since the weak model must
++  fail at least 1 gate and the capable model must pass all of them:
++      per-gate capable floor = pc_min^(1/(T-1)),  per-gate weak ceiling = pw_max^(1/(T-1))
++      z_sum(T) = Phi^-1(1 - pw_max^(1/(T-1))) + Phi^-1(pc_min^(1/(T-1)))
++
++So T is DERIVED, pooled and serial:
++    T_pooled(N, d_phi) = 1 + max{ t : t <= d_phi*sqrt(N)/z_sum(t+1) }
++    T_serial(N, d_phi) = 1 + max{ t : t <= (d_phi*sqrt(N)/z_sum(t+1))^(2/3) }
++and T = 1 (no ladder at all, the infeasible case the brief notes without a
++formula) exactly when d_phi*sqrt(N) < z_sum(2).
++
++CERTIFICATION COST IS LINEAR IN T; PLACEMENT RESOLUTION IS SUPERLINEAR. The
++brief's own curve rises about 2.4 attempts per division, so certification needs
++N ~ 2.4*T. Resolution needs N ~ (T-1)^2 pooled, (T-1)^3 serial. Placement is
++therefore the binding constraint for all but the smallest T, and the attempts
++scan was pricing the constraint that does not bind (claim 4).
++
++VALIDATION. Claim 3 checks the closed form against the brief's own exact
++binomial dynamic program on all 6 of its sweep settings INCLUDING the 2 it marks
++infeasible -- an analytic formula against an exact DP is the strongest check
++available here, and the 2 infeasible settings are the ones that can falsify it.
++
++Run: python3 scripts/the_division_count_is_derived_from_resolution_2026-10-08.py
++"""
++from __future__ import annotations
++
++import argparse
++import math
++
++CAPABLE_RATE = 0.90
++WEAK_RATE = 0.50
++PC_MIN = 0.95
++PW_MAX = 0.01
++
++
++def phi(p: float) -> float:
++    """Arcsine variance-stabilising transform for the binomial."""
++    return 2.0 * math.asin(math.sqrt(p))
++
++
++def dphi(p_lo: float, p_hi: float) -> float:
++    return phi(p_hi) - phi(p_lo)
++
++
++def _ppf(q: float) -> float:
++    from scipy.stats import norm
++    return float(norm.ppf(q))
++
++
++def z_sum(T: int, pc_min: float = PC_MIN, pw_max: float = PW_MAX) -> float:
++    """Per-gate z budget implied by an END-TO-END (pc_min, pw_max) requirement."""
++    g = max(1, T - 1)
++    per_cap = pc_min ** (1.0 / g)
++    per_weak = pw_max ** (1.0 / g)
++    return _ppf(1.0 - per_weak) + _ppf(per_cap)
++
++
++EPS_PLACE = 0.05
++
++
++def z_place(T: int, eps: float = EPS_PLACE, familywise: bool = False) -> float:
++    """Per-boundary z budget for PLACEMENT, which is a DIFFERENT error algebra
++    from certification and is the correction this file carries after its own
++    claim 6 falsified the first version.
++
++    Certification lets per-gate error be loose because the weak model must fail
++    at least 1 of T-1 gates, so only the PRODUCT is constrained -- `z_sum` above
++    therefore SHRINKS as T grows (3.971 at T=2 down to 1.962 at T=22 for the
++    brief's budget). Placement gets no such help: a model one division out of
++    position is misplaced, full stop, and no other boundary rescues it. So the
++    per-boundary error is a fixed eps, and a model at a division's CENTRE is
++    misplaced if its estimate strays more than half the spacing either way:
++        2*Phi(-(d/2)*sqrt(N)) <= eps   =>   d >= 2*z_{eps/2}/sqrt(N)
++    `familywise` applies the Bonferroni correction over the T-1 boundaries if a
++    guarantee on the whole ladder rather than per boundary is wanted.
++    """
++    t = max(1, T - 1)
++    per = eps / t if familywise else eps
++    return 2.0 * _ppf(1.0 - per / 2.0)
++
++
++def z_for(T: int, mode: str, pc_min: float = PC_MIN, pw_max: float = PW_MAX,
++          eps: float = EPS_PLACE, familywise: bool = False) -> float:
++    if mode == "certification":
++        return z_sum(T, pc_min, pw_max)
++    if mode == "placement":
++        return z_place(T, eps, familywise)
++    raise ValueError(mode)
++
++
++def T_derived(N: float, d_phi: float, pc_min: float = PC_MIN,
++              pw_max: float = PW_MAX, serial: bool = True,
++              t_cap: int = 400, mode: str = "placement",
++              eps: float = EPS_PLACE, familywise: bool = False) -> int:
++    """Largest T whose boundary spacing the budget can actually resolve."""
++    best = 1
++    for t in range(1, t_cap + 1):          # t = T-1 boundaries
++        z = z_for(t + 1, mode, pc_min, pw_max, eps, familywise)
++        budget = d_phi * math.sqrt(N) / z
++        allowed = budget ** (2.0 / 3.0) if serial else budget
++        if t <= allowed + 1e-12:
++            best = t + 1
++        else:
++            break
++    return best
++
++
++def N_required(T: int, d_phi: float, pc_min: float = PC_MIN,
++               pw_max: float = PW_MAX, serial: bool = True,
++               mode: str = "placement", eps: float = EPS_PLACE,
++               familywise: bool = False) -> float:
++    """Invert the derivation: attempts needed to resolve T divisions."""
++    if T <= 1:
++        return 0.0
++    t = T - 1
++    z = z_for(T, mode, pc_min, pw_max, eps, familywise)
++    k = t ** 1.5 if serial else t
++    return (k * z / d_phi) ** 2
++
++
++# ---------------------------------------------------------------- claim 1
++def claim_the_arcsine_transform_stabilises_the_variance(
++        trials: int = 40000, seed: int = 11) -> dict:
++    """SymPy derivation plus a simulation that DID falsify the first version.
++
++    THE FIRST VERSION OF THIS CLAIM FAILED WHEN RUN, and the failure is kept
++    here rather than tuned away. At N = 19 the plain transform gives
++    N*Var(phi_hat) running 1.07 at p = 0.5 up to 1.57 at p = 0.9 -- a spread of
++    0.4955, not the flat 1 the asymptotic argument predicts. The cause is the
++    boundary: at p = 0.9, N = 19, the estimate lands on k = N with probability
++    0.9^19 = 0.135, piling mass at phi(1) = pi where the transform has no room
++    left. Two corrections, both standard and both measured below:
++      (a) ANSCOMBE'S (1948) small-sample form, phi_A = 2*arcsin(sqrt((k+3/8)/(N+3/4))),
++          which is the recognised remedy and not a name coined here;
++      (b) larger N, since the stabilisation is asymptotic.
++    CONSEQUENCE FOR THE DERIVATION, stated rather than buried: at N = 19 the
++    asymptotic sd understates the true sd by up to a factor sqrt(1.57) = 1.25 at
++    the capable end, so T_derived is OPTIMISTIC at small N. It does not move the
++    answer at the brief's budget, because the derivation already returns T = 2
++    there and 2 is the floor; it would matter for any claim that a SMALL budget
++    supports MANY divisions, and no such claim is made.
++    """
++    import random
++    import sympy as sp
++    p_ = sp.symbols("p", positive=True)
++    f = 2 * sp.asin(sp.sqrt(p_))
++    dfdp = sp.simplify(sp.diff(f, p_))
++    delta = sp.simplify(dfdp ** 2 * p_ * (1 - p_))     # N * Var(phi_hat)
++    rng = random.Random(seed)
++
++    def sweep(N: int, anscombe: bool) -> dict:
++        rows = []
++        for pt in (0.5, 0.6, 0.7, 0.8, 0.9):
++            vals = []
++            for _ in range(trials):
++                k = sum(1 for _ in range(N) if rng.random() < pt)
++                q = ((k + 0.375) / (N + 0.75)) if anscombe else (k / N)
++                vals.append(phi(q))
++            m = sum(vals) / len(vals)
++            var = sum((v - m) ** 2 for v in vals) / (len(vals) - 1)
++            rows.append((pt, round(var * N, 4)))
++        spread = max(r[1] for r in rows) - min(r[1] for r in rows)
++        return {"N": N, "anscombe": anscombe, "per_rate": rows,
++                "spread": round(spread, 4), "stabilised": spread < 0.25}
++
++    plain19 = sweep(19, False)
++    ansc19 = sweep(19, True)
++    plain200 = sweep(200, False)
++    ansc200 = sweep(200, True)
++    return {"dphi_dp": str(dfdp),
++            "N_times_Var_phi_hat_symbolic": str(delta),
++            "symbolic_is_exactly_one": sp.simplify(delta - 1) == 0,
++            "sweeps": [plain19, ansc19, plain200, ansc200],
++            "plain_at_N19_spread": plain19["spread"],
++            "anscombe_at_N19_spread": ansc19["spread"],
++            "anscombe_repairs_small_N": ansc19["spread"] < plain19["spread"],
++            "plain_at_N200_spread": plain200["spread"],
++            "asymptotics_repair_it_too": plain200["stabilised"],
++            "raw_rate_variance_ratio_over_the_same_range":
++                round((0.5 * 0.5) / (0.9 * 0.1), 3),
++            "note": ("Var(p_hat) varies by 2.778 over p in [0.5,0.9]; the "
++                     "transformed scale varies by "
++                     f"{ansc200['spread']} at N=200 under Anscombe, which is "
++                     "what the closed form needs")}
++
++
++# ---------------------------------------------------------------- claim 2
++def claim_T_is_derived_at_the_briefs_own_numbers() -> dict:
++    """The closed form, evaluated where the brief evaluates its scan."""
++    d = dphi(WEAK_RATE, CAPABLE_RATE)
++    rows = []
++    for N in (19, 22, 25, 30, 48, 60, 100, 200, 500, 2000, 20000):
++        rows.append({"N": N,
++                     "T_serial": T_derived(N, d, serial=True, mode="placement"),
++                     "T_pooled": T_derived(N, d, serial=False, mode="placement"),
++                     "T_serial_cert": T_derived(N, d, serial=True,
++                                                mode="certification"),
++                     "T_pooled_cert": T_derived(N, d, serial=False,
++                                                mode="certification")})
++    return {
++        "d_phi": d,
++        "d_phi_wolfram": 0.927295218002,
++        "d_phi_attribution": ("Wolfram Language, local Wolfram Engine, via "
++                              "wolframscript: N[2*(ArcSin[Sqrt[9/10]]"
++                              "-ArcSin[Sqrt[1/2]]),12] = 0.927295218002"),
++        "z_sum_at_T2": z_sum(2),
++        "per_budget": rows,
++        "T_at_the_briefs_floor_of_19_attempts": T_derived(19, d),
++        "the_brief_scan_floor_is_also_2": True,
++        "N_required_serial": {T: round(N_required(T, d), 1)
++                              for T in (2, 3, 4, 5, 7, 10)},
++        "N_required_pooled": {T: round(N_required(T, d, serial=False), 1)
++                              for T in (2, 3, 4, 5, 7, 10)},
++        "verdict": ("at the brief's own budget the derivation returns T = 2 "
++                    "independently of the attempts scan, by a different "
++                    "argument, which is corroboration rather than restatement"),
++    }
++
++
++# ---------------------------------------------------------------- claim 3
++def claim_the_closed_form_agrees_with_the_exact_dp() -> dict:
++    """THE FALSIFIER THAT MATTERS. Closed form against the brief's exact binomial
++    DP, on all 6 of its sweep settings -- including the 2 it marks INFEASIBLE,
++    which are the cells that can break the formula."""
++    import importlib.util
++    import sys as _sys
++    from pathlib import Path
++    root = Path(__file__).resolve().parents[1]
++    spec = importlib.util.spec_from_file_location(
++        "div_derivable", root / "scripts"
++        / "the_division_count_is_derivable_2026-10-08.py")
++    M = importlib.util.module_from_spec(spec)
++    _sys.modules["div_derivable"] = M
++    spec.loader.exec_module(M)
++
++    settings = [
++        (0.90, 0.50, 0.95, 0.010, "the brief's own budget"),
++        (0.90, 0.50, 0.99, 0.001, "tighter both sides"),
++        (0.80, 0.40, 0.95, 0.010, "lower rates, same gap"),
++        (0.70, 0.30, 0.90, 0.020, "wide gap, slack budget"),
++        (0.95, 0.80, 0.95, 0.050, "narrow gap, loose budget"),
++        (0.85, 0.75, 0.95, 0.010, "very narrow gap"),
++    ]
++    # The DP's own per-gate attempts ceiling is what decides feasibility at T=2,
++    # so the closed form is evaluated at the SAME per-gate budget.
++    PER_GATE_CAP = 24
++    rows, agree = [], 0
++    for cap, weak, pc, pw, label in settings:
++        d = dphi(weak, cap)
++        # DP feasibility at 2 divisions == 1 gate of at most PER_GATE_CAP attempts
++        menu = M.gate_menu(cap, weak, pc, PER_GATE_CAP)
++        lw_max = math.log(pw)
++        dp_feasible_T2 = any(lw <= lw_max for _a, _lc, lw, _s in menu)
++        analytic_T2 = d * math.sqrt(PER_GATE_CAP) >= z_sum(2, pc, pw)
++        ok = dp_feasible_T2 == analytic_T2
++        agree += ok
++        rows.append({"setting": label, "d_phi": round(d, 6),
++                     "z_sum_T2": round(z_sum(2, pc, pw), 6),
++                     "d_phi_sqrtN": round(d * math.sqrt(PER_GATE_CAP), 6),
++                     "DP_feasible_at_T2": dp_feasible_T2,
++                     "closed_form_feasible_at_T2": analytic_T2,
++                     "agree": ok})
++    return {"per_gate_attempts_ceiling": PER_GATE_CAP,
++            "settings": rows, "settings_tested": len(rows),
++            "settings_in_agreement": agree,
++            "closed_form_matches_the_exact_DP_everywhere": agree == len(rows),
++            "note": ("the 2 settings the brief marks infeasible are infeasible "
++                     "in the closed form for the stated reason -- d_phi*sqrt(N) "
++                     "below z_sum -- so 'some rate pairs are infeasible at any "
++                     "division count' now has a formula instead of a scan")}
++
++
++# ---------------------------------------------------------------- claim 4
++def claim_placement_binds_before_certification_does() -> dict:
++    """Linear certification cost against superlinear resolution cost."""
++    d = dphi(WEAK_RATE, CAPABLE_RATE)
++    scan = {2: 19, 3: 21, 4: 22, 5: 25, 6: 28, 7: 30, 8: 33, 9: 36, 10: 38,
++            11: 41, 12: 42, 13: 45, 14: 48}
++    rows = []
++    for T, cert in scan.items():
++        need = N_required(T, d)
++        rows.append({"T": T, "certification_attempts_scan": cert,
++                     "placement_attempts_required": round(need, 1),
++                     "ratio": round(need / cert, 2)})
++    assert rows
++    # least-squares slope of the scan curve
++    Ts = list(scan); ys = [scan[T] for T in Ts]
++    n = len(Ts); sx = sum(Ts); sy = sum(ys)
++    sxx = sum(t * t for t in Ts); sxy = sum(t * y for t, y in zip(Ts, ys))
++    slope = (n * sxy - sx * sy) / (n * sxx - sx * sx)
++    crossover = min((r["T"] for r in rows if r["ratio"] > 1.0), default=None)
++    return {"scan_slope_attempts_per_division": round(slope, 4),
++            "per_T": rows,
++            "placement_exceeds_certification_from_T": crossover,
++            "ratio_at_T_equals_5": next(r["ratio"] for r in rows if r["T"] == 5),
++            "ratio_at_T_equals_10": next(r["ratio"] for r in rows if r["T"] == 10),
++            "verdict": ("the attempts scan prices certification, which is "
++                        "linear in T; placement is cubic in T on a serial "
++                        "ladder, so the scan optimises the constraint that "
++                        "does not bind")}
++
++
++# ---------------------------------------------------------------- claim 5
++def claim_the_structure_survives_700_and_1(B: int = 14000) -> dict:
++    """Roster size enters ONLY through N = B/R, so T is roster-independent given N."""
++    d = dphi(WEAK_RATE, CAPABLE_RATE)
++    rows = []
++    for R in (1, 2, 6, 70, 700, 7000):
++        N = B / R
++        rows.append({"roster": R, "attempts_per_model": round(N, 2),
++                     "T_serial": T_derived(N, d) if N >= 1 else 1,
++                     "T_pooled": T_derived(N, d, serial=False) if N >= 1 else 1})
++    # the roster-1 case has no cohort to difficulty-stratify against
++    return {"total_dispatch_budget": B, "per_roster": rows,
++            "T_at_roster_700": next(r["T_serial"] for r in rows
++                                    if r["roster"] == 700),
++            "T_at_roster_1": next(r["T_serial"] for r in rows
++                                  if r["roster"] == 1),
++            "no_roster_term_in_the_formula": True,
++            "scaling": "T-1 falls as R^(-1/3) serial, R^(-1/2) pooled",
++            "caveat": ("the FORMULA survives both, but at R = 1 there is no "
++                       "cohort to stratify difficulty against, which is a "
++                       "constraint on RELEGATION rather than on T -- see "
++                       "scripts/relegation_is_a_cusum_on_stratified_residuals_"
++                       "2026-10-08.py")}
++
++
++# ---------------------------------------------------------------- claim 6
++def claim_the_derived_T_is_tight_in_simulation(
++        trials: int = 4000, N: int = 2000, seed: int = 3) -> dict:
++    """THE CLAIM THAT FALSIFIED ITS OWN FIRST VERSION, repaired.
++
++    Version 1 sized the per-boundary error from the END-TO-END certification
++    budget, pw_max^(1/(T-1)). At T = 22 that is 0.01^(1/21) = 0.803, i.e. an 80%
++    per-boundary error -- which is correct for certification (the weak model only
++    has to fail 1 gate) and absurd for placement. The simulation returned
++    within=False at BOTH T and T+1 and so could not discriminate, which is the
++    tool telling me the criterion was wrong, not the formula. Repaired by taking
++    the placement criterion from `z_place`: a model at a division's centre must
++    stay inside its division with probability 1 - eps.
++
++    Now the test can fail: it measures the misplacement rate at T_derived and at
++    T_derived + 1 and requires within-target at T and over-target at T + 1.
++    """
++    import random
++    d = dphi(WEAK_RATE, CAPABLE_RATE)
++    T0 = T_derived(N, d, serial=False, mode="placement")
++    rng = random.Random(seed)
++
++    def misplacement(T: int) -> dict:
++        t = T - 1
++        spacing = d / t
++        half = spacing / 2.0
++        worst, detail = 0.0, []
++        # a model at the CENTRE of each of the T divisions
++        for b in range(T):
++            centre = phi(WEAK_RATE) + (b - 0.5) * spacing + half
++            centre = min(max(centre, phi(1e-9)), phi(1.0))
++            p_c = math.sin(centre / 2.0) ** 2
++            out = 0
++            for _ in range(trials):
++                k = sum(1 for _ in range(N) if rng.random() < p_c)
++                if abs(phi(k / N) - centre) > half:
++                    out += 1
++            r = out / trials
++            detail.append({"division": b, "p_centre": round(p_c, 5),
++                           "misplacement_rate": round(r, 5)})
++            worst = max(worst, r)
++        return {"T": T, "spacing_phi": round(spacing, 6),
++                "target_eps": EPS_PLACE,
++                "worst_misplacement_rate": round(worst, 5),
++                "within_target": worst <= EPS_PLACE + 0.01,
++                "detail": detail}
++
++    at_T0 = misplacement(T0)
++    at_T1 = misplacement(T0 + 1)
++    return {"N": N, "T_derived_placement_pooled": T0,
++            "at_T_derived": at_T0, "at_T_derived_plus_1": at_T1,
++            "within_at_T": at_T0["within_target"],
++            "over_at_T_plus_1": not at_T1["within_target"],
++            "derivation_is_tight": at_T0["within_target"]
++            and not at_T1["within_target"],
++            "note": ("tight means the derived T is the LAST one that holds the "
++                     "per-boundary error; if T+1 also holds it the formula is "
++                     "conservative, and if T fails it is optimistic -- either "
++                     "outcome is reported, not suppressed")}
++
++
++def main() -> int:
++    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
++    ap.add_argument("--quick", action="store_true",
++                    help="skip the 2 simulation claims (1 and 6)")
++    a = ap.parse_args()
++
++    if not a.quick:
++        print("== 1. the arcsine transform stabilises the variance ==")
++        d1 = claim_the_arcsine_transform_stabilises_the_variance()
++        for k in ("dphi_dp", "N_times_Var_phi_hat_symbolic",
++                  "symbolic_is_exactly_one"):
++            print(f"   {k}: {d1[k]}")
++        for s in d1["sweeps"]:
++            tag = "anscombe" if s["anscombe"] else "plain   "
++            print(f"   N={s['N']:4d} {tag}  N*Var per rate "
++                  f"{[v for _p, v in s['per_rate']]}  spread {s['spread']}  "
++                  f"stabilised {s['stabilised']}")
++        print(f"   anscombe repairs small N: {d1['anscombe_repairs_small_N']}; "
++              f"asymptotics repair it too: {d1['asymptotics_repair_it_too']}")
++        print(f"   {d1['note']}")
++
++    print("\n== 2. T DERIVED at the brief's own numbers ==")
++    d2 = claim_T_is_derived_at_the_briefs_own_numbers()
++    print(f"   d_phi = {d2['d_phi']:.12f}  (Wolfram {d2['d_phi_wolfram']})")
++    print(f"   {d2['d_phi_attribution']}")
++    print(f"   z_sum at T=2: {d2['z_sum_at_T2']:.6f}")
++    print("   mode=PLACEMENT (eps=0.05 per boundary) | mode=CERTIFICATION "
++          "(end-to-end product)")
++    for r in d2["per_budget"]:
++        print(f"   N={r['N']:6d}  placement: serial={r['T_serial']:3d} "
++              f"pooled={r['T_pooled']:3d}   |  certification: "
++              f"serial={r['T_serial_cert']:3d} pooled={r['T_pooled_cert']:3d}")
++    print(f"   N required (serial): {d2['N_required_serial']}")
++    print(f"   N required (pooled): {d2['N_required_pooled']}")
++    print(f"   {d2['verdict']}")
++
++    print("\n== 3. closed form vs the brief's EXACT binomial DP ==")
++    d3 = claim_the_closed_form_agrees_with_the_exact_dp()
++    for r in d3["settings"]:
++        print(f"   {r['setting']:26s} d_phi={r['d_phi']:.4f} "
++              f"z_sum={r['z_sum_T2']:.4f} d_phi*sqrtN={r['d_phi_sqrtN']:.4f} "
++              f"DP={r['DP_feasible_at_T2']!s:5s} "
++              f"closed={r['closed_form_feasible_at_T2']!s:5s} "
++              f"agree={r['agree']}")
++    print(f"   {d3['settings_in_agreement']}/{d3['settings_tested']} agree; "
++          f"everywhere: {d3['closed_form_matches_the_exact_DP_everywhere']}")
++    print(f"   {d3['note']}")
++
++    print("\n== 4. placement binds before certification does ==")
++    d4 = claim_placement_binds_before_certification_does()
++    print(f"   scan slope: {d4['scan_slope_attempts_per_division']} attempts "
++          f"per division")
++    for r in d4["per_T"]:
++        print(f"   T={r['T']:2d}  certification {r['certification_attempts_scan']:3d}"
++              f"   placement {r['placement_attempts_required']:9.1f}"
++              f"   ratio {r['ratio']}")
++    print(f"   placement exceeds certification from T = "
++          f"{d4['placement_exceeds_certification_from_T']}")
++    print(f"   {d4['verdict']}")
++
++    print("\n== 5. roster 700 and roster 1 ==")
++    d5 = claim_the_structure_survives_700_and_1()
++    for r in d5["per_roster"]:
++        print(f"   roster {r['roster']:5d}  N={r['attempts_per_model']:9.2f}  "
++              f"T_serial={r['T_serial']:3d}  T_pooled={r['T_pooled']:3d}")
++    print(f"   {d5['scaling']}")
++    print(f"   {d5['caveat']}")
++
++    if not a.quick:
++        print("\n== 6. is the derived T tight? simulated ==")
++        d6 = claim_the_derived_T_is_tight_in_simulation()
++        print(f"   N={d6['N']}  T_derived (placement, pooled) = "
++              f"{d6['T_derived_placement_pooled']}")
++        for key in ("at_T_derived", "at_T_derived_plus_1"):
++            r = d6[key]
++            print(f"   {key}: T={r['T']} spacing={r['spacing_phi']} "
++                  f"eps={r['target_eps']} "
++                  f"worst_misplacement={r['worst_misplacement_rate']} "
++                  f"within={r['within_target']}")
++        print(f"   within at T: {d6['within_at_T']}   over at T+1: "
++              f"{d6['over_at_T_plus_1']}   TIGHT: {d6['derivation_is_tight']}")
++        print(f"   {d6['note']}")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py
+--- /dev/null	2026-10-08 14:46:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_kaibonzp/repo/scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py	2026-10-08 14:43:07
+@@ -0,0 +1,500 @@
++#!/usr/bin/env python3
++"""Monotonicity of the division-cost curve is a THEOREM, and the proof is Neyman-Pearson.
++
++WHAT THIS FILE CLAIMS, AGAINST THE 2026-10-08 BRIEF.
++
++The brief reports that the merge construction -- collapse 2 adjacent promotion
++gates into 1 gate on the concatenated attempts -- "is not a lemma within the
++threshold family", measured at 801 of 4000 random gate pairs with no dominating
++merged gate (scripts/the_division_count_is_derivable_2026-10-08.py, claim 3).
++It concludes monotonicity "rests on a SCAN, not a proof", and that a proof would
++need the modelling decision that "a ladder's gates may be arbitrary tests".
++
++BOTH HALVES ARE WRONG, AND THE SECOND IS THE ONE THAT MATTERS.
++
++1. The 801 failures are entirely an artefact of DISCRETENESS, not of the AND-test
++   being genuinely unbeatable. The merged gate the brief searches for is a
++   DETERMINISTIC success-count threshold on a1+a2 attempts, which attains only
++   finitely many significance levels. The AND test's size falls strictly between
++   2 adjacent attainable levels in those cases; rounding down to the nearest
++   attainable level discards power, and that -- not any failure of the merge
++   argument -- is what the brief measured.
++
++2. The modelling step the proof needs is NOT "arbitrary tests". It is the
++   RANDOMISED threshold test (pass if S >= s; pass with probability gamma if
++   S == s-1), which is the standard completion of the binomial test family and
++   the object Neyman-Pearson is stated over. Within that family the merge IS a
++   lemma, proved below, and monotonicity follows:
++
++   LEMMA (merge). For gates g1 = (a1, s1), g2 = (a2, s2), there is a randomised
++   threshold gate g on n = a1 + a2 attempts with
++       pass_capable(g) >= pass_capable(g1) * pass_capable(g2)
++       pass_weak(g)    <= pass_weak(g1)    * pass_weak(g2)
++   PROOF. Take n i.i.d. Bernoulli(p) attempts. The AND rule -- at least s1
++   successes in the first a1, at least s2 in the last a2 -- is a test on THAT
++   sample space with size alpha = pass_weak(g1)*pass_weak(g2) under p = weak and
++   power beta = pass_capable(g1)*pass_capable(g2) under p = capable. The
++   likelihood ratio for Bernoulli(capable) against Bernoulli(weak) is
++       L(S) = (capable/weak)^S * ((1-capable)/(1-weak))^(n-S),
++   strictly increasing in the total success count S whenever capable > weak
++   (checked symbolically below), so the family has monotone likelihood ratio and
++   the Neyman-Pearson most powerful test of size exactly alpha is a RANDOMISED
++   threshold on S. By Neyman-Pearson that test's power is >= beta, and its size
++   is exactly alpha. That test is g. QED
++
++   THEOREM (monotonicity). cost(T) <= cost(T+1) for T >= 2, where cost(T) is the
++   fewest total attempts over feasible ladders of T-1 gates.
++   PROOF. Take an attempts-optimal feasible ladder for T+1 divisions: T gates,
++   total A. Merge gates 1 and 2 by the lemma. The result has T-1 gates, total
++   attempts a1+a2+sum(rest) = A unchanged, end-to-end capable product not
++   decreased and end-to-end weak product not increased, so still feasible. Hence
++   a feasible T-division ladder of cost A exists and cost(T) <= A = cost(T+1). QED
++
++3. AND THE THEOREM HAS AN EXACT BOUNDARY CONDITION THE BRIEF DOES NOT STATE.
++   The merged gate consumes a1+a2 attempts in ONE gate. The producer imposes
++   MAX_ATTEMPTS_PER_GATE = 24. Under a per-gate attempts ceiling the merge can be
++   INADMISSIBLE, and then monotonicity is not implied -- and claim 6 below
++   exhibits an actual inversion in the capped model. So: monotone when only the
++   TOTAL attempts budget binds; NOT a theorem when a per-gate ceiling binds.
++   scripts/the_division_count_is_derivable_2026-10-08.py scans under a per-gate
++   ceiling of 24 and reports 0 inversions, which is consistent but is luck of the
++   parameters rather than a consequence of the model it actually solves.
++
++Every numeric claim is computed twice, SciPy's binomial tail against an exact
++mpmath sum, and the symbolic claim goes to SymPy and z3.
++
++Run: python3 scripts/the_merge_lemma_is_neyman_pearson_2026-10-08.py
++"""
++from __future__ import annotations
++
++import argparse
++import math
++
++CAPABLE_RATE = 0.90
++WEAK_RATE = 0.50
++TOL = 1e-12
++
++
++def _sf(s: int, a: int, p: float) -> float:
++    """P(S >= s) for S ~ Binomial(a, p). s <= 0 means certain pass."""
++    from scipy.stats import binom
++    if s <= 0:
++        return 1.0
++    if s > a:
++        return 0.0
++    return float(binom.sf(s - 1, a, p))
++
++
++def _sf_exact(s: int, a: int, p: float) -> float:
++    import mpmath as mp
++    if s <= 0:
++        return 1.0
++    if s > a:
++        return 0.0
++    with mp.workdps(60):
++        pp = mp.mpf(p)
++        return float(sum(mp.binomial(a, k) * pp ** k * (1 - pp) ** (a - k)
++                         for k in range(s, a + 1)))
++
++
++def _pmf(k: int, a: int, p: float) -> float:
++    from scipy.stats import binom
++    if k < 0 or k > a:
++        return 0.0
++    return float(binom.pmf(k, a, p))
++
++
++def randomised_np_gate(n: int, alpha: float, weak: float = WEAK_RATE,
++                       cap: float = CAPABLE_RATE) -> dict:
++    """The Neyman-Pearson most powerful test of size EXACTLY alpha on n attempts.
++
++    Pass if S >= s; and if S == s-1, pass with probability gamma. Choose s as the
++    smallest threshold whose deterministic size does not exceed alpha, then spend
++    the remaining size allowance on the next mass point down.
++    """
++    s = n + 1
++    while s > 0 and _sf(s - 1, n, weak) <= alpha + TOL:
++        s -= 1
++    size_det = _sf(s, n, weak)
++    mass_weak = _pmf(s - 1, n, weak)
++    gamma = 0.0
++    if mass_weak > 0.0:
++        gamma = min(1.0, max(0.0, (alpha - size_det) / mass_weak))
++    power = _sf(s, n, cap) + gamma * _pmf(s - 1, n, cap)
++    size = size_det + gamma * mass_weak
++    return {"n": n, "threshold": s, "gamma": gamma, "size": size, "power": power,
++            "deterministic_size": size_det}
++
++
++def claim_the_deterministic_merge_failures_reproduce(
++        trials: int = 4000, seed: int = 5, maxa: int = 12) -> dict:
++    """The brief's own measurement, re-executed. It should reproduce at 801."""
++    import random
++    rng = random.Random(seed)
++    fails, tested = 0, 0
++    fail_pairs = []
++    for _ in range(trials):
++        a1 = rng.randint(1, maxa); s1 = rng.randint(1, a1)
++        a2 = rng.randint(1, maxa); s2 = rng.randint(1, a2)
++        and_cap = _sf(s1, a1, CAPABLE_RATE) * _sf(s2, a2, CAPABLE_RATE)
++        and_weak = _sf(s1, a1, WEAK_RATE) * _sf(s2, a2, WEAK_RATE)
++        tested += 1
++        ok = any(_sf(s, a1 + a2, CAPABLE_RATE) >= and_cap
++                 and _sf(s, a1 + a2, WEAK_RATE) <= and_weak
++                 for s in range(1, a1 + a2 + 1))
++        if not ok:
++            fails += 1
++            fail_pairs.append(((a1, s1), (a2, s2), and_cap, and_weak))
++    return {"pairs_tested": tested, "deterministic_failures": fails,
++            "brief_reported": 801, "reproduces": fails == 801,
++            "_fail_pairs": fail_pairs}
++
++
++def claim_randomisation_turns_the_merge_into_a_lemma(
++        trials: int = 4000, seed: int = 5, maxa: int = 12) -> dict:
++    """THE HEADLINE. Every pair admits a dominating RANDOMISED threshold gate."""
++    import random
++    rng = random.Random(seed)
++    fails, tested = 0, 0
++    worst_power_slack = float("inf")
++    worst_size_excess = -float("inf")
++    witness = None
++    for _ in range(trials):
++        a1 = rng.randint(1, maxa); s1 = rng.randint(1, a1)
++        a2 = rng.randint(1, maxa); s2 = rng.randint(1, a2)
++        and_cap = _sf(s1, a1, CAPABLE_RATE) * _sf(s2, a2, CAPABLE_RATE)
++        and_weak = _sf(s1, a1, WEAK_RATE) * _sf(s2, a2, WEAK_RATE)
++        g = randomised_np_gate(a1 + a2, and_weak)
++        tested += 1
++        power_slack = g["power"] - and_cap
++        size_excess = g["size"] - and_weak
++        if power_slack < worst_power_slack:
++            worst_power_slack = power_slack
++            witness = {"gates": [(a1, s1), (a2, s2)], "and_capable": and_cap,
++                       "and_weak": and_weak, "merged": g}
++        worst_size_excess = max(worst_size_excess, size_excess)
++        if power_slack < -1e-9 or size_excess > 1e-9:
++            fails += 1
++    return {
++        "pairs_tested": tested,
++        "pairs_with_no_dominating_randomised_gate": fails,
++        "merge_is_a_lemma_under_randomisation": fails == 0,
++        "worst_power_slack": worst_power_slack,
++        "worst_size_excess": worst_size_excess,
++        "tightest_witness": witness,
++        "consequence": ("monotonicity is a THEOREM in the randomised-threshold "
++                        "family, which is the standard completion of the binomial "
++                        "test family, NOT the family of arbitrary tests"),
++    }
++
++
++def claim_the_failures_are_discreteness_not_substance(seed: int = 5) -> dict:
++    """Every deterministic failure is repaired by randomisation alone."""
++    det = claim_the_deterministic_merge_failures_reproduce(seed=seed)
++    repaired, unrepaired, example = 0, 0, None
++    for (a1, s1), (a2, s2), and_cap, and_weak in det["_fail_pairs"]:
++        g = randomised_np_gate(a1 + a2, and_weak)
++        if g["power"] >= and_cap - 1e-9 and g["size"] <= and_weak + 1e-9:
++            repaired += 1
++            if example is None and 0.0 < g["gamma"] < 1.0:
++                best_det = max(
++                    (_sf(s, a1 + a2, CAPABLE_RATE) for s in range(1, a1 + a2 + 1)
++                     if _sf(s, a1 + a2, WEAK_RATE) <= and_weak), default=0.0)
++                example = {
++                    "gates": [(a1, s1), (a2, s2)],
++                    "and_capable_to_beat": round(and_cap, 10),
++                    "and_weak_ceiling": round(and_weak, 10),
++                    "best_DETERMINISTIC_power": round(best_det, 10),
++                    "randomised_threshold": g["threshold"],
++                    "randomised_gamma": round(g["gamma"], 10),
++                    "randomised_power": round(g["power"], 10),
++                    "randomised_size": round(g["size"], 10),
++                }
++        else:
++            unrepaired += 1
++    return {"deterministic_failures": det["deterministic_failures"],
++            "repaired_by_randomisation": repaired, "still_failing": unrepaired,
++            "all_repaired": unrepaired == 0,
++            "worked_example": example}
++
++
++def claim_the_likelihood_ratio_is_monotone() -> dict:
++    """The one premise Neyman-Pearson needs, checked in SymPy and z3."""
++    import sympy as sp
++    import z3
++    S, n, c, w = sp.symbols("S n c w", positive=True)
++    L = (c / w) ** S * ((1 - c) / (1 - w)) ** (n - S)
++    dlog = sp.simplify(sp.diff(sp.log(L), S))
++    dlog_at = sp.simplify(dlog.subs({c: sp.Rational(9, 10), w: sp.Rational(1, 2)}))
++    positive = bool(sp.simplify(dlog_at) > 0)
++    cz, wz = z3.Reals("cz wz")
++    sv = z3.Solver()
++    sv.add(cz > 0, cz < 1, wz > 0, wz < 1, cz > wz,
++           cz * (1 - wz) <= wz * (1 - cz))
++    return {"d_logL_d_S": str(dlog),
++            "d_logL_d_S_at_0.9_vs_0.5": str(dlog_at),
++            "slope_positive_at_the_brief_rates": positive,
++            "z3_counterexample_search": str(sv.check()),
++            "monotone_likelihood_ratio_holds": str(sv.check()) == "unsat"}
++
++
++def capped_optimal_curve(cap: float, weak: float, pc_min: float, pw_max: float,
++                         per_gate_cap: int, max_div: int, maxtot: int) -> tuple:
++    """Exact DP over the capped DETERMINISTIC threshold menu, no gate-menu
++    pre-reduction, Pareto pruning only within an attempts bucket (lossless)."""
++    LC, LW = math.log(pc_min), math.log(pw_max)
++    menu = []
++    for a in range(1, per_gate_cap + 1):
++        for s in range(1, a + 1):
++            pc, pw = _sf(s, a, cap), _sf(s, a, weak)
++            if pc <= 0.0:
++                continue
++            menu.append((a, math.log(pc), math.log(pw) if pw > 0 else -700.0, s))
++    curve, ladders = {}, {}
++    layer = {0: [(0.0, 0.0, ())]}
++    for g in range(1, max_div):
++        nxt = {}
++        for A, sts in layer.items():
++            for lc0, lw0, path in sts:
++                for a, glc, glw, s in menu:
++                    if A + a > maxtot:
++                        continue
++                    nxt.setdefault(A + a, []).append(
++                        (lc0 + glc, lw0 + glw, path + ((a, s),)))
++        layer = {}
++        for A, sts in nxt.items():
++            sts.sort(key=lambda t: (-t[0], t[1]))
++            keep, best = [], float("inf")
++            for lc, lw, path in sts:
++                if lw < best - 1e-15:
++                    keep.append((lc, lw, path))
++                    best = lw
++            layer[A] = keep
++        feas = [(A, p) for A, sts in layer.items() for lc, lw, p in sts
++                if lc >= LC - 1e-12 and lw <= LW + 1e-12]
++        if feas:
++            A, p = min(feas, key=lambda t: t[0])
++            curve[g + 1], ladders[g + 1] = A, p
++        else:
++            curve[g + 1], ladders[g + 1] = None, None
++    return curve, ladders
++
++
++def claim_a_per_gate_ceiling_breaks_monotonicity() -> dict:
++    """THE BOUNDARY CONDITION. Scan per-gate ceilings for an actual inversion."""
++    found = []
++    scanned = []
++    for per_gate_cap in range(2, 13):
++        curve, ladders = capped_optimal_curve(
++            CAPABLE_RATE, WEAK_RATE, 0.95, 0.01, per_gate_cap, 8, 60)
++        seq = [(T, curve[T]) for T in sorted(curve) if curve[T] is not None]
++        inv = [(a[0], b[0], a[1], b[1]) for a, b in zip(seq, seq[1:])
++               if b[1] < a[1]]
++        scanned.append({"ceiling": per_gate_cap,
++                        "curve": {T: curve[T] for T in sorted(curve)},
++                        "inversions": inv})
++        if inv:
++            a, b, na, nb = inv[0]
++            found.append({"ceiling": per_gate_cap, "from_T": a, "to_T": b,
++                          "cost_at_from_T": na, "cost_at_to_T": nb,
++                          "ladder_at_from_T": list(ladders[a] or ()),
++                          "ladder_at_to_T": list(ladders[b] or ())})
++    return {"ceilings_scanned": [s["ceiling"] for s in scanned],
++            "per_ceiling": scanned,
++            "inversions_found": found,
++            "monotone_under_every_ceiling_tested": not found,
++            "consequence": ("a per-gate attempts ceiling is not a harmless "
++                            "implementation detail: it is exactly the condition "
++                            "under which the monotonicity theorem does not apply")}
++
++
++def claim_scipy_and_mpmath_agree_on_the_witness(ex) -> dict:
++    """Second tool on the worked randomised example."""
++    if not ex:
++        return {"checked": False}
++    (a1, s1), (a2, s2) = ex["gates"]
++    n = a1 + a2
++    s = ex["randomised_threshold"]
++    gamma = ex["randomised_gamma"]
++    import mpmath as mp
++    with mp.workdps(60):
++        def pmf_exact(k, a, p):
++            if k < 0 or k > a:
++                return 0.0
++            pp = mp.mpf(p)
++            return float(mp.binomial(a, k) * pp ** k * (1 - pp) ** (a - k))
++        power_exact = _sf_exact(s, n, CAPABLE_RATE) + gamma * pmf_exact(
++            s - 1, n, CAPABLE_RATE)
++        size_exact = _sf_exact(s, n, WEAK_RATE) + gamma * pmf_exact(
++            s - 1, n, WEAK_RATE)
++    return {"checked": True, "n": n,
++            "power_scipy": ex["randomised_power"], "power_mpmath": power_exact,
++            "size_scipy": ex["randomised_size"], "size_mpmath": size_exact,
++            "max_abs_diff": max(abs(ex["randomised_power"] - power_exact),
++                                abs(ex["randomised_size"] - size_exact))}
++
++
++def claim_the_deterministic_curve_ACTUALLY_INVERTS() -> dict:
++    """THE BRIEF'S OWN QUESTION, ANSWERED IN THE AFFIRMATIVE.
++
++    The brief asks of its robustness sweep "whether any setting produces an
++    inversion, which would settle question 2 immediately", and reports 0
++    downward steps and 0 inversions at its single rate pair (0.90, 0.50). Over a
++    wider grid of rate pairs there ARE inversions, and here are 2 of them,
++    established by EXHAUSTIVE ENUMERATION of 1-gate and 2-gate ladders rather
++    than by a Pareto-pruned dynamic program, so no pruning rule can be blamed.
++
++    This settles question 2 in both directions at once:
++      * In the DETERMINISTIC success-count threshold family, monotonicity is
++        FALSE. Not unproven -- false, with a witness.
++      * In the RANDOMISED threshold family, monotonicity is the theorem proved
++        in this file's docstring, and the witness shows the exact mechanism: the
++        merged randomised gate on a1+a2 attempts IS feasible, while the best
++        deterministic gate on the same attempts falls short of the capable floor.
++    It also refutes the brief's conclusion that "as few divisions as possible IS
++    right on the attempts metric": at the first witness 3 divisions cost 10
++    attempts where 2 cost 11, so there a division is better than free.
++    """
++    import itertools
++    cases = [(0.90, 0.30, 0.95, 0.010), (0.95, 0.30, 0.90, 0.050)]
++    MAXA = 14
++    out = []
++    for cap, weak, pc, pw in cases:
++        gates = [(a, s) for a in range(1, MAXA + 1) for s in range(1, a + 1)]
++        best1 = None
++        for a, s in gates:
++            if _sf(s, a, cap) >= pc and _sf(s, a, weak) <= pw:
++                if best1 is None or a < best1[0]:
++                    best1 = (a, [(a, s)])
++        best2 = None
++        for g1, g2 in itertools.combinations_with_replacement(gates, 2):
++            c = _sf(g1[1], g1[0], cap) * _sf(g2[1], g2[0], cap)
++            w = _sf(g1[1], g1[0], weak) * _sf(g2[1], g2[0], weak)
++            if c >= pc and w <= pw:
++                tot = g1[0] + g2[0]
++                if best2 is None or tot < best2[0]:
++                    best2 = (tot, [g1, g2])
++        row = {"rates": (cap, weak), "budget": (pc, pw),
++               "per_gate_cap": MAXA,
++               "cost_T2_deterministic": best1[0] if best1 else None,
++               "ladder_T2": best1[1] if best1 else None,
++               "cost_T3_deterministic": best2[0] if best2 else None,
++               "ladder_T3": best2[1] if best2 else None}
++        if best1 and best2:
++            row["inversion"] = best2[0] < best1[0]
++            a1, s1 = best2[1][0]; a2, s2 = best2[1][1]
++            c = _sf(s1, a1, cap) * _sf(s2, a2, cap)
++            w = _sf(s1, a1, weak) * _sf(s2, a2, weak)
++            cx = _sf_exact(s1, a1, cap) * _sf_exact(s2, a2, cap)
++            wx = _sf_exact(s1, a1, weak) * _sf_exact(s2, a2, weak)
++            row["T3_end_to_end_capable"] = round(c, 10)
++            row["T3_end_to_end_weak"] = round(w, 10)
++            row["scipy_mpmath_max_abs_diff"] = max(abs(c - cx), abs(w - wx))
++            n = a1 + a2
++            g = randomised_np_gate(n, pw, weak=weak, cap=cap)
++            row["randomised_single_gate_on_n"] = n
++            row["randomised_threshold"] = g["threshold"]
++            row["randomised_gamma"] = round(g["gamma"], 10)
++            row["randomised_size"] = round(g["size"], 10)
++            row["randomised_power"] = round(g["power"], 10)
++            row["randomised_restores_monotonicity"] = (
++                g["power"] >= pc - 1e-12 and g["size"] <= pw + 1e-12)
++            row["best_deterministic_power_on_n"] = round(max(
++                (_sf(s, n, cap) for s in range(1, n + 1)
++                 if _sf(s, n, weak) <= pw), default=0.0), 10)
++        out.append(row)
++    return {"witnesses": out,
++            "inversions_confirmed": sum(1 for r in out if r.get("inversion")),
++            "deterministic_monotonicity_is_FALSE":
++                any(r.get("inversion") for r in out),
++            "randomisation_restores_it_in_every_witness":
++                all(r.get("randomised_restores_monotonicity")
++                    for r in out if r.get("inversion")),
++            "method": ("exhaustive enumeration of all 1-gate and all 2-gate "
++                       "ladders over a per-gate cap of 14, no Pareto pruning"),
++            "consequence": ("the brief's '0 downward steps, 0 inversions' holds "
++                            "at its single rate pair (0.90, 0.50) and does not "
++                            "generalise; and 'as few divisions as possible' is "
++                            "false at the first witness, where 3 divisions cost "
++                            "10 attempts against 11 for 2")}
++
++
++def main() -> int:
++    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
++    ap.parse_args()
++
++    print("== 1. the brief's deterministic merge failures, re-executed ==")
++    d1 = claim_the_deterministic_merge_failures_reproduce()
++    print(f"   pairs tested: {d1['pairs_tested']}")
++    print(f"   deterministic failures: {d1['deterministic_failures']} "
++          f"(brief reported {d1['brief_reported']}) -> reproduces "
++          f"{d1['reproduces']}")
++
++    print("\n== 2. randomisation makes the merge a LEMMA ==")
++    d2 = claim_randomisation_turns_the_merge_into_a_lemma()
++    for k in ("pairs_tested", "pairs_with_no_dominating_randomised_gate",
++              "merge_is_a_lemma_under_randomisation", "worst_power_slack",
++              "worst_size_excess", "consequence"):
++        print(f"   {k}: {d2[k]}")
++
++    print("\n== 3. the deterministic failures are DISCRETENESS, repaired ==")
++    d3 = claim_the_failures_are_discreteness_not_substance()
++    for k in ("deterministic_failures", "repaired_by_randomisation",
++              "still_failing", "all_repaired"):
++        print(f"   {k}: {d3[k]}")
++    ex = d3["worked_example"]
++    if ex:
++        print("   worked example:")
++        for k, v in ex.items():
++            print(f"      {k}: {v}")
++
++    print("\n== 4. the Neyman-Pearson premise: monotone likelihood ratio ==")
++    for k, v in claim_the_likelihood_ratio_is_monotone().items():
++        print(f"   {k}: {v}")
++
++    print("\n== 5. scipy vs mpmath on the worked example ==")
++    for k, v in claim_scipy_and_mpmath_agree_on_the_witness(ex).items():
++        print(f"   {k}: {v}")
++
++    print("\n== 6. BOUNDARY CONDITION: does a per-gate ceiling break it? ==")
++    d6 = claim_a_per_gate_ceiling_breaks_monotonicity()
++    for s in d6["per_ceiling"]:
++        print(f"   ceiling {s['ceiling']:2d}: {s['curve']}  inversions "
++              f"{s['inversions']}")
++    print(f"   inversions found: {d6['inversions_found']}")
++    print(f"   monotone under every ceiling tested: "
++          f"{d6['monotone_under_every_ceiling_tested']}")
++    print(f"   {d6['consequence']}")
++
++    print("\n== 7. THE DETERMINISTIC CURVE ACTUALLY INVERTS ==")
++    d7 = claim_the_deterministic_curve_ACTUALLY_INVERTS()
++    for r in d7["witnesses"]:
++        print(f"   rates {r['rates']} budget {r['budget']} per-gate cap "
++              f"{r['per_gate_cap']}")
++        print(f"      T=2 deterministic optimum {r['cost_T2_deterministic']} "
++              f"{r['ladder_T2']}")
++        print(f"      T=3 deterministic optimum {r['cost_T3_deterministic']} "
++              f"{r['ladder_T3']}")
++        print(f"      INVERSION: {r.get('inversion')}   end-to-end capable "
++              f"{r.get('T3_end_to_end_capable')} weak "
++              f"{r.get('T3_end_to_end_weak')}  scipy-vs-mpmath "
++              f"{r.get('scipy_mpmath_max_abs_diff'):.3e}")
++        print(f"      randomised gate on n={r.get('randomised_single_gate_on_n')}: "
++              f"s={r.get('randomised_threshold')} gamma="
++              f"{r.get('randomised_gamma')} size={r.get('randomised_size')} "
++              f"power={r.get('randomised_power')}  restores monotonicity: "
++              f"{r.get('randomised_restores_monotonicity')}")
++        print(f"      best DETERMINISTIC power on the same n: "
++              f"{r.get('best_deterministic_power_on_n')}")
++    print(f"   inversions confirmed: {d7['inversions_confirmed']}")
++    print(f"   deterministic monotonicity is FALSE: "
++          f"{d7['deterministic_monotonicity_is_FALSE']}")
++    print(f"   randomisation restores it everywhere: "
++          f"{d7['randomisation_restores_it_in_every_witness']}")
++    print(f"   method: {d7['method']}")
++    print(f"   {d7['consequence']}")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

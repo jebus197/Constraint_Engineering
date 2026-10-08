@@ -39,7 +39,14 @@ import pytest
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "bench"))
-os.environ.setdefault("PANEL_BRIEF_UNCHECKED", "1")
+# `PANEL_BRIEF_UNCHECKED` REMOVED 2026-10-08. It was set at MODULE level with
+# `setdefault`, which never restores, so it leaked into every test running
+# after this file in the same process -- and it makes the dispatcher SKIP
+# brief validation, disabling the guard that stops money being spent on a
+# defective brief. A22 moved the brief binding out of import time, so the
+# variable is not needed for an import at all; verified by importing the
+# dispatcher with it absent. This instance predates 2026-10-08 and was found
+# while fixing 2 copies of the same pattern introduced that day.
 
 PANEL = importlib.import_module("confer_maths_panel_2026-09-05")
 

@@ -314,7 +314,79 @@ def surviving_round_evidence(dest: Path, round_names, blind_text=()) -> list:
     return out
 
 
-def build(repo: Path, blind_of=(), blind_text=()) -> Path:
+#: THE 1 FILE OF ITS OWN ROUND A SEAT IS SUPPOSED TO SEE.
+OWN_ROUND_KEEP = ("BRIEF.md",)
+
+
+def coseat_survivors(dest: Path, own_round) -> list:
+    """What a sandbox can still reach of ITS OWN round, brief excluded.
+
+    THE GAP THIS CLOSES, PROVEN BY EXECUTION 2026-10-08 against the live tree of
+    `division_count_and_bidirectional_ladder_blind_2026-10-08`. `blind_of` names
+    OTHER rounds. It has no way to say "blind of my own round's other seats", and
+    the first dispatch of a 2-seat blind round cannot know a co-seat will land
+    while it is still running. Measured on that round: built with `blind_of=()`
+    -- which is what it was running under -- a fresh sandbox carried
+    `fable.json` and `fable.tools.attempt1.json.txt`, the co-seat's whole 12,299
+    character reply. That is what a RETRY would have been handed, because
+    `fresh_sandbox_for_attempt` clones the LIVE tree at retry time.
+
+    AND THE EXISTING CONTROL CANNOT BE USED INSTEAD. Passing the round's own name
+    to `blind_of` removes the WHOLE directory, `BRIEF.md` with it, measured in the
+    same probe: a seat told to work in the tree would find no brief there at all.
+    So the fix needs file-level selectivity, not another entry in `blind_of`.
+
+    THE WALK IS `surviving_round_evidence`'S, NOT A SECOND ONE. Two predicates
+    about what counts as "an artefact of this round" would be the producer and
+    consumer drift this project keeps paying for -- each individually correct and
+    disagreeing at the boundary. This EXPANDS that function's output rather than
+    re-deriving it.
+
+    AND THE EXPANSION IS THE WHOLE POINT, because the first version of this
+    function got it wrong in the direction that reports success. The round name
+    appears in the DIRECTORY name, not in `fable.json`, so
+    `surviving_round_evidence`'s `rglob(f"*{name}*")` matches the directory and
+    nothing inside it. A first version discarded directories as "not evidence"
+    and therefore returned an EMPTY survivor list while the co-seat's reply sat
+    untouched in the sandbox -- a check that agreed with what it was hoping for.
+    Caught by looking at the files instead of at the predicate, which is this
+    project's own standing rule: check the predicate before the result.
+    """
+    if not own_round:
+        return []
+    keep = {(dest / "bench" / "logs" / str(own_round) / k).resolve()
+            for k in OWN_ROUND_KEEP}
+    out, seen = [], set()
+    for q in surviving_round_evidence(dest, (own_round,)):
+        # A MATCH MAY BE A DIRECTORY, and then its CONTENTS are the evidence.
+        members = sorted(q.rglob("*")) if q.is_dir() else [q]
+        for m in members:
+            if not m.is_file():
+                continue
+            try:
+                rm = m.resolve()
+            except OSError:
+                rm = m
+            if rm in keep or rm in seen:
+                continue
+            seen.add(rm)
+            out.append(m)
+    return out
+
+
+def purge_coseat_evidence(dest: Path, own_round) -> int:
+    """Remove this round's own seat artefacts, keeping only the brief."""
+    n = 0
+    for q in coseat_survivors(dest, own_round):
+        try:
+            q.unlink(missing_ok=True)
+            n += 1
+        except OSError:
+            continue
+    return n
+
+
+def build(repo: Path, blind_of=(), blind_text=(), own_round=None) -> Path:
     """A throwaway copy of `repo` a seat may write to freely.
 
     `blind_of` names panel rounds this sandbox must NOT be able to read, so a
@@ -375,6 +447,22 @@ def build(repo: Path, blind_of=(), blind_text=()) -> Path:
                 + ". A blind round that can read the other seat's reply is not a "
                 "blind round."
             )
+    # ITS OWN ROUND'S CO-SEAT REPLIES, same verify-and-refuse shape as the 2
+    # blocks above and for the same stated reason. Inert when `own_round` is None,
+    # so every existing caller behaves exactly as before.
+    if own_round:
+        purge_coseat_evidence(dest, own_round)
+        left = coseat_survivors(dest, own_round)
+        if left:
+            shutil.rmtree(base, ignore_errors=True)
+            raise RuntimeError(
+                f"panel sandbox still exposes {len(left)} artefact(s) of its OWN "
+                f"round {own_round!r}, e.g. "
+                + ", ".join(sorted(str(q.relative_to(dest)) for q in left[:4]))
+                + ". A seat that can read its co-seat's reply is not answering "
+                "blind, and a retry clones the live tree at retry time."
+            )
+
     # Credentials last, and VERIFIED rather than assumed: a scrub that silently
     # missed a file would leave the sandbox looking safe while it is not, which is
     # worse than no scrub at all because it would be trusted.

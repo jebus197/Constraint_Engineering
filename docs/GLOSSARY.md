@@ -30,7 +30,17 @@ what was actually written.
 
 ### Blackboard
 
-Communication topology where models share state through a central FindingRegistry rather than direct messaging. Models see only the registry summary, not each other's raw output. See also Star topology.
+Communication topology where models share state through a central FindingRegistry rather than direct messaging. Models see only the registry summary, not each other's raw output. See also Star topology (runner sense).
+
+**The term "star topology" has 2 distinct meanings in this project and conflating them has cost a procedure.** The RUNNER sense is this one: seats talk to a central registry rather than to each other, within a single experiment round. The PANEL sense is a 2-part review — a blind round followed by a joint round — and is a different mechanism at a different layer. Until 2026-10-08 only the runner sense was documented, while rounds were being reported as "star topology" in the panel sense; see Blind round / Joint round (panel review).
+
+### Blind round / Joint round (panel review)
+
+The two halves of a panel review under **star topology (panel sense)**. In the BLIND round each seat answers without access to any other seat's reply; in the JOINT round that follows, each seat sees the others' blind answers and may revise, concede or hold. Agreement reached in a blind round is independent evidence; agreement reached in a joint round may be deference, which this project does not accept as confirmation. Disagreement surviving the joint round is preserved as information rather than resolved by preference.
+
+Declared per round by `PANEL_BLIND_OF` (rounds whose replies must be purged from this round's sandboxes) and `PANEL_JOINT_OF` (rounds whose replies this round carries). Since 2026-10-08 the declaration is also WRITTEN to `topology.json` in the round directory, because an environment variable steers a run and leaves no evidence, so nothing afterwards could audit it.
+
+**Both halves are required.** Measured 2026-10-08, of 99 archived rounds collecting 2 or more replies, 15 had a joint round — 0.151515, Wilson [0.094023, 0.235041]. Producer: `scripts/the_joint_round_was_almost_never_run_2026-10-08.py`. A lone blind round reported as star topology is the failure the founder identified that day; the dispatcher now refuses a new blind round while an earlier one still owes its joint half.
 
 ### CC1
 

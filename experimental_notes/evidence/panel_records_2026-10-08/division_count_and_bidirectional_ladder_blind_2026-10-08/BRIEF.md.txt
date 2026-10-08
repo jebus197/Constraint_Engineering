@@ -1,0 +1,153 @@
+# The promotion ladder has a BOUNDED number of divisions, and nobody has priced them
+
+You are one seat of a 2-seat panel, answering BLIND. You cannot see the other seat's
+reply and it cannot see yours. A joint round follows once both blind replies are in.
+Disagreement between the 2 of you is the output this round exists to produce; it is
+not a problem to be smoothed away, and a round that agrees by deference has produced
+nothing.
+
+Work in the sandbox repository tree you have been given. RUN things. Every figure
+below names the script that produces it, and you are expected to execute those
+scripts and contradict them where they are wrong. The tool output is the evidence;
+reasoning selects and interprets it but never substitutes for it.
+
+---
+
+## 1. The founder's framing, in his own words
+
+He has now stated this 4 times and it is the constraint everything else answers to.
+**Capability is a MEASURED RATE. Model names are not a measure of anything.** The
+roster size is arbitrary and the schema must not care what it is:
+
+> "the system should be able to cope with 5, or 6, or 70, or 700 models (or whatever),
+> and that the only goal is to use all the available resources efficiently to effect
+> the best outcome in all cases."
+
+> "The simplest understanding of this is, problem in (by the researcher, who then
+> waits) -> problem computed efficiently by the models) -> solution out. In between
+> that sits all the machinery of the schema, including capability fingerprinting, the
+> routing ladder and so on."
+
+**The ladder is BIDIRECTIONAL**, and he is explicit about what must not be allowed to
+count as evidence of improvement:
+
+> "A ladder is bidirectional. It goes both up and down. So if a weaker model gets
+> better at doing a job (say for example if a vendor releases an updated version, it
+> should be able to climb the routing ladder, based on its demonstrated improvement in
+> capability. Conversely if a stronger model proves less able, say due to some technical
+> glitch or other, it should be able to climb down the ladder to a point where it again
+> becomes effective. But what we need to guard against is simply counting when a model
+> is successful as an 'improvement in capability'. The only measure of improved
+> capability is actual observed capability (and the converse.)"
+
+**Promotion requires demonstrated capability over SEVERAL tries on DIFFERENT problems**,
+not one success:
+
+> "I didn't originally intend to say models only needed one successful try. They should
+> demostrate their capability over several tries with different problems, before being
+> considered for promotion. Perhaps a good analogy is a football team..."
+
+**And this is the part NO SEAT HAS YET BEEN ASKED ABOUT — the division count is finite:**
+
+> "But running with the football analogy, we clearly don't have infinit[e] divisions, we
+> have division 1, division 2, division 3, the Premier League. So the number of possible
+> leagues is finite. The position each team or player operate[s] in within these bou[nd]s
+> is also finite."
+
+> "We also have the Vauxhall conference and the other lower leagues. But either way the
+> number is bounded, not infinite."
+
+**Also his, on when to stop waiting for a seat:** "we should harvest results when a model
+is done, not by setting an arbitrary wall clock limit", and "A full response is always
+preferable."
+
+---
+
+## 2. What has been built since the last round, and what it measures
+
+`bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py` takes his
+bounded-divisions point and prices it. Climbing T divisions means clearing T-1 promotion
+gates in series. Gates multiply, so the per-gate sample size falls as T rises while the
+number of gates paid for rises. The error budget is held fixed across the whole scan — a
+model whose true resolve rate is 0.90 reaches the top with probability at least 0.95, and
+one at 0.50 with probability at most 0.01, END TO END — so the comparison is about division
+count and nothing else. Each figure is computed twice, SciPy's binomial tail against an
+exact mpmath sum.
+
+The results, every one of which you should re-run and attack:
+
+- The cheapest ladder is **2 divisions**, one gate, at <!-- figure: cheapest ladder | bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py | cheapest_total_attempts: 19 --> 19 attempts. The dearest in range is 13 divisions at 72.
+- The 4 divisions he named cost <!-- figure: four divisions cost | bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py | total_attempts_at_his_count: 30 --> 30 attempts, and are **not** a local minimum: 3 divisions cost 28.
+- The cost curve is **not monotone** — 2 downward steps and 6 pairs where more divisions cost strictly less, 14 divisions at 52 against 13 at 72. So the division count must be SCANNED; neither "as few as possible" nor "as many as the bound allows" is right.
+- The 5-rung rule derived separately in `bench/what_several_tries_has_to_mean_2026-10-08.py` asks <!-- figure: promotion attempts per rung | bench/what_several_tries_has_to_mean_2026-10-08.py | attempts_per_rung: 19 --> 19 attempts per rung with 11 successes required, giving <!-- figure: capable reaches top | bench/what_several_tries_has_to_mean_2026-10-08.py | 0.967152 --> 0.967152 for a capable rate and 0.00355962 for a weak one.
+
+**The boundary that result does not cross, and it is the question this round is really
+about.** Total attempts prices the climb as though every attempt were pure overhead. It is
+not: a model sitting in a lower division is DOING THAT DIVISION'S WORK while it climbs, and
+that work has value, whereas a model in front of a single gate performs 19 attempts of pure
+qualification and produces nothing a researcher can use. Tiers can therefore only be
+justified by the value of the work done DURING the climb — which that script does not
+measure and does not pretend to.
+
+---
+
+## 3. The dispatch change you are running under, and its figures
+
+The 2 seats on this panel share one subscription. Until today they were dispatched strictly
+one after the other. On the founder's ruling they are now **staggered**: both start, 20
+seconds apart. Producer: `scripts/serialising_the_free_seats_costs_40_percent_2026-10-08.py`.
+
+- Serialising cost a mean <!-- figure: serialisation saving | scripts/serialising_the_free_seats_costs_40_percent_2026-10-08.py | 0.3969 --> 0.3969 of wall clock, bootstrap CI [0.3801, 0.4126] over 91 archived rounds where both seats answered; median <!-- figure: serial wall clock | scripts/serialising_the_free_seats_costs_40_percent_2026-10-08.py | median_serial_wall_clock_s: 1611.6 --> 1611.6 s serial against 943.8 s staggered.
+- 20 s sits inside a window with a floor and a ceiling. The floor is 18.7 s, the one genuinely simultaneous co-failure in the record, which sits at session-establishment time (`scripts/the_contention_evidence_is_cap_confounded_2026-10-07.py`; the other 2 matched co-failures are both seats hitting 1 shared deadline, which is arithmetic rather than contention, and the honest recomputation is 1 of 5, Wilson [0.0362, 0.6245], one-sided exact p = <!-- figure: cap-confound recomputation | scripts/the_contention_evidence_is_cap_confounded_2026-10-07.py | 0.107550 --> 0.107550). The ceiling is the shortest first-seat duration, <!-- figure: shortest first seat | scripts/serialising_the_free_seats_costs_40_percent_2026-10-08.py | 26.7 --> 26.7 s, because SymPy reduces `max(d1, s+d2) <= d1+d2` to exactly `s <= d1` and z3 returns `unsat` on any counterexample under it and `sat` above it.
+- `PANEL_STAGGER_S=0` still restores strict serialisation. Nothing was removed.
+
+---
+
+## 4. Figures previously carried to a panel that are WITHDRAWN
+
+Reason from these corrected values, not the originals. Several were found by seats.
+
+1. The per-seat-per-round critical finding rate was **assumed** 0.3; it is **<!-- figure: measured critical rate | bench/the_intra_round_correlation_measured_2026-10-07.py | 0.233740 --> 0.233740**, Wilson [0.215572, 0.252945], exact binomial p = 5.6e-11 against the assumption.
+2. A spurious-convergence factor of **8.49986** was stated as a property of the convergence gate. It is an upper bound under independence. At the measured intra-round correlation of 0.4060 the 6-seat-to-4-seat factor is **1.4291**.
+3. A sensitivity span of **7.7915** was called plausible. It spans correlation 0 to 0.8; over the 0.1 to 0.5 range actually quoted it is 6.053.
+4. "Rotation costs identical dispatches" is **WITHDRAWN**: measured at 579 dispatches for 270 resolved against 444 for 396 — 30% more dispatches and 32% fewer resolved.
+5. Pooled correlation is confounded by a factor of **1.7202** by between-experiment variation; simulated runs give 0.681 against 0.275 for live ones, so a simulated arm under-reports this hazard by construction.
+6. **New, and this one is mine.** An analysis note of today stated the climb costs "between 52 and 182 attempts across 2 to 14 tiers", that "7 tiers cost 91 attempts where 5 cost 95", and that his 4 divisions land on "a local optimum at 68 attempts". **None of those 5 figures reproduce.** The committed scan gives 19 to 72 attempts; 7 divisions cost 48 and 5 cost 36; and 4 divisions cost 30 and are not a local minimum. They were computed in session with no committed producer. The non-monotonicity survives; the figures carrying it did not.
+
+---
+
+## 5. Also live, since you may reason from the gate
+
+- **Gamma now gates wherever a slope exists**, including the sparse branch where it previously went reported-only below 8 cumulative criticals. `_gamma_is_estimable` in `bench/reference_runner_v3.py` separates the 0.0 sentinel (4 distinct causes, only 1 a slope) from a real slope. Where no curve exists, guarded vacuity applies and a dead panel is REFUSED. Gamma is load-bearing in this project and is not up for demotion.
+- **The ladder-depth default is now exhaust**, `routing.DEFAULT_MAX_RUNGS = 0`. Over 305 archived routing records, 143 hit the old cap of 2 and 103 were abandoned unresolved. The resolve rate beyond depth 2 had never been measured because the cap prevented it.
+- **The free seat roster is now 6 rungs**, the 6th placed last on 0 recorded attempts — evidence-derived placement, not name-chosen.
+
+---
+
+## 6. What to decide
+
+1. **How many divisions should the ladder have?** Give a number with the budget it meets. If total-attempts-to-top is the wrong objective, say what the right one is and price it. The strongest answer measures the value of work done during the climb, which nothing in the repository does yet.
+2. **Is a single gate actually right?** The scan says 2 divisions is cheapest on attempts. Either defend tiers on a metric the scan does not use, or concede the single gate and say what is lost.
+3. **How does a model climb DOWN?** Demotion on observed decline is required and unbuilt. Name the statistic, the window, and what stops a transient outage from demoting a capable model — remembering that a transient fault is NOT the same condition as sustained decline, and that no model is ever benched.
+4. **What stops a success count being mistaken for improved capability?** This is his explicit guard and it needs a mechanism, not a promise.
+5. **Does the division structure survive a roster of 700?** And of 1?
+
+## 7. Output
+
+Return these fields, each with a real body. A heading with nothing under it is not an answer.
+
+- `## Verdict` — SOUND, SOUND WITH REPAIRS, or UNSOUND, on the division-count analysis as it stands.
+- `## Findings` — each labelled OBSERVED (name the run, file and line) or HYPOTHESISED (say what would settle it), each with a severity, each with the command that shows it.
+- `## Fix` — deliver each fix as a file at its real path in the sandbox repository tree, with an executed falsifier beside it. Paste the falsifier's actual output. A fix you have not tried to break is a hypothesis, not a fix. Repair rather than revert where both are available.
+- `## Disagreement` — your strongest disagreement with this brief's own framing, named as a disagreement. If a figure above is wrong, say which and show the command. If the whole tier idea is decoration, say so.
+- `## What would refute me` — the measurement or command that would overturn your own verdict, stated so that someone else could run it and defeat you.
+
+## 8. Termination
+
+Stop when further passes produce no new above-threshold findings — a finding is above
+threshold if missing it could cause real-world failure. Do not nitpick, do not generate
+findings for their own sake, and do not police style. Diminishing returns is the stop
+criterion, not exhaustion of the clock. Take the time you need to deliver a full
+response; a truncated answer is worse than a slower one.
+
+Numbers in digits, never in words. No model names where a rate will do.

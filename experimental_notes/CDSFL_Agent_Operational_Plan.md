@@ -1,13 +1,83 @@
-## ★ RESUME POINTER — 2026-10-06T04:35:04+01:00. SUPERSEDES EVERY POINTER BELOW.
+## ★ RESUME POINTER — 2026-10-08T14:19:03+01:00. SUPERSEDES EVERY POINTER BELOW.
 
-**Written at the founder's explicit request during an intermittent internet outage:** *"You
-should take careful notes of where you are at and retry with a script over a few minute
-intervals until they resolve themselves cleanly. I will look at the sate of play in the
-morning."* He is asleep from 03:46.
+**WHERE TO RESUME: cc2's blind reply is in flight. When it lands, build BOTH FULL RECORDs,
+mirror, commit, then run the JOINT round, then synthesise.** Branch `sim/shakedown-2026-09-29`,
+HEAD `b4c897fb`. The working tree is DIRTY and the commit is correctly REFUSED until the
+round's artefacts are mirrored, which must NOT be done mid-run.
 
-**WHERE TO RESUME: finish the 2 panel FULL RECORDs, run the joint round, then commit.**
-Branch `sim/shakedown-2026-09-29`, HEAD `413902a2`. The working tree is DIRTY and the
-commit is BLOCKED — see THE COMMIT IS BLOCKED below. Nothing in this window is committed yet.
+### THE ROUND IN FLIGHT
+
+- Round `division_count_blind_2026-10-08`. BLIND half of a star-topology pair. 0 paid seats.
+- **fable: LANDED.** 13,415 chars, 36 tool calls, 1305.4 s, attempt 1. Its reply REFUTED CC1's
+  central claim and CC1 reproduced the refutation independently.
+- **cc2: RE-DISPATCHED ALONE** at 14:14 with `PANEL_ONLY=cc2`, `PANEL_SEAT_TIMEOUT_S=3000`,
+  `PANEL_BLIND_OF=division_count_and_bidirectional_ladder_blind_2026-10-08`. It hit the
+  1800 s cap TWICE on this brief. Log: `/tmp/claude-501/panel/cc2_redispatch.log`.
+- **THE JOINT ROUND IS OWED** and the dispatcher now ENFORCES that: once this blind round has
+  2 landed replies it is derived as OWED and no new blind round may be opened until the joint
+  round runs with `PANEL_JOINT_OF=division_count_blind_2026-10-08`. Name the joint round
+  `division_count_star_2026-10-08` — `bench/directives/universal/joint_round_debt.json`
+  already records it as the successor discharging 4 earlier debts.
+
+### 2 PROCEDURAL ERRORS OF CC1'S TODAY, BOTH THE SAME SHAPE
+
+1. **A HEALTHY ROUND WAS KILLED ON A MID-BUILD OBSERVATION.** cc2's attempt-2 sandbox was
+   inspected at 14:07:05 and held fable's reply; the purge ran at 14:07:42 and attempt 2
+   started at 14:07:52. The sandbox now holds only `BRIEF.md`. **THE RULE: do not inspect a
+   seat sandbox until its `confined to ... copy` line has printed.** That line is the
+   build-completion marker. Its absence was noticed and explained away as output buffering.
+2. **A BRIEF WAS DISPATCHED WITH A FIGURE THAT HAD NO PRODUCER** ("6 rate pairs" against a
+   producer testing 4) and was caught only on a second read, after a kill. Killed before any
+   seat was billed.
+
+### WHAT IS IN THE TREE, UNCOMMITTED, EACH WITH AN EXECUTING GUARD
+
+1. **The free seats are STAGGERED, not serialised** — `PANEL_STAGGER_S`, default 20 s, derived
+   in 4 tools (SymPy `s <= d1`, z3 unsat/sat, Wolfram `0 < s <= d1`, NumPy over 91 rounds:
+   mean saving 0.3969, CI [0.3801, 0.4126]). `PANEL_STAGGER_S=0` restores serialisation.
+2. **`panel_sandbox.build(own_round=...)`** purges a co-seat's reply from a RETRY sandbox while
+   keeping `BRIEF.md`. Verified in production at 14:07:42 and again at 14:16.
+3. **`topology.json` written before dispatch**, and a joint-round DEBT check derived from the
+   archive, binding from the ruling date 2026-10-06. Measured: 15 of 99 rounds paired,
+   Wilson [0.094, 0.235]; 1 of 5 since the ruling.
+4. **`PANEL_SEAT_TIMEOUT_S`**, default 1800 unchanged. Kaplan-Meier over 137 attempts
+   (9 censored): median 700.7 s, 90th 1728.1 s, **95th 2939.4 s**. The 2426 s figure given to
+   the founder was a percentile of CENSORED data and is superseded.
+5. **A paid-review control ratchet** — 4 of 72 paid-capable files are review dispatchers, 1 has
+   every control (the live route, which handles paid seats), 3 historical ones are registered
+   and now name all 5 controls they bypass.
+6. **An env-leak guard** — 2 fixtures of CC1's and 1 pre-existing set `PANEL_BRIEF_UNCHECKED`
+   with `setdefault`, which never restores, silently disabling the guard that stops money being
+   spent on a defective brief. All 3 removed; a scanner now refuses the pattern.
+7. **3 CC1 claims WITHDRAWN** on the division count: the non-monotonicity conclusion (an
+   identical-gate artefact), its replacement "as few as possible" (budget-specific; fails at
+   ~1 budget in 5), and "some rate pairs are infeasible at any division count" (it was CC1's
+   own attempts ceiling binding; (0.85, 0.75) is feasible at a single gate of 253 attempts).
+
+### THE 2 ANSWERS THE ROUND HAS ALREADY PRODUCED, both independently verified by CC1
+
+- **Division count is DERIVABLE at experiment start:**
+  `T = 1 + floor((arcsin sqrt(p_hi) - arcsin sqrt(p_lo)) * sqrt(n) / z)`, where the rate span
+  is "relative complexity" and `n` is attempts per model per window. T=2 at n=19, 3 at n=80,
+  4 at n=150, 5 at n=300 over [0.5, 0.9]; grows as sqrt(n), so always finite.
+  Then `T* = argmin cost` over `T <= T_resolution`, per budget.
+- **Relegation on sustained degradation:** an exact one-sided sign test over discordant pairs
+  against the division-peer majority on the same last 40 scored attempts. Simulated by CC1:
+  when the stream hardens under an equally capable peer, an absolute floor demotes a capable
+  model 98.35% of the time, Wilson [0.9791, 0.9870], against **3.65%** for the sign test,
+  Wilson [0.0311, 0.0428]; on genuine decline the sign test fires 99.68% against 96.27%. An
+  attempt returning no artefact is an aliveness event and never enters the denominator, so an
+  outage produces no evidence rather than failures.
+
+### STILL UNBUILT, AND THE TRIGGER IS NAMED
+
+**Incremental stream-json parsing**, so a seat's tool-call COUNT is observable mid-flight.
+Measured 2026-10-08: the tool-log sink does not exist until the subprocess returns, so there
+is NO progress signal and the clock is the only lever — and the clock cannot separate a
+working seat from a churning one, because the per-call rate is the same in both (20.455 s
+against 20.816 s). **Build it when the joint round lands, before `sv`.** It touches
+`call_claude_cli`, which has roughly 20 callers, so it is not to be done while a round is in
+flight through it.
 
 ### THE COMMIT IS BLOCKED, AND THE BLOCK IS CORRECT
 

@@ -133,7 +133,12 @@ def fresh_sandbox_for_attempt(name: str, attempt: int) -> "str | None":
                 seen.append({"attempt": attempt, "path": path, "built": False})
             set_panel_cwd(path)
             return path
-    path = str(panel_sandbox.build(_REPO, blind_of=_BLIND_OF, blind_text=_blind_text_for(_BLIND_OF)))  # outside the lock: 6.53 s
+    # `own_round` CLOSES THE RETRY HOLE: this call clones the LIVE tree, which by
+    # retry time holds any co-seat reply that has already landed. Proven by
+    # execution 2026-10-08 -- see `panel_sandbox.coseat_survivors`.
+    path = str(panel_sandbox.build(_REPO, blind_of=_BLIND_OF,
+                                   blind_text=_blind_text_for(_BLIND_OF),
+                                   own_round=_logs_dir().name))  # outside the lock: 6.53 s
     with _SEAT_SANDBOX_LOCK:
         _SEAT_SANDBOXES[name] = path
         _SEAT_ATTEMPTS.setdefault(name, []).append(
@@ -272,6 +277,7 @@ def resolve_brief(argv=None) -> None:
 # Measured before removing: 0 references to `_json` anywhere in this file and 0
 # modules importing it from here. `json` is already imported plainly on line 24
 # for anything that needs it, so no capability is lost.
+import hashlib as _hashlib
 import os as _os
 from pathlib import Path as _Path
 _ONLY = _os.environ.get("PANEL_ONLY", "")
@@ -289,6 +295,142 @@ _BLIND_OF = tuple(x for x in _os.environ.get("PANEL_BLIND_OF", "").split(",") if
 #: the blind briefs -- it carries their replies -- so it cannot be grouped by brief
 #: hash and must name what it follows. Enforced in `_refuse_if_topology_is_skipped`.
 _JOINT_OF = tuple(x for x in _os.environ.get("PANEL_JOINT_OF", "").split(",") if x.strip())
+
+
+#: SECONDS BETWEEN THE STARTS OF 2 SEATS THAT SHARE ONE SUBSCRIPTION.
+#:
+#: 20 is measured, not chosen: above the 18.7 s establishment collision that is
+#: the only genuinely simultaneous co-failure in the record, and below the 26.7 s
+#: shortest first-seat duration over 91 archived 2-seat rounds, which is the
+#: point where a stagger starts losing to strict serialisation (SymPy reduces the
+#: condition to `s <= d1`; z3 returns unsat on any counterexample). See the long
+#: block at the dispatch site for the full derivation and the founder's ruling.
+#:
+#: 0 RESTORES STRICT SERIALISATION. It is kept reachable deliberately: the
+#: dispatcher's own comment admits the contention hypothesis was never tested by
+#: running a panel both ways, and that test needs both directions to exist.
+DEFAULT_STAGGER_S = 20.0
+
+
+def run_seat_group(shared, independent, dispatch_fn, stagger_s):
+    """Dispatch every seat, holding shared-subscription seats `stagger_s` apart.
+
+    SEPARATED FROM `main` SO A GUARD CAN EXECUTE IT. The behaviour under test is
+    a TIMING property -- do 2 seats on one subscription overlap, and do their
+    starts sit far enough apart -- and a test that reads this file's source
+    cannot see a timing property at all. `execute-do-not-grep`.
+
+    `stagger_s == 0` serialises the shared group, which is the behaviour that
+    stood from 2026-10-05 until the founder's ruling of 2026-10-08. Seats on
+    other routes always run concurrently, unchanged in either mode.
+    """
+    def _run_serial():
+        return [dispatch_fn(n, m, r) for n, m, r in shared]
+
+    def _after(delay, n, m, r):
+        if delay > 0:
+            print(f"    {n}: staggered start in {delay:.0f}s", flush=True)
+            time.sleep(delay)
+        return dispatch_fn(n, m, r)
+
+    stagger_group = list(shared) if stagger_s > 0 else []
+    serial_group = [] if stagger_s > 0 else list(shared)
+    workers = max(1, len(list(independent)) + len(stagger_group)
+                  + (1 if serial_group else 0))
+    out = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+        futs = []
+        if serial_group:
+            futs.append(pool.submit(_run_serial))
+        for i, (n, m, r) in enumerate(stagger_group):
+            futs.append(pool.submit(_after, i * stagger_s, n, m, r))
+        for n, m, r in independent:
+            futs.append(pool.submit(dispatch_fn, n, m, r))
+        for f in concurrent.futures.as_completed(futs):
+            got = f.result()
+            out.extend(got if isinstance(got, list) else [got])
+    return out
+
+
+#: WALL-CLOCK CEILING FOR ONE claude_cli SEAT ATTEMPT, overridable per run.
+#:
+#: 1800 REMAINS THE DEFAULT, so every other caller and every archived run is
+#: unchanged. What is new is that a single round can raise it without editing
+#: shared code: `call_claude_cli` has roughly 20 callers across this repository,
+#: most of them historical confer scripts taking the 300 s function default, and
+#: changing that default to serve one panel round would reach all of them.
+#:
+#: WHY AN OVERRIDE AT ALL -- FOUNDER'S RULING, 2026-10-07: *"The models should be
+#: given the time they need to deliver a full response."*
+#:
+#: AND THE MEASUREMENT THAT SIZES IT, which corrects a figure given to him the
+#: same morning. 2426 s was reported as "the measured 95th percentile of observed
+#: work"; it was a percentile of durations that INCLUDE attempts killed at the
+#: cap, which is circular -- those attempts are right-censored and their true
+#: durations are longer than recorded. Kaplan-Meier over 137 attempts, 128
+#: completions and 9 censored, computed by hand and by statsmodels to identical
+#: values: median 700.7 s, 90th percentile 1728.1 s, 95th percentile 2939.4 s.
+#: So 1800 s sits just above the 90th percentile and kills roughly 1 attempt in
+#: 10 while it is still working. Producer:
+#: `scripts/the_cap_was_measured_on_censored_data_2026-10-08.py`.
+#:
+#: THIS IS NOT "RAISE THE CAP AND HOPE", and the dispatcher's own record of a
+#: 3600 s raise reverted within the hour on 2026-10-06 stands: a longer clock
+#: lets a DEGRADED route churn, because the per-call rate is identical whether a
+#: seat is working or failing and retrying (20.455 s against 20.816 s per call).
+#: The clock cannot separate those 2 states and a bigger number does not help.
+#: The real repair is to consume the CLI's stream-json output incrementally so the
+#: CALL COUNT is observable mid-flight -- measured 2026-10-08, the tool-log sink
+#: does not exist until the subprocess returns, so no progress signal exists
+#: today. Until that is built, the override is for a seat KNOWN to be working:
+#: use it when a co-seat has completed the same brief, which establishes the route
+#: is healthy and the brief is answerable.
+DEFAULT_SEAT_TIMEOUT_S = 1800
+
+
+def _seat_timeout_seconds() -> int:
+    """Read PANEL_SEAT_TIMEOUT_S, or DEFAULT_SEAT_TIMEOUT_S when unset.
+
+    A malformed or non-positive value RAISES rather than falling back, for the
+    reason `_stagger_seconds` gives: a scheduling control that silently ignores
+    its own input is a control the caller cannot rely on.
+    """
+    raw = _os.environ.get("PANEL_SEAT_TIMEOUT_S")
+    if raw is None or raw.strip() == "":
+        return DEFAULT_SEAT_TIMEOUT_S
+    try:
+        val = int(float(raw))
+    except ValueError:
+        raise SystemExit(
+            f"PANEL_SEAT_TIMEOUT_S={raw!r} is not a number of seconds.")
+    if val <= 0:
+        raise SystemExit(
+            f"PANEL_SEAT_TIMEOUT_S={raw!r} must be positive.")
+    return val
+
+
+def _stagger_seconds() -> float:
+    """Read PANEL_STAGGER_S, or DEFAULT_STAGGER_S when it is unset.
+
+    A malformed or negative value RAISES rather than falling back to the default.
+    Falling back would make `PANEL_STAGGER_S=-1` or `PANEL_STAGGER_S=abc` run a
+    staggered panel while the caller believed it had asked for something else,
+    and a scheduling control that silently ignores its own input is the shape
+    this project has already paid for more than once.
+    """
+    raw = _os.environ.get("PANEL_STAGGER_S")
+    if raw is None or raw.strip() == "":
+        return DEFAULT_STAGGER_S
+    try:
+        val = float(raw)
+    except ValueError:
+        raise SystemExit(
+            f"PANEL_STAGGER_S={raw!r} is not a number. Use seconds, or 0 to "
+            f"serialise the shared-subscription seats.")
+    if val < 0:
+        raise SystemExit(
+            f"PANEL_STAGGER_S={raw!r} is negative. Use 0 to serialise.")
+    return val
 
 
 def _blind_text_for(rounds):
@@ -782,7 +924,8 @@ def dispatch(name, model_id, route):
             set_tool_log_sink(str(_sink))
             try:
                 resp = call_claude_cli(
-                    model_id, SYSTEM, PROMPT, timeout=1800, max_retries=2,
+                    model_id, SYSTEM, PROMPT,
+                    timeout=_seat_timeout_seconds(), max_retries=2,
                     accept=accept_reply_or_work(_seat_cwd or str(_REPO)),
                     # RULING (j): a retry gets a tree of its own, never the one
                     # the timed-out attempt was halfway through editing.
@@ -1009,6 +1152,194 @@ def _probe_caller(model_id, route, prompt, timeout):
         return call_openrouter(model_id, None, prompt, max_tokens=16,
                                timeout=timeout, max_retries=1)
     return _call
+
+
+def _rounds_owing_a_joint_round() -> list:
+    """Rounds with 2+ landed replies, not joint themselves, with no joint partner.
+
+    DERIVED rather than declared, so the check cannot be defeated by forgetting to
+    write an entry -- which is the failure it exists to prevent. A round's own
+    `topology.json` is believed first where it exists; before that file existed
+    the only available signal is the round NAME, so the result is an UPPER bound
+    on the omission and is documented as one in the producer.
+    """
+    # ★ THE DEBT BINDS FROM THE DATE THE RULING CREATED IT, 2026-10-06.
+    #
+    # Derived over the WHOLE archive this returns 80 rounds going back to August,
+    # and refusing today's work because of an August round is not a control -- it
+    # is a control that guarantees its own override, which is worse than none.
+    # The founder's ruling is what created the obligation
+    # (*"it should be built into all confer round machinery going forward"*), so
+    # "going forward" is read literally and dated. The historical rate is not
+    # hidden by this: 15 of 99 paired, 0.151515, Wilson [0.094023, 0.235041], is
+    # measured and reported by
+    # `scripts/the_joint_round_was_almost_never_run_2026-10-08.py` over the full
+    # archive. What binds is the forward half.
+    RULING_DATE = "2026-10-06"
+    import re as _re
+
+    def _dated_on_or_after(name):
+        m = _re.search(r"(20\d\d-\d\d-\d\d)", name)
+        if not m:
+            m2 = _re.search(r"(20\d\d)(\d\d)(\d\d)T", name)
+            if not m2:
+                return False      # undated rounds are all pre-ruling in this archive
+            return f"{m2.group(1)}-{m2.group(2)}-{m2.group(3)}" >= RULING_DATE
+        return m.group(1) >= RULING_DATE
+
+    markers = ("joint", "star", "_r2", "round2")
+    logs = _REPO / "bench" / "logs"
+    if not logs.is_dir():
+        return []
+    seats = ("cc2", "fable", "cx", "ge", "cgpt", "ds", "kimi")
+    rounds, declared_joint_of = {}, set()
+    for d in sorted(logs.iterdir()):
+        if not d.is_dir() or not (d / "BRIEF.md").is_file():
+            continue
+        landed = []
+        for n in seats:
+            f = d / f"{n}.json"
+            if not f.is_file():
+                continue
+            try:
+                j = json.loads(f.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            if isinstance(j, dict) and j.get("ok") and (j.get("chars") or 0) > 0:
+                landed.append(n)
+        kind = None
+        t = d / "topology.json"
+        if t.is_file():
+            try:
+                rec = json.loads(t.read_text(encoding="utf-8"))
+                kind = rec.get("kind")
+                declared_joint_of.update(rec.get("joint_of") or [])
+            except Exception:
+                pass
+        rounds[d.name] = (landed, kind)
+    out = []
+    names = list(rounds)
+    for name, (landed, kind) in rounds.items():
+        if len(landed) < 2:
+            continue
+        if kind == "joint" or any(m in name for m in markers):
+            continue
+        if name in declared_joint_of:
+            continue
+        stem = name.replace("_blind", "").replace("blind_", "").split("_2026")[0][:18]
+        if any(o != name and any(m in o for m in markers) and stem in o
+               for o in names):
+            continue
+        if not _dated_on_or_after(name):
+            continue
+        out.append(name)
+    return sorted(out)
+
+
+def _refuse_if_a_joint_round_is_owed() -> int:
+    """No NEW blind round while an earlier blind round still owes its joint half.
+
+    THE DEFICIENCY, found by the founder on 2026-10-08: *"you don't seem to have
+    been running recent panels under star topology, blind run first?"* Measured by
+    `scripts/the_joint_round_was_almost_never_run_2026-10-08.py`: 15 of 99 rounds
+    with 2 or more landed replies have a joint round, 0.151515, Wilson [0.094023,
+    0.235041]; since his 2026-10-06 ruling that the topology be unskippable, 1 of
+    5, Wilson [0.036224, 0.624465].
+
+    WHY THIS CHECK AND NOT A STRICTER ONE. A blind round cannot be refused for
+    lacking a joint round AT THE MOMENT IT LANDS -- the joint round does not exist
+    yet, by construction. The enforceable form is a DEBT: opening a new blind round
+    while owing one is the failure that actually occurred, 4 times in 2 days. This
+    check is therefore about the operator's queue, not about any single round.
+
+    IT IS DELIBERATELY NOT SKIPPABLE BY FORGETTING. `PANEL_SKIP_TOPOLOGY` still
+    overrides it, because an explicit override is a decision and a silent omission
+    is not -- that distinction is the whole point of the founder's ruling.
+    """
+    if _os.environ.get("PANEL_SKIP_TOPOLOGY"):
+        print("    joint-round debt check SKIPPED because PANEL_SKIP_TOPOLOGY is set",
+              flush=True)
+        return 0
+    reg = (_REPO / "bench" / "directives" / "universal" / "joint_round_debt.json")
+    if not reg.is_file():
+        # FAIL CLOSED on a missing registry would refuse every round for a reason
+        # unrelated to topology; fail LOUD instead and let the suite's own guard
+        # catch an absent registry.
+        print("    joint-round debt: no registry at "
+              f"{reg.relative_to(_REPO)} -- not checked", flush=True)
+        return 0
+    try:
+        entries = json.loads(reg.read_text(encoding="utf-8")).get("entries", {})
+    except Exception as exc:  # noqa: BLE001
+        print(f"    REFUSED: the joint-round debt registry is unreadable: "
+              f"{type(exc).__name__}: {exc}", flush=True)
+        return 4
+    # ★ THE DEBT IS DERIVED FROM THE ARCHIVE, NOT READ FROM A HAND-KEPT LIST.
+    #
+    # A registry of OWED rounds has the identical weakness to the thing it
+    # replaces: it only refuses what somebody remembered to write down, and the
+    # failure being fixed here IS a failure of remembering. So the owed set is
+    # COMPUTED -- every round with 2 or more landed replies that is not itself a
+    # joint round and has no joint partner -- and the registry holds only the
+    # EXCEPTIONS, which are claims a human made and can be audited.
+    #
+    # Producer for the same computation, with the rate and its interval:
+    # `scripts/the_joint_round_was_almost_never_run_2026-10-08.py`.
+    excused = {r for r, v in entries.items()
+               if str(v.get("status", "")).upper() in ("SUPERSEDED", "DISCHARGED")}
+    owed = sorted(r for r in _rounds_owing_a_joint_round() if r not in excused)
+    # An entry explicitly marked OWED is owed even if the derivation misses it.
+    owed = sorted(set(owed) | {r for r, v in entries.items()
+                               if str(v.get("status", "")).upper() == "OWED"})
+    if not owed:
+        print(f"    joint-round debt: 0 owed across {len(entries)} recorded "
+              f"round(s)", flush=True)
+        return 0
+    if _JOINT_OF:
+        print(f"    joint-round debt: {len(owed)} owed, and this IS a joint round "
+              f"-- proceeding", flush=True)
+        return 0
+    print(f"    REFUSED: {len(owed)} blind round(s) still owe a joint round, and "
+          f"this is a new BLIND round:", flush=True)
+    for r in owed:
+        print(f"      {r}", flush=True)
+    print("    Run the joint round for one of them (PANEL_JOINT_OF=<round>), or "
+          "record in the registry which later round supersedes it.", flush=True)
+    print("    to dispatch anyway, deliberately: PANEL_SKIP_TOPOLOGY=1", flush=True)
+    return 5
+
+
+def _write_topology_record() -> Path:
+    """Persist this round's topology declaration beside its replies.
+
+    An environment variable steers a run and leaves no evidence of having done
+    so. This writes what was declared, so the archive can be audited for the one
+    failure the pre-dispatch check is structurally unable to see: a blind round
+    with no joint round ever following it.
+
+    Deliberately written BEFORE dispatch, so a round that crashes or is killed
+    still records what it intended. A record written afterwards would be missing
+    from exactly the runs most worth auditing.
+    """
+    kind = "joint" if _JOINT_OF else "blind"
+    rec = {
+        "round": _logs_dir().name,
+        "kind": kind,
+        "blind_of": list(_BLIND_OF),
+        "joint_of": list(_JOINT_OF),
+        "seats": [n for n, _m, _r in MODELS],
+        "paid_seats": [n for n, _m, _r in MODELS if n not in FREE_SEATS],
+        "stagger_s": _stagger_seconds(),
+        "brief_sha256": _hashlib.sha256(
+            (BRIEF.read_bytes() if BRIEF and BRIEF.is_file() else b"")).hexdigest(),
+    }
+    out = _logs_dir() / "topology.json"
+    out.write_text(json.dumps(rec, indent=2, sort_keys=True) + "\n",
+                   encoding="utf-8")
+    print(f"    topology recorded: {kind} round, blind_of={list(_BLIND_OF) or 'none'}, "
+          f"joint_of={list(_JOINT_OF) or 'none'}, stagger={rec['stagger_s']:.0f}s "
+          f"-> {out.name}", flush=True)
+    return out
 
 
 def _refuse_if_a_seat_is_not_alive(models) -> int:
@@ -1244,6 +1575,34 @@ def main() -> int:
     _topo_rc = _refuse_if_topology_is_skipped(MODELS)
     if _topo_rc:
         return _topo_rc
+    _debt_rc = _refuse_if_a_joint_round_is_owed()
+    if _debt_rc:
+        return _debt_rc
+    # ★ AND THE DECLARATION IS NOW RECORDED, NOT ONLY CHECKED.
+    #
+    # THE DEFICIENCY THE FOUNDER FOUND, 2026-10-08: *"you don't seem to have been
+    # running recent panels under star topology, blind run first?"* He was right,
+    # and measured it is worse than the question implied: of 18 brief-groups
+    # dispatched in October, 11 carry neither a blind nor a joint round, including
+    # all 4 rounds run on 2026-10-07 and 2026-10-08.
+    #
+    # WHY THE GUARD BUILT TO MAKE THIS UNSKIPPABLE COULD NOT SEE IT.
+    # `_refuse_if_topology_is_skipped` refuses a round whose SIBLING holds a landed
+    # reply and is not declared blind. A round with no sibling at all passes
+    # trivially -- so a LONE blind round with no joint round ever following is
+    # exactly what the check cannot detect. It guards contamination BETWEEN rounds
+    # and has no concept of "the joint round was never run". A guard that cannot
+    # fail in the direction the failure actually took is the shape this project
+    # keeps paying for.
+    #
+    # AND NOTHING COULD BE CHECKED AFTER THE FACT EITHER, which is the root cause:
+    # `PANEL_BLIND_OF` and `PANEL_JOINT_OF` are environment variables. They steer
+    # the run and leave NO TRACE in the round directory, so no later guard, and no
+    # reader of the archive, can tell a declared blind round from an undeclared
+    # one. Recording the declaration is what makes the omission measurable, and
+    # `bench/tests/test_a_blind_round_has_a_joint_round_2026-10-08.py` is what
+    # then refuses it.
+    _write_topology_record()
 
     # ─────────── ALIVENESS PROBE, before anything expensive ───────────
     _alive_rc = _refuse_if_a_seat_is_not_alive(MODELS)
@@ -1263,7 +1622,9 @@ def main() -> int:
     # left the proposals diff unattributable.
     sandboxes = {}
     for _n, _m, _r in MODELS:
-        sandboxes[_n] = panel_sandbox.build(_REPO, blind_of=_BLIND_OF, blind_text=_blind_text_for(_BLIND_OF))
+        sandboxes[_n] = panel_sandbox.build(
+            _REPO, blind_of=_BLIND_OF, blind_text=_blind_text_for(_BLIND_OF),
+            own_round=_logs_dir().name)
         _SEAT_SANDBOXES[_n] = str(sandboxes[_n])
         print(f"    {_n} confined to its own copy: {sandboxes[_n]}")
     # Kept for any caller still reading it; every seat now uses its OWN.
@@ -1310,24 +1671,53 @@ def main() -> int:
         _shared = [(n, m, r) for n, m, r in MODELS if r == "claude_cli"]
         _independent = [(n, m, r) for n, m, r in MODELS if r != "claude_cli"]
 
-        def _run_shared_group():
-            """One subscription, one at a time, in roster order."""
-            out = []
-            for n, m, r in _shared:
-                out.append(dispatch(n, m, r))
-            return out
-
-        results = []
-        _workers = max(1, len(_independent) + (1 if _shared else 0))
-        with concurrent.futures.ThreadPoolExecutor(max_workers=_workers) as pool:
-            futs = []
-            if _shared:
-                futs.append(pool.submit(_run_shared_group))
-            for n, m, r in _independent:
-                futs.append(pool.submit(dispatch, n, m, r))
-            for f in concurrent.futures.as_completed(futs):
-                got = f.result()
-                results.extend(got if isinstance(got, list) else [got])
+        # ★ THE SHARED-SUBSCRIPTION SEATS ARE NOW STAGGERED, NOT SERIALISED.
+        # FOUNDER RULING, 2026-10-08: *"launch the outstanding panel brief with my
+        # updated framing under star topology, one blind run first and staggered
+        # dispatch as normal."* He had asked the question that produced it the day
+        # before: *"Is back to back necessary? It doubles the duration of a panel
+        # review. Isn't it the case that all that is needed is a few second[s]
+        # between dispatching each model?"*
+        #
+        # ONE CORRECTION TO HIS WORDING, AND IT IS THE REASON THIS BLOCK CHANGED:
+        # staggering was NOT "normal" before this edit. The free seats ran strictly
+        # one after the other. The stagger was item 5 of the 5 unbuilt items carried
+        # to him in the 2026-10-08 morning report, and this ruling is what built it.
+        #
+        # WHY THE STAGGER IS AT LEAST AS WELL SUPPORTED AS THE LOCK, from the
+        # project's own committed measurement -- `scripts/the_contention_evidence_is
+        # _cap_confounded_2026-10-07.py`. The serialisation rested on 3 of 5 rounds
+        # losing BOTH seats at matched durations, p = 1.556646e-07. 2 of those 3 are
+        # both seats hitting ONE SHARED DEADLINE -- 1956.2/1956.0 s against the
+        # 1800 s cap and 902.0/902.0 s against the 900 s cap -- which is arithmetic,
+        # not contention. Recomputed on the 1 genuinely simultaneous co-failure that
+        # remains, it is 1 of 5, Wilson [0.0362, 0.6245], one-sided exact
+        # p = 0.107550: NOT significant.
+        #
+        # AND THAT SURVIVING CO-FAILURE SITS AT 18.7/18.8 s, which is session
+        # ESTABLISHMENT time rather than mid-flight -- the collision a stagger is
+        # able to prevent, and the only one in the record.
+        #
+        # WHY 20 SECONDS, measured 3 ways rather than chosen. It must exceed the
+        # 18.7 s establishment collision and stay below the shortest observed
+        # first-seat duration, because a stagger longer than that is the one case
+        # where staggering loses to serialising. SymPy reduces `max(d1, s+d2) <=
+        # d1+d2` to exactly `s <= d1`; z3 returns `unsat` searching for any
+        # counterexample under that condition, so it is necessary and sufficient.
+        # Over the 91 archived rounds where both free seats answered, NumPy gives a
+        # median serial wall clock of 1611.6 s against 943.8 s staggered -- a mean
+        # saving of 0.3969, bootstrap CI [0.3801, 0.4126] over 20,000 resamples --
+        # and the shortest first-seat duration in that record is 26.7 s, so at 20 s
+        # the staggered form is never slower on a single round of the 91. At 30 s it
+        # IS slower on 1 of them, which is why 30 was not taken.
+        #
+        # NOTHING IS REMOVED: `PANEL_STAGGER_S=0` restores strict serialisation, so
+        # the lock behaviour stays reachable for whoever wants to compare, and the
+        # interventional test the old block admitted it had never run --
+        # *"It has NOT been tested by running a panel both ways"* -- is now cheap to
+        # run in either direction.
+        results = run_seat_group(_shared, _independent, dispatch,
+                                 _stagger_seconds())
     finally:
         _PANEL_SANDBOX_CWD = None
         set_panel_cwd(None)
