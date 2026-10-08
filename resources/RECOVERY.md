@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 7 October 2026 14:41 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 8 October 2026 11:10 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,34 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-08 11:09 BST (READ THIS FIRST)
+
+**BRANCH.** HEAD `3c7240bf` on `sim/shakedown-2026-09-29`. `main` untouched at `b536ff86`. 20 commits since 18:00 on 2026-10-07.
+
+**★★★ GAMMA NOW GATES WHEREVER A CURVE EXISTS, after 3 attempts and 2 corrections from the founder.** `_check_hardened_convergence` made gamma "reported-not-gated" whenever cumulative criticals fell below `gamma_crit_min_cumulative` (default 8, set by only 4 of 47 configs), so the gate called two-sided went ONE-SIDED in precisely the endgame — and the surviving half, the zero-novel-critical window, is the half a shrinking roster attacks. Found by the fable seat. His ruling: *"Gamma should remain active in all cases. Fix it."*
+
+**ATTEMPT 1 WAS REJECTED BY HIM AND HE WAS RIGHT.** It gated gamma wherever estimable and labelled the rest "unestimable": *"if gamma remains unestimable, how can gamma ever hit the 0.30 mark ...? Isn't this gamma demotion by another name?"* In that branch gamma still did not gate.
+
+**WHAT HOLDS NOW.** `_estimate_gamma` returns 0.0 for 4 distinct reasons and only 1 is a slope — too few rounds, an all-zero series, fewer than 2 usable log points, a degenerate fit. `_gamma_is_estimable` separates the sentinel from a slope. Gamma GATES wherever a slope exists, including the sparse branch where it previously did not: reachability measured by exhaustive sweep, `[1,3,0,0,0]` at gamma 0.1783 and `[1,4,0,0,0]` at 0.0461 converged before and are refused now. Where NO curve exists, the guarded vacuity of `_check_gamma_alt_convergence` applies — cumulative critical over the whole history must be zero AND the panel must have produced findings of some severity — and the second guard REFUSES. **A flat-at-zero curve receiving gamma's FLOOR is a wrong answer, not an unknowable one**: the estimator gives 1.0000 to every flat-after-something case.
+
+**AND THE 4TH PANEL FOUND 2 CRITICAL DEFECTS IN THAT FIX, BOTH SEATS INDEPENDENTLY.** cc2 14,244 chars / 2,110 words / 64 tool calls / 1427.2 s; fable 11,575 / 1,668 / 49 / 833.6 s. Verdicts: *"sound in its central claim, unsound as shipped — needs repairs, not reversion"* and *"sound with repairs"*. All 52 committed guards passed unmodified under both.
+
+- **F1.** The fix imported the sibling's 2 vacuity guards and LEFT BEHIND the 2 blocks in front of them — the A4 unverified-critical fail-safe and the contested block — so the 2 gates returned OPPOSITE verdicts on identical registries, unsafely: `UNCONFIRMED` is stripped from the settled series, so an unverified critical drives `cum_crit` DOWN and pushes a run INTO the vacuous branch. Archive exposure 0 of 69.
+- **F2.** The leave-one-out loop gated on the 0.0 sentinel, permanently refusing a maximal-depletion run at any horizon. Archive exposure **6 of 69**, named: exp38_ouroboros, exp39_0_gate, exp42_composer, 2 sim45_canary.
+- **F3/F4, low.** A refusal asserting a slope where gamma was a sentinel; and 2 stale docstrings, 1 describing the REJECTED version's mode name.
+
+**ALL 4 ARE REPAIRED at `40c4a154`.** F1 is derived IN-GATE rather than passed as parameters — fable's correction of its own first repair, after its falsifier caught that a caller can omit a defaulted parameter and reopen the hole. **133 passed** across the 9 affected guard files, re-run with `python3 -m pytest bench/tests/test_gamma_gates_wherever_it_exists_2026-10-08.py bench/tests/test_hardened_gate.py bench/tests/test_vacuous_gamma_curve.py bench/tests/test_two_sided_gate.py bench/tests/test_gamma_alt_convergence.py bench/tests/test_the_cap_default_is_exhaust_2026-10-08.py bench/tests/test_routing.py bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py bench/tests/test_pre_verdict_sweep_shadow_2026-10-06.py -q`. Pre-commit subset at `3c7240bf`: **501 passed** in 42.71 s, from `python3 -m pytest bench/tests/ -q`. **A subset is not a board** — the last complete board is the 2026-10-07 figure of **10,306 passed**, 25 failed, 18 skipped in 3998.65 s.
+
+**★★★ THE LADDER-DEPTH DEFAULT IS NOW EXHAUST.** `routing.DEFAULT_MAX_RUNGS = 0`, referenced by both signatures and the call site. FOLLOW found the trap before the edit: the runner OMITS the keyword at the default to protect 8 narrow stubs, so flipping only the config default would have broken all 8; and a first attempt read the default via `inspect.signature(route)`, which raises KeyError under exactly those stubs. Measured cost over 305 archived routing records: 143 hit the cap and **103 were ABANDONED UNRESOLVED**; per-rung resolve rates 0.3902 then 0.2797 mean 4 further rungs recover roughly 46 to 75 of them for about 209 extra dispatches. **The rate beyond depth 2 has never been measured BECAUSE the cap prevented it.**
+
+**ALSO LANDED.** Fable is the 6th ladder rung, placed last on 0 attempts (evidence-derived, not name-chosen); `git_state` survives an unreachable network and no longer renders "cannot see the tree" as "tree is clean"; `experimental_notes/OFFLINE_RECOVERY.md` is a standing network-free recovery sequence.
+
+**★ 6 FIGURES CARRIED TO A PANEL WERE WRONG, each found by a seat.** q assumed 0.3 against a measured 0.233740 (exact binomial p = 5.6e-11); a spurious-convergence factor of 8.49986 stated as a property of the gate when it is an upper bound under independence; a sensitivity span of 7.7915 described as plausible when it spans rho 0 to 0.8 and the quoted range gives 6.053; a confidence interval on exact arithmetic; a difficulty check that AST-scanned field names and never executed `route`; and "rotation costs identical dispatches", measured at 579 dispatches for 270 resolved against 444 for 396 — **30% more dispatches and 32% fewer resolved, WITHDRAWN** having been reported to him as free.
+
+**OUTSTANDING AND HIS TO RULE ON.** 3 unbuilt: the absolute full-roster false-quiet rate of 0.1159, which no roster-aware fix addresses; the ordering-versus-feasibility split in both runners (a scalar for the order, a separate CONSTRAINT for a hard-capped resource); and resetting the dispatch caps and retry budget from the measured distribution (1800 s sits below the 95th percentile of 2426 s) together with replacing the shared-credential lock with a stagger, which cost 2505.6 s — 41.76 minutes, a 46.15% increase — across 3 rounds on evidence recomputing to p = 0.107550. Plus the promotion-gate parameters, where 3 derivations give 19/11, 19/14 and 12/8 and the difference is the TARGETS not the arithmetic, all assuming independent attempts where the measured correlation inflates 19 to about 30.
+
+**AND 1 INSTRUCTED ITEM LAPSED.** He asked twice for the round-3 panel to be RE-RUN with his fresh framing — the football analogy with its finite divisions, the derivation, the withdrawals — and it was never dispatched; it was displaced by the gamma work he also authorised. The displacement was not flagged at the time. The analysis of round 3 is being written now.
 
 ## SESSION STATE — 2026-10-07 14:37 BST (READ THIS FIRST)
 

@@ -8,22 +8,22 @@ what was filtered and the criterion that filtered it, so the public
 record is honest about the shape of what is withheld, not only what is
 shown.
 
-## Accounting (counted 2026-10-07 23:16 BST)
+## Accounting (counted 2026-10-08 11:10 BST)
 
 The source index lives privately at
 `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
 Every figure below was counted from that directory on the date in this
 heading, not carried forward from a previous version of this file.
-The directory holds **196 files**, of which one is `MEMORY.md` itself
-(the index), leaving **195 individual memory files**. They partition as:
+The directory holds **197 files**, of which one is `MEMORY.md` itself
+(the index), leaving **196 individual memory files**. They partition as:
 
 | bucket | count |
 |---|---|
-| Mirrored (in summarised form) in `MEMORY.md` | 138 |
+| Mirrored (in summarised form) in `MEMORY.md` | 139 |
 | Named as excluded, with a reason, below | 15 |
 | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
 | **Unclassified — neither mirrored nor previously declared** | **39** |
-| total | 195 |
+| total | 196 |
 
 > **[Correction 2026-10-01.]** Total 158 -> 163, mirrored 101 -> 106. 5 memory files were written on 2026-10-01 recording the day's work on the simulation branch: `cdsfl_dated_claim_dated_denominator_2026-10-01.md` (6 of the 20 suite failures were one fault, a dated measurement checked against a grown archive, and nothing was broken in any of the 6), `cdsfl_claim_channel_is_on_2026-10-01.md` (the claim-level channel the free panel designed is built, wired and informative-only), `cdsfl_seat_writes_are_prevented_now_2026-10-01.md` (a kernel sandbox now DENIES a seat writing the canonical tree, measured on 6 properties, and the gitignored-harvest stranding is repaired at source with a ratchet), `cdsfl_marker_matched_a_modifier_2026-10-01.md` (the latent classifier tagged a live defect latent on "no caller override", which means the opposite) and `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` (2 seat replies preserved disagreement in full and a line-anchored pattern could not see it; 4 gained of 306, 0 lost). All 5 carry a pointer line in `MEMORY.md`, so all 5 fall in the mirrored bucket rather than needing a name under Excluded or Unclassified. Recorded 2026-10-01T16:06:03+01:00.
 >

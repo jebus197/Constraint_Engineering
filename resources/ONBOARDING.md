@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 7 October 2026 14:41 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 8 October 2026 11:10 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -39,7 +39,21 @@ never the problem: it is 1214 lines, it was added on 2026-04-08, and a probe tha
 `subprocess.run` with a recorder caught it dispatching real `pip install` and `brew install`
 commands. The documents simply never routed anyone to it.
 
-## CURRENT STATE — 2026-10-07 14:37 BST
+## CURRENT STATE — 2026-10-08 11:09 BST
+
+**BRANCH.** HEAD `3c7240bf` on `sim/shakedown-2026-09-29`; `main` untouched at `b536ff86`. The 2026-09-30 ruling still governs: simulated runs commit only to a simulated branch.
+
+**Gamma gates wherever a decay curve exists.** The hardened convergence check previously made gamma reported-rather-than-gating whenever critical findings were sparse, so the gate described as two-sided was one-sided in exactly the endgame. The repair took 3 attempts: the founder rejected the second as the demotion renamed, and he was right. The estimator returns 0 for 4 different reasons and only 1 is a slope, so the fix separates the sentinel from a measurement, gates gamma wherever a slope exists, and routes the no-curve case to a guarded vacuity whose second guard refuses outright when the panel produced nothing.
+
+**The ladder depth default is exhaust.** A finding now runs until it is resolved or the roster is exhausted, which was ruled on 2026-10-06 and had reached nothing because no configuration expressed it. Measured over 305 archived routing records, the old limit of 2 abandoned 103 findings unresolved, and the success rate beyond the second rung had never been measured at all because the limit prevented it.
+
+**4 free panel rounds were dispatched across this arc, none paid, every one landing both seats.** They found 2 critical defects in the gamma repair, independently and in agreement, and 6 figures the author had carried into briefs were wrong — each caught by a seat rather than by the author. All are corrected in committed scripts with guards, and the full unfiltered replies are preserved per round.
+
+**A measurement instrument was the weak point 5 times in 2 days.** A classifier that tested for file-opening where the directive requires an import; a glob at a directory that has never existed; a confidence interval on exact arithmetic; a difficulty check that scanned field names and never executed the function; and a panel-round count that included every run directory. The standing lesson is now carried by executing guards rather than prose.
+
+**Standing policy, unchanged:** the panel reviews a design before it is built, and fixes are suggested to the human in the loop rather than applied.
+
+## CURRENT STATE — 2026-10-07 14:37 BST (SUPERSEDED by the block above)
 
 **BRANCH, because it decides whether a commit is legitimate.** HEAD `20ec400a` on `sim/shakedown-2026-09-29`; `main` untouched at `b536ff86`. Founder ruling 2026-09-30 still governs: simulated runs commit ONLY to a simulated branch, and the canonical branch moves by his agreement or after a real experimental run.
 
