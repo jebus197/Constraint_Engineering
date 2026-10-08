@@ -1,0 +1,72 @@
+# A rung ladder earned by demonstrated capability, keyed by opaque model identifiers: review the design and fix the promotion rule
+
+## What you are reviewing
+
+The founder's design for how a model with no track record earns its way up a routing ladder, and his proposal that models be keyed by opaque unique identifiers rather than by name. Neither is built. Three committed artefacts carry the analysis and all are runnable:
+
+- `bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py`
+- `bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py`
+- `bench/routing.py`, which holds the live ladder and `RoutingResult`
+
+Run each of them. Several figures in this brief were wrong on a first attempt and were corrected by measurement, so take none of them on trust.
+
+## The design, in the founder's own words
+
+On identifiers: *"We don't need the model's names if we just assign each model in the roster a unique model ID! ... if you have 5 models from the same company, or that are the same model, the only way to tell them apart is through a randomly assigned model ID. Similarly trying to keep a record of 70, or 700 hundred model names would quickly become a nonsensical mess!"* And: *"No new model is inherently trusted, so yes it gets its own unique model ID."*
+
+On promotion: *"new models get tried out on simpler tasks. If they succeed in simpler tasks they are granted an attempt to climb the ladder. If they then succeed in that more complex task, they climb the ladder again, if they fail they either stay on the same simpler problem resolution rung, or if they fail on any more complex task/rung on the ladder, they stay on the last rung where they demonstrated success. Tasks in this sense become increasingly harder, until finally only the most capable (and usually most expensive) models get to deal with the most complex problems."*
+
+His constraint on all of it: *"That does not/should not contradict the premise, that models with demonstrated capability get given tasks in accordance with their demonstrated capability."* And his earlier framing, which forbids excluding a weak model rather than placing it: *"even if a model can do no better than a standard 6 dollar calculator, then we use it for the kind of tasks that kind of capability is best suited for ... even an old 386 computer is still capable of doing work that is beyond many humans."*
+
+## Why the design is needed, and what it fixes
+
+A pure sort over measured capability cannot start. On the first run every model's lower confidence bound is exactly 0.0, so the ordering is a total tie. A previous panel answered this by keeping the hand-written strength tuple as a cold-start tie-break, and its arithmetic was right for 6 models and wrong at scale: the 6-name tuple orders 100.0000% of a 6-model roster, 8.5714% of 70 and 0.8571% of 700, with everything past it ordered by nothing but input order.
+
+Opaque identifiers fix 3 separate defects at once, and the third is a live fault rather than a preference. First, an identifier carries no prior, so it cannot smuggle in a judgement that one vendor beats another. Second, identifiers are generated rather than written, so an arbitrary roster size needs no hand-maintained list. Third, **the project currently has no unique stable identifier for a model at all**: `model_id` in `bench/experiment_11_orchestrator.py` occurs 12 times with only 10 distinct values -- `opus` and `gpt-5.5` each appear twice -- so it collides and cannot key a capability record; and it carries a vendor version in 9 of those 12, so it is not stable across a vendor release.
+
+## What this brief has already measured, and what you must fix
+
+**The promotion criterion is asymmetric in the wrong direction.** Under promote-on-one-success with 5 rungs, a model whose true per-rung success rate is 0.90 reaches the top rung only 59.049% of the time, so it is kept out 40.951% of the time by luck alone. A simulation over 20000 trials returns 0.4101, Wilson [0.403301, 0.416933], agreeing with the closed form. Meanwhile a useless model at 0.10 reaches the top only 0.001% of the time. So the rule does not mainly admit bad models; **it mainly excludes good ones**, and it contradicts the founder's own requirement that *"simply counting when a model is successful"* is not an improvement in capability.
+
+**And the obvious repair over-corrects.** Replacing the single success with a Wilson lower bound over 10 attempts at a floor of 0.50 requires 9 successes per rung, and a genuinely 0.90 model then reaches the top only 21.611302% of the time -- worse than the rule it replaces. State what attempts-per-rung and floor should be, and **derive them from a stated false-negative target** rather than choosing them. If you believe no such calibration exists, say so and say why.
+
+**The absorbing rung contradicts bidirectionality.** If a failure permanently fixes a model at its last successful rung, then the 40.951% of good models capped by luck are capped forever, which contradicts the founder's rule that a model losing capability must be able to regain it. Say what re-test schedule restores bidirectionality without letting a model climb on noise, and what it costs.
+
+**Difficulty appears not to need a classifier, and you should check that.** The founder's ladder needs tasks ordered by difficulty BEFORE a new model is placed, while a previous panel argued difficulty is emergent and retrospective -- a finding is hard because everything better already failed. `RoutingResult` in `bench/routing.py` already records `rungs_tried` and `model_used` per finding, so the depth at which a finding was actually resolved is available today as a measured difficulty label. Verify that this reconciles the two, or show that it does not.
+
+## Open questions you must answer
+
+1. Does a model that fails at a rung lose its place at the rung below, and if not, what stops a model accumulating rungs it can no longer hold?
+2. A new vendor release: same identifier inheriting the record, or a new identifier at 0 attempts? The founder's bidirectional rule says a model climbs on demonstrated improvement, which appears to force a new identifier, but say what that costs and whether anything is lost.
+3. With the depth cap removed every model is eventually tried on every finding, so a new model gains measurements on hard findings for free, at the back of the order. Does the rung ladder then govern PRIORITY only rather than eligibility, and if so does it still need rungs at all?
+4. 5 models from one vendor, or 5 instances of the same model: what must the identifier be derived from so that 2 genuinely identical configurations are not merged and 1 configuration is not split?
+5. Rotation was proposed as the tie-break while bounds are tied, because a deterministic identifier order starves everything past the cap: measured over 400 findings with 12 models and a cap of 2, identifier order left **10 of 12** models with 0 attempts, Wilson [0.5520, 0.9530], while rotation gave every model 66 or 67 at identical dispatch cost. Does rotation compose with the rung ladder, or do they conflict?
+6. The founder's position on timeouts is that output should be harvested when a model is done rather than at an arbitrary wall clock. An idle timeout was demonstrated against a fixed cap: a slow-but-working process was killed at 5.0 s with 0 lines by a total cap but completed in 8.1 s under an idle cap, and a genuinely hung process was caught in 3.1 s by the idle cap against 20.0 s by the total cap. Is an idle timeout on the stream the right mechanism, and what breaks it?
+
+## Required: fixes, not only findings
+
+For every problem you raise, propose a repair, write and EXECUTE a falsifier for it, and deliver each fix as a file at its real path in your sandbox repository tree. A fix you have not run is a hypothesis. Where a fix needs a parameter, derive the parameter and show the derivation; do not choose it.
+
+## Output
+
+Return these fields by name.
+
+- VERDICT on the design as a whole: sound, sound with repairs, or unsound.
+- FINDINGS, each with file and line, each marked OBSERVED with the command that shows it or HYPOTHESISED with what would settle it.
+- FIXES, one per finding, each delivered as a file with the falsifier you executed and its output.
+- YOUR STRONGEST DISAGREEMENT with this brief's own framing. Earlier briefs in this series were wrong about a correlation, about a rate, and about the span of a sensitivity analysis, and each error was found by a seat rather than by the author. Assume this one is wrong somewhere and say where.
+- WHAT WOULD REFUTE YOUR OWN POSITION, as a measurement someone else could run.
+- CONFIDENCE, with the evidence that sets it.
+
+## Termination
+
+Stop when every question above has either a fix with an executed falsifier or an explicit statement that it cannot be answered and why. Stop early if 2 consecutive passes over your own answer produce no new finding above the threshold of real-world consequence. Diminishing returns is a reason to stop; length is not a virtue.
+
+<!-- figure: good_model_kept_out_by_one_success_rule | bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py | 0.40951 -->
+<!-- figure: bound_gate_overcorrects | bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py | 0.21611302 -->
+<!-- figure: absorbing_rung_caps_good_models | bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py | 0.4101 -->
+<!-- figure: tuple_share_at_70 | bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py | 8.5714 -->
+<!-- figure: tuple_share_at_700 | bench/the_cold_start_cannot_use_a_tuple_at_scale_2026-10-08.py | 0.8571 -->
+<!-- figure: good_model_reaches_top_one_success | bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py | 0.59049 -->
+<!-- figure: absorbing_cap_wilson_low | bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py | 0.403301 -->
+<!-- figure: absorbing_cap_wilson_high | bench/the_promotion_ladder_needs_a_bound_not_a_success_2026-10-08.py | 0.416933 -->
