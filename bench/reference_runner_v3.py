@@ -3614,6 +3614,32 @@ def _resolve_merge_source(
 # Gamma estimation and convergence
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _gamma_is_estimable(novelty_counts: List[int], min_rounds: int = 3) -> bool:
+    """True when `_estimate_gamma` returns a SLOPE rather than its 0.0 sentinel.
+
+    ADDED 2026-10-08 for the founder's ruling that gamma gates in all cases. The
+    estimator returns 0.0 for 4 distinct reasons, only 1 of which is a slope of
+    0.0: too few rounds, no novelty at all, fewer than 2 usable log points, and a
+    degenerate denominator. A caller that gates on 0.0 without this distinction
+    either gates on a sentinel or demotes gamma; both have happened.
+
+    The conditions below MIRROR `_estimate_gamma` deliberately. A test executes
+    both against the same inputs so they cannot drift -- a mirror that is only
+    read cannot detect a producer and a consumer disagreeing.
+    """
+    n = len(novelty_counts)
+    if n < min_rounds:
+        return False
+    if sum(novelty_counts) == 0:
+        return False
+    cumulative, total = [], 0
+    for c in novelty_counts:
+        total += c
+        cumulative.append(total)
+    usable = sum(1 for i, cum in enumerate(cumulative) if cum > 0 and (i + 1) > 0)
+    return usable >= 2
+
+
 def _estimate_gamma(novelty_counts: List[int], min_rounds: int = 3) -> float:
     n = len(novelty_counts)
     if n < min_rounds:
@@ -9203,20 +9229,55 @@ def _check_hardened_convergence(
                  gamma_crit_settled=round(g_crit, 4),
                  cum_critical=cum_crit, zero_crit_ok=zero_crit_ok)
 
-    # Sparsity fallback — critical pool too small for a stable slope.
+    # ─────── GAMMA GATES IN EVERY CASE WHERE GAMMA EXISTS ───────
+    # FOUNDER'S RULING, 2026-10-08: *"Gamma should remain active in all cases.
+    # Fix it."* Issued after this branch was found to make gamma
+    # "reported-not-gated" whenever the critical pool is sparse, so the gate
+    # advertised as two-sided went ONE-SIDED in precisely the endgame regime --
+    # and the surviving half, the zero-novel-critical window, is the half a
+    # shrinking roster attacks. Found by the fable seat, panel round
+    # `rung_promotion_and_model_ids_2026-10-08`.
+    #
+    # WHY THE BRANCH CANNOT SIMPLY BE DELETED, and this is the arithmetic that
+    # bounds his ruling rather than a preference. `_estimate_gamma` returns 0.0
+    # as a SENTINEL, not as a slope: on fewer than `min_rounds` points, on an
+    # all-zero series, and on a degenerate fit. A CLEAN run has an all-zero
+    # critical series by construction, so gating unconditionally on a 0.0 that
+    # means "not estimable" would make a clean target unable to converge -- and
+    # 3 consecutive clean convergences on the prose target is the programme of
+    # study's own success criterion. Gating on a sentinel is not gating on gamma.
+    #
+    # SO THE DISTINCTION IS MADE EXPLICIT. Gamma gates wherever it is ESTIMABLE,
+    # including in this sparse branch where it previously did not. Where it is
+    # NOT estimable the fact is recorded as such and the window decides alone --
+    # the same outcome as before, but no longer silent, and auditable afterwards.
+    #
+    # THE BEHAVIOURAL CHANGE THIS MAKES, which is the point: a run with
+    # cum_critical below the floor but a genuinely estimable gamma below theta
+    # used to converge on the window alone. It no longer does.
+    _g_estimable = _gamma_is_estimable(crit_s)
+    telem["gamma_crit_estimable"] = _g_estimable
     if cum_crit < cfg.gamma_crit_min_cumulative:
-        telem["mode"] = "sparsity_fallback"
-        if zero_crit_ok:
+        telem["mode"] = "sparsity_gamma_gated" if _g_estimable else "sparsity_gamma_unestimable"
+        _g_ok = (g_crit >= theta) if _g_estimable else True
+        telem["gamma_crit_gated"] = bool(_g_estimable)
+        if zero_crit_ok and _g_ok:
             return True, (
-                f"HARDENED_CONVERGED (sparsity fallback): cum_critical="
+                f"HARDENED_CONVERGED (sparse pool): cum_critical="
                 f"{cum_crit} < {cfg.gamma_crit_min_cumulative}; "
-                f"γ_crit={g_crit:.3f} reported-not-gated; {W} consecutive "
-                f"settled zero-novel-critical rounds met at R{round_idx} "
-                f"[γ_all diag={g_all:.3f}]"), telem
+                f"γ_crit={g_crit:.3f} "
+                f"{'GATED and met' if _g_estimable else 'NOT ESTIMABLE (sentinel 0.0), window decides alone'}"
+                f"; {W} consecutive settled zero-novel-critical rounds met at "
+                f"R{round_idx} [γ_all diag={g_all:.3f}]"), telem
+        _why = []
+        if not zero_crit_ok:
+            _why.append("zero-crit window not satisfied")
+        if _g_estimable and not _g_ok:
+            _why.append(f"γ_crit={g_crit:.3f} < θ={theta:.3f} and gamma GATES here")
         return False, (
-            f"hardened not met (sparsity, cum_crit={cum_crit}): "
-            f"zero-crit window not satisfied; γ_crit={g_crit:.3f} "
-            f"reported-not-gated [γ_all diag={g_all:.3f}]"), telem
+            f"hardened not met (sparse pool, cum_crit={cum_crit}): "
+            + "; ".join(_why)
+            + f" [γ_all diag={g_all:.3f}]"), telem
 
     telem["mode"] = "full"
     # (B) sustained over consecutive prior settled recomputes
@@ -17555,6 +17616,15 @@ def run_experiment(
                 _check_hardened_convergence(round_idx, registry, cfg)
             )
             _log(f"  hardened-gate telemetry: {_hg_telem}")
+            # PERSISTED, NOT ONLY LOGGED, added 2026-10-08. Until now this
+            # telemetry reached the log file and nothing else, so NO archived
+            # report said which gate mode closed a run: a scan of every
+            # *report*.json in bench/logs for a record carrying `mode` returned
+            # 0. That makes the founder's ruling that gamma gates in all cases
+            # unauditable even once it is implemented, and it defeats his
+            # standing requirement that a researcher be able to retrace what
+            # happened. The round record is the place a researcher looks.
+            _hardened_gate_telem_for_record = dict(_hg_telem)
         else:
             # Critical-quiescence path enforces review-clean (not
             # contested, not churning) directly so it does not converge
@@ -17816,6 +17886,10 @@ def run_experiment(
             "open_crit_high": registry.open_crit_high_count(),
             "unverified_critical": _unresolved_crit,
             "models_responded": list(responses.keys()),
+            # See _hardened_gate_telem_for_record above: which gate mode closed
+            # the round, and whether gamma was ESTIMABLE and therefore gating.
+            "hardened_gate_telemetry": locals().get(
+                "_hardened_gate_telem_for_record") or None,
             "elapsed_s": round(round_elapsed, 1),
             # "gamma" is the LEGACY name and carries the ALL-SEVERITY series.
             # It is NOT what the gate reads. Kept unchanged because 22 archived
