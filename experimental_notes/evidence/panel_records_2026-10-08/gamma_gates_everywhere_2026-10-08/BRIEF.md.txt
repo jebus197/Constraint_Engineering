@@ -1,0 +1,72 @@
+# Gamma now gates in every case where a curve exists: review the fix and try to break it
+
+## What you are reviewing
+
+A change already COMMITTED to the active runner, at `8f014a59` and `ad2ae579` on `sim/shakedown-2026-09-29`. Not a proposal. If it is wrong it is wrong in live code, and the founder will act on what you find.
+
+- `bench/reference_runner_v3.py` — `_check_hardened_convergence` and the new `_gamma_is_estimable`
+- `bench/tests/test_gamma_gates_wherever_it_exists_2026-10-08.py` — 21 guards
+- `bench/tests/test_hardened_gate.py` — 2 pre-existing guards updated, 1 added
+- `bench/tests/test_vacuous_gamma_curve.py` — the sibling path this fix imports from
+
+Run all of them. Execute `_check_hardened_convergence` directly; do not read it and conclude.
+
+## Why the change was made
+
+The founder's standing directive is that gamma is load-bearing and must never be demoted. The fable seat found `_check_hardened_convergence` making gamma "reported-not-gated" whenever the cumulative critical pool falls below `gamma_crit_min_cumulative`, which defaults to 8 and is set by only 4 of the 47 experiment configs. So the gate described throughout the project as two-sided went ONE-SIDED in precisely the endgame regime, and the surviving half — the zero-novel-critical window — is the half a shrinking roster attacks.
+
+His ruling: *"Gamma should remain active in all cases. Fix it."*
+
+The first attempt gated gamma wherever it was estimable and labelled the remaining case "unestimable". **He rejected that**: *"if gamma remains unestimable, how can gamma ever hit the 0.30 mark that has traditionally been set for it? Isn't this gamma demotion by another name?"* He was right. In that branch gamma still did not gate, and renaming a state is not fixing a behaviour.
+
+## What the change now does
+
+**`_estimate_gamma` returns 0.0 for 4 distinct reasons and only 1 is a slope of 0.0** — too few rounds, an all-zero series, fewer than 2 usable log points, a degenerate denominator. `_gamma_is_estimable` separates the sentinel from a slope by mirroring the estimator's own conditions. Measured: `[1,0,0,0,0]` gives 1.0000, `[5,0,0,0,0]` gives 1.0000, `[2,1,0,0,0]` gives 0.7597, `[1,2,3,4,5]` gives 0.0000 and `[0,0,0,0,0]` gives 0.0000. A flat cumulative curve is maximal diminishing returns, so flat-at-zero receiving the FLOOR is the wrong answer rather than an unknowable one.
+
+**Where a curve exists, gamma gates.** Including in the sparse branch where it previously did not. Reachability was measured rather than assumed, because a change that bites nowhere is an unwired addition: an exhaustive sweep over short sparse series with the window met found `[1,3,0,0,0]` at gamma 0.1783 and `[1,4,0,0,0]` at 0.0461. Both converged before and are refused now.
+
+**Where no curve exists, the proven two-guard vacuity from the sibling gate applies, imported rather than re-invented.** `test_vacuous_gamma_curve.py` states the principle: gamma is not demoted, its estimator's DOMAIN is narrowed. The 2 guards are that cumulative critical over the WHOLE history must be zero, so a constant-rate series stays blocked; and that the panel must have produced findings of SOME severity, so a clean target is distinguishable from a dead panel. The second guard REFUSES convergence.
+
+**The gate's mode is now persisted to the round record.** It previously reached `_log` and nothing else: a scan of every report under `bench/logs` for a record carrying `mode` returned 0, so no archived run says which mode closed it and the ruling would have been unauditable even once implemented.
+
+Every path, executed:
+
+| critical series | findings | outcome | mode |
+|---|---|---|---|
+| `[0,0,0,0]` | 18 | CONVERGED | `vacuous_curve_converged` |
+| `[0,0,0,0]` | 0 | **REFUSED** | `vacuous_curve_refused_dead_panel` |
+| `[0,0]` | 18 | REFUSED | `vacuous_curve_window_unmet` |
+| `[1,3,0,0,0]` | 12 | REFUSED | `sparsity_gamma_gated` |
+| `[5,0,0,0]` | 12 | CONVERGED | `sparsity_gamma_gated` |
+| `[2,2,2,2,2,2]` | 30 | REFUSED | never reaches the vacuous path |
+
+## What you must try to break
+
+1. **Find a path where gamma is excused without a guard.** That is the whole claim. If one exists the fix fails on its own terms.
+2. **Find a case where a dead panel still converges**, or where a clean target is refused. The 2 guards are supposed to separate them; show they do not.
+3. **The mirror between `_gamma_is_estimable` and `_estimate_gamma` is hand-maintained.** Find an input where they disagree — where the predicate says estimable and the estimator returns its sentinel, or the reverse. A test executes both on 10 shared inputs; widen it.
+4. **Is "flat cumulative curve means fully decayed" actually right?** The fix does NOT set gamma to its ceiling for an all-zero series; it routes that case to guarded vacuity instead. Say whether setting the ceiling would be better or worse, and what it would break.
+5. **The constant-rate series is the dangerous lookalike.** `[2,2,2,2,2,2]` drives the estimator to the same 0.0 as a clean run for the opposite reason. Prove the first guard excludes every such case, or find one it admits.
+6. **This change TIGHTENS convergence**, so a run that previously closed may now continue. Quantify the cost against the archive: how many completed runs would have been refused, and at what round?
+7. **Does the fix interact with the roster hazard?** The one-sided endgame was found because a shrinking roster attacks the window. With gamma now gating in the sparse branch, is the roster hazard reduced, unchanged, or moved?
+
+## Required: fixes, not only findings
+
+For every problem you raise, propose a repair, write and EXECUTE a falsifier, and deliver each fix as a file at its real path in your sandbox tree. A fix you have not run is a hypothesis. Where a parameter is involved, derive it and show the derivation.
+
+## Output
+
+- VERDICT on the committed change: sound, sound with repairs, or unsound and should be reverted.
+- FINDINGS, each with file and line, each marked OBSERVED with the command that shows it or HYPOTHESISED with what would settle it.
+- FIXES, one per finding, delivered as files, each with its executed falsifier output.
+- YOUR STRONGEST DISAGREEMENT with this brief's framing. Briefs in this series have been wrong about a correlation, a rate, a sensitivity span, a collision mechanism and the direction of a censoring, each caught by a seat rather than the author. Assume this one is wrong somewhere.
+- WHAT WOULD REFUTE YOUR OWN POSITION, as a measurement someone else could run.
+- CONFIDENCE, with the evidence that sets it.
+
+## Termination
+
+Stop when every numbered item above has a fix with an executed falsifier or an explicit statement that it cannot be answered and why. Stop early if 2 consecutive passes produce no new finding above the threshold of real-world consequence.
+<!-- figure: flat_after_something_is_the_ceiling | bench/gamma_sentinel_versus_slope_2026-10-08.py | 1.0000 -->
+<!-- figure: partially_flat_curve | bench/gamma_sentinel_versus_slope_2026-10-08.py | 0.7597 -->
+<!-- figure: sparse_window_met_gamma_low | bench/gamma_sentinel_versus_slope_2026-10-08.py | 0.1783 -->
+<!-- figure: sparse_window_met_gamma_lower | bench/gamma_sentinel_versus_slope_2026-10-08.py | 0.0461 -->
