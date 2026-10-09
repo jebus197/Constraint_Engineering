@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 8 October 2026 11:10 BST (2026-10-08T11:10:32+01:00)
+Generated: 9 October 2026 05:21 BST (2026-10-09T05:21:53+01:00)
 
 ---
 
@@ -18,20 +18,16 @@ Generated: 8 October 2026 11:10 BST (2026-10-08T11:10:32+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `3c7240bf` the morning report now carries the 4th panel's outcome, which I said I would add and did not
-- **Committed:** 2026-10-08 10:48:20 +0100
+- **Last commit (the PARENT of the commit containing this file):** `e3297cbb` the wheel is largely invented, the research proving it had fabricated citations, and his "2 or 3" was nearly right
+- **Committed:** 2026-10-09 05:20:14 +0100
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
-- **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
-
-Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M resources/ONBOARDING.md`
-- `M resources/RECOVERY.md`
+- **Working tree at snapshot time:** clean
 
 ---
 
 ## Tests
 
-**10508 tests collected** at 8 October 2026 11:10 BST, HEAD `3c7240bf` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**10618 tests collected** at 9 October 2026 05:21 BST, HEAD `e3297cbb` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -61,13 +57,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `e3297cbb the wheel is largely invented, the research proving it had fabricated citations, and his "2 or 3" was nearly right`
+- `b03aa8a2 both seats refuted me, randomisation settles monotonicity, and 4 launch deficiencies are fixed`
+- `b4c897fb the round-3 panel analysis he asked for under `d` and did not receive`
+- `6d0f53cc sv: gamma gates wherever a curve exists, the cap default is exhaust, and the panel found 2 critical defects in my fix`
 - `3c7240bf the morning report now carries the 4th panel's outcome, which I said I would add and did not`
 - `40c4a154 both seats found the same 2 critical defects in my gamma fix, and all 4 are now repaired`
 - `80619fa1 p-pass: the hand-maintained mirror holds over a sweep, not over the 10 inputs I first tested`
 - `eaadd840 morning report: gamma gates everywhere, and 6 figures I carried to a panel were wrong`
 - `8f014a59 he was right: "unestimable" was the demotion renamed, so the proven guarded vacuity is imported`
 - `e6cd8ead the 2 guards my gamma fix broke were guarding the defect, and are updated not deleted`
-- `ad2ae579 gamma gates wherever gamma exists, and the gate's mode is finally on the record`
-- `dd46bfd0 both seats land on the rung ladder: sound with repairs, and 4 defects in my own scripts`
-- `39fe5589 p-pass: the derived sample IS minimal, and the rung COUNT is a trade-off nobody had named`
-- `f06c5dcb his clarification withdraws the criticism, and "several" turns out to be derivable`
