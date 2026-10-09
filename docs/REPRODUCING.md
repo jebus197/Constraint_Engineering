@@ -413,6 +413,56 @@ in the conversation and can be combined (e.g. `p a e d`).
 | `sq` | Sequential — strictly one tool call at a time, no parallel batches, to avoid stressing Anthropic servers during long autonomous runs. When dispatching sub-agents, the sequential constraint propagates to them. Does not change what work is done, only the rate at which requests are issued. |
 | `pr` | Panel review — dispatch the full model panel (cc2, cx, ge, cgpt, ds) on a completed analysis or design question under sy, sth, f, e, d, t. Run WITHOUT compelled convergence: each model returns an independent verdict and its strongest falsification, disagreement is preserved as information rather than smoothed to consensus, and CC1 actively participates with its own position and synthesizes the range. Output mirrored to TTS. |
 
+### Panel round controls
+
+Environment variables read by `bench/confer_maths_panel_2026-09-05.py`. Every one has
+a default that reproduces prior behaviour, so a bare invocation is unchanged.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `PANEL_BLIND_OF` | unset | Comma-separated round names whose artefacts must be PURGED from this round's sandboxes, so a blind round in star topology is genuinely blind. The sandbox is refused rather than returned if any artefact survives. |
+| `PANEL_JOINT_OF` | unset | Comma-separated round names whose replies this round CARRIES. Setting it makes the round a JOINT round; the kind is detected from this rather than declared, so forgetting it cannot silently downgrade a joint round. |
+| `PANEL_STAGGER_S` | `20` | Seconds between the starts of 2 seats that share one subscription. `0` restores the strict serialisation that stood from 2026-10-05 to 2026-10-08. A malformed or negative value is refused, not defaulted. |
+| `PANEL_SEAT_TIMEOUT_S` | `1800` | Wall-clock ceiling for one command-line seat attempt. Raise it for a seat KNOWN to be working — a co-seat having completed the same brief establishes that. A malformed or non-positive value is refused. |
+| `PANEL_ONLY` | unset | Restrict dispatch to named seats, intersected with the free seats. |
+| `PANEL_SKIP_TOPOLOGY` | unset | Explicitly skip the star-topology and joint-round-debt checks. An explicit override is a decision; a silent omission is not. |
+| `PANEL_SKIP_ALIVENESS` | unset | Explicitly skip the pre-dispatch liveness probe. |
+
+**Why 20 seconds.** It must clear the 18.7 s session-establishment collision that is the
+only genuinely simultaneous co-failure in the record, and stay below the shortest
+observed first-seat duration of 26.7 s, above which staggering is slower than
+serialising. SymPy reduces the condition to `s <= d1`, z3 returns `unsat` on any
+counterexample under it and `sat` above it, and Wolfram Language (local Wolfram Engine)
+independently returns `0 < s <= d1`. Measured 2026-10-08 over the 91 archived rounds where both free seats had answered,
+serialising cost a mean 0.3969 of wall clock, bootstrap CI [0.3801, 0.4126]. **These
+figures move as the corpus grows** — every completed round adds a pair — so re-running
+the producer today gives a slightly different value, and the figure is only meaningful
+with its date and denominator attached. Producer:
+`scripts/serialising_the_free_seats_costs_40_percent_2026-10-08.py`.
+
+**Why 1800 seconds, and what it costs.** Measured 2026-10-08: Kaplan-Meier over 137
+recorded attempts, 128 completions and 9 right-censored, computed by hand and by
+statsmodels to identical values: median 700.7 s, 90th percentile 1728.1 s, 95th percentile 2939.4 s. So the
+default sits just above the 90th percentile and kills roughly 1 attempt in 10 while it
+is still working. A longer clock is NOT the general repair — the per-call rate is
+identical whether a seat is working or churning on a degraded route (20.455 s against
+20.816 s per call), so only the tool-call COUNT separates those states, and that count
+is not observable until the subprocess returns. Producer:
+`scripts/the_cap_was_measured_on_censored_data_2026-10-08.py`.
+
+**Star topology is 2 halves and both are required.** A blind round, then a joint round
+in which each seat sees the others' blind answers. Measured 2026-10-08, of 99 archived rounds
+collecting 2 or more replies, 15 had a joint round — 0.151515, Wilson [0.094023,
+0.235041]. That denominator grows with every round, and 0.151515 rises as the debt is
+discharged, so quote the figure with its date: re-running the producer on 2026-10-08
+after the day's own rounds landed already gives 16 of 100. The
+dispatcher now writes `topology.json` into every round directory before dispatch, and
+refuses a new blind round while an earlier one still owes its joint half, with the owed
+set derived from the archive rather than from a hand-kept list. Producer:
+`scripts/the_joint_round_was_almost_never_run_2026-10-08.py`. See `docs/GLOSSARY.md`
+under "Blind round / Joint round (panel review)", and note that "star topology" also
+names an unrelated runner-level mechanism.
+
 ### Model Confer Dispatch
 
 These commands direct the model to confer on the current task with a specific

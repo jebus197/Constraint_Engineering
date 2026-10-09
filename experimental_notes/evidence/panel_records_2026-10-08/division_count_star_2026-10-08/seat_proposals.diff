@@ -1,0 +1,1676 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-08 15:45:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i3d4953z/repo/.cdsfl_deny_canonical_writes.sb	2026-10-08 15:02:37
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py	2026-10-08 13:16:30
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i3d4953z/repo/bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py	2026-10-08 15:36:48
+@@ -241,9 +241,21 @@
+         "is_monotone": (falls == 0 or rises == 0),
+         "inversions_more_tiers_cost_less": len(inversions),
+         "example_inversions": inversions[:6],
+-        "verdict": ("the cost curve is NOT monotone in the number of divisions, "
+-                    "so the tier count has to be SCANNED; neither 'as few as "
+-                    "possible' nor 'as many as the bound allows' is right"),
++        "verdict": ("WITHDRAWN 2026-10-08 (joint round); the measurement is KEPT. "
++                    "The non-monotonicity above is real ONLY inside the "
++                    "identical-gate family `smallest_gate` imposes. Under "
++                    "heterogeneous gates the curve at THIS budget is monotone: "
++                    "19, 21, 22, 25, 28, 30, 33, 36, 38, 41, 42, 45, 48. The "
++                    "conclusion 'the tier count has to be SCANNED' was right by "
++                    "accident -- the curve DOES invert at other budgets (capable "
++                    "0.90 / weak 0.30, budget (0.95, 0.010): 3 divisions cost 10 "
++                    "attempts where 2 cost 11) -- but a cost scan cannot CHOOSE "
++                    "the division count. It reports the smallest FEASIBLE count "
++                    "under the attempts ceiling. The count is a RESOLUTION bound, "
++                    "max(1, floor(dphi*sqrt(N)/z_alpha_over_2)) over the measured "
++                    "resolve-rate span. See scripts/the_division_count_is_a_"
++                    "resolution_bound_and_relegation_is_not_identified_2026-10-08"
++                    ".py claims 1, 3 and 4"),
+     }
+ 
+ 
+
+### cc2:attempt-1:docs/REPRODUCING.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/REPRODUCING.md	2026-10-08 15:09:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i3d4953z/repo/docs/REPRODUCING.md	2026-10-03 17:45:25
+@@ -412,57 +412,7 @@
+ | `rg` | Regain full context on named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output. Name the resources consulted. |
+ | `sq` | Sequential — strictly one tool call at a time, no parallel batches, to avoid stressing Anthropic servers during long autonomous runs. When dispatching sub-agents, the sequential constraint propagates to them. Does not change what work is done, only the rate at which requests are issued. |
+ | `pr` | Panel review — dispatch the full model panel (cc2, cx, ge, cgpt, ds) on a completed analysis or design question under sy, sth, f, e, d, t. Run WITHOUT compelled convergence: each model returns an independent verdict and its strongest falsification, disagreement is preserved as information rather than smoothed to consensus, and CC1 actively participates with its own position and synthesizes the range. Output mirrored to TTS. |
+-
+-### Panel round controls
+-
+-Environment variables read by `bench/confer_maths_panel_2026-09-05.py`. Every one has
+-a default that reproduces prior behaviour, so a bare invocation is unchanged.
+-
+-| Variable | Default | What it does |
+-|---|---|---|
+-| `PANEL_BLIND_OF` | unset | Comma-separated round names whose artefacts must be PURGED from this round's sandboxes, so a blind round in star topology is genuinely blind. The sandbox is refused rather than returned if any artefact survives. |
+-| `PANEL_JOINT_OF` | unset | Comma-separated round names whose replies this round CARRIES. Setting it makes the round a JOINT round; the kind is detected from this rather than declared, so forgetting it cannot silently downgrade a joint round. |
+-| `PANEL_STAGGER_S` | `20` | Seconds between the starts of 2 seats that share one subscription. `0` restores the strict serialisation that stood from 2026-10-05 to 2026-10-08. A malformed or negative value is refused, not defaulted. |
+-| `PANEL_SEAT_TIMEOUT_S` | `1800` | Wall-clock ceiling for one command-line seat attempt. Raise it for a seat KNOWN to be working — a co-seat having completed the same brief establishes that. A malformed or non-positive value is refused. |
+-| `PANEL_ONLY` | unset | Restrict dispatch to named seats, intersected with the free seats. |
+-| `PANEL_SKIP_TOPOLOGY` | unset | Explicitly skip the star-topology and joint-round-debt checks. An explicit override is a decision; a silent omission is not. |
+-| `PANEL_SKIP_ALIVENESS` | unset | Explicitly skip the pre-dispatch liveness probe. |
+-
+-**Why 20 seconds.** It must clear the 18.7 s session-establishment collision that is the
+-only genuinely simultaneous co-failure in the record, and stay below the shortest
+-observed first-seat duration of 26.7 s, above which staggering is slower than
+-serialising. SymPy reduces the condition to `s <= d1`, z3 returns `unsat` on any
+-counterexample under it and `sat` above it, and Wolfram Language (local Wolfram Engine)
+-independently returns `0 < s <= d1`. Measured 2026-10-08 over the 91 archived rounds where both free seats had answered,
+-serialising cost a mean 0.3969 of wall clock, bootstrap CI [0.3801, 0.4126]. **These
+-figures move as the corpus grows** — every completed round adds a pair — so re-running
+-the producer today gives a slightly different value, and the figure is only meaningful
+-with its date and denominator attached. Producer:
+-`scripts/serialising_the_free_seats_costs_40_percent_2026-10-08.py`.
+ 
+-**Why 1800 seconds, and what it costs.** Measured 2026-10-08: Kaplan-Meier over 137
+-recorded attempts, 128 completions and 9 right-censored, computed by hand and by
+-statsmodels to identical values: median 700.7 s, 90th percentile 1728.1 s, 95th percentile 2939.4 s. So the
+-default sits just above the 90th percentile and kills roughly 1 attempt in 10 while it
+-is still working. A longer clock is NOT the general repair — the per-call rate is
+-identical whether a seat is working or churning on a degraded route (20.455 s against
+-20.816 s per call), so only the tool-call COUNT separates those states, and that count
+-is not observable until the subprocess returns. Producer:
+-`scripts/the_cap_was_measured_on_censored_data_2026-10-08.py`.
+-
+-**Star topology is 2 halves and both are required.** A blind round, then a joint round
+-in which each seat sees the others' blind answers. Measured 2026-10-08, of 99 archived rounds
+-collecting 2 or more replies, 15 had a joint round — 0.151515, Wilson [0.094023,
+-0.235041]. That denominator grows with every round, and 0.151515 rises as the debt is
+-discharged, so quote the figure with its date: re-running the producer on 2026-10-08
+-after the day's own rounds landed already gives 16 of 100. The
+-dispatcher now writes `topology.json` into every round directory before dispatch, and
+-refuses a new blind round while an earlier one still owes its joint half, with the owed
+-set derived from the archive rather than from a hand-kept list. Producer:
+-`scripts/the_joint_round_was_almost_never_run_2026-10-08.py`. See `docs/GLOSSARY.md`
+-under "Blind round / Joint round (panel review)", and note that "star topology" also
+-names an unrelated runner-level mechanism.
+-
+ ### Model Confer Dispatch
+ 
+ These commands direct the model to confer on the current task with a specific
+
+### cc2:attempt-1:experimental_notes/data/instrument_inventory.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/instrument_inventory.json	2026-10-08 15:06:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i3d4953z/repo/experimental_notes/data/instrument_inventory.json	2026-10-07 14:44:36
+@@ -11,7 +11,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 8,
++   "naming_tests": 7,
+    "commissioning_candidate": true,
+    "evidence": "test_vacuous_gamma_curve.py",
+    "heuristic_said": true,
+@@ -27,7 +27,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 20,
++   "naming_tests": 18,
+    "commissioning_candidate": true,
+    "evidence": "test_repair_loop_wiring_2026-08-30.py",
+    "heuristic_said": true,
+@@ -75,7 +75,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 20,
++   "naming_tests": 18,
+    "commissioning_candidate": true,
+    "evidence": "test_repair_loop_wiring_2026-08-30.py",
+    "heuristic_said": true,
+@@ -91,9 +91,9 @@
+    "flag": "hardened_gate_enabled",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 2,
++   "naming_tests": 1,
+    "commissioning_candidate": true,
+-   "evidence": "test_gamma_gates_wherever_it_exists_2026-10-08.py",
++   "evidence": "test_hardened_gate.py",
+    "heuristic_said": true,
+    "measured": false,
+    "panel_verdict": ""
+@@ -475,7 +475,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 26,
++   "naming_tests": 25,
+    "commissioning_candidate": true,
+    "evidence": "test_ouroboros_query_builder.py",
+    "heuristic_said": true,
+
+### cc2:attempt-1:scripts/the_division_count_is_a_resolution_bound_and_relegation_is_not_identified_2026-10-08.py
+--- /dev/null	2026-10-08 15:45:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i3d4953z/repo/scripts/the_division_count_is_a_resolution_bound_and_relegation_is_not_identified_2026-10-08.py	2026-10-08 15:38:04
+@@ -0,0 +1,863 @@
++#!/usr/bin/env python3
++"""The division count is a resolution bound; the relegation signal is not identified.
++
++JOINT ROUND, 2026-10-08. This file reconciles two blind positions on the founder's
++question -- *"how many leagues should there be, and can that be mathematically
++derived at the start of an experiment, from the relative complexity of the task and
++the available resources?"* -- and on what relegates a model. It re-executes both
++positions' load-bearing arithmetic, confirms what reproduces, and contradicts three
++things both of them got wrong.
++
++NO MODEL NAMES. Capability is a rate.
++
++WHAT REPRODUCES, AND IS NOT IN DISPUTE (claim 1).
++Both deterministic inversion witnesses reproduce exactly by exhaustive enumeration:
++at capable 0.90 / weak 0.30 with end-to-end budget (0.95, 0.010) and a per-gate
++ceiling of 14 attempts, 3 divisions cost 10 attempts and 2 cost 11; at capable
++0.95 / weak 0.30 with budget (0.90, 0.050), 3 cost 4 and 2 cost 5. One witness is
++enough to kill "as few divisions as possible" as a general claim. The randomised
++merged gate on the 10 summed attempts reproduces too: S = 7, gamma = 0.9342258766,
++power 0.9834296545 at size exactly 0.010, against 0.9298091736 for the best
++deterministic gate on the same 10 attempts -- short of the 0.95 floor, which is
++the whole mechanism of the inversion.
++
++CONTRADICTION 1, AND IT PRICES THE RANDOMISATION QUESTION (claim 2).
++The joint brief puts the randomisation decision as "whether this project should
++promote a model on a coin flip", with the implied alternative being a per-budget
++scan. Neither position priced the choice. Measured here, at T = 2, in attempts:
++
++    capable 0.90 / weak 0.50, budget (0.95, 0.010) -- THE COMMITTED BUDGET:
++        randomised minimum 19 attempts, deterministic minimum 19 attempts.
++        THE PRICE OF DETERMINISM AT THIS PROJECT'S OWN OPERATING POINT IS 0.
++    capable 0.90 / weak 0.30, budget (0.95, 0.010):  randomised 9, deterministic 11.
++    capable 0.95 / weak 0.30, budget (0.90, 0.050):  randomised 4, deterministic 5.
++
++And the cost of accepting randomisation, in the only currency that matters for
++auditability: at the merged gate of witness 1 the coin is load-bearing on
++P(K = 7 | 0.90) = 0.057395628 of capable records and 0.009001692 of weak ones. So
++5.74% of capable-model promotion decisions would be settled by a coin, and two
++identical attempt records would receive different verdicts in 2 * 0.0574 * 0.9342
++* 0.0658 of paired decisions. That is the decision the founder is being asked to
++make, with both sides now in numbers rather than in principle.
++
++CONTRADICTION 2, AND IT IS THE ONE THAT MATTERS MOST (claim 3).
++Both positions' closed forms for the division count OVERESTIMATE it, and
++overestimation is the unsafe direction: a formula that returns more divisions than
++the attempt record can resolve builds boundaries no model can be placed on. Over
++128 cells (4 error rates x 4 rate spans x 8 sample sizes), scored against an EXACT
++binomial computation of the largest number of equal-width arcsine bands in which a
++model at every band centre is placed in its own band with probability >= 1 - alpha:
++
++    max(1, floor(dphi*sqrt(N)/z))     bias -0.117, MAE 0.227, exact in 100/128
++    1 + floor(dphi*sqrt(N)/z)         bias -1.047, MAE 1.047, exact in  16/128
++    1 + floor(2*dphi*sqrt(N)/z)       bias -7.906, MAE 7.906, exact in   2/128
++
++where dphi = arcsin(sqrt(p_hi)) - arcsin(sqrt(p_lo)) and z = z_{alpha/2}. The
++"+ 1" is the error. The DOUBLING is not an error by itself: doubling the arcsine
++gap also doubles the critical value, because Var(2*arcsin(sqrt(phat))) ~ 1/N where
++Var(arcsin(sqrt(phat))) ~ 1/(4N), so the two cancel and the bracket is the same
++number. One position's own quoted Wolfram bound at N = 2000 is 10.5792512465,
++whose FLOOR is 10, which is exactly the exact-binomial answer; its reported T = 11
++is that value plus the spurious 1.
++
++The consequence is load-bearing at this project's own operating point: at N = 19
++attempts over a measured resolve-rate span [0.50, 0.90], the exact supportable
++count is 1 -- NO promotion boundary is supportable -- while one position's formula
++returns 2 and the other's as summarised returns 3. The committed 5-rung rule
++(19 attempts, 11 successes) sits exactly there.
++
++CONTRADICTION 3, AND IT DISSOLVES THE "CHOOSE ONE OR COMPOSE" FRAMING (claims 5-7).
++The brief asks the panel to choose between a peer-comparative sign test and a
++CUSUM on Rasch residuals against measured item difficulty, or to compose them.
++Neither can be right, because the quantity is not identified. In the Rasch model
++P(y = 1) = sigma(theta - b), a roster-wide capability drop of delta and a
++stream-wide difficulty rise of delta induce IDENTICAL distributions on every
++outcome (SymPy: the difference is exactly 0; z3 finds no witness separating them).
++So no statistic computed on outcomes alone can tell a genuine common-mode decline
++from the task stream getting harder. Measured, with all three rules calibrated to
++the SAME false-alarm probability 0.05 on a stable model, evaluated on a held-out
++seed:
++
++    scenario                absolute floor   peer sign test   Rasch CUSUM
++    stable        (want LOW)        0.0560           0.0470        0.0583
++    stream hardens(want LOW)        1.0000           0.0037        0.0250
++    individual decline (HIGH)       1.0000           0.9603        0.9990
++    COMMON-MODE decline(HIGH)       1.0000           0.0190        0.9990
++    difficulty estimate stale(LOW)  1.0000           0.0037        1.0000
++
++The peer sign test resolves the unidentified direction by always calling it
++hardening -- it is BLIND to a roster-wide decline, 0.0190 against its own 0.0470
++size. The Rasch CUSUM on archived difficulty resolves it by always calling it
++decline -- it demotes a stable model 1.0000 of the time when the recorded
++difficulty is stale. Those are priors, not measurements, and neither position
++measured its own.
++
++THE DERIVED FIX IS A DESIGN REQUIREMENT, NOT A STATISTIC (claim 7). An ANCHOR SET
++of items whose difficulty is fixed externally and re-run each window breaks the
++indeterminacy, and nothing else does. Measured, at a threshold calibrated to size
++0.05, with difficulty known exactly on anchors and estimated from the concurrent
++cohort elsewhere:
++
++    anchor share 0.00  P(demote | common-mode decline) 0.0000   P(demote | harden) 0.0000
++    anchor share 0.10                                  0.2200                       0.0047
++    anchor share 0.40                                  0.8953                       0.0247
++    anchor share 1.00                                  1.0000                       0.0627
++
++This independently reproduces the other position's 0.40 calibration share by a
++different construction, and supplies the reason it exists. Under the founder's
++composability rule the ANCHORED CUSUM ALONE dominates: it detects what the peer
++test cannot (common-mode), and the anchor set removes the stale-difficulty failure
++that is the CUSUM's own, so the composition has nothing left to add. It also works
++at a roster of 1, where the peer test has no comparator.
++
++AND A FOURTH DEFECT IN THE CUSUM AS SPECIFIED (claim 6). The threshold
++h = 4.400221, solved from a target ARL0 of 500 by the Brook-Evans normal-theory
++Markov chain, is not in control. The Winsorised Rasch residual on a single
++Bernoulli observation is TWO-VALUED and its skew depends on the item's pass
++probability, so the realised in-control ARL0 is 773.4 at p = 0.50, 356.8 at 0.65,
++155.9 at 0.8176 and 6755.5 at 0.95 -- a 43-fold spread, matching the 500 target at
++none of them. At p = 0.8176 the specified h demotes 0.6927 of stable models over a
++200-observation horizon. No single h is in control across a difficulty-varying
++stream. The anchor set repairs this too, by construction: every CUSUM observation
++then comes from a pool whose difficulty distribution is fixed.
++
++WHAT THE COST SCAN IS STILL FOR (claim 4). One position calls the attempts
++objective degenerate at T = 2 always; the other prices the climb with it. Both are
++partly wrong. Over 40 random budgets (seed 11, per-gate ceiling 14, total ceiling
++40, T <= 5): 27 feasible, 0 downward steps (Wilson 0.0000-0.1246), and in 0 of 27
++did the argmin STRICTLY beat the smallest feasible division count. But in 6 of 27
++the smallest feasible count was 3, not 2, because the per-gate ceiling made a
++single gate impossible. So the scan does not and cannot choose T; its one surviving
++job is to report the SMALLEST FEASIBLE T under the attempts ceiling, and to price
++the ladder at the T that resolution has already chosen. Reproduce with --budget-scan
++(184 s). Note the 0 inversions here is at ceiling 14 and does NOT reproduce or
++refute the 0.1875 rate reported at ceiling 24 -- different population, overlapping
++intervals. The witnesses, which is what kills the general claim, reproduce exactly.
++
++EVERY FIGURE TWICE. SciPy's binomial against an exact mpmath sum; SymPy and z3 on
++the symbolic claims; Wolfram Language (local Wolfram Engine, via wolframscript,
++exit 0, no Name::tag, no $Failed) as the second falsifier on 7 values, recorded in
++claim 1 and claim 3 with attribution. Wolfram is never the only source.
++
++Run: python3 scripts/the_division_count_is_a_resolution_bound_and_relegation_is_not_identified_2026-10-08.py
++     (add --budget-scan for the 40-budget scan, 184 s, OFF by default)
++"""
++from __future__ import annotations
++
++import argparse
++import itertools
++import math
++
++Z95 = 1.959963984540054
++K_REF = 0.5
++WINSOR = 2.0
++
++
++def sf(s: int, a: int, p: float) -> float:
++    """P(at least s successes in a attempts at rate p), SciPy."""
++    from scipy.stats import binom
++    return float(binom.sf(s - 1, a, p))
++
++
++def sf_exact(s: int, a: int, p: float) -> float:
++    """The same, as an exact 50-digit mpmath sum."""
++    import mpmath as mp
++    with mp.workdps(50):
++        pp = mp.mpf(p)
++        return float(sum(mp.binomial(a, k) * pp ** k * (1 - pp) ** (a - k)
++                         for k in range(s, a + 1)))
++
++
++def pmf(k: int, n: int, p: float) -> float:
++    from scipy.stats import binom
++    return float(binom.pmf(k, n, p))
++
++
++def phi(p: float) -> float:
++    """The variance-stabilising transform, UNDOUBLED: Var(phi(phat)) ~ 1/(4N)."""
++    return math.asin(math.sqrt(p))
++
++
++def _wilson(k: int, n: int) -> tuple:
++    p = k / n
++    d = 1 + Z95 * Z95 / n
++    c = (p + Z95 * Z95 / (2 * n)) / d
++    h = (Z95 / d) * math.sqrt(p * (1 - p) / n + Z95 * Z95 / (4 * n * n))
++    return (round(max(0.0, c - h), 4), round(min(1.0, c + h), 4))
++
++
++# --------------------------------------------------------------------------- #
++# claim 1 -- both inversion witnesses, exhaustively, and the randomised merge
++# --------------------------------------------------------------------------- #
++def claim_both_inversion_witnesses_reproduce() -> dict:
++    """Exhaustive enumeration of every 1-gate and 2-gate ladder. No pruning."""
++    out = {}
++    for cap, weak, pcmin, pwmax, maxa, label in [
++            (0.90, 0.30, 0.95, 0.010, 14,
++             "capable 0.90 / weak 0.30, budget (0.95, 0.010)"),
++            (0.95, 0.30, 0.90, 0.050, 14,
++             "capable 0.95 / weak 0.30, budget (0.90, 0.050)")]:
++        gates = [(a, s) for a in range(1, maxa + 1) for s in range(1, a + 1)]
++        one = min(((a, (a, s)) for a, s in gates
++                   if sf(s, a, cap) >= pcmin and sf(s, a, weak) <= pwmax))
++        two = None
++        for (a1, s1), (a2, s2) in itertools.combinations_with_replacement(gates, 2):
++            c = sf(s1, a1, cap) * sf(s2, a2, cap)
++            w = sf(s1, a1, weak) * sf(s2, a2, weak)
++            if c >= pcmin and w <= pwmax and (two is None or a1 + a2 < two[0]):
++                two = (a1 + a2, [(a1, s1), (a2, s2)], c, w)
++        cm = (sf_exact(two[1][0][1], two[1][0][0], cap)
++              * sf_exact(two[1][1][1], two[1][1][0], cap))
++        wm = (sf_exact(two[1][0][1], two[1][0][0], weak)
++              * sf_exact(two[1][1][1], two[1][1][0], weak))
++        out[label] = {
++            "cost_T2": one[0], "gate_T2": one[1],
++            "cost_T3": two[0], "ladder_T3": two[1],
++            "end_to_end_capable": round(two[2], 10),
++            "end_to_end_weak": round(two[3], 10),
++            "inverts": two[0] < one[0],
++            "scipy_vs_mpmath": max(abs(two[2] - cm), abs(two[3] - wm)),
++        }
++        assert two[0] < one[0], f"inversion did not reproduce at {label}"
++    n, cap, weak, pwmax = 10, 0.90, 0.30, 0.010
++    S = 7
++    base_w, tie_w = sf(S + 1, n, weak), pmf(S, n, weak)
++    gamma = (pwmax - base_w) / tie_w
++    power = sf(S + 1, n, cap) + gamma * pmf(S, n, cap)
++    det = max(sf(s, n, cap) for s in range(1, n + 1) if sf(s, n, weak) <= pwmax)
++    out["the randomised merged gate on 10 attempts"] = {
++        "S": S, "gamma": round(gamma, 10),
++        "randomised_power": round(power, 10),
++        "randomised_size": round(base_w + gamma * tie_w, 10),
++        "best_deterministic_power_on_the_same_10": round(det, 10),
++        "deterministic_clears_the_0.95_floor": det >= 0.95,
++        "wolfram": {"gamma": 0.9342258766, "power": 0.9834296545,
++                    "tie_mass_capable": 0.057395628,
++                    "tie_mass_weak": 0.009001692,
++                    "best_deterministic": 0.9298091736,
++                    "attribution": "Wolfram Language, local Wolfram Engine, "
++                                   "via wolframscript"},
++    }
++    assert 0.0 <= gamma <= 1.0
++    assert power >= 0.95 > det, "the randomisation gap did not reproduce"
++    return out
++
++
++# --------------------------------------------------------------------------- #
++# claim 2 -- the price of determinism, in attempts, and the coin's share
++# --------------------------------------------------------------------------- #
++def _rand_power(n: int, cap: float, weak: float, pwmax: float) -> float:
++    best = -1.0
++    for S in range(0, n + 1):
++        base = sf(S + 1, n, weak)
++        if base > pwmax:
++            continue
++        tie = pmf(S, n, weak)
++        g = 1.0 if tie == 0 else min(1.0, (pwmax - base) / tie)
++        best = max(best, sf(S + 1, n, cap) + g * pmf(S, n, cap))
++    return best
++
++
++def _det_power(n: int, cap: float, weak: float, pwmax: float) -> float:
++    return max([sf(s, n, cap) for s in range(1, n + 1)
++                if sf(s, n, weak) <= pwmax] or [-1.0])
++
++
++def claim_the_price_of_determinism_in_attempts() -> dict:
++    """What refusing the coin costs, at T = 2, where the merge theorem lives."""
++    rows = {}
++    for cap, weak, pcmin, pwmax, label in [
++            (0.90, 0.50, 0.95, 0.010, "THE COMMITTED BUDGET (0.90/0.50, 0.95/0.010)"),
++            (0.90, 0.30, 0.95, 0.010, "witness 1 (0.90/0.30, 0.95/0.010)"),
++            (0.95, 0.30, 0.90, 0.050, "witness 2 (0.95/0.30, 0.90/0.050)")]:
++        nr = next(n for n in range(1, 400)
++                  if _rand_power(n, cap, weak, pwmax) >= pcmin)
++        nd = next(n for n in range(1, 400)
++                  if _det_power(n, cap, weak, pwmax) >= pcmin)
++        rows[label] = {"randomised_min_attempts": nr,
++                       "deterministic_min_attempts": nd,
++                       "price_of_determinism_in_attempts": nd - nr}
++    rows["the coin's share at witness 1's merged gate"] = {
++        "P(tie | capable 0.90)": round(pmf(7, 10, 0.90), 9),
++        "P(tie | weak 0.30)": round(pmf(7, 10, 0.30), 9),
++        "P(2 identical records differ | capable)":
++            round(2 * pmf(7, 10, 0.90) * 0.9342258766 * (1 - 0.9342258766), 9),
++    }
++    assert rows["THE COMMITTED BUDGET (0.90/0.50, 0.95/0.010)"][
++        "price_of_determinism_in_attempts"] == 0, \
++        "determinism was expected to be free at the committed budget"
++    return rows
++
++
++# --------------------------------------------------------------------------- #
++# claim 3 -- the exact resolvable division count, against three closed forms
++# --------------------------------------------------------------------------- #
++def exact_division_count(N: int, p_lo: float, p_hi: float, alpha: float) -> int:
++    """Largest T such that a model at EVERY band centre lands in its own band
++    with probability >= 1 - alpha, bands equal-width in arcsine coordinates.
++
++    Exact binomial. No normal approximation anywhere in this function.
++    """
++    import numpy as np
++    from scipy.stats import binom
++    ks = np.arange(N + 1)
++    ph = np.array([phi(k / N) for k in ks])
++    lo, hi = phi(p_lo), phi(p_hi)
++    best = 0
++    for T in range(1, 90):
++        e = [lo + (hi - lo) * j / T for j in range(T + 1)]
++        worst = 1.0
++        for j in range(T):
++            p = math.sin(0.5 * (e[j] + e[j + 1])) ** 2
++            pm = binom.pmf(ks, N, p)
++            if T == 1:
++                mk = np.ones_like(ph, dtype=bool)
++            elif j == 0:
++                mk = ph < e[1]
++            elif j == T - 1:
++                mk = ph >= e[T - 1]
++            else:
++                mk = (ph >= e[j]) & (ph < e[j + 1])
++            worst = min(worst, float(pm[mk].sum()))
++        if worst >= 1 - alpha:
++            best = T
++        else:
++            break
++    return best
++
++
++def claim_both_closed_forms_overestimate_the_division_count() -> dict:
++    """The reconciliation of the 2 formulae, and the correction to both."""
++    import numpy as np
++    from scipy.stats import norm
++    cells = []
++    for alpha in (0.01, 0.05, 0.10, 0.20):
++        z = float(norm.ppf(1 - alpha / 2))
++        for p_lo, p_hi in ((0.5, 0.9), (0.3, 0.95), (0.6, 0.8), (0.1, 0.99)):
++            d = phi(p_hi) - phi(p_lo)
++            for N in (19, 38, 80, 150, 300, 500, 1000, 2000):
++                cells.append((exact_division_count(N, p_lo, p_hi, alpha),
++                              d * math.sqrt(N) / z))
++    E = np.array([c[0] for c in cells], dtype=float)
++    br = np.array([c[1] for c in cells])
++    forms = {
++        "max(1, floor(dphi*sqrtN/z))   [this round]": np.maximum(1, np.floor(br)),
++        "1 + floor(dphi*sqrtN/z)       [position A]": 1 + np.floor(br),
++        "1 + floor(2*dphi*sqrtN/z)     [position B as summarised]":
++            1 + np.floor(2 * br),
++    }
++    table = {}
++    for k, v in forms.items():
++        err = E - v
++        table[k] = {"bias": round(float(err.mean()), 4),
++                    "MAE": round(float(np.abs(err).mean()), 4),
++                    "max_abs_err": int(np.abs(err).max()),
++                    "exact_cells": f"{int((err == 0).sum())}/{len(E)}",
++                    "overestimating_cells": f"{int((err < 0).sum())}/{len(E)}"}
++    d = phi(0.9) - phi(0.5)
++    at_point = {N: {"exact": exact_division_count(N, 0.5, 0.9, 0.05),
++                    "bracket": round(d * math.sqrt(N) / Z95, 6),
++                    "A": int(1 + math.floor(d * math.sqrt(N) / Z95)),
++                    "B_as_summarised":
++                        int(1 + math.floor(2 * d * math.sqrt(N) / Z95))}
++                for N in (19, 38, 80, 2000)}
++    best = min(table, key=lambda k: table[k]["MAE"])
++    assert best.startswith("max(1,"), "the corrected form was not the most accurate"
++    assert at_point[19]["exact"] == 1 < at_point[19]["A"], \
++        "the operating-point consequence did not reproduce"
++    return {
++        "cells": len(E),
++        "scored_against": "an exact binomial band-centre placement computation",
++        "table": table,
++        "at_the_operating_point": at_point,
++        "dphi_undoubled": repr(d),
++        "dphi_doubled": repr(2 * d),
++        "why_the_doubling_is_not_itself_an_error":
++            ("Var(arcsin(sqrt(phat))) ~ 1/(4N) and Var(2*arcsin(sqrt(phat))) ~ 1/N, "
++             "so doubling the gap doubles the critical value and the bracket is "
++             "unchanged; the '+ 1' is the error, in both formulae"),
++        "wolfram": {"dphi": 0.46364760900080611621,
++                    "two_dphi": 0.92729521800161223243,
++                    "bracket_at_N_2000": 10.579251246541043,
++                    "floor_of_that": 10,
++                    "attribution": "Wolfram Language, local Wolfram Engine, "
++                                   "via wolframscript"},
++    }
++
++
++# --------------------------------------------------------------------------- #
++# claim 4 -- what the cost scan is still for
++# --------------------------------------------------------------------------- #
++def claim_the_cost_scan_reports_feasibility_not_the_count(run_scan: bool) -> dict:
++    """The committed DP, reused unchanged. Heavy half behind a flag."""
++    import importlib.util
++    import random
++    import time
++    spec = importlib.util.spec_from_file_location(
++        "dcd", "scripts/the_division_count_is_derivable_2026-10-08.py")
++    m = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(m)
++    t0 = time.time()
++    c = m.optimal_costs()
++    wall = time.time() - t0
++    curve = [c[T] for T in sorted(c)]
++    out = {"committed_budget_optimum_curve": curve,
++           "one_full_DP_T2_to_T14_seconds": round(wall, 3),
++           "monotone_at_the_committed_budget":
++               all(b >= a for a, b in zip(curve, curve[1:]))}
++    assert curve[0] == 19 and len(curve) == 13, "the committed curve did not reproduce"
++    if not run_scan:
++        out["budget_scan"] = ("SKIPPED -- rerun with --budget-scan (184 s). "
++                              "Recorded: 40 budgets seed 11 at per-gate ceiling 14, "
++                              "total ceiling 40, T <= 5: 27 feasible, 0 downward "
++                              "steps (Wilson 0.0000-0.1246), argmin T {2: 21, 3: 6}, "
++                              "and in 0 of 27 did argmin STRICTLY beat the smallest "
++                              "feasible T -- the 6 threes are budgets where a single "
++                              "gate is INFEASIBLE under the ceiling.")
++        return out
++    rng = random.Random(11)
++    feas = inv = strict = 0
++    argmins: "dict[int, int]" = {}
++    for _ in range(40):
++        cap = rng.uniform(0.6, 0.99)
++        weak = rng.uniform(0.01, cap - 0.05)
++        pc = rng.uniform(0.80, 0.99)
++        pw = rng.uniform(0.001, 0.35)
++        cc = m.optimal_costs(cap, weak, pc, pw, max_div=5, maxa=14, maxtot=40)
++        seq = [(T, cc[T]) for T in sorted(cc) if cc[T] is not None]
++        if not seq:
++            continue
++        feas += 1
++        s = [v for _, v in seq]
++        if any(b < a for a, b in zip(s, s[1:])):
++            inv += 1
++        am = min(seq, key=lambda t: (t[1], t[0]))
++        argmins[am[0]] = argmins.get(am[0], 0) + 1
++        if am[1] < s[0]:
++            strict += 1
++    out["budget_scan"] = {
++        "budgets": 40, "feasible": feas, "with_a_downward_step": inv,
++        "wilson_on_the_inversion_rate": _wilson(inv, feas),
++        "argmin_T_distribution": dict(sorted(argmins.items())),
++        "argmin_STRICTLY_beat_the_smallest_feasible_T": f"{strict}/{feas}",
++        "reading": ("the scan cannot choose T; it reports the smallest FEASIBLE T "
++                    "under the per-gate attempts ceiling"),
++    }
++    return out
++
++
++# --------------------------------------------------------------------------- #
++# claim 5 -- three relegation rules at EQUAL false-alarm rate, five scenarios
++# --------------------------------------------------------------------------- #
++N_OBS = 200
++WIN = 40
++THETA0 = 1.5
++DROP = 1.5
++ROSTER = 5
++
++
++def _stream(scenario: str, rng):
++    import numpy as np
++    b = np.zeros(N_OBS)
++    th_t = np.full(N_OBS, THETA0)
++    th_p = np.full((N_OBS, ROSTER - 1), THETA0)
++    if scenario in ("harden", "stale"):
++        b = np.linspace(0.0, 2.5, N_OBS)
++    if scenario == "decline":
++        th_t[N_OBS // 2:] -= DROP
++    if scenario == "common":
++        th_t[N_OBS // 2:] -= DROP
++        th_p[N_OBS // 2:, :] -= DROP
++    b_rec = np.zeros(N_OBS) if scenario == "stale" else b.copy()
++    pt = 1 / (1 + np.exp(-(th_t - b)))
++    pp = 1 / (1 + np.exp(-(th_p - b[:, None])))
++    return b_rec, (rng.random(N_OBS) < pt).astype(int), \
++        (rng.random((N_OBS, ROSTER - 1)) < pp).astype(int)
++
++
++def _fire_floor(y, b_rec, yp, thr):
++    import numpy as np
++    c = np.convolve(y, np.ones(WIN), "valid") / WIN
++    return bool((c < thr).any())
++
++
++def _signpv(nd: int, k: int) -> float:
++    from scipy.stats import binom
++    return float(binom.sf(k - 1, nd, 0.5))
++
++
++def _fire_sign(y, b_rec, yp, alpha, alt="greater"):
++    """Exact one-sided sign test over discordant pairs against the peer majority."""
++    import numpy as np
++    maj = (yp.mean(axis=1) > 0.5).astype(int)
++    a = ((y == 0) & (maj == 1)).astype(int)
++    b = ((y == 1) & (maj == 0)).astype(int)
++    ca = np.convolve(a, np.ones(WIN), "valid").astype(int)
++    cb = np.convolve(b, np.ones(WIN), "valid").astype(int)
++    for n21, n12 in zip(ca, cb):
++        nd = int(n21 + n12)
++        if nd == 0:
++            continue
++        if _signpv(nd, int(n21 if alt == "greater" else n12)) < alpha:
++            return True
++    return False
++
++
++def _fire_cusum(y, b_rec, yp, h, warm=20):
++    import numpy as np
++    p = np.clip(1 / (1 + np.exp(-(THETA0 - b_rec))), 1e-6, 1 - 1e-6)
++    z = np.clip((y - p) / np.sqrt(p * (1 - p)), -WINSOR, WINSOR)
++    S = 0.0
++    for k, zk in enumerate(z):
++        S = max(0.0, S - zk - K_REF)
++        if S >= h and k + 1 >= warm:
++            return True
++    return False
++
++
++def _rate(scenario, rule, param, seed, trials):
++    import numpy as np
++    rng = np.random.default_rng(seed)
++    hits = 0
++    for _ in range(trials):
++        b_rec, y, yp = _stream(scenario, rng)
++        hits += bool(rule(y, b_rec, yp, param))
++    return hits / trials
++
++
++def _calibrate(rule, lo, hi, increasing, target=0.05, seed=101, trials=1500):
++    for _ in range(16):
++        mid = 0.5 * (lo + hi)
++        if (_rate("stable", rule, mid, seed, trials) > target) == increasing:
++            hi = mid
++        else:
++            lo = mid
++    return 0.5 * (lo + hi)
++
++
++def claim_three_relegation_rules_at_equal_size(trials: int = 2000) -> dict:
++    """The only fair comparison: same false-alarm rate, held-out evaluation seed."""
++    thr = _calibrate(_fire_floor, 0.0, 1.0, True)
++    alpha = _calibrate(_fire_sign, 1e-9, 0.05, True)
++    h = _calibrate(_fire_cusum, 0.5, 40.0, False)
++    rules = [("absolute_floor", _fire_floor, thr),
++             ("peer_sign_test", _fire_sign, alpha),
++             ("rasch_cusum", _fire_cusum, h)]
++    table = {}
++    for sc in ("stable", "harden", "decline", "common", "stale"):
++        table[sc] = {}
++        for name, fn, pm in rules:
++            r = _rate(sc, fn, pm, 202, trials)
++            table[sc][name] = {"rate": round(r, 4),
++                               "wilson": _wilson(int(round(r * trials)), trials)}
++    less = lambda y, b, yp, a: _fire_sign(y, b, yp, a, "less")
++    inverted = {"decline": round(_rate("decline", less, alpha, 202, trials), 4),
++                "harden": round(_rate("harden", less, alpha, 202, trials), 4)}
++    out = {"calibrated_to_size_0.05_on_seed_101":
++           {"floor_rate": round(thr, 6), "sign_alpha": f"{alpha:.3e}",
++            "cusum_h": round(h, 4)},
++           "evaluated_on_seed_202": table,
++           "trials_per_cell": trials,
++           "sign_test_with_alternative_less_as_quoted_in_prose": inverted,
++           "brook_evans_h_4.400221_realised_size_on_stable":
++               round(_rate("stable", _fire_cusum, 4.400221, 101, 1000), 4)}
++    assert table["harden"]["absolute_floor"]["rate"] > 0.9, \
++        "the absolute floor's hard-problem defect did not reproduce"
++    assert table["common"]["peer_sign_test"]["rate"] < 0.10, \
++        "the peer test was expected blind to common-mode decline"
++    assert table["stale"]["rasch_cusum"]["rate"] > 0.9, \
++        "the CUSUM was expected to misfire on stale difficulty"
++    assert inverted["decline"] < table["decline"]["peer_sign_test"]["rate"], \
++        "the quoted alternative was expected to detect less, not more"
++    return out
++
++
++# --------------------------------------------------------------------------- #
++# claim 6 -- the Brook-Evans threshold is not in control
++# --------------------------------------------------------------------------- #
++def claim_the_brook_evans_threshold_is_not_in_control(h: float = 4.400221,
++                                                      trials: int = 4000) -> dict:
++    import numpy as np
++    rows = {}
++    for p in (0.50, 0.65, 0.8176, 0.95):
++        rng = np.random.default_rng(5)
++        zf = max(-WINSOR, min(WINSOR, (0 - p) / math.sqrt(p * (1 - p))))
++        zs = max(-WINSOR, min(WINSOR, (1 - p) / math.sqrt(p * (1 - p))))
++        tot = 0
++        for _ in range(trials):
++            S, n = 0.0, 0
++            while S < h and n < 200000:
++                S = max(0.0, S - (zs if rng.random() < p else zf) - K_REF)
++                n += 1
++            tot += n
++        rows[p] = round(tot / trials, 1)
++    spread = max(rows.values()) / min(rows.values())
++    assert spread > 5, "the ARL0 spread did not reproduce"
++    assert not any(400 < v < 600 for v in rows.values()), \
++        "some item pass-probability hit the 500 design target"
++    return {"h": h, "design_target_ARL0": 500,
++            "realised_ARL0_by_item_pass_probability": rows,
++            "spread_factor": round(spread, 1),
++            "why": ("the Winsorised Rasch residual on a SINGLE Bernoulli "
++                    "observation is two-valued and its skew depends on p, so the "
++                    "normal-theory Brook-Evans Markov chain does not describe the "
++                    "increment; no single h is in control across a "
++                    "difficulty-varying stream")}
++
++
++# --------------------------------------------------------------------------- #
++# claim 7 -- the indeterminacy, and the anchor set that breaks it
++# --------------------------------------------------------------------------- #
++def claim_common_mode_decline_is_not_identified() -> dict:
++    import sympy as sp
++    import z3
++    th, b, d = sp.symbols("theta b delta", real=True)
++    pr = lambda t, bb: sp.exp(t - bb) / (1 + sp.exp(t - bb))
++    diff = sp.simplify(pr(th - d, b) - pr(th, b + d))
++    assert diff == 0, f"the Rasch additive indeterminacy did not hold: {diff}"
++    t2, b2, d2 = z3.Reals("theta b delta")
++    s = z3.Solver()
++    s.add(d2 > 0, (t2 - d2) - b2 != t2 - (b2 + d2))
++    res = str(s.check())
++    assert res == "unsat"
++    return {"sympy_difference_of_the_2_success_probabilities": str(diff),
++            "z3_search_for_a_separating_logit": res,
++            "consequence": ("a roster-wide capability drop of delta and a "
++                            "stream-wide difficulty rise of delta induce IDENTICAL "
++                            "distributions on every outcome, so NO statistic on "
++                            "outcomes alone separates them")}
++
++
++def claim_an_anchor_set_is_what_breaks_it(h: float = 7.583,
++                                          trials: int = 1500) -> dict:
++    import numpy as np
++
++    def run(share, seed, common, harden):
++        rng = np.random.default_rng(seed)
++        nan_ = int(round(share * N_OBS))
++        fires = 0
++        for _ in range(trials):
++            is_a = np.zeros(N_OBS, bool)
++            is_a[rng.permutation(N_OBS)[:nan_]] = True
++            b_true = np.where(is_a, 0.0, np.linspace(0.0, 2.5, N_OBS))
++            if harden:
++                b_true = np.where(is_a, 0.0,
++                                  b_true + 1.5 * (np.arange(N_OBS) >= N_OBS // 2))
++            th = np.full(N_OBS, THETA0)
++            if common:
++                th[N_OBS // 2:] -= DROP
++            p_true = 1 / (1 + np.exp(-(th - b_true)))
++            y = (rng.random(N_OBS) < p_true).astype(int)
++            # difficulty exact on anchors; elsewhere estimated from the concurrent
++            # cohort, which absorbs any common shift and leaves zero residual
++            p_mod = np.where(is_a, 1 / (1 + np.exp(-(THETA0 - b_true))),
++                             np.clip(p_true, 1e-6, 1 - 1e-6))
++            S = 0.0
++            for k in range(N_OBS):
++                if not is_a[k]:
++                    continue
++                pk = float(min(max(p_mod[k], 1e-6), 1 - 1e-6))
++                z = max(-WINSOR, min(WINSOR,
++                                     (y[k] - pk) / math.sqrt(pk * (1 - pk))))
++                S = max(0.0, S - z - K_REF)
++                if S >= h:
++                    fires += 1
++                    break
++        return fires / trials
++
++    rows = {}
++    for share in (0.0, 0.05, 0.10, 0.20, 0.40, 0.60, 1.00):
++        rows[share] = {"common_mode": round(run(share, 303, True, False), 4),
++                       "hardening": round(run(share, 404, False, True), 4)}
++    assert rows[0.0]["common_mode"] < 0.02, \
++        "with no anchors the common-mode drop should be invisible"
++    assert rows[0.40]["common_mode"] > 0.80, \
++        "a 0.40 anchor share should give high power"
++    assert rows[0.40]["hardening"] < 0.10, \
++        "a 0.40 anchor share should not misfire on a hardening stream"
++    return {"cusum_h": h, "trials_per_cell": trials, "by_anchor_share": rows,
++            "composability_verdict":
++                ("the ANCHORED CUSUM ALONE dominates: it detects common-mode "
++                 "decline, which the peer test cannot, and the anchor set removes "
++                 "the stale-difficulty misfire, which is the CUSUM's own failure. "
++                 "Composing the peer test with it adds nothing measurable and "
++                 "costs the common-mode detection under an AND rule. It also "
++                 "operates at a roster of 1, where the peer test has no "
++                 "comparator.")}
++
++
++
++# --------------------------------------------------------------------------- #
++# claim 8 -- I TRIED TO BREAK CLAIM 3 AND IT HELD, WITH A QUALIFICATION
++# --------------------------------------------------------------------------- #
++def claim_the_plus_one_is_wrong_under_the_other_criterion_too() -> dict:
++    """A fix not tried against its own strongest objection is a hypothesis.
++
++    THE OBJECTION. Claim 3 scores the closed forms against ONE resolution
++    criterion: a model at every band centre is placed in its own band with
++    probability >= 1 - alpha. That is a TWO-SIDED requirement on interior bands,
++    which is why the critical value is z_{alpha/2}. An equally defensible
++    criterion scores each interior EDGE instead: the 2 centres flanking an edge
++    must each fall on their own side of it with probability >= 1 - alpha, a
++    ONE-SIDED two-point discrimination, which would license z_alpha and a larger
++    count. If the '+ 1' is correct under that criterion, claim 3 is a criterion
++    artefact rather than an error.
++
++    IT IS NOT. Under the edge criterion the best-fitting form is still the one
++    WITHOUT the '+ 1'. And the consequence that matters is criterion-independent:
++    at N = 19 over the span [0.50, 0.90] BOTH criteria give an exact count of 1.
++    What IS criterion-dependent is the SIZE of the overestimate -- 1.047
++    divisions under the band criterion, 0.547 under the edge criterion -- and
++    which z to use. That choice is the founder's, and it is listed as such.
++    """
++    import numpy as np
++    from scipy.stats import binom, norm
++    def exact_T_edge(N, plo, phh, alpha):
++        ks = np.arange(N + 1)
++        ph = np.array([phi(k / N) for k in ks])
++        lo, hi = phi(plo), phi(phh)
++        best = 0
++        for T in range(1, 90):
++            e = [lo + (hi - lo) * j / T for j in range(T + 1)]
++            ok = True
++            for j in range(1, T):
++                pl = math.sin(0.5 * (e[j - 1] + e[j])) ** 2
++                pr = math.sin(0.5 * (e[j] + e[j + 1])) ** 2
++                if float(binom.pmf(ks, N, pl)[ph >= e[j]].sum()) > alpha:
++                    ok = False
++                    break
++                if float(binom.pmf(ks, N, pr)[ph < e[j]].sum()) > alpha:
++                    ok = False
++                    break
++            if ok:
++                best = T
++            else:
++                break
++        return best
++    rows = []
++    for alpha in (0.01, 0.05, 0.10, 0.20):
++        z1 = float(norm.ppf(1 - alpha))
++        z2 = float(norm.ppf(1 - alpha / 2))
++        for plo, phh in ((0.5, 0.9), (0.3, 0.95), (0.6, 0.8), (0.1, 0.99)):
++            d = phi(phh) - phi(plo)
++            for N in (19, 38, 80, 150, 300, 500, 1000, 2000):
++                rows.append((exact_T_edge(N, plo, phh, alpha),
++                             d * math.sqrt(N) / z1, d * math.sqrt(N) / z2))
++    E = np.array([r[0] for r in rows], dtype=float)
++    b1 = np.array([r[1] for r in rows])
++    b2 = np.array([r[2] for r in rows])
++    forms = {
++        "max(1, floor(dphi*sqrtN/z_alpha))     [one-sided z, no +1]":
++            np.maximum(1, np.floor(b1)),
++        "1 + floor(dphi*sqrtN/z_alpha)         [one-sided z, +1]": 1 + np.floor(b1),
++        "max(1, floor(dphi*sqrtN/z_alpha_2))   [two-sided z, no +1]":
++            np.maximum(1, np.floor(b2)),
++        "1 + floor(dphi*sqrtN/z_alpha_2)       [two-sided z, +1 = position A]":
++            1 + np.floor(b2),
++    }
++    table = {}
++    for k, v in forms.items():
++        err = E - v
++        table[k] = {"bias": round(float(err.mean()), 4),
++                    "MAE": round(float(np.abs(err).mean()), 4),
++                    "exact_cells": f"{int((err == 0).sum())}/{len(E)}"}
++    best = min(table, key=lambda k: table[k]["MAE"])
++    at_point = {N: exact_T_edge(N, 0.5, 0.9, 0.05) for N in (19, 38, 80, 2000)}
++    assert "no +1" in best, \
++        f"the '+ 1' became the best form under the edge criterion: {best}"
++    assert at_point[19] == 1, \
++        "the operating-point consequence was expected criterion-independent"
++    return {"criterion": "interior-edge one-sided two-point discrimination",
++            "cells": len(E), "table": table, "best_fitting_form": best,
++            "exact_counts_span_0.50_to_0.90_alpha_0.05": at_point,
++            "verdict": ("claim 3 HELD. The '+ 1' is not the best-fitting form "
++                        "under either criterion. The MAGNITUDE of the "
++                        "overestimate and the choice of z ARE criterion-"
++                        "dependent; the operating-point consequence at N = 19 "
++                        "is not.")}
++
++# --------------------------------------------------------------------------- #
++def main() -> int:
++    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
++    ap.add_argument("--budget-scan", action="store_true",
++                    help="also run the 40-budget DP scan (184 s). OFF by default: "
++                         "the panel validator has a 600 s ceiling.")
++    a = ap.parse_args()
++
++    print("== 1. both inversion witnesses, exhaustively, and the randomised merge ==")
++    for k, v in claim_both_inversion_witnesses_reproduce().items():
++        print(f"   {k}")
++        for kk, vv in v.items():
++            print(f"      {kk}: {vv}")
++
++    print("\n== 2. the price of determinism, in attempts ==")
++    for k, v in claim_the_price_of_determinism_in_attempts().items():
++        print(f"   {k}: {v}")
++
++    print("\n== 3. both closed forms OVERESTIMATE the division count ==")
++    d3 = claim_both_closed_forms_overestimate_the_division_count()
++    print(f"   {d3['cells']} cells, scored against {d3['scored_against']}")
++    for k, v in d3["table"].items():
++        print(f"      {k:58s} bias {v['bias']:+7.3f}  MAE {v['MAE']:6.3f}  "
++              f"max|err| {v['max_abs_err']:2d}  exact {v['exact_cells']}  "
++              f"over {v['overestimating_cells']}")
++    print("   at the operating point, span 0.50-0.90, alpha 0.05:")
++    for N, r in d3["at_the_operating_point"].items():
++        print(f"      N={N:5d}  exact {r['exact']:2d}   A {r['A']:2d}   "
++              f"B {r['B_as_summarised']:2d}   bracket {r['bracket']}")
++    print(f"   dphi {d3['dphi_undoubled']}  doubled {d3['dphi_doubled']}")
++    print(f"   {d3['why_the_doubling_is_not_itself_an_error']}")
++    print(f"   Wolfram: {d3['wolfram']}")
++
++    print("\n== 4. what the cost scan is still for ==")
++    for k, v in claim_the_cost_scan_reports_feasibility_not_the_count(
++            a.budget_scan).items():
++        print(f"   {k}: {v}")
++
++    print("\n== 5. three relegation rules at EQUAL false-alarm rate ==")
++    d5 = claim_three_relegation_rules_at_equal_size()
++    print(f"   {d5['calibrated_to_size_0.05_on_seed_101']}")
++    print(f"   Brook-Evans h=4.400221 realised P(fire | stable) = "
++          f"{d5['brook_evans_h_4.400221_realised_size_on_stable']}")
++    names = ("absolute_floor", "peer_sign_test", "rasch_cusum")
++    print(f"   {'scenario':12s}" + "".join(f"{n:>28s}" for n in names))
++    for sc, row in d5["evaluated_on_seed_202"].items():
++        line = f"   {sc:12s}"
++        for n in names:
++            line += f"{row[n]['rate']:9.4f} {row[n]['wilson']}".rjust(28)
++        print(line)
++    print("   want:        stable LOW   harden LOW   decline HIGH   "
++          "common HIGH   stale LOW")
++    print(f"   sign test with alternative 'less' as quoted in prose: "
++          f"{d5['sign_test_with_alternative_less_as_quoted_in_prose']}")
++
++    print("\n== 6. the Brook-Evans threshold is not in control ==")
++    for k, v in claim_the_brook_evans_threshold_is_not_in_control().items():
++        print(f"   {k}: {v}")
++
++    print("\n== 7. common-mode decline is NOT IDENTIFIED, and anchors break it ==")
++    for k, v in claim_common_mode_decline_is_not_identified().items():
++        print(f"   {k}: {v}")
++    d7 = claim_an_anchor_set_is_what_breaks_it()
++    for share, r in d7["by_anchor_share"].items():
++        print(f"   anchor share {share:4.2f}  common-mode {r['common_mode']:.4f}   "
++              f"hardening {r['hardening']:.4f}")
++    print(f"   {d7['composability_verdict']}")
++
++    print("\n== 8. I tried to break claim 3 under the other resolution criterion ==")
++    d8 = claim_the_plus_one_is_wrong_under_the_other_criterion_too()
++    print(f"   criterion: {d8['criterion']}, {d8['cells']} cells")
++    for k, v in d8["table"].items():
++        print(f"      {k:62s} bias {v['bias']:+7.3f}  MAE {v['MAE']:6.3f}  "
++              f"exact {v['exact_cells']}")
++    print(f"   best-fitting form: {d8['best_fitting_form']}")
++    print(f"   exact counts, span 0.50-0.90, alpha 0.05: "
++          f"{d8['exact_counts_span_0.50_to_0.90_alpha_0.05']}")
++    print(f"   {d8['verdict']}")
++
++    print("\nall falsifiers passed")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-08 15:45:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_x_tqzisq/repo/.cdsfl_deny_canonical_writes.sb	2026-10-08 15:02:57
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py	2026-10-08 13:16:30
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_x_tqzisq/repo/bench/the_division_count_is_bounded_and_the_cost_is_not_monotone_2026-10-08.py	2026-10-08 15:35:35
+@@ -241,9 +241,16 @@
+         "is_monotone": (falls == 0 or rises == 0),
+         "inversions_more_tiers_cost_less": len(inversions),
+         "example_inversions": inversions[:6],
+-        "verdict": ("the cost curve is NOT monotone in the number of divisions, "
+-                    "so the tier count has to be SCANNED; neither 'as few as "
+-                    "possible' nor 'as many as the bound allows' is right"),
++        "verdict": ("WITHDRAWN 2026-10-08 (see module docstring): this "
++                    "non-monotonicity is a property of the IDENTICAL-GATE "
++                    "restriction only, and these costs are UPPER BOUNDS. "
++                    "Heterogeneous-gate optima live in "
++                    "scripts/the_division_count_is_derivable_2026-10-08.py; "
++                    "the 2026-10-08 joint round measured inversions there "
++                    "too at other budgets (exhaustive witnesses in "
++                    "scripts/the_joint_round_settles_the_gate_family_and_"
++                    "the_count_2026-10-08.py), so the tier count is still "
++                    "SCANNED per budget -- but not on this file's evidence"),
+     }
+ 
+ 
+
+### fable:attempt-1:docs/REPRODUCING.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/REPRODUCING.md	2026-10-08 15:09:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_x_tqzisq/repo/docs/REPRODUCING.md	2026-10-03 17:45:25
+@@ -412,57 +412,7 @@
+ | `rg` | Regain full context on named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output. Name the resources consulted. |
+ | `sq` | Sequential — strictly one tool call at a time, no parallel batches, to avoid stressing Anthropic servers during long autonomous runs. When dispatching sub-agents, the sequential constraint propagates to them. Does not change what work is done, only the rate at which requests are issued. |
+ | `pr` | Panel review — dispatch the full model panel (cc2, cx, ge, cgpt, ds) on a completed analysis or design question under sy, sth, f, e, d, t. Run WITHOUT compelled convergence: each model returns an independent verdict and its strongest falsification, disagreement is preserved as information rather than smoothed to consensus, and CC1 actively participates with its own position and synthesizes the range. Output mirrored to TTS. |
+-
+-### Panel round controls
+-
+-Environment variables read by `bench/confer_maths_panel_2026-09-05.py`. Every one has
+-a default that reproduces prior behaviour, so a bare invocation is unchanged.
+-
+-| Variable | Default | What it does |
+-|---|---|---|
+-| `PANEL_BLIND_OF` | unset | Comma-separated round names whose artefacts must be PURGED from this round's sandboxes, so a blind round in star topology is genuinely blind. The sandbox is refused rather than returned if any artefact survives. |
+-| `PANEL_JOINT_OF` | unset | Comma-separated round names whose replies this round CARRIES. Setting it makes the round a JOINT round; the kind is detected from this rather than declared, so forgetting it cannot silently downgrade a joint round. |
+-| `PANEL_STAGGER_S` | `20` | Seconds between the starts of 2 seats that share one subscription. `0` restores the strict serialisation that stood from 2026-10-05 to 2026-10-08. A malformed or negative value is refused, not defaulted. |
+-| `PANEL_SEAT_TIMEOUT_S` | `1800` | Wall-clock ceiling for one command-line seat attempt. Raise it for a seat KNOWN to be working — a co-seat having completed the same brief establishes that. A malformed or non-positive value is refused. |
+-| `PANEL_ONLY` | unset | Restrict dispatch to named seats, intersected with the free seats. |
+-| `PANEL_SKIP_TOPOLOGY` | unset | Explicitly skip the star-topology and joint-round-debt checks. An explicit override is a decision; a silent omission is not. |
+-| `PANEL_SKIP_ALIVENESS` | unset | Explicitly skip the pre-dispatch liveness probe. |
+-
+-**Why 20 seconds.** It must clear the 18.7 s session-establishment collision that is the
+-only genuinely simultaneous co-failure in the record, and stay below the shortest
+-observed first-seat duration of 26.7 s, above which staggering is slower than
+-serialising. SymPy reduces the condition to `s <= d1`, z3 returns `unsat` on any
+-counterexample under it and `sat` above it, and Wolfram Language (local Wolfram Engine)
+-independently returns `0 < s <= d1`. Measured 2026-10-08 over the 91 archived rounds where both free seats had answered,
+-serialising cost a mean 0.3969 of wall clock, bootstrap CI [0.3801, 0.4126]. **These
+-figures move as the corpus grows** — every completed round adds a pair — so re-running
+-the producer today gives a slightly different value, and the figure is only meaningful
+-with its date and denominator attached. Producer:
+-`scripts/serialising_the_free_seats_costs_40_percent_2026-10-08.py`.
+ 
+-**Why 1800 seconds, and what it costs.** Measured 2026-10-08: Kaplan-Meier over 137
+-recorded attempts, 128 completions and 9 right-censored, computed by hand and by
+-statsmodels to identical values: median 700.7 s, 90th percentile 1728.1 s, 95th percentile 2939.4 s. So the
+-default sits just above the 90th percentile and kills roughly 1 attempt in 10 while it
+-is still working. A longer clock is NOT the general repair — the per-call rate is
+-identical whether a seat is working or churning on a degraded route (20.455 s against
+-20.816 s per call), so only the tool-call COUNT separates those states, and that count
+-is not observable until the subprocess returns. Producer:
+-`scripts/the_cap_was_measured_on_censored_data_2026-10-08.py`.
+-
+-**Star topology is 2 halves and both are required.** A blind round, then a joint round
+-in which each seat sees the others' blind answers. Measured 2026-10-08, of 99 archived rounds
+-collecting 2 or more replies, 15 had a joint round — 0.151515, Wilson [0.094023,
+-0.235041]. That denominator grows with every round, and 0.151515 rises as the debt is
+-discharged, so quote the figure with its date: re-running the producer on 2026-10-08
+-after the day's own rounds landed already gives 16 of 100. The
+-dispatcher now writes `topology.json` into every round directory before dispatch, and
+-refuses a new blind round while an earlier one still owes its joint half, with the owed
+-set derived from the archive rather than from a hand-kept list. Producer:
+-`scripts/the_joint_round_was_almost_never_run_2026-10-08.py`. See `docs/GLOSSARY.md`
+-under "Blind round / Joint round (panel review)", and note that "star topology" also
+-names an unrelated runner-level mechanism.
+-
+ ### Model Confer Dispatch
+ 
+ These commands direct the model to confer on the current task with a specific
+
+### fable:attempt-1:experimental_notes/data/instrument_inventory.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/instrument_inventory.json	2026-10-08 15:06:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_x_tqzisq/repo/experimental_notes/data/instrument_inventory.json	2026-10-07 14:44:36
+@@ -11,7 +11,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 8,
++   "naming_tests": 7,
+    "commissioning_candidate": true,
+    "evidence": "test_vacuous_gamma_curve.py",
+    "heuristic_said": true,
+@@ -27,7 +27,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 20,
++   "naming_tests": 18,
+    "commissioning_candidate": true,
+    "evidence": "test_repair_loop_wiring_2026-08-30.py",
+    "heuristic_said": true,
+@@ -75,7 +75,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 20,
++   "naming_tests": 18,
+    "commissioning_candidate": true,
+    "evidence": "test_repair_loop_wiring_2026-08-30.py",
+    "heuristic_said": true,
+@@ -91,9 +91,9 @@
+    "flag": "hardened_gate_enabled",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 2,
++   "naming_tests": 1,
+    "commissioning_candidate": true,
+-   "evidence": "test_gamma_gates_wherever_it_exists_2026-10-08.py",
++   "evidence": "test_hardened_gate.py",
+    "heuristic_said": true,
+    "measured": false,
+    "panel_verdict": ""
+@@ -475,7 +475,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 26,
++   "naming_tests": 25,
+    "commissioning_candidate": true,
+    "evidence": "test_ouroboros_query_builder.py",
+    "heuristic_said": true,
+
+### fable:attempt-1:scripts/the_joint_round_settles_the_gate_family_and_the_count_2026-10-08.py
+--- /dev/null	2026-10-08 15:45:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_x_tqzisq/repo/scripts/the_joint_round_settles_the_gate_family_and_the_count_2026-10-08.py	2026-10-08 15:40:27
+@@ -0,0 +1,475 @@
++#!/usr/bin/env python3
++"""The joint round, executed: gate family, division-count formulae, scan role, relegation.
++
++Written for the 2026-10-08 joint round over the 2 blind positions on the founder's
++division-count question. The blind positions' delivered files are NOT in this tree,
++so every figure either position relied on is RE-DERIVED here from scratch; nothing
++is carried on citation. 5 claims, each with its own falsifier (asserts raise on
++failure).
++
++  1. Both blind inversion witnesses reproduce by exhaustive enumeration.
++  2. The gate-family trichotomy (Q1): deterministic count-thresholds invert;
++     randomised thresholds repair the witness; AND a third family neither
++     position examined -- deterministic but ORDER-READING tests -- also repairs
++     it, which shows the real modelling axioms are determinism AND
++     exchangeability, not determinism alone. With both axioms the optimal gate
++     is a count threshold (verified by brute force over all count subsets),
++     monotonicity is false, and the per-budget scan is the derivation of cost.
++  3. The 2 blind division-count formulae (Q2) are ONE statistic: the arcsine
++     doubling cancels symbolically, and the residual disagreement is which
++     error quantity is held (per-side vs per-boundary two-sided). An
++     exact-binomial placement arbiter decides both, and measures where the
++     closed form is optimistic at small n.
++  4. The attempts objective (Q3) is NOT literally degenerate -- its argmin
++     reached 4 at one measured budget, killing this claim's own first
++     assertion -- but it is decided entirely by the error budget and has no
++     dependence on the per-model attempt allowance, so it cannot track
++     resolution and cannot derive the count. Resolution derives the count;
++     the scan prices T <= T_resolution and harvests free divisions. That is
++     the scan's whole remaining role.
++  5. The 2 relegation mechanisms (Q4), measured across regimes: the
++     division-peer sign test has no comparator at roster 1; the Rasch-residual
++     CUSUM false-demotes under a hardening stream when item difficulty is
++     uncalibrated; a regime-gated composition (peers govern when a cohort
++     shares the stream; the Rasch CUSUM governs only where no cohort exists
++     AND difficulty is calibrated; neither available -> abstain and report)
++     weakly dominates each alone on every regime and strictly on at least 1 --
++     which is the committed measurement the founder's composability rule
++     demands before composing.
++
++Every probability is computed in SciPy and checked against an exact mpmath sum;
++the symbolic identity goes to SymPy. Wolfram, where quoted, is the SECOND
++falsifier and is recorded in the committed text beside the run that called it.
++
++Run: python3 scripts/the_joint_round_settles_the_gate_family_and_the_count_2026-10-08.py
++"""
++from __future__ import annotations
++
++import importlib.util
++import math
++import pathlib
++import random
++
++REPO = pathlib.Path(__file__).resolve().parent.parent
++
++
++import functools
++
++
++@functools.lru_cache(maxsize=None)
++def _sf(s, a, p):
++    from scipy.stats import binom
++    return float(binom.sf(s - 1, a, p))
++
++
++@functools.lru_cache(maxsize=None)
++def _pmf(k, a, p):
++    from scipy.stats import binom
++    return float(binom.pmf(k, a, p))
++
++
++def _sf_exact(s, a, p):
++    import mpmath as mp
++    with mp.workdps(50):
++        pp = mp.mpf(p)
++        return float(sum(mp.binomial(a, k) * pp ** k * (1 - pp) ** (a - k)
++                         for k in range(s, a + 1)))
++
++
++def _ladder_cost_exhaustive(cap, weak, pc_min, pw_max, gates, max_per_gate,
++                            max_total):
++    """Cheapest total attempts over ALL ladders with `gates` threshold gates.
++
++    Exhaustive, not a Pareto DP: this is the falsifier for the witnesses, so
++    it must not share pruning logic with anything it checks.
++    """
++    from itertools import product
++    singles = [(a, s) for a in range(1, max_per_gate + 1)
++               for s in range(1, a + 1)]
++    best, best_ladder = None, None
++    for combo in product(singles, repeat=gates):
++        tot = sum(a for a, _ in combo)
++        if tot > max_total or (best is not None and tot >= best):
++            continue
++        pc = pw = 1.0
++        for a, s in combo:
++            pc *= _sf(s, a, cap)
++            pw *= _sf(s, a, weak)
++        if pc >= pc_min and pw <= pw_max:
++            best, best_ladder = tot, list(combo)
++    return best, best_ladder
++
++
++def claim_1_both_blind_witnesses_reproduce():
++    """Exhaustive enumeration at the 3 cited budgets; scipy checked by mpmath."""
++    out = {}
++    c2, l2 = _ladder_cost_exhaustive(0.90, 0.50, 0.85, 0.26, 1, 8, 8)
++    c3, l3 = _ladder_cost_exhaustive(0.90, 0.50, 0.85, 0.26, 2, 8, 8)
++    out["witness_seat1"] = {"cost_2_divisions": c2, "ladder": l2,
++                            "cost_3_divisions": c3, "ladder3": l3}
++    assert c2 == 5 and c3 == 4 and c3 < c2, out["witness_seat1"]
++    c2, l2 = _ladder_cost_exhaustive(0.90, 0.30, 0.95, 0.010, 1, 14, 14)
++    c3, l3 = _ladder_cost_exhaustive(0.90, 0.30, 0.95, 0.010, 2, 14, 14)
++    out["witness_seat2_a"] = {"cost_2_divisions": c2, "ladder": l2,
++                              "cost_3_divisions": c3, "ladder3": l3}
++    assert c2 == 11 and c3 == 10 and c3 < c2, out["witness_seat2_a"]
++    c2, l2 = _ladder_cost_exhaustive(0.95, 0.30, 0.90, 0.05, 1, 10, 10)
++    c3, l3 = _ladder_cost_exhaustive(0.95, 0.30, 0.90, 0.05, 2, 10, 10)
++    out["witness_seat2_b"] = {"cost_2_divisions": c2, "ladder": l2,
++                              "cost_3_divisions": c3, "ladder3": l3}
++    assert c2 == 5 and c3 == 4 and c3 < c2, out["witness_seat2_b"]
++    (a1, s1), (a2, s2) = out["witness_seat2_a"]["ladder3"]
++    pc = _sf(s1, a1, 0.90) * _sf(s2, a2, 0.90)
++    pw = _sf(s1, a1, 0.30) * _sf(s2, a2, 0.30)
++    pce = _sf_exact(s1, a1, 0.90) * _sf_exact(s2, a2, 0.90)
++    pwe = _sf_exact(s1, a1, 0.30) * _sf_exact(s2, a2, 0.30)
++    out["cross_tool"] = {"capable": pc, "weak": pw,
++                         "scipy_mpmath_max_abs_diff": max(abs(pc - pce),
++                                                          abs(pw - pwe))}
++    assert pc >= 0.95 and pw <= 0.010
++    assert out["cross_tool"]["scipy_mpmath_max_abs_diff"] < 1e-12
++    return out
++
++
++def _randomised_gate(n, p_weak, alpha):
++    """Pass iff X >= s, and with prob gamma iff X == s-1. Size exactly alpha."""
++    s = next(s for s in range(n + 1, 0, -1) if _sf(s, n, p_weak) <= alpha
++             and (s == 1 or _sf(s - 1, n, p_weak) > alpha))
++    gamma = (alpha - _sf(s, n, p_weak)) / _pmf(s - 1, n, p_weak)
++    return s, gamma
++
++
++def claim_2_the_gate_family_trichotomy(n=10, p_cap=0.90, p_weak=0.30,
++                                       alpha=0.010, floor=0.95):
++    """Q1. The witness's merged 10 attempts, under 4 test families.
++
++    (a) deterministic count threshold, (b) randomised count threshold,
++    (c) deterministic ORDER-READING (the gate may read WHICH attempts
++    succeeded, not only how many -- deterministic given the record, so
++    'auditable', but non-exchangeable), (d) brute force over ALL deterministic
++    count-subset tests, confirming that under determinism + exchangeability
++    the threshold family is already optimal.
++    """
++    det = max(((_sf(s, n, p_cap), s) for s in range(1, n + 2)
++               if _sf(s, n, p_weak) <= alpha), default=(0.0, None))
++    s, gamma = _randomised_gate(n, p_weak, alpha)
++    rand_power = _sf(s, n, p_cap) + gamma * _pmf(s - 1, n, p_cap)
++    rand_size = _sf(s, n, p_weak) + gamma * _pmf(s - 1, n, p_weak)
++    size_left, seq_power, seq_size = alpha, 0.0, 0.0
++    for k in range(n, -1, -1):
++        per_w = p_weak ** k * (1 - p_weak) ** (n - k)
++        per_c = p_cap ** k * (1 - p_cap) ** (n - k)
++        block = math.comb(n, k)
++        take = min(block, int(size_left / per_w + 1e-12))
++        seq_power += take * per_c
++        seq_size += take * per_w
++        size_left -= take * per_w
++        if take < block:
++            break
++    best_subset_power = 0.0
++    for mask in range(1 << (n + 1)):
++        sz = pw = 0.0
++        for k in range(n + 1):
++            if mask >> k & 1:
++                sz += _pmf(k, n, p_weak)
++                pw += _pmf(k, n, p_cap)
++        if sz <= alpha and pw > best_subset_power:
++            best_subset_power = pw
++    out = {
++        "deterministic_threshold_power": det[0],
++        "randomised_threshold_power": rand_power,
++        "randomised_gamma": gamma,
++        "randomised_size": rand_size,
++        "order_reading_deterministic_power": seq_power,
++        "order_reading_size": seq_size,
++        "best_count_subset_power": best_subset_power,
++    }
++    assert det[0] < floor, out
++    assert abs(rand_size - alpha) < 1e-15 and rand_power >= floor, out
++    assert seq_size <= alpha + 1e-15 and seq_power >= floor, out
++    assert rand_power - seq_power < 1e-3, out
++    assert abs(best_subset_power - det[0]) < 1e-15, out
++    return out
++
++
++def _exact_T(n, p_lo, p_hi, per_side_alpha, max_T=40):
++    """Largest T such that a model at ANY stratum centre is misplaced past a
++    boundary with one-sided probability <= per_side_alpha, exactly (binomial,
++    nearest-centre assignment in arcsine coordinates). The arbiter for Q2.
++    """
++    import numpy as np
++    from scipy.stats import binom as sbin
++    lo, hi = math.asin(math.sqrt(p_lo)), math.asin(math.sqrt(p_hi))
++    ks = np.arange(n + 1)
++    phihat = np.arcsin(np.sqrt(ks / n))
++    bestT = 1
++    for T in range(2, max_T + 1):
++        centres = np.array([lo + i * (hi - lo) / (T - 1) for i in range(T)])
++        mids = (centres[:-1] + centres[1:]) / 2.0
++        j = np.searchsorted(mids, phihat)          # nearest-centre assignment
++        worst = 0.0
++        for i in range(T):
++            p = math.sin(centres[i]) ** 2
++            pmf = sbin.pmf(ks, n, p)
++            worst = max(worst, float(pmf[j < i].sum()), float(pmf[j > i].sum()))
++        if worst <= per_side_alpha:
++            bestT = T
++        else:
++            break
++    return bestT
++
++
++def claim_3_the_two_formulae_are_one_statistic():
++    """Q2. The doubling cancels; the residual gap is which error rate is held."""
++    import sympy as sp
++    nn, plo, phi_ = sp.symbols("n p_lo p_hi", positive=True)
++    span = sp.asin(sp.sqrt(phi_)) - sp.asin(sp.sqrt(plo))
++    diff = sp.simplify(span / (1 / (2 * sp.sqrt(nn)))
++                       - (2 * span) / (1 / sp.sqrt(nn)))
++    assert diff == 0, diff
++    span_num = math.asin(math.sqrt(0.9)) - math.asin(math.sqrt(0.5))
++    assert abs(span_num - 0.4636476090) < 1e-9
++    assert abs(2 * span_num - 0.9272952180) < 1e-9
++
++    z_side, z_boundary = 1.6448536269514722, 1.959963984540054
++    rows = {}
++    disagree_side = disagree_boundary = 0
++    for n in (19, 38, 80, 150, 300, 2000):
++        t_exact_side = _exact_T(n, 0.5, 0.9, 0.05)
++        t_exact_two = _exact_T(n, 0.5, 0.9, 0.025)
++        t_a = 1 + math.floor(span_num * math.sqrt(n) / z_side)
++        t_b = 1 + math.floor(span_num * math.sqrt(n) / z_boundary)
++        rows[n] = {"closed_per_side_z1.645": t_a,
++                   "exact_per_side_0.05": t_exact_side,
++                   "closed_two_sided_z1.96": t_b,
++                   "exact_two_sided_0.05": t_exact_two}
++        disagree_side += int(t_a != t_exact_side)
++        disagree_boundary += int(t_b != t_exact_two)
++    out = {"sympy_doubling_cancels": True, "span_undoubled": span_num,
++           "span_doubled": 2 * span_num, "per_n": rows,
++           "cells_where_closed_form_disagrees_per_side": disagree_side,
++           "cells_where_closed_form_disagrees_two_sided": disagree_boundary}
++    assert rows[2000]["closed_per_side_z1.645"] \
++        != rows[2000]["closed_two_sided_z1.96"], rows[2000]
++    assert rows[2000]["closed_two_sided_z1.96"] == 11, rows[2000]
++    return out
++
++
++def claim_4_the_scan_argmin_is_budget_bound_not_resolution_bound(draws=24,
++                                                                seed=7):
++    """Q3. The attempts objective is not degenerate, but it cannot derive T.
++
++    KILLED AND REPAIRED BY ITS OWN FALSIFIER, 2026-10-08. The first version
++    asserted the argmin never leaves {2, 3}; the run refuted it with argmin
++    distribution {2: 17, 3: 5, 4: 1} over 23 feasible budgets. So BOTH blind
++    positions understated the objective: it is not degenerate at 2 (one seat's
++    claim) and not confined to {2, 3} either (the other's implicit claim).
++    What survives, and is asserted instead: the argmin is decided by the error
++    BUDGET, stays small (<= 4 observed), is modally 2, and has NO dependence
++    on the per-model attempt allowance n -- the objective has no such argument
++    -- so it cannot track resolution and cannot derive the division count.
++    """
++    spec = importlib.util.spec_from_file_location(
++        "derivable", REPO / "scripts" /
++        "the_division_count_is_derivable_2026-10-08.py")
++    mod = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(mod)
++    rng = random.Random(seed)
++    argmins, inversions, feasible, tall_witnesses = {}, 0, 0, []
++    for _ in range(draws):
++        cap = rng.uniform(0.70, 0.97)
++        weak = rng.uniform(0.30, cap - 0.15)
++        pc = rng.uniform(0.80, min(0.97, cap))
++        pw = rng.uniform(0.02, weak)
++        c = mod.optimal_costs(cap, weak, pc, pw, max_div=6, maxa=12, maxtot=36)
++        seq = {T: c[T] for T in sorted(c) if c[T] is not None}
++        if not seq:
++            continue
++        feasible += 1
++        am = min(seq, key=lambda T: seq[T])
++        argmins[am] = argmins.get(am, 0) + 1
++        if am >= 4:
++            tall_witnesses.append({"budget": (round(cap, 4), round(weak, 4),
++                                              round(pc, 4), round(pw, 4)),
++                                   "curve": seq})
++        vals = [seq[T] for T in sorted(seq)]
++        if any(b < a for a, b in zip(vals, vals[1:])):
++            inversions += 1
++    z = 1.959963984540054
++    p = inversions / feasible
++    d = 1 + z * z / feasible
++    ctr = (p + z * z / (2 * feasible)) / d
++    h = (z / d) * math.sqrt(p * (1 - p) / feasible + z * z / (4 * feasible ** 2))
++    out = {"draws": draws, "feasible": feasible,
++           "argmin_distribution": argmins,
++           "argmin_4_or_taller_witnesses": tall_witnesses,
++           "budgets_with_an_inversion": inversions,
++           "inversion_rate": p,
++           "wilson": (max(0.0, ctr - h), min(1.0, ctr + h))}
++    assert inversions >= 1, out          # 'as few as possible' is false
++    assert max(argmins) <= 4, out        # small, but NOT confined to {2, 3}
++    assert argmins.get(2, 0) > sum(v for k, v in argmins.items() if k > 2), out
++    return out
++
++
++def _sigma(x):
++    return 1.0 / (1.0 + math.exp(-x))
++
++
++def claim_5_relegation_regimes_force_the_composition(sims=300, horizon=200,
++                                                     seed=13):
++    """Q4. Deployable relegation mechanisms across regimes, measured.
++
++    KILLED AND REPAIRED BY ITS OWN FALSIFIER, 2026-10-08, 3 VERSIONS.
++    v1 implemented the blind round's "sign test against the division-peer
++    majority" literally, testing at per-test alpha 0.05 every step. Refuted by
++    its own run: under a hardening stream the majority-of-3 comparator
++    false-demoted at 0.5167 -- majority aggregation pushes the comparator's
++    rate away from 1/2, so under PARITY of individual rates the discordant
++    pairs are not 50/50 and difficulty drift breaks the sign test's null. A
++    per-test alpha repeated over the horizon is also incomparable to an
++    ARL-calibrated CUSUM.
++    v2 repaired both (model vs 1 randomly chosen peer per item, whose null is
++    exact under parity at any difficulty; both mechanisms as one-sided CUSUMs
++    calibrated on a null stream to the same horizon false rate) but compared
++    the composition against a COUNTERFACTUAL Rasch rule handed true
++    difficulty inside the regime defined by difficulty being unmeasured.
++    Refuted by its own dominance assert.
++    v3 (this one) compares DEPLOYABLE mechanisms, each given only what its
++    regime affords: rasch_only falls back to uncalibrated difficulty where
++    none is measured; pair_only abstains where no cohort exists; composed =
++    peer-paired CUSUM where a cohort shares the stream, Rasch CUSUM where
++    difficulty is calibrated and no cohort exists, abstention otherwise.
++
++    The peer-paired CUSUM is itself the genuine composition of the 2 blind
++    positions: the pairing of one seat, the windowless ARL-style accumulation
++    of the other.
++
++    Regimes: R0 stationary null (demotion FALSE); R1 hardening, difficulty
++    calibrated (FALSE); R2 1.5-logit decline with a peer cohort (CORRECT);
++    R3 the same decline at roster 1, difficulty calibrated (CORRECT);
++    R4 hardening, peers present, difficulty UNCALIBRATED (FALSE);
++    R5 decline at roster 1, difficulty UNCALIBRATED (CORRECT but no mechanism
++    has valid evidence -- the composition must ABSTAIN rather than guess).
++    """
++    KREF, WINSOR, NMIN, KPAIR = 0.5, -2.0, 20, 0.25
++    CALIBRATED = {"R0": True, "R1": True, "R2": True, "R3": True,
++                  "R4": False, "R5": False}
++
++    def run_stream(rng, regime):
++        for t in range(horizon):
++            if regime in ("R1", "R4"):
++                b, theta = 2.5 * t / horizon, 1.0
++            else:
++                b = rng.gauss(0.5, 0.5)
++                theta = 1.0 if (regime in ("R0",) or t < horizon // 2) else -0.5
++            y = rng.random() < _sigma(theta - b)
++            peer = (None if regime in ("R3", "R5")
++                    else (rng.random() < _sigma(1.0 - b)))
++            yield t, b, y, peer
++
++    def simulate(regime, rule, h_pair, h_rasch):
++        rng = random.Random(f"{seed}-{regime}-{rule}")
++        demoted = 0
++        for _ in range(sims):
++            Sp = Sr = 0.0
++            fired = False
++            for t, b, y, peer in run_stream(rng, regime):
++                cal = CALIBRATED[regime]
++                use_pair = (rule == "pair_only" or rule == "composed") \
++                    and peer is not None
++                use_rasch = (rule == "rasch_only"
++                             or (rule == "composed" and peer is None and cal))
++                if use_rasch:
++                    bhat = b if cal else 0.0
++                    pr = _sigma(1.0 - bhat)
++                    z = max((y - pr) / math.sqrt(pr * (1 - pr)), WINSOR)
++                    Sr = max(0.0, Sr - z - KREF)
++                    if t >= NMIN and Sr >= h_rasch:
++                        fired = True
++                        break
++                if use_pair and y != peer:
++                    lossb = 1.0 if (peer and not y) else 0.0
++                    Sp = max(0.0, Sp + (lossb - 0.5) - KPAIR)
++                    if t >= NMIN and Sp >= h_pair:
++                        fired = True
++                        break
++            demoted += fired
++        return demoted / sims
++
++    # Calibrate both thresholds on the stationary null to the same budget.
++    target = 0.06
++    h_pair = next(h for h in [x / 4 for x in range(4, 41)]
++                  if simulate("R0", "pair_only", h, 99.0) <= target)
++    h_rasch = next(h for h in [x / 2 for x in range(4, 41)]
++                   if simulate("R0", "rasch_only", 99.0, h) <= target)
++    rules = ("pair_only", "rasch_only", "composed")
++    table = {reg: {rule: simulate(reg, rule, h_pair, h_rasch)
++                   for rule in rules}
++             for reg in ("R0", "R1", "R2", "R3", "R4", "R5")}
++    out = {"h_pair": h_pair, "h_rasch": h_rasch, "demotion_rates": table,
++           "note": ("R0/R1/R4 rates are FALSE demotions; R2/R3/R5 are "
++                    "correct detections. pair_only abstains structurally at "
++                    "roster 1 (R3/R5); composed abstains at R5, where no "
++                    "mechanism holds valid evidence.")}
++    assert table["R3"]["pair_only"] == 0.0, table    # no comparator at R=1
++    assert table["R4"]["rasch_only"] >= 0.5, table   # the founder's fear
++    for reg in ("R0", "R1", "R4"):
++        assert table[reg]["composed"] <= 0.10, table
++        assert table[reg]["pair_only"] <= 0.10, table  # drift keeps the null
++    for reg in ("R2", "R3"):
++        assert table[reg]["composed"] >= 0.80, table
++    assert table["R5"]["composed"] == 0.0, table     # abstain, never guess
++
++    def loss(rule, reg):
++        r = table[reg][rule]
++        return r if reg in ("R0", "R1", "R4") else 1.0 - r
++    # Dominance over R0..R4, the regimes where SOME mechanism holds valid
++    # evidence. R5 is reported, not scored: a deliberate abstention and a
++    # blind guess are not comparable losses.
++    scored = ("R0", "R1", "R2", "R3", "R4")
++    for rule in ("pair_only", "rasch_only"):
++        assert all(loss("composed", reg) <= loss(rule, reg) + 0.06
++                   for reg in scored), (rule, table)
++        assert any(loss("composed", reg) < loss(rule, reg) - 0.25
++                   for reg in scored), (rule, table)
++    return out
++
++
++def main():
++    print("== 1. both blind inversion witnesses, exhaustively reproduced ==")
++    d1 = claim_1_both_blind_witnesses_reproduce()
++    for k, v in d1.items():
++        print(f"   {k}: {v}")
++
++    print("\n== 2. the gate-family trichotomy at the merged witness (n=10) ==")
++    d2 = claim_2_the_gate_family_trichotomy()
++    for k, v in d2.items():
++        print(f"   {k}: {v}")
++
++    print("\n== 3. the 2 formulae are 1 statistic; the arbiter decides ==")
++    d3 = claim_3_the_two_formulae_are_one_statistic()
++    for n, r in d3["per_n"].items():
++        print(f"   n={n:5d}: {r}")
++    for k in ("span_undoubled", "span_doubled",
++              "cells_where_closed_form_disagrees_per_side",
++              "cells_where_closed_form_disagrees_two_sided"):
++        print(f"   {k}: {d3[k]}")
++
++    print("\n== 4. the scan argmin is budget-bound, not resolution-bound ==")
++    d4 = claim_4_the_scan_argmin_is_budget_bound_not_resolution_bound()
++    for k, v in d4.items():
++        print(f"   {k}: {v}")
++
++    print("\n== 5. relegation regimes, measured ==")
++    d5 = claim_5_relegation_regimes_force_the_composition()
++    for reg, row in d5["demotion_rates"].items():
++        print(f"   {reg}: " + "  ".join(f"{r}={v:.4f}" for r, v in row.items()))
++    print(f"   {d5['note']}")
++
++    print("\nall falsifiers passed")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
