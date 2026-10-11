@@ -52,6 +52,13 @@ MAX_TOTAL_ATTEMPTS = 60
 MAX_DIVISIONS = 14
 
 
+
+#: Phi^-1(0.975). The TWO-SIDED critical value, on his ruling of 2026-10-11.
+#: The per-side alternative is 1.6448536270 and is NOT what he chose.
+TWO_SIDED_Z = 1.959963984540054
+PER_SIDE_Z = 1.6448536270233396
+
+
 def _sf(s: int, a: int, p: float) -> float:
     from scipy.stats import binom
     return float(binom.sf(s - 1, a, p))
@@ -202,7 +209,30 @@ def claim_the_merge_lemma_fails_inside_the_threshold_family(
                 examples.append({"gates": [(a1, s1), (a2, s2)],
                                  "and_capable": round(and_cap, 8),
                                  "and_weak": round(and_weak, 8)})
-    z = 1.959963984540054
+    # THE ERROR CONVENTION IS TWO-SIDED, AND THAT IS HIS RULING OF 2026-10-11, NOT A DEFAULT.
+    # His words: *"Yes. Use the two sided setting."* He had asked first, on 2026-10-09: *"I
+    # dont know what you are asking me to decide on here? What error convention?"* -- so the
+    # choice was explained and then decided, and it must not now drift silently.
+    #
+    # WHAT IT MEANS. A comparison can err in 2 directions. The convention is whether the 5%
+    # allowance is spent on EACH direction (per-side, 10% in total) or SPLIT across both
+    # (two-sided, 2.5% each way). z = 1.959963984540054 is the two-sided value, Phi^-1(0.975);
+    # the per-side value would be 1.6448536270, Phi^-1(0.95).
+    #
+    # AND IT SETTLES THE SEATS' DISAGREEMENT. The 2 seats differed over whether the answer at
+    # n = 2000 is 10 or 11. Under two-sided the per-boundary error is 0.038126 at T = 11 and
+    # 0.059430 at T = 12, so T = 11 holds and the formula's `+ 1` is correct. Under per-side
+    # even T = 13 passes at 0.042002. Fixing the convention resolves the dispute; it was never
+    # a disagreement about arithmetic.
+    #
+    # HIS RULING 1, RECORDED HERE BECAUSE THERE IS NOWHERE ELSE YET. *"Yes. Use both."* -- the
+    # 2 properties a capability gate must have: a verdict REPRODUCIBLE from the record, and one
+    # depending only on how many attempts succeeded and how many were made (EXCHANGEABILITY),
+    # so 2 models with identical records cannot be separated by the order their successes fell
+    # in. Measured price: 0 additional attempts, both minima at 19. None of this machinery is
+    # wired to live code yet -- 0 references in reference_runner_v3, routing or the simulated
+    # runner -- so these rulings are pinned here, where the work will be picked up.
+    z = TWO_SIDED_Z
     p = fails / tested
     d = 1 + z * z / tested
     c = (p + z * z / (2 * tested)) / d
