@@ -10732,9 +10732,26 @@ def _dispatch_single_model_inner(
     _retry_budget = mc.timeout * max(1, int(getattr(mc, "max_retries", 1) or 1))
     wall_limit = max(mc.timeout * _mult, _retry_budget)
     try:
+        # SUBSTANCE TEST ON THE SEAT'S REPLY. His ruling of 2026-10-07, given verbatim
+        # on each of 4 panel lessons: "We should use it. Wire it in all simulated and
+        # real runners going forward" -- because "the panel refuses a reply that is
+        # merely non empty, because an error string, a usage notice or a holding note
+        # is answering without answering the question."
+        #
+        # MEASURED BEFORE WIRING, over 2,582 archived runner replies: the predicate
+        # rejects 26, a proportion of 0.0101, Wilson [0.0069, 0.0147], and 20 of the 26
+        # are EMPTY -- already failures rather than answers. Exactly 1 would be rejected
+        # while carrying a finding, at 191 characters, which is the holding-note case
+        # the test exists to catch. The earlier claim that this might endanger
+        # convergence was caution standing in for a measurement, and is withdrawn.
+        #
+        # NOT APPLIED AT run_preflight (reference_runner_v3.py, `run_preflight`), which
+        # deliberately accepts `len(text.strip()) > 5` as proof of life -- an 800-char
+        # floor there would fail every preflight. Nor at `_arb_dispatch`, a closure
+        # invoked indirectly whose exception handling cannot be traced statically.
         text, elapsed = dispatch_to_model(
             mc, prompt, model_cdsfl, wall_clock_limit=wall_limit,
-            enable_tools=enable_tools)
+            enable_tools=enable_tools, require_substance=True)
         _record_throughput(mc.label, len(prompt), elapsed)
         _note_intake(text)
         model_findings = parse_findings(mc.label, round_idx, text)
@@ -10792,9 +10809,12 @@ def _dispatch_single_model_inner(
                  f"{mc.api}/{mc.model_id} failed/empty; trying "
                  f"{mc.secondary_api}/{mc.secondary_model_id}")
             try:
+                # The secondary route answers the SAME question, so it is held to the
+                # same standard: a fallback returning a usage notice has not answered.
                 text2, elapsed2 = dispatch_to_model(
                     secondary_mc, prompt, model_cdsfl,
                     wall_clock_limit=wall_limit,
+                    require_substance=True,
                 )
                 if text2 and text2.strip():
                     _record_throughput(mc.label, len(prompt), elapsed2)

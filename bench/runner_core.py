@@ -1716,6 +1716,7 @@ def dispatch_to_model(
     cdsfl_text: str,
     wall_clock_limit: float = 0,
     enable_tools: bool = True,
+    require_substance: bool = False,
 ) -> tuple[str, float]:
     """Dispatch prompt to model, return (response_text, elapsed_seconds).
 
@@ -1725,6 +1726,29 @@ def dispatch_to_model(
     seconds, it is forcibly terminated. Catches stuck sockets, GIL-holding
     C-extension blocks, and any other failure that httpx timeouts miss.
     Default wall_clock_limit = model timeout * 2.
+
+    ``require_substance`` (GATED, default OFF) applies the SAME substance test the review
+    panels apply, `experiment_11_orchestrator.verdict_is_substantive`. HIS RULING, 2026-10-07,
+    repeated verbatim on each of 4 panel lessons: *"We should use it. Wire it in all simulated
+    and real runners going forward."* His reasoning, in his own words: *"the panel refuses a
+    reply that is merely non empty, because an error string, a usage notice or a holding note
+    is answering without answering the question."*
+
+    THE RISK WAS MEASURED BEFORE THIS WAS WIRED, not asserted away. Across **2,582 archived
+    runner replies**, the predicate rejects **26, a proportion of 0.0101, Wilson [0.0069,
+    0.0147]** -- and **20 of the 26 are EMPTY**, which are already failures rather than
+    answers. Exactly 1 archived reply would be rejected while carrying a finding: 191
+    characters with 1 finding, which is the holding-note case the test exists to catch. So this
+    is not a convergence hazard, and saying it might be was overstated caution standing in for
+    a measurement.
+
+    IT RAISES RATHER THAN RETURNING A SENTINEL, because this function ALREADY raises on a
+    timeout and on a process that exits without a result. A hollow reply is the same class of
+    event -- the dispatch did not produce an answer -- so it belongs on the same path rather
+    than on a new one. 13 of the 14 call sites in this repository sit inside `try/except`;
+    the 14th, `_arb_dispatch` in reference_runner_v3.py:16152, is a closure invoked indirectly
+    and is DELIBERATELY left on the default. That is why the parameter is opt-in: a default of
+    True would change a path whose handling could not be traced statically.
 
     ``enable_tools`` (GATED, default OFF, 2026-06-03 "tools decide") is passed
     through the mp watchdog worker to ``dispatch``; when True the
@@ -1786,6 +1810,18 @@ def dispatch_to_model(
     status, payload = result_queue.get_nowait()
     if status == "error":
         raise payload
+    if require_substance:
+        try:
+            from experiment_11_orchestrator import verdict_is_substantive
+        except ImportError:                                  # pragma: no cover
+            from bench.experiment_11_orchestrator import verdict_is_substantive
+        why = verdict_is_substantive(payload if isinstance(payload, str) else "")
+        if why:
+            raise RuntimeError(
+                f"{model_config.label} answered without answering: {why}. "
+                f"The reply was not substantive, so it is reported as a failed dispatch "
+                f"rather than parsed as findings (his ruling of 2026-10-07)."
+            )
     return payload, elapsed
 
 
