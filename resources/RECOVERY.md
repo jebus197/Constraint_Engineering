@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 11 October 2026 21:48 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 11 October 2026 21:54 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -45,7 +45,7 @@ session loss, compaction event, or fresh start with a new model instance.
 
 **HIS WORK ORDER, 2026-10-11 21:47, open:** 13 recover the 4 commits on `r3-parser-envelope` then reclaim the 2.5 GB; 3 implement the 0.05 false-alarm proportion; 9 build the per-run computed round recommendation (NOT a shipped constant of 10, which is a CDSFL average and arbitrary elsewhere); 12 build the human-review trigger on substantial evidence a run will not converge; 14 verify all 87 against the tree; 11 verify and fix the 4 panel lessons; 5 the domain-verdict producer, after the rest. **HIS STANDING CAUTION ON ALL OF IT:** *"Beware of proposals made by the models you s[u]bsequently rejected or modified, either on your own, or after discussions with me."*
 
-**SUITE.** **84 passed** across the 6 guard files touching today's changes. Pre-commit subset **501 passed** on each of 4 commits. **A subset is not a board**; the last full board remains 10,306 passed on 2026-10-07.
+**SUITE.** **84 passed in 62.77 s** across the 6 guard files touching today's changes, from `python3 -m pytest bench/tests/test_the_error_convention_is_his_ruling_2026-10-11.py bench/tests/test_archived_runs_are_marked_not_edited_2026-10-11.py bench/tests/test_a_delivered_note_names_its_standard_2026-10-11.py bench/tests/test_the_founder_responses_are_readable_2026-10-11.py bench/tests/test_the_local_resource_budget_binds_2026-10-11.py bench/tests/test_immune_memory_consumption.py -q`. Pre-commit subset **501 passed** on each of 4 commits, from `python3 -m pytest bench/tests/ -q`. **A subset is not a board**; the last full board remains 10,306 passed on 2026-10-07, from `python3 -m pytest bench/tests/ -q --netguard-strict`.
 
 ## SESSION STATE — 2026-10-11 16:15 BST (READ THIS FIRST)
 
