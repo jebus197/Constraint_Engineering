@@ -305,7 +305,8 @@ def make_shim(model: str = "opus", timeout: int = 900,
         return text, el
 
     def _dispatch(model_config, prompt, cdsfl_text,
-                  wall_clock_limit: float = 0, enable_tools: bool = False):
+                  wall_clock_limit: float = 0, enable_tools: bool = False,
+                  require_substance: bool = False):
         """Retry a dispatch whose STREAM BROKE, which is not a bad answer.
 
         THE DEFECT, MEASURED ON SIMULATED RUN 1, 2026-10-02. The Claude CLI
@@ -343,6 +344,33 @@ def make_shim(model: str = "opus", timeout: int = 900,
                 wall_clock_limit=wall_clock_limit, enable_tools=enable_tools)
             reason = stalled_mid_stream(text)
             if not reason:
+                # SUBSTANCE IS PART OF THE SEAM, 2026-10-11. The primitive gained
+                # `require_substance` the same night and this shim did not, so the
+                # parameter lists diverged and `test_the_shim_signature_matches_the
+                # _primitive` went red -- the guard built on 2026-08-30 for exactly
+                # this, after a mismatched shim raised inside a bare `except` and
+                # read as a model that returned nothing (falsifier_code 0 of 19
+                # against 23 of 39, Fisher p = 6.0e-06). Two call sites in
+                # `reference_runner_v3` now pass `require_substance=True`, so
+                # without this the next simulated run would have silenced its own
+                # falsification core again.
+                #
+                # It RAISES, matching `runner_core.dispatch_to_model`: a hollow
+                # reply is a dispatch that produced no answer, which is the class
+                # this module already raises for on a stall and a dead process.
+                if require_substance:
+                    try:
+                        from experiment_11_orchestrator import verdict_is_substantive
+                    except ImportError:              # pragma: no cover
+                        from bench.experiment_11_orchestrator import verdict_is_substantive
+                    why = verdict_is_substantive(text if isinstance(text, str) else "")
+                    if why:
+                        _record(label, el, len(text), 0, f"NOT SUBSTANTIVE: {why}")
+                        raise RuntimeError(
+                            f"{label} answered without answering: {why}. The reply "
+                            f"was not substantive, so it is reported as a failed "
+                            f"dispatch rather than parsed as findings (his ruling "
+                            f"of 2026-10-07).")
                 return text, el
             last = reason
             _record(label, el, len(text), 0, f"STALLED attempt {attempt}")

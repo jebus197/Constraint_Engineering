@@ -115,3 +115,64 @@ class TestItIsWiredWhereHeMeantAndNotWhereItWouldBreakThings:
         body = ast.get_source_segment(src, fn) or ""
         assert "require_substance" not in body, (
             "preflight must not apply the substance test; it would fail every proof-of-life call")
+
+
+class TestTheSimulationSeamCarriesItToo:
+    """THE SEAM MUST MIRROR THE PRIMITIVE, or the rehearsal cannot rehearse this.
+
+    Wiring `require_substance` into `dispatch_to_model` on 2026-10-11 changed the
+    primitive's parameter list and left `sim_dispatch_shim` behind, so
+    `test_sim_seam_covers_every_dispatch_2026-08-30` went red the same evening.
+    That guard exists because on 2026-08-30 a mismatched shim raised inside a bare
+    `except` and read as a model returning nothing: falsifier_code reached 0 of 19
+    against 23 of 39 in the real run on the same target, scipy Fisher p = 6.0e-06.
+    Two call sites in `reference_runner_v3` pass `require_substance=True`, so an
+    unfixed shim would have silenced the next simulated run's falsification core.
+    """
+
+    def _shim_with_reply(self, text):
+        from bench.tools import sim_dispatch_shim as S
+        shim = S.make_shim(timeout=5)
+
+        class _Result:
+            returncode = 0
+            stdout = text
+            stderr = ""
+
+        return S, shim, _Result
+
+    def test_a_hollow_reply_raises_when_the_gate_is_on(self):
+        S, shim, Result = self._shim_with_reply("API Error: Response stalled")
+        real = S.subprocess.run
+        try:
+            S.subprocess.run = lambda *a, **k: Result()
+            with pytest.raises(RuntimeError, match="answered without answering"):
+                shim(_MC(), "p", "c", require_substance=True)
+        finally:
+            S.subprocess.run = real
+
+    def test_the_same_reply_passes_when_the_gate_is_off(self):
+        """The default must be byte-identical to the behaviour before this existed."""
+        S, shim, Result = self._shim_with_reply("API Error: Response stalled")
+        real = S.subprocess.run
+        try:
+            S.subprocess.run = lambda *a, **k: Result()
+            text, _ = shim(_MC(), "p", "c", require_substance=False)
+            assert text == "API Error: Response stalled"
+        finally:
+            S.subprocess.run = real
+
+    def test_a_substantive_reply_is_not_rejected(self):
+        S, shim, Result = self._shim_with_reply(
+            "FINDING_ID: F001\nSEVERITY: 0.8\nDESCRIPTION: " + "a real finding " * 20)
+        real = S.subprocess.run
+        try:
+            S.subprocess.run = lambda *a, **k: Result()
+            text, _ = shim(_MC(), "p", "c", require_substance=True)
+            assert "F001" in text
+        finally:
+            S.subprocess.run = real
+
+
+class _MC:
+    label = "CC2-SIM"

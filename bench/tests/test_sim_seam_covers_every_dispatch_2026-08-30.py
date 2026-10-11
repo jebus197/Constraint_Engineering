@@ -26,6 +26,7 @@ WHAT THIS TEST PINS
    silently bypasses the seam.
 """
 import ast, sys, pathlib
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 import reference_runner_v3 as R
@@ -84,13 +85,12 @@ class TestNothingBypassesTheSeam:
     def test_the_known_dispatchers_all_use_the_primitive(self):
         """Records the nine, so a tenth appearing is a visible diff."""
         tree = ast.parse(RUNNER.read_text(encoding="utf-8"))
-        users = set()
-        for fn in [n for n in ast.walk(tree)
-                   if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
-            for c in ast.walk(fn):
-                if (isinstance(c, ast.Call) and isinstance(c.func, ast.Name)
-                        and c.func.id == "dispatch_to_model"):
-                    users.add(fn.name)
+        # FOLLOW DELEGATION, 2026-10-11. `_dispatch_single_model` became a
+        # 12-line wrapper over `_dispatch_single_model_inner` on 2026-10-07
+        # (46617574); the call moved, nothing was lost, and this assertion went
+        # red for 4 days because it only ever looked at the named function.
+        from _delegation import callers_of
+        users = callers_of(tree, "dispatch_to_model")
         expected = {"_apply_routing", "_post_convergence_sweep", "_inround_reask",
                     "_dispatch_single_model", "_verification_step",
                     "run_preflight", "run_experiment", "resolve_fn",
