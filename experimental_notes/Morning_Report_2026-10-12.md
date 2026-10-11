@@ -133,10 +133,168 @@ wraps across 2 lines, first on the lesson-4 docstring, then on his quoted ruling
 error class inside an hour is what `feedback_long_session_degradation` names, so items 9, 12
 and 14 were left rather than pushed through.
 
+## All 4 remaining items complete
+
+Work resumed after 23:15. 3 of the 4 items surfaced a defect in previously proposed or
+delivered work, and in 2 cases the defect was in a proposal CC1 had made itself.
+
+### Item 14 — the review of the older instructions
+
+**92, not 87.** The earlier figure came from a narrower regex. Producer:
+`scripts/his_older_instructions_triage_2026-10-11.py`.
+
+A first extraction re-implemented the annotation predicate inline instead of calling
+`read_founder_responses_2026-10-11.annotations()`, and admitted **2 markdown headings from a
+saved Google Search page** as his words — the "one code path" lesson repeated within the hour
+of learning it. The extraction now runs through the single definition and asserts no `.md`
+heading can contribute.
+
+**26 of 92, 0.2826, Wilson [0.2008, 0.3819], refer the fix to the model panel** — and his
+wording escalates across the month, which is what a repeatedly-ignored instruction looks
+like. 2026-08-29: *"The purpose of these multi model reviews is not just to find problems
+(although that is clearly 50% of it), but also to suggest fixes."* 2026-08-31: *"Did you ask
+the models? Or did you (again) just ask them to find problems"*. 2026-09-21: *"clearly you
+keep missing things."* Beside that: 39 bare standing orders, 13 he deferred himself, 11
+awaiting an explanation before he rules.
+
+Spot-checked by execution, not reading: his 2026-08-31 order to strip personal and disability
+directives is done and guarded (`test_live_spawns_do_not_inherit_operator_config_2026-08-31.py`,
+9 green; `sim_dispatch_shim.py` carries his verbatim words at `--setting-sources ""`); his
+2026-09-17 order to set the stalled valve to 6 is in all 3 `bench/exp56_configs/*.json` and
+the value reaches `RunnerConfig` (confirmed by constructing the dataclass from the file, and
+every ignored key is an `_`-prefixed annotation block); the Stop-hook repair is green at 21.
+
+**The largest-looking open item is correctly parked.** His 2026-09-21 ruling that a
+non-curing fix route back to the models is wired as `record` not `veto` on the measured 126 of
+246; the 2026-10-03 attempt at the stronger form broke 2 committed oracles and armed a
+deferred ruling. See [[cdsfl_withholding_verified_is_blocking_2026-10-03]].
+
+### The board of guards dated on his instruction days: 4 failed, 1142 passed, 1 skipped, 237.09 s
+
+105 files. Nobody had run that set.
+
+**Failure 1 was CC1's, from the same evening, and would have muted the next simulated run.**
+`require_substance` was added to `runner_core.dispatch_to_model` and not to
+`bench/tools/sim_dispatch_shim.py`. That guard exists because on 2026-08-30 a mismatched shim
+raised inside a bare `except` and read as a model returning nothing: **falsifier_code 0 of 19
+against 23 of 39, Fisher p = 6.0e-06**. 2 live call sites pass `require_substance=True`. The
+shim now carries and ENFORCES it (the module's own contract: *"THE ERROR CONTRACT IS PART OF
+THE SEAM"*), executed in all 3 states.
+
+**Failures 2–4 were instrument failures; the runner was sound.** `46617574` (2026-10-07) split
+`_dispatch_single_model` into a 12-line wrapper over a 77-line `_inner`. AST at 3 revisions:
+at `46617574^` 78 lines holding `_ASK_CORRECTED_COPY`; after, `_inner` holds that marker, the
+"NO ask" announcement and the `dispatch_to_model` call, the wrapper none. **4th
+`execute-do-not-grep` occurrence.** Repaired by `bench/tests/_delegation.py`, which follows and
+CONCATENATES, so a marker deleted from both still fails and a rename fails loudly; 12-test
+ratchet proves it can fail.
+
+### Item 9 — the round recommendation, and CC1's own 2026-09-20 wiring was wrong
+
+`bench/round_budget.py`: n* = (a/θ)^(1/γ) fitted per run; `round_budget_theta` is a config
+field, named distinctly because `theta` was already bound to `gamma_alt_threshold`.
+
+**Two γ estimators had one name.** The gate fits the CUMULATIVE series (`1 - slope`); the
+formula needs the PER-ROUND intensity exponent. On exact counts at γ = 0.709 the intensity fit
+recovers 0.709000 at every n; the cumulative returns **0.3525 (n=4), 0.4129 (n=10), 0.5121
+(n=50), 0.6100 (n=500)** — the log-linear form drops the `-1` in
+`N(n) = a(n^(1-γ) - 1)/(1-γ)`. Biased low by 0.30–0.36 at the 3–21 rounds actually run.
+
+The proposal never said where `a` comes from (`_estimate_gamma` discards its intercept), so 3
+wirings were available and **all 3 overestimate** against the correct 9.3695 on [5,3,2,2]:
+**22.3759 (2.3882×)**, **71.5436 (7.6358×)**, **75.9566 (8.1068×)**.
+
+**γ is not demoted and not touched.** `_estimate_gamma` and the 0.30/0.45 thresholds are a
+matched pair on that estimator's scale. A guard asserts `round_budget.py` consults no gate
+threshold and never calls `_estimate_gamma`; both γ appear side by side in one telemetry
+record. Advisory: the gate's verdict is identical at θ = 0.1, 1.0, 100.0. `a = exp(α)·β` is
+SymPy-verified; python/numpy/mpmath agree to 3.55e-15.
+
+### Item 12 — the human-review trigger, refuted before it was built
+
+`bench/human_review_trigger.py`. The elegant design (fire when n* > rounds remaining) was
+tested against the archive FIRST: over 17 archived reports n* spans **151.64 to
+1.79969828506e20 rounds**, firing on 16 of 17 including **4 of the 5 that converged**. The 5th
+escaped only on a too-short series. Cause: convergence is the two-sided gate on CRITICAL
+findings, not total yield below θ.
+
+Signal A is DEDUCTIVE — with fewer than K rounds left, criterion (C) cannot be met by a
+flawless run. **0 of 5 false alarms, Wilson [0.0000, 0.4345]; 12 of 12 on capped runs.** The
+honest claim is 0 observed in 5. Signals B and C are statistical, so 2 are required. 0 of 17
+reports carry a convergence field, so the label is DERIVED and marked as such. Producer:
+`scripts/the_review_trigger_false_alarm_rate_2026-10-11.py`.
+
+**A clean run is never flagged** — the fatal case, since 3 consecutive clean convergences is
+the programme of study's success criterion. It inherits `_gamma_is_estimable` from his
+2026-10-08 ruling, so γ's 0.0 SENTINEL is never read as "no decay". It halts nothing.
+
+### Item 5 — the domain-verdict gap, and an error inside the correction
+
+His ruling: *"If there is valid work to do, then you should do it."* Producer:
+`scripts/the_domain_verdict_gap_2026-10-11.py`.
+
+| domain | findings | settled rate | Wilson 95% |
+|---|---|---|---|
+| statistics | 1198 decided | 0.8656 | [0.8451, 0.8838] |
+| software | 1313 decided | 0.7372 | [0.7128, 0.7603] |
+| engineering | 62 decided | 0.6774 | [0.5537, 0.7805] |
+| cs_software | 63 decided | 0.4286 | [0.3140, 0.5514] |
+| chemistry | 37 decided | 1.0000 | [0.9059, 1.0000] |
+
+Pooled 0.7897 (2111 of 2673); largest share 0.4912; shares sum to 1.000000. **`domain` is
+RUN-level** — no finding record carries one. Excluded: 2099 records whose `status` is a test
+outcome, 2774 duplicates across state file and report.
+
+Withdrawn figures confirmed impossible exactly: implied share **9914312/14289591 = 0.693814**,
+required rate **10592550459/1030160000 = 10.282432 > 1** (SymPy exact rationals, mpmath 30 dps).
+
+**And the withdrawal was itself miscalculated** — the note gave 0.6142 and 14.6356, off by
+0.0796 and 4.3532. The conclusion holds, so the withdrawal stands, but both wrong figures stay
+recorded in the script. It now recomputes the refutation every run and exits 3 if any rate,
+share or partition cannot be true — answering *"Ae you even checking if these numbers make any
+practical sense before writing them"* mechanically. See
+[[feedback_a_correction_needs_checking_too_2026-10-11]].
+
+### A stale citation between 2 correct safety mechanisms
+
+`experimental_notes/EXPERIMENT_RUN_LEDGER.md` cites a line in `reference_runner_v3.py` that had
+drifted **238 lines**. Located at 3 revisions: correct at `40c4a154`, **already 174 stale at
+this evening's starting HEAD**, 238 by the end — so the guard was red beforehand and 64 of the
+drift is CC1's.
+
+Neither repairer could fix it, both correctly. `citation_content_guard_2026-09-10.py` only
+re-points a citation preceded by a backticked `def`/`class` whose AST span it reads; this points
+at a COMMENT (it repaired 29 others the same evening). And `experiment_run_ledger.py` refuses to
+rewrite on a checkout holding fewer artefacts than the ledger declares (44/31 against 56/31),
+because that would delete rows existing elsewhere — the removal half of the additive standard.
+
+**A row-protection refusal was blocking a citation repair, the 2 being bundled.** Now separable:
+the refusal still fires, the derived citation is repaired anyway. Mutation-verified — set to
+99999 it repairs to 18535 with all 55 table rows byte-identical; a correct citation leaves the
+file untouched.
+
+## A direct answer on saving from Word
+
+**Yes, and no change of habit is required.** The reader handles both the RTF and the plain text
+Word produces, including Mac OS Roman line endings and curly quotes. All 18 annotated files read
+with **0 characters lost**, and `--verify` exits 3 if any annotated file cannot be read — the
+silent failure was the actual defect.
+
 ## Open
 
-Per-run computed round recommendation · human-review trigger · verify the 87 older instructions
-· rebuild the domain-verdict measurement last.
+1. **Item 8 — recovered and compared earlier this evening; the BUILD remains.** Not among the
+   4, and the morning report's first draft wrongly called it "not started". The record of
+   21:50 has it: the better way is **incremental stream-json parsing**, which beats a
+   completion marker because a seat that has DIED never prints the marker either, and the
+   clock cannot separate working from churning (**20.455 s vs 20.816 s per call**, measured).
+   A live tool-call count separates all 3 states. Same work as the lapsed stream-json trigger
+   — **1 build, not 2**. It touches `dispatch_to_model` and its ~20 callers.
+2. **11 of the 92 await an explanation before he rules.** Answers owed, not work owed.
+3. **The 26-of-92 panel referral** is the clearest actionable pattern in the review: a free
+   `cc2` + `fable` panel briefed with proposed fixes rather than problems.
+
+Board: 501 fast guards green; 338 across every γ and convergence guard; 204 across every guard
+touching the simulation shim. Commits `a1014a47`, `8288b40b`, `6a2e87f0`, `45ba58b4`, `a4a5a4a6`.
 
 ---
 

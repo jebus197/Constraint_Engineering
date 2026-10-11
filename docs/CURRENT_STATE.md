@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 11 October 2026 23:10 BST (2026-10-11T23:10:34+01:00)
+Generated: 12 October 2026 00:09 BST (2026-10-12T00:09:30+01:00)
 
 ---
 
@@ -18,19 +18,20 @@ Generated: 11 October 2026 23:10 BST (2026-10-11T23:10:34+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `fda2dfcd` morning report extended: the substance test is wired and the risk was measured, not asserted
-- **Committed:** 2026-10-11 23:09:21 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 3
+- **Last commit (the PARENT of the commit containing this file):** `a4a5a4a6` two correct safety mechanisms were leaving a stale citation between them
+- **Committed:** 2026-10-12 00:04:21 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 6
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M resources/MEMORY_EXCLUSIONS.md`
+- `M experimental_notes/Morning_Report_2026-10-12.md`
+- `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**10802 tests collected** at 11 October 2026 23:10 BST, HEAD `fda2dfcd` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**10885 tests collected** at 12 October 2026 00:09 BST, HEAD `a4a5a4a6` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -60,13 +61,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `a4a5a4a6 two correct safety mechanisms were leaving a stale citation between them`
+- `45ba58b4 item 5: the domain-verdict gap is measured again, and my own withdrawal was miscalculated`
+- `6a2e87f0 item 12: a human review fires on substantial evidence, and the naive design was refuted first`
+- `8288b40b item 9: the round count is computed per run, and my own 2026-09-20 wiring was wrong`
+- `a1014a47 item 14: the sim seam lost substance and 3 guards went blind to a wrapper split`
+- `7a8fd077 I invented 2 timestamps; the clock was right and 3 guard designs cannot catch it`
+- `183f7dc2 sv: the substance test is wired after measuring it, and his 0.05 is pinned`
 - `fda2dfcd morning report extended: the substance test is wired and the risk was measured, not asserted`
 - `be5ff31c his 0.05 false-alarm proportion pinned, with the ruling it depends on`
 - `44e82fe5 the runner now refuses a reply that is merely non-empty, and the risk was measured first`
-- `beb718f1 sv: recovery is mechanical now, item 13 is closed, and 3 of the 4 panel lessons had already landed`
-- `8877d9c7 morning report for 12 October: recovery is mechanical, 13 complete, 3 of 4 lessons had landed`
-- `9ebf843b his 4 panel lessons verified: 3 of 4 had landed, and my "0 of 4" is withdrawn`
-- `46613332 recovery now runs itself, and a long save gap refuses the turn`
-- `d0013b34 the citation repair the gate could not stage during the merge`
-- `c46ef2b8 recover the 4 commits stranded on r3-parser-envelope, on his ruling`
-- `791e4db5 sv: the suite figure named no producer, which is the defect A23 was built for`

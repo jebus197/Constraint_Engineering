@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 11 October 2026 23:10 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 12 October 2026 00:09 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,28 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-12 00:09 BST (READ THIS FIRST)
+
+**BRANCH.** `sim/shakedown-2026-09-29`, HEAD `a4a5a4a6`. `main` untouched.
+
+**ALL 4 REMAINING ITEMS OF HIS WORK ORDER ARE COMPLETE — 14, 9, 12 and 5.** 3 of the 4 surfaced a defect in previously proposed or delivered work, and in 2 the defect was in a proposal CC1 had made itself.
+
+**★★★ THE SIM SEAM LOST SUBSTANCE AND WOULD HAVE MUTED THE NEXT RUN.** `require_substance` was wired into `runner_core.dispatch_to_model` and NOT into `bench/tools/sim_dispatch_shim.py`, so the parameter lists diverged. That guard exists because on 2026-08-30 a mismatched shim raised inside a bare `except` and read as a model returning nothing: **falsifier_code 0 of 19 against 23 of 39, Fisher p = 6.0e-06**. 2 live call sites pass `require_substance=True`. The shim now carries AND ENFORCES it, executed in all 3 states. Found by running the **105 guards dated on his own instruction days: 4 failed, 1142 passed, 1 skipped, 237.09 s** — a set nobody had run.
+
+**★★★ 3 GUARDS WENT BLIND TO A WRAPPER SPLIT AND THE RUNNER WAS SOUND.** `46617574` (2026-10-07) split `_dispatch_single_model` into a 12-line wrapper over a 77-line `_inner`. AST at 3 revisions: at `46617574^` 78 lines holding `_ASK_CORRECTED_COPY`; after, `_inner` holds that marker, the "NO ask" announcement and the `dispatch_to_model` call, the wrapper none. Red for 4 days. **4th `execute-do-not-grep` occurrence.** `bench/tests/_delegation.py` follows and CONCATENATES, so a marker deleted from both still fails; 12-test ratchet proves it can fail, including that with the follow DISABLED the wrapper is not a caller.
+
+**★★★ ITEM 9: CC1's OWN 2026-09-20 WIRING WAS WRONG BY 2.3882x TO 8.1068x.** Two gamma estimators carried one name. The gate fits the CUMULATIVE series (`1 - slope`); n* = (a/theta)^(1/gamma) needs the PER-ROUND intensity exponent. On exact counts at gamma = 0.709 the intensity fit recovers 0.709000 at every n; the cumulative gives **0.3525 (n=4), 0.4129 (n=10), 0.5121 (n=50), 0.6100 (n=500)**, because the log-linear form drops the `-1` in `N(n) = a(n^(1-gamma) - 1)/(1-gamma)`. Biased low by 0.30-0.36 at the 3-21 rounds actually run. The proposal never said where `a` comes from, so 3 wirings existed and all 3 overestimate against 9.3695 on [5,3,2,2]: 22.3759, 71.5436, 75.9566. **GAMMA IS NOT DEMOTED AND NOT TOUCHED** — it and the 0.30/0.45 thresholds are a matched pair on that estimator's scale; a guard asserts `bench/round_budget.py` consults no gate threshold and never calls `_estimate_gamma`. Advisory: the gate's verdict is identical at theta = 0.1, 1.0, 100.0.
+
+**★★★ ITEM 12: THE ELEGANT TRIGGER WAS REFUTED BY THE ARCHIVE BEFORE IT WAS BUILT.** Firing when n* exceeds the rounds remaining fires on 16 of 17 archived runs **including 4 of the 5 that converged** (n* spans 151.64 to 1.79969828506e20). Convergence is the two-sided gate on CRITICAL findings, not total yield below theta. What shipped is DEDUCTIVE: with fewer than K rounds left criterion (C) cannot be met by a flawless run. **0 of 5 false alarms, Wilson [0.0000, 0.4345]; 12 of 12 on capped runs** — honest claim is 0 observed in 5. A CLEAN run is never flagged, which was the fatal case. Halts nothing.
+
+**★★ ITEM 5 REBUILT, AND THE WITHDRAWAL WAS ITSELF MISCALCULATED.** Settled-verdict rate by domain over 2,673 decided findings: statistics 0.8656 [0.8451, 0.8838]; software 0.7372 [0.7128, 0.7603]; engineering 0.6774; cs_software 0.4286; chemistry 1.0000. Pooled 0.7897. **`domain` is RUN-level** — no finding carries one. Excluded: 2,099 test-outcome records sharing the `status` key, 2,774 duplicates. The withdrawn figures are impossible exactly (implied share 9914312/14289591 = 0.693814; required rate 10.282432 > 1) — **but the note delivered to him gave 0.6142 and 14.6356, both wrong.** The conclusion holds so the withdrawal stands; both wrong figures stay recorded. The script now exits 3 if any rate, share or partition it prints cannot be true.
+
+**★★ A STALE CITATION BETWEEN 2 CORRECT SAFETY MECHANISMS.** The run ledger's citation into the runner had drifted **238 lines** — correct at `40c4a154`, **already 174 stale at this evening's starting HEAD**, 238 by the end, so the guard was red beforehand. `citation_content_guard` correctly skips it (it points at a COMMENT, which has no AST span) and the generator correctly refuses to rewrite on a shrunken corpus (44/31 against 56/31). A row-protection refusal was blocking a citation repair; now separable, mutation-verified, 55 rows byte-identical.
+
+**ITEM 14: 92, NOT 87**, and **26 of 92, 0.2826, Wilson [0.2008, 0.3819], refer the fix to the PANEL with proposed fixes rather than problems** — his clearest repeated instruction. 39 bare standing orders, 13 he deferred himself, 11 awaiting an explanation. A first extraction re-implemented the annotation predicate and admitted 2 markdown headings as his words; it now runs through the single definition.
+
+**STILL OPEN.** Item 8's BUILD (recovered and compared at 21:50: incremental stream-json parsing, 1 build not 2, touches ~20 callers). The 11 explanations owed. The free `cc2`+`fable` panel the 26-of-92 pattern calls for.
 
 ## SESSION STATE — 2026-10-11 21:50 BST (READ THIS FIRST)
 
