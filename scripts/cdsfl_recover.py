@@ -217,6 +217,38 @@ def _mtime_iso(path: Path) -> str:
     except OSError as exc:
         return f"!! mtime unreadable ({exc})"
 
+def _responses_dir() -> Path:
+    """The founder's annotated-response folder. A module-level helper so a fixture can
+    displace it, matching the DESKTOP_MIRROR pattern above."""
+    return Path("/Users/georgejackson/Developer_Projects/Responses")
+
+
+def _responses_label() -> str:
+    """Describe the folder by MEASUREMENT, so the entry cannot go stale the way a hand-written
+    description does. Counts come from the project's own format-aware reader."""
+    d = _responses_dir()
+    if not d.is_dir():
+        return "THE FOUNDER'S ANNOTATED RESPONSES — folder not present on this machine"
+    try:
+        import subprocess as _sp
+        import json as _json
+        out = _sp.run([sys.executable,
+                       str(Path(__file__).resolve().parent / "read_founder_responses_2026-10-11.py"),
+                       "--json"], capture_output=True, text=True, timeout=180)
+        cov = _json.loads(out.stdout).get("coverage", {}) if out.returncode == 0 else {}
+    except Exception:
+        cov = {}
+    n_ann = cov.get("annotations_total")
+    n_files = cov.get("annotated_files")
+    blind = cov.get("annotations_in_blind_files")
+    if n_ann is None:
+        return ("THE FOUNDER'S ANNOTATED RESPONSES — his '#' verdicts. READ WITH "
+                "scripts/read_founder_responses_2026-10-11.py, NEVER with grep")
+    return (f"THE FOUNDER'S ANNOTATED RESPONSES — {n_ann} '#' verdicts across {n_files} files, "
+            f"{blind} of them in files grep treats as BINARY. The only record here he wrote "
+            f"himself. READ WITH scripts/read_founder_responses_2026-10-11.py, NEVER with grep")
+
+
 
 def first_read_lines(root: Path) -> list[str]:
     """The FIRST READ section: the operational tracker and the live work queue.
@@ -284,6 +316,25 @@ def first_read_lines(root: Path) -> list[str]:
         (
             root / "experimental_notes" / "OUTSTANDING_QUEUE_to_BR2.md",
             "work queue to Bench Run 2",
+        ),
+        (
+            # THE FOUNDER'S OWN VERDICTS, ADDED ON HIS INSTRUCTION 2026-10-11:
+            # *"This is the folder I use to keep all my tts responses in ... You should
+            # probably mark it as one of your available resources for this inventory."*
+            #
+            # IT IS THE ONLY RECORD IN THIS PROJECT THAT CC1 DID NOT WRITE, which is
+            # exactly why it belongs here. On 2026-10-11 an inventory of "what was agreed"
+            # was built from 5 sources that were ALL CC1's own writing -- 2 git-log passes,
+            # WORK_IN_FLIGHT, RECOVERY and the tracker -- so it could not detect an
+            # instruction the founder gave that CC1 never recorded. 29 of his 200 annotations
+            # in that window have no verbal trace in those 5 sources at all.
+            #
+            # AND A NAIVE READER IS BLIND TO A THIRD OF IT: 221 of 691 annotations, 0.3198,
+            # sit in files that `grep` treats as binary because Word writes plain text with
+            # CR-only line endings and high bytes. Read it with the reader, never with grep:
+            #   python3 scripts/read_founder_responses_2026-10-11.py --since <date>
+            _responses_dir(),
+            _responses_label(),
         ),
     ]
     # NEWEST FIRST, AND SAY HOW STALE THE REST ARE.
