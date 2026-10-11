@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 12 October 2026 00:09 BST (2026-10-12T00:09:30+01:00)
+Generated: 12 October 2026 00:13 BST (2026-10-12T00:13:28+01:00)
 
 ---
 
@@ -18,20 +18,19 @@ Generated: 12 October 2026 00:09 BST (2026-10-12T00:09:30+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `a4a5a4a6` two correct safety mechanisms were leaving a stale citation between them
-- **Committed:** 2026-10-12 00:04:21 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 6
+- **Last commit (the PARENT of the commit containing this file):** `1feaa502` sv: all 4 remaining items done; the sim seam lost substance and 3 guards went blind
+- **Committed:** 2026-10-12 00:09:30 +0100
+- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M experimental_notes/Morning_Report_2026-10-12.md`
 - `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**10885 tests collected** at 12 October 2026 00:09 BST, HEAD `a4a5a4a6` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**10885 tests collected** at 12 October 2026 00:13 BST, HEAD `1feaa502` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -61,6 +60,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `1feaa502 sv: all 4 remaining items done; the sim seam lost substance and 3 guards went blind`
 - `a4a5a4a6 two correct safety mechanisms were leaving a stale citation between them`
 - `45ba58b4 item 5: the domain-verdict gap is measured again, and my own withdrawal was miscalculated`
 - `6a2e87f0 item 12: a human review fires on substantial evidence, and the naive design was refuted first`
@@ -70,4 +70,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `183f7dc2 sv: the substance test is wired after measuring it, and his 0.05 is pinned`
 - `fda2dfcd morning report extended: the substance test is wired and the risk was measured, not asserted`
 - `be5ff31c his 0.05 false-alarm proportion pinned, with the ruling it depends on`
-- `44e82fe5 the runner now refuses a reply that is merely non-empty, and the risk was measured first`
