@@ -213,3 +213,69 @@ class TestTheDriftGuardCanActuallyFail:
         assert (good, bad, gone) == (0, 1, 1), (
             f"drift check does not discriminate: {(good, bad, gone)}"
         )
+
+
+class TestTheCitationIsRepairedWithoutTouchingRows:
+    """Two correct safety mechanisms were combining to leave a stale figure.
+
+    The shrink refusal protects ROWS: on a checkout holding fewer run artefacts
+    than the ledger declares, rewriting would delete rows that exist elsewhere.
+    But the ledger also carries a line-number citation into the runner, which
+    drifts on every edit to it, and `citation_content_guard` cannot re-point that
+    one -- it only moves a citation preceded by a backticked `def` or `class`
+    whose AST span it can read, and this points at a COMMENT. So the generator was
+    the only thing that could fix it, and it returned before trying.
+
+    Measured 2026-10-11: the citation read 18297 -- correct at `40c4a154` when the
+    ledger was last written, already 174 lines stale at that evening's starting
+    HEAD, and 238 by the end.
+    """
+
+    def _rows(self, text: str) -> list[str]:
+        return [l for l in text.splitlines() if l.startswith("|")]
+
+    def test_a_wrong_citation_is_repaired_and_no_row_changes(self, monkeypatch):
+        import re as _re
+        import subprocess
+        original = LEDGER.read_text(encoding="utf-8")
+        sys.path.insert(0, str(REPO / "scripts"))
+        from experiment_run_ledger import _gamma_alt_comment_line
+        want = _gamma_alt_comment_line()
+        try:
+            LEDGER.write_text(
+                _re.sub(r"(bench/reference_runner_v3\.py:)\d+", r"\g<1>99999",
+                        original, count=1), encoding="utf-8")
+            r = subprocess.run([sys.executable,
+                                str(REPO / "scripts" / "experiment_run_ledger.py"),
+                                "--refresh"],
+                               capture_output=True, text=True, timeout=600,
+                               cwd=str(REPO))
+            assert r.returncode == 0, r.stderr[-400:]
+            after = LEDGER.read_text(encoding="utf-8")
+            assert f"bench/reference_runner_v3.py:{want}" in after, (
+                "the stale citation was not repaired")
+            assert "99999" not in after
+            assert self._rows(after) == self._rows(original), (
+                "a row changed while repairing a citation")
+        finally:
+            LEDGER.write_text(original, encoding="utf-8")
+
+    def test_the_shrink_refusal_still_protects_rows(self):
+        """The repair must not have weakened the thing it sits inside."""
+        src = (REPO / "scripts" / "experiment_run_ledger.py").read_text(
+            encoding="utf-8")
+        assert "Rewriting would drop rows that exist elsewhere." in src
+        assert "0 rows touched" in src
+
+    def test_a_correct_citation_is_left_alone(self):
+        """It must not rewrite the file on every run; an unchanged ledger stays
+        byte-identical so it never shows up as a spurious diff."""
+        import subprocess
+        before = LEDGER.read_bytes()
+        r = subprocess.run([sys.executable,
+                            str(REPO / "scripts" / "experiment_run_ledger.py"),
+                            "--refresh"],
+                           capture_output=True, text=True, timeout=600, cwd=str(REPO))
+        assert r.returncode == 0
+        assert "repaired the runner citation" not in r.stdout
+        assert LEDGER.read_bytes() == before

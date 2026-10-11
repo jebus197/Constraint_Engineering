@@ -309,6 +309,35 @@ def main() -> int:
                       f"{here[0]}/{here[1]} run dirs/signals against the "
                       f"{declared[0]}/{declared[1]} the ledger declares. "
                       f"Rewriting would drop rows that exist elsewhere.")
+                # THE DERIVED CITATION IS REPAIRED ANYWAY, 2026-10-11, because two
+                # correct safety mechanisms were combining to leave a stale figure.
+                #
+                # The shrink refusal above protects ROWS. But the ledger also
+                # carries a line-number citation into the runner, and that drifts
+                # on every edit to the runner. `citation_content_guard` cannot
+                # re-point it, correctly: that guard only moves a citation preceded
+                # by a backticked `def` or `class` whose AST span it can read, and
+                # this one points at a COMMENT, which has no span. So the generator
+                # is the only thing that can fix it -- and it was returning here
+                # first. Measured 2026-10-11: the citation read 18297, correct at
+                # `40c4a154` when the ledger was last written, already 174 lines
+                # stale at that evening's starting HEAD, and 238 stale by the end.
+                #
+                # Repairing ONE DERIVED NUMBER drops no rows, so the removal half
+                # of the additive standard is not engaged.
+                try:
+                    cur = LEDGER.read_text(encoding="utf-8")
+                    want = _gamma_alt_comment_line()
+                    pat = re.compile(r"(bench/reference_runner_v3\.py:)(\d+)")
+                    found = pat.search(cur)
+                    if found and found.group(2) != str(want):
+                        LEDGER.write_text(
+                            pat.sub(lambda m: f"{m.group(1)}{want}", cur, count=1),
+                            encoding="utf-8")
+                        print(f"  repaired the runner citation "
+                              f"{found.group(2)} -> {want} (0 rows touched)")
+                except Exception as exc:                     # noqa: BLE001
+                    print(f"  citation repair skipped: {type(exc).__name__}: {exc}")
                 return 0
             if LEDGER.read_text(encoding="utf-8") == fresh:
                 return 0
