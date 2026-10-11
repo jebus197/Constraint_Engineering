@@ -181,6 +181,65 @@ def _recovery_ran_after(iso_ts: str) -> bool:
     except (OSError, ValueError):
         return False
 
+def _auto_restore(root: pathlib.Path) -> str:
+    """RUN the restore, do not merely ask for it. His ruling of 2026-10-11.
+
+    *"Once recently I saw something very interesting. You compacted, detected it after the
+    compaction completed, and ran rs without my intervention at all. If you could do this after
+    every compaction event (again perhaps mechanically?) ... that would be a significant
+    advancement in our working practices."*
+
+    WHY NOTIFYING WAS NOT ENOUGH, measured on 2026-10-11. The notice below has existed since
+    2026-09-08 and is loud, visible and repeats every turn. It still depends on an assistant
+    reading it and choosing to act. On 2026-10-11 a compaction landed, the notice fired, the
+    restore was run -- and the session still spent hours recovering, because a notice delivers
+    a REMINDER where the founder asked for a MECHANISM. The difference is that this function
+    executes.
+
+    COST, AND WHY IT IS ACCEPTABLE. `--record-restore` implies `--full`, which runs a test
+    count, so this is seconds rather than milliseconds. It runs ONCE PER COMPACTION, not once
+    per turn: the script writes `last_recovery`, `_recovery_ran_after` then reads that marker,
+    and the alarm self-acknowledges on the next prompt. A compaction is a rare event and the
+    alternative cost -- an assistant reasoning from a summary of the project rather than the
+    project -- has been measured in hours.
+
+    IT NEVER FELLS THE HOOK. Every failure path returns a string saying what did not happen.
+    A recovery mechanism that can break the session it protects is worse than none.
+    """
+    script = root / "scripts" / "cdsfl_recover.py"
+    if not script.is_file():
+        return ("  AUTO-RESTORE DID NOT RUN: scripts/cdsfl_recover.py is not in this "
+                "checkout, so the restore is owed manually.")
+    try:
+        r = subprocess.run([sys.executable, str(script), "--record-restore"],
+                           cwd=str(root), capture_output=True, text=True, timeout=300)
+    except subprocess.TimeoutExpired:
+        return ("  AUTO-RESTORE TIMED OUT after 300 s. The restore is owed manually: "
+                "python3 scripts/cdsfl_recover.py --record-restore")
+    except Exception as exc:
+        return (f"  AUTO-RESTORE FAILED: {type(exc).__name__}. The restore is owed manually: "
+                f"python3 scripts/cdsfl_recover.py --record-restore")
+    if r.returncode != 0:
+        tail = (r.stderr or r.stdout or "").strip().splitlines()[-3:]
+        return ("  AUTO-RESTORE EXITED " + str(r.returncode) + ": " + " | ".join(tail)
+                + "\n  The restore is owed manually.")
+    # The FIRST READ block is the part that changes what the assistant does next; the rest of
+    # the report is long and is on disk for anyone who wants it.
+    out = (r.stdout or "").splitlines()
+    keep, grabbing = [], False
+    for line in out:
+        if line.strip().startswith("## FIRST READ"):
+            grabbing = True
+        elif grabbing and line.startswith("## "):
+            break
+        if grabbing:
+            keep.append(line)
+    body = "\n".join(keep[:40]) if keep else "\n".join(out[:30])
+    return ("  AUTO-RESTORE RAN AND SUCCEEDED (exit 0). Its marker acknowledges this "
+            "compaction, so this notice will not repeat.\n"
+            "  READ THESE BEFORE RELYING ON ANYTHING RECALLED:\n" + body)
+
+
 def _desktop_notify(when_iso, ago):
     """Fire a macOS notification ONCE per compaction, and never fell the hook.
 
@@ -334,6 +393,14 @@ def main():
            f"scripts/cdsfl_recover.py --full.\n"
            f"  This repeats every turn until `rs` is issued, so it cannot scroll "
            f"out of view permanently.")
+    # RUN IT, DO NOT ONLY ASK. His ruling of 2026-10-11. See `_auto_restore`.
+    try:
+        _root = pathlib.Path(
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering")
+        msg = msg + "\n\n" + _auto_restore(_root)
+    except Exception:
+        msg = msg + "\n\n  AUTO-RESTORE could not be attempted; the restore is owed manually."
+
     # VISIBLE, NOT SUPPRESSED (founder ruling, 2026-09-08). See the note above.
     print(json.dumps({
         "suppressOutput": False,
