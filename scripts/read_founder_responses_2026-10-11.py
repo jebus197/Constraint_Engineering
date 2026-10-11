@@ -84,6 +84,20 @@ def is_a_response_file(path: Path) -> bool:
             and not path.name.startswith("."))
 
 
+#: `#`, 1 to 6 of them, then a space, then a short title-case-ish phrase and no sentence
+#: punctuation. That is a heading. His annotations are conversational prose, usually long,
+#: and frequently begin without a space after the hash.
+_MD_HEADING = re.compile(r"^#{1,6}\s+\S")
+
+
+def _looks_like_a_markdown_heading(line: str) -> bool:
+    if not _MD_HEADING.match(line):
+        return False
+    body = line.lstrip("#").strip()
+    # A heading rarely runs past a clause and rarely ends in sentence punctuation.
+    return len(body) <= 120 and not body.rstrip().endswith((".", "?", "!"))
+
+
 def read_any(path: Path) -> str:
     """Decode a response file whatever Word did to it.
 
@@ -129,14 +143,32 @@ def annotations(since: _dt.date | None = None, until: _dt.date | None = None) ->
             continue
         if until and d > until:
             continue
-        text = read_any(p)
-        if not text:
-            continue
+        out.extend(_annotations_in(p, d))
+    return out
+
+
+def _annotations_in(p: Path, d: _dt.date | None = None) -> list:
+    """Every annotation in ONE file. The single definition of what counts as one."""
+    out = []
+    if d is None:
+        d = _dt.date.fromtimestamp(p.stat().st_mtime)
+    text = read_any(p)
+    if text:
         for i, line in enumerate(text.splitlines()):
             s = line.strip()
-            if s.startswith("#") and len(s) > 2:
-                out.append({"file": p.name, "ext": p.suffix.lower(), "date": d.isoformat(),
-                            "line_index": i, "text": s.lstrip("# ").strip()})
+            if not (s.startswith("#") and len(s) > 2):
+                continue
+            # A MARKDOWN HEADING IS NOT ONE OF HIS ANNOTATIONS. Found 2026-10-11 by READING
+            # the extract rather than trusting its count: entries 81-87 of a 258-row pull were
+            # headings from `CDSFL_Panel_Advice_and_Shakedown_Readiness_2026-09-29.md` --
+            # "Recommendation", "Explorer interpretation". The `.md` files in this folder are
+            # saved web pages and machine-generated exports (one is literally
+            # "asymptote curve meaning - Google Search.md"); he annotates .txt, .rtf and .docx
+            # in Word. Counting headings inflated his 480 real annotations to 691.
+            if p.suffix.lower() in (".md", ".markdown") and _looks_like_a_markdown_heading(s):
+                continue
+            out.append({"file": p.name, "ext": p.suffix.lower(), "date": d.isoformat(),
+                        "line_index": i, "text": s.lstrip("# ").strip()})
     return out
 
 
@@ -154,9 +186,12 @@ def claim_a_naive_grep_is_blind_to_some_of_them() -> dict:
             cr += 1
         if not shape["valid_utf8"]:
             nonutf8 += 1
-        text = read_any(p)
-        n = sum(1 for l in text.splitlines()
-                if l.strip().startswith("#") and len(l.strip()) > 2)
+        # ONE CODE PATH. This counter originally re-implemented the annotation test inline
+        # and the two drifted the moment markdown headings were excluded from `annotations()`:
+        # the window pull correctly fell to 248 while this function still reported 691. A
+        # producer and a consumer that disagree is the defect `execute-do-not-grep` names, so
+        # the count now comes from the same function that yields the annotations.
+        n = len(_annotations_in(p))
         if not n:
             continue
         annotated += 1
