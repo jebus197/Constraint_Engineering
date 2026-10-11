@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 11 October 2026 02:27 BST (2026-10-11T02:27:01+01:00)
+Generated: 11 October 2026 21:48 BST (2026-10-11T21:48:47+01:00)
 
 ---
 
@@ -18,19 +18,20 @@ Generated: 11 October 2026 02:27 BST (2026-10-11T02:27:01+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `f5093e36` sv: the prior art is largely invented, the research proving it needed correcting, and the gap is what sets the attempts budget
-- **Committed:** 2026-10-09 05:21:54 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
+- **Last commit (the PARENT of the commit containing this file):** `15a0d6dd` the single file now records what became of all 18 of his responses
+- **Committed:** 2026-10-11 21:06:14 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 6
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
 - `M resources/MEMORY_EXCLUSIONS.md`
+- `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**10618 tests collected** at 11 October 2026 02:27 BST, HEAD `f5093e36` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**10692 tests collected** at 11 October 2026 21:48 BST, HEAD `15a0d6dd` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -60,13 +61,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `15a0d6dd the single file now records what became of all 18 of his responses`
+- `fd2eae8a his rulings 1 and 2 pinned where they would otherwise have been lost`
+- `48c6bd53 his 18 responses worked: 256 characters of his writing were being dropped, and 4 rulings land`
+- `3c4e0e37 the older 233 audited, and the file written to stop decisions going missing had lost 3`
+- `2935d57b Pass B: his own words as the source, and 4 of 12 checkable rulings had not landed`
+- `d4e48d3b his machine is a fixed resource, and 221 of his 691 verdicts were unreadable`
+- `fbbd9163 the Lean anchor set is built, and a mutation pass caught me writing a guard that could not fail`
+- `7bc4a390 sv: Lean checks the proof and not the statement, and that gap is the one CDSFL already closes`
 - `f5093e36 sv: the prior art is largely invented, the research proving it needed correcting, and the gap is what sets the attempts budget`
 - `e3297cbb the wheel is largely invented, the research proving it had fabricated citations, and his "2 or 3" was nearly right`
-- `b03aa8a2 both seats refuted me, randomisation settles monotonicity, and 4 launch deficiencies are fixed`
-- `b4c897fb the round-3 panel analysis he asked for under `d` and did not receive`
-- `6d0f53cc sv: gamma gates wherever a curve exists, the cap default is exhaust, and the panel found 2 critical defects in my fix`
-- `3c7240bf the morning report now carries the 4th panel's outcome, which I said I would add and did not`
-- `40c4a154 both seats found the same 2 critical defects in my gamma fix, and all 4 are now repaired`
-- `80619fa1 p-pass: the hand-maintained mirror holds over a sweep, not over the 10 inputs I first tested`
-- `eaadd840 morning report: gamma gates everywhere, and 6 figures I carried to a panel were wrong`
-- `8f014a59 he was right: "unestimable" was the demotion renamed, so the proven guarded vacuity is imported`

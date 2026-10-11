@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 11 October 2026 02:27 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 11 October 2026 21:48 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,28 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-11 21:50 BST (READ THIS FIRST)
+
+**BRANCH.** `sim/shakedown-2026-09-29`, HEAD `15a0d6dd`. `main` untouched.
+
+**★★★ THE READER WAS MANGLING HIS WRITING, NOT MERELY FAILING TO FIND IT.** Reporting that his files "parsed" was not enough and his instruction said **fully**: `errors="ignore"` silently DROPPED every curly apostrophe, so *"I don't get it"* arrived as *"I dont get it"*. **Measured: 256 characters of his writing lost across 14 of 29 plain-text files, 0.4828, Wilson [0.3139, 0.6557].** The codec is **Mac OS Roman**, confirmed 3 ways: his Word dialog shows "Western (Mac OS Roman)" with "CR only"; `0xD5` ×11 and `0xD4` ×3 are the right and left single quotes there (O-circumflex under cp1252); `file` reports `ISO-8859 text, with CR line terminators`. `decode_bytes()` now tries UTF-8 strict, then the single-byte codec the **quote bytes** point at, then a VISIBLE `errors="replace"`. Both single-byte codecs decode every byte, so "try until one works" proves nothing — the quote bytes are the discriminator. **Re-measured: 0 files decoded incorrectly, 0 characters lost, all 18 of his responses read back intact.** HE CHANGES NOTHING; Word cannot save `.md` and the `.md` suggestion is WITHDRAWN.
+
+**★★★ THE NOTE-STANDARD STAMP IS MECHANICAL NOW**, on his *"(prerably mechanically so you don't forget again)"*. Present on the notes of 10-08 and 10-09, absent from BOTH files delivered on 10-11. A first fix added the check to `blocking()` alone and reported 0 findings on plainly unstamped files because `main()` calls `partition()` directly — **an unwired addition, inside the fix for unwired additions**. Now wired at the CLI, scoped to `experimental_notes/` and `*_tts/`. Guard: `test_a_delivered_note_names_its_standard_2026-10-11.py` (6). **24 older notes lack a stamp** and are held by the ratchet as a backlog.
+
+**HIS RULINGS LANDED.** (1) and (2) the 2 gate properties and the two-sided convention — pinned as `TWO_SIDED_Z`/`PER_SIDE_Z` in `scripts/the_division_count_is_derivable_2026-10-08.py` with a guard that RECOMPUTES 0.038126 at T=11 against 0.059430 at T=12, so the seats' 10-vs-11 dispute is settled by the convention rather than asserted; **0 live references** to that machinery, so it is pinned where the work will be picked up. (6) **`immune_memory_enabled` now defaults TRUE** — safe because RECORDING runs at run end, is advisory and never touches a verdict or the gate; `immune_memory_consume_rk0` stays FALSE and is the cross-experiment contamination path; 31 configs inherit, 16 set it explicitly; its guard was UPDATED not deleted and a mutation turning consumption on makes it fail. (10) **10 future configs corrected to `"auto"`, 33 archived records left untouched** and recorded in the new `bench/directives/universal/archived_run_confounds.json`, on his *"No one ever said we should go back and 'fake the record' … mark them explicitly in our docs and correct them going forward."* (15) **his "Set it to 6" was ALREADY DONE** — it is the exhausted-round valve of exp56 (ruling 3 of `Outstanding_Rulings_2026-09-15.rtf`), now `exhausted_round_threshold: 6` against `max_rounds: 8` in all 3 configs.
+
+**★★ A CAUTION OF MY OWN, WITHDRAWN ON MEASUREMENT.** I claimed the 5 exp52 factorial cells were a design decision. `burst_mode` does **NOT** vary across them — the factors are `divergence_channel_enabled` and `feedback_channel_enabled` — so pinning burst off measured those channels **under a crippled runner**. All 4 cells corrected.
+
+**RULING 7 REFUSED, WITH THE LINE NUMBERS THAT REFUSE IT.** Fold-fixes-forward stays OFF. His condition had 2 halves. Satisfied: `_apply_back_setup` uses a per-run copy, *"The repo file is never modified"*. **Not satisfied:** the runner states at **`:5419`** and **`:6049`** that it *"rewrites the reviewed target between rounds"*, and `_refresh_stale_corrected_copies` exists precisely to repair evidence staled by that mid-run rewrite. Enabling it reintroduces the moving-target problem he named. **The work is to move the fold to run END; that is a build, not a setting.**
+
+**ITEM 8 RECOVERED FROM THE RECORD, as he asked.** The "better way" was **incremental stream-json parsing**. Stronger than a completion marker because a seat that has DIED never prints the marker either, and the clock cannot separate working from churning (**20.455 s vs 20.816 s per call**, measured). A live tool-call count separates all 3 states. Same item as the lapsed stream-json trigger — **1 piece of work, not 2**.
+
+**★★ HIS CORRECTION, ACCEPTED WITHOUT QUALIFICATION, 2026-10-11:** *"a question emerges of how you can interpret 'fix if not already fixed' as a question? To my eyes that's a clear instruction to fix something if you haven't already fixed it."* He is right. The 87 imperative annotations were softened by calling them "conditional in form". **A precondition is not a question.** They are instructions that require a check first.
+
+**HIS WORK ORDER, 2026-10-11 21:47, open:** 13 recover the 4 commits on `r3-parser-envelope` then reclaim the 2.5 GB; 3 implement the 0.05 false-alarm proportion; 9 build the per-run computed round recommendation (NOT a shipped constant of 10, which is a CDSFL average and arbitrary elsewhere); 12 build the human-review trigger on substantial evidence a run will not converge; 14 verify all 87 against the tree; 11 verify and fix the 4 panel lessons; 5 the domain-verdict producer, after the rest. **HIS STANDING CAUTION ON ALL OF IT:** *"Beware of proposals made by the models you s[u]bsequently rejected or modified, either on your own, or after discussions with me."*
+
+**SUITE.** **84 passed** across the 6 guard files touching today's changes. Pre-commit subset **501 passed** on each of 4 commits. **A subset is not a board**; the last full board remains 10,306 passed on 2026-10-07.
 
 ## SESSION STATE — 2026-10-11 16:15 BST (READ THIS FIRST)
 
