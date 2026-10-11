@@ -89,7 +89,7 @@ instructions · rebuild the domain-verdict measurement last.
 
 ---
 
-# Later the same night, 23:00–00:05 — lesson 1 wired, item 3 pinned
+# Later the same night, 23:00–23:15 BST — lesson 1 wired, item 3 pinned
 
 **His correction, and it was right:** saying a change *"affects whether runs converge"* is not
 saying it breaks convergence, and caution must not stand in for a measurement.
@@ -126,7 +126,7 @@ the runner or routing. The *reasoning* is recorded beside the value and a test a
 0.05 is right **because** ruling 4 fixes rankings at experiment start, moving demotion to
 between experiments. If ruling 4 changes, this is revisited, not inherited.
 
-## Why building stopped at 00:05
+## Why building stopped at 23:15
 
 **The same predicate fault twice within an hour** — a contiguous search for a sentence that
 wraps across 2 lines, first on the lesson-4 docstring, then on his quoted ruling. A repeating
