@@ -212,4 +212,62 @@ bypass `main()`.
 
 ---
 
+# ADDENDUM 2, 2026-10-11 21:25 BST — his 18 responses worked
+
+## Encoding: the reader was reading his files and mangling them
+
+`errors="ignore"` DROPPED every curly apostrophe. *"I don't get it"* → *"I dont get it"*.
+**256 characters of his writing lost across 14 of 29 plain-text files, 0.4828,
+Wilson [0.3139, 0.6557].** Codec is **Mac OS Roman**, confirmed 3 ways: his Word dialog shows
+"Western (Mac OS Roman)" + "CR only"; `0xD5` ×11 and `0xD4` ×3 are the right/left single quotes
+there (O-circumflex under cp1252); and `file` reports `ISO-8859 text, with CR line terminators`.
+`decode_bytes()` now tries UTF-8 strict → the single-byte codec the **quote bytes** point at →
+visible `errors="replace"`. Both single-byte codecs decode *every* byte, so "try until one
+works" proves nothing; the quote bytes are the discriminator. **Re-measured: 0 files decoded
+incorrectly, 0 characters lost, all 18 responses read back with apostrophes intact.**
+He changes nothing — Word cannot save `.md`; the `.md` suggestion is withdrawn.
+
+## Note-standard stamp, now mechanical
+
+`missing_standard_stamp()` in `note_vagueness_lint.py`, scoped to `experimental_notes/` and
+`*_tts/`. **A first fix added it to `blocking()` only and reported 0 findings on plainly
+unstamped files, because `main()` calls `partition()` directly — an unwired addition, inside
+the fix for unwired additions.** Now wired at the CLI. Guard: 6 tests. 24 older notes lack a
+stamp; the ratchet holds them as a backlog.
+
+## Rulings landed
+
+| # | Ruling | Action |
+|---|---|---|
+| 1 | "Yes. Use both" (gate properties) | pinned in the division producer; **0 live references** to that machinery |
+| 2 | "Yes. Use the two sided setting" | `TWO_SIDED_Z` named, `PER_SIDE_Z` recorded beside it, guard recomputes 0.038126 at T=11 vs 0.059430 at T=12 |
+| 6 | immune memory on by default | `immune_memory_enabled → True`; `immune_memory_consume_rk0` stays `False`; 31 configs inherit; guard updated, mutation-verified |
+| 10 | burst: mark and correct | 10 future configs → `"auto"`; 33 archived **untouched** and recorded in `archived_run_confounds.json`; guard 4 tests |
+| 15 | "Set it to 6" | **already done** — `exhausted_round_threshold: 6` vs `max_rounds: 8` in all 3 exp56 configs |
+
+**Withdrawn:** the claim that the 5 exp52 factorial cells were a design decision. `burst_mode`
+does **not** vary across them — the factors are `divergence_channel_enabled` and
+`feedback_channel_enabled` — so pinning it off measured those channels under a crippled runner.
+
+## Ruling 7 refused, with cause
+
+Fold-fixes-forward stays off. His condition had 2 halves. **Satisfied:** `_apply_back_setup`
+uses a per-run copy, *"The repo file is never modified"*. **Not satisfied:** the runner states
+at **:5419** and **:6049** that it *"rewrites the reviewed target between rounds"*, and
+`_refresh_stale_corrected_copies` exists to repair evidence staled by that mid-run rewrite.
+
+## Item 8 recovered
+
+The "better way" was **incremental stream-json parsing**. Stronger than a completion marker: a
+dead seat never prints the marker either, and the clock cannot separate working from churning
+(**20.455 s vs 20.816 s per call**, measured). A live count separates all 3 states. Same item
+as the lapsed stream-json trigger — 1 piece of work, not 2.
+
+## Still owed
+
+**Item 11** — *"Verdict: Verify and fix all"* on the 4 panel lessons. Live code across both
+runners; not rushed at the end of a long session.
+
+---
+
 *Written under CDSFL note standard v1.7.*
