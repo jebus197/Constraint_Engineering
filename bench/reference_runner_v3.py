@@ -1630,6 +1630,19 @@ class RunnerConfig:
     #: stroke, which changes when a run converges, so it is promoted on
     #: measured evidence from a run and not on argument.
     fix_efficacy_mode: str = "off"
+    # ROUND BUDGET (item 9, his order of 2026-10-11: *"9: Then yes, do this
+    # also."*). The stopping threshold for the per-run round recommendation
+    # n* = (a/theta)^(1/gamma), in NEW CRITICAL FINDINGS PER ROUND. It is the
+    # RESEARCHER'S cost/value call, which is why it is a config field and why
+    # his constraint -- *"there is a case to be considered at where that average
+    # number might sit in experiments ran by other researchers"* -- is satisfied
+    # by computing n* per run rather than shipping a constant.
+    #
+    # DELIBERATELY NOT NAMED `theta`: that name is already taken in this module
+    # for `cfg.gamma_alt_threshold` (0.30, the convergence gate's cutoff). Two
+    # different thetas under one name is how the two different gammas got
+    # conflated in the first place.
+    round_budget_theta: float = 1.0
     # CONSUMPTION. The memory's blended prior SEEDS R_k(0) — the appendix §1.1
     # initial condition R_k(0) = π_k — per finding flaw class.
     #
@@ -9345,6 +9358,25 @@ def _check_hardened_convergence(
     telem.update(gamma_all_settled=round(g_all, 4),
                  gamma_crit_settled=round(g_crit, 4),
                  cum_critical=cum_crit, zero_crit_ok=zero_crit_ok)
+
+    # ROUND BUDGET — ADVISORY, GATES NOTHING (item 9, 2026-10-11). It answers the
+    # FORWARD question the gate never asks: how many more rounds are worth running?
+    # It fits the PER-ROUND intensity, NOT `_estimate_gamma`'s cumulative slope,
+    # because the two differ by 0.30 to 0.36 at the round counts this project runs
+    # and feeding the cumulative gamma into n* = (a/theta)^(1/gamma) overestimates
+    # by 2.3882x on the project's own early data. `bench/round_budget.py` carries
+    # the measurement. Nothing in `telem` is read by any convergence decision.
+    try:
+        from round_budget import project_optimal_rounds
+    except ImportError:                                      # pragma: no cover
+        from bench.round_budget import project_optimal_rounds
+    try:
+        telem.update(project_optimal_rounds(
+            crit_s, theta=getattr(cfg, "round_budget_theta", 1.0)).as_dict())
+    except Exception as exc:                                 # noqa: BLE001
+        # A diagnostic must not fell a run — the same contract the threshold
+        # profile above states in its own except clause.
+        telem["round_budget_status"] = f"ERROR: {type(exc).__name__}: {exc}"
 
     # ─────── GAMMA GATES IN EVERY CASE WHERE GAMMA EXISTS ───────
     # FOUNDER'S RULING, 2026-10-08: *"Gamma should remain active in all cases.
