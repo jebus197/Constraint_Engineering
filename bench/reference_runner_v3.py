@@ -9378,6 +9378,38 @@ def _check_hardened_convergence(
         # profile above states in its own except clause.
         telem["round_budget_status"] = f"ERROR: {type(exc).__name__}: {exc}"
 
+    # HUMAN REVIEW TRIGGER — ADVISORY, HALTS NOTHING (item 12, 2026-10-11).
+    # HIS CONDITION: a review *"should only be triggered if there is substantial
+    # evidence that an experimental run is unlikely to converge under the given
+    # conditions and with the available resources."* HIS CONSTRAINT, 2026-09-28:
+    # *"What I don't want is a condition where no run could ever complete, and
+    # where the HIL queue could grow to unmanageable levels."*
+    #
+    # Signal A is DEDUCTIVE: with fewer rounds left than the K consecutive
+    # zero-novel-critical rounds criterion (C) requires, (C) cannot be met even by
+    # a flawless run. Measured over 17 archived runs it fires on 0 of the 5 that
+    # converged, Wilson [0.0000, 0.4345], and on 12 of 12 that reached their cap.
+    # The naive design -- trigger when item 9's n* exceeds the rounds remaining --
+    # was REFUTED first: it fires on 4 of those same 5 converged runs. Producer:
+    # `scripts/the_review_trigger_false_alarm_rate_2026-10-11.py`.
+    try:
+        from human_review_trigger import assess as _assess_review
+    except ImportError:                                      # pragma: no cover
+        from bench.human_review_trigger import assess as _assess_review
+    try:
+        telem.update(_assess_review(
+            round_idx=round_idx,
+            max_rounds=int(getattr(cfg, "max_rounds", 0) or 0),
+            consecutive_zero_crit_required=W,
+            critical_novelty_series=crit_s,
+            gamma_critical=g_crit,
+            gamma_threshold=theta,
+            gamma_is_estimable=_gamma_is_estimable(crit_s),
+        ).as_dict())
+    except Exception as exc:                                 # noqa: BLE001
+        telem["human_review_requested"] = False
+        telem["human_review_detail"] = {"error": f"{type(exc).__name__}: {exc}"}
+
     # ─────── GAMMA GATES IN EVERY CASE WHERE GAMMA EXISTS ───────
     # FOUNDER'S RULING, 2026-10-08: *"Gamma should remain active in all cases.
     # Fix it."* Issued after this branch was found to make gamma
