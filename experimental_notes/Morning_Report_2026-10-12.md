@@ -89,4 +89,55 @@ instructions · rebuild the domain-verdict measurement last.
 
 ---
 
+# Later the same night, 23:00–00:05 — lesson 1 wired, item 3 pinned
+
+**His correction, and it was right:** saying a change *"affects whether runs converge"* is not
+saying it breaks convergence, and caution must not stand in for a measurement.
+
+## The substance test, measured then wired
+
+Across **2,582 archived runner replies** the predicate rejects **26 = 0.0101**, Wilson
+[0.0069, 0.0147], exact [0.0066, 0.0147]. **20 of the 26 are EMPTY.** The remaining 6 are 2, 7,
+191, 191 and 603 chars. **Exactly 1** would be rejected while carrying a finding — 191 chars,
+1 finding, the holding-note case the test exists for. No panel needed; the archive answered it.
+
+| Site | Applied? | Why |
+|---|---|---|
+| `_dispatch_single_model_inner` (primary seat) | **yes** | the reply he means |
+| …its secondary fallback | **yes** | answers the same question |
+| `run_preflight` | **no** | accepts `len(text.strip()) > 5` as proof of life; an 800-char floor fails every preflight |
+| `_arb_dispatch` (:16152) | **no** | closure invoked indirectly; the 1 of 14 sites not inside `try/except` |
+
+It **raises** rather than returning a sentinel because `dispatch_to_model` already raises on a
+timeout and on a process exiting without a result. A hollow reply is the same class of event.
+
+**Finding along the way:** `_report_dispatch_failure` is imported at
+`reference_runner_v3.py:244` and **called nowhere** — an unwired import in the active runner,
+and the reason no live reporting path existed to route a rejection into.
+
+**P-pass:** 7 passed; disabling the check kills 2; the default path asserted byte-identical.
+**501 passed** in the gate, so the behaviour change breaks nothing.
+
+## Item 3 — `FALSE_ALARM_PROPORTION = 0.05`
+
+*"Then yes. Do it that way. 0.05 is acceptable within this f[r]amework."* Pinned in the
+division producer with his other 2 rulings; **0 live references** to relegation machinery in
+the runner or routing. The *reasoning* is recorded beside the value and a test asserts it:
+0.05 is right **because** ruling 4 fixes rankings at experiment start, moving demotion to
+between experiments. If ruling 4 changes, this is revisited, not inherited.
+
+## Why building stopped at 00:05
+
+**The same predicate fault twice within an hour** — a contiguous search for a sentence that
+wraps across 2 lines, first on the lesson-4 docstring, then on his quoted ruling. A repeating
+error class inside an hour is what `feedback_long_session_degradation` names, so items 9, 12
+and 14 were left rather than pushed through.
+
+## Open
+
+Per-run computed round recommendation · human-review trigger · verify the 87 older instructions
+· rebuild the domain-verdict measurement last.
+
+---
+
 *Written under CDSFL note standard v1.7.*
