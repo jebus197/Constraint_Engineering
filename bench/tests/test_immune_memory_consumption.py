@@ -571,10 +571,23 @@ class TestConfigPlumbing:
         assert build_runner_config_from_dict(
             cfg, SimpleNamespace(resume=False)).immune_memory_rho == 0.35
 
-    def test_default_is_off_and_rho_matches_the_appendix(self):
+    def test_recording_defaults_on_consumption_defaults_off_and_rho_matches_the_appendix(self):
+        """UPDATED 2026-10-11 ON HIS RULING, and the halves now differ deliberately.
+
+        His words: *"This feels like at least the second time I have ruled on this. But yes,
+        immune memory should be on by default."* So RECORDING defaults ON. It runs at run end,
+        is advisory only, and never touches a verdict or the gate.
+
+        CONSUMPTION STILL DEFAULTS OFF AND THAT IS THE LOAD-BEARING HALF OF THIS TEST. It is
+        what carries a cross-experiment prior between experiments, which is the contamination
+        path the rest of this file exists to guard. Changing the recording default must not be
+        allowed to drag the consumption default with it, so both are asserted here together.
+        """
         rc = RunnerConfig()
-        assert rc.immune_memory_enabled is False
-        assert rc.immune_memory_consume_rk0 is False
+        assert rc.immune_memory_enabled is True, (
+            "his ruling of 2026-10-11 was that immune memory records by default")
+        assert rc.immune_memory_consume_rk0 is False, (
+            "consumption must NEVER default on -- it is the cross-experiment contamination path")
         assert rc.immune_memory_rho == 0.2
 
     def test_builder_returns_nothing_when_the_flag_is_off(self):

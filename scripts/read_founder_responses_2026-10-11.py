@@ -115,9 +115,50 @@ def read_any(path: Path) -> str:
             r = subprocess.run(["textutil", "-stdout", "-convert", "txt", str(path)],
                                capture_output=True, text=True, timeout=120)
             return r.stdout or ""
-        return path.read_bytes().decode("utf-8", errors="ignore")
+        return decode_bytes(path.read_bytes())
     except Exception:
         return ""
+
+
+#: Curly-quote byte ranges that DISCRIMINATE the two single-byte codecs Word may write.
+#: Mac OS Roman puts the smart quotes at 0xD2-0xD5; Windows-1252 puts them at 0x91-0x94.
+#: Both codecs decode EVERY byte, so "try until one works" always succeeds and proves nothing.
+#: The question is which is CORRECT, and the quote bytes are what answer it.
+_MAC_QUOTES = range(0xD2, 0xD6)
+_CP1252_QUOTES = range(0x91, 0x95)
+
+
+def decode_bytes(raw: bytes) -> str:
+    """Decode a response file WITHOUT dropping a single character of his writing.
+
+    WHY THIS REPLACED `errors="ignore"`, measured 2026-10-11 on his own instruction *"take care
+    you are using the correct encodings to parse my outputs fully."* The lossy decode READ the
+    files but MANGLED them: every curly apostrophe vanished, so *"I don't get it"* arrived as
+    *"I dont get it"*. Measured across his plain-text files: **256 characters of his writing
+    dropped across 14 of 29 files, 0.4828, Wilson [0.3139, 0.6557]** -- every one recoverable.
+
+    THE CODEC IS MAC OS ROMAN AND THAT IS NOT A GUESS. His Word save dialog shows
+    "Mac OS (Default)" with "Western (Mac OS Roman)" selected and "End lines with: CR only".
+    In his files 0xD5 appears 11 times and 0xD4 3 times, which are the right and left single
+    quotes in Mac OS Roman; under Windows-1252 the same bytes render as O-with-circumflex.
+
+    Order: UTF-8 strict first, because a genuinely UTF-8 file must not be reinterpreted. Then
+    whichever single-byte codec the quote bytes point at. `errors="replace"` is the last resort
+    and it SHOWS the damage rather than hiding it, which is the opposite of what was there.
+    """
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        pass
+    mac = sum(1 for b in raw if b in _MAC_QUOTES)
+    win = sum(1 for b in raw if b in _CP1252_QUOTES)
+    order = ("mac_roman", "cp1252") if mac >= win else ("cp1252", "mac_roman")
+    for enc in order + ("iso-8859-1",):
+        try:
+            return raw.decode(enc)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return raw.decode("utf-8", errors="replace")
 
 
 def file_shape(path: Path) -> dict:

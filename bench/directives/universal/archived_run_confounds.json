@@ -1,0 +1,175 @@
+{
+ "_what_this_is": [
+  "CONFOUNDS PRESENT IN RUNS THAT HAVE ALREADY COMPLETED. His ruling of 2026-10-11:",
+  "\"No one ever said we should go back and 'fake the record'. Like every confound, or",
+  "deficit we find, when we find them, we mark them explicitly in our docs and correct",
+  "them going forward. Verdict fix it. Do exactly that.\"",
+  "",
+  "So an archived run's config is NEVER edited. The confound is recorded HERE, against",
+  "the named runs it affected, and the defect is corrected only in configs that have not",
+  "yet run. A guard asserts that no entry here is silently removed and that no archived",
+  "config is altered."
+ ],
+ "confounds": [
+  {
+   "id": "burst-mode-off-in-archived-runs",
+   "found": "2026-10-11",
+   "what": [
+    "burst_mode was pinned to \"off\" in 43 of 47 experiment configs. Burst logic is part",
+    "of the iterative-restart machinery, and his ruling of 2026-10-05 was \"It shouldnt be",
+    "off as far as I am concerned. The ITC machinery is one of the more effective methods",
+    "of finding and resolving problems we uncovered.\""
+   ],
+   "effect_on_the_affected_runs": [
+    "Every run below executed WITHOUT burst logic. Any convergence or non-convergence they",
+    "report was measured on a runner missing that facility, so those results understate",
+    "what the full machinery would do. They are not invalid; they are narrower than they",
+    "look, and must be quoted with this confound named."
+   ],
+   "corrected_going_forward": [
+    "10 configs that had not yet run were set to \"auto\" on 2026-10-11. burst_mode was",
+    "verified NOT to be a factor in the exp52 2x2 factorial first -- its factors are",
+    "divergence_channel_enabled and feedback_channel_enabled, and burst was held constant",
+    "at \"off\" across all 4 cells, so correcting it changes the held level rather than the",
+    "design. An earlier claim that the 5 factorial configs were a design decision was",
+    "WITHDRAWN on that measurement."
+   ],
+   "runner_default": "auto, and the runner gates on `!= \"off\"` (reference_runner_v3.py:15667)",
+   "archived_runs_affected": 33,
+   "archived_configs_NOT_edited": [
+    {
+     "config": "39_0_gate.json",
+     "experiment": "exp39_0_gate"
+    },
+    {
+     "config": "39_C_macrophage.json",
+     "experiment": "exp39_C_macrophage"
+    },
+    {
+     "config": "39_D_composition.json",
+     "experiment": "exp39_D_composition"
+    },
+    {
+     "config": "39_G_biology.json",
+     "experiment": "exp39_G_biology"
+    },
+    {
+     "config": "39_H_infosci.json",
+     "experiment": "exp39_H_infosci"
+    },
+    {
+     "config": "39_I_cross_domain.json",
+     "experiment": "exp39_I_cross_domain"
+    },
+    {
+     "config": "39_J_microglia.json",
+     "experiment": "exp39_J_ouroboros"
+    },
+    {
+     "config": "39_K_physics.json",
+     "experiment": "exp39_K_burst_planner"
+    },
+    {
+     "config": "39_L_chemistry.json",
+     "experiment": "exp39_L_shadow_extensions"
+    },
+    {
+     "config": "39_M_engineering.json",
+     "experiment": "exp39_M_orchestrator"
+    },
+    {
+     "config": "40_gate.json",
+     "experiment": "exp40_gate"
+    },
+    {
+     "config": "40_slice_admissibility.json",
+     "experiment": "exp40_slice_admissibility"
+    },
+    {
+     "config": "40_slice_admissibility_hardened.json",
+     "experiment": "exp40_slice_admissibility_hardened"
+    },
+    {
+     "config": "40_slice_collision_hardened.json",
+     "experiment": "exp40_slice_collision"
+    },
+    {
+     "config": "40_slice_records_hardened.json",
+     "experiment": "exp40_slice_records"
+    },
+    {
+     "config": "41_convergence.json",
+     "experiment": "exp41_convergence"
+    },
+    {
+     "config": "41b_first_principles.json",
+     "experiment": "exp41b_first_principles"
+    },
+    {
+     "config": "41c_first_principles_run.json",
+     "experiment": "exp41c_first_principles"
+    },
+    {
+     "config": "42_composer.json",
+     "experiment": "exp42_composer"
+    },
+    {
+     "config": "42_composer_confirm.json",
+     "experiment": "exp42_composer_confirm"
+    },
+    {
+     "config": "42_composer_locationkey_live.json",
+     "experiment": "exp42_composer_locationkey_live"
+    },
+    {
+     "config": "42_composer_takeupslack.json",
+     "experiment": "exp42_composer_takeupslack"
+    },
+    {
+     "config": "43_macrophage_locationkey_live.json",
+     "experiment": "exp43_macrophage_locationkey_live"
+    },
+    {
+     "config": "44_evidence_locationkey_live.json",
+     "experiment": "exp44_evidence_locationkey_live"
+    },
+    {
+     "config": "45_memory_statistics_live.json",
+     "experiment": "exp45_memory_statistics_live"
+    },
+    {
+     "config": "46_stage6_locationkey_live.json",
+     "experiment": "exp46_stage6_locationkey_live"
+    },
+    {
+     "config": "47_divergence_locationkey_live.json",
+     "experiment": "exp47_divergence_locationkey_live"
+    },
+    {
+     "config": "48_chemistry_exam_live.json",
+     "experiment": "exp48_chemistry_exam_live"
+    },
+    {
+     "config": "49_engineering_exam_live.json",
+     "experiment": "exp49_engineering_exam_live"
+    },
+    {
+     "config": "50_physics_exam_live.json",
+     "experiment": "exp50_physics_exam_live"
+    },
+    {
+     "config": "50_physics_exam_live_redesigned_2026-09-10.json",
+     "experiment": "exp50_physics_exam_live"
+    },
+    {
+     "config": "53_control_zero_live.json",
+     "experiment": "exp53_control_zero_live"
+    },
+    {
+     "config": "55_v3_control.json",
+     "experiment": "exp55_v3_control"
+    }
+   ]
+  }
+ ]
+}

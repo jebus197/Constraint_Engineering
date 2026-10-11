@@ -341,9 +341,53 @@ def partition(path) -> tuple[list, list]:
     return (counted, exempted)
 
 
+#: The note standard a delivered note or TTS file must name. Bumped WITH the standard.
+CURRENT_NOTE_STANDARD = "v1.7"
+NOTE_STANDARD_STAMP = re.compile(r"note standard\s+v(\d+(?:\.\d+)?)", re.I)
+
+
+def missing_standard_stamp(path) -> list:
+    """A delivered note or TTS file must name the CDSFL note standard it was written under.
+
+    HIS INSTRUCTION, 2026-10-11: *"You have returned again to not printing the CDSFL notes
+    standard used to produce these files. This is a small glitch, but meaningful and should be
+    fixed (prerably mechanically so you don't forget again), as it helps me to track which notes
+    standards you are using across files."*
+
+    MECHANICAL IS THE OPERATIVE WORD. The stamp was present on the notes of 2026-10-08 and
+    2026-10-09 and absent from BOTH files delivered on 2026-10-11, which is precisely the
+    forget-again he is describing. Remembering is not a mechanism; a blocking check is.
+
+    SCOPE, deliberately narrow. Only files under `experimental_notes/` and a `*_tts/` folder are
+    DELIVERED artefacts. A README, a registry, a producer's own output and a source file are not
+    notes and are not stamped, so checking them would make the rule noise and get it switched off.
+    """
+    pth = pathlib.Path(path)
+    parts = {q.lower() for q in pth.parts}
+    is_note = ("experimental_notes" in parts
+               or any(q.endswith("_tts") for q in parts))
+    if not is_note or pth.suffix.lower() not in (".md", ".txt"):
+        return []
+    try:
+        text = pth.read_bytes().decode("utf-8", errors="ignore")
+    except OSError:
+        return []
+    m = NOTE_STANDARD_STAMP.search(text)
+    if not m:
+        return [(0, "MISSING NOTE STANDARD STAMP", "note standard",
+                 f"name the standard in the file, e.g. 'Written under CDSFL note standard "
+                 f"{CURRENT_NOTE_STANDARD}.' He tracks which standard produced which file.")]
+    found = "v" + m.group(1)
+    if found != CURRENT_NOTE_STANDARD:
+        return [(0, f"NOTE STANDARD STAMP IS {found}, CURRENT IS {CURRENT_NOTE_STANDARD}",
+                 "note standard",
+                 "either update the file, or say explicitly why it is pinned to an older one.")]
+    return []
+
+
 def blocking(path) -> list:
     """The findings that COUNT. What a guard must gate on."""
-    return partition(path)[0]
+    return partition(path)[0] + missing_standard_stamp(path)
 
 
 #: Rule 28's phrases, bounded so an inflection is not read as the noun.
@@ -567,6 +611,11 @@ def main() -> int:
         if not p.is_file():
             print(f"  missing: {p}"); missing += 1; continue
         counted, exempted = partition(p)
+        # WIRED HERE, NOT ONLY IN `blocking()`. A first attempt added the stamp check to
+        # `blocking()` alone and reported 0 findings on files that plainly lacked a stamp,
+        # because `main()` calls `partition()` directly -- an UNWIRED ADDITION, which is the
+        # exact defect the additive standard names and the one this whole session measured.
+        counted = counted + missing_standard_stamp(p)
         total += len(counted)
         print(f"\n  {p.name}: {len(counted)} finding(s)")
         for para_no, kind, token, s in counted:

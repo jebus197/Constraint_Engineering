@@ -1559,7 +1559,25 @@ class RunnerConfig:
     # RECORDING. The run's per-flaw-class confirmed/rejected tallies are written
     # to the memory at run end. This is what `immune_memory_enabled` has meant
     # since 2026-07-28, and it is true in eleven shipped configs.
-    immune_memory_enabled: bool = False
+    #
+    # DEFAULT FLIPPED TO TRUE 2026-10-11 ON HIS RULING, which he noted was at least his
+    # second on the point: *"This feels like at least the second time I have ruled on this.
+    # But yes, immune memory should be on by default. 'Sing in harmony', simply means it
+    # should work exactly as specified, and we should pay attention to ensure that it does,
+    # and fix it if it doesn't."*
+    #
+    # WHY THIS HALF IS SAFE TO DEFAULT ON, and the other is not. RECORDING runs at RUN END,
+    # is advisory only, never touches a verdict or the gate, and a failure in it never kills
+    # the report (reference_runner_v3.py, the call site under "IMMUNE MEMORY recording"). It
+    # therefore cannot move the target mid-run, which is the hazard he named separately about
+    # folding fixes forward. CONSUMPTION is the half that carries a cross-experiment prior
+    # between experiments and it is `immune_memory_consume_rk0`, which stays FALSE and is
+    # guarded by bench/tests/test_immune_memory_consumption.py.
+    #
+    # BLAST RADIUS, measured before the change: 47 experiment configs, 16 set this field
+    # explicitly (13 true, 3 false) and are unaffected; 31 inherit the default and now
+    # inherit True.
+    immune_memory_enabled: bool = True
     #: TASK A19, the founder's design point of 2026-09-10: "it should simply
     #: mark a purely prose input as 'inadmissible', while still solving any
     #: computationally reducible elements within that prose! This is STEM."

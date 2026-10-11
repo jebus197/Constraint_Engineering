@@ -209,3 +209,7 @@ His ruling of 2026-09-28 — *"There should be no paid dispatches without my exp
 holds: `select_models` raises `SystemExit` unless the ledger names the round **and** carries
 `founder_verbatim`, and module-level `MODELS` is intersected with `FREE_SEATS` so an importer cannot
 bypass `main()`.
+
+---
+
+*Written under CDSFL note standard v1.7.*
