@@ -127,3 +127,85 @@ future-run configs pinning burst off, 5 being factorial cells. 6. Error conventi
 its premise is withdrawn. 8. `hil_review`'s unexecuted ON path, 0 of 47 configs. 9. The 5 stale
 worktrees, 2.5 GB — **POINT, NEVER PRUNE**. 10. Whether the other 233 annotations outside the
 13-day window should be audited.
+
+---
+
+# ADDENDUM, 2026-10-11 18:10 BST — the older 233, the 4 lessons, and a gap in this note's own predecessor
+
+**The founder's single reading file is now `~/Desktop/CDSFL_tts/Consolidated_For_Your_Evening_2026-10-11.txt`.**
+This note is its technical companion.
+
+## A. This note's predecessor dropped 3 of his 5 open decisions
+
+He asked whether the consolidated file carried the decisions from the **unanswered** morning report
+of 2026-10-09. Measured against `experimental_notes/Morning_Report_2026-10-09.md` § "The 5
+decisions, unchanged and still yours":
+
+| His decision | In the earlier TTS? |
+|---|---|
+| 1. The 2 gate properties (determinism + exchangeability) | **NO** — 0 mentions of either term |
+| 2. Which error convention | yes — 1 mention |
+| 3. One false-alarm proportion for relegation | **NO** — 0 mentions, and **never answered by him** |
+| 4. Anchor set re-run per window vs fixed at start | **NO** — 0 mentions |
+| 5. Whether to repair the domain verdict gap | yes — 1 mention |
+
+**2 of 5 carried, 3 dropped.** Item 3 had never been answered at all. The file written to stop
+decisions going missing lost 3 of them. All 5 are restored in the consolidated file, numbered 1–5.
+
+## B. Which morning reports are answered
+
+Mechanically, by presence of `#` annotations in `Responses/`:
+`Morning_Report_2026-10-07.txt` → **11 annotations, ANSWERED**.
+`Morning_Report_2026-10-09.txt` and `Morning_Report_2026-10-08.txt` → **not in `Responses/`, UNANSWERED**.
+So his "last unread morning report" is 10-09, and 10-07 is the one he answered — which is where
+the 4 panel lessons below were ruled on.
+
+## C. His 4 panel lessons of 2026-10-07 — ruled "wire it in", measured today
+
+All 4 carry the identical response: *"We should use it. Wire it in all simulated and real runners
+going forward."* `RECOVERY.md` still lists them under **"OPEN FOR HIS RULING, carried forward"** —
+they were ruled 4 days earlier. That is `feedback_already_ruled_and_misread_rates` confirmed
+concretely.
+
+| Lesson | Panel | `reference_runner_v3` | Verdict |
+|---|---|---|---|
+| 1. substance test, refuse a merely non-empty reply | present | **comment only, line 9663** | NOT LANDED |
+| 2. a retry must not erase the attempt it replaces | `_preserve_prior_attempt` | 19 `preserve|backup|overwrit` hits, **0 concerning a reply** | NOT LANDED |
+| 3. state DETECTED from content, not declared | `_detect_round_kind` | `detect_target_kind` at **:1811**, reads path and bytes | PARTLY — principle honoured for *target* kind; the panel's round-kind form has no runner analogue |
+| 4. one definition imported, not restated | — | — | **UNVERIFIED** — `REQUIRED_FIELDS` exists nowhere, panel included; the probe name was invented |
+
+**A first pass reported "0 of 4" and that figure is withdrawn.** It rested on `grep -icE` patterns
+using `\|` (BRE alternation) under `-E`, so every pattern searched for a literal pipe and matched
+nothing — the **7th predicate error of the session**, same family as the other 6.
+
+## D. The older 233 annotations, triaged
+
+233 predate 2026-09-29 (2026-08-27 → 2026-09-28), 52,775 chars across 19 files.
+
+| Class | Count | Interval |
+|---|---|---|
+| imperative instruction | **87 of 233 = 0.3734** | Wilson [0.3138, 0.4371] |
+| question | 63 of 233 = 0.2704 | Wilson [0.2174, 0.3308] |
+| observation / context | 78 of 233 = 0.3348 | Wilson [0.2773, 0.3976] |
+| acknowledgement | 5 of 233 = 0.0215 | Wilson [0.0092, 0.0492] |
+
+The 87 are a **backlog, not a defect list**: many are conditional ("fix it if not already fixed")
+and a large share were satisfied by work in the intervening fortnight. Verifying each against the
+current tree is itself a day's work — that is decision 14.
+
+**3 worth naming now.** (i) 2026-08-31, the macrophage cell *"should have been fully functional in
+our runners for some time"*, with shadow-code promotion repeatedly discussed. (ii) 2026-08-31, a
+direct instruction to **remove personal and disability directives from the directive set fed to the
+models** — a privacy matter, not an engineering one. (iii) 2026-09-17, set a named value to **6** in
+the next simulated run and add it to the programme of study, because *"There is no point having
+machinery that in effect does nothing."*
+
+**And his own statement of the pattern, 2026-09-21:** *"Even now, several sweeps in over the last 3
+months, we keep finding things we built but never enabled."*
+
+## E. Also verified landed
+
+His ruling of 2026-09-28 — *"There should be no paid dispatches without my express authorisation"* —
+holds: `select_models` raises `SystemExit` unless the ledger names the round **and** carries
+`founder_verbatim`, and module-level `MODELS` is intersected with `FREE_SEATS` so an importer cannot
+bypass `main()`.
