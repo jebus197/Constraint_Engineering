@@ -53,6 +53,23 @@ MAX_DIVISIONS = 14
 
 
 
+#: HIS RULING OF 2026-10-11 ON THE FALSE-ALARM PROPORTION: *"Then yes. Do it that way. 0.05 is
+#: acceptable within this f[r]amework."* That is the chance of DEMOTING A MODEL THAT IS IN FACT
+#: STABLE, and both decision thresholds are solved FROM it rather than chosen.
+#:
+#: WHY 0.05 RATHER THAN SOMETHING LOOSER, and the reasoning comes from his OWN ruling 4 of the
+#: same day. If demotion could happen mid-experiment, a looser number would be right: under the
+#: standing no-benching rule a wrong demotion costs little, because the model keeps working on
+#: easier problems, while a missed decline costs more. But he ruled that rankings are FIXED at
+#: the start of an experiment and held until it completes. That moves demotion to BETWEEN
+#: experiments, where there is more evidence and no urgency, and that is exactly where the
+#: stricter number belongs. The 2 rulings fit together.
+#:
+#: NOT WIRED, AND MEASURED SO: 0 references to relegation or false-alarm machinery in
+#: reference_runner_v3.py or routing.py on 2026-10-11. Pinned here with the other 2 rulings of
+#: the same day, where the work will be picked up.
+FALSE_ALARM_PROPORTION = 0.05
+
 #: Phi^-1(0.975). The TWO-SIDED critical value, on his ruling of 2026-10-11.
 #: The per-side alternative is 1.6448536270 and is NOT what he chose.
 TWO_SIDED_Z = 1.959963984540054

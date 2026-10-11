@@ -73,3 +73,28 @@ class TestTheConventionIsPinned:
         # and under the rejected convention the answer differs, which is why it mattered
         one_sided_13 = norm.sf((dphi / 12) / 2 / sd)
         assert one_sided_13 <= 0.05, "the per-side convention no longer admits T=13"
+
+class TestTheFalseAlarmProportionIsHisRuling:
+    """*"Then yes. Do it that way. 0.05 is acceptable within this f[r]amework."* -- 2026-10-11."""
+
+    def test_it_is_pinned_at_the_value_he_accepted(self):
+        m = _load()
+        assert hasattr(m, "FALSE_ALARM_PROPORTION"), (
+            "his accepted false-alarm proportion is recorded nowhere, so it will be re-asked")
+        assert m.FALSE_ALARM_PROPORTION == 0.05
+
+    def test_his_words_travel_with_the_value(self):
+        """WHITESPACE-FLEXIBLE, because the quote WRAPS across 2 comment lines. A contiguous
+        search failed here on a sentence that was plainly present -- the identical fault caught
+        in the lesson-4 docstring check an hour earlier the same night."""
+        import re
+        src = PRODUCER.read_text(encoding="utf-8")
+        assert re.search(r"0\.05\s+is\s+(?:#:\s*)?acceptable\s+(?:#:\s*)?within\s+"
+                         r"(?:#:\s*)?this", src), (
+            "a number without its ruling is a number someone will change")
+
+    def test_the_reasoning_names_the_ruling_it_depends_on(self):
+        """It is 0.05 BECAUSE rankings are fixed at experiment start -- his ruling 4. If that
+        changed, this number should be revisited rather than inherited."""
+        src = PRODUCER.read_text(encoding="utf-8")
+        assert "FIXED at" in src and "no-benching" in src
