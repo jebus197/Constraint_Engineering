@@ -173,3 +173,38 @@ class TestTheRecordsAreRealRecords:
             f"{missing} document a round run under Section P and carry no "
             f"foot-line, so they were written under the standard without "
             f"declaring it")
+
+
+class TestTheBuilderCannotWriteARecordThisGuardCannotSee:
+    """ADDED 2026-10-12, after it did exactly that.
+
+    `scripts/make_panel_full_record_2026-09-11.py` accepted the out_name
+    `Free_Panel_Clearing_The_Outstanding_2026-10-12.md`, wrote 57,029 bytes of a
+    complete record for the 2026-10-12 free-panel round, and
+    `test_none_is_missing` above went on reporting that round as having NO
+    record -- because this file globs `*FULL_RECORD*.md` and that name does not
+    match. The record existed and was invisible to the only thing that checks
+    records exist.
+
+    DRIFT BETWEEN THE TWO MARKERS NEEDS NO SEPARATE GUARD: if this file's glob
+    changed, `test_none_is_missing` would stop matching the existing records and
+    go red by itself. So this class EXECUTES the builder's refusal and asserts
+    nothing about source text.
+    """
+
+    def test_the_builder_refuses_a_name_without_the_marker(self):
+        import importlib.util
+
+        import pytest as _pytest
+
+        spec = importlib.util.spec_from_file_location(
+            "mpfr", REPO / "scripts" / "make_panel_full_record_2026-09-11.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        with _pytest.raises(SystemExit) as exc:
+            mod.build("clear_the_outstanding_2026-10-12", "T",
+                      "No_Marker_Here.md", "context")
+        assert "FULL_RECORD" in str(exc.value), (
+            "the refusal must name what is wrong and what to pass instead")
+        assert not (NOTES / "No_Marker_Here.md").exists(), (
+            "it refused and wrote the file anyway")

@@ -433,9 +433,37 @@ class TestDivergencePassIsPrevented:
         src = (REPO_ROOT / "bench" / "reference_runner_v3.py").read_text(
             encoding="utf-8")
         tree = ast.parse(src)
-        fn = next(n for n in ast.walk(tree)
-                  if isinstance(n, ast.FunctionDef)
-                  and n.name == "_dispatch_single_model")
+        # RESOLVE THE DELEGATION (2026-10-12). This looked only inside
+        # `_dispatch_single_model`, which is a THIN WRAPPER: the live wiring
+        # sits at reference_runner_v3.py:11041 in
+        # `_dispatch_single_model_inner`, so the test reported "omission not
+        # wired into dispatch" while the omission was wired and working. A
+        # false red on a correct mechanism is as expensive as a false green on
+        # a broken one -- it spends the founder's attention on nothing.
+        #
+        # THE TEETH ARE UNCHANGED, AND THAT IS THE POINT: the wrapper and every
+        # function it delegates to are searched, and if NONE of them assigns
+        # from `_apply_directive_omission` the original assertion fails with
+        # the original message. Deleting the wiring from the inner function
+        # still turns this red -- verified by mutation 2026-10-12. The helper
+        # is `bench/tests/_delegation.py`, the committed resolver for this
+        # exact shape, so this test does not invent a second rule for it.
+        import _delegation
+        _candidates = ["_dispatch_single_model"] + _delegation.delegate_names(
+            tree, "_dispatch_single_model")
+        fn = None
+        for _name in _candidates:
+            _node = _delegation._named(tree, _name)
+            if _node is None:
+                continue
+            if any(isinstance(n, ast.Assign) and isinstance(n.value, ast.Call)
+                   and getattr(n.value.func, "id", "")
+                   == "_apply_directive_omission" for n in ast.walk(_node)):
+                fn = _node
+                break
+        if fn is None:                      # keep the original failure mode
+            fn = _delegation._named(tree, "_dispatch_single_model")
+        assert fn is not None, "_dispatch_single_model is gone; wiring unknown"
         omit_line = None
         for node in ast.walk(fn):
             if (isinstance(node, ast.Assign)

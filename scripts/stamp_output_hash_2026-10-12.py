@@ -33,6 +33,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import tempfile
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 LEDGER = REPO / "experimental_notes" / "data" / "output_hashes.json"
@@ -99,6 +100,37 @@ def record(entries: list[dict]) -> None:
     LEDGER.write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8")
 
 
+def _is_ephemeral(p: pathlib.Path) -> bool:
+    """True when `p` is a scratch file rather than a delivered output.
+
+    WHY THIS EXISTS. `bench/tests/test_every_output_carries_its_own_hash_2026-10-12.py`
+    invokes this script as a SUBPROCESS with `cwd=REPO` on a `tmp_path` file, so
+    it cannot be monkeypatched away, and every green test run appended a junk
+    row to the tracked ledger. Measured before this guard: 10 rows, of which 2
+    were under the system temp dir and 1 named a file that no longer existed.
+    The ledger's own `_what_this_is` calls itself the record of "every delivered
+    note and TTS file"; unbounded rows pointing at deleted temp files make the
+    only after-the-fact identification record for a delivered output LESS exact,
+    which is the opposite of its purpose.
+
+    THE SECOND CLAUSE IS LOAD-BEARING AND IS MEASURED, NOT DEFENSIVE. A naive
+    temp-prefix guard would be wrong here: a SANDBOXED CLONE of this repository
+    lives under the temp dir itself (measured: `tempfile.gettempdir()` is
+    /var/folders/cc/.../T and a clone root resolves beneath it). Without the
+    `not under REPO` clause, such a clone would stop recording its own genuine
+    outputs. The Desktop TTS path is not under temp, so it is unaffected either
+    way.
+    """
+    try:
+        r = p.resolve()
+        tmp = pathlib.Path(tempfile.gettempdir()).resolve()
+    except OSError:  # pragma: no cover
+        return False
+    if not r.is_relative_to(tmp):
+        return False
+    return not r.is_relative_to(REPO.resolve())
+
+
 def main(argv: list[str]) -> int:
     _answer_help(__doc__, __file__, argv[1:])
     # AN UNRECOGNISED FLAG IS A FLAG, NOT A FILENAME. `takes_no_arguments=False`
@@ -132,6 +164,9 @@ def main(argv: list[str]) -> int:
         else:
             d, changed = stamp(p)
             print(f"  {d}  {'stamped' if changed else 'already current'}  {p.name}")
+            if _is_ephemeral(p):
+                print("    not recorded (temporary file, not a delivered output)")
+                continue
             entries.append({"digest": d, "path": str(p),
                             "bytes": len(strip_stamp(p.read_text(encoding='utf-8')).encode()),
                             "commit": head_sha(),

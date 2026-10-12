@@ -941,7 +941,17 @@ def test_the_runner_records_the_full_body_beside_the_truncation():
     """
     runner = (REPO_ROOT / "bench" / "reference_runner_v3.py").read_text(
         encoding="utf-8")
-    block = runner[runner.index('"routing_history"'):]
+    # ANCHOR ON THE WRITER, NOT ON THE FIRST MENTION (2026-10-12). This read
+    # `runner.index('"routing_history"')`, the FIRST occurrence anywhere in the
+    # file. On 2026-10-12 a new predicate that merely READS
+    # `e.get("routing_history")` was added ~5000 lines above the writer, the
+    # slice began there instead, and this test failed with the two assertions
+    # still perfectly true of the code they are about. The assertions below are
+    # UNCHANGED; only the anchor is made specific, so the test is now pinned to
+    # `_apply_routing`'s actual append site and cannot be moved again by an
+    # unrelated reader. Loosening either assertion would have been the wrong
+    # repair -- the test was right and its aim was off.
+    block = runner[runner.index('e.setdefault("routing_history", []).append({'):]
     block = block[:block.index("})", block.index('"last_falsifier_code"'))]
     assert '"last_falsifier_code": (result.falsifier_code or "")[:600]' in block, (
         "the truncated field is no longer written; the bundle lost its "

@@ -152,8 +152,29 @@ class TestTheLeakClassExistsAndIsClosed:
         """THE INVARIANT, and it is corpus-size independent."""
         sim_dirs = lca._simulated_run_dirs()
         reports, newest = lca._archive()
+        # CALL THE PRODUCER'S OWN THIRD RULE, DO NOT RESTATE TWO OF ITS THREE
+        # (2026-10-12). `_archive()` skips a file on THREE tests: seat scratch,
+        # per-file simulation, per-run simulation. This list restated the last
+        # two and omitted `_is_seat_scratch`, so the moment a panel harvested a
+        # sandbox containing anything report-shaped the two forms disagreed and
+        # this invariant went red while the audit was behaving correctly.
+        #
+        # IT WENT RED ON A REAL FILE: the 2026-10-05 fingerprint-ladder panel
+        # harvested a seat's own scratch fixture,
+        # `.../sandbox_harvest/cc2/attempt-1/files/.scratch/ps/synthetic_run/x_report.json`
+        # -- a synthetic report a seat wrote inside its own sandbox, which is
+        # not an archived experimental run and which `_archive` already
+        # excluded. 73 admitted against 74 reconstructed.
+        #
+        # THE DIRECTION OF THE DISAGREEMENT MATTERS AND THIS TEST COULD NOT SEE
+        # IT: the audit admitted FEWER than the naive rule, which is the SAFE
+        # direction -- no simulated report leaked. The invariant is unchanged
+        # and still forbids a leak; only the reconstruction is brought back
+        # into line with the producer, which is what `execute-do-not-grep`
+        # requires where both forms are live code.
         admitted = [fp for fp, d in parsed
-                    if _is_report(d) and not lca._is_simulated(d, fp)
+                    if _is_report(d) and not lca._is_seat_scratch(fp)
+                    and not lca._is_simulated(d, fp)
                     and fp.parent not in sim_dirs]
         assert len(reports) == len(admitted), (len(reports), len(admitted))
         # UPDATED 2026-09-29: the baseline is a RECORDED date, not an mtime. This

@@ -207,3 +207,48 @@ class TestParkingIsIdempotent:
         other = B.park("A19: enable the prose-listing flag, or leave it off", "detail")
         assert other is not None, "a new decision was refused"
         assert parked.read_text(encoding="utf-8").count("## ") == 2
+
+
+class TestTheThirdQuestionIsAnswered:
+    """ADDED 2026-10-12. The script answered 2 of the 3 questions its own header names.
+
+    Both free seats of the 2026-10-12 panel found this independently and
+    neither wrote the fix. The cost was concrete: A8's committed text ends
+    "NEEDS A POLICY RULING: track them, relocate them, or accept and label
+    them", it triaged as a bare PARK, and `hooks/work_not_narrate.py` reads
+    PARK as "carry on" -- so the hook pushed the assistant to DO a thing the
+    entry itself says is the founder's to decide.
+    """
+
+    def test_an_entry_that_declares_a_policy_ruling_is_flagged(self, B):
+        got = B.decision_required(
+            "A8 orphan clones: track them, relocate them, or accept and "
+            "label them. NEEDS A POLICY RULING")
+        assert got, "the entry declares itself a decision and was not flagged"
+
+    def test_the_other_declaring_forms_are_caught(self, B):
+        for text in ("NEEDS YOUR RULING on the flag",
+                     "NEEDS HIS RULING before the run",
+                     "that is his call to make, not ours",
+                     "awaiting the founder's ruling"):
+            assert B.decision_required(text), text
+
+    def test_an_ordinary_item_is_NOT_flagged(self, B):
+        """The guard against a predicate that flags everything."""
+        for text in ("sk_enabled is false in the exp56 arms",
+                     "wire the 3 orphan scripts to a caller",
+                     "the docstring is stale and says severity >= threshold"):
+            assert B.decision_required(text) == "", text
+
+    def test_it_is_a_THIRD_FLAG_and_not_a_third_verdict(self, B):
+        """Folding the questions together is the defect the first version shipped."""
+        text = "A8 orphan clones. NEEDS A POLICY RULING"
+        verdict, why, perm = B.classify(text)
+        assert verdict == "PARK", (
+            "a decision is not a blocker; nothing on the list waits on it")
+        assert B.decision_required(text), "and it must still carry the flag"
+
+    def test_classify_still_returns_exactly_three(self, B):
+        """A shape change here would break every caller silently."""
+        out = B.classify("anything at all")
+        assert isinstance(out, tuple) and len(out) == 3

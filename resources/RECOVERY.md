@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 12 October 2026 15:07 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 12 October 2026 19:34 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.

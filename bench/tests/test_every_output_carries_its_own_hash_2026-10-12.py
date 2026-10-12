@@ -142,3 +142,40 @@ class TestTheLedgerTracksThem:
             for k in ("digest", "path", "bytes", "commit", "stamped"):
                 assert k in r, f"a ledger row is missing {k}"
             assert len(r["digest"]) == 12
+
+def test_the_ledger_does_not_record_temporary_files(tmp_path):
+    """The test suite must not write into the real delivered-output ledger.
+
+    MEASURED BEFORE THE GUARD: 10 rows, 2 under the system temp dir, 1 naming a
+    file that no longer existed -- pytest detritus in the only after-the-fact
+    identification record for a delivered output."""
+    before = LEDGER.read_text(encoding="utf-8") if LEDGER.is_file() else ""
+    f = tmp_path / "n.md"
+    f.write_text("# x\n\nbody\n", encoding="utf-8")
+    subprocess.run([sys.executable, str(STAMPER), str(f)],
+                   capture_output=True, timeout=120, cwd=str(REPO))
+    after = LEDGER.read_text(encoding="utf-8") if LEDGER.is_file() else ""
+    assert after == before, "stamping a temp file mutated the real output ledger"
+
+
+def test_a_real_output_inside_the_repo_is_still_recorded(tmp_path):
+    """THE CONVERSE, AND IT IS THE LOAD-BEARING HALF. A sandboxed clone of this
+    repository lives UNDER the system temp dir, so a naive temp-prefix guard
+    would stop recording that clone's own genuine outputs. `_is_ephemeral`
+    excludes anything under REPO from the temp test for exactly this reason."""
+    sys.path.insert(0, str(REPO / "scripts"))
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_stamper", str(STAMPER))
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    inside = REPO / "experimental_notes" / "_ephemeral_probe.md"
+    try:
+        inside.write_text("# p\n\nbody\n", encoding="utf-8")
+        assert m._is_ephemeral(inside) is False, (
+            "a file inside the repository was judged ephemeral; in a sandboxed "
+            "clone that would silently stop recording real outputs")
+    finally:
+        inside.unlink(missing_ok=True)
+    outside = tmp_path / "o.md"
+    outside.write_text("# o\n\nbody\n", encoding="utf-8")
+    assert m._is_ephemeral(outside) is True

@@ -1,0 +1,135 @@
+"""Serving a never-served finding must not destroy the door that releases it.
+
+THE CROSS-MODULE DEFECT THIS PINS, AND IT WAS INVISIBLE TO BOTH SEATS THAT
+CAUSED IT. The free panel of 2026-10-12 sent two blind seats at one blocker --
+a finding nothing ever served blocks convergence for the life of the run -- and
+they returned two different mechanisms:
+
+  the SERVE  (`_apply_routing`): a never-served UNCONFIRMED entry is admitted
+             into the existing routing ladder exactly once, so that a TOOL can
+             decide it. Appends to `routing_history`, which is the one-attempt
+             guard.
+  the DOOR   (`_routing_ladder_never_served` + `ladder_unserved_findings`):
+             after a minimum age, an entry no instrument ever touched stops
+             counting as a blocker and is NAMED in the round log, so that the
+             exclusion is never silent.
+
+Each passed its own falsifier and failed the other's. Composed, they were
+STRICTLY WORSE THAN EITHER ALONE: an empty `routing_history` was one of the
+emptiness facts the door required, so the serve CONSUMED THE DOOR'S OWN
+TRIGGER. Measured on a C0066-shaped entry served to a ladder that returned
+UNRESOLVED: before the serve (A4=0, door releases it), after the serve (A4=1,
+door empty) -- blocking for ever again with neither mechanism able to release
+it. Producer:
+scripts/do_both_never_served_fixes_earn_their_place_2026-10-12.py.
+
+Neither seat could see it. Each tested its own fix in isolation, and in
+isolation each is correct. This is the class the adversarial brief names:
+"constraint violations visible only at system level".
+
+THE REPAIR distinguishes SERVED-AND-NO-READING from SERVED-AND-RULED, on the
+`resolved` flag and an explicit `NO_READING_ROUTING_VERDICTS` sentinel set that
+fails CLOSED -- any verdict string not in that tiny set is treated as a ruling.
+So the three outcomes of a serve are now distinct, and this file pins all three.
+"""
+import sys
+from pathlib import Path
+from unittest import mock
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+import bench.reference_runner_v3 as rr  # noqa: E402
+import bench.routing as routing  # noqa: E402
+
+EXP = {"models": [{"label": "X-SIM"}, {"label": "Y-SIM"}]}
+LATER = 9
+
+
+def _entry(cid="C9001", severity=0.45):
+    return {
+        "canonical_id": cid, "status": "UNCONFIRMED", "severity": severity,
+        "description": "never served", "source_model": "X-SIM",
+        "falsifier_code": "", "falsifier_verdict": "", "verdicts": [],
+        "escalated": False, "verified": False,
+        "open_since_round": 5, "last_status_change_round": 5,
+    }
+
+
+class _Outcome:
+    """A ladder result. Mirrors the attributes `_apply_routing` reads."""
+
+    def __init__(self, verdict, resolved, falsifier_code=""):
+        self.verdict = verdict
+        self.resolved = resolved
+        self.falsifier_code = falsifier_code
+        self.model_used = "Y-SIM"
+        self.duplicate_of = None
+        self.rungs_tried = 1
+        self.ladder_was_empty = False
+
+
+def _serve(outcome):
+    """Run the REAL serve against a never-served entry; return the registry.
+
+    The router is stubbed, so no dispatch leaves the machine and no seat is
+    billed. The labels are SIM labels, never a vendor name.
+    """
+    reg = rr.FindingRegistry()
+    reg.entries["C9001"] = _entry()
+    with mock.patch.object(routing, "route", return_value=outcome):
+        rr._apply_routing(reg, 7, EXP,
+                          cfg=rr.RunnerConfig(routing_enabled=True),
+                          repo_root=str(Path(__file__).resolve().parents[2]))
+    return reg
+
+
+def test_the_serve_actually_runs():
+    """Guard the guard: a serve that no-ops would make every case below vacuous."""
+    reg = _serve(_Outcome("UNRESOLVED", False))
+    assert reg.entries["C9001"].get("routing_history"), (
+        "the serve wrote no routing_history, so this file measures nothing")
+
+
+def test_served_and_no_reading_is_released_AND_named():
+    """The defect's own case. Release WITHOUT a name would be a silent closure."""
+    reg = _serve(_Outcome("UNRESOLVED", False))
+    assert reg.unverified_critical_count(LATER) == 0, (
+        "a finding served to a ladder that read nothing still blocks for ever")
+    assert reg.ladder_unserved_findings(LATER) == ["C9001"], (
+        "released but NOT named -- the exclusion is silent, which the "
+        "2026-10-02 ruling forbids")
+
+
+def test_served_and_RULED_still_blocks():
+    """UNTOOLABLE is a ruling by something that ran, not an absence of reading."""
+    reg = _serve(_Outcome("UNTOOLABLE", False))
+    assert reg.unverified_critical_count(LATER) == 1, (
+        "an instrument ran and ruled; that must keep blocking")
+    assert reg.ladder_unserved_findings(LATER) == []
+
+
+def test_served_and_resolved_is_cleared_by_the_tool():
+    """TOOLS DECIDE: a resolution clears A4 through the verdict, not the door."""
+    reg = _serve(_Outcome("CONFIRMED", True, falsifier_code="assert False"))
+    assert reg.unverified_critical_count(LATER) == 0
+    assert reg.ladder_unserved_findings(LATER) == [], (
+        "cleared by a tool verdict must not ALSO be reported as an exclusion")
+
+
+def test_an_unrecognised_ladder_verdict_fails_CLOSED():
+    """A verdict nobody anticipated must block, never release.
+
+    This is the property that makes the sentinel set safe to be tiny: a new
+    verdict added anywhere else in the harness closes this door rather than
+    silently widening it.
+    """
+    reg = _serve(_Outcome("SOME_FUTURE_VERDICT", False))
+    assert reg.unverified_critical_count(LATER) == 1
+    assert reg.ladder_unserved_findings(LATER) == []
+
+
+def test_the_sentinel_set_is_tiny_and_contains_no_ruling():
+    rulings = {"UNTOOLABLE", "ERROR", "INTEGRITY_VIOLATION", "CONFIRMED",
+               "REFUTED", "NON_DISCRIMINATING"}
+    assert not (rr.NO_READING_ROUTING_VERDICTS & rulings), (
+        "a ruling leaked into the no-reading set; the door is now too wide")

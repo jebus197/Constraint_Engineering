@@ -80,6 +80,21 @@ def build(round_dir: str, title: str, out_name: str, context: str) -> pathlib.Pa
         f"by sha256 and checked on every suite run by "
         f"`bench/tests/test_panel_records_are_preserved_2026-09-11.py`.\n")
     parts.append("\nWritten under CDSFL note standard v1.7 (26 August 2026).\n")
+    # THE NAME MUST CARRY "FULL_RECORD", OR THE GUARD CANNOT SEE THE RECORD.
+    # MEASURED 2026-10-12: this script accepted
+    # `Free_Panel_Clearing_The_Outstanding_2026-10-12.md`, wrote 57,029 bytes of
+    # a perfectly good record, and
+    # bench/tests/test_panel_rounds_have_a_full_record_2026-09-11.py went on
+    # reporting the round as having NO record -- because that guard globs
+    # `experimental_notes/*FULL_RECORD*.md` and the name did not match. A
+    # builder whose output nothing reads is the defect class the additive
+    # standard names, and this builder could produce one silently. Refuse
+    # instead, and say what to pass.
+    if "FULL_RECORD" not in out_name:
+        raise SystemExit(
+            f"out_name must contain FULL_RECORD, or the guard that checks every "
+            f"panel round has a record cannot see this file. Got: {out_name!r}. "
+            f"Try: {out_name.replace('.md', '') + '_FULL_RECORD.md'}")
     out = REPO / "experimental_notes" / out_name
     out.write_text("\n".join(parts), encoding="utf-8")
     return out

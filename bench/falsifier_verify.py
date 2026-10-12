@@ -173,6 +173,7 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import glob
 import os
 import re
 import shutil
@@ -693,6 +694,105 @@ _emit(_CFG["ready"])
 '''
 
 
+#: Cache for :func:`_secondary_interpreter_roots` — probing an interpreter is a
+#: subprocess call, and the observer is rendered once per falsifier run.
+_SECONDARY_ROOTS_CACHE: list[str] | None = None
+
+
+def _secondary_interpreter_roots() -> list[str]:
+    """Installation roots of OTHER interpreters a falsifier may legitimately spawn.
+
+    THE FALSE-REFUSAL CLASS THIS REMOVES (STUDY_IN_FLIGHT.json,
+    integrity-gate-interpreter-carve-out; fixed by the free panel 2026-10-12).
+    :func:`_interpreter_roots` carves out the HARNESS interpreter's directories
+    only. A falsifier that spawns a second interpreter — C0050's spawns
+    ``/usr/bin/python3`` precisely BECAUSE the defect it demonstrates is that
+    the target prescribes a bare unpinned ``python3`` — gets macOS's system
+    3.9, whose stdlib lives under ``/Library`` and whose user-site lives under
+    ``~``, both inside ``_SANDBOX_DENY_REGIONS``. Its ordinary import
+    bootstrap reads were recorded as denials, and ANY denial becomes
+    INTEGRITY_VIOLATION, so the gate was guaranteed to refuse the CORRECT
+    falsifier for that whole defect class. Executed 2026-10-12 before this
+    change: a falsifier running ``/usr/bin/python3 -c "import json, ssl"``
+    returned INTEGRITY_VIOLATION on 13 stdlib bootstrap reads.
+
+    WHAT IS WIDENED, AND WHAT IS NOT. Only the INSTALLATION directories that a
+    discoverable interpreter itself reports (prefixes, site-packages,
+    user-site, sys.path) are allowed — the same classes of directory already
+    allowed for the harness interpreter, so this is parity, not a new
+    category. The deny regions stay denied for everything else, the protected
+    scoring-key digests are checked exactly as before, and the refuse-on-
+    denial behaviour is UNCHANGED: no scoring key lives inside an
+    interpreter's stdlib. Discovery is limited to ``/usr/bin/python3`` (the
+    macOS system interpreter the defect class names) and whatever ``python3``
+    resolves to on PATH; an interpreter that fails to answer within 10s
+    contributes nothing and the gate stays exactly as strict as before.
+    """
+    global _SECONDARY_ROOTS_CACHE
+    if _SECONDARY_ROOTS_CACHE is not None:
+        return list(_SECONDARY_ROOTS_CACHE)
+    roots: list[str] = []
+    harness = os.path.realpath(sys.executable)
+    probe = (
+        "import sys, site, json\n"
+        "r = [sys.prefix, sys.base_prefix, sys.exec_prefix, sys.base_exec_prefix]\n"
+        "try:\n"
+        "    r += site.getsitepackages()\n"
+        "except Exception:\n"
+        "    pass\n"
+        "try:\n"
+        "    r.append(site.getusersitepackages())\n"
+        "except Exception:\n"
+        "    pass\n"
+        "r += [p for p in sys.path if p]\n"
+        "try:\n"
+        "    import sysconfig\n"
+        "    r += [v for v in sysconfig.get_paths().values() if v]\n"
+        "except Exception:\n"
+        "    pass\n"
+        "print(json.dumps(r))\n"
+    )
+    # THE EXECUTION GATE APPLIES HERE TOO. The probe is a harness-authored
+    # constant, but test_falsifier_cannot_read_the_key.py pins the invariant
+    # that EVERY function in this module launching a child calls the scanner
+    # in its own body -- an allowlist would weaken the pin, and weakening a
+    # test to make it pass is prohibited conduct. Fail closed: if the probe
+    # ever stops scanning clean, no roots are added and the gate stays
+    # exactly as strict as before.
+    if scan_falsifier_source(probe):
+        _SECONDARY_ROOTS_CACHE = []
+        return []
+    candidates = {"/usr/bin/python3", shutil.which("python3") or "",
+                  "/opt/homebrew/bin/python3", "/usr/local/bin/python3"}
+    # Every framework/Cellar interpreter installed on this machine, discovered
+    # rather than enumerated by version, so a new minor release needs no edit.
+    for _pat in ("/Library/Frameworks/Python.framework/Versions/*/bin/python3",
+                 "/opt/homebrew/opt/python@*/bin/python3"):
+        candidates.update(glob.glob(_pat))
+    for cand in sorted(c for c in candidates if c and os.path.isfile(c)):
+        try:
+            if os.path.realpath(cand) == harness:
+                continue
+            proc = subprocess.run(
+                [cand, "-c", probe], capture_output=True, text=True, timeout=10)
+            if proc.returncode != 0 or not proc.stdout.strip():
+                continue
+            import json as _json
+            reported = _json.loads(proc.stdout.strip().splitlines()[-1])
+            roots.extend(r for r in reported
+                         if isinstance(r, str) and r and os.path.isdir(r))
+            # The zip-stdlib path (python39.zip) is a FILE, not a directory,
+            # and the 3.9 bootstrap opens it directly; keep it if it exists
+            # in any form.
+            roots.extend(r for r in reported
+                         if isinstance(r, str) and r.endswith(".zip")
+                         and os.path.exists(r))
+        except (OSError, ValueError, subprocess.SubprocessError):
+            continue
+    _SECONDARY_ROOTS_CACHE = sorted(set(roots))
+    return list(_SECONDARY_ROOTS_CACHE)
+
+
 def _interpreter_roots() -> list[str]:
     """Directories the interpreter itself must be able to read.
 
@@ -723,6 +823,8 @@ def _interpreter_roots() -> list[str]:
     except (AttributeError, TypeError):  # pragma: no cover
         pass
     roots.extend(p for p in sys.path if p and os.path.isdir(p))
+    # Spawned-interpreter parity: see _secondary_interpreter_roots.
+    roots.extend(_secondary_interpreter_roots())
     return [r for r in roots if r]
 
 

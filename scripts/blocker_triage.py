@@ -164,6 +164,45 @@ def blocks_progress(text: str, tasks: pathlib.Path | None = None) -> tuple[bool,
                    "nothing is waiting")
 
 
+#: Phrases by which an entry DECLARES ITSELF a decision only the founder can
+#: make. Matched on the entry's own committed text, so this is a reading of
+#: what the record says, never an inference about what the item "feels like".
+DECLARES_A_DECISION = re.compile(
+    r"NEEDS A POLICY RULING|NEEDS (?:YOUR|HIS|A FOUNDER) RULING"
+    r"|NEEDS? (?:THE )?FOUNDER'?S? (?:RULING|DECISION)"
+    r"|(?:his|the founder's) (?:call|decision) (?:to make|not ours)"
+    r"|(?:his|her|their) to decide|NEEDS HIS DECISION"
+    r"|awaiting (?:his|the founder's) ruling",
+    re.IGNORECASE)
+
+
+def decision_required(text: str) -> str:
+    """Why this item is the FOUNDER'S DECISION, or "" when it is not.
+
+    THE THIRD QUESTION, AND THE SCRIPT ANSWERED ONLY 2 OF ITS OWN 3 UNTIL
+    2026-10-12. This module's header names three: does it block progress, is it
+    his to authorise, and is the ITEM ITSELF a decision only he can make. Only
+    the first two were implemented. Both free seats of the 2026-10-12 panel
+    found the gap independently and neither wrote the fix.
+
+    WHAT IT COST. A8 -- whose own committed text ends "NEEDS A POLICY RULING:
+    track them, relocate them, or accept and label them" -- triaged as a bare
+    PARK with no flag, and `hooks/work_not_narrate.py` reads PARK as "carry
+    on". So the hook pushed the assistant to go and DO a thing the entry itself
+    says is the founder's to decide. A19 is the same shape: a flag on/off
+    design call.
+
+    IT IS A THIRD FLAG, NOT A THIRD VERDICT, and that is deliberate. The 3
+    questions are orthogonal -- an item can be any combination of blocking,
+    permission-bearing and decision-bearing -- and FOLDING TWO OF THEM INTO ONE
+    IS THE DEFECT THE FIRST VERSION OF THIS SCRIPT SHIPPED (it called editing a
+    desktop config a BLOCK when that edit blocked nothing). `classify` keeps
+    its 3-tuple so that no caller changes shape.
+    """
+    m = DECLARES_A_DECISION.search(text or "")
+    return m.group(0) if m else ""
+
+
 def classify(text: str) -> tuple[str, str, str]:
     """(verdict, why, permission). BLOCK only if progress is prevented.
 
@@ -245,8 +284,13 @@ def main() -> int:
     if not a.title:
         ap.error("--title is required")
 
-    verdict, why, perm = classify(f"{a.title}\n{a.detail}")
+    _text = f"{a.title}\n{a.detail}"
+    verdict, why, perm = classify(_text)
+    decision = decision_required(_text)
     print(f"  {verdict}: {why}")
+    if decision:
+        print(f"  HIS DECISION — the entry says so itself: \"{decision}\"")
+        print("  -> do NOT act on it; carry it to him as a decision, not as work.")
     if perm:
         print(f"  NEEDS PERMISSION — {perm}")
         print("  -> do NOT do it unilaterally. That is separate from whether it blocks.")
@@ -257,6 +301,10 @@ def main() -> int:
         print("  -> would be appended to " + str(PARKED.relative_to(REPO)))
         return 0
     detail = a.detail
+    if decision:
+        detail += (f"\n\n**This is YOUR DECISION, by the entry's own words — "
+                   f"\"{decision}\".** Not blocking, and not work to be done "
+                   f"meanwhile.")
     if perm:
         detail += f"\n\n**Needs your decision — {perm}.** Not blocking; nothing on the list waits on it."
     p = park(a.title, detail)
