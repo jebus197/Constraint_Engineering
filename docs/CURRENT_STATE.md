@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 12 October 2026 00:13 BST (2026-10-12T00:13:28+01:00)
+Generated: 12 October 2026 02:21 BST (2026-10-12T02:21:30+01:00)
 
 ---
 
@@ -18,9 +18,9 @@ Generated: 12 October 2026 00:13 BST (2026-10-12T00:13:28+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `1feaa502` sv: all 4 remaining items done; the sim seam lost substance and 3 guards went blind
-- **Committed:** 2026-10-12 00:09:30 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
+- **Last commit (the PARENT of the commit containing this file):** `9061ddf1` the restore now fires at a task boundary, and the board accounted for all 20 reds
+- **Committed:** 2026-10-12 02:19:59 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 1
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
@@ -30,7 +30,7 @@ Uncommitted files at snapshot time — the working tree as it stood before the s
 
 ## Tests
 
-**10885 tests collected** at 12 October 2026 00:13 BST, HEAD `1feaa502` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**10912 tests collected** at 12 October 2026 02:21 BST, HEAD `9061ddf1` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -60,6 +60,8 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `9061ddf1 the restore now fires at a task boundary, and the board accounted for all 20 reds`
+- `af89f6d0 sv: the A23 guard needed a re-runnable producer, and this file's own lesson recurred`
 - `1feaa502 sv: all 4 remaining items done; the sim seam lost substance and 3 guards went blind`
 - `a4a5a4a6 two correct safety mechanisms were leaving a stale citation between them`
 - `45ba58b4 item 5: the domain-verdict gap is measured again, and my own withdrawal was miscalculated`
@@ -68,5 +70,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `a1014a47 item 14: the sim seam lost substance and 3 guards went blind to a wrapper split`
 - `7a8fd077 I invented 2 timestamps; the clock was right and 3 guard designs cannot catch it`
 - `183f7dc2 sv: the substance test is wired after measuring it, and his 0.05 is pinned`
-- `fda2dfcd morning report extended: the substance test is wired and the risk was measured, not asserted`
-- `be5ff31c his 0.05 false-alarm proportion pinned, with the ruling it depends on`

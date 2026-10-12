@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 12 October 2026 00:13 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 12 October 2026 02:21 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,24 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-12 02:21 BST (READ THIS FIRST)
+
+**BRANCH.** `sim/shakedown-2026-09-29`, HEAD `9061ddf1`. `main` untouched.
+
+**`rs` WAS RUN ON HIS INSTRUCTION, EXIT CODE 0**, and the work done in the degraded hour was re-checked rather than trusted. All 3 producers reproduce their figures exactly; item 9's monotonicity was re-verified by a DIFFERENT method than first time (z3 `unsat` on the counterexample search, SymPy's derivative negative at every test point, a 400-point NumPy sweep strictly decreasing); the trigger's safety property holds under z3 `unsat` plus 3250 exhaustive executions with 0 violations. Run `python3 -m pytest bench/tests/test_the_round_count_is_computed_per_run_2026-10-11.py bench/tests/test_the_restore_fires_at_a_task_boundary_2026-10-12.py -q` for **44 passed**.
+
+**★★★ THE RESTORE NOW FIRES AT A TASK BOUNDARY — HIS CORRECTION, AND MY PROPOSAL WAS WRONG.** `UserPromptSubmit` cannot fire during unattended work: after the 2026-10-11 23:23:01 BST compaction the restore ran at 00:22:55 BST, **59.89 min late and 21.0 s after his message**, with 169 tool calls made from a summary rather than the project. His words: *"it's probably not heathy to interrupt a task that was running immediately before compaction ... fire at a safe point immediately after the first task ... completes."* A turn-end trigger would have fired at **0.91 min**, mid-item-14. The first COMMIT landed at **16.89 min**, exactly item 14's completion. `~/.claude/hooks/compaction_task_boundary.py` is registered FIRST among the Stop hooks, stays silent until a commit exists, then restores, BLOCKS the stop so the context lands, names the degraded-window commits and orders the re-check. **THE TWO TRIGGERS COMPOSE AND THE GAIN IS IN THE COMPOSITION** — a commit trigger ALONE is sooner on only 27 of 43, Wilcoxon p = 0.2164, with a worse maximum; firing on whichever comes first gives median 13.18 min against 55.22, and on the 32 unattended compactions 88.57 → 22.71 min, **112.00 hours avoided**. Producer: `scripts/the_task_boundary_restore_is_sooner_2026-10-12.py`.
+
+**★★ ITS P-PASS FOUND 2 DEFECTS.** (1) Gating only on `_recovery_ran_after` meant a FAILED restore left no marker and the hook re-armed at every stop, refusing one per turn forever; `fired_for` is now written BEFORE the restore and separately from its success. (2) Converting that guard from an index comparison to an EXECUTED dying-restore test exposed a test-ordering bug — `compaction_watch.STATE` binds `Path.home()` at import, so importing before setting the test HOME read the live marker. 4 mutations each turn the guard red.
+
+**★★ 3 HOOKS EXISTED ONLY ON HIS MACHINE** — `sv_milestone_gate`, `local_resource_budget`, `compaction_task_boundary`, all mine from this session, repeating the defect the 2026-10-03 record names. Now HARD-LINKED into `hooks/` sharing inodes, so drift is impossible rather than detected, and the drift guard enumerates `hooks/*.py` so they came under it by construction.
+
+**★★★ THE FULL BOARD, AND ALL 20 REDS ARE ACCOUNTED FOR: 20 failed, 10847 passed, 18 skipped in 3468.81 s.** Reproduce with `python3 -m pytest bench/tests/ -q`. **MINE AND FIXED (10):** 4 were new scripts accepting an unknown flag at exit 0 plus a silently capped listing, now routed through `scripts/_cli_help.answer_help`; 3 `compaction_notice` reds were TEST POLLUTION because `_auto_restore` writes the LIVE `last_recovery` while the guard unlinked only the session marker, so each run acknowledged the next test's compaction (HOME isolated, 14 passed); 3 were ONE cause, a memory file written after the last sv leaving the ledger at 214 against 215, with the `desktop_mirrors` red a pure cascade whose own message said so. **NOT MINE (10):** 4 `shared_subscription_seats_are_serialised` assert a property HIS 2026-10-08 staggering ruling retired, red for 4 days; `test_the_baseline_is_honest` was ALREADY red at `7a8fd077` (20 measured against a pin of 21, now lowered with provenance); 2 `scripts_are_reached` name 3 scripts added 2026-10-06, 10-09 and 10-11 16:20; `exp52_factor_switches` and `simulated_runs_are_excluded` were untouched since the compaction.
+
+**NEEDS HIS RULING, 2 ITEMS.** (1) The 4 retired `shared_subscription_seats` guards should be RE-POINTED at the 20-second stagger rather than retired, since "the shared seats do not collide" still matters — but that is a rewrite against his design decision. (2) The source-text census stands at **98 against a pin of 82**; by the detector's OWN predicate only 5 are mine and 2 of those are converted to executing checks, so raising the pin would absorb 11 assertions nobody has examined and the guard warns against exactly that. Left red deliberately. Producer: `scripts/source_text_assertions_2026-09-11.py`, which gives 98/7709 = 1.2712%, Wilson [1.0443%, 1.5467%].
+
+**STILL OPEN FROM BEFORE.** Item 8's BUILD (incremental stream-json parsing, 1 build not 2, ~20 callers). The 11 explanations owed on his older instructions. The free `cc2`+`fable` panel the 26-of-92 pattern calls for.
 
 ## SESSION STATE — 2026-10-12 00:09 BST (READ THIS FIRST)
 
