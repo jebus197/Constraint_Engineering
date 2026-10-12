@@ -423,6 +423,21 @@ def main(argv: list[str]) -> int:
         desk.parent.mkdir(parents=True, exist_ok=True)
         desk.write_text(tts, encoding="utf-8")
         print(f"  wrote {desk}  ({len(tts.splitlines())} lines)")
+        # STAMP THEM HERE, because regenerating WIPES a stamp applied afterwards and a
+        # step you must remember is a step that gets forgotten. His order of 2026-10-12:
+        # give each output its own hash value, to track them exactly.
+        try:
+            sys.path.insert(0, str(REPO / "scripts"))
+            from stamp_output_hash_2026_10_12 import main as _stamp  # noqa: F401
+        except ImportError:
+            import importlib.util as _ilu
+            _spec = _ilu.spec_from_file_location(
+                "stamper", str(REPO / "scripts" / "stamp_output_hash_2026-10-12.py"))
+            _m = _ilu.module_from_spec(_spec)
+            sys.modules["stamper"] = _m
+            _spec.loader.exec_module(_m)
+            _stamp = _m.main
+        _stamp(["stamp_output_hash", str(out), str(desk)])
     else:
         print(md)
     return 0

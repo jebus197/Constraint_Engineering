@@ -76,94 +76,141 @@ class _Recorder:
 
 
 def _scheduler():
-    """Build a callable with the dispatcher's real scheduling block.
+    """Return the dispatcher's REAL scheduling function, by importing it.
 
-    The block is lifted verbatim from the source between its own markers and
-    executed, so the test runs the shipped control flow rather than a restatement
-    of it. If the block cannot be located the test fails loudly rather than
-    silently passing over nothing.
+    RE-POINTED 2026-10-12 ON HIS RULING: *"yes stagger the seats. I've already ruled on
+    this several times."*
+
+    WHAT THIS FILE USED TO DO, AND WHY IT BROKE. It located the scheduling block in the
+    dispatcher's SOURCE between 2 literal anchors, exec'd the lifted text, and failed
+    loudly if it could not find them. On 2026-10-08 the block was extracted into the named
+    function `run_seat_group`, so the end anchor -- `results.extend(...)` -- ceased to
+    exist and all 4 tests here reported "this guard is testing nothing" for 4 days. The
+    system was never broken; the instrument was reading source text and the source moved.
+    `execute-do-not-grep`, and the extraction is what makes the honest form possible:
+    there is now a function to CALL.
+
+    AND THE PROPERTY UNDER TEST CHANGED WITH HIS RULING, which is the other half. These
+    tests asserted STRICT SERIALISATION of the 2 shared-subscription seats. His ruling of
+    2026-10-08 replaced that with a stagger -- *"Is back to back necessary? It doubles the
+    duration of a panel review. Isn't it the case that all that is needed is a few
+    second[s] between dispatching each model?"* -- so asserting non-overlap
+    unconditionally would now assert against the shipped design.
+
+    BOTH BEHAVIOURS ARE STILL REACHABLE AND BOTH ARE TESTED HERE. `run_seat_group`
+    staggers when `stagger_s > 0` and SERIALISES when it is 0, so his earlier ruling was
+    not removed, it was made selectable. The real default is pinned separately at 20.0 s
+    without any test sleeping for 20 seconds.
     """
-    src = DISPATCHER.read_text(encoding="utf-8")
-    start = src.find("        _shared = [(n, m, r) for n, m, r in MODELS")
-    end = src.find("results.extend(got if isinstance(got, list) else [got])")
-    if start < 0 or end < 0:
-        pytest.fail(
-            "the scheduling block could not be located in "
-            f"{DISPATCHER.name}; this guard is testing nothing")
-    block = src[start:end + len("results.extend(got if isinstance(got, list) else [got])")]
-    block = "\n".join(line[8:] if line.startswith("        ") else line
-                      for line in block.split("\n"))
-
-    def run(models, dispatch):
-        import concurrent.futures
-        ns = {"MODELS": models, "dispatch": dispatch,
-              "concurrent": concurrent, "results": None}
-        exec(compile(block, "<scheduling-block>", "exec"), ns)  # noqa: S102
-        return ns["results"]
-    return run
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("cmp_panel_live", str(DISPATCHER))
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["cmp_panel_live"] = mod
+    spec.loader.exec_module(mod)
+    return mod
 
 
-FREE = [("cc2", "opus", "claude_cli"), ("fable", "fable", "claude_cli")]
-MIXED = FREE + [("ge", "gemini", "openrouter"), ("ds", "deepseek", "direct")]
+#: Seats on the shared Max subscription, and one that is not.
+SHARED = [("cc2", "opus", "claude_cli"), ("fable", "fable", "claude_cli")]
+INDEPENDENT = [("ge", "gemini", "openrouter"), ("ds", "deepseek", "deepseek")]
+
+#: A test-scale stagger. The property is the ordering of start times, not the magnitude,
+#: and the shipped 20.0 s is pinned by its own test rather than waited for.
+TEST_STAGGER = 0.12
 
 
-class TestTheSharedSeatsDoNotOverlap:
-    def test_two_claude_cli_seats_are_never_in_flight_together(self):
-        rec = _Recorder()
-        _scheduler()(FREE, rec)
+class TestTheSharedSeatsAreStaggered:
+    """His ruling of 2026-10-08, asserted by CALLING the scheduler."""
+
+    def test_the_shared_seats_start_at_increasing_offsets(self):
+        mod = _scheduler()
+        rec = _Recorder(hold=0.02)
+        mod.run_seat_group(SHARED, [], rec, TEST_STAGGER)
+        starts = [t for kind, name, route, t in rec.order if kind == "start"]
+        assert len(starts) == 2
+        gap = abs(starts[1] - starts[0])
+        assert gap >= TEST_STAGGER * 0.5, (
+            f"the 2 shared seats started {gap:.3f}s apart, which is not a stagger of "
+            f"{TEST_STAGGER}s -- they were dispatched together")
+
+    def test_the_stagger_lets_them_overlap_which_is_the_point(self):
+        """A stagger is NOT serialisation: the second seat starts before the first
+        finishes, which is where the measured saving comes from."""
+        mod = _scheduler()
+        rec = _Recorder(hold=TEST_STAGGER * 3)
+        mod.run_seat_group(SHARED, [], rec, TEST_STAGGER)
+        assert rec.max_live_by_route.get("claude_cli", 0) == 2, (
+            "the shared seats never overlapped, so this is serialisation rather than "
+            "the stagger he ruled for")
+
+    def test_the_shipped_default_is_twenty_seconds(self):
+        """Pinned without sleeping for it. 20 s was measured 3 ways: it must exceed the
+        18.7 s establishment collision and stay under the shortest observed first-seat
+        duration of 26.7 s."""
+        mod = _scheduler()
+        assert mod.DEFAULT_STAGGER_S == 20.0
+
+    def test_the_shared_group_is_dispatched_in_roster_order(self):
+        mod = _scheduler()
+        rec = _Recorder(hold=0.02)
+        mod.run_seat_group(SHARED, [], rec, TEST_STAGGER)
+        started = [name for kind, name, route, t in rec.order if kind == "start"]
+        assert started == [n for n, _m, _r in SHARED], (
+            f"dispatched {started}, not in roster order")
+
+
+class TestZeroStaggerStillSerialises:
+    """HIS EARLIER RULING WAS NOT REMOVED, IT WAS MADE SELECTABLE -- the additive
+    standard's removal clause. `PANEL_STAGGER_S=0` restores strict serialisation."""
+
+    def test_at_zero_the_shared_seats_never_overlap(self):
+        mod = _scheduler()
+        rec = _Recorder(hold=0.05)
+        mod.run_seat_group(SHARED, [], rec, 0)
         assert rec.max_live_by_route.get("claude_cli", 0) == 1, (
-            f"{rec.max_live_by_route.get('claude_cli')} claude_cli seats were in "
-            f"flight at once; they share one subscription")
+            "at stagger 0 the shared seats overlapped, so the serialised path his "
+            "2026-10-05 ruling asked for is no longer reachable")
 
+    def test_a_negative_or_malformed_stagger_refuses_rather_than_defaulting(self):
+        """A scheduling control that silently ignores its own input is a shape this
+        project has paid for before."""
+        import os
+        mod = _scheduler()
+        for bad in ("-1", "abc"):
+            old = os.environ.get("PANEL_STAGGER_S")
+            try:
+                os.environ["PANEL_STAGGER_S"] = bad
+                with pytest.raises(SystemExit):
+                    mod._stagger_seconds()
+            finally:
+                if old is None:
+                    os.environ.pop("PANEL_STAGGER_S", None)
+                else:
+                    os.environ["PANEL_STAGGER_S"] = old
+
+
+class TestNothingElseRegressed:
     def test_every_seat_still_returns_a_result(self):
-        rec = _Recorder()
-        out = _scheduler()(FREE, rec)
-        assert len(out) == len(FREE), (
-            f"{len(out)} results for {len(FREE)} seats — serialising must not "
-            f"drop a seat")
-        assert {r["model"] for r in out} == {"cc2", "fable"}
-
-    def test_the_shared_group_runs_in_roster_order(self):
-        rec = _Recorder()
-        _scheduler()(FREE, rec)
-        starts = [n for kind, n, r, _ in rec.order
-                  if kind == "start" and r == "claude_cli"]
-        assert starts == ["cc2", "fable"], f"roster order not preserved: {starts}"
-
-
-class TestOtherRoutesStillOverlap:
-    """Additive: serialising one group must not serialise the whole panel."""
+        mod = _scheduler()
+        rec = _Recorder(hold=0.02)
+        out = mod.run_seat_group(SHARED, INDEPENDENT, rec, TEST_STAGGER)
+        got = sorted(r["model"] for r in out)
+        assert got == sorted(n for n, _m, _r in SHARED + INDEPENDENT), (
+            f"a seat was dropped by the scheduler: got {got}")
 
     def test_non_shared_seats_still_run_concurrently(self):
-        rec = _Recorder(hold=0.12)
-        out = _scheduler()(MIXED, rec)
-        assert len(out) == len(MIXED)
-        assert rec.max_live_by_route.get("claude_cli", 0) == 1
-        others = max(rec.max_live_by_route.get("openrouter", 0),
-                     rec.max_live_by_route.get("direct", 0))
-        assert others >= 1
-        total_span = rec.order[-1][3] - rec.order[0][3]
-        serial_span = len(MIXED) * 0.12
-        assert total_span < serial_span * 0.9, (
-            f"the whole panel took {total_span:.3f}s against {serial_span:.3f}s "
-            f"fully serial — the independent seats are no longer overlapping")
+        """The stagger must not have serialised the routes that never contended."""
+        mod = _scheduler()
+        rec = _Recorder(hold=0.08)
+        mod.run_seat_group([], INDEPENDENT, rec, TEST_STAGGER)
+        assert rec.max_live_by_route.get("openrouter", 0) >= 1
+        live = {r: v for r, v in rec.max_live_by_route.items()}
+        assert sum(live.values()) >= 2, (
+            f"independent seats did not overlap at all: {live}")
 
-
-class TestTheProbeIsNotVacuous:
-    def test_a_fully_concurrent_scheduler_would_fail_the_overlap_check(self):
-        """Anti-vacuity: the recorder must be able to SEE an overlap."""
-        import concurrent.futures
-        rec = _Recorder()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(FREE)) as pool:
-            list(pool.map(lambda t: rec(*t), FREE))
-        assert rec.max_live_by_route.get("claude_cli", 0) == 2, (
-            "the recorder did not observe 2 concurrent seats even under a fully "
-            "concurrent pool, so the main assertion could pass for the wrong "
-            "reason")
-
-    def test_the_dispatcher_no_longer_pools_the_whole_roster(self):
-        src = DISPATCHER.read_text(encoding="utf-8")
-        assert not re.search(
-            r"ThreadPoolExecutor\(max_workers=len\(MODELS\)\)\s*as pool:\s*\n"
-            r"\s*futs = \{pool\.submit\(dispatch,", src), (
-            "the original whole-roster pool is back")
+    def test_the_scheduler_is_a_named_function_not_a_lifted_block(self):
+        """The repair itself: if the scheduling ever goes back inline, this file must
+        fail rather than silently re-acquire the blindness it just lost."""
+        mod = _scheduler()
+        assert callable(getattr(mod, "run_seat_group", None)), (
+            "run_seat_group is gone, so these guards are lifting source text again")
