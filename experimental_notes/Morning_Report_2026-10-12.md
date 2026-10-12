@@ -296,6 +296,140 @@ silent failure was the actual defect.
 Board: 501 fast guards green; 338 across every γ and convergence guard; 204 across every guard
 touching the simulation shim. Commits `a1014a47`, `8288b40b`, `6a2e87f0`, `45ba58b4`, `a4a5a4a6`.
 
+## Overnight addition — written 2026-10-12 11:30 BST
+
+Everything above was written at 00:05 and covers the 4 work-order items. ~2.5 hours of
+further work followed and appeared nowhere above until now. A report written before the
+work finishes is not a report on the work.
+
+### The restore fired 59.89 min late, and its trigger is fixed
+
+`compaction_watch.py` was on `UserPromptSubmit`, which **cannot fire during unattended
+work**. After the 23:23:01 BST compaction the restore ran at 00:22:55 — **59.89 min late,
+21.0 s after his message**. 169 tool calls were made from a summary rather than the
+project. Over 43 compactions the wait for his next message is median **55.22 min**, max
+**25.72 h**, with 38 of 43 over 10 min (0.8837, Wilson [0.7552, 0.9493]).
+
+**His correction was right and the measurement agrees.** A turn-end trigger would have
+fired at **0.91 min**, mid-item-14 with the tree dirty. A **commit** is the safe point
+because the pre-commit board must pass for one to exist; the first commit after that
+compaction landed at **16.89 min**, exactly item 14's completion.
+`~/.claude/hooks/compaction_task_boundary.py`, registered first among the `Stop` hooks,
+blocks the stop so the context lands and orders the re-check before the rest of the list.
+
+**The triggers COMPOSE, and that is where the gain is.** Commit alone is sooner on only
+27 of 43, Wilcoxon **p = 0.2164**, with a worse maximum. Whichever-comes-first gives
+median **13.18 min** against 55.22 and p90 **54.95** against 420.30; on the 32 unattended
+compactions, 88.57 → **22.71 min**, **112.00 hours** avoided. Producer:
+`scripts/the_task_boundary_restore_is_sooner_2026-10-12.py`.
+
+**Its P-pass found 2 defects.** (1) Gating only on `_recovery_ran_after` — written by
+`cdsfl_recover.py` itself — meant a FAILED restore left no marker and the hook re-armed
+at every stop, refusing one per turn indefinitely; `fired_for` is now written BEFORE the
+restore and separately from its success. (2) Converting that guard from an index
+comparison to an EXECUTED dying-restore test exposed a test-ordering fault:
+`compaction_watch.STATE` binds `Path.home()` at import. 23 tests, 4 mutations each red.
+
+### 3 hooks existed only on his machine
+
+`sv_milestone_gate.py`, `local_resource_budget.py`, `compaction_task_boundary.py` — all
+built this session, repeating the defect the 2026-10-03 record names. Now **hard-linked**
+into `hooks/` sharing inodes, so drift is impossible rather than detected; the drift guard
+enumerates `hooks/*.py` so they came under it by construction.
+
+### The full board: 20 failed, 10847 passed, 18 skipped, 3468.81 s
+
+`python3 -m pytest bench/tests/ -q`. **5 of the 20 had been red for days.**
+
+**Mine, fixed — 10 of 20** (0.5000, Wilson [0.2993, 0.7007], CP [0.2720, 0.7280]):
+4 were new scripts accepting `--this-flag-does-not-exist` at exit 0 plus a silently
+capped listing, now routed through `scripts/_cli_help.answer_help` (`test_operational_scripts.py`
+**664 passed**); 3 `compaction_notice` reds were **test pollution** — `_auto_restore`
+writes the live `~/.claude/.compaction_watch/last_recovery` while the guard unlinked only
+the session marker, so each run acknowledged the next test's compaction (HOME isolated,
+14 passed); 3 were ONE cause — a memory file written after the last `sv` left the derived
+ledger at 214 against 215, and the `desktop_mirrors` red was a pure cascade whose own
+message said so.
+
+**Not mine — 10 of 20.** 4 `shared_subscription_seats_are_serialised` assert strict
+sequencing, which his 2026-10-08 staggering ruling retired (the guard's end anchor
+`results.extend(...)` no longer exists), red for 4 days. `test_the_baseline_is_honest`
+was **already red at `7a8fd077`** — 20 measured against a pin of 21, verified by
+replicating the ratchet's own predicate; lowered to 20 with provenance. 2
+`scripts_are_reached` name 3 scripts added 2026-10-06, 10-09 and 10-11 16:20.
+`exp52_factor_switches` and `simulated_runs_are_excluded` were untouched since the
+compaction.
+
+### An error pattern, as a hypothesis not a finding
+
+Of 11 errors in that window, **4 were improvising a measurement this project already
+had a committed definition for** — 0.3636, Wilson [0.1517, 0.6462], CP [0.1093, 0.6921].
+Widened to "an existing instrument would have prevented it": 6 of 11, binomial
+**p = 0.5000**, NOT significant. Recorded as a pattern to watch with a withdrawal
+prediction: [[feedback_use_the_instrument_that_exists_2026-10-12]].
+
+**A correction.** I said "4 instances" in chat and listed reading UTC as local among
+them; that was 2026-10-01, not this session. The figure of 4 was right; the membership was not.
+
+## NEEDS YOUR RULING — 4
+
+| # | item | where |
+|---|---|---|
+| 1 | **Re-point the 4 retired seat guards at the 20 s stagger** rather than retire them — "the shared seats do not collide" still matters, but it is a rewrite against your design decision | `bench/tests/test_shared_subscription_seats_are_serialised_2026-10-05.py` |
+| 2 | **The source-text census: 98 against a pin of 82.** By the detector's own predicate only 5 are mine and 2 are converted to executing checks. Raising it absorbs 11 nobody has examined, and the guard warns against that. **Left red deliberately** | `bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py:153` |
+| 3 | **R1 — restart Exp 53, the zero-plant control.** Marked BLOCKED. Ruled twice, 2026-08-07 and 2026-09-06, still not run | `CDSFL_MASTER_TASK_LIST.md:107` |
+| 4 | **10.2** — analysis complete 2026-09-10; the list records the decision as yours | `CDSFL_MASTER_TASK_LIST.md:450` |
+
+## APPROVED BY YOU, NOT BUILT — 2
+
+| # | item | state | where |
+|---|---|---|---|
+| 5 | **A19.** S_k classifies the TARGET, not the ELEMENT, so a computable fragment inside prose is never scored. Your design point, 2026-09-10 | OPEN / TESTED | `CDSFL_MASTER_TASK_LIST.md:566` |
+| 6 | **V9.** A DONE entry's evidence must go RED against its own reverted fix, and nothing checks that it does. Approved by you 2026-09-17 | OPEN / PROPOSED | `CDSFL_MASTER_TASK_LIST.md:620` |
+
+## WORK WAITING, NO RULING NEEDED — 3
+
+1. **Item 8's BUILD.** The better way was recovered as you asked: **incremental stream-json
+   parsing**, stronger than a completion marker because a dead seat never prints the marker
+   either and the clock cannot separate working from churning (**20.455 s vs 20.816 s** per
+   call). Same work as the lapsed stream-json trigger — **1 build, not 2**. Touches
+   `dispatch_to_model` and ~20 callers.
+2. **The free `cc2`+`fable` panel.** **26 of 92** older instructions (0.2826, Wilson
+   [0.2008, 0.3819]) answer "how should this be fixed?" with "put it to the panel **with
+   your proposed fixes**, not just problems". Costs nothing. Not run.
+3. **4 of 9 study measurements outstanding:** `arm5`, `haiku_extended`, `guard_reach`,
+   `in_round_clearance`.
+
+## EXPLANATIONS OWED — 11
+
+You asked for each of these to be explained before you would rule, and the explanation
+was never delivered. Answers owed, not work owed. Producer:
+`scripts/his_older_instructions_triage_2026-10-11.py`.
+
+| date | what you asked |
+|---|---|
+| 2026-08-30 | whether an incomplete fix can and should be completed |
+| 2026-09-15 | what the fix was, and whether those falsifiers are intended machinery or written for the tests |
+| 2026-09-15 | the untracked-log problem explained in more detail before you rule |
+| 2026-09-17 | a plain-English reminder of what the drift detector is for |
+| 2026-09-17 | the reverted-fix check explained in plain English |
+| 2026-09-17 | the recommended action on the log-directory hypothesis |
+| 2026-09-17 | whether 30 further issues remain, and which need your ruling |
+| 2026-09-20 | what "not free" meant |
+| 2026-09-21 | whether the evidence justifies a 3rd review of the conserved revisions |
+| 2026-09-21 | how the false-alarm (phi) measurement should be resolved |
+| 2026-09-28 | whether a set of failing tests fail by design or from an unresolved problem |
+
+## ALSO PARKED — 21
+
+`experimental_notes/PARKED_FOR_THE_FOUNDER.md` holds 21 items judged non-blocking and
+appended rather than raised at the time. Queued, not dropped.
+
+## State
+
+Committed and pushed, `0a0d1657`, working tree clean, all 6 `sv` postconditions green.
+Boards: 501 fast guards, 664 script guards, 23 hook guards.
+
 ---
 
 *Written under CDSFL note standard v1.7.*
