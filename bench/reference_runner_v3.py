@@ -3056,6 +3056,93 @@ class FindingRegistry:
             count += 1
         return count
 
+    def severity_spec_shadow(self) -> dict:
+        """What the appendix's own severity formula would say. GATES NOTHING.
+
+        FOUNDER RULING 2026-10-12, verbatim: *"Severity was supposed to be
+        calculated in accordance with our existing maths model. If the models
+        are asked to compute anything it should surely be computed from our
+        maths model and from what this already says about severity surely, then
+        they must provide a proof to demonstrate that they have computed
+        severity correctly, then the other machinery of the schema should apply
+        a working falsifier/use tools to check that this number makes sense and
+        checks out. This does not qualify as a 'vote'. Indeed it is the very
+        opposite of a vote."*
+
+        HE IS RIGHT, AND THE SPECIFICATION HE POINTS AT HAS NEVER BEEN
+        IMPLEMENTED. docs/MATHEMATICAL_APPENDIX.md section 7.7 states
+
+            Sev(f) = W(class) . confidence . V(verification)
+            W(HARD)=1.0 W(SOFT)=0.5; V(True)=1.0 V(None)=0.5 V(False)=0.0
+
+        with the KEY PROPERTY that a disproved finding scores ZERO regardless of
+        confidence. TWO OF THE THREE INPUTS WERE NEVER COLLECTED: across 3,298
+        archived entries, `confidence` appears on 0 and no field carries a
+        HARD/SOFT class (`flaw_class` is section 4's integer class id, a
+        different quantity). The runner reads
+        `severity=float(entry.get("severity") or 0.0)` from the model's own
+        output instead, so the 2026-09-06 case for removing the severity test --
+        a model-assigned number must not decide convergence -- was SOUND ABOUT
+        THE IMPLEMENTATION AND WRONG ABOUT THE SPECIFICATION. The remedy that
+        argument licensed was removal; the remedy the specification licenses is
+        to compute it.
+
+        WHAT THIS SHADOW APPLIES, AND WHY IT IS THE HALF THAT NEEDS NO SCHEMA
+        CHANGE. `V` is the HARNESS'S OWN falsifier verdict, so applying it is
+        precisely the step he describes. It is also the factor that makes the
+        formula the opposite of a vote: V(False)=0 annihilates the product. The
+        asserted severity stands in for the uncollected `W . confidence`.
+
+        MEASURED ACROSS THE ARCHIVE, AND THE MOVEMENT IS LARGE, WHICH IS WHY
+        THIS GATES NOTHING YET: the share at or above the 0.7 cut falls from
+        41.6313% (Wilson [39.9596%, 43.3225%]) to 16.3129% ([15.0912%,
+        17.6130%]), with 835 of 3,298 entries crossing downward -- 25.3184%,
+        Wilson [23.8636%, 26.8306%], Clopper-Pearson [23.8416%, 26.8391%].
+        Those are findings the gate calls critical and section 7.7 would not,
+        because no tool has verified them. The appendix's key property is
+        violated on 35 of 40 disproved findings, 87.5000%, Wilson [73.8879%,
+        94.5405%]. Producers:
+        scripts/the_verification_factor_shadow_2026-10-12.py and
+        scripts/severity_was_never_computed_from_the_model_2026-10-12.py.
+
+        PROMOTION IS HIS, NOT THE PANEL'S AND NOT MINE. A 25-point
+        reclassification is replay-invalidating, and this project's own rule is
+        that each promotion needs non-distortion evidence from a RUN first. This
+        reader exists so the next simulated run produces that evidence.
+        """
+        spec = {"V_true": 0, "V_none": 0, "V_false": 0,
+                "critical_asserted": 0, "critical_spec": 0,
+                "crossed_downward": [], "key_property_violations": []}
+        for cid, e in self.entries.items():
+            sev = e.get("severity")
+            if not isinstance(sev, (int, float)):
+                continue
+            verdict = str(e.get("falsifier_verdict") or "").strip().upper()
+            if verdict == "CONFIRMED":
+                v, bucket = 1.0, "V_true"
+            elif verdict == "REFUTED":
+                v, bucket = 0.0, "V_false"
+            else:
+                v, bucket = 0.5, "V_none"
+            spec[bucket] += 1
+            shadow = float(sev) * v
+            if float(sev) >= CRITICAL_SEVERITY_THRESHOLD:
+                spec["critical_asserted"] += 1
+                if shadow < CRITICAL_SEVERITY_THRESHOLD:
+                    spec["crossed_downward"].append(cid)
+            if shadow >= CRITICAL_SEVERITY_THRESHOLD:
+                spec["critical_spec"] += 1
+            if v == 0.0 and float(sev) != 0.0:
+                spec["key_property_violations"].append(cid)
+        spec["note"] = (
+            "docs/MATHEMATICAL_APPENDIX.md section 7.7 applied with V from this "
+            "harness's own falsifier verdict. GATES NOTHING. `confidence` and "
+            "the HARD/SOFT class are not collected, so the asserted severity "
+            "stands in for W . confidence; collecting them is a schema change "
+            "and a replay-invalidating decision for the founder."
+        )
+        return spec
+
     def unverified_critical_count(self, current_round: Optional[int] = None) -> int:
         """A4 fail-safe signal: UNCONFIRMED candidates no tool has resolved.
 
@@ -9848,6 +9935,21 @@ def _check_hardened_convergence(
         # A diagnostic must not fell a run — the same contract the threshold
         # profile above states in its own except clause.
         telem["round_budget_status"] = f"ERROR: {type(exc).__name__}: {exc}"
+
+    # SEVERITY SPECIFICATION SHADOW — ADVISORY, GATES NOTHING (his ruling,
+    # 2026-10-12). It records what docs/MATHEMATICAL_APPENDIX.md section 7.7's
+    # own formula would say about every finding's severity, with the
+    # verification factor taken from this harness's OWN falsifier verdict. The
+    # gate continues to read the model-asserted float; this records the gap, so
+    # the next simulated run produces the non-distortion evidence his promotion
+    # decision needs rather than the decision resting on an archive replay.
+    # Measured across the archive: the share at or above the 0.7 cut falls from
+    # 41.6313% to 16.3129%, 835 of 3,298 crossing downward. See the reader's
+    # own docstring for the intervals and the producers.
+    try:
+        telem["severity_spec_shadow"] = registry.severity_spec_shadow()
+    except Exception as exc:                                 # noqa: BLE001
+        telem["severity_spec_shadow_status"] = f"ERROR: {type(exc).__name__}: {exc}"
 
     # HUMAN REVIEW TRIGGER — ADVISORY, HALTS NOTHING (item 12, 2026-10-11).
     # HIS CONDITION: a review *"should only be triggered if there is substantial

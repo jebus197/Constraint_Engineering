@@ -83,6 +83,18 @@ def callers_of(tree: ast.AST, callee: str, *, follow_delegation: bool = True) ->
 
     A wrapper is reported under the WRAPPER's name, because that is the name the
     rest of the runner refers to and the name a guard's expected-set records.
+
+    BARE-NAME CALLS ONLY, AND THAT IS A TRAP WORTH NAMING. The match is
+    `isinstance(c.func, ast.Name)`, so `obj.callee()` -- a METHOD call -- is
+    NOT found. A guard that asks this whether a method is wired gets an empty
+    set and reads it as "nothing calls it", which is a false negative of
+    exactly the shape this module exists to prevent. It happened on 2026-10-12
+    to the first version of
+    bench/tests/test_the_severity_specification_shadow_2026-10-12.py, whose
+    subject is a `FindingRegistry` method. Measured at the same time: all 3
+    other call sites in the suite target module-level functions, so no existing
+    guard is vacuous because of this. For a method, walk for `ast.Attribute`
+    with the matching `.attr` instead.
     """
     direct: set[str] = set()
     for fn in ast.walk(tree):
