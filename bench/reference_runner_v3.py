@@ -2571,23 +2571,41 @@ def _irreducible_queue_split(entries) -> Tuple[int, int]:
         # distinction `LADDER_UNSERVED_MIN_AGE_ROUNDS` draws for the report,
         # read off the record instead of off the round number, so this
         # function needs no new parameter and no caller moves.
-        # A LADDER-EMPTY DEFERRAL IS ALSO "NOTHING READ IT", and leaving it out
-        # left his ruling unsatisfied in the LIVE shape. Executed: 3
-        # never-served sub-criticals served to an empty ladder acquire
-        # `routing_deferred`, the severity skip then excluded them, and the
-        # queue stayed at 0 -- so the halt path his ruling routes them to could
-        # never be reached for a sub-critical. `routing_deferred` means no
-        # writer was available besides the finding's own source, which is an
-        # absence of reading, not a ruling. `irreducible_escalation` is the
-        # opposite case and stays skipped: the ladder was EXHAUSTED, every rung
-        # was tried, and that is instrument contact.
-        _no_reading = (not e.get("irreducible_escalation")
-                       and (e.get("routing_deferred")
-                            or (bool(e.get("routing_history"))
-                                and _routing_ladder_never_served(e))))
-        _never_read = _no_reading and not e.get("routing_deferred")
+        # AND IT MUST HAVE HAD A TURN. An earlier version counted ANY
+        # never-read finding, including a critical that had only just arrived
+        # and was awaiting its first verification --
+        # test_static_queue_closure.py::
+        # test_registry_irreducible_excluded_from_a4_blocker caught it, and the
+        # consequence was severe: 3 fresh criticals would put the queue over
+        # the bound and HALT a run that had barely started.
+        #
+        # THE DISTINCTION IS "PASSED OVER" versus "NOT YET REACHED", and the
+        # ladder's own record carries it. A non-empty `routing_history` whose
+        # every entry is a no-reading record means the ladder HAD its turn and
+        # came back with nothing, which is the state his ruling escalates. An
+        # empty history means no turn has been taken yet, which is ordinary
+        # pending verification and must stay silent.
+        #
+        # A LADDER-EMPTY DEFERRAL IS DELIBERATELY NOT INCLUDED, AND THAT IS A
+        # QUESTION FOR HIM RATHER THAN A SETTLED POINT. Executed 2026-10-12: a
+        # never-served sub-critical served to an EMPTY ladder (no writer
+        # available besides its own source) acquires `routing_deferred`, and
+        # the severity skip then excludes it -- so for a SUB-CRITICAL in that
+        # specific state the halt path his ruling routes to is still not
+        # reached. Including it was tried and REVERTED the same night: it broke
+        # the equivalence between this split and the reference rule held by
+        # test_the_alarm_names_which_kind_2026-10-02.py, on a 3rd successive
+        # correction to the same predicate, and widening a halt condition at
+        # midnight on a design already corrected twice is how a quiet defect
+        # gets committed. Whether "the ladder was empty" counts as "never read
+        # by a model" under his 2026-10-12 ruling is a semantic call that
+        # belongs to him; the measurement sits in the session note.
+        _never_read = (bool(e.get("routing_history"))
+                       and not e.get("irreducible_escalation")
+                       and not e.get("routing_deferred")
+                       and _routing_ladder_never_served(e))
         if ((e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD
-                and not _no_reading):
+                and not _never_read):
             continue
         # THE HALT BOUND NO LONGER SEES A KEY-ACCESS REFUSAL (founder ruling
         # 2026-10-02). Run 1b is the case this fixes: the run HALTED on a

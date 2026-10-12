@@ -180,8 +180,31 @@ def test_the_sentinel_set_is_tiny_and_contains_no_ruling():
 # what exercises it.
 # ---------------------------------------------------------------------------
 
-def test_an_empty_ladder_on_subcriticals_HALTS_with_a_bundle():
-    """3 never-read sub-criticals must reach the founder, not burn the run."""
+def test_an_empty_ladder_on_subcriticals_does_NOT_yet_halt_AND_WHY():
+    """THE ONE SUB-CASE OF HIS RULING THAT IS NOT YET SATISFIED, pinned so it
+    cannot be forgotten and cannot be closed by accident.
+
+    HIS RULING, 2026-10-12: a finding nothing ever read is "fed back into the
+    mechanics of the harness for resolution ... routing, the sweep mechanics
+    and the other machinery". Routing, the sweep and the halt machinery are all
+    wired for the SERVED-AND-NO-READING case. This case is different and is
+    measured here: a never-served SUB-CRITICAL served to an EMPTY ladder -- no
+    writer available besides its own source -- acquires `routing_deferred`, and
+    `_irreducible_queue_split` then excludes it by severity. So it keeps
+    blocking, it is named, and it reaches NO halt path: such a run would burn
+    to max_rounds.
+
+    INCLUDING IT WAS TRIED AND REVERTED THE SAME NIGHT. It broke the
+    equivalence between the split and the reference rule held by
+    test_the_alarm_names_which_kind_2026-10-02.py, on a 3rd successive
+    correction to the same predicate within the hour. Whether "the ladder was
+    empty" counts as "never read by a model" under his ruling is a semantic
+    call that belongs to him, and widening a HALT condition on a design already
+    corrected twice is how a quiet defect gets committed.
+
+    THIS TEST WILL FAIL WHEN THAT CHANGES, which is the point: it is the
+    reminder, not an endorsement of the current state.
+    """
     reg = rr.FindingRegistry()
     for i in range(3):
         reg.entries[f"C900{i}"] = dict(_entry(cid=f"C900{i}"), severity=0.45)
@@ -199,16 +222,17 @@ def test_an_empty_ladder_on_subcriticals_HALTS_with_a_bundle():
                           repo_root=str(Path(__file__).resolve().parents[2]))
 
     locked, deferred = rr._irreducible_queue_split(reg.entries)
-    assert locked + deferred == 3, (
-        f"the never-read sub-criticals did not reach the halt machinery: "
-        f"locked={locked} deferred={deferred}. A run carrying them would "
-        f"neither converge nor halt.")
-    alarm = rr.build_irreducible_queue_alarm(reg, rr.RunnerConfig(), 9)
-    assert alarm is not None, (
-        "the alarm stayed silent, so the founder is never handed the bundle")
-    assert alarm["count"] == 3 and alarm["bound"] == 2
+    assert locked + deferred == 0, (
+        f"the ladder-empty sub-critical case now reaches the halt queue "
+        f"(locked={locked} deferred={deferred}). If that was deliberate and "
+        f"ruled on, update this test and say so; if not, it is a widened halt "
+        f"condition nobody authorised.")
+    # What IS satisfied: they still block, and they are still named.
     assert reg.unverified_critical_count(9) == 3, (
-        "and they must still BLOCK -- fed back, not excused")
+        "fed back, not excused -- this half of his ruling must hold")
+    assert reg.ladder_unserved_findings(9) == [], (
+        "a deferred entry is not reported as never-served; the ladder did "
+        "take its turn and found no writer")
 
 
 def test_a_LADDER_EXHAUSTED_subcritical_still_does_NOT_trip_it():
