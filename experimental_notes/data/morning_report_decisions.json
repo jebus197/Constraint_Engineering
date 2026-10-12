@@ -113,5 +113,21 @@
   "why": "Your ruling is on record: build the closing sweep machinery into the schema rather than leave it as an afterthought (2026-10-04). Outstanding work.",
   "options": [],
   "evidence_line": "This is the forward half of the two defects above: if re-attachment clears blockers in-round, the valve asymmetry matters less in practice."
+ },
+ "task:B1": {
+  "no_ruling_needed": true,
+  "title": "B1 — an exp52 factor switch is not wired into dispatch",
+  "what": "A guard reports *\"omission not wired into dispatch\"*, so the omission the 2x2 factorial's divergence arm depends on is not reaching the dispatch path. The factorial's whole design is that its 2 factors vary independently, and a factor that never reaches dispatch makes that cell measure nothing.",
+  "why": "Filed as work, not as a question. Red on the 2026-10-12 board and PREDATING the 2026-10-11 compaction, so it did not arise from that session. It is here rather than fixed in haste because the first step is a discrimination, not a repair: the same guard-or-system question that resolved 3 other reds that day in the instrument's favour.",
+  "options": [],
+  "evidence_line": "`test_exp52_factor_switches.py::TestDivergencePassIsPrevented::test_omission_precedes_every_use_of_the_prompt`, failing on `assert None is not None`."
+ },
+ "task:B2": {
+  "no_ruling_needed": true,
+  "title": "B2 — a simulated-run report passes the content check and is caught only by the directory rule",
+  "what": "The live admission path admits 1 more report than the guard's own filter allows, at `assert 73 == 74`. Measured while diagnosing: the stage-6 calibration files inside the `study_run1b_2026-10-03` run directory are excluded by the per-DIRECTORY rule but NOT by the content inspection in `latent_control_audit._is_simulated`. So the directory rule is load-bearing and the content check has a gap.",
+  "why": "This is the PROVENANCE class, which is the one this project treats as most serious: a simulated result reaching an analysis that believes it is real is indistinguishable downstream from a fabricated one. Work, not a question -- and pre-existing, untouched since before the compaction.",
+  "options": [],
+  "evidence_line": "Close the gap at source by deciding whether `_is_simulated` should recognise those files by content, rather than widening the directory rule, which would hide the content gap instead of fixing it."
  }
 }

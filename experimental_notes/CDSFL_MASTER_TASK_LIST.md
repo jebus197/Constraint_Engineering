@@ -683,6 +683,16 @@ Written under CDSFL note standard v1.7 (26 August 2026).
 
 ---
 
+## B. BOARD — added 2026-10-12 15:10 BST, on his ruling that nothing be ditched or ignored
+
+**His instruction, 2026-10-12, verbatim:** *"no don't ditch tests, or ignore them until you are sure what they do, or if they are useful."* These 2 guards were red on the full board of 2026-10-12 (20 failed, 10847 passed). Both PREDATE the 2026-10-11 compaction and neither arose from that session's work, established by `git log` showing their subjects untouched since. They are filed here rather than fixed in haste, because forcing a board green is the quiet absorption he objected to in the same message.
+
+**B1. An exp52 factor switch is not wired into dispatch.** `test_exp52_factor_switches.py::TestDivergencePassIsPrevented::test_omission_precedes_every_use_of_the_prompt` fails with *"omission not wired into dispatch"* on an `assert None is not None`, so the omission the 2x2 factorial's divergence arm depends on is not reaching the dispatch path. The factorial's whole design is that its 2 factors vary independently; a factor that does not reach dispatch makes that cell measure nothing. **For DONE:** establish whether the switch is unwired or the guard's locator is stale -- the SAME discrimination that resolved 3 other reds that day in the instrument's favour -- then repair whichever it is.
+<!-- task: B1 | state: OPEN | status: PROPOSED | evidence:  -->
+
+**B2. A simulated-run report passes the content check and is caught only by the directory rule.** `test_simulated_runs_are_excluded_per_run_2026-09-29.py::TestTheLeakClassExistsAndIsClosed::test_no_admitted_report_comes_from_a_simulated_run` fails at `assert 73 == 74`: the live admission path admits 1 more report than the test's own filter allows. Measured while diagnosing: the `stage6_calibration_r0N.json` files inside `study_run1b_2026-10-03_20261003T100439Z` are excluded by the per-DIRECTORY rule but NOT by `latent_control_audit._is_simulated`'s content inspection, so the directory rule is load-bearing and the content check has a gap. This is the PROVENANCE class -- a simulated result reaching an analysis that believes it is real is indistinguishable downstream from a fabricated one. **For DONE:** identify the 1 differing report, decide whether `_is_simulated` should recognise it by content, and close the gap at source rather than widening the directory rule.
+<!-- task: B2 | state: OPEN | status: PROPOSED | evidence:  -->
+
 # SUPPLEMENTARY LIST — the 59 entries the work generated
 
 **Opened 2026-09-11 23:35 BST on the founder's instruction**, after he established that the canonical list was meant to be *"the canonical list of un-actioned founder decisions over the last several days. But nothing more and nothing less than this."*
