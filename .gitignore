@@ -82,3 +82,10 @@ bench/logs/*/panel_worktree_harvest/**/files/bench/logs/**
 # scratch written by falsifier execution during a run
 .cdsfl_tmp/
 .mutants/
+
+# Generated morning reports — DERIVED, and every source is versioned.
+# Committing one churns on every commit, because its own work-done ledger would
+# then list the commit that carries it. Rebuild with:
+#   python3 scripts/morning_report_build_2026-10-12.py --write
+# at the HEAD the file names in its own header, and it reproduces byte for byte.
+experimental_notes/Morning_Report_*_GENERATED.md

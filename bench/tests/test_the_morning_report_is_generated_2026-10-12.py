@@ -222,3 +222,42 @@ class TestTheTTSVersionIsSpeakable:
     def test_it_is_within_the_tts_line_limit(self):
         n = len(self._tts().splitlines())
         assert 60 <= n <= 400, f"{n} lines, outside the standard's 60-400 for TTS"
+
+
+class TestItIsReproducibleRatherThanCommitted:
+    """A generated report that churns on every commit is worse than no history.
+
+    FOUND BY P-PASS, 2026-10-12. Generating twice gave different bytes, and the diff
+    was a single line: the work-done ledger had grown by the commit that carried the
+    report. Not non-determinism -- SELF-REFERENCE, the same shape `docs/CURRENT_STATE.md`
+    carries and whose `sv` block documents it as "generated first and committed second,
+    so it cannot describe the commit that carries it".
+
+    The resolution keeps the property that matters. The file is NOT tracked, every
+    source it is built from IS, and it names the HEAD it was built at -- so
+    "reproducible" is checkable rather than asserted, which is what the next 2 tests do.
+    """
+
+    def test_the_report_names_the_head_it_was_built_at(self):
+        import re as _re
+        md = _run(expect=0).stdout
+        assert _re.search(r"at HEAD `[0-9a-f]{7,}`", md), (
+            "without the HEAD, 'rebuild it to reproduce this' is unverifiable")
+
+    def test_two_runs_at_the_same_head_are_byte_identical(self):
+        a = _run(expect=0).stdout
+        b = _run(expect=0).stdout
+        assert a == b, "the generator is not deterministic at a fixed HEAD"
+
+    def test_the_generated_report_is_not_tracked(self):
+        r = subprocess.run(["git", "ls-files",
+                            "experimental_notes/Morning_Report_2026-10-12_GENERATED.md"],
+                           cwd=str(REPO), capture_output=True, text=True)
+        assert not r.stdout.strip(), (
+            "the derived report is tracked, so every commit will churn it")
+
+    def test_the_ignore_rule_says_how_to_rebuild_it(self):
+        gi = (REPO / ".gitignore").read_text(encoding="utf-8")
+        assert "Morning_Report_*_GENERATED.md" in gi
+        assert "morning_report_build_2026-10-12.py --write" in gi, (
+            "an ignore rule that does not name the rebuild command strands the reader")
