@@ -64,12 +64,25 @@ def archived_runs() -> list[dict]:
     return out
 
 
+
+def _answer_help(doc, path, args):
+    """Answer `--help` AND refuse an unknown flag, through the shared helper.
+
+    WIRED 2026-10-12 after `test_operational_scripts` caught all of this date's
+    new scripts accepting `--this-flag-does-not-exist` with exit 0 -- in the
+    guard's own words, *"an unrecognised argument that reads as success is the
+    118-day no-op again"*. The hand-rolled block each carried answered `--help`
+    and ignored everything else. `scripts/_cli_help.answer_help` enforces both
+    in the one place every caller goes through.
+    """
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from _cli_help import answer_help
+    answer_help(doc, path, list(args))
+
+
 def main(argv: list[str]) -> int:
-    if len(argv) > 1 and argv[1] in ("-h", "--help"):
-        print(f"usage: {Path(argv[0]).name} [-h|--help]")
-        print()
-        print(__doc__)
-        return 0
+    _answer_help(__doc__, __file__, argv[1:])
 
     from round_budget import project_optimal_rounds
     import human_review_trigger as HRT

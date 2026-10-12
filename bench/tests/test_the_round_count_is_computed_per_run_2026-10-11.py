@@ -218,12 +218,42 @@ class TestGammaIsNotDemoted:
         assert R._estimate_gamma([2, 2, 2]) == 0.0      # the sentinel still means
         assert R._estimate_gamma([5]) == 0.0            # "not estimable"
 
-    def test_the_round_budget_reads_no_gate_threshold(self):
-        """It must not import or consult the gate's cutoffs, or a change to one
-        would silently move the other."""
+    def test_moving_the_gates_thresholds_does_not_move_the_projection(self):
+        """CONVERTED FROM A SOURCE-TEXT ASSERTION, 2026-10-12. The first form
+        grepped `round_budget.py` for the gate's threshold names. That asserts the
+        module describes itself consistently and cannot detect a producer and a
+        consumer that disagree -- `execute-do-not-grep`, and the same class of
+        blindness repaired in 3 guards the same night. This EXECUTES: it moves
+        every gate threshold to an absurd value and requires the projection to be
+        byte-identical, which is the property the grep was standing in for."""
+        import reference_runner_v3 as R
+        real = R._settled_novelty_series
+        try:
+            R._settled_novelty_series = (
+                lambda registry, rnd, **kw: (list(EARLY), list(EARLY)))
+            base = R._check_hardened_convergence(
+                round_idx=20, registry={}, cfg=R.RunnerConfig())[2]
+            moved = R._check_hardened_convergence(
+                round_idx=20, registry={},
+                cfg=R.RunnerConfig(gamma_alt_threshold=0.99,
+                                   gamma_hard_threshold=0.98,
+                                   gamma_soft_threshold=0.97))[2]
+        finally:
+            R._settled_novelty_series = real
+        keys = [k for k in base if k.startswith("round_budget")]
+        assert keys, "the projection did not reach the telemetry at all"
+        for k in keys:
+            assert base[k] == moved[k], (
+                f"{k} moved when a GATE threshold moved, so the projection is "
+                f"consulting the gate's cutoffs")
+
+    def test_it_never_calls_the_gates_estimator(self):
+        """The one genuinely structural half of the old grep, kept and narrowed:
+        `_estimate_gamma` is the gate's estimator on the gate's scale, and calling
+        it here is the 2.3882x-to-8.1068x error this module exists to avoid."""
+        import ast
         src = (pathlib.Path(__file__).resolve().parents[1] / "round_budget.py"
                ).read_text(encoding="utf-8")
-        body = "\n".join(l for l in src.splitlines() if not l.strip().startswith("#"))
-        for forbidden in ("gamma_alt_threshold", "gamma_hard_threshold",
-                          "gamma_soft_threshold", "_estimate_gamma("):
-            assert forbidden not in body, f"it consults {forbidden}"
+        called = {n.func.id for n in ast.walk(ast.parse(src))
+                  if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+        assert "_estimate_gamma" not in called

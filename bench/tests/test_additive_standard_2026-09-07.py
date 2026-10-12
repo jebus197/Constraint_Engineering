@@ -63,7 +63,17 @@ RETIRED = {
 #: `_verification_step` past its round guard. Measured by moving those 4 new test
 #: files out of the directory and re-running `_unreached_config_fields`: 22
 #: without them, 21 with, and the single difference is that field.
-UNREACHED_BASELINE = 21
+#: LOWERED 21 -> 20 on 2026-10-12, and it was ALREADY WRONG before that date.
+#: Replicating this module's own predicate against `7a8fd077` (the pre-session
+#: HEAD) gives 20 unreached fields against a pin of 21, so
+#: `test_the_baseline_is_honest` was red before the night's work and stayed red
+#: because nobody ran the full board. `round_budget_theta`, added the same night,
+#: is WIRED -- read by `_check_hardened_convergence` and exercised by
+#: `test_the_round_count_is_computed_per_run_2026-10-11` -- so it joined the 94
+#: fields without joining the backlog, which is why the measured count did not
+#: move. Lowering the pin is what `test_the_baseline_is_honest` asks for in its
+#: own words: "if the backlog shrank, lower the pin so the ratchet keeps biting".
+UNREACHED_BASELINE = 20
 
 
 def _unreached_config_fields() -> list[str]:

@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import os
 import subprocess
 import sys
 import time
@@ -39,8 +40,25 @@ SID = "zz-test-compaction-tz"
 
 
 def _run(hook: Path, ts: str, tmp_path: Path) -> str:
-    """Run the hook against a one-entry transcript and return its notice."""
-    (STATE / SID).unlink(missing_ok=True)
+    """Run the hook against a one-entry transcript and return its notice.
+
+    HOME IS ISOLATED, AND IT HAS TO BE SINCE 2026-10-11. The hook gained
+    `_auto_restore`, which RUNS the recovery and writes the LIVE
+    `~/.claude/.compaction_watch/last_recovery`. This helper unlinked only the
+    session marker, so every invocation acknowledged the NEXT test's compaction
+    through that shared file and the tests began defeating each other: measured
+    on the 2026-10-12 board, 3 of these failed, and isolating the marker by hand
+    moved WHICH 3 rather than fixing them. Each run also fired a real desktop
+    notification and executed a full recovery against the operator's own state.
+
+    With HOME pointed at a temporary directory every file the hook writes --
+    the session marker, `last_recovery`, `desktop_notified` -- lands there, so
+    the tests are independent and production state is untouched. The hook itself
+    is unchanged: writing live state is correct FOR A HOOK, and the defect was a
+    guard that invoked it without isolation.
+    """
+    home = tmp_path / "home"
+    (home / ".claude").mkdir(parents=True, exist_ok=True)
     t = tmp_path / "t.jsonl"
     t.write_text(json.dumps({"type": "user", "isCompactSummary": True,
                              "timestamp": ts}) + "\n", encoding="utf-8")
@@ -48,7 +66,8 @@ def _run(hook: Path, ts: str, tmp_path: Path) -> str:
         [sys.executable, str(hook)],
         input=json.dumps({"session_id": SID, "prompt": "hello",
                           "transcript_path": str(t)}),
-        capture_output=True, text=True, timeout=60,
+        capture_output=True, text=True, timeout=120,
+        env={**os.environ, "HOME": str(home)},
     )
     assert r.returncode == 0, "the hook must ALWAYS exit 0; blocking a prompt is worse"
     if not r.stdout.strip():

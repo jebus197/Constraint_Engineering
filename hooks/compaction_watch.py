@@ -279,21 +279,23 @@ def _desktop_notify(when_iso, ago):
         pass  # an alert must never break the hook that carries the notice
 
 
-def main():
-    try:
-        payload = json.load(sys.stdin)
-    except Exception:
-        payload = {}
-    sid = str(payload.get("session_id") or "").replace("/", "_")[:128]
-    prompt = str(payload.get("prompt") or "")
+def load_state_and_scan(tpath: pathlib.Path, sid: str):
+    """Shared by BOTH compaction hooks: load the marker, scan forward, return state.
 
-    tpath = payload.get("transcript_path") or find_transcript(sid)
-    if not tpath:
-        return
-    tpath = pathlib.Path(tpath)
-    if not tpath.is_file():
-        return
+    EXTRACTED 2026-10-12 so the Stop-event hook does not reimplement this. A second
+    copy of a detection predicate is how this project's predicates drift -- on
+    2026-10-11 an extraction re-implemented the founder's annotation test inline and
+    admitted 2 markdown headings from a saved web page as his words, hours after the
+    single-definition lesson was recorded. One scan, one definition.
 
+    THE OFFSET IS SHARED DELIBERATELY, and it is safe because `last_compaction` is
+    PERSISTED. Whichever hook scans first advances the offset past the compaction
+    line; the other initialises `newest` from the stored value and therefore inherits
+    the finding rather than missing it. Sharing the file is also what makes
+    "once per compaction" hold ACROSS both paths: `acknowledged` lives here.
+
+    Returns (state_file, state_dict, newest_compaction_iso_or_None).
+    """
     STATE.mkdir(parents=True, exist_ok=True)
     sf = STATE / (sid or "default")
     st = {"offset": 0, "last_compaction": None, "acknowledged": None}
@@ -307,7 +309,7 @@ def main():
     try:
         size = tpath.stat().st_size
     except Exception:
-        return
+        return sf, st, st.get("last_compaction")
     if st.get("offset", 0) > size:
         st["offset"] = 0
 
@@ -330,6 +332,25 @@ def main():
     except Exception:
         pass
     st["last_compaction"] = newest
+    return sf, st, newest
+
+
+def main():
+    try:
+        payload = json.load(sys.stdin)
+    except Exception:
+        payload = {}
+    sid = str(payload.get("session_id") or "").replace("/", "_")[:128]
+    prompt = str(payload.get("prompt") or "")
+
+    tpath = payload.get("transcript_path") or find_transcript(sid)
+    if not tpath:
+        return
+    tpath = pathlib.Path(tpath)
+    if not tpath.is_file():
+        return
+
+    sf, st, newest = load_state_and_scan(tpath, sid)
 
     # THE ALARM COULD BE DISARMED BY TALKING ABOUT IT (2026-09-08).
     #

@@ -152,12 +152,25 @@ def collect() -> tuple[dict, dict]:
     return dict(per_domain), dict(diag)
 
 
+
+def _answer_help(doc, path, args):
+    """Answer `--help` AND refuse an unknown flag, through the shared helper.
+
+    WIRED 2026-10-12 after `test_operational_scripts` caught all of this date's
+    new scripts accepting `--this-flag-does-not-exist` with exit 0 -- in the
+    guard's own words, *"an unrecognised argument that reads as success is the
+    118-day no-op again"*. The hand-rolled block each carried answered `--help`
+    and ignored everything else. `scripts/_cli_help.answer_help` enforces both
+    in the one place every caller goes through.
+    """
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from _cli_help import answer_help
+    answer_help(doc, path, list(args))
+
+
 def main(argv: list[str]) -> int:
-    if len(argv) > 1 and argv[1] in ("-h", "--help"):
-        print(f"usage: {Path(argv[0]).name} [-h|--help]")
-        print()
-        print(__doc__)
-        return 0
+    _answer_help(__doc__, __file__, argv[1:])
 
     per_domain, diag = collect()
     if not per_domain:
@@ -234,8 +247,17 @@ def main(argv: list[str]) -> int:
 
     print()
     print("DIAGNOSTICS — what was excluded, and why")
-    for k, v in sorted(diag.items(), key=lambda kv: -kv[1])[:10]:
+    # STATE THE REMAINDER. A list cut to 10 under a heading that reads as
+    # complete is a silent falsehood -- `test_operational_scripts` caught this
+    # exact line on 2026-10-12.
+    _ordered = sorted(diag.items(), key=lambda kv: -kv[1])
+    for k, v in _ordered[:10]:
         print(f"  {v:>7}  {k}")
+    if len(_ordered) > 10:
+        _rest = sum(v for _, v in _ordered[10:])
+        print(f"  ... and {len(_ordered) - 10} further exclusion categor"
+              f"{'y' if len(_ordered) - 10 == 1 else 'ies'} totalling "
+              f"{_rest} record(s), withheld from this listing only")
     print()
     print("BOUNDARY. `domain` is declared per RUN, so a finding inherits its run's")
     print("domain; no finding record carries one of its own. Domains differ in target")
