@@ -239,8 +239,16 @@ class TestTheClassificationIsPinned:
             mine = {r["read"] for r in surveyed["rows"] if r["leaf"] == leaf}
             assert mine == {bool(sites)}, (leaf, mine, sites)
 
-    def test_only_max_papers_per_round_is_unread_and_its_block_explains_it(
+    def test_only_max_papers_per_round_is_unread_and_its_own_note_explains_it(
             self, surveyed):
+        """ASSERTION REPLACED 2026-10-12 (joint round, parked item 2), sharper.
+        It pinned `why` to the enclosing block's `_note`, which documents WHY
+        retrieval is off but not that THIS KEY IS UNREAD -- a reader could
+        still take the key for the load-bearing switch. The arm files now
+        carry a sibling `_max_papers_per_round_note` stating the redundancy
+        (readers_of() = [], api_access=[] is the read control), and
+        explanation() prefers a sibling note over the block note, so `why`
+        must now be the sibling note and must name the redundancy."""
         rows = self._exp56(surveyed)
         unread = sorted((r["file"], r["path"]) for r in rows if not r["read"])
         assert unread == sorted(
@@ -248,8 +256,12 @@ class TestTheClassificationIsPinned:
             for a in ARMS), unread
         for r in rows:
             if not r["read"]:
-                note = _arm_data(r["file"].rsplit("/", 1)[1])["_ouroboros"]["_note"]
+                blk = _arm_data(r["file"].rsplit("/", 1)[1])["_ouroboros"]
+                note = blk["_max_papers_per_round_note"]
                 assert r["status"] == "DOCUMENTED" and r["why"] == note.strip()
+                assert "api_access" in r["why"] and "NO runner module" in r["why"], (
+                    "the dedicated note must state the redundancy, not restate "
+                    "the block's intent")
 
     def test_the_counts_the_script_prints(self, surveyed):
         """15 off-switches, 12 read. Pinned so a config edit cannot move the
@@ -268,11 +280,21 @@ class TestTheClassificationIsPinned:
             if r["status"] == "CITED":
                 assert r["cited"].startswith("_convergence_criteria.description: ")
 
-    def test_deleting_the_block_note_makes_that_row_unexplained(self, mod, surveyed):
-        """Control: the block-level lookup is what explains the row."""
+    def test_deleting_both_notes_makes_that_row_unexplained(self, mod, surveyed):
+        """CONTROL REPLACED 2026-10-12 (joint round, parked item 2), sharper
+        and non-vacuous in both directions. The old control deleted only the
+        block `_note` and expected UNEXPLAINED; with the dedicated sibling
+        note now on file that expectation is false -- and rightly so, the
+        sibling note is the sharper record. The replacement pins BOTH facts:
+        the sibling note alone keeps the row DOCUMENTED, and only deleting
+        both notes makes it UNEXPLAINED."""
         import copy
         data = copy.deepcopy(_arm_data(ARMS[0]))
         del data["_ouroboros"]["_note"]
+        rows = {r["path"]: r for r in mod.classify(data, "x", surveyed["read"])}
+        assert rows["_ouroboros.max_papers_per_round"]["status"] == "DOCUMENTED", (
+            "the dedicated sibling note must explain the row on its own")
+        del data["_ouroboros"]["_max_papers_per_round_note"]
         rows = {r["path"]: r for r in mod.classify(data, "x", surveyed["read"])}
         assert rows["_ouroboros.max_papers_per_round"]["status"] == "UNEXPLAINED"
         assert rows["merge_arbitration_enabled"]["status"] == "DOCUMENTED"

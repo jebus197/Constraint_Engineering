@@ -1,0 +1,67 @@
+# JOINT ROUND — clear_the_outstanding_2026-10-12
+
+You reviewed this independently and blind. You are now seeing the other seat's work and mine. This is the joint half: resolve what can be resolved, and preserve genuine disagreement as information rather than smoothing it to consensus. There are no votes in CDSFL — a finding is confirmed programmatically or by the founder, never by agreement between seats.
+
+Every fix you delivered was EXECUTED, cross-tested against the other seat's falsifier, and mutation-verified in both directions. 21 of 31 of your tests fail on the unfixed tree, so your falsifiers are genuine. What follows is what happened when they met each other.
+
+## WHAT WAS APPLIED, AND WHY
+
+**1b, the integrity gate.** Both of you fixed it. cc2 added a declared list of roots; fable probed each interpreter for its own roots and argued that as more robust. MEASURED over the 4 python3 interpreters present on this machine (`scripts/interpreter_allowlist_coverage_2026-10-12.py`):
+
+    baseline, no fix                                      1 of 4 fully covered
+    fable, probe of /usr/bin/python3 and PATH python3      2 of 4
+    cc2, declared roots                                    3 of 4
+    composed: fable's probe + full discovery + sysconfig    4 of 4
+
+So the prose argument was backwards: the probe covered FEWER interpreters than the declared list, because it probed only 2 of the 4 present. APPLIED: fable's probe mechanism, with discovery widened to Homebrew and every framework version by glob, and the probe extended to report `sysconfig.get_paths()` (which is what surfaces 3.9's purelib). cc2's declared paths are NOT applied — measured redundant under the composed form at 4 of 4, not judged redundant. Both of your interpreter suites pass (5 and 4), and the key-access suite is 41 green.
+
+My own instrument was wrong first: it counted roots that DO NOT EXIST on disk as coverage gaps, reading the composed fix as 1 of 4 when it is 4 of 4. A directory not on disk can never be read, so it can never be denied.
+
+**1c, and this is the part that matters.** fable SERVES a never-served finding up the ladder so a tool can decide it. cc2 opens a DOOR so a finding nothing ever touched stops blocking, with a paired reader so the exclusion is never silent. Each passes its own falsifier and fails the other's. Neither dominates.
+
+COMPOSED, THEY WERE STRICTLY WORSE THAN EITHER ALONE. Serving appends to `routing_history`, and an empty `routing_history` was one of the seven emptiness facts cc2's door required. So the serve CONSUMED THE DOOR'S OWN TRIGGER. Measured on a C0066-shaped entry served to a ladder returning UNRESOLVED:
+
+    before the serve:  A4=0, door releases and names C9001
+    after  the serve:  A4=1, door empty  -> blocks for ever, neither mechanism can release it
+
+Neither of you could see this. Each tested its own fix in isolation, and in isolation each is correct. Producer: `scripts/do_both_never_served_fixes_earn_their_place_2026-10-12.py`.
+
+THE REPAIR I APPLIED distinguishes SERVED-AND-NO-READING from SERVED-AND-RULED. `_routing_ladder_never_served` no longer requires an empty `routing_history`; instead every ladder record must have `resolved` false AND a verdict in a new `NO_READING_ROUTING_VERDICTS = frozenset({"", "UNRESOLVED"})`. Any other verdict string, known or not, is treated as a ruling and closes the door — so it FAILS CLOSED. cc2's `{"verdict": "UNTOOLABLE"}` case stays green, because UNTOOLABLE is a ruling by something that ran. Measured, all three outcomes:
+
+    ladder returned UNRESOLVED   A4=0  door=['C9001']  -> released AND named
+    ladder ruled UNTOOLABLE      A4=1  door=[]         -> still blocks
+    ladder RESOLVED it           A4=0  door=[]         -> cleared by the tool verdict
+
+z3 proves `door_open AND a_ruling_exists` is UNSAT, and that the door is still reachable (SAT), with SymPy agreeing. All 57 tests across both your suites and the 2 adjacent suites pass, and no test was weakened.
+
+**Also applied:** cc2's ledger-pollution fix to the output stamper (its 2 new tests fail without it), its key-test anchor change (both assertions byte-identical, anchor made specific — verified), and its additive A19 record correction.
+
+**A claim I made and WITHDREW.** I asserted that cc2's record patch deleted two of the founder's rulings. fable's diff carries the same two removals verbatim, and two blind seats cannot coincidentally delete the same blocks. The cause is the diff direction: both sandboxes were cut at 19:15, the live file was edited at 19:16:09, and a line present in the live file but absent from an older clone appears with a leading minus. The removals are my own additions. cc2 is owed that correction explicitly. Producer: `scripts/no_seat_deleted_his_rulings_2026-10-12.py`.
+
+## WHAT I AM ASKING YOU FOR
+
+Nothing you write is auto-applied; every delivery is tested and suggested to the founder.
+
+### OUTPUT SHAPE — return these fields, per item, by name
+
+- **verdict** — one of FIXED, PREMISE WRONG, RESOLVED ALREADY, NEEDS HIS RULING, or UNRUNNABLE HERE.
+- **fix** — write it INTO the sandbox repository tree at its real path. A fix left in prose or in scratch space is destroyed at teardown and is not delivered. Name every path you wrote.
+- **falsifier** — the command you EXECUTED and its actual output, pasted. Not a command you would run.
+- **reasoning** — why this is the simplest sufficient fix, and what you rejected.
+- **refutation** — what evidence would overturn your own answer.
+- **termination** — when this item is DONE, and when to stop pushing on it.
+- **disagreement** — where you expect the other seat to differ, and whether the difference is real or verbal.
+
+**J1. Attack the composition repair.** It is mine, it is new, and it is the least reviewed thing in the tree. Specifically: is there a FOURTH ladder outcome neither of the three above covers — a record shape where `resolved` is false and the verdict is empty but an instrument did in fact read the finding? Is `LADDER_UNSERVED_MIN_AGE_ROUNDS = 1` right, or does a finding emitted in a run's final round need longer? And cc2's own refutation condition still stands: if any field I do not test records instrument contact, the door is still too wide. Name it.
+
+**J2. The probe fails CLOSED, and that may be the wrong direction.** fable's discovery failure contributes no roots, so the gate stays as strict as before — which means the false refusals RETURN. cc2's declared list cannot fail that way. Is there a machine state (a probe timeout under load, a stripped PATH, a seat sandbox without the framework tree) where the composed form regresses to refusing correct falsifiers, and should a declared fallback therefore be kept beside the probe after all? This is the one place my measurement may have picked the wrong mechanism. Measure it, do not argue it.
+
+**J3. The severity gate: consolidate, then attack.** You independently reached the same conclusion — that the founder's provenance ruling and his "no votes" principle are BOTH satisfied by what is already in the tree, because `severity_is_proven` gates on a TOOL RECOMPUTATION of the model's stated R_k rather than on the raw float, and the worked proofs he ordered ARE the gate's mechanism. Two blind seats agreeing is replication, not proof. So: state the consolidated answer in one paragraph he can rule on, AND execute fable's own named attack on it — can `severity_is_proven`'s recomputation be gamed by a model stating self-consistent but WRONG inputs? If it can, the restored gate is a vote in proof's clothing and the consolidation is void. That is the decisive question.
+
+**J4. Write parked items 1 and 2.** Both of you named them mechanically fixable and neither wrote them. Item 1: the A17 verdict-tuple guard matches function names across the repository (`scripts/supersession_check.py`). Item 2: the A18 missing note for `max_papers_per_round` in the exp56 configs — and note fable measured its "no note" premise for `hardened_gate_enabled` as already stale, so check the premise before writing. cc2's coupling warning applies and must be honoured: `bench/tests/test_capabilities_disabled_by_config_2026-09-10.py:265` pins the CITED set to exactly 3 arms and :280 is a control expecting UNEXPLAINED; both must change in the same commit, and the cited-set assertion must be REPLACED with something non-vacuous rather than emptied. Item 18 is already done (`decision_required` in `scripts/blocker_triage.py`, a third flag rather than a third verdict, 27 tests green). Item 3 (A13/A14) is confirmed STALE as fable predicted: today's own run gave 2 distinct sandbox roots for 2 seats and `test_fresh_sandbox_per_attempt_2026-09-17` passes 11 tests.
+
+**J5. Two side-findings, reported by you and not fixed. Which is above threshold?** cc2: `tempfile.gettempdir()` has long been in the allowlist and a sandboxed clone lives under the temp dir, so `experimental_notes/` is reachable through that allowance in sandboxed runs (the protected set still holds, being digest-matched). fable: the v2 runner's `_capture_baseline` at `bench/reference_runner.py:2663` still carries the identical round-13 baseline-substrate defect, with zero `_gateable_source` occurrences in that module. For each: is missing it capable of causing real-world failure, and if so what is the simplest sufficient fix? Do not fix a legacy runner unprompted — say what you would do and what it would cost.
+
+## STANDARDS THAT BIND THIS ROUND
+
+Simplest sufficient fix. Additive: nothing disabled or removed, and every new flag, gate or entry point wired to a caller and executed by a committed test — an addition nothing reaches is not additive either. A measured rate travels with the script that produced it. Execute, do not grep: where both a producer and a consumer are live code, call them and compare outputs rather than asserting on source text. Every `--help` must be free. Never weaken a test to make it pass; if a pinned behaviour is measured wrong, REPLACE the assertion with a sharper one and say so. Simulated agents are labelled SIM only, never a vendor name. Cross-verify every computational claim with at least two tools, and give any proportion a confidence interval.

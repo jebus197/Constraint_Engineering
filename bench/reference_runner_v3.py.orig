@@ -2238,6 +2238,156 @@ ATTESTED_STATUSES = frozenset({"CORROBORATED"})
 # FindingRegistry (identical to Exp 36 — A1 windowing, A3 HIL escalation)
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: Ladder verdicts that mean THE LADDER PRODUCED NO READING, as distinct from
+#: an instrument that ran and ruled. `_apply_routing` writes "UNRESOLVED" when
+#: a rung returned nothing; an entry whose every ladder attempt is one of these
+#: has been SERVED and still has no reading, which is the founder's 2026-08-22
+#: equipment-failure class. Deliberately TINY and matched exactly: an
+#: unrecognised verdict is treated as a ruling, so a new verdict added
+#: elsewhere in the harness closes this door rather than silently widening it.
+NO_READING_ROUTING_VERDICTS = frozenset({"", "UNRESOLVED"})
+
+
+def _routing_ladder_never_served(e) -> bool:
+    """True when NO instrument ever touched this entry: no verdict, no routing
+    history, no falsifier code.
+
+    THERE IS NO FORMAL NAME FOR THIS STATE IN docs/GLOSSARY.md, so this
+    docstring describes the mechanism in full rather than coining a label.
+    "Routing ladder" is the glossary's own term; "never served" describes the
+    three emptiness facts below and is not new project vocabulary.
+
+    THE THREE FACTS, AND WHY THEY ARE FACTS AND NOT OPINIONS.
+      len(verdicts) == 0                   -- no seat ever reviewed it
+      len(routing_history) == 0            -- the ladder never dispatched it
+      falsifier_code is empty              -- no tool was ever written
+      falsifier_verdict is empty           -- the gate never ruled
+      routing_verdict_unreconciled is unset
+      not routing_deferred, not hil_escalated
+    Each is a mechanically checkable property of the entry; none is a number a
+    model asserted.
+
+    THE VERDICT CONJUNCTS WERE NOT IN THE FIRST DRAFT OF THIS PREDICATE AND A
+    COMMITTED TEST CAUGHT IT. With only the first three facts, an entry whose
+    falsifier_verdict is "UNTOOLABLE" -- no code, no verdicts, no routing
+    history -- was released by this door, and
+    test_key_access_advisory_2026-10-02.py::
+    test_without_the_flag_it_still_blocks_so_the_test_above_is_not_vacuous
+    failed with `assert 0 == 1`. It was RIGHT to fail: UNTOOLABLE is a RULING.
+    An instrument ran, read the finding and reported that no runnable tool can
+    be written for it. That is instrument contact, it is an ordinary unresolved
+    verdict, and it must STILL block. The lesson generalises -- "nothing was
+    written" is not the same fact as "nothing was tried" -- so every field that
+    records an instrument having ruled is a conjunct here, and the door is
+    deliberately the NARROWEST reading of untouched: it opens only when the
+    entry carries no trace of any instrument at all. That is precisely the substitution the 2026-09-06 reasoning
+    demanded when it attacked the raw severity float: "WHAT REPLACES IT:
+    whether a tool ran and resolved. That is a fact, not an opinion." An entry
+    in this state is not "pending verification" -- nothing is pending, because
+    nothing was ever started on it.
+
+    WHY IT MUST NOT FEED THE CONVERGENCE MACHINERY. Both release doors out of
+    `unverified_critical_count` are closed to such an entry BY CONSTRUCTION:
+
+      * the `exhausted` door (single stamp site in `_update_finding_statuses`)
+        requires `severity >= 0.7` AND `has_reviews = len(verdicts) > 0`. A
+        sub-critical with zero verdicts fails BOTH conjuncts, so widening the
+        severity term alone does NOT open this door -- measured, not assumed.
+      * the `severity_is_proven` door requires an R_k that reproduces from the
+        entry's own stated inputs. With no corroboration block to check,
+        `severity_proof_status` returns SKIP, so the entry can never be proven
+        sub-critical.
+
+    The entry therefore blocks the zero-critical streak for the LIFE of the run
+    and the run reaches `max_rounds` instead of converging. Per the core
+    directives' section 3, budget exhaustion is NOT convergence -- it is an
+    operational stop carrying residual falsification debt. Blocking forever
+    buys no verification; it only converts a reportable gap into an
+    unexplained non-convergence.
+
+    THIS IS THE FOUNDER'S OWN 2026-10-02 DISCIPLINE APPLIED TO A SECOND CAUSE:
+    exclude from the gate, NAME IT IN THE REPORT. It is deliberately NOT a
+    closure -- `ladder_unserved_findings()` is the paired reader and is logged
+    every round it is non-empty, so a convergence reached over one of these is
+    never silent. The claim remains UNTESTED and the log line says so.
+
+    SCOPE, STATED PLAINLY. This is a REPORTING fix, not a verification fix. It
+    makes a blocked run converge honestly; it does NOT make the finding tested.
+    The deeper repair -- making the routing ladder serve every entry that
+    reaches UNCONFIRMED, so this predicate is empty by construction -- is NOT
+    attempted here and remains open for a founder ruling.
+    """
+    if (e.get("verdicts") or []):
+        return False
+    # SERVED BUT NOTHING RESOLVED IS STILL AN ABSENCE OF READING, and this
+    # conjunct was `if routing_history: return False` until 2026-10-12.
+    #
+    # THE CROSS-MODULE DEFECT THAT CHANGED IT, MEASURED. The two free seats of
+    # 2026-10-12 fixed this blocker independently: one SERVES a never-served
+    # entry up the ladder (`_apply_routing`), the other opens this door. Each
+    # passes its own falsifier. COMPOSED, they were strictly worse than either
+    # alone, because serving an entry APPENDS to `routing_history` and an
+    # empty `routing_history` was one of the facts this door required. With
+    # both fixes in, a C0066-shaped entry served to a ladder that returned
+    # UNRESOLVED went from (A4=0, door releases it) to (A4=1, door empty) --
+    # the serve consumed the door's own trigger and the entry blocked for
+    # ever again, with neither mechanism able to release it. Producer:
+    # scripts/do_both_never_served_fixes_earn_their_place_2026-10-12.py.
+    #
+    # THE DISTINCTION IS MECHANICAL, NOT A JUDGEMENT. Every ladder attempt
+    # records `resolved`. An attempt that resolved nothing is the founder's own
+    # 2026-08-22 equipment-failure class -- "the instrument produced no
+    # reading" -- and a ruling of any kind still closes the door, because
+    # `verdicts`, `falsifier_code`, `falsifier_verdict` and
+    # `routing_verdict_unreconciled` remain conjuncts below. So an instrument
+    # that RAN AND RULED (UNTOOLABLE, ERROR, INTEGRITY_VIOLATION) still blocks;
+    # only one that ran and read nothing opens this door.
+    # WHAT COUNTS AS "NO READING" IS AN EXPLICIT SENTINEL SET, AND IT FAILS
+    # CLOSED. A first version of this conjunct keyed on `resolved` alone and
+    # was REFUTED by this module's own committed test: a ladder record of
+    # {"verdict": "UNTOOLABLE"} carries resolved=False, yet UNTOOLABLE is a
+    # RULING -- an instrument ran, read the finding and reported that no
+    # runnable tool can be written for it. Keying on `resolved` would have
+    # released it. So only a record that resolved nothing AND whose verdict is
+    # one of the no-reading sentinels leaves this door open; ANY other verdict
+    # string, known or not, is treated as a ruling and closes it.
+    for _r in (e.get("routing_history") or []):
+        if not isinstance(_r, dict):
+            return False
+        if bool(_r.get("resolved")):
+            return False
+        if (_r.get("verdict") or "").strip().upper() \
+                not in NO_READING_ROUTING_VERDICTS:
+            return False
+    if (e.get("falsifier_code") or "").strip():
+        return False
+    # A VERDICT IS INSTRUMENT CONTACT even when no code survives beside it:
+    # UNTOOLABLE, ERROR and INTEGRITY_VIOLATION are all rulings by something
+    # that ran. See the docstring for the committed test that proved this.
+    if (e.get("falsifier_verdict") or "").strip():
+        return False
+    if (e.get("routing_verdict_unreconciled") or "").strip():
+        return False
+    if e.get("routing_deferred") or e.get("hil_escalated"):
+        return False
+    # `error_routed` IS INSTRUMENT CONTACT THE CONJUNCTS ABOVE CANNOT SEE
+    # (joint round J1, 2026-10-12, answering the standing refutation condition
+    # "if any field not tested here records instrument contact, the door is
+    # too wide"). It is stamped only when a rung GENUINELY REACHED a model.
+    # Two ways it can stand beside an empty routing_history: (a) the telemetry
+    # append at the single routing_history write site is wrapped in
+    # `except Exception` ("telemetry must not fell a run"), so a failed write
+    # erases the only record while this flag survives; (b) every archived
+    # registry written before routing_history existed (2026-09-02): 68
+    # archived entries carry error_routed=True with no routing_history, 0 of
+    # which this door releases today only because all 68 happen to carry
+    # another conjunct (measured over every runner_state.json in bench/logs
+    # and bench/logs_quarantine, 2026-10-12). One line, fails CLOSED.
+    if e.get("error_routed"):
+        return False
+    return True
+
+
 def _integrity_violation_excluded(e) -> bool:
     """True when a key-access refusal must not feed the convergence machinery.
 
@@ -2822,8 +2972,22 @@ class FindingRegistry:
             count += 1
         return count
 
-    def unverified_critical_count(self) -> int:
+    def unverified_critical_count(self, current_round: Optional[int] = None) -> int:
         """A4 fail-safe signal: UNCONFIRMED candidates no tool has resolved.
+
+        THE SEVERITY RULE IS NOT `severity >= CRITICAL_SEVERITY_THRESHOLD`, and
+        this paragraph replaces a claim that said it was -- stale from
+        2026-09-06, when the raw-float gate was removed, until 2026-10-12, and
+        found independently by BOTH free seats of the 2026-10-12 panel. The live
+        rule is the INVERSE and is conditional: a sub-critical entry is released
+        only when its severity is PROVEN sub-critical (`severity_is_proven`), by
+        recomputation of its stated R_k from its own stated inputs. An unproven
+        severity, at any value, buys no release -- which is why this is a
+        measurement and not a model's vote.
+
+        `current_round` is read ONLY by the never-served door below. Left at
+        None the door is disabled and this reader is byte-identical in
+        behaviour to every call site that predates it.
 
         Pure reader — no state mutation. Counts entries with status
         UNCONFIRMED whose falsifier has not resolved (no falsifier_code, or
@@ -2944,6 +3108,67 @@ class FindingRegistry:
             # scripts/integrity_exclusion_figures_2026-10-02.py.
             if _integrity_violation_excluded(e):
                 continue
+            # THE ROUTING LADDER NEVER SERVED THIS ENTRY (2026-10-12, free panel).
+            #
+            # MEASURED ON THE LIVE REGISTRY, NOT ARGUED: on
+            # bench/logs/study_run1b_2026-10-03_20261003T100439Z/runner_state.json
+            # (75 entries) this counter returned 2, and BOTH survivors -- C0066 at
+            # severity 0.45 and C0073 at 0.50 -- carried 0 verdicts, 0
+            # routing_history entries, 0 characters of falsifier_code and
+            # severity_proof_status == SKIP. Nothing had ever been dispatched to
+            # them. Leave-one-out: excluding the pair takes this counter from 2 to
+            # 0, which is the whole of what stopped that run converging.
+            #
+            # IT IS NOT THE SEVERITY GATE THAT IS MISSING. The severity test was
+            # restored below on 2026-10-06 and it CANNOT release these: it requires
+            # `severity_is_proven`, and with no corroboration block to recompute
+            # `severity_proof_status` returns SKIP for all of them. Nor does the
+            # `exhausted` valve reach them -- it requires `len(verdicts) > 0`, so
+            # widening its `severity >= 0.7` term releases nothing here. Both of
+            # those are asserted directly in
+            # bench/tests/test_an_unserved_finding_cannot_block_for_ever_2026-10-12.py
+            # so that a later edit to either door cannot silently reopen this hole.
+            #
+            # EXCLUDED, NOT CLOSED. `ladder_unserved_findings()` names every entry
+            # this door drops and is logged every round it is non-empty, on the
+            # same excluded-implies-reported discipline as the 2026-10-02
+            # key-access ruling directly above.
+            # AGE-LOCKED, AND THE LOCK IS WHAT MAKES THIS CORRECT RATHER THAN
+            # MERELY CONVENIENT. A COMMITTED TEST CAUGHT THE UNLOCKED VERSION:
+            # test_severity_calibration.py::TestEndToEndUnblocksConvergence::
+            # test_an_already_subcritical_unproven_finding_still_blocks builds a
+            # sub-critical UNPROVEN entry at round 0 with no instrument trace and
+            # asserts it STILL BLOCKS. Unlocked, this door released it and that
+            # test failed. It was RIGHT to fail: a finding that has only just
+            # arrived has not been passed over by the ladder, it simply has not
+            # been reached yet, and releasing it would be a false convergence.
+            #
+            # `current_round is None` DISABLES THE DOOR, so every existing caller
+            # that does not pass a round keeps its previous behaviour exactly.
+            # Only the convergence-gate call site passes one.
+            #
+            # THE THRESHOLD IS 1 ROUND, NOT `exhausted_round_threshold`. They
+            # answer different questions. `exhausted_round_threshold` (default 8)
+            # means "the ladder tried repeatedly and could not resolve it". This
+            # means "a full round passed and the ladder never dispatched it at
+            # all", for which one completed round is the natural bound: the
+            # ladder had its turn and did not take it.
+            #
+            # WHAT THIS MEASURES ON THE LIVE REGISTRY, AND IT IS NOT 0. On
+            # study_run1b at round 7: C0066 arrived at round 5 (age 2) and IS
+            # released; C0073 arrived at round 7 (age 0) and is NOT. A4 goes 2 ->
+            # 1, so that run STILL does not converge, and that is the honest
+            # answer rather than the convenient one. C0073 was emitted in the
+            # final round and nothing ever examined it; a gate that converged
+            # over it would be reporting a clean run over an unread finding. The
+            # remedy for C0073 is one more round (or a round budget that accounts
+            # for findings emitted in the last round), NOT a wider gate.
+            if (current_round is not None
+                    and _routing_ladder_never_served(e)
+                    and (int(current_round)
+                         - int(e.get("last_status_change_round") or 0))
+                    >= LADDER_UNSERVED_MIN_AGE_ROUNDS):
+                continue
             # ───────────────────────────────────────────────────────────────
             # THE SEVERITY TEST, RESTORED 2026-10-06 ON THE FOUNDER'S RULING.
             #
@@ -2987,6 +3212,46 @@ class FindingRegistry:
             if (not _fc) or _fv not in _FALSIFIER_RESOLVED_VERDICTS:
                 count += 1
         return count
+
+    def ladder_unserved_findings(self, current_round: Optional[int] = None) -> List[str]:
+        """Canonical ids of non-terminal entries the routing ladder never served.
+
+        THE PAIRED RECORD for the `_routing_ladder_never_served` door in
+        `unverified_critical_count`, on exactly the discipline the 2026-10-02
+        key-access ruling established for its own exclusion: whatever the
+        counter drops, this names. An empty list means there was nothing to
+        say, which is the only case in which saying nothing is correct.
+
+        IT KEYS ON THE SAME PREDICATE AS THE EXCLUSION, never on a flag, so
+        excluded-implies-reported holds by construction rather than by two
+        scopes a later edit can drift apart. That is the mistake the sibling
+        reader below records having made once already.
+
+        A SECOND READER AND NOT A WIDENING OF `integrity_refused_criticals`,
+        deliberately, and this is the one place the simplest-sufficient rule
+        points AWAY from reuse. That reader's scope is one CAUSE -- a key-access
+        refusal -- and its own name is quoted verbatim in the
+        `integrity_refused_reason` string written onto entries and into every
+        archived registry. Folding a second, unrelated cause into it would make
+        both report keys ambiguous about WHY an entry was excused, which is the
+        single thing a human reading the advisory needs. Two causes, two lines,
+        one predicate each.
+        """
+        _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+        return sorted(
+            cid for cid, e in self.entries.items()
+            if _routing_ladder_never_served(e)
+            and e.get("status") not in _TERMINAL
+            and e.get("status") == "UNCONFIRMED"
+            # SAME AGE LOCK AS THE DOOR, so excluded-implies-reported holds by
+            # construction. Without this the reader would name entries the
+            # counter still blocks on, which would read as "excused" when they
+            # were not.
+            and (current_round is None
+                 or (int(current_round)
+                     - int(e.get("last_status_change_round") or 0))
+                 >= LADDER_UNSERVED_MIN_AGE_ROUNDS)
+        )
 
     def integrity_refused_criticals(self) -> List[str]:
         """Canonical ids of non-terminal criticals excused by a key-access refusal.
@@ -7112,13 +7377,19 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
         # keeps blocking, which is the honest state -- tools decide, and a
         # tool was at least asked. Test:
         # bench/tests/test_never_served_findings_enter_the_ladder_2026-10-12.py.
+        # ONE PREDICATE, TWO READERS (joint round J1, 2026-10-12): the serve
+        # admission now keys on the SAME predicate as the door, so the two
+        # cannot drift -- which is this module's own excluded-implies-reported
+        # discipline. Behavioural delta, measured: a routing_history whose
+        # every record is no-reading (the reclassified transport-dead serve
+        # above) no longer consumes the one admission, so the ladder retries
+        # on a later round exactly as the transport-dead guard's own comment
+        # promises ("must not burn the attempt"). A serve that reached a
+        # model sets error_routed, which the predicate now tests, so the
+        # one-attempt guard is unchanged where a model answered.
         _never_served = (
             e.get("status") == "UNCONFIRMED"
-            and not (e.get("falsifier_code") or "").strip()
-            and not (e.get("falsifier_verdict") or "").strip()
-            and not e.get("verdicts")
-            and not e.get("routing_history")
-            and not e.get("error_routed"))
+            and _routing_ladder_never_served(e))
         if not e.get("escalated") and not _never_served:
             continue
         if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
@@ -7341,6 +7612,35 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
                          f"besides its own source; deferred rather than retried, "
                          f"so it still counts toward the irreducible queue")
                     continue
+                # A DEAD TRANSPORT IS NOT A RULING (joint round J1,
+                # 2026-10-12). The record appended above carries the verdict
+                # the ladder RETURNED, and when no model was reached that
+                # verdict is "ERROR" -- a string the never-served door reads
+                # as a ruling, which is false: nothing read the finding.
+                # Measured end-to-end by
+                # scripts/transport_dead_serve_blocks_for_ever_2026-10-12.py:
+                # a C0066-shaped entry served once on a dead transport was
+                # BLOCKED FOR EVER -- door closed by the ERROR record, serve
+                # admission consumed by the non-empty routing_history -- the
+                # exact composed defect of the 2026-10-12 repair, one failure
+                # class over. Reclassify the record to the documented
+                # no-reading sentinel (this is the write the
+                # NO_READING_ROUTING_VERDICTS comment already described) and
+                # say directly that no rung was reached. ONLY the
+                # ERROR-with-zero-models-reached shape is reclassified: a
+                # verdict a decider actually returned (UNTOOLABLE, REFUTED,
+                # INTEGRITY_VIOLATION...) requires falsifier code, which
+                # requires a reached model, so it never coincides with this
+                # branch in production -- and a mocked serve asserting such a
+                # verdict keeps its ruling semantics, per
+                # test_the_serve_does_not_consume_the_door_2026-10-12.py.
+                _rh = e.get("routing_history") or []
+                if (_rh and isinstance(_rh[-1], dict)
+                        and not bool(_rh[-1].get("resolved"))
+                        and str(_rh[-1].get("verdict") or "").strip().upper()
+                        == "ERROR"):
+                    _rh[-1]["verdict"] = "UNRESOLVED"
+                    _rh[-1]["rungs_reached"] = 0
                 continue  # transport-dead: no model reached; retry a later round
         if result.verdict == "DUPLICATE":
             # NO VOTING (founder ruling 2026-08-19). routing_enabled is unset in
@@ -8496,6 +8796,14 @@ def _check_gamma_alt_convergence(
 # `0.7` critical-severity literals remain a tracked migration item; the
 # hardened gate uses this named constant.
 CRITICAL_SEVERITY_THRESHOLD = 0.7
+
+#: Completed rounds an UNCONFIRMED entry must have waited, with NO instrument
+#: having touched it, before `unverified_critical_count` stops blocking on it.
+#: 1 round = the routing ladder had a full turn and did not dispatch it. This is
+#: deliberately NOT `exhausted_round_threshold` (default 8): that one means "the
+#: ladder tried and failed repeatedly", which is a different fact about a
+#: different entry. See `_routing_ladder_never_served`.
+LADDER_UNSERVED_MIN_AGE_ROUNDS = 1
 
 # THE PRE-REGISTERED THRESHOLD PROFILE (F6), built 2026-09-01.
 #
@@ -18031,7 +18339,24 @@ def run_experiment(
                  f"falsifier: {_integrity_refused}. Reporting only (founder "
                  f"ruling 2026-10-02) -- the claims remain UNTESTED and this "
                  f"run's convergence must be read with that stated.")
-        _unresolved_crit = registry.unverified_critical_count()
+        # THE PAIRED RECORD for the `_routing_ladder_never_served` door
+        # (2026-10-12). Same discipline as the key-access advisory above:
+        # the A4 blocker drops these, so this is the ONLY place a reader
+        # learns of them. Logged every round it is non-empty, so a
+        # convergence reached over one of these is reported and never
+        # silent. ZERO weight on any gate: nothing downstream branches on
+        # `_ladder_unserved`.
+        _ladder_unserved = registry.ladder_unserved_findings(round_idx)
+        if _ladder_unserved:
+            _log(f"  UNSERVED-FINDING ADVISORY: {len(_ladder_unserved)} "
+                 f"UNCONFIRMED finding(s) excused from the A4 blocker because "
+                 f"the routing ladder never served them -- 0 verdicts, 0 "
+                 f"routing-history entries and no falsifier code, so no "
+                 f"instrument ever touched them: {_ladder_unserved}. Reporting "
+                 f"only -- the claims remain UNTESTED and this run's "
+                 f"convergence must be read with that stated. A non-empty list "
+                 f"here is an INSTRUMENT defect, not a document defect.")
+        _unresolved_crit = registry.unverified_critical_count(round_idx)
         if _unresolved_crit > 0:
             _log(f"  A4: {_unresolved_crit} unverified critical-severity "
                  f"candidate(s) (UNCONFIRMED, no resolved falsifier) pending — "

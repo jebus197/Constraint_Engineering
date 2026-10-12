@@ -1,0 +1,2105 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-12 20:53:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w_9e9xx3/repo/.cdsfl_deny_canonical_writes.sb	2026-10-12 20:23:02
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/falsifier_verify.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/falsifier_verify.py	2026-10-12 19:46:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w_9e9xx3/repo/bench/falsifier_verify.py	2026-10-12 20:37:01
+@@ -697,6 +697,39 @@
+ #: Cache for :func:`_secondary_interpreter_roots` — probing an interpreter is a
+ #: subprocess call, and the observer is rendered once per falsifier run.
+ _SECONDARY_ROOTS_CACHE: list[str] | None = None
++
++#: Completed discovery attempts, and the interpreters that did not answer on
++#: the most recent one. See :func:`_secondary_interpreter_roots` for why an
++#: INCOMPLETE discovery must not be cached, and
++#: :func:`secondary_interpreter_discovery_incomplete` for the paired report.
++_SECONDARY_ROOTS_ATTEMPTS: int = 0
++_SECONDARY_ROOTS_UNPROBEABLE: list[str] = []
++
++#: How many times discovery is retried before an incomplete result is accepted
++#: and cached. A CHOSEN BOUND, NOT A MEASURED OPTIMUM, and stated as such: the
++#: retry exists to survive a TRANSIENT failure, so with independent attempts at
++#: per-attempt failure probability q the chance of permanent degradation falls
++#: from q to q**3. The cost ceiling is 3 discovery passes per process instead
++#: of 1, reached only when an interpreter is present on disk and never answers;
++#: in the ordinary case every candidate answers on the first pass and the
++#: behaviour is unchanged.
++SECONDARY_ROOTS_DISCOVERY_ATTEMPTS: int = 3
++
++
++def secondary_interpreter_discovery_incomplete() -> list[str]:
++    """Interpreters present on disk that did not answer the roots probe.
++
++    THE PAIRED REPORT for the fail-closed branch of
++    :func:`_secondary_interpreter_roots`, on the same excluded-implies-reported
++    discipline the runner's 2026-10-02 key-access ruling established. An
++    interpreter absent from this list contributed its roots; one named here did
++    not, so any INTEGRITY_VIOLATION raised against a falsifier spawning it is a
++    FALSE REFUSAL and not a verdict. An empty list means there was nothing to
++    say, which is the only case in which saying nothing is correct.
++    """
++    if _SECONDARY_ROOTS_CACHE is None:
++        _secondary_interpreter_roots()
++    return list(_SECONDARY_ROOTS_UNPROBEABLE)
+ 
+ 
+ def _secondary_interpreter_roots() -> list[str]:
+@@ -723,15 +756,54 @@
+     category. The deny regions stay denied for everything else, the protected
+     scoring-key digests are checked exactly as before, and the refuse-on-
+     denial behaviour is UNCHANGED: no scoring key lives inside an
+-    interpreter's stdlib. Discovery is limited to ``/usr/bin/python3`` (the
+-    macOS system interpreter the defect class names) and whatever ``python3``
+-    resolves to on PATH; an interpreter that fails to answer within 10s
+-    contributes nothing and the gate stays exactly as strict as before.
++    interpreter's stdlib.
++
++    WHAT DISCOVERY ACTUALLY COVERS. The sentence replaced here said discovery
++    was limited to two interpreters, and it was stale the moment the glob below
++    was added. It covers: the macOS system interpreter the defect class names,
++    whatever ``python3`` resolves to on PATH, the two Homebrew prefixes, and
++    every framework or Cellar interpreter installed on this machine found by
++    glob -- so a new minor release needs no edit. Measured over the 4
++    ``python3`` interpreters present on this machine, 4 of 4 are covered; a
++    declared list of roots covered 3 of 4 and a probe of only the first two
++    covered 2 of 4. Producer:
++    scripts/interpreter_allowlist_coverage_2026-10-12.py.
++
++    AN INCOMPLETE DISCOVERY IS NOT CACHED, AND THAT IS THE WHOLE OF THE
++    2026-10-12 JOINT-ROUND REPAIR. Each probe is a ``subprocess.run`` with a
++    10s timeout and this function memoises into a module-level cache populated
++    once per process, so a SINGLE transient timeout -- one interpreter slow to
++    start under load -- used to cache a partial root list for the LIFE of the
++    runner process. Every later falsifier spawning that interpreter was then
++    refused on its ordinary import bootstrap, long after the machine recovered.
++    EXECUTED 2026-10-12: one simulated ``TimeoutExpired`` on
++    ``/usr/bin/python3`` dropped the root count from 22 to 15 and took a
++    CORRECT falsifier spawning it from CONFIRMED to INTEGRITY_VIOLATION on 13
++    bootstrap reads -- reinstating exactly the false-refusal class this
++    function exists to remove. Producer:
++    scripts/secondary_root_discovery_failure_is_not_permanent_2026-10-12.py.
++
++    So the cache is written only when EVERY candidate answered. An incomplete
++    pass returns the roots it did find and leaves the cache unset, which makes
++    a transient failure transient; after
++    ``SECONDARY_ROOTS_DISCOVERY_ATTEMPTS`` incomplete passes the partial result
++    is accepted and cached, and the interpreters that never answered are named
++    by :func:`secondary_interpreter_discovery_incomplete`, so a false refusal
++    is never silent.
++
++    A DECLARED FALLBACK LIST IS DELIBERATELY NOT ADDED BESIDE THE PROBE. It was
++    measured at 3 of 4 against the probe's 4 of 4, so it cannot improve the
++    covered set; in the common path nothing would reach it; and for an
++    interpreter that cannot be probed, its roots would be a guess at a layout
++    this function otherwise reads from the interpreter itself. PERMANENCE was
++    the defect, not the mechanism.
+     """
+-    global _SECONDARY_ROOTS_CACHE
++    global _SECONDARY_ROOTS_CACHE, _SECONDARY_ROOTS_ATTEMPTS
++    global _SECONDARY_ROOTS_UNPROBEABLE
+     if _SECONDARY_ROOTS_CACHE is not None:
+         return list(_SECONDARY_ROOTS_CACHE)
+     roots: list[str] = []
++    unprobeable: list[str] = []
+     harness = os.path.realpath(sys.executable)
+     probe = (
+         "import sys, site, json\n"
+@@ -776,6 +848,7 @@
+             proc = subprocess.run(
+                 [cand, "-c", probe], capture_output=True, text=True, timeout=10)
+             if proc.returncode != 0 or not proc.stdout.strip():
++                unprobeable.append(cand)
+                 continue
+             import json as _json
+             reported = _json.loads(proc.stdout.strip().splitlines()[-1])
+@@ -788,8 +861,27 @@
+                          if isinstance(r, str) and r.endswith(".zip")
+                          and os.path.exists(r))
+         except (OSError, ValueError, subprocess.SubprocessError):
++            # A TIMEOUT IS THE TRANSIENT CASE AND IS WHAT MADE THIS PERMANENT.
++            # Recording the candidate here is what lets the pass be judged
++            # incomplete below instead of cached as though it were whole.
++            unprobeable.append(cand)
+             continue
+-    _SECONDARY_ROOTS_CACHE = sorted(set(roots))
++    _SECONDARY_ROOTS_UNPROBEABLE = sorted(set(unprobeable))
++    _SECONDARY_ROOTS_ATTEMPTS += 1
++    found = sorted(set(roots))
++    if (unprobeable
++            and _SECONDARY_ROOTS_ATTEMPTS < SECONDARY_ROOTS_DISCOVERY_ATTEMPTS):
++        # NOT CACHED. The next falsifier retries discovery, so one slow start
++        # under load degrades one verification instead of every later one.
++        return found
++    if unprobeable:
++        print("falsifier_verify: interpreter root discovery INCOMPLETE after "
++              f"{_SECONDARY_ROOTS_ATTEMPTS} attempts; these interpreters never "
++              "answered, so an INTEGRITY_VIOLATION against a falsifier that "
++              "spawns one of them is a FALSE REFUSAL, not a verdict: "
++              + ", ".join(_SECONDARY_ROOTS_UNPROBEABLE),
++              file=sys.stderr, flush=True)
++    _SECONDARY_ROOTS_CACHE = found
+     return list(_SECONDARY_ROOTS_CACHE)
+ 
+ 
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-12 20:07:15
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w_9e9xx3/repo/bench/reference_runner_v3.py	2026-10-12 20:33:57
+@@ -2247,7 +2247,43 @@
+ #: elsewhere in the harness closes this door rather than silently widening it.
+ NO_READING_ROUTING_VERDICTS = frozenset({"", "UNRESOLVED"})
+ 
++#: R_k-proof statuses that mean THE PROOF CHECKER PRODUCED NO READING, on
++#: exactly the sentinel-set discipline of `NO_READING_ROUTING_VERDICTS` above.
++#: `severity_proof_status` returns ABSENT when no proof was ever recorded and
++#: SKIP when there was no corroboration block to recompute. PASS, WARN and FAIL
++#: are all READINGS -- the checker ran on this entry's own stated inputs and
++#: reported whether they reproduce. FAIL is the sharpest of the three, because
++#: it says the model's stated R_k does NOT reproduce. Any unrecognised status
++#: is treated as a reading, so this FAILS CLOSED.
++#:
++#: WHY THIS IS A CONJUNCT OF `_routing_ladder_never_served`, MEASURED. The
++#: never-served door is evaluated BEFORE the restored severity test in
++#: `unverified_critical_count` and it ignores severity entirely. Without this
++#: conjunct, an entry whose R_k proof FAILED -- the one state in which the
++#: severity test is GUARANTEED to refuse a release, since `severity_is_proven`
++#: accepts only PASS/WARN -- was released by the door instead. The door was
++#: therefore strictly WIDER than the gate whose removal the founder has
++#: rejected 3-4 times, and it nullified that gate for this entry class.
++#: Measured over every archived runner_state.json in bench/logs (3515 entries):
++#: the door opens on 431 non-terminal entries, of which 25 carry a non-SKIP
++#: proof (5.80%, Wilson 95% [3.96%, 8.42%]) and 11 carry status FAIL (2.55%,
++#: Wilson 95% [1.43%, 4.51%]). Producer:
++#: scripts/never_served_door_vs_instrument_contact_2026-10-12.py.
++#:
++#: MEASURED DISCRIMINATING, which is why it is this field and not the other
++#: candidates. study_run1b's C0066 and C0073 -- the two entries the door exists
++#: for -- both carry severity_proof {"status": "SKIP"}, so the door still opens
++#: on them and the 2026-10-12 fix is not regressed to a no-op. The same producer
++#: shows why the rejected candidates are NOT conjuncts: `status_adjudicator`
++#: == "tool" and `status_log` are set on C0066 itself by the ordinary
++#: OPEN->UNCONFIRMED bookkeeping, so they close the door on everything;
++#: `computed_evidence` on C0066 holds {"kind": "reasoned_withdrawal", "by":
++#: "CC2-SIM"}, which is a MODEL statement, not an instrument; and
++#: `fix_efficacy` on C0066 holds outcome "NOT_PROBED_NO_FALSIFIER", which
++#: records that nothing ran.
++NO_READING_SEVERITY_PROOF_STATUSES = frozenset({"ABSENT", "SKIP"})
+ 
++
+ def _routing_ladder_never_served(e) -> bool:
+     """True when NO instrument ever touched this entry: no verdict, no routing
+     history, no falsifier code.
+@@ -2264,6 +2300,8 @@
+       falsifier_verdict is empty           -- the gate never ruled
+       routing_verdict_unreconciled is unset
+       not routing_deferred, not hil_escalated
++      severity_proof_status is ABSENT or SKIP  -- the R_k proof checker is an
++          instrument and it writes to none of the fields above
+     Each is a mechanically checkable property of the entry; none is a number a
+     model asserted.
+ 
+@@ -2296,7 +2334,13 @@
+       * the `severity_is_proven` door requires an R_k that reproduces from the
+         entry's own stated inputs. With no corroboration block to check,
+         `severity_proof_status` returns SKIP, so the entry can never be proven
+-        sub-critical.
++        sub-critical. THAT SENTENCE IS TRUE BY CONSTRUCTION ONLY SINCE THE
++        severity_proof CONJUNCT WAS ADDED (joint round, 2026-10-12). Before it
++        the sentence held of study_run1b's two survivors but NOT in general:
++        this door is evaluated BEFORE the severity test and ignores severity,
++        so an entry whose proof returned FAIL -- severity affirmatively NOT
++        proven -- was released HERE, which made the door strictly wider than
++        the gate it cited as unreachable. Measured: 11 of 431.
+ 
+     The entry therefore blocks the zero-critical streak for the LIFE of the run
+     and the run reaches `max_rounds` instead of converging. Per the core
+@@ -2370,6 +2414,17 @@
+         return False
+     if e.get("routing_deferred") or e.get("hil_escalated"):
+         return False
++    # THE R_k PROOF CHECKER IS AN INSTRUMENT, AND IT DOES NOT WRITE TO THE
++    # LADDER. Every conjunct above reads a ladder, falsifier or HIL field. The
++    # severity-proof checker reads the finding's own corroboration block and
++    # records its reading in `severity_proof` WITHOUT touching any of them, so
++    # an entry it read looked untouched to this predicate. Measured on the
++    # archived registries: 25 of the 431 non-terminal entries this door
++    # released carry a non-SKIP proof and 11 carry FAIL. See
++    # NO_READING_SEVERITY_PROOF_STATUSES for the figures, the CIs and the
++    # producer, and for why the other contact-shaped fields are NOT conjuncts.
++    if severity_proof_status(e) not in NO_READING_SEVERITY_PROOF_STATUSES:
++        return False
+     return True
+ 
+ 
+
+### cc2:attempt-1:bench/tests/test_a_transient_probe_failure_is_not_permanent_2026-10-12.py
+--- /dev/null	2026-10-12 20:53:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w_9e9xx3/repo/bench/tests/test_a_transient_probe_failure_is_not_permanent_2026-10-12.py	2026-10-12 20:36:49
+@@ -0,0 +1,163 @@
++"""A transient interpreter-probe failure must not refuse correct falsifiers for ever.
++
++WHAT IS UNDER TEST. `falsifier_verify._secondary_interpreter_roots` probes every
++`python3` on the machine for its own installation roots and adds them to the
++integrity gate's allow set, so a falsifier that legitimately spawns a second
++interpreter is not refused on its import bootstrap. Each probe is a
++`subprocess.run` with a 10s timeout and the result is memoised in a
++module-level cache populated ONCE per process.
++
++THE DEFECT THESE TESTS PIN. The fail-closed direction is correct -- an
++interpreter that does not answer contributes no roots and the gate stays as
++strict as before. But the result was CACHED whether or not discovery completed,
++so a SINGLE transient timeout (one interpreter slow to start under load) kept a
++partial root list for the LIFE of the runner process. Every later falsifier
++spawning that interpreter was then refused with INTEGRITY_VIOLATION long after
++the machine recovered -- reinstating exactly the false-refusal class the probe
++exists to remove. EXECUTED 2026-10-12: one simulated TimeoutExpired on
++/usr/bin/python3 dropped the root count from 22 to 15 and took a CORRECT
++falsifier from CONFIRMED to INTEGRITY_VIOLATION on 13 bootstrap reads.
++Producer: scripts/secondary_root_discovery_failure_is_not_permanent_2026-10-12.py.
++
++NOTHING IS WEAKENED. The deny regions, the protected-key digests and the
++refuse-on-denial behaviour are untouched; what changes is only whether an
++INCOMPLETE discovery is remembered as if it were whole.
++"""
++import os
++import subprocess
++import sys
++
++import pytest
++
++sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
++    os.path.abspath(__file__)))))
++
++import bench.falsifier_verify as fv  # noqa: E402
++
++TARGET = "/usr/bin/python3"
++
++
++@pytest.fixture(autouse=True)
++def _reset_discovery_state():
++    """Each test starts from an unprobed module and leaves it unprobed."""
++    saved = (fv._SECONDARY_ROOTS_CACHE, fv._SECONDARY_ROOTS_ATTEMPTS,
++             fv._SECONDARY_ROOTS_UNPROBEABLE)
++    fv._SECONDARY_ROOTS_CACHE = None
++    fv._SECONDARY_ROOTS_ATTEMPTS = 0
++    fv._SECONDARY_ROOTS_UNPROBEABLE = []
++    yield
++    (fv._SECONDARY_ROOTS_CACHE, fv._SECONDARY_ROOTS_ATTEMPTS,
++     fv._SECONDARY_ROOTS_UNPROBEABLE) = saved
++
++
++def _timeout_for(target):
++    real = subprocess.run
++
++    def flaky(*a, **k):
++        cmd = a[0] if a else k.get("args")
++        if isinstance(cmd, (list, tuple)) and cmd and str(cmd[0]) == target:
++            raise subprocess.TimeoutExpired(cmd=target, timeout=10)
++        return real(*a, **k)
++    return real, flaky
++
++
++def test_the_retry_bound_is_declared_and_reachable():
++    """A bound nothing reaches is not additive either."""
++    assert fv.SECONDARY_ROOTS_DISCOVERY_ATTEMPTS >= 2, (
++        "a bound of 1 is the unrepaired behaviour: no retry at all"
++    )
++    assert hasattr(fv, "secondary_interpreter_discovery_incomplete")
++
++
++def test_a_complete_discovery_is_cached_exactly_once():
++    """The ordinary path is unchanged: one probe pass per process."""
++    first = fv._secondary_interpreter_roots()
++    assert fv._SECONDARY_ROOTS_CACHE is not None, (
++        "a discovery in which every candidate answered must still be cached, "
++        "or every falsifier pays for a fresh probe sweep"
++    )
++    assert fv._SECONDARY_ROOTS_ATTEMPTS == 1
++    assert fv._secondary_interpreter_roots() == first
++    assert fv._SECONDARY_ROOTS_ATTEMPTS == 1, "the cache was not served"
++
++
++@pytest.mark.skipif(not os.path.isfile(TARGET),
++                    reason=f"{TARGET} absent; this defect class cannot arise")
++def test_an_incomplete_discovery_is_not_cached():
++    """THE DEFECT. One timeout must not be remembered as a complete answer."""
++    real, flaky = _timeout_for(TARGET)
++    subprocess.run = flaky
++    try:
++        partial = fv._secondary_interpreter_roots()
++    finally:
++        subprocess.run = real
++    assert fv._SECONDARY_ROOTS_CACHE is None, (
++        "an incomplete discovery was cached, so a transient probe timeout "
++        "refuses correct falsifiers for the life of the process"
++    )
++    # And the gate did stay strict during the transient, which is the correct
++    # fail-closed direction and is NOT what is being changed.
++    assert TARGET in fv._SECONDARY_ROOTS_UNPROBEABLE
++    # The machine has recovered; the gate must recover with it.
++    full = fv._secondary_interpreter_roots()
++    assert len(full) > len(partial), (
++        "discovery was not retried after the transient passed"
++    )
++    assert fv._SECONDARY_ROOTS_CACHE is not None
++    assert fv.secondary_interpreter_discovery_incomplete() == []
++
++
++@pytest.mark.skipif(not os.path.isfile(TARGET),
++                    reason=f"{TARGET} absent; this defect class cannot arise")
++def test_a_permanently_unprobeable_interpreter_is_accepted_and_NAMED():
++    """The bound must terminate, and the exclusion must never be silent."""
++    real, flaky = _timeout_for(TARGET)
++    subprocess.run = flaky
++    try:
++        for _ in range(fv.SECONDARY_ROOTS_DISCOVERY_ATTEMPTS):
++            fv._secondary_interpreter_roots()
++    finally:
++        subprocess.run = real
++    assert fv._SECONDARY_ROOTS_CACHE is not None, (
++        "discovery must stop retrying a permanently dead interpreter, or "
++        "every falsifier pays a 10s timeout for it"
++    )
++    assert fv._SECONDARY_ROOTS_ATTEMPTS == fv.SECONDARY_ROOTS_DISCOVERY_ATTEMPTS
++    assert TARGET in fv.secondary_interpreter_discovery_incomplete(), (
++        "an interpreter whose roots are missing must be NAMED, so an "
++        "INTEGRITY_VIOLATION against a falsifier spawning it is readable as a "
++        "false refusal rather than as a verdict"
++    )
++
++
++@pytest.mark.skipif(not os.path.isfile(TARGET),
++                    reason=f"{TARGET} absent; this defect class cannot arise")
++def test_end_to_end_a_correct_falsifier_survives_a_transient_timeout():
++    """The consequence, through the real gate rather than the root count."""
++    falsifier = (
++        "import subprocess\n"
++        f"p = subprocess.run(['{TARGET}', '-c', 'import json, ssl, sysconfig'],"
++        " capture_output=True, text=True)\n"
++        "assert p.returncode == 0, p.stderr[-300:]\n"
++        "print('FALSIFIED')\n"
++    )
++    repo = os.path.dirname(os.path.dirname(os.path.dirname(
++        os.path.abspath(__file__))))
++    healthy = fv.reverify_falsifier(falsifier, repo_root=repo, timeout=120)
++    if healthy != "CONFIRMED":
++        pytest.skip(f"healthy baseline is {healthy}, not CONFIRMED; this "
++                    "machine cannot measure the transient")
++
++    fv._SECONDARY_ROOTS_CACHE = None
++    fv._SECONDARY_ROOTS_ATTEMPTS = 0
++    real, flaky = _timeout_for(TARGET)
++    subprocess.run = flaky
++    try:
++        fv._secondary_interpreter_roots()
++    finally:
++        subprocess.run = real
++    after = fv.reverify_falsifier(falsifier, repo_root=repo, timeout=120)
++    assert after == "CONFIRMED", (
++        f"a CORRECT falsifier went CONFIRMED -> {after} because one probe "
++        "timed out once; the false-refusal class is reinstated"
++    )
+
+### cc2:attempt-1:bench/tests/test_the_door_does_not_override_the_severity_gate_2026-10-12.py
+--- /dev/null	2026-10-12 20:53:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w_9e9xx3/repo/bench/tests/test_the_door_does_not_override_the_severity_gate_2026-10-12.py	2026-10-12 20:33:50
+@@ -0,0 +1,181 @@
++"""The never-served door must not release what the severity gate refuses.
++
++WHAT IS UNDER TEST. `reference_runner_v3.unverified_critical_count` evaluates
++two independent release doors in sequence:
++
++  1. the never-served door  -- `_routing_ladder_never_served(e)` + an age lock
++  2. the severity test      -- `severity < 0.7 AND severity_is_proven(e)`
++
++Door 1 is evaluated FIRST and reads no severity field at all. Door 2 was
++restored on 2026-10-06 on the founder's repeatedly-stated ruling, and it is
++gated on `severity_is_proven` -- a TOOL RECOMPUTATION of the model's stated
++R_k -- precisely so that an unrecomputable number cannot buy a closure.
++
++THE DEFECT THESE TESTS PIN. `severity_proof_status` returns FAIL when the
++checker ran and the model's stated R_k did NOT reproduce. That is the one state
++in which door 2 is GUARANTEED to refuse a release. Yet the R_k proof checker
++writes only `severity_proof`; it touches none of the ladder, falsifier or HIL
++fields door 1's predicate reads. So before the `severity_proof` conjunct was
++added, an entry whose proof FAILED looked untouched to door 1 and was released
++there -- making door 1 strictly WIDER than door 2 and nullifying it for this
++entry class. Measured over every archived runner_state.json in bench/logs: the
++pre-fix door released 431 non-terminal entries, of which 25 carried a non-SKIP
++proof (5.80%, Wilson 95% [3.96%, 8.42%]) and 11 carried FAIL (2.55%, Wilson 95%
++[1.43%, 4.51%]). Producer:
++scripts/never_served_door_vs_instrument_contact_2026-10-12.py.
++
++ANTI-VACUITY IS ASSERTED, NOT ASSUMED. The SKIP and ABSENT cases below are the
++two entries study_run1b's blocker is actually made of, and they assert the door
++STILL OPENS. Without them a conjunct that closed the door on everything would
++pass this file while silently reverting the 2026-10-12 fix to a no-op.
++"""
++import os
++import sys
++
++import pytest
++
++sys.path.insert(0, os.path.join(
++    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
++
++import reference_runner_v3 as R  # noqa: E402
++
++
++def _entry(**over):
++    """A minimally-shaped entry carrying NO ladder, falsifier or HIL trace."""
++    e = {
++        "canonical_id": "C9001",
++        "description": "a finding nothing ever dispatched",
++        "status": "UNCONFIRMED",
++        "severity": 0.45,
++        "verdicts": [],
++        "routing_history": [],
++        "falsifier_code": "",
++        "falsifier_verdict": "",
++        "open_since_round": 0,
++        "last_status_change_round": 0,
++    }
++    e.update(over)
++    return e
++
++
++# ── the sentinel set itself ───────────────────────────────────────────────────
++
++def test_the_no_reading_set_is_disjoint_from_every_reading_status():
++    """ABSENT/SKIP mean no reading; PASS/WARN/FAIL are readings."""
++    assert R.NO_READING_SEVERITY_PROOF_STATUSES == frozenset({"ABSENT", "SKIP"})
++    readings = {"PASS", "WARN", "FAIL"}
++    assert not (R.NO_READING_SEVERITY_PROOF_STATUSES & readings)
++    # Every status the accepting set honours is a READING, so the two sets
++    # cannot drift into agreeing that a proven severity was never read.
++    assert R._RK_PROOF_ACCEPTED <= readings
++
++
++def test_an_unrecognised_proof_status_fails_closed():
++    """A status nobody declared is treated as a ruling, never as silence."""
++    e = _entry(severity_proof={"status": "SOME_FUTURE_STATUS"})
++    assert R._routing_ladder_never_served(e) is False
++
++
++# ── the predicate, all five proof states ─────────────────────────────────────
++
++@pytest.mark.parametrize("status", sorted({"PASS", "WARN", "FAIL"}))
++def test_a_proof_reading_closes_the_door(status):
++    """The checker ran and reported. That is instrument contact."""
++    e = _entry(severity_proof={"status": status, "model_rk": 0.12,
++                               "recomputed_rk": 0.56, "round": 3})
++    assert R.severity_proof_status(e) == status
++    assert R._routing_ladder_never_served(e) is False, (
++        f"severity_proof status {status} is a reading by the R_k checker; the "
++        "door must not call this entry untouched"
++    )
++
++
++@pytest.mark.parametrize("proof", [None, {"status": "SKIP"}, {"status": ""}])
++def test_no_proof_reading_leaves_the_door_open(proof):
++    """ANTI-VACUITY. SKIP and ABSENT are the states the fix exists for."""
++    e = _entry()
++    if proof is not None:
++        e["severity_proof"] = proof
++    assert R.severity_proof_status(e) in R.NO_READING_SEVERITY_PROOF_STATUSES
++    assert R._routing_ladder_never_served(e) is True, (
++        "the door must still open on an entry no instrument read, or the "
++        "2026-10-12 never-served fix is reverted to a no-op"
++    )
++
++
++# ── the two doors, measured against each other end to end ────────────────────
++
++def _count(entry, current_round):
++    reg = R.FindingRegistry()
++    reg.entries[entry["canonical_id"]] = entry
++    return reg.unverified_critical_count(current_round=current_round)
++
++
++def test_the_door_no_longer_releases_what_the_severity_gate_refuses():
++    """THE DEFECT ITSELF, through the live counter rather than the predicate.
++
++    A sub-critical entry whose R_k proof FAILED: door 2 refuses it because
++    `severity_is_proven` is False. Door 1 must not release it either.
++    """
++    e = _entry(severity=0.45,
++               severity_proof={"status": "FAIL", "model_rk": 0.12,
++                               "recomputed_rk": 0.56, "delta": 0.44,
++                               "round": 0})
++    assert R.severity_is_proven(e) is False, "door 2 must refuse this entry"
++    assert _count(e, current_round=5) == 1, (
++        "door 1 released an entry whose severity the R_k checker affirmatively "
++        "failed to reproduce, so door 1 is wider than the gate restored on "
++        "2026-10-06"
++    )
++
++
++def test_a_proven_subcritical_is_still_released_by_the_severity_gate():
++    """The composed form must not have made door 2 unreachable."""
++    e = _entry(severity=0.45,
++               severity_proof={"status": "PASS", "model_rk": 0.44,
++                               "recomputed_rk": 0.441, "delta": 0.001,
++                               "round": 0})
++    assert R.severity_is_proven(e) is True
++    assert _count(e, current_round=5) == 0
++
++
++def test_an_untouched_entry_is_still_released_by_the_never_served_door():
++    """ANTI-VACUITY for the counter, not just the predicate."""
++    e = _entry(severity=0.45)
++    assert _count(e, current_round=5) == 0
++    # and the age lock still holds it in its arrival round
++    assert _count(_entry(severity=0.45), current_round=0) == 1
++
++
++def test_the_paired_reader_still_names_what_the_door_drops():
++    """Excluded-implies-reported, held across the new conjunct."""
++    reg = R.FindingRegistry()
++    reg.entries["C9001"] = _entry()
++    reg.entries["C9002"] = _entry(canonical_id="C9002",
++                                  severity_proof={"status": "FAIL"})
++    assert reg.ladder_unserved_findings(current_round=5) == ["C9001"], (
++        "the reader must name exactly what the counter dropped -- C9002 is "
++        "now blocked, so naming it would read as excused when it is not"
++    )
++    assert reg.unverified_critical_count(current_round=5) == 1
++
++
++# ── the age bound, answered from the ladder's own record ─────────────────────
++
++def test_the_age_bound_matches_the_ladders_measured_first_serve_latency():
++    """LADDER_UNSERVED_MIN_AGE_ROUNDS = 1 is measured, not chosen.
++
++    Over every archived runner_state.json in bench/logs, 230 of 230
++    ladder-served entries were first served in their ARRIVAL round
++    (first_routing_round - open_since_round == 0; Wilson 95% [98.36%, 100%]).
++    The ladder serves an entry in its arrival round or never, so one completed
++    round is a full round of margin over a bound the data puts at 0 and a
++    longer wait buys no service. Producer:
++    scripts/never_served_door_vs_instrument_contact_2026-10-12.py.
++    """
++    assert R.LADDER_UNSERVED_MIN_AGE_ROUNDS == 1
++    e = _entry(severity=0.45, last_status_change_round=7)
++    # emitted this round: not yet passed over, still blocks
++    assert _count(dict(e), current_round=7) == 1
++    # one completed round later: the ladder had its turn and did not take it
++    assert _count(dict(e), current_round=8) == 0
+
+### cc2:attempt-1:scripts/never_served_door_vs_instrument_contact_2026-10-12.py
+--- /dev/null	2026-10-12 20:53:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w_9e9xx3/repo/scripts/never_served_door_vs_instrument_contact_2026-10-12.py	2026-10-12 20:33:05
+@@ -0,0 +1,239 @@
++#!/usr/bin/env python3
++"""Which instruments read a finding WITHOUT writing any field the never-served door tests?
++
++THE NAMED PROPERTY THIS MEASURES. `reference_runner_v3._routing_ladder_never_served`
++releases an entry from `unverified_critical_count` when the entry carries no
++trace of any instrument. Its conjuncts read ladder, falsifier and HIL fields
++only. This script asks the question the joint round of 2026-10-12 put to it: is
++there a registry field, NOT among those conjuncts, that records an instrument
++having READ the finding -- and is that state REACHABLE on real registries
++rather than merely conceivable?
++
++THE ANSWER, MEASURED OVER EVERY ARCHIVED runner_state.json IN bench/logs. Yes,
++and the decisive one is `severity_proof`. The R_k proof checker reads a
++finding's own corroboration block and records PASS / WARN / FAIL / SKIP in
++`severity_proof` without touching `verdicts`, `routing_history`,
++`falsifier_code`, `falsifier_verdict`, `routing_verdict_unreconciled`,
++`routing_deferred` or `hil_escalated`. So an entry it had read looked untouched.
++
++WHY THAT IS MATERIAL AND NOT A TIDINESS POINT. The door is evaluated BEFORE the
++severity test in `unverified_critical_count` and ignores severity entirely. An
++entry whose proof returned FAIL is the one state in which the severity test is
++GUARANTEED to refuse a release (`severity_is_proven` accepts PASS and WARN
++only). Before this conjunct the door released it anyway, so the door was
++strictly WIDER than the severity gate whose removal the founder has rejected
++3-4 times, and it nullified that gate for this entry class.
++
++WHY THE OTHER CONTACT-SHAPED FIELDS ARE REJECTED AS CONJUNCTS. A field
++qualifies only if it (a) records a TOOL reading and (b) is still absent on the
++two entries the door exists for, so adding it does not regress the fix to a
++no-op. This script prints both halves for every candidate, so the rejection is
++measured rather than argued:
++
++  * `status_adjudicator` == "tool" and `status_log` are written by the ordinary
++    OPEN -> UNCONFIRMED bookkeeping and are present on C0066 itself. As
++    conjuncts they would close the door on everything.
++  * `computed_evidence` on C0066 holds {"kind": "reasoned_withdrawal", "by":
++    "CC2-SIM"} -- a MODEL statement. Under "tools decide, not votes" that is
++    the opposite of instrument contact.
++  * `fix_efficacy` on C0066 holds outcome "NOT_PROBED_NO_FALSIFIER", whose own
++    detail string says nothing ran.
++
++AND THE SECOND QUESTION THE JOINT ROUND ASKED: is
++LADDER_UNSERVED_MIN_AGE_ROUNDS = 1 the right bound, or does a finding emitted
++in a run's final round need longer? This script answers it from the ladder's own
++record: for every entry the ladder DID serve, it prints first_routing_round -
++open_since_round. Measured, that is 0 for 230 of 230. The ladder serves an entry
++in its ARRIVAL round or never, so waiting longer buys nothing, and 1 is a full
++round of margin over a bound the data puts at 0.
++
++Usage: python3 scripts/never_served_door_vs_instrument_contact_2026-10-12.py
++"""
++import glob
++import json
++import os
++import sys
++from collections import Counter
++
++_HERE = os.path.dirname(os.path.abspath(__file__))
++_ROOT = os.path.dirname(_HERE)
++sys.path.insert(0, _HERE)
++sys.path.insert(0, _ROOT)
++sys.path.insert(0, os.path.join(_ROOT, "bench"))
++
++from _cli_help import answer_help  # noqa: E402
++
++#: Fields the door's own conjuncts read. A candidate matters only if NOT here.
++DOOR_CONJUNCTS = (
++    "verdicts", "routing_history", "falsifier_code", "falsifier_verdict",
++    "routing_verdict_unreconciled", "routing_deferred", "hil_escalated",
++)
++
++#: Enumerated from the UNION of entry keys across all archived registries, not
++#: guessed: every field that could plausibly record an instrument reading.
++CANDIDATES = (
++    "severity_proof", "severity_proof_history", "sk_result", "sk_evaluated",
++    "status_adjudicator", "status_mechanism", "status_evidence", "status_log",
++    "computed_evidence", "hil_has_computed_evidence", "fix_efficacy",
++    "fix_efficacy_attempted", "corrected_copy", "occasions",
++    "routing_verdict_reconciled", "mechanical_fault", "equipment_failure",
++    "error_routed", "discrimination", "verification_voided", "exhausted",
++    "irreducible_escalation", "hil_reason", "attestation_count",
++    "refused_transitions", "withdrawn_by_sweep", "bugzilla_attempted",
++    "bugzilla_verified", "cc2v_escalated", "merge_blocked_reason",
++    "latent_evidence", "resolved_by_routing", "resolved_by_sweep",
++    "resolved_by_takeup",
++)
++
++TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
++
++#: The two entries study_run1b's blocker is made of. A candidate conjunct SET on
++#: these would close the door on the very case the fix exists for.
++REFERENCE_RUN = "bench/logs/study_run1b_2026-10-03_20261003T100439Z/runner_state.json"
++REFERENCE_IDS = ("C0066", "C0073")
++
++
++def _set(v) -> bool:
++    return v not in (None, "", [], {}, 0, False)
++
++
++def _wilson(k, n):
++    try:
++        from statsmodels.stats.proportion import proportion_confint
++        return proportion_confint(k, n, method="wilson")
++    except Exception:
++        return float("nan"), float("nan")
++
++
++def _registries(root=""):
++    pat = os.path.join(root, "bench/logs/**/runner_state.json") if root \
++        else "bench/logs/**/runner_state.json"
++    for path in sorted(glob.glob(pat, recursive=True)):
++        try:
++            with open(path, encoding="utf-8") as fh:
++                yield path, json.load(fh)
++        except (OSError, ValueError):
++            continue
++
++
++def main() -> int:
++    answer_help(__doc__, __file__)
++    os.chdir(_ROOT)
++    import reference_runner_v3 as R
++
++    # The PRE-FIX door, obtained by deleting the field the new conjunct reads
++    # rather than by reading an old copy of the file -- so producer and
++    # consumer are the same live code.
++    def door_prefix(e) -> bool:
++        if R._routing_ladder_never_served(e):
++            return True
++        shadow = dict(e)
++        shadow.pop("severity_proof", None)
++        return R._routing_ladder_never_served(shadow)
++
++    total = nonterm = 0
++    hits, example, proof_status = Counter(), {}, Counter()
++    for path, blob in _registries():
++        for cid, e in ((blob.get("registry") or {}).get("entries") or {}).items():
++            total += 1
++            if not door_prefix(e) or e.get("status") in TERMINAL:
++                continue
++            nonterm += 1
++            proof_status[R.severity_proof_status(e)] += 1
++            for field in CANDIDATES:
++                if _set(e.get(field)):
++                    hits[field] += 1
++                    example.setdefault(field, (
++                        os.path.basename(os.path.dirname(path)), cid,
++                        repr(e.get(field))[:60]))
++
++    print(f"archived registry entries scanned ............. {total}")
++    print(f"NON-TERMINAL entries the PRE-FIX door released   {nonterm}")
++    if not nonterm:
++        print("no archived registries on this machine -- nothing to measure")
++        return 0
++    print("\nR_k PROOF STATUS ON THOSE ENTRIES "
++          "(a non-SKIP status is a reading the door discarded):")
++    for st, n in proof_status.most_common():
++        lo, hi = _wilson(n, nonterm)
++        print(f"   {st:7s} {n:4d}  {100*n/nonterm:5.2f}%  "
++              f"Wilson 95% [{100*lo:.2f}%, {100*hi:.2f}%]")
++    reading = sum(n for st, n in proof_status.items()
++                  if st not in R.NO_READING_SEVERITY_PROOF_STATUSES)
++    lo, hi = _wilson(reading, nonterm)
++    print(f"   -> A READING WAS DISCARDED on {reading} of {nonterm} "
++          f"({100*reading/nonterm:.2f}%, Wilson 95% "
++          f"[{100*lo:.2f}%, {100*hi:.2f}%])")
++    nfail = proof_status.get("FAIL", 0)
++    lo, hi = _wilson(nfail, nonterm)
++    print(f"   -> of those, FAIL (severity affirmatively NOT proven): "
++          f"{nfail} ({100*nfail/nonterm:.2f}%, Wilson 95% "
++          f"[{100*lo:.2f}%, {100*hi:.2f}%])")
++
++    print("\nCANDIDATE CONTACT FIELDS SET ON A PRE-FIX DOOR-OPEN ENTRY:")
++    for field, n in hits.most_common():
++        print(f"   {n:4d}  {field:26s} e.g. {example[field]}")
++
++    print(f"\nDISCRIMINATION AGAINST THE CASE THE DOOR EXISTS FOR "
++          f"({', '.join(REFERENCE_IDS)} of study_run1b):")
++    try:
++        with open(REFERENCE_RUN, encoding="utf-8") as fh:
++            ref = json.load(fh)["registry"]["entries"]
++    except (OSError, KeyError, ValueError):
++        print("   reference run absent on this machine -- skipped")
++        ref = {}
++    # THE COLUMN TESTS THE CONJUNCT'S OWN PREDICATE, NOT FIELD PRESENCE, and
++    # the first version of this script got that wrong in exactly the way the
++    # founder's interpreter instrument did: for `severity_proof` the conjunct
++    # keys on the STATUS, so mere presence of the field reported the composed
++    # fix as closing the door on C0066 when it does not. A wrong instrument
++    # reads as a confident result, so the predicate is named per field here.
++    def _contacted(e, field) -> bool:
++        if field in ("severity_proof", "severity_proof_history"):
++            return R.severity_proof_status(e) \
++                not in R.NO_READING_SEVERITY_PROOF_STATUSES
++        return _set(e.get(field))
++
++    for field in hits:
++        cols = " ".join(
++            f"{cid}={'CONTACT' if _contacted(ref.get(cid) or {}, field) else '-'}"
++            for cid in REFERENCE_IDS)
++        usable = bool(ref) and all(
++            not _contacted(ref.get(c) or {}, field) for c in REFERENCE_IDS)
++        print(f"   {field:26s} {cols:30s} "
++              + ("DISCRIMINATING -- usable as a conjunct" if usable
++                 else "REJECTED: closes the door on the reference case"))
++    for cid in REFERENCE_IDS:
++        if cid in ref:
++            e = ref[cid]
++            print(f"   {cid}: severity_proof="
++                  f"{json.dumps(e.get('severity_proof'))} -> "
++                  f"{R.severity_proof_status(e)}; door opens now = "
++                  f"{R._routing_ladder_never_served(e)}")
++
++    lat = Counter()
++    for _p, blob in _registries():
++        for _cid, e in ((blob.get("registry") or {}).get("entries") or {}).items():
++            rh = e.get("routing_history") or []
++            rounds = [r.get("round") for r in rh
++                      if isinstance(r, dict) and r.get("round") is not None]
++            if not rounds or e.get("open_since_round") is None:
++                continue
++            lat[min(int(x) for x in rounds) - int(e["open_since_round"])] += 1
++    n = sum(lat.values())
++    print(f"\nIS LADDER_UNSERVED_MIN_AGE_ROUNDS = "
++          f"{R.LADDER_UNSERVED_MIN_AGE_ROUNDS} THE RIGHT BOUND?")
++    print(f"   ladder-served entries with a round-stamped first attempt: {n}")
++    for k in sorted(lat):
++        lo, hi = _wilson(lat[k], n)
++        print(f"   first_routing_round - open_since_round = {k:3d}  "
++              f"{lat[k]:4d}  {100*lat[k]/n:6.2f}%  "
++              f"Wilson 95% [{100*lo:.2f}%, {100*hi:.2f}%]")
++    print("   -> the ladder serves an entry in its ARRIVAL round or never, so a"
++          " longer wait\n      buys nothing; 1 is a full round of margin over a"
++          " bound the data puts at 0.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:scripts/secondary_root_discovery_failure_is_not_permanent_2026-10-12.py
+--- /dev/null	2026-10-12 20:53:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w_9e9xx3/repo/scripts/secondary_root_discovery_failure_is_not_permanent_2026-10-12.py	2026-10-12 20:36:13
+@@ -0,0 +1,151 @@
++#!/usr/bin/env python3
++"""Does a TRANSIENT interpreter-probe failure permanently refuse correct falsifiers?
++
++THE NAMED PROPERTY THIS MEASURES. `bench.falsifier_verify._secondary_interpreter_roots`
++probes every `python3` on this machine for its own installation roots and adds
++them to the integrity gate's allow set, so that a falsifier legitimately
++spawning a second interpreter is not refused on its ordinary import bootstrap.
++Each probe is a `subprocess.run` with a 10s timeout, and the result is memoised
++in a module-level cache populated once per process.
++
++THE JOINT ROUND OF 2026-10-12 ASKED WHETHER THE PROBE'S FAIL-CLOSED DIRECTION
++CAN REGRESS THE GATE TO REFUSING CORRECT FALSIFIERS, and whether a declared
++fallback list should therefore be kept beside it. This script answers the first
++half by execution. It simulates the cheapest realistic machine state -- ONE
++interpreter slow to start under load, raising `TimeoutExpired` on a single probe
++-- and then measures what happens after the machine has recovered.
++
++WHAT IT FINDS. The fail-closed DIRECTION is right; the CACHE is the defect.
++Before the repair, one transient timeout cached a partial root list for the LIFE
++of the process, so every later falsifier spawning that interpreter was refused
++with INTEGRITY_VIOLATION long after the transient had passed. The regression is
++end-to-end and not merely a count: a CORRECT falsifier goes from CONFIRMED to
++INTEGRITY_VIOLATION on 13 bootstrap reads, which is exactly the false-refusal
++class the probe exists to remove.
++
++WHY THE ANSWER IS NOT A DECLARED FALLBACK LIST. A declared list of roots was
++measured at 3 of 4 interpreters against the probe's 4 of 4
++(scripts/interpreter_allowlist_coverage_2026-10-12.py), so it cannot improve
++the covered set, and in the common path nothing would reach it. The repair is
++to stop caching an INCOMPLETE discovery, which makes a transient failure
++transient; the bounded retry and the named report of unprobeable interpreters
++are the other two halves.
++
++Usage: python3 scripts/secondary_root_discovery_failure_is_not_permanent_2026-10-12.py
++
++The spawned interpreter under test is /usr/bin/python3, which is the macOS
++system interpreter the original defect class names. On a machine without it,
++this script says so and exits 0 rather than reporting a result it did not
++measure.
++"""
++import os
++import subprocess
++import sys
++
++_HERE = os.path.dirname(os.path.abspath(__file__))
++_ROOT = os.path.dirname(_HERE)
++sys.path.insert(0, _HERE)
++sys.path.insert(0, _ROOT)
++
++from _cli_help import answer_help  # noqa: E402
++
++#: The interpreter whose probe is made to fail, and which the falsifier spawns.
++TARGET = "/usr/bin/python3"
++
++#: A CORRECT falsifier: it demonstrates its defect by spawning a second
++#: interpreter, which is the shape of the real C0050 class. It prints the
++#: literal FALSIFIED token on success, so a healthy gate returns CONFIRMED.
++FALSIFIER = (
++    "import subprocess\n"
++    f"p = subprocess.run(['{TARGET}', '-c', 'import json, ssl, sysconfig'],\n"
++    "                   capture_output=True, text=True)\n"
++    "assert p.returncode == 0, p.stderr[-300:]\n"
++    "print('FALSIFIED')\n"
++)
++
++
++def _probe_fails_once_for(target):
++    """Install a `subprocess.run` that raises TimeoutExpired for `target`.
++
++    This is the transient: the interpreter is present on disk and healthy, it
++    simply did not answer within the probe's 10s budget on one attempt.
++    """
++    real = subprocess.run
++
++    def flaky(*a, **k):
++        cmd = a[0] if a else k.get("args")
++        if isinstance(cmd, (list, tuple)) and cmd and str(cmd[0]) == target:
++            raise subprocess.TimeoutExpired(cmd=target, timeout=10)
++        return real(*a, **k)
++    return real, flaky
++
++
++def main() -> int:
++    answer_help(__doc__, __file__)
++    os.chdir(_ROOT)
++    import bench.falsifier_verify as fv
++
++    if not os.path.isfile(TARGET):
++        print(f"{TARGET} is not present on this machine; the defect class this "
++              "measures does not arise here. Nothing measured, nothing claimed.")
++        return 0
++
++    print(f"repaired module state: "
++          f"SECONDARY_ROOTS_DISCOVERY_ATTEMPTS = "
++          f"{getattr(fv, 'SECONDARY_ROOTS_DISCOVERY_ATTEMPTS', 'ABSENT')}")
++
++    # ── healthy baseline ────────────────────────────────────────────────────
++    fv._SECONDARY_ROOTS_CACHE = None
++    fv._SECONDARY_ROOTS_ATTEMPTS = 0
++    healthy = fv._secondary_interpreter_roots()
++    print(f"\nHEALTHY  roots = {len(healthy):3d}")
++    healthy_verdict = fv.reverify_falsifier(FALSIFIER, repo_root=os.getcwd(),
++                                            timeout=120)
++    print(f"HEALTHY  verdict on a CORRECT falsifier = {healthy_verdict}")
++
++    # ── one transient timeout, then the machine is healthy again ───────────
++    fv._SECONDARY_ROOTS_CACHE = None
++    fv._SECONDARY_ROOTS_ATTEMPTS = 0
++    real, flaky = _probe_fails_once_for(TARGET)
++    subprocess.run = flaky
++    try:
++        during = fv._secondary_interpreter_roots()
++    finally:
++        subprocess.run = real
++    print(f"\nTRANSIENT roots = {len(during):3d}   "
++          f"lost = {len(set(healthy) - set(during))}")
++    cached = fv._SECONDARY_ROOTS_CACHE is not None
++    print(f"TRANSIENT pass was CACHED = {cached}   "
++          + ("<-- PERMANENT: the next falsifier cannot recover"
++             if cached else "<-- not cached: the next falsifier retries"))
++
++    # The machine has recovered. Does the gate recover with it?
++    after = fv._secondary_interpreter_roots()
++    recovered = sorted(after) == sorted(healthy)
++    print(f"AFTER     roots = {len(after):3d}   recovered = {recovered}")
++    after_verdict = fv.reverify_falsifier(FALSIFIER, repo_root=os.getcwd(),
++                                          timeout=120)
++    print(f"AFTER     verdict on the SAME correct falsifier = {after_verdict}")
++
++    print("\nnamed report of interpreters that never answered: "
++          f"{fv.secondary_interpreter_discovery_incomplete()}"
++          if hasattr(fv, "secondary_interpreter_discovery_incomplete")
++          else "\nnamed report: ABSENT (pre-repair module)")
++
++    print()
++    if healthy_verdict != "CONFIRMED":
++        print("INCONCLUSIVE: the healthy baseline did not reach CONFIRMED, so "
++              "this run measures nothing about the transient.")
++        return 0
++    if after_verdict == "CONFIRMED" and recovered:
++        print("REPAIRED: a transient probe failure no longer refuses a correct "
++              "falsifier. The gate recovered with the machine.")
++    else:
++        print(f"REGRESSION PRESENT: a correct falsifier went "
++              f"{healthy_verdict} -> {after_verdict} because one probe timed "
++              f"out once. The false-refusal class is reinstated.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-12 20:53:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/.cdsfl_deny_canonical_writes.sb	2026-10-12 20:23:22
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/exp56_configs/d11_seat_contrast_diversity_arm.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/exp56_configs/d11_seat_contrast_diversity_arm.json	2026-10-11 20:58:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/bench/exp56_configs/d11_seat_contrast_diversity_arm.json	2026-10-12 20:45:46
+@@ -62,6 +62,7 @@
+   "_ouroboros": {
+     "api_access": [],
+     "max_papers_per_round": 0,
++    "_max_papers_per_round_note": "Read by NO runner module -- A18, measured by scripts/config_fields_are_read_2026-09-11.py: readers_of('max_papers_per_round') returns []. External retrieval is actually disabled by the sibling api_access = [], which IS read. The key is retained as a redundant second switch; this note exists so a reader does not take it for the load-bearing one.",
+     "_note": "External literature retrieval OFF. A live retrieval would add an uncontrolled and arm-varying input to a comparison whose value rests on every input except panel composition being identical."
+   },
+   "_specialist_cells": {
+
+### fable:attempt-1:bench/exp56_configs/d9_multi_model_panel.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/exp56_configs/d9_multi_model_panel.json	2026-10-11 20:58:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/bench/exp56_configs/d9_multi_model_panel.json	2026-10-12 20:45:46
+@@ -65,6 +65,7 @@
+   "_ouroboros": {
+     "api_access": [],
+     "max_papers_per_round": 0,
++    "_max_papers_per_round_note": "Read by NO runner module -- A18, measured by scripts/config_fields_are_read_2026-09-11.py: readers_of('max_papers_per_round') returns []. External retrieval is actually disabled by the sibling api_access = [], which IS read. The key is retained as a redundant second switch; this note exists so a reader does not take it for the load-bearing one.",
+     "_note": "External literature retrieval OFF. A live retrieval would add an uncontrolled and arm-varying input to a comparison whose value rests on every input except panel composition being identical."
+   },
+   "_specialist_cells": {
+
+### fable:attempt-1:bench/exp56_configs/d9_single_model_with_agents.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/exp56_configs/d9_single_model_with_agents.json	2026-10-11 20:58:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/bench/exp56_configs/d9_single_model_with_agents.json	2026-10-12 20:45:46
+@@ -61,6 +61,7 @@
+   "_ouroboros": {
+     "api_access": [],
+     "max_papers_per_round": 0,
++    "_max_papers_per_round_note": "Read by NO runner module -- A18, measured by scripts/config_fields_are_read_2026-09-11.py: readers_of('max_papers_per_round') returns []. External retrieval is actually disabled by the sibling api_access = [], which IS read. The key is retained as a redundant second switch; this note exists so a reader does not take it for the load-bearing one.",
+     "_note": "External literature retrieval OFF. A live retrieval would add an uncontrolled and arm-varying input to a comparison whose value rests on every input except panel composition being identical."
+   },
+   "_specialist_cells": {
+
+### fable:attempt-1:bench/falsifier_verify.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/falsifier_verify.py	2026-10-12 19:46:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/bench/falsifier_verify.py	2026-10-12 20:42:16
+@@ -776,6 +776,18 @@
+             proc = subprocess.run(
+                 [cand, "-c", probe], capture_output=True, text=True, timeout=10)
+             if proc.returncode != 0 or not proc.stdout.strip():
++                # A PROBE THAT DOES NOT ANSWER MUST NOT COST THE CARVE-OUT
++                # (joint round J2, 2026-10-12). Measured before this branch
++                # existed: with every probe timing out (a loaded machine),
++                # this function returned 0 roots, and because the result is
++                # cached per process, ONE bad moment put the gate back to
++                # refusing every spawned-interpreter falsifier FOR THE LIFE
++                # OF THE RUN. The declared roots below are derived from the
++                # candidate's own path, never by executing it, so they cannot
++                # time out -- and they are consulted ONLY on probe failure,
++                # so a machine where every probe answers is byte-identical.
++                # Producer: scripts/probe_failure_regresses_the_gate_2026-10-12.py.
++                roots.extend(_declared_secondary_roots(cand))
+                 continue
+             import json as _json
+             reported = _json.loads(proc.stdout.strip().splitlines()[-1])
+@@ -788,11 +800,79 @@
+                          if isinstance(r, str) and r.endswith(".zip")
+                          and os.path.exists(r))
+         except (OSError, ValueError, subprocess.SubprocessError):
++            # Same declared fallback as the non-answer branch above: a
++            # timeout or a crashed probe is a fact about THIS MOMENT's load,
++            # not about where the interpreter's stdlib lives.
++            roots.extend(_declared_secondary_roots(cand))
+             continue
+     _SECONDARY_ROOTS_CACHE = sorted(set(roots))
+     return list(_SECONDARY_ROOTS_CACHE)
++
++
++#: The macOS system ``/usr/bin/python3`` is a shim whose installation lives
++#: under the CommandLineTools framework tree and the fixed ``/Library/Python``
++#: site-packages locations -- none of which are derivable from the shim's own
++#: path. Globbed, not pinned to a version, so a macOS update needs no edit.
++_SYSTEM_PYTHON_ROOT_PATTERNS = (
++    "/Library/Developer/CommandLineTools/Library/Frameworks/"
++    "Python3.framework/Versions/*",
++    "/Library/Developer/CommandLineTools/Library/Frameworks/"
++    "Python3.framework/Versions/*/lib/python3.*",
++    "/Library/Developer/CommandLineTools/Library/Frameworks/"
++    "Python3.framework/Versions/*/lib/python3.*/lib-dynload",
++    "/Library/Developer/CommandLineTools/Library/Frameworks/"
++    "Python3.framework/Versions/*/lib/python3.*/site-packages",
++    "/Library/Python/*/site-packages",
++    "~/Library/Python/*/lib/python/site-packages",
++)
++
++
++def _declared_secondary_roots(cand: str) -> list[str]:
++    """Installation roots for ``cand`` derived WITHOUT executing it.
++
++    The declared half of the 1b composition (joint round J2, 2026-10-12).
++    The probe is the primary mechanism and is strictly richer when it
++    answers (it reports ``sys.path`` extras no static rule can know); this
++    is consulted only when the probe does not answer, so the gate degrades
++    to the declared coverage instead of to refusing correct falsifiers.
+ 
++    Two derivations, both existence-filtered so a directory not on disk --
++    which can never be read and so can never be denied -- is never added:
++      * STRUCTURAL: for a framework or Homebrew interpreter, the prefix is
++        ``dirname(dirname(realpath))`` and the stdlib/site-packages live in
++        fixed positions under it.
++      * DECLARED: the macOS ``/usr/bin/python3`` shim, whose installation
++        the structural rule cannot reach (its prefix resolves to ``/``),
++        gets the fixed CommandLineTools and /Library/Python locations.
++    """
++    out: list[str] = []
++    real = os.path.realpath(cand)
++    prefix = os.path.dirname(os.path.dirname(real))
++    # STRUCTURAL ONLY WHEN THE PREFIX DEMONSTRABLY IS AN INSTALLATION:
++    # ``dirname(dirname(/usr/bin/python3))`` is ``/usr``, and the first
++    # version of this helper added it wholesale to the allow set -- a
++    # widening nobody sanctioned -- while missing the CommandLineTools tree
++    # where that shim's stdlib actually lives. Caught by executing the
++    # producer, not by review. The prefix itself is NEVER added: only the
++    # ``lib/python3.*`` trees the import bootstrap reads.
++    # BOTH the shim-level and the resolved prefix: Homebrew's bootstrap sees
++    # ``/opt/homebrew/lib/python3.*`` (the candidate's own prefix) while the
++    # realpath resolves into the Cellar -- the observer may be handed either
++    # spelling, so the fallback declares both where they exist.
++    _prefixes = {prefix, os.path.dirname(os.path.dirname(cand))}
++    libs = sorted({lib for pf in _prefixes if pf not in ("", "/", os.sep)
++                   for lib in glob.glob(os.path.join(pf, "lib", "python3.*"))})
++    if libs:
++        out.extend(libs)
++        for lib in libs:
++            out.extend(glob.glob(os.path.join(lib, "lib-dynload")))
++            out.extend(glob.glob(os.path.join(lib, "site-packages")))
++    else:
++        for pat in _SYSTEM_PYTHON_ROOT_PATTERNS:
++            out.extend(glob.glob(os.path.expanduser(pat)))
++    return sorted(set(r for r in out if os.path.isdir(r)))
+ 
++
+ def _interpreter_roots() -> list[str]:
+     """Directories the interpreter itself must be able to read.
+ 
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-12 20:07:15
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/bench/reference_runner_v3.py	2026-10-12 20:37:47
+@@ -2369,6 +2369,21 @@
+     if (e.get("routing_verdict_unreconciled") or "").strip():
+         return False
+     if e.get("routing_deferred") or e.get("hil_escalated"):
++        return False
++    # `error_routed` IS INSTRUMENT CONTACT THE CONJUNCTS ABOVE CANNOT SEE
++    # (joint round J1, 2026-10-12, answering the standing refutation condition
++    # "if any field not tested here records instrument contact, the door is
++    # too wide"). It is stamped only when a rung GENUINELY REACHED a model.
++    # Two ways it can stand beside an empty routing_history: (a) the telemetry
++    # append at the single routing_history write site is wrapped in
++    # `except Exception` ("telemetry must not fell a run"), so a failed write
++    # erases the only record while this flag survives; (b) every archived
++    # registry written before routing_history existed (2026-09-02): 68
++    # archived entries carry error_routed=True with no routing_history, 0 of
++    # which this door releases today only because all 68 happen to carry
++    # another conjunct (measured over every runner_state.json in bench/logs
++    # and bench/logs_quarantine, 2026-10-12). One line, fails CLOSED.
++    if e.get("error_routed"):
+         return False
+     return True
+ 
+@@ -7362,13 +7377,19 @@
+         # keeps blocking, which is the honest state -- tools decide, and a
+         # tool was at least asked. Test:
+         # bench/tests/test_never_served_findings_enter_the_ladder_2026-10-12.py.
++        # ONE PREDICATE, TWO READERS (joint round J1, 2026-10-12): the serve
++        # admission now keys on the SAME predicate as the door, so the two
++        # cannot drift -- which is this module's own excluded-implies-reported
++        # discipline. Behavioural delta, measured: a routing_history whose
++        # every record is no-reading (the reclassified transport-dead serve
++        # above) no longer consumes the one admission, so the ladder retries
++        # on a later round exactly as the transport-dead guard's own comment
++        # promises ("must not burn the attempt"). A serve that reached a
++        # model sets error_routed, which the predicate now tests, so the
++        # one-attempt guard is unchanged where a model answered.
+         _never_served = (
+             e.get("status") == "UNCONFIRMED"
+-            and not (e.get("falsifier_code") or "").strip()
+-            and not (e.get("falsifier_verdict") or "").strip()
+-            and not e.get("verdicts")
+-            and not e.get("routing_history")
+-            and not e.get("error_routed"))
++            and _routing_ladder_never_served(e))
+         if not e.get("escalated") and not _never_served:
+             continue
+         if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+@@ -7591,6 +7612,35 @@
+                          f"besides its own source; deferred rather than retried, "
+                          f"so it still counts toward the irreducible queue")
+                     continue
++                # A DEAD TRANSPORT IS NOT A RULING (joint round J1,
++                # 2026-10-12). The record appended above carries the verdict
++                # the ladder RETURNED, and when no model was reached that
++                # verdict is "ERROR" -- a string the never-served door reads
++                # as a ruling, which is false: nothing read the finding.
++                # Measured end-to-end by
++                # scripts/transport_dead_serve_blocks_for_ever_2026-10-12.py:
++                # a C0066-shaped entry served once on a dead transport was
++                # BLOCKED FOR EVER -- door closed by the ERROR record, serve
++                # admission consumed by the non-empty routing_history -- the
++                # exact composed defect of the 2026-10-12 repair, one failure
++                # class over. Reclassify the record to the documented
++                # no-reading sentinel (this is the write the
++                # NO_READING_ROUTING_VERDICTS comment already described) and
++                # say directly that no rung was reached. ONLY the
++                # ERROR-with-zero-models-reached shape is reclassified: a
++                # verdict a decider actually returned (UNTOOLABLE, REFUTED,
++                # INTEGRITY_VIOLATION...) requires falsifier code, which
++                # requires a reached model, so it never coincides with this
++                # branch in production -- and a mocked serve asserting such a
++                # verdict keeps its ruling semantics, per
++                # test_the_serve_does_not_consume_the_door_2026-10-12.py.
++                _rh = e.get("routing_history") or []
++                if (_rh and isinstance(_rh[-1], dict)
++                        and not bool(_rh[-1].get("resolved"))
++                        and str(_rh[-1].get("verdict") or "").strip().upper()
++                        == "ERROR"):
++                    _rh[-1]["verdict"] = "UNRESOLVED"
++                    _rh[-1]["rungs_reached"] = 0
+                 continue  # transport-dead: no model reached; retry a later round
+         if result.verdict == "DUPLICATE":
+             # NO VOTING (founder ruling 2026-08-19). routing_enabled is unset in
+
+### fable:attempt-1:bench/tests/test_capabilities_disabled_by_config_2026-09-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_capabilities_disabled_by_config_2026-09-10.py	2026-09-17 19:05:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/bench/tests/test_capabilities_disabled_by_config_2026-09-10.py	2026-10-12 20:47:05
+@@ -239,8 +239,16 @@
+             mine = {r["read"] for r in surveyed["rows"] if r["leaf"] == leaf}
+             assert mine == {bool(sites)}, (leaf, mine, sites)
+ 
+-    def test_only_max_papers_per_round_is_unread_and_its_block_explains_it(
++    def test_only_max_papers_per_round_is_unread_and_its_own_note_explains_it(
+             self, surveyed):
++        """ASSERTION REPLACED 2026-10-12 (joint round, parked item 2), sharper.
++        It pinned `why` to the enclosing block's `_note`, which documents WHY
++        retrieval is off but not that THIS KEY IS UNREAD -- a reader could
++        still take the key for the load-bearing switch. The arm files now
++        carry a sibling `_max_papers_per_round_note` stating the redundancy
++        (readers_of() = [], api_access=[] is the read control), and
++        explanation() prefers a sibling note over the block note, so `why`
++        must now be the sibling note and must name the redundancy."""
+         rows = self._exp56(surveyed)
+         unread = sorted((r["file"], r["path"]) for r in rows if not r["read"])
+         assert unread == sorted(
+@@ -248,8 +256,12 @@
+             for a in ARMS), unread
+         for r in rows:
+             if not r["read"]:
+-                note = _arm_data(r["file"].rsplit("/", 1)[1])["_ouroboros"]["_note"]
++                blk = _arm_data(r["file"].rsplit("/", 1)[1])["_ouroboros"]
++                note = blk["_max_papers_per_round_note"]
+                 assert r["status"] == "DOCUMENTED" and r["why"] == note.strip()
++                assert "api_access" in r["why"] and "NO runner module" in r["why"], (
++                    "the dedicated note must state the redundancy, not restate "
++                    "the block's intent")
+ 
+     def test_the_counts_the_script_prints(self, surveyed):
+         """15 off-switches, 12 read. Pinned so a config edit cannot move the
+@@ -268,12 +280,22 @@
+             if r["status"] == "CITED":
+                 assert r["cited"].startswith("_convergence_criteria.description: ")
+ 
+-    def test_deleting_the_block_note_makes_that_row_unexplained(self, mod, surveyed):
+-        """Control: the block-level lookup is what explains the row."""
++    def test_deleting_both_notes_makes_that_row_unexplained(self, mod, surveyed):
++        """CONTROL REPLACED 2026-10-12 (joint round, parked item 2), sharper
++        and non-vacuous in both directions. The old control deleted only the
++        block `_note` and expected UNEXPLAINED; with the dedicated sibling
++        note now on file that expectation is false -- and rightly so, the
++        sibling note is the sharper record. The replacement pins BOTH facts:
++        the sibling note alone keeps the row DOCUMENTED, and only deleting
++        both notes makes it UNEXPLAINED."""
+         import copy
+         data = copy.deepcopy(_arm_data(ARMS[0]))
+         del data["_ouroboros"]["_note"]
+         rows = {r["path"]: r for r in mod.classify(data, "x", surveyed["read"])}
++        assert rows["_ouroboros.max_papers_per_round"]["status"] == "DOCUMENTED", (
++            "the dedicated sibling note must explain the row on its own")
++        del data["_ouroboros"]["_max_papers_per_round_note"]
++        rows = {r["path"]: r for r in mod.classify(data, "x", surveyed["read"])}
+         assert rows["_ouroboros.max_papers_per_round"]["status"] == "UNEXPLAINED"
+         assert rows["merge_arbitration_enabled"]["status"] == "DOCUMENTED"
+ 
+
+### fable:attempt-1:bench/tests/test_never_served_findings_enter_the_ladder_2026-10-12.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_never_served_findings_enter_the_ladder_2026-10-12.py	2026-10-12 19:42:15
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/bench/tests/test_never_served_findings_enter_the_ladder_2026-10-12.py	2026-10-12 20:39:26
+@@ -56,7 +56,18 @@
+     ladder_was_empty = False
+ 
+ 
+-def test_never_served_subcritical_is_served_exactly_once_and_still_blocks():
++def test_a_no_reading_serve_is_retried_and_a_ruled_serve_is_not():
++    """REPLACED 2026-10-12 (joint round J1), and the old pin was measured
++    wrong at system level. This test pinned "served exactly once" for an
++    UNRESOLVED outcome. The only live serve that produces an UNRESOLVED
++    record is one NO model answered (transport-dead: measured by
++    scripts/transport_dead_serve_blocks_for_ever_2026-10-12.py, the ladder's
++    reachable verdicts never include the no-reading sentinels), and burning
++    the one admission on it contradicts the transport-dead guard's own
++    promise ("must not burn the attempt") -- composed with the never-served
++    door it blocked a C0066-shaped entry FOR EVER. The sharper pin
++    distinguishes by outcome: a serve that read nothing is retried; a serve
++    an instrument RULED on is served exactly once."""
+     reg = rr.FindingRegistry()
+     reg.entries["C9001"] = _never_served_entry(0.45)
+     served = []
+@@ -69,14 +80,35 @@
+         rr._apply_routing(reg, 6, EXP, cfg=_cfg())
+         rr._apply_routing(reg, 7, EXP, cfg=_cfg())
+ 
+-    assert served == ["C9001"], (
+-        "the never-served entry must be dispatched exactly once; the "
+-        "routing_history record is the one-attempt guard")
+-    assert len(reg.entries["C9001"].get("routing_history", [])) == 1
+-    # SERVICE, NOT RELEASE: unresolved and unproven, it still blocks A4.
++    assert served == ["C9001", "C9001"], (
++        "a serve that produced NO reading must not consume the admission; "
++        "a healed transport can never decide a finding it is refused")
++    assert len(reg.entries["C9001"].get("routing_history", [])) == 2
++    # LEGACY CALLERS UNCHANGED: with no round passed, the door is disabled
++    # and the unresolved, unproven entry still blocks A4.
+     assert reg.unverified_critical_count() == 1
+ 
++    # THE RULED HALF, same machinery: UNTOOLABLE is a ruling and is final.
++    reg2 = rr.FindingRegistry()
++    reg2.entries["C9001"] = _never_served_entry(0.45)
++    served2 = []
+ 
++    class _Ruled(_Unresolved):
++        verdict = "UNTOOLABLE"
++
++    def fake_route2(finding, *a, **k):
++        served2.append(finding["id"])
++        return _Ruled()
++
++    with mock.patch.object(routing, "route", fake_route2):
++        rr._apply_routing(reg2, 6, EXP, cfg=_cfg())
++        rr._apply_routing(reg2, 7, EXP, cfg=_cfg())
++
++    assert served2 == ["C9001"], (
++        "an entry an instrument ruled on must be served exactly once")
++    assert reg2.unverified_critical_count() == 1
++
++
+ def test_a_tool_resolution_clears_a4():
+     reg = rr.FindingRegistry()
+     reg.entries["C9001"] = _never_served_entry(0.45)
+@@ -118,10 +150,19 @@
+     assert served == ["C9002"], "pre-existing ERROR-class routing regressed"
+ 
+ 
+-def test_an_already_served_entry_is_not_re_entered():
++def test_an_already_RULED_entry_is_not_re_entered():
++    """REPLACED 2026-10-12 (joint round J1), sharper, and the old fixture was
++    the measured-wrong shape: it keyed "already served" on a routing_history
++    record whose verdict was UNRESOLVED -- a record that says NOTHING READ
++    THE FINDING. Refusing re-entry on that record is what blocked a
++    C0066-shaped entry for ever when composed with the never-served door.
++    The sharper pins: a RULED record refuses re-entry; so does error_routed
++    (stamped only when a rung genuinely reached a model) even when the
++    telemetry record was lost."""
+     reg = rr.FindingRegistry()
+     e = _never_served_entry(0.45)
+-    e["routing_history"] = [{"round": 3, "verdict": "UNRESOLVED"}]
++    e["routing_history"] = [{"round": 3, "verdict": "UNTOOLABLE",
++                             "resolved": False}]
+     reg.entries["C9001"] = e
+     served = []
+ 
+@@ -133,5 +174,24 @@
+         rr._apply_routing(reg, 6, EXP, cfg=_cfg())
+ 
+     assert served == [], (
+-        "an entry the ladder already served must not re-enter through the "
+-        "never-served door")
++        "an entry the ladder already ruled on must not re-enter through the "
++        "never-served admission")
++
++    # A LOST TELEMETRY RECORD IS NOT A LOST SERVICE: error_routed alone
++    # (the pre-2026-09-02 archive shape, 68 entries) also refuses re-entry.
++    reg2 = rr.FindingRegistry()
++    e2 = _never_served_entry(0.45)
++    e2["error_routed"] = True
++    reg2.entries["C9001"] = e2
++    served2 = []
++
++    def fake_route2(finding, *a, **k):
++        served2.append(finding["id"])
++        return _Unresolved()
++
++    with mock.patch.object(routing, "route", fake_route2):
++        rr._apply_routing(reg2, 6, EXP, cfg=_cfg())
++
++    assert served2 == [], (
++        "error_routed records a model was reached; the admission must refuse "
++        "it even when the routing_history write failed")
+
+### fable:attempt-1:bench/tests/test_probe_failure_keeps_the_carve_out_2026-10-12.py
+--- /dev/null	2026-10-12 20:53:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/bench/tests/test_probe_failure_keeps_the_carve_out_2026-10-12.py	2026-10-12 20:43:25
+@@ -0,0 +1,101 @@
++"""A probe that does not answer must not cost the interpreter carve-out.
++
++JOINT ROUND J2, 2026-10-12. The probe-based carve-out failed CLOSED: a
++candidate interpreter that did not answer within 10s contributed no roots, and
++the per-process cache made one loaded moment permanent -- measured by
++scripts/probe_failure_regresses_the_gate_2026-10-12.py, every probe timing out
++left 0 roots for the life of the process, returning the gate to refusing every
++spawned-interpreter falsifier (the C0050 false-refusal class). The repair is a
++DECLARED fallback per failed candidate: roots derived from the candidate's
++path without executing it, existence-filtered, consulted only on probe
++failure. The probe stays primary and normal operation is byte-identical.
++"""
++import os
++import subprocess
++import sys
++from pathlib import Path
++
++import pytest
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
++
++import bench.falsifier_verify as fv  # noqa: E402
++
++
++@pytest.fixture(autouse=True)
++def fresh_cache():
++    saved = fv._SECONDARY_ROOTS_CACHE
++    fv._SECONDARY_ROOTS_CACHE = None
++    yield
++    fv._SECONDARY_ROOTS_CACHE = saved
++
++
++def _timeout(*a, **k):
++    raise subprocess.TimeoutExpired(cmd=a[0], timeout=k.get("timeout", 10))
++
++
++def test_total_probe_failure_still_contributes_roots(monkeypatch):
++    monkeypatch.setattr(subprocess, "run", _timeout)
++    roots = fv._secondary_interpreter_roots()
++    assert roots, (
++        "every probe timed out and the carve-out vanished; the gate is back "
++        "to refusing correct falsifiers for the life of the process")
++    assert all(os.path.isdir(r) for r in roots), (
++        "a declared root that does not exist can never be read, so declaring "
++        "it is dead weight -- the fallback must existence-filter")
++
++
++def test_the_fallback_never_declares_a_bare_system_prefix(monkeypatch):
++    """dirname(dirname(/usr/bin/python3)) is /usr; the first draft of the
++    fallback allowed it wholesale. A bare /usr or / in the allow set is a
++    widening nobody sanctioned."""
++    monkeypatch.setattr(subprocess, "run", _timeout)
++    roots = fv._secondary_interpreter_roots()
++    assert not any(r in ("/", "/usr", "/usr/local", "/opt") for r in roots)
++
++
++@pytest.mark.skipif(
++    not os.path.isdir("/Library/Developer/CommandLineTools/Library/Frameworks/"
++                      "Python3.framework/Versions"),
++    reason="no CommandLineTools python on this machine")
++def test_the_system_shim_gets_its_declared_tree_without_execution():
++    declared = fv._declared_secondary_roots("/usr/bin/python3")
++    assert any("Python3.framework/Versions" in r and "/lib/python3." in r
++               for r in declared), (
++        "the /usr/bin/python3 shim's stdlib lives under CommandLineTools and "
++        "is not derivable from the shim path; the declared patterns must "
++        "cover it or C0050-class falsifiers are refused whenever the probe "
++        "fails")
++
++
++def test_bootstrap_class_coverage_degrades_but_does_not_vanish(monkeypatch):
++    """Every import-bootstrap-class tree the live probe reports stays allowed
++    in at least one REALPATH spelling under total probe failure. The observer
++    realpaths both the read target and the allow set, so spelling collapse is
++    the correct comparison."""
++    normal = set(fv._secondary_interpreter_roots())
++    fv._SECONDARY_ROOTS_CACHE = None
++    monkeypatch.setattr(subprocess, "run", _timeout)
++    degraded = {os.path.realpath(r) for r in fv._secondary_interpreter_roots()}
++    gaps = [r for r in normal
++            if ("/lib/python3" in r or r.rstrip("/").endswith(
++                ("site-packages", "lib-dynload")))
++            and os.path.realpath(r) not in degraded]
++    assert gaps == [], f"bootstrap-class trees lost under probe failure: {gaps}"
++
++
++def test_a_working_probe_is_byte_identical_no_fallback_consulted(monkeypatch):
++    """Additive standard, both halves: the fallback is wired AND unreached
++    when the mechanism it backs up is healthy."""
++    calls = []
++    real = fv._declared_secondary_roots
++
++    def spy(cand):
++        calls.append(cand)
++        return real(cand)
++
++    monkeypatch.setattr(fv, "_declared_secondary_roots", spy)
++    fv._secondary_interpreter_roots()
++    assert calls == [], (
++        f"the declared fallback was consulted although every probe answered: "
++        f"{calls}")
+
+### fable:attempt-1:bench/tests/test_transport_dead_serve_is_not_a_ruling_2026-10-12.py
+--- /dev/null	2026-10-12 20:53:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/bench/tests/test_transport_dead_serve_is_not_a_ruling_2026-10-12.py	2026-10-12 20:38:17
+@@ -0,0 +1,130 @@
++"""A transport-dead serve must not mint a ruling-shaped record nor burn the admission.
++
++THE FOURTH LADDER OUTCOME (joint round J1, 2026-10-12). The composition repair
++distinguished SERVED-AND-NO-READING / SERVED-AND-RULED / RESOLVED by the
++routing_history record's verdict string. But the live ladder NEVER emits the
++no-reading sentinels ("", "UNRESOLVED") -- measured by
++scripts/transport_dead_serve_blocks_for_ever_2026-10-12.py, the reachable
++verdict set of bench.routing.route intersected with NO_READING_ROUTING_VERDICTS
++is EMPTY -- and a serve on a DEAD TRANSPORT (every rung's dispatch failed, no
++model reached) returned verdict "ERROR", which the door read as a ruling. The
++entry was then blocked for ever: door closed by the ERROR record, serve
++admission consumed by the non-empty routing_history. The exact composed defect
++the 2026-10-12 repair removed, one failure class over.
++
++THE REPAIR PINNED HERE: (1) the transport-dead path reclassifies its own
++just-appended ERROR record to "UNRESOLVED" with rungs_reached=0 -- the write
++the NO_READING_ROUTING_VERDICTS comment always described; (2) the serve
++admission keys on `_routing_ladder_never_served` itself, so a no-reading serve
++does not consume the one admission; (3) `error_routed` -- stamped only when a
++rung genuinely reached a model -- is a conjunct of the door, so the one-attempt
++guard is unchanged wherever a model answered, and the 68 archived entries that
++carry error_routed with no routing_history can never be released as unserved.
++"""
++import sys
++from pathlib import Path
++from unittest import mock
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
++
++import bench.reference_runner_v3 as rr  # noqa: E402
++import bench.routing as routing  # noqa: E402
++
++EXP = {"models": [{"label": "X-SIM"}, {"label": "Y-SIM"}]}
++LATER = 9
++
++
++def _entry(cid="C9001"):
++    return {
++        "canonical_id": cid, "status": "UNCONFIRMED", "severity": 0.45,
++        "description": "never served", "source_model": "X-SIM",
++        "falsifier_code": "", "falsifier_verdict": "", "verdicts": [],
++        "escalated": False, "verified": False,
++        "open_since_round": 5, "last_status_change_round": 5,
++    }
++
++
++class _DeadTransport:
++    """What resolve_via_routing returns when no rung's dispatch succeeds.
++
++    Shape derived by executing the real function with the runner's own
++    resolve_fn contract (a failed dispatch returns ""): verdict ERROR,
++    resolved False, no code. SIM labels only; no dispatch leaves the machine.
++    """
++
++    def __init__(self):
++        self.verdict = "ERROR"
++        self.resolved = False
++        self.falsifier_code = ""
++        self.model_used = "Y-SIM"
++        self.duplicate_of = None
++        self.rungs_tried = 1
++        self.ladder_was_empty = False
++
++
++def _serve(reg, round_idx, result=None):
++    with mock.patch.object(routing, "route", return_value=result or _DeadTransport()):
++        rr._apply_routing(reg, round_idx, EXP,
++                          cfg=rr.RunnerConfig(routing_enabled=True),
++                          repo_root=str(Path(__file__).resolve().parents[2]))
++
++
++def test_a_dead_transport_record_is_reclassified_to_no_reading():
++    reg = rr.FindingRegistry()
++    reg.entries["C9001"] = _entry()
++    _serve(reg, 7)
++    rec = reg.entries["C9001"]["routing_history"][0]
++    assert rec["verdict"] == "UNRESOLVED", (
++        "a serve no model answered wrote a ruling-shaped verdict; the door "
++        "will read it as instrument contact that never happened")
++    assert rec["rungs_reached"] == 0
++    assert rec["resolved"] is False
++
++
++def test_the_entry_is_released_AND_named_not_blocked_for_ever():
++    reg = rr.FindingRegistry()
++    reg.entries["C9001"] = _entry()
++    _serve(reg, 7)
++    assert reg.unverified_critical_count(LATER) == 0
++    assert reg.ladder_unserved_findings(LATER) == ["C9001"]
++
++
++def test_the_admission_is_not_burnt_the_ladder_retries_next_round():
++    """The transport-dead guard's own promise: 'must not burn the attempt'."""
++    reg = rr.FindingRegistry()
++    reg.entries["C9001"] = _entry()
++    _serve(reg, 7)
++    _serve(reg, 8)
++    assert len(reg.entries["C9001"]["routing_history"]) == 2, (
++        "the failed serve consumed the one admission; a later round with a "
++        "healed transport can never decide this finding")
++
++
++def test_a_ruling_verdict_is_NOT_reclassified():
++    """UNTOOLABLE on a mocked serve keeps its ruling semantics and blocks."""
++    dead = _DeadTransport()
++    dead.verdict = "UNTOOLABLE"
++    reg = rr.FindingRegistry()
++    reg.entries["C9001"] = _entry()
++    _serve(reg, 7, result=dead)
++    assert reg.entries["C9001"]["routing_history"][0]["verdict"] == "UNTOOLABLE"
++    assert reg.unverified_critical_count(LATER) == 1
++    assert reg.ladder_unserved_findings(LATER) == []
++
++
++def test_error_routed_alone_closes_the_door():
++    """The named untested instrument-contact field (cc2's standing refutation
++    condition). 68 archived entries carry error_routed=True with an empty
++    routing_history -- the flag predates the history field by six weeks."""
++    e = _entry()
++    e["error_routed"] = True
++    assert rr._routing_ladder_never_served(e) is False
++
++
++def test_a_served_and_answered_entry_is_not_readmitted():
++    """One-attempt guard unchanged where a model answered: error_routed set,
++    predicate False, so the serve admission refuses it."""
++    e = _entry()
++    e["error_routed"] = True
++    e["routing_history"] = [{"round": 7, "verdict": "ERROR", "resolved": False}]
++    assert rr._routing_ladder_never_served(e) is False
+
+### fable:attempt-1:scripts/door_open_archive_carries_no_instrument_contact_2026-10-12.py
+--- /dev/null	2026-10-12 20:53:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/scripts/door_open_archive_carries_no_instrument_contact_2026-10-12.py	2026-10-12 20:51:15
+@@ -0,0 +1,67 @@
++#!/usr/bin/env python3
++"""Do any archived door-open entries carry untested instrument-contact fields?
++
++JOINT ROUND J1, 2026-10-12. The producer for two figures cited in
++`_routing_ladder_never_served`'s error_routed conjunct and its tests:
++
++  * 68 archived entries carry error_routed=True with NO routing_history —
++    the flag (Exp 43, 2026-07-22) predates the history field (2026-09-02).
++  * 0 of 681 door-open entries across every archived runner_state.json carry
++    error_routed or escalated — Wilson upper bound 0.5609% (statsmodels and
++    mpmath agreeing to 1e-9) — i.e. the conjunct guards a state the archive
++    does not currently contain; its justification is the LIVE telemetry
++    except-path and the pre-2026-09-02 record shape, not a live instance.
++
++Usage: python3 scripts/door_open_archive_carries_no_instrument_contact_2026-10-12.py
++"""
++import glob
++import json
++import os
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
++
++from _cli_help import answer_help  # noqa: E402
++
++answer_help(__doc__)
++
++from bench.reference_runner_v3 import _routing_ladder_never_served  # noqa: E402
++
++
++def main() -> int:
++    flag_no_history = 0
++    door_open = 0
++    contact = []
++    for p in (glob.glob("bench/logs/*/runner_state.json")
++              + glob.glob("bench/logs_quarantine/*/runner_state.json")):
++        try:
++            d = json.load(open(p))
++        except Exception:
++            continue
++        ents = d.get("registry", {}).get("entries", {}) or d.get("entries", {})
++        if not isinstance(ents, dict):
++            continue
++        for cid, e in ents.items():
++            if e.get("error_routed") and not e.get("routing_history"):
++                flag_no_history += 1
++            if _routing_ladder_never_served(e):
++                door_open += 1
++                if e.get("error_routed") or e.get("escalated"):
++                    contact.append((p, cid))
++    print(f"error_routed with no routing_history (archive): {flag_no_history}")
++    print(f"door-open entries across the archive: {door_open}")
++    print(f"door-open AND carrying error_routed/escalated: {len(contact)}")
++    try:
++        from statsmodels.stats.proportion import proportion_confint
++        lo, hi = proportion_confint(len(contact), max(door_open, 1),
++                                    alpha=0.05, method="wilson")
++        print(f"proportion {len(contact)}/{door_open}, Wilson "
++              f"[{lo:.4%}, {hi:.4%}]")
++    except ImportError:
++        print("statsmodels unavailable; proportion reported without interval")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:scripts/probe_failure_regresses_the_gate_2026-10-12.py
+--- /dev/null	2026-10-12 20:53:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/scripts/probe_failure_regresses_the_gate_2026-10-12.py	2026-10-12 20:42:59
+@@ -0,0 +1,94 @@
++#!/usr/bin/env python3
++"""Does a probe failure put the integrity gate back to refusing correct falsifiers?
++
++JOINT ROUND J2, 2026-10-12. The 1b composition made the interpreter carve-out
++probe-based: each discoverable interpreter reports its own installation roots.
++The probe fails CLOSED -- a candidate that does not answer contributes nothing
++-- and the result is cached per process. MEASURED HERE on the unfixed tree:
++
++    normal probe                         22 roots
++    every probe times out (loaded box)    0 roots
++    after the load clears, same process   0 roots  <- POISONED FOR PROCESS LIFE
++    stripped PATH                        22 roots  (static candidates cover it)
++
++So one 10-second load spike at the first falsifier of a run disabled the
++carve-out for EVERY falsifier of that run: the false-refusal class the fix
++exists to remove (a spawned /usr/bin/python3's import bootstrap recorded as
++denials, any denial becoming INTEGRITY_VIOLATION) RETURNED, run-wide.
++
++THE REPAIR MEASURED BY THIS SCRIPT'S SECOND HALF: a declared fallback per
++failed candidate -- roots derived from the candidate's path without executing
++it (structural lib/python3.* trees; the fixed CommandLineTools and
++/Library/Python locations for the /usr/bin/python3 shim), existence-filtered,
++consulted ONLY on probe failure. With every probe timing out, the import-
++bootstrap-class trees (stdlib, lib-dynload, site-packages, user-site) of every
++candidate remain covered in at least one spelling, and the observer realpaths
++both the read target and the allow set, so symlink spellings collapse. When
++the probe answers, behaviour is byte-identical: the fallback is unreached.
++
++Usage: python3 scripts/probe_failure_regresses_the_gate_2026-10-12.py
++"""
++import os
++import subprocess
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
++
++from _cli_help import answer_help  # noqa: E402
++
++answer_help(__doc__)
++
++import bench.falsifier_verify as fv  # noqa: E402
++
++
++def roots_under(patch=None):
++    fv._SECONDARY_ROOTS_CACHE = None
++    if patch is None:
++        return set(fv._secondary_interpreter_roots())
++    real = subprocess.run
++    subprocess.run = patch
++    try:
++        return set(fv._secondary_interpreter_roots())
++    finally:
++        subprocess.run = real
++
++
++def main() -> int:
++    def timeout(*a, **k):
++        raise subprocess.TimeoutExpired(cmd=a[0], timeout=k.get("timeout", 10))
++
++    normal = roots_under()
++    loaded = roots_under(timeout)
++    healed = set(fv._secondary_interpreter_roots())  # cache from the loaded pass
++    print(f"normal probe: {len(normal)} roots")
++    print(f"every probe times out: {len(loaded)} roots")
++    print(f"same process after load clears (cached): {len(healed)} roots")
++    missing = sorted(normal - loaded)
++    # THE OBSERVER REALPATHS BOTH SIDES (fv._resolve on the read target,
++    # fv._realpaths on the allow set), so a spelling is a gap only if its
++    # REALPATH is outside the realpathed fallback set.
++    loaded_real = {os.path.realpath(r) for r in loaded}
++    boot_missing = [m for m in missing
++                    if ("/lib/python3" in m or m.rstrip("/").endswith(
++                        ("site-packages", "lib-dynload")))
++                    and os.path.realpath(m) not in loaded_real]
++    print(f"missing vs normal: {len(missing)} "
++          f"(import-bootstrap-class among them: {len(boot_missing)})")
++    for m in boot_missing:
++        print("  BOOTSTRAP-CLASS GAP:", m)
++    if not loaded:
++        print("-> REGRESSED: a load spike returns the gate to refusing every "
++              "spawned-interpreter falsifier for the life of the process.")
++    elif boot_missing:
++        print("-> PARTIAL: fallback present but a bootstrap-class tree is "
++              "uncovered in every spelling; check whether realpath collapses it.")
++    else:
++        print("-> COVERED: under total probe failure every import-bootstrap-"
++              "class tree stays allowed in at least one spelling; normal "
++              "operation is byte-identical (fallback unreached).")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:scripts/severity_proof_gaming_2026-10-12.py
+--- /dev/null	2026-10-12 20:53:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/scripts/severity_proof_gaming_2026-10-12.py	2026-10-12 20:51:15
+@@ -0,0 +1,88 @@
++#!/usr/bin/env python3
++"""Can severity_is_proven be gamed by self-consistent but WRONG inputs? Measured.
++
++JOINT ROUND J3, 2026-10-12 — the decisive attack on the consolidated severity-
++gate answer, executed against the real module. Two levels, both land:
++
++LEVEL 1 — INPUT PROVENANCE. `_validate_rk_computation` recomputes R_k from the
++model's OWN STATED inputs (R_old, q or eta*d*p, S_k, nu_eff) and compares with
++the model's stated R_k. Nothing cross-checks those inputs against any registry
++fact or tool measurement, so an invented-but-arithmetically-consistent block
++passes: R_old=0.30, q=0.648, R_k=0.1312 -> PASS (recomputed 0.13108...,
++cross-checked by SymPy and by Wolfram Language, local Wolfram Engine:
++0.13108242303872889771...).
++
++LEVEL 2 — THE PROVEN QUANTITY IS NOT THE GATED QUANTITY. `severity_is_proven`
++reads only the proof STATUS. Nothing ties the proof's R_k to the entry's
++severity float, so a proof whose own content is R_k = 0.95 — a HIGH residual
++risk, consistently derived — buys the A4 release of a 0.45 severity float.
++Measured below: A4 goes 1 -> 0 on exactly that proof.
++
++WHAT THE GAMING BUYS, PRECISELY. The enforcement is one-directional by design:
++a proof can only release a SUB-CRITICAL (float < 0.7, the model's own choice)
++from blocking convergence; it cannot confirm, close, refute or demote. So the
++gate does real work against HONEST noise (an unproven float still blocks at
++its claimed value) and is gameable by an ADVERSARIAL seat — but an adversarial
++seat already controls the float itself. The gate demonstrates USE of the
++mathematical model, which is the founder's 2026-09-06 formulation; it does not
++demonstrate that the inputs are true, and it does not demonstrate that the
++float it releases has anything to do with the arithmetic shown.
++
++Usage: python3 scripts/severity_proof_gaming_2026-10-12.py
++"""
++import os
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
++
++from _cli_help import answer_help  # noqa: E402
++
++answer_help(__doc__)
++
++import bench.reference_runner_v3 as rr  # noqa: E402
++
++
++def main() -> int:
++    blk1 = """
++R_old = 0.30
++q = 0.90 x 0.80 x 0.90 = 0.648
++R_k = 0.30 * (1 - 0.648) / (1 - 0.648*0.30) = 0.1312
++"""
++    print("LEVEL 1, invented-but-consistent inputs:",
++          rr._validate_rk_computation(blk1))
++
++    blk2 = """
++R_old = 0.95
++q = 0.0
++R_k = 0.95 * (1 - 0.0) / (1 - 0.0*0.95) = 0.95
++"""
++    st, mrk, rec = rr._validate_rk_computation(blk2)
++    print("LEVEL 2, proof computing R_k = 0.95:", (st, mrk, rec))
++    e = {
++        "canonical_id": "C9100", "status": "UNCONFIRMED", "severity": 0.45,
++        "description": "x", "falsifier_code": "", "falsifier_verdict": "",
++        "verdicts": [], "open_since_round": 0, "last_status_change_round": 0,
++        "severity_proof": {"status": st, "model_rk": mrk, "recomputed_rk": rec,
++                           "delta": abs(mrk - rec), "round": 0},
++    }
++    print("severity_is_proven on a 0.95-risk proof excusing a 0.45 float:",
++          rr.severity_is_proven(e))
++    reg = rr.FindingRegistry()
++    reg.entries["C9100"] = e
++    a4_gamed = reg.unverified_critical_count()
++    e2 = {k: v for k, v in e.items() if k != "severity_proof"}
++    reg2 = rr.FindingRegistry()
++    reg2.entries["C9100"] = e2
++    a4_honest = reg2.unverified_critical_count()
++    print(f"A4 with the gamed proof: {a4_gamed} | without any proof: {a4_honest}")
++    if a4_gamed == 0 and a4_honest == 1:
++        print("-> GAMEABLE at both levels; the release is bought by arithmetic "
++              "about a quantity the gate never compares with the float it "
++              "releases. Repair direction needs the founder's ruling on WHAT "
++              "severity must be computed FROM.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:scripts/transport_dead_serve_blocks_for_ever_2026-10-12.py
+--- /dev/null	2026-10-12 20:53:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_w3jzo2_i/repo/scripts/transport_dead_serve_blocks_for_ever_2026-10-12.py	2026-10-12 20:37:07
+@@ -0,0 +1,162 @@
++#!/usr/bin/env python3
++"""The fourth ladder outcome: a transport-dead serve writes a ruling-shaped record.
++
++THE QUESTION THIS ANSWERS (joint round J1, 2026-10-12). The composition repair in
++`_routing_ladder_never_served` distinguishes three serve outcomes by the record's
++`resolved` flag and verdict string: SERVED-AND-NO-READING (verdict in
++`NO_READING_ROUTING_VERDICTS`, door releases), SERVED-AND-RULED (any other
++verdict, door blocks), and RESOLVED (tool verdict clears it). Is there a fourth?
++
++THERE IS, AND IT IS THE OPPOSITE DIRECTION FROM THE ONE ASKED. The brief asked
++for a record shape where the verdict is empty but an instrument did read the
++finding (door too wide). Measured here, the live defect is the inverse: a
++record whose verdict is a RULING STRING written when NO instrument ever read
++the finding (door too narrow, permanently).
++
++PART 1 — THE LIVE LADDER NEVER EMITS THE NO-READING SENTINELS. Executed, not
++read off the source: every reachable terminal of `bench.routing.route` /
++`resolve_via_routing` is enumerated by stubbing `resolve_fn` (raises, returns
++empty, returns code) and `reverify_fn` (every verdict the runner's decider can
++return, per the return sites of `bench/falsifier_verify.py`). The reachable
++set intersected with `NO_READING_ROUTING_VERDICTS` is EMPTY. So the door's
++release case is reachable only through an EMPTY routing history (never served)
++or a mocked outcome — never from a verdict the live ladder wrote.
++
++PART 2 — THE TRANSPORT-DEAD SERVE, END TO END. When every rung's dispatch
++fails (the 402-cascade class), `resolve_via_routing` returns verdict "ERROR"
++with `resolved=False` and `rungs_tried` counting rungs NO model answered.
++`_apply_routing` appends that record BEFORE the transport-dead guard runs, so
++a C0066-shaped entry served once on a dead transport:
++  * carries a routing_history record whose verdict, "ERROR", the door treats
++    as a ruling — the door CLOSES although nothing ever read the finding;
++  * is never served again, because the `_never_served` admission requires an
++    EMPTY routing_history, which the failed serve just consumed;
++  * and blocks A4 for the life of the run — the exact composed defect the
++    2026-10-12 repair was built to remove, one failure class over.
++The guard's own comment says a transport-dead round "must not burn the attempt
++nor mint a false 'ladder exhausted' record"; for the never-served class it
++burns the attempt AND mints the record.
++
++Usage: python3 scripts/transport_dead_serve_blocks_for_ever_2026-10-12.py
++Exit 0 always; it prints the measurement. Run on the unfixed tree it prints
++BLOCKED FOR EVER; after the repair it prints RELEASED AND RE-SERVED.
++"""
++import os
++import sys
++from pathlib import Path
++from unittest import mock
++
++sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
++
++from _cli_help import answer_help  # noqa: E402
++
++answer_help(__doc__)
++
++import bench.reference_runner_v3 as rr  # noqa: E402
++import bench.routing as routing  # noqa: E402
++
++EXP = {"models": [{"label": "X-SIM"}, {"label": "Y-SIM"}]}
++
++
++def part1_reachable_verdicts() -> set:
++    """Every verdict `route` can return, by execution over stubbed dependencies."""
++    # The verdict strings bench/falsifier_verify.py's reverify path can return,
++    # read from its return sites and executed here as stub deciders.
++    REVERIFY_VOCAB = ["CONFIRMED", "REFUTED", "ERROR", "UNTOOLABLE",
++                      "INTEGRITY_VIOLATION", "NON_DISCRIMINATING"]
++    finding = {"id": "F1", "source_model": "X-SIM", "description": "d"}
++    reached = set()
++
++    def sim(fn, reverify, rungs=("Y-SIM",), self_rung=None):
++        r = routing.resolve_via_routing(finding, list(rungs), fn, reverify,
++                                        max_rungs=0, self_rung=self_rung)
++        reached.add(r.verdict)
++
++    # A dispatch exception never reaches resolve_via_routing: the runner's
++    # resolve_fn closure in _apply_routing catches it and returns "" (verified
++    # by execution -- passing a raising stub here propagates, which is the
++    # wrapper's job to prevent). So "transport dead" and "model produced
++    # nothing" are the SAME shape at this layer: empty code.
++    sim(lambda m, f: "", lambda c: "CONFIRMED")             # dead transport / nothing
++    for v in REVERIFY_VOCAB:                                # decider rules v
++        sim(lambda m, f: "assert False", lambda c, _v=v: _v)
++    sim(lambda m, f: "x", lambda c: "CONFIRMED", rungs=())  # empty ladder
++    sim(lambda m, f: "x", lambda c: "REFUTED", rungs=(), self_rung="X-SIM")
++    # The dedup path, through route() itself.
++    dup = routing.route(finding, ["X-SIM", "Y-SIM"],
++                        [{"id": "F0", "description": "d"}],
++                        lambda m, f: "", lambda c: "ERROR",
++                        lambda a, b: 1.0)
++    reached.add(dup.verdict)
++    return reached
++
++
++def entry(cid="C9001"):
++    return {
++        "canonical_id": cid, "status": "UNCONFIRMED", "severity": 0.45,
++        "description": "never served", "source_model": "X-SIM",
++        "falsifier_code": "", "falsifier_verdict": "", "verdicts": [],
++        "escalated": False, "verified": False,
++        "open_since_round": 5, "last_status_change_round": 5,
++    }
++
++
++class DeadTransportResult:
++    """The exact RoutingResult shape Part 1 measured for an all-rungs-dead serve."""
++
++    def __init__(self):
++        self.verdict = "ERROR"      # measured: resolve_fn raising on every rung
++        self.resolved = False
++        self.falsifier_code = ""
++        self.model_used = "Y-SIM"   # resolve_via_routing sets last_model BEFORE dispatch
++        self.duplicate_of = None
++        self.rungs_tried = 1
++        self.ladder_was_empty = False
++
++
++def part2_end_to_end() -> None:
++    reg = rr.FindingRegistry()
++    reg.entries["C9001"] = entry()
++    repo = str(Path(__file__).resolve().parents[1])
++    cfg = rr.RunnerConfig(routing_enabled=True)
++    with mock.patch.object(routing, "route", return_value=DeadTransportResult()):
++        rr._apply_routing(reg, 7, EXP, cfg=cfg, repo_root=repo)   # the first serve
++        n_after_first = len(reg.entries["C9001"].get("routing_history") or [])
++        rr._apply_routing(reg, 8, EXP, cfg=cfg, repo_root=repo)   # is it retried?
++        n_after_second = len(reg.entries["C9001"].get("routing_history") or [])
++    e = reg.entries["C9001"]
++    rec = (e.get("routing_history") or [{}])[0]
++    a4 = reg.unverified_critical_count(9)
++    named = reg.ladder_unserved_findings(9)
++    print("PART 2 — a C0066-shaped entry served once on a dead transport:")
++    print(f"  routing_history[0].verdict = {rec.get('verdict')!r}, "
++          f"resolved = {rec.get('resolved')!r}")
++    print(f"  records after round-7 serve: {n_after_first}; "
++          f"after round-8 pass: {n_after_second} "
++          f"({'RE-SERVED' if n_after_second > n_after_first else 'NEVER RE-SERVED'})")
++    print(f"  A4 at round 9 = {a4}; ladder_unserved_findings = {named}")
++    if a4 and not named and n_after_second == n_after_first:
++        print("  -> BLOCKED FOR EVER: the door reads the dead-transport record "
++              "as a ruling, the serve's one admission is consumed, and neither "
++              "mechanism can release it. The composed defect is back.")
++    else:
++        print("  -> RELEASED AND RE-SERVED: the record is reclassified as "
++              "no-reading, the door names it, and the ladder may try again.")
++
++
++def main() -> int:
++    reached = part1_reachable_verdicts()
++    overlap = reached & rr.NO_READING_ROUTING_VERDICTS
++    print("PART 1 — verdicts the live ladder can return, by execution:")
++    print(f"  reachable: {sorted(reached)}")
++    print(f"  NO_READING_ROUTING_VERDICTS: {sorted(rr.NO_READING_ROUTING_VERDICTS)}")
++    print(f"  intersection: {sorted(overlap)} "
++          f"({'EMPTY' if not overlap else 'NON-EMPTY'})")
++    print()
++    part2_end_to_end()
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())

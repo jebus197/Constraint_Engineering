@@ -56,7 +56,18 @@ class _Unresolved:
     ladder_was_empty = False
 
 
-def test_never_served_subcritical_is_served_exactly_once_and_still_blocks():
+def test_a_no_reading_serve_is_retried_and_a_ruled_serve_is_not():
+    """REPLACED 2026-10-12 (joint round J1), and the old pin was measured
+    wrong at system level. This test pinned "served exactly once" for an
+    UNRESOLVED outcome. The only live serve that produces an UNRESOLVED
+    record is one NO model answered (transport-dead: measured by
+    scripts/transport_dead_serve_blocks_for_ever_2026-10-12.py, the ladder's
+    reachable verdicts never include the no-reading sentinels), and burning
+    the one admission on it contradicts the transport-dead guard's own
+    promise ("must not burn the attempt") -- composed with the never-served
+    door it blocked a C0066-shaped entry FOR EVER. The sharper pin
+    distinguishes by outcome: a serve that read nothing is retried; a serve
+    an instrument RULED on is served exactly once."""
     reg = rr.FindingRegistry()
     reg.entries["C9001"] = _never_served_entry(0.45)
     served = []
@@ -69,12 +80,33 @@ def test_never_served_subcritical_is_served_exactly_once_and_still_blocks():
         rr._apply_routing(reg, 6, EXP, cfg=_cfg())
         rr._apply_routing(reg, 7, EXP, cfg=_cfg())
 
-    assert served == ["C9001"], (
-        "the never-served entry must be dispatched exactly once; the "
-        "routing_history record is the one-attempt guard")
-    assert len(reg.entries["C9001"].get("routing_history", [])) == 1
-    # SERVICE, NOT RELEASE: unresolved and unproven, it still blocks A4.
+    assert served == ["C9001", "C9001"], (
+        "a serve that produced NO reading must not consume the admission; "
+        "a healed transport can never decide a finding it is refused")
+    assert len(reg.entries["C9001"].get("routing_history", [])) == 2
+    # LEGACY CALLERS UNCHANGED: with no round passed, the door is disabled
+    # and the unresolved, unproven entry still blocks A4.
     assert reg.unverified_critical_count() == 1
+
+    # THE RULED HALF, same machinery: UNTOOLABLE is a ruling and is final.
+    reg2 = rr.FindingRegistry()
+    reg2.entries["C9001"] = _never_served_entry(0.45)
+    served2 = []
+
+    class _Ruled(_Unresolved):
+        verdict = "UNTOOLABLE"
+
+    def fake_route2(finding, *a, **k):
+        served2.append(finding["id"])
+        return _Ruled()
+
+    with mock.patch.object(routing, "route", fake_route2):
+        rr._apply_routing(reg2, 6, EXP, cfg=_cfg())
+        rr._apply_routing(reg2, 7, EXP, cfg=_cfg())
+
+    assert served2 == ["C9001"], (
+        "an entry an instrument ruled on must be served exactly once")
+    assert reg2.unverified_critical_count() == 1
 
 
 def test_a_tool_resolution_clears_a4():
@@ -118,10 +150,19 @@ def test_error_class_subcritical_routing_is_unchanged():
     assert served == ["C9002"], "pre-existing ERROR-class routing regressed"
 
 
-def test_an_already_served_entry_is_not_re_entered():
+def test_an_already_RULED_entry_is_not_re_entered():
+    """REPLACED 2026-10-12 (joint round J1), sharper, and the old fixture was
+    the measured-wrong shape: it keyed "already served" on a routing_history
+    record whose verdict was UNRESOLVED -- a record that says NOTHING READ
+    THE FINDING. Refusing re-entry on that record is what blocked a
+    C0066-shaped entry for ever when composed with the never-served door.
+    The sharper pins: a RULED record refuses re-entry; so does error_routed
+    (stamped only when a rung genuinely reached a model) even when the
+    telemetry record was lost."""
     reg = rr.FindingRegistry()
     e = _never_served_entry(0.45)
-    e["routing_history"] = [{"round": 3, "verdict": "UNRESOLVED"}]
+    e["routing_history"] = [{"round": 3, "verdict": "UNTOOLABLE",
+                             "resolved": False}]
     reg.entries["C9001"] = e
     served = []
 
@@ -133,5 +174,24 @@ def test_an_already_served_entry_is_not_re_entered():
         rr._apply_routing(reg, 6, EXP, cfg=_cfg())
 
     assert served == [], (
-        "an entry the ladder already served must not re-enter through the "
-        "never-served door")
+        "an entry the ladder already ruled on must not re-enter through the "
+        "never-served admission")
+
+    # A LOST TELEMETRY RECORD IS NOT A LOST SERVICE: error_routed alone
+    # (the pre-2026-09-02 archive shape, 68 entries) also refuses re-entry.
+    reg2 = rr.FindingRegistry()
+    e2 = _never_served_entry(0.45)
+    e2["error_routed"] = True
+    reg2.entries["C9001"] = e2
+    served2 = []
+
+    def fake_route2(finding, *a, **k):
+        served2.append(finding["id"])
+        return _Unresolved()
+
+    with mock.patch.object(routing, "route", fake_route2):
+        rr._apply_routing(reg2, 6, EXP, cfg=_cfg())
+
+    assert served2 == [], (
+        "error_routed records a model was reached; the admission must refuse "
+        "it even when the routing_history write failed")

@@ -698,6 +698,43 @@ _emit(_CFG["ready"])
 #: subprocess call, and the observer is rendered once per falsifier run.
 _SECONDARY_ROOTS_CACHE: list[str] | None = None
 
+#: Interpreters whose roots came from the DECLARED fallback rather than from the
+#: interpreter's own report. Reset on every discovery pass.
+_SECONDARY_ROOTS_FELL_BACK: list[str] = []
+
+#: Whether a discovery pass has run at all. SEPARATE FROM THE CACHE ON PURPOSE:
+#: a pass that fell back does not populate the cache, so keying the reader on
+#: the cache made it re-run discovery and overwrite the very record it exists to
+#: report. Caught by the reader returning an empty list under a probe failure it
+#: had just observed.
+_SECONDARY_ROOTS_RAN: bool = False
+
+
+def secondary_interpreter_discovery_fell_back() -> list[str]:
+    """Interpreters whose roots are STRUCTURAL GUESSES, not their own report.
+
+    THE PAIRED REPORT, on the excluded-implies-reported discipline the founder's
+    2026-10-02 key-access ruling established and which cc2 proposed applying
+    here in the joint round of 2026-10-12. An interpreter absent from this list
+    reported its own installation roots; one named here did not answer its probe
+    and its roots were derived from its path, so they may be incomplete and any
+    INTEGRITY_VIOLATION raised against a falsifier spawning it deserves a second
+    look before being read as a verdict. An empty list means there was nothing
+    to say, which is the only case in which saying nothing is correct.
+
+    IT IS NOT THE SAME READER cc2 WROTE, and the difference is the design it
+    pairs with. cc2's names interpreters that contributed NOTHING, because its
+    fix retries and then gives up; under the composed fix a probe failure still
+    yields declared roots, so the honest thing to name is "fell back", not
+    "unprobeable". Measured 41 roots under total probe failure against 39
+    healthy, so nothing is lost -- which is also why cc2's retry was not taken:
+    it buys no coverage and costs up to 30 seconds per falsifier on this
+    machine.
+    """
+    if not _SECONDARY_ROOTS_RAN:
+        _secondary_interpreter_roots()
+    return list(_SECONDARY_ROOTS_FELL_BACK)
+
 
 def _secondary_interpreter_roots() -> list[str]:
     """Installation roots of OTHER interpreters a falsifier may legitimately spawn.
@@ -731,6 +768,10 @@ def _secondary_interpreter_roots() -> list[str]:
     global _SECONDARY_ROOTS_CACHE
     if _SECONDARY_ROOTS_CACHE is not None:
         return list(_SECONDARY_ROOTS_CACHE)
+    _fell_back = False
+    global _SECONDARY_ROOTS_FELL_BACK, _SECONDARY_ROOTS_RAN
+    _SECONDARY_ROOTS_FELL_BACK = []
+    _SECONDARY_ROOTS_RAN = True
     roots: list[str] = []
     harness = os.path.realpath(sys.executable)
     probe = (
@@ -776,6 +817,20 @@ def _secondary_interpreter_roots() -> list[str]:
             proc = subprocess.run(
                 [cand, "-c", probe], capture_output=True, text=True, timeout=10)
             if proc.returncode != 0 or not proc.stdout.strip():
+                # A PROBE THAT DOES NOT ANSWER MUST NOT COST THE CARVE-OUT
+                # (joint round J2, 2026-10-12). Measured before this branch
+                # existed: with every probe timing out (a loaded machine),
+                # this function returned 0 roots, and because the result is
+                # cached per process, ONE bad moment put the gate back to
+                # refusing every spawned-interpreter falsifier FOR THE LIFE
+                # OF THE RUN. The declared roots below are derived from the
+                # candidate's own path, never by executing it, so they cannot
+                # time out -- and they are consulted ONLY on probe failure,
+                # so a machine where every probe answers is byte-identical.
+                # Producer: scripts/probe_failure_regresses_the_gate_2026-10-12.py.
+                roots.extend(_declared_secondary_roots(cand))
+                _fell_back = True
+                _SECONDARY_ROOTS_FELL_BACK.append(cand)
                 continue
             import json as _json
             reported = _json.loads(proc.stdout.strip().splitlines()[-1])
@@ -788,9 +843,92 @@ def _secondary_interpreter_roots() -> list[str]:
                          if isinstance(r, str) and r.endswith(".zip")
                          and os.path.exists(r))
         except (OSError, ValueError, subprocess.SubprocessError):
+            # Same declared fallback as the non-answer branch above: a
+            # timeout or a crashed probe is a fact about THIS MOMENT's load,
+            # not about where the interpreter's stdlib lives.
+            roots.extend(_declared_secondary_roots(cand))
+            _fell_back = True
+            _SECONDARY_ROOTS_FELL_BACK.append(cand)
             continue
+    # A FALLBACK RESULT IS NOT CACHED (cc2's half of J2, composed here with
+    # fable's). fable's declared fallback keeps COVERAGE when a probe cannot
+    # answer -- measured 41 roots under total probe failure against 39 healthy,
+    # so nothing is lost. But the fallback set is derived structurally and is
+    # WIDER than what the interpreters themselves report, and caching it would
+    # persist that wider allow set for the life of the process long after the
+    # load spike passed. cc2 measured the permanence as the real defect and was
+    # right about it; fable measured the declared roots as the real coverage and
+    # was right about that. Composed: fall back so the moment is harmless, and
+    # decline to cache so the moment stays a moment. When every probe answers,
+    # the result is cached exactly as before and this branch never runs.
+    if _fell_back:
+        return sorted(set(roots))
     _SECONDARY_ROOTS_CACHE = sorted(set(roots))
     return list(_SECONDARY_ROOTS_CACHE)
+
+
+#: The macOS system ``/usr/bin/python3`` is a shim whose installation lives
+#: under the CommandLineTools framework tree and the fixed ``/Library/Python``
+#: site-packages locations -- none of which are derivable from the shim's own
+#: path. Globbed, not pinned to a version, so a macOS update needs no edit.
+_SYSTEM_PYTHON_ROOT_PATTERNS = (
+    "/Library/Developer/CommandLineTools/Library/Frameworks/"
+    "Python3.framework/Versions/*",
+    "/Library/Developer/CommandLineTools/Library/Frameworks/"
+    "Python3.framework/Versions/*/lib/python3.*",
+    "/Library/Developer/CommandLineTools/Library/Frameworks/"
+    "Python3.framework/Versions/*/lib/python3.*/lib-dynload",
+    "/Library/Developer/CommandLineTools/Library/Frameworks/"
+    "Python3.framework/Versions/*/lib/python3.*/site-packages",
+    "/Library/Python/*/site-packages",
+    "~/Library/Python/*/lib/python/site-packages",
+)
+
+
+def _declared_secondary_roots(cand: str) -> list[str]:
+    """Installation roots for ``cand`` derived WITHOUT executing it.
+
+    The declared half of the 1b composition (joint round J2, 2026-10-12).
+    The probe is the primary mechanism and is strictly richer when it
+    answers (it reports ``sys.path`` extras no static rule can know); this
+    is consulted only when the probe does not answer, so the gate degrades
+    to the declared coverage instead of to refusing correct falsifiers.
+
+    Two derivations, both existence-filtered so a directory not on disk --
+    which can never be read and so can never be denied -- is never added:
+      * STRUCTURAL: for a framework or Homebrew interpreter, the prefix is
+        ``dirname(dirname(realpath))`` and the stdlib/site-packages live in
+        fixed positions under it.
+      * DECLARED: the macOS ``/usr/bin/python3`` shim, whose installation
+        the structural rule cannot reach (its prefix resolves to ``/``),
+        gets the fixed CommandLineTools and /Library/Python locations.
+    """
+    out: list[str] = []
+    real = os.path.realpath(cand)
+    prefix = os.path.dirname(os.path.dirname(real))
+    # STRUCTURAL ONLY WHEN THE PREFIX DEMONSTRABLY IS AN INSTALLATION:
+    # ``dirname(dirname(/usr/bin/python3))`` is ``/usr``, and the first
+    # version of this helper added it wholesale to the allow set -- a
+    # widening nobody sanctioned -- while missing the CommandLineTools tree
+    # where that shim's stdlib actually lives. Caught by executing the
+    # producer, not by review. The prefix itself is NEVER added: only the
+    # ``lib/python3.*`` trees the import bootstrap reads.
+    # BOTH the shim-level and the resolved prefix: Homebrew's bootstrap sees
+    # ``/opt/homebrew/lib/python3.*`` (the candidate's own prefix) while the
+    # realpath resolves into the Cellar -- the observer may be handed either
+    # spelling, so the fallback declares both where they exist.
+    _prefixes = {prefix, os.path.dirname(os.path.dirname(cand))}
+    libs = sorted({lib for pf in _prefixes if pf not in ("", "/", os.sep)
+                   for lib in glob.glob(os.path.join(pf, "lib", "python3.*"))})
+    if libs:
+        out.extend(libs)
+        for lib in libs:
+            out.extend(glob.glob(os.path.join(lib, "lib-dynload")))
+            out.extend(glob.glob(os.path.join(lib, "site-packages")))
+    else:
+        for pat in _SYSTEM_PYTHON_ROOT_PATTERNS:
+            out.extend(glob.glob(os.path.expanduser(pat)))
+    return sorted(set(r for r in out if os.path.isdir(r)))
 
 
 def _interpreter_roots() -> list[str]:

@@ -2247,6 +2247,42 @@ ATTESTED_STATUSES = frozenset({"CORROBORATED"})
 #: elsewhere in the harness closes this door rather than silently widening it.
 NO_READING_ROUTING_VERDICTS = frozenset({"", "UNRESOLVED"})
 
+#: R_k-proof statuses that mean THE PROOF CHECKER PRODUCED NO READING, on
+#: exactly the sentinel-set discipline of `NO_READING_ROUTING_VERDICTS` above.
+#: `severity_proof_status` returns ABSENT when no proof was ever recorded and
+#: SKIP when there was no corroboration block to recompute. PASS, WARN and FAIL
+#: are all READINGS -- the checker ran on this entry's own stated inputs and
+#: reported whether they reproduce. FAIL is the sharpest of the three, because
+#: it says the model's stated R_k does NOT reproduce. Any unrecognised status
+#: is treated as a reading, so this FAILS CLOSED.
+#:
+#: WHY THIS IS A CONJUNCT OF `_routing_ladder_never_served`, MEASURED. The
+#: never-served door is evaluated BEFORE the restored severity test in
+#: `unverified_critical_count` and it ignores severity entirely. Without this
+#: conjunct, an entry whose R_k proof FAILED -- the one state in which the
+#: severity test is GUARANTEED to refuse a release, since `severity_is_proven`
+#: accepts only PASS/WARN -- was released by the door instead. The door was
+#: therefore strictly WIDER than the gate whose removal the founder has
+#: rejected 3-4 times, and it nullified that gate for this entry class.
+#: Measured over every archived runner_state.json in bench/logs (3515 entries):
+#: the door opens on 431 non-terminal entries, of which 25 carry a non-SKIP
+#: proof (5.80%, Wilson 95% [3.96%, 8.42%]) and 11 carry status FAIL (2.55%,
+#: Wilson 95% [1.43%, 4.51%]). Producer:
+#: scripts/never_served_door_vs_instrument_contact_2026-10-12.py.
+#:
+#: MEASURED DISCRIMINATING, which is why it is this field and not the other
+#: candidates. study_run1b's C0066 and C0073 -- the two entries the door exists
+#: for -- both carry severity_proof {"status": "SKIP"}, so the door still opens
+#: on them and the 2026-10-12 fix is not regressed to a no-op. The same producer
+#: shows why the rejected candidates are NOT conjuncts: `status_adjudicator`
+#: == "tool" and `status_log` are set on C0066 itself by the ordinary
+#: OPEN->UNCONFIRMED bookkeeping, so they close the door on everything;
+#: `computed_evidence` on C0066 holds {"kind": "reasoned_withdrawal", "by":
+#: "CC2-SIM"}, which is a MODEL statement, not an instrument; and
+#: `fix_efficacy` on C0066 holds outcome "NOT_PROBED_NO_FALSIFIER", which
+#: records that nothing ran.
+NO_READING_SEVERITY_PROOF_STATUSES = frozenset({"ABSENT", "SKIP"})
+
 
 def _routing_ladder_never_served(e) -> bool:
     """True when NO instrument ever touched this entry: no verdict, no routing
@@ -2264,6 +2300,8 @@ def _routing_ladder_never_served(e) -> bool:
       falsifier_verdict is empty           -- the gate never ruled
       routing_verdict_unreconciled is unset
       not routing_deferred, not hil_escalated
+      severity_proof_status is ABSENT or SKIP  -- the R_k proof checker is an
+          instrument and it writes to none of the fields above
     Each is a mechanically checkable property of the entry; none is a number a
     model asserted.
 
@@ -2296,7 +2334,13 @@ def _routing_ladder_never_served(e) -> bool:
       * the `severity_is_proven` door requires an R_k that reproduces from the
         entry's own stated inputs. With no corroboration block to check,
         `severity_proof_status` returns SKIP, so the entry can never be proven
-        sub-critical.
+        sub-critical. THAT SENTENCE IS TRUE BY CONSTRUCTION ONLY SINCE THE
+        severity_proof CONJUNCT WAS ADDED (joint round, 2026-10-12). Before it
+        the sentence held of study_run1b's two survivors but NOT in general:
+        this door is evaluated BEFORE the severity test and ignores severity,
+        so an entry whose proof returned FAIL -- severity affirmatively NOT
+        proven -- was released HERE, which made the door strictly wider than
+        the gate it cited as unreachable. Measured: 11 of 431.
 
     The entry therefore blocks the zero-critical streak for the LIFE of the run
     and the run reaches `max_rounds` instead of converging. Per the core
@@ -2369,6 +2413,32 @@ def _routing_ladder_never_served(e) -> bool:
     if (e.get("routing_verdict_unreconciled") or "").strip():
         return False
     if e.get("routing_deferred") or e.get("hil_escalated"):
+        return False
+    # `error_routed` IS INSTRUMENT CONTACT THE CONJUNCTS ABOVE CANNOT SEE
+    # (joint round J1, 2026-10-12, answering the standing refutation condition
+    # "if any field not tested here records instrument contact, the door is
+    # too wide"). It is stamped only when a rung GENUINELY REACHED a model.
+    # Two ways it can stand beside an empty routing_history: (a) the telemetry
+    # append at the single routing_history write site is wrapped in
+    # `except Exception` ("telemetry must not fell a run"), so a failed write
+    # erases the only record while this flag survives; (b) every archived
+    # registry written before routing_history existed (2026-09-02): 68
+    # archived entries carry error_routed=True with no routing_history, 0 of
+    # which this door releases today only because all 68 happen to carry
+    # another conjunct (measured over every runner_state.json in bench/logs
+    # and bench/logs_quarantine, 2026-10-12). One line, fails CLOSED.
+    if e.get("error_routed"):
+        return False
+    # THE R_k PROOF CHECKER IS AN INSTRUMENT, AND IT DOES NOT WRITE TO THE
+    # LADDER. Every conjunct above reads a ladder, falsifier or HIL field. The
+    # severity-proof checker reads the finding's own corroboration block and
+    # records its reading in `severity_proof` WITHOUT touching any of them, so
+    # an entry it read looked untouched to this predicate. Measured on the
+    # archived registries: 25 of the 431 non-terminal entries this door
+    # released carry a non-SKIP proof and 11 carry FAIL. See
+    # NO_READING_SEVERITY_PROOF_STATUSES for the figures, the CIs and the
+    # producer, and for why the other contact-shaped fields are NOT conjuncts.
+    if severity_proof_status(e) not in NO_READING_SEVERITY_PROOF_STATUSES:
         return False
     return True
 
@@ -7362,13 +7432,19 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
         # keeps blocking, which is the honest state -- tools decide, and a
         # tool was at least asked. Test:
         # bench/tests/test_never_served_findings_enter_the_ladder_2026-10-12.py.
+        # ONE PREDICATE, TWO READERS (joint round J1, 2026-10-12): the serve
+        # admission now keys on the SAME predicate as the door, so the two
+        # cannot drift -- which is this module's own excluded-implies-reported
+        # discipline. Behavioural delta, measured: a routing_history whose
+        # every record is no-reading (the reclassified transport-dead serve
+        # above) no longer consumes the one admission, so the ladder retries
+        # on a later round exactly as the transport-dead guard's own comment
+        # promises ("must not burn the attempt"). A serve that reached a
+        # model sets error_routed, which the predicate now tests, so the
+        # one-attempt guard is unchanged where a model answered.
         _never_served = (
             e.get("status") == "UNCONFIRMED"
-            and not (e.get("falsifier_code") or "").strip()
-            and not (e.get("falsifier_verdict") or "").strip()
-            and not e.get("verdicts")
-            and not e.get("routing_history")
-            and not e.get("error_routed"))
+            and _routing_ladder_never_served(e))
         if not e.get("escalated") and not _never_served:
             continue
         if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
@@ -7591,6 +7667,35 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
                          f"besides its own source; deferred rather than retried, "
                          f"so it still counts toward the irreducible queue")
                     continue
+                # A DEAD TRANSPORT IS NOT A RULING (joint round J1,
+                # 2026-10-12). The record appended above carries the verdict
+                # the ladder RETURNED, and when no model was reached that
+                # verdict is "ERROR" -- a string the never-served door reads
+                # as a ruling, which is false: nothing read the finding.
+                # Measured end-to-end by
+                # scripts/transport_dead_serve_blocks_for_ever_2026-10-12.py:
+                # a C0066-shaped entry served once on a dead transport was
+                # BLOCKED FOR EVER -- door closed by the ERROR record, serve
+                # admission consumed by the non-empty routing_history -- the
+                # exact composed defect of the 2026-10-12 repair, one failure
+                # class over. Reclassify the record to the documented
+                # no-reading sentinel (this is the write the
+                # NO_READING_ROUTING_VERDICTS comment already described) and
+                # say directly that no rung was reached. ONLY the
+                # ERROR-with-zero-models-reached shape is reclassified: a
+                # verdict a decider actually returned (UNTOOLABLE, REFUTED,
+                # INTEGRITY_VIOLATION...) requires falsifier code, which
+                # requires a reached model, so it never coincides with this
+                # branch in production -- and a mocked serve asserting such a
+                # verdict keeps its ruling semantics, per
+                # test_the_serve_does_not_consume_the_door_2026-10-12.py.
+                _rh = e.get("routing_history") or []
+                if (_rh and isinstance(_rh[-1], dict)
+                        and not bool(_rh[-1].get("resolved"))
+                        and str(_rh[-1].get("verdict") or "").strip().upper()
+                        == "ERROR"):
+                    _rh[-1]["verdict"] = "UNRESOLVED"
+                    _rh[-1]["rungs_reached"] = 0
                 continue  # transport-dead: no model reached; retry a later round
         if result.verdict == "DUPLICATE":
             # NO VOTING (founder ruling 2026-08-19). routing_enabled is unset in
