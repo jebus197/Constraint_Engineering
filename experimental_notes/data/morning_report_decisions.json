@@ -30,17 +30,6 @@
   ],
   "evidence_line": "Zero post-ruling run directories exist against 2 pre-ruling ones. The entry has sat BLOCKED/PROPOSED with zero evidence files since 2026-08-07."
  },
- "task:10.2": {
-  "title": "10.2 — remote access to this Mac: the analysis is done and the choice is yours",
-  "what": "Whether to enable Tailscale SSH for remote access to this machine. Measured on 2026-09-10: Tailscale SSH is **OFF** (`SSH_HostKeys` absent on this Mac and on the one peer), ordinary `sshd` IS running with port 22 answering on `100.124.143.121`, and your account carries the `ssh` capability.",
-  "why": "The entry is marked BLOCKED, which this list uses specifically for a ruling that awaits you. The analysis has been complete for over a month. It is a security-posture decision about your own machine, so it is not mine to take.",
-  "options": [
-   "**Leave it as it is** — ordinary sshd on the tailnet address, which already works.",
-   "**Enable Tailscale SSH**, which replaces key management with tailnet identity and gives you per-device ACLs.",
-   "**Close the entry as decided-no-change**, so it stops appearing as an open decision."
-  ],
-  "evidence_line": "Full measurement in the entry at `CDSFL_MASTER_TASK_LIST.md:450`, dated 2026-09-10. Nothing has changed since; port 22 still answers on the tailnet address."
- },
  "defect:A4-counter-valve-severity-mismatch": {
   "title": "The blocker counter and its release valve disagree about severity, and a run cannot converge because of it",
   "what": "`unverified_critical_count()` counts findings with **no severity test at all** — it skips non-UNCONFIRMED, already-escalated and exhausted entries, then counts whatever is left. But the only thing that can RELEASE an entry from that count, the `exhausted` valve, requires severity of 0.7 or above. So a sub-critical finding can ENTER the tally of findings that block convergence, and has no way out of it.",

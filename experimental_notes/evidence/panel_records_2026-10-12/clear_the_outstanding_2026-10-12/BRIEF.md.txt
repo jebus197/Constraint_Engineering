@@ -1,0 +1,234 @@
+# Clear the outstanding work, in keeping with the formal standards
+
+You are a seat in a CDSFL free panel (cc2, fable). No paid seat is dispatched. The
+founder has read a generated report of every outstanding item and annotated it. His
+annotations are quoted verbatim below and they are the brief.
+
+**HIS OVERALL INSTRUCTION, verbatim, 2026-10-12:** *"Run the free panel to clear as much
+of the outstanding work as possible, then test it to ensure their solutions work and apply
+cleanly, and then fix the ones that do not. ... Work with the panel to clear as many as
+possible, in keeping with our formal simplest sufficient fix, and other formal standards,
+and with the project specification as a whole."*
+
+**HIS STATED OBJECTIVE, verbatim:** *"Clearly the objective is clean honest convergence."*
+
+## Every number in this brief is QUOTED, not measured here — verify it
+
+The brief's own validator flags 10 numeric claims in the prose as backed by no declared
+figure, and it is right to: *"A declared figure is RE-EXECUTED. A number typed in a
+sentence is not, and that is exactly how `gamma is 0.451` reached 2 seats when it is
+0.415413."*
+
+So treat every number below as a CLAIM TO CHECK rather than a fact to build on. The
+severities (0.7, 0.6, 0.45, 0.50) are quoted from `experimental_notes/STUDY_IN_FLIGHT.json`
+under `open_defects`; the interpreter versions (3.13, 3.9) from the integrity-gate defect
+record; and the replay figures (36.8%, 63.2%, 0 of 87, Wilson [0.0%, 4.2%]) from the
+message of commit `6c10fe4` itself. **If any of them is wrong, saying so is a result and
+it changes the answer.** One of this session's own figures was withdrawn for exactly this
+reason: a never-named count of 527 of 571 was an artefact of a regex that could not match a
+hyphen, against a true 401.
+
+## What is required of you, and what will be done with it
+
+Produce **FIXES, not findings**. The founder has said this repeatedly — measured at 26 of
+his 92 older imperative instructions — and in his own words: *"The purpose of these multi
+model reviews is not just to find problems (although that is clearly 50% of it), but also
+to suggest fixes. But you have a bad habit of simply telling our models during these
+reviews 'find problems with this code' and not telling them to come up with fixes."*
+
+**DELIVER EACH FIX AS A FILE.** Write your fix INTO the sandbox repository tree at its
+real path — edit `bench/reference_runner_v3.py` itself, not a copy, not a patch in prose,
+not something under a scratch directory. A fix left in prose or in scratch space is
+destroyed at teardown and is not delivered. The founder's words on exactly this, 2026-08-30:
+*"Jesus why are you throwing sandbox repairs away? Sure sandboxes should be deleted after
+we are done with them and after you have extracted fixes, not before!"* Your sandbox is
+harvested, so a file written at its real path survives and can be tested and applied.
+
+For each item you address:
+1. **Name the file and line** you would change, and give the change.
+2. **RUN something.** Execute a falsifier against your own fix. The tool output is the
+   evidence; reasoning selects and interprets it but never substitutes for it.
+3. **State what would refute your own answer.**
+4. **Name a termination criterion** — when is this item done?
+5. Say explicitly if an item is **already resolved**, or if the premise is wrong. A
+   withdrawal is a result.
+
+Every fix must meet two formal standards:
+- **SIMPLEST SUFFICIENT FIX.** Simplicity and sufficiency are different measures; the fix
+  must be both.
+- **THE ADDITIVE STANDARD.** Work adds to reliability, functionality, accuracy and the
+  project's stated aims. Never disable or remove a feature; removal only where a
+  COMMITTED MEASUREMENT shows the replacement dominates on a named property. Symmetrically,
+  an addition nothing reaches is not additive: a new flag, gate or entry point must be
+  wired to a caller and executed by a test.
+
+Fixes are **SUGGESTED to the human in the loop**, never auto-applied. Findings are
+confirmed programmatically or by him, never by model vote.
+
+## ITEM 1 — the convergence blockers. This is the priority.
+
+Three defects in `experimental_notes/STUDY_IN_FLIGHT.json` under `open_defects` currently
+stop a run converging. His objective is clean honest convergence, so these come first.
+
+### 1a. The blocker counter and its release valve disagree about severity
+
+`unverified_critical_count()` in `bench/reference_runner_v3.py` counts findings with **no
+severity test in its body** — it skips non-UNCONFIRMED, already-escalated and exhausted
+entries, then counts what is left. The only thing that can RELEASE an entry from that
+count, the `exhausted` valve, requires `severity >= 0.7`. So a sub-critical finding can
+ENTER the tally that blocks convergence and has no exit.
+
+Live instance: finding C0042 in `study_run1b_2026-10-03_20261003T100439Z`, severity 0.6,
+zero-character falsifier, emitted in round 2 and never given one. Leave-one-out on the
+live registry: removing it drops the tally from 1 to 0. **That run could not converge.**
+
+The counter's own docstring still claims it counts `severity >= CRITICAL_SEVERITY_THRESHOLD`,
+which its body does not do — stale since 2026-09-06.
+
+**HIS ANNOTATION, verbatim:** *"Clearly the objective is clean honest convergence. What are
+you advising? One fully paid run so this can happen, or a simulated run with these missing
+severity tests in place? Ask the panel how to resolve this too if no current solution
+exists. But instinctively my position is we should go with whichever of these, or whichever
+combination of these bring us closest to that objective, subject to testing, rather than
+assumption."*
+
+### 1b. The integrity gate refuses a correct falsifier, by construction
+
+The sandbox integrity gate allows the harness's own Python 3.13 directories. A falsifier
+that spawns a second interpreter gets macOS's `/usr/bin/python3` (3.9), whose stdlib is
+under `/Library` and user-site under `~` — both in the denied regions. Its ordinary import
+reads are recorded as denials, and ANY denial becomes `INTEGRITY_VIOLATION`.
+
+It is structural: finding C0050's falsifier spawns `/usr/bin/python3` precisely BECAUSE
+the defect it demonstrates is that the target prescribes a bare unpinned `python3`. Any
+falsifier for that defect class must do the same, so the gate is guaranteed to refuse the
+correct falsifier. C0050 is severity 0.7 — a critical — recorded as untested and pushed to
+a human. Counterfactual: with the 3.9 roots allowed, the identical falsifier returns
+CONFIRMED instead of INTEGRITY_VIOLATION.
+
+The refuse-rather-than-flag behaviour entered on 2026-08-15 in a milestone merge citing no
+founder ruling, and he confirmed on 2026-10-03 he was never consulted.
+
+**HIS ANNOTATION, verbatim:** *"Ask the free panel how to resolve this too."*
+
+### 1c. A finding can block a run for its whole life without the ladder serving it — AND a commit quotes him approving a change he says he never approved
+
+Two findings in `study_run1b_2026-10-03`, C0066 at severity 0.45 and C0073 at 0.50,
+reached the blocker tally with **zero verdicts, no routing history and no falsifier code**.
+Nothing ever served them. The post-run sweep settled two similar findings but C0073 arrived
+in the identical shape afterwards, so the sweep is not a net solution.
+
+**THE PROVENANCE QUESTION, AND HE HAS NOW RULED ON IT.** The severity gate was removed from
+`unverified_critical_count` in commit `6c10fe4`, 2026-09-06 16:21:48, whose message quotes
+him as *"Verdict: do it. There are no votes in CDSFL."* But
+`DECISIONS_AWAITING_YOU_2026-09-06.md` item 23 records, at 22:15 the same day: *"ANSWERED
+2026-09-06 22:15 AND THE RECOMMENDATION WAS REJECTED. He rejected both removal and the
+rubric swap and ordered worked proofs instead."*
+
+**HIS ANNOTATION, verbatim:** *"Again I never approved the removal of the severity gate, so
+yes, it should be restored. But the worked proofs should remain part of the design too. But
+check the overall design with the free panel, and ask them to suggest fixes and solutions,
+where any may be needed."*
+
+**A TENSION YOU MUST ADDRESS DIRECTLY, because executing his instruction naively may
+contradict his own standing principle.** The removal's stated reasoning was: *"The A4
+fail-safe read `severity >= 0.7`, where severity is a float the SOURCE MODEL assigns — a
+vote wearing a number's clothes. It now gates on whether a tool actually returned a
+verdict, which is a fact rather than an opinion."* And it carried a measurement: replayed
+over 87 archived reports, the replacement blocks MORE in 36.8%, identically in 63.2%, and
+FEWER in 0 of 87, Wilson [0.0%, 4.2%] — so convergence could only get harder, not easier.
+
+"There are no votes in CDSFL" IS his standing principle. So restoring a model-assigned
+float as a convergence gate re-introduces a model's opinion into the gate. **Is he ruling
+on PROVENANCE (an unauthorised change must be reversed) or on DESIGN (severity should
+gate)? What design satisfies both his ruling and his no-votes principle, and keeps the
+worked proofs he ordered?** Answer that explicitly, with a fix.
+
+Measured, for your use: restoring the severity gate takes the blocker tally from 3 to 0 on
+this run's pre-sweep registry, after which the gate blocks on `contested=2` and the
+zero-critical streak instead.
+
+Producers you may run: `scripts/exhausted_marking_age_lock_2026-10-03.py`,
+`scripts/a4_blockers_lock_audit_2026-10-03.py`,
+`scripts/gate_replay_on_registry_2026-10-03.py`,
+`scripts/routing_severity_gate_2026-10-03.py`.
+
+## ITEM 2 — A19, the admissibility scorer: does it work, and is it the whole solution?
+
+`S_k`, the admissibility scorer, classifies a whole TARGET rather than each element inside
+it, so a computable fragment sitting inside prose is never scored. His design point,
+2026-09-10, verbatim: *"clearly it should simply mark a purely prose input as
+'inadmissible', while still solving any computationally reducible elements within that
+prose! This is STEM."*
+
+The entry is `A19` in `experimental_notes/CDSFL_MASTER_TASK_LIST.md` (line ~566), marked
+`state: OPEN | status: TESTED`, and its own words are *"BUILT AND TESTED 2026-09-11, NOT
+DONE — Section P applies, and the last step is HIS."* Its evidence,
+`bench/tests/test_a19_gates_and_baseline_share_a_substrate_2026-09-11.py`, passes 20 tests.
+
+Panel round 13 on 2026-09-11 had both seats independently find the same critical defect in
+it: a gate that could not fail moved from `e4` to `e3` inside the commit that removed it
+from `e4`. That is recorded as repaired.
+
+**HIS ANNOTATION, verbatim:** *"Didn't the models in panel review offer objections to this
+design? Wasn't an overall better design decided? More importantly, does this deign even
+work? If the panel review on this work is outstanding, then run this first, and ask if it
+presents the whole solution, and if not what does?"*
+
+So: **(a)** what objections did the earlier review raise, and were they answered or
+dropped? **(b)** was a better design decided and then lost? **(c)** DOES IT WORK — run it
+and show the output. **(d)** is it the whole solution, and if not, what is?
+
+## ITEM 3 — review this session's own work
+
+35 commits landed between 2026-10-11 16:20 and 2026-10-12 14:54. **HIS ANNOTATION,
+verbatim:** *"Has this all been built, or fixed, and tested? Ask the free panel to look at
+this work too and to suggest fixes where any are still needed."*
+
+Read `git log --since=2026-10-11T12:00:00+01:00 --stat` and audit it. The largest items:
+the restore now fires at a task boundary (`~/.claude/hooks/compaction_task_boundary.py`);
+a per-run round recommendation (`bench/round_budget.py`); a human-review trigger
+(`bench/human_review_trigger.py`); the domain-verdict measurement rebuilt
+(`scripts/the_domain_verdict_gap_2026-10-11.py`); a generated morning report
+(`scripts/morning_report_build_2026-10-12.py`); output hashing
+(`scripts/stamp_output_hash_2026-10-12.py`); the free seats re-pointed at the stagger
+(`bench/tests/test_shared_subscription_seats_are_serialised_2026-10-05.py`).
+
+Be adversarial. This output was produced by another system and has not been independently
+verified. Look for: errors at interfaces between subsystems; unstated assumptions that
+conflict across components; constraint violations visible only at system level; and
+conclusions that are internally consistent but wrong. **Your task is to find what is wrong,
+not to confirm what is right.**
+
+## ITEM 4 — the 21 parked items
+
+`experimental_notes/PARKED_FOR_THE_FOUNDER.md` holds 21 items judged non-blocking and
+appended rather than raised. **HIS ANNOTATION, verbatim:** *"Ask the free panel to look at
+this work too and to suggest fixes where any are still needed. Any that still needs my
+explicit ruling can be reserved for my closing report on the above work."*
+
+Several are already marked resolved or superseded in the file itself. Say which are
+**already closed**, which have a fix you can produce now, and which genuinely need his
+ruling. A parked item that is already resolved should be named as such, not re-litigated.
+
+## What to return — the output shape, field by field
+
+A numbered list keyed to the items above. For **each** item you address, return these
+fields by name:
+
+- **verdict** — one of FIXED, RESOLVED ALREADY, PREMISE WRONG, or NEEDS HIS RULING.
+- **fix** — the real path you wrote in the sandbox tree, and the change. Say
+  `NO FILE WRITTEN` explicitly if you wrote none, and why.
+- **falsifier** — the command you RAN against your own fix, and its actual output. A
+  falsifier you did not execute is not a falsifier.
+- **reasoning** — why this fix and not another, against the simplest-sufficient and
+  additive standards.
+- **refutation** — what evidence would overturn your own answer.
+- **termination** — when is this item done, stated so someone else could check it.
+- **disagreement** — where you expect the other seat to differ, and on what. State this
+  even if you think they will agree, and say so if you believe the brief itself is wrong.
+  Disagreement is preserved as information, never smoothed to consensus: there is no
+  compelled convergence in this panel and no model vote decides anything.
+
+Prefer depth on the convergence blockers (Item 1) over breadth across Item 4. Item 1c
+carries a design tension you must address directly rather than route around.

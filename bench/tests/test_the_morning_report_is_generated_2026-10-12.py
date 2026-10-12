@@ -193,8 +193,15 @@ class TestTheTTSVersionIsSpeakable:
         outstanding = [i for i in items if i["key"] not in {d["key"] for d in decs}]
         outstanding += [d for d in decs if d.get("no_ruling_needed")]
         decs = [d for d in decs if not d.get("no_ruling_needed")]
+        # `explanations_owed()` returns (live, superseded) since 2026-10-12, when his
+        # question -- "Are these questions still relevant? If not you can discount those
+        # that are not." -- was answered by DERIVING the discount against
+        # `data/explanations_superseded.json` rather than by prose. Passing the tuple as
+        # the owed list raised `TypeError: list indices must be integers` in 5 tests:
+        # a return type changed without its callers, which is a FOLLOW miss.
+        live, superseded = g.explanations_owed()
         return g.render_tts(decs, outstanding, g.work_done("2026-10-11T12:00:00+01:00"),
-                            g.explanations_owed(), g.parked_items(), "x")
+                            live, g.parked_items(), "x", superseded)
 
     def test_no_markdown_survives_into_the_spoken_form(self):
         t = self._tts()

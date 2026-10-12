@@ -151,11 +151,35 @@ def parked_items() -> list[str]:
             if l.startswith("## ")]
 
 
-def explanations_owed() -> list[dict]:
+SUPERSEDED = REPO / "experimental_notes" / "data" / "explanations_superseded.json"
+
+
+def explanations_owed() -> tuple[list[dict], list[dict]]:
+    """(still owed, superseded).
+
+    HIS QUESTION, 2026-10-12: *"Are these questions still relevant? If not you can
+    discount those that are not."* An explanation is SUPERSEDED when the record shows
+    he answered it himself, or ruled on its subject, AFTER asking -- so the discount is
+    a DERIVATION against `data/explanations_superseded.json`, which carries the evidence
+    for each, rather than a judgement made in prose. A superseded entry is reported, not
+    deleted: the question was really asked and being overtaken is part of the answer.
+    """
     t = _load(REPO / "scripts" / "his_older_instructions_triage_2026-10-11.py",
               "triage_report")
-    return [{"date": i["date"], "text": i["text"]}
+    owed = [{"date": i["date"], "text": i["text"]}
             for i in t.triage() if i["cls"] == "QUESTION_OWED"]
+    recs = []
+    if SUPERSEDED.is_file():
+        recs = json.loads(SUPERSEDED.read_text(encoding="utf-8")).get("superseded", [])
+    live, dead = [], []
+    for q in owed:
+        hit = next((r for r in recs
+                    if r["date"] == q["date"] and r["match"] in q["text"]), None)
+        if hit:
+            dead.append({**q, **hit})
+        else:
+            live.append(q)
+    return live, dead
 
 
 def head_sha() -> str:
@@ -200,7 +224,7 @@ def decisions(items: list[dict]) -> tuple[list[dict], list[str], list[str]]:
 
 # ───────────────────────── render ─────────────────────────
 
-def render_md(decs, outstanding, done, owed, parked, since) -> str:
+def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> str:
     L = []
     A = L.append
     A(f"# Morning report — {dt.date.today().isoformat()}")
@@ -267,6 +291,16 @@ def render_md(decs, outstanding, done, owed, parked, since) -> str:
     for q in owed:
         A(f"- **{q['date']}** — {_first_sentence(q['text'])}")
     A("")
+    if superseded:
+        A(f"**And {len(superseded)} discounted as no longer relevant**, on his question "
+          f"*\"Are these questions still relevant? If not you can discount those that are "
+          f"not.\"* Each is discounted against the record, not by judgement:")
+        A("")
+        for r in superseded:
+            A(f"- **{r['date']} — {r['subject']}**")
+            A(f"  {r['why']}")
+            A(f"  *What remains:* {r['what_remains']}")
+        A("")
     A(f"## 5. Parked — {len(parked)}")
     A("")
     A("Judged non-blocking and appended rather than raised at the time. Queued, not "
@@ -299,7 +333,7 @@ def _spoken(text: str) -> str:
     return t.strip()
 
 
-def render_tts(decs, outstanding, done, owed, parked, since) -> str:
+def render_tts(decs, outstanding, done, owed, parked, since, superseded=()) -> str:
     L = []
     A = L.append
     A(f"MORNING REPORT, {dt.date.today().strftime('%d %B %Y')}")
@@ -364,6 +398,18 @@ def render_tts(decs, outstanding, done, owed, parked, since) -> str:
     for q in owed:
         A(f"{q['date']}. {_spoken(_first_sentence(q['text']))}")
     A("")
+    if superseded:
+        A(f"And {len(superseded)} of them are discounted as no longer relevant, on his "
+          f"question of whether these are still relevant. Each is discounted against the "
+          f"record rather than by judgement.")
+        A("")
+        for r in superseded:
+            A(f"{r['date']}. {_spoken(r['subject'])}.")
+            A("")
+            A(_spoken(r["why"]))
+            A("")
+            A("What remains. " + _spoken(r["what_remains"]))
+            A("")
     A(f"SECTION 5. PARKED, {len(parked)} ITEMS")
     A("")
     A("These were judged not to block progress and appended rather than raised at the "
@@ -407,12 +453,12 @@ def main(argv: list[str]) -> int:
     outstanding += [d for d in decs if d.get("no_ruling_needed")]
     decs = [d for d in decs if not d.get("no_ruling_needed")]
 
-    owed = explanations_owed()
+    owed, superseded = explanations_owed()
     parked = parked_items()
     done = work_done(args.since)
-    md = render_md(decs, outstanding, done, owed, parked, args.since)
+    md = render_md(decs, outstanding, done, owed, parked, args.since, superseded)
 
-    tts = render_tts(decs, outstanding, done, owed, parked, args.since)
+    tts = render_tts(decs, outstanding, done, owed, parked, args.since, superseded)
     if args.write:
         out = (REPO / "experimental_notes"
                / f"Morning_Report_{dt.date.today().isoformat()}_GENERATED.md")
