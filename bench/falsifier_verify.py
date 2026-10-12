@@ -572,10 +572,59 @@ def _protected(path):
         cur = nxt
 
 
+def _is_evidence(path):
+    """True for a path inside this project's own RUN OR PANEL EVIDENCE.
+
+    Matched on PATH SEGMENTS rather than on absolute roots, which is what lets
+    one tier close every route at once: the real repository, a staged clone
+    under the temp directory, and any of the sibling panel sandboxes that
+    `tempfile.gettempdir()` exposes.
+    """
+    parts = [q for q in path.replace("\\", "/").split("/") if q]
+    for i, seg in enumerate(parts):
+        if seg in _CFG["evidence_segments"]:
+            return True
+        if seg == "bench" and i + 1 < len(parts) and parts[i + 1] == "logs":
+            return True
+        if (seg == "experimental_notes" and i + 1 < len(parts)
+                and parts[i + 1] in ("evidence", "seat_evidence")):
+            return True
+    return any("FULL_RECORD" in q for q in parts)
+
+
 def _denied(path):
     # Protected locations are refused even inside an allowed root; the allowlist
     # is a convenience, the protected set is the point.
     if _protected(path):
+        return True
+    # THIS PROJECT'S OWN EVIDENCE IS REFUSED EVEN INSIDE AN ALLOWED ROOT, and it
+    # is checked HERE, beside `_protected`, for the same reason: the allowlist
+    # cannot be the thing that decides it.
+    #
+    # THE HOLE THIS CLOSES, found independently by both free seats on
+    # 2026-10-12 and confirmed on a clean tree. The repository root is in the
+    # rendered allow set, so a sandboxed falsifier could read
+    # `experimental_notes/evidence/` and `bench/logs/` -- this exam's own prior
+    # rounds, including other seats' replies. `tempfile.gettempdir()` is also
+    # allowed and 472 sibling panel sandboxes sat directly beneath it. The
+    # sealed scoring key store was never reachable and still is not: it is
+    # digest-matched by `_protected`, which is checked first and is untouched.
+    # Narrowing the temp allowance alone would NOT have closed this, because
+    # the clone root grants it independently -- which is why the tier is
+    # checked before the allowlist rather than carved out of it.
+    #
+    # THE BLAST RADIUS IS MEASURED AT ZERO, which is what let this be built at
+    # all. Across 1,360 archived falsifier sources, 0 name a run or panel
+    # evidence region: Wilson 95% [0.0000%, 0.2817%], Clopper-Pearson
+    # [0.0000%, 0.2709%]. The boundary is drawn where the measurement put it,
+    # not where it looked tidy: denying ALL of `experimental_notes/` would have
+    # refused 1 honest falsifier, the C0061 source in
+    # commissioning_arm1_panel_20260929T214647Z, which reads
+    # `CDSFL_MASTER_TASK_LIST.md` to demonstrate that a test file parses the
+    # task list at import time. The canonical task list stays READABLE; the
+    # evidence subtrees do not. Producer:
+    # scripts/does_any_falsifier_read_the_evidence_2026-10-12.py.
+    if _is_evidence(path):
         return True
     if any(_under(path, a) for a in _CFG["allow"]):
         return False
@@ -1011,9 +1060,31 @@ def _observer_source(
         "allow": allow,
         "deny": deny,
         "protected": protected,
+        "evidence_segments": sorted(EVIDENCE_SEGMENTS),
         "kernel_re": _wolfram.KERNEL_RE.pattern,
     }
     return _OBSERVER_SOURCE.replace("__CDSFL_CONFIG__", repr(cfg))
+
+
+#: Directory names that mark this project's own RUN OR PANEL EVIDENCE. A
+#: falsifier has no business reading any of them: they hold prior rounds of the
+#: very exam it is part of, including other seats' replies. Deliberately a set
+#: of SEGMENTS, so the rule holds for the real tree, a staged clone and every
+#: sibling sandbox without naming a single absolute root.
+#:
+#: `experimental_notes` IS NOT HERE, and that is measured rather than lenient:
+#: it holds the canonical task list, which 1 archived falsifier legitimately
+#: reads. Its `evidence/` and `seat_evidence/` children are covered by
+#: `_is_evidence` instead.
+#: A DATED directory name was in this set on the first draft
+#: (`panel_records_2026-10-12`) and was removed: a segment carrying a date
+#: covers one day and rots on the next, and the mirrored panel records already
+#: sit under `experimental_notes/evidence/`, which `_is_evidence` covers by its
+#: own branch. Nothing here may carry a date.
+EVIDENCE_SEGMENTS = frozenset({
+    "seat_evidence",
+    "sandbox_harvest",
+})
 
 
 def _install_observer(
