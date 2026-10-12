@@ -81,12 +81,30 @@ def test_a_dead_transport_record_is_reclassified_to_no_reading():
     assert rec["resolved"] is False
 
 
-def test_the_entry_is_released_AND_named_not_blocked_for_ever():
+def test_the_entry_KEEPS_BLOCKING_and_is_named_and_reaches_the_halt_queue():
+    """REPLACED ON HIS RULING, 2026-10-12. Verbatim: "No. If a record exists
+    that says a problem was never read by a model, this should simply be fed
+    back into the mechanics of the harness for resolution, this can include
+    routing, the sweep mechanics and the other machinery we have for dealing
+    with problems of this nature."
+
+    This asserted the entry was RELEASED from the blocker count. The
+    reclassification this file exists to pin is still correct and still
+    load-bearing -- a transport-dead serve asserting an ERROR ruling is a
+    false claim that something read the finding, and reclassifying it is what
+    lets the ladder RETRY. What changes is the consequence: retry, name, and
+    queue for the halt bundle, rather than excuse.
+    """
     reg = rr.FindingRegistry()
     reg.entries["C9001"] = _entry()
     _serve(reg, 7)
-    assert reg.unverified_critical_count(LATER) == 0
-    assert reg.ladder_unserved_findings(LATER) == ["C9001"]
+    assert reg.unverified_critical_count(LATER) == 1, (
+        "a finding the ladder could not reach was excused from the count")
+    assert reg.ladder_unserved_findings(LATER) == ["C9001"], (
+        "blocking but not named")
+    locked, deferred = rr._irreducible_queue_split(reg.entries)
+    assert locked + deferred >= 1, (
+        "it did not reach the halt machinery")
 
 
 def test_the_admission_is_not_burnt_the_ladder_retries_next_round():

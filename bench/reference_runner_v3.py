@@ -2525,7 +2525,27 @@ def _irreducible_queue_split(entries) -> Tuple[int, int]:
     for e in entries.values():
         if e.get("status") in _TERMINAL:
             continue
-        if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+        # A FINDING NOTHING EVER READ REACHES THIS QUEUE AT ANY SEVERITY --
+        # FOUNDER RULING 2026-10-12, verbatim: "If a record exists that says a
+        # problem was never read by a model, this should simply be fed back
+        # into the mechanics of the harness for resolution, this can include
+        # routing, the sweep mechanics and the other machinery we have for
+        # dealing with problems of this nature."
+        #
+        # WHY THE SEVERITY SKIP HAD TO YIELD, MEASURED. Until this line the
+        # queue skipped everything below CRITICAL_SEVERITY_THRESHOLD, so the
+        # 2 findings that stopped study_run1b converging -- C0066 at 0.45 and
+        # C0073 at 0.50, neither of which any instrument ever read -- could
+        # not reach the halt-with-evidence-bundle machinery at all. Executed
+        # on that registry: ladder-exhausted 0, never-assessed 0, total 0. So
+        # withdrawing the release door without this change would leave A4
+        # blocking at 2 with no alarm able to fire, and the run would burn to
+        # max_rounds and end BUDGET_EXHAUSTED instead of handing the founder a
+        # bundle. His ruling names the machinery; this is what reaching it
+        # requires.
+        _never_read = _routing_ladder_never_served(e)
+        if ((e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD
+                and not _never_read):
             continue
         # THE HALT BOUND NO LONGER SEES A KEY-ACCESS REFUSAL (founder ruling
         # 2026-10-02). Run 1b is the case this fixes: the run HALTED on a
@@ -2565,6 +2585,15 @@ def _irreducible_queue_split(entries) -> Tuple[int, int]:
         if e.get("irreducible_escalation"):
             locked += 1
         elif e.get("routing_deferred"):
+            deferred += 1
+        elif _never_read:
+            # DEFERRED, NOT LOCKED, and the distinction is the 2026-09-07
+            # panel repair rather than a preference. `irreducible_escalation`
+            # means the ladder was EXHAUSTED, and that repair deliberately
+            # stopped stamping it on findings the instrument never read,
+            # because the flag was doing 2 jobs at once. A never-read finding
+            # is awaiting resolution, which is what `deferred` already counts.
+            # THE TUPLE SHAPE IS UNCHANGED so no caller moves.
             deferred += 1
     return locked, deferred
 
@@ -3218,12 +3247,50 @@ class FindingRegistry:
             # over it would be reporting a clean run over an unread finding. The
             # remedy for C0073 is one more round (or a round budget that accounts
             # for findings emitted in the last round), NOT a wider gate.
-            if (current_round is not None
-                    and _routing_ladder_never_served(e)
-                    and (int(current_round)
-                         - int(e.get("last_status_change_round") or 0))
-                    >= LADDER_UNSERVED_MIN_AGE_ROUNDS):
-                continue
+            # ───────────────────────────────────────────────────────────────
+            # THE RELEASE IS WITHDRAWN -- FOUNDER RULING 2026-10-12, verbatim:
+            # "No. If a record exists that says a problem was never read by a
+            # model, this should simply be fed back into the mechanics of the
+            # harness for resolution, this can include routing, the sweep
+            # mechanics and the other machinery we have for dealing with
+            # problems of this nature."
+            #
+            # WHAT THIS DOOR USED TO DO, AND WHY IT IS THE WRONG SHAPE. It
+            # EXCUSED a never-read finding from the blocker count once it was a
+            # round old, so a run could record a clean convergence over a
+            # finding no instrument had ever examined. That is an exclusion, not
+            # a resolution, and his ruling is that the finding must be worked
+            # rather than excused.
+            #
+            # WHERE THE FEEDBACK NOW GOES, ALL 3 PATHS NAMED IN HIS RULING:
+            #   ROUTING -- `_apply_routing` admits a never-served entry into
+            #     the ladder and RE-admits it while no reading comes back, so a
+            #     tool is asked every round rather than once.
+            #   THE SWEEP -- `_post_convergence_sweep` already takes every
+            #     non-terminal finding as a residual, and the pre-verdict sweep
+            #     shadow records whether sweeping BEFORE the verdict would
+            #     change it. That shadow has never recorded: it was added
+            #     2026-10-06 and the newest experiment report predates it by 3
+            #     days, so the next simulated run produces its first data point.
+            #   THE HALT MACHINERY -- `_irreducible_queue_split` now admits a
+            #     never-read finding AT ANY SEVERITY, so a queue over the bound
+            #     halts with an evidence bundle for the founder instead of the
+            #     run burning silently to max_rounds.
+            #
+            # THE RESIDUAL, STATED RATHER THAN HIDDEN. The alarm fires only
+            # above `max_irreducible_queue` (default 2). Measured on
+            # study_run1b, the 2 never-read survivors put the queue at exactly
+            # 2, which is NOT over the bound -- so 1 or 2 unresolvable
+            # never-read findings still block A4 without tripping the alarm,
+            # and such a run reaches max_rounds. Lowering the bound or giving
+            # this class its own is a TUNING decision and is his, not one to
+            # take quietly inside a predicate.
+            #
+            # `ladder_unserved_findings()` IS UNCHANGED AND STILL REPORTS, so
+            # the round log continues to name every never-read finding. The
+            # reader outliving the release is the point: the founder is told
+            # what is blocking, and nothing is dropped.
+            # ───────────────────────────────────────────────────────────────
             # ───────────────────────────────────────────────────────────────
             # THE SEVERITY TEST, RESTORED 2026-10-06 ON THE FOUNDER'S RULING.
             #

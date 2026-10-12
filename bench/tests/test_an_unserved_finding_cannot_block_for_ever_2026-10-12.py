@@ -45,9 +45,27 @@ def _reg(entries):
 
 # ── THE DOOR ────────────────────────────────────────────────────────────────
 
-def test_an_unserved_finding_does_not_block_a4_once_a_round_has_passed():
+def test_an_unserved_finding_KEEPS_BLOCKING_and_is_named_and_queued():
+    """REPLACED ON HIS RULING, 2026-10-12. Verbatim: "No. If a record exists
+    that says a problem was never read by a model, this should simply be fed
+    back into the mechanics of the harness for resolution, this can include
+    routing, the sweep mechanics and the other machinery we have for dealing
+    with problems of this nature."
+
+    This test asserted that such a finding was RELEASED from the blocker
+    count. An exclusion is not a resolution, so the release is withdrawn and
+    the contract is stronger: the finding KEEPS BLOCKING, is NAMED so nothing
+    is silent, and REACHES the halt machinery so the founder is handed a
+    bundle rather than a run burning quietly to its round cap.
+    """
     r = _reg({"C0001": _unserved_entry()})
-    assert r.unverified_critical_count(current_round=1) == 0
+    assert r.unverified_critical_count(current_round=1) == 1, (
+        "a finding nothing ever read was excused from the blocker count")
+    assert r.ladder_unserved_findings(current_round=1) == ["C0001"], (
+        "blocking but not named")
+    locked, deferred = R._irreducible_queue_split(r.entries)
+    assert locked + deferred >= 1, (
+        "it did not reach the halt machinery, so the run burns to max_rounds")
 
 
 def test_a_brand_new_unserved_finding_STILL_blocks():
@@ -67,11 +85,20 @@ def test_without_a_round_the_door_is_disabled_so_old_callers_are_unchanged():
     assert r.unverified_critical_count() == 1
 
 
-def test_excluded_implies_reported():
-    """Whatever the door drops, the paired reader must name. No silent exclusion."""
+def test_blocking_implies_reported():
+    """REPLACED ON HIS RULING, 2026-10-12, and the property is now STRONGER.
+
+    It asserted that whatever the door DROPPED, the reader named -- a
+    no-silent-exclusion rule over an exclusion that no longer happens. With
+    the release withdrawn the obligation widens: whatever BLOCKS must be
+    named, because a founder cannot act on a blocker the round log does not
+    report. Nothing is dropped, so nothing can be dropped silently.
+    """
     r = _reg({"C0001": _unserved_entry(), "C0002": _unserved_entry(severity=0.5)})
-    assert r.unverified_critical_count(current_round=1) == 0
-    assert r.ladder_unserved_findings(current_round=1) == ["C0001", "C0002"]
+    assert r.unverified_critical_count(current_round=1) == 2, (
+        "both never-read findings must still block")
+    assert r.ladder_unserved_findings(current_round=1) == ["C0001", "C0002"], (
+        "a blocking finding that the reader does not name is unactionable")
 
 
 def test_the_reader_is_silent_when_there_is_nothing_to_say():
@@ -131,33 +158,55 @@ def test_widening_the_exhausted_valve_severity_term_releases_nothing_here():
 # ── THE LIVE REGISTRY, END TO END ──────────────────────────────────────────
 
 @pytest.mark.skipif(not os.path.exists(_LIVE), reason="archived run not present")
-def test_the_live_run_at_its_own_final_round_does_NOT_fully_clear():
-    """THE HONEST NUMBER, AND IT IS NOT ZERO. An earlier draft of this fix had
-    no age lock and reported A4 = 0 on this registry. That was over-wide and is
-    WITHDRAWN. Measured with the lock, at the run's own final round 7:
+def test_the_live_run_does_NOT_clear_at_any_round():
+    """REPLACED ON HIS RULING, 2026-10-12, AND IT REVERSES THIS TEST'S ADVICE.
 
-        C0066 arrived round 5, age 2 -> released and named
-        C0073 arrived round 7, age 0 -> STILL BLOCKS
+    Two earlier drafts of this test both said study_run1b could be cleared.
+    The first had no age lock and reported A4 = 0 at the run's own round 7 --
+    over-wide, and withdrawn. The second added the lock and said the remedy
+    was ONE MORE ROUND, because at round 8 both survivors aged past the lock
+    and the door released them.
 
-    A4 goes 2 -> 1. study_run1b still does not converge, and it should not:
-    C0073 was emitted in the final round and nothing ever examined it. A gate
-    that converged over it would report a clean run over an unread finding.
-    The remedy is one more round, not a wider gate -- which test below."""
+    BOTH DRAFTS RESTED ON THE RELEASE, AND HE HAS WITHDRAWN IT: "If a record
+    exists that says a problem was never read by a model, this should simply
+    be fed back into the mechanics of the harness for resolution." An extra
+    round does not make an unread finding read. So the honest answer is that
+    NO number of rounds clears this run by ageing, at round 7 or 8 or 20 --
+    what clears it is a tool reading C0066 and C0073, which is what the
+    routing fix of the same day makes possible.
+    """
     with open(_LIVE) as fh:
         reg = R.FindingRegistry.from_dict(json.load(fh)["registry"])
-    assert reg.unverified_critical_count(current_round=7) == 1
-    assert reg.ladder_unserved_findings(current_round=7) == ["C0066"]
+    for rd in (7, 8, 9, 20):
+        assert reg.unverified_critical_count(current_round=rd) == 2, (
+            f"at round {rd} the count fell below 2, so ageing alone excused a "
+            f"finding nothing ever read")
+    assert reg.ladder_unserved_findings(current_round=8) == ["C0066", "C0073"], (
+        "both blockers must be named at every round, so the founder can see "
+        "what is holding the run")
 
 
 @pytest.mark.skipif(not os.path.exists(_LIVE), reason="archived run not present")
-def test_one_further_round_is_what_clears_the_live_run():
-    """The advice this fix yields, stated as an executable assertion: the run
-    needed round 8. Neither a paid run nor a simulated severity test is
-    required to clear this blocker."""
+def test_the_live_run_reaches_the_halt_machinery():
+    """Where the feedback goes instead, and it is the third path he named.
+
+    MEASURED BEFORE HIS RULING: `_irreducible_queue_split` skipped everything
+    below CRITICAL_SEVERITY_THRESHOLD, so C0066 at 0.45 and C0073 at 0.50
+    reached the halt-with-evidence-bundle machinery not at all -- queue 0 of
+    0. A run carrying them could neither converge nor halt, and would burn to
+    max_rounds. They now reach it at any severity.
+
+    THE RESIDUAL IS PINNED HERE RATHER THAN HIDDEN: 2 is NOT over the default
+    bound of 2, so these two alone still do not trip the alarm. Lowering the
+    bound is his tuning call, and this assertion will fail the moment it
+    changes, which is the right kind of noisy.
+    """
     with open(_LIVE) as fh:
         reg = R.FindingRegistry.from_dict(json.load(fh)["registry"])
-    assert reg.unverified_critical_count(current_round=8) == 0
-    assert reg.ladder_unserved_findings(current_round=8) == ["C0066", "C0073"]
+    locked, deferred = R._irreducible_queue_split(reg.entries)
+    assert locked + deferred == 2, (
+        f"expected both never-read survivors in the queue, got "
+        f"locked={locked} deferred={deferred}")
 
 
 @pytest.mark.skipif(not os.path.exists(_LIVE), reason="archived run not present")

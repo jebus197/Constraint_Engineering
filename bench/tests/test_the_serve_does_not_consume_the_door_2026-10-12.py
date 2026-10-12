@@ -90,14 +90,32 @@ def test_the_serve_actually_runs():
         "the serve wrote no routing_history, so this file measures nothing")
 
 
-def test_served_and_no_reading_is_released_AND_named():
-    """The defect's own case. Release WITHOUT a name would be a silent closure."""
+def test_served_and_no_reading_KEEPS_BLOCKING_and_is_named_and_queued():
+    """REPLACED ON HIS RULING, 2026-10-12, AND IT PINS 3 FACTS WHERE IT PINNED 1.
+
+    This test used to assert that a finding served to a ladder which read
+    nothing was RELEASED from the blocker count. He ruled against that
+    directly, verbatim: "No. If a record exists that says a problem was never
+    read by a model, this should simply be fed back into the mechanics of the
+    harness for resolution, this can include routing, the sweep mechanics and
+    the other machinery we have for dealing with problems of this nature."
+
+    An exclusion is not a resolution. So the contract is now the stronger one:
+    the finding KEEPS BLOCKING, it is NAMED in the report so nothing is
+    silent, and it REACHES the halt-with-evidence-bundle machinery so a founder
+    sees it rather than a run burning quietly to its round cap.
+    """
     reg = _serve(_Outcome("UNRESOLVED", False))
-    assert reg.unverified_critical_count(LATER) == 0, (
-        "a finding served to a ladder that read nothing still blocks for ever")
+    assert reg.unverified_critical_count(LATER) == 1, (
+        "a finding nothing ever read was excused from the blocker count; his "
+        "2026-10-12 ruling is that it must be worked, not excused")
     assert reg.ladder_unserved_findings(LATER) == ["C9001"], (
-        "released but NOT named -- the exclusion is silent, which the "
-        "2026-10-02 ruling forbids")
+        "blocking but NOT named -- the founder cannot act on what the round "
+        "log does not report")
+    locked, deferred = rr._irreducible_queue_split(reg.entries)
+    assert locked + deferred >= 1, (
+        "the never-read finding did not reach the halt machinery, so a run "
+        "carrying it burns to max_rounds instead of handing over a bundle")
 
 
 def test_served_and_RULED_still_blocks():

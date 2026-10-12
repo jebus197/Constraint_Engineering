@@ -139,12 +139,20 @@ def test_a_proven_subcritical_is_still_released_by_the_severity_gate():
     assert _count(e, current_round=5) == 0
 
 
-def test_an_untouched_entry_is_still_released_by_the_never_served_door():
-    """ANTI-VACUITY for the counter, not just the predicate."""
+def test_an_untouched_entry_BLOCKS_and_the_reader_names_it():
+    """REPLACED ON HIS RULING, 2026-10-12: a never-read finding is fed back for
+    resolution, never excused. The anti-vacuity purpose is preserved by
+    asserting the READER, which is what still distinguishes a never-read
+    finding from a read one now that nothing is released.
+    """
     e = _entry(severity=0.45)
-    assert _count(e, current_round=5) == 0
-    # and the age lock still holds it in its arrival round
-    assert _count(_entry(severity=0.45), current_round=0) == 1
+    assert _count(e, current_round=5) == 1, (
+        "a finding nothing ever read was excused from the blocker count")
+    reg = R.FindingRegistry()
+    reg.entries["C9001"] = _entry(severity=0.45)
+    assert reg.ladder_unserved_findings(current_round=5) == ["C9001"], (
+        "the reader no longer distinguishes never-read from read, so this "
+        "file would be vacuous")
 
 
 def test_the_paired_reader_still_names_what_the_door_drops():
@@ -154,10 +162,19 @@ def test_the_paired_reader_still_names_what_the_door_drops():
     reg.entries["C9002"] = _entry(canonical_id="C9002",
                                   severity_proof={"status": "FAIL"})
     assert reg.ladder_unserved_findings(current_round=5) == ["C9001"], (
-        "the reader must name exactly what the counter dropped -- C9002 is "
-        "now blocked, so naming it would read as excused when it is not"
+        "the reader must name exactly the findings NOTHING READ. C9002's "
+        "proof was computed and FAILED, so an instrument did read it and "
+        "naming it here would be false -- which is the whole point of this "
+        "file's conjunct, and it survives the 2026-10-12 withdrawal of the "
+        "release unchanged, because the REPORT still has to tell the two "
+        "apart"
     )
-    assert reg.unverified_critical_count(current_round=5) == 1
+    assert reg.unverified_critical_count(current_round=5) == 2, (
+        "REPLACED ON HIS RULING 2026-10-12: both block now -- C9001 because "
+        "nothing read it and it is fed back rather than excused, C9002 "
+        "because its proof FAILED. The counter no longer separates them; the "
+        "reader does."
+    )
 
 
 # ── the age bound, answered from the ladder's own record ─────────────────────
@@ -174,8 +191,22 @@ def test_the_age_bound_matches_the_ladders_measured_first_serve_latency():
     scripts/never_served_door_vs_instrument_contact_2026-10-12.py.
     """
     assert R.LADDER_UNSERVED_MIN_AGE_ROUNDS == 1
-    e = _entry(severity=0.45, last_status_change_round=7)
-    # emitted this round: not yet passed over, still blocks
-    assert _count(dict(e), current_round=7) == 1
-    # one completed round later: the ladder had its turn and did not take it
-    assert _count(dict(e), current_round=8) == 0
+    # THE BOUND NOW GOVERNS THE REPORT RATHER THAN A RELEASE (his ruling,
+    # 2026-10-12). It still matters and for the same measured reason: a
+    # finding emitted in the current round has not been PASSED OVER by the
+    # ladder, it has not been reached yet, so naming it as never-read would
+    # accuse the ladder of skipping something it never had a turn at.
+    reg = R.FindingRegistry()
+    reg.entries["C9001"] = _entry(severity=0.45, last_status_change_round=7)
+    assert reg.ladder_unserved_findings(current_round=7) == [], (
+        "a finding emitted this round was reported as never-read before the "
+        "ladder had a turn at it")
+    assert reg.ladder_unserved_findings(current_round=8) == ["C9001"], (
+        "after a full round with no reading, the report must name it")
+    # ONE COMPLETED ROUND LATER IT STILL BLOCKS, and that is the change his
+    # 2026-10-12 ruling makes: the ladder had its turn and did not take it, so
+    # the finding is fed back rather than released. Ageing changes what the
+    # REPORT says, never whether the finding counts.
+    assert _count(_entry(severity=0.45, last_status_change_round=7),
+                  current_round=8) == 1, (
+        "ageing past the bound excused a finding nothing ever read")
