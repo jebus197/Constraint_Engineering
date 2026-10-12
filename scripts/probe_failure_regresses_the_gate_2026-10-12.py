@@ -37,7 +37,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
 
 from _cli_help import answer_help  # noqa: E402
 
-answer_help(__doc__)
+# ANSWER --help FROM main(), NOT AT IMPORT TIME (2026-10-12). This read
+# `answer_help(__doc__)` at module level, so merely IMPORTING the module made
+# the helper inspect `sys.argv` -- which, under the suite's import probe, holds
+# the script's own path and is refused as an unrecognised argument, exit 2.
+# bench/tests/test_operational_scripts.py caught it on all 4 producers written
+# in the joint round. The flag is still answered and still free; it is answered
+# where the work starts.
 
 import bench.falsifier_verify as fv  # noqa: E402
 
@@ -55,6 +61,7 @@ def roots_under(patch=None):
 
 
 def main() -> int:
+    answer_help(__doc__, __file__)
     def timeout(*a, **k):
         raise subprocess.TimeoutExpired(cmd=a[0], timeout=k.get("timeout", 10))
 

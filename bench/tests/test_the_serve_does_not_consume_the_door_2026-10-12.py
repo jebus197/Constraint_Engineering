@@ -151,3 +151,78 @@ def test_the_sentinel_set_is_tiny_and_contains_no_ruling():
                "REFUTED", "NON_DISCRIMINATING"}
     assert not (rr.NO_READING_ROUTING_VERDICTS & rulings), (
         "a ruling leaked into the no-reading set; the door is now too wide")
+
+
+# ---------------------------------------------------------------------------
+# THE HALT PATH HIS RULING ROUTES TO, EXERCISED IN THE LIVE SHAPE.
+#
+# Added 2026-10-12 after the full board refuted two earlier versions of the
+# queue predicate. His ruling: "If a record exists that says a problem was
+# never read by a model, this should simply be fed back into the mechanics of
+# the harness for resolution, this can include routing, the sweep mechanics and
+# the other machinery we have for dealing with problems of this nature."
+#
+# The halt-with-evidence-bundle alarm is that last machinery, and until this
+# change it could not see a sub-critical at all: `_irreducible_queue_split`
+# skipped everything below CRITICAL_SEVERITY_THRESHOLD, so a run carrying
+# never-read sub-criticals could neither converge nor halt and burned to
+# max_rounds. Two earlier attempts were each too wide and each was caught by an
+# EXISTING test rather than by inspection: counting ladder-EXHAUSTED entries
+# (test_subcritical_irreducibles_do_not_trip_the_alarm), then counting a
+# critical awaiting its FIRST verification, which would have halted healthy
+# runs at 3 fresh findings
+# (test_registry_irreducible_excluded_from_a4_blocker).
+#
+# NON-DISTORTION, MEASURED: over the 69 archived registries, 8 are over the
+# bound of 2 both before and after this change -- identical, because the
+# archive predates the routing fix and holds no served-but-unread entry. The
+# mechanism is forward-looking by construction and the next simulated run is
+# what exercises it.
+# ---------------------------------------------------------------------------
+
+def test_an_empty_ladder_on_subcriticals_HALTS_with_a_bundle():
+    """3 never-read sub-criticals must reach the founder, not burn the run."""
+    reg = rr.FindingRegistry()
+    for i in range(3):
+        reg.entries[f"C900{i}"] = dict(_entry(cid=f"C900{i}"), severity=0.45)
+
+    class _EmptyLadder(_Outcome):
+        def __init__(self):
+            super().__init__("ERROR", False)
+            self.rungs_tried = 0
+            self.ladder_was_empty = True
+            self.model_used = None
+
+    with mock.patch.object(routing, "route", return_value=_EmptyLadder()):
+        rr._apply_routing(reg, 7, EXP,
+                          cfg=rr.RunnerConfig(routing_enabled=True),
+                          repo_root=str(Path(__file__).resolve().parents[2]))
+
+    locked, deferred = rr._irreducible_queue_split(reg.entries)
+    assert locked + deferred == 3, (
+        f"the never-read sub-criticals did not reach the halt machinery: "
+        f"locked={locked} deferred={deferred}. A run carrying them would "
+        f"neither converge nor halt.")
+    alarm = rr.build_irreducible_queue_alarm(reg, rr.RunnerConfig(), 9)
+    assert alarm is not None, (
+        "the alarm stayed silent, so the founder is never handed the bundle")
+    assert alarm["count"] == 3 and alarm["bound"] == 2
+    assert reg.unverified_critical_count(9) == 3, (
+        "and they must still BLOCK -- fed back, not excused")
+
+
+def test_a_LADDER_EXHAUSTED_subcritical_still_does_NOT_trip_it():
+    """The boundary. An exhausted ladder IS instrument contact: every rung ran.
+
+    This is the case the first version of the predicate got wrong, and it is
+    held by test_static_queue_closure.py as well. Pinned here too because the
+    two cases differ by one flag and the distinction is the whole design.
+    """
+    reg = rr.FindingRegistry()
+    for i in range(5):
+        reg.entries[f"C800{i}"] = dict(_entry(cid=f"C800{i}"), severity=0.4,
+                                       irreducible_escalation=True)
+    locked, deferred = rr._irreducible_queue_split(reg.entries)
+    assert locked + deferred == 0, (
+        f"an exhausted sub-critical reached the queue: locked={locked} "
+        f"deferred={deferred}; that halts runs the ladder genuinely served")

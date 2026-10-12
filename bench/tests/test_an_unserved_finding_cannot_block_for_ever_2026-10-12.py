@@ -63,9 +63,17 @@ def test_an_unserved_finding_KEEPS_BLOCKING_and_is_named_and_queued():
         "a finding nothing ever read was excused from the blocker count")
     assert r.ladder_unserved_findings(current_round=1) == ["C0001"], (
         "blocking but not named")
+    # AND IT MUST NOT YET REACH THE HALT QUEUE. This assertion was the
+    # OPPOSITE when first written, and the full board refuted it: counting a
+    # finding that has not yet had a ladder turn would put 3 fresh criticals
+    # over the bound and HALT a run that had barely started
+    # (test_static_queue_closure.py caught it). The queue is for a finding the
+    # ladder PASSED OVER, which the record distinguishes by a non-empty
+    # routing_history of no-reading entries.
     locked, deferred = R._irreducible_queue_split(r.entries)
-    assert locked + deferred >= 1, (
-        "it did not reach the halt machinery, so the run burns to max_rounds")
+    assert locked + deferred == 0, (
+        "a finding awaiting its first verification was queued for the halt "
+        "alarm; that halts healthy runs")
 
 
 def test_a_brand_new_unserved_finding_STILL_blocks():
@@ -187,26 +195,30 @@ def test_the_live_run_does_NOT_clear_at_any_round():
 
 
 @pytest.mark.skipif(not os.path.exists(_LIVE), reason="archived run not present")
-def test_the_live_run_reaches_the_halt_machinery():
-    """Where the feedback goes instead, and it is the third path he named.
+def test_the_live_run_does_not_reach_the_halt_queue_and_WHY():
+    """CORRECTED THE SAME NIGHT IT WAS WRITTEN, by the full board.
 
-    MEASURED BEFORE HIS RULING: `_irreducible_queue_split` skipped everything
-    below CRITICAL_SEVERITY_THRESHOLD, so C0066 at 0.45 and C0073 at 0.50
-    reached the halt-with-evidence-bundle machinery not at all -- queue 0 of
-    0. A run carrying them could neither converge nor halt, and would burn to
-    max_rounds. They now reach it at any severity.
+    The first version asserted that study_run1b's 2 survivors reached the halt
+    queue. They do not, and they should not: the queue is for a finding the
+    ladder PASSED OVER, and this registry predates the routing fix of the same
+    day, so C0066 and C0073 carry NO routing_history at all -- the ladder never
+    had a turn at them, which is the whole defect that fix addresses.
 
-    THE RESIDUAL IS PINNED HERE RATHER THAN HIDDEN: 2 is NOT over the default
-    bound of 2, so these two alone still do not trip the alarm. Lowering the
-    bound is his tuning call, and this assertion will fail the moment it
-    changes, which is the right kind of noisy.
+    SO THE ARCHIVE CANNOT DEMONSTRATE THE HALT PATH, and saying so is the
+    honest position. In a live run with routing enabled, the serve admits these
+    entries, a transport-dead or empty-ladder outcome writes a no-reading
+    record, and THEN they queue. That is what the next simulated run measures.
     """
     with open(_LIVE) as fh:
         reg = R.FindingRegistry.from_dict(json.load(fh)["registry"])
     locked, deferred = R._irreducible_queue_split(reg.entries)
-    assert locked + deferred == 2, (
-        f"expected both never-read survivors in the queue, got "
-        f"locked={locked} deferred={deferred}")
+    assert (locked, deferred) == (0, 0), (
+        f"expected the archived survivors NOT to queue, since the ladder never "
+        f"had a turn at them; got locked={locked} deferred={deferred}")
+    # They still BLOCK, and are still NAMED. That is the part the archive does
+    # demonstrate, and it is what his ruling requires.
+    assert reg.unverified_critical_count(current_round=9) == 2
+    assert reg.ladder_unserved_findings(current_round=9) == ["C0066", "C0073"]
 
 
 @pytest.mark.skipif(not os.path.exists(_LIVE), reason="archived run not present")

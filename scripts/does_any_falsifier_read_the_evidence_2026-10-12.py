@@ -100,8 +100,12 @@ def main() -> int:
         for pat, c in per_pattern.most_common():
             print(f"    {pat:<34}{c:>6}")
         print("\n  first few:")
-        for run, cid, matched in hits[:8]:
+        _shown = hits[:8]
+        for run, cid, matched in _shown:
             print(f"    {run[:44]:<44} {cid:<8} {matched}")
+        if len(hits) > len(_shown):
+            print(f"    ... and {len(hits) - len(_shown)} more "
+                  f"(of {len(hits)} in total)")
 
     print()
     if k == 0:

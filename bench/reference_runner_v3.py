@@ -2543,9 +2543,51 @@ def _irreducible_queue_split(entries) -> Tuple[int, int]:
         # max_rounds and end BUDGET_EXHAUSTED instead of handing the founder a
         # bundle. His ruling names the machinery; this is what reaching it
         # requires.
-        _never_read = _routing_ladder_never_served(e)
+        # AN ENTRY ALREADY FLAGGED IS NOT "NEVER READ", AND THE FIRST VERSION
+        # OF THIS LINE GOT THAT WRONG. `_routing_ladder_never_served` does not
+        # test `irreducible_escalation`, because on the A4 path that flag is
+        # skipped SEVERAL LINES EARLIER and the predicate never sees such an
+        # entry. Asking it here, where no such skip precedes it, classified a
+        # LADDER-EXHAUSTED sub-critical as never-read and admitted it to the
+        # queue. test_static_queue_closure.py::
+        # test_subcritical_irreducibles_do_not_trip_the_alarm caught it: 5
+        # escalated entries at severity 0.4 tripped an alarm that must stay
+        # silent. An exhausted ladder IS instrument contact -- every rung was
+        # tried -- so those entries keep their severity skip exactly as before.
+        # AND IT MUST HAVE HAD A TURN. The second version of this line counted
+        # ANY never-read finding, including a critical that had only just
+        # arrived and was awaiting its first verification --
+        # test_static_queue_closure.py::
+        # test_registry_irreducible_excluded_from_a4_blocker caught it, and the
+        # consequence was severe: 3 fresh criticals would put the queue over
+        # the bound and HALT a run that had barely started.
+        #
+        # THE DISTINCTION IS "PASSED OVER" versus "NOT YET REACHED", and the
+        # ladder's own record carries it. A non-empty `routing_history` whose
+        # every entry is a no-reading record means the ladder HAD its turn and
+        # came back with nothing, which is the state his ruling escalates. An
+        # empty history means no turn has been taken yet, which is ordinary
+        # pending verification and must stay silent. This is the same
+        # distinction `LADDER_UNSERVED_MIN_AGE_ROUNDS` draws for the report,
+        # read off the record instead of off the round number, so this
+        # function needs no new parameter and no caller moves.
+        # A LADDER-EMPTY DEFERRAL IS ALSO "NOTHING READ IT", and leaving it out
+        # left his ruling unsatisfied in the LIVE shape. Executed: 3
+        # never-served sub-criticals served to an empty ladder acquire
+        # `routing_deferred`, the severity skip then excluded them, and the
+        # queue stayed at 0 -- so the halt path his ruling routes them to could
+        # never be reached for a sub-critical. `routing_deferred` means no
+        # writer was available besides the finding's own source, which is an
+        # absence of reading, not a ruling. `irreducible_escalation` is the
+        # opposite case and stays skipped: the ladder was EXHAUSTED, every rung
+        # was tried, and that is instrument contact.
+        _no_reading = (not e.get("irreducible_escalation")
+                       and (e.get("routing_deferred")
+                            or (bool(e.get("routing_history"))
+                                and _routing_ladder_never_served(e))))
+        _never_read = _no_reading and not e.get("routing_deferred")
         if ((e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD
-                and not _never_read):
+                and not _no_reading):
             continue
         # THE HALT BOUND NO LONGER SEES A KEY-ACCESS REFUSAL (founder ruling
         # 2026-10-02). Run 1b is the case this fixes: the run HALTED on a

@@ -117,8 +117,12 @@ def main() -> int:
               f"{k/disproved_total:.4%}")
         print(f"    Wilson 95%          [{lo:.4%}, {hi:.4%}]  (statsmodels)")
         print(f"    Clopper-Pearson 95% [{lo2:.4%}, {hi2:.4%}]  (scipy.beta)")
-        for cid, sev in disproved_nonzero[:6]:
+        _shown = disproved_nonzero[:6]
+        for cid, sev in _shown:
             print(f"      {cid}  severity={sev}")
+        if len(disproved_nonzero) > len(_shown):
+            print(f"      ... and {len(disproved_nonzero) - len(_shown)} more "
+                  f"(of {len(disproved_nonzero)} in total)")
 
     # SECOND, INDEPENDENT CHECK. Under section 7.7 severity is a product of
     # W in {0.5, 1.0} and V in {0.0, 0.5, 1.0} with confidence in [0, 1], so a

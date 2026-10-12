@@ -97,6 +97,10 @@ def test_secondary_roots_never_include_protected_material():
 # Both free seats fixed the false-refusal class, by different mechanisms, and
 # each argued its own in prose. Measured by
 # scripts/interpreter_allowlist_coverage_2026-10-12.py over the 4 interpreters
+# (and the intervals on those counts, together with the 21-of-31 figure for
+# the seats' own falsifiers against the unfixed tree, by
+# scripts/the_panel_harvest_numbers_2026-10-12.py, which also discharges the
+# repaired door's safety property by z3 with SymPy agreeing)
 # on this machine, the prose was backwards: the probe ("more robust") covered
 # 2 of 4, the declared list covered 3 of 4, and the composition of the probe
 # with full discovery plus sysconfig paths covers 4 of 4.
