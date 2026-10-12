@@ -1,0 +1,117 @@
+{
+ "_what_this_is": [
+  "THE AUTHORED HALF of the morning report. `scripts/morning_report_build_2026-10-12.py`",
+  "derives WHICH items are live, from their own markers; this file says WHAT each one is",
+  "and WHAT the choices are, so a short report does not become a guessing game.",
+  "His order, 2026-10-12: 'leave enough detail for me to make sane and sensible choices.",
+  "Don't leave me guessing what you are talking about.'",
+  "The generator REFUSES (exit 3) if a live item has no entry here, or an entry here names",
+  "no live item -- so a new decision cannot go unexplained and stale text cannot survive."
+ ],
+ "task:A19": {
+  "title": "A19 — the admissibility scorer is BUILT and TESTED; the last step is a panel review and it is yours",
+  "what": "S_k, the admissibility scorer, classifies a whole TARGET rather than each element inside it, so a computable fragment sitting inside prose is never scored. Your design point of 2026-09-10, verbatim: *\"clearly it should simply mark a purely prose input as 'inadmissible', while still solving any computationally reducible elements within that prose! This is STEM.\"* The entry's own words are **\"BUILT AND TESTED 2026-09-11, NOT DONE — Section P applies, and the last step is HIS.\"**",
+  "why": "It is not waiting on engineering. It is waiting on a Section P panel review, which the list records as yours to call. My 2026-10-12 report wrongly listed this as 'approved, not built' — the marker says `state: OPEN / status: TESTED` and its evidence passes 20 tests, so the prose was wrong and the marker was right. That mislabel is the reason this report is now generated.",
+  "options": [
+   "**Call the Section P panel review** on the built work, using the free cc2 and fable seats, which costs nothing. This is the step the entry names.",
+   "**Accept it without a panel** and mark it DONE, on the grounds that both seats already found and fixed the one critical defect in it during panel round 13 on 2026-09-11.",
+   "**Defer it** behind the next simulated run, so the review sees it exercised rather than static."
+  ],
+  "evidence_line": "Panel round 13, 2026-09-11, had both seats independently find the same critical defect in it — a gate that could not fail moved from `e4` to `e3` inside the commit that removed it from `e4` — and that is repaired. Measured on a real design note, `bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`: ruff reports 311 diagnostics over the extracted listings where the whole-file form reported none."
+ },
+ "task:R1": {
+  "title": "R1 — Exp 53, the zero-plant control, has been ruled twice and never run",
+  "what": "The zero-plant control experiment. You ruled it on 2026-08-07 — *\"7: Restart or resume Exp 53. Restart it.\"* — and again on 2026-09-06 with `# restart`. Two run directories exist and both PREDATE the first ruling, so no post-ruling run exists. It has been carried 66 days.",
+  "why": "This is not a decision you have failed to make; it is a ruling of yours that went unexecuted. Two things stand between it and running: it is blocked behind the A1-to-A10 engineering gate, which is execution work, and the entry records that it is large and **costs money**. The money is the part only you can release.",
+  "options": [
+   "**Authorise the spend and run it next**, after the outstanding simulated run, which is where your 2026-09-28 instruction already placed it: *\"The restart of this experiment should come immediately next on our runway after the outstanding next simulated run.\"*",
+   "**Run it in simulated form first** with the free seats, which costs nothing but is the weaker instrument for a control.",
+   "**Withdraw it** if the zero-plant control no longer earns its cost, which would need an explicit WITHDRAWN entry rather than continued silence."
+  ],
+  "evidence_line": "Zero post-ruling run directories exist against 2 pre-ruling ones. The entry has sat BLOCKED/PROPOSED with zero evidence files since 2026-08-07."
+ },
+ "task:10.2": {
+  "title": "10.2 — remote access to this Mac: the analysis is done and the choice is yours",
+  "what": "Whether to enable Tailscale SSH for remote access to this machine. Measured on 2026-09-10: Tailscale SSH is **OFF** (`SSH_HostKeys` absent on this Mac and on the one peer), ordinary `sshd` IS running with port 22 answering on `100.124.143.121`, and your account carries the `ssh` capability.",
+  "why": "The entry is marked BLOCKED, which this list uses specifically for a ruling that awaits you. The analysis has been complete for over a month. It is a security-posture decision about your own machine, so it is not mine to take.",
+  "options": [
+   "**Leave it as it is** — ordinary sshd on the tailnet address, which already works.",
+   "**Enable Tailscale SSH**, which replaces key management with tailnet identity and gives you per-device ACLs.",
+   "**Close the entry as decided-no-change**, so it stops appearing as an open decision."
+  ],
+  "evidence_line": "Full measurement in the entry at `CDSFL_MASTER_TASK_LIST.md:450`, dated 2026-09-10. Nothing has changed since; port 22 still answers on the tailnet address."
+ },
+ "defect:A4-counter-valve-severity-mismatch": {
+  "title": "The blocker counter and its release valve disagree about severity, and a run cannot converge because of it",
+  "what": "`unverified_critical_count()` counts findings with **no severity test at all** — it skips non-UNCONFIRMED, already-escalated and exhausted entries, then counts whatever is left. But the only thing that can RELEASE an entry from that count, the `exhausted` valve, requires severity of 0.7 or above. So a sub-critical finding can ENTER the tally of findings that block convergence, and has no way out of it.",
+  "why": "It is live and it blocked a real run. Finding C0042 in `study_run1b_2026-10-03` sits at severity 0.6 with a zero-character falsifier, emitted in round 2 and never given one. Leave-one-out on the live registry: removing it drops the blocker count from 1 to 0. It blocks the zero-critical streak for every remaining round, so **that run could not converge**. You issued `d` on 2026-10-03 and nothing has changed since, so the run is still obstructed.",
+  "options": [
+   "**Make the counter and the valve share ONE severity predicate** — the symmetric fix, and the one the defect record itself asks for. A finding either enters the blocker tally and can be released from it, or it does neither.",
+   "**Restore the severity gate to the counter**, so only criticals ever enter it. Measured consequence: that takes the blocker tally from 3 to 0 on this run's pre-sweep registry, after which the gate blocks on `contested=2` and the zero-critical streak instead.",
+   "**Lower the valve's severity requirement** to match the counter, which releases sub-criticals but weakens what `exhausted` means."
+  ],
+  "evidence_line": "The counter's own docstring claims it counts `severity >= CRITICAL_SEVERITY_THRESHOLD`, which its body does not do — stale since the gate was removed on 2026-09-06. A second defect found alongside: `exhausted_round_threshold` defaulted to 8 while the maximum reachable age in an 8-round run is 7, so the valve could not fire in ANY 8-round run; z3 returns unsat, NumPy's enumeration of all 36 legal pairs gives max age 7, SymPy gives the general condition T <= R-1. That half is fixed — the Exp 56 configs now set 6."
+ },
+ "defect:integrity-gate-interpreter-carve-out": {
+  "title": "The integrity gate refuses a correct falsifier, and must refuse it by construction",
+  "what": "The sandbox integrity gate allows the harness's own Python 3.13 directories. A falsifier that spawns a second interpreter gets macOS's own Python 3.9 at `/usr/bin/python3`, whose standard library sits under `/Library` and whose user-site sits under `~` — both inside the denied regions. Its ordinary import reads are recorded as denials, and **any** denial becomes an INTEGRITY_VIOLATION.",
+  "why": "It is structural, not incidental. Finding C0050's falsifier spawns `/usr/bin/python3` precisely BECAUSE the defect it demonstrates is that the target prescribes a bare unpinned `python3`. Any falsifier for that defect class must do the same thing, so the gate is guaranteed to refuse the correct falsifier. C0050 is severity 0.7 — a critical — and was recorded as untested and pushed to a human. Proved by counterfactual: with the 3.9 roots allowed, the identical falsifier returns CONFIRMED instead of INTEGRITY_VIOLATION.",
+  "options": [
+   "**Run it and flag the denials as a reporting metric** rather than refusing. This is the option the defect record leans toward, and it has a measured side effect worth knowing: the finding stops being `contested`, which removes a second obstruction to convergence on its own.",
+   "**Keep refusing and widen the carve-out** to include system interpreters. This preserves the refusal but means `contested` must be named explicitly in the fix, or the convergence bug survives it.",
+   "**Keep refusing with no change**, accepting that this defect class can never be falsified inside the harness."
+  ],
+  "evidence_line": "The refuse-rather-than-flag behaviour entered on 2026-08-15 in a milestone merge citing NO founder ruling, and you confirmed on 2026-10-03 that you were never consulted. Cost on this run: 34 matched-read lines and 6 banners over-reported for one finding."
+ },
+ "defect:A finding can reach UNCONFIRMED without ": {
+  "title": "A finding can block a run for its whole life without the routing ladder ever serving it — and a commit quotes you approving the change that caused it",
+  "what": "Two findings in `study_run1b_2026-10-03`, C0066 at severity 0.45 and C0073 at 0.50, reached the blocker count with **zero verdicts, no routing history and no falsifier code**. Nothing ever served them. The post-run sweep settled two similar findings but C0073 arrived in the identical shape afterwards, so the sweep is not a net solution.",
+  "why": "There are two questions here and the second one is uncomfortable. The mechanical question: the blocker counter counts every severity since the gate was removed, and the only release requires severity 0.7 or above plus verdicts above zero plus sufficient age — executed, at severity 0.45 to 0.69 the valve returns none at age 50 with any threshold. **The provenance question:** the severity gate was removed in commit `6c10fe4` on 2026-09-06 at 16:21:48, whose message quotes you as *\"Verdict: do it. There are no votes in CDSFL.\"* But `DECISIONS_AWAITING_YOU_2026-09-06.md` item 23 records, at 22:15 the same day: *\"ANSWERED 2026-09-06 22:15 AND THE RECOMMENDATION WAS REJECTED. He rejected both removal and the rubric swap and ordered worked proofs instead.\"* That verbatim quote appears in no tracked file except the code comment itself and five later panel diffs. So a change may be running on a ruling you did not give.",
+  "options": [
+   "**Confirm or deny the quoted ruling.** If you did not approve the removal, the severity gate goes back and this is a reversal rather than a new design. Measured: restoring it takes the blocker count from 3 to 0 on this run's pre-sweep registry.",
+   "**Confirm the removal was intended** and fix the asymmetry instead, which collapses into the first decision above about one shared severity predicate.",
+   "**Order the worked proofs** that item 23 records you asking for, before anything changes either way."
+  ],
+  "evidence_line": "Decision ledger item 2, which governs this, is still OPEN. Producers: `scripts/exhausted_marking_age_lock_2026-10-03.py`, `scripts/a4_blockers_lock_audit_2026-10-03.py`, `scripts/gate_replay_on_registry_2026-10-03.py`, `scripts/routing_severity_gate_2026-10-03.py`. No code has been changed pending your word."
+ },
+ "task:V9": {
+  "no_ruling_needed": true,
+  "title": "V9 — you approved it on 2026-09-18 and it was never built",
+  "what": "Task V1 set three conditions for a DONE marker's evidence. Two are implemented and guarded: the evidence must exist, and it must pass. The third — that **reverting the fix makes that same evidence FAIL** — is implemented nowhere and no entry tracks it.",
+  "why": "Approved by you on 2026-09-18 at 01:26 BST, verbatim: *\"V9: Approved.\"* It is build work with your ruling already on record, so it needs no new decision from you. It belongs on the work queue, not in your inbox.",
+  "options": [],
+  "evidence_line": "Without it, a DONE entry can cite evidence that passes for reasons unrelated to the fix — which is the mutation discipline applied to the task list itself."
+ },
+ "study:arm5": {
+  "no_ruling_needed": true,
+  "title": "arm5 — the paired effectiveness baseline",
+  "what": "Paired baseline: the pre-window commit `a2a0197` against HEAD, same target, same seed. This is THE effectiveness question for the whole fix window.",
+  "why": "Your ruling is on record: RUN IT (2026-10-03). Outstanding work, not a decision.",
+  "options": [],
+  "evidence_line": "Design already verified: the target is byte-identical at both commits (3,498 bytes, 0 commits between them touch it), so a difference between arms is attributable to the machinery rather than target drift. The HEAD arm is already run, so only the baseline arm remains."
+ },
+ "study:haiku_extended": {
+  "no_ruling_needed": true,
+  "title": "haiku_extended — the claim classifier on an extended set",
+  "what": "Haiku as the decidable-claim classifier at run scale, with your confidence composition: Haiku decides, syntax corroborates and can never block.",
+  "why": "Your ruling is on record: DO IT, mark as a significant study area (2026-10-03). Outstanding work.",
+  "options": [],
+  "evidence_line": "On the 15-document set the model arm reached 14 of 15 = 93.3333%, Wilson [70.1835%, 98.8133%], against the syntax arm's 10 of 15 = 66.6667%. The confidence composition is NOT DEMONSTRATED on that set at alpha 0.05 (Fisher p = 1.0). What is owed is the EXTENDED set: 15 documents cannot separate these effects, because the complementarity rests on 1 document and the confidence label on a 5-versus-6 split."
+ },
+ "study:guard_reach": {
+  "no_ruling_needed": true,
+  "title": "guard_reach — how far the discrimination control actually reaches",
+  "what": "The discrimination control reaches only falsifiers that arrive with a corrected copy. The shadow invariance probe synthesises the missing side and runs as a post-run sweep, because inline cost roughly 187 minutes per run.",
+  "why": "Your ruling is on record: EXTEND THE EXISTING GUARD, do not add a template (2026-10-03). Outstanding work.",
+  "options": [],
+  "evidence_line": "Producer: `scripts/invariance_sweep_2026-10-03.py`. The inline version was first wired on a projection of 1.4 minutes per run, measured against a probe on a 1-file temporary directory; an overlay build at the real repository root is 14.034 s."
+ },
+ "study:in_round_clearance": {
+  "no_ruling_needed": true,
+  "title": "in_round_clearance — does in-round re-attachment clear blockers while the gate can still see it",
+  "what": "Whether in-round falsifier re-attachment actually clears blocker-count entries while the convergence gate can still see them, and whether the UNRESOLVED section elicits the id-addressed form at all.",
+  "why": "Your ruling is on record: build the closing sweep machinery into the schema rather than leave it as an afterthought (2026-10-04). Outstanding work.",
+  "options": [],
+  "evidence_line": "This is the forward half of the two defects above: if re-attachment clears blockers in-round, the valve asymmetry matters less in practice."
+ }
+}
