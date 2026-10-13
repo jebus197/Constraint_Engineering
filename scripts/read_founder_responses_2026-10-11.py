@@ -89,6 +89,31 @@ def is_a_response_file(path: Path) -> bool:
 #: and frequently begin without a space after the hash.
 _MD_HEADING = re.compile(r"^#{1,6}\s+\S")
 
+#: Where this project's own generated TTS reports live. An annotated response
+#: file is a COPY of one of these with his '#' insertions, so the original is an
+#: EXACT oracle for which lines are the report's and which are his -- better
+#: than any shape heuristic. Consulted when a same-named original exists.
+_TTS_ORIGINALS = Path.home() / "Desktop" / "CDSFL_tts"
+
+#: FALLBACK ONLY, for a response file whose original no longer exists: a line
+#: opening with a run of capitals followed by a digit or a stop is how the
+#: reports write their headings ("DECISION 2.", "SECTION 1."). Measured over his
+#: 522 annotations, exactly 1 of HIS OWN lines opens with 4+ capitals -- 0.1916%,
+#: Wilson 95% [0.0338%, 1.0771%] -- so it is nearly safe and not exactly safe,
+#: which is why the oracle is preferred wherever it survives.
+_REPORT_SHAPE = re.compile(r"^[A-Z]{4,}[\s0-9.]")
+
+
+def _report_lines_for(p: "Path") -> set:
+    """Lines belonging to the GENERATED report this response file annotates."""
+    orig = _TTS_ORIGINALS / p.name
+    if not orig.is_file():
+        return set()
+    try:
+        return {l.strip() for l in read_any(orig).splitlines() if l.strip()}
+    except Exception:                                     # noqa: BLE001
+        return set()
+
 
 def _looks_like_a_markdown_heading(line: str) -> bool:
     if not _MD_HEADING.match(line):
@@ -195,7 +220,8 @@ def _annotations_in(p: Path, d: _dt.date | None = None) -> list:
         d = _dt.date.fromtimestamp(p.stat().st_mtime)
     text = read_any(p)
     if text:
-        for i, line in enumerate(text.splitlines()):
+        _lines = text.splitlines()
+        for i, line in enumerate(_lines):
             s = line.strip()
             if not (s.startswith("#") and len(s) > 2):
                 continue
@@ -208,8 +234,51 @@ def _annotations_in(p: Path, d: _dt.date | None = None) -> list:
             # in Word. Counting headings inflated his 480 real annotations to 691.
             if p.suffix.lower() in (".md", ".markdown") and _looks_like_a_markdown_heading(s):
                 continue
+            body = s.lstrip("# ").strip()
+            # AN ANNOTATION CAN SPAN LINES, AND HIS TRAILING HASH SAYS SO.
+            # FOUND 2026-10-13 ON HIS OWN INSTRUCTION -- "Make sure you can
+            # parse my responses in full" -- the SECOND time he has had to say
+            # it. The first was `errors="ignore"` eating his curly apostrophes,
+            # 256 characters across 14 files. THIS one: a line-by-line walk
+            # treated each '#' line as a whole annotation, so an annotation
+            # continuing on later lines lost everything after the first.
+            #
+            # MEASURED ON THE FILE THAT EXPOSED IT. His first annotation on
+            # Morning_Report_2026-10-13.txt occupies lines 23, 25 and 27 (the
+            # hash line, his re-quoted ruling, then its tail) and the reader
+            # returned 97 of 1,053 characters. The lost text carried the
+            # operative clause -- "But propose your own fixes first" -- which
+            # changes the ORDER of the work, and it survived only because the
+            # file was also read directly.
+            #
+            # THE RULE IS HIS OWN CONVENTION: a LEADING hash opens an
+            # annotation, a TRAILING hash says a quotation follows. The
+            # continuation then runs until THE REPORT RESUMES, read from the
+            # generated original where one survives, so the boundary is an
+            # oracle rather than a guess. Measured across the corpus: 1 of 522
+            # annotations ends with a trailing hash, 0.1916%, Wilson 95%
+            # [0.0338%, 1.0771%]; a rule capturing ANY following prose line
+            # would have swallowed 367 further lines, mostly the reports' own
+            # sentences. Producer:
+            # scripts/an_annotation_can_span_lines_2026-10-13.py.
+            if s.endswith("#"):
+                _report = _report_lines_for(p)
+                _parts = [body.rstrip("# ").rstrip()]
+                for _j in range(i + 1, len(_lines)):
+                    _nxt = _lines[_j].strip()
+                    if not _nxt:
+                        continue
+                    if _nxt.startswith("#"):
+                        break
+                    if _report:
+                        if _nxt in _report:
+                            break
+                    elif _REPORT_SHAPE.match(_nxt):
+                        break
+                    _parts.append(_nxt)
+                body = " ".join(x for x in _parts if x).strip()
             out.append({"file": p.name, "ext": p.suffix.lower(), "date": d.isoformat(),
-                        "line_index": i, "text": s.lstrip("# ").strip()})
+                        "line_index": i, "text": body})
     return out
 
 
