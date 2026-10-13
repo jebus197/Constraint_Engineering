@@ -1266,6 +1266,32 @@ The asymmetric rates are the primary construct. The derived scalar is a convenie
 
 **Verified:** HARD, conf=0.9, verified=True → 0.90. HARD, conf=0.9, verified=False → 0.00.
 
+**Two cautions on using this formula as a gate** (added 2026-10-13, both derived
+with SymPy and independently with z3; producer
+`scripts/the_severity_cut_collapses_the_formula_2026-10-13.py`):
+
+1. **At a 0.7 critical cut the formula collapses to a conjunction.** The factor
+   sets are discrete and confidence is bounded in [0,1], so the supremum of
+   Sev over confidence is 1 for (HARD, V=True) and at most 1/2 in each of the
+   other five cells. Hence `Sev(f) ≥ 0.7` **is identically** `class = HARD ∧
+   verified = True ∧ confidence ≥ 0.7` (z3 returns unsat for the negation of
+   that equivalence), and inside the one surviving cell `Sev = confidence`
+   exactly. The two harness-owned factors act as a conjunctive pre-filter on
+   eligibility; they place no constraint on the magnitude. A severity gate built
+   this way is therefore **not** "the opposite of a vote" — it is the same vote
+   taken over a smaller population. Making it tool-decided requires replacing
+   `confidence` with a harness-computed quantity; §7.8 Approach B
+   (`S_v = 1/(1 + exp(−Λ_total))`) is that quantity and is already specified.
+
+2. **Do not import §1's default rule into W.** `cdsfl_core.txt` §1 sets
+   `class(c) = HARD if c is ambiguous`, which is conservative where it is
+   written — treating an unclear constraint as non-negotiable risks nothing.
+   Here it inverts: `Sev(HARD) > Sev(SOFT)` strictly for every confidence > 0
+   (z3: unsat for the negation), so `ambiguous → HARD` **inflates** severity and
+   pushes findings toward the critical side of the gate. In the severity context
+   the conservative default is SOFT, and the asymmetry must be stated wherever
+   the class is collected.
+
 ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
 
 SymPy, dimensional analysis, and numerical spot-checking each catch different error types with different reliability. Two combination approaches:
@@ -1330,7 +1356,7 @@ No single number tells the whole story. A model might find many things quickly (
 | Runner convergence gate (§7.4) | 5-condition gate operational; 2/5 non-contributing in Exp 36 | Implemented; C₆ (churn) pending; ascending abstraction guard pending |
 | O_A + S_sync^emp (§7.5) | Verified, edge cases handled, 3-regime discrimination | Ready for implementation |
 | Δ (§7.6) | Verified | Ready for implementation |
-| Sev(f) (§7.7) | Verified | Implemented in pipeline |
+| Sev(f) (§7.7) | Verified | **NOT implemented.** The product is computed nowhere in the gating path; `bench/reference_runner_v3.py` reads a model-asserted float. `confidence` and the HARD/SOFT class are not collected (0 of 3,298 archived entries carry either), and the §7.7 KEY PROPERTY is violated on 35 of 40 disproved findings — 87.5000%, Wilson [73.8879%, 94.5405%]. Applied advisory-only by `FindingRegistry.severity_spec_shadow`, which GATES NOTHING. Producers: `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, `scripts/the_severity_cut_collapses_the_formula_2026-10-13.py`. (Row corrected 2026-10-13; it read "Implemented in pipeline" and that was false.) |
 | Multi-verifier (§7.8) | Verified, Λ notation, both approaches | Ready for implementation |
 | Fingerprint (§7.9) | Verified | Partially implemented |
 | Manager selection (§7.11) | Defined, uses §7.7/§7.8 | Ready for implementation |

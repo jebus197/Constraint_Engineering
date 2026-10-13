@@ -1,0 +1,91 @@
+# FREE PANEL — the founder's rulings of 2026-10-13
+
+## WHAT YOUR FIXES ARE FOR, AND IT IS NOT A CODE-REVIEW EXERCISE
+
+Your goal is to provide fixes **in accordance with the full specifications, goals and objectives of this project**, and **clean, honest convergence remains the primary goal at all times**. Those are the founder's words of 2026-10-13 and they govern every item below. A fix that makes a gate pass more easily, or that excuses a finding so a run can finish, is not a fix — it is the defect this project exists to detect. Equally, a fix that makes convergence unreachable is not rigour, it is a broken instrument.
+
+**THE PURPOSE OF A SIMULATED RUN, in his words, because one is next and several items below are about what it should test:** the purpose is to test features exactly like these, to see how they would perform in like experiments and whether we should continue to use them. A simulated run is where a feature earns promotion or is withdrawn; it is not a rehearsal to be passed.
+
+**EVERY ITEM BELOW CARRIES MY OWN PROPOSED FIX FIRST.** That is his explicit instruction — *"But propose your own fixes first."* Your task is to attack those proposals, not to start from a blank page: say where each is wrong, where it is insufficient, and what you would do instead. Where my proposal survives, say so and say why. Agreement reached by not looking is worth nothing here.
+
+**APPLY `a`, `f` AND `sy` TO EVERY FIX YOU DELIVER — his instruction, 2026-10-13.** Analyse dispassionately: if the record contradicts a framing in this brief, say so with citations. FFAFP in all 5 steps: FIND with evidence, FOLLOW the blast radius BEFORE editing, ANALYSE with tools because the tool output IS the evidence, FIX the root cause, and P-PASS by actively trying to break your own fix. And `sy`: every computational claim cross-verified with at least 2 independent tools (SymPy with z3, SciPy with statsmodels, NumPy with mpmath), with a confidence interval on every proportion you report.
+
+---
+
+## ITEM 1 — WHAT IS SEVERITY COMPUTED FROM?
+
+**The record.** `docs/MATHEMATICAL_APPENDIX.md` §7.7 specifies `Sev(f) = W(class) · confidence · V(verification)`, with `W(HARD)=1.0`, `W(SOFT)=0.5`, `V(True)=1.0`, `V(None)=0.5`, `V(False)=0.0`, and the section's stated KEY PROPERTY that a disproved finding scores zero regardless of confidence. **It was never implemented.** `bench/reference_runner_v3.py:6682` reads `severity=float(entry.get("severity") or 0.0)` from the model's own output. **2 of the 3 inputs were never collected:** across 3,298 archived findings `confidence` appears on 0 and no field carries a HARD/SOFT class. The appendix's own key property is violated on **35 of 40** disproved findings — 87.5000%, Wilson 95% [73.8879%, 94.5405%]. Producer: `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`.
+
+**His ruling, verbatim:** *"Severity was supposed to be calculated in accordance with our existing maths model. If the models are asked to compute anything it should surely be computed from our maths model and from what this already says about severity surely, then they must provide a proof to demonstrate that they have computed severity correctly, then the other machinery of the schema should apply a working falsifier/use tools to check that this number makes sense and checks out. This does not qualify as a 'vote'. Indeed it is the very opposite of a vote."*
+
+**MY PROPOSED FIX, for you to attack.** Four parts. (1) Collect the 2 missing inputs: the model supplies `confidence` in [0,1] and classifies its finding HARD or SOFT — both are existing project vocabulary, not new terms. (2) The harness COMPUTES `Sev(f)` and the model never asserts a severity number at all; the field becomes derived, not reported. (3) The proof the model must supply is of ITS OWN arithmetic — W, confidence and their product — which the harness re-derives, exactly as `_validate_rk_computation` already re-derives R_k. (4) The tool check is `V`, which is the falsifier verdict the harness already owns, so a disproved finding scores zero by construction and the gate cannot be voted open.
+
+**Why I think it answers his "opposite of a vote" point:** 2 of the 3 factors become harness-owned, and the one the model supplies is multiplied by a factor the harness can set to zero.
+
+**What I am least sure of, and want you to settle.** The schema change invalidates replay comparability with every archived run. Measured cost of applying only the V factor today: the share at or above the 0.7 cut falls from 41.6313% to 16.3129%, with **835 of 3,298** crossing downward — 25.3184%, Wilson [23.8636%, 26.8306%]. Is that movement evidence the formula is right, or evidence the 0.7 cut was calibrated against the uncomputed float and must move with it? And `confidence` is still a model-asserted number: does multiplying it by harness-owned factors make it not-a-vote, or merely a quieter one?
+
+---
+
+## ITEM 2 — IS AN EMPTY LADDER THE SAME THING AS NOTHING HAVING READ THE FINDING?
+
+**His framing, verbatim, and he names both horns himself:** *"So is this a tension? If I say the empty ladder counts for nothing, sub-critical findings go unresolved? But if I say they also should be fed back into the harness machinery, this could block or severely delay convergence? The first is not ideal, because it could mean whole classes of faults go unresolved and are ignored. The second could lead to a problem we encountered in the past where new sub-critical (and often mostly churn/dupe) issues kept being discovered and kept pushing convergence beyond reach? Again neither outcome is ideal (if my reading is accurate?)."*
+
+**His reading IS accurate, and the record supports both horns.** The release door that excused never-read findings was withdrawn on his ruling of 2026-10-12. The halt machinery now admits a served-but-unread finding at any severity. The case still unhandled: a sub-critical served to an EMPTY ladder — no writer available besides the finding's own source — acquires `routing_deferred` and is then excluded by the severity skip, so it blocks, is named, and reaches no halt path. Including it was tried on 2026-10-12 and REVERTED, because it broke the equivalence between `_irreducible_queue_split` and the reference rule in `test_the_alarm_names_which_kind_2026-10-02.py`, on a third successive correction to the same predicate inside an hour.
+
+**MY PROPOSED FIX, for you to attack.** Separate the two questions the single predicate is conflating. (1) **Was it read?** A ladder-empty deferral means NOTHING read it — that is a resourcing fact about the roster, not a ruling about the finding — so it must not be excused. (2) **Can anything in this run read it?** If the ladder is empty, nothing can, so blocking further rounds buys nothing: the honest terminal state is HIL escalation with an evidence bundle, which TERMINATES rather than excuses. So: a never-read finding escalates to the founder rather than either blocking for ever or being dropped. (3) **The churn horn is a different defect and needs a different fix:** duplicate and near-duplicate sub-criticals pushing convergence out of reach is a DEDUPLICATION failure, and excusing findings to compensate would hide it. If that is what happened before, the fix belongs in the dedup path, measured on the archive, not in the blocker count.
+
+**What I want from you:** is my (2) sound, or does escalating a sub-critical to HIL on every empty ladder flood the founder and amount to the same thing as excusing it? And measure the churn horn on the archive: how often did sub-critical duplicates actually push a run's novelty series upward? If that is rare, his second fear is smaller than it feels.
+
+---
+
+## ITEM 3 — THE HALT BOUND IS 2 AND THE ALARM NEEDS MORE THAN 2
+
+**His ruling:** *"Again the goal in all cases is honest clean convergence. Ask the panel how to resolve this too, given this framing."*
+
+**The record.** `cfg.max_irreducible_queue` defaults to 2 and `build_irreducible_queue_alarm` fires only ABOVE it, so 1 or 2 unresolvable never-read findings block convergence without producing the evidence bundle, and the run reaches `max_rounds` instead. Measured on `study_run1b_2026-10-03`: its 2 survivors put the queue at exactly 2.
+
+**MY PROPOSED FIX, for you to attack.** The bound is a single integer applied to classes that differ in whether anything could ever resolve them, and that is the error. A LADDER-EXHAUSTED finding has been tried by every rung, so waiting is reasonable and 2 is defensible. A NEVER-READ finding cannot be resolved by waiting at all, so its bound should be 1: tell the founder at the first occurrence. That makes convergence honest without burning rounds against an impossibility.
+
+**What I want from you:** is a per-class bound right, or is it 2 parameters where 1 would do? And does firing at 1 make the alarm so frequent that it stops being read, which would be a worse failure than the current silence?
+
+---
+
+## ITEM 4 — THE A19 PROSE-LISTING FLAG, AND THE CLAIM LEDGER
+
+**His ruling:** *"ask the free panel to resolve any outstanding issues and if it should be safe (and wise) to turn it on in the next simulated run and make it load bearing? Make sure the models know the purpose of simulated runs is to test features exactly like these to see how they would perform in like experiments and if we should continue to use them?"*
+
+**The record.** The admissibility scorer classifies a whole TARGET rather than each element, so a computable fragment inside prose is never scored. His design point of 2026-09-10 asks for a prose input to be marked inadmissible *"while still solving any computationally reducible elements within that prose"*. The 2026-10-12 joint round established: the evidence suite is green; `sk_score_prose_listings` exists; the flag's form is VETO-ONLY since 2026-09-22, so the gates may convict and never admit; and `bench/claim_ledger.py` is the designed path to per-element handling and is currently `informative_only=True`. Both seats also reported that an archived `SHELL_INJECTION_FIX` exploit is admitted at sk=1.0 with the flag ON, which the record itself calls the strongest argument for keeping it OFF.
+
+**MY PROPOSED FIX, for you to attack.** Turn the flag ON for the next simulated run in its veto-only form, because veto-only bounds the downside: it can convict or abstain and can never admit, so the exploit case cannot be made worse by enabling it. Keep the claim ledger INFORMATIVE for that same run, and record whether its per-claim decisions agree with the gate's. Promote the ledger to load-bearing only if that agreement is measured, not assumed. The simulated run is exactly the instrument for this, which is his point.
+
+**What I want from you:** is veto-only genuinely one-sided in the code, or does some path still admit? And is the SHELL_INJECTION_FIX result an argument against the flag, or against the bandit rating that scores `shell=True` as LOW?
+
+---
+
+## ITEM 5 — THE DIRECTIVE COMPOSER, AND HE HAS NEVER HEARD OF THE PRUNER
+
+**His two questions, verbatim, and they are owed a plain answer as well as a fix:** *"I have to say that a 'coherence pruner that prunes directive text' is news to me? When did that come into play? What does it do and why?"* And on the 9.0026% delivery: *"9% of the universal directive text??? How can the models even make sense of what they are being asked to do if they receive so little? I spoke briefly a while ago about potentially stripping out all of the historical back and forth chatter that bore no weight on what the models were actually being asked to do in this project. You said it was a good idea. But I had no idea if you had actually built anything?"*
+
+**THE ANSWERS, ESTABLISHED FROM THE RECORD THIS MORNING.** `_prune_for_coherence` and `MODEL_COHERENCE_BUDGETS` both entered on **2026-03-31** in commit `adaa434f`, "Dynamic Directive Composer built + 5-model confer", so the pruner has been live for over 6 months. It deletes SOFT directive text to bring a `constraint_density` figure under a per-model budget — the budgets are 0.01 to 0.02 constraints per token. **And nothing was built for the trimming he remembers agreeing to.** There IS a review: `experimental_notes/CDSFL_Directive_Pruning_Review_2026-07-18.md`, measuring the operational directive at 43,667 characters, 6,615 words, 933 lines, 22 sections — and its own second line reads *"Recommendation only — nothing is applied here."* It was never applied.
+
+**The 4 defects, all raised by panel models in June 2026, recorded UNCONFIRMED and UNTOOLABLE, confirmed 2026-09-10 and verified live on 2026-10-13.** C0001: `_prune_for_coherence` makes the metric it optimises WORSE. Its guard PASSES *because the defect persists* — the assertion reads "density improved ... the inversion is gone and C0001 may be fixed". The mechanism was discharged formally: `_count_constraints` is independent of the text, so a shorter text cannot lower density; z3 returns **unsat** for "pruning shortened the text AND density did not worsen", SymPy agrees on the sign, NumPy and mpmath cross-check. C0040: `_load_universal_directive` serves a reduced rendering whenever the full text exceeds a model's `max_directive_chars`, delivering 9.0026% of it as a flag dump. C0037: `_semantically_duplicate` treats a short line as a duplicate of a longer one at an intersection ratio of 0.95 over the SHORTER line, which deleted a formula and kept its special case. C0036 and C0054: `resolve_layer_conflicts` is blind to 95.6120% of directives because `_directive_topic_and_stance` cannot classify them.
+
+**MY PROPOSED FIX, for you to attack, and it is a RETIREMENT rather than a repair.** His instinct is that *"building mechanics around the core directives to automatically prune them, seems ... inherently risky — and potentially wildly inaccurate"*, and the measurement agrees: the inversion is forced by the shape of the metric, not by a loop bug, so repairing the arithmetic means changing what is measured. So: (1) do NOT repair the pruner's arithmetic; (2) TRIM THE DIRECTIVE SET BY HAND to what the project specification actually requires, using the 2026-07-18 review that already exists and was never applied, and which marks its KEEP-VERBATIM sections explicitly; (3) once the full text fits every model's budget, the pruner has nothing to do and the reduced rendering never triggers, which closes C0040 and C0001 together without changing a single measurement; (4) C0037 and C0036/C0054 are then repairs to mechanisms that still run, and they are separable.
+
+**This is the item where I most want you to disagree if you can.** Retiring a mechanism requires a COMMITTED MEASUREMENT showing the replacement dominates on a named property — that is this project's additive standard, and "trim by hand" is not yet such a measurement. So: name the property, and say what measurement would establish that a hand-trimmed directive set dominates the automatic pruner. If you think the pruner should be repaired rather than retired, say what it should measure instead of density, and whether that can be done without invalidating replay.
+
+---
+
+## OUTPUT SHAPE — return these fields, per item, by name
+
+- **verdict** — one of ATTACK SUCCEEDS (my proposal is wrong, and why), INSUFFICIENT (right direction, names what is missing), SOUND (survives, and what you tried that failed to break it), PREMISE WRONG (the brief's own facts are wrong, with citations), or NEEDS HIS RULING (a value judgement no measurement settles).
+- **fix** — write it INTO the sandbox repository tree at its real path. A fix left in prose or in scratch space is destroyed at teardown and is not delivered. Name every path you wrote.
+- **falsifier** — the command you EXECUTED and its actual output, pasted. Not a command you would run.
+- **reasoning** — why this is the simplest sufficient fix under the project's standards, and what you rejected.
+- **refutation** — what evidence would overturn your own answer.
+- **termination** — when this item is DONE, and when to stop pushing on it.
+- **disagreement** — where you expect the other seat to differ, and whether the difference is real or verbal.
+
+## STANDARDS THAT BIND THIS ROUND
+
+Clean honest convergence is the goal in all cases. Simplest sufficient fix. Additive: nothing disabled or removed without a committed measurement showing the replacement dominates on a named property, and every new flag, gate or entry point wired to a caller and executed by a committed test — an addition nothing reaches is not additive either. A measured rate travels with the script that produced it. Execute, do not grep: where a producer and a consumer are both live code, call them and compare outputs. Every `--help` must be free. Never weaken a test to make it pass; if a pinned behaviour is measured wrong, REPLACE the assertion with a sharper one and say so in place. Simulated agents are labelled SIM only, never a vendor name. Fixes are SUGGESTED to the founder and never auto-applied.

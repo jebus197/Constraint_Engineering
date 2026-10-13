@@ -96,8 +96,23 @@ def clearance_mm(temp_c: float) -> float:
 '''
 
 # The measured exploit: a shell-injection call smuggled into a fenced listing.
-# Under the repaired hard gates (A=1) and the prose-blind effect gates this
-# scored sk=1.0000 ADMISSIBLE.
+# HISTORICAL FIGURE, SUPERSEDED -- corrected in place 2026-10-13. This comment
+# read "Under the repaired hard gates (A=1) and the prose-blind effect gates this
+# scored sk=1.0000 ADMISSIBLE", and that figure was still being cited in
+# 2026-10-13 as the strongest argument for keeping sk_score_prose_listings OFF.
+# It is pre-veto. Since the flag became veto-only (2026-09-22) no code path can
+# produce it: EXECUTED, flag=False gives tristate=NO_SCORE sk=0.0 and flag=True
+# gives tristate=ESCALATE sk=0.0 (committed at
+# experimental_notes/CDSFL_MASTER_TASK_LIST.md:575-580). The exploit is never
+# admitted under either setting -- pinned by
+# bench/tests/test_prose_gates_are_one_sided_2026-09-22.py and
+# bench/tests/test_prose_acceptance_stem.py::TestTheFlagCanConvictButNeverAdmit.
+# WHAT IS STILL TRUE, and it is a different defect: bandit rates
+# subprocess.call("<literal>", shell=True) LOW, and the veto helper
+# _gates_introduced_new_defects reads only HIGH and MEDIUM, so the LOW cannot
+# convict. It is surfaced but not charged, via
+# _prose_one_sided["new_low_severity_security_findings"]. That is an argument
+# about the bandit rating, NOT about the flag.
 SHELL_INJECTION_FIX = '''<<<< SEARCH
 def clearance_mm(temp_c: float) -> float:
     return 0.29 + 0.0004 * (temp_c - 20.0)

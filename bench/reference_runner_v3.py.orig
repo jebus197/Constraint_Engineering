@@ -1144,6 +1144,12 @@ def _note_intake(response: str) -> None:
 
 _FALSIFIER_GATE: Dict[str, Any] = {"on": True}
 
+# Module mirror of `RunnerConfig.composer_coherence_pruning`, same idiom and
+# same reason as _ASK_CORRECTED_COPY / _FALSIFIER_GATE above: the composer is
+# called from `_compose_for_model`, which has no cfg in scope. Default True ==
+# the shipped behaviour; the next simulated run's ablation arm sets it False.
+_COMPOSER_COHERENCE_PRUNING: Dict[str, Any] = {"on": True}
+
 
 def _directive_factor_state(cfg: "RunnerConfig", factor: str) -> Tuple[bool, bool]:
     """Return ``(directive_text_present, runner_pass_active)`` for `factor`.
@@ -1559,6 +1565,26 @@ class RunnerConfig:
     # mutated). NOTE: inert without an upstream producer that tags entries
     # `latent`/`finding_category`; the flag alone is a safe no-op (fail-safe).
     severity_calibration_enabled: bool = False
+    # Sev(f) PER docs/MATHEMATICAL_APPENDIX.md SECTION 7.7, COMPUTED BY THE
+    # HARNESS (2026-10-13 free panel, Item 1). When on, `stamp_sev_f` records
+    # Sev(f) = W(class) * confidence * V(verification) on every registry entry
+    # as the derived field `sev_f`, beside -- never instead of -- the model's
+    # asserted `severity`. INFORMATIVE ONLY in v1, on the claim_ledger
+    # precedent: it moves no gate, because applying V(None)=0.5 to the BLOCKING
+    # gate would let a model drop its own critical below the 0.7 cut by never
+    # attaching a falsifier. Measured on the archive (producer:
+    # scripts/what_moves_when_v_is_applied_2026-10-13.py): 831 of 835 downward
+    # crossers under V are V(None) halvings of UNVERIFIED claims -- 99.5210%,
+    # Wilson 95% [98.7748%, 99.8136%] -- and only 4 are the key property
+    # V(False)=0. Default OFF => byte-identical.
+    sev_f_enabled: bool = False
+    # COHERENCE-PRUNER ABLATION (2026-10-13 free panel, Item 5). False runs
+    # the directive composer WITHOUT `_prune_for_coherence`, whose density
+    # inversion is proven (test_falsifier_C0001_prune_inversion_2026-09-10.py).
+    # Default True => byte-identical to shipped behaviour; the simulated run
+    # is the instrument that decides retirement, per the 2026-07-18 pruning
+    # review's own lean-vs-full ablation gate.
+    composer_coherence_pruning: bool = True
     # Severity a demoted finding is pinned to (must be < CRITICAL_SEVERITY_THRESHOLD).
     severity_calibration_floor: float = 0.69
     # LATENT TAGGER (2026-07-31) — the upstream producer severity calibration has
@@ -1682,6 +1708,16 @@ class RunnerConfig:
     # irreducibility, and refuses convergence. For code review, genuinely-irreducible
     # defects are rare, so the bound is small.
     max_irreducible_queue: int = 2
+    # EMPTY-LADDER ALARM (2026-10-13 free panel, Item 3). When on, ONE critical
+    # whose routing deferral records "routing ladder empty by construction"
+    # fires build_irreducible_queue_alarm at its first occurrence, because no
+    # later round of THIS run can resolve it -- the roster carries no writer
+    # besides the finding's own source, and the roster does not change
+    # mid-run, so waiting only burns rounds to max_rounds. Ladder-EXHAUSTED
+    # and served-but-unread entries keep the bound above: every rung was tried
+    # for the first and a retry next round can still read the second.
+    # Default OFF => byte-identical; to be exercised by the next simulated run.
+    alarm_on_empty_ladder: bool = False
     exhausted_round_threshold: int = 8  # rounds stalled before EXHAUSTED bypass
     multiturn_chunk_target: int = 30_000
 
@@ -2247,6 +2283,42 @@ ATTESTED_STATUSES = frozenset({"CORROBORATED"})
 #: elsewhere in the harness closes this door rather than silently widening it.
 NO_READING_ROUTING_VERDICTS = frozenset({"", "UNRESOLVED"})
 
+#: R_k-proof statuses that mean THE PROOF CHECKER PRODUCED NO READING, on
+#: exactly the sentinel-set discipline of `NO_READING_ROUTING_VERDICTS` above.
+#: `severity_proof_status` returns ABSENT when no proof was ever recorded and
+#: SKIP when there was no corroboration block to recompute. PASS, WARN and FAIL
+#: are all READINGS -- the checker ran on this entry's own stated inputs and
+#: reported whether they reproduce. FAIL is the sharpest of the three, because
+#: it says the model's stated R_k does NOT reproduce. Any unrecognised status
+#: is treated as a reading, so this FAILS CLOSED.
+#:
+#: WHY THIS IS A CONJUNCT OF `_routing_ladder_never_served`, MEASURED. The
+#: never-served door is evaluated BEFORE the restored severity test in
+#: `unverified_critical_count` and it ignores severity entirely. Without this
+#: conjunct, an entry whose R_k proof FAILED -- the one state in which the
+#: severity test is GUARANTEED to refuse a release, since `severity_is_proven`
+#: accepts only PASS/WARN -- was released by the door instead. The door was
+#: therefore strictly WIDER than the gate whose removal the founder has
+#: rejected 3-4 times, and it nullified that gate for this entry class.
+#: Measured over every archived runner_state.json in bench/logs (3515 entries):
+#: the door opens on 431 non-terminal entries, of which 25 carry a non-SKIP
+#: proof (5.80%, Wilson 95% [3.96%, 8.42%]) and 11 carry status FAIL (2.55%,
+#: Wilson 95% [1.43%, 4.51%]). Producer:
+#: scripts/never_served_door_vs_instrument_contact_2026-10-12.py.
+#:
+#: MEASURED DISCRIMINATING, which is why it is this field and not the other
+#: candidates. study_run1b's C0066 and C0073 -- the two entries the door exists
+#: for -- both carry severity_proof {"status": "SKIP"}, so the door still opens
+#: on them and the 2026-10-12 fix is not regressed to a no-op. The same producer
+#: shows why the rejected candidates are NOT conjuncts: `status_adjudicator`
+#: == "tool" and `status_log` are set on C0066 itself by the ordinary
+#: OPEN->UNCONFIRMED bookkeeping, so they close the door on everything;
+#: `computed_evidence` on C0066 holds {"kind": "reasoned_withdrawal", "by":
+#: "CC2-SIM"}, which is a MODEL statement, not an instrument; and
+#: `fix_efficacy` on C0066 holds outcome "NOT_PROBED_NO_FALSIFIER", which
+#: records that nothing ran.
+NO_READING_SEVERITY_PROOF_STATUSES = frozenset({"ABSENT", "SKIP"})
+
 
 def _routing_ladder_never_served(e) -> bool:
     """True when NO instrument ever touched this entry: no verdict, no routing
@@ -2264,6 +2336,8 @@ def _routing_ladder_never_served(e) -> bool:
       falsifier_verdict is empty           -- the gate never ruled
       routing_verdict_unreconciled is unset
       not routing_deferred, not hil_escalated
+      severity_proof_status is ABSENT or SKIP  -- the R_k proof checker is an
+          instrument and it writes to none of the fields above
     Each is a mechanically checkable property of the entry; none is a number a
     model asserted.
 
@@ -2296,7 +2370,13 @@ def _routing_ladder_never_served(e) -> bool:
       * the `severity_is_proven` door requires an R_k that reproduces from the
         entry's own stated inputs. With no corroboration block to check,
         `severity_proof_status` returns SKIP, so the entry can never be proven
-        sub-critical.
+        sub-critical. THAT SENTENCE IS TRUE BY CONSTRUCTION ONLY SINCE THE
+        severity_proof CONJUNCT WAS ADDED (joint round, 2026-10-12). Before it
+        the sentence held of study_run1b's two survivors but NOT in general:
+        this door is evaluated BEFORE the severity test and ignores severity,
+        so an entry whose proof returned FAIL -- severity affirmatively NOT
+        proven -- was released HERE, which made the door strictly wider than
+        the gate it cited as unreachable. Measured: 11 of 431.
 
     The entry therefore blocks the zero-critical streak for the LIFE of the run
     and the run reaches `max_rounds` instead of converging. Per the core
@@ -2385,6 +2465,17 @@ def _routing_ladder_never_served(e) -> bool:
     # and bench/logs_quarantine, 2026-10-12). One line, fails CLOSED.
     if e.get("error_routed"):
         return False
+    # THE R_k PROOF CHECKER IS AN INSTRUMENT, AND IT DOES NOT WRITE TO THE
+    # LADDER. Every conjunct above reads a ladder, falsifier or HIL field. The
+    # severity-proof checker reads the finding's own corroboration block and
+    # records its reading in `severity_proof` WITHOUT touching any of them, so
+    # an entry it read looked untouched to this predicate. Measured on the
+    # archived registries: 25 of the 431 non-terminal entries this door
+    # released carry a non-SKIP proof and 11 carry FAIL. See
+    # NO_READING_SEVERITY_PROOF_STATUSES for the figures, the CIs and the
+    # producer, and for why the other contact-shaped fields are NOT conjuncts.
+    if severity_proof_status(e) not in NO_READING_SEVERITY_PROOF_STATUSES:
+        return False
     return True
 
 
@@ -2449,8 +2540,83 @@ def _integrity_violation_excluded(e) -> bool:
     return False
 
 
-def _irreducible_queue_split(entries) -> Tuple[int, int]:
-    """(ladder-exhausted, never-assessed) over a registry's entries.
+def _routing_deferred_structural(e) -> bool:
+    """True when `routing_deferred` records a routing ladder EMPTY BY CONSTRUCTION.
+
+    `routing_deferred` is stamped on two distinct states: an EQUIPMENT failure
+    (falsifier ERROR/UNTOOLABLE -- retryable next round) and a ladder that is
+    empty by construction (the roster carries no writer besides the finding's
+    own source -- not resolvable by waiting in this run at all). This reads the
+    second state off the entry's own record: the `routing_ladder_empty` boolean
+    stamped beside the deferral since 2026-10-13, with the deferral reason's
+    recorded opening words as the fallback for entries written before the
+    boolean existed. The string prefix is the fallback, not the rule.
+    """
+    if not e.get("routing_deferred"):
+        return False
+    if e.get("routing_ladder_empty"):
+        return True
+    return str(e.get("routing_deferred_reason") or "").startswith(
+        "routing ladder empty by construction")
+
+
+def ladder_empty_deferred_findings(entries) -> List[Dict[str, Any]]:
+    """Evidence rows for findings deferred to an EMPTY ladder, at ANY severity.
+
+    ITEM 2 OF THE 2026-10-13 FREE PANEL. A sub-critical served to an empty
+    ladder acquires `routing_deferred` and is then excluded from the halt
+    queue by the severity skip, so it blocks nothing, halts nothing, and --
+    before this reader existed -- ended the run named in no bundle. An empty
+    ladder is a RESOURCING fact about the roster, not a ruling about the
+    finding, and nothing in THIS run can ever read the finding, so the honest
+    terminal state is the founder's 2026-10-02 discipline applied again:
+    exclude from the gate, NAME IT IN THE REPORT. This is a reporting reader
+    -- it moves no verdict and carries zero weight on convergence -- and it is
+    one bundle per run, not one escalation per finding, so it cannot flood.
+    Criticals in the same state additionally fire the queue alarm when
+    `cfg.alarm_on_empty_ladder` is on; sub-criticals end here either way.
+    """
+    _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+    rows: List[Dict[str, Any]] = []
+    for cid, e in entries.items():
+        if e.get("status") in _TERMINAL:
+            continue
+        if not _routing_deferred_structural(e):
+            continue
+        rows.append({
+            "canonical_id": cid,
+            "status": e.get("status"),
+            "severity": e.get("severity"),
+            "source_model": e.get("source_model"),
+            "open_since_round": e.get("open_since_round"),
+            "routing_deferred_reason": e.get("routing_deferred_reason") or "",
+            "description": (e.get("description") or "")[:300],
+        })
+    return rows
+
+
+def _irreducible_queue_members(entries) -> List[Tuple[str, str]]:
+    """[(canonical_id, kind)] for every entry the irreducible queue counts.
+
+    kind is "ladder_exhausted" (irreducible_escalation) or "never_assessed"
+    (routing_deferred, or a served-but-unread entry per
+    `_routing_ladder_never_served`). `_irreducible_queue_split` derives its
+    counts from this list and `build_irreducible_queue_alarm` derives its
+    evidence bundle from this list, so the count that fires the alarm and the
+    items the bundle names CANNOT disagree.
+
+    WHY MEMBERSHIP BECAME A FUNCTION (2026-10-13 free panel, executed
+    falsifier). The 2026-10-12 change admitted served-but-unread entries to
+    the COUNT via `_never_read`, but the alarm collector's first filter was
+    still `irreducible_escalation OR routing_deferred` -- which a `_never_read`
+    entry carries NEITHER of. Executed: a registry of 3 never-read criticals
+    put the count at 3, fired the alarm, and attached evidence for 0 items.
+    That is the sim45_memory_20260908T033012Z defect shape the collector's own
+    comment records as repaired on 2026-09-08, reintroduced for a third
+    membership class. One membership list, N readers, is the same repair this
+    module already prescribes for the split's own two readers.
+
+    (ladder-exhausted, never-assessed) over a registry's entries.
 
     ONE PREDICATE, TWO READERS, AND NO `self`. `FindingRegistry` has 2 methods
     over this and the round loop logs a third reading of the same rule; keeping
@@ -2466,11 +2632,91 @@ def _irreducible_queue_split(entries) -> Tuple[int, int]:
     reimplementation, 0 mismatches.
     """
     _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
-    locked = deferred = 0
-    for e in entries.values():
+    members: List[Tuple[str, str]] = []
+    for cid, e in entries.items():
         if e.get("status") in _TERMINAL:
             continue
-        if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+        # A FINDING NOTHING EVER READ REACHES THIS QUEUE AT ANY SEVERITY --
+        # FOUNDER RULING 2026-10-12, verbatim: "If a record exists that says a
+        # problem was never read by a model, this should simply be fed back
+        # into the mechanics of the harness for resolution, this can include
+        # routing, the sweep mechanics and the other machinery we have for
+        # dealing with problems of this nature."
+        #
+        # WHY THE SEVERITY SKIP HAD TO YIELD, MEASURED. Until this line the
+        # queue skipped everything below CRITICAL_SEVERITY_THRESHOLD, so the
+        # 2 findings that stopped study_run1b converging -- C0066 at 0.45 and
+        # C0073 at 0.50, neither of which any instrument ever read -- could
+        # not reach the halt-with-evidence-bundle machinery at all. Executed
+        # on that registry: ladder-exhausted 0, never-assessed 0, total 0. So
+        # withdrawing the release door without this change would leave A4
+        # blocking at 2 with no alarm able to fire, and the run would burn to
+        # max_rounds and end BUDGET_EXHAUSTED instead of handing the founder a
+        # bundle. His ruling names the machinery; this is what reaching it
+        # requires.
+        # AN ENTRY ALREADY FLAGGED IS NOT "NEVER READ", AND THE FIRST VERSION
+        # OF THIS LINE GOT THAT WRONG. `_routing_ladder_never_served` does not
+        # test `irreducible_escalation`, because on the A4 path that flag is
+        # skipped SEVERAL LINES EARLIER and the predicate never sees such an
+        # entry. Asking it here, where no such skip precedes it, classified a
+        # LADDER-EXHAUSTED sub-critical as never-read and admitted it to the
+        # queue. test_static_queue_closure.py::
+        # test_subcritical_irreducibles_do_not_trip_the_alarm caught it: 5
+        # escalated entries at severity 0.4 tripped an alarm that must stay
+        # silent. An exhausted ladder IS instrument contact -- every rung was
+        # tried -- so those entries keep their severity skip exactly as before.
+        # AND IT MUST HAVE HAD A TURN. The second version of this line counted
+        # ANY never-read finding, including a critical that had only just
+        # arrived and was awaiting its first verification --
+        # test_static_queue_closure.py::
+        # test_registry_irreducible_excluded_from_a4_blocker caught it, and the
+        # consequence was severe: 3 fresh criticals would put the queue over
+        # the bound and HALT a run that had barely started.
+        #
+        # THE DISTINCTION IS "PASSED OVER" versus "NOT YET REACHED", and the
+        # ladder's own record carries it. A non-empty `routing_history` whose
+        # every entry is a no-reading record means the ladder HAD its turn and
+        # came back with nothing, which is the state his ruling escalates. An
+        # empty history means no turn has been taken yet, which is ordinary
+        # pending verification and must stay silent. This is the same
+        # distinction `LADDER_UNSERVED_MIN_AGE_ROUNDS` draws for the report,
+        # read off the record instead of off the round number, so this
+        # function needs no new parameter and no caller moves.
+        # AND IT MUST HAVE HAD A TURN. An earlier version counted ANY
+        # never-read finding, including a critical that had only just arrived
+        # and was awaiting its first verification --
+        # test_static_queue_closure.py::
+        # test_registry_irreducible_excluded_from_a4_blocker caught it, and the
+        # consequence was severe: 3 fresh criticals would put the queue over
+        # the bound and HALT a run that had barely started.
+        #
+        # THE DISTINCTION IS "PASSED OVER" versus "NOT YET REACHED", and the
+        # ladder's own record carries it. A non-empty `routing_history` whose
+        # every entry is a no-reading record means the ladder HAD its turn and
+        # came back with nothing, which is the state his ruling escalates. An
+        # empty history means no turn has been taken yet, which is ordinary
+        # pending verification and must stay silent.
+        #
+        # A LADDER-EMPTY DEFERRAL IS DELIBERATELY NOT INCLUDED, AND THAT IS A
+        # QUESTION FOR HIM RATHER THAN A SETTLED POINT. Executed 2026-10-12: a
+        # never-served sub-critical served to an EMPTY ladder (no writer
+        # available besides its own source) acquires `routing_deferred`, and
+        # the severity skip then excludes it -- so for a SUB-CRITICAL in that
+        # specific state the halt path his ruling routes to is still not
+        # reached. Including it was tried and REVERTED the same night: it broke
+        # the equivalence between this split and the reference rule held by
+        # test_the_alarm_names_which_kind_2026-10-02.py, on a 3rd successive
+        # correction to the same predicate, and widening a halt condition at
+        # midnight on a design already corrected twice is how a quiet defect
+        # gets committed. Whether "the ladder was empty" counts as "never read
+        # by a model" under his 2026-10-12 ruling is a semantic call that
+        # belongs to him; the measurement sits in the session note.
+        _never_read = (bool(e.get("routing_history"))
+                       and not e.get("irreducible_escalation")
+                       and not e.get("routing_deferred")
+                       and _routing_ladder_never_served(e))
+        if ((e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD
+                and not _never_read):
             continue
         # THE HALT BOUND NO LONGER SEES A KEY-ACCESS REFUSAL (founder ruling
         # 2026-10-02). Run 1b is the case this fixes: the run HALTED on a
@@ -2508,8 +2754,36 @@ def _irreducible_queue_split(entries) -> Tuple[int, int]:
         if _integrity_violation_excluded(e):
             continue
         if e.get("irreducible_escalation"):
-            locked += 1
+            members.append((cid, "ladder_exhausted"))
         elif e.get("routing_deferred"):
+            members.append((cid, "never_assessed"))
+        elif _never_read:
+            # DEFERRED, NOT LOCKED, and the distinction is the 2026-09-07
+            # panel repair rather than a preference. `irreducible_escalation`
+            # means the ladder was EXHAUSTED, and that repair deliberately
+            # stopped stamping it on findings the instrument never read,
+            # because the flag was doing 2 jobs at once. A never-read finding
+            # is awaiting resolution, which is what `deferred` already counts.
+            # THE TUPLE SHAPE of `_irreducible_queue_split` IS UNCHANGED so
+            # no caller moves.
+            members.append((cid, "never_assessed"))
+    return members
+
+
+def _irreducible_queue_split(entries) -> Tuple[int, int]:
+    """(ladder-exhausted, never-assessed) counts over `_irreducible_queue_members`.
+
+    SIGNATURE AND SEMANTICS UNCHANGED (2026-10-13): the membership rule above
+    is this function's previous body verbatim -- only the counting moved out,
+    so the alarm's evidence collector can read the SAME membership instead of
+    a second, drift-prone copy of the filters. Every committed equivalence in
+    test_the_alarm_names_which_kind_2026-10-02.py holds over this wrapper.
+    """
+    locked = deferred = 0
+    for _cid, kind in _irreducible_queue_members(entries):
+        if kind == "ladder_exhausted":
+            locked += 1
+        else:
             deferred += 1
     return locked, deferred
 
@@ -2972,6 +3246,93 @@ class FindingRegistry:
             count += 1
         return count
 
+    def severity_spec_shadow(self) -> dict:
+        """What the appendix's own severity formula would say. GATES NOTHING.
+
+        FOUNDER RULING 2026-10-12, verbatim: *"Severity was supposed to be
+        calculated in accordance with our existing maths model. If the models
+        are asked to compute anything it should surely be computed from our
+        maths model and from what this already says about severity surely, then
+        they must provide a proof to demonstrate that they have computed
+        severity correctly, then the other machinery of the schema should apply
+        a working falsifier/use tools to check that this number makes sense and
+        checks out. This does not qualify as a 'vote'. Indeed it is the very
+        opposite of a vote."*
+
+        HE IS RIGHT, AND THE SPECIFICATION HE POINTS AT HAS NEVER BEEN
+        IMPLEMENTED. docs/MATHEMATICAL_APPENDIX.md section 7.7 states
+
+            Sev(f) = W(class) . confidence . V(verification)
+            W(HARD)=1.0 W(SOFT)=0.5; V(True)=1.0 V(None)=0.5 V(False)=0.0
+
+        with the KEY PROPERTY that a disproved finding scores ZERO regardless of
+        confidence. TWO OF THE THREE INPUTS WERE NEVER COLLECTED: across 3,298
+        archived entries, `confidence` appears on 0 and no field carries a
+        HARD/SOFT class (`flaw_class` is section 4's integer class id, a
+        different quantity). The runner reads
+        `severity=float(entry.get("severity") or 0.0)` from the model's own
+        output instead, so the 2026-09-06 case for removing the severity test --
+        a model-assigned number must not decide convergence -- was SOUND ABOUT
+        THE IMPLEMENTATION AND WRONG ABOUT THE SPECIFICATION. The remedy that
+        argument licensed was removal; the remedy the specification licenses is
+        to compute it.
+
+        WHAT THIS SHADOW APPLIES, AND WHY IT IS THE HALF THAT NEEDS NO SCHEMA
+        CHANGE. `V` is the HARNESS'S OWN falsifier verdict, so applying it is
+        precisely the step he describes. It is also the factor that makes the
+        formula the opposite of a vote: V(False)=0 annihilates the product. The
+        asserted severity stands in for the uncollected `W . confidence`.
+
+        MEASURED ACROSS THE ARCHIVE, AND THE MOVEMENT IS LARGE, WHICH IS WHY
+        THIS GATES NOTHING YET: the share at or above the 0.7 cut falls from
+        41.6313% (Wilson [39.9596%, 43.3225%]) to 16.3129% ([15.0912%,
+        17.6130%]), with 835 of 3,298 entries crossing downward -- 25.3184%,
+        Wilson [23.8636%, 26.8306%], Clopper-Pearson [23.8416%, 26.8391%].
+        Those are findings the gate calls critical and section 7.7 would not,
+        because no tool has verified them. The appendix's key property is
+        violated on 35 of 40 disproved findings, 87.5000%, Wilson [73.8879%,
+        94.5405%]. Producers:
+        scripts/the_verification_factor_shadow_2026-10-12.py and
+        scripts/severity_was_never_computed_from_the_model_2026-10-12.py.
+
+        PROMOTION IS HIS, NOT THE PANEL'S AND NOT MINE. A 25-point
+        reclassification is replay-invalidating, and this project's own rule is
+        that each promotion needs non-distortion evidence from a RUN first. This
+        reader exists so the next simulated run produces that evidence.
+        """
+        spec = {"V_true": 0, "V_none": 0, "V_false": 0,
+                "critical_asserted": 0, "critical_spec": 0,
+                "crossed_downward": [], "key_property_violations": []}
+        for cid, e in self.entries.items():
+            sev = e.get("severity")
+            if not isinstance(sev, (int, float)):
+                continue
+            verdict = str(e.get("falsifier_verdict") or "").strip().upper()
+            if verdict == "CONFIRMED":
+                v, bucket = 1.0, "V_true"
+            elif verdict == "REFUTED":
+                v, bucket = 0.0, "V_false"
+            else:
+                v, bucket = 0.5, "V_none"
+            spec[bucket] += 1
+            shadow = float(sev) * v
+            if float(sev) >= CRITICAL_SEVERITY_THRESHOLD:
+                spec["critical_asserted"] += 1
+                if shadow < CRITICAL_SEVERITY_THRESHOLD:
+                    spec["crossed_downward"].append(cid)
+            if shadow >= CRITICAL_SEVERITY_THRESHOLD:
+                spec["critical_spec"] += 1
+            if v == 0.0 and float(sev) != 0.0:
+                spec["key_property_violations"].append(cid)
+        spec["note"] = (
+            "docs/MATHEMATICAL_APPENDIX.md section 7.7 applied with V from this "
+            "harness's own falsifier verdict. GATES NOTHING. `confidence` and "
+            "the HARD/SOFT class are not collected, so the asserted severity "
+            "stands in for W . confidence; collecting them is a schema change "
+            "and a replay-invalidating decision for the founder."
+        )
+        return spec
+
     def unverified_critical_count(self, current_round: Optional[int] = None) -> int:
         """A4 fail-safe signal: UNCONFIRMED candidates no tool has resolved.
 
@@ -3163,12 +3524,50 @@ class FindingRegistry:
             # over it would be reporting a clean run over an unread finding. The
             # remedy for C0073 is one more round (or a round budget that accounts
             # for findings emitted in the last round), NOT a wider gate.
-            if (current_round is not None
-                    and _routing_ladder_never_served(e)
-                    and (int(current_round)
-                         - int(e.get("last_status_change_round") or 0))
-                    >= LADDER_UNSERVED_MIN_AGE_ROUNDS):
-                continue
+            # ───────────────────────────────────────────────────────────────
+            # THE RELEASE IS WITHDRAWN -- FOUNDER RULING 2026-10-12, verbatim:
+            # "No. If a record exists that says a problem was never read by a
+            # model, this should simply be fed back into the mechanics of the
+            # harness for resolution, this can include routing, the sweep
+            # mechanics and the other machinery we have for dealing with
+            # problems of this nature."
+            #
+            # WHAT THIS DOOR USED TO DO, AND WHY IT IS THE WRONG SHAPE. It
+            # EXCUSED a never-read finding from the blocker count once it was a
+            # round old, so a run could record a clean convergence over a
+            # finding no instrument had ever examined. That is an exclusion, not
+            # a resolution, and his ruling is that the finding must be worked
+            # rather than excused.
+            #
+            # WHERE THE FEEDBACK NOW GOES, ALL 3 PATHS NAMED IN HIS RULING:
+            #   ROUTING -- `_apply_routing` admits a never-served entry into
+            #     the ladder and RE-admits it while no reading comes back, so a
+            #     tool is asked every round rather than once.
+            #   THE SWEEP -- `_post_convergence_sweep` already takes every
+            #     non-terminal finding as a residual, and the pre-verdict sweep
+            #     shadow records whether sweeping BEFORE the verdict would
+            #     change it. That shadow has never recorded: it was added
+            #     2026-10-06 and the newest experiment report predates it by 3
+            #     days, so the next simulated run produces its first data point.
+            #   THE HALT MACHINERY -- `_irreducible_queue_split` now admits a
+            #     never-read finding AT ANY SEVERITY, so a queue over the bound
+            #     halts with an evidence bundle for the founder instead of the
+            #     run burning silently to max_rounds.
+            #
+            # THE RESIDUAL, STATED RATHER THAN HIDDEN. The alarm fires only
+            # above `max_irreducible_queue` (default 2). Measured on
+            # study_run1b, the 2 never-read survivors put the queue at exactly
+            # 2, which is NOT over the bound -- so 1 or 2 unresolvable
+            # never-read findings still block A4 without tripping the alarm,
+            # and such a run reaches max_rounds. Lowering the bound or giving
+            # this class its own is a TUNING decision and is his, not one to
+            # take quietly inside a predicate.
+            #
+            # `ladder_unserved_findings()` IS UNCHANGED AND STILL REPORTS, so
+            # the round log continues to name every never-read finding. The
+            # reader outliving the release is the point: the founder is told
+            # what is blocking, and nothing is dropped.
+            # ───────────────────────────────────────────────────────────────
             # ───────────────────────────────────────────────────────────────
             # THE SEVERITY TEST, RESTORED 2026-10-06 ON THE FOUNDER'S RULING.
             #
@@ -7600,6 +7999,9 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
                 if getattr(result, "ladder_was_empty", False) or (
                         getattr(result, "rungs_tried", 0) == 0):
                     e["routing_deferred"] = True
+                    # The FACT as a boolean, where `_routing_deferred_structural`
+                    # reads it (2026-10-13), beside the prose reason below.
+                    e["routing_ladder_empty"] = True
                     _self = getattr(result, "model_used", None)
                     e["routing_deferred_reason"] = (
                         "routing ladder empty by construction: the roster "
@@ -8403,11 +8805,43 @@ def build_irreducible_queue_alarm(
     """
     count = registry.irreducible_queue_count()
     bound = int(getattr(cfg, "max_irreducible_queue", 2))
-    if count <= bound:
+    # A STRUCTURALLY UNRESOLVABLE CRITICAL NEEDS NO QUEUE OF 3 (2026-10-13
+    # free panel, Item 3; default OFF, byte-identical until cfg enables it). A
+    # critical whose routing deferral records "routing ladder empty by
+    # construction" cannot be resolved by any later round of THIS run, so
+    # counting it against the bound only burns rounds to max_rounds and ends
+    # BUDGET_EXHAUSTED instead of handing over the bundle. With
+    # `cfg.alarm_on_empty_ladder` ON, ONE such critical fires this alarm at
+    # its first occurrence. It fires ONCE per run by construction -- the alarm
+    # HALTS, so there is no round after it -- which answers the
+    # alarm-fatigue question: the frequency cost is one halt per run, not a
+    # recurring page.
+    _structural: List[str] = []
+    if getattr(cfg, "alarm_on_empty_ladder", False):
+        _structural = sorted(
+            cid for cid, e in registry.entries.items()
+            if e.get("status") not in {"MERGED", "CLOSED", "REFUTED",
+                                       "DUPLICATE", "CONFIRMED"}
+            and (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
+            and _routing_deferred_structural(e)
+            and not _integrity_violation_excluded(e))
+    if count <= bound and not _structural:
         return None
 
-    _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
     evidence: List[Dict[str, Any]] = []
+    # ONE MEMBERSHIP, TWO READERS (2026-10-13 free panel). The collector's
+    # filters below matched the count's rule by parallel maintenance and
+    # drifted twice -- 2026-09-08 (routing_deferred in the count, not the
+    # collector; bundle empty on sim45_memory_20260908T033012Z) and again
+    # after 2026-10-12 (served-but-unread entries in the count via
+    # `_never_read`, carrying NEITHER flag the collector tested; executed
+    # 2026-10-13: count 3, alarm fired, evidence 0). The collector now reads
+    # the SAME membership list the count is derived from, so "MATCH
+    # `irreducible_queue_count()` EXACTLY" holds BY CONSTRUCTION. Structural
+    # empty-ladder criticals are added so a structural-only firing still
+    # attaches its evidence.
+    _members = {cid for cid, _kind in _irreducible_queue_members(registry.entries)}
+    _members |= set(_structural)
     for cid, e in registry.entries.items():
         # MATCH `irreducible_queue_count()` EXACTLY (2026-09-08). That method
         # counts `irreducible_escalation OR routing_deferred`; this loop tested
@@ -8426,16 +8860,7 @@ def build_irreducible_queue_alarm(
         # adjudicating it does not have to reconstruct anything", and its notify
         # text says "read the bundle, not move the line". The bundle was empty,
         # so the only documented way to act on the halt was unavailable.
-        if not (e.get("irreducible_escalation") or e.get("routing_deferred")):
-            continue
-        # MATCH `irreducible_queue_count()` EXACTLY (2026-10-02): that count now
-        # excludes key-access refusals, so this collector must too, or the
-        # evidence bundle lists more items than the count that triggered it.
-        if _integrity_violation_excluded(e):
-            continue
-        if e.get("status") in _TERMINAL:
-            continue
-        if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+        if cid not in _members:
             continue
         sk = e.get("sk_result") or {}
         evidence.append({
@@ -8541,6 +8966,9 @@ def build_irreducible_queue_alarm(
         "round": round_idx,
         "count": count,
         "bound": bound,
+        # Non-empty ONLY when `cfg.alarm_on_empty_ladder` fired this alarm at
+        # or below the bound: the criticals no writer in this roster can read.
+        "structural_empty_ladder": _structural,
         "sk_states_in_queue": sk_states,
         "items_without_falsifier": no_falsifier,
         # WIRED TO A READER, not merely computed. An item whose falsifier was
@@ -9168,6 +9596,96 @@ def _apply_severity_calibration(registry, cfg: "RunnerConfig", round_idx: int) -
     return demoted
 
 
+# Sev(f) -- docs/MATHEMATICAL_APPENDIX.md SECTION 7.7, COMPUTED BY THE HARNESS
+# (2026-10-13 free panel, Item 1). The appendix specifies
+#   Sev(f) = W(class) * confidence * V(verification)
+# and the implementation never computed it: the gate reads a model-asserted
+# float (producer:
+# scripts/severity_was_never_computed_from_the_model_2026-10-12.py -- 35 of 40
+# REFUTED findings carry non-zero severity, 87.5000%, Wilson 95% [73.8879%,
+# 94.5405%]). These two functions make Sev(f) a DERIVED field.
+#
+# INFORMATIVE ONLY IN v1, AND THE ONE-DIRECTIONAL RULE IS WHY. V(False)=0
+# cannot loosen the gate -- REFUTED is already terminal in every blocker --
+# but V(None)=0.5 at the BLOCKING gate would release a critical whose author
+# simply never attached a falsifier. Measured on the archive (producer:
+# scripts/what_moves_when_v_is_applied_2026-10-13.py): 831 of 835 downward
+# crossers under V are V(None) halvings of UNVERIFIED claims -- 99.5210%,
+# Wilson 95% [98.7748%, 99.8136%] -- and only 4 are the key property. So
+# `sev_f` is stamped BESIDE `severity`, never over it, on the claim_ledger
+# informative-only precedent; promotion to the gate is a founder decision
+# after a simulated run measures the two populations' disagreement.
+SEV_F_W = {"HARD": 1.0, "SOFT": 0.5}
+SEV_F_V = {"CONFIRMED": 1.0, "REFUTED": 0.0}
+SEV_F_V_NONE = 0.5
+
+
+def compute_sev_f(constraint_class, confidence, falsifier_verdict) -> float:
+    """Sev(f) = W(class) * confidence * V(verification), appendix section 7.7.
+
+    Every default is the STRICTER reading, so an omitted model input can never
+    lower the computed severity:
+      * constraint_class missing or unrecognised -> HARD (W = 1.0), the core
+        directives' section 1 default for ambiguous constraints;
+      * confidence missing or unparseable -> 1.0 (clamped to [0, 1] otherwise);
+      * falsifier_verdict CONFIRMED -> V = 1.0; REFUTED -> V = 0.0; anything
+        else (absent, UNTOOLABLE, ERROR, NON_DISCRIMINATING) -> V = 0.5, the
+        appendix's "not assessed".
+    The appendix's own verified examples hold: HARD, conf 0.9, verified ->
+    0.90; HARD, conf 0.9, disproved -> 0.00.
+    """
+    w = SEV_F_W.get(str(constraint_class or "").strip().upper(), SEV_F_W["HARD"])
+    try:
+        c = float(confidence)
+    except (TypeError, ValueError):
+        c = 1.0
+    c = min(max(c, 0.0), 1.0)
+    v = SEV_F_V.get(str(falsifier_verdict or "").strip().upper(), SEV_F_V_NONE)
+    return w * c * v
+
+
+def stamp_sev_f(registry, cfg: "RunnerConfig", round_idx: int) -> int:
+    """Stamp `sev_f` (computed Sev(f)) on every entry; returns entries stamped.
+
+    Default-off no-op: returns 0 and mutates nothing unless cfg.sev_f_enabled.
+    NEVER touches entry["severity"] -- the claimed float keeps doing exactly
+    what it does today, so every blocker, alarm and report is unchanged with
+    the flag on EXCEPT for the added `sev_f` record and one log line. That log
+    line is the simulated-run measurement: how many entries the two severities
+    would gate differently at CRITICAL_SEVERITY_THRESHOLD.
+    """
+    if not getattr(cfg, "sev_f_enabled", False):
+        return 0
+    entries = registry.entries if hasattr(registry, "entries") else {}
+    stamped = disagree = 0
+    for _cid, e in entries.items():
+        _class = e.get("constraint_class")
+        _conf = e.get("confidence")
+        _verdict = e.get("falsifier_verdict")
+        value = compute_sev_f(_class, _conf, _verdict)
+        e["sev_f"] = {
+            "value": round(value, 6),
+            "W": SEV_F_W.get(str(_class or "").strip().upper(), SEV_F_W["HARD"]),
+            "constraint_class_defaulted":
+                str(_class or "").strip().upper() not in SEV_F_W,
+            "confidence_defaulted": not isinstance(_conf, (int, float)),
+            "V": SEV_F_V.get(str(_verdict or "").strip().upper(), SEV_F_V_NONE),
+            "informative_only": True,
+            "round": round_idx,
+        }
+        stamped += 1
+        claimed = (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
+        computed = value >= CRITICAL_SEVERITY_THRESHOLD
+        if claimed != computed:
+            disagree += 1
+    if stamped:
+        _log(f"  Sev(f) sec 7.7: {stamped} entr{'y' if stamped == 1 else 'ies'} "
+             f"stamped; {disagree} would gate differently at "
+             f"{CRITICAL_SEVERITY_THRESHOLD} than the model-asserted severity "
+             f"(informative only; no gate moved)")
+    return stamped
+
+
 # F4: post-reconciliation statuses that are NOT genuine novelty —
 # stripped before γ sees them (mirrors the runner's existing per-round
 # γ-input correction and bench/exp40_gamma_findings_audit.py).
@@ -9726,6 +10244,21 @@ def _check_hardened_convergence(
         # A diagnostic must not fell a run — the same contract the threshold
         # profile above states in its own except clause.
         telem["round_budget_status"] = f"ERROR: {type(exc).__name__}: {exc}"
+
+    # SEVERITY SPECIFICATION SHADOW — ADVISORY, GATES NOTHING (his ruling,
+    # 2026-10-12). It records what docs/MATHEMATICAL_APPENDIX.md section 7.7's
+    # own formula would say about every finding's severity, with the
+    # verification factor taken from this harness's OWN falsifier verdict. The
+    # gate continues to read the model-asserted float; this records the gap, so
+    # the next simulated run produces the non-distortion evidence his promotion
+    # decision needs rather than the decision resting on an archive replay.
+    # Measured across the archive: the share at or above the 0.7 cut falls from
+    # 41.6313% to 16.3129%, 835 of 3,298 crossing downward. See the reader's
+    # own docstring for the intervals and the producers.
+    try:
+        telem["severity_spec_shadow"] = registry.severity_spec_shadow()
+    except Exception as exc:                                 # noqa: BLE001
+        telem["severity_spec_shadow_status"] = f"ERROR: {type(exc).__name__}: {exc}"
 
     # HUMAN REVIEW TRIGGER — ADVISORY, HALTS NOTHING (item 12, 2026-10-11).
     # HIS CONDITION: a review *"should only be triggered if there is substantial
@@ -10703,7 +11236,8 @@ def _compose_for_model(
 ) -> ComposedDirectiveSet:
     composer_model = COMPOSER_MODEL_MAP.get(model_label, model_label)
     situation = build_interaction_pattern(pattern_name)
-    return compose(task_domain=domain, model=composer_model, situation=situation)
+    return compose(task_domain=domain, model=composer_model, situation=situation,
+                   coherence_pruning=bool(_COMPOSER_COHERENCE_PRUNING.get("on", True)))
 
 
 def _multiturn_fallback(
@@ -16055,6 +16589,8 @@ def run_experiment(
     # control cannot receive its second input from the main panel.
     _ASK_CORRECTED_COPY["on"] = bool(getattr(cfg, "discrimination_control_ask", False))
     _FALSIFIER_GATE["on"] = bool(getattr(cfg, "falsifier_gate_enabled", False))
+    _COMPOSER_COHERENCE_PRUNING["on"] = bool(
+        getattr(cfg, "composer_coherence_pruning", True))
     _log(f"  Target: {cfg.test_article}")
     _log(f"  Context: {cfg.context_files}")
     _log(f"  Models: {sorted(baseline)}")
@@ -18092,6 +18628,10 @@ def run_experiment(
             _log(f"  latent-tagger: {_latent_n} finding(s) tagged latent "
                  f"(explicit evidence only; silence reads as reachable)")
         _sev_calib_n = _apply_severity_calibration(registry, cfg, round_idx)
+        # Sev(f) stamp AFTER the calibration sweep, so its disagreement log
+        # line compares against the severity the gate actually reads this
+        # round. Default-off no-op (cfg.sev_f_enabled).
+        stamp_sev_f(registry, cfg, round_idx)
         # ANSWERABLE FROM THE ARTEFACT (2026-09-07, panel cc2). "Was the demotion
         # half actually rehearsed?" could only be answered by reading the log. The
         # tagger already returns how many it flagged and the sweep already returns
@@ -19600,6 +20140,23 @@ def run_experiment(
     except Exception as _sr_exc:  # noqa: BLE001
         _log(f"  WARNING: stop reason not attached ({_sr_exc})")
         result.update(stop_reason_fields(None))
+
+    # EMPTY-LADDER DEFERRALS, HANDED TO THE HUMAN (2026-10-13 free panel,
+    # Item 2). Exclude from the gate, NAME IT IN THE REPORT -- the founder's
+    # 2026-10-02 discipline applied to a second cause. One bundle per run,
+    # zero weight on convergence. Exception-safe like every other
+    # report-assembly section.
+    try:
+        _el_rows = ladder_empty_deferred_findings(registry.entries)
+        result["ladder_empty_deferred_findings"] = _el_rows
+        if _el_rows:
+            _log(f"  EMPTY-LADDER DEFERRALS: {len(_el_rows)} finding(s) that "
+                 f"no writer in this roster could ever read "
+                 f"{[r['canonical_id'] for r in _el_rows]} -- attached to the "
+                 f"report for human resolution; zero weight on convergence")
+    except Exception as _el_exc:  # noqa: BLE001
+        _log(f"  WARNING: empty-ladder deferral section not attached ({_el_exc})")
+        result["ladder_empty_deferred_findings"] = []
 
     # CLAIM LEDGER (founder ruling 2026-09-30: "Build it, apply it and test it
     # before the next simulated run"; design by the fable and cc2 seats in the

@@ -127,10 +127,62 @@ class TestItHappensOnRealPackets:
             out, pruned = _prune_for_coherence(pkts, policy, budget)
         after = C / max(sum(len(p.text) for p in out) // 4, 1)
         assert before > budget, "this fixture no longer triggers pruning"
-        assert after > before, (
-            f"density improved, {before:.6f} -> {after:.6f}; the inversion is "
-            f"gone and C0001 may be fixed")
         assert pruned, "nothing was pruned, so the fixture proves nothing"
+
+        # SHARPENED IN PLACE, 2026-10-13, free panel. The assertion that stood
+        # here was `assert after > before` with the message "density improved
+        # ... the inversion is gone and C0001 may be fixed". It PASSED BECAUSE
+        # THE DEFECT PERSISTS, and it pinned the weaker of the two available
+        # properties. It is kept below as a corollary; these 2 assertions are
+        # strictly stronger and are the ones a repair has to answer.
+        #
+        # (1) THE FUNCTIONAL FAILURE IS THE ABSENT STOPPING RULE, not the sign
+        # of the change. Because `_count_constraints` reads the merged policy
+        # dict and no packet text (pinned by the sibling test below), the
+        # numerator is constant across the loop while the denominator strictly
+        # falls, so density is monotonically non-decreasing and the early-exit
+        # branches at composer.py:919 and :932 are UNREACHABLE once :895 falls
+        # through. z3 returns unsat for "the loop was over budget AND an early
+        # exit fires" (producer:
+        # scripts/the_hand_trim_closes_neither_C0040_nor_C0001_2026-10-13.py).
+        # The observable consequence is that `_prune_for_coherence` can never
+        # return a composition that MEETS its budget. That is checkable here,
+        # and a correct fix must make it false.
+        assert after > budget, (
+            f"the pruner returned a composition that MEETS its budget "
+            f"({after:.6f} <= {budget:.6f}); it has acquired a stopping rule, so "
+            f"C0001 is fixed -- REPLACE this guard with one pinning the new "
+            f"behaviour rather than deleting it")
+
+        # (2) AND IT RUNS TO EXHAUSTION, which is what "no stopping rule" costs.
+        # With both exits unreachable the function always reaches composer.py:935
+        # and deletes every prunable SOFT non-universal packet. This is the fact
+        # the 2026-10-13 brief's retirement proposal did not state, and it is why
+        # the measured harm is not merely a worse metric but 10 of 50
+        # compositions losing a domain directive entirely.
+        prunable_in = [pk for pk in pkts
+                       if pk.constraint_class == "SOFT" and pk.layer != "universal"]
+        survivors = [pk for pk in out
+                     if pk.constraint_class == "SOFT" and pk.layer != "universal"]
+        assert prunable_in, "fixture carries no prunable SOFT packet"
+        assert len(survivors) < len(prunable_in) or all(
+            len(a.text) > len(b.text)
+            for a, b in zip(prunable_in, survivors)), (
+            "no prunable SOFT packet was reduced or removed; the exhaustion "
+            "behaviour has changed and this guard needs re-deriving")
+
+        # (3) THE ORIGINAL INVERSION, kept as a corollary of (1). If this ever
+        # fails while (1) still holds, the MEASUREMENT is broken rather than the
+        # defect fixed -- density cannot improve while the numerator is constant
+        # and the text has shrunk. The previous version of this test could not
+        # tell those 2 states apart.
+        assert after > before, (
+            f"density improved, {before:.6f} -> {after:.6f}, while assertion (1) "
+            f"above still reports the budget unmet. With a text-independent "
+            f"numerator that state is impossible, so EITHER the numerator is now "
+            f"text-dependent (C0001 fixed -- re-derive this file) OR this "
+            f"measurement is broken. Do not relax either assertion to reconcile "
+            f"them.")
 
     def test_the_constraint_count_really_is_independent_of_the_text(self):
         """The premise. If pruning could lower it, the inversion would not follow."""
@@ -163,7 +215,45 @@ class TestTheHarmRateIsNotOverstated:
         from scipy.stats import beta as sbeta
         slo = sbeta.ppf(0.025, lost, had - lost + 1) if lost else 0.0
         assert abs(slo - lo_c) < 1e-9, "statsmodels and scipy disagree"
-        assert lost > 0, "no domain directive is deleted any more; recheck the finding"
-        assert hi < 0.6, (
-            f"the deletion rate rose to [{lo:.4%}, {hi:.4%}]; the parked "
-            f"disposition should be revisited at that scale")
+        # REPLACED ON HIS RULING OF 2026-10-13, AND THE REPLACEMENT IS
+        # TWO-SIDED, SO IT IS STRICTLY STRONGER THAN WHAT IT REPLACES.
+        #
+        # This read `assert lost > 0, "no domain directive is deleted any more;
+        # recheck the finding"` -- a characterisation of the harm, which went
+        # RED the moment the harm stopped. It stopped because he retired the
+        # pruner: *"We have no way of knowing what it feeds, or has been
+        # feeding our models ... so that the models get fed the same set of
+        # core directives every single time an experiment is run."*
+        #
+        # Pinning "the harm still happens" would now require keeping the
+        # pruner on, which inverts the test's purpose. So it pins the EFFECT of
+        # the retirement in both directions: with the pruner OFF (the default)
+        # NO composition loses a domain directive, and with it ON the loss
+        # returns at the rate this file measured. Either half failing is a real
+        # regression -- the first means the retirement lapsed, the second means
+        # the ablation arm can no longer reproduce the finding it exists to
+        # weigh.
+        assert lost == 0, (
+            f"{lost} of {had} compositions still lose a domain directive with "
+            f"the pruner retired; his 2026-10-13 retirement is not in force")
+
+        on_lost = on_had = 0
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            for d, m in itertools.product(list(DOMAIN_MAP), MODEL_COHERENCE_BUDGETS):
+                if _load_domain_directive(d) is None:
+                    continue
+                on_had += 1
+                c = compose(task_domain=d, model=m,
+                            situation=build_interaction_pattern("meta_structured"),
+                            coherence_pruning=True)
+                if "domain" not in {p.layer for p in c.packets}:
+                    on_lost += 1
+        assert on_lost > 0, (
+            "with the pruner switched back ON no domain directive is deleted, "
+            "so the ablation arm cannot reproduce C0001 and the retirement "
+            "rests on a finding this file can no longer demonstrate")
+        on_lo, on_hi = proportion_confint(on_lost, on_had, method="wilson")
+        assert on_hi < 0.6, (
+            f"with pruning ON the deletion rate rose to [{on_lo:.4%}, "
+            f"{on_hi:.4%}]; the parked disposition should be revisited")

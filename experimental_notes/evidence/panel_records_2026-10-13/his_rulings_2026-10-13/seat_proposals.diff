@@ -1,0 +1,1974 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-13 11:03:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_exghpidz/repo/.cdsfl_deny_canonical_writes.sb	2026-10-13 10:40:01
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-12 23:46:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_exghpidz/repo/bench/reference_runner_v3.py	2026-10-13 10:49:47
+@@ -3424,15 +3424,40 @@
+             #     halts with an evidence bundle for the founder instead of the
+             #     run burning silently to max_rounds.
+             #
+-            # THE RESIDUAL, STATED RATHER THAN HIDDEN. The alarm fires only
+-            # above `max_irreducible_queue` (default 2). Measured on
++            # THE RESIDUAL, STATED RATHER THAN HIDDEN -- AND THE FIGURE THAT
++            # STOOD HERE WAS WRONG. This paragraph said "Measured on
+             # study_run1b, the 2 never-read survivors put the queue at exactly
+-            # 2, which is NOT over the bound -- so 1 or 2 unresolvable
+-            # never-read findings still block A4 without tripping the alarm,
+-            # and such a run reaches max_rounds. Lowering the bound or giving
+-            # this class its own is a TUNING decision and is his, not one to
+-            # take quietly inside a predicate.
++            # 2, which is NOT over the bound", and concluded that the bound was
++            # what kept the alarm silent. EXECUTED against that registry on
++            # 2026-10-13, `_irreducible_queue_split` returns (0, 0): the queue
++            # is ZERO, not 2. The alarm is therefore silent at a bound of 2, at
++            # 1, and at 0 alike, because `count > bound` is False for every
++            # non-negative bound when count is 0. Lowering the bound -- or
++            # giving the never-read class its own bound, which a panel proposed
++            # on 2026-10-13 -- fires on 0 of the entries in the only run cited.
+             #
++            # WHY THE QUEUE IS EMPTY. The never-read arm below opens with
++            # `bool(e.get("routing_history"))`. The 3 non-terminal entries in
++            # that registry (C0009, C0066, C0073) carry routing_history None:
++            # they were never ROUTED AT ALL, so routing_deferred was never set
++            # either, and their severities (0.45, 0.45, 0.50) fail the severity
++            # skip as well. Three independent exclusions, any one sufficient.
++            # `_never_read` does not mean "nothing read it"; it means "it was
++            # routed and every rung declined". A finding that never reached a
++            # rung has no name in this machinery.
++            #
++            # THE DEFECT IS AN ASYMMETRY, NOT A BOUND. On the same registry
++            # `unverified_critical_count()` returns 2 -- those findings DO
++            # refuse convergence, by a different predicate with a different
++            # severity rule (the severity_is_proven test below; both carry
++            # severity_proof.status SKIP). So the run was refused convergence by
++            # findings the halt machinery could not see, and exited at
++            # max_rounds with stop_reason UNRECORDED_STOP. Neither honest
++            # convergence nor an honest halt: the third state, silence.
++            # Producer: scripts/the_queue_is_zero_not_two_2026-10-13.py.
++            # Whether to admit the never-routed class remains HIS decision; the
++            # correction here is to the measurement, not to the policy.
++            #
+             # `ladder_unserved_findings()` IS UNCHANGED AND STILL REPORTS, so
+             # the round log continues to name every never-read finding. The
+             # reader outliving the release is the point: the founder is told
+
+### cc2:attempt-1:bench/tests/test_a_blocker_must_be_able_to_reach_a_halt_2026-10-13.py
+--- /dev/null	2026-10-13 11:03:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_exghpidz/repo/bench/tests/test_a_blocker_must_be_able_to_reach_a_halt_2026-10-13.py	2026-10-13 10:53:50
+@@ -0,0 +1,125 @@
++"""A convergence blocker that cannot reach a halt path is a silent max_rounds exit.
++
++FREE PANEL, 2026-10-13, ITEMS 2 and 3. This file pins the measurement that
++refutes the brief's ITEM 3 premise, and the conservation property the repair
++should establish. It asserts the CURRENT state explicitly so that a later repair
++FAILS here and has to be re-derived in place rather than silently absorbed.
++
++THE PREMISE THAT FAILED. The 2026-10-13 brief, and the paragraph that stood at
++bench/reference_runner_v3.py:3427-3434 until it was corrected the same day, both
++said: "Measured on study_run1b_2026-10-03, the 2 never-read survivors put the
++queue at exactly 2." Executed, the queue is ZERO. The alarm is therefore silent
++at a bound of 2, at 1, and at 0 alike, so the per-class bound the brief proposed
++for ITEM 3 fires on none of those entries.
++
++WHY. `_irreducible_queue_split`'s never-read arm opens with
++`bool(e.get("routing_history"))`, and the 3 non-terminal entries carry None.
++They were never ROUTED, so `routing_deferred` was never set either, and their
++severities (0.45, 0.45, 0.50) fail the severity skip as well -- 3 independent
++exclusions. Meanwhile `unverified_critical_count()` returns 2 on the same
++registry, so they DO refuse convergence. The run exited at max_rounds with
++stop_reason UNRECORDED_STOP.
++
++Producer: scripts/the_queue_is_zero_not_two_2026-10-13.py
++"""
++import json
++import pathlib
++import types
++
++import pytest
++
++import bench.reference_runner_v3 as rr
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++RUN = REPO / "bench" / "logs" / "study_run1b_2026-10-03_20261003T100439Z"
++STATE = RUN / "runner_state.json"
++TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
++
++
++def _registry():
++    if not STATE.exists():
++        pytest.skip("study_run1b registry absent in this clone")
++    reg = rr.FindingRegistry()
++    reg.entries = json.loads(STATE.read_text())["registry"]["entries"]
++    return reg
++
++
++class TestTheQueueIsZeroNotTwo:
++    """The ITEM 3 premise, measured rather than cited."""
++
++    def test_the_split_returns_zero_on_study_run1b(self):
++        reg = _registry()
++        locked, deferred = rr._irreducible_queue_split(reg.entries)
++        assert (locked, deferred) == (0, 0), (
++            f"the split returned ({locked}, {deferred}); the 2026-10-13 "
++            f"measurement of (0, 0) no longer holds. If the never-read arm was "
++            f"widened, re-derive this file and the corrected comment at "
++            f"bench/reference_runner_v3.py:3427 -- do NOT relax the assertion.")
++
++    def test_no_bound_makes_the_alarm_fire_on_this_registry(self):
++        """The decisive refutation of a per-class bound of 1."""
++        reg = _registry()
++        count = reg.irreducible_queue_count()
++        for bound in (0, 1, 2, 3):
++            cfg = types.SimpleNamespace(max_irreducible_queue=bound)
++            assert rr.build_irreducible_queue_alarm(cfg=cfg, registry=reg,
++                                                    round_idx=8) is None, (
++                f"the alarm fired at bound={bound}; with a count of {count} that "
++                f"should be impossible, so either the count changed or the "
++                f"comparison changed. Re-derive, do not relax.")
++
++    def test_the_blockers_carry_no_routing_history(self):
++        """The root cause: never ROUTED, not merely never read."""
++        reg = _registry()
++        nonterm = [(c, e) for c, e in reg.entries.items()
++                   if e.get("status") not in TERMINAL]
++        assert nonterm, "fixture has no non-terminal entries"
++        for cid, e in nonterm:
++            assert not e.get("routing_history"), (
++                f"{cid} now carries routing_history; the never-read arm may "
++                f"admit it and this file needs re-deriving")
++            assert not e.get("routing_deferred"), f"{cid} now carries routing_deferred"
++
++
++class TestTheAsymmetryIsTheDefect:
++    """A blocker invisible to every halt path can only end in max_rounds."""
++
++    def test_blockers_exceed_the_queue(self):
++        reg = _registry()
++        blockers = reg.unverified_critical_count()
++        queue = reg.irreducible_queue_count()
++        assert blockers > queue, (
++            f"blockers={blockers} queue={queue}; the asymmetry this file exists "
++            f"to record is gone. If the 2 predicates now agree on their "
++            f"population the conservation property below holds and THIS "
++            f"assertion should be REPLACED by it, not deleted.")
++
++    def test_the_conservation_property_is_currently_violated(self):
++        """blockers > 0 must imply a reachable NAMED terminal state.
++
++        Asserted in the negative because it is currently FALSE and the
++        counterexample is archived. A repair makes this test fail, which is the
++        intended signal: swap the body for the positive form and say so here.
++        """
++        reg = _registry()
++        blockers = reg.unverified_critical_count()
++        cfg = types.SimpleNamespace(max_irreducible_queue=2)
++        alarm = rr.build_irreducible_queue_alarm(cfg=cfg, registry=reg, round_idx=8)
++        assert blockers > 0 and alarm is None, (
++            "the conservation property now HOLDS on this registry: every "
++            "convergence blocker can reach a named terminal state. Replace this "
++            "assertion with the positive form -- `blockers == 0 or alarm is not "
++            "None` -- and record the repair that achieved it.")
++
++
++class TestTheCorrectedCommentIsInPlace:
++    """The wrong figure must not come back."""
++
++    def test_the_runner_no_longer_claims_the_queue_is_two(self):
++        src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
++        assert "survivors put the queue at exactly" not in src or (
++            "the queue\n            # is ZERO, not 2" in src), (
++            "the uncorrected study_run1b figure has returned to "
++            "bench/reference_runner_v3.py; it was measured wrong on 2026-10-13")
++        assert "scripts/the_queue_is_zero_not_two_2026-10-13.py" in src, (
++            "the corrected comment must cite its producer")
+
+### cc2:attempt-1:bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py	2026-09-17 19:05:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_exghpidz/repo/bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py	2026-10-13 10:50:35
+@@ -127,11 +127,63 @@
+             out, pruned = _prune_for_coherence(pkts, policy, budget)
+         after = C / max(sum(len(p.text) for p in out) // 4, 1)
+         assert before > budget, "this fixture no longer triggers pruning"
+-        assert after > before, (
+-            f"density improved, {before:.6f} -> {after:.6f}; the inversion is "
+-            f"gone and C0001 may be fixed")
+         assert pruned, "nothing was pruned, so the fixture proves nothing"
+ 
++        # SHARPENED IN PLACE, 2026-10-13, free panel. The assertion that stood
++        # here was `assert after > before` with the message "density improved
++        # ... the inversion is gone and C0001 may be fixed". It PASSED BECAUSE
++        # THE DEFECT PERSISTS, and it pinned the weaker of the two available
++        # properties. It is kept below as a corollary; these 2 assertions are
++        # strictly stronger and are the ones a repair has to answer.
++        #
++        # (1) THE FUNCTIONAL FAILURE IS THE ABSENT STOPPING RULE, not the sign
++        # of the change. Because `_count_constraints` reads the merged policy
++        # dict and no packet text (pinned by the sibling test below), the
++        # numerator is constant across the loop while the denominator strictly
++        # falls, so density is monotonically non-decreasing and the early-exit
++        # branches at composer.py:919 and :932 are UNREACHABLE once :895 falls
++        # through. z3 returns unsat for "the loop was over budget AND an early
++        # exit fires" (producer:
++        # scripts/the_hand_trim_closes_neither_C0040_nor_C0001_2026-10-13.py).
++        # The observable consequence is that `_prune_for_coherence` can never
++        # return a composition that MEETS its budget. That is checkable here,
++        # and a correct fix must make it false.
++        assert after > budget, (
++            f"the pruner returned a composition that MEETS its budget "
++            f"({after:.6f} <= {budget:.6f}); it has acquired a stopping rule, so "
++            f"C0001 is fixed -- REPLACE this guard with one pinning the new "
++            f"behaviour rather than deleting it")
++
++        # (2) AND IT RUNS TO EXHAUSTION, which is what "no stopping rule" costs.
++        # With both exits unreachable the function always reaches composer.py:935
++        # and deletes every prunable SOFT non-universal packet. This is the fact
++        # the 2026-10-13 brief's retirement proposal did not state, and it is why
++        # the measured harm is not merely a worse metric but 10 of 50
++        # compositions losing a domain directive entirely.
++        prunable_in = [pk for pk in pkts
++                       if pk.constraint_class == "SOFT" and pk.layer != "universal"]
++        survivors = [pk for pk in out
++                     if pk.constraint_class == "SOFT" and pk.layer != "universal"]
++        assert prunable_in, "fixture carries no prunable SOFT packet"
++        assert len(survivors) < len(prunable_in) or all(
++            len(a.text) > len(b.text)
++            for a, b in zip(prunable_in, survivors)), (
++            "no prunable SOFT packet was reduced or removed; the exhaustion "
++            "behaviour has changed and this guard needs re-deriving")
++
++        # (3) THE ORIGINAL INVERSION, kept as a corollary of (1). If this ever
++        # fails while (1) still holds, the MEASUREMENT is broken rather than the
++        # defect fixed -- density cannot improve while the numerator is constant
++        # and the text has shrunk. The previous version of this test could not
++        # tell those 2 states apart.
++        assert after > before, (
++            f"density improved, {before:.6f} -> {after:.6f}, while assertion (1) "
++            f"above still reports the budget unmet. With a text-independent "
++            f"numerator that state is impossible, so EITHER the numerator is now "
++            f"text-dependent (C0001 fixed -- re-derive this file) OR this "
++            f"measurement is broken. Do not relax either assertion to reconcile "
++            f"them.")
++
+     def test_the_constraint_count_really_is_independent_of_the_text(self):
+         """The premise. If pruning could lower it, the inversion would not follow."""
+         policy = load_effective_policy(domain="software", model="deepseek_v3")
+
+### cc2:attempt-1:bench/tests/test_target_kind_and_no_score.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_target_kind_and_no_score.py	2026-09-01 13:24:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_exghpidz/repo/bench/tests/test_target_kind_and_no_score.py	2026-10-13 10:49:47
+@@ -96,8 +96,23 @@
+ '''
+ 
+ # The measured exploit: a shell-injection call smuggled into a fenced listing.
+-# Under the repaired hard gates (A=1) and the prose-blind effect gates this
+-# scored sk=1.0000 ADMISSIBLE.
++# HISTORICAL FIGURE, SUPERSEDED -- corrected in place 2026-10-13. This comment
++# read "Under the repaired hard gates (A=1) and the prose-blind effect gates this
++# scored sk=1.0000 ADMISSIBLE", and that figure was still being cited in
++# 2026-10-13 as the strongest argument for keeping sk_score_prose_listings OFF.
++# It is pre-veto. Since the flag became veto-only (2026-09-22) no code path can
++# produce it: EXECUTED, flag=False gives tristate=NO_SCORE sk=0.0 and flag=True
++# gives tristate=ESCALATE sk=0.0 (committed at
++# experimental_notes/CDSFL_MASTER_TASK_LIST.md:575-580). The exploit is never
++# admitted under either setting -- pinned by
++# bench/tests/test_prose_gates_are_one_sided_2026-09-22.py and
++# bench/tests/test_prose_acceptance_stem.py::TestTheFlagCanConvictButNeverAdmit.
++# WHAT IS STILL TRUE, and it is a different defect: bandit rates
++# subprocess.call("<literal>", shell=True) LOW, and the veto helper
++# _gates_introduced_new_defects reads only HIGH and MEDIUM, so the LOW cannot
++# convict. It is surfaced but not charged, via
++# _prose_one_sided["new_low_severity_security_findings"]. That is an argument
++# about the bandit rating, NOT about the flag.
+ SHELL_INJECTION_FIX = '''<<<< SEARCH
+ def clearance_mm(temp_c: float) -> float:
+     return 0.29 + 0.0004 * (temp_c - 20.0)
+
+### cc2:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-09-29 11:58:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_exghpidz/repo/docs/MATHEMATICAL_APPENDIX.md	2026-10-13 10:49:47
+@@ -1265,7 +1265,33 @@
+ **Key property:** Disproved findings always receive zero severity, regardless of confidence. A model that is very confident about something wrong gets zero credit. This prevents hallucinated findings from inflating severity scores.
+ 
+ **Verified:** HARD, conf=0.9, verified=True → 0.90. HARD, conf=0.9, verified=False → 0.00.
++
++**Two cautions on using this formula as a gate** (added 2026-10-13, both derived
++with SymPy and independently with z3; producer
++`scripts/the_severity_cut_collapses_the_formula_2026-10-13.py`):
++
++1. **At a 0.7 critical cut the formula collapses to a conjunction.** The factor
++   sets are discrete and confidence is bounded in [0,1], so the supremum of
++   Sev over confidence is 1 for (HARD, V=True) and at most 1/2 in each of the
++   other five cells. Hence `Sev(f) ≥ 0.7` **is identically** `class = HARD ∧
++   verified = True ∧ confidence ≥ 0.7` (z3 returns unsat for the negation of
++   that equivalence), and inside the one surviving cell `Sev = confidence`
++   exactly. The two harness-owned factors act as a conjunctive pre-filter on
++   eligibility; they place no constraint on the magnitude. A severity gate built
++   this way is therefore **not** "the opposite of a vote" — it is the same vote
++   taken over a smaller population. Making it tool-decided requires replacing
++   `confidence` with a harness-computed quantity; §7.8 Approach B
++   (`S_v = 1/(1 + exp(−Λ_total))`) is that quantity and is already specified.
+ 
++2. **Do not import §1's default rule into W.** `cdsfl_core.txt` §1 sets
++   `class(c) = HARD if c is ambiguous`, which is conservative where it is
++   written — treating an unclear constraint as non-negotiable risks nothing.
++   Here it inverts: `Sev(HARD) > Sev(SOFT)` strictly for every confidence > 0
++   (z3: unsat for the negation), so `ambiguous → HARD` **inflates** severity and
++   pushes findings toward the critical side of the gate. In the severity context
++   the conservative default is SOFT, and the asymmetry must be stated wherever
++   the class is collected.
++
+ ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
+ 
+ SymPy, dimensional analysis, and numerical spot-checking each catch different error types with different reliability. Two combination approaches:
+@@ -1330,7 +1356,7 @@
+ | Runner convergence gate (§7.4) | 5-condition gate operational; 2/5 non-contributing in Exp 36 | Implemented; C₆ (churn) pending; ascending abstraction guard pending |
+ | O_A + S_sync^emp (§7.5) | Verified, edge cases handled, 3-regime discrimination | Ready for implementation |
+ | Δ (§7.6) | Verified | Ready for implementation |
+-| Sev(f) (§7.7) | Verified | Implemented in pipeline |
++| Sev(f) (§7.7) | Verified | **NOT implemented.** The product is computed nowhere in the gating path; `bench/reference_runner_v3.py` reads a model-asserted float. `confidence` and the HARD/SOFT class are not collected (0 of 3,298 archived entries carry either), and the §7.7 KEY PROPERTY is violated on 35 of 40 disproved findings — 87.5000%, Wilson [73.8879%, 94.5405%]. Applied advisory-only by `FindingRegistry.severity_spec_shadow`, which GATES NOTHING. Producers: `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, `scripts/the_severity_cut_collapses_the_formula_2026-10-13.py`. (Row corrected 2026-10-13; it read "Implemented in pipeline" and that was false.) |
+ | Multi-verifier (§7.8) | Verified, Λ notation, both approaches | Ready for implementation |
+ | Fingerprint (§7.9) | Verified | Partially implemented |
+ | Manager selection (§7.11) | Defined, uses §7.7/§7.8 | Ready for implementation |
+
+### cc2:attempt-1:scripts/the_hand_trim_closes_neither_C0040_nor_C0001_2026-10-13.py
+--- /dev/null	2026-10-13 11:03:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_exghpidz/repo/scripts/the_hand_trim_closes_neither_C0040_nor_C0001_2026-10-13.py	2026-10-13 10:53:15
+@@ -0,0 +1,185 @@
++#!/usr/bin/env python3
++"""The hand-trim cannot close C0040: the 2 files are on different paths. Measured.
++
++FREE PANEL, 2026-10-13, ITEM 5. The brief proposes RETIRING the coherence pruner
++by hand-trimming the directive set, and attaches this claim to its step (3):
++"once the full text fits every model's budget, the pruner has nothing to do and
++the reduced rendering never triggers, which closes C0040 and C0001 together
++without changing a single measurement."
++
++THAT CLAIM IS ARITHMETICALLY FALSE, and the error is a file mix-up it inherits
++from its own citation. Three facts, all executed below.
++
++FACT 1 -- THE REVIEW MEASURED A DIFFERENT FILE FROM THE ONE C0040 IS ABOUT.
++`experimental_notes/CDSFL_Directive_Pruning_Review_2026-07-18.md` names its
++target in its own header: bench/directives/universal/cdsfl_operational.md. The
++file `_load_universal_directive` reads, and whose length triggers the reduced
++rendering at bench/cdsfl_registry/composer.py:592-595, is
++bench/directives/universal/cdsfl_core_formal.md. They are different files and
++they reach the model by different routes: the operational directive is APPENDED
++IN FULL and is EXEMPT from the per-model `max_directive_chars` caps -- pinned by
++bench/tests/test_falsifier_C0040_universal_directive_2026-09-10.py, which
++asserts both that the append happens and that the appended prose is more than
++90% of what the model receives. Every character the review proposes to cut is a
++character that never passed through the cap, so trimming it cannot change that
++branch.
++
++FACT 2 -- THE REQUIRED CUT IS 3.7x TO 5.6x THE REVIEW'S COMMITTED ESTIMATE, on
++a file the review never measured. Computed below.
++
++FACT 3 -- THE REVIEW FORBIDS THE EDIT THE BRIEF PROPOSES, in its own words,
++stated twice (its lines 29-34 and 1611-1616): "Nothing should be cut until a
++lean-versus-full ablation has run... This report is the input to that
++experiment, not a licence to edit."
++
++WHAT SURVIVES OF THE BRIEF'S ITEM 5 -- its diagnosis. The inversion is forced by
++the SHAPE of the metric, not by a loop bug. `_count_constraints`
++(composer.py:857-874) takes the merged TOML policy dict and nothing else -- no
++DirectivePacket, no `.text` -- so the numerator of `constraint_density` cannot
++move when text is deleted while the denominator (`len(text)//4`) strictly falls.
++Density is monotonically non-decreasing across both pruning passes. Re-derived
++below with SymPy and z3.
++
++THE CONSEQUENCE THE BRIEF DOES NOT STATE, and it is the one a repair must
++answer: with both early exits unreachable, `_prune_for_coherence` ALWAYS falls
++through to composer.py:935. Its observable behaviour is not "prune until the
++budget is met" -- it is "delete every prunable SOFT packet whenever the budget
++is exceeded". The function has no stopping rule. Pinned, 2026-10-13, by 2 new
++assertions in bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py,
++which previously pinned only the weaker claim that density worsens.
++
++ON THE ADDITIVE STANDARD'S REMOVAL CLAUSE. The committed measurement a
++retirement needs already exists, in that test's own docstring: deepseek_v3 /
++software, density 0.011851 -> 0.021042 against a budget of 0.010, 1.7756x WORSE
++on the named property (constraint_density against budget), with 10 of 50
++compositions losing a domain directive entirely -- 20.0000%, Wilson [11.2438%,
++33.0371%]. Not pruning dominates pruning on the metric pruning exists to
++optimise. That licenses retiring the PRUNER. It does not license a hand trim,
++which is a different intervention on a different file with no measurement at
++all.
++
++Usage: python3 scripts/the_hand_trim_closes_neither_C0040_nor_C0001_2026-10-13.py
++"""
++import os
++import pathlib
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++from _cli_help import answer_help  # noqa: E402
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++UNIVERSAL = REPO / "bench" / "directives" / "universal" / "cdsfl_core_formal.md"
++OPERATIONAL = REPO / "bench" / "directives" / "universal" / "cdsfl_operational.md"
++REVIEW = REPO / "experimental_notes" / "CDSFL_Directive_Pruning_Review_2026-07-18.md"
++
++#: Mirrors PHENOTYPE_TRANSFORMS in bench/cdsfl_registry/composer.py:90-117.
++CAPS = {"opus_4_6": 12000, "chatgpt_5_4": 8000, "codex_5_3": 6000,
++        "gemini_3_1_pro": 8000, "deepseek_v3": 4000}
++#: The review's own committed estimate, from its summary table.
++REVIEW_SAVING_CHARS = 6650
++REVIEW_MEASURED_CHARS = 43667
++
++
++def chars(p):
++    return len(p.read_text(encoding="utf-8")) if p.exists() else 0
++
++
++def derive():
++    import sympy as sp
++    C = sp.Symbol("C", positive=True)
++    L = sp.Symbol("L", positive=True)
++    density = C / (L / 4)
++    out = {"density": sp.simplify(density),
++           "d_dL": sp.simplify(sp.diff(density, L))}
++    from z3 import Solver, Reals, Not, unsat
++    C_, L0, L1, Bz = Reals("C L0 L1 Bz")
++    s = Solver()
++    s.add(C_ > 0, L0 > 0, L1 > 0, L1 < L0, Not(4 * C_ / L1 > 4 * C_ / L0))
++    out["z3_shorter_without_worse"] = s.check()
++    out["z3_shorter_without_worse_unsat"] = (s.check() == unsat)
++    s2 = Solver()
++    s2.add(C_ > 0, L0 > 0, L1 > 0, Bz > 0, L1 < L0,
++           4 * C_ / L0 > Bz, 4 * C_ / L1 <= Bz)
++    out["z3_early_exit"] = s2.check()
++    out["z3_early_exit_unsat"] = (s2.check() == unsat)
++    return out
++
++
++def main() -> int:
++    answer_help(__doc__, __file__)
++    uni, ope = chars(UNIVERSAL), chars(OPERATIONAL)
++    print("=" * 78)
++    print("FACT 1 -- TWO DIFFERENT FILES, TWO DIFFERENT PATHS TO THE MODEL")
++    print("=" * 78)
++    print(f"\n  universal   (read by _load_universal_directive, CAPPED) : {uni:7d} chars")
++    print(f"              bench/directives/universal/cdsfl_core_formal.md")
++    print(f"  operational (appended in full, EXEMPT from the caps)     : {ope:7d} chars")
++    print(f"              bench/directives/universal/cdsfl_operational.md")
++    print(f"\n  the 2026-07-18 review exists: {REVIEW.exists()}")
++    if REVIEW.exists():
++        txt = REVIEW.read_text(encoding="utf-8", errors="ignore")
++        print(f"    header names cdsfl_operational.md  : "
++              f"{'cdsfl_operational.md' in txt[:4000]}")
++        print(f"    header names cdsfl_core_formal.md  : "
++              f"{'cdsfl_core_formal.md' in txt[:4000]}")
++        print(f"    states an ablation gate on adoption: {'ablation' in txt.lower()}")
++    print("\n  So the review's cuts land entirely outside the capped path.")
++
++    print()
++    print("=" * 78)
++    print("FACT 2 -- REQUIRED CUT vs THE REVIEW'S COMMITTED ESTIMATE")
++    print("=" * 78)
++    print("\n  required cut on the universal file to clear each cap:")
++    for m, c in sorted(CAPS.items(), key=lambda kv: -kv[1]):
++        print(f"    {m:15s} cap {c:6d}   must lose {100.0 * (uni - c) / uni:8.4f}%"
++              f"   (keep {c} of {uni})")
++    rate = REVIEW_SAVING_CHARS / REVIEW_MEASURED_CHARS
++    landed = uni - round(uni * rate)
++    print(f"\n  review's committed estimate : ~{REVIEW_SAVING_CHARS} of "
++          f"{REVIEW_MEASURED_CHARS} = {100 * rate:.4f}%  (OPERATIONAL file)")
++    print(f"  that rate on the universal file : {uni} -> {landed} chars")
++    print(f"    clears the smallest cap ({min(CAPS.values())})? "
++          f"{landed <= min(CAPS.values())}   shortfall {landed - min(CAPS.values()):+d}")
++    print(f"    clears the largest  cap ({max(CAPS.values())})? "
++          f"{landed <= max(CAPS.values())}   shortfall {landed - max(CAPS.values()):+d}")
++    print(f"\n  required-cut / committed-estimate, most generous cap : "
++          f"{((uni - max(CAPS.values())) / uni) / rate:.4f}x")
++    print(f"  the same ratio at the strictest cap                  : "
++          f"{((uni - min(CAPS.values())) / uni) / rate:.4f}x")
++    print(f"\n  CONCLUSION: the hand trim closes C0040 for 0 of {len(CAPS)} models.")
++
++    print()
++    print("=" * 78)
++    print("WHAT SURVIVES -- THE INVERSION, RE-DERIVED (SymPy, then z3)")
++    print("=" * 78)
++    d = derive()
++    print(f"\n  SymPy: constraint_density(L) = {d['density']}  with C text-independent")
++    print(f"         d/dL = {d['d_dL']}  -- strictly negative in L, so shortening")
++    print(f"         the text RAISES density.")
++    print(f"\n  z3: 'text got shorter AND density did not worsen' -> "
++          f"{d['z3_shorter_without_worse']}  (unsat: {d['z3_shorter_without_worse_unsat']})")
++    print(f"  z3: 'over budget AND an early exit fires'          -> "
++          f"{d['z3_early_exit']}  (unsat: {d['z3_early_exit_unsat']})")
++    print("\n  composer.py:919 and :932 are UNREACHABLE once :895 falls through, so")
++    print("  _prune_for_coherence ALWAYS runs to :935: it deletes every prunable")
++    print("  SOFT packet. It has no stopping rule.")
++
++    print()
++    print("=" * 78)
++    print("VERDICT")
++    print("=" * 78)
++    print("""
++  The brief's ITEM 5 diagnosis survives; its step (3) does not. A hand trim of
++  the operational directive cannot close C0040 -- different file, uncapped path,
++  and a required cut 3.7x to 5.6x the review's own committed estimate. The
++  review also forbids the edit until an ablation has run.
++
++  The removal clause is the right frame and its committed measurement already
++  exists (see this file's docstring). It licenses retiring the PRUNER. It does
++  not license a hand trim.
++""")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:scripts/the_queue_is_zero_not_two_2026-10-13.py
+--- /dev/null	2026-10-13 11:03:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_exghpidz/repo/scripts/the_queue_is_zero_not_two_2026-10-13.py	2026-10-13 10:51:20
+@@ -0,0 +1,164 @@
++#!/usr/bin/env python3
++"""study_run1b's irreducible queue is 0, not 2. The ITEM 3 premise fails.
++
++FREE PANEL, 2026-10-13, ITEMS 2 and 3. Executed against the live predicate and
++the archived registry, not read off a comment.
++
++THE CLAIM UNDER TEST, from the 2026-10-13 brief and from the paragraph that
++stood at bench/reference_runner_v3.py:3427-3434: "Measured on
++study_run1b_2026-10-03, the 2 never-read survivors put the queue at exactly 2",
++therefore the alarm's strict `>` against max_irreducible_queue = 2 is what keeps
++it silent, therefore a smaller bound would make it fire.
++
++MEASURED: the queue is ZERO. `_irreducible_queue_split` returns (0, 0) on that
++registry. The alarm does not fire at a bound of 2, nor 1, nor 0, because
++`count > bound` is False for every non-negative bound when count is 0. So the
++brief's ITEM 3 fix -- a per-class bound of 1 for never-read findings -- fires on
++0 of the entries in the only run it cites. It is an addition nothing reaches,
++which is the failure mode this project has recorded 11 times since 2026-08-01.
++
++WHY THE QUEUE IS EMPTY, and this is the root cause for ITEM 2 as well. The
++never-read arm (reference_runner_v3.py:2603-2606) opens with
++`bool(e.get("routing_history"))`. The 3 non-terminal entries carry
++routing_history None. They were never ROUTED AT ALL, so:
++
++  * routing_deferred was never set      -> the deferred arm does not admit them
++  * routing_history is empty            -> the never-read arm does not admit them
++  * severity 0.45 / 0.45 / 0.50 < 0.7   -> the severity skip excludes them
++
++Three independent exclusions, any one sufficient. `_never_read` does not mean
++"nothing read it"; it means "it was routed and every rung declined". A finding
++that never reached a rung has no name in this machinery and no path into either
++the count or the evidence bundle.
++
++THE ASYMMETRY, WHICH IS THE ACTUAL DEFECT. The same entries DO block
++convergence: `unverified_critical_count()` returns 2 on the same registry, via a
++different predicate with a different severity rule (:3476-3477, which releases a
++sub-critical only when its severity is PROVEN; both carry severity_proof.status
++SKIP). So the run was refused convergence by findings the halt machinery could
++not see, and exited at max_rounds with stop_reason UNRECORDED_STOP. That is
++neither honest convergence nor an honest halt; it is the third state, silence.
++
++WHAT THIS MEANS FOR THE BRIEF'S TWO ITEMS. ITEM 2's horns are both real, but
++neither is the live case: no ladder was ever consulted on this registry, so
++"should an empty ladder excuse a sub-critical" does not arise and answering it
++leaves the blockage in place. ITEM 3's bound is not the binding constraint; it
++is evaluated against a count the findings never enter, so lowering it is free
++and useless.
++
++THE SIMPLEST SUFFICIENT REPAIR IS NEITHER A NEW BOUND NOR A NEW EXCUSAL DOOR.
++It is to require the 2 predicates to agree on their population: every entry
++`unverified_critical_count` treats as a blocker must be visible to
++`build_irreducible_queue_alarm`'s evidence bundle. Any entry that can refuse
++convergence and cannot reach a halt path is, by construction, a silent
++max_rounds exit. That is a conservation property, it is one assertion, it adds
++no configuration, and it cannot be used to make convergence easier -- it can
++only convert a silent exit into a named one. Pinned by
++bench/tests/test_a_blocker_must_be_able_to_reach_a_halt_2026-10-13.py.
++
++Usage: python3 scripts/the_queue_is_zero_not_two_2026-10-13.py
++"""
++import json
++import os
++import pathlib
++import sys
++import types
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++from _cli_help import answer_help  # noqa: E402
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++RUN = REPO / "bench" / "logs" / "study_run1b_2026-10-03_20261003T100439Z"
++STATE = RUN / "runner_state.json"
++REPORT = RUN / "study_run1b_2026-10-03_report.json"
++TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
++
++
++def main() -> int:
++    answer_help(__doc__, __file__)
++    if not STATE.exists():
++        print(f"registry absent in this clone: {STATE}")
++        return 3
++
++    sys.path.insert(0, str(REPO))
++    sys.path.insert(0, str(REPO / "bench"))
++    import importlib
++    rr = importlib.import_module("bench.reference_runner_v3")
++
++    entries = json.loads(STATE.read_text())["registry"]["entries"]
++    reg = rr.FindingRegistry()
++    reg.entries = entries
++
++    print("=" * 78)
++    print("THE COUNT, FROM THE LIVE PREDICATE")
++    print("=" * 78)
++    locked, deferred = rr._irreducible_queue_split(entries)
++    total = locked + deferred
++    print(f"\n  registry entries           : {len(entries)}")
++    print(f"  _irreducible_queue_split   : (locked={locked}, deferred={deferred})")
++    print(f"  irreducible_queue_count()  : {reg.irreducible_queue_count()}")
++    print(f"\n  THE BRIEF SAYS : 2")
++    print(f"  MEASURED       : {total}")
++    print(f"  agreement      : {total == 2}")
++    print("\n  does the alarm fire, at each candidate bound? (rule is count > bound)")
++    for bound in (0, 1, 2, 3):
++        print(f"    bound={bound}  ->  {total} > {bound}  =  {total > bound}")
++    print("\n  So the per-class bound proposed for ITEM 3 fires on 0 of these entries.")
++
++    print()
++    print("=" * 78)
++    print("WHY: THE THREE INDEPENDENT EXCLUSIONS")
++    print("=" * 78)
++    nonterm = [(c, e) for c, e in entries.items() if e.get("status") not in TERMINAL]
++    print(f"\n  non-terminal entries: {len(nonterm)}")
++    for c, e in nonterm:
++        sev = e.get("severity") or 0.0
++        print(f"\n    {c}  status={e.get('status')}  severity={sev}")
++        print(f"      routing_history        = {e.get('routing_history')!r}"
++              f"   never-read arm admits: {bool(e.get('routing_history'))}")
++        print(f"      routing_deferred       = {e.get('routing_deferred')!r}"
++              f"   deferred arm admits: {bool(e.get('routing_deferred'))}")
++        print(f"      irreducible_escalation = {e.get('irreducible_escalation')!r}"
++              f"   locked arm admits: {bool(e.get('irreducible_escalation'))}")
++        print(f"      severity >= {rr.CRITICAL_SEVERITY_THRESHOLD} ?"
++              f"              severity skip passes: "
++              f"{sev >= rr.CRITICAL_SEVERITY_THRESHOLD}")
++
++    print()
++    print("=" * 78)
++    print("THE ASYMMETRY -- BLOCKS CONVERGENCE, INVISIBLE TO THE HALT PATH")
++    print("=" * 78)
++    blockers = reg.unverified_critical_count()
++    cfg = types.SimpleNamespace(max_irreducible_queue=2)
++    alarm = rr.build_irreducible_queue_alarm(reg, cfg, 8)
++    print(f"\n  unverified_critical_count()  (REFUSES convergence) : {blockers}")
++    print(f"  irreducible_queue_count()    (reaches the alarm)   : {total}")
++    print(f"  build_irreducible_queue_alarm(...)                 : {alarm}")
++    print(f"\n  can refuse convergence but cannot reach a halt path: "
++          f"{max(blockers - total, 0)}")
++    if REPORT.exists():
++        rep = json.loads(REPORT.read_text())
++        print(f"\n  rounds {rep.get('total_rounds')}/{rep.get('max_rounds')}"
++              f"  converged={rep.get('converged')}  halted={rep.get('halted')}")
++        print(f"  stop_reason: {str(rep.get('stop_reason'))[:100]}")
++
++    print()
++    print("=" * 78)
++    print("THE CONSERVATION PROPERTY THE REPAIR SHOULD ESTABLISH")
++    print("=" * 78)
++    print("""
++  Over any registry:
++
++      blockers(reg) > 0  =>  the run can reach a NAMED terminal state
++                             (converged, or halted with an evidence bundle)
++
++  Today that implication is false and the counterexample is archived. No new
++  bound and no new excusal door is required: it is an agreement condition
++  between 2 predicates that already exist, which is why it is the simplest
++  sufficient repair and why it cannot make convergence easier.
++""")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:scripts/the_severity_cut_collapses_the_formula_2026-10-13.py
+--- /dev/null	2026-10-13 11:03:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_exghpidz/repo/scripts/the_severity_cut_collapses_the_formula_2026-10-13.py	2026-10-13 10:52:26
+@@ -0,0 +1,274 @@
++#!/usr/bin/env python3
++"""At a 0.7 cut, Sev(f) = W.confidence.V collapses to a conjunction. Derived.
++
++FREE PANEL, 2026-10-13, ITEM 1. Answers the 2 questions the brief left open, by
++derivation rather than judgement.
++
++THE PROPOSAL UNDER ATTACK: collect `confidence` and a HARD/SOFT class from the
++model, have the harness compute Sev(f) = W(class) . confidence . V(verification)
++per docs/MATHEMATICAL_APPENDIX.md section 7.7, keep the cut at
++CRITICAL_SEVERITY_THRESHOLD = 0.7, and require the model to PROVE its own
++arithmetic the way `_validate_rk_computation` re-derives R_k. The claim attached:
++"2 of the 3 factors become harness-owned, and the one the model supplies is
++multiplied by a factor the harness can set to zero", therefore "the opposite of
++a vote".
++
++RESULT 1 -- THE CUT IS UNREACHABLE IN 5 OF THE 6 CELLS. W in {1.0, 0.5}, V in
++{1.0, 0.5, 0.0}, confidence the only continuous factor, bounded in [0,1].
++Suprema over confidence: (HARD,True) 1; (HARD,None) 1/2; (HARD,False) 0;
++(SOFT,True) 1/2; (SOFT,None) 1/4; (SOFT,False) 0. So at a 0.7 cut
++
++    Sev(f) >= 0.7   IS   HARD  AND  CONFIRMED  AND  confidence >= 0.7
++
++as an identity over the whole domain: z3 returns unsat for the negation of the
++equivalence, and SymPy agrees cell by cell. Both run below.
++
++RESULT 2 -- INSIDE THE SURVIVING CELL, Sev IS THE ASSERTED NUMBER. On W=1, V=1
++the product reduces to `confidence` identically (d Sev/d confidence = 1; z3
++finds no 2 distinct confidences with equal severity, so the map is injective).
++The 2 harness-owned factors are a CONJUNCTIVE PRE-FILTER on eligibility and
++place no constraint on magnitude. ANSWER TO HIS SECOND QUESTION: multiplying by
++harness-owned factors makes it a QUIETER vote, not a different kind of thing --
++the same vote over a smaller population. "Opposite of a vote" overstates by
++exactly one factor, and it is the factor the appendix leaves model-asserted.
++
++RESULT 3 -- WHAT THE 25-POINT MOVEMENT IS NOT EVIDENCE OF. Every entry that
++crosses downward does so because V < 1, NECESSARILY: sev >= 0.7 with sev.V < 0.7
++forces V < 1. So the movement measures one quantity -- how many findings the
++live gate calls critical that no tool has verified -- and carries no information
++about whether 0.7 is well calibrated. The cut must move if and only if one wants
++an UNVERIFIED finding to be able to be critical, which is the opposite of this
++project's founding principle. Keeping 0.7 is that principle written as a number;
++the 25 points are its intended consequence, not an artefact.
++
++RESULT 4 -- THE DEFAULT RULE INVERTS, AND THE PROPOSAL INHERITS IT SILENTLY.
++The brief calls HARD/SOFT "existing project vocabulary". That vocabulary carries
++a default: cdsfl_core.txt section 1, `class(c) = HARD if c is ambiguous`,
++conservative where written. In section 7.7 it inverts -- Sev(HARD) > Sev(SOFT)
++strictly for every confidence > 0 (z3: unsat for the negation) -- so
++ambiguous -> HARD INFLATES severity. In the severity context the conservative
++default is SOFT.
++
++RESULT 5 -- THE PROOF STEP REPRODUCES A DEFECT ALREADY MEASURED HERE.
++`scripts/severity_proof_gaming_2026-10-12.py` establishes that
++`_validate_rk_computation` recomputes R_k from the model's OWN STATED inputs
++with nothing cross-checking those inputs against any registry fact, so an
++invented-but-consistent block PASSES. A "proof of W . confidence" has the same
++shape and is weaker still, being one multiplication. Re-deriving a model's
++arithmetic from the model's own premises checks arithmetic, not truth.
++
++WHAT TO DO INSTEAD, and it is already in the appendix. The factor that must stop
++being model-asserted is `confidence`, and section 7.8 Approach B supplies a
++harness-owned replacement computed from verifier outcomes,
++S_v = 1 / (1 + exp(-Lambda_total)), listed in the appendix's own status table as
++"Ready for implementation". Sev(f) = W . S_v . V contains no model-asserted
++number and is the form that earns the phrase. Note also that the V half of the
++brief's proposal is ALREADY BUILT and tested:
++`FindingRegistry.severity_spec_shadow` (bench/reference_runner_v3.py:3119),
++wired into round telemetry at :10010, with an anti-dead-code assertion in
++bench/tests/test_the_severity_specification_shadow_2026-10-12.py.
++
++Usage: python3 scripts/the_severity_cut_collapses_the_formula_2026-10-13.py
++"""
++import collections
++import json
++import os
++import pathlib
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++from _cli_help import answer_help  # noqa: E402
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++LOGS = REPO / "bench" / "logs"
++CUT = 0.7
++VERIFIED = {"CONFIRMED"}
++DISPROVED = {"REFUTED"}
++CLASS_FIELDS = ("constraint_class", "hard_soft", "severity_class", "class")
++
++
++def entries():
++    for fp in LOGS.glob("**/runner_state.json"):
++        try:
++            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++        except Exception:                                 # noqa: BLE001
++            continue
++        for cid, e in (((d or {}).get("registry") or {}).get("entries") or {}).items():
++            if isinstance(e, dict):
++                yield fp, cid, e
++
++
++def v_factor(entry: dict) -> float:
++    v = str(entry.get("falsifier_verdict") or "").strip().upper()
++    return 1.0 if v in VERIFIED else (0.0 if v in DISPROVED else 0.5)
++
++
++def derive_with_sympy():
++    import sympy as sp
++    c = sp.Symbol("c", nonnegative=True)
++    cut = sp.Rational(7, 10)
++    Ws = {"HARD": sp.Integer(1), "SOFT": sp.Rational(1, 2)}
++    Vs = {"True": sp.Integer(1), "None": sp.Rational(1, 2), "False": sp.Integer(0)}
++    cells = {}
++    for wn, wv in Ws.items():
++        for vn, vv in Vs.items():
++            sup = sp.simplify(wv * vv)
++            need = sp.solve(sp.Eq(wv * c * vv, cut), c)
++            cells[(wn, vn)] = {"sup": sup, "reaches": bool(sup >= cut),
++                               "need": (need[0] if need else None),
++                               "feasible": bool(need and 0 <= need[0] <= 1)}
++    return {"cells": cells, "reduced": sp.simplify(Ws["HARD"] * c * Vs["True"]),
++            "deriv": sp.diff(Ws["HARD"] * c * Vs["True"], c)}
++
++
++def derive_with_z3():
++    from z3 import Solver, Real, Reals, RealVal, Or, And, Not, unsat
++    cut = RealVal(7) / 10
++    W, c, V, S = Reals("W c V S")
++    base = [Or(W == 1, W == RealVal(1) / 2),
++            Or(V == 1, V == RealVal(1) / 2, V == 0),
++            c >= 0, c <= 1, S == W * c * V]
++    out = {}
++    s = Solver(); s.add(base); s.add(V != 1, S >= cut)
++    out["unverified_can_be_critical"] = (s.check() != unsat)
++    s = Solver(); s.add(base); s.add(W == RealVal(1) / 2, S >= cut)
++    out["soft_can_be_critical"] = (s.check() != unsat)
++    s = Solver(); s.add(base); s.add(Not((S >= cut) == And(W == 1, V == 1, c >= cut)))
++    out["cut_is_the_conjunction"] = (s.check() == unsat)
++    c1, c2 = Reals("c1 c2")
++    s = Solver(); s.add(c1 >= 0, c1 <= 1, c2 >= 0, c2 <= 1, c1 != c2,
++                        RealVal(1) * c1 * RealVal(1) == RealVal(1) * c2 * RealVal(1))
++    out["sev_injective_in_confidence"] = (s.check() == unsat)
++    cc = Real("cc"); s = Solver(); s.add(cc > 0, cc <= 1)
++    s.add(Not(RealVal(1) * cc * RealVal(1) > (RealVal(1) / 2) * cc * RealVal(1)))
++    out["hard_strictly_exceeds_soft"] = (s.check() == unsat)
++    return out
++
++
++def ci(k: int, n: int):
++    if n == 0:
++        return None
++    from statsmodels.stats.proportion import proportion_confint
++    wl, wh = proportion_confint(k, n, alpha=0.05, method="wilson")
++    cl, ch = proportion_confint(k, n, alpha=0.05, method="beta")
++    import mpmath as mp
++    mp.mp.dps = 50
++    z = mp.mpf("1.959963984540054235524594430520551527955899076163")
++    p = mp.mpf(k) / mp.mpf(n); nn = mp.mpf(n)
++    den = 1 + z ** 2 / nn
++    centre = (p + z ** 2 / (2 * nn)) / den
++    half = (z / den) * mp.sqrt(p * (1 - p) / nn + z ** 2 / (4 * nn ** 2))
++    mpl, mph = float(centre - half), float(centre + half)
++    return {"p": k / n, "wilson": (wl, wh), "cp": (cl, ch),
++            "agree": abs(mpl - wl) < 1e-9 and abs(mph - wh) < 1e-9}
++
++
++def main() -> int:
++    answer_help(__doc__, __file__)
++    print("=" * 78)
++    print("PART 1 -- DERIVATION (SymPy, then z3 independently)")
++    print("=" * 78)
++    d = derive_with_sympy()
++    print("\nSymPy, supremum of Sev over confidence in [0,1], per section-7.7 cell:")
++    for (wn, vn), r in d["cells"].items():
++        tag = "REACHES 0.7" if r["reaches"] else "cannot reach 0.7"
++        need = r["need"]
++        ns = ("confidence required = %s%s" % (need, "" if r["feasible"] else "  INFEASIBLE (>1)")
++              if need is not None else "product identically 0")
++        print(f"  W={wn:5s} V={vn:5s}  sup = {str(r['sup']):4s}  {tag:17s}  {ns}")
++    print(f"\n  on the surviving cell (HARD, CONFIRMED): Sev = {d['reduced']}"
++          f"    d Sev/d confidence = {d['deriv']}")
++    z = derive_with_z3()
++    print("\nz3, same claims, independently, over the reals:")
++    print(f"  a non-CONFIRMED finding can be critical          : "
++          f"{z['unverified_can_be_critical']}   (False = unsat = impossible)")
++    print(f"  a SOFT finding can be critical                   : "
++          f"{z['soft_can_be_critical']}   (False = unsat = impossible)")
++    print(f"  'Sev>=0.7' IS 'HARD and CONFIRMED and conf>=0.7' : "
++          f"{z['cut_is_the_conjunction']}   (True = negation unsat = identity)")
++    print(f"  Sev injective in confidence on that cell         : "
++          f"{z['sev_injective_in_confidence']}   (True = Sev IS the asserted number)")
++    print(f"  Sev(HARD) > Sev(SOFT) for every confidence > 0   : "
++          f"{z['hard_strictly_exceeds_soft']}   (True = ambiguous->HARD inflates)")
++    sympy_agrees = all(not r["reaches"] for (wn, vn), r in d["cells"].items()
++                       if not (wn == "HARD" and vn == "True"))
++    print(f"\n  SymPy and z3 agree on every cell: "
++          f"{sympy_agrees and not z['unverified_can_be_critical'] and not z['soft_can_be_critical']}")
++
++    print()
++    print("=" * 78)
++    print("PART 2 -- THE ARCHIVE, AND WHAT THE MOVEMENT ACTUALLY MEASURES")
++    print("=" * 78)
++    by_v = collections.Counter()
++    n = crit_asserted = crit_spec = crossed = crossed_nonconf = 0
++    conf_present = class_present = 0
++    for _fp, _cid, e in entries():
++        sev = e.get("severity")
++        if not isinstance(sev, (int, float)):
++            continue
++        n += 1
++        v = v_factor(e)
++        by_v[v] += 1
++        if e.get("confidence") is not None:
++            conf_present += 1
++        if any(str(e.get(f) or "").strip().upper() in {"HARD", "SOFT"} for f in CLASS_FIELDS):
++            class_present += 1
++        shadow = float(sev) * v
++        if float(sev) >= CUT:
++            crit_asserted += 1
++            if shadow < CUT:
++                crossed += 1
++                if v < 1.0:
++                    crossed_nonconf += 1
++        if shadow >= CUT:
++            crit_spec += 1
++    if n == 0:
++        print("\n  no archived entries with a numeric severity in this clone")
++        return 3
++
++    print(f"\n  archived entries with a numeric severity : {n}")
++    print(f"    carrying a `confidence` field          : {conf_present}")
++    print(f"    carrying a HARD/SOFT class             : {class_present}")
++    print("\n  section-7.7 V, from the harness's own falsifier verdict:")
++    for v, lab in ((1.0, "V=1.0 CONFIRMED"), (0.5, "V=0.5 not assessed"),
++                   (0.0, "V=0.0 REFUTED")):
++        k = by_v.get(v, 0)
++        print(f"    {lab:22s} {k:5d}   {100.0 * k / n:7.4f}%")
++    print("\n  critical population, asserted float vs the V factor applied:")
++    for lab, k in (("asserted severity >= 0.7", crit_asserted),
++                   ("severity . V       >= 0.7", crit_spec),
++                   ("crossed downward", crossed)):
++        s = ci(k, n)
++        print(f"    {lab:26s} {k:5d}/{n} = {100 * s['p']:7.4f}%"
++              f"   Wilson [{100 * s['wilson'][0]:7.4f}%, {100 * s['wilson'][1]:7.4f}%]"
++              f"  CP [{100 * s['cp'][0]:7.4f}%, {100 * s['cp'][1]:7.4f}%]"
++              f"  mpmath agrees: {s['agree']}")
++    print(f"\n  of the {crossed} crossing downward, how many have V < 1 : "
++          f"{crossed_nonconf} ({100.0 * crossed_nonconf / max(crossed, 1):.4f}%)")
++    print("  THIS IS A TAUTOLOGY, NOT A FINDING, and that is the point.")
++    print(f"\n  upper bound on the FULL section-7.7 critical set over the uncollected W:")
++    print(f"    W=HARD everywhere (most generous) : {crit_spec}")
++    print(f"    so the full-formula count lies in [0, {crit_spec}]; W can only REDUCE it.")
++    print("    Collecting the class cannot restore any entry V already removed.")
++
++    print()
++    print("=" * 78)
++    print("VERDICT")
++    print("=" * 78)
++    print("""
++  1. At the 0.7 cut, section 7.7 does not re-rank findings. It PARTITIONS them
++     by the harness's falsifier verdict and applies the model's own number
++     inside the CONFIRMED block. Derived, 2 tools agreeing.
++  2. "Opposite of a vote" holds for ELIGIBILITY and fails for MAGNITUDE.
++  3. The cut does not need to move to make the formula right -- only if an
++     unverified finding should be able to be critical.
++  4. Section 1's `ambiguous -> HARD` default inflates severity here. In this
++     context the conservative default is SOFT.
++  5. The remaining model-asserted factor is `confidence`; section 7.8
++     Approach B already specifies the harness-owned replacement.
++""")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-13 11:03:07
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_a7u9fqo4/repo/.cdsfl_deny_canonical_writes.sb	2026-10-13 10:40:21
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/cdsfl_registry/composer.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/composer.py	2026-09-10 19:58:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_a7u9fqo4/repo/bench/cdsfl_registry/composer.py	2026-10-13 10:59:01
+@@ -1303,6 +1303,7 @@
+     explicit_unknowns: str = "",
+     adversarial_brief: str = "",
+     interaction_surface: str = "",
++    coherence_pruning: bool = True,
+ ) -> ComposedDirectiveSet:
+     """Compose a per-dispatch directive set from all applicable layers.
+ 
+@@ -1387,8 +1388,24 @@
+     policy = load_effective_policy(domain=task_domain, model=model)
+ 
+     # --- Coherence enforcement (with intra-packet pruning) ---
++    # ABLATION SWITCH (2026-10-13 free panel, Item 5; default True preserves
++    # behaviour byte-for-byte). `_prune_for_coherence` provably worsens the
++    # density it enforces: `_count_constraints` reads only the merged TOML
++    # policy, so the numerator is independent of the text, and a shorter text
++    # strictly raises constraints-per-token (SymPy: d(L2)-d(L1) =
++    # 4*C*(L1-L2)/(L1*L2) > 0 for L2 < L1; z3: "pruning shortened the text AND
++    # density did not worsen" is unsat; committed proof:
++    # bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py). Whether
++    # the pruning nonetheless helps the models it was built for is exactly the
++    # kind of question the founder says simulated runs exist to answer, so the
++    # next simulated run carries an arm with coherence_pruning=False
++    # (cfg.composer_coherence_pruning) and the lean-vs-full comparison the
++    # 2026-07-18 pruning review already gates every cut on.
+     budget = MODEL_COHERENCE_BUDGETS.get(model, DEFAULT_COHERENCE_BUDGET)
+-    packets, pruned_soft = _prune_for_coherence(packets, policy, budget)
++    if coherence_pruning:
++        packets, pruned_soft = _prune_for_coherence(packets, policy, budget)
++    else:
++        pruned_soft = []
+ 
+     # --- Conflict resolution (Problem 4) ---
+     # Build preliminary ComposedDirectiveSet for conflict resolver
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-12 23:46:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_a7u9fqo4/repo/bench/reference_runner_v3.py	2026-10-13 10:59:08
+@@ -1143,6 +1143,12 @@
+ 
+ 
+ _FALSIFIER_GATE: Dict[str, Any] = {"on": True}
++
++# Module mirror of `RunnerConfig.composer_coherence_pruning`, same idiom and
++# same reason as _ASK_CORRECTED_COPY / _FALSIFIER_GATE above: the composer is
++# called from `_compose_for_model`, which has no cfg in scope. Default True ==
++# the shipped behaviour; the next simulated run's ablation arm sets it False.
++_COMPOSER_COHERENCE_PRUNING: Dict[str, Any] = {"on": True}
+ 
+ 
+ def _directive_factor_state(cfg: "RunnerConfig", factor: str) -> Tuple[bool, bool]:
+@@ -1559,6 +1565,26 @@
+     # mutated). NOTE: inert without an upstream producer that tags entries
+     # `latent`/`finding_category`; the flag alone is a safe no-op (fail-safe).
+     severity_calibration_enabled: bool = False
++    # Sev(f) PER docs/MATHEMATICAL_APPENDIX.md SECTION 7.7, COMPUTED BY THE
++    # HARNESS (2026-10-13 free panel, Item 1). When on, `stamp_sev_f` records
++    # Sev(f) = W(class) * confidence * V(verification) on every registry entry
++    # as the derived field `sev_f`, beside -- never instead of -- the model's
++    # asserted `severity`. INFORMATIVE ONLY in v1, on the claim_ledger
++    # precedent: it moves no gate, because applying V(None)=0.5 to the BLOCKING
++    # gate would let a model drop its own critical below the 0.7 cut by never
++    # attaching a falsifier. Measured on the archive (producer:
++    # scripts/what_moves_when_v_is_applied_2026-10-13.py): 831 of 835 downward
++    # crossers under V are V(None) halvings of UNVERIFIED claims -- 99.5210%,
++    # Wilson 95% [98.7748%, 99.8136%] -- and only 4 are the key property
++    # V(False)=0. Default OFF => byte-identical.
++    sev_f_enabled: bool = False
++    # COHERENCE-PRUNER ABLATION (2026-10-13 free panel, Item 5). False runs
++    # the directive composer WITHOUT `_prune_for_coherence`, whose density
++    # inversion is proven (test_falsifier_C0001_prune_inversion_2026-09-10.py).
++    # Default True => byte-identical to shipped behaviour; the simulated run
++    # is the instrument that decides retirement, per the 2026-07-18 pruning
++    # review's own lean-vs-full ablation gate.
++    composer_coherence_pruning: bool = True
+     # Severity a demoted finding is pinned to (must be < CRITICAL_SEVERITY_THRESHOLD).
+     severity_calibration_floor: float = 0.69
+     # LATENT TAGGER (2026-07-31) — the upstream producer severity calibration has
+@@ -1682,6 +1708,16 @@
+     # irreducibility, and refuses convergence. For code review, genuinely-irreducible
+     # defects are rare, so the bound is small.
+     max_irreducible_queue: int = 2
++    # EMPTY-LADDER ALARM (2026-10-13 free panel, Item 3). When on, ONE critical
++    # whose routing deferral records "routing ladder empty by construction"
++    # fires build_irreducible_queue_alarm at its first occurrence, because no
++    # later round of THIS run can resolve it -- the roster carries no writer
++    # besides the finding's own source, and the roster does not change
++    # mid-run, so waiting only burns rounds to max_rounds. Ladder-EXHAUSTED
++    # and served-but-unread entries keep the bound above: every rung was tried
++    # for the first and a retry next round can still read the second.
++    # Default OFF => byte-identical; to be exercised by the next simulated run.
++    alarm_on_empty_ladder: bool = False
+     exhausted_round_threshold: int = 8  # rounds stalled before EXHAUSTED bypass
+     multiturn_chunk_target: int = 30_000
+ 
+@@ -2504,9 +2540,84 @@
+     return False
+ 
+ 
+-def _irreducible_queue_split(entries) -> Tuple[int, int]:
+-    """(ladder-exhausted, never-assessed) over a registry's entries.
++def _routing_deferred_structural(e) -> bool:
++    """True when `routing_deferred` records a routing ladder EMPTY BY CONSTRUCTION.
+ 
++    `routing_deferred` is stamped on two distinct states: an EQUIPMENT failure
++    (falsifier ERROR/UNTOOLABLE -- retryable next round) and a ladder that is
++    empty by construction (the roster carries no writer besides the finding's
++    own source -- not resolvable by waiting in this run at all). This reads the
++    second state off the entry's own record: the `routing_ladder_empty` boolean
++    stamped beside the deferral since 2026-10-13, with the deferral reason's
++    recorded opening words as the fallback for entries written before the
++    boolean existed. The string prefix is the fallback, not the rule.
++    """
++    if not e.get("routing_deferred"):
++        return False
++    if e.get("routing_ladder_empty"):
++        return True
++    return str(e.get("routing_deferred_reason") or "").startswith(
++        "routing ladder empty by construction")
++
++
++def ladder_empty_deferred_findings(entries) -> List[Dict[str, Any]]:
++    """Evidence rows for findings deferred to an EMPTY ladder, at ANY severity.
++
++    ITEM 2 OF THE 2026-10-13 FREE PANEL. A sub-critical served to an empty
++    ladder acquires `routing_deferred` and is then excluded from the halt
++    queue by the severity skip, so it blocks nothing, halts nothing, and --
++    before this reader existed -- ended the run named in no bundle. An empty
++    ladder is a RESOURCING fact about the roster, not a ruling about the
++    finding, and nothing in THIS run can ever read the finding, so the honest
++    terminal state is the founder's 2026-10-02 discipline applied again:
++    exclude from the gate, NAME IT IN THE REPORT. This is a reporting reader
++    -- it moves no verdict and carries zero weight on convergence -- and it is
++    one bundle per run, not one escalation per finding, so it cannot flood.
++    Criticals in the same state additionally fire the queue alarm when
++    `cfg.alarm_on_empty_ladder` is on; sub-criticals end here either way.
++    """
++    _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
++    rows: List[Dict[str, Any]] = []
++    for cid, e in entries.items():
++        if e.get("status") in _TERMINAL:
++            continue
++        if not _routing_deferred_structural(e):
++            continue
++        rows.append({
++            "canonical_id": cid,
++            "status": e.get("status"),
++            "severity": e.get("severity"),
++            "source_model": e.get("source_model"),
++            "open_since_round": e.get("open_since_round"),
++            "routing_deferred_reason": e.get("routing_deferred_reason") or "",
++            "description": (e.get("description") or "")[:300],
++        })
++    return rows
++
++
++def _irreducible_queue_members(entries) -> List[Tuple[str, str]]:
++    """[(canonical_id, kind)] for every entry the irreducible queue counts.
++
++    kind is "ladder_exhausted" (irreducible_escalation) or "never_assessed"
++    (routing_deferred, or a served-but-unread entry per
++    `_routing_ladder_never_served`). `_irreducible_queue_split` derives its
++    counts from this list and `build_irreducible_queue_alarm` derives its
++    evidence bundle from this list, so the count that fires the alarm and the
++    items the bundle names CANNOT disagree.
++
++    WHY MEMBERSHIP BECAME A FUNCTION (2026-10-13 free panel, executed
++    falsifier). The 2026-10-12 change admitted served-but-unread entries to
++    the COUNT via `_never_read`, but the alarm collector's first filter was
++    still `irreducible_escalation OR routing_deferred` -- which a `_never_read`
++    entry carries NEITHER of. Executed: a registry of 3 never-read criticals
++    put the count at 3, fired the alarm, and attached evidence for 0 items.
++    That is the sim45_memory_20260908T033012Z defect shape the collector's own
++    comment records as repaired on 2026-09-08, reintroduced for a third
++    membership class. One membership list, N readers, is the same repair this
++    module already prescribes for the split's own two readers.
++
++    (ladder-exhausted, never-assessed) over a registry's entries.
++
+     ONE PREDICATE, TWO READERS, AND NO `self`. `FindingRegistry` has 2 methods
+     over this and the round loop logs a third reading of the same rule; keeping
+     the arithmetic here means the total and the split cannot disagree, while a
+@@ -2521,8 +2632,8 @@
+     reimplementation, 0 mismatches.
+     """
+     _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+-    locked = deferred = 0
+-    for e in entries.values():
++    members: List[Tuple[str, str]] = []
++    for cid, e in entries.items():
+         if e.get("status") in _TERMINAL:
+             continue
+         # A FINDING NOTHING EVER READ REACHES THIS QUEUE AT ANY SEVERITY --
+@@ -2643,9 +2754,9 @@
+         if _integrity_violation_excluded(e):
+             continue
+         if e.get("irreducible_escalation"):
+-            locked += 1
++            members.append((cid, "ladder_exhausted"))
+         elif e.get("routing_deferred"):
+-            deferred += 1
++            members.append((cid, "never_assessed"))
+         elif _never_read:
+             # DEFERRED, NOT LOCKED, and the distinction is the 2026-09-07
+             # panel repair rather than a preference. `irreducible_escalation`
+@@ -2653,7 +2764,26 @@
+             # stopped stamping it on findings the instrument never read,
+             # because the flag was doing 2 jobs at once. A never-read finding
+             # is awaiting resolution, which is what `deferred` already counts.
+-            # THE TUPLE SHAPE IS UNCHANGED so no caller moves.
++            # THE TUPLE SHAPE of `_irreducible_queue_split` IS UNCHANGED so
++            # no caller moves.
++            members.append((cid, "never_assessed"))
++    return members
++
++
++def _irreducible_queue_split(entries) -> Tuple[int, int]:
++    """(ladder-exhausted, never-assessed) counts over `_irreducible_queue_members`.
++
++    SIGNATURE AND SEMANTICS UNCHANGED (2026-10-13): the membership rule above
++    is this function's previous body verbatim -- only the counting moved out,
++    so the alarm's evidence collector can read the SAME membership instead of
++    a second, drift-prone copy of the filters. Every committed equivalence in
++    test_the_alarm_names_which_kind_2026-10-02.py holds over this wrapper.
++    """
++    locked = deferred = 0
++    for _cid, kind in _irreducible_queue_members(entries):
++        if kind == "ladder_exhausted":
++            locked += 1
++        else:
+             deferred += 1
+     return locked, deferred
+ 
+@@ -7869,6 +7999,9 @@
+                 if getattr(result, "ladder_was_empty", False) or (
+                         getattr(result, "rungs_tried", 0) == 0):
+                     e["routing_deferred"] = True
++                    # The FACT as a boolean, where `_routing_deferred_structural`
++                    # reads it (2026-10-13), beside the prose reason below.
++                    e["routing_ladder_empty"] = True
+                     _self = getattr(result, "model_used", None)
+                     e["routing_deferred_reason"] = (
+                         "routing ladder empty by construction: the roster "
+@@ -8672,11 +8805,43 @@
+     """
+     count = registry.irreducible_queue_count()
+     bound = int(getattr(cfg, "max_irreducible_queue", 2))
+-    if count <= bound:
++    # A STRUCTURALLY UNRESOLVABLE CRITICAL NEEDS NO QUEUE OF 3 (2026-10-13
++    # free panel, Item 3; default OFF, byte-identical until cfg enables it). A
++    # critical whose routing deferral records "routing ladder empty by
++    # construction" cannot be resolved by any later round of THIS run, so
++    # counting it against the bound only burns rounds to max_rounds and ends
++    # BUDGET_EXHAUSTED instead of handing over the bundle. With
++    # `cfg.alarm_on_empty_ladder` ON, ONE such critical fires this alarm at
++    # its first occurrence. It fires ONCE per run by construction -- the alarm
++    # HALTS, so there is no round after it -- which answers the
++    # alarm-fatigue question: the frequency cost is one halt per run, not a
++    # recurring page.
++    _structural: List[str] = []
++    if getattr(cfg, "alarm_on_empty_ladder", False):
++        _structural = sorted(
++            cid for cid, e in registry.entries.items()
++            if e.get("status") not in {"MERGED", "CLOSED", "REFUTED",
++                                       "DUPLICATE", "CONFIRMED"}
++            and (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
++            and _routing_deferred_structural(e)
++            and not _integrity_violation_excluded(e))
++    if count <= bound and not _structural:
+         return None
+ 
+-    _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
+     evidence: List[Dict[str, Any]] = []
++    # ONE MEMBERSHIP, TWO READERS (2026-10-13 free panel). The collector's
++    # filters below matched the count's rule by parallel maintenance and
++    # drifted twice -- 2026-09-08 (routing_deferred in the count, not the
++    # collector; bundle empty on sim45_memory_20260908T033012Z) and again
++    # after 2026-10-12 (served-but-unread entries in the count via
++    # `_never_read`, carrying NEITHER flag the collector tested; executed
++    # 2026-10-13: count 3, alarm fired, evidence 0). The collector now reads
++    # the SAME membership list the count is derived from, so "MATCH
++    # `irreducible_queue_count()` EXACTLY" holds BY CONSTRUCTION. Structural
++    # empty-ladder criticals are added so a structural-only firing still
++    # attaches its evidence.
++    _members = {cid for cid, _kind in _irreducible_queue_members(registry.entries)}
++    _members |= set(_structural)
+     for cid, e in registry.entries.items():
+         # MATCH `irreducible_queue_count()` EXACTLY (2026-09-08). That method
+         # counts `irreducible_escalation OR routing_deferred`; this loop tested
+@@ -8695,17 +8860,8 @@
+         # adjudicating it does not have to reconstruct anything", and its notify
+         # text says "read the bundle, not move the line". The bundle was empty,
+         # so the only documented way to act on the halt was unavailable.
+-        if not (e.get("irreducible_escalation") or e.get("routing_deferred")):
++        if cid not in _members:
+             continue
+-        # MATCH `irreducible_queue_count()` EXACTLY (2026-10-02): that count now
+-        # excludes key-access refusals, so this collector must too, or the
+-        # evidence bundle lists more items than the count that triggered it.
+-        if _integrity_violation_excluded(e):
+-            continue
+-        if e.get("status") in _TERMINAL:
+-            continue
+-        if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+-            continue
+         sk = e.get("sk_result") or {}
+         evidence.append({
+             "canonical_id": cid,
+@@ -8810,6 +8966,9 @@
+         "round": round_idx,
+         "count": count,
+         "bound": bound,
++        # Non-empty ONLY when `cfg.alarm_on_empty_ladder` fired this alarm at
++        # or below the bound: the criticals no writer in this roster can read.
++        "structural_empty_ladder": _structural,
+         "sk_states_in_queue": sk_states,
+         "items_without_falsifier": no_falsifier,
+         # WIRED TO A READER, not merely computed. An item whose falsifier was
+@@ -9437,6 +9596,96 @@
+     return demoted
+ 
+ 
++# Sev(f) -- docs/MATHEMATICAL_APPENDIX.md SECTION 7.7, COMPUTED BY THE HARNESS
++# (2026-10-13 free panel, Item 1). The appendix specifies
++#   Sev(f) = W(class) * confidence * V(verification)
++# and the implementation never computed it: the gate reads a model-asserted
++# float (producer:
++# scripts/severity_was_never_computed_from_the_model_2026-10-12.py -- 35 of 40
++# REFUTED findings carry non-zero severity, 87.5000%, Wilson 95% [73.8879%,
++# 94.5405%]). These two functions make Sev(f) a DERIVED field.
++#
++# INFORMATIVE ONLY IN v1, AND THE ONE-DIRECTIONAL RULE IS WHY. V(False)=0
++# cannot loosen the gate -- REFUTED is already terminal in every blocker --
++# but V(None)=0.5 at the BLOCKING gate would release a critical whose author
++# simply never attached a falsifier. Measured on the archive (producer:
++# scripts/what_moves_when_v_is_applied_2026-10-13.py): 831 of 835 downward
++# crossers under V are V(None) halvings of UNVERIFIED claims -- 99.5210%,
++# Wilson 95% [98.7748%, 99.8136%] -- and only 4 are the key property. So
++# `sev_f` is stamped BESIDE `severity`, never over it, on the claim_ledger
++# informative-only precedent; promotion to the gate is a founder decision
++# after a simulated run measures the two populations' disagreement.
++SEV_F_W = {"HARD": 1.0, "SOFT": 0.5}
++SEV_F_V = {"CONFIRMED": 1.0, "REFUTED": 0.0}
++SEV_F_V_NONE = 0.5
++
++
++def compute_sev_f(constraint_class, confidence, falsifier_verdict) -> float:
++    """Sev(f) = W(class) * confidence * V(verification), appendix section 7.7.
++
++    Every default is the STRICTER reading, so an omitted model input can never
++    lower the computed severity:
++      * constraint_class missing or unrecognised -> HARD (W = 1.0), the core
++        directives' section 1 default for ambiguous constraints;
++      * confidence missing or unparseable -> 1.0 (clamped to [0, 1] otherwise);
++      * falsifier_verdict CONFIRMED -> V = 1.0; REFUTED -> V = 0.0; anything
++        else (absent, UNTOOLABLE, ERROR, NON_DISCRIMINATING) -> V = 0.5, the
++        appendix's "not assessed".
++    The appendix's own verified examples hold: HARD, conf 0.9, verified ->
++    0.90; HARD, conf 0.9, disproved -> 0.00.
++    """
++    w = SEV_F_W.get(str(constraint_class or "").strip().upper(), SEV_F_W["HARD"])
++    try:
++        c = float(confidence)
++    except (TypeError, ValueError):
++        c = 1.0
++    c = min(max(c, 0.0), 1.0)
++    v = SEV_F_V.get(str(falsifier_verdict or "").strip().upper(), SEV_F_V_NONE)
++    return w * c * v
++
++
++def stamp_sev_f(registry, cfg: "RunnerConfig", round_idx: int) -> int:
++    """Stamp `sev_f` (computed Sev(f)) on every entry; returns entries stamped.
++
++    Default-off no-op: returns 0 and mutates nothing unless cfg.sev_f_enabled.
++    NEVER touches entry["severity"] -- the claimed float keeps doing exactly
++    what it does today, so every blocker, alarm and report is unchanged with
++    the flag on EXCEPT for the added `sev_f` record and one log line. That log
++    line is the simulated-run measurement: how many entries the two severities
++    would gate differently at CRITICAL_SEVERITY_THRESHOLD.
++    """
++    if not getattr(cfg, "sev_f_enabled", False):
++        return 0
++    entries = registry.entries if hasattr(registry, "entries") else {}
++    stamped = disagree = 0
++    for _cid, e in entries.items():
++        _class = e.get("constraint_class")
++        _conf = e.get("confidence")
++        _verdict = e.get("falsifier_verdict")
++        value = compute_sev_f(_class, _conf, _verdict)
++        e["sev_f"] = {
++            "value": round(value, 6),
++            "W": SEV_F_W.get(str(_class or "").strip().upper(), SEV_F_W["HARD"]),
++            "constraint_class_defaulted":
++                str(_class or "").strip().upper() not in SEV_F_W,
++            "confidence_defaulted": not isinstance(_conf, (int, float)),
++            "V": SEV_F_V.get(str(_verdict or "").strip().upper(), SEV_F_V_NONE),
++            "informative_only": True,
++            "round": round_idx,
++        }
++        stamped += 1
++        claimed = (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
++        computed = value >= CRITICAL_SEVERITY_THRESHOLD
++        if claimed != computed:
++            disagree += 1
++    if stamped:
++        _log(f"  Sev(f) sec 7.7: {stamped} entr{'y' if stamped == 1 else 'ies'} "
++             f"stamped; {disagree} would gate differently at "
++             f"{CRITICAL_SEVERITY_THRESHOLD} than the model-asserted severity "
++             f"(informative only; no gate moved)")
++    return stamped
++
++
+ # F4: post-reconciliation statuses that are NOT genuine novelty —
+ # stripped before γ sees them (mirrors the runner's existing per-round
+ # γ-input correction and bench/exp40_gamma_findings_audit.py).
+@@ -10987,7 +11236,8 @@
+ ) -> ComposedDirectiveSet:
+     composer_model = COMPOSER_MODEL_MAP.get(model_label, model_label)
+     situation = build_interaction_pattern(pattern_name)
+-    return compose(task_domain=domain, model=composer_model, situation=situation)
++    return compose(task_domain=domain, model=composer_model, situation=situation,
++                   coherence_pruning=bool(_COMPOSER_COHERENCE_PRUNING.get("on", True)))
+ 
+ 
+ def _multiturn_fallback(
+@@ -16339,6 +16589,8 @@
+     # control cannot receive its second input from the main panel.
+     _ASK_CORRECTED_COPY["on"] = bool(getattr(cfg, "discrimination_control_ask", False))
+     _FALSIFIER_GATE["on"] = bool(getattr(cfg, "falsifier_gate_enabled", False))
++    _COMPOSER_COHERENCE_PRUNING["on"] = bool(
++        getattr(cfg, "composer_coherence_pruning", True))
+     _log(f"  Target: {cfg.test_article}")
+     _log(f"  Context: {cfg.context_files}")
+     _log(f"  Models: {sorted(baseline)}")
+@@ -18376,6 +18628,10 @@
+             _log(f"  latent-tagger: {_latent_n} finding(s) tagged latent "
+                  f"(explicit evidence only; silence reads as reachable)")
+         _sev_calib_n = _apply_severity_calibration(registry, cfg, round_idx)
++        # Sev(f) stamp AFTER the calibration sweep, so its disagreement log
++        # line compares against the severity the gate actually reads this
++        # round. Default-off no-op (cfg.sev_f_enabled).
++        stamp_sev_f(registry, cfg, round_idx)
+         # ANSWERABLE FROM THE ARTEFACT (2026-09-07, panel cc2). "Was the demotion
+         # half actually rehearsed?" could only be answered by reading the log. The
+         # tagger already returns how many it flagged and the sweep already returns
+@@ -19884,6 +20140,23 @@
+     except Exception as _sr_exc:  # noqa: BLE001
+         _log(f"  WARNING: stop reason not attached ({_sr_exc})")
+         result.update(stop_reason_fields(None))
++
++    # EMPTY-LADDER DEFERRALS, HANDED TO THE HUMAN (2026-10-13 free panel,
++    # Item 2). Exclude from the gate, NAME IT IN THE REPORT -- the founder's
++    # 2026-10-02 discipline applied to a second cause. One bundle per run,
++    # zero weight on convergence. Exception-safe like every other
++    # report-assembly section.
++    try:
++        _el_rows = ladder_empty_deferred_findings(registry.entries)
++        result["ladder_empty_deferred_findings"] = _el_rows
++        if _el_rows:
++            _log(f"  EMPTY-LADDER DEFERRALS: {len(_el_rows)} finding(s) that "
++                 f"no writer in this roster could ever read "
++                 f"{[r['canonical_id'] for r in _el_rows]} -- attached to the "
++                 f"report for human resolution; zero weight on convergence")
++    except Exception as _el_exc:  # noqa: BLE001
++        _log(f"  WARNING: empty-ladder deferral section not attached ({_el_exc})")
++        result["ladder_empty_deferred_findings"] = []
+ 
+     # CLAIM LEDGER (founder ruling 2026-09-30: "Build it, apply it and test it
+     # before the next simulated run"; design by the fable and cc2 seats in the
+
+### fable:attempt-1:bench/tests/test_composer_pruning_ablation_switch_2026-10-13.py
+--- /dev/null	2026-10-13 11:03:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_a7u9fqo4/repo/bench/tests/test_composer_pruning_ablation_switch_2026-10-13.py	2026-10-13 10:59:58
+@@ -0,0 +1,66 @@
++"""The coherence-pruner ablation switch: default-on byte-identical, off is
++reachable from a RunnerConfig, and off never delivers LESS directive text.
++
++2026-10-13 FREE PANEL, ITEM 5. The brief proposed retiring the pruner by
++hand-trimming the directive set until "the pruner has nothing to do". That
++mechanism is BACKWARDS for this pruner: `_count_constraints` reads only the
++merged TOML policy, so the density `_prune_for_coherence` enforces has a text-
++independent numerator, and SHORTENING the text RAISES density (SymPy:
++d(L2)-d(L1) = 4*C*(L1-L2)/(L1*L2) > 0 for L2 < L1; z3 'shorter AND density did
++not worsen' unsat; committed proof in
++test_falsifier_C0001_prune_inversion_2026-09-10.py). A hand-trimmed canon
++would trigger MORE pruning, not none. Retirement therefore needs an ablation
++measurement, not a hope -- this switch is the instrument the next simulated
++run uses, per the 2026-07-18 pruning review's own lean-vs-full gate.
++"""
++import types
++
++from bench.cdsfl_registry.composer import compose, build_interaction_pattern
++import bench.reference_runner_v3 as rr
++
++# The fixture test_falsifier_C0001_prune_inversion_2026-09-10.py measures
++# pruning on: deepseek_v3 / software / meta_structured.
++_MODEL, _DOMAIN, _PATTERN = "deepseek_v3", "software", "meta_structured"
++
++
++def _compose(**kw):
++    return compose(task_domain=_DOMAIN, model=_MODEL,
++                   situation=build_interaction_pattern(_PATTERN), **kw)
++
++
++class TestTheSwitch:
++    def test_default_is_on_and_byte_identical_to_the_shipped_call(self):
++        assert _compose().rendered_text == _compose(coherence_pruning=True).rendered_text
++
++    def test_off_prunes_nothing_and_never_delivers_less(self):
++        on = _compose(coherence_pruning=True)
++        off = _compose(coherence_pruning=False)
++        assert off.pruned_soft == []
++        assert len(off.rendered_text) >= len(on.rendered_text)
++
++    def test_this_fixture_actually_exercises_the_pruner(self):
++        """Anti-vacuity: with pruning ON something IS pruned here, so the
++        off-arm comparison above is a real contrast, not two identical runs."""
++        on = _compose(coherence_pruning=True)
++        assert on.pruned_soft, (
++            "fixture no longer triggers pruning; pick one that does or this "
++            "file proves nothing")
++
++
++class TestItIsReachableFromARunnerConfig:
++    def test_the_config_default_preserves_behaviour(self):
++        assert rr.RunnerConfig().composer_coherence_pruning is True
++        assert rr._COMPOSER_COHERENCE_PRUNING["on"] is True
++
++    def test_the_mirror_reaches_compose_for_model(self):
++        prev = rr._COMPOSER_COHERENCE_PRUNING["on"]
++        try:
++            rr._COMPOSER_COHERENCE_PRUNING["on"] = True
++            on = rr._compose_for_model(_MODEL, _PATTERN, _DOMAIN)
++            rr._COMPOSER_COHERENCE_PRUNING["on"] = False
++            off = rr._compose_for_model(_MODEL, _PATTERN, _DOMAIN)
++        finally:
++            rr._COMPOSER_COHERENCE_PRUNING["on"] = prev
++        assert on.pruned_soft and off.pruned_soft == [], (
++            "flipping the mirror must flip the pruner, or the flag is an "
++            "addition nothing reaches")
+
+### fable:attempt-1:bench/tests/test_sev_f_and_queue_membership_2026-10-13.py
+--- /dev/null	2026-10-13 11:03:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_a7u9fqo4/repo/bench/tests/test_sev_f_and_queue_membership_2026-10-13.py	2026-10-13 10:57:37
+@@ -0,0 +1,178 @@
++"""Sev(f) is computed, the queue's count and bundle share one membership, and
++an empty-ladder deferral is named -- the 2026-10-13 free-panel fixes, pinned.
++
++THREE MECHANISMS, ONE ROUND, EACH WITH ITS EXECUTED FALSIFIER.
++
++1. Sev(f) (Item 1). docs/MATHEMATICAL_APPENDIX.md section 7.7 specifies
++   Sev(f) = W(class) * confidence * V(verification) and it was never computed:
++   35 of 40 archived REFUTED findings carry non-zero severity (87.5000%,
++   Wilson 95% [73.8879%, 94.5405%]; producer:
++   scripts/severity_was_never_computed_from_the_model_2026-10-12.py).
++   `compute_sev_f` + `stamp_sev_f` make it a DERIVED field, informative-only
++   in v1 because 831 of 835 downward 0.7-cut crossers under V are V(None)
++   halvings of UNVERIFIED claims (99.5210%, Wilson 95% [98.7748%, 99.8136%];
++   producer: scripts/what_moves_when_v_is_applied_2026-10-13.py) -- gating
++   V(None) would reward falsifier omission, the loophole the 2026-09-06
++   one-directional rule exists to close.
++
++2. Queue membership (Items 2/3). Executed 2026-10-13 against the pre-fix
++   runner: a registry of 3 never-read criticals put irreducible_queue_count at
++   3, fired build_irreducible_queue_alarm, and attached evidence for 0 items
++   -- the sim45_memory_20260908T033012Z defect shape, reintroduced for the
++   membership class the 2026-10-12 change added. Count and collector now both
++   derive from `_irreducible_queue_members`.
++
++3. Empty-ladder deferrals (Items 2/3). A sub-critical deferred to an EMPTY
++   ladder reaches `ladder_empty_deferred_findings` (reporting; zero weight on
++   convergence -- the founder's 2026-10-02 exclude-from-the-gate,
++   name-it-in-the-report discipline). A CRITICAL in the same state fires the
++   alarm at its FIRST occurrence when `cfg.alarm_on_empty_ladder` is on,
++   because an empty ladder cannot be resolved by waiting; the flag defaults
++   OFF and the next simulated run is its instrument.
++"""
++import types
++
++import bench.reference_runner_v3 as rr
++
++
++def _never_read_entry(sev):
++    return {"status": "UNCONFIRMED", "severity": sev,
++            "routing_history": [{"verdict": "UNRESOLVED", "resolved": False}],
++            "verdicts": [], "falsifier_code": "", "falsifier_verdict": "",
++            "routing_verdict_unreconciled": ""}
++
++
++def _empty_ladder_entry(sev, boolean=True):
++    e = {"status": "UNCONFIRMED", "severity": sev, "routing_deferred": True}
++    if boolean:
++        e["routing_ladder_empty"] = True
++    else:
++        e["routing_deferred_reason"] = (
++            "routing ladder empty by construction: the roster carries no "
++            "writer other than this finding's own source model, so no rung "
++            "exists to try in any round")
++    return e
++
++
++class TestSevFIsComputedNotReported:
++    def test_the_appendix_own_verified_examples(self):
++        assert rr.compute_sev_f("HARD", 0.9, "CONFIRMED") == 0.90
++        assert rr.compute_sev_f("HARD", 0.9, "REFUTED") == 0.00
++
++    def test_the_key_property_a_disproved_finding_scores_zero(self):
++        for conf in (0.0, 0.5, 1.0, None, "not a number"):
++            for cls in ("HARD", "SOFT", None, "AMBIGUOUS"):
++                assert rr.compute_sev_f(cls, conf, "REFUTED") == 0.0
++
++    def test_every_default_is_the_stricter_reading(self):
++        # Missing class -> HARD (section 1 of the core directives); missing
++        # confidence -> 1.0; so omission can never LOWER the computed value.
++        assert rr.compute_sev_f(None, None, "CONFIRMED") == 1.0
++        assert rr.compute_sev_f("SOFT", None, "CONFIRMED") == 0.5
++        assert rr.compute_sev_f(None, 2.0, "CONFIRMED") == 1.0  # clamped
++        assert rr.compute_sev_f(None, -1.0, "CONFIRMED") == 0.0  # clamped
++
++    def test_v_none_is_half_and_unrecognised_verdicts_fail_to_v_none(self):
++        for verdict in (None, "", "UNTOOLABLE", "ERROR", "NON_DISCRIMINATING",
++                        "SOMETHING_NEW"):
++            assert rr.compute_sev_f("HARD", 1.0, verdict) == 0.5
++
++    def test_the_stamp_is_a_default_off_no_op(self):
++        reg = rr.FindingRegistry()
++        reg.entries = {"C1": {"status": "OPEN", "severity": 0.85,
++                              "falsifier_verdict": "REFUTED"}}
++        assert rr.stamp_sev_f(reg, types.SimpleNamespace(), 3) == 0
++        assert "sev_f" not in reg.entries["C1"]
++
++    def test_the_stamp_never_touches_the_claimed_severity(self):
++        reg = rr.FindingRegistry()
++        reg.entries = {"C1": {"status": "OPEN", "severity": 0.85,
++                              "falsifier_verdict": "REFUTED"},
++                       "C2": {"status": "OPEN", "severity": 0.9,
++                              "constraint_class": "SOFT", "confidence": 0.8,
++                              "falsifier_verdict": "CONFIRMED"}}
++        cfg = types.SimpleNamespace(sev_f_enabled=True)
++        assert rr.stamp_sev_f(reg, cfg, 4) == 2
++        assert reg.entries["C1"]["severity"] == 0.85
++        assert reg.entries["C1"]["sev_f"]["value"] == 0.0
++        assert reg.entries["C1"]["sev_f"]["informative_only"] is True
++        assert reg.entries["C2"]["sev_f"]["value"] == 0.4  # 0.5 * 0.8 * 1.0
++        assert reg.entries["C2"]["sev_f"]["constraint_class_defaulted"] is False
++        assert reg.entries["C2"]["sev_f"]["confidence_defaulted"] is False
++
++
++class TestTheCountAndTheBundleShareOneMembership:
++    def test_the_executed_falsifier_now_passes(self):
++        """Pre-fix: count 3, alarm fired, evidence 0. Now evidence == count."""
++        reg = rr.FindingRegistry()
++        reg.entries = {"C0001": _never_read_entry(0.9),
++                       "C0002": _never_read_entry(0.9),
++                       "C0003": _never_read_entry(0.4)}
++        cfg = types.SimpleNamespace(max_irreducible_queue=2)
++        alarm = rr.build_irreducible_queue_alarm(reg, cfg, round_idx=5)
++        assert alarm is not None
++        assert alarm["count"] == 3
++        assert len(alarm["evidence"]) == alarm["count"], (
++            "the bundle must name every item the count fired on -- an empty "
++            "bundle on a fired alarm is the sim45 defect shape")
++        assert {x["canonical_id"] for x in alarm["evidence"]} == {
++            "C0001", "C0002", "C0003"}
++
++    def test_split_equals_membership_counts(self):
++        reg_entries = {
++            "A": {"status": "OPEN", "severity": 0.9,
++                  "irreducible_escalation": True},
++            "B": {"status": "OPEN", "severity": 0.9, "routing_deferred": True},
++            "C": _never_read_entry(0.3),
++            "D": {"status": "REFUTED", "severity": 0.9,
++                  "irreducible_escalation": True},  # terminal, excluded
++        }
++        members = rr._irreducible_queue_members(reg_entries)
++        locked, deferred = rr._irreducible_queue_split(reg_entries)
++        assert locked == sum(1 for _c, k in members if k == "ladder_exhausted")
++        assert deferred == sum(1 for _c, k in members if k == "never_assessed")
++        assert ("D", "ladder_exhausted") not in members
++
++
++class TestAnEmptyLadderIsNamedAndACriticalOneCanAlarm:
++    def test_subcritical_reaches_the_report_reader_not_the_alarm(self):
++        reg = rr.FindingRegistry()
++        reg.entries = {"C0020": _empty_ladder_entry(0.45, boolean=False)}
++        cfg_on = types.SimpleNamespace(max_irreducible_queue=2,
++                                       alarm_on_empty_ladder=True)
++        assert rr.build_irreducible_queue_alarm(reg, cfg_on, 1) is None, (
++            "a SUB-critical empty-ladder deferral must not halt the run")
++        rows = rr.ladder_empty_deferred_findings(reg.entries)
++        assert [r["canonical_id"] for r in rows] == ["C0020"]
++        assert rows[0]["severity"] == 0.45
++
++    def test_the_flag_defaults_off_and_off_is_byte_identical(self):
++        assert rr.RunnerConfig().alarm_on_empty_ladder is False
++        reg = rr.FindingRegistry()
++        reg.entries = {"C0010": _empty_ladder_entry(0.9)}
++        cfg_off = types.SimpleNamespace(max_irreducible_queue=2)
++        assert rr.build_irreducible_queue_alarm(reg, cfg_off, 1) is None
++
++    def test_one_structural_critical_fires_at_first_occurrence_when_enabled(self):
++        reg = rr.FindingRegistry()
++        reg.entries = {"C0010": _empty_ladder_entry(0.9)}
++        cfg_on = types.SimpleNamespace(max_irreducible_queue=2,
++                                       alarm_on_empty_ladder=True)
++        alarm = rr.build_irreducible_queue_alarm(reg, cfg_on, 1)
++        assert alarm is not None
++        assert alarm["structural_empty_ladder"] == ["C0010"]
++        assert len(alarm["evidence"]) == 1, (
++            "a structural-only firing must still attach its evidence")
++
++    def test_the_structural_predicate_reads_fact_then_fallback(self):
++        assert rr._routing_deferred_structural(_empty_ladder_entry(0.9)) is True
++        assert rr._routing_deferred_structural(
++            _empty_ladder_entry(0.9, boolean=False)) is True
++        # An equipment-failure deferral is NOT structural: retry can resolve it.
++        assert rr._routing_deferred_structural(
++            {"routing_deferred": True,
++             "routing_deferred_reason": "not escalated at round 3: ..."}) is False
++        assert rr._routing_deferred_structural({"routing_ladder_empty": True}) is False
++
++    def test_sev_f_default_off_in_config(self):
++        assert rr.RunnerConfig().sev_f_enabled is False
+
+### fable:attempt-1:scripts/subcritical_duplicate_pressure_on_novelty_2026-10-13.py
+--- /dev/null	2026-10-13 11:03:07
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_a7u9fqo4/repo/scripts/subcritical_duplicate_pressure_on_novelty_2026-10-13.py	2026-10-13 10:58:04
+@@ -0,0 +1,108 @@
++#!/usr/bin/env python3
++"""How often did sub-critical duplicates actually push novelty upward?
++
++ITEM 2 OF THE 2026-10-13 FREE-PANEL BRIEF, the churn horn. The founder's
++second fear, verbatim: "new sub-critical (and often mostly churn/dupe) issues
++kept being discovered and kept pushing convergence beyond reach". This script
++measures how large that effect actually is in the archive, so the fear can be
++sized rather than felt.
++
++WHAT COUNTS AS DUPLICATE PRESSURE ON THE NOVELTY SERIES. A duplicate the
++dedup path CAUGHT at registration (alias fold, codiscovery) never entered
++`novelty_counts` -- it inflated nothing. The inflating case is a canonical
++that was REGISTERED AS NEW and only LATER recognised as a duplicate: it
++carries `merged_into` (or status MERGED), and it contributed 1 to the novelty
++series at its `open_since_round`. This is an UPPER bound on live inflation --
++a late merge can also reflect two genuinely distinct findings converging.
++
++Usage: python3 scripts/subcritical_duplicate_pressure_on_novelty_2026-10-13.py
++"""
++import json
++import os
++import pathlib
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++from _cli_help import answer_help  # noqa: E402
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++CRITICAL = 0.7
++
++
++def runs():
++    for root in (REPO / "bench" / "logs", REPO / "bench" / "logs_quarantine"):
++        if not root.exists():
++            continue
++        for fp in sorted(root.glob("*/runner_state.json")):
++            try:
++                yield fp, json.loads(fp.read_text(encoding="utf-8",
++                                                  errors="ignore"))
++            except Exception:  # noqa: BLE001
++                continue
++
++
++def main() -> int:
++    answer_help(__doc__, __file__)
++    total_novel = 0        # sum of every run's novelty series
++    inflat_sub = 0         # later-merged SUB-critical canonicals (the fear)
++    inflat_crit = 0        # later-merged criticals (for contrast)
++    runs_with_any = runs_seen = 0
++    per_run = []
++    for fp, d in runs():
++        reg = ((d or {}).get("registry") or {}).get("entries") or {}
++        series = d.get("novelty_counts") or []
++        if not reg:
++            continue
++        runs_seen += 1
++        nov = sum(int(x) for x in series) if series else 0
++        total_novel += nov
++        sub = crit = 0
++        for e in reg.values():
++            if not isinstance(e, dict):
++                continue
++            merged = bool(e.get("merged_into")) or e.get("status") == "MERGED"
++            if not merged:
++                continue
++            sev = e.get("severity")
++            if not isinstance(sev, (int, float)):
++                continue
++            if sev < CRITICAL:
++                sub += 1
++            else:
++                crit += 1
++        inflat_sub += sub
++        inflat_crit += crit
++        if sub:
++            runs_with_any += 1
++            per_run.append((fp.parent.name, sub, nov))
++    if not runs_seen:
++        print("no archived runs with a registry; measurement void.")
++        return 3
++    print(f"archived runs with a registry             : {runs_seen}")
++    print(f"sum of all novelty series                 : {total_novel}")
++    print(f"later-merged SUB-critical canonicals      : {inflat_sub}")
++    print(f"later-merged critical canonicals          : {inflat_crit}")
++    print(f"runs with ANY sub-critical late merge     : {runs_with_any}")
++    if total_novel:
++        from statsmodels.stats.proportion import proportion_confint
++        from scipy import stats
++        k, n = inflat_sub, total_novel
++        lo, hi = proportion_confint(k, n, alpha=0.05, method="wilson")
++        lo2 = stats.beta.ppf(0.025, k, n - k + 1) if k else 0.0
++        hi2 = stats.beta.ppf(0.975, k + 1, n - k) if k < n else 1.0
++        print(f"UPPER BOUND on novelty inflation by sub-critical duplicates:")
++        print(f"  {k}/{n} = {k/n:.4%}")
++        print(f"  Wilson 95%          [{lo:.4%}, {hi:.4%}]  (statsmodels)")
++        print(f"  Clopper-Pearson 95% [{lo2:.4%}, {hi2:.4%}]  (scipy.beta)")
++    for name, sub, nov in sorted(per_run, key=lambda t: -t[1])[:8]:
++        print(f"    {name:<48} {sub:>3} late-merged sub-crit of {nov} novel")
++    print()
++    print("READING. The inflating case is the LATE merge; a duplicate caught at")
++    print("registration never touched the series. The figure above is therefore")
++    print("an upper bound on how much sub-critical duplication pushed novelty")
++    print("(and with it any novelty-fed convergence input) upward.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:scripts/what_moves_when_v_is_applied_2026-10-13.py
+--- /dev/null	2026-10-13 11:03:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_a7u9fqo4/repo/scripts/what_moves_when_v_is_applied_2026-10-13.py	2026-10-13 10:49:16
+@@ -0,0 +1,114 @@
++#!/usr/bin/env python3
++"""Which verdict class drives the 835 downward crossers when V is applied?
++
++CONTEXT. Item 1 of the 2026-10-13 free-panel brief measured that applying only
++the V factor of docs/MATHEMATICAL_APPENDIX.md section 7.7 to the archived
++severities moves the share at or above the 0.7 cut from 41.6313% to 16.3129%,
++with 835 of 3,298 entries crossing downward. The brief asks whether that
++movement is evidence the formula is right or evidence the cut was calibrated
++against the uncomputed float.
++
++THE QUESTION THIS SCRIPT DECIDES IS SHARPER: of the downward crossers, how many
++cross because V(False) = 0 (the appendix's KEY PROPERTY -- a disproved finding
++scores zero) and how many cross because V(None) = 0.5 (a finding nothing ever
++verified is HALVED)? The distinction is load-bearing for the gate design:
++
++  * A crosser with falsifier_verdict REFUTED crosses because a TOOL disproved
++    it. Zeroing it can never loosen the gate against a real defect -- the tool
++    already ruled, and status REFUTED is terminal in the halt machinery anyway
++    (bench/reference_runner_v3.py, _irreducible_queue_split's _TERMINAL set).
++  * A crosser with NO verdict crosses only because V(None) = 0.5 HALVED an
++    unverified claim. If V(None) were applied to the BLOCKING gate, a model
++    could drop its own critical below the 0.7 cut by never attaching a
++    falsifier -- rewarding exactly the omission the falsifier gate polices.
++    Same loophole shape as the one the 2026-09-06 one-directional rule closed
++    for missing R_k proofs (bench/reference_runner_v3.py, "THE ENFORCEMENT IS
++    ONE-DIRECTIONAL").
++
++Usage: python3 scripts/what_moves_when_v_is_applied_2026-10-13.py
++"""
++import collections
++import json
++import os
++import pathlib
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++from _cli_help import answer_help  # noqa: E402
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++LOGS = REPO / "bench" / "logs"
++
++CUT = 0.7
++#: V per the appendix: CONFIRMED is V(True), REFUTED is V(False), anything
++#: else -- absent, UNTOOLABLE, ERROR, NON_DISCRIMINATING -- is V(None) = 0.5.
++V = {"CONFIRMED": 1.0, "REFUTED": 0.0}
++
++KEY_PROPERTY = "REFUTED (V=0, the key property)"
++HALVED = "no/indeterminate verdict (V=0.5 halving)"
++
++
++def entries():
++    for fp in LOGS.glob("**/runner_state.json"):
++        try:
++            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++        except Exception:  # noqa: BLE001
++            continue
++        for cid, e in (((d or {}).get("registry") or {}).get("entries") or {}).items():
++            if isinstance(e, dict):
++                yield cid, e
++
++
++def _both_cis(k: int, n: int):
++    """Wilson (statsmodels) and Clopper-Pearson (scipy) -- 2 independent tools."""
++    from statsmodels.stats.proportion import proportion_confint
++    from scipy import stats
++    lo, hi = proportion_confint(k, n, alpha=0.05, method="wilson")
++    lo2 = stats.beta.ppf(0.025, k, n - k + 1) if k else 0.0
++    hi2 = stats.beta.ppf(0.975, k + 1, n - k) if k < n else 1.0
++    return (lo, hi), (lo2, hi2)
++
++
++def main() -> int:
++    answer_help(__doc__, __file__)
++    n = before = after = 0
++    crossers = collections.Counter()
++    for _cid, e in entries():
++        sev = e.get("severity")
++        if not isinstance(sev, (int, float)):
++            continue
++        n += 1
++        verdict = str(e.get("falsifier_verdict") or "").strip().upper()
++        sev_v = float(sev) * V.get(verdict, 0.5)
++        if float(sev) >= CUT:
++            before += 1
++            if sev_v < CUT:
++                crossers[KEY_PROPERTY if verdict == "REFUTED" else HALVED] += 1
++        if sev_v >= CUT:
++            after += 1
++    if not n:
++        print("no archived entries carry a numeric severity; measurement void.")
++        return 3
++    total_cross = sum(crossers.values())
++    print(f"archived entries with numeric severity : {n}")
++    print(f"at/above {CUT} before V                 : {before} ({before/n:.4%})")
++    print(f"at/above {CUT} after  V                 : {after} ({after/n:.4%})")
++    print(f"downward crossers                      : {total_cross}")
++    for label, c in crossers.most_common():
++        (wl, wh), (cl, ch) = _both_cis(c, total_cross)
++        print(f"  {label:<44}{c:>5}  ({c/total_cross:.4%} of crossers)")
++        print(f"    Wilson 95% [{wl:.4%}, {wh:.4%}]  "
++              f"Clopper-Pearson 95% [{cl:.4%}, {ch:.4%}]")
++    refuted_cross = crossers.get(KEY_PROPERTY, 0)
++    print()
++    print(f"VERDICT: {refuted_cross} of {total_cross} crossers are the key property;")
++    print(f"the other {total_cross - refuted_cross} cross only because V(None)=0.5")
++    print(f"halves an UNVERIFIED claim. Applying V(None) at the BLOCKING gate")
++    print(f"would release those {total_cross - refuted_cross} without any tool")
++    print(f"having ruled -- the falsifier-omission loophole. V(False)=0 is safe")
++    print(f"to gate; V(None) belongs to scoring/reporting only.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

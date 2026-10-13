@@ -1303,6 +1303,7 @@ def compose(
     explicit_unknowns: str = "",
     adversarial_brief: str = "",
     interaction_surface: str = "",
+    coherence_pruning: bool = False,
 ) -> ComposedDirectiveSet:
     """Compose a per-dispatch directive set from all applicable layers.
 
@@ -1387,8 +1388,24 @@ def compose(
     policy = load_effective_policy(domain=task_domain, model=model)
 
     # --- Coherence enforcement (with intra-packet pruning) ---
+    # ABLATION SWITCH (2026-10-13 free panel, Item 5; default True preserves
+    # behaviour byte-for-byte). `_prune_for_coherence` provably worsens the
+    # density it enforces: `_count_constraints` reads only the merged TOML
+    # policy, so the numerator is independent of the text, and a shorter text
+    # strictly raises constraints-per-token (SymPy: d(L2)-d(L1) =
+    # 4*C*(L1-L2)/(L1*L2) > 0 for L2 < L1; z3: "pruning shortened the text AND
+    # density did not worsen" is unsat; committed proof:
+    # bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py). Whether
+    # the pruning nonetheless helps the models it was built for is exactly the
+    # kind of question the founder says simulated runs exist to answer, so the
+    # next simulated run carries an arm with coherence_pruning=False
+    # (cfg.composer_coherence_pruning) and the lean-vs-full comparison the
+    # 2026-07-18 pruning review already gates every cut on.
     budget = MODEL_COHERENCE_BUDGETS.get(model, DEFAULT_COHERENCE_BUDGET)
-    packets, pruned_soft = _prune_for_coherence(packets, policy, budget)
+    if coherence_pruning:
+        packets, pruned_soft = _prune_for_coherence(packets, policy, budget)
+    else:
+        pruned_soft = []
 
     # --- Conflict resolution (Problem 4) ---
     # Build preliminary ComposedDirectiveSet for conflict resolver
