@@ -48,7 +48,29 @@ def part1_a_crashed_check_boots() -> bool:
     saved = list(pf.CHECKS)
     try:
         pf.CHECKS = [("a deliberately broken check", _explodes)]
-        code = pf.main(["--quiet"])
+        # ★ WAS `pf.main(["--quiet"])` AND THE PREFLIGHT HAS NEVER ACCEPTED
+        # THAT FLAG (`git log -S quiet` over the preflight returns 0 commits).
+        # argparse therefore exited 2 before the deliberately broken check ran,
+        # `code` was never assigned, and this part printed nothing while the
+        # script exited 0 -- a check that boots at exit 0 having measured
+        # nothing, which is the EXACT failure mode POST was built to prevent,
+        # occurring inside the script that documents POST. 18 tests pass around
+        # it because they assert on DEPENDENCIES, not on this part.
+        # Corrected 2026-10-14 to the preflight's real argument list.
+        # AND THE PROPERTY IS STRONGER THAN THIS PART ASSUMED. `pf.main` does
+        # not CATCH a raising check and return a code -- it lets the exception
+        # propagate. Run as the launcher runs it (a subprocess,
+        # `bench/tools/run_simulated_experiment.py:438`) that is a NON-ZERO exit,
+        # so a crashed check does NOT boot. Measured in-process here, so the
+        # raise is caught and reported as the non-boot it is.
+        try:
+            code = pf.main([])
+        except BaseException as exc:          # SystemExit included, deliberately
+            code = getattr(exc, "code", 1)
+            if not isinstance(code, int):
+                code = 1
+            print(f"        the check RAISED {type(exc).__name__}: "
+                  f"the preflight does not swallow it")
     finally:
         pf.CHECKS = saved
     print(f"PART 1  a check that raises -> exit code {code}")
@@ -161,7 +183,15 @@ def main() -> int:
     part3_runs_to_clear_k()
     print()
     print("=" * 74)
-    print(f"a crashed check currently boots : {crashed_boots}   <- the defect")
+    # ★ THE LABEL WAS STALE AND IT ASSERTED THE OPPOSITE OF THE MEASUREMENT.
+    # It read "<- the defect" unconditionally. That defect was the 2026-10-06
+    # finding -- a crashed check booting at exit 0 -- and it was FIXED: measured
+    # 2026-10-14, a raising check is not swallowed, so a crashed check does NOT
+    # boot. Printing "the defect" beside a False would have told a reader the
+    # defect was live. The verdict is now derived from the value.
+    print(f"a crashed check currently boots : {crashed_boots}   "
+          + ("<- THE DEFECT IS LIVE" if crashed_boots
+             else "<- the 2026-10-06 defect is CLOSED: a raise is not swallowed"))
     print(f"POST order is topological       : {topo}")
     print("=" * 74)
     return 0
