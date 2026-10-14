@@ -102,8 +102,10 @@ def owed(require_partner_replies: bool) -> list:
                 # round actually collected 2 or more replies.
                 if (not require_partner_replies) or len(lands) >= 2:
                     declared_joint_of.update(rec.get("joint_of") or [])
-            except Exception:
-                pass
+            except Exception as exc:
+                # NAMED, not swallowed: an unreadable topology.json changes the
+                # owed set, so a reader must see that one could not be read.
+                print(f"  ** unreadable topology.json in {d.name}: {exc!r}")
         rounds[d.name] = (lands, kind)
 
     out, names = [], list(rounds)
@@ -129,12 +131,18 @@ def owed(require_partner_replies: bool) -> list:
 
 def wilson(k: int, n: int):
     """Wilson 95% interval, computed twice with independent tools."""
+    # ★ A SWALLOWED IMPORT MEANS A FIGURE LOSES ITS INTERVAL IN SILENCE.
+    # `except Exception: pass` here would let a missing statsmodels or mpmath
+    # remove a confidence interval from a reported proportion with no trace,
+    # and this project's standing rule is that every proportion carries one.
+    # The failure is now NAMED and returned, so the caller can print it.
     a = b = None
+    _why = []
     try:
         from statsmodels.stats.proportion import proportion_confint
         a = tuple(float(x) for x in proportion_confint(k, n, 0.05, method="wilson"))
-    except Exception:
-        pass
+    except Exception as exc:
+        _why.append(f"statsmodels unavailable: {exc!r}")
     try:
         import mpmath as mp
         mp.mp.dps = 40
@@ -144,8 +152,11 @@ def wilson(k: int, n: int):
         d = z * mp.sqrt(p * (1 - p) / nn + z ** 2 / (4 * nn ** 2))
         den = 1 + z ** 2 / nn
         b = (float((c - d) / den), float((c + d) / den))
-    except Exception:
-        pass
+    except Exception as exc:
+        _why.append(f"mpmath unavailable: {exc!r}")
+    if _why:
+        print("  ** INTERVAL TOOL MISSING, so a figure below carries no "
+              "interval: " + "; ".join(_why))
     return a, b
 
 

@@ -94,8 +94,13 @@ def main() -> int:
         print(f"  {k}/{n} = {k/n:.4%}")
         print(f"  Wilson 95%          [{lo:.4%}, {hi:.4%}]  (statsmodels)")
         print(f"  Clopper-Pearson 95% [{lo2:.4%}, {hi2:.4%}]  (scipy.beta)")
-    for name, sub, nov in sorted(per_run, key=lambda t: -t[1])[:8]:
+    _ranked = sorted(per_run, key=lambda t: -t[1])
+    for name, sub, nov in _ranked[:8]:
         print(f"    {name:<48} {sub:>3} late-merged sub-crit of {nov} novel")
+    # STATE THE REMAINDER: a truncated ranking read as the whole set otherwise.
+    if len(_ranked) > 8:
+        print(f"    ... and {len(_ranked) - 8} further run(s), of "
+              f"{len(_ranked)} total, not shown")
     print()
     print("READING. The inflating case is the LATE merge; a duplicate caught at")
     print("registration never touched the series. The figure above is therefore")

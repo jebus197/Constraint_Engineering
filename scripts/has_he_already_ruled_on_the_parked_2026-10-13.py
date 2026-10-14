@@ -176,6 +176,10 @@ def main() -> int:
         print(f"    {h[:92]}")
         for date, ident, txt in hits[:2]:
             print(f"       {date} [{ident}] {txt}")
+        # A LIST CUT TO N UNDER A COMPLETE-LOOKING HEADING IS A SILENT FALSEHOOD.
+        if len(hits) > 2:
+            print(f"       ... and {len(hits) - 2} further ruling(s) on this "
+                  f"heading, of {len(hits)} total, not shown")
     print(f"\nNO RULING FOUND, NEEDS READING         : {len(undecided)}")
     for h, idents in undecided:
         print(f"    {h[:88]}   idents={idents or '(none)'}")

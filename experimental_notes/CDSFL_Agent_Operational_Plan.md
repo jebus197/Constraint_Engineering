@@ -4,7 +4,7 @@
 `sim/shakedown-2026-09-29`, HEAD `da23d286`. Working tree clean. `rs` was run on his
 instruction, **exit code 0** on both `--full` and `--full --record-restore`.
 
-**NOTE STANDARD.** This resume pointer and every section added from 2026-10-14 onward are written under **CDSFL note standard v1.7 (26 August 2026)**. The historical sections below retain the foot-lines of the standard in force when they were written (v1 and v1.2), deliberately and not by omission: this is a long-lived tracker, its older entries are a record of what was true then, and restamping them would assert they were written to a standard that did not yet exist. The lint reports the file-level stamp as older than current, and that report is correct; this paragraph is the explicit reason it asks for.
+**WHY THIS FILE'S FOOT-LINE PREDATES THE CURRENT STANDARD, AND WHY IT IS LEFT THAT WAY.** This is a living tracker rather than a dated note: opened under CDSFL note standard v1.7's predecessor on 21 April 2026 and maintained continuously since. Historical sections carry their own dates inline. Restamping the foot-line was ATTEMPTED on 2026-10-14 and REVERTED, because `bench/tests/test_footline_is_read_from_the_footline_2026-09-17.py` then requires the enforcement gain to be reviewed and allow-listed, and that review is a separate decision from un-stalling a resume pointer. The foot-line test was ALREADY RED on this file at commit `6a29a27f`, before any of this file's 2026-10-14 edits, so it is a pre-existing item and not a regression introduced here. Filed as the next thing to settle on this file.
 
 ### WHAT IS DONE AND NEEDS NO FURTHER WORK
 

@@ -144,12 +144,18 @@ def collect():
 
 def wilson(k, n):
     """Wilson 95%, computed twice with independent tools; returns both."""
+    # ★ A SWALLOWED IMPORT MEANS A FIGURE LOSES ITS INTERVAL IN SILENCE.
+    # `except Exception: pass` here would let a missing statsmodels or mpmath
+    # remove a confidence interval from a reported proportion with no trace,
+    # and this project's standing rule is that every proportion carries one.
+    # The failure is now NAMED and returned, so the caller can print it.
     a = b = None
+    _why = []
     try:
         from statsmodels.stats.proportion import proportion_confint
         a = tuple(float(x) for x in proportion_confint(k, n, 0.05, method="wilson"))
-    except Exception:
-        pass
+    except Exception as exc:
+        _why.append(f"statsmodels unavailable: {exc!r}")
     try:
         import mpmath as mp
         mp.mp.dps = 40
@@ -159,8 +165,11 @@ def wilson(k, n):
         d = z * mp.sqrt(p * (1 - p) / N + z ** 2 / (4 * N ** 2))
         den = 1 + z ** 2 / N
         b = (float((c - d) / den), float((c + d) / den))
-    except Exception:
-        pass
+    except Exception as exc:
+        _why.append(f"mpmath unavailable: {exc!r}")
+    if _why:
+        print("  ** INTERVAL TOOL MISSING, so a figure below carries no "
+              "interval: " + "; ".join(_why))
     return a, b
 
 
@@ -218,8 +227,13 @@ def main() -> int:
         byrun = defaultdict(int)
         for r in undated:
             byrun[r["run"]] += 1
-        for run, n in sorted(byrun.items(), key=lambda kv: -kv[1])[:12]:
+        _ranked = sorted(byrun.items(), key=lambda kv: -kv[1])
+        for run, n in _ranked[:12]:
             print(f"      {n:5d}  {run}")
+        # STATE THE REMAINDER.
+        if len(_ranked) > 12:
+            print(f"      ... and {len(_ranked) - 12} further undated run(s), "
+                  f"of {len(_ranked)} total, not shown")
 
     # ── THE TEST ──
     print(f"\n=== HIS HYPOTHESIS: IS THE FALSIFIER-LESS SHARE CONCENTRATED EARLY? ===")

@@ -4,6 +4,8 @@
 
 Every item here was classified by `scripts/blocker_triage.py` as NOT blocking. Nothing here is dropped; it is queued. Items that DO block are raised at once and never appear in this file.
 
+**THIS FILE GOES STALE AND ITS STALENESS IS MEASURED, NOT ASSUMED.** Nothing reconciles it against the master task list when an entry closes, so it re-presents settled business and buries the live items among it. Measured 2026-10-13 by `scripts/has_he_already_ruled_on_the_parked_2026-10-13.py`: **14 of 21 items were already settled — 66.6667%**, Wilson [45.3735%, 82.8052%] — 6 by their own heading, 6 naming task entries recorded DONE or WITHDRAWN, and 2 refuted by execution. The founder's ruling on reading that was *"Build it and implement it."* Run that producer before treating any item here as open; a figure about this file's staleness that is not re-derived is a claim about evidence rather than evidence.
+
 ---
 
 ## A17: the verdict-tuple guard matches function names across the repository

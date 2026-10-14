@@ -48,27 +48,23 @@ def _load(path: pathlib.Path, name: str):
 
 @pytest.fixture(scope="module")
 def panel():
-    """Import the dispatcher without LEAKING its import-time environment.
+    """Import the dispatcher. IT NEEDS NO MONEY-GUARD OVERRIDE.
 
-    The first version set `PANEL_BRIEF_UNCHECKED` with a bare `os.environ[...]`
-    at module scope and never restored it. pytest runs these files in one
-    process, so the variable survived into every later test -- and
-    `test_panel_brief_format_2026-09-09.py` spawns the dispatcher as a
-    SUBPROCESS, which inherited it, skipped the brief check it exists to verify
-    and returned a different exit code. A fixture that contaminates its
-    neighbours is worse than no fixture, because the neighbour's failure points
-    at the wrong file.
+    THE FIRST VERSION SET `PANEL_BRIEF_UNCHECKED` AND THE SECOND SAVED AND
+    RESTORED IT. Both were wrong, and the second was wrong in the more
+    expensive way: it treated a leak as the defect when the defect was setting
+    the variable at all. `bench/tests/test_no_test_leaks_a_money_guard_override_2026-10-08.py`
+    says so in its own failure text -- "the dispatcher imports fine without
+    PANEL_BRIEF_UNCHECKED since A22" -- and that is verified here by execution
+    rather than taken from the message: with the variable unset, the module
+    imports and exposes `_rounds_owing_a_joint_round` and
+    `_refuse_if_a_joint_round_is_owed`.
+
+    THAT VARIABLE DISABLES THE GUARD THAT STOPS MONEY BEING SPENT ON A DEFECTIVE
+    BRIEF. A test process that leaks it silently disarms that guard for every
+    later test, which is why the check exists and why it is not a style point.
     """
-    prior = os.environ.get("PANEL_BRIEF_UNCHECKED")
-    os.environ["PANEL_BRIEF_UNCHECKED"] = "1"
-    try:
-        yield _load(REPO / "bench" / "confer_maths_panel_2026-09-05.py",
-                    "_panel_dbt")
-    finally:
-        if prior is None:
-            os.environ.pop("PANEL_BRIEF_UNCHECKED", None)
-        else:
-            os.environ["PANEL_BRIEF_UNCHECKED"] = prior
+    return _load(REPO / "bench" / "confer_maths_panel_2026-09-05.py", "_panel_dbt")
 
 
 @pytest.fixture(scope="module")
