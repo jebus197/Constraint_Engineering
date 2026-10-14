@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 14 October 2026 23:00 BST (2026-10-14T23:00:34+01:00)
+Generated: 14 October 2026 23:03 BST (2026-10-14T23:03:35+01:00)
 
 ---
 
@@ -18,8 +18,8 @@ Generated: 14 October 2026 23:00 BST (2026-10-14T23:00:34+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `797f3dab` board: 32 red to 6, and 3 of the 6 are not defects
-- **Committed:** 2026-10-14 22:56:49 +0100
+- **Last commit (the PARENT of the commit containing this file):** `c50abdb6` sv: the run is launch-ready, the board went 32 red to 6, and 4 items need his ruling
+- **Committed:** 2026-10-14 23:00:35 +0100
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
@@ -30,7 +30,7 @@ Uncommitted files at snapshot time — the working tree as it stood before the s
 
 ## Tests
 
-**11217 tests collected** at 14 October 2026 23:00 BST, HEAD `797f3dab` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**11217 tests collected** at 14 October 2026 23:03 BST, HEAD `c50abdb6` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -60,6 +60,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `c50abdb6 sv: the run is launch-ready, the board went 32 red to 6, and 4 items need his ruling`
 - `797f3dab board: 32 red to 6, and 3 of the 6 are not defects`
 - `f0405a6e fix: the script documenting POST had never run its own part 1, and its verdict label lied`
 - `d13c28e2 docs: tracker un-stalled and the programme of study revised for the hotel window`
@@ -69,4 +70,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `5fb360b5 panel: the directive set and measured capability, 6 items, both seats landed`
 - `c6115986 fix: a joint round must ANSWER to discharge a debt; and the joint half lands`
 - `8590f6cf t: the directive-set analysis, with the 4 decisions it leaves him`
-- `d189488a sv: 0 of 15 core directive sections reach any model, and the caps forcing it are unjustified`
