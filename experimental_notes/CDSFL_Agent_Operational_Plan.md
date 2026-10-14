@@ -1,9 +1,62 @@
-## ★ RESUME POINTER — 2026-10-08T14:19:03+01:00. SUPERSEDES EVERY POINTER BELOW.
+## ★ RESUME POINTER — 2026-10-14T21:48:28+01:00. SUPERSEDES EVERY POINTER BELOW.
 
-**WHERE TO RESUME: cc2's blind reply is in flight. When it lands, build BOTH FULL RECORDs,
-mirror, commit, then run the JOINT round, then synthesise.** Branch `sim/shakedown-2026-09-29`,
-HEAD `b4c897fb`. The working tree is DIRTY and the commit is correctly REFUSED until the
-round's artefacts are mirrored, which must NOT be done mid-run.
+**WHERE TO RESUME: the next SIMULATED RUN and the revised programme of study.** Branch
+`sim/shakedown-2026-09-29`, HEAD `da23d286`. Working tree clean. `rs` was run on his
+instruction, **exit code 0** on both `--full` and `--full --record-restore`.
+
+**NOTE STANDARD.** This resume pointer and every section added from 2026-10-14 onward are written under **CDSFL note standard v1.7 (26 August 2026)**. The historical sections below retain the foot-lines of the standard in force when they were written (v1 and v1.2), deliberately and not by omission: this is a long-lived tracker, its older entries are a record of what was true then, and restamping them would assert they were written to a standard that did not yet exist. The lint reports the file-level stamp as older than current, and that report is correct; this paragraph is the explicit reason it asks for.
+
+### WHAT IS DONE AND NEEDS NO FURTHER WORK
+
+- **Both panel rounds of 2026-10-14 are complete**, free seats only, `paid_seats: []` on
+  both, each with a FULL RECORD note carrying the replies unedited. The JOINT round for
+  `his_rulings_2026-10-13` is run and its debt legitimately discharged.
+- **The joint-round debt machinery is repaired.** It was dischargeable by a DIRECTORY: a
+  marker-named sibling with 0 replies, or a `topology.json` written at dispatch. Both now
+  require 2 or more landed replies, and the gate refuses a declared joint round whose brief
+  does not QUOTE its parent.
+- **The length cap now records what it cut.** `manifest["length_cap"]` carries
+  fired/cap/chars_cut/packets_cut. deepseek_v3 at cap 4000 was receiving 1 of 196 chars of
+  its situation packet while the manifest claimed full delivery.
+- **`missing_falsifiers_2026-09-10.py` now sees every run**, not only `exp*`. Honest
+  population 44 over 13 runs, 28 covered = 63.6364%, Wilson [48.8664%, 76.2165%]; the 16
+  uncovered are NAMED as a shrink-only ratchet.
+- **Arm 4's prose target is NOT blocked** — `bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md` works
+  and is retained. `PAPER.md` is REFUTED (0 of 11 fenced blocks contain Python).
+  `targets/prose_with_computable_listings.md` is added and WIRED for the simulated run, with
+  2 defects verified by 2 tools each before planting.
+
+### WHAT STANDS BETWEEN US AND THE NEXT SIMULATED RUN
+
+1. **The full board.** Running at the time of writing. When it lands, the number of failures and
+   the attribution of each one go here. His instruction is a FULLY GREEN board.
+2. **The programme of study needs revising** to cover the 15 days since 2026-09-29. Its
+   window boundary is already settled and measured (`a2a0197`, 2026-09-06, indistinguishable
+   from his 2026-09-07 hotel marker across 3 overlapping Wilson intervals).
+3. **4 ITEMS NEED HIS RULING** and no work can substitute for them:
+   - **The caps.** Both seats refused OUTRIGHT removal on the additive standard: no
+     committed measurement shows removal dominates in either direction, so the caps are
+     unjustified AND so is deleting them. Their recommendation is to measure it in the
+     simulated run. CC1 accepts this; it supersedes CC1's own proposal to remove them.
+   - **The prose target** for the simulated run: his PAPER.md suggestion is refuted, and the
+     purpose-built target is wired but he has not chosen it.
+   - **fable's proposed section 11 Worked Proofs** in the core formal directive, which fable
+     marked as awaiting his ratification. "worked proof" occurs 0 times in either directive
+     file while the requirement IS enforced at `bench/dm/_rk_proof.py` and
+     `reference_runner_v3.py:9499-9511`, so models were gated on an unstated requirement.
+   - **cc2's single irreducible exception**, `sim45_memory_20260908T033012Z` C0050: cc2
+     records 1 genuinely irreducible finding in 41 and argues for keeping it; fable records 0
+     and calls it equipment. Preserved as disagreement, not resolved by vote.
+4. **`bench/capability_identity.py` is DELIVERED BY BOTH SEATS AND NOT ADOPTED**, because
+   cc2 flagged its own as not wired into the runner's dispatch and wiring measured capability
+   into seat selection is a design change on the model-names question, not a repair.
+
+### STANDING CONSTRAINTS THAT DID NOT CHANGE
+
+- **No paid dispatch without his express authorisation.** Always `PANEL_ONLY=cc2,fable`.
+- Nothing committed from simulated runs except to `sim/shakedown-2026-09-29`.
+- Fixes are SUGGESTED to HIL, never auto-applied; findings confirmed programmatically or by
+  HIL, never by model vote.
 
 ### THE ROUND IN FLIGHT
 

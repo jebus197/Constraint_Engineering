@@ -114,3 +114,39 @@ The base programme's list stands, with 2 additions. The bundle comparison shows 
 Unchanged, and it is the project's rule from the outset: **convergence, the irreducible-queue alarm, or the round limit.** The study stops when every measurement has a value or a named reason it could not be taken. A measurement that could not be taken is reported as such and never as a pass.
 
 Written under CDSFL note standard v1.7 (26 August 2026).
+
+## REVISION, 2026-10-14T21:50:11+01:00: the window re-measured and 10 mechanisms added
+
+Added on his instruction: *"the next simulated run and (revised) program of study, that should include all fixes since I first told you I was staying in a hotel. (I think that was about 4 or 5 weeks ago?)"*
+
+**His recollection is accurate and the boundary does not move.** The record places him at a hotel on 2026-09-07, driving home at 22:03 that evening to seal the answer-key archive; the earliest committed mention is 2026-09-09. From 2026-10-14 that is 37 days, so "4 or 5 weeks" is right. The window boundary measured on 2026-09-29 stands: `a2a0197`, 2026-09-06 17:06, whose 3 candidate openings gave intervals overlapping across almost their whole range. Nothing in the intervening 15 days bears on that choice, and arm 5 still depends on that commit being runnable.
+
+**The window has grown by 176 commits and its composition has not moved at all.** Measured now: **597 commits since `a2a0197`, 339 of them touching runtime code, 56.7839%**, Wilson [52.7793%, 60.7018%]. Against the 2026-09-29 figure of 239 of 421 (56.7696%, Wilson [51.9973%, 61.4195%]) a two-proportion test finds **z = -0.004543, p = 0.996375**, with Fisher exact at p = 1.000000 and a Yates-corrected chi-square agreeing; a hand computation in NumPy and mpmath reproduces the z to 4.0e-16. The share across the 3 measurements reads 56.2319%, 56.7696%, 56.7839%.
+
+**So the argument that bounds this study is unchanged and now rests on a larger sample.** Per-fix attribution would need 339 ablation arms, and the family-wise error rate argument already recorded applies with greater force. **The study attributes the BUNDLE.** What the revision adds is not a new method but 10 mechanisms whose first data point is the next run, each of which was built inside the window and has never been exercised by a live run.
+
+### The 10 mechanisms the next run measures for the first time
+
+1. **The directive length cap's own record.** `manifest["length_cap"]` carries fired, cap, chars_cut and packets_cut as of 2026-10-14. Before it, deepseek_v3 at cap 4000 received **1 of 196 characters** of its situation packet while the manifest claimed full delivery. **MEASURE: whether the cap fires in the run at all, and for which seats, against what the manifest records.**
+2. **The retired mechanical pruner.** Retired on his ruling of 2026-10-13, reachable only behind a flag. Verified on the real compose path: 0 of 50 compositions lose a domain directive with the retirement in force, against 10 of 50 with the flag on. **MEASURE: that 0 holds in a live run, and the lean-versus-full comparison if he wants it run.**
+3. **Directive delivery, now known to be uniform.** Every one of 8 seat labels receives the same 2,503 characters, 9.0026% of the core formal directive, with 0 of its 16 headings surviving. The per-model caps therefore differentiate nothing. **MEASURE: what each seat actually receives in the run, recorded per seat rather than derived.**
+4. **The worked-proof gate, which no directive states.** "worked proof" occurs 0 times in either directive file while the requirement is enforced at `bench/dm/_rk_proof.py` and `bench/reference_runner_v3.py:9499-9511`. **MEASURE: how many findings are refused by a gate the seats were never told about. This is the sharpest open confound in the study.**
+5. **The severity specification shadow.** Appendix section 7.7 computed as a shadow, gating nothing, since 2026-10-12. **It has never recorded**: 0 archived reports carry the field. **MEASURE: its first live values, and whether promoting it would distort.**
+6. **The evidence deny tier.** A falsifier can no longer read the project's own evidence; 0 of 1,360 archived falsifier sources ever did. Not yet exercised by a live verification, which is his own stated instruction. **MEASURE: that the tier fires and refuses nothing honest.**
+7. **The routing ladder's EXHAUST default.** His ruling of 2026-10-06 made `max_rungs=0` mean "use every rung". **0 of 39 archived UNTOOLABLE rows postdate that ruling**, Wilson [0.0000%, 8.9667%], so cc2's finding that 11 of 11 attempted-and-failed cases stopped with rungs in hand is entirely pre-ruling. **MEASURE: whether any finding still stops with rungs untried. This is the test of whether the never-attempted class is already closed.**
+8. **The never-attempted class itself.** 1,938 of 3,298 archived findings carry no falsifier, of which 1,639 of 1,938 were never attempted. **But 1,568 of 1,886 deduplicated, 83.1389%, Wilson [81.3822%, 84.7609%], predate the falsifier machinery entirely** — April and May 2026 are 100% falsifier-less because nothing existed to carry one. **MEASURE: the rate within this run alone, where no pre-machinery era can inflate it.**
+9. **A19 on a prose target with verified defects.** `sk_score_prose_listings` has been set and inert because the launcher's target defaults to a Python file. `targets/prose_with_computable_listings.md` is now named as `PROSE_TARGET` and carries 2 defects verified by 2 independent tools each, plus one claim carrying no listing at all. **MEASURE: that the reducible hunks are scored and the unscoreable claim returns NO_SCORE rather than a fabricated grade.**
+10. **The pre-verdict sweep shadow**, added 2026-10-06, which 0 archived reports carry because the newest report predates it. **MEASURE: its first data point.**
+
+### What the revision does NOT change
+
+The 5 arms stand. The 8 flags stand, 5 on and 3 studied. Measurements 1 to 11 stand. Arm 5 remains the only arm that can answer whether the bundle helped, and it still runs `a2a0197` against current HEAD on the same target with the same seed.
+
+### 4 items still need his ruling and no measurement substitutes for them
+
+1. **The caps.** Both panel seats of 2026-10-14 refused outright removal on the additive standard, since no committed measurement shows removal dominates in either direction. Their recommendation, which supersedes CC1's own proposal, is to measure it in this run.
+2. **The prose target.** His own suggestion of PAPER.md is refuted: its 11 fenced blocks contain 0 Python.
+3. **fable's proposed section 11 Worked Proofs** in the core formal directive, marked by fable as awaiting his ratification.
+4. **cc2's single irreducible exception**, `sim45_memory_20260908T033012Z` C0050, where cc2 records 1 genuinely irreducible finding in 41 and fable records 0.
+
+Producers: `scripts/were_the_missing_falsifiers_pre_machinery_2026-10-14.py`, `scripts/directive_chatter_predicate_2026-10-14.py`, `scripts/never_attempted_findings_2026-10-14.py`, `scripts/what_the_full_directive_set_costs_2026-10-14.py`. Repository state at the time of writing: branch `sim/shakedown-2026-09-29`, HEAD `da23d286`.
