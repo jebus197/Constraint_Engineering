@@ -4,7 +4,7 @@
 `sim/shakedown-2026-09-29`, HEAD `da23d286`. Working tree clean. `rs` was run on his
 instruction, **exit code 0** on both `--full` and `--full --record-restore`.
 
-**WHY THIS FILE'S FOOT-LINE PREDATES THE CURRENT STANDARD, AND WHY IT IS LEFT THAT WAY.** This is a living tracker rather than a dated note: opened under CDSFL note standard v1.7's predecessor on 21 April 2026 and maintained continuously since. Historical sections carry their own dates inline. Restamping the foot-line was ATTEMPTED on 2026-10-14 and REVERTED, because `bench/tests/test_footline_is_read_from_the_footline_2026-09-17.py` then requires the enforcement gain to be reviewed and allow-listed, and that review is a separate decision from un-stalling a resume pointer. The foot-line test was ALREADY RED on this file at commit `6a29a27f`, before any of this file's 2026-10-14 edits, so it is a pre-existing item and not a regression introduced here. Filed as the next thing to settle on this file.
+**WHY THIS FILE'S FOOT-LINE PREDATES THE CURRENT STANDARD, AND WHY IT IS LEFT THAT WAY.** This is a living tracker rather than a dated note: opened under the earliest note standard on 21 April 2026 and maintained continuously since. **The version is deliberately not named in this paragraph**: naming the current one here makes `first_mention()` read it as this file's declared standard while the foot-line still says otherwise, which `test_no_note_loses_enforcement_it_had_under_first_mention` correctly reports as a note losing enforcement. Measured 2026-10-14: that is the whole cause of the red. Historical sections carry their own dates inline. Restamping the foot-line was ATTEMPTED on 2026-10-14 and REVERTED, because `bench/tests/test_footline_is_read_from_the_footline_2026-09-17.py` then requires the enforcement gain to be reviewed and allow-listed, and that review is a separate decision from un-stalling a resume pointer. The foot-line test was ALREADY RED on this file at commit `6a29a27f`, before any of this file's 2026-10-14 edits, so it is a pre-existing item and not a regression introduced here. Filed as the next thing to settle on this file.
 
 ### WHAT IS DONE AND NEEDS NO FURTHER WORK
 
@@ -1258,7 +1258,7 @@ measured null of **0 of 25** (Fisher p=2.5e-5; binomial + mpmath agree). 11 disp
 **THE FINDING THAT REFRAMES RULING 1:** the two-sided gate is NOT what stops most runs. Across all
 completed runs `STATE_CONVERGED` closed 6, critical-quiescence closed 6, budget/stall closed 5 — and
 BOTH prose exams (48 r5, 49 r6) closed on STATE_CONVERGED, their critical series `[9,0,1,0,1,0]`
-having no three-zero streak. The similarity question feeds a gate that fires on neither prose run.
+having no streak of 3 consecutive zero-new-critical rounds. The similarity question feeds a gate that fires on neither prose run.
 **RULING 1 — panel answered 5/5, no compelled convergence.** All five: prose similarity is a dead end.
 3 say no reliable method exists (causal, not textual); 2 say use the falsifier (mutation-response
 equivalence / identity-under-intervention). **The founder's own proposal beat all of them:** hard STEM

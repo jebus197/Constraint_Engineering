@@ -116,10 +116,39 @@ class TestTheCorrectedCommentIsInPlace:
     """The wrong figure must not come back."""
 
     def test_the_runner_no_longer_claims_the_queue_is_two(self):
-        src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
-        assert "survivors put the queue at exactly" not in src or (
-            "the queue\n            # is ZERO, not 2" in src), (
-            "the uncorrected study_run1b figure has returned to "
-            "bench/reference_runner_v3.py; it was measured wrong on 2026-10-13")
-        assert "scripts/the_queue_is_zero_not_two_2026-10-13.py" in src, (
-            "the corrected comment must cite its producer")
+        """The queue IS zero, established by CALLING the predicate.
+
+        ★ CONVERTED FROM A SOURCE-TEXT ASSERTION, 2026-10-14. It read
+        `bench/reference_runner_v3.py` and asserted on the wording of a COMMENT:
+        that a wrong figure's phrase was absent, or a correction phrase present,
+        and that the comment cited its producer. That verified the runner
+        describes itself consistently and nothing about the queue.
+
+        `execute-do-not-grep`: "Where both forms exist as live code, the test
+        must CALL them and compare outputs." The underlying claim is executable,
+        because the figure has a committed producer, so the fact is checked here
+        instead of the sentence recording it. It also removes this test from
+        `scripts/source_text_assertions_2026-09-11.py`'s census, which the
+        guard's own message asks for in preference to raising its ceiling: 4
+        guards of this class broke on CORRECT changes in a single day.
+        """
+        state = (REPO / "bench" / "logs"
+                 / "study_run1b_2026-10-03_20261003T100439Z" / "runner_state.json")
+        if not state.is_file():
+            pytest.skip("study_run1b is not archived in this clone")
+        entries = json.loads(state.read_text(encoding="utf-8"))["registry"]["entries"]
+        locked, deferred = rr._irreducible_queue_split(entries)
+        reg = rr.FindingRegistry()
+        reg.entries = entries
+        # BOTH live forms, compared against each other and against the figure.
+        assert locked + deferred == 0, (
+            f"_irreducible_queue_split put study_run1b's queue at "
+            f"(locked={locked}, deferred={deferred}); the brief's figure of 2 was "
+            f"measured wrong on 2026-10-13 and the producer is "
+            f"scripts/the_queue_is_zero_not_two_2026-10-13.py")
+        assert reg.irreducible_queue_count() == 0, (
+            f"irreducible_queue_count() returned "
+            f"{reg.irreducible_queue_count()}, disagreeing with the split")
+        assert (REPO / "scripts" / "the_queue_is_zero_not_two_2026-10-13.py").is_file(), (
+            "the producer for this figure must stay committed; a measured rate "
+            "travels with the script that produced it")

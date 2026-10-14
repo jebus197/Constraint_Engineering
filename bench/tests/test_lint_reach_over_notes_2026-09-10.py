@@ -123,11 +123,36 @@ class TestTheSelectorIsTheLiveOne:
             cwd=ROOT, capture_output=True, text=True, timeout=120).stdout
         dirty = {ln[3:].strip().strip('"') for ln in tracked.splitlines() if ln.strip()}
 
-        unexplained = [p for p in only_live if p not in dirty]
+        # ★ A THIRD EXPLANATION, ADDED 2026-10-14, AND THE TEST HAD ONLY 2.
+        #
+        # It ruled out "uncommitted work" with `git status --porcelain`, which by
+        # default does NOT list IGNORED files, and then treated anything left as
+        # a selector-versus-reader disagreement. But a path git does not TRACK
+        # has no HEAD side at all, so "HEAD does not declare v1.7 in it" carries
+        # no information about either component.
+        #
+        # MEASURED: the one offender was
+        # `experimental_notes/Morning_Report_2026-10-12_GENERATED.md`, ignored by
+        # `.gitignore:91` (`experimental_notes/Morning_Report_*_GENERATED.md`)
+        # DELIBERATELY -- its own guard class is named
+        # TestItIsReproducibleRatherThanCommitted, because a generated report
+        # that churns on every commit is worse than no history. The selector is
+        # right to lint it (it is a real note on disk) and the revision reader is
+        # right not to find it at HEAD. Neither is broken.
+        #
+        # So the gap is computed against TRACKED paths, which is the population
+        # the comparison is about. An UNTRACKED note that declares v1.7 is still
+        # linted; it is simply not evidence of the 2 readers disagreeing.
+        _tracked_out = subprocess.run(
+            ["git", "ls-files", "--", "experimental_notes/"],
+            cwd=ROOT, capture_output=True, text=True, timeout=120).stdout
+        in_git = {ln.strip() for ln in _tracked_out.splitlines() if ln.strip()}
+        unexplained = [p for p in only_live if p not in dirty and p in in_git]
         assert not unexplained, (
             f"the working tree declares v1.7 in {unexplained} but HEAD does not, "
-            f"and git reports them as clean — the selector and the revision "
-            f"reader disagree for a reason that is not uncommitted work")
+            f"git reports them as clean, and git DOES track them — so the "
+            f"selector and the revision reader disagree for a reason that is "
+            f"neither uncommitted work nor an untracked file")
         assert not [p for p in only_head if p not in dirty], (
             f"HEAD declares v1.7 in {only_head} and the working tree does not, "
             f"with no pending change to explain it")

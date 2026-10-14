@@ -141,7 +141,45 @@ def test_no_annotation_anywhere_absorbs_a_generated_REPORT_LINE(R):
 
 
 def test_the_corpus_count_is_unchanged_by_the_fix(R):
-    """A reader fix must change what is READ, never how much there is."""
-    assert len(R.annotations()) == 522, (
-        "the annotation COUNT moved; joining or splitting his annotations "
-        "changes the record rather than reading it")
+    """A reader fix must change what is READ, never how much there is.
+
+    ★ THE WINDOW IS BOUNDED, 2026-10-14, AND THE PIN ITSELF IS UNCHANGED AT 522.
+    This asserted `len(R.annotations()) == 522` over the LIVE corpus, which grows
+    every time the founder writes. It went red at 533 on 2026-10-14 for the one
+    reason that is not a defect: he had written 11 more annotations that day.
+
+    A TOTAL OVER A GROWING DIRECTORY CANNOT TELL THE 2 CAUSES APART -- "he wrote
+    more" and "the reader split one annotation into two" move it identically, and
+    the second is the only one this test exists to catch. Bounding the window to
+    the date the pin was taken removes the first cause entirely: `until` filters
+    on the date in each response file's name, so the set of annotations dated on
+    or before 2026-10-13 is CLOSED and the figure is stable. Measured the same
+    day: 511 until 2026-10-12, **522 until 2026-10-13**, 533 unbounded.
+
+    The pin is therefore neither raised nor relaxed. It is measured over the
+    population it was always meant to describe.
+    """
+    import datetime as _dt
+    bounded = R.annotations(until=_dt.date(2026, 10, 13))
+    assert len(bounded) == 522, (
+        f"the annotation count moved to {len(bounded)} over a CLOSED window "
+        f"ending 2026-10-13; joining or splitting his annotations changes the "
+        f"record rather than reading it, and new writing cannot move this figure")
+
+
+def test_the_reader_never_loses_ground_on_the_live_corpus(R):
+    """A RATCHET on the whole corpus: it may grow, it must never shrink.
+
+    The bounded assertion above cannot see a regression that loses annotations
+    the founder wrote AFTER the pin date. This one can, and it is the half that
+    protects his newest writing -- which is the writing most likely to be acted
+    on. 533 measured 2026-10-14; a fall means the reader dropped some of his
+    words, which is the failure the whole reader repair of 2026-10-11 exists to
+    prevent (256 characters of his writing had been silently lost).
+    """
+    assert len(R.annotations()) >= 533, (
+        f"the live corpus returned {len(R.annotations())} annotations, below the "
+        f"533 measured on 2026-10-14. His corpus only grows, so a FALL is the "
+        f"reader losing his words. Re-measure with "
+        f"`python3 scripts/read_founder_responses_2026-10-11.py` before raising "
+        f"this floor, and raise it only to a figure you have just measured.")
