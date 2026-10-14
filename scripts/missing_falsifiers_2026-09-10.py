@@ -53,9 +53,38 @@ def entries(state: dict) -> list[dict]:
     return [v for v in vals if isinstance(v, dict)]
 
 
+#: ★ THE POPULATION IS EVERY RUN, NOT EVERY `exp*` RUN. WIDENED 2026-10-14.
+#:
+#: THE DEFECT, measured. Both glob sites read `exp*/runner_state.json`, so 5 run
+#: directories were invisible to this script and to the test that consumes it:
+#: `commissioning_arm1_panel_20260929T214647Z`,
+#: `commissioning_arm4_prose_20260922T053349Z`, `sim45_memory_20260830T161215Z`,
+#: `sim45_memory_20260908T033012Z` and `study_run1_2026-10-03_20261003T083519Z`.
+#: That hid **11 of 39 UNTOOLABLE rows, 28.2051%, Wilson [16.5435%, 43.7753%]**,
+#: and the hidden set includes a programme-of-study run and the A19 prose
+#: commissioning arm -- the 2 families the next simulated run depends on most.
+#:
+#: SO `test_missing_falsifiers_all_covered_2026-09-17.py`'s "28 of 28,
+#: REMAINING: 0" was a CONFIDENT ZERO PRODUCED BY A NARROW GLOB, the same shape
+#: as the Exp 48 forensic scan that globbed `r*_*.json` and reported CLEAN.
+#: Found by cc2 in the panel of 2026-10-14 and reproduced independently here.
+#:
+#: HARVEST COPIES ARE EXCLUDED, because `sandbox_harvest` and `seat_evidence`
+#: hold frozen copies of OTHER runs' registries; counting them would inflate the
+#: population with duplicates rather than widen it.
+def _run_states():
+    """Every live runner_state.json under bench/logs, harvest copies excluded."""
+    root = REPO / "bench" / "logs"
+    for r in sorted(root.glob("**/runner_state.json")):
+        parts = r.relative_to(root).parts
+        if "sandbox_harvest" in parts or "seat_evidence" in parts:
+            continue
+        yield r
+
+
 def survey() -> dict:
     pre, post = [], []
-    for r in sorted((REPO / "bench" / "logs").glob("exp*/runner_state.json")):
+    for r in _run_states():
         name = r.parent.name
         try:
             rows = entries(json.loads(r.read_text()))
@@ -168,7 +197,7 @@ def main() -> int:
 
     from statsmodels.stats.proportion import proportion_confint
     tot_post_crit = 0
-    for r in sorted((REPO / "bench" / "logs").glob("exp*/runner_state.json")):
+    for r in _run_states():
         if _stamp(r.parent.name) < MECHANISM_BUILT:
             continue
         try:

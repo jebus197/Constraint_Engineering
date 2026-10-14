@@ -191,7 +191,20 @@ def main() -> int:
     d_route = inspect.signature(route).parameters["max_rungs"].default
     print(f"  resolve_via_routing max_rungs default = {d_rvr}")
     print(f"  route               max_rungs default = {d_route}")
-    assert d_rvr == 2 and d_route == 2
+    # ★ PIN CORRECTED 2026-10-14. It read `== 2` and CRASHED the script, because
+    # the founder RULED on 2026-10-06 that the ladder EXHAUSTS rather than
+    # stopping at a fixed rung, and `DEFAULT_MAX_RUNGS` became 0 to express it:
+    # `bench/routing.py:221` reads `len(list(rungs)) if not max_rungs else
+    # max_rungs`, so 0 means "use every rung", not "use none". The pin asserted
+    # the pre-ruling constant and so refused the ruling it was supposed to
+    # observe. A stale pin, not a defect in the code it guards.
+    assert d_rvr == d_route, (
+        f"the 2 entry points disagree on the rung budget: "
+        f"resolve_via_routing={d_rvr} route={d_route}")
+    assert d_rvr == 0, (
+        f"max_rungs default is {d_rvr}, expected 0 = EXHAUST "
+        f"(founder's ruling 2026-10-06). A positive default silently caps the "
+        f"ladder; if that is intended it is a design change, not a constant.")
 
     src = (REPO / "bench" / "reference_runner_v3.py").read_text()
     i = src.find("result = route(")

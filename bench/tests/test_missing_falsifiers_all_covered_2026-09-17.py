@@ -39,6 +39,59 @@ def _load(path: pathlib.Path, name: str):
     return m
 
 
+#: ★ THESE FIGURES WERE REPLACED, NOT RELAXED, 2026-10-14.
+#:
+#: They used to read `len(population) == 28`, `7` runs and `REMAINING: 0`. All 3
+#: were TRUE of the population the script surveyed and FALSE of the project,
+#: because both of `scripts/missing_falsifiers_2026-09-10.py`'s glob sites read
+#: `exp*/runner_state.json`. 5 run directories were therefore invisible:
+#: `commissioning_arm1_panel_*`, `commissioning_arm4_prose_*` (2 runs),
+#: `sim45_memory_*` (2 runs) and `study_run1_2026-10-03_*` -- hiding **11 of 39
+#: UNTOOLABLE rows, 28.2051%, Wilson [16.5435%, 43.7753%]**, among them a
+#: programme-of-study run and the A19 prose commissioning arm.
+#:
+#: So "REMAINING: 0" was a CONFIDENT ZERO PRODUCED BY A NARROW GLOB -- the same
+#: shape as the Exp 48 forensic scan that globbed `r*_*.json` and reported CLEAN.
+#: Found by cc2 in the panel of 2026-10-14, reproduced independently, and the
+#: glob widened to `**` with harvest copies excluded.
+#:
+#: WHAT THE HONEST POPULATION IS: **44 findings across 13 runs, 28 covered =
+#: 63.6364%, Wilson [48.8664%, 76.2165%]** (statsmodels and mpmath agreeing
+#: exactly), **0 stale declarations** -- every COVERS entry is real, so the gap
+#: is uncovered findings and not mis-declaration.
+#:
+#: AND IT IS A RATCHET, NOT AN EQUALITY. The 16 uncovered are named below and the
+#: set MAY SHRINK but MUST NOT GROW. An equality assertion on 16 would make
+#: writing the 17th falsifier fail the suite; an inequality alone would let the
+#: backlog grow unnoticed. Naming them is what stops either.
+#:
+#: 6 of the 16 are the SAME findings
+#: `scripts/falsifier_untoolable_is_stale_error_2026-09-22.py` already documents
+#: as carrying stale UNTOOLABLE labels: arm4_prose C0002, C0005, C0006, C0011,
+#: C0012, C0015. The 2 findings converge on one run.
+EXPECTED_REMAINING = frozenset({
+    ("commissioning_arm1_panel_20260929T214647Z", "C0053"),
+    ("commissioning_arm4_prose_20260922T053349Z", "C0002"),
+    ("commissioning_arm4_prose_20260922T053349Z", "C0005"),
+    ("commissioning_arm4_prose_20260922T053349Z", "C0006"),
+    ("commissioning_arm4_prose_20260922T053349Z", "C0011"),
+    ("commissioning_arm4_prose_20260922T053349Z", "C0012"),
+    ("commissioning_arm4_prose_20260922T053349Z", "C0015"),
+    ("commissioning_arm4_prose_20260930T064044Z", "C0004"),
+    ("commissioning_arm4_prose_20260930T064044Z", "C0005"),
+    ("commissioning_arm4_prose_20260930T064044Z", "C0013"),
+    ("commissioning_arm4_prose_20260930T064044Z", "C0014"),
+    ("sim45_memory_20260830T161215Z", "C0004"),
+    ("sim45_memory_20260830T161215Z", "C0006"),
+    ("sim45_memory_20260908T033012Z", "C0050"),
+    ("study_run1_2026-10-03_20261003T083519Z", "C0002"),
+    ("study_run1_2026-10-03_20261003T083519Z", "C0009"),
+})
+
+POPULATION_SIZE = 44
+POPULATION_RUNS = 13
+COVERED = 28
+
 @pytest.fixture(scope="module")
 def mf():
     return _load(SCRIPT, "missing_falsifiers_2026_09_17")
@@ -54,26 +107,33 @@ def population(mf):
 
 class TestTheCountIsDerivedFromTheTests:
     def test_the_population_is_the_one_the_entry_names(self, population):
-        """28 findings in 7 runs: the population the entry's count is over."""
-        assert len(population) == 28, len(population)
-        assert len({r["run"] for r in population}) == 7
+        """44 findings in 13 runs: EVERY run, not just the `exp*` ones."""
+        assert len(population) == POPULATION_SIZE, len(population)
+        assert len({r["run"] for r in population}) == POPULATION_RUNS, \
+            sorted({r["run"] for r in population})
 
     def test_every_finding_is_declared_and_every_declaration_is_a_finding(
             self, mf, population):
         covers = mf.declared_covers()
         written, remaining, stale = mf.coverage(population, covers)
-        assert remaining == set(), f"no falsifier declares {sorted(remaining)}"
+        # RATCHET: the uncovered set may shrink, never grow.
+        grew = sorted(set(remaining) - EXPECTED_REMAINING)
+        assert not grew, (
+            f"{len(grew)} finding(s) became uncovered: {grew}. Either a "
+            f"falsifier's COVERS declaration was lost, or a new run archived "
+            f"findings nothing adjudicates.")
         assert stale == set(), f"declared but not in the population: {sorted(stale)}"
-        assert written == {(r["run"], r["id"]) for r in population}
+        assert len(written) == COVERED, len(written)
+        assert written | set(remaining) == {(r["run"], r["id"]) for r in population}
 
-    def test_the_script_prints_28_written_and_0_remaining(self, mf, population):
+    def test_the_script_prints_the_honest_written_and_remaining(self, mf, population):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             rc = mf.main()
         out = buf.getvalue()
         assert rc == 0
-        assert "ALREADY WRITTEN: 28 " in out, out[-800:]
-        assert "REMAINING       : 0\n" in out, out[-800:]
+        assert f"ALREADY WRITTEN: {COVERED} " in out, out[-800:]
+        assert f"REMAINING       : {len(EXPECTED_REMAINING)}\n" in out, out[-800:]
         assert "DECLARED BUT NOT IN THE POPULATION" not in out
 
     def test_each_declaring_file_holds_tests_and_imports_to_the_same_set(self, mf):
@@ -107,21 +167,33 @@ class TestTheCountIsDerivedFromTheTests:
 
 
 class TestTheCheckCanFail:
-    def test_removing_one_declaration_leaves_one_remaining(self, mf, population):
+    def test_removing_one_declaration_leaves_one_more_remaining(self, mf, population):
+        """RE-BASED 2026-10-14 on the honest population, not weakened.
+
+        It asserted `remaining == {dropped}` and `len(written) == 27`, both of
+        which held only while the narrow glob made the uncovered set empty. The
+        PROPERTY being checked is unchanged and is now stated as a DELTA, which
+        is what it always meant: dropping 1 declaration must move exactly that
+        finding from covered to uncovered.
+        """
         covers = dict(mf.declared_covers())
         dropped = sorted(covers)[0]
         del covers[dropped]
         written, remaining, stale = mf.coverage(population, covers)
-        assert remaining == {dropped}
-        assert len(written) == 27
+        assert dropped in remaining, dropped
+        assert set(remaining) == EXPECTED_REMAINING | {dropped}
+        assert len(written) == COVERED - 1, len(written)
         assert set(covers) != {(r["run"], r["id"]) for r in population}
 
     def test_a_mistyped_run_is_reported_stale(self, mf, population):
+        """Same re-basing: the typo's own pair becomes uncovered AND stale, on
+        top of the known backlog rather than against an empty one."""
         covers = dict(mf.declared_covers())
         run, fid = sorted(covers)[0]
         covers[(run + "_typo", fid)] = covers.pop((run, fid))
         _, remaining, stale = mf.coverage(population, covers)
-        assert remaining == {(run, fid)} and stale == {(run + "_typo", fid)}
+        assert set(remaining) == EXPECTED_REMAINING | {(run, fid)}
+        assert stale == {(run + "_typo", fid)}
 
     def test_the_reader_finds_a_declaration_and_refuses_a_non_literal(
             self, mf, tmp_path):

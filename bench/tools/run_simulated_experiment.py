@@ -118,6 +118,40 @@ def resolve_seats(seats_arg: str | None, models_count: int) -> list[str]:
     return chosen
 
 
+#: ★ THE PROSE TARGET THAT COMMISSIONS A19, NAMED HERE RATHER THAN REMEMBERED.
+#:
+#: `sk_score_prose_listings=True` is set below and is INERT on the default
+#: target, which is a Python file. The comment there has said so since
+#: 2026-09-21, and saying so is not the same as supplying the target: the
+#: operator still had to know which file to pass, and the programme of study
+#: records arm 4 as blocked on exactly that choice.
+#:
+#: 3 CANDIDATES WERE MEASURED ON 2026-10-14 AND 1 WAS REFUTED.
+#:   PAPER.md -- the founder's own suggestion. REFUTED: 11 fenced blocks, **0**
+#:     containing Python. They hold directive text, shorthand and mathematical
+#:     notation. `_gateable_source` returns None, "target carries no code", and
+#:     S_k reaches NO_SCORE. Tagging those fences `python` would be false.
+#:   bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md -- arm 4's EXISTING target, and it
+#:     WORKS: the live extractor sees 2 listings, both parse, and 2 archived
+#:     arm-4 runs produced findings against it. Retained as the commissioning
+#:     arm's target; nothing here changes it.
+#:   targets/prose_with_computable_listings.md -- purpose-built for the
+#:     SIMULATED run and used below. It carries 2 defective listings whose
+#:     defects were verified with 2 independent tools BEFORE being planted (a
+#:     variance dividing by n while claiming unbiasedness, SymPy bias
+#:     -sigma2/n cross-checked by a 200,000-draw NumPy simulation; and a Wilson
+#:     centre using z**2/n instead of z**2/(2n), statsmodels and mpmath agreeing
+#:     the upper bound is 0.31949990 against the listing's 0.36331070) PLUS one
+#:     claim carrying NO listing. That last part is the point: A19 is about the
+#:     DISCRIMINATION between a reducible hunk and an unscoreable one, so a
+#:     target with only reducible content cannot commission it.
+#:
+#: Guarded by `bench/tests/test_the_prose_target_is_fit_for_arm4_2026-10-14.py`,
+#: which asserts the defects are still real -- so a silent repair of the target
+#: turns the suite red rather than yielding a clean convergence that measured
+#: nothing.
+PROSE_TARGET = "bench/cdsfl_registry/targets/prose_with_computable_listings.md"
+
 def build_parser() -> argparse.ArgumentParser:
     """The argument surface, separated from main() so a test can EXECUTE it.
 
@@ -129,7 +163,10 @@ def build_parser() -> argparse.ArgumentParser:
     """
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--target", default="bench/dm/_memory.py")
+    ap.add_argument("--target", default="bench/dm/_memory.py",
+                    help="repo-relative file under review. A .py target leaves "
+                         "sk_score_prose_listings INERT; pass PROSE_TARGET "
+                         f"({PROSE_TARGET}) to commission A19.")
     # 7, NOT 4 (2026-08-30). `verification_min_round` is 6, so at 4 rounds the
     # verification stage returned {"skipped": True, "reason": "round N < 6"} in
     # EVERY round of the v3.1 run and `verified` was False on all 19 entries.

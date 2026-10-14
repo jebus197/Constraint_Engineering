@@ -1435,12 +1435,66 @@ def compose(
     # --- Render ---
     rendered = _render_directive_text(packets)
 
-    # Apply global phenotype length cap
+    # Apply global phenotype length cap.
+    #
+    # ★ RECORDED, NOT SILENT (2026-10-14, joint round J1, fable's finding,
+    # verified independently by CC1 before applying).
+    #
+    # THE DEFECT. This cap runs on the FINAL render, AFTER packet assembly, so a
+    # packet is listed in `manifest["packets"]` at its full length while the cap
+    # has removed most of its text from what was actually delivered. Measured on
+    # the real compose path with the pruner retired: deepseek_v3 (cap 4000)
+    # receives 49% of the domain directive and **1 character of the situation
+    # packet** -- the review target, the code extracts and the adversarial brief
+    # -- while the manifest claimed full delivery and `pruned_soft` was empty.
+    # 2 of 10 model x domain rows are cut, 20.0000%, Wilson [5.6682%, 50.9838%].
+    #
+    # WHY THE EXISTING GUARD CANNOT SEE IT.
+    # `test_falsifier_C0001_prune_inversion_2026-09-10.py` counts packet
+    # MEMBERSHIP (`"domain" not in {p.layer for p in c.packets}`), which is the
+    # layer ABOVE the cap, so its 0-of-50 with pruning off is consistent with
+    # total text loss underneath.
+    #
+    # WHAT THIS CHANGES AND WHAT IT DOES NOT. It makes the manifest TRUTHFUL. It
+    # changes NO delivered byte -- asserted by
+    # `test_the_manifest_records_the_length_cap_cut_2026-10-14.py`. It does NOT
+    # remove or raise the cap: both panel seats refused outright removal on the
+    # additive standard, since no committed measurement shows removal dominates,
+    # and that measurement belongs to the next simulated run.
+    #
+    # THE OFFSET ARITHMETIC IS EXACT, not approximate. `_render_directive_text`
+    # joins `packet.text.strip()` in packet order with "\n\n---\n\n" and skips
+    # empty packets, so cumulative offsets locate each packet precisely. Verified
+    # by execution against the live renderer at all 3 packet positions before
+    # this was applied.
+    #
+    # Producer: `scripts/the_cap_cuts_what_the_manifest_claims_2026-10-14.py`.
+    length_cap_record: dict[str, Any] = {
+        "fired": False,
+        "cap": transform.max_directive_chars,
+        "chars_cut": 0,
+        "packets_cut": [],
+    }
     if len(rendered) > transform.max_directive_chars:
-        rendered = (
-            rendered[: transform.max_directive_chars]
-            + "\n[... truncated for model capacity]"
-        )
+        kept = rendered[: transform.max_directive_chars]
+        length_cap_record["fired"] = True
+        length_cap_record["chars_cut"] = len(rendered) - len(kept)
+        offset = 0
+        sep = len("\n\n---\n\n")
+        for p in packets:
+            body = p.text.strip()
+            if not body:
+                continue
+            survived = min(max(len(kept) - offset, 0), len(body))
+            if survived < len(body):
+                length_cap_record["packets_cut"].append({
+                    "layer": p.layer,
+                    "name": p.name,
+                    "chars_delivered": survived,
+                    "chars_total": len(body),
+                })
+            offset += len(body) + sep
+        rendered = kept + "\n[... truncated for model capacity]"
 
     # --- Metrics ---
     token_estimate = max(len(rendered) // 4, 1)
@@ -1463,6 +1517,7 @@ def compose(
             for p in packets
         ],
         "pruned_soft": pruned_soft,
+        "length_cap": length_cap_record,
         "constraint_count": constraint_count,
         "token_estimate": token_estimate,
         "constraint_density": round(density, 6),
