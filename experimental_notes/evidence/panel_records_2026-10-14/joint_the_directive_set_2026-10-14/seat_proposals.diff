@@ -1,0 +1,1194 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-14 23:50:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gpd7wmgo/repo/.cdsfl_deny_canonical_writes.sb	2026-10-14 23:34:14
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/cdsfl_registry/targets/prose_with_computable_listings.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/targets/prose_with_computable_listings.md	2026-10-14 21:43:11
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gpd7wmgo/repo/bench/cdsfl_registry/targets/prose_with_computable_listings.md	2026-10-14 23:43:33
+@@ -42,15 +42,31 @@
+     return ((centre - half) / denominator, (centre + half) / denominator)
+ ```
+ 
+-**Claim PL-03.** Reporting dispersion alongside an interval is the right
++**Claim PL-03.** The corroboration helper below computes the Stage-1 cumulative
++detection probability `C(n) = 1 - (1 - p)**n`, which is zero at `n = 0`, strictly
++increasing in `n` for `0 < p < 1`, and concave in `n`, so each further pass
++contributes less than the one before it.
++
++```python
++def cumulative_detection(p, n):
++    """C(n) = 1 - (1 - p)**n, the Stage-1 corroboration model."""
++    if not 0.0 <= p <= 1.0:
++        raise ValueError("p must lie in [0, 1]")
++    if n < 0:
++        raise ValueError("n must be non-negative")
++    return 1.0 - (1.0 - p) ** n
++```
++
++**Claim PL-04.** Reporting dispersion alongside an interval is the right
+ presentation for this audience, because a reader who sees both is less likely to
+ over-read a single round's movement than one who sees only a central value.
+ 
+ ## 3. What a reviewer is asked to do
+ 
+ Each claim is either computationally reducible or it is not, and the two kinds
+-should not be answered the same way. PL-01 and PL-02 are statements about the
+-listings beneath them and can be settled by executing those listings against a
+-reference. PL-03 is a statement about presentation and a reader's likely
+-inference; it carries no listing and no reference implementation, so it is not
+-settled by execution.
++should not be answered the same way. PL-01, PL-02 and PL-03 are statements about
++the listings beneath them and can be settled by executing those listings against
++a reference. Being reducible is not the same as being wrong, and a reviewer who
++reports every listing has discriminated nothing. PL-04 is a statement about
++presentation and a reader's likely inference; it carries no listing and no
++reference implementation, so it is not settled by execution.
+
+### cc2:attempt-1:bench/tests/test_C0050_is_toolable_2026-10-14.py
+--- /dev/null	2026-10-14 23:50:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gpd7wmgo/repo/bench/tests/test_C0050_is_toolable_2026-10-14.py	2026-10-14 23:45:41
+@@ -0,0 +1,83 @@
++"""The 1 'genuinely irreducible' finding in the archive is not irreducible.
++
++JOINT ROUND J5, 2026-10-14. Seat cc2's blind reply records exactly 1 genuinely
++irreducible finding in 41 UNTOOLABLE rows -- `sim45_memory_20260908T033012Z`
++C0050 -- and argues the record should carry the exception rather than a sweep.
++Seat fable records 0 and treats it as equipment failure. Neither position was
++decided by a tool, so this file decides it.
++
++THE WIRING. `scripts/falsifier_C0050_is_not_irreducible_2026-10-14.py` is the
++producer. This test EXECUTES it in both directions as a subprocess, so the
++producer cannot drift from the assertion that cites it, and an unwired script is
++not left in the tree. A measured rate travels with its producing script; this is
++the caller that reaches it.
++
++WHAT IT DECIDES. C0050's dispositive sub-claim sets 20,563 against 20,605 and
++concludes the reviewed artefact "matches neither HEAD nor any observed
++working-tree state". Those are the CHARACTER count and the BYTE count of one
++unchanged file; the 42-char gap is UTF-8 multibyte. The artefact header matched
++HEAD exactly. And the only recorded falsifier attempt tests a different
++proposition (`ImmuneMemory.load` type-handling of ``experiment_ids``) and
++stopped at rung 2 of 6 with verdict ERROR, so no machine tried this claim.
++"""
++from __future__ import annotations
++
++import json
++import pathlib
++import subprocess
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++PRODUCER = REPO / "scripts" / "falsifier_C0050_is_not_irreducible_2026-10-14.py"
++RUN = REPO / "bench" / "logs" / "sim45_memory_20260908T033012Z" / "runner_state.json"
++TARGET = REPO / "bench" / "dm" / "_memory.py"
++
++
++def _run(*args: str) -> subprocess.CompletedProcess:
++    return subprocess.run([sys.executable, str(PRODUCER), *args],
++                          capture_output=True, text=True, timeout=120)
++
++
++def test_the_producer_exists_and_is_help_free():
++    assert PRODUCER.is_file(), PRODUCER
++    p = _run("--help")
++    assert p.returncode == 0, p.stderr
++
++
++def test_RED_cc2s_proposition_is_falsified():
++    """RED: asserting C0050 is genuinely irreducible must FAIL."""
++    p = _run("--claim", "cc2")
++    assert p.returncode == 1, (p.returncode, p.stdout, p.stderr)
++    assert "FALSIFIED" in p.stdout, p.stdout
++
++
++def test_GREEN_the_amended_proposition_holds():
++    """GREEN: asserting C0050 is toolable must exit cleanly."""
++    p = _run("--claim", "amended")
++    assert p.returncode == 0, (p.returncode, p.stdout, p.stderr)
++    assert "FALSIFIED" not in p.stdout, p.stdout
++    assert "AMENDED CLAIM HOLDS" in p.stdout, p.stdout
++
++
++def test_the_char_byte_arithmetic_directly():
++    """The two numbers, recomputed here independently of the producer."""
++    if not TARGET.is_file():
++        pytest.skip(f"target absent: {TARGET}")
++    raw = TARGET.read_bytes()
++    assert len(raw.decode("utf-8")) == 20563, len(raw.decode("utf-8"))
++    assert len(raw) == 20605, len(raw)
++    assert len(raw) - len(raw.decode("utf-8")) == 42
++
++
++def test_the_only_recorded_attempt_targets_a_different_claim():
++    if not RUN.is_file():
++        pytest.skip(f"run record absent: {RUN}")
++    e = json.loads(RUN.read_text(encoding="utf-8"))["registry"]["entries"]["C0050"]
++    rh = e["routing_history"][0]
++    code = rh["last_falsifier_code"]
++    assert "experiment_ids" in code                       # the attempt's subject
++    assert "oscillat" not in code and "artifact header" not in code  # not C0050's
++    assert rh["rungs_tried"] < rh["rungs_available"], rh  # ladder not exhausted
++    assert e["falsifier_verdict"] == "UNTOOLABLE", e["falsifier_verdict"]
+
+### cc2:attempt-1:bench/tests/test_the_prose_target_is_fit_for_arm4_2026-10-14.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_the_prose_target_is_fit_for_arm4_2026-10-14.py	2026-10-14 21:46:17
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gpd7wmgo/repo/bench/tests/test_the_prose_target_is_fit_for_arm4_2026-10-14.py	2026-10-14 23:44:08
+@@ -33,6 +33,22 @@
+   PL-02  uses z**2/n as the Wilson centre instead of z**2/(2n). statsmodels and
+          mpmath at 40 dps agree the upper bound is 0.31949990 for 7 of 40; the
+          listing returns 0.36331070, an error of 0.04381080.
++
++AND ONE LISTING THAT IS CORRECT (added 2026-10-14, joint round J3). With only
++defective listings the target could not measure what the arm is for. Both
++listings being wrong means a seat that reports every listing it finds scores 2
++of 2, so precision has no denominator and discrimination is unmeasurable. PL-03
++computes the Stage-1 corroboration model C(n) = 1 - (1 - p)**n and is correct;
++SymPy decides its three stated properties symbolically and mpmath at 40 dps
++decides the arithmetic. Reporting PL-03 as a defect is now a false positive the
++arm can count.
++
++AND THE CODE-FREE HALF OF A19'S DESIGN POINT IS NOT IN THIS FILE, deliberately.
++"Mark a purely prose input as inadmissible" cannot be exercised by a target that
++carries code. `targets/control_two_distinct_defects.md` already serves that half:
++measured 2026-10-14 against the live `_gateable_source`, it yields 0 hunks and
++"target carries no code; syntax gates not applicable", against 3 hunks here.
++Commissioning A19 needs BOTH targets run, not one.
+ """
+ from __future__ import annotations
+ 
+@@ -79,26 +95,77 @@
+     assert TARGET.suffix == ".md", TARGET.suffix
+ 
+ 
+-def test_the_live_extractor_sees_exactly_two_listings(listings):
+-    assert len(listings) == 2, f"{len(listings)} listing(s) recognised"
++def test_the_live_extractor_sees_exactly_three_listings(listings):
++    """WAS `== 2`, SHARPENED TO `== 3` ON 2026-10-14 (joint round J3).
+ 
++    The assertion was not loosened and it was not wrong about what it saw; it
++    was measuring a target that could not support the measurement the arm is
++    for. With 2 listings and BOTH defective, a seat that reports every listing
++    it finds scores 2 of 2 and is indistinguishable from a seat that
++    discriminated -- precision has no denominator. PL-03 adds a listing that is
++    CORRECT, so reporting it is a false positive and the arm can now separate
++    discrimination from indiscriminate reporting. The count is held exact, so
++    adding or dropping a listing still turns this red.
++    """
++    assert len(listings) == 3, f"{len(listings)} listing(s) recognised"
+ 
++
+ def test_both_listings_parse_as_python(listings):
+     for i, body in enumerate(listings, 1):
+         ast.parse(body)          # raises SyntaxError and fails the test
+ 
+ 
+ def test_the_target_also_carries_a_claim_with_no_listing(text):
+-    """A19's point is the DISCRIMINATION, so an unscoreable claim must be there."""
++    """A19's point is the DISCRIMINATION, so an unscoreable claim must be there.
++
++    THE UNSCOREABLE CLAIM MOVED FROM PL-03 TO PL-04 ON 2026-10-14 (joint round
++    J3), because PL-03 is now the correct listing. The assertion is sharper, not
++    weaker: it pins 4 claims rather than "at least 3", and it still requires the
++    final claim to carry no fence.
++    """
+     claims = re.findall(r"\*\*Claim (PL-\d+)\.\*\*", text)
+-    assert len(claims) >= 3, claims
+-    assert "PL-03" in claims
+-    # PL-03's section must contain no fence.
+-    seg = text[text.index("PL-03"):]
++    assert claims == ["PL-01", "PL-02", "PL-03", "PL-04"], claims
++    # PL-04's section must contain no fence.
++    seg = text[text.index("**Claim PL-04."):]
+     seg = seg[:seg.index("## 3.")] if "## 3." in seg else seg
+-    assert "```" not in seg, "PL-03 must carry no listing"
++    assert "```" not in seg, "PL-04 must carry no listing"
+ 
+ 
++def test_PL03_listing_is_CORRECT_under_two_independent_tools(listings):
++    """THE PRECISION DENOMINATOR. PL-03 must be right, or the arm cannot tell a
++    discriminating reviewer from one that flags every listing it is handed.
++
++    Checked twice and independently: SymPy decides the three stated properties
++    symbolically (C(0)=0, dC/dn > 0, d2C/dn2 < 0 for 0 < p < 1), and mpmath at
++    40 decimal places decides that the listing's float arithmetic reproduces the
++    exact value. Neither tool is a copy of the listing.
++    """
++    sympy = pytest.importorskip("sympy")
++    mp = pytest.importorskip("mpmath")
++    body = next(b for b in listings if "cumulative_detection" in b)
++    ns: dict = {}
++    exec(compile(body, "<pl03>", "exec"), ns)
++    f = ns["cumulative_detection"]
++
++    pp, nn = sympy.symbols("p n", positive=True)
++    C = 1 - (1 - pp) ** nn
++    assert sympy.simplify(C.subs(nn, 0)) == 0                       # C(0) = 0
++    d1 = sympy.diff(C, nn)
++    d2 = sympy.diff(C, nn, 2)
++    half = {pp: sympy.Rational(1, 3), nn: 4}
++    assert sympy.simplify(d1.subs(half)) > 0                        # increasing
++    assert sympy.simplify(d2.subs(half)) < 0                        # concave
++
++    mp.mp.dps = 40
++    for p_val, n_val in ((0.25, 1), (0.25, 7), (0.05, 20), (0.9, 3)):
++        exact = 1 - (mp.mpf(1) - mp.mpf(str(p_val))) ** n_val
++        assert abs(f(p_val, n_val) - float(exact)) < 1e-12, (p_val, n_val)
++    assert f(0.3, 0) == 0.0
++    for bad in ((1.5, 2), (-0.1, 2), (0.3, -1)):
++        with pytest.raises(ValueError):
++            f(*bad)
++
++
+ def test_defect_PL01_is_real(listings):
+     """The variance listing must be BIASED, confirmed symbolically and numerically."""
+     sympy = pytest.importorskip("sympy")
+
+### cc2:attempt-1:scripts/falsifier_C0050_is_not_irreducible_2026-10-14.py
+--- /dev/null	2026-10-14 23:50:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gpd7wmgo/repo/scripts/falsifier_C0050_is_not_irreducible_2026-10-14.py	2026-10-14 23:42:30
+@@ -0,0 +1,136 @@
++#!/usr/bin/env python3
++"""Falsifier: `sim45_memory_20260908T033012Z` C0050 is NOT genuinely irreducible.
++
++JOINT ROUND J5, 2026-10-14. Seat cc2's blind reply records exactly 1 genuinely
++irreducible finding in 41 UNTOOLABLE rows and names C0050 as that one case, on
++the ground that a falsifier was attempted and the record states a structural
++bar: "it cannot be falsified by any test importing `_memory.py`."
++
++This script decides the question by EXECUTION on the artefact and its declared
++inputs only -- the archived `runner_state.json` of that run and the target file
++`bench/dm/_memory.py` that the run reviewed. It reads no scoring key, no answer
++file, no planted-defect manifest and no prior-round report.
++
++TWO INDEPENDENT GROUNDS, EITHER OF WHICH DEFEATS THE EXCEPTION.
++
++GROUND 1 -- the dispositive sub-claim is arithmetic, and it is FALSE.
++C0050's closing sentence is:
++
++    "The artifact header states 20,563 chars; HEAD is 20,605. So the text I was
++     asked to review matches neither HEAD nor any observed working-tree state."
++
++`bench/dm/_memory.py` is 20,563 CHARACTERS and 20,605 BYTES. The two numbers the
++finding sets against each other are a character count and a byte count of the
++SAME file; the gap is UTF-8 multibyte, not a mismatch. The artifact header
++therefore matched HEAD exactly, and the inference drawn from it is refuted by
++two subtractions. A claim refuted by arithmetic is not irreducible.
++
++GROUND 2 -- no falsifier was ever attempted against C0050's claim.
++`routing_history[0].last_falsifier_code` is a 600-char program whose own
++docstring says it tests whether `ImmuneMemory.load` type-checks
++``experiment_ids``. That is a different proposition from C0050's. The routing
++ladder stopped at rungs_tried=2 of rungs_available=6 with verdict ERROR. So the
++record does not show "a machine tried and failed"; it shows a machine tried a
++DIFFERENT claim and stopped with 4 rungs in hand. The run's own
++`routing_defer_reason` says as much in terms: "no falsifier and no S_k
++evaluation exist, so nothing has been assessed yet. 'Irreducible' would assert a
++machine tried and failed."
++
++USAGE
++    python3 scripts/falsifier_C0050_is_not_irreducible_2026-10-14.py --claim cc2
++        RED. Asserts cc2's proposition (C0050 is genuinely irreducible). The
++        assertion fails and the token FALSIFIED is printed.
++    python3 scripts/falsifier_C0050_is_not_irreducible_2026-10-14.py --claim amended
++        GREEN. Asserts the amended proposition (C0050 is toolable and its
++        dispositive sub-claim is false). Exits 0, prints no FALSIFIED token.
++
++Exit status is 1 on a demonstrated defect and 0 otherwise, so a harness may read
++either the token or the status.
++"""
++from __future__ import annotations
++
++import argparse
++import json
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++RUN = REPO / "bench" / "logs" / "sim45_memory_20260908T033012Z" / "runner_state.json"
++TARGET = REPO / "bench" / "dm" / "_memory.py"
++
++#: The two numbers C0050 sets against each other, quoted from its own text.
++HEADER_CHARS_CLAIMED = 20563
++HEAD_CHARS_CLAIMED = 20605
++
++
++def measure() -> dict:
++    """Every number this falsifier decides on, computed, never asserted."""
++    entry = json.loads(RUN.read_text(encoding="utf-8"))["registry"]["entries"]["C0050"]
++    raw = TARGET.read_bytes()
++    text = raw.decode("utf-8")
++
++    rh = (entry.get("routing_history") or [{}])[0]
++    code = rh.get("last_falsifier_code") or ""
++
++    return {
++        "target_chars": len(text),
++        "target_bytes": len(raw),
++        "multibyte_delta": len(raw) - len(text),
++        "numbers_are_chars_and_bytes_of_one_file": (
++            len(text) == HEADER_CHARS_CLAIMED and len(raw) == HEAD_CHARS_CLAIMED
++        ),
++        "falsifier_verdict": entry.get("falsifier_verdict"),
++        "rungs_tried": rh.get("rungs_tried"),
++        "rungs_available": rh.get("rungs_available"),
++        "routing_verdict": rh.get("verdict"),
++        "attempt_subject_is_experiment_ids": "experiment_ids" in code,
++        "attempt_mentions_rewrite_churn": any(
++            tok in code for tok in ("oscillat", "rewritten", "artifact header")
++        ),
++    }
++
++
++def main() -> int:
++    ap = argparse.ArgumentParser(
++        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
++    ap.add_argument("--claim", choices=("cc2", "amended"), default="cc2",
++                    help="cc2 = C0050 is genuinely irreducible (RED). "
++                         "amended = C0050 is toolable, sub-claim false (GREEN).")
++    args = ap.parse_args()
++
++    m = measure()
++    for k, v in m.items():
++        print(f"  {k:42s} {v!r}"[:200])
++
++    if args.claim == "cc2":
++        try:
++            assert not m["numbers_are_chars_and_bytes_of_one_file"], (
++                "GROUND 1: C0050's two numbers are the character count and the byte "
++                f"count of one unchanged file ({m['target_chars']} chars, "
++                f"{m['target_bytes']} bytes, delta {m['multibyte_delta']} from UTF-8 "
++                "multibyte). The artifact header MATCHED HEAD; the inference drawn "
++                "from the pair is false and two subtractions decide it.")
++            assert not (m["attempt_subject_is_experiment_ids"]
++                        and not m["attempt_mentions_rewrite_churn"]), (
++                "GROUND 2: the only recorded attempt tests `experiment_ids` type "
++                f"handling, not C0050's claim, and stopped at rung "
++                f"{m['rungs_tried']} of {m['rungs_available']} with verdict "
++                f"{m['routing_verdict']}. No machine tried this claim.")
++        except AssertionError as exc:
++            print("FALSIFIED")
++            print(f"  {exc}")
++            return 1
++        print("cc2's proposition survives: C0050 is genuinely irreducible.")
++        return 0
++
++    assert m["numbers_are_chars_and_bytes_of_one_file"], m
++    assert m["attempt_subject_is_experiment_ids"], m
++    assert not m["attempt_mentions_rewrite_churn"], m
++    assert m["rungs_tried"] < m["rungs_available"], m
++    print("AMENDED CLAIM HOLDS: C0050 is toolable; its dispositive sub-claim is "
++          "refuted by arithmetic; genuinely-irreducible count is 0 of 41.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:scripts/the_caps_measurement_is_underpowered_2026-10-14.py
+--- /dev/null	2026-10-14 23:50:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gpd7wmgo/repo/scripts/the_caps_measurement_is_underpowered_2026-10-14.py	2026-10-14 23:45:06
+@@ -0,0 +1,217 @@
++#!/usr/bin/env python3
++"""J1 and J2, measured: what the caps actually do, and whether one run can decide it.
++
++JOINT ROUND, 2026-10-14. Both panel seats refused outright removal of the
++directive length caps and asked for a measurement. The brief asks for the
++measurement to be SPECIFIED precisely enough that the next simulated run either
++settles it or is shown to be underpowered. This script supplies the numbers that
++decide which of those two it is, and the section-overlap figure that chooses the
++chatter predicate.
++
++Every proportion carries a Wilson 95% interval from 2 independent
++implementations (statsmodels and a hand/scipy computation), and every sample
++size carries 2 independent derivations (statsmodels' arcsine-transform solver
++and a closed-form normal-approximation expression, the latter also evaluated
++symbolically by SymPy).
++
++Reads only this repository's own run records and directive sources. No scoring
++key, no answer file, no planted-defect manifest.
++
++    python3 scripts/the_caps_measurement_is_underpowered_2026-10-14.py
++"""
++from __future__ import annotations
++
++import glob
++import importlib.util
++import json
++import math
++import os
++import pathlib
++import re
++import sys
++from collections import Counter
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO / "bench"))
++
++import numpy as np                                      # noqa: E402
++import sympy as sp                                      # noqa: E402
++from scipy.stats import norm                            # noqa: E402
++from statsmodels.stats.power import NormalIndPower      # noqa: E402
++from statsmodels.stats.proportion import (              # noqa: E402
++    proportion_confint, proportion_effectsize)
++
++Z = 1.959963984540054
++
++
++def wilson_hand(k: int, n: int) -> tuple[float, float]:
++    """Wilson score interval written out, so statsmodels is CHECKED not trusted."""
++    if n == 0:
++        return (0.0, 0.0)
++    p = k / n
++    d = 1 + Z * Z / n
++    c = (p + Z * Z / (2 * n)) / d
++    h = Z * math.sqrt(p * (1 - p) / n + Z * Z / (4 * n * n)) / d
++    return (max(0.0, c - h), min(1.0, c + h))
++
++
++def ci(label: str, k: int, n: int) -> tuple[float, float]:
++    a = wilson_hand(k, n)
++    b = tuple(proportion_confint(k, n, 0.05, method="wilson")) if n else (0.0, 0.0)
++    agree = all(abs(x - y) < 1e-12 for x, y in zip(a, b))
++    pct = (k / n * 100) if n else float("nan")
++    print(f"  {label:54s} {k:5d}/{n:<5d} = {pct:8.4f}%  "
++          f"Wilson [{a[0]*100:7.4f}%, {a[1]*100:7.4f}%]  "
++          f"{'[AGREE]' if agree else '[DISAGREE]'}")
++    return a
++
++
++# ─────────────────────────── SECTION 1 — the cap is BINARY ───────────────────
++def section_cap_is_binary() -> None:
++    from cdsfl_registry import composer as C
++    core = (C.DIRECTIVES_DIR / "universal" / "cdsfl_core_formal.md").read_text(
++        encoding="utf-8")
++    print("\n=== 1. THE CAP IS A BINARY SWITCH, NOT A GRADED KNOB ===")
++    print(f"  cdsfl_core_formal.md source: {len(core):,} chars, "
++          f"{len(re.findall(r'^## ', core, re.M))} level-2 headings")
++    delivered = {}
++    for key in list(C.PHENOTYPE_TRANSFORMS) + [""]:
++        t = C.PHENOTYPE_TRANSFORMS.get(key, C.PhenotypeTransform())
++        pkt = C._load_universal_directive(key or None)
++        delivered[key or "(default)"] = len(pkt.text)
++        heads = len(re.findall(r"^## ", pkt.text, re.M))
++        print(f"  {key or '(default)':16s} cap={t.max_directive_chars:6,d} "
++              f"style={t.format_style:8s} -> delivered {len(pkt.text):6,d} chars, "
++              f"{heads} of 16 headings")
++    distinct = sorted(set(delivered.values()))
++    print(f"  distinct delivered lengths over the whole configured cap range "
++          f"{sorted({C.PHENOTYPE_TRANSFORMS.get(k, C.PhenotypeTransform()).max_directive_chars for k in list(C.PHENOTYPE_TRANSFORMS) + ['']})}: "
++          f"{distinct}")
++    assert len(distinct) == 1, distinct
++    print("  -> the cap VALUE changes nothing. Every seat receives the same "
++          f"{distinct[0]:,}-char minimal render. A cap-value sweep is therefore")
++    print("     not a design; the only measurable contrast is minimal vs full.")
++
++
++# ───────────────────── SECTION 2 — candidate statistics, base rates ──────────
++def _sim_entries():
++    for p in sorted(glob.glob(str(REPO / "bench" / "logs" / "sim*" / "runner_state.json"))):
++        d = json.loads(pathlib.Path(p).read_text(encoding="utf-8"))
++        e = d.get("registry", {}).get("entries", {})
++        if isinstance(e, dict):
++            yield os.path.basename(os.path.dirname(p)), [
++                v for v in e.values() if isinstance(v, dict)]
++
++
++def section_base_rates() -> tuple[int, int]:
++    print("\n=== 2. THE 2 STATISTICS THE SEATS PROPOSED ARE BOTH UNUSABLE ===")
++    runs = list(_sim_entries())
++    allv = [v for _, vs in runs for v in vs]
++    n = len(allv)
++    conf = sum(1 for v in allv if str(v.get("status", "")).upper() == "CONFIRMED")
++    per_run_conf = [sum(1 for v in vs if str(v.get("status", "")).upper() == "CONFIRMED")
++                    for _, vs in runs]
++    crit = [v for v in allv if isinstance(v.get("severity"), (int, float))
++            and v["severity"] >= 0.7]
++    crit_f = sum(1 for v in crit if v.get("falsifier_code"))
++    det = sum(1 for v in allv
++              if str(v.get("falsifier_verdict", "")).upper() in {"CONFIRMED", "REFUTED"})
++    print(f"  corpus: {len(runs)} simulated runs, {n} registry entries")
++    ci("fable's 'runner-reverified confirm rate'", conf, n)
++    print(f"      FLOOR-BOUND AND CLUSTERED: per-run CONFIRMED counts "
++          f"{per_run_conf}; {max(per_run_conf)} of {conf} events are in one run.")
++    ci("critical findings carrying a falsifier", crit_f, len(crit))
++    print("      CEILING-BOUND: at 94.83% the uncapped arm can gain at most 5.17 "
++          "points.")
++    ci("determinate falsifier verdict (CONFIRMED|REFUTED)", det, n)
++    print("      USABLE: away from 0 and 1, harness-computed, and the requirement "
++          "it measures\n      is stated ONLY in the 2 core sections the cap "
++          "deletes.")
++    return det, n
++
++
++# ─────────────────────────── SECTION 3 — the power ───────────────────────────
++def section_power(det: int, n: int) -> None:
++    p0 = det / n
++    print("\n=== 3. SAMPLE SIZE PER ARM, 2 DERIVATIONS + A SYMBOLIC CHECK ===")
++    print(f"  baseline p0 = {p0:.6f} (the capped arm, from the archive)")
++    za, zb = norm.ppf(0.975), norm.ppf(0.80)
++    for p1 in (0.85, 0.88, 0.90, 0.95):
++        h = proportion_effectsize(p1, p0)
++        n_sm = NormalIndPower().solve_power(effect_size=h, power=0.80, alpha=0.05,
++                                            ratio=1, alternative="two-sided")
++        pb = (p0 + p1) / 2
++        n_cf = ((za * math.sqrt(2 * pb * (1 - pb))
++                 + zb * math.sqrt(p0 * (1 - p0) + p1 * (1 - p1))) ** 2) / (p1 - p0) ** 2
++        A, B, P = sp.symbols("z_a z_b p_bar", positive=True)
++        sym = ((A * sp.sqrt(2 * P * (1 - P))
++                + B * sp.sqrt(sp.Float(p0) * (1 - sp.Float(p0))
++                              + sp.Float(p1) * (1 - sp.Float(p1)))) ** 2
++               / sp.Float(p1 - p0) ** 2)
++        n_sy = float(sym.subs({A: sp.Float(za), B: sp.Float(zb), P: sp.Float(pb)}))
++        tag = "AGREE" if abs(n_cf - n_sy) < 1e-6 and abs(n_sm - n_cf) / n_cf < 0.03 \
++            else "DISAGREE"
++        print(f"  p1={p1:.2f}  statsmodels(arcsine) {n_sm:8.1f}   "
++              f"closed form {n_cf:8.1f}   SymPy {n_sy:8.1f}   [{tag}]")
++    yields = [len(vs) for _, vs in _sim_entries()]
++    print(f"  findings per simulated run, observed: {sorted(yields)}  "
++          f"mean {np.mean(yields):.1f}")
++    need = NormalIndPower().solve_power(
++        effect_size=proportion_effectsize(0.90, p0), power=0.80, alpha=0.05,
++        ratio=1, alternative="two-sided")
++    print(f"  -> ONE run per arm supplies ~{np.mean(yields):.0f} findings against "
++          f"the ~{need:.0f} needed for a 10-point effect.")
++    print(f"     UNDERPOWERED by a factor of {need/np.mean(yields):.1f}. "
++          f"~{math.ceil(need/np.mean(yields))} runs PER ARM are required, and "
++          "findings cluster\n     within (run, seat), so that count is a FLOOR "
++          "before any design effect.")
++
++
++# ───────────────────── SECTION 4 — J2, which predicate to adopt ──────────────
++def section_predicate() -> None:
++    print("\n=== 4. J2 — P2 REPRODUCES THE INDEPENDENT 2026-07-18 PRUNING REVIEW ===")
++    spec = importlib.util.spec_from_file_location(
++        "_chatter", REPO / "scripts" / "directive_chatter_predicate_2026-10-14.py")
++    ch = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(ch)
++    path = REPO / "bench" / "directives" / "universal" / "cdsfl_operational.md"
++    text = path.read_text(encoding="utf-8")
++    lines = text.split("\n")
++    hits = sorted(ch.p2_medium(text))
++    secmap, cur = {}, "(preamble)"
++    for i, l in enumerate(lines):
++        m = re.match(r"^(#{1,3})\s+(.*)", l)
++        if m:
++            cur = m.group(2).strip()
++        secmap[i] = cur
++    # The 2026-07-18 review's own verdict per section, as the chatter producer
++    # records it. Anything not named 'compress' there is KEEP-VERBATIM.
++    compressible = ("7.1.", "14.", "16.", "17.", "18", "PREAMBLE")
++    inside = [i for i in hits
++              if any(secmap[i].lstrip("§").startswith(c.lstrip("§"))
++                     for c in compressible)]
++    c = Counter(secmap[i] for i in hits)
++    for k, v in c.most_common():
++        mark = "compress     " if any(k.lstrip("§").startswith(x.lstrip("§"))
++                                      for x in compressible) else "KEEP-VERBATIM"
++        print(f"  [{mark}] {v:3d} lines  {k[:66]}")
++    ci("P2 hits inside a 'compress' section", len(inside), len(hits))
++    print("  -> 2 instruments derived independently (a human pruning review in "
++          "July, a\n     mechanical predicate in October) concur on ~90% of the "
++          "marked lines. The\n     residual sits in §15 FFAFP Admissibility, "
++          "which the review marks KEEP-VERBATIM;\n     under the additive "
++          "standard KEEP-VERBATIM wins, because no measurement shows\n     "
++          "removal dominates.")
++
++
++def main() -> int:
++    section_cap_is_binary()
++    det, n = section_base_rates()
++    section_power(det, n)
++    section_predicate()
++    print("\nDONE.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-14 23:50:27
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qwo0t5id/repo/.cdsfl_deny_canonical_writes.sb	2026-10-14 23:34:34
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/tests/test_capability_ledger_from_archive_2026-10-14.py
+--- /dev/null	2026-10-14 23:50:29
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qwo0t5id/repo/bench/tests/test_capability_ledger_from_archive_2026-10-14.py	2026-10-14 23:46:44
+@@ -0,0 +1,45 @@
++"""The J4 ledger producer is wired to a caller and executed (additive standard).
++
++Executes the committed producer -- the real entry point, not a retyped copy --
++and asserts the properties the joint round claimed for it:
++  1. it runs clean on the repository archive and finds outcomes;
++  2. ranking uses the Wilson LOWER BOUND: lb(1,1) ~ 0.2065 < 1.0, so a lucky
++     1/1 cannot outrank a seasoned identity (the founder's guard);
++  3. symlink deduplication holds: no identity's n is double-counted through
++     the exp36_evidence_latest symlink (ledger == ledger built on realpaths).
++"""
++import os
++import subprocess
++import sys
++
++HERE = os.path.dirname(os.path.abspath(__file__))
++REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
++SCRIPT = os.path.join(REPO, "scripts", "capability_ledger_from_archive_2026-10-14.py")
++sys.path.insert(0, os.path.join(REPO, "scripts"))
++
++import importlib.util
++
++spec = importlib.util.spec_from_file_location("cap_ledger", SCRIPT)
++mod = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(mod)
++
++
++def test_entry_point_executes_clean():
++    r = subprocess.run([sys.executable, SCRIPT], cwd=REPO,
++                       capture_output=True, text=True, timeout=300)
++    assert r.returncode == 0, r.stderr
++    assert "CAPABILITY LEDGER" in r.stdout
++    assert "wilson_lb" in r.stdout
++
++
++def test_wilson_lower_bound_guards_lucky_cold_start():
++    lb_1_1 = mod.wilson_lb(1, 1)
++    assert abs(lb_1_1 - 0.2065) < 0.001          # the documented constant
++    assert lb_1_1 < mod.wilson_lb(22, 43)        # lucky 1/1 < seasoned 22/43
++
++
++def test_ledger_nonempty_and_counts_are_sane():
++    led = mod.build_ledger(os.path.join(REPO, "bench/logs/*/runner_state.json"))
++    assert led, "archive yielded no determinate outcomes"
++    for ident, (n, k) in led.items():
++        assert 0 <= k <= n, (ident, n, k)
+
+### fable:attempt-1:experimental_notes/S11_Worked_Proofs_Corrected_2026-10-14.md
+--- /dev/null	2026-10-14 23:50:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qwo0t5id/repo/experimental_notes/S11_Worked_Proofs_Corrected_2026-10-14.md	2026-10-14 23:46:06
+@@ -0,0 +1,54 @@
++# Proposed §11 — Worked Proofs (Severity Corroboration), v2
++
++> **Proposed amendment v2, 2026-10-14 joint panel — awaiting founder
++> ratification.** Replaces the v1 draft of the same date (never adopted into
++> the tree; preserved in that round's `seat_proposals.diff`). v1 stated a
++> BROADER requirement than any gate enforces ("every quantitative claim") and,
++> in one place, the OPPOSITE direction to the enforced one — it said an
++> unproven claim is excluded from every convergence-relevant series,
++> which is exactly the loophole the runner's design comment rules out: if
++> unproven criticals stopped counting, a model could clear the convergence
++> gate by omitting its arithmetic. This v2 states the gate the runner has
++> enforced since 2026-09-07 (`bench/dm/_rk_proof.py`;
++> `bench/reference_runner_v3.py`, "SEVERITY MUST BE A CALCULATION, NOT A
++> VOTE"), and nothing more.
++
++**Natural language:**
++Every finding's severity MUST carry a CORROBORATION block stating every value
++used and its evaluated result:
++
++    R_old, eta, d, p, q = eta*d*p, R_det, S_k, nu_b, nu_f, nu_eff, R_k
++
++Write each parameter and its RESULT on one line, or put the result on a
++continuation line beginning with `=`. A formula with no evaluated result reads
++as no answer. The RUNNER recomputes R_k from your stated parameters; its
++recomputation — never your prose, never panel agreement — decides whether the
++severity is arithmetic or an assertion.
++
++Enforcement is ONE-DIRECTIONAL, and that is the whole design: a finding whose
++severity does not reproduce is RETAINED and still BLOCKS at its claimed
++severity. What it cannot do, until the arithmetic reproduces, is be used to
++demote, clear or close anything. If you cannot produce the arithmetic,
++withdraw the finding instead — a withdrawal is a legitimate outcome and costs
++you nothing.
++
++**Formal:**
++```
++corroboration(f) = block naming {R_old, eta, d, p, q, R_det, S_k,
++                                 nu_b, nu_f, nu_eff, R_k} with evaluated results
++proven(f)  ≡ runner_recompute(params(f)) reproduces stated R_k(f)
++             // arbiter: the harness's recomputation, never model prose
++¬proven(f) ⇒ retained(f) ∧ blocks_at_claimed_severity(f)
++             ∧ ¬may_demote(f) ∧ ¬may_clear(f) ∧ ¬may_close(f)
++             ∧ proof_request_next_round(f)        // bench/dm/_rk_proof.py
++```
++
++**Scope note (deliberate):** this section states ONLY the enforced gate. The
++v1 aspiration — an executed derivation on every quantitative claim — is
++enforced by no gate in the tree, and a directive stating an unenforced
++requirement is the same defect this amendment exists to close, in the other
++direction. If the founder wants the broader gate, the gate is built first and
++the directive follows it.
++
++Classification Summary row:
++| Worked proofs (§11, proposed v2 2026-10-14) | Per-finding CORROBORATION recomputation; one-directional (blocks, never loosens); arbiter is the runner | Yes |
+
+### fable:attempt-1:scripts/c0050_source_hash_never_populated_2026-10-14.py
+--- /dev/null	2026-10-14 23:50:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qwo0t5id/repo/scripts/c0050_source_hash_never_populated_2026-10-14.py	2026-10-14 23:44:45
+@@ -0,0 +1,97 @@
++#!/usr/bin/env python3
++"""J5, settled on the record (2026-10-14 joint panel).
++
++The disputed case: `sim45_memory_20260908T033012Z` C0050 -- a claim that the
++target file was rewritten six times during the review round itself. One seat
++counted it the archive's 1 genuinely irreducible finding; the other counted 0.
++
++What this producer shows, by execution:
++  1. C0050 carries NO machine attempt: `falsifier_code` empty,
++     `last_falsifier_code` null, and its own defer reason declines the label:
++     "'Irreducible' would assert a machine tried and failed."
++     So the DEMONSTRATED-irreducible count in the archive is 0.
++  2. C0050 is also NOT equipment failure: its 6 `computed_evidence` entries
++     are `reasoned_withdrawal` records with EMPTY falsifier_code -- six model
++     prose verdicts, i.e. agreement, which CDSFL does not count as a
++     confirmation mechanism.
++  3. The claim's truth-maker (the sequence of target contents during the
++     round) has a schema field DESIGNED to carry provenance evidence --
++     `source_hash` -- and that field is empty in every occurrence this script
++     can find. The claim was toolable in principle and unfalsifiable in
++     practice because the harness never recorded the evidence.
++
++So neither seat's blind taxonomy held: not "genuinely irreducible"
++(nothing was demonstrated) and not "equipment failure" (nothing failed).
++The class is: evidence never recorded by the harness. The record settles the
++count at 0 demonstrated-irreducible and names the missing instrumentation.
++"""
++from __future__ import annotations
++
++import glob
++import json
++import os
++import sys
++
++RUN = "bench/logs/sim45_memory_20260908T033012Z"
++
++
++def walk_source_hash(obj, out):
++    if isinstance(obj, dict):
++        for k, v in obj.items():
++            if k == "source_hash":
++                out.append(v)
++            else:
++                walk_source_hash(v, out)
++    elif isinstance(obj, list):
++        for v in obj:
++            walk_source_hash(v, out)
++
++
++def main() -> int:
++    rs = json.load(open(os.path.join(RUN, "runner_state.json")))
++    ents = rs.get("registry", {}).get("entries", {})
++    c0050 = None
++    for k, v in ents.items():
++        if (v.get("canonical_id") or k) == "C0050":
++            c0050 = v
++            break
++    if c0050 is None:
++        print("C0050 not found -- run layout changed"); return 1
++
++    print("=== C0050, THE RECORD ===")
++    print(f"  status={c0050.get('status')}  severity={c0050.get('severity')}")
++    print(f"  falsifier_code empty: {not c0050.get('falsifier_code')}")
++    print(f"  last_falsifier_code:  {c0050.get('last_falsifier_code')!r}")
++    print(f"  defer reason: {c0050.get('routing_defer_reason')!r}")
++    ce = c0050.get("computed_evidence") or []
++    kinds = [(e.get("kind"), not e.get("falsifier_code")) for e in ce]
++    print(f"  computed_evidence: {len(ce)} entries, (kind, falsifier-empty): {kinds}")
++    print("  -> machine attempts on C0050: 0 (every evidence entry is prose)")
++
++    for scope, files in (("sim45 run", [os.path.join(RUN, "runner_state.json"),
++                                        os.path.join(RUN, "checkpoint.json")]),
++                         ("whole archive", sorted(glob.glob("bench/logs/*/runner_state.json")))):
++        vals, seen = [], set()
++        for p in files:
++            rp = os.path.realpath(p)
++            if rp in seen:
++                continue
++            seen.add(rp)
++            try:
++                walk_source_hash(json.load(open(p)), vals)
++            except Exception:
++                continue
++        empty = sum(1 for v in vals if not v)
++        print(f"=== source_hash fields, {scope}: {len(vals)} present, {empty} empty "
++              f"({'ALL EMPTY' if vals and empty == len(vals) else 'SOME POPULATED'}) ===")
++
++    print("\nVERDICT: demonstrated-irreducible count = 0; C0050's class is")
++    print("'evidence never recorded by the harness' (empty source_hash), which is")
++    print("a harness instrumentation gap, not an irreducible claim and not an")
++    print("equipment failure. Populating source_hash at write time makes this")
++    print("claim class decidable in future runs.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:scripts/cap_measurement_power_2026-10-14.py
+--- /dev/null	2026-10-14 23:50:27
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qwo0t5id/repo/scripts/cap_measurement_power_2026-10-14.py	2026-10-14 23:44:25
+@@ -0,0 +1,132 @@
++#!/usr/bin/env python3
++"""The cap measurement, made decidable (2026-10-14 joint panel, J1).
++
++Both seats refused outright removal of the composer directive caps and asked
++for a measurement. This file IS the specification, precise enough that the
++next simulated run either settles the question or is shown here to be
++underpowered for it.
++
++PROPERTY (named): pooled runner-reverified falsifier confirm rate -- of
++  registry entries carrying a determinate `falsifier_verdict` (CONFIRMED or
++  REFUTED after the runner's independent re-execution), the fraction CONFIRMED.
++  Caveat, stated not hidden: the archive schema carries no admissibility bit,
++  so this is an upper bound on the admissible-confirm rate; admissibility is
++  enforced upstream by the gate, not re-derived here.
++
++ARMS (2): identical target, seats, rounds, seed policy.
++  ARM A (control)  : shipped behaviour, `composer_directive_caps=True`
++                     (reduced 2,503-char universal render + operational text).
++  ARM B (treatment): `composer_directive_caps=False` -- full universal text,
++                     no `max_directive_chars` truncation (the ablation switch
++                     committed 2026-10-14, wired at `_compose_for_model`).
++
++STATISTIC: difference of pooled confirm rates (B - A) with a Newcombe
++  Wilson-score-based 95% CI; per-seat differences reported as strata, never
++  pooled away silently.
++
++DECISION RULE (what the founder reads): the caps may be REMOVED iff
++  (a) ARM B delivers the full directive set (deterministic: 16/16 headings,
++      already measured -- the named property on which the replacement
++      dominates), AND
++  (b) the Newcombe 95% CI lower bound of (B - A) exceeds -delta
++      (non-inferiority on the confirm rate at the margin delta the run was
++      powered for).
++  The caps are KEPT PER IDENTITY for any seat whose own stratum CI upper
++  bound is below 0 -- that seat's cap becomes a MEASURED transport limit
++  with a source and a date.
++
++STOPPING RULE: fixed-sample. No interim looks, no early stop -- the run (or
++  runs) per arm continue until each arm holds at least n determinate
++  outcomes, n computed below. If the planned budget cannot reach n, the plan
++  is declared UNDERPOWERED here, before a token is spent.
++
++This script computes n per arm (two independent tools, printed with their
++agreement), measures the archive's actual determinate-outcome yield per run,
++and prints the POWERED/UNDERPOWERED verdict for the candidate plans.
++Run it; do not trust this docstring.
++"""
++from __future__ import annotations
++
++import glob
++import json
++import math
++import os
++import statistics
++import sys
++
++
++def n_per_arm_closed_form(delta: float, alpha: float = 0.05, power: float = 0.80) -> float:
++    """(z_{1-a/2}+z_{power})^2 * (p1(1-p1)+p2(1-p2)) / delta^2 at worst case p=1/2."""
++    from scipy.stats import norm  # tool 1
++    z = norm.ppf(1 - alpha / 2) + norm.ppf(power)
++    return z * z * 0.5 / (delta * delta)
++
++
++def n_per_arm_sympy(delta: str) -> float:
++    """Same quantity via SymPy with the project-standard z constant."""
++    import sympy as sp  # tool 2
++    from scipy.stats import norm
++    z975 = sp.Float("1.959963984540054", 17)
++    z80 = sp.Float(norm.ppf(0.80), 17)
++    dd = sp.Float(delta, 17)
++    return float((z975 + z80) ** 2 * sp.Rational(1, 2) / dd ** 2)
++
++
++def archive_yield() -> list:
++    """Determinate falsifier_verdict outcomes per run, symlink-deduplicated."""
++    seen = set()
++    per_run = []
++    for p in sorted(glob.glob("bench/logs/*/runner_state.json")):
++        rp = os.path.realpath(p)
++        if rp in seen:            # the exp36_evidence_latest symlink class
++            continue
++        seen.add(rp)
++        try:
++            d = json.load(open(p))
++        except Exception:
++            continue
++        ents = d.get("registry", {}).get("entries", {})
++        if not isinstance(ents, dict):
++            continue
++        n = sum(1 for v in ents.values() if isinstance(v, dict)
++                and str(v.get("falsifier_verdict") or "").upper().startswith(("CONFIRMED", "REFUTED")))
++        if n:
++            per_run.append(n)
++    return per_run
++
++
++def main() -> int:
++    print("=== n PER ARM (two-sided alpha=0.05, power 0.80, worst-case p=1/2) ===")
++    for d in ("0.30", "0.15"):
++        a = n_per_arm_closed_form(float(d))
++        b = n_per_arm_sympy(d)
++        agree = abs(a - b) < 1e-6
++        print(f"  delta={d}:  scipy={a:.4f}  sympy={b:.4f}  "
++              f"[{'AGREE' if agree else 'DISAGREE'}]  -> n/arm = {math.ceil(a)}")
++    print("  (Wolfram Language cross-check, computed 2026-10-14: "
++          "43.60488741305049 at delta=0.30)")
++
++    yields = archive_yield()
++    if not yields:
++        print("NO archive runs with determinate falsifier verdicts found -- cannot size.")
++        return 1
++    med = statistics.median(yields)
++    print("\n=== ARCHIVE-MEASURED YIELD (symlink-deduplicated) ===")
++    print(f"  runs with >=1 determinate outcome: {len(yields)}; "
++          f"median outcomes/run: {med}; min {min(yields)}, max {max(yields)}")
++
++    print("\n=== VERDICT PER PLAN ===")
++    for delta in (0.30, 0.15):
++        n = math.ceil(n_per_arm_closed_form(delta))
++        runs_needed = math.ceil(n / med)
++        print(f"  pooled delta={delta} (n/arm={n}): needs {runs_needed} run(s)/arm "
++              f"-> a 1-run/arm plan is "
++              f"{'POWERED' if runs_needed <= 1 else 'UNDERPOWERED'}")
++    per_seat = math.ceil(43 / (med / 6))
++    print(f"  per-seat delta=0.30 (43/seat/arm, 6 seats): needs {per_seat} runs/arm "
++          f"-> per-seat strata from 1 run are DESCRIPTIVE ONLY, and are reported as such")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:scripts/capability_ledger_from_archive_2026-10-14.py
+--- /dev/null	2026-10-14 23:50:27
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qwo0t5id/repo/scripts/capability_ledger_from_archive_2026-10-14.py	2026-10-14 23:47:33
+@@ -0,0 +1,97 @@
++#!/usr/bin/env python3
++"""Capability ledger from the ARCHIVE -- the minimal additive wiring (J4).
++
++`bench/capability_identity.py` was built by both blind seats and adopted by
++neither the orchestrator nor this joint round, because wiring measured
++capability into seat selection is a design change on the model-names question
++(the founder's ruling to apply). What IS additive without touching dispatch:
++the accumulating MEASUREMENT that ruling will need. The archive already
++records, per registry entry, the authoring identity (`source_model`) and the
++runner's independent re-execution verdict (`falsifier_verdict`). This producer
++turns that into the capability ledger: per identity, determinate outcomes,
++confirms, point rate, and the Wilson LOWER BOUND the ranking must use so a
++lucky 1/1 cannot outrank a seasoned mid-rate identity.
++
++It changes which seat gets which work in NO way. It reads logs and prints.
++
++DECLARED LIMITS (named, not hidden):
++  - no admissibility bit exists in the archive schema, so this is the
++    confirm rate, an UPPER BOUND on the admissible-confirm rate;
++  - `source_model` is the FINDING's author; where a falsifier had a different
++    author the archive does not say so;
++  - identities with fewer than 43 determinate outcomes (n >= z^2/delta^2 at
++    delta=0.3; SymPy and Wolfram Language both give 42.6829 -> 43) are
++    printed UNRANKED -- cold-start policy is the routing ladder's question,
++    not this ledger's.
++"""
++from __future__ import annotations
++
++import glob
++import json
++import math
++import os
++import sys
++
++_Z = 1.959963984540054
++MIN_OUTCOMES = 43
++
++
++def wilson_lb(k: int, n: int) -> float:
++    if n == 0:
++        return 0.0
++    p = k / n
++    den = 1 + _Z * _Z / n
++    centre = p + _Z * _Z / (2 * n)
++    half = _Z * math.sqrt(p * (1 - p) / n + _Z * _Z / (4 * n * n))
++    return (centre - half) / den
++
++
++def build_ledger(logs_glob: str = "bench/logs/*/runner_state.json") -> dict:
++    seen, ledger = set(), {}
++    for p in sorted(glob.glob(logs_glob)):
++        rp = os.path.realpath(p)
++        if rp in seen:            # exp36_evidence_latest symlink class
++            continue
++        seen.add(rp)
++        try:
++            d = json.load(open(p))
++        except Exception:
++            continue
++        for v in d.get("registry", {}).get("entries", {}).values():
++            if not isinstance(v, dict):
++                continue
++            verdict = str(v.get("falsifier_verdict") or "").upper()
++            if not verdict.startswith(("CONFIRMED", "REFUTED")):
++                continue
++            ident = str(v.get("source_model") or "UNATTRIBUTED")
++            n, k = ledger.get(ident, (0, 0))
++            ledger[ident] = (n + 1, k + (1 if verdict.startswith("CONFIRMED") else 0))
++    return ledger
++
++
++def main() -> int:
++    ledger = build_ledger()
++    if not ledger:
++        print("no determinate outcomes found"); return 1
++    rows = [(ident, n, k, k / n, wilson_lb(k, n)) for ident, (n, k) in ledger.items()]
++    measured = sorted((r for r in rows if r[1] >= MIN_OUTCOMES), key=lambda r: -r[4])
++    cold = sorted((r for r in rows if r[1] < MIN_OUTCOMES), key=lambda r: -r[1])
++    print(f"=== CAPABILITY LEDGER (archive, symlink-deduplicated; "
++          f"{sum(n for n, _ in ledger.values())} determinate outcomes) ===")
++    print("RANKED (n >= 43, by Wilson lower bound -- never the point estimate):")
++    for ident, n, k, pt, lb in measured:
++        print(f"  {ident:<16} k/n={k}/{n:<4} point={pt:.4f}  wilson_lb={lb:.4f}")
++    print("UNRANKED (cold start, n < 43 -- ordering is the routing ladder's call):")
++    for ident, n, k, pt, lb in cold:
++        print(f"  {ident:<16} k/n={k}/{n:<4} point={pt:.4f}  wilson_lb={lb:.4f}")
++    print("\nCaveats: confirm rate is an UPPER BOUND on admissible-confirm rate "
++          "(no admissibility bit in archive schema); identity = source_model.\n"
++          "MEASURED 2026-10-14: the ranking is NOT robust to the denominator -- "
++          "counting ERROR verdicts as failures reorders it (Fable-SIM first vs "
++          "CC2-SIM first). The founder rules on the outcome definition BEFORE "
++          "any ranking is wired anywhere.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:scripts/falsifier_s11_matches_enforced_gate_2026-10-14.py
+--- /dev/null	2026-10-14 23:50:27
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qwo0t5id/repo/scripts/falsifier_s11_matches_enforced_gate_2026-10-14.py	2026-10-14 23:46:06
+@@ -0,0 +1,86 @@
++#!/usr/bin/env python3
++"""FALSIFIER (J6, 2026-10-14 joint panel): does the proposed directive section
++'Worked Proofs' state the requirement the runner ACTUALLY enforces?
++
++The enforced gate (bench/dm/_rk_proof.py + bench/reference_runner_v3.py,
++'SEVERITY MUST BE A CALCULATION, NOT A VOTE'):
++  - scope: per-FINDING severity, via a CORROBORATION block;
++  - parameter list: taken here from the EXECUTED output of
++    build_proof_requests (imports the real target; never retyped);
++  - direction: one-directional -- an unproven severity still BLOCKS and cannot
++    be used to demote, clear or close (looser-direction wording is a defect:
++    it would let a model clear the convergence gate by omitting arithmetic).
++
++RED  on the unpatched tree: no corrected proposal exists, so this evaluates the
++     v1 draft reconstructed from the round's seat_proposals.diff -> FALSIFIED.
++GREEN after: experimental_notes/S11_Worked_Proofs_Corrected_2026-10-14.md
++     exists and passes every check -> clean exit.
++"""
++from __future__ import annotations
++
++import os
++import re
++import sys
++
++sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "bench"))
++from dm._rk_proof import build_proof_requests  # REAL target, not a copy
++
++CORRECTED = "experimental_notes/S11_Worked_Proofs_Corrected_2026-10-14.md"
++DIFF = "bench/logs/the_directive_set_and_capability_2026-10-14/seat_proposals.diff"
++LOOSER = "does not count toward any convergence-relevant series"
++
++
++def canonical_params() -> list:
++    """Execute the real gate and parse the parameter list from its OUTPUT."""
++    out = build_proof_requests([("C9999", "ABSENT", None, None)])
++    m = re.search(r"^\s*(R_old,.*R_k)\s*$", out, re.M)
++    assert m, "parameter line not found in build_proof_requests output"
++    return [t.strip() for t in m.group(1).replace("= eta*d*p", "").split(",") if t.strip()]
++
++
++def v1_from_diff() -> str:
++    lines, on = [], False
++    for ln in open(DIFF, encoding="utf-8"):
++        if ln.startswith("+## 11. Worked Proofs"):
++            on = True
++        elif on and (ln.startswith("+## ") or ln.startswith("### ")):
++            break
++        if on and ln.startswith("+"):
++            lines.append(ln[1:])
++    return "".join(lines)
++
++
++def check(text: str) -> list:
++    fails = []
++    missing = [p for p in canonical_params() if p not in text]
++    if missing:
++        fails.append(f"A: parameter list incomplete, missing {missing}")
++    low = text.lower()
++    if not (("block" in low) and ("demote" in low) and ("cannot" in low)):
++        fails.append("B: one-directional blocking property not stated")
++    if LOOSER in re.sub(r"\s+", " ", text):
++        fails.append("C: states the LOOSER direction (unproven claim 'does not count') "
++                     "-- the exact loophole the runner comment names")
++    if "CORROBORATION" not in text:
++        fails.append("D: does not name the CORROBORATION block the runner checks")
++    return fails
++
++
++def main() -> int:
++    if os.path.exists(CORRECTED):
++        text, which = open(CORRECTED, encoding="utf-8").read(), CORRECTED
++    else:
++        text, which = v1_from_diff(), f"v1 draft (from {DIFF})"
++    fails = check(text)
++    print(f"candidate: {which}")
++    for f in fails:
++        print("  FAIL", f)
++    if fails:
++        print("FALSIFIED")
++        return 1
++    print("  all checks pass: section states the enforced gate")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())

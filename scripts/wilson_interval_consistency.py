@@ -157,9 +157,45 @@ def _tol(text: str) -> float:
     dp = len(text.split(".")[1]) if "." in text else 0
     return 0.5 * 10 ** (-dp)
 
+#: ★ A SEAT'S QUOTED INTERVAL IS ITS CLAIM, NOT THIS PROJECT'S. ADDED 2026-10-14.
+#:
+#: A FULL RECORD reproduces panel replies between `<!-- verbatim-begin: ... -->`
+#: and `<!-- verbatim-end -->`, and the founder's standing instruction is that
+#: those replies are presented "in full and in unfiltered format". On 2026-10-14
+#: a seat quoted [0.0%, 8.4495%] for 0 of 41 where Wilson gives 8.5668%, and the
+#: record reproduced it faithfully -- so this checker refused the commit over a
+#: number nobody here may correct. Editing it would turn the record into a
+#: paraphrase, which is the provenance failure this project documents as its core
+#: concern; bypassing the gate would disable it for the other 509 checks.
+#:
+#: THE CONVENTION ALREADY EXISTS AND THIS ADOPTS IT RATHER THAN INVENTING ONE.
+#: `scripts/note_vagueness_lint.py` honours the same markers, and carefully: its
+#: own comments record handling a violation that sits AFTER `verbatim-end`, in the
+#: note's own voice. Scope is identical here -- only the marked span is skipped,
+#: and every figure this project states in its own voice is still checked.
+#:
+#: A seat's wrong interval is still worth recording; it belongs in the note's own
+#: voice beside the block, where this checker DOES read it.
+_VERBATIM = re.compile(
+    r"<!--\s*verbatim-begin\b.*?-->.*?<!--\s*verbatim-end\s*-->",
+    re.S | re.I)
+
+
+def _blank_verbatim(text: str) -> str:
+    """Replace each verbatim span with the same number of newlines.
+
+    Line numbers in findings must stay true, so the span is not deleted -- its
+    non-newline content is dropped and its newlines kept.
+    """
+    def _blank(m):
+        return "".join(ch if ch == "\n" else " " for ch in m.group(0))
+    return _VERBATIM.sub(_blank, text)
+
+
 def scan_text(path: str, text: str, loose: Optional[List['Finding']] = None) -> List[Finding]:
     out: List[Finding] = []
     loose = [] if loose is None else loose
+    text = _blank_verbatim(text)
     for m in _FRAC.finditer(text):
         try:
             k = int(m.group(1).replace(",", "")); n = int(m.group(2).replace(",", ""))
