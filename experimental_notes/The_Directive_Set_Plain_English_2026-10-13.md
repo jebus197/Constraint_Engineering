@@ -4,6 +4,21 @@
 
 **Audience: a reader who can follow a file path but was not in the session.** The unedited panel replies are in `His_Rulings_FULL_RECORD_2026-10-13.md`. Key paths named here: `bench/directives/universal/cdsfl_core_formal.md` (27,803 chars, 15 sections), `bench/directives/universal/cdsfl_operational.md` (46,374 chars), `bench/cdsfl_registry/composer.py` (`PHENOTYPE_TRANSFORMS`, `max_directive_chars`, `_load_universal_directive`), `experimental_notes/CDSFL_Directive_Pruning_Review_2026-07-18.md`, and the guard `bench/tests/test_falsifier_C0040_universal_directive_2026-09-10.py` (8 passed).
 
+
+## CORRECTION, 2026-10-14: TWO FIGURES IN THIS NOTE ARE SUPERSEDED
+
+Both were re-derived on 2026-10-14 by calling the live composer, under the rule that a measured rate travels with the script that produced it. The producer is `scripts/what_the_full_directive_set_costs_2026-10-14.py`, and its `--help` is free.
+
+**The delivered size was 2,734 characters (9.8335 percent). It is 2,503 characters (9.0026 percent).** The direction of the finding is unchanged and its force is slightly greater. The 2026-10-13 figure ran inline with no committed script, so it could not be reproduced; the note's other figure of 9.0026 percent, recorded the same day, is the correct one.
+
+**AND THE CORRECTION SHARPENS THE POINT ABOUT THE CAPS.** All 8 seat labels tried, the 5 carrying a transform plus `fable`, `cc2` and the no-model default, receive the SAME 2,503 characters. So the per-model caps of 4,000, 6,000, 8,000 and 12,000 differentiate nothing at all: the minimal render sits below even the smallest of them, and the caps decide only WHETHER that render is used, which it always is because 27,803 exceeds the largest cap. `fable` and `cc2` have no entry in the transform table and receive the same text by default. The earlier framing, that each model gets a different truncation, was wrong.
+
+**The historical-narrative share was 18 lines of 494 and 20 of 762. Those numerators cannot be reproduced.** The denominators reproduce exactly on non-empty lines. Across 4 candidate predicates for what historical narrative looks like, a bare 4-digit year, an ISO date, year-or-MEASURED, and year-or-month-name, the highest counts obtainable are 8 of 494 and 13 to 16 of 762. Nothing tried reaches 18 or 20. On the broadest defensible predicate the chatter is 2.0033 percent of the 2 files by volume, which is 1,486 characters of 74,177, or about 371 tokens for each seat in each round.
+
+**The founder's judgement survives the correction and is strengthened by it.** His words were that a 7 percent overhead of what may ultimately be useful context is not such a huge burden to carry, and that it should be measured. Measured, it is about 2 percent, not 7. Carrying the whole directive set uncapped costs about 18,544 tokens for each seat in each round, and the historical narrative is the cheapest component of that. Removing the caps is the change that delivers the specification; cutting the narrative saves little and removes context that may matter.
+
+**And a smaller count: the file carries 16 markdown headings, not 15.** Zero survive in the delivered text, confirmed by execution rather than recall.
+
 ---
 
 None of the core directive reaches any model, and the caps forcing that are unjustified

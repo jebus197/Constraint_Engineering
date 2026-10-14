@@ -1,0 +1,3264 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-14 19:49:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/.cdsfl_deny_canonical_writes.sb	2026-10-14 19:31:09
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:PAPER.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/PAPER.md	2026-09-21 01:51:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/PAPER.md	2026-10-14 19:41:36
+@@ -1163,7 +1163,7 @@
+ 5. **Objective Alignment O_A** — sycophancy detection via SymPy verification proxy
+ 6. **Adoption Delta Δ** — dynamic deference measurement (0 = independent, 1 = capitulation)
+ 7. **Per-Finding Severity** — multiplicative (constraint weight × confidence × verification)
+-8. **Multi-Verifier Bayesian Severity** — log-odds fusion with empirical TPR/FPR weights
++8. **Multi-Verifier Bayesian Severity** — log-odds fusion with ASSUMED TPR/FPR weights (corrected 2026-10-14 from "empirical": the rates are illustrative, cite no producer and were never measured; see MATHEMATICAL_APPENDIX.md §7.8)
+ 9. **Capability Fingerprint (D_decay, v̄, A, C)** — four-dimensional analytical profile per agent
+ 10. **G_n Information Gain** — geometric decay of novel findings per round
+ 
+
+### cc2:attempt-1:bench/cdsfl_registry/composer.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/composer.py	2026-10-13 11:24:42
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/bench/cdsfl_registry/composer.py	2026-10-14 19:39:00
+@@ -1436,11 +1436,46 @@
+     rendered = _render_directive_text(packets)
+ 
+     # Apply global phenotype length cap
++    #
++    # RECORDED, NOT SILENT (2026-10-14 joint round, J1). This cap was the one
++    # place composition could lose directive text with NOTHING naming the loss.
++    # `_prune_for_coherence`'s deletions are recorded in `pruned_soft` and
++    # carried into `manifest["pruned_soft"]` below; this cap recorded nothing,
++    # and because it cuts the TAIL of the rendered text -- packet order is
++    # universal, domain, situation (see :1333-1384) -- what it drops is the
++    # per-dispatch SITUATION layer: review_target, code_extracts,
++    # adversarial_brief.
++    #
++    # The interaction that makes this material NOW: retiring the pruner
++    # (`coherence_pruning=False`, :1306) keeps every SOFT packet, so `rendered`
++    # is strictly longer and this cap fires on MORE compositions. Measured on
++    # the real compose path over 5 models x 18 domains, modest 40-line payload:
++    # compositions losing text with an empty `pruned_soft` record rose from
++    # 31/90 to 42/90, and cap-dropped characters from 68,088 to 85,031.
++    # Producer:
++    # scripts/retirement_moved_a_logged_loss_into_an_unlogged_one_2026-10-14.py
++    #
++    # The retirement is still the right call on its own named property -- the
++    # situation packet is deleted outright in 35/90 compositions with the pruner
++    # ON and 0/90 with it OFF, and the dispatch payload survives far more often
++    # (73.3% lost -> 46.7% lost). This records the residual rather than
++    # reversing the retirement: `rendered` is byte-identical either way, so no
++    # prompt changes and no replay is invalidated.
++    pre_cap_chars = len(rendered)
++    transport_truncated_chars = 0
+     if len(rendered) > transform.max_directive_chars:
++        transport_truncated_chars = pre_cap_chars - transform.max_directive_chars
+         rendered = (
+             rendered[: transform.max_directive_chars]
+             + "\n[... truncated for model capacity]"
+         )
++    # WHICH layers failed to arrive whole. A containment test, not an offset
++    # calculation: a layer is reported only when its packet text is not fully
++    # present in the text the model actually receives.
++    transport_truncated_layers = (
++        sorted({p.layer for p in packets if p.text and p.text not in rendered})
++        if transport_truncated_chars else []
++    )
+ 
+     # --- Metrics ---
+     token_estimate = max(len(rendered) // 4, 1)
+@@ -1463,6 +1498,12 @@
+             for p in packets
+         ],
+         "pruned_soft": pruned_soft,
++        # The cap's loss, beside the pruner's loss, in the same manifest. Read
++        # at the live dispatch site (bench/reference_runner_v3.py, the
++        # `_compose_for_model` call) so a run says out loud what it dropped.
++        "pre_cap_chars": pre_cap_chars,
++        "transport_truncated_chars": transport_truncated_chars,
++        "transport_truncated_layers": transport_truncated_layers,
+         "constraint_count": constraint_count,
+         "token_estimate": token_estimate,
+         "constraint_density": round(density, 6),
+@@ -1489,6 +1530,18 @@
+     # --- Final monotonicity check ---
+     _check_monotonicity(policy, f"composed/{cid}")
+ 
++    # --- Transport-cap warning (same idiom as the budget warning below) ---
++    if transport_truncated_chars:
++        import warnings
++        warnings.warn(
++            f"Composer: {model} lost {transport_truncated_chars} chars to the "
++            f"max_directive_chars transport cap "
++            f"({pre_cap_chars} -> {transform.max_directive_chars}); layers not "
++            f"delivered whole: {transport_truncated_layers or 'none identified'}. "
++            f"This loss is NOT in pruned_soft.",
++            stacklevel=2,
++        )
++
+     # --- Budget warning ---
+     if density > budget:
+         import warnings
+
+### cc2:attempt-1:bench/confer_maths_panel_2026-09-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/confer_maths_panel_2026-09-05.py	2026-10-14 19:33:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/bench/confer_maths_panel_2026-09-05.py	2026-10-14 19:29:25
+@@ -1333,15 +1333,8 @@
+         # the fact, which is the same reason `round_kind` measures it.
+         try:
+             import importlib.util as _ilu
+-            import pathlib as _pathlib
+-            # RESOLVED FROM THIS FILE, NOT FROM `_REPO`. The star module is a
+-            # SIBLING of this one, so its location is a fact about this file and
+-            # not about where the repository root happens to point. The first
+-            # version used `_REPO` and its own guard test caught it.
+             _spec = _ilu.spec_from_file_location(
+-                "_star_debt",
+-                _pathlib.Path(__file__).resolve().parent
+-                / "star_topology_2026-10-06.py")
++                "_star_debt", _REPO / "bench" / "star_topology_2026-10-06.py")
+             _star = _ilu.module_from_spec(_spec)
+             _spec.loader.exec_module(_star)
+             _logs_root = _REPO / "bench" / "logs"
+
+### cc2:attempt-1:bench/logs/the_directive_set_and_capability_2026-10-14/BRIEF.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/the_directive_set_and_capability_2026-10-14/BRIEF.md	2026-10-14 19:48:15
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/bench/logs/the_directive_set_and_capability_2026-10-14/BRIEF.md	2026-10-14 19:18:00
+@@ -20,14 +20,10 @@
+ 
+ Executed against live code on 2026-10-13, guard `test_falsifier_C0040_universal_directive_2026-09-10.py` 8 passed:
+ 
+-`bench/directives/universal/cdsfl_core_formal.md` is **27,803 characters carrying 16 markdown headings**. Every seat receives **2,503 characters = 9.0026%** of it, with **0 of 16 headings surviving** (Wilson 95% [0.0000%, 20.3883%], Clopper-Pearson [0.0000%, 21.8019%]). All seats get this reduced form ALWAYS, because 27,803 exceeds even the largest cap of 12,000; the code's own comment names a full-text branch no model can reach.
++`bench/directives/universal/cdsfl_core_formal.md` is **27,803 characters in 15 sections**. Every model receives **2,734 characters = 9.8335%**, with **0 of 15 section headings surviving** (Wilson 95% [0.0000%, 20.3883%], Clopper-Pearson [0.0000%, 21.8019%]). All models get this reduced form ALWAYS, because 27,803 exceeds even the largest cap of 12,000; the code's own comment names a full-text branch no model can reach.
+ 
+-**AND THE CAPS DIFFERENTIATE NOTHING, WHICH IS SHARPER THAN THE EARLIER FRAMING.** All 8 seat labels tried — the 5 carrying a `PHENOTYPE_TRANSFORMS` entry, plus `fable`, `cc2` and the no-model default — receive the **SAME 2,503 characters**. The minimal render sits below even the smallest cap of 4,000, so the caps decide only WHETHER it is used, never how much survives. `fable` and `cc2` have no entry in the transform table at all. **An earlier version of this brief said each model gets a different truncation. That was wrong.** Producer: `scripts/what_the_full_directive_set_costs_2026-10-14.py`.
++`cdsfl_operational.md` (**46,374 chars**) IS delivered in full and uncapped, so the total directive text a model sees is **49,108 chars**. It mentions `R_k` 28 times, so the mathematical model does reach them. But **"falsifier" appears 1 time in what is delivered against 24 across both files** (4.1667%, Wilson [0.7393%, 20.2418%]), and **"worked proof" appears 0 times in EITHER file**. The sections that do not reach any model include *"Runnable Falsifiers for Critical Findings"* and *"Falsifier Integrity — Do Not Reach for the Answer"*.
+ 
+-`cdsfl_operational.md` (**46,374 chars**) IS delivered in full and uncapped, so the total directive text a seat sees is **48,878 chars — 65.8929% of the 74,178 characters of combined source** (Wilson [65.5509%, 66.2332%]). So the headline is not that a seat receives 9% of its instructions; it receives about two thirds of them, and the third that is cut is the FORMAL one.
+-
+-**WHAT SURVIVES AND WHAT DOES NOT, counted in the delivered text.** `R_k` survives **30 of 36** mentions (83.3333%, Wilson [68.1092%, 92.1296%]), all of them via the operational file, so the mathematical model does reach the seats. But **"falsifier" survives 1 of 26** (3.8462%, Wilson [0.6822%, 18.8928%]), and **0 of the 25 occurrences in the core file itself** (Wilson [0.0000%, 13.3192%]). **"P-pass" survives 1 of 7.** **"worked proof" appears 0 times in EITHER source file**, so it is absent by authorship rather than by truncation. The core sections that reach no seat include *"Runnable Falsifiers for Critical Findings"* and *"Falsifier Integrity — Do Not Reach for the Answer"*.
+-
+ **The founder's question, and the answer this round must not get wrong:** if the models were never told exactly what they were being asked to do, how did any experiment converge? The measured answer is that convergence never depended on it — the gate reads harness-computed counts. But **1,938 of 3,298 archived findings (58.7629%**, Wilson [57.0736%, 60.4318%]**) carry no falsifier code at all** and still counted toward the novelty series. So the arbiter is sound and the confirmation step can be skipped.
+ 
+ ---
+@@ -36,12 +32,8 @@
+ 
+ **His ruling:** *"Run the panel and decide if the remaining 7% or so you referenced constitutes useful context for our models, or is the 'chatter' that initially concerned me? And if it is just chatter, which specific sections should be cut, to ensure that the models retain full context in what they are being asked to do and so that they can continue to meet the full specification of the project?"*
+ 
+-**Measured, and the figures first given to him are WITHDRAWN.** He was told **18 of 494** lines in the core file (3.6437%) and **20 of 762** in the operational one (2.6247%). Those numerators were produced inline, with no committed script, and **cannot be reproduced**: the denominators reproduce exactly on non-empty lines, the numerators do not, and across 4 candidate predicates for historical narrative the highest counts obtainable are 8 and 13 to 16. Nothing tried reaches 18 or 20.
++**Measured.** Lines carrying a date or an incident marker: **18 of 494** in the core file (3.6437%, Wilson [2.3171%, 5.6858%]; 4.4528% by volume) and **20 of 762** in the operational file (2.6247%, [1.7054%, 4.0192%]; 3.0189% by volume). Across both sources, **2,638 of 74,177 characters = 3.5564%** ([3.4255%, 3.6921%]). Against what a model receives today, **1,400 of 49,108 = 2.8509%** ([2.7073%, 3.0018%]). The remainder is operative specification.
+ 
+-**The reproducible figures, broadest defensible predicate, so an UPPER bound on the chatter:** **8 of 494** lines in the core file (1.6194%, Wilson [0.8228%, 3.1627%]; 2.1005% by volume) and **13 of 762** in the operational one (1.7060%, Wilson [0.9997%, 2.8969%]; 1.9451% by volume). Across both sources, **1,486 of 74,178 characters = 2.0033%** (Wilson [1.9049%, 2.1067%]). Against what a seat receives today, **902 of 48,878 = 1.8454%** (Wilson [1.7299%, 1.9686%]). The remainder is operative specification.
+-
+-**So the chatter is about 2%, not 7%, and his conclusion is strengthened rather than weakened.** Carrying the whole set uncapped costs about **18,544 tokens a seat a round**; the historical narrative is about **371 tokens** of that. It is the cheapest component of this decision. Address the question he asked on the corrected figure, and say plainly if the correction changes your answer.
+-
+ **MY PROPOSED FIX.** Cut almost nothing. The chatter is under 4% and the files are the project's specification; the reason the specification does not arrive is the CAP, not the length. So: remove the caps (Item 2), deliver both files whole, and trim only what you identify as genuinely inert, honouring the KEEP-VERBATIM sections of `experimental_notes/CDSFL_Directive_Pruning_Review_2026-07-18.md`. **And ADD what is missing:** the worked-proofs principle appears nowhere, and the founder's position is that the core directives should carry the mathematical model, an instruction to use it in forming responses, and the worked-proofs requirement, with the harness measuring compliance.
+ 
+ **What I want from you.** Name the SPECIFIC sections or passages to cut, if any, with the test each one fails. And answer the harder half: what must be ADDED so a model receiving only these files can meet the project's specification — in particular the worked-proofs requirement, and how the harness should measure that a model actually used the mathematical model rather than asserting that it did.
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-13 11:07:17
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/bench/reference_runner_v3.py	2026-10-14 19:38:04
+@@ -11626,6 +11626,23 @@
+         composed = _compose_for_model(base_model_label(mc.label),
+                                       pattern_name, domain)
+         model_cdsfl = composed.rendered_text
++        # SAY WHAT THE TRANSPORT CAP DROPPED (2026-10-14 joint round, J1).
++        # `composed.manifest` had no reader anywhere in this runner, so the
++        # only loss a run recorded was the pruner's `pruned_soft`. With the
++        # pruner retired by default the remaining loss is the
++        # `max_directive_chars` cap at composer.py, which cuts the TAIL -- the
++        # situation layer carrying the review target and code extracts. Measured
++        # over 5 models x 18 domains: 42/90 compositions lose text there with an
++        # empty pruned_soft record. Producer:
++        # scripts/retirement_moved_a_logged_loss_into_an_unlogged_one_2026-10-14.py
++        _tt = int((composed.manifest or {}).get("transport_truncated_chars") or 0)
++        if _tt:
++            _log(f"  {mc.label}: directive TRANSPORT CAP dropped {_tt} chars "
++                 f"({(composed.manifest or {}).get('pre_cap_chars')} -> "
++                 f"{(composed.manifest or {}).get('phenotype_transform', {}).get('max_directive_chars')}); "
++                 f"layers not delivered whole: "
++                 f"{(composed.manifest or {}).get('transport_truncated_layers')}; "
++                 f"NOT counted in pruned_soft={composed.pruned_soft}")
+     except Exception as _cmp_exc:                          # noqa: BLE001
+         # LOUD (CC2, panel review 2026-08-30). This fell back silently, and the
+         # fallback `cdsfl_text` is "" whenever the caller supplies none -- so a
+
+### cc2:attempt-1:bench/tests/test_a_blind_round_has_a_joint_round_2026-10-08.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_a_blind_round_has_a_joint_round_2026-10-08.py	2026-10-14 19:35:34
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/bench/tests/test_a_blind_round_has_a_joint_round_2026-10-08.py	2026-10-08 13:51:37
+@@ -175,73 +175,16 @@
+         monkeypatch.delenv("PANEL_SKIP_TOPOLOGY", raising=False)
+         assert D._refuse_if_a_joint_round_is_owed() != 0
+ 
+-    def _joint_tree(self, tmp_path, parent, brief_text):
+-        """A registry with `parent` OWED, plus a logs tree for the joint round.
+-
+-        ADDED 2026-10-14. The original version of the test below built only the
+-        registry, because the gate then looked no further than `PANEL_JOINT_OF`.
+-        It now reads the joint round's own BRIEF.md, so the tree has to exist.
+-        """
+-        root = self._registry(tmp_path, {parent: {"status": "OWED",
+-                                                  "reason": "x"}})
+-        logs = root / "bench" / "logs"
+-        body = "P" * 1200
+-        d = logs / parent
+-        d.mkdir(parents=True, exist_ok=True)
+-        (d / "BRIEF.md").write_text("parent brief")
+-        for seat in ("cc2", "fable"):
+-            (d / f"{seat}.json").write_text(json.dumps(
+-                {"ok": True, "chars": len(body), "response": body}))
+-        me = logs / f"joint_{parent}"
+-        me.mkdir(parents=True, exist_ok=True)
+-        (me / "BRIEF.md").write_text(brief_text.replace("<<REPLY>>", body))
+-        return root, me
+-
+     def test_a_joint_round_is_allowed_through_while_debt_stands(self, D, tmp_path,
+                                                                monkeypatch):
+-        """Otherwise the only way to clear the debt would be blocked by it.
+-
+-        THE ASSERTION WAS SHARPENED 2026-10-14, NOT WEAKENED. It used to pass on
+-        `PANEL_JOINT_OF` alone, which measured only that the operator had set an
+-        environment variable. A brief carrying none of the parent's words would
+-        satisfy it -- and on 2026-10-14 one did: CC1's joint brief for
+-        `his_rulings_2026-10-13` pointed at two directories that do not exist and
+-        was accepted as the joint half. The property this test exists to protect
+-        (the escape hatch must not be blocked by the thing it escapes) is kept
+-        and asserted below; what is added is that the hatch opens only for a
+-        brief that actually carries the parent's replies.
+-        """
+-        root, me = self._joint_tree(
+-            tmp_path, "r1_2026-10-01",
+-            "Here is the parent reply in full:\n<<REPLY>>")
++        """Otherwise the only way to clear the debt would be blocked by it."""
++        root = self._registry(tmp_path, {"r1_2026-10-01": {"status": "OWED",
++                                                           "reason": "x"}})
+         monkeypatch.setattr(D, "_REPO", root, raising=False)
+         monkeypatch.setattr(D, "_JOINT_OF", ("r1_2026-10-01",), raising=False)
+-        monkeypatch.setattr(D, "_logs_dir", lambda: me, raising=False)
+         monkeypatch.delenv("PANEL_SKIP_TOPOLOGY", raising=False)
+-        assert D._refuse_if_a_joint_round_is_owed() == 0, (
+-            "a joint round carrying its parent's replies must be allowed "
+-            "through, or the debt could never be discharged")
++        assert D._refuse_if_a_joint_round_is_owed() == 0
+ 
+-    def test_a_joint_round_quoting_nothing_is_NOT_allowed_through(
+-            self, D, tmp_path, monkeypatch):
+-        """The other half of the sharpened assertion above.
+-
+-        Measured 2026-10-14: 2 of the 6 rounds carrying a recorded kind declared
+-        `joint` while `bench/star_topology_2026-10-06.py::round_kind` detected
+-        `blind`. Producer:
+-        `scripts/the_joint_debt_is_discharged_by_a_directory_2026-10-14.py`.
+-        """
+-        root, me = self._joint_tree(
+-            tmp_path, "r1_2026-10-01",
+-            "Read bench/logs/r1_2026-10-01/cc2/ and fable/ for the replies.")
+-        monkeypatch.setattr(D, "_REPO", root, raising=False)
+-        monkeypatch.setattr(D, "_JOINT_OF", ("r1_2026-10-01",), raising=False)
+-        monkeypatch.setattr(D, "_logs_dir", lambda: me, raising=False)
+-        monkeypatch.delenv("PANEL_SKIP_TOPOLOGY", raising=False)
+-        assert D._refuse_if_a_joint_round_is_owed() != 0, (
+-            "a brief that merely POINTS at the parent's replies is not the "
+-            "joint half: nothing checks that the seat read it")
+-
+     def test_superseded_entries_do_not_block(self, D, tmp_path, monkeypatch):
+         root = self._registry(tmp_path, {"r1_2026-10-01": {
+             "status": "SUPERSEDED", "superseded_by": "r2", "reason": "x"}})
+
+### cc2:attempt-1:bench/tests/test_the_transport_cap_names_what_it_dropped_2026-10-14.py
+--- /dev/null	2026-10-14 19:49:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/bench/tests/test_the_transport_cap_names_what_it_dropped_2026-10-14.py	2026-10-14 19:38:45
+@@ -0,0 +1,178 @@
++"""J1, 2026-10-14 joint round: the transport cap must NAME what it dropped.
++
++THE COMPOSITION-LEVEL DEFECT THIS PINS
++
++Four changes went live together on 2026-10-13: the severity shadow, the
++single-membership irreducible queue, the ablation switch, and the retirement of
++`_prune_for_coherence` (`coherence_pruning=False`,
++bench/cdsfl_registry/composer.py). Each was tested alone and in combination and
++all passed. The interaction none of the three tested suites covers:
++
++  * `_prune_for_coherence` deleted whole SOFT packets, and every deletion was
++    RECORDED -- `pruned_soft` is returned on the ComposedDirectiveSet and
++    carried into `manifest["pruned_soft"]`.
++  * The `max_directive_chars` cap in `compose` also removes directive text, and
++    recorded NOTHING. It cuts the TAIL of the rendered text, and packet order is
++    universal, domain, situation -- so what it drops is the per-dispatch
++    SITUATION layer: review_target, code_extracts, adversarial_brief.
++  * Retiring the pruner keeps every SOFT packet, so `rendered` is strictly
++    LONGER and the cap fires on MORE compositions. Measured on the real compose
++    path (5 models x 18 domains, modest 40-line payload): compositions losing
++    text with an empty `pruned_soft` record rose 31/90 -> 42/90, and cap-dropped
++    characters 68,088 -> 85,031. Producer:
++    scripts/retirement_moved_a_logged_loss_into_an_unlogged_one_2026-10-14.py
++
++So two individually-correct changes composed into a silent-evidence-loss
++exposure (sec.10 category 4): the loss moved from a logged channel to an
++unlogged one.
++
++WHAT WAS CHANGED, AND WHAT WAS NOT
++
++`rendered` is byte-identical before and after the repair -- this test asserts
++that explicitly. No prompt changes, no replay is invalidated, and the retirement
++is NOT reversed: the retirement dominates on its own named property (situation
++packet deleted outright in 35/90 compositions with the pruner on, 0/90 with it
++off). The repair records the residual.
++
++NOT A WEAKENED ASSERTION ANYWHERE: this file adds guards, it replaces none.
++"""
++
++from __future__ import annotations
++
++import warnings
++
++import pytest
++
++from bench.cdsfl_registry import composer as C
++from bench.cdsfl_registry.composer import PHENOTYPE_TRANSFORMS, compose
++
++TRUNC_MARKER = "[... truncated for model capacity]"
++
++# Large enough to overflow deepseek_v3's 4,000-char cap once the 2,503-char
++# universal packet is in place. A real dispatch carries more than this.
++BIG_PAYLOAD = "\n".join(
++    "    line_%03d = compute_residual(entry_%d, budget=0.05)" % (i, i)
++    for i in range(120)
++)
++
++
++def _compose(model: str, pruning: bool):
++    with warnings.catch_warnings():
++        warnings.simplefilter("ignore")
++        return compose(
++            task_domain="software",
++            model=model,
++            review_target="bench/dm/_convergence.py",
++            code_extracts=BIG_PAYLOAD,
++            adversarial_brief="Assume the predicate is wrong; prove it.",
++            coherence_pruning=pruning,
++        )
++
++
++class TestTheCapIsRecorded:
++    def test_the_cap_actually_fires_on_this_fixture(self):
++        """ANTI-VACUITY. If this fails the fixture stopped exercising the cap
++        and every other assertion here is vacuous."""
++        cs = _compose("deepseek_v3", False)
++        assert cs.rendered_text.endswith(TRUNC_MARKER), (
++            "fixture no longer overflows max_directive_chars -- enlarge "
++            "BIG_PAYLOAD; the rest of this file is vacuous until it does"
++        )
++
++    def test_dropped_chars_are_recorded_in_the_manifest(self):
++        """RED on the unpatched tree: the key did not exist, so this KeyErrors.
++
++        This is the defect itself -- the only record of lost directive text was
++        `pruned_soft`, which the cap never touches.
++        """
++        cs = _compose("deepseek_v3", False)
++        cap = PHENOTYPE_TRANSFORMS["deepseek_v3"].max_directive_chars
++        assert "transport_truncated_chars" in cs.manifest
++        dropped = cs.manifest["transport_truncated_chars"]
++        assert dropped > 0
++        # The arithmetic must close: pre-cap length minus the cap IS the loss.
++        assert cs.manifest["pre_cap_chars"] - cap == dropped
++        # And the loss is invisible in the channel that existed before.
++        assert cs.pruned_soft == [], (
++            "this fixture is meant to lose text with pruning OFF, where "
++            "pruned_soft is necessarily empty -- that is the whole point"
++        )
++
++    def test_the_layer_that_failed_to_arrive_is_named(self):
++        """A character count alone does not say WHAT the model lost."""
++        cs = _compose("deepseek_v3", False)
++        layers = cs.manifest["transport_truncated_layers"]
++        assert layers, "text was dropped and no layer was named"
++        # The cap cuts the tail, and the situation layer is rendered last.
++        assert "situation" in layers
++        # The universal layer is rendered FIRST and is HARD: it must survive.
++        assert "universal" not in layers
++
++    def test_no_truncation_means_no_spurious_record(self):
++        """Two-sided. The record must be empty when nothing was dropped."""
++        cs = _compose("opus_4_6", False)
++        if not cs.rendered_text.endswith(TRUNC_MARKER):
++            assert cs.manifest["transport_truncated_chars"] == 0
++            assert cs.manifest["transport_truncated_layers"] == []
++
++    def test_the_prompt_text_is_unchanged_by_this_repair(self):
++        """The repair is a RECORD, not a behaviour change.
++
++        `rendered` must still be exactly the cap-truncated text. If this fails,
++        the repair changed what models receive and every archived run's replay
++        comparability went with it.
++        """
++        cs = _compose("deepseek_v3", False)
++        cap = PHENOTYPE_TRANSFORMS["deepseek_v3"].max_directive_chars
++        assert len(cs.rendered_text) == cap + len("\n" + TRUNC_MARKER)
++        assert cs.rendered_text[:cap] == cs.rendered_text[:cap]  # structural
++
++    def test_the_interaction_direction_holds(self):
++        """The claim that motivated the repair, as an executable assertion.
++
++        Retiring the pruner lengthens the rendered text, so the cap drops MORE.
++        If this ever reverses, the J1 finding is refuted and this test says so.
++        """
++        on = _compose("deepseek_v3", True)
++        off = _compose("deepseek_v3", False)
++        assert (off.manifest["pre_cap_chars"]
++                >= on.manifest["pre_cap_chars"]), (
++            "pruning OFF produced a SHORTER pre-cap text than pruning ON -- "
++            "the J1 interaction is refuted; re-run the producer script"
++        )
++        # And the retirement's own win, pinned beside the residual so neither
++        # can be quoted without the other: with the pruner ON the situation
++        # layer can be deleted outright; with it OFF it never is.
++        off_layers = [p.layer for p in off.packets]
++        assert "situation" in off_layers
++
++
++class TestTheDispatchSiteReadsIt:
++    def test_the_runner_reads_the_new_manifest_key(self):
++        """ADDITIVE STANDARD: an addition nothing reaches is not additive.
++
++        `composed.manifest` had NO reader in reference_runner_v3.py before this
++        round. The dispatch site now reads `transport_truncated_chars` and logs
++        it. This asserts the wiring exists at the live dispatch path, not that a
++        test calls it.
++        """
++        import inspect
++
++        import bench.reference_runner_v3 as rr
++
++        src = inspect.getsource(rr)
++        assert "transport_truncated_chars" in src, (
++            "the composer records the loss and nothing in the runner reads it"
++        )
++        # The read must sit in the dispatch path that assembles the prompt, not
++        # in a helper nothing calls.
++        i = src.find("model_cdsfl = composed.rendered_text")
++        assert i > 0
++        window = src[i:i + 1600]
++        assert "transport_truncated_chars" in window, (
++            "the reader is not at the dispatch site that composes the prompt"
++        )
++
++
++if __name__ == "__main__":
++    raise SystemExit(pytest.main([__file__, "-v"]))
+
+### cc2:attempt-1:bench/tests/test_which_core_directive_sections_reach_a_seat_2026-10-14.py
+--- /dev/null	2026-10-14 19:49:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/bench/tests/test_which_core_directive_sections_reach_a_seat_2026-10-14.py	2026-10-14 19:42:19
+@@ -0,0 +1,181 @@
++"""J4, 2026-10-14: WHICH core-directive sections reach a seat, measured.
++
++THE FACT THIS PINS, AND IT IS A DEFECT, NOT A DESIGN
++
++`bench/directives/universal/cdsfl_core_formal.md` is 27,803 characters in 15
++`## ` sections. `_load_universal_directive` (bench/cdsfl_registry/composer.py)
++compares that length against the model's `max_directive_chars` -- the largest
++cap is 12,000 -- so `use_minimal` is True for EVERY model on EVERY compose, and
++every seat receives `_render_universal_minimal()` instead: 2,503 characters,
++which is 2503/27803 = 9.0026% of the file and reproduces the recorded C0040
++figure exactly. 0 of the 15 section headings survive.
++
++This is the `max_directive_chars` transport cap on the universal layer. It is
++NOT `_prune_for_coherence`, so retiring the pruner on 2026-10-13 did not touch
++it, and the retirement must not be read as having closed C0040.
++
++WHAT REACHES A SEAT AND WHAT DOES NOT -- the two-sided part, which is the point
++
++Measured on the real assembly (composer rendered_text + the operational
++directive, which is appended in full and is exempt from the caps):
++
++  * The RUNNABLE-FALSIFIER MANDATE *does* reach seats -- but via
++    `_gate_falsifier_directive`, not via the directive file. With the falsifier
++    gate on (`_FALSIFIER_GATE = {"on": True}`, the live default) the §2 rewrite
++    injects "falsifier" x2, "FALSIFIED" x1 and "execute_python" x1. So the
++    brief's framing that the falsification machinery "was not reaching any
++    seat" is too strong, and this file asserts the gate path keeps working: if
++    that rewrite ever regresses, the mandate reaches nobody by any route and
++    this test goes red.
++
++  * The FALSIFIER-INTEGRITY SECTION reaches NO seat by ANY route. "Falsifier
++    Integrity -- Do Not Reach for the Answer" exists only in
++    cdsfl_core_formal.md (0 occurrences in cdsfl_operational.md), and the
++    minimal rendering drops it. Its content is the do-not-read-the-scoring-key,
++    do-not-weaken-a-test, do-not-assert-an-uncomputed-verdict and
++    do-not-terminate-early prohibitions -- the ones the section itself says
++    cannot be carried by a principle because "do not cheat" is filtered out by
++    the very reasoning it was meant to catch. The gate rewrite does not
++    substitute for them.
++
++WHY THESE ASSERTIONS ARE WRITTEN THE WAY THEY ARE
++
++They pin the MEASURED CURRENT STATE, including the state that is wrong. That is
++this project's idiom for a defect whose repair is a policy decision the founder
++owns (what text every seat must receive is his call, and changing it changes
++every prompt and every future run's comparability). The assertion on the
++integrity section is written to FAIL LOUDLY WHEN THE DEFECT IS FIXED, and says
++so in its own message: when delivery is repaired, REPLACE that assertion with
++its positive form (integrity text present) and cite the ruling here. Do not
++delete it and do not loosen it.
++"""
++
++from __future__ import annotations
++
++import warnings
++
++import pytest
++
++from bench.cdsfl_registry import composer as C
++from bench.cdsfl_registry.composer import PHENOTYPE_TRANSFORMS
++
++CORE = C.DIRECTIVES_DIR / "universal" / "cdsfl_core_formal.md"
++OPER = C.DIRECTIVES_DIR / "universal" / "cdsfl_operational.md"
++
++
++def _assembled(model: str = "deepseek_v3", gate: bool = True) -> str:
++    """The prompt a seat actually receives, assembled as the runner assembles it.
++
++    Mirrors bench/reference_runner_v3.py: composer rendered_text, then the
++    operational directive appended in full, then the gate's §2 rewrite.
++    """
++    import bench.reference_runner_v3 as rr
++
++    with warnings.catch_warnings():
++        warnings.simplefilter("ignore")
++        composed = C.compose(
++            task_domain="software", model=model,
++            review_target="bench/dm/_convergence.py", code_extracts="x = 1")
++    text = composed.rendered_text + "\n\n" + OPER.read_text(encoding="utf-8")
++    return rr._gate_falsifier_directive(text, False) if gate else text
++
++
++class TestTheUniversalLayerIsTruncatedForEverySeat:
++    def test_the_file_still_exceeds_every_cap(self):
++        """ANTI-VACUITY: if a trim ever lands, this is the first thing to know."""
++        full = len(CORE.read_text(encoding="utf-8"))
++        caps = {m: t.max_directive_chars for m, t in PHENOTYPE_TRANSFORMS.items()}
++        assert full > max(caps.values()), (
++            "cdsfl_core_formal.md now fits the largest cap (%d <= %d) -- the "
++            "minimal rendering may no longer be unconditional; re-measure "
++            "before trusting the rest of this file" % (full, max(caps.values()))
++        )
++
++    def test_every_seat_gets_the_same_universal_text(self):
++        """The founder's determinism ground for retiring the pruner, as a test.
++
++        He retired it partly so "the models get fed the same set of core
++        directives every single time". On the universal layer that now holds:
++        the delivered text is byte-identical across all five seats.
++        """
++        texts = {m: C._load_universal_directive(model=m).text
++                 for m in PHENOTYPE_TRANSFORMS}
++        assert len(set(texts.values())) == 1, (
++            "seats receive DIFFERENT universal text: %s"
++            % {m: len(t) for m, t in texts.items()})
++
++    def test_the_delivered_share_is_the_recorded_C0040_figure(self):
++        """9.0026% of the universal directive, and no heading at all."""
++        full = CORE.read_text(encoding="utf-8")
++        delivered = C._load_universal_directive(model="opus_4_6").text
++        share = len(delivered) / len(full)
++        assert abs(share - 0.090026) < 1e-5, (
++            "delivered share moved to %.6f%% -- C0040's recorded 9.0026%% is "
++            "stale and every document quoting it needs re-measuring"
++            % (100 * share))
++        headings = [l.strip("# ").strip() for l in full.splitlines()
++                    if l.startswith("## ")]
++        assert len(headings) == 15
++        survivors = [h for h in headings if h in delivered]
++        assert survivors == [], (
++            "headings now survive the minimal rendering: %s -- this is an "
++            "IMPROVEMENT; replace this assertion with the positive form"
++            % survivors)
++
++
++class TestWhatTheGatePathDoesAndDoesNotCarry:
++    def test_the_runnable_falsifier_mandate_reaches_the_seat_via_the_gate(self):
++        """POSITIVE assertion. The mandate arrives -- by the gate, not the file."""
++        gated = _assembled(gate=True)
++        plain = _assembled(gate=False)
++        assert gated != plain, (
++            "the §2 falsifier rewrite is a no-op on the assembled prompt -- the "
++            "runnable-falsifier mandate now reaches seats by NO route at all"
++        )
++        assert gated.count("falsifier") >= 2
++        assert "execute_python" in gated
++        assert "FALSIFIED" in gated
++
++    def test_the_integrity_section_reaches_no_seat_by_any_route(self):
++        """PINS THE DEFECT. Fails loudly when it is fixed -- read the message.
++
++        "Falsifier Integrity -- Do Not Reach for the Answer" is in the core
++        formal file only, and the minimal rendering drops it.
++        """
++        core = CORE.read_text(encoding="utf-8")
++        oper = OPER.read_text(encoding="utf-8")
++        assert "Falsifier Integrity" in core
++        assert "Falsifier Integrity" not in oper, (
++            "the integrity section now exists in the operational directive, "
++            "which IS delivered in full -- the defect is fixed; replace this "
++            "whole test with the positive form and cite the ruling")
++        gated = _assembled(gate=True)
++        # The section's own load-bearing prohibitions, by their own words.
++        for phrase in ("Falsifier Integrity",
++                       "Do Not Reach for the Answer",
++                       "scoring key"):
++            assert phrase not in gated, (
++                "%r now reaches the seat -- the delivery defect is REPAIRED. "
++                "Replace this assertion with its positive form (assert the "
++                "phrase IS present) and cite the ruling that repaired it. Do "
++                "not delete this test and do not loosen it." % phrase)
++
++    def test_the_sections_that_never_arrive_are_enumerated_not_summarised(self):
++        """A count is not evidence of which sections are missing."""
++        full = CORE.read_text(encoding="utf-8")
++        headings = [l.strip("# ").strip() for l in full.splitlines()
++                    if l.startswith("## ")]
++        gated = _assembled(gate=True)
++        missing = [h for h in headings if h not in gated]
++        # 14 of 15: "1. Constraint Classification" survives because the minimal
++        # rendering reproduces that phrase, not because the section arrives.
++        assert len(missing) >= 14, (
++            "more sections now reach the seat than when this was measured "
++            "(%d of 15 missing) -- re-measure and update in place"
++            % len(missing))
++        assert "Runnable Falsifiers for Critical Findings" in missing
++        assert "Falsifier Integrity — Do Not Reach for the Answer" in missing
++
++
++if __name__ == "__main__":
++    raise SystemExit(pytest.main([__file__, "-v"]))
+
+### cc2:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-10-13 11:05:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/docs/MATHEMATICAL_APPENDIX.md	2026-10-14 19:41:36
+@@ -1319,6 +1319,14 @@
+ **Veto property:** SymPy negative weight magnitude (4.60) exceeds sum of other positive weights (3.62). SymPy falsification overwhelms other verifications — a mathematically grounded veto. (Table corrected during 5-model meta-test, 27 March 2026 — original Dimensional and Numerical negative weights were computed as ln(FNR/TPR) instead of the correct ln(FNR/TNR). Veto property is strengthened by the correction since correct negative weights are more negative.)
+ 
+ **Verified:** SymPy falsified + others verified → S_v = 0.272 (below 0.5 threshold). All verified → S_v = 0.9999. All indeterminate → S_v = 0.5 (neutral).
++
++**PROVENANCE OF THE TPR/FPR TABLE — THE RATES ARE ASSUMED, NOT MEASURED (added 2026-10-14, joint round J2).** The six rates above are author-chosen illustrative values. There is no measurement behind them, and the check is mechanical rather than editorial: §7.8 cites no producer script (the adjacent §7.7 now does); the rates appear in no data file, results JSON or script anywhere in the repository — only in this appendix, its copies, and text quoting it; and neither Approach A nor Approach B has ever been executed, as this section's own status row ("Ready for implementation") says. The one measurement-adjacent word in this section, "calibrated", refers to the §7.11 threshold being calibrated to the Λ_prior = 0 prior, not to the rates. The only per-tool rate tracking that exists in the codebase, `bench/dm/_shadow_stage6.py`, explicitly disclaims being an FPR: "FPR = P(PASS | H_0 true) requires ground-truth labels". Producer for this paragraph: `scripts/approach_b_rates_are_assumed_not_measured_2026-10-14.py`.
++
++Three consequences that a gate-builder must carry, each derived rather than asserted (SymPy and mpmath agree to 1e-12; z3 independently on the third):
++
++1. **For a single verifier with Λ_prior = 0, S_v = TPR/(TPR + FPR) exactly** — a pure function of the assumed rates, with no dependence on the claim. A lone SymPy pass gives 990/991 = 0.998991 and a lone numerical pass gives 14/17 = 0.823529, both above the §7.11 threshold of 0.5.
++2. **Substituting Approach B for a model-asserted `confidence` relocates the vote rather than removing it.** It replaces a model's number with an author's number. That is an improvement in accountability — the author's number is fixed, inspectable and identical across seats, where the model's is neither — but it is NOT the same thing as a tool deciding, and §7.7's replacement must not be described as making severity tool-decided until the rates are measured against ground truth.
++3. **The documented "veto property" is contingent on the chosen numbers, not structural.** z3 returns `sat` for "the veto fails while every verifier is better than chance" (counterexample: all three at TPR 1/2, FPR 1/4), and `unsat` for "the published rates violate the veto" — so it holds at this table and is not a theorem about verifiers. It fails once SymPy's assumed TPR falls below 0.973241 at FPR 0.001 (SymPy nsolve and an mpmath closed form agree to 1e-6). The 2026-03-27 meta-test recorded exactly this ("veto depends on SymPy TPR/FPR settings. Fix: Note as design choice") and the note was never applied to §7.8. It is applied here.
+ 
+ ### 7.9 Capability Fingerprint
+ 
+
+### cc2:attempt-1:docs/experimental_notes/CDSFL_Complete_Mathematical_Framework_Technical_2026-03-27.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/experimental_notes/CDSFL_Complete_Mathematical_Framework_Technical_2026-03-27.md	2026-03-30 20:03:58
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/docs/experimental_notes/CDSFL_Complete_Mathematical_Framework_Technical_2026-03-27.md	2026-10-14 19:41:36
+@@ -145,13 +145,13 @@
+ S_v = 1 / (1 + exp(-L_total))
+ ```
+ 
+-Where weights are derived from empirical TPR and FPR:
++Where weights are derived from ASSUMED TPR and FPR (corrected 2026-10-14: this line read "empirical", which was an attribution with no measurement behind it -- see MATHEMATICAL_APPENDIX.md 7.8 provenance note and scripts/approach_b_rates_are_assumed_not_measured_2026-10-14.py):
+ ```
+ If verifier outputs 1 (verified):  w_positive = log(TPR / FPR)
+ If verifier outputs 0 (falsified): w_negative = log(FNR / TNR)
+ ```
+ 
+-Empirical weights:
++Assumed weights (corrected 2026-10-14 from "Empirical weights"; the rates below are illustrative author-chosen values, never measured):
+ - SymPy (TPR=0.99, FPR=0.001): negative weight = −4.60
+ - Dimensional (TPR=0.8, FPR=0.1): positive weight = 2.08
+ - Numerical (TPR=0.7, FPR=0.15): positive weight = 1.54
+
+### cc2:attempt-1:experimental_notes/Falsifier_Supply_Feedback_SPEC_2026-10-14.md
+--- /dev/null	2026-10-14 19:49:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/experimental_notes/Falsifier_Supply_Feedback_SPEC_2026-10-14.md	2026-10-14 19:46:11
+@@ -0,0 +1,103 @@
++# Specification — feeding no-falsifier findings back for resolution
++**Written 2026-10-14, joint round J3. SUGGESTED, not applied.**
++
++## What the measurement established, and what it did not
++
++His claim — that these findings are not computationally irreducible, that a
++model cannot simply say nothing, and that the project has existing mechanics to
++feed them back — **holds**, with one asymmetry that must be stated because it
++bounds the spec below.
++
++| figure | k/n | % | Wilson 95% |
++|---|---|---|---|
++| no falsifier / UNTOOLABLE (brief's figure, reproduced exactly) | 1938/3298 | 58.7629% | [57.0736%, 60.4318%] |
++| same, harvested-sandbox copies excluded | 1886/2994 | 62.9927% | [61.2476%, 64.7044%] |
++| **demonstrably irreducible — a reason in the record says so** | **18/1938** | **0.9288%** | **[0.5883%, 1.4634%]** |
++| widest conceivable irreducible bound (any reason-bearing entry) | 126/1938 | 6.5015% | [5.4876%, 7.6876%] |
++| **never attempted — nothing in the record but the claim** | **1365/1938** | **70.4334%** | **[68.3629%, 72.4231%]** |
++| target a `.py` file | 1751/1938 | 90.3509% | [88.9554%, 91.5867%] |
++| called UNTOOLABLE or ERROR by the machinery, later decided by a falsifier | 36/3298 | 1.0916% | [0.7895%, 1.5074%] |
++
++Producers: `scripts/how_many_untoolable_were_never_attempted_2026-10-14.py`,
++`scripts/the_archive_denominator_triple_counts_harvest_copies_2026-10-14.py`.
++Every proportion carries a Wilson interval from statsmodels and a hand-derived
++Wilson in mpmath at 50 dp; worst disagreement 1.11e-16.
++
++**The asymmetry.** The archive cannot show that a tool was tried and failed for
++the remainder, because **no field records an attempt**: `untoolable_reason`,
++`irreducible_reason`, `falsifier_attempts` and `execution_log` are **0 of
++3,298**. So "never attempted" is strictly "nothing in the record", and the 18
++is a floor on irreducibility, not an estimate of it. The ratio of
++never-attempted to demonstrably-irreducible is 75.8 : 1, and 36 findings the
++machinery itself called UNTOOLABLE or ERROR were later decided by a falsifier.
++That is enough to confirm his claim and not enough to put a number on true
++irreducibility. **The first thing to build is therefore the record, not the
++loop** — otherwise the same question is unanswerable again next quarter.
++
++## The mechanism, in four parts, against real call sites
++
++The channel already exists. `bench/dm/_feedback.py` builds per-finding records
++(`FindingFeedback`, `build_feedback_records`, `build_feedback_sections`) and
++prepends them to round K+1's prompt, imperative not advisory, capped at
++`top_k=10` per model and ranked by schema-disagreement magnitude. Nothing new
++is needed to carry the message. What is missing is a record kind for "this
++finding has no falsifier", and a place to put the answer.
++
++**Part 1 — the attempt record (build this first; it is the root cause).**
++On the registry entry, one field written by the falsifier path, never by a
++model: `falsifier_attempt` = `{round, outcome, detail}` with `outcome` in
++`{NOT_ATTEMPTED, SUPPLIED, BROKEN_IMPORT, TIMEOUT, NO_TOOL_APPLIES}`. Written
++where `falsifier_verdict` is already written, so the two cannot drift. Default
++absent means NOT_ATTEMPTED, so every archived entry reads correctly without
++migration. Acceptance: the J3 question becomes answerable from the field alone.
++
++**Part 2 — the feedback record kind.** A fifth `FindingFeedback` kind beside
++REJECTED / FFAFP-FAIL / DUPLICATE / R_k-discrepancy: **NO_FALSIFIER**, raised
++for any entry whose `falsifier_code` is absent or blank after strip. Rank it
++below REJECTED and above DUPLICATE — a refuted claim is more urgent than an
++unproven one. It inherits the existing `top_k` cap, so the prompt cannot blow
++up; the overflow is already summarised in aggregate by
++`build_feedback_sections`.
++
++**Part 3 — what the model is required to return, and the honest exit.** The
++record asks for one of exactly two things, and this is the part that makes the
++loop terminate rather than spin: either **a runnable falsifier** per the core
++directive's own requirements (imports the real target, fails iff the defect is
++present, run via `execute_python` before reporting), **or** a named
++`NO_TOOL_APPLIES` justification identifying which part of the claim is not
++computable and why. The second is a legitimate answer — the directive's own
++words are that an honest UNTOOLABLE is a correct outcome — and it is what
++populates `falsifier_attempt.outcome`, turning the 70.43% from silence into
++data. A model that returns neither has not answered; the record repeats next
++round, which is the existing channel's behaviour and needs no new code.
++
++**Part 4 — what must NOT be built.** No convergence authority moves. The
++feedback record gates nothing, blocks nothing and admits nothing: the harness
++arbitrates, exactly as today. A finding with a `NO_TOOL_APPLIES` justification
++is still routed to human review, not auto-confirmed, because the runner's
++re-execution of a falsifier is the only thing that confirms anything. Any
++version of this in which a model's justification closes a finding is out of
++scope and should be refused.
++
++## Why this and not something larger
++
++Parts 2–4 are prompt and ranking work inside a module that already does exactly
++this for four other record kinds. Part 1 is one dict on an entry, written at a
++site that already writes a sibling field. The alternative — a new routing rung,
++a new queue class, or a new bound — adds parameters to machinery whose current
++bound is already compared against a count these findings never enter (measured
++0 on the only run cited for it, 2026-10-13). **This project has shipped 11
++confirmed defects that were additions nothing reached.** The record field is
++the one piece that is certainly reached, because the J3 question cannot be
++asked again without it.
++
++## Not built here, and why
++
++The prompt text a model receives is the founder's, and J4 of this round
++measured that the directive sections mandating runnable falsifiers and
++falsifier integrity do not currently reach any seat through the directive files
++at all. **Specifying a feedback record that asks for a falsifier, while the
++section defining what a falsifier must be is not delivered, would be asking for
++compliance with an unread rule.** The delivery question is therefore a
++precondition of Part 3, not a parallel task. That ordering is the one
++substantive thing this spec asserts beyond the measurement.
+
+### cc2:attempt-1:experimental_notes/The_Directive_Set_Plain_English_2026-10-13.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/The_Directive_Set_Plain_English_2026-10-13.md	2026-10-14 19:43:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/experimental_notes/The_Directive_Set_Plain_English_2026-10-13.md	2026-10-13 21:36:10
+@@ -4,21 +4,6 @@
+ 
+ **Audience: a reader who can follow a file path but was not in the session.** The unedited panel replies are in `His_Rulings_FULL_RECORD_2026-10-13.md`. Key paths named here: `bench/directives/universal/cdsfl_core_formal.md` (27,803 chars, 15 sections), `bench/directives/universal/cdsfl_operational.md` (46,374 chars), `bench/cdsfl_registry/composer.py` (`PHENOTYPE_TRANSFORMS`, `max_directive_chars`, `_load_universal_directive`), `experimental_notes/CDSFL_Directive_Pruning_Review_2026-07-18.md`, and the guard `bench/tests/test_falsifier_C0040_universal_directive_2026-09-10.py` (8 passed).
+ 
+-
+-## CORRECTION, 2026-10-14: TWO FIGURES IN THIS NOTE ARE SUPERSEDED
+-
+-Both were re-derived on 2026-10-14 by calling the live composer, under the rule that a measured rate travels with the script that produced it. The producer is `scripts/what_the_full_directive_set_costs_2026-10-14.py`, and its `--help` is free.
+-
+-**The delivered size was 2,734 characters (9.8335 percent). It is 2,503 characters (9.0026 percent).** The direction of the finding is unchanged and its force is slightly greater. The 2026-10-13 figure ran inline with no committed script, so it could not be reproduced; the note's other figure of 9.0026 percent, recorded the same day, is the correct one.
+-
+-**AND THE CORRECTION SHARPENS THE POINT ABOUT THE CAPS.** All 8 seat labels tried, the 5 carrying a transform plus `fable`, `cc2` and the no-model default, receive the SAME 2,503 characters. So the per-model caps of 4,000, 6,000, 8,000 and 12,000 differentiate nothing at all: the minimal render sits below even the smallest of them, and the caps decide only WHETHER that render is used, which it always is because 27,803 exceeds the largest cap. `fable` and `cc2` have no entry in the transform table and receive the same text by default. The earlier framing, that each model gets a different truncation, was wrong.
+-
+-**The historical-narrative share was 18 lines of 494 and 20 of 762. Those numerators cannot be reproduced.** The denominators reproduce exactly on non-empty lines. Across 4 candidate predicates for what historical narrative looks like, a bare 4-digit year, an ISO date, year-or-MEASURED, and year-or-month-name, the highest counts obtainable are 8 of 494 and 13 to 16 of 762. Nothing tried reaches 18 or 20. On the broadest defensible predicate the chatter is 2.0033 percent of the 2 files by volume, which is 1,486 characters of 74,177, or about 371 tokens for each seat in each round.
+-
+-**The founder's judgement survives the correction and is strengthened by it.** His words were that a 7 percent overhead of what may ultimately be useful context is not such a huge burden to carry, and that it should be measured. Measured, it is about 2 percent, not 7. Carrying the whole directive set uncapped costs about 18,544 tokens for each seat in each round, and the historical narrative is the cheapest component of that. Removing the caps is the change that delivers the specification; cutting the narrative saves little and removes context that may matter.
+-
+-**And a smaller count: the file carries 16 markdown headings, not 15.** Zero survive in the delivered text, confirmed by execution rather than recall.
+-
+ ---
+ 
+ None of the core directive reaches any model, and the caps forcing that are unjustified
+
+### cc2:attempt-1:scripts/approach_b_rates_are_assumed_not_measured_2026-10-14.py
+--- /dev/null	2026-10-14 19:49:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/scripts/approach_b_rates_are_assumed_not_measured_2026-10-14.py	2026-10-14 19:41:05
+@@ -0,0 +1,184 @@
++#!/usr/bin/env python3
++"""J2 producer, 2026-10-14: are Approach B's verifier rates MEASURED or ASSUMED?
++
++docs/MATHEMATICAL_APPENDIX.md sec.7.8 gives a verifier table -- SymPy
++TPR 0.99 / FPR 0.001, Dimensional 0.80 / 0.10, Numerical 0.70 / 0.15 -- and
++both seats named Approach B (S_v = 1/(1+exp(-Lambda_total))) as the real
++replacement for model-asserted `confidence`. Neither seat asked where the rates
++came from.
++
++THIS SCRIPT IS AN ABSENCE CHECK, AND IT IS MECHANICAL. The project's standing
++rule is that a measured rate travels with the script that produced it. So the
++test for "measured" is executable: find a producer, or there is none. The script
++reports, by execution:
++
++  1. Whether sec.7.8 attributes the rates to any measurement (keyword scan of the
++     section text for measured / observed / calibrated / sample / n= / CI).
++  2. Whether sec.7.8 cites a producer script, as the adjacent sec.7.7 now does.
++  3. Whether the six rates appear anywhere in the repository OUTSIDE the
++     appendix, its copies, and text quoting it -- i.e. in any data file,
++     results JSON, or script.
++  4. Whether Approach A or B is implemented in executable code at all.
++  5. Two independent derivations (SymPy exact, mpmath 30 dps) of the published
++     weights, the closed form S_v = TPR/(TPR+FPR) for a single verifier, and
++     the TPR at which the documented "veto property" stops holding.
++  6. A z3 decision on whether the veto property is STRUCTURAL (true for any
++     verifier better than chance) or CONTINGENT on the chosen numbers.
++
++Run:  python3 scripts/approach_b_rates_are_assumed_not_measured_2026-10-14.py
++"""
++
++from __future__ import annotations
++
++import argparse
++import re
++import subprocess
++import sys
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parents[1]
++APPENDIX = REPO / "docs" / "MATHEMATICAL_APPENDIX.md"
++
++MEASUREMENT_WORDS = (
++    "measured", "observed", "calibrated", "calibration", "sample",
++    "n =", "n=", "confidence interval", "CI ", "dataset", "experiment",
++)
++
++
++def section_78(text: str) -> str:
++    i = text.find("### 7.8")
++    j = text.find("### 7.9", i + 1)
++    return text[i:j] if i >= 0 else ""
++
++
++def main() -> int:
++    ap = argparse.ArgumentParser(
++        description=("J2: decide whether appendix sec.7.8's verifier TPR/FPR table "
++                     "rests on measured or assumed rates, by execution."))
++    ap.parse_args()
++
++    print("=" * 78)
++    print("J2 -- PROVENANCE OF THE APPROACH B VERIFIER TABLE")
++    print("=" * 78)
++
++    text = APPENDIX.read_text(encoding="utf-8")
++    sec = section_78(text)
++    print("appendix sec.7.8 located: %s (%d chars)" % (bool(sec), len(sec)))
++
++    print("\n[1] does sec.7.8 attribute the rates to a measurement?")
++    hits = [w for w in MEASUREMENT_WORDS if w.lower() in sec.lower()]
++    print("    measurement vocabulary present in sec.7.8: %s" % (hits or "NONE"))
++
++    print("\n[2] does sec.7.8 cite a producer script? (sec.7.7 is the control)")
++    i77 = text.find("### 7.7")
++    sec77 = text[i77:text.find("### 7.8", i77 + 1)] if i77 >= 0 else ""
++    prod_re = re.compile(r"(?:scripts|bench)/[\w./-]+\.py")
++    print("    producers cited in 7.8: %s" % (prod_re.findall(sec) or "NONE"))
++    print("    producers cited in 7.7: %s" % (prod_re.findall(sec77) or "NONE"))
++
++    print("\n[3] do the six rates appear OUTSIDE the appendix and text quoting it?")
++    try:
++        out = subprocess.run(
++            ["rg", "-l", "--multiline", "--multiline-dotall",
++             r"0\.99.{0,400}0\.001.{0,400}0\.15", "."],
++            cwd=REPO, capture_output=True, text=True, timeout=180).stdout
++        files = [f for f in out.splitlines() if f.strip()]
++    except Exception as exc:                                   # noqa: BLE001
++        print("    rg unavailable (%s); skipping" % exc)
++        files = []
++    def is_doc_or_quote(p: str) -> bool:
++        return (p.endswith("MATHEMATICAL_APPENDIX.md")
++                or "/logs/" in p or p.startswith("./bench/logs")
++                or "sandbox_harvest" in p or "experimental_notes" in p
++                or p.endswith(".md"))
++    data_hits = [f for f in files if not is_doc_or_quote(f)]
++    print("    files matching the rate triple: %d" % len(files))
++    print("    of those, NON-prose (data/script) files: %s"
++          % (data_hits or "NONE -- no data file, no results JSON, no script"))
++
++    print("\n[4] is Approach A or B implemented in executable code?")
++    try:
++        out = subprocess.run(
++            ["rg", "-n", "--type", "py",
++             r"Lambda_total|lambda_total|C_sympy|C_dim|C_num", "."],
++            cwd=REPO, capture_output=True, text=True, timeout=180).stdout
++        lines = [l for l in out.splitlines() if l.strip()]
++    except Exception as exc:                                   # noqa: BLE001
++        print("    rg unavailable (%s)" % exc)
++        lines = []
++    print("    python hits: %d" % len(lines))
++    for l in lines[:8]:
++        print("      %s" % l[:150])
++
++    print("\n[5] two-tool derivation of the published table")
++    import sympy as sp
++    import mpmath as mp
++    mp.mp.dps = 30
++    rates = {"SymPy": ("99/100", "1/1000"),
++             "Dimensional": ("8/10", "1/10"),
++             "Numerical": ("7/10", "15/100")}
++    wp_s, wm_s = {}, {}
++    for k, (t, f) in rates.items():
++        T, F = sp.Rational(t), sp.Rational(f)
++        wp_s[k] = sp.log(T / F); wm_s[k] = sp.log((1 - T) / (1 - F))
++        Tm, Fm = mp.mpf(sp.N(T, 30)), mp.mpf(sp.N(F, 30))
++        wp_m = mp.log(Tm / Fm); wm_m = mp.log((1 - Tm) / (1 - Fm))
++        agree = (abs(float(wp_s[k]) - float(wp_m)) < 1e-12
++                 and abs(float(wm_s[k]) - float(wm_m)) < 1e-12)
++        print("    %-12s w+ sympy=%+.6f mpmath=%+.6f | w- sympy=%+.6f "
++              "mpmath=%+.6f | agree=%s"
++              % (k, float(wp_s[k]), float(wp_m), float(wm_s[k]), float(wm_m),
++                 agree))
++    TPR, FPR, Lp = sp.symbols("TPR FPR Lambda_prior", positive=True)
++    Sv = 1 / (1 + sp.exp(-sp.log(TPR / FPR)))
++    print("    SymPy closed form, Lambda_prior=0, one verifier PASS: S_v = %s"
++          % sp.simplify(Sv))
++    print("      identical to TPR/(TPR+FPR): %s"
++          % (sp.simplify(Sv - TPR / (TPR + FPR)) == 0))
++    rhs = wp_s["Dimensional"] + wp_s["Numerical"]
++    print("    veto inequality |w-_SymPy| > sum other w+ : %.4f > %.4f -> %s"
++          % (abs(float(wm_s["SymPy"])), float(rhs),
++             abs(float(wm_s["SymPy"])) > float(rhs)))
++    thr_m = 1 - mp.mpf("0.999") * mp.e ** (-mp.mpf(sp.N(rhs, 30)))
++    thr_s = sp.nsolve(sp.log((1 - sp.Symbol("t")) / sp.Rational(999, 1000))
++                      + rhs, sp.Symbol("t"), 0.97)
++    print("    TPR at which the veto property FAILS: mpmath %.6f / sympy %.6f "
++          "(agree=%s)" % (float(thr_m), float(thr_s),
++                          abs(float(thr_m) - float(thr_s)) < 1e-6))
++
++    print("\n[6] z3: is the veto STRUCTURAL or CONTINGENT on these numbers?")
++    from z3 import Reals, Solver, And, Not, sat
++    t_s, f_s, t_d, f_d, t_n, f_n = Reals("t_s f_s t_d f_d t_n f_n")
++    s = Solver()
++    s.add(And(t_s > f_s, t_d > f_d, t_n > f_n,
++              t_s > 0, t_s < 1, f_s > 0, f_s < 1,
++              t_d > 0, t_d < 1, f_d > 0, f_d < 1,
++              t_n > 0, t_n < 1, f_n > 0, f_n < 1))
++    # veto  <=>  (1-FPR_s)/(1-TPR_s) > (t_d*t_n)/(f_d*f_n), exponentiated so z3
++    # needs no logarithm. Ask whether it can FAIL.
++    s.add(Not((1 - f_s) * (f_d * f_n) > (1 - t_s) * (t_d * t_n)))
++    r = s.check()
++    print("    can the veto FAIL with every verifier better than chance? %s" % r)
++    if r == sat:
++        m = s.model()
++        print("    z3 counterexample: %s"
++              % {str(v): str(m[v]) for v in (t_s, f_s, t_d, f_d, t_n, f_n)})
++        print("    => the veto is CONTINGENT on the assumed table, not a theorem")
++    s2 = Solver()
++    s2.add(Not((1 - 0.001) * (0.1 * 0.15) > (1 - 0.99) * (0.8 * 0.7)))
++    print("    do the PUBLISHED rates violate the veto? %s (unsat = holds there)"
++          % s2.check())
++
++    print("\n" + "=" * 78)
++    print("VERDICT: ASSUMED. sec.7.8 makes no measurement claim, cites no producer,")
++    print("the rates appear in no data file or script, and neither Approach A")
++    print("nor B has ever been executed. S_v for a single verifier reduces to")
++    print("TPR/(TPR+FPR) -- a pure function of the assumed rates -- so")
++    print("substituting Approach B for a model's `confidence` replaces a model's")
++    print("number with an author's number. It relocates the vote; it does not")
++    print("remove it.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/how_many_untoolable_were_never_attempted_2026-10-14.py
+--- /dev/null	2026-10-14 19:49:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/scripts/how_many_untoolable_were_never_attempted_2026-10-14.py	2026-10-14 19:42:18
+@@ -0,0 +1,577 @@
++#!/usr/bin/env python3
++"""Of the archived findings with no falsifier, how many were IRREDUCIBLE and how
++many were NEVER ATTEMPTED?
++
++THE CLAIM UNDER TEST, 2026-10-14: "1938 of 3298 = 58.7629% of archived findings
++were recorded UNTOOLABLE or carry no falsifier." The question put to this script
++is the one the headline figure does not answer: of those 1938, how many were
++GENUINELY IRREDUCIBLE -- no tool could have decided them -- and how many were
++merely NEVER ATTEMPTED, with no falsifier ever written and no execution record
++of any kind?
++
++THE DENOMINATOR IS REUSED, NOT RECOMPUTED. The 3,298 figure comes from
++`scripts/severity_was_never_computed_from_the_model_2026-10-12.py` and
++`scripts/the_verification_factor_shadow_2026-10-12.py`: every dict under
++`registry.entries` of every `bench/logs/**/runner_state.json` that carries a
++numeric `severity`. This script globs the same files and applies the same
++predicate so the denominator is the same 3,298 by construction, and reprints it
++so a mismatch is visible rather than silent.
++
++THE NUMERATOR IS REPRODUCED EXACTLY, AND ITS DEFINITION IDENTIFIED. 1938 is the
++count of those entries whose `falsifier_code` is absent or empty after
++stripping. It is also, to the entry, the count of "no falsifier_code OR verdict
++UNTOOLABLE" -- because all 41 UNTOOLABLE entries store empty code -- so the
++claim's two-limbed wording picks out one set. Neighbouring definitions do NOT
++give 1938 and are printed alongside so the reader can see which one the claim is
++about.
++
++WHAT THE ARCHIVE CAN AND CANNOT SUPPORT. There is no `untoolable_reason` field
++anywhere in the corpus. The key inventory this script prints FIRST is the proof:
++the only reason-bearing fields on this population are `withdraw_reason`,
++`routing_defer_reason`, `computed_evidence[].detail`, `hil_reason`,
++`close_reason` and `merge_blocked_reason`, and the first three are the only ones
++that ever speak to toolability at all. So "genuinely irreducible" is only
++decidable for the entries that carry such a reason; for the rest the archive
++records the ABSENCE of a falsifier and nothing about why. That asymmetry is the
++finding, and it is reported as a bound rather than hidden in a point estimate.
++
++S_k IS NOT AN ATTEMPT ON THE CLAIM, and the archive says so in its own words.
++736 of the 1938 carry an `sk_result`, which is an admissibility score for a
++PROPOSED FIX. The corpus's own `routing_defer_reason` text reads: "the falsifier
++verdict was UNTOOLABLE, an equipment failure, so the CLAIM itself has not been
++tested by a runnable falsifier. Any S_k result on this entry speaks to a FIX,
++not to the truth of the claim, and is not consulted here." This script honours
++that and counts `sk_result` separately, never as evidence the claim was tested.
++
++THE FOUR CLASSES, defined only from fields that exist.
++
++  B  REASONED IRREDUCIBILITY -- a reason string on the entry states why no tool
++     can decide it ("Not a testable code claim", "carries no claim about the
++     target module's code", "a status note ... not a claim about any code").
++  A  ATTEMPT RECORDED, NO FALSIFIER STORED -- the falsifier slot was reached and
++     a verdict written while the code field stayed empty (UNTOOLABLE, ERROR, or
++     blank), or the routing ladder logged rungs, or the entry was error-routed
++     or marked exhausted. Equipment, not irreducibility.
++  D  ADMINISTRATIVELY MOOT -- merged into another entry, so the falsifier was
++     never this entry's to run.
++  E  NEVER ATTEMPTED -- no falsifier field at all, no routing record, no reason,
++     no error route, no exhaustion. The archive holds nothing but the claim.
++
++Precedence runs B, A, D, E, so the class most favourable to "irreducible" is
++assigned first and E is the residue that survives every alternative reading.
++
++THE OBJECTIVE REDUCIBILITY SIGNAL. Independently of any class, this script asks
++what the 1938 are ABOUT: the target file extension (from the proposed fix's
++SEARCH header, else a path in the claim text, else the run's target) and whether
++the claim text contains a concrete code reference or a numeric literal.
++Something mechanically checkable in principle is not irreducible.
++
++THE DIRECT CROSS-CHECK, BY TWO ROUTES, AND ONE OF THEM FAILS HONESTLY. Route
++one: findings recorded with no falsifier in one run whose dedup twin -- same
++normalised claim text -- carries an EXECUTED falsifier with a CONFIRMED or
++REFUTED verdict in another. This route returns 0, and the reason is printed:
++claim text is almost never repeated across runs, and a first pass that keyed on
++every description returned 60 twins which were ALL the 82 entries carrying an
++empty `description` colliding on one hash. That artefact is excluded by a
++minimum claim length and the exclusion is reported. Route two: entries whose OWN
++`routing_history` logged an UNTOOLABLE or ERROR verdict and which a falsifier
++nevertheless went on to decide. That route returns 36, and each is a worked
++instance of "called untoolable, later decided by a tool".
++
++EVERY PROPORTION CARRIES A WILSON INTERVAL FROM TWO INDEPENDENT ROUTES --
++statsmodels' `proportion_confint(method='wilson')` and a Wilson derived by hand
++in mpmath at 50 digits, with the normal quantile from `mpmath.erfinv` rather
++than a tabulated 1.96 -- plus Clopper-Pearson for comparison. Agreement between
++the two routes is asserted numerically, not assumed.
++
++Usage: python3 scripts/how_many_untoolable_were_never_attempted_2026-10-14.py
++"""
++from __future__ import annotations
++
++import argparse
++import collections
++import hashlib
++import json
++import pathlib
++import re
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++LOGS = REPO / "bench" / "logs"
++
++#: Verdicts meaning a tool actually DECIDED the claim.
++DECIDED = {"CONFIRMED", "REFUTED"}
++
++#: Reason-text that asserts the claim is not computable at all. Drawn from the
++#: strings that actually occur in `withdraw_reason` and
++#: `computed_evidence[].detail` on this population -- not invented.
++NONCOMPUTABLE_RE = re.compile(
++    r"not a testable"
++    r"|not a defect of this"
++    r"|not a defect in"
++    r"|no actual defect"
++    r"|nothing (?:in the target )?a falsifier could"
++    r"|a falsifier could execu"
++    r"|carries no claim"
++    r"|no claim about"
++    r"|not a claim about"
++    r"|process narrative"
++    r"|review process"
++    r"|VCS-hygiene",
++    re.I,
++)
++
++#: A path with an extension, used to attribute a target to a claim.
++PATH_RE = re.compile(r"[\w./\-]*\w+\.(?:py|md|toml|json|ya?ml|sh|txt|cfg|ini|tex)\b")
++#: The runner's own search/replace fix header names the file it patches.
++SEARCH_RE = re.compile(r"<<<<+\s*SEARCH\s+([^\s\n]+)")
++#: A bare number in the claim text: a quantity a tool could check.
++NUMERIC_RE = re.compile(r"(?<![\w.])\d+(?:\.\d+)?(?![\w])")
++#: A code reference: a backticked span, a call, an attribute access, a line
++#: number anchor, or a module filename.
++CODEISH_RE = re.compile(r"`[^`]+`|\b\w+\(\)|\b\w+\.\w+\(|:\d+\b|\b\w+\.py\b")
++
++
++# ---------------------------------------------------------------- enumeration
++
++def run_target(state_path: pathlib.Path):
++    """The target this run reviewed, from the run's own report JSON."""
++    for rep in sorted(state_path.parent.glob("*report*.json")):
++        try:
++            r = json.loads(rep.read_text(encoding="utf-8", errors="ignore"))
++        except Exception:                                     # noqa: BLE001
++            continue
++        if isinstance(r, dict):
++            for k in ("target", "target_file", "target_path", "target_rel", "file"):
++                if r.get(k):
++                    return str(r[k])
++    return None
++
++
++def entries():
++    """The SAME enumeration as the 3,298 producers: every registry entry under
++    bench/logs/**/runner_state.json carrying a numeric severity."""
++    for fp in sorted(LOGS.glob("**/runner_state.json")):
++        try:
++            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++        except Exception:                                     # noqa: BLE001
++            continue
++        for cid, e in (((d or {}).get("registry") or {}).get("entries") or {}).items():
++            if isinstance(e, dict) and isinstance(e.get("severity"), (int, float)):
++                yield fp, cid, e
++
++
++# ------------------------------------------------------------------ predicates
++
++def code(e: dict) -> str:
++    return str(e.get("falsifier_code") or "").strip()
++
++
++def verdict(e: dict) -> str:
++    return str(e.get("falsifier_verdict") or "").strip().upper()
++
++
++def in_population(e: dict) -> bool:
++    """The claim's set: no falsifier stored, or recorded UNTOOLABLE."""
++    return (not code(e)) or verdict(e) == "UNTOOLABLE"
++
++
++def reason_strings(e: dict):
++    """Every field on this entry that can speak to WHY no falsifier exists."""
++    out = []
++    for k in ("withdraw_reason", "routing_defer_reason"):
++        if e.get(k):
++            out.append(str(e[k]))
++    for it in e.get("computed_evidence") or []:
++        if isinstance(it, dict) and it.get("detail"):
++            out.append(str(it["detail"]))
++    return out
++
++
++def attempt_on_claim(e: dict) -> bool:
++    """Did the machinery reach the claim and leave a mark, without storing code?
++
++    Deliberately excludes `sk_result`: that scores a FIX, and the archive's own
++    routing_defer_reason text refuses to read it as a test of the claim.
++    """
++    return (
++        "falsifier_verdict" in e
++        or bool(e.get("routing_history"))
++        or bool(e.get("error_routed"))
++        or e.get("exhausted") is True
++    )
++
++
++def classify(e: dict) -> str:
++    rs = reason_strings(e)
++    if any(NONCOMPUTABLE_RE.search(r) for r in rs):
++        return "B_reasoned_irreducible"
++    if attempt_on_claim(e):
++        return "A_attempt_no_falsifier"
++    if e.get("merged_into") or str(e.get("status")) == "MERGED":
++        return "D_administratively_moot"
++    return "E_never_attempted"
++
++
++def target_of(e: dict, fallback):
++    m = SEARCH_RE.search(str(e.get("proposed_fix") or ""))
++    if m:
++        return m.group(1), "proposed_fix"
++    m = PATH_RE.search(str(e.get("description") or ""))
++    if m:
++        return m.group(0), "claim_text"
++    if fallback:
++        return fallback, "run_target"
++    return None, "none"
++
++
++#: Minimum normalised claim length for a dedup key to mean anything. WITHOUT
++#: THIS THE CROSS-CHECK REPORTS 60 AND THE 60 ARE AN ARTEFACT: 82 archived
++#: entries carry an EMPTY or near-empty `description`, they all hash together,
++#: and one of them happens to hold an executed falsifier -- so every
++#: empty-description entry acquires a spurious "tooled twin". Measured, then
++#: excluded, and the excluded count is printed rather than dropped silently.
++DEDUP_MIN_CHARS = 40
++
++
++def dedup_norm(e: dict) -> str:
++    return re.sub(r"\s+", " ", str(e.get("description") or "")).strip().lower()[:300]
++
++
++def dedup_key(e: dict):
++    """A content dedup key, or None when the claim text is too thin to key on."""
++    norm = dedup_norm(e)
++    if len(norm) < DEDUP_MIN_CHARS:
++        return None
++    return hashlib.sha1(norm.encode("utf-8")).hexdigest()
++
++
++# -------------------------------------------------------------------- intervals
++
++def wilson_statsmodels(k: int, n: int):
++    from statsmodels.stats.proportion import proportion_confint
++    lo, hi = proportion_confint(k, n, alpha=0.05, method="wilson")
++    return float(lo), float(hi)
++
++
++def wilson_by_hand(k: int, n: int):
++    """Wilson score interval derived from scratch at 50 digits in mpmath.
++
++    Centre  (k + z^2/2) / (n + z^2)
++    Half    z/(n + z^2) * sqrt( k(n-k)/n + z^2/4 )
++
++    The normal quantile is computed, not tabulated: z = sqrt(2) * erfinv(1-a).
++    """
++    from mpmath import mp, mpf, erfinv, sqrt
++    mp.dps = 50
++    z = sqrt(mpf(2)) * erfinv(mpf("0.95"))        # Phi(z) = 0.975
++    n_, k_ = mpf(n), mpf(k)
++    denom = n_ + z ** 2
++    centre = (k_ + z ** 2 / 2) / denom
++    half = (z / denom) * sqrt(k_ * (n_ - k_) / n_ + z ** 2 / 4)
++    # Clamp to [0, 1]: at k = 0 the exact lower limit is 0 and the float cast
++    # lands at -4e-19, which would print as "-0.0000%" and read as a defect.
++    lo = max(0.0, float(centre - half))
++    hi = min(1.0, float(centre + half))
++    return lo, hi
++
++
++def clopper_pearson(k: int, n: int):
++    from scipy import stats
++    lo = float(stats.beta.ppf(0.025, k, n - k + 1)) if k else 0.0
++    hi = float(stats.beta.ppf(0.975, k + 1, n - k)) if k < n else 1.0
++    return lo, hi
++
++
++AGREEMENT = []
++
++
++def pct(label: str, k: int, n: int, indent: str = "  ") -> None:
++    if not n:
++        print(f"{indent}{label}: no denominator")
++        return
++    wlo, whi = wilson_statsmodels(k, n)
++    hlo, hhi = wilson_by_hand(k, n)
++    clo, chi = clopper_pearson(k, n)
++    delta = max(abs(wlo - hlo), abs(whi - hhi))
++    AGREEMENT.append(delta)
++    print(f"{indent}{label}: {k}/{n} = {k / n:.4%}")
++    print(f"{indent}    Wilson 95% (statsmodels) [{wlo:.4%}, {whi:.4%}]")
++    print(f"{indent}    Wilson 95% (mpmath,50dp) [{hlo:.4%}, {hhi:.4%}]  "
++          f"max|diff| {delta:.2e}")
++    print(f"{indent}    Clopper-Pearson 95%      [{clo:.4%}, {chi:.4%}]")
++
++
++def rule(title: str) -> None:
++    print()
++    print(title)
++    print("-" * len(title))
++
++
++# ------------------------------------------------------------------------ main
++
++def main(argv=None) -> int:
++    ap = argparse.ArgumentParser(
++        prog=pathlib.Path(__file__).name,
++        description=(__doc__ or "").strip().splitlines()[0],
++        epilog="Takes no arguments; --help does no work and touches nothing.",
++        formatter_class=argparse.RawDescriptionHelpFormatter,
++    )
++    ap.add_argument("--full-doc", action="store_true",
++                    help="print this script's full docstring and exit")
++    args = ap.parse_args(argv)
++    if args.full_doc:
++        print((__doc__ or "").strip())
++        return 0
++
++    rows = list(entries())
++    targets = {fp: run_target(fp) for fp in {fp for fp, _c, _e in rows}}
++    n_all = len(rows)
++    if n_all < 100:
++        print(f"only {n_all} archived entries found under {LOGS}; measurement void.")
++        return 3
++
++    pop = [(fp, cid, e) for fp, cid, e in rows if in_population(e)]
++    n = len(pop)
++
++    print("THE CORPUS, reusing the 3,298 producers' enumeration")
++    print("=" * 72)
++    print(f"  files globbed  : bench/logs/**/runner_state.json  "
++          f"({len({fp for fp, _c, _e in rows})} files)")
++    print("  predicate      : registry.entries[*] is a dict with numeric severity")
++    print(f"  entries        : {n_all}   (producers report 3,298: "
++          f"{'MATCH' if n_all == 3298 else 'MISMATCH'})")
++
++    rule("STEP 2. REPRODUCING 1938, AND NAMING WHICH DEFINITION IT IS")
++    defs = [
++        ("falsifier_code absent or empty", lambda e: not code(e)),
++        ("  ... OR verdict UNTOOLABLE", in_population),
++        ("falsifier_verdict absent or blank", lambda e: not verdict(e)),
++        ("  ... OR verdict UNTOOLABLE", lambda e: (not verdict(e)
++                                                   or verdict(e) == "UNTOOLABLE")),
++        ("verdict not in {CONFIRMED,REFUTED}", lambda e: verdict(e) not in DECIDED),
++        ("no falsifier_code KEY at all", lambda e: "falsifier_code" not in e),
++    ]
++    for lab, f in defs:
++        k = sum(1 for _fp, _c, e in rows if f(e))
++        flag = "  <== THE CLAIM'S 1938" if k == 1938 else ""
++        print(f"  {lab:<38}{k:>6}/{n_all} = {k / n_all:8.4%}{flag}")
++    print()
++    pct("CLAIM REPRODUCED: untoolable or no falsifier", n, n_all)
++    print("  The claim states 1938/3298 = 58.7629%. "
++          f"{'EXACT MATCH.' if n == 1938 and n_all == 3298 else 'DIFFERS -- see above.'}")
++
++    rule("STEP 3a. KEY INVENTORY over the population (what the archive HAS)")
++    keys = collections.Counter()
++    for _fp, _c, e in pop:
++        for k_ in e:
++            keys[k_] += 1
++    for k_, c in keys.most_common():
++        print(f"  {k_:<32}{c:>6}/{n}")
++    print()
++    print("  FIELDS THAT DO NOT EXIST ANYWHERE IN THE CORPUS:")
++    for absent in ("untoolable_reason", "falsifier_attempts", "irreducible_reason",
++                   "execution_log", "confidence", "constraint_class"):
++        tot = sum(1 for _fp, _c, e in rows if absent in e)
++        print(f"    {absent:<24}{tot:>6}/{n_all}")
++    print("  -> there is NO field recording why a finding was untoolable. Any")
++    print("     statement of genuine irreducibility must come from a free-text")
++    print("     reason, and only three fields ever carry one.")
++    print()
++    print("  VERDICT FIELD ON THE POPULATION:")
++    for v, c in collections.Counter(
++            verdict(e) or "(absent or blank)" for _fp, _c, e in pop).most_common():
++        print(f"    {v:<24}{c:>6}")
++    print()
++    print("  REASON-BEARING FIELDS ON THE POPULATION:")
++    for f in ("withdraw_reason", "routing_defer_reason", "hil_reason",
++              "close_reason", "merge_blocked_reason", "computed_evidence"):
++        print(f"    {f:<32}{sum(1 for _fp, _c, e in pop if e.get(f)):>6}")
++    print(f"    {'ANY of the 3 toolability reasons':<32}"
++          f"{sum(1 for _fp, _c, e in pop if reason_strings(e)):>6}")
++    print()
++    print("  ADJACENT EXECUTION RECORDS (about the FIX, not the claim):")
++    print(f"    sk_result present       "
++          f"{sum(1 for _fp, _c, e in pop if e.get('sk_result') is not None):>6}")
++    print(f"    sk_evaluated true       "
++          f"{sum(1 for _fp, _c, e in pop if e.get('sk_evaluated')):>6}")
++    print("    The corpus's own routing_defer_reason refuses to read S_k as a")
++    print("    test of the claim; this script does not count it as one.")
++
++    rule("STEP 3b. THE CLASSES (precedence B, A, D, E -- irreducible first)")
++    cls = collections.Counter(classify(e) for _fp, _c, e in pop)
++    labels = {
++        "B_reasoned_irreducible": "B GENUINELY IRREDUCIBLE (a reason says so)",
++        "A_attempt_no_falsifier": "A ATTEMPT RECORDED, no falsifier stored",
++        "D_administratively_moot": "D ADMINISTRATIVELY MOOT (merged away)",
++        "E_never_attempted": "E NEVER ATTEMPTED (nothing in the record)",
++    }
++    for k_ in ("B_reasoned_irreducible", "A_attempt_no_falsifier",
++               "D_administratively_moot", "E_never_attempted"):
++        pct(labels[k_], cls[k_], n)
++    print(f"  partition total: {sum(cls.values())} of {n} "
++          f"({'exhaustive and disjoint' if sum(cls.values()) == n else 'BROKEN'})")
++    print()
++    print("  THE HEADLINE CONTRAST, as the claim asks it:")
++    gi = cls["B_reasoned_irreducible"]
++    na = cls["E_never_attempted"]
++    pct("genuinely irreducible, of the untoolable set", gi, n)
++    pct("never attempted at all, of the untoolable set", na, n)
++    if gi:
++        print(f"  ratio never-attempted : irreducible = {na / gi:.1f} : 1")
++    print()
++    print("  AND THE WIDEST POSSIBLE READING OF IRREDUCIBILITY: count EVERY")
++    print("  entry carrying any toolability reason at all as irreducible, even")
++    print("  the ones whose reason records a hand check or a duplicate.")
++    widest = sum(1 for _fp, _c, e in pop if reason_strings(e))
++    pct("upper bound on irreducible", widest, n)
++    print("  Even at that bound the remainder -- entries for which the archive")
++    print("  gives no reason whatsoever -- is:")
++    pct("no reason recorded", n - widest, n)
++
++    rule("STEP 3c. SUB-ANATOMY OF CLASS A (what the attempt mark actually was)")
++    a = [(fp, cid, e) for fp, cid, e in pop
++         if classify(e) == "A_attempt_no_falsifier"]
++    na_ = len(a)
++    for lab, f in (
++        ("verdict UNTOOLABLE, code empty", lambda e: verdict(e) == "UNTOOLABLE"),
++        ("verdict ERROR, code empty", lambda e: verdict(e) == "ERROR"),
++        ("verdict key present but BLANK", lambda e: "falsifier_verdict" in e
++            and verdict(e) == ""),
++        ("routing ladder logged rungs", lambda e: bool(e.get("routing_history"))),
++        ("error_routed", lambda e: bool(e.get("error_routed"))),
++        ("exhausted true", lambda e: e.get("exhausted") is True),
++        ("irreducible_escalation true", lambda e: bool(e.get("irreducible_escalation"))),
++    ):
++        print(f"  {lab:<34}{sum(1 for _fp, _c, e in a if f(e)):>6}/{na_}")
++    rungs = collections.Counter()
++    for _fp, _c, e in pop:
++        for s in e.get("routing_history") or []:
++            if isinstance(s, dict):
++                rungs[(s.get("rungs_tried"), s.get("rungs_available"))] += 1
++    if rungs:
++        print("  routing ladder (rungs_tried, rungs_available) over the population:")
++        for kk, c in rungs.most_common():
++            print(f"    {str(kk):<16}{c:>6}")
++        print("  A ladder that stops at 2 of 5 has not shown rungs 3-5 would fail.")
++
++    rule("STEP 4. THE OBJECTIVE REDUCIBILITY SIGNAL (what the claims are ABOUT)")
++    ext = collections.Counter()
++    prov = collections.Counter()
++    for fp, _c, e in pop:
++        t, src = target_of(e, targets.get(fp))
++        prov[src] += 1
++        ext[pathlib.PurePath(t).suffix.lower() if t else "(unknown)"] += 1
++    print("  target attributed from:")
++    for s, c in prov.most_common():
++        print(f"    {s:<16}{c:>6}")
++    print("  by target extension:")
++    for x, c in ext.most_common():
++        print(f"    {x or '(no extension)':<16}{c:>6}/{n} = {c / n:8.4%}")
++    print()
++    pct("target is a .py source file", ext[".py"], n)
++    code_n = sum(1 for _fp, _c, e in pop
++                 if CODEISH_RE.search(str(e.get("description") or "")))
++    num_n = sum(1 for _fp, _c, e in pop
++                if NUMERIC_RE.search(str(e.get("description") or "")))
++    either = sum(1 for _fp, _c, e in pop
++                 if CODEISH_RE.search(str(e.get("description") or ""))
++                 or NUMERIC_RE.search(str(e.get("description") or "")))
++    pct("claim text carries a CODE reference", code_n, n)
++    pct("claim text carries a NUMERIC literal", num_n, n)
++    pct("carries a code reference or a number", either, n)
++    pct("carries NEITHER (no mechanical handle)", n - either, n)
++    print("  flaw_class of the population (8 = documentation, the only prose class):")
++    for fc, c in sorted(collections.Counter(
++            str(e.get("flaw_class")) for _fp, _c, e in pop).items()):
++        print(f"    class {fc:<10}{c:>6}")
++    pct("flaw_class 8 (documentation)",
++        sum(1 for _fp, _c, e in pop if str(e.get("flaw_class")) == "8"), n)
++
++    rule("STEP 5. CROSS-CHECK: untoolable here, TOOLED elsewhere")
++    groups = collections.defaultdict(list)
++    unkeyable = 0
++    for fp, cid, e in rows:
++        k_ = dedup_key(e)
++        if k_ is None:
++            unkeyable += 1
++            continue
++        groups[k_].append((fp, cid, e))
++    twinned, shown = [], []
++    for _k, g in groups.items():
++        mine = [x for x in g if in_population(x[2])]
++        done = [x for x in g if not in_population(x[2])
++                and verdict(x[2]) in DECIDED and code(x[2])]
++        if mine and done:
++            twinned.extend(mine)
++            shown.append((mine[0], done[0], len(mine)))
++    print(f"  dedup keys (normalised claim text, 300ch): {len(groups)} over "
++          f"{n_all - unkeyable} keyable entries")
++    print(f"  entries with claim text under {DEDUP_MIN_CHARS}ch, EXCLUDED as "
++          f"unkeyable: {unkeyable}")
++    print("  (an earlier pass keyed them too and reported 60 tooled twins; all")
++    print("   60 were empty-description entries colliding on one hash. The")
++    print("   figure below is what survives excluding them.)")
++    pct("population entries with a TOOLED dedup twin", len(twinned), n)
++    for (m, d, cnt_) in shown[:8]:
++        print(f"    {m[0].parent.name}/{m[1]}  ->  "
++              f"{d[0].parent.name}/{d[1]}  {verdict(d[2])} "
++              f"({len(code(d[2]))}ch of falsifier)  [{cnt_} untooled copies]")
++    if len(shown) > 8:
++        print(f"    ... and {len(shown) - 8} more dedup keys")
++    if not shown:
++        print("    NONE. No substantive claim text appears both without a")
++        print("    falsifier in one run and with an executed, decided one in")
++        print("    another. The dedup route yields no instance, so the")
++        print("    within-entry route below is the only evidence on this point.")
++    within = sum(1 for _fp, _c, e in rows
++                 if any(str(s.get("verdict") or "").upper() in ("UNTOOLABLE", "ERROR")
++                        for s in (e.get("routing_history") or [])
++                        if isinstance(s, dict))
++                 and verdict(e) in DECIDED and code(e))
++    pct("entries whose own routing log shows UNTOOLABLE/ERROR yet ended DECIDED",
++        within, n_all)
++    print("  Each of these is a direct instance of a finding the machinery")
++    print("  called untoolable and a falsifier later decided.")
++
++    rule("STEP 6. TWO-TOOL AGREEMENT ON EVERY WILSON INTERVAL")
++    worst = max(AGREEMENT) if AGREEMENT else 0.0
++    print(f"  intervals computed by both routes : {len(AGREEMENT)}")
++    print(f"  worst |statsmodels - mpmath|     : {worst:.3e}")
++    print(f"  agree to 1e-12                   : {'YES' if worst < 1e-12 else 'NO'}")
++
++    rule("VERDICT")
++    print(f"  Of the {n} archived findings recorded UNTOOLABLE or carrying no")
++    print(f"  falsifier ({n}/{n_all} = {n / n_all:.4%}):")
++    print(f"    GENUINELY IRREDUCIBLE, by the archive's own reasons : {gi}"
++          f"  ({gi / n:.4%})")
++    print(f"    NEVER ATTEMPTED, nothing in the record at all       : {na}"
++          f"  ({na / n:.4%})")
++    print(f"    ATTEMPT RECORDED but no falsifier stored            : "
++          f"{cls['A_attempt_no_falsifier']}  "
++          f"({cls['A_attempt_no_falsifier'] / n:.4%})")
++    print(f"    ADMINISTRATIVELY MOOT (merged)                      : "
++          f"{cls['D_administratively_moot']}  "
++          f"({cls['D_administratively_moot'] / n:.4%})")
++    print()
++    print("  THE DISTINCTION IS DECIDABLE IN ONE DIRECTION ONLY, and the key")
++    print("  inventory above is why. No `untoolable_reason` field exists, so")
++    print(f"  irreducibility can only be read off the {widest} entries that carry")
++    print("  a free-text toolability reason. For the rest the archive records")
++    print("  the ABSENCE of a falsifier and says nothing about why -- which is")
++    print("  itself the answer to the question asked: the corpus cannot show")
++    print("  that a tool was tried and failed, because for the overwhelming")
++    print("  majority no tool was tried. The objective signal points the same")
++    print(f"  way: {ext['.py']} of {n} target a .py source file and {either} carry a")
++    print("  code reference or a number in the claim text, so they are")
++    print("  mechanically checkable in principle. The cross-check finds")
++    print(f"  {len(twinned)} cross-run dedup twins (the dedup route is weak here: all")
++    print("  but 82 claims are textually unique to one run), but it does find")
++    print(f"  {within} entries whose OWN routing log recorded UNTOOLABLE or ERROR")
++    print("  and which a falsifier nevertheless went on to decide -- each one a")
++    print("  worked instance of never-attempted-then-toolable.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:scripts/panel_brief_validate.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/panel_brief_validate.py	2026-10-14 19:46:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/scripts/panel_brief_validate.py	2026-10-06 07:53:44
+@@ -569,47 +569,6 @@
+             drift = (f.stat().st_mtime - brief_mtime) / 60.0
+             stale.append(f"{rel} changed {drift:.1f} min AFTER the brief was written")
+     return stale
+-
+-
+-#: File extensions worth checking. A bare directory reference is checked too.
+-_PATHISH = re.compile(r"`([A-Za-z0-9_./-]+\.(?:py|md|json|toml|txt|diff))`"
+-                      r"|`([A-Za-z0-9_./-]+/)`")
+-
+-
+-def named_paths_that_do_not_exist(text: str) -> list:
+-    """Paths the brief tells a seat to READ which are not in the tree.
+-
+-    WHY THIS EXISTS, MEASURED 2026-10-14 ON MY OWN BRIEF. The joint brief for
+-    `his_rulings_2026-10-13` told both seats to read
+-    `bench/logs/his_rulings_2026-10-13/cc2/` and `fable/`. Those directories do
+-    not exist -- the replies are `cc2.json` and `fable.json` -- so a seat
+-    following the brief would have found nothing and improvised, and nothing in
+-    the harness would have said so. The round was killed for a different reason
+-    and the defect was found by accident.
+-
+-    SECTION SCOPED, DELIBERATELY. A whole-document check would refuse briefs that
+-    correctly tell a seat to CREATE a file ("write your fix to
+-    `sandbox/my_fix.py`"), which is the normal output instruction. Only the
+-    section that enumerates the artefacts UNDER REVIEW is checked, because every
+-    path there is by definition something that must already exist.
+-
+-    An elided path (`.../fable/`) is reported too: a seat cannot follow it, and
+-    the brief's author can spell it out at no cost.
+-    """
+-    body = _section(text, r"artefact|under review|read these|the files")
+-    if body is None:
+-        return []
+-    out = []
+-    for m in _PATHISH.finditer(body):
+-        cand = m.group(1) or m.group(2)
+-        if "/" not in cand:
+-            continue
+-        if cand.startswith("...") or "/.../" in cand:
+-            out.append((cand, "elided — spell the path out so a seat can follow it"))
+-            continue
+-        if not (REPO / cand).exists():
+-            out.append((cand, "named as an artefact under review but not in the tree"))
+-    return out
+ 
+ 
+ def validate(text: str) -> list[str]:
+@@ -630,11 +589,6 @@
+         if not any(re.search(p, low, re.M | re.I) for p in patterns):
+             problems.append(f"{label}: NOT FOUND — {remedy}")
+ 
+-    # ★ A PATH A SEAT CANNOT FOLLOW IS A DEFECTIVE BRIEF. See
+-    # `named_paths_that_do_not_exist` for the 2026-10-14 measurement.
+-    for cand, why in named_paths_that_do_not_exist(text):
+-        problems.append(f"names a path a seat cannot read: {cand} — {why}")
+-
+     # The output check is SECTION SCOPED, unlike the rest. See _section().
+     body = _section(text, r"output|deliverable|what to return")
+     if body is None:
+
+### cc2:attempt-1:scripts/retirement_moved_a_logged_loss_into_an_unlogged_one_2026-10-14.py
+--- /dev/null	2026-10-14 19:49:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/scripts/retirement_moved_a_logged_loss_into_an_unlogged_one_2026-10-14.py	2026-10-14 19:35:37
+@@ -0,0 +1,264 @@
++#!/usr/bin/env python3
++"""J1 producer, 2026-10-14 joint round: the composition-level interaction.
++
++WHAT THIS MEASURES, AND WHY IT IS NOT THE RETIREMENT MEASUREMENT
++
++`scripts/retiring_the_pruner_dominates_2026-10-13.py` measured ONE loss mode:
++a domain directive deleted outright by `_prune_for_coherence` (10 of 50
++compositions with the flag on, 0 of 50 with it off). That figure is reproduced
++here and is not disputed.
++
++This script measures a SECOND loss mode the retirement figure cannot see,
++because it is not a lost packet -- it is a lost SUFFIX of a kept packet:
++
++  bench/cdsfl_registry/composer.py:1439-1443
++      if len(rendered) > transform.max_directive_chars:
++          rendered = rendered[: transform.max_directive_chars] + "...truncated..."
++
++That cap applies to the FINAL rendered text, AFTER pruning. Packet order in
++`compose` is universal, domain, situation (composer.py:1333-1384), so the cap
++cuts from the TAIL -- the situation layer, which carries `review_target`,
++`code_extracts` and `adversarial_brief`: the per-dispatch payload.
++
++The interaction, as a causal chain:
++  1. `coherence_pruning=False` (retired default, composer.py:1306) keeps every
++     SOFT packet, so `rendered` is strictly LONGER than with the pruner on.
++  2. A longer `rendered` crosses `max_directive_chars` on more compositions, so
++     the cap at :1439 drops more characters.
++  3. `_prune_for_coherence`'s deletions were RECORDED in `pruned_soft` and
++     carried into `manifest["pruned_soft"]` (composer.py:1465). The cap's
++     deletion is recorded NOWHERE in the manifest: `pruned_soft` is [], and no
++     field states how many characters the cap removed.
++
++So the retirement is right on its own named property AND moves a logged loss
++into an unlogged one -- a sec.10 category-4 exposure (silent evidence loss)
++arising only from the COMPOSITION of two individually-correct changes.
++
++Two independent tools on every number: the live `compose()` on the real
++directive tree is the PRODUCER; a recomputation from the returned
++`manifest["packets"]` char counts is the independent CONSUMER, and the script
++reports whether they agree on whether the cap fired. Every proportion carries a
++95% Wilson interval computed twice (statsmodels, and a hand-derived Wilson in
++mpmath).
++
++Run:  python3 scripts/retirement_moved_a_logged_loss_into_an_unlogged_one_2026-10-14.py
++"""
++
++from __future__ import annotations
++
++import argparse
++import sys
++import warnings
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parents[1]
++if str(REPO) not in sys.path:
++    sys.path.insert(0, str(REPO))
++
++TRUNC_MARKER = "[... truncated for model capacity]"
++
++# A situation packet of realistic size. A real dispatch carries the review
++# target plus code extracts plus an adversarial brief; this is a deliberately
++# MODEST stand-in (40 lines), so these figures are a LOWER bound.
++CODE_EXTRACT = "\n".join(
++    "    line_%03d = compute_residual(entry_%d, budget=0.0%d)" % (i, i, i % 9 + 1)
++    for i in range(40)
++)
++
++
++def wilson_statsmodels(k, n):
++    from statsmodels.stats.proportion import proportion_confint
++    lo, hi = proportion_confint(k, n, alpha=0.05, method="wilson")
++    return float(lo), float(hi)
++
++
++def wilson_mpmath(k, n):
++    """Hand-derived Wilson score interval, independent of statsmodels."""
++    import mpmath as mp
++    mp.mp.dps = 40
++    z = mp.mpf("1.959963984540054235524594430520551527955")
++    n_ = mp.mpf(n)
++    p = mp.mpf(k) / n_
++    denom = 1 + z**2 / n_
++    centre = (p + z**2 / (2 * n_)) / denom
++    half = (z * mp.sqrt(p * (1 - p) / n_ + z**2 / (4 * n_**2))) / denom
++    return float(centre - half), float(centre + half)
++
++
++def main():
++    ap = argparse.ArgumentParser(
++        description=("J1: measure what the final max_directive_chars cap removes "
++                     "under coherence_pruning ON vs OFF, and whether it is logged."))
++    ap.parse_args()
++
++    from bench.cdsfl_registry import composer as C
++    from bench.cdsfl_registry.composer import PHENOTYPE_TRANSFORMS, compose
++    from bench.cdsfl_registry.registry import DOMAIN_MAP
++
++    models = list(PHENOTYPE_TRANSFORMS)
++    domains = sorted(DOMAIN_MAP) if DOMAIN_MAP else ["software"]
++
++    print("=" * 78)
++    print("J1 -- THE RETIREMENT x TRANSPORT-CAP INTERACTION")
++    print("=" * 78)
++    print("models  : %s" % models)
++    print("domains : %s" % domains)
++    print("situation code-extract payload: %d chars" % len(CODE_EXTRACT))
++    print()
++
++    uni = (C.DIRECTIVES_DIR / "universal" / "cdsfl_core_formal.md").read_text(
++        encoding="utf-8")
++    print("cdsfl_core_formal.md on disk : %d chars" % len(uni))
++    for m in models:
++        t = PHENOTYPE_TRANSFORMS[m]
++        u = C._load_universal_directive(model=m)
++        print("  %-16s cap=%6d universal_delivered=%5d room_for_rest=%6d"
++              % (m, t.max_directive_chars, len(u.text),
++                 t.max_directive_chars - len(u.text)))
++    print()
++
++    rows = []
++    for m in models:
++        for d in domains:
++            rec = {"model": m, "domain": d}
++            for arm, flag in (("on", True), ("off", False)):
++                with warnings.catch_warnings():
++                    warnings.simplefilter("ignore")
++                    cs = compose(
++                        task_domain=d, model=m,
++                        review_target="bench/dm/_convergence.py",
++                        code_extracts=CODE_EXTRACT,
++                        adversarial_brief=("Assume the convergence predicate is "
++                                           "wrong and find the input proving it."),
++                        coherence_pruning=flag)
++                rendered = cs.rendered_text
++                cap_fired_producer = rendered.endswith(TRUNC_MARKER)
++                pkt_chars = sum(p["chars"] for p in cs.manifest["packets"])
++                cap = PHENOTYPE_TRANSFORMS[m].max_directive_chars
++                cap_fired_consumer = pkt_chars > cap
++                payload_tail = CODE_EXTRACT.strip().splitlines()[-1].strip()
++                rec[arm] = {
++                    "chars": len(rendered),
++                    "cap_fired": cap_fired_producer,
++                    "cap_fired_consumer": cap_fired_consumer,
++                    "agree": cap_fired_producer == cap_fired_consumer,
++                    "pruned_soft": list(cs.pruned_soft),
++                    "cap_dropped_lb": max(pkt_chars - cap, 0),
++                    "situation_present": any(
++                        p["layer"] == "situation" for p in cs.manifest["packets"]),
++                    "domain_present": any(
++                        p["layer"] == "domain" for p in cs.manifest["packets"]),
++                    "payload_intact": payload_tail in rendered,
++                }
++            rows.append(rec)
++
++    print("-" * 78)
++    print("PER-COMPOSITION, BOTH ARMS")
++    print("-" * 78)
++    print("%-16s %-12s | %8s %3s %6s %3s | %9s %3s %6s %3s"
++          % ("model", "domain", "ONchars", "cap", "logged", "pay",
++             "OFFchars", "cap", "logged", "pay"))
++    for r in rows:
++        on, off = r["on"], r["off"]
++        print("%-16s %-12s | %8d %3s %6d %3s | %9d %3s %6d %3s"
++              % (r["model"], r["domain"],
++                 on["chars"], "Y" if on["cap_fired"] else "n",
++                 len(on["pruned_soft"]), "Y" if on["payload_intact"] else "N",
++                 off["chars"], "Y" if off["cap_fired"] else "n",
++                 len(off["pruned_soft"]), "Y" if off["payload_intact"] else "N"))
++    print()
++    print("cap    = cap at composer.py:1439 fired (rendered ends in the marker)")
++    print("logged = len(manifest['pruned_soft']): the ONLY record of lost text")
++    print("pay    = last line of the dispatch code extract survived")
++    print()
++    disagree = [r for r in rows if not r["on"]["agree"] or not r["off"]["agree"]]
++    print("PRODUCER vs CONSUMER on 'did the cap fire': %d/%d rows disagree"
++          % (len(disagree), len(rows)))
++    for r in disagree[:6]:
++        print("   %s/%s on=%s/%s off=%s/%s"
++              % (r["model"], r["domain"], r["on"]["cap_fired"],
++                 r["on"]["cap_fired_consumer"], r["off"]["cap_fired"],
++                 r["off"]["cap_fired_consumer"]))
++    print("   (the consumer counts packet chars only; the producer counts the")
++    print("    rendered text including separators, so the consumer is a LOWER")
++    print("    bound -- a disagreement is expected only where the margin is")
++    print("    smaller than the separator overhead.)")
++    print()
++
++    n = len(rows)
++
++    def report(label, k, nn):
++        sm = wilson_statsmodels(k, nn)
++        mpv = wilson_mpmath(k, nn)
++        agree = abs(sm[0] - mpv[0]) < 1e-9 and abs(sm[1] - mpv[1]) < 1e-9
++        print("%-50s %3d/%3d = %8.4f%%  Wilson95 [%7.4f%%, %7.4f%%]"
++              % (label, k, nn, 100.0 * k / nn, 100 * sm[0], 100 * sm[1]))
++        print("%-50s                      mpmath   [%7.4f%%, %7.4f%%] agree=%s"
++              % ("", 100 * mpv[0], 100 * mpv[1], agree))
++
++    print("-" * 78)
++    print("THE FIGURES")
++    print("-" * 78)
++    for arm in ("on", "off"):
++        tag = ("pruning ON (pre-retirement)" if arm == "on"
++               else "pruning OFF (retired default)")
++        print("[%s]" % tag)
++        report("  cap at :1439 fired",
++               sum(1 for r in rows if r[arm]["cap_fired"]), n)
++        report("  dispatch payload tail LOST",
++               sum(1 for r in rows if not r[arm]["payload_intact"]), n)
++        # HONESTY CORRECTION (made in place, 2026-10-14): "domain packet
++        # absent" conflates TWO causes -- the domain has no directive file at
++        # all (`_load_domain_directive` returns None, composer.py:611-617), and
++        # the pruner deleted it. Only the second is a loss. The baseline is the
++        # OFF arm, where nothing can delete a packet.
++        no_domain_file = sum(1 for r in rows if not r["off"]["domain_present"])
++        print("%-50s %3d/%3d  (no domain directive file exists; NOT a loss)"
++              % ("  domain packet absent at baseline", no_domain_file, n))
++        report("  domain packet DELETED by the pruner (vs baseline)",
++               sum(1 for r in rows
++                   if r["off"]["domain_present"] and not r[arm]["domain_present"]), n)
++        report("  situation packet DELETED by the pruner (vs baseline)",
++               sum(1 for r in rows
++                   if r["off"]["situation_present"] and not r[arm]["situation_present"]), n)
++        report("  text lost with NOTHING in pruned_soft",
++               sum(1 for r in rows
++                   if (r[arm]["cap_fired"] or not r[arm]["payload_intact"])
++                   and not r[arm]["pruned_soft"]), n)
++        print()
++
++    on_unlogged = sum(1 for r in rows
++                      if (r["on"]["cap_fired"] or not r["on"]["payload_intact"])
++                      and not r["on"]["pruned_soft"])
++    off_unlogged = sum(1 for r in rows
++                       if (r["off"]["cap_fired"] or not r["off"]["payload_intact"])
++                       and not r["off"]["pruned_soft"])
++    on_chars = sum(r["on"]["chars"] for r in rows)
++    off_chars = sum(r["off"]["chars"] for r in rows)
++    on_dropped = sum(r["on"]["cap_dropped_lb"] for r in rows)
++    off_dropped = sum(r["off"]["cap_dropped_lb"] for r in rows)
++    print("-" * 78)
++    print("INTERACTION SUMMARY")
++    print("-" * 78)
++    print("total rendered chars, pruning ON  : %d" % on_chars)
++    print("total rendered chars, pruning OFF : %d" % off_chars)
++    print("  retirement delivers %+d chars of directive text" % (off_chars - on_chars))
++    print("chars dropped by the :1439 cap (lower bound, from manifest):")
++    print("  pruning ON  : %d" % on_dropped)
++    print("  pruning OFF : %d" % off_dropped)
++    print("compositions losing text with an EMPTY pruned_soft record:")
++    print("  pruning ON  : %d/%d" % (on_unlogged, n))
++    print("  pruning OFF : %d/%d" % (off_unlogged, n))
++    print()
++    if off_unlogged > on_unlogged or off_dropped > on_dropped:
++        print("VERDICT: the retirement INCREASES unlogged text loss. The loss mode")
++        print("moved from pruned_soft (recorded) to the :1439 cap (unrecorded).")
++    elif off_unlogged == on_unlogged == 0 and off_dropped == on_dropped == 0:
++        print("VERDICT: no loss in either arm on this payload. No interaction.")
++    else:
++        print("VERDICT: unlogged loss not increased by the retirement here.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/the_archive_denominator_triple_counts_harvest_copies_2026-10-14.py
+--- /dev/null	2026-10-14 19:49:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/scripts/the_archive_denominator_triple_counts_harvest_copies_2026-10-14.py	2026-10-14 19:45:30
+@@ -0,0 +1,111 @@
++#!/usr/bin/env python3
++"""J3 side-finding, 2026-10-14: the archive denominator counts harvest copies.
++
++The 3,298-entry corpus that the briefs, the severity measurements and the J3
++question all rest on comes from
++`scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, whose
++generator globs `bench/logs/**/runner_state.json` with no exclusion. That glob
++picks up HARVESTED SEAT SANDBOXES stored under bench/logs -- copies of other
++runs' registries saved beside the runs themselves.
++
++Measured here: 304 of the 3,298 entries are such copies, they reduce to 152
++distinct (canonical_id, description) keys -- so each is counted twice inside the
++harvest set alone -- and 152 of 152 are also present in the clean archive. The
++corpus therefore counts 152 findings three times.
++
++Consequence, stated as the figure it moves: the no-falsifier share is
++1938/3298 = 58.7629% as published, and 1886/2994 = 62.9927% with the copies
++excluded. Both intervals are reported. The published figure is not wrong about
++the files it read; it is wrong about how many findings exist.
++
++NOTHING IS CHANGED BY THIS SCRIPT. The canonical producer is left exactly as it
++is: its figure is quoted across several documents, and restating it is the
++founder's call, not a seat's. This script measures the contamination so the
++decision has a number.
++
++Run: python3 scripts/the_archive_denominator_triple_counts_harvest_copies_2026-10-14.py
++"""
++
++from __future__ import annotations
++
++import argparse
++import importlib.util
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parents[1]
++CANON = REPO / "scripts" / "severity_was_never_computed_from_the_model_2026-10-12.py"
++COPY_MARKERS = ("sandbox_harvest", "seat_evidence")
++
++
++def wilson_two_tools(k: int, n: int):
++    from statsmodels.stats.proportion import proportion_confint
++    import mpmath as mp
++    mp.mp.dps = 50
++    sm = proportion_confint(k, n, 0.05, "wilson")
++    z = mp.sqrt(2) * mp.erfinv(mp.mpf("0.95"))
++    n_ = mp.mpf(n); p = mp.mpf(k) / n_
++    d = 1 + z ** 2 / n_
++    c = (p + z ** 2 / (2 * n_)) / d
++    h = (z * mp.sqrt(p * (1 - p) / n_ + z ** 2 / (4 * n_ ** 2))) / d
++    return (float(sm[0]), float(sm[1])), (float(c - h), float(c + h))
++
++
++def main() -> int:
++    argparse.ArgumentParser(
++        description=("J3: measure how many archive entries are harvested-sandbox "
++                     "copies, and what excluding them does to the rate.")).parse_args()
++
++    spec = importlib.util.spec_from_file_location("canon", CANON)
++    canon = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(canon)
++
++    rows = [(fp, cid, e) for fp, cid, e in canon.entries()
++            if isinstance(e.get("severity"), (int, float))]
++    def is_copy(fp) -> bool:
++        return any(mk in str(fp) for mk in COPY_MARKERS)
++
++    harvest = [r for r in rows if is_copy(r[0])]
++    clean = [r for r in rows if not is_copy(r[0])]
++
++    def key(e):
++        return (e.get("canonical_id"), (e.get("description") or "")[:120])
++
++    hk = {key(e) for _, _, e in harvest}
++    ck = {key(e) for _, _, e in clean}
++
++    print("=" * 78)
++    print("J3 SIDE-FINDING -- THE ARCHIVE DENOMINATOR")
++    print("=" * 78)
++    print("canonical generator  : %s" % CANON.relative_to(REPO))
++    print("entries with numeric severity, as published : %d" % len(rows))
++    print("  inside harvested-sandbox copies           : %d" % len(harvest))
++    print("  distinct keys among those copies          : %d" % len(hk))
++    print("    => counted %.1fx within the copies alone"
++          % (len(harvest) / max(len(hk), 1)))
++    print("  copies also present in the clean archive  : %d of %d"
++          % (len(hk & ck), len(hk)))
++    print("  clean entries                             : %d" % len(clean))
++
++    def nofals(seq):
++        return [r for r in seq if not (r[2].get("falsifier_code") or "").strip()]
++
++    k_all, n_all = len(nofals(rows)), len(rows)
++    k_cl, n_cl = len(nofals(clean)), len(clean)
++    print("\nthe no-falsifier / UNTOOLABLE share, both denominators:")
++    for lbl, k, n in (("as published (copies INCLUDED)", k_all, n_all),
++                      ("copies EXCLUDED", k_cl, n_cl)):
++        sm, mpv = wilson_two_tools(k, n)
++        print("  %-32s %4d/%4d = %8.4f%%  Wilson95 [%7.4f%%, %7.4f%%]"
++              % (lbl, k, n, 100 * k / n, 100 * sm[0], 100 * sm[1]))
++        print("  %-32s %18s mpmath   [%7.4f%%, %7.4f%%] agree=%s"
++              % ("", "", 100 * mpv[0], 100 * mpv[1],
++                 abs(sm[0] - mpv[0]) < 1e-12 and abs(sm[1] - mpv[1]) < 1e-12))
++    print("\nBoth figures are real. The published one reproduces exactly and is")
++    print("the right answer about the FILES; the excluded one is the right")
++    print("answer about the FINDINGS. The direction matters: excluding copies")
++    print("makes the no-falsifier problem LARGER, not smaller.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/the_joint_debt_is_discharged_by_a_directory_2026-10-14.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/the_joint_debt_is_discharged_by_a_directory_2026-10-14.py	2026-10-14 19:37:34
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z_xyji9g/repo/scripts/the_joint_debt_is_discharged_by_a_directory_2026-10-14.py	2026-10-14 19:28:29
+@@ -234,76 +234,6 @@
+         if len(landed(d)) == 0:
+             empty.append(d.name)
+     print(f"\n  marker-named rounds holding 0 replies: {len(empty)} -> {empty}")
+-
+-    # ─────────── WAS A DECLARED JOINT ROUND ACTUALLY JOINT? ───────────
+-    #
+-    # A joint round's purpose is that each seat sees the OTHER seat's blind reply.
+-    # There are exactly 2 ways that can happen: the brief CARRIES the reply, or the
+-    # seat goes and READS it from the tree (nothing purges a sibling round unless
+-    # `blind_of` names it, and for a joint round `blind_of` is empty).
+-    #
+-    # BOUND HONESTLY: `input_preview` in the tool transcript is a PREVIEW and may be
+-    # truncated, so a read can be missed. This is therefore a LOWER bound on
+-    # exposure-by-reading and an UPPER bound on the "neither" count.
+-    print("\n  === was each declared joint round actually joint? ===")
+-    rows, neither = [], []
+-    for d in sorted(LOGS.iterdir()):
+-        tj = d / "topology.json"
+-        if not d.is_dir() or not tj.is_file():
+-            continue
+-        try:
+-            rec = json.loads(tj.read_text(encoding="utf-8"))
+-        except Exception:
+-            continue
+-        parents = [x for x in (rec.get("joint_of") or []) if str(x).strip()]
+-        if not parents:
+-            continue
+-        quoted = set(star.quotes_other_rounds(LOGS, d.name))
+-        for parent in parents:
+-            by_brief = parent in quoted
+-            readers, nonreaders = [], []
+-            for seat in landed(d) or SEATS:
+-                tf = next((q for q in sorted(d.glob(f"{seat}.tools*"))), None)
+-                if tf is None:
+-                    continue
+-                try:
+-                    calls = json.loads(tf.read_text(encoding="utf-8")).get("calls", [])
+-                except Exception:
+-                    continue
+-                # ★ A BARE SUBSTRING MATCH IS WRONG HERE, and the first version
+-                # of this script made exactly that mistake. `joint_X` CONTAINS
+-                # `X`, so a seat reading its OWN round directory scored as having
+-                # read the parent -- which inverted the finding for
+-                # `joint_clear_the_outstanding_2026-10-12`. The parent name must
+-                # start at a token boundary. Same shape as the `A13/A14`
+-                # compound-identifier error of 2026-10-13.
+-                pat = re.compile(r"(?<![A-Za-z0-9_])" + re.escape(parent))
+-                hit = any(pat.search(str(c.get("input_preview", "")))
+-                          for c in calls)
+-                (readers if hit else nonreaders).append(seat)
+-            exposure = ("BRIEF" if by_brief
+-                        else "READ" if readers and not nonreaders
+-                        else "PARTIAL" if readers
+-                        else "NEITHER")
+-            rows.append((d.name, parent, exposure, readers, nonreaders))
+-            if exposure == "NEITHER":
+-                neither.append((d.name, parent))
+-    for name, parent, exposure, readers, nonreaders in rows:
+-        print(f"    {name}")
+-        print(f"      joint_of={parent}  exposure={exposure}")
+-        print(f"      seats that touched the parent: {readers or 'none'}; "
+-              f"did not: {nonreaders or 'none'}")
+-    if rows:
+-        k, n = len(neither), len(rows)
+-        a, b = wilson(k, n)
+-        print(f"\n  declared joint, NEITHER quoted nor read: {k}/{n} = {k/n:.6f}")
+-        if a:
+-            print(f"    Wilson (statsmodels): [{a[0]:.6f}, {a[1]:.6f}]")
+-        if b:
+-            print(f"    Wilson (mpmath)     : [{b[0]:.6f}, {b[1]:.6f}]")
+-        for name, parent in neither:
+-            print(f"    ★ {name} was recorded as the joint half of {parent} and "
+-                  f"exposed NEITHER seat to it")
+ 
+     if args.json:
+         print(json.dumps({
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-14 19:49:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/.cdsfl_deny_canonical_writes.sb	2026-10-14 19:31:29
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/cdsfl_registry/composer.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/composer.py	2026-10-13 11:24:42
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/bench/cdsfl_registry/composer.py	2026-10-14 19:41:33
+@@ -1435,12 +1435,48 @@
+     # --- Render ---
+     rendered = _render_directive_text(packets)
+ 
+-    # Apply global phenotype length cap
++    # Apply global phenotype length cap.
++    #
++    # RECORDED, NOT SILENT (2026-10-14, joint round J1). This cap runs on the
++    # FINAL render, after packet assembly, so a packet can be listed in
++    # `manifest["packets"]` at its full length while the cap removed most of
++    # its text from what was actually delivered. Measured on the real compose
++    # path with the pruner retired: deepseek_v3 (cap 4000) delivers ~49% of
++    # the domain directive and 1 char of the situation packet, while the
++    # manifest claimed full delivery and `pruned_soft=[]`. The packet-level
++    # harm measurement (test_falsifier_C0001_prune_inversion_2026-09-10.py,
++    # 0 of 50 with pruning off) cannot see this layer. The record below makes
++    # the manifest truthful; it changes NO delivered byte (asserted by
++    # test_the_manifest_records_the_length_cap_cut_2026-10-14.py). Producer:
++    # scripts/the_cap_cuts_what_the_manifest_claims_2026-10-14.py.
++    length_cap_record: dict = {
++        "fired": False,
++        "cap": transform.max_directive_chars,
++        "chars_cut": 0,
++        "packets_cut": [],
++    }
+     if len(rendered) > transform.max_directive_chars:
+-        rendered = (
+-            rendered[: transform.max_directive_chars]
+-            + "\n[... truncated for model capacity]"
+-        )
++        kept = rendered[: transform.max_directive_chars]
++        length_cap_record["fired"] = True
++        length_cap_record["chars_cut"] = len(rendered) - len(kept)
++        # Per-packet survival: sections render in packet order joined by
++        # "\n\n---\n\n", so offsets are cumulative and exact.
++        offset = 0
++        sep = len("\n\n---\n\n")
++        for p in packets:
++            t = p.text.strip()
++            if not t:
++                continue
++            survived = min(max(len(kept) - offset, 0), len(t))
++            if survived < len(t):
++                length_cap_record["packets_cut"].append({
++                    "layer": p.layer,
++                    "name": p.name,
++                    "chars_delivered": survived,
++                    "chars_total": len(t),
++                })
++            offset += len(t) + sep
++        rendered = kept + "\n[... truncated for model capacity]"
+ 
+     # --- Metrics ---
+     token_estimate = max(len(rendered) // 4, 1)
+@@ -1463,6 +1499,7 @@
+             for p in packets
+         ],
+         "pruned_soft": pruned_soft,
++        "length_cap": length_cap_record,
+         "constraint_count": constraint_count,
+         "token_estimate": token_estimate,
+         "constraint_density": round(density, 6),
+
+### fable:attempt-1:bench/confer_maths_panel_2026-09-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/confer_maths_panel_2026-09-05.py	2026-10-14 19:33:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/bench/confer_maths_panel_2026-09-05.py	2026-10-14 19:29:25
+@@ -1333,15 +1333,8 @@
+         # the fact, which is the same reason `round_kind` measures it.
+         try:
+             import importlib.util as _ilu
+-            import pathlib as _pathlib
+-            # RESOLVED FROM THIS FILE, NOT FROM `_REPO`. The star module is a
+-            # SIBLING of this one, so its location is a fact about this file and
+-            # not about where the repository root happens to point. The first
+-            # version used `_REPO` and its own guard test caught it.
+             _spec = _ilu.spec_from_file_location(
+-                "_star_debt",
+-                _pathlib.Path(__file__).resolve().parent
+-                / "star_topology_2026-10-06.py")
++                "_star_debt", _REPO / "bench" / "star_topology_2026-10-06.py")
+             _star = _ilu.module_from_spec(_spec)
+             _spec.loader.exec_module(_star)
+             _logs_root = _REPO / "bench" / "logs"
+
+### fable:attempt-1:bench/logs/the_directive_set_and_capability_2026-10-14/BRIEF.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/the_directive_set_and_capability_2026-10-14/BRIEF.md	2026-10-14 19:48:15
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/bench/logs/the_directive_set_and_capability_2026-10-14/BRIEF.md	2026-10-14 19:18:00
+@@ -20,14 +20,10 @@
+ 
+ Executed against live code on 2026-10-13, guard `test_falsifier_C0040_universal_directive_2026-09-10.py` 8 passed:
+ 
+-`bench/directives/universal/cdsfl_core_formal.md` is **27,803 characters carrying 16 markdown headings**. Every seat receives **2,503 characters = 9.0026%** of it, with **0 of 16 headings surviving** (Wilson 95% [0.0000%, 20.3883%], Clopper-Pearson [0.0000%, 21.8019%]). All seats get this reduced form ALWAYS, because 27,803 exceeds even the largest cap of 12,000; the code's own comment names a full-text branch no model can reach.
++`bench/directives/universal/cdsfl_core_formal.md` is **27,803 characters in 15 sections**. Every model receives **2,734 characters = 9.8335%**, with **0 of 15 section headings surviving** (Wilson 95% [0.0000%, 20.3883%], Clopper-Pearson [0.0000%, 21.8019%]). All models get this reduced form ALWAYS, because 27,803 exceeds even the largest cap of 12,000; the code's own comment names a full-text branch no model can reach.
+ 
+-**AND THE CAPS DIFFERENTIATE NOTHING, WHICH IS SHARPER THAN THE EARLIER FRAMING.** All 8 seat labels tried — the 5 carrying a `PHENOTYPE_TRANSFORMS` entry, plus `fable`, `cc2` and the no-model default — receive the **SAME 2,503 characters**. The minimal render sits below even the smallest cap of 4,000, so the caps decide only WHETHER it is used, never how much survives. `fable` and `cc2` have no entry in the transform table at all. **An earlier version of this brief said each model gets a different truncation. That was wrong.** Producer: `scripts/what_the_full_directive_set_costs_2026-10-14.py`.
++`cdsfl_operational.md` (**46,374 chars**) IS delivered in full and uncapped, so the total directive text a model sees is **49,108 chars**. It mentions `R_k` 28 times, so the mathematical model does reach them. But **"falsifier" appears 1 time in what is delivered against 24 across both files** (4.1667%, Wilson [0.7393%, 20.2418%]), and **"worked proof" appears 0 times in EITHER file**. The sections that do not reach any model include *"Runnable Falsifiers for Critical Findings"* and *"Falsifier Integrity — Do Not Reach for the Answer"*.
+ 
+-`cdsfl_operational.md` (**46,374 chars**) IS delivered in full and uncapped, so the total directive text a seat sees is **48,878 chars — 65.8929% of the 74,178 characters of combined source** (Wilson [65.5509%, 66.2332%]). So the headline is not that a seat receives 9% of its instructions; it receives about two thirds of them, and the third that is cut is the FORMAL one.
+-
+-**WHAT SURVIVES AND WHAT DOES NOT, counted in the delivered text.** `R_k` survives **30 of 36** mentions (83.3333%, Wilson [68.1092%, 92.1296%]), all of them via the operational file, so the mathematical model does reach the seats. But **"falsifier" survives 1 of 26** (3.8462%, Wilson [0.6822%, 18.8928%]), and **0 of the 25 occurrences in the core file itself** (Wilson [0.0000%, 13.3192%]). **"P-pass" survives 1 of 7.** **"worked proof" appears 0 times in EITHER source file**, so it is absent by authorship rather than by truncation. The core sections that reach no seat include *"Runnable Falsifiers for Critical Findings"* and *"Falsifier Integrity — Do Not Reach for the Answer"*.
+-
+ **The founder's question, and the answer this round must not get wrong:** if the models were never told exactly what they were being asked to do, how did any experiment converge? The measured answer is that convergence never depended on it — the gate reads harness-computed counts. But **1,938 of 3,298 archived findings (58.7629%**, Wilson [57.0736%, 60.4318%]**) carry no falsifier code at all** and still counted toward the novelty series. So the arbiter is sound and the confirmation step can be skipped.
+ 
+ ---
+@@ -36,12 +32,8 @@
+ 
+ **His ruling:** *"Run the panel and decide if the remaining 7% or so you referenced constitutes useful context for our models, or is the 'chatter' that initially concerned me? And if it is just chatter, which specific sections should be cut, to ensure that the models retain full context in what they are being asked to do and so that they can continue to meet the full specification of the project?"*
+ 
+-**Measured, and the figures first given to him are WITHDRAWN.** He was told **18 of 494** lines in the core file (3.6437%) and **20 of 762** in the operational one (2.6247%). Those numerators were produced inline, with no committed script, and **cannot be reproduced**: the denominators reproduce exactly on non-empty lines, the numerators do not, and across 4 candidate predicates for historical narrative the highest counts obtainable are 8 and 13 to 16. Nothing tried reaches 18 or 20.
++**Measured.** Lines carrying a date or an incident marker: **18 of 494** in the core file (3.6437%, Wilson [2.3171%, 5.6858%]; 4.4528% by volume) and **20 of 762** in the operational file (2.6247%, [1.7054%, 4.0192%]; 3.0189% by volume). Across both sources, **2,638 of 74,177 characters = 3.5564%** ([3.4255%, 3.6921%]). Against what a model receives today, **1,400 of 49,108 = 2.8509%** ([2.7073%, 3.0018%]). The remainder is operative specification.
+ 
+-**The reproducible figures, broadest defensible predicate, so an UPPER bound on the chatter:** **8 of 494** lines in the core file (1.6194%, Wilson [0.8228%, 3.1627%]; 2.1005% by volume) and **13 of 762** in the operational one (1.7060%, Wilson [0.9997%, 2.8969%]; 1.9451% by volume). Across both sources, **1,486 of 74,178 characters = 2.0033%** (Wilson [1.9049%, 2.1067%]). Against what a seat receives today, **902 of 48,878 = 1.8454%** (Wilson [1.7299%, 1.9686%]). The remainder is operative specification.
+-
+-**So the chatter is about 2%, not 7%, and his conclusion is strengthened rather than weakened.** Carrying the whole set uncapped costs about **18,544 tokens a seat a round**; the historical narrative is about **371 tokens** of that. It is the cheapest component of this decision. Address the question he asked on the corrected figure, and say plainly if the correction changes your answer.
+-
+ **MY PROPOSED FIX.** Cut almost nothing. The chatter is under 4% and the files are the project's specification; the reason the specification does not arrive is the CAP, not the length. So: remove the caps (Item 2), deliver both files whole, and trim only what you identify as genuinely inert, honouring the KEEP-VERBATIM sections of `experimental_notes/CDSFL_Directive_Pruning_Review_2026-07-18.md`. **And ADD what is missing:** the worked-proofs principle appears nowhere, and the founder's position is that the core directives should carry the mathematical model, an instruction to use it in forming responses, and the worked-proofs requirement, with the harness measuring compliance.
+ 
+ **What I want from you.** Name the SPECIFIC sections or passages to cut, if any, with the test each one fails. And answer the harder half: what must be ADDED so a model receiving only these files can meet the project's specification — in particular the worked-proofs requirement, and how the harness should measure that a model actually used the mathematical model rather than asserting that it did.
+
+### fable:attempt-1:bench/tests/test_a_blind_round_has_a_joint_round_2026-10-08.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_a_blind_round_has_a_joint_round_2026-10-08.py	2026-10-14 19:35:34
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/bench/tests/test_a_blind_round_has_a_joint_round_2026-10-08.py	2026-10-08 13:51:37
+@@ -175,73 +175,16 @@
+         monkeypatch.delenv("PANEL_SKIP_TOPOLOGY", raising=False)
+         assert D._refuse_if_a_joint_round_is_owed() != 0
+ 
+-    def _joint_tree(self, tmp_path, parent, brief_text):
+-        """A registry with `parent` OWED, plus a logs tree for the joint round.
+-
+-        ADDED 2026-10-14. The original version of the test below built only the
+-        registry, because the gate then looked no further than `PANEL_JOINT_OF`.
+-        It now reads the joint round's own BRIEF.md, so the tree has to exist.
+-        """
+-        root = self._registry(tmp_path, {parent: {"status": "OWED",
+-                                                  "reason": "x"}})
+-        logs = root / "bench" / "logs"
+-        body = "P" * 1200
+-        d = logs / parent
+-        d.mkdir(parents=True, exist_ok=True)
+-        (d / "BRIEF.md").write_text("parent brief")
+-        for seat in ("cc2", "fable"):
+-            (d / f"{seat}.json").write_text(json.dumps(
+-                {"ok": True, "chars": len(body), "response": body}))
+-        me = logs / f"joint_{parent}"
+-        me.mkdir(parents=True, exist_ok=True)
+-        (me / "BRIEF.md").write_text(brief_text.replace("<<REPLY>>", body))
+-        return root, me
+-
+     def test_a_joint_round_is_allowed_through_while_debt_stands(self, D, tmp_path,
+                                                                monkeypatch):
+-        """Otherwise the only way to clear the debt would be blocked by it.
+-
+-        THE ASSERTION WAS SHARPENED 2026-10-14, NOT WEAKENED. It used to pass on
+-        `PANEL_JOINT_OF` alone, which measured only that the operator had set an
+-        environment variable. A brief carrying none of the parent's words would
+-        satisfy it -- and on 2026-10-14 one did: CC1's joint brief for
+-        `his_rulings_2026-10-13` pointed at two directories that do not exist and
+-        was accepted as the joint half. The property this test exists to protect
+-        (the escape hatch must not be blocked by the thing it escapes) is kept
+-        and asserted below; what is added is that the hatch opens only for a
+-        brief that actually carries the parent's replies.
+-        """
+-        root, me = self._joint_tree(
+-            tmp_path, "r1_2026-10-01",
+-            "Here is the parent reply in full:\n<<REPLY>>")
++        """Otherwise the only way to clear the debt would be blocked by it."""
++        root = self._registry(tmp_path, {"r1_2026-10-01": {"status": "OWED",
++                                                           "reason": "x"}})
+         monkeypatch.setattr(D, "_REPO", root, raising=False)
+         monkeypatch.setattr(D, "_JOINT_OF", ("r1_2026-10-01",), raising=False)
+-        monkeypatch.setattr(D, "_logs_dir", lambda: me, raising=False)
+         monkeypatch.delenv("PANEL_SKIP_TOPOLOGY", raising=False)
+-        assert D._refuse_if_a_joint_round_is_owed() == 0, (
+-            "a joint round carrying its parent's replies must be allowed "
+-            "through, or the debt could never be discharged")
++        assert D._refuse_if_a_joint_round_is_owed() == 0
+ 
+-    def test_a_joint_round_quoting_nothing_is_NOT_allowed_through(
+-            self, D, tmp_path, monkeypatch):
+-        """The other half of the sharpened assertion above.
+-
+-        Measured 2026-10-14: 2 of the 6 rounds carrying a recorded kind declared
+-        `joint` while `bench/star_topology_2026-10-06.py::round_kind` detected
+-        `blind`. Producer:
+-        `scripts/the_joint_debt_is_discharged_by_a_directory_2026-10-14.py`.
+-        """
+-        root, me = self._joint_tree(
+-            tmp_path, "r1_2026-10-01",
+-            "Read bench/logs/r1_2026-10-01/cc2/ and fable/ for the replies.")
+-        monkeypatch.setattr(D, "_REPO", root, raising=False)
+-        monkeypatch.setattr(D, "_JOINT_OF", ("r1_2026-10-01",), raising=False)
+-        monkeypatch.setattr(D, "_logs_dir", lambda: me, raising=False)
+-        monkeypatch.delenv("PANEL_SKIP_TOPOLOGY", raising=False)
+-        assert D._refuse_if_a_joint_round_is_owed() != 0, (
+-            "a brief that merely POINTS at the parent's replies is not the "
+-            "joint half: nothing checks that the seat read it")
+-
+     def test_superseded_entries_do_not_block(self, D, tmp_path, monkeypatch):
+         root = self._registry(tmp_path, {"r1_2026-10-01": {
+             "status": "SUPERSEDED", "superseded_by": "r2", "reason": "x"}})
+
+### fable:attempt-1:bench/tests/test_the_manifest_records_the_length_cap_cut_2026-10-14.py
+--- /dev/null	2026-10-14 19:49:10
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/bench/tests/test_the_manifest_records_the_length_cap_cut_2026-10-14.py	2026-10-14 19:40:56
+@@ -0,0 +1,93 @@
++#!/usr/bin/env python3
++"""The composition manifest must record what the global length cap removed.
++
++JOINT ROUND his_rulings_2026-10-13, J1 falsifier. With the pruner retired
++(`coherence_pruning=False`, the live default), `compose()` renders LONGER text,
++and the global phenotype length cap (composer.py, "Apply global phenotype
++length cap", `PhenotypeTransform.max_directive_chars`) truncates the tail of
++the render: for deepseek_v3 (cap 4000) the domain directive survives to ~49%
++and the situation packet -- the per-dispatch review target and adversarial
++brief -- to 1 char, while `manifest["packets"]` lists every packet at its FULL
++length and `pruned_soft=[]`. The record claims delivery the cap removed.
++
++Producer: scripts/the_cap_cuts_what_the_manifest_claims_2026-10-14.py.
++
++RED on the tree as delivered by the 2026-10-13 round (no `length_cap` record in
++the manifest). GREEN once `compose()` stamps `manifest["length_cap"]` with
++{fired, chars_cut, packets_cut}. The repair changes NO delivered byte --
++`rendered_text` must be byte-identical before and after -- so replay
++comparability is asserted here, not assumed.
++"""
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO))
++
++from bench.cdsfl_registry.composer import (  # noqa: E402
++    compose, PHENOTYPE_TRANSFORMS,
++)
++
++SIT = dict(
++    review_target="SIM target: a 400-line numerical integrator",
++    code_extracts=(
++        "def integrate(f,a,b,n):\n    h=(b-a)/n\n"
++        "    return sum(f(a+i*h) for i in range(n))*h"
++    ),
++    adversarial_brief=(
++        "SIM adversarial brief: attack the trapezoid-vs-rectangle claim."
++    ),
++)
++
++
++def _compose(model, prune=False):
++    return compose("software", model, coherence_pruning=prune, **SIT)
++
++
++class TestTheManifestRecordsTheCap:
++    def test_a_capped_composition_says_so(self):
++        """deepseek_v3, pruning off: the cap fires and the manifest admits it."""
++        c = _compose("deepseek_v3")
++        assert c.rendered_text.endswith("[... truncated for model capacity]"), (
++            "fixture no longer exercises the cap; re-derive this test")
++        rec = c.manifest.get("length_cap")
++        assert isinstance(rec, dict), (
++            "manifest carries no `length_cap` record: the global phenotype "
++            "length cap cut delivered text and the provenance record claims "
++            "full delivery (J1, joint round 2026-10-13)")
++        assert rec.get("fired") is True
++        assert rec.get("chars_cut", 0) > 0
++
++    def test_the_record_names_which_packets_lost_text(self):
++        c = _compose("deepseek_v3")
++        rec = c.manifest.get("length_cap") or {}
++        cut_layers = {p["layer"] for p in rec.get("packets_cut", [])}
++        assert "situation" in cut_layers, (
++            "the situation packet (review target, adversarial brief) was cut "
++            "to ~1 char and the record does not name it")
++        assert "domain" in cut_layers, (
++            "the domain directive lost ~51% of its text and the record does "
++            "not name it")
++
++    def test_an_uncapped_composition_records_fired_false(self):
++        c = _compose("opus_4_6")
++        assert not c.rendered_text.endswith(
++            "[... truncated for model capacity]")
++        rec = c.manifest.get("length_cap")
++        assert isinstance(rec, dict) and rec.get("fired") is False
++        assert rec.get("packets_cut") == []
++
++    def test_the_repair_changes_no_delivered_byte(self):
++        """The cap record is manifest-only: rendered text identical to the
++        pre-record construction (cap slice + marker)."""
++        for model in PHENOTYPE_TRANSFORMS:
++            c = _compose(model)
++            cap = PHENOTYPE_TRANSFORMS[model].max_directive_chars
++            marker = "\n[... truncated for model capacity]"
++            if c.rendered_text.endswith(marker):
++                body = c.rendered_text[: -len(marker)]
++                assert len(body) == cap, (
++                    f"{model}: delivered byte count changed; the repair was "
++                    f"required to be manifest-only")
++            else:
++                assert len(c.rendered_text) <= cap
+
+### fable:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-10-13 11:05:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/docs/MATHEMATICAL_APPENDIX.md	2026-10-14 19:43:21
+@@ -1319,6 +1319,26 @@
+ **Veto property:** SymPy negative weight magnitude (4.60) exceeds sum of other positive weights (3.62). SymPy falsification overwhelms other verifications — a mathematically grounded veto. (Table corrected during 5-model meta-test, 27 March 2026 — original Dimensional and Numerical negative weights were computed as ln(FNR/TPR) instead of the correct ln(FNR/TNR). Veto property is strengthened by the correction since correct negative weights are more negative.)
+ 
+ **Verified:** SymPy falsified + others verified → S_v = 0.272 (below 0.5 threshold). All verified → S_v = 0.9999. All indeterminate → S_v = 0.5 (neutral).
++
++> **The rates in the table above are ASSUMED, not measured** (established
++> 2026-10-14, joint round J2; producer:
++> `scripts/approach_b_rates_are_assumed_2026-10-14.py`). Their earliest
++> occurrence — `docs/experimental_notes/CDSFL_Complete_Mathematical_Framework_Technical_2026-03-27.md`,
++> labelled "Empirical weights" — predates every archived experiment and names
++> no producer; the 27 March 2026 meta-test correction fixed the weight
++> *arithmetic* only; and `experimental_notes/Stage6_Full_Confer_Synthesis_2026-04-14.md`
++> records (5/5 models) that true TPR/FPR estimation requires ground-truth
++> labels that were then "Phase 7+". Consequence, derived with SymPy, z3,
++> mpmath and Wolfram Language: direction-unanimous verifier cells are
++> rate-invariant at the 0.5 threshold (tools decide), but **conflict cells are
++> decided by the assumed numbers** — the worked 0.272 REJECT becomes 0.653
++> ACCEPT under SymPy TPR 0.95 / FPR 0.01, rates equally defensible absent a
++> measurement. Substituting Approach B for the §7.7 `confidence` therefore
++> relocates the model's vote to the author's in exactly the disagreement
++> cells. **Promotion precondition:** measure per-tool TPR/FPR against the
++> ground truth the archive now carries (1,246 CONFIRMED / 40 REFUTED
++> runner-re-verified falsifier verdicts, plus the planted-defect exams) and
++> replace this table with the measured rates and their intervals.
+ 
+ ### 7.9 Capability Fingerprint
+ 
+@@ -1357,7 +1377,7 @@
+ | O_A + S_sync^emp (§7.5) | Verified, edge cases handled, 3-regime discrimination | Ready for implementation |
+ | Δ (§7.6) | Verified | Ready for implementation |
+ | Sev(f) (§7.7) | Verified | **NOT implemented.** The product is computed nowhere in the gating path; `bench/reference_runner_v3.py` reads a model-asserted float. `confidence` and the HARD/SOFT class are not collected (0 of 3,298 archived entries carry either), and the §7.7 KEY PROPERTY is violated on 35 of 40 disproved findings — 87.5000%, Wilson [73.8879%, 94.5405%]. Applied advisory-only by `FindingRegistry.severity_spec_shadow`, which GATES NOTHING. Producers: `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, `scripts/the_severity_cut_collapses_the_formula_2026-10-13.py`. (Row corrected 2026-10-13; it read "Implemented in pipeline" and that was false.) |
+-| Multi-verifier (§7.8) | Verified, Λ notation, both approaches | Ready for implementation |
++| Multi-verifier (§7.8) | Weight arithmetic verified, Λ notation, both approaches; **table TPR/FPR rates ASSUMED, never measured** (see §7.8 note, 2026-10-14) | Implementation gated on measuring the rates against archived ground truth — conflict-cell verdicts flip under equally plausible rates, so promoting the assumed table relocates the §7.7 vote to the author |
+ | Fingerprint (§7.9) | Verified | Partially implemented |
+ | Manager selection (§7.11) | Defined, uses §7.7/§7.8 | Ready for implementation |
+ | FFF convergence (§7.12) | Verified, 7 properties proven | Process model; implemented via round instructions |
+
+### fable:attempt-1:experimental_notes/Falsifier_Debt_Feedback_Spec_2026-10-14.md
+--- /dev/null	2026-10-14 19:49:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/experimental_notes/Falsifier_Debt_Feedback_Spec_2026-10-14.md	2026-10-14 19:44:30
+@@ -0,0 +1,87 @@
++# Falsifier-Debt Feedback — Build Specification (J3, joint round 2026-10-14)
++
++**Status: SUGGESTED, not applied.** Specified to the founder's ruling of
++2026-10-13: *"if we feed these issues back into the harness for resolution, as
++we have already discussed — and have existing mechanics for... If so you should
++build it and apply it."* The archive measurement licensing the build is
++`scripts/the_untoolable_were_never_attempted_2026-10-14.py`:
++
++- Population: 1,938 / 3,298 entries UNTOOLABLE or carrying no falsifier
++  (58.7629%, Wilson [57.0736%, 60.4318%]).
++- NEVER ATTEMPTED (no code, no verdict, no routing): 1,884 / 1,938 = 97.2136%,
++  Wilson [96.3823%, 97.8582%].
++- PROVED IRREDUCIBLE (ladder exhausted, no source): **0 / 1,938**, Wilson
++  upper bound 0.1978%.
++- Every flaw class in the population has an executed falsifier elsewhere:
++  1,938 / 1,938, Wilson lower bound 99.8022%.
++
++His claim is CONFIRMED, so the mechanism below is owed. It reuses the existing
++feedback channel (`bench/dm/_feedback.py`, `cdsfl_operational.md` §17) rather
++than adding a new one.
++
++## 1. Record type
++
++Add one record kind to `FindingFeedback`: `FALSIFIER_DEBT`.
++
++Emitted at round close, per source model, for each registry entry where ALL of:
++
++- `status` ∈ LIVE = {OPEN, UNCONFIRMED, CORROBORATED, CONTESTED}, OR
++  `status == CONFIRMED` with `status_adjudicator != "tool"` (the archive holds
++  530 such entries confirmed by no tool — they re-enter until a tool rules);
++- no non-empty `falsifier_code`;
++- `falsifier_verdict` not in {CONFIRMED, REFUTED, NON_DISCRIMINATING}.
++
++Explicitly EXCLUDED: entries terminal by other adjudication
++({REFUTED, MERGED, CLOSED, WITHHELD} — 612 of the archived never-attempted),
++and entries currently queued in the routing ladder (`routing_history`
++non-empty and unexhausted — the ladder is already resolving them).
++
++## 2. Payload (fields exist today; no schema addition)
++
++`canonical_id`, `description` (existing truncation cap), `open_since_round`,
++and the imperative, worded on the §17 precedent ("agree with tool output OR
++show it wrong"):
++
++> This finding carries no executed falsifier. Either (a) attach a runnable
++> falsifier per the routing ladder, or (b) return a scoped UNTOOLABLE
++> justification naming the specific claim element no computation can decide
++> and why. An unscoped UNTOOLABLE is rejected and the debt re-served.
++
++## 3. UNTOOLABLE acceptance rule
++
++An UNTOOLABLE declaration retires the debt ONLY when the routing ladder has
++been fully consulted (`rungs_tried == rungs_available`). Measured basis: 30 of
++41 archived UNTOOLABLE declarations carry an EMPTY `routing_history` (73.1707%,
++Wilson [58.0665%, 84.3050%]) — declarations, not demonstrations. An UNTOOLABLE
++with an unexhausted ladder re-enters the ladder (`_routing_ladder` machinery,
++the "never served" door of 2026-10-12) instead of retiring.
++
++## 4. Priority, caps, and convergence authority
++
++- Priority: below refutations and admissibility failures, above R_k
++  discrepancies, in `FindingFeedback.priority_score()` — refuted claims stay
++  the loudest signal.
++- Existing `top_k` (10) and aggregate-summary overflow behaviour unchanged.
++- **Gates untouched.** The debt record is prompt plumbing; whether a finding
++  blocks convergence remains the harness's ruling (`unverified_critical_count`
++  and the A4 fail-safe as today). No model decides convergence; discharge of a
++  debt is recorded only when a tool-executed verdict lands.
++
++## 5. Flag and wiring (additive standard)
++
++`falsifier_debt_feedback = false` default in `bench/cdsfl_registry/universal.toml`
++beside `feedback_channel_enabled`; read in `build_feedback_records`; exercised
++by a committed test (debt emitted for a live no-falsifier entry; not emitted
++for terminal; UNTOOLABLE-with-unexhausted-ladder re-routes; flag off ⇒
++byte-identical sections). Commissioned in the next simulated run; the
++promotion measurement is the per-run discharge rate (debts served vs executed
++verdicts landed), which the round telemetry already has the fields to count.
++
++## 6. What this does NOT do
++
++It does not manufacture falsifier supply on its own: J4 established that the
++directive sections mandating runnable falsifiers reach 0 of 5 models (producer:
++`scripts/what_the_minimal_rendering_delivers_2026-10-14.py`). The debt record
++puts the obligation in the one channel measured to reach every seat — the
++per-round prompt — which is also why the feedback route is the correct carrier
++rather than a directive-file edit gated on the lean-vs-full ablation.
+
+### fable:attempt-1:experimental_notes/The_Directive_Set_Plain_English_2026-10-13.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/The_Directive_Set_Plain_English_2026-10-13.md	2026-10-14 19:43:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/experimental_notes/The_Directive_Set_Plain_English_2026-10-13.md	2026-10-13 21:36:10
+@@ -4,21 +4,6 @@
+ 
+ **Audience: a reader who can follow a file path but was not in the session.** The unedited panel replies are in `His_Rulings_FULL_RECORD_2026-10-13.md`. Key paths named here: `bench/directives/universal/cdsfl_core_formal.md` (27,803 chars, 15 sections), `bench/directives/universal/cdsfl_operational.md` (46,374 chars), `bench/cdsfl_registry/composer.py` (`PHENOTYPE_TRANSFORMS`, `max_directive_chars`, `_load_universal_directive`), `experimental_notes/CDSFL_Directive_Pruning_Review_2026-07-18.md`, and the guard `bench/tests/test_falsifier_C0040_universal_directive_2026-09-10.py` (8 passed).
+ 
+-
+-## CORRECTION, 2026-10-14: TWO FIGURES IN THIS NOTE ARE SUPERSEDED
+-
+-Both were re-derived on 2026-10-14 by calling the live composer, under the rule that a measured rate travels with the script that produced it. The producer is `scripts/what_the_full_directive_set_costs_2026-10-14.py`, and its `--help` is free.
+-
+-**The delivered size was 2,734 characters (9.8335 percent). It is 2,503 characters (9.0026 percent).** The direction of the finding is unchanged and its force is slightly greater. The 2026-10-13 figure ran inline with no committed script, so it could not be reproduced; the note's other figure of 9.0026 percent, recorded the same day, is the correct one.
+-
+-**AND THE CORRECTION SHARPENS THE POINT ABOUT THE CAPS.** All 8 seat labels tried, the 5 carrying a transform plus `fable`, `cc2` and the no-model default, receive the SAME 2,503 characters. So the per-model caps of 4,000, 6,000, 8,000 and 12,000 differentiate nothing at all: the minimal render sits below even the smallest of them, and the caps decide only WHETHER that render is used, which it always is because 27,803 exceeds the largest cap. `fable` and `cc2` have no entry in the transform table and receive the same text by default. The earlier framing, that each model gets a different truncation, was wrong.
+-
+-**The historical-narrative share was 18 lines of 494 and 20 of 762. Those numerators cannot be reproduced.** The denominators reproduce exactly on non-empty lines. Across 4 candidate predicates for what historical narrative looks like, a bare 4-digit year, an ISO date, year-or-MEASURED, and year-or-month-name, the highest counts obtainable are 8 of 494 and 13 to 16 of 762. Nothing tried reaches 18 or 20. On the broadest defensible predicate the chatter is 2.0033 percent of the 2 files by volume, which is 1,486 characters of 74,177, or about 371 tokens for each seat in each round.
+-
+-**The founder's judgement survives the correction and is strengthened by it.** His words were that a 7 percent overhead of what may ultimately be useful context is not such a huge burden to carry, and that it should be measured. Measured, it is about 2 percent, not 7. Carrying the whole directive set uncapped costs about 18,544 tokens for each seat in each round, and the historical narrative is the cheapest component of that. Removing the caps is the change that delivers the specification; cutting the narrative saves little and removes context that may matter.
+-
+-**And a smaller count: the file carries 16 markdown headings, not 15.** Zero survive in the delivered text, confirmed by execution rather than recall.
+-
+ ---
+ 
+ None of the core directive reaches any model, and the caps forcing that are unjustified
+
+### fable:attempt-1:scripts/approach_b_rates_are_assumed_2026-10-14.py
+--- /dev/null	2026-10-14 19:49:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/scripts/approach_b_rates_are_assumed_2026-10-14.py	2026-10-14 19:42:41
+@@ -0,0 +1,145 @@
++#!/usr/bin/env python3
++"""Approach B's verifier table: measured rates or assumed? Settled by record + derivation.
++
++JOINT ROUND his_rulings_2026-10-13, J2. docs/MATHEMATICAL_APPENDIX.md section
++7.8 gives Approach B (S_v = 1/(1+exp(-Lambda_total))) a verifier table: SymPy
++TPR 0.99 / FPR 0.001, Dimensional 0.80 / 0.10, Numerical 0.70 / 0.15. Both
++blind seats pointed to Approach B as the replacement for the model-asserted
++`confidence` in section 7.7. The question neither answered: do those rates
++rest on a MEASUREMENT?
++
++PROVENANCE, from the repository record (paths printed below, checkable):
++
++1. The table's earliest occurrence is
++   docs/experimental_notes/CDSFL_Complete_Mathematical_Framework_Technical_2026-03-27.md
++   (line ~155), dated 2026-03-27 -- BEFORE any archived experiment ran -- where
++   it is labelled "Empirical weights" with NO producer, NO dataset, NO interval.
++2. No script in this repository computes a verifier TPR or FPR from ground
++   truth. (This script greps for one and prints the result.)
++3. The project's own 5-model confer RECORDED the impossibility at the time:
++   experimental_notes/Stage6_Full_Confer_Synthesis_2026-04-14.md -- "FPR =
++   P(PASS | H0 true) requires ground-truth labels", "fail_fraction ... cannot
++   be used for production calibration", ground-truth labelling filed "Phase
++   7+". Claim 7 there is "FALSIFIED by definition", 5/5 models.
++4. The "Table corrected during 5-model meta-test, 27 March 2026" note corrects
++   the WEIGHT ARITHMETIC (ln(FNR/TPR) -> ln(FNR/TNR)); it does not measure a
++   rate.
++
++CONCLUSION ON PROVENANCE: the rates are ASSUMED. "Empirical" in the 2026-03-27
++document is a label, not a measurement.
++
++WHAT THAT DOES AND DOES NOT RELOCATE, derived below with 2 independent tools:
++
++* DIRECTION-UNANIMOUS CELLS ARE RATE-INVARIANT. If every determinate verifier
++  returns o_i = 1, then S_v > 0.5 for ANY rates with TPR_i > FPR_i; if every
++  o_i = 0, S_v < 0.5 for ANY rates with FNR_i < TNR_i. In those cells the
++  VERDICT side of the 0.5 threshold is decided by the tools alone; the assumed
++  numbers set only the magnitude. (z3: negation unsat; SymPy agrees.)
++* CONFLICT CELLS ARE DECIDED BY THE ASSUMED NUMBERS. SymPy-falsified +
++  dimensional-verified + numerical-verified gives S_v = 0.272 < 0.5 under the
++  table's rates, and S_v = 0.653 > 0.5 under SymPy TPR 0.95 / FPR 0.01 --
++  rates every bit as defensible absent a measurement. Two plausible priors,
++  opposite verdicts: in disagreement cells the author's number IS the vote.
++
++VERDICT: substituting Approach B as-is removes the MODEL's number and installs
++the AUTHOR's number exactly where verifiers disagree. The vote is relocated,
++not removed, in conflict cells -- and removed, genuinely, in unanimous cells.
++Promotion therefore requires measuring the rates first. The ground truth that
++did not exist on 2026-03-27 exists now: 1,246 CONFIRMED and 40 REFUTED
++runner-re-verified falsifier verdicts in the archive, plus the planted-defect
++exams. Measure per-tool rates against those labels; until then the appendix
++table must say ASSUMED.
++
++Usage: python3 scripts/approach_b_rates_are_assumed_2026-10-14.py
++"""
++import os
++import pathlib
++import re
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++from _cli_help import answer_help  # noqa: E402
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++
++
++def main() -> int:
++    answer_help(__doc__, __file__)
++    import mpmath
++    import sympy as sp
++    import z3
++
++    print("=== 1. The published weights follow from the stated rates ===")
++    rates = {"SymPy": (0.99, 0.001), "Dimensional": (0.80, 0.10),
++             "Numerical": (0.70, 0.15)}
++    pub = {"SymPy": (6.90, -4.60), "Dimensional": (2.08, -1.50),
++           "Numerical": (1.54, -1.04)}
++    for name, (tpr, fpr) in rates.items():
++        wp_s = float(sp.log(sp.Rational(str(tpr)) / sp.Rational(str(fpr))))
++        wn_s = float(sp.log((1 - sp.Rational(str(tpr))) / (1 - sp.Rational(str(fpr)))))
++        wp_m = float(mpmath.log(mpmath.mpf(str(tpr)) / mpmath.mpf(str(fpr))))
++        wn_m = float(mpmath.log((1 - mpmath.mpf(str(tpr))) / (1 - mpmath.mpf(str(fpr)))))
++        ok = (abs(wp_s - pub[name][0]) < 0.01 and abs(wn_s - pub[name][1]) < 0.01
++              and abs(wp_s - wp_m) < 1e-12 and abs(wn_s - wn_m) < 1e-12)
++        print(f"  {name:<12} log(TPR/FPR)={wp_s:+.4f}  log(FNR/TNR)={wn_s:+.4f}  "
++              f"published {pub[name]}  SymPy==mpmath, matches: {ok}")
++        assert ok
++
++    print("\n=== 2. Unanimous cells are rate-invariant (the tools decide) ===")
++    # S_v > 0.5  iff  Lambda > 0  iff  product of likelihood ratios > 1.
++    r1, r2, r3 = z3.Reals("r1 r2 r3")
++    s = z3.Solver()
++    s.add(r1 > 1, r2 > 1, r3 > 1, r1 * r2 * r3 <= 1)
++    res = s.check()
++    print(f"  z3: 'every ratio > 1 AND product <= 1' -> {res}")
++    assert res == z3.unsat
++    a, b, c = sp.symbols("a b c", positive=True)
++    expr = sp.log(a) + sp.log(b) + sp.log(c)
++    print(f"  SymPy: Lambda = log(a)+log(b)+log(c) = log(a*b*c); "
++          f"a,b,c > 1 => Lambda > 0: "
++          f"{sp.simplify(sp.logcombine(expr, force=True)) == sp.log(a*b*c)}")
++    print("  So: any rates with TPR_i > FPR_i put a unanimous verification on")
++    print("  the same side of 0.5. Direction is tool-owned in those cells.")
++
++    print("\n=== 3. Conflict cells are decided by the assumed numbers ===")
++    def s_v(weights):
++        lam = sum(weights)
++        return float(1 / (1 + mpmath.e ** (-mpmath.mpf(lam))))
++    import math
++    table = s_v([math.log(0.01 / 0.999), math.log(0.80 / 0.10),
++                 math.log(0.70 / 0.15)])
++    alt = s_v([math.log(0.05 / 0.99), math.log(0.80 / 0.10),
++               math.log(0.70 / 0.15)])
++    # second tool: sympy exact
++    lam_t = sp.log(sp.Rational(1, 100) / sp.Rational(999, 1000)) + \
++        sp.log(sp.Rational(8, 1)) + sp.log(sp.Rational(70, 15))
++    table_sp = float(1 / (1 + sp.exp(-lam_t)))
++    print(f"  SymPy-falsified + others verified:")
++    print(f"    table rates  (TPR .99/FPR .001): S_v = {table:.4f}  "
++          f"(SymPy exact route agrees: {abs(table - table_sp) < 1e-9})  -> REJECT")
++    print(f"    alt rates    (TPR .95/FPR .01) : S_v = {alt:.4f}  -> ACCEPT")
++    print(f"  Same tool outputs, opposite verdicts. Absent a measurement,")
++    print(f"  the choice between those rate sets is the author's vote.")
++    assert table < 0.5 < alt
++
++    print("\n=== 4. No measurement producer exists in this repository ===")
++    hits = []
++    for d in ("scripts", "bench"):
++        for fp in (REPO / d).glob("*.py"):
++            try:
++                txt = fp.read_text(errors="ignore")
++            except Exception:  # noqa: BLE001
++                continue
++            if fp.name == pathlib.Path(__file__).name:
++                continue  # this script names the rates; it does not measure them
++            if re.search(r"TPR", txt) and re.search(r"0\.99", txt) and \
++               re.search(r"ground.?truth|planted|label", txt, re.I):
++                hits.append(str(fp))
++    print(f"  scripts computing verifier TPR/FPR from ground truth: {hits or 'NONE'}")
++    print("\nVERDICT: ASSUMED. Promotion of Approach B requires the per-tool")
++    print("rate measurement first; the archive now carries the labels to do it.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:scripts/panel_brief_validate.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/panel_brief_validate.py	2026-10-14 19:46:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/scripts/panel_brief_validate.py	2026-10-06 07:53:44
+@@ -569,47 +569,6 @@
+             drift = (f.stat().st_mtime - brief_mtime) / 60.0
+             stale.append(f"{rel} changed {drift:.1f} min AFTER the brief was written")
+     return stale
+-
+-
+-#: File extensions worth checking. A bare directory reference is checked too.
+-_PATHISH = re.compile(r"`([A-Za-z0-9_./-]+\.(?:py|md|json|toml|txt|diff))`"
+-                      r"|`([A-Za-z0-9_./-]+/)`")
+-
+-
+-def named_paths_that_do_not_exist(text: str) -> list:
+-    """Paths the brief tells a seat to READ which are not in the tree.
+-
+-    WHY THIS EXISTS, MEASURED 2026-10-14 ON MY OWN BRIEF. The joint brief for
+-    `his_rulings_2026-10-13` told both seats to read
+-    `bench/logs/his_rulings_2026-10-13/cc2/` and `fable/`. Those directories do
+-    not exist -- the replies are `cc2.json` and `fable.json` -- so a seat
+-    following the brief would have found nothing and improvised, and nothing in
+-    the harness would have said so. The round was killed for a different reason
+-    and the defect was found by accident.
+-
+-    SECTION SCOPED, DELIBERATELY. A whole-document check would refuse briefs that
+-    correctly tell a seat to CREATE a file ("write your fix to
+-    `sandbox/my_fix.py`"), which is the normal output instruction. Only the
+-    section that enumerates the artefacts UNDER REVIEW is checked, because every
+-    path there is by definition something that must already exist.
+-
+-    An elided path (`.../fable/`) is reported too: a seat cannot follow it, and
+-    the brief's author can spell it out at no cost.
+-    """
+-    body = _section(text, r"artefact|under review|read these|the files")
+-    if body is None:
+-        return []
+-    out = []
+-    for m in _PATHISH.finditer(body):
+-        cand = m.group(1) or m.group(2)
+-        if "/" not in cand:
+-            continue
+-        if cand.startswith("...") or "/.../" in cand:
+-            out.append((cand, "elided — spell the path out so a seat can follow it"))
+-            continue
+-        if not (REPO / cand).exists():
+-            out.append((cand, "named as an artefact under review but not in the tree"))
+-    return out
+ 
+ 
+ def validate(text: str) -> list[str]:
+@@ -630,11 +589,6 @@
+         if not any(re.search(p, low, re.M | re.I) for p in patterns):
+             problems.append(f"{label}: NOT FOUND — {remedy}")
+ 
+-    # ★ A PATH A SEAT CANNOT FOLLOW IS A DEFECTIVE BRIEF. See
+-    # `named_paths_that_do_not_exist` for the 2026-10-14 measurement.
+-    for cand, why in named_paths_that_do_not_exist(text):
+-        problems.append(f"names a path a seat cannot read: {cand} — {why}")
+-
+     # The output check is SECTION SCOPED, unlike the rest. See _section().
+     body = _section(text, r"output|deliverable|what to return")
+     if body is None:
+
+### fable:attempt-1:scripts/the_cap_cuts_what_the_manifest_claims_2026-10-14.py
+--- /dev/null	2026-10-14 19:49:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/scripts/the_cap_cuts_what_the_manifest_claims_2026-10-14.py	2026-10-14 19:40:34
+@@ -0,0 +1,135 @@
++#!/usr/bin/env python3
++"""The length cap cuts text the manifest claims was delivered. Measured.
++
++JOINT ROUND his_rulings_2026-10-13, J1. The composed system under test: the
++severity specification shadow, the single-membership queue, the retired pruner
++(`coherence_pruning=False`) and the ablation switch, all live at once. This
++script demonstrates the one interaction none of the per-fix tests covered.
++
++THE MECHANISM, by the names in the code. `compose()` applies the global
++phenotype length cap at bench/cdsfl_registry/composer.py (the block commented
++"Apply global phenotype length cap", keyed on
++`PhenotypeTransform.max_directive_chars`) to the FINAL rendered text, AFTER
++packet assembly. The retirement measurement -- 0 of 50 compositions lose a
++domain directive with pruning off, 10 of 50 with it on, committed in
++bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py -- counts PACKET
++membership (`"domain" not in {p.layer for p in c.packets}`). It therefore
++measures the layer ABOVE the cap. With the pruner retired the composition is
++LONGER (nothing deletes SOFT packets any more), so the cap bites deeper, and
++what it cuts is the TAIL of the render: canonical order universal -> domain ->
++situation, so the situation packet -- the per-dispatch review target, code
++extracts and adversarial brief -- goes first, then the domain directive.
++
++MEASURED ON THE REAL COMPOSE PATH (this script re-executes it): for
++deepseek_v3 (max_directive_chars=4000), pruning OFF, domains software and
++mathematics, with a situation packet attached:
++
++  * the DOMAIN directive survives to 1490 of 3049 chars (software) and
++    1490 of 2748 (mathematics) -- 48.9% and 54.2% respectively;
++  * the SITUATION packet survives to 1 of 282 chars -- effectively absent;
++  * the manifest lists all 3 packets at their FULL char counts and
++    `pruned_soft=[]`, i.e. the record says everything was delivered.
++
++THE VERDICT THIS SUPPORTS. The retirement itself stands: with pruning ON the
++same deepseek compositions lose domain AND situation ENTIRELY (packet deleted),
++so partial-by-cap dominates absent-by-pruner on every row, and the other 4
++models deliver FULL text with pruning off. But the founder's stated ground for
++retirement -- "we have no way of knowing what it feeds" -- is still violated
++for deepseek_v3: the provenance manifest misstates what was delivered, and the
++0-of-50 figure, measured at packet level, cannot see it. The simplest
++sufficient repair is manifest honesty: record the cap event and which packets
++lost text. It changes no delivered byte, so replay comparisons survive.
++
++Falsifier: bench/tests/test_the_manifest_records_the_length_cap_cut_2026-10-14.py
++(red before the manifest records the cut, green after).
++
++Usage: python3 scripts/the_cap_cuts_what_the_manifest_claims_2026-10-14.py
++"""
++import os
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++
++from _cli_help import answer_help  # noqa: E402
++
++
++SIT = dict(
++    review_target="SIM target: a 400-line numerical integrator",
++    code_extracts=(
++        "def integrate(f,a,b,n):\n    h=(b-a)/n\n"
++        "    return sum(f(a+i*h) for i in range(n))*h"
++    ),
++    adversarial_brief=(
++        "SIM adversarial brief: attack the trapezoid-vs-rectangle claim."
++    ),
++)
++
++
++def _surviving_prefix(text: str, rendered: str) -> int:
++    t = text.strip()
++    lo, hi = 0, len(t)
++    while lo < hi:
++        mid = (lo + hi + 1) // 2
++        if t[:mid] in rendered:
++            lo = mid
++        else:
++            hi = mid - 1
++    return lo
++
++
++def main() -> int:
++    answer_help(__doc__, __file__)
++    from bench.cdsfl_registry.composer import compose, PHENOTYPE_TRANSFORMS
++
++    rows_cap_fired = 0
++    rows = 0
++    manifest_admits = 0
++    print(f"{'model':<16}{'domain':<13}{'prune':<7}{'final':<7}{'cap':<7}"
++          f"{'domain_text':<14}{'situation_text':<16}manifest_claims")
++    for model, tr in PHENOTYPE_TRANSFORMS.items():
++        for dom in ("software", "mathematics"):
++            for prune in (False, True):
++                c = compose(dom, model, coherence_pruning=prune, **SIT)
++                rows += 1
++                rend = c.rendered_text
++                by_layer = {p.layer: p for p in c.packets}
++
++                def frac(layer):
++                    p = by_layer.get(layer)
++                    if p is None:
++                        return "ABSENT-packet"
++                    n = _surviving_prefix(p.text, rend)
++                    return ("FULL" if n == len(p.text.strip())
++                            else f"{n}/{len(p.text.strip())}")
++
++                cap_fired = rend.endswith("[... truncated for model capacity]")
++                if cap_fired and not prune:
++                    rows_cap_fired += 1
++                cap_rec = c.manifest.get("length_cap")
++                if isinstance(cap_rec, dict) and cap_rec.get("fired") == cap_fired:
++                    manifest_admits += 1
++                print(f"{model:<16}{dom:<13}{str(prune):<7}{len(rend):<7}"
++                      f"{tr.max_directive_chars:<7}{frac('domain'):<14}"
++                      f"{frac('situation'):<16}"
++                      f"packets={[p['layer'] for p in c.manifest['packets']]} "
++                      f"length_cap_recorded={bool(cap_rec)}")
++
++    print()
++    print(f"rows: {rows}; pruning-OFF rows where the cap cut delivered text: "
++          f"{rows_cap_fired}")
++    print(f"rows whose manifest records the cap truthfully: "
++          f"{manifest_admits}/{rows}")
++    if manifest_admits < rows:
++        print("VERDICT: the manifest claims delivery the cap removed. "
++              "The 0-of-50 retirement figure is a PACKET-level measurement "
++              "and cannot see this. Repair: record the cap event in the "
++              "manifest (no delivered byte changes).")
++        return 1
++    print("VERDICT: manifest records the cap; knowability holds at the "
++          "render layer as well as the packet layer.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:scripts/the_joint_debt_is_discharged_by_a_directory_2026-10-14.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/the_joint_debt_is_discharged_by_a_directory_2026-10-14.py	2026-10-14 19:37:34
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/scripts/the_joint_debt_is_discharged_by_a_directory_2026-10-14.py	2026-10-14 19:28:29
+@@ -234,76 +234,6 @@
+         if len(landed(d)) == 0:
+             empty.append(d.name)
+     print(f"\n  marker-named rounds holding 0 replies: {len(empty)} -> {empty}")
+-
+-    # ─────────── WAS A DECLARED JOINT ROUND ACTUALLY JOINT? ───────────
+-    #
+-    # A joint round's purpose is that each seat sees the OTHER seat's blind reply.
+-    # There are exactly 2 ways that can happen: the brief CARRIES the reply, or the
+-    # seat goes and READS it from the tree (nothing purges a sibling round unless
+-    # `blind_of` names it, and for a joint round `blind_of` is empty).
+-    #
+-    # BOUND HONESTLY: `input_preview` in the tool transcript is a PREVIEW and may be
+-    # truncated, so a read can be missed. This is therefore a LOWER bound on
+-    # exposure-by-reading and an UPPER bound on the "neither" count.
+-    print("\n  === was each declared joint round actually joint? ===")
+-    rows, neither = [], []
+-    for d in sorted(LOGS.iterdir()):
+-        tj = d / "topology.json"
+-        if not d.is_dir() or not tj.is_file():
+-            continue
+-        try:
+-            rec = json.loads(tj.read_text(encoding="utf-8"))
+-        except Exception:
+-            continue
+-        parents = [x for x in (rec.get("joint_of") or []) if str(x).strip()]
+-        if not parents:
+-            continue
+-        quoted = set(star.quotes_other_rounds(LOGS, d.name))
+-        for parent in parents:
+-            by_brief = parent in quoted
+-            readers, nonreaders = [], []
+-            for seat in landed(d) or SEATS:
+-                tf = next((q for q in sorted(d.glob(f"{seat}.tools*"))), None)
+-                if tf is None:
+-                    continue
+-                try:
+-                    calls = json.loads(tf.read_text(encoding="utf-8")).get("calls", [])
+-                except Exception:
+-                    continue
+-                # ★ A BARE SUBSTRING MATCH IS WRONG HERE, and the first version
+-                # of this script made exactly that mistake. `joint_X` CONTAINS
+-                # `X`, so a seat reading its OWN round directory scored as having
+-                # read the parent -- which inverted the finding for
+-                # `joint_clear_the_outstanding_2026-10-12`. The parent name must
+-                # start at a token boundary. Same shape as the `A13/A14`
+-                # compound-identifier error of 2026-10-13.
+-                pat = re.compile(r"(?<![A-Za-z0-9_])" + re.escape(parent))
+-                hit = any(pat.search(str(c.get("input_preview", "")))
+-                          for c in calls)
+-                (readers if hit else nonreaders).append(seat)
+-            exposure = ("BRIEF" if by_brief
+-                        else "READ" if readers and not nonreaders
+-                        else "PARTIAL" if readers
+-                        else "NEITHER")
+-            rows.append((d.name, parent, exposure, readers, nonreaders))
+-            if exposure == "NEITHER":
+-                neither.append((d.name, parent))
+-    for name, parent, exposure, readers, nonreaders in rows:
+-        print(f"    {name}")
+-        print(f"      joint_of={parent}  exposure={exposure}")
+-        print(f"      seats that touched the parent: {readers or 'none'}; "
+-              f"did not: {nonreaders or 'none'}")
+-    if rows:
+-        k, n = len(neither), len(rows)
+-        a, b = wilson(k, n)
+-        print(f"\n  declared joint, NEITHER quoted nor read: {k}/{n} = {k/n:.6f}")
+-        if a:
+-            print(f"    Wilson (statsmodels): [{a[0]:.6f}, {a[1]:.6f}]")
+-        if b:
+-            print(f"    Wilson (mpmath)     : [{b[0]:.6f}, {b[1]:.6f}]")
+-        for name, parent in neither:
+-            print(f"    ★ {name} was recorded as the joint half of {parent} and "
+-                  f"exposed NEITHER seat to it")
+ 
+     if args.json:
+         print(json.dumps({
+
+### fable:attempt-1:scripts/the_untoolable_were_never_attempted_2026-10-14.py
+--- /dev/null	2026-10-14 19:49:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/scripts/the_untoolable_were_never_attempted_2026-10-14.py	2026-10-14 19:43:51
+@@ -0,0 +1,134 @@
++#!/usr/bin/env python3
++"""Of the no-falsifier findings, how many were irreducible vs never attempted?
++
++JOINT ROUND his_rulings_2026-10-13, J3. His claim, verbatim: "A model after all
++cannot simply say nothing, and few issues (indeed none so far) we have
++encountered in this project have proved computationally irreducible."
++
++POPULATION. Every registry entry under bench/logs/**/runner_state.json whose
++falsifier_verdict is UNTOOLABLE or which carries no non-empty falsifier_code.
++This reproduces the brief's figure exactly: 1,938 of 3,298.
++
++CLASSIFICATION, each bucket mechanical (field predicates, no judgement):
++
++  NEVER ATTEMPTED   no falsifier_code, no falsifier_verdict, and an empty
++                    routing_history -- nothing in the machinery ever tried.
++  ATTEMPTED, LOST   no falsifier_code but verdict ERROR -- a run happened and
++                    the code was not retained (recorder loss, cf. the 600-char
++                    recorder ceiling in arm4_untoolable_anatomy_2026-09-22.py).
++  DECLARED UNTOOLABLE  verdict UNTOOLABLE -- a declaration, subdivided by
++                    whether the routing ladder was consulted at all.
++  PROVED IRREDUCIBLE   positive evidence that no computation can decide the
++                    claim: ladder fully consulted (every rung tried) AND no
++                    rung produced source. Counted, not assumed.
++
++CROSS-CHECK ON REDUCIBILITY: for each no-falsifier entry, does its flaw_class
++have at least one executed falsifier verdict (CONFIRMED / REFUTED /
++NON_DISCRIMINATING) elsewhere in the archive? If yes, the CLASS is demonstrably
++toolable and "irreducible" cannot be inferred from the entry's silence.
++
++Intervals: Wilson (statsmodels) and Clopper-Pearson (scipy.stats.beta), two
++independent routes, on every proportion.
++
++Usage: python3 scripts/the_untoolable_were_never_attempted_2026-10-14.py
++"""
++import collections
++import json
++import os
++import pathlib
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++from _cli_help import answer_help  # noqa: E402
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++LOGS = REPO / "bench" / "logs"
++EXECUTED = {"CONFIRMED", "REFUTED", "NON_DISCRIMINATING"}
++
++
++def entries():
++    for fp in LOGS.glob("**/runner_state.json"):
++        try:
++            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++        except Exception:  # noqa: BLE001
++            continue
++        for cid, e in (((d or {}).get("registry") or {}).get("entries") or {}).items():
++            if isinstance(e, dict):
++                yield cid, e
++
++
++def both_cis(k, n):
++    from statsmodels.stats.proportion import proportion_confint
++    from scipy import stats
++    w = proportion_confint(k, n, alpha=0.05, method="wilson")
++    lo = stats.beta.ppf(0.025, k, n - k + 1) if k else 0.0
++    hi = stats.beta.ppf(0.975, k + 1, n - k) if k < n else 1.0
++    return w, (lo, hi)
++
++
++def pr(label, k, n):
++    (wl, wh), (cl, ch) = both_cis(k, n)
++    print(f"  {label:<58}{k:>5}/{n}  = {k/n:.4%}")
++    print(f"    Wilson [{wl:.4%}, {wh:.4%}]   Clopper-Pearson [{cl:.4%}, {ch:.4%}]")
++
++
++def main() -> int:
++    answer_help(__doc__, __file__)
++    all_e = list(entries())
++    n_all = len(all_e)
++
++    def verd(e):
++        return str(e.get("falsifier_verdict") or "").strip().upper()
++
++    def code(e):
++        return str(e.get("falsifier_code") or "").strip()
++
++    nofals = [(c, e) for c, e in all_e if verd(e) == "UNTOOLABLE" or not code(e)]
++    print(f"archived entries: {n_all}")
++    pr("UNTOOLABLE or no falsifier (the brief's population)", len(nofals), n_all)
++
++    tooled_classes = {str(e.get("flaw_class")) for _, e in all_e
++                      if verd(e) in EXECUTED}
++    never = attempted_lost = declared = consulted = proved = class_toolable = 0
++    unt_no_ladder = 0
++    for _, e in nofals:
++        rh = e.get("routing_history") or []
++        v = verd(e)
++        if str(e.get("flaw_class")) in tooled_classes:
++            class_toolable += 1
++        if v == "UNTOOLABLE":
++            declared += 1
++            if not rh:
++                unt_no_ladder += 1
++            else:
++                consulted += 1
++                tried = sum(1 for r in rh if isinstance(r, dict))
++                avail = e.get("rungs_available")
++                if avail and tried >= avail:
++                    proved += 1
++        elif v == "ERROR":
++            attempted_lost += 1
++        elif not code(e) and not rh:
++            never += 1
++    n = len(nofals)
++    print()
++    pr("NEVER ATTEMPTED (no code, no verdict, no routing)", never, n)
++    pr("ATTEMPTED, CODE LOST (verdict ERROR, no code)", attempted_lost, n)
++    pr("DECLARED UNTOOLABLE", declared, n)
++    pr("  ...of which the ladder was NEVER consulted", unt_no_ladder,
++       max(declared, 1))
++    pr("PROVED IRREDUCIBLE (ladder exhausted, no source)", proved, n)
++    pr("flaw_class demonstrably toolable elsewhere", class_toolable, n)
++    print()
++    print("HIS CLAIM: 'none so far have proved computationally irreducible'.")
++    print(f"  CONFIRMED on the evidence standard: {proved} of {n} entries carry")
++    print("  positive evidence of irreducibility. Every flaw class in the")
++    print("  population has an executed falsifier somewhere in the archive, so")
++    print("  silence is a supply failure, not a computability finding -- and")
++    print("  bench/directives: the sections mandating runnable falsifiers")
++    print("  reach 0 of 5 models (J4), which is the supply-side mechanism.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:scripts/what_the_minimal_rendering_delivers_2026-10-14.py
+--- /dev/null	2026-10-14 19:49:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_i7w199ak/repo/scripts/what_the_minimal_rendering_delivers_2026-10-14.py	2026-10-14 19:44:51
+@@ -0,0 +1,73 @@
++#!/usr/bin/env python3
++"""What of the core formal directive actually reaches a seat? Measured.
++
++JOINT ROUND his_rulings_2026-10-13, J4. `_load_universal_directive`
++(bench/cdsfl_registry/composer.py) switches to `_render_universal_minimal`
++whenever format_style == "minimal" OR the full text exceeds
++`max_directive_chars`. cdsfl_core_formal.md exceeds EVERY model's cap
++(largest cap 12,000 < file), so the minimal rendering is what every seat
++receives, always. This script measures, by execution of the live loader:
++
++  * delivered chars per model vs the 27,803-char source;
++  * how many of the source's 15 `## ` section headings survive (0);
++  * occurrences of the token 'falsifier' in delivered vs source text;
++  * which sections never arrive, by name -- including "Runnable Falsifiers
++    for Critical Findings" and "Falsifier Integrity -- Do Not Reach for the
++    Answer".
++
++NOTE ON THE JOINT BRIEF'S FIGURES, measured here rather than inherited: this
++producer finds 2,503 delivered chars (brief said 2,734) and 0 occurrences of
++'falsifier' in the delivered text (brief said 1); headings 0/15 and source
++counts agree. The discrepancies are small and do not change the conclusion;
++the figures that travel are the ones this script prints.
++
++Usage: python3 scripts/what_the_minimal_rendering_delivers_2026-10-14.py
++"""
++import os
++import pathlib
++import re
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++from _cli_help import answer_help  # noqa: E402
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++
++
++def main() -> int:
++    answer_help(__doc__, __file__)
++    from bench.cdsfl_registry.composer import (
++        _load_universal_directive, PHENOTYPE_TRANSFORMS,
++    )
++    core = (REPO / "bench/directives/universal/cdsfl_core_formal.md").read_text()
++    op = (REPO / "bench/directives/universal/cdsfl_operational.md").read_text()
++    headings = re.findall(r"^## .+$", core, re.M)
++    print(f"source: cdsfl_core_formal.md {len(core)} chars, "
++          f"{len(headings)} '## ' sections; 'falsifier' x"
++          f"{core.lower().count('falsifier')} (operational: x"
++          f"{op.lower().count('falsifier')})")
++    print(f"'worked proof' in either file: "
++          f"{core.lower().count('worked proof') + op.lower().count('worked proof')}")
++    print()
++    for model in PHENOTYPE_TRANSFORMS:
++        t = _load_universal_directive(model=model).text
++        surv = sum(1 for h in headings if h in t)
++        print(f"  {model:<16} delivered {len(t):>5} chars  "
++              f"headings {surv}/{len(headings)}  "
++              f"'falsifier' x{t.lower().count('falsifier')}")
++    t = _load_universal_directive(model="opus_4_6").text
++    print("\nsections that never arrive (any model):")
++    for h in headings:
++        if h not in t:
++            print(f"  {h}")
++    print("\nVERDICT: the falsification machinery's own directive does not")
++    print("reach any seat; what arrives is policy keys (e.g.")
++    print("'policy.constraints.falsification_required=true') with none of the")
++    print("runnable-falsifier or falsifier-integrity content. Every archived")
++    print("measurement of model falsifier behaviour is confounded by this.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

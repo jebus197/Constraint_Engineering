@@ -571,6 +571,47 @@ def check_currency(brief_path, repo: Path = REPO) -> list[str]:
     return stale
 
 
+#: File extensions worth checking. A bare directory reference is checked too.
+_PATHISH = re.compile(r"`([A-Za-z0-9_./-]+\.(?:py|md|json|toml|txt|diff))`"
+                      r"|`([A-Za-z0-9_./-]+/)`")
+
+
+def named_paths_that_do_not_exist(text: str) -> list:
+    """Paths the brief tells a seat to READ which are not in the tree.
+
+    WHY THIS EXISTS, MEASURED 2026-10-14 ON MY OWN BRIEF. The joint brief for
+    `his_rulings_2026-10-13` told both seats to read
+    `bench/logs/his_rulings_2026-10-13/cc2/` and `fable/`. Those directories do
+    not exist -- the replies are `cc2.json` and `fable.json` -- so a seat
+    following the brief would have found nothing and improvised, and nothing in
+    the harness would have said so. The round was killed for a different reason
+    and the defect was found by accident.
+
+    SECTION SCOPED, DELIBERATELY. A whole-document check would refuse briefs that
+    correctly tell a seat to CREATE a file ("write your fix to
+    `sandbox/my_fix.py`"), which is the normal output instruction. Only the
+    section that enumerates the artefacts UNDER REVIEW is checked, because every
+    path there is by definition something that must already exist.
+
+    An elided path (`.../fable/`) is reported too: a seat cannot follow it, and
+    the brief's author can spell it out at no cost.
+    """
+    body = _section(text, r"artefact|under review|read these|the files")
+    if body is None:
+        return []
+    out = []
+    for m in _PATHISH.finditer(body):
+        cand = m.group(1) or m.group(2)
+        if "/" not in cand:
+            continue
+        if cand.startswith("...") or "/.../" in cand:
+            out.append((cand, "elided — spell the path out so a seat can follow it"))
+            continue
+        if not (REPO / cand).exists():
+            out.append((cand, "named as an artefact under review but not in the tree"))
+    return out
+
+
 def validate(text: str) -> list[str]:
     """Return a list of failures. Empty means the brief is dispatchable."""
     low = text.lower()
@@ -588,6 +629,11 @@ def validate(text: str) -> list[str]:
     for label, patterns, remedy in CHECKS:
         if not any(re.search(p, low, re.M | re.I) for p in patterns):
             problems.append(f"{label}: NOT FOUND — {remedy}")
+
+    # ★ A PATH A SEAT CANNOT FOLLOW IS A DEFECTIVE BRIEF. See
+    # `named_paths_that_do_not_exist` for the 2026-10-14 measurement.
+    for cand, why in named_paths_that_do_not_exist(text):
+        problems.append(f"names a path a seat cannot read: {cand} — {why}")
 
     # The output check is SECTION SCOPED, unlike the rest. See _section().
     body = _section(text, r"output|deliverable|what to return")

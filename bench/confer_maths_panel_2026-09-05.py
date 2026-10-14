@@ -1213,7 +1213,15 @@ def _rounds_owing_a_joint_round() -> list:
             try:
                 rec = json.loads(t.read_text(encoding="utf-8"))
                 kind = rec.get("kind")
-                declared_joint_of.update(rec.get("joint_of") or [])
+                # ★ A DECLARATION DISCHARGES NOTHING UNTIL THE ROUND ANSWERS.
+                # MEASURED 2026-10-14: `topology.json` is written AT DISPATCH,
+                # before any seat replies, so a round killed 30 s after launch
+                # discharged its parent for ever. CC1's own joint round for
+                # `his_rulings_2026-10-13` was killed with 0 replies and the
+                # parent left the owed set. Producer:
+                # `scripts/the_joint_debt_is_discharged_by_a_directory_2026-10-14.py`.
+                if len(landed) >= 2:
+                    declared_joint_of.update(rec.get("joint_of") or [])
             except Exception:
                 pass
         rounds[d.name] = (landed, kind)
@@ -1227,7 +1235,12 @@ def _rounds_owing_a_joint_round() -> list:
         if name in declared_joint_of:
             continue
         stem = name.replace("_blind", "").replace("blind_", "").split("_2026")[0][:18]
+        # ★ AND NEITHER DOES A DIRECTORY NAME. Same measurement: a sibling whose
+        # name carries a marker and this round's stem discharged the debt while
+        # holding 0 replies. The registry's own rule says the debt is discharged
+        # "by running the joint round" -- so the partner must have REPLIES.
         if any(o != name and any(m in o for m in markers) and stem in o
+               and len(rounds[o][0]) >= 2
                for o in names):
             continue
         if not _dated_on_or_after(name):
@@ -1296,8 +1309,66 @@ def _refuse_if_a_joint_round_is_owed() -> int:
               f"round(s)", flush=True)
         return 0
     if _JOINT_OF:
+        # ★ A DECLARED JOINT ROUND MUST CARRY ITS PARENT'S REPLIES, AND UNTIL
+        # 2026-10-14 THIS GATE TOOK THE OPERATOR'S WORD FOR IT.
+        #
+        # `bench/star_topology_2026-10-06.py` already fixed this inference for the
+        # round KIND -- its docstring reads "THE ROUND KIND MUST NOT BE INFERRED
+        # FROM THE DECLARATION IT REQUIRES" -- and `round_kind` detects jointness
+        # by finding 240 contiguous characters of another round's reply inside the
+        # brief. The debt gate never adopted that rule, so `PANEL_JOINT_OF` alone
+        # let a blind brief through as the joint half and clear the debt.
+        #
+        # MEASURED 2026-10-14 on CC1's own brief: it POINTED at
+        # `bench/logs/his_rulings_2026-10-13/cc2/` and `fable/` -- directories
+        # that do not exist, the replies being `cc2.json` and `fable.json` -- so a
+        # seat following it would have found nothing and improvised. 2 of 6 rounds
+        # carrying a recorded kind declare `joint` while `round_kind` detects
+        # `blind`. Producer:
+        # `scripts/the_joint_debt_is_discharged_by_a_directory_2026-10-14.py`.
+        #
+        # WHY REFUSE RATHER THAN WARN. A seat cannot be relied on to go and read a
+        # sibling directory, and nothing in the harness checks that it did. Text
+        # inside the brief is the only form of exposure that is verifiable after
+        # the fact, which is the same reason `round_kind` measures it.
+        try:
+            import importlib.util as _ilu
+            import pathlib as _pathlib
+            # RESOLVED FROM THIS FILE, NOT FROM `_REPO`. The star module is a
+            # SIBLING of this one, so its location is a fact about this file and
+            # not about where the repository root happens to point. The first
+            # version used `_REPO` and its own guard test caught it.
+            _spec = _ilu.spec_from_file_location(
+                "_star_debt",
+                _pathlib.Path(__file__).resolve().parent
+                / "star_topology_2026-10-06.py")
+            _star = _ilu.module_from_spec(_spec)
+            _spec.loader.exec_module(_star)
+            _logs_root = _REPO / "bench" / "logs"
+            _me = _logs_dir().name
+            _quoted = set(_star.quotes_other_rounds(_logs_root, _me))
+            _unquoted = [r for r in _JOINT_OF if r not in _quoted]
+        except Exception as _exc:              # pragma: no cover - never silent
+            print(f"    REFUSED: the joint-round quotation check could not run: "
+                  f"{_exc!r}", flush=True)
+            return 6
+        if _unquoted:
+            print(f"    REFUSED: this round declares PANEL_JOINT_OF but its brief "
+                  f"does not QUOTE the parent round(s) it names.", flush=True)
+            for _r in _unquoted:
+                print(f"      {_r}: no 240-character span of its landed replies "
+                      f"appears in this brief", flush=True)
+            print("    A joint round exposes each seat to the other seat's actual "
+                  "WORDS.\n"
+                  "    Pointing at a path is not exposure: nothing checks that the "
+                  "seat read it,\n"
+                  "    and a sibling directory may not even exist under the name "
+                  "given.\n"
+                  "    Embed the parent's replies in BRIEF.md verbatim, then "
+                  "re-dispatch.", flush=True)
+            return 7
         print(f"    joint-round debt: {len(owed)} owed, and this IS a joint round "
-              f"-- proceeding", flush=True)
+              f"carrying its parent's replies verbatim -- proceeding", flush=True)
         return 0
     print(f"    REFUSED: {len(owed)} blind round(s) still owe a joint round, and "
           f"this is a new BLIND round:", flush=True)

@@ -175,15 +175,72 @@ class TestTheDebtCheckRefusesANewBlindRound:
         monkeypatch.delenv("PANEL_SKIP_TOPOLOGY", raising=False)
         assert D._refuse_if_a_joint_round_is_owed() != 0
 
+    def _joint_tree(self, tmp_path, parent, brief_text):
+        """A registry with `parent` OWED, plus a logs tree for the joint round.
+
+        ADDED 2026-10-14. The original version of the test below built only the
+        registry, because the gate then looked no further than `PANEL_JOINT_OF`.
+        It now reads the joint round's own BRIEF.md, so the tree has to exist.
+        """
+        root = self._registry(tmp_path, {parent: {"status": "OWED",
+                                                  "reason": "x"}})
+        logs = root / "bench" / "logs"
+        body = "P" * 1200
+        d = logs / parent
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "BRIEF.md").write_text("parent brief")
+        for seat in ("cc2", "fable"):
+            (d / f"{seat}.json").write_text(json.dumps(
+                {"ok": True, "chars": len(body), "response": body}))
+        me = logs / f"joint_{parent}"
+        me.mkdir(parents=True, exist_ok=True)
+        (me / "BRIEF.md").write_text(brief_text.replace("<<REPLY>>", body))
+        return root, me
+
     def test_a_joint_round_is_allowed_through_while_debt_stands(self, D, tmp_path,
                                                                monkeypatch):
-        """Otherwise the only way to clear the debt would be blocked by it."""
-        root = self._registry(tmp_path, {"r1_2026-10-01": {"status": "OWED",
-                                                           "reason": "x"}})
+        """Otherwise the only way to clear the debt would be blocked by it.
+
+        THE ASSERTION WAS SHARPENED 2026-10-14, NOT WEAKENED. It used to pass on
+        `PANEL_JOINT_OF` alone, which measured only that the operator had set an
+        environment variable. A brief carrying none of the parent's words would
+        satisfy it -- and on 2026-10-14 one did: CC1's joint brief for
+        `his_rulings_2026-10-13` pointed at two directories that do not exist and
+        was accepted as the joint half. The property this test exists to protect
+        (the escape hatch must not be blocked by the thing it escapes) is kept
+        and asserted below; what is added is that the hatch opens only for a
+        brief that actually carries the parent's replies.
+        """
+        root, me = self._joint_tree(
+            tmp_path, "r1_2026-10-01",
+            "Here is the parent reply in full:\n<<REPLY>>")
         monkeypatch.setattr(D, "_REPO", root, raising=False)
         monkeypatch.setattr(D, "_JOINT_OF", ("r1_2026-10-01",), raising=False)
+        monkeypatch.setattr(D, "_logs_dir", lambda: me, raising=False)
         monkeypatch.delenv("PANEL_SKIP_TOPOLOGY", raising=False)
-        assert D._refuse_if_a_joint_round_is_owed() == 0
+        assert D._refuse_if_a_joint_round_is_owed() == 0, (
+            "a joint round carrying its parent's replies must be allowed "
+            "through, or the debt could never be discharged")
+
+    def test_a_joint_round_quoting_nothing_is_NOT_allowed_through(
+            self, D, tmp_path, monkeypatch):
+        """The other half of the sharpened assertion above.
+
+        Measured 2026-10-14: 2 of the 6 rounds carrying a recorded kind declared
+        `joint` while `bench/star_topology_2026-10-06.py::round_kind` detected
+        `blind`. Producer:
+        `scripts/the_joint_debt_is_discharged_by_a_directory_2026-10-14.py`.
+        """
+        root, me = self._joint_tree(
+            tmp_path, "r1_2026-10-01",
+            "Read bench/logs/r1_2026-10-01/cc2/ and fable/ for the replies.")
+        monkeypatch.setattr(D, "_REPO", root, raising=False)
+        monkeypatch.setattr(D, "_JOINT_OF", ("r1_2026-10-01",), raising=False)
+        monkeypatch.setattr(D, "_logs_dir", lambda: me, raising=False)
+        monkeypatch.delenv("PANEL_SKIP_TOPOLOGY", raising=False)
+        assert D._refuse_if_a_joint_round_is_owed() != 0, (
+            "a brief that merely POINTS at the parent's replies is not the "
+            "joint half: nothing checks that the seat read it")
 
     def test_superseded_entries_do_not_block(self, D, tmp_path, monkeypatch):
         root = self._registry(tmp_path, {"r1_2026-10-01": {
