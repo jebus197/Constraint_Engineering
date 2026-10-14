@@ -89,7 +89,22 @@ def run_date(name: str):
 def collect():
     """Every finding, de-duplicated, with its run name, date and status."""
     seen_hash, rows, files = set(), [], []
-    for fp in sorted(LOGS.glob("**/runner_state.json")):
+    # ★ LIVE REGISTRIES ARE VISITED BEFORE HARVEST COPIES, EXPLICITLY.
+    #
+    # The de-duplication keeps the FIRST file of each content hash, and a harvest
+    # copy carries the HARVESTING round's date rather than the finding's. On this
+    # corpus the right file happened to win on alphabetical order:
+    # `commissioning_arm1_panel_20260929T194414Z` sorts before
+    # `falsifier_root_cause_2026-09-30/sandbox_harvest/...`, which holds 2 copies
+    # of it. That is luck, not a rule -- a harvesting round whose name sorted
+    # earlier would have dated those findings 1 day late and moved them across a
+    # month boundary. Found by attacking this script rather than by reading it.
+    def _ordering(fp):
+        parts = fp.relative_to(LOGS).parts
+        harvested = ("sandbox_harvest" in parts) or ("seat_evidence" in parts)
+        return (1 if harvested else 0, str(fp))
+
+    for fp in sorted(LOGS.glob("**/runner_state.json"), key=_ordering):
         real = fp.resolve()
         try:
             raw = real.read_bytes()
