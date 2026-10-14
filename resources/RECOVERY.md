@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 13 October 2026 21:33 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 14 October 2026 23:00 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,30 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-14 22:59 BST (READ THIS FIRST)
+
+**BRANCH.** `sim/shakedown-2026-09-29`, HEAD `797f3dab`, pushed, working tree clean. `main` untouched. **`rs` WAS RUN ON HIS INSTRUCTION, EXIT CODE 0** on both `--full` and `--full --record-restore`; the first run printed "restore NOT recorded", which `--full` alone does not do.
+
+**★★★ THE LAUNCH PREFLIGHT IS GREEN: 5 of 5 checks, "System ready."** `python3 scripts/preflight_health_check_2026-10-06.py --all`. It also settles 2 items the record still listed as OPEN: `routing_max_rungs = 0` (exhaust the ladder, his 2026-10-06 ruling in force) and **the capability ladder CLIMBS** — the launcher's `--seat-models` default is `ladder`, where the memory note had it defaulting to uniform and "NEEDS HIS RULING".
+
+**★★★ THE BOARD WENT 32 RED TO 6, AND 3 OF THE 6 ARE NOT DEFECTS.** Full board on a clean tree at `6a29a27f`: **32 failed, 11152 passed, 18 skipped in 3588.89 s**. **14 of the 32 were ONE root cause** — the morning-report generator refusing at exit 3 because its decisions file carried authored detail for `task:B1` and `task:B2`, both DONE; archived under an `_`-prefixed key rather than deleted, and 22 tests pass. **NOT DEFECTS:** `test_the_live_registry_blocks_nothing_right_now` is CORRECT, because tonight's directive-set blind round legitimately owes its joint half; `test_task_list_burndown` requires closure to outpace discovery; `test_footline_is_read_from_the_footline` was ALREADY red at `6a29a27f`, established from the board log rather than assumed. **STILL OWED, 2:** the annotation-corpus pin (his Responses directory gained content today) and the source-text census.
+
+**★★★ THE JOINT-ROUND DEBT WAS DISCHARGEABLE BY A DIRECTORY.** 2 independent routes, neither requiring a reply: a marker-named sibling holding 0 replies, and a `topology.json` written AT DISPATCH before any seat answers. Found when CC1's own joint round was killed 30 s in with 0 replies and the parent left the owed set. Both now require 2 or more landed replies. A third defect beside them: the debt gate took `PANEL_JOINT_OF` as PROOF of jointness, the exact inference `bench/star_topology_2026-10-06.py` had already fixed for the round KIND. It now runs `quotes_other_rounds` and refuses with exit 7 — and refused CC1's own brief before any dispatch, at zero cost. **AND A JOINT ROUND REPORTED TO HIM WAS NOT ONE:** `joint_clear_the_outstanding_2026-10-12` exposed NEITHER seat to its parent, 1 of 3 declared joint rounds, Wilson [6.1492%, 79.2340%].
+
+**★★★ THE LENGTH CAP WAS HANDING A SEAT 1 CHARACTER OF ITS OWN TASK.** `composer.py` truncates the FINAL render AFTER packet assembly, so `manifest["packets"]` listed every packet at full length while the cap had removed the text. deepseek_v3 at cap 4000: **1 of 196 chars of the situation packet** — review target, code extracts, adversarial brief — with `pruned_soft` empty. 2 of 10 rows cut, 20.0000%, Wilson [5.6682%, 50.9838%]. `manifest["length_cap"]` now records fired/cap/chars_cut/packets_cut, arithmetically exact under SymPy and mpmath, and **NO DELIVERED BYTE CHANGED** (10 of 10 render hashes identical). The cap is NOT removed: both seats refused that on the additive standard.
+
+**★★★ BOTH PANEL ROUNDS LANDED, FREE SEATS ONLY, `paid_seats: []` ON BOTH.** The owed JOINT round for `his_rulings_2026-10-13` ran (cc2 26,785 chars/126 tools, fable 19,898/60) and both corrected their own blind positions. Then the 6-item directive-set round (cc2 8,154/241, fable 18,923/46). **J2/Item 6, triple-confirmed: appendix 7.8 Approach B's verifier rates are ASSUMED**, labelled "Empirical" in a document dated before any archived experiment, no producer, no interval — so substituting it RELOCATES the vote to the appendix's author in conflict cells. **Item 4: his never-attempted claim CONFIRMED** by 2 independent producers, 1,938 of 3,298 = 58.7629% carrying no falsifier and 1,639 of 1,938 = 84.5717% never attempted.
+
+**★★★ AND HE WAS RIGHT THAT THE FALSIFIER GAP IS MOSTLY PRE-MACHINERY.** **1,568 of 1,886 = 83.1389%**, Wilson [81.3822%, 84.7609%], predate `falsifier_verify.py`; April and May 2026 are 100% falsifier-less. **The 2026-10-03 panel had already called it an era artefact 11 days earlier**, and its 0-of-610 reproduces today at 0 of 593. **IT DID NOT CARRY FORWARD BECAUSE ITS PRODUCER WAS NEVER COMMITTED** — `scripts/star_q1_contract_2026-10-03.py` is not in the repository. **BUT cc2's UNTOOLABLE class is entirely POST-machinery**: 0 of 39 predate the gate, so that part is live.
+
+**4 ITEMS NEED HIS RULING AND NO WORK SUBSTITUTES FOR THEM.** (1) **The caps** — both seats refused OUTRIGHT removal on the additive standard, no measurement dominating in either direction, and recommend measuring in the run; this SUPERSEDES CC1's own proposal. (2) **The prose target** — his PAPER.md suggestion is REFUTED, 0 of its 11 fenced blocks contain Python; `targets/prose_with_computable_listings.md` is built, wired as `PROSE_TARGET`, with 2 defects verified by 2 tools each before planting. (3) **fable's proposed section 11 Worked Proofs**, marked by fable as awaiting his ratification — "worked proof" occurs 0 times in either directive file while the requirement IS enforced at `bench/dm/_rk_proof.py` and `reference_runner_v3.py:9499-9511`. (4) **cc2's single irreducible exception**, `sim45_memory_20260908T033012Z` C0050, where cc2 records 1 of 41 and fable records 0.
+
+**AND THE JOINT HALF OF TONIGHT'S DIRECTIVE-SET ROUND IS OWED** before any new blind round, which is the one thing gating a fully green board.
+
+**NOT ADOPTED, DELIBERATELY.** `bench/capability_identity.py` from both seats: cc2 flagged its own as NOT WIRED into the runner's dispatch, and wiring measured capability into seat selection is a design change on the model-names question rather than a repair. **V9 NOT BUILT:** it needs "the fix" commit identified automatically, which is not mechanically determinable, and a full sweep would need 90 pytest runs against his own one-board rule.
+
+**4 WRONG INSTRUMENT ASSUMPTIONS OF CC1's TONIGHT, ALL CAUGHT BY CHECKING THE PREDICATE.** A bare substring scored a seat as having read its parent because `joint_X` contains `X`; a `.replace("/ n")` rewrote a mean as well as a divisor; `PARKED_FOR_THE_FOUNDER.md` cannot vouch for a script because it is in the reach checker's own `INSTRUMENT` tuple; and the interval checker's "valid but loose" block was read as failures, briefly costing it an unjustified exclusion that is now reverted.
 
 ## SESSION STATE — 2026-10-12 23:47 BST (READ THIS FIRST)
 
