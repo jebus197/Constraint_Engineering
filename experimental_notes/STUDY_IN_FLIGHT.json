@@ -759,6 +759,49 @@
             "attribution": "3 seats flagged in run 2 against 1 in run 1. NOT attributable to the severity flag, which governs release rather than routing, and the pair is non-deterministic with n = 2. Recorded as an observation needing a larger sample, not as an effect."
           },
           "the_machinery_verdict": "THE SWITCH BREAKS NOTHING. With the section 7.7 severity DECIDING, run 2 computed it, agreed with the asserted critical count at 12, recorded 0 key-property violations, exercised the contested-blocked gate path correctly, and converged cleanly. That is the question run 2 was able to answer, and the answer is clean."
+        },
+        "the_key_property_claim_re_checked_against_the_FINAL_reports": {
+          "at": "2026-10-15T09:53:11+01:00",
+          "why_re_checked": "Both runs' final reports show 2 findings with status REFUTED, and a reader could take that as contradicting the V_false = 0 claim. It does not, and the reason is that the severity specification reads a DIFFERENT FIELD.",
+          "the_distinction": "spec_verification_factor reads entry['falsifier_verdict'], not entry['status']. CONFIRMED gives V=1.0, REFUTED gives V=0.0, and anything else gives V=0.5. A finding's STATUS can be REFUTED while its FALSIFIER's verdict is something else entirely, because a finding can be refuted by routes that are not a falsifier returning a refutation.",
+          "measured_on_the_refuted_findings": {
+            "run_1": [
+              "C0020 status=REFUTED falsifier_verdict=(absent) severity=0.55",
+              "C0021 status=REFUTED falsifier_verdict=(absent) severity=0.35"
+            ],
+            "run_2": [
+              "C0016 status=REFUTED falsifier_verdict=CONFIRMED severity=0.45",
+              "C0017 status=REFUTED falsifier_verdict=INTEGRITY_VIOLATION severity=0.0"
+            ]
+          },
+          "the_claim_is_CONFIRMED_at_2_moments_by_2_routes": {
+            "run_1_telemetry_at_round_3": {
+              "V_true": 15,
+              "V_none": 7,
+              "V_false": 0,
+              "total": 22
+            },
+            "run_1_recomputed_from_the_final_report": {
+              "V_true": 18,
+              "V_none": 4,
+              "V_false": 0,
+              "total": 22
+            },
+            "run_2_telemetry_at_round_3": {
+              "V_true": 14,
+              "V_none": 5,
+              "V_false": 0,
+              "total": 19
+            },
+            "run_2_recomputed_from_the_final_report": {
+              "V_true": 17,
+              "V_none": 2,
+              "V_false": 0,
+              "total": 19
+            },
+            "note": "The V_true and V_none splits differ between the 2 moments because the post-convergence settle confirmed more falsifiers after the round-3 telemetry was written. Both totals match their finding counts, and V_false is 0 at BOTH moments in BOTH runs, so '0 of 41' holds under the runner's own census and under an independent recomputation from the final reports."
+          },
+          "a_further_observation_about_B9s_refusals": "The falsifier_verdict census carries INTEGRITY_VIOLATION 1 time in run 1 and 2 times in run 2 \u2014 B9's refusals landing in the registry as a verdict VALUE. spec_verification_factor maps them to V=0.5, the same bucket as a falsifier that never ran at all. That is defensible, because a refusal is explicitly NOT a verdict, and it is worth recording because it means a confinement refusal is absorbed into the neutral bucket rather than surfaced as its own category."
         }
       },
       "headline": "THE SEVERITY ARM IS ANSWERED BY THE ARCHIVE REPLAY, NOT BY THE RUNS: promoting the section 7.7 severity changes 7 A4 releases across 2,994 archived findings, small because the release test's other half \u2014 a proven calculation \u2014 holds for only 295 of 2,994, 9.8531%, Wilson [8.8364%, 10.9726%]. Run 1's shadow reports 0 of 22 crossing downward, which is the EXPECTED outcome (probability 0.9498) and refutes nothing: 688 findings are needed before a zero is informative, so the 2-run contrast is under-powered by 31.27x. Run 2 therefore tests whether the switch BREAKS anything, not what it CHANGES."
@@ -1078,7 +1121,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T09:48:57+01:00",
+  "last_updated": "2026-10-15T09:53:11+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
