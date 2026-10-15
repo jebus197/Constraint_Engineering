@@ -454,7 +454,39 @@
         "hard_blocks_reaching_each_seat": "22 of 22 (was 0 of 22)",
         "round_budget_status": "ABSENT \u2014 no projection possible; the critical series hit zero too fast to fit an intensity decay",
         "round_budget_advisory_emitted": true,
-        "producer": "scripts/run1_converged_and_a19_is_by_design_2026-10-15.py"
+        "producer": "scripts/run1_converged_and_a19_is_by_design_2026-10-15.py",
+        "futility_guard_in_a_live_run": {
+          "status": "HELD \u2014 the B6(3) confound did NOT fire",
+          "at": "2026-10-15T08:29:18+01:00",
+          "guard_decisions": 24,
+          "seats_observed": 6,
+          "payload_over_the_seats_floor": "24 of 24, Wilson [86.2024%, 100.0000%], Clopper-Pearson [85.7526%, 100.0000%]",
+          "decomposable_part_under_the_floor": "24 of 24, Wilson [86.2024%, 100.0000%]",
+          "dispatches_actually_split": 0,
+          "system_prompt_chars": {
+            "min": 79767,
+            "max": 80358,
+            "mean": 80220.0
+          },
+          "decomposable_chars": {
+            "min": 8994,
+            "max": 22247,
+            "mean": 16512.9
+          },
+          "system_prompt_as_fraction_of_payload": {
+            "min": 0.783,
+            "max": 0.8993,
+            "mean": 0.8312
+          },
+          "what_this_establishes": "Judging the floor on the TOTAL payload force-decomposes every dispatch; judging it on the DECOMPOSABLE payload does not. In all 24 logged decisions the total exceeded the 80,000 floor while the splittable portion never did, because the system prompt is 78.30% to 89.93% of the payload and is re-sent per chunk rather than split.",
+          "bound": "1 simulated run. It establishes the guard fires and declines to split on the payloads this target and these 6 seats produce. It establishes nothing about a paid seat, whose recorded floor is 465,206 or 110,076 and which the confound was measured never to reach.",
+          "interval_cross_verified_by": [
+            "statsmodels beta",
+            "scipy.stats.beta from first principles",
+            "mpmath exact p^n = 0.025 at 40 digits"
+          ],
+          "producer": "scripts/the_futility_guard_held_in_a_live_run_2026-10-15.py"
+        }
       },
       "headline": "RUN 1 CONVERGED AT ROUND 3 OF 10 with the whole 27,803-character specification delivered to every seat and all 22 HARD blocks arriving, against 0 of 22 before the repair. Both planted defects were found in round 0. gamma_critical 1.000, sustained 2 rounds, leave-one-out minimum 1.000, 3 consecutive settled zero-novel-critical rounds, 0 unresolved criticals, 0 contested."
     },
@@ -726,5 +758,5 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T08:26:42+01:00"
+  "last_updated": "2026-10-15T08:29:18+01:00"
 }
