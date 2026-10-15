@@ -335,7 +335,7 @@
       "founder_ruling": "IF IT STILL NEEDS FIXING, FIX IT (2026-10-03)",
       "implemented": {
         "at": "2026-10-03T07:44:18+01:00",
-        "instance": "shakedown_2026-09-29/arm1_harvest/C0041 — CONFIRMED, verified=true, severity 0.8, falsifier NON_DISCRIMINATING, claim withdrawn by its own source model",
+        "instance": "shakedown_2026-09-29/arm1_harvest/C0041 \u2014 CONFIRMED, verified=true, severity 0.8, falsifier NON_DISCRIMINATING, claim withdrawn by its own source model",
         "producer": "scripts/verified_on_a_voided_instrument_2026-10-03.py",
         "exposure": "13 of 3208 archived entries, 0.4052%, Wilson [0.237%, 0.6921%]; all 13 verified=true and terminal; 12 already CLOSED below critical severity; exactly 1 critical",
         "convergence_effect": "none: unverified_critical_count skips any entry whose status is not UNCONFIRMED and never reads `verified`. The status is left CONFIRMED, so CONFIRM-only is unchanged and the founder's deferred blocking ruling is untouched.",
@@ -425,8 +425,38 @@
         "producer": "scripts/the_spec_is_not_work_2026-10-15.py"
       },
       "what_it_can_and_cannot_say": "2 free runs compare 2 runs, so they cannot establish a rate. They CAN show whether findings per round, rounds to convergence, HIL referrals and the irreducible queue move, and whether any seat degrades on the longer prompt.",
-      "result": null,
-      "headline": null
+      "result": {
+        "status": "PARTIAL \u2014 run 1 converged at round 3; its post-convergence sweep was still running at this stamp",
+        "at": "2026-10-15T08:21:27+01:00",
+        "run": "free_run1_directive_whole_20261015T061123Z",
+        "convergence": "HARDENED_CONVERGED at round 3 of a 10-round budget",
+        "gamma_critical": 1.0,
+        "gamma_crit_sustained_rounds": 2,
+        "gamma_crit_loo_min": 1.0,
+        "gamma_all_diagnostic": 0.6521,
+        "consecutive_settled_zero_novel_critical": 3,
+        "cum_critical": 12,
+        "total_findings": 22,
+        "unresolved_critical": 0,
+        "contested": 0,
+        "planted_defects_found_in_round_0": 2,
+        "planted_defects_planted": 2,
+        "round_0_findings": 14,
+        "round_0_novel_criticals": 2,
+        "per_round_findings": [
+          14,
+          2,
+          5,
+          1
+        ],
+        "spec_chars_delivered_per_seat": 27803,
+        "spec_chars_delivered_before_the_repair": 2503,
+        "hard_blocks_reaching_each_seat": "22 of 22 (was 0 of 22)",
+        "round_budget_status": "ABSENT \u2014 no projection possible; the critical series hit zero too fast to fit an intensity decay",
+        "round_budget_advisory_emitted": true,
+        "producer": "scripts/run1_converged_and_a19_is_by_design_2026-10-15.py"
+      },
+      "headline": "RUN 1 CONVERGED AT ROUND 3 OF 10 with the whole 27,803-character specification delivered to every seat and all 22 HARD blocks arriving, against 0 of 22 before the repair. Both planted defects were found in round 0. gamma_critical 1.000, sustained 2 rounds, leave-one-out minimum 1.000, 3 consecutive settled zero-novel-critical rounds, 0 unresolved criticals, 0 contested."
     },
     {
       "id": "severity_promotion",
@@ -435,8 +465,56 @@
       "what": "Promote the severity specification shadow from record-only to DECIDING, and measure whether it distorts convergence. This is the 2nd free run's subject, deliberately separated from the directive repair so each is attributable.",
       "founder_ruling": "DO NOT RUN A SHADOW IN A SIMULATION (2026-10-15). His words, 2026-10-14: \"why run them in shadow in a simulated run, when the purpose of a simulated run is to test how they will behave in a real experiment and to fix any deficiencies/issues you encounter so that we don't run into those same issues in a paid run, and risk pointlessly burning money we don't have?\"",
       "why_it_needed_a_build_not_a_flag": "Measured 2026-10-15: of the 10 mechanisms listed in the programme revision, 6 are LIVE, 1 is a record by design, 1 is a measurement, and 2 are genuine record-only shadows -- 2 of 10, 20.0000%, Wilson [5.6682%, 50.9838%]. NEITHER of the 2 had a flag that makes it gate, so promoting them is a build. And their own promotion criterion asks for non-distortion evidence \"from a run\", which a shadow can never supply because a shadow never decides. That circle is what his question exposed.",
-      "result": null,
-      "headline": null
+      "result": {
+        "status": "ANSWERED BY THE ARCHIVE REPLAY (2,994 findings, adequately powered). It is the RUN-2 CONTRAST that is under-powered by 31.27x, and that contrast was never the right instrument for the effect question.",
+        "at": "2026-10-15T08:21:27+01:00",
+        "run1_shadow": {
+          "V_true": 15,
+          "V_none": 7,
+          "V_false": 0,
+          "critical_asserted": 12,
+          "critical_spec": 12,
+          "crossed_downward": 0,
+          "key_property_violations": 0,
+          "findings": 22
+        },
+        "archive_reach": {
+          "hits": 7,
+          "n": 2994,
+          "rate": 0.002338009352037408
+        },
+        "is_0_of_22_a_refutation_of_7_of_2994": false,
+        "p_observing_zero_given_archive_rate": 0.949807041910656,
+        "expected_crossings_in_22_findings": 0.05143620574482298,
+        "exact_binomial_test_p": 1.0,
+        "archive_clopper_pearson": [
+          0.0009405015839665534,
+          0.004811223243227395
+        ],
+        "run1_clopper_pearson": [
+          0.0,
+          0.1543725128155746
+        ],
+        "intervals_overlap": true,
+        "findings_needed_before_a_zero_is_informative": 688,
+        "under_powered_factor_on_a_22_finding_run": 31.27,
+        "power_figure_cross_verified_by": [
+          "scipy loop",
+          "SymPy closed form ceil(ln(1/5)/ln(1-7/2994))",
+          "mpmath 40-digit"
+        ],
+        "what_run_2_therefore_measures": "Run 2 measures whether the switch, turned on live, BREAKS anything \u2014 that the promoted severity computes, gates, and reports without fault, and that the run still converges. The EFFECT question is already answered by the archive replay at n = 2,994. Reporting run 2's 22 findings as the effect measurement would be reporting an under-powered instrument in place of an adequate one that has already run.",
+        "producer": "scripts/run1_converged_and_a19_is_by_design_2026-10-15.py",
+        "the_arm_is_answered_and_by_what": {
+          "instrument": "replay of the section 7.7 severity over the archive",
+          "n": 2994,
+          "n_needed_for_adequate_power": 688,
+          "adequately_powered": true,
+          "answer": "promoting the severity changes 7 A4 releases",
+          "why_it_is_small": "the release test joins 2 halves with AND, so a lower severity only helps when the other half \u2014 a proven calculation \u2014 holds, and that holds for 295 of 2,994 findings, 9.8531%, Wilson [8.8364%, 10.9726%]"
+        }
+      },
+      "headline": "THE SEVERITY ARM IS ANSWERED BY THE ARCHIVE REPLAY, NOT BY THE RUNS: promoting the section 7.7 severity changes 7 A4 releases across 2,994 archived findings, small because the release test's other half \u2014 a proven calculation \u2014 holds for only 295 of 2,994, 9.8531%, Wilson [8.8364%, 10.9726%]. Run 1's shadow reports 0 of 22 crossing downward, which is the EXPECTED outcome (probability 0.9498) and refutes nothing: 688 findings are needed before a zero is informative, so the 2-run contrast is under-powered by 31.27x. Run 2 therefore tests whether the switch BREAKS anything, not what it CHANGES."
     },
     {
       "id": "coherence_budget_recalibration",
@@ -527,7 +605,7 @@
       "priority": "HIGH",
       "at": "2026-10-15T02:15:57+01:00",
       "severity": "the situation packet's code extracts are collapsed for 4 of 5 models",
-      "status": "FOUND 2026-10-15, NOT FIXED — recorded honestly per his instruction",
+      "status": "FOUND 2026-10-15, NOT FIXED \u2014 recorded honestly per his instruction",
       "what": "`_apply_phenotype_transform` with `format_style=\"concise\"` runs the semantic-duplicate dedup over the SITUATION packet, which carries the review target, the code extracts and the adversarial brief. Measured 2026-10-15 on a 1,492-character situation packet holding 20 repeated function definitions: opus_4_6 (style \"full\") receives 1,491 characters; chatgpt_5_4, codex_5_3, deepseek_v3 and gemini_3_1_pro (all \"concise\") receive 339 -- the repeats collapsed to 1 and every line stripped of indentation. 4 of 5 models, 80.0000%, Wilson [37.5535%, 96.3776%].",
       "why_it_is_bounded": "The code under review ALSO reaches the model through the user prompt, which `_build_prompt` builds from `full_code`, so a model is not reviewing nothing. The situation packet is supplementary context. The harm is that 2 genuinely different functions with similar token sets can be collapsed into 1, and indentation -- which is syntax in Python -- is destroyed.",
       "why_not_fixed_tonight": "Dedup-over-code is a design change to the phenotype layer, it is not in the causal path of either free run's hypothesis, and 3 large changes in one night with no measurement between them is how a confound becomes unattributable.",
@@ -539,7 +617,7 @@
       "priority": "HIGH",
       "at": "2026-10-15T02:15:57+01:00",
       "severity": "a seat's observed capacity can never rise",
-      "status": "FOUND 2026-10-15, NOT FIXED — a futility guard was added instead",
+      "status": "FOUND 2026-10-15, NOT FIXED \u2014 a futility guard was added instead",
       "what": "`_should_decompose` step 2 reads `max_successful_prompt_chars` and returns `payload_chars > observed * 0.9`. Its own docstring calls that figure a PROVEN FLOOR -- \"The model has PROVEN it can handle at least that much input\" -- and the code uses it as a CEILING. A seat that has only ever been sent 72,934 characters can never be sent more, so the observed maximum never rises: a ratchet that cannot climb, structurally the same defect as the routing ladder's.",
       "what_it_cost_tonight": "With the specification delivered whole the system prompt is 74,177 characters, and 6 of 6 simulated seats (100.0000%, Wilson [60.9666%, 100.0000%], Clopper-Pearson [54.0742%, 100.0000%]) have an effective limit below that: CC2-SIM 72,465, ChatGPT-SIM 65,640, Codex-SIM 70,922, DeepSeek-SIM 72,465, Fable-SIM 69,775, Gemini-SIM 67,510. Every simulated dispatch would have force-decomposed on the size of its own instructions. NO PAID SEAT WOULD HAVE -- CC2 sits at 418,685 and DeepSeek at 99,068 -- so this is a confound that fires only in simulation, which is the exact hazard he named.",
       "what_was_done_instead": "A futility guard: when the NON-DECOMPOSABLE part of the payload already exceeds the effective limit, decomposition is dominated on per-request bytes, total bytes and request count, so the monolithic dispatch is sent and the transport is allowed to speak. Proof: SymPy `S*n > 0`, z3 `unsat` on all 3 negations, mpmath on the concrete case. An explicit `pre_decompose_models` override is honoured over the futility argument.",
@@ -574,17 +652,33 @@
       "at": "2026-10-15T08:02:21+01:00",
       "severity": "a false HIL referral in the first 2 rounds of every run",
       "status": "OBSERVED LIVE 2026-10-15 in free run 1, NOT FIXED (run in flight)",
-      "what": "At round 1 of free run 1 the console printed `gamma_all: 0.000 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit`. That sentence is a BAND LABEL, not a detected disagreement: `GAMMA_BANDS` at bench/reference_runner_v3.py:4671 maps the range 0.00 to 0.20 to that wording, and `_estimate_gamma` RETURNS 0.0 when it has fewer than 3 points. So the label is applied to a gamma that is not a measurement at all.",
+      "what": "At round 1 of free run 1 the console printed `gamma_all: 0.000 (telemetry, passed) \u2014 Gamma disagrees with state closure \u2014 recommend HIL audit`. That sentence is a BAND LABEL, not a detected disagreement: `GAMMA_BANDS` at bench/reference_runner_v3.py:4671 maps the range 0.00 to 0.20 to that wording, and `_estimate_gamma` RETURNS 0.0 when it has fewer than 3 points. So the label is applied to a gamma that is not a measurement at all.",
       "why_it_matters": "The wording recommends a HIL audit. A diagnostic that asks for the founder's attention in the first 2 rounds of EVERY run is noise that can mask a real disagreement later, and gamma is load-bearing by standing directive.",
       "the_falsifiable_prediction": "gamma becomes estimable at round 3 and the band label moves off the 0.00-0.20 band. Testable inside this run; the result is recorded here rather than assumed.",
       "not_fixed_because": "the run is in flight and gamma is load-bearing. Changing a gamma-adjacent code path mid-experiment would make the run uninterpretable, which is a worse outcome than a noisy advisory line.",
       "candidate_fix": "gate the band lookup on estimability -- the runner already computes `gamma_crit_estimable` -- and print 'not yet estimable (n < 3)' instead of a band label. Advisory either way; it gates nothing.",
       "needs": "no founder ruling; it is a diagnostic-wording repair once the runs land"
+    },
+    {
+      "id": "a-simulated-run-restamps-the-real-paid-seats-fingerprints",
+      "added": "2026-10-15T08:26:42+01:00",
+      "priority": "HIGH",
+      "task_list_entry": "B7",
+      "observed_on": "free_run1_directive_whole_20261015T061123Z",
+      "severity": "RECORD-ONLY today; DATA-BEARING if the -SIM suffix is ever dropped",
+      "restamped": "5 of 5 real paid seats, Wilson [56.5518%, 100.0000%]",
+      "values_altered": "0 of 5, Clopper-Pearson [0.0000%, 52.1824%]",
+      "sim_real_decision_field_collisions": 0,
+      "cause": "bench/reference_runner_v3.py:11324-11350 \u2014 _load_fingerprints globs all, _save_fingerprints writes all",
+      "prior_finding_by": "fable seat, 2026-10-05, never promoted out of its sandbox",
+      "not_fixed_because": "run in flight; the save path is live run machinery and fixes are SUGGESTED to HIL",
+      "mitigation_applied": "restore the 5 real-seat files to HEAD after each run exits; commit only the 6 -SIM files",
+      "producer": "scripts/the_fingerprint_store_restamps_seats_it_never_measured_2026-10-15.py"
     }
   ],
   "high_priority_2026_10_15": {
     "added": "2026-10-15T03:21:37+01:00",
-    "founder_instruction": "\"Apply any outstanding fixes you have identified first, including any as yet unbuilt/unapplied machinery, before you begin the runs. Make sure you mark these items as high priority considerations in the accompanying/outstanding program of study\" — 2026-10-15",
+    "founder_instruction": "\"Apply any outstanding fixes you have identified first, including any as yet unbuilt/unapplied machinery, before you begin the runs. Make sure you mark these items as high priority considerations in the accompanying/outstanding program of study\" \u2014 2026-10-15",
     "measurements": [
       "directive_delivery",
       "severity_promotion",
@@ -596,10 +690,41 @@
       "cross-layer-soft-deletion-on-a-spurious-topic-match"
     ],
     "runs": {
-      "run_1": "directive_delivery — the specification delivered whole, severity shadow UNCHANGED",
-      "run_2": "severity_promotion — the severity specification promoted to deciding",
+      "run_1": "directive_delivery \u2014 the specification delivered whole, severity shadow UNCHANGED",
+      "run_2": "severity_promotion \u2014 MACHINERY test of the severity specification switch plus a second convergence. NOT a measurement of its effect: under-powered 31.27x at 22 findings per run (688 needed).",
       "why_2_and_not_1": "Promoting the severity specification alters what counts as critical, which alters convergence. Running it alongside the directive repair makes neither attributable, which is the same error the programme already rejects for per-fix attribution. 2 free runs cost nothing."
     },
     "replay_cost_accepted_by_him": "\"We cannot go back and change time, so the confounds discovered in the last 24 hours can only be noted and added to the record honestly.\" Delivering the specification whole changes every dispatch and invalidates replay against the 81 archived runs. That is the cost C0040 was parked for and he has now paid it knowingly."
-  }
+  },
+  "withdrawn_hypotheses": [
+    {
+      "id": "a19-verification-does-not-reach-the-extracted-listings",
+      "withdrawn_at": "2026-10-15T08:21:27+01:00",
+      "formed_at": "2026-10-15T08:14 BST",
+      "claim_as_formed": "The close-the-loop verifier points ruff, mypy and bandit at the whole .md file and so cannot reach the fenced Python listings A19 taught S_k to score, making the 3 non-closures of C0018, C0019 and C0020 a gap in the capability run 1 commissions.",
+      "why_it_is_wrong": "The prose path is a documented design decision with 3 rejected alternatives recorded beside it at bench/bugzilla_loop.py:440-465, each measured on 2026-08-01. The listings reference imports the document declares in PROSE, so ruff and mypy report undefined names on any extracted fragment no matter what the fix did. What IS checkable without a baseline is whether the code still parses, and that runs as a VETO recorded in vetoes_run, never in checks_run. A clean parse yields NO_APPLICABLE_CHECKS rather than PASS because attempt_close closes on PASS, and calling an unchecked fix verified is rejected alternative 2 \u2014 measured to have waved through a fix injecting shell=True.",
+      "established_by_execution_not_reading": {
+        "clean_prose_target": {
+          "outcome": "NO_APPLICABLE_CHECKS",
+          "checks_run": [],
+          "vetoes_run": [
+            "ast.parse of 2 fenced Python listing(s)"
+          ],
+          "passed": false
+        },
+        "mangled_listing": {
+          "outcome": "FAIL",
+          "passed": false
+        },
+        "extractor_wrote_a_file": true,
+        "extracted_chars": 589,
+        "extracted_parses": true
+      },
+      "the_bounded_truth_that_remains": "On a prose target no finding can close by STATIC VERIFICATION, so closure rate is not a measurable quantity on this target and the parse veto is the only automatic rejection. This is a designed property, already stated in the code, and NOT a new defect.",
+      "pattern": "7th withdrawn claim of this arc and the same shape as the other 6: a universal asserted after reading one part. The instrument was a partial read of a comment rather than a call to the function.",
+      "producer": "scripts/run1_converged_and_a19_is_by_design_2026-10-15.py",
+      "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
+    }
+  ],
+  "last_updated": "2026-10-15T08:26:42+01:00"
 }
