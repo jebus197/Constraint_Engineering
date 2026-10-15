@@ -291,15 +291,29 @@
         "promotion_criterion": "agreement with the real discrimination control on the overlap where both can speak, measured over the 3 runs, before the outcome is allowed to escalate anything"
       },
       "result": {
-        "status": "DEFERRED TO AFTER RUN 2 \u2014 instrument exists and is feasible; the machine does not have the headroom while a run is live",
-        "at": "2026-10-15T08:40:32+01:00",
-        "instrument": "scripts/invariance_sweep_2026-10-03.py",
-        "help_is_free": true,
-        "containment_verified": "The overlay is built in tempfile.mkdtemp, not the repository, and uses an APFS clone giving REAL FILES so a falsifier's writes stay inside the overlay. The earlier absolute-symlink form, under which a falsifier modified the real working tree, was fixed on 2026-09-06 under founder ruling 35.",
-        "why_deferred": "Each probe clones about 683 MB and 8,403 files, built 3 times per finding (baseline, tripwire, corrected) on purpose so one stage cannot contaminate the next. The runner's own comment records the machine's swap as already near full, and free pages measured 3,526 at 16 KiB, about 57.8 MB, with run 2 live. The hardware budget allows 2 heavy processes and run 2 holds one, so this is numerically permitted and imprudent: creating the condition that forces a pause is what cy exists to avoid. It is a post-run sweep by design and loses nothing by waiting.",
-        "scheduled": "immediately after run 2 exits, over run 1 and run 2 together"
+        "status": "ANSWERED, and the answer has 2 halves \u2014 one good, one blocked",
+        "at": "2026-10-15T09:34:44+01:00",
+        "half_1_the_probe_population_is_nearly_empty_and_that_is_good_news": {
+          "corrected_copies_pooled": "40 accepted of 57 offered, 70.1754%, Wilson [57.3357%, 80.4674%], Clopper-Pearson [56.5974%, 81.5712%]",
+          "run_1": "23 accepted of 34, 67.6471%, Wilson [50.8429%, 80.8684%], over 4 rounds",
+          "run_2": "17 accepted of 23, 73.9130%, Wilson [53.5300%, 87.4514%], over 5 rounds",
+          "probeable_falsifiers": {
+            "run_1": 0,
+            "run_2": 1
+          },
+          "what_it_means": "The invariance probe only sees falsifiers that arrived WITHOUT a corrected copy, because the real discrimination control can act whenever one was supplied. Corrected copies ARE arriving, so the gap the probe was built to fill has largely closed on this target \u2014 the opposite of the 2026-10-03 position in which 0 archived entries carried the control's NO_CONTROL stamp."
+        },
+        "half_2_the_one_probe_that_existed_could_not_speak": {
+          "the_probe": "C0017 in run 2, the single distinct falsifier lacking a corrected copy",
+          "verdict": "INTEGRITY_VIOLATION -> indeterminate",
+          "cause": "The same refusal recorded as B9: a read of bench/logs/<run>/working/prose_with_computable_listings.md, the run's OWN working copy of the review target, denied because _is_evidence refuses any bench/logs path even inside an allowed root.",
+          "cannot_fail_rate": "0 of 1, Wilson [0.0000%, 79.3451%] \u2014 the single probe could not speak in either direction",
+          "one_sidedness_retained": "invariant:true demonstrates a falsifier cannot fail; invariant:false demonstrates nothing about whether it tests its claim; and an INTEGRITY_VIOLATION is not a verdict in either direction. No outcome here clears a falsifier."
+        },
+        "a_second_small_finding": "The sweep could not read the target from either run's own config and refused with 'no target article: pass --target', so --target had to be supplied by hand. Its --help documents the auto-read as the default behaviour. Minor, and recorded rather than fixed while the fixes are being batched.",
+        "producer": "scripts/the_invariance_probe_had_almost_nothing_to_probe_2026-10-15.py"
       },
-      "headline": "DEFERRED, NOT BLOCKED. The invariance sweep exists, its --help is free, and its containment was verified: overlays are APFS clones in a temp directory, so a falsifier's writes cannot reach the real tree. It clones about 683 MB three times per finding, and with run 2 live the machine had about 57.8 MB of free pages, so it runs after run 2 over both runs together.",
+      "headline": "GUARD_REACH ANSWERED IN 2 HALVES. The probe's population is nearly empty and that is GOOD NEWS: 40 corrected copies were accepted of 57 offered, 70.1754%, Wilson [57.3357%, 80.4674%], so the REAL discrimination control could act on nearly everything and the synthesised side was needed for just 1 falsifier across 2 runs \u2014 0 in run 1 and 1 in run 2. But that single probe, C0017, returned INTEGRITY_VIOLATION and could not speak, because of B9. So B9 blocks the POST-RUN sweep as well as in-run verification, and 2 programme measurements now depend on the same 1-line staging fix: this arm and the severity specification's key property.",
       "live_observations": [
         {
           "at": "2026-10-03T10:35:49+01:00",
@@ -966,6 +980,16 @@
         "cost": "1 line in the runner; the guard is not weakened at all",
         "guard_required": "a test that EXECUTES a falsifier against a staged target and fails if the open is refused",
         "correction": "CC1's first version of this entry offered adding the working directory to the declared roots as an alternative. That is forbidden by the denial order and is WITHDRAWN at 2026-10-15T08:53:12+01:00."
+      },
+      "blast_radius_widened": {
+        "at": "2026-10-15T09:34:44+01:00",
+        "was_filed_as": "costing verification DEPTH inside a run",
+        "also_blocks": [
+          "the POST-RUN invariance sweep: run 2's single probeable falsifier C0017 returned INTEGRITY_VIOLATION -> indeterminate",
+          "the guard_reach programme arm, which cannot be measured on these runs as a result",
+          "the severity specification's key property, which needs a V_false that only a falsifier reaching a verdict can produce (0 of 41 across both runs)"
+        ],
+        "so": "2 programme measurements are gated on the same 1-line staging fix, which raises B9's priority above where it was filed"
       }
     },
     {
@@ -1028,7 +1052,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T09:28:27+01:00",
+  "last_updated": "2026-10-15T09:34:44+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",

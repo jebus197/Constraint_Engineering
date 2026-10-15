@@ -1,0 +1,37 @@
+{
+  "run": "bench/logs/free_run2_severity_spec_20261015T073418Z_20261015T073418Z",
+  "target": "bench/cdsfl_registry/targets/prose_with_computable_listings.md",
+  "distinct_falsifiers_without_a_corrected_copy": 1,
+  "probed": 1,
+  "skipped_by_limit": 0,
+  "probe_ran": 0,
+  "cannot_fail": {
+    "k": 0,
+    "n": 1,
+    "pct": 0.0,
+    "wilson": [
+      0.0,
+      79.3451
+    ]
+  },
+  "elapsed_seconds": 13.1,
+  "one_sided": "invariant=true demonstrates cannot-fail; invariant=false demonstrates nothing about discrimination",
+  "rows": [
+    {
+      "cids": [
+        "C0017"
+      ],
+      "verdict": "INTEGRITY_VIOLATION",
+      "probe": {
+        "ran": false,
+        "invariant": null,
+        "real_verdict": "INTEGRITY_VIOLATION",
+        "variants": {
+          "emptied": "INTEGRITY_VIOLATION",
+          "duplicated": "INTEGRITY_VIOLATION"
+        },
+        "limit": "one-sided: invariance demonstrates cannot-fail; variation demonstrates nothing"
+      }
+    }
+  ]
+}

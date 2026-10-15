@@ -1,0 +1,72 @@
+{
+  "runs": {
+    "run1": {
+      "rounds": 4,
+      "accepted": 23,
+      "refused": 4,
+      "unmatched": 7,
+      "accepted_wilson": [
+        0.508428945939082,
+        0.808683564359745
+      ]
+    },
+    "run2": {
+      "rounds": 5,
+      "accepted": 17,
+      "refused": 3,
+      "unmatched": 3,
+      "accepted_wilson": [
+        0.5352999516257462,
+        0.8745138395501364
+      ]
+    }
+  },
+  "pooled": {
+    "accepted": 40,
+    "refused": 7,
+    "unmatched": 10,
+    "n": 57,
+    "accepted_wilson": [
+      0.5733571989653998,
+      0.8046744992518191
+    ],
+    "accepted_clopper_pearson": [
+      0.5659735864224326,
+      0.8157118731842129
+    ]
+  },
+  "sweep_records": {
+    "run1": {
+      "run": "bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z",
+      "target": "bench/cdsfl_registry/targets/prose_with_computable_listings.md",
+      "distinct_falsifiers_without_a_corrected_copy": 0,
+      "probed": 0,
+      "skipped_by_limit": 0,
+      "probe_ran": 0,
+      "elapsed_seconds": 0.0,
+      "one_sided": "invariant=true demonstrates cannot-fail; invariant=false demonstrates nothing about discrimination"
+    },
+    "run2": {
+      "run": "bench/logs/free_run2_severity_spec_20261015T073418Z_20261015T073418Z",
+      "target": "bench/cdsfl_registry/targets/prose_with_computable_listings.md",
+      "distinct_falsifiers_without_a_corrected_copy": 1,
+      "probed": 1,
+      "skipped_by_limit": 0,
+      "probe_ran": 0,
+      "elapsed_seconds": 13.1,
+      "one_sided": "invariant=true demonstrates cannot-fail; invariant=false demonstrates nothing about discrimination"
+    }
+  },
+  "conclusions": {
+    "probe_population_nearly_empty": true,
+    "probeable_falsifiers_run1": 0,
+    "probeable_falsifiers_run2": 1,
+    "the_one_probe_verdict": "INTEGRITY_VIOLATION -> indeterminate (C0017, run 2)",
+    "cannot_fail_rate": "0 of 1, Wilson [0.0000%, 79.3451%]",
+    "b9_blocks_this_arm": true,
+    "measurements_gated_on_the_b9_fix": [
+      "guard_reach",
+      "severity key property (V_false)"
+    ]
+  }
+}
