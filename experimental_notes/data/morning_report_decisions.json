@@ -195,26 +195,6 @@
       "Leave it and read past the stale items, which is what has happened for 21 items so far."
     ]
   },
-  "task:B4": {
-    "title": "The specification repair, built and tested tonight, awaiting only the commit",
-    "what": "6 mechanisms were keeping the specification out of every model: the loader chose the reduced form by the work cap, the reduced form carried 0 of 22 hard blocks, the conflict resolver resolved the specification against itself in 40 of 42 conflicts, 95.2381%, Wilson [84.2101%, 98.6842%], its rebuild flattened blank lines even when it dropped nothing, the length cap would have truncated inside the specification, and the decomposition decision counted a payload it cannot split.",
-    "why": "Its marker says open and tested only because no commit has happened. The task-list checker correctly refuses a done marker whose work is not committed, so this closes itself the moment the commit lands, which is the marker catching up with reality rather than being flipped.",
-    "evidence_line": "24 executing tests in its own guard suite, 13 in the re-based falsifier for the original finding, and 5 existing suites re-based as deltas rather than relaxed.",
-    "options": [
-      "Nothing to decide.",
-      "Review the 6 mechanisms before the commit, if you want to see them individually before they fold into the record."
-    ]
-  },
-  "task:B5": {
-    "title": "The severity promotion, built and tested tonight, awaiting only the commit",
-    "what": "The appendix's severity formula can now decide rather than merely be recorded, behind a flag that defaults to off. It was measured as reaching real decisions before it was built: 7 releases change across 2,994 archived entries in 59 runs.",
-    "why": "As with the specification repair, its marker says open and tested purely because the commit has not happened. It is free run 2's only difference from run 1, so the 2 runs isolate its effect.",
-    "evidence_line": "13 tests, including one that executes the config-to-mirror wiring rather than reading the source for it, which was itself a correction made tonight after a census guard caught the weaker form.",
-    "options": [
-      "Nothing to decide.",
-      "Change which run carries it, if you would rather see the severity change measured before the directive change."
-    ]
-  },
   "task:B6": {
     "title": "3 defects found while repairing the specification, recorded and deliberately not fixed",
     "what": "The coherence budgets are stale so the pruner's comparison cannot run, the concise rendering deduplicates the code under review for 4 of 5 models, and a proven capacity floor is used as a ceiling so a seat's maximum can never rise. Each has its own entry in this report.",
@@ -223,6 +203,16 @@
     "options": [
       "Rule on them individually, since each appears separately in this report with its own options.",
       "Defer all 3 until the 2 free runs have reported, since 2 of the 3 are measured by those runs."
+    ]
+  },
+  "defect:gamma-band-label-is-applied-to-an-unestimable-gamma": {
+    "title": "A gamma band label is applied to a gamma that is not a measurement, and it asks for you",
+    "what": "At round 1 of free run 1 the console printed: gamma_all 0.000, Gamma disagrees with state closure, recommend HIL audit. That sentence is a BAND LABEL, not a detected disagreement. The band table maps the range 0.00 to 0.20 to that wording, and the gamma estimator returns 0.0 whenever it has fewer than 3 rounds to fit. So the label is applied to a value that is not yet a measurement.",
+    "why": "The wording asks for a HIL audit, so a diagnostic requests your attention in the first 2 rounds of EVERY run. That is noise which can mask a real disagreement later, and gamma is load-bearing by your own standing directive.",
+    "evidence_line": "Observed live in free run 1 at 07:31:53, and the prediction that it clears at round 3 is being tested inside that same run rather than argued.",
+    "options": [
+      "Gate the band lookup on estimability, which the runner already computes, and print not yet estimable rather than a band label.",
+      "Leave it, on the ground that it is advisory and gates nothing, and read past it in the first 2 rounds."
     ]
   }
 }

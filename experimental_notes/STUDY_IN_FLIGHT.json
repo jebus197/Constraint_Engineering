@@ -567,6 +567,19 @@
       "why_this_is_not_a_regression": "The contrast the arm was DESIGNED to carry lapsed on 2026-04-02 at commit 556e0af, when the Codex seat moved off `codex exec`. What remained was truncation. Removing a truncation artefact is strictly better than measuring it.",
       "needs": "a founder decision: a NEW contrast dimension for Arm C, or an explicit ruling that Arm C is retired. Not resolvable by code, and the config was NOT relaxed -- its own guard test demanded that the design note say so, and it now does.",
       "guard": "bench/tests/test_d9_d11_configs_valid_2026-09-05.py::TestSeatContrastArm::test_the_arm_is_not_null_today"
+    },
+    {
+      "id": "gamma-band-label-is-applied-to-an-unestimable-gamma",
+      "priority": "MEDIUM",
+      "at": "2026-10-15T08:02:21+01:00",
+      "severity": "a false HIL referral in the first 2 rounds of every run",
+      "status": "OBSERVED LIVE 2026-10-15 in free run 1, NOT FIXED (run in flight)",
+      "what": "At round 1 of free run 1 the console printed `gamma_all: 0.000 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit`. That sentence is a BAND LABEL, not a detected disagreement: `GAMMA_BANDS` at bench/reference_runner_v3.py:4671 maps the range 0.00 to 0.20 to that wording, and `_estimate_gamma` RETURNS 0.0 when it has fewer than 3 points. So the label is applied to a gamma that is not a measurement at all.",
+      "why_it_matters": "The wording recommends a HIL audit. A diagnostic that asks for the founder's attention in the first 2 rounds of EVERY run is noise that can mask a real disagreement later, and gamma is load-bearing by standing directive.",
+      "the_falsifiable_prediction": "gamma becomes estimable at round 3 and the band label moves off the 0.00-0.20 band. Testable inside this run; the result is recorded here rather than assumed.",
+      "not_fixed_because": "the run is in flight and gamma is load-bearing. Changing a gamma-adjacent code path mid-experiment would make the run uninterpretable, which is a worse outcome than a noisy advisory line.",
+      "candidate_fix": "gate the band lookup on estimability -- the runner already computes `gamma_crit_estimable` -- and print 'not yet estimable (n < 3)' instead of a band label. Advisory either way; it gates nothing.",
+      "needs": "no founder ruling; it is a diagnostic-wording repair once the runs land"
     }
   ],
   "high_priority_2026_10_15": {
