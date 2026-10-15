@@ -1196,7 +1196,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-16T00:08:16+01:00",
+  "last_updated": "2026-10-16T00:13:43+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
@@ -1220,7 +1220,19 @@
     "note": "Both are CLEAN by the gate's own hardened criterion. A third run would complete the criterion; the founder authorised 2, so whether to run a third is his.",
     "the_gate_refused_once_and_it_was_right": "Leg 3 declined at round 3 on the A4 condition: 1 unverified critical-severity candidate with no resolved falsifier, while BOTH sides of the gate already held (gamma_crit 1.000, series [0,0,0]). Checked against the known defect in which a SUB-critical entry can enter that counter and never leave: round 0 produced 13 findings of which 12 carry severity at or above 0.7, while rounds 1, 2 and 3 produced 3, 7 and 9 findings with a maximum severity of 0.5 and no criticals at all. The blocker was therefore one of round 0's genuine criticals, so the refusal is a TRUE POSITIVE and the gate was correctly declining to call a run converged with a critical unverified. Leg 2 took the identical path. The monitoring watchdog labels the refusal as trouble, which is a false positive in its labelling.",
     "the_closing_sweep_finally_has_work": "Legs 1 and 2 left the closing sweep nothing to do, which the founder correctly said is not a fault. Leg 3 handed it 15 residuals, so the sweep mechanics are exercised for the first time by a run rather than by a contrived case. Leg 3 also executed 2 in-round falsifiers (cleared 0, withdrawn 1, no verdict 1), which is the first data the in-round clearance arm has had from a clean run.",
-    "WHAT_MAY_NOT_BE_CLAIMED": "Leg 3 produced 39 findings against 22 and 19. That difference may NOT be attributed to any fix. With 1 run per configuration and run-to-run variance already measured today, the pair cannot separate a machinery effect from ordinary variation, and Gemini-SIM alone accounts for 16 of the 39."
+    "WHAT_MAY_NOT_BE_CLAIMED": "Leg 3 produced 39 findings against 22 and 19. That difference may NOT be attributed to any fix. With 1 run per configuration and run-to-run variance already measured today, the pair cannot separate a machinery effect from ordinary variation, and Gemini-SIM alone accounts for 16 of the 39.",
+    "leg3_final_as_the_report_states_it": {
+      "runner_version": "v3.2",
+      "rounds_run": 5,
+      "converged_at": 4,
+      "reason": "HARDENED_CONVERGED: gamma_crit=1.000 >= 0.3 (sustained 2r, loo_min=1.000) AND 3 consecutive settled zero-novel-critical at R4",
+      "findings": 38,
+      "wall_clock_min": 71.5,
+      "gamma_final": 0.359,
+      "note_on_the_count": "The mid-run completion signal recorded 39 findings and the final report states 38. The final report is the figure to quote; the 2 are taken at different moments, before and after the closing sweep and its reconciliation."
+    },
+    "closing_sweep_outcome": "THE SWEEP RAN AND ACTED, for the first time in the 3 legs. Handed 15 residuals it reported '0 cleared, 4 withdrawn, 9 remaining', and post-sweep reconciliation re-probed 3 and settled none. So its mechanics are exercised: 4 residuals were withdrawn by it. 9 remain as un-demonstrated sub-criticals, which are non-gating by design and did not block convergence. Legs 1 and 2 gave it nothing to do, which the founder correctly said is not a fault; this leg shows it is not inert either.",
+    "in_round_falsifiers": "2 executed: cleared 0, withdrawn 1, critical-refuted recorded 0, no verdict 1. This is the first data the in-round clearance arm has had from a CLEAN run, which is the arm whose difficulty was that a clean convergence leaves nothing for it to read."
   },
   "board_after_the_runs": {
     "at": "2026-10-15T11:20:37+01:00",
