@@ -31,6 +31,14 @@ import pathlib
 import re
 import sys
 
+# `_cli_help` lives in scripts/. Locate it rather than assume a depth.
+for _cand in (pathlib.Path(__file__).resolve().parent,
+              *pathlib.Path(__file__).resolve().parents):
+    if (_cand / "_cli_help.py").is_file():
+        sys.path.insert(0, str(_cand))
+        break
+from _cli_help import answer_help  # noqa: E402
+
 REPO = pathlib.Path(__file__).resolve().parents[1]
 RUN1 = REPO / ("bench/logs/free_run1_directive_whole_20261015T061123Z"
                "_20261015T061124Z")
@@ -200,4 +208,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    answer_help(__doc__, __file__)
     sys.exit(main())

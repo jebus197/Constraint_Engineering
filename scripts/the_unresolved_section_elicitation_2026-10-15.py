@@ -36,6 +36,14 @@ import pathlib
 import re
 import sys
 
+# `_cli_help` lives in scripts/. Locate it rather than assume a depth.
+for _cand in (pathlib.Path(__file__).resolve().parent,
+              *pathlib.Path(__file__).resolve().parents):
+    if (_cand / "_cli_help.py").is_file():
+        sys.path.insert(0, str(_cand))
+        break
+from _cli_help import answer_help  # noqa: E402
+
 REPO = pathlib.Path(__file__).resolve().parents[1]
 RUN1 = REPO / ("bench/logs/free_run1_directive_whole_20261015T061123Z"
                "_20261015T061124Z")
@@ -131,8 +139,14 @@ def main() -> int:
                 v = int(m.group(1))
                 opp_detail.append((src.name, key, v))
                 opp = max(opp, v)
-    for s, k, v in opp_detail[:14]:
+    _CAP = 14
+    for s, k, v in opp_detail[:_CAP]:
         print(f"    {s:<52} {k} = {v}")
+    # A list cut to N under a heading that reads as complete is a silent
+    # falsehood. State the remainder rather than letting the cap pass unseen.
+    if len(opp_detail) > _CAP:
+        print(f"    ... and {len(opp_detail) - _CAP} further row(s) not shown "
+              f"({len(opp_detail)} in total); the maximum below is over ALL of them")
     print(f"  maximum unconfirmed-critical count seen: {opp}")
 
     # --- the two proportions ------------------------------------------------
@@ -210,4 +224,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    answer_help(__doc__, __file__)
     sys.exit(main())

@@ -52,6 +52,14 @@ import subprocess
 import sys
 import tempfile
 
+# `_cli_help` lives in scripts/. Locate it rather than assume a depth.
+for _cand in (pathlib.Path(__file__).resolve().parent,
+              *pathlib.Path(__file__).resolve().parents):
+    if (_cand / "_cli_help.py").is_file():
+        sys.path.insert(0, str(_cand))
+        break
+from _cli_help import answer_help  # noqa: E402
+
 REPO = pathlib.Path(__file__).resolve().parents[1]
 LINT = REPO / "scripts/note_vagueness_lint.py"
 COUNT = re.compile(r"^\s*(\d+) finding", re.M)
@@ -162,4 +170,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    answer_help(__doc__, __file__)
     sys.exit(main())

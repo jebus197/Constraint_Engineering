@@ -79,30 +79,6 @@
     "options": [],
     "evidence_line": "Design already verified: the target is byte-identical at both commits (3,498 bytes, 0 commits between them touch it), so a difference between arms is attributable to the machinery rather than target drift. The HEAD arm is already run, so only the baseline arm remains."
   },
-  "study:haiku_extended": {
-    "no_ruling_needed": true,
-    "title": "haiku_extended — the claim classifier on an extended set",
-    "what": "Haiku as the decidable-claim classifier at run scale, with your confidence composition: Haiku decides, syntax corroborates and can never block.",
-    "why": "Your ruling is on record: DO IT, mark as a significant study area (2026-10-03). Outstanding work.",
-    "options": [],
-    "evidence_line": "On the 15-document set the model arm reached 14 of 15 = 93.3333%, Wilson [70.1835%, 98.8133%], against the syntax arm's 10 of 15 = 66.6667%. The confidence composition is NOT DEMONSTRATED on that set at alpha 0.05 (Fisher p = 1.0). What is owed is the EXTENDED set: 15 documents cannot separate these effects, because the complementarity rests on 1 document and the confidence label on a 5-versus-6 split."
-  },
-  "study:guard_reach": {
-    "no_ruling_needed": true,
-    "title": "guard_reach — how far the discrimination control actually reaches",
-    "what": "The discrimination control reaches only falsifiers that arrive with a corrected copy. The shadow invariance probe synthesises the missing side and runs as a post-run sweep, because inline cost roughly 187 minutes per run.",
-    "why": "Your ruling is on record: EXTEND THE EXISTING GUARD, do not add a template (2026-10-03). Outstanding work.",
-    "options": [],
-    "evidence_line": "Producer: `scripts/invariance_sweep_2026-10-03.py`. The inline version was first wired on a projection of 1.4 minutes per run, measured against a probe on a 1-file temporary directory; an overlay build at the real repository root is 14.034 s."
-  },
-  "study:in_round_clearance": {
-    "no_ruling_needed": true,
-    "title": "in_round_clearance — does in-round re-attachment clear blockers while the gate can still see it",
-    "what": "Whether in-round falsifier re-attachment actually clears blocker-count entries while the convergence gate can still see them, and whether the UNRESOLVED section elicits the id-addressed form at all.",
-    "why": "Your ruling is on record: build the closing sweep machinery into the schema rather than leave it as an afterthought (2026-10-04). Outstanding work.",
-    "options": [],
-    "evidence_line": "This is the forward half of the two defects above: if re-attachment clears blockers in-round, the valve asymmetry matters less in practice."
-  },
   "_archived_authored_detail": {
     "_why": [
       "POINT, NEVER PRUNE. Authored detail for an item that has CLOSED is stale to the",
@@ -130,39 +106,69 @@
       "evidence_line": "Close the gap at source by deciding whether `_is_simulated` should recognise those files by content, rather than widening the directory rule, which would hide the content gap instead of fixing it.",
       "_archived_on": "2026-10-14T22:37:01+01:00",
       "_archived_because": "the task list records this entry as state: DONE | status: COMMITTED, so the generator refused with exit 3: AUTHORED DETAIL for an item no longer live"
+    },
+    "study:coherence_budget_recalibration": {
+      "title": "The coherence budgets are stale by construction, and the pruner comparison cannot run until they are re-derived",
+      "what": "Constraint density divides 20 active policy constraints by a size estimate taken from the rendered length. The specification made that length about 5.7 times larger without adding a single constraint, so 0 of 50 real compositions are now over budget, 0.0000%, Wilson [0.0000%, 7.1348%], against roughly 2 in 3 before.",
+      "why": "The named loss is that the lean-versus-full comparison every proposed cut has been gated on since July cannot be run while nothing exceeds a budget. They were deliberately not hand-retuned, because a hand-set cap with no measurement behind it is what you objected to twice this week.",
+      "evidence_line": "The project already derives these from experiment logs, so the 2 free runs are the measurement.",
+      "options": [
+        "Re-derive them from the 2 free runs using the existing function, which needs no judgement from either of us.",
+        "Re-derive them from a paid run instead, on the ground that a simulated panel's density is not the frontier panel's."
+      ],
+      "_archived": "2026-10-15: this measurement now carries a result in experimental_notes/STUDY_IN_FLIGHT.json, so it is no longer a live item for the generator. The authored detail is kept because it records what was asked and why."
+    },
+    "study:directive_delivery": {
+      "title": "The project's own specification now reaches every model, and the 2 free runs measure what that changes",
+      "what": "Until 2026-10-15 every seat received a 2,503-character reduced form of the 27,803-character core specification. Of the 22 blocks the project's own HARD predicate identifies, 0 reached any model by any path, 0.0000%, Wilson [0.0000%, 14.8655%], including the whole of the falsifier-integrity section and its instructions not to read a scoring key, not to weaken a test to make it pass, and not to stop early for a passing result.",
+      "why": "Your ruling of 2026-10-14, that 7,000 words is not excessive for a modern model and that the caps were never meant for the core directives, is implemented as a split between a WORK bound and a SPECIFICATION bound. 6 separate mechanisms were keeping the specification out, not 1.",
+      "evidence_line": "Verified on the real dispatch seam: all 6 seats receive about 75,650 characters and every one now carries the falsifier-integrity section, for the first time in the project's history.",
+      "options": [
+        "Read the 2 free runs and rule then.",
+        "Accept it now without the runs, on the ground that no model can be gated on a rule it was never sent.",
+        "Ask for a paid-panel view on whether the fuller specification changes what frontier models do, which the free simulation cannot tell you."
+      ],
+      "_archived": "2026-10-15: this measurement now carries a result in experimental_notes/STUDY_IN_FLIGHT.json, so it is no longer a live item for the generator. The authored detail is kept because it records what was asked and why."
+    },
+    "study:guard_reach": {
+      "no_ruling_needed": true,
+      "title": "guard_reach — how far the discrimination control actually reaches",
+      "what": "The discrimination control reaches only falsifiers that arrive with a corrected copy. The shadow invariance probe synthesises the missing side and runs as a post-run sweep, because inline cost roughly 187 minutes per run.",
+      "why": "Your ruling is on record: EXTEND THE EXISTING GUARD, do not add a template (2026-10-03). Outstanding work.",
+      "options": [],
+      "evidence_line": "Producer: `scripts/invariance_sweep_2026-10-03.py`. The inline version was first wired on a projection of 1.4 minutes per run, measured against a probe on a 1-file temporary directory; an overlay build at the real repository root is 14.034 s.",
+      "_archived": "2026-10-15: this measurement now carries a result in experimental_notes/STUDY_IN_FLIGHT.json, so it is no longer a live item for the generator. The authored detail is kept because it records what was asked and why."
+    },
+    "study:haiku_extended": {
+      "no_ruling_needed": true,
+      "title": "haiku_extended — the claim classifier on an extended set",
+      "what": "Haiku as the decidable-claim classifier at run scale, with your confidence composition: Haiku decides, syntax corroborates and can never block.",
+      "why": "Your ruling is on record: DO IT, mark as a significant study area (2026-10-03). Outstanding work.",
+      "options": [],
+      "evidence_line": "On the 15-document set the model arm reached 14 of 15 = 93.3333%, Wilson [70.1835%, 98.8133%], against the syntax arm's 10 of 15 = 66.6667%. The confidence composition is NOT DEMONSTRATED on that set at alpha 0.05 (Fisher p = 1.0). What is owed is the EXTENDED set: 15 documents cannot separate these effects, because the complementarity rests on 1 document and the confidence label on a 5-versus-6 split.",
+      "_archived": "2026-10-15: this measurement now carries a result in experimental_notes/STUDY_IN_FLIGHT.json, so it is no longer a live item for the generator. The authored detail is kept because it records what was asked and why."
+    },
+    "study:in_round_clearance": {
+      "no_ruling_needed": true,
+      "title": "in_round_clearance — does in-round re-attachment clear blockers while the gate can still see it",
+      "what": "Whether in-round falsifier re-attachment actually clears blocker-count entries while the convergence gate can still see them, and whether the UNRESOLVED section elicits the id-addressed form at all.",
+      "why": "Your ruling is on record: build the closing sweep machinery into the schema rather than leave it as an afterthought (2026-10-04). Outstanding work.",
+      "options": [],
+      "evidence_line": "This is the forward half of the two defects above: if re-attachment clears blockers in-round, the valve asymmetry matters less in practice.",
+      "_archived": "2026-10-15: this measurement now carries a result in experimental_notes/STUDY_IN_FLIGHT.json, so it is no longer a live item for the generator. The authored detail is kept because it records what was asked and why."
+    },
+    "study:severity_promotion": {
+      "title": "The appendix's own severity formula now decides in free run 2, and it changes 7 releases",
+      "what": "Section 7.7 scores a finding by class, confidence and verification, with the key property that a disproved finding scores zero regardless of confidence. It had never decided anything.",
+      "why": "Your objection of 2026-10-14 was that running a feature in shadow during a simulation defeats the simulation's purpose. The circle was sharper than that: the shadow's own promotion criterion asked for evidence from a run, and a shadow never decides, so a run could never supply it.",
+      "evidence_line": "Measured over 2,994 archived entries in 59 runs before it was built: the release door is conjunctive, its proof half holds for 295 of 2,994, 9.8530%, Wilson [8.8364%, 10.9726%], and 7 releases change.",
+      "options": [
+        "Compare run 1 against run 2 and rule on whether the reclassification distorts convergence.",
+        "Promote it unconditionally, since a model-asserted severity deciding convergence is what you objected to and this formula is the opposite of a vote.",
+        "Leave it off until confidence and the hard-or-soft class are actually collected, since only the verification factor is measured today."
+      ],
+      "_archived": "2026-10-15: this measurement now carries a result in experimental_notes/STUDY_IN_FLIGHT.json, so it is no longer a live item for the generator. The authored detail is kept because it records what was asked and why."
     }
-  },
-  "study:directive_delivery": {
-    "title": "The project's own specification now reaches every model, and the 2 free runs measure what that changes",
-    "what": "Until 2026-10-15 every seat received a 2,503-character reduced form of the 27,803-character core specification. Of the 22 blocks the project's own HARD predicate identifies, 0 reached any model by any path, 0.0000%, Wilson [0.0000%, 14.8655%], including the whole of the falsifier-integrity section and its instructions not to read a scoring key, not to weaken a test to make it pass, and not to stop early for a passing result.",
-    "why": "Your ruling of 2026-10-14, that 7,000 words is not excessive for a modern model and that the caps were never meant for the core directives, is implemented as a split between a WORK bound and a SPECIFICATION bound. 6 separate mechanisms were keeping the specification out, not 1.",
-    "evidence_line": "Verified on the real dispatch seam: all 6 seats receive about 75,650 characters and every one now carries the falsifier-integrity section, for the first time in the project's history.",
-    "options": [
-      "Read the 2 free runs and rule then.",
-      "Accept it now without the runs, on the ground that no model can be gated on a rule it was never sent.",
-      "Ask for a paid-panel view on whether the fuller specification changes what frontier models do, which the free simulation cannot tell you."
-    ]
-  },
-  "study:severity_promotion": {
-    "title": "The appendix's own severity formula now decides in free run 2, and it changes 7 releases",
-    "what": "Section 7.7 scores a finding by class, confidence and verification, with the key property that a disproved finding scores zero regardless of confidence. It had never decided anything.",
-    "why": "Your objection of 2026-10-14 was that running a feature in shadow during a simulation defeats the simulation's purpose. The circle was sharper than that: the shadow's own promotion criterion asked for evidence from a run, and a shadow never decides, so a run could never supply it.",
-    "evidence_line": "Measured over 2,994 archived entries in 59 runs before it was built: the release door is conjunctive, its proof half holds for 295 of 2,994, 9.8530%, Wilson [8.8364%, 10.9726%], and 7 releases change.",
-    "options": [
-      "Compare run 1 against run 2 and rule on whether the reclassification distorts convergence.",
-      "Promote it unconditionally, since a model-asserted severity deciding convergence is what you objected to and this formula is the opposite of a vote.",
-      "Leave it off until confidence and the hard-or-soft class are actually collected, since only the verification factor is measured today."
-    ]
-  },
-  "study:coherence_budget_recalibration": {
-    "title": "The coherence budgets are stale by construction, and the pruner comparison cannot run until they are re-derived",
-    "what": "Constraint density divides 20 active policy constraints by a size estimate taken from the rendered length. The specification made that length about 5.7 times larger without adding a single constraint, so 0 of 50 real compositions are now over budget, 0.0000%, Wilson [0.0000%, 7.1348%], against roughly 2 in 3 before.",
-    "why": "The named loss is that the lean-versus-full comparison every proposed cut has been gated on since July cannot be run while nothing exceeds a budget. They were deliberately not hand-retuned, because a hand-set cap with no measurement behind it is what you objected to twice this week.",
-    "evidence_line": "The project already derives these from experiment logs, so the 2 free runs are the measurement.",
-    "options": [
-      "Re-derive them from the 2 free runs using the existing function, which needs no judgement from either of us.",
-      "Re-derive them from a paid run instead, on the ground that a simulated panel's density is not the frontier panel's."
-    ]
   },
   "defect:concise-style-deduplicates-the-code-under-review": {
     "title": "The concise rendering collapses the code under review for 4 of 5 models",
@@ -213,6 +219,27 @@
     "options": [
       "Gate the band lookup on estimability, which the runner already computes, and print not yet estimable rather than a band label.",
       "Leave it, on the ground that it is advisory and gates nothing, and read past it in the first 2 rounds."
+    ]
+  },
+  "task:B8": {
+    "title": "B8 — the coherence-budget recalibration is inert 3 ways, and its repair is a SCHEMA change that is yours to authorise",
+    "what": "`update_coherence_budgets_from_experiments` is the mechanism the programme names for re-deriving the coherence budgets from the free runs, and those budgets gate the coherence pruner's lean-versus-full ablation arm — the gate every proposed directive cut has been held to since 2026-07-18. It cannot be driven from the runs, for 3 reasons each sufficient alone. **Nothing calls it**: 0 `ast.Call` sites and 0 imports across `bench/` and `scripts/`, the 6 textual mentions being prose in test docstrings and scripts. **It persists nothing**: `MODEL_COHERENCE_BUDGETS` is a dict literal at `composer.py:69`, and mutating it to 0.123456 in one process reads back as 0.02 in a fresh one. **The runs do not emit its input shape**: 0 of free run 1's 61 JSON entries carry both `model` and `chars`, Wilson [0.0000%, 5.9244%], so on real logs it returns its own defaults byte-identically through its closing `setdefault`.",
+    "why": "NOT fixed, and deliberately. The algorithm is SOUND — on a fixture in the documented shape it moves `opus_4_6` from 0.02 to 0.0571 — so this is a schema mismatch between what the runner writes and what the calibrator reads, and the repair means emitting `model` and `chars` per dispatch into every run's own JSON. That changes what every future run records, which is a replay-invalidation decision and belongs with you rather than with an assistant's judgement at 10am. B7 and B9 were pure repairs with no schema impact and were applied; this one is not.",
+    "evidence_line": "scripts/the_coherence_recalibration_is_inert_three_ways_2026-10-15.py; experimental_notes/evidence/coherence_recalibration_inert_2026-10-15.json",
+    "options": [
+      "Authorise the schema change: emit `model` and `chars` per dispatch, wire a caller, persist the calibrated budgets to a file the composer reads at import, and guard it with a test that fails if the calibrator returns its own defaults on a real run's logs. The pruner ablation arm becomes runnable; archived runs stop replaying against the new log shape.",
+      "Defer it into the one batched replay-invalidation decision alongside anything else that changes run output, so the cost is paid once.",
+      "Leave it inert and accept that the lean-versus-full ablation arm stays un-runnable, which means every future proposed directive cut has no gate to pass."
+    ]
+  },
+  "task:B10": {
+    "no_ruling_needed": true,
+    "title": "B10 — the note-lint ratchet is blind to the note-standard stamp, by construction",
+    "what": "`scripts/note_vagueness_lint.py` is PATH-SENSITIVE: its standard-stamp rule fires only for a file under a directory named `experimental_notes`. `hooks/pre-commit:375-392` materialises BOTH sides of its ratchet into a flat `mktemp -d` as `after_$base` and `before_$base`, so that parent is gone from both and the rule fires on neither. Measured on identical bytes across 6 notes: the real path and a same-directory copy agree every time, while a flat copy loses a finding in 4 of 6, and every lost finding is `MISSING NOTE STANDARD STAMP`. Being blind on BOTH sides makes it a SOUND RATCHET and an INCOMPLETE DETECTOR — it can never report a change that is not there, but it cannot notice a note delivered with a missing stamp. What slipped past: **73 of 522 notes postdate the standard and name none, 13.9847%, Wilson [11.2717%, 17.2238%]**, an UPPER BOUND since several are working scratch files. The 161 notes naming an OLDER standard are NOT defects — the convention retains version-specific foot-lines.",
+    "why": "Filed as work, not as a question. Found by the assistant being wrong twice: it compared a working file against a bare `/tmp` copy of its HEAD version, read a +1 that did not exist, and deleted good prose to fix a finding it had never created. The paragraph is restored and the lesson is recorded.",
+    "evidence_line": "scripts/the_note_lint_ratchet_is_blind_to_the_stamp_2026-10-15.py; experimental_notes/evidence/note_lint_is_path_sensitive_2026-10-15.json",
+    "options": [
+      "Preserve the parent directory when the hook materialises both sides — write to `$STAGED_COPY/after/experimental_notes/<base>` and `$STAGED_COPY/before/experimental_notes/<base>` — which keeps the blind-on-both-sides soundness while letting the ratchet see path-sensitive rules, then re-run it over the 73 and either stamp them or record each exemption."
     ]
   }
 }
