@@ -1,0 +1,74 @@
+# Free run 1: the specification arrived whole and the run converged at round 3
+
+2026-10-15 08:42 BST. Audience: a reproducing engineer. The plain-English companion is `Free_Run_1_The_Specification_Arrived_And_The_Run_Converged_Plain_English_2026-10-15.md`.
+
+## What the run was for
+
+Free run 1 was the first simulated run in which the project's own formal specification reached the models at all. The repair it tests landed at commit `5f8f3b9c` the same night, after 6 separate mechanisms were found to be keeping the specification out of what every seat receives, and after 0 of the 22 blocks the project's own classifier marks HARD were measured to reach any model by any path. The run's question was not "does the harness converge" — it was "does the harness still behave, and converge, once every seat is finally given the rules every verdict in this project rests on".
+
+Configuration: target `bench/cdsfl_registry/targets/prose_with_computable_listings.md`, 10-round budget, domain `mathematics`, routing ladder active with its rung budget set to EXHAUST, 6 simulated seats, severity specification RECORDED but not deciding. Cost: none. `bench/tools/sim_dispatch_shim.py` patches `_dispatch_single_model`, the single point at which a paid model would be called, and substitutes subagents on the founder's own plan; every seat label carries the `-SIM` suffix at source and the spending limit is 0.00.
+
+## The result
+
+CONVERGED at round 3 of a 10-round budget, on the hardened two-sided gate, in 82.4 minutes across 4 rounds.
+
+| quantity | value |
+|---|---|
+| convergence reason | `HARDENED_CONVERGED` |
+| gamma_critical | 1.000, sustained 2 rounds, leave-one-out minimum 1.000 |
+| gamma_all (diagnostic) | 0.652 |
+| consecutive settled zero-novel-critical rounds | 3 |
+| cumulative criticals | 12 |
+| total findings | 22 |
+| unresolved criticals at close | 0 |
+| contested | 0 |
+| findings per round | 14, 2, 5, 1 |
+| verification chain | SEALED, 33 records |
+| claim ledger | 22 claims, 19 decidable, 3 routed |
+| runner | v3.2 |
+
+Both planted defects were found in round 0, which produced 14 findings and 2 novel criticals: the `round_dispersion` unbiased-variance defect (C0001, C0003, C0005) and the `wilson_interval` centre term (C0002, C0004, C0006), at severities 0.9 to 0.95. Each had been verified with 2 independent tools before planting, and `bench/tests/test_the_prose_target_is_fit_for_arm4_2026-10-14.py` keeps them real.
+
+## The specification arrived, and this is the figure the run exists to carry
+
+Every seat received the whole 27,803-character specification rather than a 2,503-character summary of configuration flags, and all 22 HARD blocks arrived against 0 of 22 before the repair. The per-seat system prompt measured 79,767 to 80,358 characters in the live dispatch log. Among the 22 blocks that previously reached nothing is the entire section headed *Falsifier Integrity — Do Not Reach for the Answer*, which carries the instructions not to read a scoring key, not to weaken a test to make it pass, and not to stop early to obtain a passing result.
+
+## The futility guard held, 24 times, and that was a prediction
+
+Task B6 item 3 recorded, before either run started, that `max_successful_prompt_chars` is a PROVEN FLOOR used as a CEILING, and that delivering the specification whole would push every simulated seat's payload past its own recorded floor — so 6 of 6 simulated seats would have force-decomposed every dispatch on the size of their own instructions, while no paid seat would have, the paid figures being 465,206 and 110,076 against the simulated seats' 72,934 to 80,517. A confound that fires only in the cheap runs and vanishes in the expensive ones is the worst available shape, which is why a futility guard was built rather than deferred.
+
+Run 1 shows it holding. Across 24 logged decomposition decisions covering all 6 seats, the total payload exceeded the 80,000 floor in 24 of 24, Wilson [86.2024%, 100.0000%], Clopper-Pearson [85.7526%, 100.0000%]; the DECOMPOSABLE portion was under the floor in 24 of 24 as well; and 0 dispatches were actually split. Each seat's standing instructions ran 78.30% to 89.93% of the payload, mean 83.12%, so the un-splittable part dominates exactly as the futility argument requires: splitting cannot help when the un-splittable part already exceeds the limit, because those standing instructions are re-sent with every chunk. The interval is cross-verified 3 ways — statsmodels beta, `scipy.stats.beta` from first principles, and mpmath solving $p^n = 0.025$ at 40 digits — agreeing to 1e-9. Producer: `scripts/the_futility_guard_held_in_a_live_run_2026-10-15.py`.
+
+This claim is bounded deliberately. It establishes that the guard fires and declines to split on the payloads this target and these 6 seats produce. It establishes nothing about a paid seat, which the confound was separately measured never to reach.
+
+## The round-budget advisory fired, and said there was nothing to project
+
+The advisory built on 2026-10-11 and wired into the round log for the first time in this run emitted `ROUND BUDGET ADVISORY: no projection is available for this run (absent); a run whose novelty does not decay has no optimal round count, and that is a result rather than a gap.` The reason is visible in the per-round series 14, 2, 5, 1: the critical novelty series reached zero too quickly for an intensity decay to be fitted, giving `TOO_EARLY` at round 3 with 1 round of non-zero count against the 3 the fit requires. The module refuses to answer rather than clamping, which is the designed behaviour — `GAMMA_FLOOR = 1e-6` reports a diverging $n^*$ instead of hiding it.
+
+## 2 defects found during the run, neither fixed
+
+**B7 — a simulated run restamps the REAL paid seats' fingerprints, and the credit for finding it is not this session's.** All 11 files in `bench/fingerprints/` were written at 08:17:00, the convergence moment, and 5 of 5 real paid seats were restamped, Wilson [56.5518%, 100.0000%], so `bench/fingerprints/CC2.json` now reads `"experiment": "free_run1_directive_whole_20261015T061123Z"` and the true last real observation, `study_run1b_2026-10-03`, is overwritten in the working tree. CC2, ChatGPT, Codex, DeepSeek and Gemini were never dispatched in a simulated run. The cause is a read/write asymmetry at `bench/reference_runner_v3.py:11324-11350`: `_load_fingerprints()` globs every `*.json` into one dict keyed by `model_id` and discards the provenance fields, and `_save_fingerprints(observed, experiment_name)` then rewrites every key of that dict with this run's name. It is RECORD-ONLY today, because 0 of 5 real seats had any observed value altered, Clopper-Pearson [0.0000%, 52.1824%], and 0 of 5 SIM/REAL pairs carry identical decision fields — CC2-SIM reports a `compression_threshold` of 80,517 against CC2's 465,206. The mandatory `-SIM` suffix is therefore the only thing separating the 2 records, which makes a naming rule the sole guard on the real seats' accumulated counters: `total_findings` 400 for CC2, `rounds_participated` 274, `avg_findings_per_round`, `quality_at_capacity` and `D_decay`, of which `compression_threshold`, `decomposition_recommended` and `max_successful_prompt_chars` feed live routing and decomposition decisions. The `fable` seat found this on 2026-10-05 and named that read/write asymmetry exactly, under a heading reading *THE FINGERPRINT STORE ERASES RUN PROVENANCE ON EVERY SAVE*; its producer exists only inside a sandbox harvest, is absent from `scripts/`, and is named nowhere in the master task list, whose 4 `fingerprint` hits are all other matters. Mitigation applied: the 5 real-seat files were left unstaged, so the committed record keeps their true last real observation. Producer: `scripts/the_fingerprint_store_restamps_seats_it_never_measured_2026-10-15.py`.
+
+**B8 — the coherence-budget recalibration is inert on 3 independent layers, each sufficient alone.** `update_coherence_budgets_from_experiments` is the mechanism B6 item 1 names for re-deriving the coherence budgets from these 2 runs, and those budgets gate the coherence pruner's lean-versus-full ablation arm, the gate on every proposed directive cut since 2026-07-18. First, nothing calls it: an AST walk over `bench/` and `scripts/`, excluding `bench/logs/`, finds 0 `ast.Call` nodes naming it and 0 `ImportFrom` nodes importing it, the 6 textual mentions being prose in 4 test docstrings and 2 scripts. Second, it persists nothing, established by execution: `MODEL_COHERENCE_BUDGETS` is a dict literal at `bench/cdsfl_registry/composer.py:69`, and mutating it to 0.123456 in one process and re-reading it in a fresh one returns 0.02, the literal. Third, the runs do not emit its input shape: of free run 1's 61 JSON entries, 0 carry both `model` and `chars`, Wilson [0.0000%, 5.9244%], Clopper-Pearson [0.0000%, 5.8681%] with the upper cross-checked against $1 - 0.025^{1/61}$ to 1e-9, so on that directory it returns values byte-identical to the source literal because its closing loop is `thresholds.setdefault(model, fallback)` over `MODEL_COHERENCE_BUDGETS` itself. The ALGORITHM is sound, which is the distinction that decides the repair: fed a fixture in the documented shape it moves `opus_4_6` from 0.02 to 0.0571, so the gap is a schema mismatch between what the runner writes and what the calibrator reads, and the fix belongs at the log-emission end or in an adapter rather than in the curve fitting. Not fixed, because changing the composer between run 1 and run 2 would destroy the matched pair the 2 runs exist to form. Producer: `scripts/the_coherence_recalibration_is_inert_three_ways_2026-10-15.py`.
+
+## The severity arm is answered by the archive, not by the runs
+
+Run 1's severity shadow reports 0 of 22 findings crossing downward, with `V_true` 15, `V_none` 7, `V_false` 0, and `critical_asserted` equal to `critical_spec` at 12. That is the EXPECTED outcome, not a refutation: at the archive's measured reach of 7 in 2,994 the probability of observing 0 crossings in 22 findings is 0.9498, the exact binomial test gives p = 1.0000, and the intervals overlap — archive Clopper-Pearson [0.0941%, 0.4811%] against run 1's [0.0000%, 15.4373%]. 688 findings are required before a zero is informative, a figure cross-verified by a scipy loop, the SymPy closed form $\lceil \ln(1/5)/\ln(1-7/2994) \rceil$ and mpmath at 40 digits, so the 2-run contrast is under-powered by a factor of 31.27. The arm's EFFECT question is therefore already answered, at adequate power, by the archive replay: promoting the section 7.7 severity changes 7 A4 releases, small because the release test's other half — a proven calculation — holds for only 295 of 2,994 findings, 9.8530%, Wilson [8.8364%, 10.9726%]. What run 2 measures is whether the switch, turned on live, BREAKS anything. Reporting its 22 findings as the effect measurement would substitute an under-powered instrument for an adequate one that has already run.
+
+## The elicitation arm cannot be read from a clean run, and that is a tension in the programme's design
+
+`in_round_clearance` asks, in its second half, whether the UNRESOLVED section elicits the id-addressed `FALSIFIER: Cxxxx` form at all, against an archived baseline of 0 of 3473 round replies, Wilson [0.0000%, 0.1105%]. Measured on run 1 with the predicate lifted from the runner's own `record_in_round_falsifier_reattachments` rather than invented: 0 of 29 seat replies carried the form, Wilson [0.0000%, 11.6970%], Fisher exact p = 1.0000 against the archive. That zero carries no verdict. The form can only be supplied if an UNCONFIRMED critical was rendered under UNRESOLVED for a seat to address, and run 1's maximum unconfirmed-critical count was 0. The in-round re-attachment parser had nothing to fire on. Since the programme's success criterion is 3 consecutive CLEAN convergences, and a clean convergence leaves 0 unresolved criticals, the better the runs go the less readable this arm becomes. 3 options are recorded for the founder: accept the arm as unmeasurable on clean runs and read it only from runs that stall; measure it on a deliberately seeded run carrying a known unconfirmable critical; or replay the archive's 175 attributed blockers through the repaired `build_summary` and measure elicitation against the corrected prompt rather than against a live run. Producer: `scripts/the_unresolved_section_elicitation_2026-10-15.py`.
+
+## 1 hypothesis formed and withdrawn during the run
+
+At 08:14 the 3 BUGZILLA close-the-loop non-closures of C0018, C0019 and C0020 prompted the hypothesis that the verifier points ruff, mypy and bandit at the whole `.md` file and therefore cannot reach the fenced listings that task A19 taught `S_k` to score — which would have made those non-closures a gap in the very capability this run commissions. The hypothesis is WITHDRAWN. The prose path is a documented design decision with 3 rejected alternatives recorded beside it at `bench/bugzilla_loop.py:440-465`, each measured on 2026-08-01, including one in which promoting a clean parse to PASS closed a finding on a fix injecting `subprocess.call(..., shell=True)`. Established by CALLING `run_verification` rather than reading it: an untouched prose target returns `NO_APPLICABLE_CHECKS` with `checks_run` empty and the veto `ast.parse of 2 fenced Python listing(s)` recorded in `vetoes_run`, while a target whose first listing is mangled returns FAIL. The extractor does reach the listings, writing 589 characters that parse. Run 1 then closed C0018, C0019 and C0022 in its post-convergence settle, which refutes the hypothesis a second time and independently. This is the 7th withdrawn claim of this arc and it has the same shape as the other 6: a universal asserted after reading one part. The remaining bounded truth is that on a prose target no finding closes by STATIC verification, so closure rate is not a measurable quantity on that target — a designed property already stated in the code, not a new defect.
+
+## What this run costs
+
+No archived run can now be replayed against the current composer and expected to reproduce, because what every model receives has changed. That price was accepted in terms: *"We cannot go back and change time, so the confounds discovered in the last 24 hours can only be noted and added to the record honestly."*
+
+## State
+
+Run 2 — identical configuration plus `--severity-spec` — launched at 08:34:18 BST as `free_run2_severity_spec_20261015T073418Z`, pid 48962, under the same watchdog and the same tail terminal. `guard_reach` runs as a post-run invariance sweep over both runs once run 2 exits; it was deferred rather than run concurrently because each probe clones about 683 MB three times per finding and the machine showed about 57.8 MB of free pages with a run live.
+
+Written under CDSFL note standard v1.7 (26 August 2026).

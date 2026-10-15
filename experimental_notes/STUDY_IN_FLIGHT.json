@@ -765,6 +765,25 @@
       "not_fixed_because": "run in flight; the save path is live run machinery and fixes are SUGGESTED to HIL",
       "mitigation_applied": "restore the 5 real-seat files to HEAD after each run exits; commit only the 6 -SIM files",
       "producer": "scripts/the_fingerprint_store_restamps_seats_it_never_measured_2026-10-15.py"
+    },
+    {
+      "id": "the-confinement-guard-refuses-the-falsifiers-own-review-target",
+      "added": "2026-10-15T08:47:50+01:00",
+      "priority": "HIGH",
+      "task_list_entry": "B9",
+      "observed_on": [
+        "free_run1_directive_whole_20261015T061123Z",
+        "free_run2_severity_spec_20261015T073418Z"
+      ],
+      "refusals_per_run": 18,
+      "all_of_them_the_working_target": "18 of 18, Wilson [82.4121%, 100.0000%]",
+      "before_the_rule": "study_run1b_2026-10-03: 0 of 81, Wilson [0.0000%, 4.5278%] (59 interpreter paths, 22 import probes)",
+      "fisher_exact_p": 3.97695e-20,
+      "chi_square_yates_p": 7.11049e-22,
+      "the_seam": "falsifier_verify._is_evidence refuses any bench/logs path even inside an allowed root (correct, closed 2026-10-12 by e8ee2e18 after both free seats found the hole); reference_runner_v3.py:11688 stages the target at logs_dir/'working' (since ce08914c, 2026-09-01); and STAGED_TARGET_ROOT = ~/CDSFL_review_targets is allowed for exactly this purpose and never referenced by the runner.",
+      "bound": "Did NOT stop run 1 converging and left 0 unresolved criticals. The gate reads UNCONFIRMED criticals, of which run 1 ended with 0, and a refusal is not a disconfirmation. The cost is verification DEPTH, not convergence.",
+      "not_fixed_because": "Run 2 was in flight carrying the identical defect, 18 and 18, so the matched pair is intact; a mid-pair fix would make neither run comparable.",
+      "producer": "scripts/the_guard_refuses_the_runs_own_target_2026-10-15.py"
     }
   ],
   "high_priority_2026_10_15": {
@@ -817,7 +836,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T08:40:32+01:00",
+  "last_updated": "2026-10-15T08:47:50+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
