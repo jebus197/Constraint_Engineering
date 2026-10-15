@@ -146,6 +146,45 @@ check("it does NOT match prose with no fenced code", len(pat.findall("FALSIFIER:
 
 print()
 print("=" * 78)
+print("6. The severity key-property producer — is '0 of 41' a measurement?")
+print("=" * 78)
+import tempfile as _tf
+kp = load("the_severity_key_property_never_fired_2026-10-15.py")
+_T = ("[09:00:00]   hardened-gate telemetry: {{'gamma_crit_settled': 1.0, "
+      "'severity_spec_shadow': {{'V_true': {vt}, 'V_none': {vn}, 'V_false': {vf}, "
+      "'critical_asserted': 12, 'critical_spec': 12, 'crossed_downward': [], "
+      "'key_property_violations': []}}, 'total_findings': {tf}, "
+      "'unresolved_critical': 0, 'contested': 0, 'mode': 'full'}}\n")
+
+def _mk(tmp, body):
+    d = pathlib.Path(tmp) / "fake_run"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "console.log").write_text(body)
+    return d
+
+with _tf.TemporaryDirectory() as _t:
+    c = kp.census(_mk(_t, _T.format(vt=10, vn=5, vf=4, tf=19)))
+    check("a PLANTED V_false=4 is reported", c and c["V_false"], 4,
+          "if a planted V_false is missed, the 0-of-41 claim is vacuous")
+with _tf.TemporaryDirectory() as _t:
+    c = kp.census(_mk(_t, "[09:00:00]   hardened-gate telemetry: "
+                          "{'gamma_crit_settled': 1.0, 'total_findings': 19}\n"))
+    check("telemetry with NO census -> None", c, None,
+          "absence must not be read as a zero census")
+with _tf.TemporaryDirectory() as _t:
+    check("an empty log -> None", kp.census(_mk(_t, "")), None)
+with _tf.TemporaryDirectory() as _t:
+    c = kp.census(_mk(_t, _T.format(vt=10, vn=5, vf=0, tf=19)))
+    s_ = c["V_true"] + c["V_none"] + c["V_false"]
+    check("a census that does NOT sum fails to close", s_ == c["total_findings"], False)
+with _tf.TemporaryDirectory() as _t:
+    c = kp.census(_mk(_t, _T.format(vt=1, vn=1, vf=0, tf=2)
+                          + _T.format(vt=14, vn=5, vf=0, tf=19)))
+    check("the LAST census is used, not an earlier one", c["total_findings"], 19,
+          "else a mid-run figure could be reported as final")
+
+print()
+print("=" * 78)
 print("VERDICT")
 print("=" * 78)
 if FAILURES:
@@ -155,6 +194,6 @@ if FAILURES:
     print("  AT LEAST ONE OF TODAY'S FIGURES RESTS ON A PREDICATE THAT DOES NOT")
     print("  DISCRIMINATE, AND MUST BE WITHDRAWN UNTIL REPAIRED.")
 else:
-    print("  all 4 producers discriminate: every deliberately wrong input changed")
+    print("  all 5 producers discriminate: every deliberately wrong input changed")
     print("  the answer, and every planted true case was found.")
 sys.exit(1 if FAILURES else 0)
