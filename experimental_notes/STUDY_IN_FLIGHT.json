@@ -640,6 +640,13 @@
           },
           "wiring_traced_end_to_end": "run_simulated_experiment.py:335 defines --severity-spec; :765 passes severity_spec_enabled=bool(args.severity_spec) into RunnerConfig; reference_runner_v3.py:1755 declares the field default False; :9778 mirrors it into the module-level _SEVERITY_SPEC['on']; :9838 is the early return that makes effective_severity a no-op when it is off.",
           "a_false_lead_recorded": "A first grep counted 52 'severity_spec_' hits in run 2's log and 1 in run 1's, which looked like strong evidence and was not: all 52 are the RUN NAME, free_run2_severity_spec_20261015T073418Z, which contains the string. The 1 hit in run 1 is the real telemetry key. Counting a substring that the run name happens to carry is the same instrument-defect class as the 6 figures withdrawn this week."
+        },
+        "the_pair_is_not_deterministic_and_that_bounds_it_further": {
+          "at": "2026-10-15T09:16:26+01:00",
+          "observed": "At the same point in the schedule run 1 had produced 14, 2, 5 findings and run 2 has produced 14, 0, 2. Round 0 matches exactly at 14; rounds 1 and 2 do not.",
+          "why_it_is_not_the_severity_spec": "The section 7.7 severity governs RELEASE decisions at the A4 door, not finding GENERATION. A promoted severity cannot cause a seat to report fewer findings in a round. The seats are simulated subagents and are non-deterministic, so round-level finding counts vary between otherwise identical runs.",
+          "the_consequence_for_attribution": "A difference between the 2 runs is therefore NOT automatically attributable to the flag, and with n = 2 the run-to-run variance cannot be estimated from the pair itself. This compounds the 31.27x under-powering already recorded: the contrast can only detect a LARGE effect, and the archive replay has already measured the effect as small (7 releases in 2,994 findings). Run 2's value is therefore confirmed as a MACHINERY test \u2014 does the switch compute, gate and report without fault, and does the run still converge \u2014 and not as an effect measurement.",
+          "what_IS_attributable": "The deciding-layer mode, verified: 'SECTION 7.7 SPECIFICATION (deciding)' in run 2 against 'asserted (specification recorded only)' in run 1. Whether the promoted severity produces a fault, a crash, a key-property violation or a failure to converge is attributable to the flag, because those are properties of the mechanism rather than of the sample."
         }
       },
       "headline": "THE SEVERITY ARM IS ANSWERED BY THE ARCHIVE REPLAY, NOT BY THE RUNS: promoting the section 7.7 severity changes 7 A4 releases across 2,994 archived findings, small because the release test's other half \u2014 a proven calculation \u2014 holds for only 295 of 2,994, 9.8531%, Wilson [8.8364%, 10.9726%]. Run 1's shadow reports 0 of 22 crossing downward, which is the EXPECTED outcome (probability 0.9498) and refutes nothing: 688 findings are needed before a zero is informative, so the 2-run contrast is under-powered by 31.27x. Run 2 therefore tests whether the switch BREAKS anything, not what it CHANGES."
@@ -923,7 +930,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T09:13:33+01:00",
+  "last_updated": "2026-10-15T09:16:26+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
