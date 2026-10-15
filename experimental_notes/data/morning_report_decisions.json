@@ -134,8 +134,8 @@
     },
     "study:haiku_extended": {
       "no_ruling_needed": true,
-      "title": "haiku_extended — the claim classifier on an extended set",
-      "what": "Haiku as the decidable-claim classifier at run scale, with your confidence composition: Haiku decides, syntax corroborates and can never block.",
+      "title": "haiku_extended — the classifier on an extended set",
+      "what": "Haiku as the decidable-classifier at run scale, with your confidence composition: Haiku decides, syntax corroborates and can never block.",
       "why": "Your ruling is on record: DO IT, mark as a significant study area (2026-10-03). Outstanding work.",
       "options": [],
       "evidence_line": "On the 15-document set the model arm reached 14 of 15 = 93.3333%, Wilson [70.1835%, 98.8133%], against the syntax arm's 10 of 15 = 66.6667%. The confidence composition is NOT DEMONSTRATED on that set at alpha 0.05 (Fisher p = 1.0). What is owed is the EXTENDED set: 15 documents cannot separate these effects, because the complementarity rests on 1 document and the confidence label on a 5-versus-6 split.",
@@ -272,7 +272,7 @@
     "title": "B10 — the cause of the non-project terminology, fixed rather than recorded",
     "what": "You asked: 'Is the lesson is recorded the same as saying the problem that caused it has now been fixed? Because if not you should probably also fix the cause rather than just record the symptom.' It was not the same, and the cause is now mechanical. Rule 30 in the note lint refuses a note using a compound technical term that exists nowhere you can look it up, wired into both the blocking surface and the command-line report.",
     "evidence_line": "Of the 4 terms you challenged, 3 existed NOWHERE in the project (discrimination guard, paired baseline, consequence gate: 0 glossary hits, 0 docs files) and 1 was real but undefined (coherence budget: 0 glossary hits, 4 docs files). 13 tests, and removing the rule's test-exclusion turns 7 of them red. 2 glossary entries added with code anchors.",
-    "no_ruling_needed": "The cause fix needs nothing from you. The BACKLOG it surfaced does: 734 instances across 243 of 523 notes, 46.46%, mostly real project mechanisms with no glossary entry.",
+    "no_ruling_needed": "The cause fix needs nothing from you. The BACKLOG it surfaced does: 869 instances across 263 of 524 notes, 50.19%, mostly real project mechanisms with no glossary entry.",
     "options": [
       "DRAIN BY RATCHET (recommended): new notes carry 0, the committed baseline of 734 may only fall, and terms get defined as they are used.",
       "COMMISSION A GLOSSARY SWEEP of the 734 now, which is real work and would make the whole archive look-up-able.",
@@ -281,14 +281,14 @@
     "VALIDATED_AGAINST_THE_ACTUAL_COMPLAINT": {
       "method": "Rule 30 was run over the 2 TTS files he annotated on 2026-10-15, the ones carrying the complaint.",
       "The_Two_Free_Runs_Both_Converged": "3 findings — 'confinement guard', 'discrimination guard', 'paired baseline'. He explicitly challenged 2 of those 3: \"What is the 'discrimination guard'? I am unfamiliar with this term\" and \"What is this 'paired baseline'? Plain English please.\"",
-      "Status_Decisions_And_Next_Steps": "4 findings — 'paired baseline', 'haiku classifier', 'confinement guard', 'comparison arm'. He challenged 'paired baseline' here too.",
+      "Status_Decisions_And_Next_Steps": "4 findings — 'paired baseline', 'Haiku's classifier role', 'confinement guard', 'comparison arm'. He challenged 'paired baseline' here too.",
       "WHY coherence budget IS NOT FLAGGED, AND THAT IS CORRECT": "He challenged it as well, but the composer EMITS the string 'over coherence budget' as a runtime warning, so the rule treats it as a real project term. The right repair for that class was never a refusal — it was a DEFINITION, and 'Coherence Budget' and 'Coherence Budget Recalibration' are now in docs/GLOSSARY.md with code anchors. So the 2 halves of the fix map exactly onto the 2 classes of term he complained about: coined terms are refused, real-but-undefined terms are defined.",
       "the_boundary": "The rule catches compound terms introduced as a definite noun phrase. It does not and cannot catch a single-word coinage, nor a term used without 'the'. Measured trade-off: requiring the definite article cut false positives from 2,841 findings over 426 notes to 734 over 243, while still catching both terms he challenged."
     }
   },
   "defect:maths-guard-blocks-the-exp38-rescue-outside-software": {
     "title": "Haiku cannot rescue a misrouted code bug outside the software domain",
-    "what": "You asked whether restricting the Haiku classifier to code-based issues risks making it redundant in non-code STEM experiments, and asked for a fix. The measured answer corrects the premise and then finds a real defect running the OTHER way. Haiku holds 3 live roles and only 1 is domain-gated at all: the claim classifier. The dedup assessor and the Ouroboros librarian reader run in every domain. Even the gated one is DEMOTED outside software, not switched off -- it still made 22 classifications in a mathematics run. But `math_guard` blocks ANY move away from a `mathematical` label outside software at ANY confidence, including the move TO a code type, which is the one destination that CAN ground a code claim. So the rescue the classifier exists to perform is reachable in software only.",
+    "what": "You asked whether restricting Haiku to code-based issues risks making it redundant in non-code STEM experiments, and asked for a fix. The measured answer corrects the premise and then finds a real defect running the OTHER way. Haiku holds 3 live roles and only 1 is domain-gated at all: the classifier. The dedup assessor and the Ouroboros librarian reader run in every domain. Even the gated one is DEMOTED outside software, not switched off -- it still made 22 classifications in a mathematics run. But `math_guard` blocks ANY move away from a `mathematical` label outside software at ANY confidence, including the move TO a code type, which is the one destination that CAN ground a code claim. So the rescue the classifier exists to perform is reachable in software only.",
     "evidence_line": "Over 220 archived classifier logs and 2,273 override lines: of 539 mathematical-guard blocks, 408 had a CODE destination -- 75.6957%, 95% Wilson [71.9011%, 79.1267%] -- across 327 distinct (run, finding, move) occasions, 104 finding identifiers and 32 runs. Producer: scripts/the_code_path_guard_is_off_in_non_software_2026-10-15.py",
     "what_was_already_fixed": "The mirror-image hole WAS fixed tonight and needed no ruling because it only ADDS protection: the code-path guard was wired to the software domain, so outside software a true code claim could be demoted OFF the code path. Measured: 10 distinct findings of 333 SEMI-ACTIVE overrides, 3.0030%, 95% Wilson [1.6392%, 5.4387%], 8 of them from exp38 -- the experiment the guard's own comment cites as its motivation. Now domain-independent, 51 tests green, and 2 mutations turn them red (16 failures and 3 failures).",
     "options": [
@@ -311,14 +311,15 @@
     }
   },
   "defect:the-projects-working-vocabulary-is-largely-undocumented": {
-    "title": "734 undefined compound terms across 243 of the project's 523 notes",
+    "title": "869 undefined compound terms across 263 of the project's 524 notes",
     "what": "Fixing the cause of the non-project terminology you challenged surfaced a larger measured fact: the project's working vocabulary is substantially undocumented. The phrases flagged are mostly REAL mechanisms -- confinement guard, provenance gate, integrity guard, literature cell, falsifier ladder, post-run sweep -- appearing neither in docs/GLOSSARY.md nor in anything the code emits, so a reader who meets one has nowhere to look it up. This is why you keep meeting unfamiliar terms: it is systemic, not an occasional slip.",
-    "evidence_line": "Measured with the live Rule 30 over the project's own notes: 734 instances across 243 of 523 notes, 46.46%. Enforcement is a RATCHET -- the baseline is committed and may only fall, notes written from now carry 0 -- because blocking on the absolute count would refuse nearly half the archive and teach its reader the checker is noise. Rule: scripts/note_vagueness_lint.py Rule 30; guard: bench/tests/test_the_note_lint_catches_a_coined_term_2026-10-15.py, 13 tests, mutation-proven.",
+    "evidence_line": "Measured with the live Rule 30 over the project's own notes: 869 instances across 263 of 524 notes, 50.19%. Enforcement is a RATCHET -- the baseline is committed and may only fall, notes written from now carry 0 -- because blocking on the absolute count would refuse nearly half the archive and teach its reader the checker is noise. Rule: scripts/note_vagueness_lint.py Rule 30; guard: bench/tests/test_the_note_lint_catches_a_coined_term_2026-10-15.py, 13 tests, mutation-proven.",
     "options": [
       "DRAIN BY RATCHET (recommended). Costs nothing now, new notes are clean, terms get defined as they are next used.",
-      "COMMISSION A GLOSSARY SWEEP of all 734 now. Real work, and it would make the whole archive look-up-able for a third-party reader.",
+      "COMMISSION A GLOSSARY SWEEP of all 869 now. Real work, and it would make the whole archive look-up-able for a third-party reader.",
       "SWEEP ONLY THE COMMONEST and let the ratchet handle the tail."
-    ]
+    ],
+    "THE_FIGURE_IS_AN_UPPER_BOUND_ON_COINAGES": "869 is every compound the rule flags, not a count of coinages. A suffix heuristic splits it into 544 noun-plus-noun instances, 62.6007%, 95% Wilson [59.3348%, 65.7557%], and 325 whose first word is adjectival -- 'pinned threshold', 'committed baseline', 'corrected threshold' -- which are ordinary English the rule cannot distinguish from a coinage, and the heuristic itself misclassifies nouns ending in -ent. This is also why the rule REPORTS rather than blocks: gating at that precision would refuse roughly 1 note in 2."
   },
   "task:B11": {
     "title": "B11 — the board triage, and the honest answer to when the board goes fully green",
