@@ -295,7 +295,20 @@
       "RULE YES on the one-clause narrowing: `math_guard = (regex is MATHEMATICAL and not llm_primary and llm_type not in _code_types)` (recommended). It extends to every domain the behaviour software already has, and the named dominated property is whether a code claim can reach the only cell that can ground it.",
       "RULE NO and keep the maths label absolute outside software. The cost is that 327 measured occasions of a proposed rescue stay refused, and Haiku stays unable to make its most valuable move in exactly the domains you asked about.",
       "RULE a CONFIDENCE TEST instead: allow the move to a code type only above a stated confidence, rather than unconditionally. 0 of the 327 occasions fell below 0.65, so a 0.70 threshold would admit nearly all of them."
-    ]
+    ],
+    "OBSERVED_LIVE_IN_LEG_3_NOT_ONLY_IN_THE_ARCHIVE": {
+      "at": "2026-10-15, during leg 3 of the final shakedown, while it was running",
+      "measured": "5 of 12 mathematical-guard blocks in the run so far had a CODE destination -- 41.6667%, 95% Wilson [19.3260%, 68.0489%], 2 interval routes agreeing. 5 overrides were applied in the same window, so the refused rescues equal the applied overrides in number.",
+      "the_refusals": [
+        "DeepSeek-SIM_F002  mathematical -> code_behavioral  conf=0.78",
+        "Fable-SIM_F101     mathematical -> code_behavioral  conf=0.85",
+        "Gemini-SIM_F008    mathematical -> code_behavioral  conf=0.92",
+        "Codex-SIM_F003     mathematical -> code_structural  conf=0.65",
+        "Gemini-SIM_F009    mathematical -> code_behavioral  conf=0.68"
+      ],
+      "why_this_target_makes_it_matter": "Leg 3's review target is `prose_with_computable_listings.md` -- prose carrying real Python. So code claims are EXPECTED in a `domain=mathematics` run, and the guard refused to route 5 of them to the only cell that can ground a claim against source. This is the scenario the founder named when he asked whether restricting the classifier risks 'rendering it redundant in other STEM focused experiments that have nothing to do with code'.",
+      "status": "OBSERVED, not hypothesised, in the study's own final leg."
+    }
   },
   "defect:the-projects-working-vocabulary-is-largely-undocumented": {
     "title": "734 undefined compound terms across 243 of the project's 523 notes",

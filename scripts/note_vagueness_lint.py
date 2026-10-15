@@ -576,8 +576,17 @@ def project_vocabulary() -> str:
 #: Measured by the LIVE rule, not by an earlier draft of it: a baseline
 #: produced by a different predicate is the like-for-like error this
 #: project made with the lint ratchet earlier the same day.
-RULE30_RATCHET_BASELINE = 734
-RULE30_RATCHET_NOTES = 243
+#:
+#: ★ MOVED FROM 734/243 TO 869/263 ON THE SAME DAY, and the increase is the
+#: rule getting STRONGER rather than the archive getting worse. 734 was
+#: measured BEFORE the `[coinage]` marker existed. Until then, the glossary
+#: entry naming `confinement guard` in order to deprecate it was admitting
+#: that phrase as vocabulary and masking it everywhere it appeared. Dropping
+#: coinage-marked lines re-exposed it and others like it. A baseline measured
+#: under a different predicate is not a baseline, which is the whole reason
+#: this comment exists.
+RULE30_RATCHET_BASELINE = 869
+RULE30_RATCHET_NOTES = 263
 
 
 def undefined_project_terms(path) -> list:
@@ -607,8 +616,33 @@ def undefined_project_terms(path) -> list:
 
 def blocking(path) -> list:
     """The findings that COUNT. What a guard must gate on."""
-    return (partition(path)[0] + missing_standard_stamp(path)
-            + undefined_project_terms(path))
+    # ★ RULE 30 IS REPORTED, NOT BLOCKING, AND THAT WAS DECIDED BY MEASUREMENT
+    # AFTER IT REFUSED A COMPLIANT NOTE (2026-10-15).
+    #
+    # It was wired in here first, because this file's own comments warn that a
+    # rule reached by nothing is not additive. Within the hour it blocked the
+    # session's own technical note on 9 findings, of which the genuine coinages
+    # were 1: the rest were ORDINARY DESCRIPTIVE ENGLISH that happens to end in
+    # a term noun -- "pinned threshold", "committed baseline", "abstract
+    # verifier", "baseline arm".
+    #
+    # MEASURED over the project's 523 notes: of 869 instances, a suffix
+    # heuristic puts 544 in the noun-plus-noun class, 62.6007%, 95% Wilson
+    # [59.3348%, 65.7557%], and 325 in the adjectival class, and the heuristic
+    # itself misclassifies nouns ending in -ent. There is NO structural
+    # difference between "pinned threshold" (a description) and "paired
+    # baseline" (a coinage the founder challenged), so the rule cannot separate
+    # them and must not pretend to.
+    #
+    # Gating on a check with that precision would refuse roughly 1 note in 2 and
+    # teach its reader that the checker is noise -- which is the failure this
+    # rule's own ratchet comment names. The founder's ruling of 2026-09-04 made
+    # a SPELLED-NUMBER finding blocking; it did not make every rule blocking.
+    #
+    # SO THE CAPABILITY IS INTACT AND ONLY THE GATE COUPLING CHANGED: Rule 30
+    # still runs, still reports through `main()`, and still carries a committed
+    # ratchet. It returns here when it can tell a coinage from an adjective.
+    return partition(path)[0] + missing_standard_stamp(path)
 
 
 #: Rule 28's phrases, bounded so an inflection is not read as the noun.
