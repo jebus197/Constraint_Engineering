@@ -449,6 +449,24 @@ TERM_PHRASE = re.compile(r"\bthe\s+([a-z][a-z-]{2,})\s+("
                          + "|".join(_TERM_NOUNS) + r")s?\b")
 
 
+#: ★ THE FOURTH SELF-LEGITIMISING PATH, and the one that only appears once the
+#: rule works. Documenting a coinage in order to deprecate it ADMITS IT AS
+#: VOCABULARY: writing in `docs/GLOSSARY.md` that a mechanism "had been referred
+#: to as the confinement guard, which is not its name" made `confinement guard`
+#: pass the rule. The 3 earlier paths were the rule's own explanatory comment,
+#: the producer scripts, and its own test fixtures.
+#:
+#: So a line may mark itself as naming a coinage rather than using one, with the
+#: marker below, and the vocabulary drops that line. This is the only way the
+#: glossary can tell a reader "this is not what it is called" without thereby
+#: making it what it is called.
+_COINAGE_MARKER = "[coinage]"
+
+
+def _drop_coinage_lines(text: str) -> str:
+    return "\n".join(l for l in text.split("\n") if _COINAGE_MARKER not in l)
+
+
 def _module_string_literals(src: str) -> str:
     """Every string the module can EMIT, with docstrings excluded.
 
@@ -500,7 +518,7 @@ def _project_vocabulary() -> str:
             for f in d.rglob("*"):
                 if f.is_file() and f.suffix in (".md", ".toml"):
                     try:
-                        parts.append(f.read_text(errors="ignore"))
+                        parts.append(_drop_coinage_lines(f.read_text(errors="ignore")))
                     except OSError:
                         pass
     for extra in (repo / "README.md",

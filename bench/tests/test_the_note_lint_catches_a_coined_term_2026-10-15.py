@@ -178,3 +178,39 @@ def test_the_ratchet_baseline_is_recorded():
     """The historical count is a committed number, so it can only fall."""
     assert lint.RULE30_RATCHET_BASELINE == 734
     assert lint.RULE30_RATCHET_NOTES == 243
+
+def test_deprecating_a_coinage_does_not_legitimise_it():
+    """★ THE FOURTH SELF-LEGITIMISING PATH, and it only appears once the rule
+    works. Writing in the glossary that a mechanism "had been called the
+    confinement guard, which is not its name" ADMITTED that phrase as
+    vocabulary, so the rule stopped flagging the very term the entry existed to
+    deprecate. A line carrying the coinage marker is dropped from the
+    vocabulary, which is the only way the glossary can say "this is not what it
+    is called" without making it what it is called.
+    """
+    vocab = lint.project_vocabulary()
+    glossary = (REPO / "docs" / "GLOSSARY.md")
+    if not glossary.is_file():
+        pytest.skip("no glossary in this checkout")
+    raw = glossary.read_text(errors="ignore").lower()
+    assert "confinement guard" in raw, (
+        "the glossary should still TELL a reader the coinage is not the name"
+    )
+    assert lint._COINAGE_MARKER in glossary.read_text(errors="ignore"), (
+        "the glossary names a coinage without marking it, so the vocabulary "
+        "will absorb it"
+    )
+    assert "confinement guard" not in vocab, (
+        "a deprecated coinage was absorbed into the vocabulary; the rule can no "
+        "longer flag the term its own glossary entry deprecates"
+    )
+    assert "audit observer" in vocab, (
+        "the REAL name must be vocabulary, or the rule flags correct usage"
+    )
+
+
+def test_the_coinage_marker_drops_only_the_marked_line():
+    kept = lint._drop_coinage_lines(
+        "real term one\nbogus term [coinage] here\nreal term two")
+    assert "real term one" in kept and "real term two" in kept
+    assert "bogus term" not in kept

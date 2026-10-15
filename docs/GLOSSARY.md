@@ -28,6 +28,34 @@ never a coined one. Renamed throughout the live tree on that date; the archived 
 and `experimental_notes/seat_evidence/` keep the old wording because they are a record of
 what was actually written.
 
+### Audit Observer
+
+The mechanism that confines a dispatched seat's file access
+(`bench/falsifier_verify.py:1438`). It refuses a read outside the seat's own
+sandbox, including anything inside the run's evidence tree, because a falsifier
+that can read run evidence can read earlier verdicts and its verdict would no
+longer be independent.
+
+Added to this glossary on 2026-10-15. In notes it had been called the
+"confinement guard", which is not its name and appears nowhere else in the project.  [coinage] On 2026-10-15 it was found refusing falsifiers permission to read the
+very document they were asked to review, 18 times per run, because the runner had
+been staging its working copy of the target inside that same evidence tree since
+2026-09-01. Both halves were individually correct; the repair moved the working
+copy to a permitted location and mirrors it back into the archive on every write.
+
+### Decomposition Futility
+
+`_decomposition_is_futile()` (`bench/reference_runner_v3.py:439`): returns true
+when splitting a payload could not bring any single turn under the effective
+limit, because the NON-DECOMPOSABLE part already exceeds it. When it holds,
+`should_decompose_v2` declines to split. An explicit `pre_decompose_models`
+override is honoured rather than overridden, because that is a human or an
+immune escalation and a derived argument must not silently countermand an
+instruction.
+
+Measured in the 2 free runs of 2026-10-15: it held 24 of 24 decisions across all
+6 seats with 0 splits.
+
 ### Blackboard
 
 Communication topology where models share state through a central FindingRegistry rather than direct messaging. Models see only the registry summary, not each other's raw output. See also Star topology (runner sense).
