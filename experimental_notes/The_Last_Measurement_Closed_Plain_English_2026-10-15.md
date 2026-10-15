@@ -74,6 +74,6 @@ The nearest thing that can actually be done costs no money and no model time: re
 
 ## What needs a decision from him
 
-The mathematical guard and the move it blocks, with 327 recorded occasions and 5 tonight. The blind-exam question, 68 days old, blocking 6 experiments. The shared capacity number on the 4 paid models, and whether the size limit should move. The 869-instance terminology backlog. Whether to close the programme of study now that every measurement has an answer. And one change to how finding names are recorded, which is the only honest route to a fully green test board.
+The mathematical guard and the move it blocks, with 327 recorded occasions before leg 3 and 337 after it, 5 of them in leg 3 itself. The blind-exam question, 68 days old, blocking 6 experiments. The shared capacity number on the 4 paid models, and whether the size limit should move. The 869-instance terminology backlog. Whether to close the programme of study now that every measurement has an answer. And one change to how finding names are recorded, which is the only honest route to a fully green test board.
 
 Written under CDSFL note standard v1.7 (26 August 2026).
