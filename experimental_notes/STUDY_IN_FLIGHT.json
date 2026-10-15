@@ -558,8 +558,42 @@
       "the_named_loss": "The lean-versus-full comparison the 2026-07-18 pruning review gates every cut on CANNOT BE RUN until this is closed. The mechanism's REACHABILITY is still pinned by bench/tests/test_composer_pruning_ablation_switch_2026-10-13.py with a budget supplied explicitly.",
       "explicitly_not_done": "The budgets were NOT hand-retuned. A hand-set cap with no measurement behind it is precisely what the founder objected to on 2026-10-13 and 2026-10-14.",
       "producer": "scripts/the_spec_is_not_work_2026-10-15.py",
-      "result": null,
-      "headline": null
+      "result": {
+        "status": "CANNOT BE SATISFIED BY THE RUNS \u2014 the mechanism is inert on 3 independent layers",
+        "at": "2026-10-15T08:36:17+01:00",
+        "task_list_entry": "B8",
+        "layer_1_no_caller": {
+          "ast_call_sites": 0,
+          "ast_imports": 0,
+          "textual_mentions": 6
+        },
+        "layer_2_no_persistence": {
+          "defined_as_source_literal_at": "bench/cdsfl_registry/composer.py:69",
+          "value_after_mutation_in_process": 0.123456,
+          "value_in_a_fresh_process": 0.02,
+          "mutation_survived": false,
+          "method": "2 subprocesses, executed; a first text-heuristic version of this check was wrong and is withdrawn"
+        },
+        "layer_3_schema_mismatch": {
+          "entries_with_model_and_chars": "0 of 61, Wilson [0.0000%, 5.9244%], Clopper-Pearson [0.0000%, 5.8681%]",
+          "returned_on_run1": {
+            "opus_4_6": 0.02,
+            "chatgpt_5_4": 0.015,
+            "codex_5_3": 0.012,
+            "gemini_3_1_pro": 0.015,
+            "deepseek_v3": 0.01
+          },
+          "identical_to_source_literal": true,
+          "returned_on_a_correctly_shaped_fixture": {
+            "opus_4_6": 0.0571
+          },
+          "algorithm_is_sound": true
+        },
+        "consequence": "The coherence pruner's lean-versus-full ablation arm, the gate on every proposed directive cut since 2026-07-18, stays un-runnable until the schema gap is closed. Running the 2 free runs does not close it, because no path exists from run data into the budgets that survives the process.",
+        "not_fixed_because": "Changing the composer's budgets between run 1 and run 2 would destroy the matched pair the runs exist to form. Scheduled for after run 2.",
+        "producer": "scripts/the_coherence_recalibration_is_inert_three_ways_2026-10-15.py"
+      },
+      "headline": "THE RECALIBRATION IS INERT ON 3 INDEPENDENT LAYERS, EACH SUFFICIENT ALONE: 0 AST call sites and 0 imports; a mutation that does not survive the process, since the budgets are a source literal at composer.py:69; and 0 of 61 run-1 JSON entries carrying the keys it reads, Wilson [0.0000%, 5.9244%], so on real logs it returns its own defaults byte-identically. The ALGORITHM is sound \u2014 on a correctly shaped fixture it moves opus_4_6 from 0.02 to 0.0571 \u2014 so the gap is a SCHEMA MISMATCH, and the pruner ablation arm stays un-runnable until it is closed."
     }
   ],
   "run_conditions": {
@@ -758,5 +792,5 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T08:29:18+01:00"
+  "last_updated": "2026-10-15T08:36:17+01:00"
 }
