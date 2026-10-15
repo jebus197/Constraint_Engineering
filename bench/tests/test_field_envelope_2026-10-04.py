@@ -360,8 +360,24 @@ class TestTheArchiveIsUnchanged:
         """
         probe = [_finding("Seat_F001", severity=0.42, description="untouched"),
                  _finding("Seat_F002", severity=0.77, description="also untouched")]
+        # ★ RESTRICTED TO THE NON-ADOPTING SUBSET (2026-10-15). This iterated
+        # EVERY archived reply, on the premise -- stated by the test below --
+        # that none carries an envelope. The 2 free runs of 2026-10-15 adopted
+        # envelopes, so that premise is now false and the test was failing on
+        # replies where the overlay is SUPPOSED to change something.
+        #
+        # The property at issue is unchanged and is stated in the docstring
+        # above: "the overlay must be invisible on text carrying no envelope".
+        # That is a property OF THE NON-ADOPTING POPULATION, so the population
+        # is now derived from the archive rather than assumed to be all of it.
+        # The founder's ruling: "Make each suite derive its baseline from the
+        # archive rather than pin a number."
+        non_adopting = [(p_, t_) for p_, t_ in _seat_replies() if BEG not in t_]
+        assert len(non_adopting) >= 300, (
+            f"only {len(non_adopting)} archived replies carry no envelope, so "
+            "this identity test no longer has a population to measure")
         changed = []
-        for path, text in _seat_replies():
+        for path, text in non_adopting:
             out = rc._apply_field_envelopes("Seat", 1, text, list(probe))
             if len(out) != len(probe):
                 changed.append((path, f"{len(probe)} -> {len(out)} findings"))
@@ -405,12 +421,32 @@ class TestTheArchiveIsUnchanged:
             f"{len(changed)} panel reply/findings changed under the overlay:\n"
             + "\n".join(f"  {p}: {w}" for p, w in changed[:10]))
 
-    def test_no_archived_reply_carries_an_envelope(self):
-        """Which is what makes the tests above no-regression tests and not ties."""
-        carrying = [p for p, t in _seat_replies() if BEG in t]
-        assert not carrying, (
-            "an archived reply now carries an envelope, so the identity tests "
-            f"above are no longer measuring the non-adopting case: {carrying[:5]}")
+    def test_the_non_adopting_population_is_still_worth_measuring(self):
+        """Which is what makes the tests above no-regression tests and not ties.
+
+        ★ SUPERSEDES `test_no_archived_reply_carries_an_envelope` (2026-10-15).
+        That test asserted that NO archived reply carries an envelope, and its
+        own failure message named the reason it existed: "the identity tests
+        above are no longer measuring the non-adopting case". Once the 2 free
+        runs of 2026-10-15 adopted envelopes the assertion became false while
+        THE CONCERN IT ENCODED stayed valid -- the identity tests are only
+        meaningful while a non-adopting population exists.
+
+        So the concern is asserted DIRECTLY instead of through a proxy that any
+        successful run falsifies: the non-adopting population must remain large
+        enough for the identity tests above to mean something. Adoption is
+        counted and reported, because a growing adopting population is the
+        envelope working, not a regression.
+        """
+        replies = list(_seat_replies())
+        carrying = [p for p, t in replies if BEG in t]
+        non_adopting = [p for p, t in replies if BEG not in t]
+        print(f"\n    envelope adoption: {len(carrying)} of {len(replies)} "
+              f"archived replies carry an envelope; {len(non_adopting)} do not")
+        assert len(non_adopting) >= 300, (
+            f"the non-adopting population has fallen to {len(non_adopting)} of "
+            f"{len(replies)}; the identity tests above no longer measure a "
+            "meaningful corpus and need re-basing on a frozen archive slice")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

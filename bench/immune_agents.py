@@ -5076,9 +5076,34 @@ def typed_llm_classifier(
             # (-> HIL); demoting a true code claim off it causes false
             # convergence. (llm_primary is True iff the domain is software.)
             _code_types = (ClaimType.CODE_BEHAVIORAL, ClaimType.CODE_STRUCTURAL)
+            # ★ DOMAIN-INDEPENDENT SINCE 2026-10-15, AND THE RATIONALE ABOVE
+            # IS WHY. Every argument in the comment above — that only the CT
+            # cell can ground a claim against the target source, that the
+            # abstract verifiers return "cannot ground claim in source AST" ->
+            # UNCERTAIN, and that demoting a true code claim off the CT path
+            # causes false convergence — is an argument about CLAIM TYPE. None
+            # of it is an argument about the domain label. The guard was
+            # nevertheless wired to `llm_primary`, so outside the software
+            # domain a code claim had no protection at all.
+            #
+            # MEASURED, not inferred, over 220 archived classifier logs and
+            # 2,273 override lines: 10 DISTINCT findings of 333 distinct
+            # SEMI-ACTIVE overrides were code -> non-code demotions let through
+            # unguarded, 3.0030%, 95% Wilson [1.6392%, 5.4387%]. 8 of the 10
+            # come from exp38 — the live experiment this guard's own comment
+            # cites as its motivation — 1 from a simulated study run and 1 from
+            # a commissioning fixture. The identical move was refused 128 times
+            # in the software domain, where the guard did fire.
+            #
+            # THE ASYMMETRY IS PRESERVED, because it is the point: this blocks
+            # only code -> non-code. The Exp 38 RESCUE direction, non-code ->
+            # code, is untouched and still overrides freely. `math_guard` is
+            # also untouched: it requires regex == MATHEMATICAL and this
+            # requires regex in the code types, so the 2 guards are disjoint by
+            # construction and cannot contend.
+            # Producer: scripts/the_code_path_guard_is_off_in_non_software_2026-10-15.py
             code_path_protected = (
-                llm_primary
-                and regex_tf.claim_type in _code_types
+                regex_tf.claim_type in _code_types
                 and llm_type not in _code_types
                 # UNCATEGORISED never overrides anyway (handled separately), so
                 # the guard only fires for a genuine demotion to a specific
@@ -5101,6 +5126,12 @@ def typed_llm_classifier(
                     disagrees
                     and llm_confidence >= override_threshold
                     and not math_guard
+                    # The code-path guard now binds here too (2026-10-15).
+                    # Without this clause the guard would compute and log but
+                    # decide nothing outside software — an addition nothing
+                    # reaches, which is the failure mode this project keeps
+                    # finding.
+                    and not code_path_protected
                     and llm_type != ClaimType.UNCATEGORISED
                 )
 

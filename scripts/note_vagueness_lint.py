@@ -29,6 +29,7 @@ worked around, and the point is to be read before delivery, not obeyed after.
 from __future__ import annotations
 
 import pathlib
+import ast
 import re
 import sys
 
@@ -385,9 +386,211 @@ def missing_standard_stamp(path) -> list:
     return []
 
 
+# ---------------------------------------------------------------------------
+# RULE 30 (2026-10-15) — A TERM THAT EXISTS NOWHERE IN THE PROJECT.
+#
+# THE FOUNDER'S COMPLAINT, TWICE IN ONE DAY. "You are using non-project terms
+# again. You said you had fixed it so you would stop." And, on the preceding
+# note: "What is the 'discrimination guard'? I am unfamiliar with this term. Is
+# it official project terminology?"
+#
+# AND HIS TEST OF WHETHER A FIX IS A FIX: "Is 'the lesson is recorded' the same
+# as saying the problem that caused it has now been fixed? Because if not you
+# should probably also fix the cause rather than just record the symptom."
+#
+# THE CAUSE, MEASURED. 4 terms used to him in 2 notes on 2026-10-15, checked
+# against the glossary and the project's documentation:
+#
+#   coherence budget      0 glossary hits,  4 docs files  -> REAL but UNDEFINED
+#   discrimination guard  0 glossary hits,  0 docs files  -> MINTED HERE
+#   paired baseline       0 glossary hits,  0 docs files  -> MINTED HERE
+#   consequence gate      0 glossary hits,  0 docs files  -> MINTED HERE
+#
+# So the cause has 2 halves and this rule treats both. 3 of the 4 terms exist
+# NOWHERE in the project: they were invented in a note and then used to him as
+# though they were the project's vocabulary. The 4th is a genuine term the
+# composer emits at run time that was never written into the glossary, so a
+# reader who meets it has nowhere to look it up.
+#
+# ★ THE VOCABULARY DELIBERATELY EXCLUDES `experimental_notes/`. A term invented
+# in a note yesterday must not legitimise itself today, which is the same trap
+# as a test asserting on a module's own source text: each description is
+# individually consistent and the pair can still be wrong. The vocabulary is
+# therefore the glossary, the documentation, the project and global directive
+# files, and the SOURCE CODE -- because a term the code emits is a real term
+# whatever the glossary omits.
+_TERM_NOUNS = (
+    "guard", "gate", "budget", "baseline", "barrier", "cell", "ladder",
+    "sweep", "probe", "arm", "band", "tagger", "envelope", "ratchet",
+    "tripwire", "harness", "seam", "rung", "stamp", "gateway", "filter",
+    "threshold", "composer", "classifier", "verifier", "falsifier",
+)
+
+#: A first word that makes the phrase ordinary English rather than a term.
+_TERM_STOP_FIRST = frozenset("""
+the this that these those each every same other another next last first second
+third final whole single real only new old its his her their our your my a an
+any no none one two three more most such which what some both either neither
+own very much many few several all most least best worst main key core
+and or but not now also then still already again even just very only
+existing current done test sole internal external above below here there
+""".split())
+
+#: ★ THE DEFINITE ARTICLE IS THE PREDICATE, AND IT WAS FITTED RATHER THAN
+#: CHOSEN. A bare "<word> <noun>" test gave 2,841 findings across 426 of 523
+#: notes -- unusable, and most of it grammatical accident: "and gate", "now
+#: gate", "test baseline". A COINED term is introduced as a DEFINITE noun
+#: phrase, which is exactly how the founder met all 4 of them: "What is the
+#: 'discrimination guard'?" So the pattern requires "the". Measured on the same
+#: 523 notes: 745 findings across 247, and it still catches both terms he
+#: challenged while correctly passing `coherence budget` and `skin barrier`,
+#: which are real.
+TERM_PHRASE = re.compile(r"\bthe\s+([a-z][a-z-]{2,})\s+("
+                         + "|".join(_TERM_NOUNS) + r")s?\b")
+
+
+def _module_string_literals(src: str) -> str:
+    """Every string the module can EMIT, with docstrings excluded.
+
+    ★ WHY LITERALS AND NOT THE WHOLE FILE. A first version read every .py file
+    whole and the rule came out VACUOUS: all 4 terms it was built to catch were
+    "in vocabulary", because this rule's own explanatory comment names them, and
+    so do the producer scripts written the same hour. A module's comments are
+    CC1's narration, and admitting narration as vocabulary is the same defect as
+    a test asserting on its own module's source text -- the description and the
+    thing described agree with each other and can both be wrong.
+
+    So the vocabulary is what the FOUNDER CAN LOOK UP (the glossary, the
+    documentation, the directive files) plus what the PROGRAM ACTUALLY PRINTS
+    (string literals in `bench/`). Docstrings are narration and are dropped.
+    """
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return ""
+    doc_ids = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef,
+                             ast.ClassDef)):
+            body = getattr(node, "body", None) or []
+            if (body and isinstance(body[0], ast.Expr)
+                    and isinstance(body[0].value, ast.Constant)
+                    and isinstance(body[0].value.value, str)):
+                doc_ids.add(id(body[0].value))
+    out = []
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Constant) and isinstance(node.value, str)
+                and id(node) not in doc_ids):
+            out.append(node.value)
+    return "\n".join(out)
+
+
+def _project_vocabulary() -> str:
+    """Every place a LEGITIMATE project term can be defined or emitted.
+
+    Notes are excluded on purpose, and so is this file: see the rule comment.
+    """
+    repo = pathlib.Path(__file__).resolve().parents[1]
+    me = pathlib.Path(__file__).resolve()
+    parts: list[str] = []
+    # 1. What the founder can look up.
+    for rel in ("docs", ".claude"):
+        d = repo / rel
+        if d.is_dir():
+            for f in d.rglob("*"):
+                if f.is_file() and f.suffix in (".md", ".toml"):
+                    try:
+                        parts.append(f.read_text(errors="ignore"))
+                    except OSError:
+                        pass
+    for extra in (repo / "README.md",
+                  pathlib.Path.home() / ".claude" / "CLAUDE.md"):
+        if extra.is_file():
+            try:
+                parts.append(extra.read_text(errors="ignore"))
+            except OSError:
+                pass
+    # 2. What the program prints. `bench/` only -- `scripts/` holds producers
+    #    whose prose is CC1's own narration, which is what half this defect was.
+    d = repo / "bench"
+    if d.is_dir():
+        for f in d.rglob("*.py"):
+            sp = str(f)
+            # ★ TESTS ARE EXCLUDED, AND THIS RULE HAD TO BE DEFENDED AGAINST
+            # THREE SUCCESSIVE SELF-LEGITIMISING PATHS. First its own
+            # explanatory comment named all 4 coined terms, so reading whole .py
+            # files made it vacuous. Then the producer scripts written the same
+            # hour did. Then its own TEST FILE did, through the string fixtures
+            # that feed it the coined phrases -- so the rule reported 0 findings
+            # on a note the test had just handed it a coinage in.
+            #
+            # The principle that settles all 3: vocabulary is what the FOUNDER
+            # CAN LOOK UP, or what the PROGRAM EMITS DURING A RUN. A test's
+            # fixtures are neither.
+            if ("/logs/" in sp or "harvest" in sp.lower()
+                    or "/tests/" in sp or f.name.startswith("test_")
+                    or f.resolve() == me):
+                continue
+            try:
+                parts.append(_module_string_literals(f.read_text(errors="ignore")))
+            except OSError:
+                pass
+    return "\n".join(parts).lower()
+
+
+_VOCAB_CACHE: list = []
+
+
+def project_vocabulary() -> str:
+    if not _VOCAB_CACHE:
+        _VOCAB_CACHE.append(_project_vocabulary())
+    return _VOCAB_CACHE[0]
+
+
+#: ★ A RATCHET, NOT A RETROSPECTIVE BLOCK. 745 instances already exist across
+#: 247 notes, so blocking on the absolute count would refuse 47.23% of the
+#: project's own archive and teach its reader that the checker is noise. The
+#: enforcement that matters is on notes written FROM NOW: a note delivered to
+#: the founder carries 0. Historical notes are reported and the baseline below
+#: may only fall. Terms this rule surfaced that are REAL project mechanisms
+#: belong in `docs/GLOSSARY.md` -- defining the vocabulary is the additive fix,
+#: banning it is not.
+#: Measured by the LIVE rule, not by an earlier draft of it: a baseline
+#: produced by a different predicate is the like-for-like error this
+#: project made with the lint ratchet earlier the same day.
+RULE30_RATCHET_BASELINE = 734
+RULE30_RATCHET_NOTES = 243
+
+
+def undefined_project_terms(path) -> list:
+    """Findings for compound technical terms absent from the whole project."""
+    try:
+        text = pathlib.Path(path).read_text(errors="ignore")
+    except OSError:
+        return []
+    vocab = project_vocabulary()
+    out, seen = [], set()
+    for para_no, para in enumerate(paragraphs(text), start=1):
+        clean = INLINE_CODE.sub(" ", _strip_quoted(para))
+        for m in TERM_PHRASE.finditer(clean.lower()):
+            first, noun = m.group(1), m.group(2)
+            if first in _TERM_STOP_FIRST:
+                continue
+            phrase = f"{first} {noun}"
+            if phrase in seen:
+                continue
+            if phrase in vocab or f"{first}_{noun}" in vocab:
+                continue
+            seen.add(phrase)
+            out.append((para_no, "undefined-project-term", phrase,
+                        para.strip().replace("\n", " ")))
+    return out
+
+
 def blocking(path) -> list:
     """The findings that COUNT. What a guard must gate on."""
-    return partition(path)[0] + missing_standard_stamp(path)
+    return (partition(path)[0] + missing_standard_stamp(path)
+            + undefined_project_terms(path))
 
 
 #: Rule 28's phrases, bounded so an inflection is not read as the noun.
@@ -615,7 +818,11 @@ def main() -> int:
         # `blocking()` alone and reported 0 findings on files that plainly lacked a stamp,
         # because `main()` calls `partition()` directly -- an UNWIRED ADDITION, which is the
         # exact defect the additive standard names and the one this whole session measured.
-        counted = counted + missing_standard_stamp(p)
+        # Rule 30 is wired HERE as well as in `blocking()`, for the reason the
+        # comment above gives: `main()` calls `partition()` directly, so a rule
+        # added only to `blocking()` reports 0 findings to a human reader.
+        counted = (counted + missing_standard_stamp(p)
+                   + undefined_project_terms(p))
         total += len(counted)
         print(f"\n  {p.name}: {len(counted)} finding(s)")
         for para_no, kind, token, s in counted:

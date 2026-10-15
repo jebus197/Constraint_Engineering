@@ -180,18 +180,41 @@ def _all_archived_decisions() -> list:
 
 class TestWhatTheMemoryHolds:
 
-    def test_disk_memory_reproduces_from_the_three_run_reports(self):
+    def test_disk_memory_reproduces_from_its_recorded_run_reports(self):
         """Provenance by replay. The file names its sources only as of
         2026-08-12; for everything written before that, this replay IS the
-        provenance record."""
+        provenance record.
+
+        ★ THE RECORDING SET IS DERIVED, NOT PINNED (2026-10-15). This asserted
+        `_experiment_count == 3` and went red the moment immune persistence did
+        its job and 2 more runs landed. The founder's ruling: "Make each suite
+        derive its baseline from the archive rather than pin a number... Then
+        yes, OK do it this way and test it in the next simulated run."
+
+        THE DERIVATION, and it makes the test STRONGER rather than weaker. The
+        memory's own `experiment_ids` ledger names every run recorded since
+        2026-08-12; `_RECORDING_RUNS` names the pre-ledger ones that it cannot.
+        Their union is the full recording set, and its size must equal
+        `_experiment_count` — which is itself a new check, because a ledger and
+        a count that disagree beyond the known pre-ledger set is a corrupted
+        memory. Measured 2026-10-15: the union is 5, the count is 5, and
+        replaying all 5 reproduces the disk memory with a worst per-class
+        difference of 0.0. The old form replayed 3 runs and compared them
+        against a 5-run memory, so it could only ever have failed.
+        """
+        disk = _memory_on_disk()
+        recording_runs = list(_RECORDING_RUNS) + [
+            r for r in disk.experiment_ids if r not in _RECORDING_RUNS]
         replay = ImmuneMemory()
-        for run in _RECORDING_RUNS:
+        for run in recording_runs:
             replay.record_experiment(run, _flaw_counts_from(_report_for(run)))
 
-        disk = _memory_on_disk()
-        assert disk._experiment_count == 3, (
-            f"memory records {disk._experiment_count} experiments; this suite "
-            f"describes the 3-run state written by {_RECORDING_RUNS}")
+        assert len(recording_runs) == disk._experiment_count, (
+            f"memory records {disk._experiment_count} experiments but the "
+            f"derivable recording set has {len(recording_runs)}: "
+            f"{recording_runs}. A ledger and a count that disagree beyond the "
+            f"known pre-ledger runs {_RECORDING_RUNS} means the memory has "
+            f"ingested something it cannot name.")
         assert set(replay._records) == set(disk._records), (
             f"flaw classes differ: replay {sorted(replay._records)} vs disk "
             f"{sorted(disk._records)}")
@@ -396,10 +419,39 @@ class TestCounterfactual:
                 binding[fc] = s_star
         assert list(binding) == [8], (
             f"classes producing a positive S* changed: {binding}")
-        assert binding[8] == pytest.approx(0.0724, abs=5e-4), binding
-        assert mem._records[8].total == pytest.approx(math.exp(-0.1), abs=1e-6), (
-            "class 8 is no longer one decayed observation — the caveat above "
-            "needs re-deriving")
+        # ★ DERIVED, NOT PINNED (2026-10-15). This asserted S* == 0.0724 and
+        # `total == exp(-0.1)`. Both are STATE-DEPENDENT: every further
+        # experiment decays the single class-8 observation one more step, so S*
+        # falls and `total` shrinks. Measured after the 2 free runs of
+        # 2026-10-15 landed: S* = 0.0594 and total = 0.7408182206817177.
+        #
+        # THE 2 CLAIMS THE DOCSTRING ACTUALLY MAKES ARE BOTH DERIVABLE, and the
+        # derived forms are stronger regression detectors than the constants:
+        #
+        #   1. NOTHING FLIPS. The decision-relevant claim is that no archived
+        #      fix scores below the threshold. Derived from the archive: the
+        #      weakest `sk` over 1,160 archived decisions is 0.740. A pinned
+        #      0.0724 could not notice a memory that pushed S* past 0.740; this
+        #      can, and that is the only way the gate could start rejecting.
+        #
+        #   2. IT RESTS ON ONE OBSERVATION. A single observation decayed j times
+        #      has total = exp(-decay_rate * j), so -log(total)/decay_rate is a
+        #      NON-NEGATIVE INTEGER exactly when it is still 1 observation.
+        #      Cross-verified 2026-10-15 by SymPy, mpmath and NumPy agreeing to
+        #      0.000e+00 that j = 3, and internally consistent: j moved 1 -> 3
+        #      as the experiment count moved 3 -> 5.
+        assert binding[8] > 0.0, binding
+        weakest_archived = min(res["sk"] for _r, _c, _f, res
+                               in _all_archived_decisions())
+        assert weakest_archived > binding[8], (
+            f"the class-8 threshold {binding[8]:.6f} has risen above the "
+            f"weakest archived fix score {weakest_archived:.6f}, so feeding "
+            f"the memory would now REJECT a fix the archive accepted")
+        decay_steps = -math.log(mem._records[8].total) / mem.decay_rate
+        assert abs(decay_steps - round(decay_steps)) < 1e-6 and decay_steps >= 0, (
+            f"class 8 is no longer ONE decayed observation: "
+            f"-log(total)/decay_rate = {decay_steps!r} is not a non-negative "
+            f"integer, so the caveat above needs re-deriving")
 
     def test_the_sk_gate_has_never_bound_at_all(self):
         """Context for the whole question: at the uniform prior S* clamps to
@@ -726,9 +778,20 @@ class TestIntegrityGuards:
             ImmuneMemory.load(path)
 
     def test_the_live_memory_file_still_loads(self):
-        """The guards must refuse corruption without refusing reality."""
+        """The guards must refuse corruption without refusing reality.
+
+        ★ A RATCHET, NOT A PIN (2026-10-15). This asserted `== 3` and so
+        "refusing reality" was exactly what it did once 2 more runs landed. The
+        memory is append-only by design — immune persistence accumulates — so
+        the invariant is MONOTONICITY: the count may grow and must never fall.
+        A memory that LOST experiments is the corruption worth catching, and a
+        pinned equality cannot distinguish that from ordinary growth.
+        """
         mem = _memory_on_disk()
-        assert mem._experiment_count == 3
+        assert mem._experiment_count >= len(_RECORDING_RUNS), (
+            f"the memory records {mem._experiment_count} experiments, fewer "
+            f"than the {len(_RECORDING_RUNS)} pre-ledger runs known to have "
+            f"written it: experiments have been LOST")
         assert mem.decay_rate == pytest.approx(0.1)
         assert sorted(mem._records) == [1, 2, 3, 4, 5, 6, 8]
 

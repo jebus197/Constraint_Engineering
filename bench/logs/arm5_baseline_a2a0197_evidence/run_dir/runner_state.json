@@ -1,0 +1,519 @@
+{
+  "runner_version": "v3.2",
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "Fable-SIM",
+        "occasions": [
+          {
+            "model": "Fable-SIM",
+            "round": 0,
+            "alias": "Fable-SIM_F001",
+            "from_canonical": "C0001",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "Fable-SIM_F001"
+        ],
+        "severity": 0.75,
+        "description": "The spec's \u00a71B prescribed replacement for `_extract_section` (lines ~24-37 of `BUILD_BOT_TEST_BENCH_FIX_SPEC.md`) is described as \"logic equivalent to\" a block whose `stop_pattern` requires `(?:\\n|$)` immediately after the stop-label's colon, and whose `re.search` omits `re.IGNORECASE`. The *actual* current implementation at `bench/run_benchmark.py:796-833` already drops that `(?:\\n|$)` requirement (comment: \"EPP M1 fix 1 \u2014 removed `(?:\\n|$)` after colon... Old pattern only stopped when label was followed by empty line or EOF, causing section leakage\") and already adds `re.IGNORECASE` plus Title-Case stop-label variants (comment: \"Gemini R2 fix 6\"). The spec's code block is not equivalent \u2014 it is the pre-fix version of this exact function, reintroducing a previously-identified and already-patched bug class.",
+        "proposed_fix": "<<<< SEARCH bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md\nReplace `_extract_section(...)` with logic equivalent to:\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\n==== REPLACE\n`_extract_section(...)` already exists at `bench/run_benchmark.py:796-833` with the required behavior (case-insensitive label matching, Title-Case stop-label variants, and no same-line-content stop failure \u2014 see function docstring: \"Gemini R2 fix 6\" and \"EPP M1 fix 1\"). Do NOT replace it with a simpler pattern; the existing implementation is the fixed version and literally reimplementing the block below would reintroduce the bug it already fixed:\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "fix_efficacy": {
+          "outcome": "NOT_PROBED_NO_FALSIFIER",
+          "detail": "finding carries a proposed fix but no falsifier, so there is nothing to run the fix against"
+        },
+        "corrected_copy_from_fix": {
+          "used": false,
+          "reason": "the original passage does not occur in the target verbatim, so it could not be located; copy it character for character, without re-indenting or re-wrapping it"
+        },
+        "routing_history": [
+          {
+            "round": 0,
+            "verdict": "ERROR",
+            "resolved": false,
+            "model_used": "CC2-SIM",
+            "rungs_tried": 2,
+            "rungs_available": 6,
+            "duplicate_of": null,
+            "last_falsifier_code": "import re\n\ndoc = open('bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md', encoding='utf-8').read()\n\nm = re.search(\n    r\"Replace `_extract_section\\(\\.\\.\\.\\)` with logic equivalent to:\\n\\n```python\\n(.*?)```\",\n    doc, flags=re.DOTALL,\n)\nassert m, \"could not locate the _extract_section code block in the spec\"\ncode = m.group(1)\n\nm_labels = re.search(r\"```python\\n(SECTION_LABELS = \\([^\\n]*\\))\\n```\", doc)\nassert m_labels\nlabels_code = m_labels.group(1)\n\nns = {\"re\": re}\nexec(compile(labels_code, \"<labels>\", \"exec\"), ns)\nexec(compile(code, \"<spec_extract_section>\", \"exec\"), ns)\nspec_extract_section = ns[\"_ext"
+          }
+        ],
+        "error_routed": true,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted after 2 rung(s) reached a model; no rung returned a falsifier the runner could confirm (target_kind=prose) -> HIL static queue"
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "Gemini-SIM",
+        "occasions": [
+          {
+            "model": "Gemini-SIM",
+            "round": 0,
+            "alias": "Gemini-SIM_F001",
+            "from_canonical": "C0002",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "Gemini-SIM_F001"
+        ],
+        "severity": 0.75,
+        "description": "`BUILD_BOT_TEST_BENCH_FIX_SPEC.md` \u00a71B prescribes `_extract_section` with `stop_pattern = rf\"(?=\\n(?:{stop_labels}):\\s*(?:\\n|$)|\\Z)\"` \u2014 a stop-label match that only fires when the next label's colon is followed immediately by a newline or end-of-string. The currently deployed `_extract_section` in `bench/run_benchmark.py:796-833` deliberately removed that `(?:\\n|$)` requirement, per its own inline comment: \"EPP M1 fix 1: removed (?:\\n|$) after colon \u2014 models often put content on the same line as the label... Old pattern only stopped when label was followed by empty line or EOF, causing section leakage.\" The spec's \u00a71B code block is a reversion to the exact pre-fix behavior it independently also calls \"the known-bad state\" elsewhere (the \"Critical Invariant\" section is about the opposite failure mode \u2014 over-eager stopping \u2014 but \u00a71B's literal code reintroduces the under-eager failure mode: not stopping at all when the next label has inline content).",
+        "proposed_fix": "<<<< SEARCH bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\n==== REPLACE\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        # No trailing (?:\\n|$) requirement: a stop label followed by inline\n        # content on the same line (e.g. \"REVISED_ANSWER: The answer is...\")\n        # must still terminate the current section \u2014 see run_benchmark.py's\n        # \"EPP M1 fix 1\" for the incident this guards against.\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "fix_efficacy": {
+          "outcome": "NOT_PROBED_NO_FALSIFIER",
+          "detail": "finding carries a proposed fix but no falsifier, so there is nothing to run the fix against"
+        },
+        "corrected_copy": "# Test Bench Fix Specification\n\n## Scope\nPatch only:\n- `bench/run_benchmark.py`\n- `bench/evaluate.py`\n- `bench/report.py`\n\nDo not change task JSON files.\n\n## Critical Invariant (Must Keep)\n`run_benchmark.py` must **not** stop `REVISED_ANSWER` parsing at arbitrary uppercase headings like `NOTE:`.  \nIt must stop only at known benchmark section labels or end-of-text.\n\n## Required Patches\n\n### 1) `bench/run_benchmark.py`\n\n#### A. Preserve iterative pass chaining\nExperimental passes should carry forward the prior revised draft and prior issues into the next pass prompt.\n\n#### B. Add explicit section labels and safe extraction\nAdd this constant near prompt-construction helpers:\n\n```python\nSECTION_LABELS = (\"INITIAL_ANSWER\", \"ISSUES_FOUND\", \"REVISED_ANSWER\")\n```\n\nReplace `_extract_section(...)` with logic equivalent to:\n\n```python\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        # No trailing (?:\\n|$) requirement: a stop label followed by inline\n        # content on the same line (e.g. \"REVISED_ANSWER: The answer is...\")\n        # must still terminate the current section \u2014 see run_benchmark.py's\n        # \"EPP M1 fix 1\" for the incident this guards against.\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\n```\n\nBehavioral requirement:\n- `REVISED_ANSWER` may contain lines like `NOTE:` and they must remain in the extracted section unless a known section label starts.\n\n#### C. Include run metadata envelope\nOutput should be object form:\n- top-level `benchmark_meta`\n- top-level `results`\n\n`benchmark_meta` should include at least:\n- `schema_version` (e.g., `cdsfl-bench-v2`)\n- `model`\n- `provider`\n- `num_passes`\n- `task_count`\n- `directives_source`\n- `timestamp_utc`\n- `domains`\n\n---\n\n### 2) `bench/evaluate.py`\n\n#### A. Accept both input shapes\nInput JSON must support:\n1. legacy raw list of task results\n2. object containing `benchmark_meta` + `results`\n\n#### B. Emit report-oriented schema\nOutput should contain:\n- `metadata`\n- `summary`\n- `per_domain`\n- `per_pass`\n- `corroboration_fit`\n- `control_vs_experimental`\n- `false_positive_detail`\n- `fault_details`\n\n#### C. Curve-fit field normalization\nUse `estimated_p` as the canonical key (not `p`) in output.  \nIf fitting is unavailable/fails, keep graceful fallback with note fields (no crash).\n\n---\n\n### 3) `bench/report.py`\n\n#### A. Accept normalized evaluation schema\nRequire and consume the `summary`-based structure from `evaluate.py`.\n\n#### B. Support legacy fit naming\nIf `corroboration_fit` uses legacy key `p`, map it to `estimated_p` before reporting.\n\n#### C. Tolerate partial fit data\nIf `estimated_p` or `r_squared` is missing, print `unavailable` rather than failing.\n\n## Verification Steps\n\nRun:\n\n```bash\ncd bench\npython3 run_benchmark.py --dry-run\npython3 evaluate.py --help\npython3 report.py --help\n```\n\nExpected:\n- dry run validates all tasks and prints counts\n- help commands exit successfully\n\n### Parser Regression Test (Required)\nUse a response block where `REVISED_ANSWER` contains `NOTE:`.  \nPass condition: extracted `REVISED_ANSWER` still includes `NOTE:` content and is only cut at the next known section label (or EOF).\n\n## Non-Negotiable Acceptance Criteria\n1. No syntax errors in patched files.\n2. Dry-run benchmark still works.\n3. `REVISED_ANSWER` extraction is not truncated by unknown uppercase headings.\n4. `evaluate.py` output is consumable by `report.py` without schema errors.\n\n",
+        "corrected_copy_anchor": {
+          "original": "def _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None",
+          "corrected": "def _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        # No trailing (?:\\n|$) requirement: a stop label followed by inline\n        # content on the same line (e.g. \"REVISED_ANSWER: The answer is...\")\n        # must still terminate the current section \u2014 see run_benchmark.py's\n        # \"EPP M1 fix 1\" for the incident this guards against.\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None"
+        },
+        "corrected_copy_source": "proposed_fix",
+        "corrected_copy_target_sha": "4dc03b519c9da1b4",
+        "corrected_copy_from_fix": {
+          "used": true,
+          "reason": "corrected passage of 497 chars spliced into bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md (3782 chars)"
+        },
+        "routing_history": [
+          {
+            "round": 0,
+            "verdict": "ERROR",
+            "resolved": false,
+            "model_used": "CC2-SIM",
+            "rungs_tried": 2,
+            "rungs_available": 6,
+            "duplicate_of": null,
+            "last_falsifier_code": "import re\n\ndef extract_extract_section_code(doc_text: str) -> str:\n    m = re.search(r\"```python\\n(def _extract_section.*?)\\n```\", doc_text, flags=re.DOTALL)\n    assert m, \"could not locate _extract_section code block in document\"\n    return m.group(1)\n\ndef falsify(doc_text: str) -> None:\n    code = extract_extract_section_code(doc_text)\n    ns = {\"re\": re}\n    exec(\"SECTION_LABELS = ('INITIAL_ANSWER', 'ISSUES_FOUND', 'REVISED_ANSWER')\\n\" + code, ns)\n    _extract_section = ns[\"_extract_section\"]\n\n    # ISSUES_FOUND has inline content on the same line as its label.\n    text = (\n        \"INITIAL"
+          }
+        ],
+        "error_routed": true,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted after 2 rung(s) reached a model; no rung returned a falsifier the runner could confirm (target_kind=prose) -> HIL static queue"
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "DeepSeek-SIM",
+        "occasions": [
+          {
+            "model": "DeepSeek-SIM",
+            "round": 0,
+            "alias": "DeepSeek-SIM_F001",
+            "from_canonical": "C0003",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "DeepSeek-SIM_F001"
+        ],
+        "severity": 0.5,
+        "description": "`BUILD_BOT_TEST_BENCH_FIX_SPEC.md` lines 29\u201345 tells a build bot to *replace* `run_benchmark.py`'s `_extract_section` with a literal code block. But `bench/run_benchmark.py:796-833` already contains a more correct implementation than the one the spec prescribes, and the two differ in exactly the ways needed to reproduce two bugs the current code's own comments say were already fixed: \"Gemini R2 fix 6\" (case-insensitive label matching, incl. Title Case variants) and \"EPP M1 fix 1\" (removing a requirement that the next label be followed by `\\n`/EOF, because models routinely put content on the same line as a label). The spec's block drops `re.IGNORECASE`/title-case matching and reinstates the `(?:\\n|$)` requirement EPP M1 fix 1 explicitly removed.\n\nEvidence (executed, not asserted \u2014 see FALSIFICATION): running both implementations verbatim against two realistic model-response strings shows the spec's version leaks the *next* section's content into the extracted `REVISED_ANSWER`, while the current shipped code does not.",
+        "proposed_fix": "<<<< SEARCH bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md\nReplace `_extract_section(...)` with logic equivalent to:\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\nBehavioral requirement:\n- `REVISED_ANSWER` may contain lines like `NOTE:` and they must remain in the extracted section unless a known section label starts.\n==== REPLACE\nDo not replace `_extract_section(...)`. The existing implementation in\n`run_benchmark.py` already satisfies the Critical Invariant above, and is\n*stricter* than the block previously specified here: it matches stop labels\ncase-insensitively (incl. Title Case variants, e.g. `Revised Answer:`) and\nstops at a known label regardless of what follows the label's colon on the\nsame line. Its own docstring documents these as prior fixes (\"Gemini R2 fix\n6\", \"EPP M1 fix 1\"). A replacement that drops `re.IGNORECASE`/title-case\nmatching, or that requires `(?:\\n|$)` immediately after the stop label's\ncolon, reintroduces section-leakage: content from the *next* section bleeds\ninto the extracted `REVISED_ANSWER` whenever a model writes that next\nlabel in different case or puts content on the same line as the label\n(e.g. `ISSUES_FOUND: already addressed above.`).\n\nBehavioral requirement (unchanged, already satisfied):\n- `REVISED_ANSWER` may contain lines like `NOTE:` and they must remain in the extracted section unless a known section label starts.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "fix_efficacy": {
+          "outcome": "NOT_PROBED_NO_FALSIFIER",
+          "detail": "finding carries a proposed fix but no falsifier, so there is nothing to run the fix against"
+        },
+        "corrected_copy_from_fix": {
+          "used": false,
+          "reason": "the original passage does not occur in the target verbatim, so it could not be located; copy it character for character, without re-indenting or re-wrapping it"
+        }
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "CC2-SIM",
+        "occasions": [
+          {
+            "model": "CC2-SIM",
+            "round": 0,
+            "alias": "CC2-SIM_F001",
+            "from_canonical": "C0004",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "CC2-SIM_F001"
+        ],
+        "severity": 0.9,
+        "description": "`BUILD_BOT_TEST_BENCH_FIX_SPEC.md` \u00a71B instructs the build bot to \"Replace `_extract_section(...)` with logic equivalent to\" a literal code block containing `stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"` and a `re.search(..., flags=re.DOTALL)` call with no `re.IGNORECASE`. The live `bench/run_benchmark.py:796-833` already contains a different, strictly more defensive implementation, whose own inline comments document two named prior fixes that the spec's literal snippet undoes: \"EPP M1 fix 1: removed `(?:\\n|$)` after colon \u2014 models often put content on the same line as the label... Old pattern only stopped when label was followed by empty line or EOF, causing section leakage\" and \"Gemini R2 fix 6: LLMs frequently vary case.\" Evidence (executed, not asserted): differentially running the spec's exact code against the current code on two adversarial-but-realistic inputs:\n1. `ISSUES_FOUND: the draft ignored rounding...` (label content on the same line as the label, the exact scenario the current code's own comment names as common). Spec regex: `_extract_section(text, \"INITIAL_ANSWER\")` returns `'The draft answer is 7.\\nISSUES_FOUND: the draft ignored rounding; also missed edge case x=0'` \u2014 leaks the entire next section into the current one. Current regex correctly returns `'The draft answer is 7.'`.\n2. Mixed-case next label `Revised Answer:` instead of `REVISED_ANSWER:`. Spec regex (no `IGNORECASE`, no title-case stop variants) returns `'minor issue\\nRevised Answer:\\nFinal value is 42.'` for `ISSUES_FOUND` \u2014 again leaks the whole next section. Current regex correctly returns `'minor issue'`.",
+        "proposed_fix": "<<<< SEARCH bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md\nReplace `_extract_section(...)` with logic equivalent to:\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\nBehavioral requirement:\n- `REVISED_ANSWER` may contain lines like `NOTE:` and they must remain in the extracted section unless a known section label starts.\n==== REPLACE\nDo NOT replace `_extract_section`. The function already present at `bench/run_benchmark.py:796-833` satisfies this invariant and additionally handles two cases the snippet above does not: (a) section content placed on the same line as its own label, and (b) case variance in label spelling (e.g. `Revised Answer:` vs `REVISED_ANSWER:`). Applying the snippet above would regress both of these (verified: see finding F001). If `_extract_section` needs further changes, they must be diffed against the current implementation, not against this superseded snippet \u2014 the snippet should be removed from this spec rather than executed.\n\nBehavioral requirement (unchanged):\n- `REVISED_ANSWER` may contain lines like `NOTE:` and they must remain in the extracted section unless a known section label starts.\n- Additionally: the current label-boundary detection must remain case-insensitive and must still recognize a stop label even when that label's own content begins on the same line as the label (not only when followed by a newline).\n>>>>",
+        "falsifier_code": "import re\nSECTION_LABELS = (\"INITIAL_ANSWER\", \"ISSUES_FOUND\", \"REVISED_ANSWER\")\n\ndef extract_spec(text, label):\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\" if stop_labels else r\"\\Z\"\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    m = re.search(pattern, text, flags=re.DOTALL)\n    return (m.group(1).strip() or None) if m else None\n\nt1 = (\"INITIAL_ANSWER:\\nThe draft answer is 7.\\n\"\n      \"ISSUES_FOUND: the draft ignored rounding; also missed edge case x=0\\n\"\n      \"REVISED_ANSWER:\\nThe answer is 42.\\n\")\nleaked_1 = \"ISSUES_FOUND\" in (extract_spec(t1, \"INITIAL_ANSWER\") or \"\")\n\nt2 = \"INITIAL_ANSWER:\\nDraft.\\nISSUES_FOUND:\\nminor issue\\nRevised Answer:\\nFinal value is 42.\\n\"\nleaked_2 = \"Revised Answer\" in (extract_spec(t2, \"ISSUES_FOUND\") or \"\")\n\nassert leaked_1 and leaked_2, \"spec regex did not leak -- finding not reproduced\"\nprint(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "fix_efficacy_attempted": true,
+        "fix_efficacy": {
+          "outcome": "INDETERMINATE_NOT_INTERCEPTED",
+          "detail": "falsifier returned CONFIRMED against a target that only raises, and no absolute path was rewritten; no verdict is available"
+        },
+        "corrected_copy_from_fix": {
+          "used": false,
+          "reason": "the original passage does not occur in the target verbatim, so it could not be located; copy it character for character, without re-indenting or re-wrapping it"
+        },
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "CONFIRMED",
+            "round": 0,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ]
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "Codex-SIM",
+        "occasions": [
+          {
+            "model": "Codex-SIM",
+            "round": 0,
+            "alias": "Codex-SIM_F001",
+            "from_canonical": "C0005",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "Codex-SIM_F001"
+        ],
+        "severity": 0.85,
+        "description": "`BUILD_BOT_TEST_BENCH_FIX_SPEC.md`, section \"1.B\", instructs: *\"Replace `_extract_section(...)` with logic equivalent to: [regex block]\"*. This is false \u2014 the prescribed replacement is not equivalent to the current implementation at `bench/run_benchmark.py:796-833`. The current code is already more capable than what the spec demands, in two independently-triggerable ways:\n\n1. Current code: `stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*|\\Z)\"` \u2014 a stop label only needs a colon, not a trailing newline/EOF, with an inline comment explaining why (`EPP M1 fix 1`: \"models often put content on the same line as the label... causing section leakage\").\n   Spec's proposed code: `stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"` \u2014 requires the stop label's colon to be followed by newline/EOF. This is exactly the bug the current comment says was already fixed.\n2. Current code matches `re.IGNORECASE` plus generates a title-case variant per label (`Gemini R2 fix 6`: \"LLMs frequently vary case\").\n   Spec's proposed code has no `IGNORECASE` flag and no title-case variant generation.\n\nEvidence \u2014 executed directly against the real `SECTION_LABELS` tuple and the spec's verbatim regex (see FALSIFICATION):\n- Input `\"INITIAL_ANSWER:\\nSome initial draft.\\nISSUES_FOUND: Minor wording issue.\\n...\"` \u2192 spec's regex returns `INITIAL_ANSWER` = `'Some initial draft.\\nISSUES_FOUND: Minor wording issue.'` (leaked into the next section) instead of `'Some initial draft.'`.\n- Input `\"Initial Answer:\\n...\\nRevised Answer:\\n...\"` (title case) \u2192 spec's regex returns `None` for both `INITIAL_ANSWER` and `REVISED_ANSWER`.\n\nBoth inputs are realistic model outputs, not adversarial edge cases \u2014 the inline comments confirm both patterns were observed and fixed in prior rounds (`EPP M1`, `Gemini R2`).",
+        "proposed_fix": "<<<< SEARCH bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md\n#### B. Add explicit section labels and safe extraction\nAdd this constant near prompt-construction helpers:\nSECTION_LABELS = (\"INITIAL_ANSWER\", \"ISSUES_FOUND\", \"REVISED_ANSWER\")\nReplace `_extract_section(...)` with logic equivalent to:\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\nBehavioral requirement:\n- `REVISED_ANSWER` may contain lines like `NOTE:` and they must remain in the extracted section unless a known section label starts.\n==== REPLACE\n#### B. Keep the existing hardened extraction; do not replace it with a weaker regex\n\n`bench/run_benchmark.py` already defines:\nSECTION_LABELS = (\"INITIAL_ANSWER\", \"ISSUES_FOUND\", \"REVISED_ANSWER\")\nand an `_extract_section(...)` implementation (see `run_benchmark.py:796-833`) that is\nstricter than what this spec previously prescribed. Do not replace it. The\nexisting implementation must be preserved as-is because it fixes two defects a\nnaive EOF/newline-anchored, case-sensitive regex reintroduces:\n\n1. A stop label's content may appear on the *same line* as that label's own\n   colon (e.g. `ISSUES_FOUND: minor wording issue.`). The stop pattern must\n   not require a newline or end-of-string immediately after the stop label's\n   colon, or the preceding section will swallow the next label's line.\n2. Labels may appear in mixed case or title case (e.g. `Revised Answer:`).\n   Matching must be case-insensitive and accept the title-case variant of\n   each label.\n\nBehavioral requirement:\n- `REVISED_ANSWER` may contain lines like `NOTE:` and they must remain in the extracted section unless a known section label starts.\n- A stop label is recognized regardless of case, and regardless of whether\n  content follows its colon on the same line.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": true,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "fix_efficacy": {
+          "outcome": "NOT_PROBED_NO_FALSIFIER",
+          "detail": "finding carries a proposed fix but no falsifier, so there is nothing to run the fix against"
+        },
+        "corrected_copy_from_fix": {
+          "used": false,
+          "reason": "the original passage does not occur in the target verbatim, so it could not be located; copy it character for character, without re-indenting or re-wrapping it"
+        },
+        "routing_history": [
+          {
+            "round": 0,
+            "verdict": "ERROR",
+            "resolved": false,
+            "model_used": "ChatGPT-SIM",
+            "rungs_tried": 2,
+            "rungs_available": 6,
+            "duplicate_of": null,
+            "last_falsifier_code": "import re\n\ndoc = open('bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md', encoding='utf-8').read()\n\nm = re.search(\n    r\"```python\\ndef _extract_section\\(text: str, label: str\\) -> str \\| None:\\n.*?\\n```\",\n    doc, flags=re.DOTALL,\n)\nassert m, \"could not find spec code block\"\nspec_code = m.group(0)[len(\"```python\\n\"):-len(\"```\")]\n\nSECTION_LABELS = (\"INITIAL_ANSWER\", \"ISSUES_FOUND\", \"REVISED_ANSWER\")\nns = {\"re\": re, \"SECTION_LABELS\": SECTION_LABELS}\nexec(spec_code, ns)\nspec_extract = ns[\"_extract_section\"]\n\n# A stop label with inline content on the same line as the label (no\n# newline immediately after i"
+          }
+        ],
+        "error_routed": true,
+        "irreducible_escalation": true,
+        "hil_escalated": true,
+        "hil_reason": "routing ladder exhausted after 2 rung(s) reached a model; no rung returned a falsifier the runner could confirm (target_kind=prose) -> HIL static queue"
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "ChatGPT-SIM",
+        "occasions": [
+          {
+            "model": "ChatGPT-SIM",
+            "round": 0,
+            "alias": "ChatGPT-SIM_F001",
+            "from_canonical": "C0006",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "ChatGPT-SIM_F001"
+        ],
+        "severity": 0.9,
+        "description": "`BUILD_BOT_TEST_BENCH_FIX_SPEC.md` lines 29\u201345 instruct a build-bot to \"Replace `_extract_section(...)` with logic equivalent to\" a specific regex implementation. That implementation is byte-for-byte a *regression* to a pre-fix version of the function already shipped in `bench/run_benchmark.py:796-833`. The shipped function carries two fixes documented in its own docstring/comments (`\"Gemini R2 fix 6\"` \u2014 case-insensitive matching; `\"EPP M1 fix 1\"` \u2014 removed `(?:\\n|$)` after the stop-label colon because \"models often put content on the same line as the label... causing section leakage\"). The spec's proposed code (a) omits `re.IGNORECASE` entirely, and (b) reintroduces the exact `(?:\\n|$)` suffix that the shipped fix-log says was removed to stop leakage. If a build-bot executes this spec literally against the current repo, it overwrites a working, already-hardened parser with the specific broken version it was hardened against.\n\nEvidence (executed against the real `run_benchmark` module, not asserted):\ninline_content_leakage  INITIAL_ANSWER   shipped='The capital is Paris.'   spec=\"The capital is Paris.\\nISSUES_FOUND: None.\"\nlowercase_labels        REVISED_ANSWER   shipped='Paris.'                  spec=None",
+        "proposed_fix": "<<<< SEARCH bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md\nReplace `_extract_section(...)` with logic equivalent to:\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\n==== REPLACE\n`_extract_section(...)` already exists in `bench/run_benchmark.py` (lines 796-833) in a form that satisfies this requirement \u2014 it is case-insensitive and does not truncate on a stop-label that has inline content after its colon. Do NOT replace it with a simplified variant. If touched at all, it must remain logic-equivalent to:\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = []\n    for item in SECTION_LABELS:\n        if item != label:\n            escaped = re.escape(item)\n            title_variant = re.escape(item.replace(\"_\", \" \").title())\n            stop_labels.append(escaped)\n            if title_variant != escaped:\n                stop_labels.append(title_variant)\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    label_pattern = re.escape(label).replace(r\"\\_\", r\"[_ ]\")\n    pattern = rf\"(?:^|\\n){label_pattern}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL | re.IGNORECASE)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\n>>>>",
+        "falsifier_code": "import re\n\ndef spec_extract_section(text, label):\n    SECTION_LABELS = (\"INITIAL_ANSWER\", \"ISSUES_FOUND\", \"REVISED_ANSWER\")\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    stop_pattern = (rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n                     if stop_labels else r\"\\Z\")\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    m = re.search(pattern, text, flags=re.DOTALL)\n    return (m.group(1).strip() or None) if m else None\n\nnote_text = (\"INITIAL_ANSWER:\\nDraft.\\nISSUES_FOUND:\\nsomething\\n\"\n             \"REVISED_ANSWER:\\nFinal answer here.\\nNOTE: side comment.\\nMore text.\\n\")\nresult = spec_extract_section(note_text, \"REVISED_ANSWER\")\nmandated_test_passes = (result is not None and \"NOTE: side comment\" in result\n                         and \"More text\" in result)\nif mandated_test_passes:\n    print(\"FALSIFIED\")  # the spec's own required test passes on the buggy implementation",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "fix_efficacy_attempted": true,
+        "fix_efficacy": {
+          "outcome": "INDETERMINATE_NOT_INTERCEPTED",
+          "detail": "falsifier returned CONFIRMED against a target that only raises, and no absolute path was rewritten; no verdict is available"
+        },
+        "corrected_copy": "# Test Bench Fix Specification\n\n## Scope\nPatch only:\n- `bench/run_benchmark.py`\n- `bench/evaluate.py`\n- `bench/report.py`\n\nDo not change task JSON files.\n\n## Critical Invariant (Must Keep)\n`run_benchmark.py` must **not** stop `REVISED_ANSWER` parsing at arbitrary uppercase headings like `NOTE:`.  \nIt must stop only at known benchmark section labels or end-of-text.\n\n## Required Patches\n\n### 1) `bench/run_benchmark.py`\n\n#### A. Preserve iterative pass chaining\nExperimental passes should carry forward the prior revised draft and prior issues into the next pass prompt.\n\n#### B. Add explicit section labels and safe extraction\nAdd this constant near prompt-construction helpers:\n\n```python\nSECTION_LABELS = (\"INITIAL_ANSWER\", \"ISSUES_FOUND\", \"REVISED_ANSWER\")\n```\n\n`_extract_section(...)` already exists in `bench/run_benchmark.py` (lines 796-833) in a form that satisfies this requirement \u2014 it is case-insensitive and does not truncate on a stop-label that has inline content after its colon. Do NOT replace it with a simplified variant. If touched at all, it must remain logic-equivalent to the shipped implementation (case-insensitive, no bare `(?:\\n|$)` after the stop-label colon).\n\nBehavioral requirement:\n- `REVISED_ANSWER` may contain lines like `NOTE:` and they must remain in the extracted section unless a known section label starts.\n\n#### C. Include run metadata envelope\nOutput should be object form:\n- top-level `benchmark_meta`\n- top-level `results`\n\n`benchmark_meta` should include at least:\n- `schema_version` (e.g., `cdsfl-bench-v2`)\n- `model`\n- `provider`\n- `num_passes`\n- `task_count`\n- `directives_source`\n- `timestamp_utc`\n- `domains`\n\n---\n\n### 2) `bench/evaluate.py`\n\n#### A. Accept both input shapes\nInput JSON must support:\n1. legacy raw list of task results\n2. object containing `benchmark_meta` + `results`\n\n#### B. Emit report-oriented schema\nOutput should contain:\n- `metadata`\n- `summary`\n- `per_domain`\n- `per_pass`\n- `corroboration_fit`\n- `control_vs_experimental`\n- `false_positive_detail`\n- `fault_details`\n\n#### C. Curve-fit field normalization\nUse `estimated_p` as the canonical key (not `p`) in output.  \nIf fitting is unavailable/fails, keep graceful fallback with note fields (no crash).\n\n---\n\n### 3) `bench/report.py`\n\n#### A. Accept normalized evaluation schema\nRequire and consume the `summary`-based structure from `evaluate.py`.\n\n#### B. Support legacy fit naming\nIf `corroboration_fit` uses legacy key `p`, map it to `estimated_p` before reporting.\n\n#### C. Tolerate partial fit data\nIf `estimated_p` or `r_squared` is missing, print `unavailable` rather than failing.\n\n## Verification Steps\n\nRun:\n\n```bash\ncd bench\npython3 run_benchmark.py --dry-run\npython3 evaluate.py --help\npython3 report.py --help\n```\n\nExpected:\n- dry run validates all tasks and prints counts\n- help commands exit successfully\n\n### Parser Regression Test (Required)\nUse a response block where `REVISED_ANSWER` contains `NOTE:`.  \nPass condition: extracted `REVISED_ANSWER` still includes `NOTE:` content and is only cut at the next known section label (or EOF).\n\n## Non-Negotiable Acceptance Criteria\n1. No syntax errors in patched files.\n2. Dry-run benchmark still works.\n3. `REVISED_ANSWER` extraction is not truncated by unknown uppercase headings.\n4. `evaluate.py` output is consumable by `report.py` without schema errors.\n\n",
+        "corrected_copy_anchor": {
+          "original": "Replace `_extract_section(...)` with logic equivalent to:\n\n```python\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\n```",
+          "corrected": "`_extract_section(...)` already exists in `bench/run_benchmark.py` (lines 796-833) in a form that satisfies this requirement \u2014 it is case-insensitive and does not truncate on a stop-label that has inline content after its colon. Do NOT replace it with a simplified variant. If touched at all, it must remain logic-equivalent to the shipped implementation (case-insensitive, no bare `(?:\\n|$)` after the stop-label colon)."
+        },
+        "corrected_copy_source": "ChatGPT-SIM",
+        "corrected_copy_target_sha": "4dc03b519c9da1b4",
+        "discrimination": {
+          "outcome": "INDETERMINATE_NOT_INTERCEPTED",
+          "detail": "this falsifier behaves identically when the target file is replaced wholesale, so the control cannot reach the target it reads and cannot test whether it discriminates. Nothing is concluded \u2014 this is NOT a finding against the falsifier.",
+          "target": "bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md",
+          "falsifier_sha": "b7daaf6c6b1b0c57",
+          "corrected_sha": "4d8f06bf896e3c5c",
+          "baseline_verdict": "CONFIRMED",
+          "corrected_verdict": "",
+          "intercepted": false,
+          "deterministic": true,
+          "retarget_substitutions": 0,
+          "round": 0,
+          "target_sha": "4dc03b519c9da1b4"
+        },
+        "computed_evidence": [
+          {
+            "kind": "discrimination_control:INDETERMINATE_NOT_INTERCEPTED",
+            "by": "discrimination_control",
+            "detail": "this falsifier behaves identically when the target file is replaced wholesale, so the control cannot reach the target it reads and cannot test whether it discriminates. Nothing is concluded \u2014 this is NOT a finding against the falsifier.",
+            "falsifier_code": "import re\n\ndef spec_extract_section(text, label):\n    SECTION_LABELS = (\"INITIAL_ANSWER\", \"ISSUES_FOUND\", \"REVISED_ANSWER\")\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    stop_pattern = (rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n                     if stop_labels else r\"\\Z\")\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    m = re.search(pattern, text, flags=re.DOTALL)\n    return (m.group(1).strip() or None) if m else None\n\nnote_text = (\"INITIAL_ANSWER:\\nDraft.\\nISSUES_FOUND:\\nsomething\\n\"\n             \"REVISED_ANSWER:\\nFinal answer here.\\nNOTE: side comment.\\nMore text.\\n\")\nresult = spec_extract_section(note_text, \"REVISED_ANSWER\")\nmandated_test_passes = (result is not None and \"NOTE: side comment\" in result\n                         and \"More text\" in result)\nif mandated_test_passes:\n    print(\"FALSIFIED\")  # the spec's own required test passes on the buggy implementation",
+            "proposed_fix": "<<<< SEARCH bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md\nReplace `_extract_section(...)` with logic equivalent to:\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\n==== REPLACE\n`_extract_section(...)` already exists in `bench/run_benchmark.py` (lines 796-833) in a form that satisfies this requirement \u2014 it is case-insensitive and does not truncate on a stop-label that has inline content after its colon. Do NOT replace it with a simplified variant. If touched at all, it must remain logic-equivalent to:\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = []\n    for item in SECTION_LABELS:\n        if item != label:\n            escaped = re.escape(item)\n            title_variant = re.escape(item.replace(\"_\", \" \").title())\n            stop_labels.append(escaped)\n            if title_variant != escaped:\n                stop_labels.append(title_variant)\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    label_pattern = re.escape(label).replace(r\"\\_\", r\"[_ ]\")\n    pattern = rf\"(?:^|\\n){label_pattern}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL | re.IGNORECASE)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\n>>>>"
+          }
+        ],
+        "hil_has_computed_evidence": true,
+        "discrimination_indeterminate": true,
+        "hil_escalated": true,
+        "hil_reason": "discrimination control INDETERMINATE_NOT_INTERCEPTED: this falsifier behaves identically when the target file is replaced wholesale, so the control cannot reach the target it reads and cannot test whether it discriminates. Nothing is concluded \u2014 this is NOT a finding against the falsifier.",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "CONFIRMED",
+            "round": 0,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ]
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "ChatGPT-SIM",
+        "occasions": [
+          {
+            "model": "ChatGPT-SIM",
+            "round": 0,
+            "alias": "ChatGPT-SIM_F002",
+            "from_canonical": "C0007",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "ChatGPT-SIM_F002"
+        ],
+        "severity": 0.55,
+        "description": "The spec's \"Parser Regression Test (Required)\" (and the corresponding \"Non-Negotiable Acceptance Criteria\" item 3) only exercises one scenario: a `REVISED_ANSWER` body containing a `NOTE:` line. Lines 47-48 state the behavioral requirement in those terms only. F001's proposed regex *passes* this exact test (confirmed by direct execution \u2014 `note_inside_revised` case produces identical output under both the spec's regex and the shipped implementation). The mandated verification suite therefore cannot catch the two regressions identified in F001 (inline-content stop-label leakage, loss of case-insensitivity): a build-bot could implement the spec exactly as written, run the required verification steps, see all of them pass, and ship a parser that silently corrupts a non-trivial fraction of real model outputs.",
+        "proposed_fix": "<<<< SEARCH bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md\n### Parser Regression Test (Required)\nUse a response block where `REVISED_ANSWER` contains `NOTE:`.  \nPass condition: extracted `REVISED_ANSWER` still includes `NOTE:` content and is only cut at the next known section label (or EOF).\n==== REPLACE\n### Parser Regression Test (Required)\nUse a response block where `REVISED_ANSWER` contains `NOTE:`.  \nPass condition: extracted `REVISED_ANSWER` still includes `NOTE:` content and is only cut at the next known section label (or EOF).\n\nAdditionally require, as part of the same test, that extraction is correct for:\n- A non-target section label followed by inline content on the same line as its colon (e.g. `ISSUES_FOUND: None.` immediately followed by `REVISED_ANSWER:`) \u2014 the preceding section must NOT absorb that label line or its content.\n- Section labels in lowercase or mixed case (e.g. `revised_answer:`) \u2014 extraction must still succeed.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "fix_efficacy": {
+          "outcome": "NOT_PROBED_NO_FALSIFIER",
+          "detail": "finding carries a proposed fix but no falsifier, so there is nothing to run the fix against"
+        },
+        "corrected_copy": "# Test Bench Fix Specification\n\n## Scope\nPatch only:\n- `bench/run_benchmark.py`\n- `bench/evaluate.py`\n- `bench/report.py`\n\nDo not change task JSON files.\n\n## Critical Invariant (Must Keep)\n`run_benchmark.py` must **not** stop `REVISED_ANSWER` parsing at arbitrary uppercase headings like `NOTE:`.  \nIt must stop only at known benchmark section labels or end-of-text.\n\n## Required Patches\n\n### 1) `bench/run_benchmark.py`\n\n#### A. Preserve iterative pass chaining\nExperimental passes should carry forward the prior revised draft and prior issues into the next pass prompt.\n\n#### B. Add explicit section labels and safe extraction\nAdd this constant near prompt-construction helpers:\n\n```python\nSECTION_LABELS = (\"INITIAL_ANSWER\", \"ISSUES_FOUND\", \"REVISED_ANSWER\")\n```\n\nReplace `_extract_section(...)` with logic equivalent to:\n\n```python\ndef _extract_section(text: str, label: str) -> str | None:\n    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]\n    if stop_labels:\n        stop_pattern = rf\"(?=\\n(?:{'|'.join(stop_labels)}):\\s*(?:\\n|$)|\\Z)\"\n    else:\n        stop_pattern = r\"\\Z\"\n\n    pattern = rf\"(?:^|\\n){re.escape(label)}:\\s*\\n?(.*?){stop_pattern}\"\n    match = re.search(pattern, text, flags=re.DOTALL)\n    if not match:\n        return None\n    value = match.group(1).strip()\n    return value or None\n```\n\nBehavioral requirement:\n- `REVISED_ANSWER` may contain lines like `NOTE:` and they must remain in the extracted section unless a known section label starts.\n\n#### C. Include run metadata envelope\nOutput should be object form:\n- top-level `benchmark_meta`\n- top-level `results`\n\n`benchmark_meta` should include at least:\n- `schema_version` (e.g., `cdsfl-bench-v2`)\n- `model`\n- `provider`\n- `num_passes`\n- `task_count`\n- `directives_source`\n- `timestamp_utc`\n- `domains`\n\n---\n\n### 2) `bench/evaluate.py`\n\n#### A. Accept both input shapes\nInput JSON must support:\n1. legacy raw list of task results\n2. object containing `benchmark_meta` + `results`\n\n#### B. Emit report-oriented schema\nOutput should contain:\n- `metadata`\n- `summary`\n- `per_domain`\n- `per_pass`\n- `corroboration_fit`\n- `control_vs_experimental`\n- `false_positive_detail`\n- `fault_details`\n\n#### C. Curve-fit field normalization\nUse `estimated_p` as the canonical key (not `p`) in output.  \nIf fitting is unavailable/fails, keep graceful fallback with note fields (no crash).\n\n---\n\n### 3) `bench/report.py`\n\n#### A. Accept normalized evaluation schema\nRequire and consume the `summary`-based structure from `evaluate.py`.\n\n#### B. Support legacy fit naming\nIf `corroboration_fit` uses legacy key `p`, map it to `estimated_p` before reporting.\n\n#### C. Tolerate partial fit data\nIf `estimated_p` or `r_squared` is missing, print `unavailable` rather than failing.\n\n## Verification Steps\n\nRun:\n\n```bash\ncd bench\npython3 run_benchmark.py --dry-run\npython3 evaluate.py --help\npython3 report.py --help\n```\n\nExpected:\n- dry run validates all tasks and prints counts\n- help commands exit successfully\n\n### Parser Regression Test (Required)\nUse a response block where `REVISED_ANSWER` contains `NOTE:`.  \nPass condition: extracted `REVISED_ANSWER` still includes `NOTE:` content and is only cut at the next known section label (or EOF).\n\nAdditionally require, as part of the same test, that extraction is correct for:\n- A non-target section label followed by inline content on the same line as its colon (e.g. `ISSUES_FOUND: None.` immediately followed by `REVISED_ANSWER:`) \u2014 the preceding section must NOT absorb that label line or its content.\n- Section labels in lowercase or mixed case (e.g. `revised_answer:`) \u2014 extraction must still succeed.\n\n## Non-Negotiable Acceptance Criteria\n1. No syntax errors in patched files.\n2. Dry-run benchmark still works.\n3. `REVISED_ANSWER` extraction is not truncated by unknown uppercase headings.\n4. `evaluate.py` output is consumable by `report.py` without schema errors.\n\n",
+        "corrected_copy_anchor": {
+          "original": "### Parser Regression Test (Required)\nUse a response block where `REVISED_ANSWER` contains `NOTE:`.  \nPass condition: extracted `REVISED_ANSWER` still includes `NOTE:` content and is only cut at the next known section label (or EOF).",
+          "corrected": "### Parser Regression Test (Required)\nUse a response block where `REVISED_ANSWER` contains `NOTE:`.  \nPass condition: extracted `REVISED_ANSWER` still includes `NOTE:` content and is only cut at the next known section label (or EOF).\n\nAdditionally require, as part of the same test, that extraction is correct for:\n- A non-target section label followed by inline content on the same line as its colon (e.g. `ISSUES_FOUND: None.` immediately followed by `REVISED_ANSWER:`) \u2014 the preceding section must NOT absorb that label line or its content.\n- Section labels in lowercase or mixed case (e.g. `revised_answer:`) \u2014 extraction must still succeed."
+        },
+        "corrected_copy_source": "proposed_fix",
+        "corrected_copy_target_sha": "4dc03b519c9da1b4",
+        "corrected_copy_from_fix": {
+          "used": true,
+          "reason": "corrected passage of 233 chars spliced into bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md (3910 chars)"
+        }
+      }
+    },
+    "next_id": 8,
+    "alias_map": {
+      "Fable-SIM:Fable-SIM_F001": "C0001",
+      "Gemini-SIM:Gemini-SIM_F001": "C0002",
+      "DeepSeek-SIM:DeepSeek-SIM_F001": "C0003",
+      "CC2-SIM:CC2-SIM_F001": "C0004",
+      "Codex-SIM:Codex-SIM_F001": "C0005",
+      "ChatGPT-SIM:ChatGPT-SIM_F001": "C0006",
+      "ChatGPT-SIM:ChatGPT-SIM_F002": "C0007"
+    }
+  },
+  "novelty_counts": [
+    7
+  ],
+  "raw_counts": [
+    7
+  ],
+  "novelty_counts_per_model": {
+    "ChatGPT-SIM": [
+      2
+    ],
+    "Fable-SIM": [
+      1
+    ],
+    "DeepSeek-SIM": [
+      1
+    ],
+    "CC2-SIM": [
+      1
+    ],
+    "Gemini-SIM": [
+      1
+    ],
+    "Codex-SIM": [
+      1
+    ]
+  },
+  "raw_counts_per_model": {
+    "ChatGPT-SIM": [
+      2
+    ],
+    "Fable-SIM": [
+      1
+    ],
+    "DeepSeek-SIM": [
+      1
+    ],
+    "CC2-SIM": [
+      1
+    ],
+    "Gemini-SIM": [
+      1
+    ],
+    "Codex-SIM": [
+      1
+    ]
+  },
+  "rho_history": [
+    1.0
+  ],
+  "gamma_history": [
+    0.0
+  ],
+  "gate_history": [
+    false
+  ],
+  "open_ch_history": [],
+  "stall_history": [
+    {
+      "open_ch": 3,
+      "contested": 0
+    }
+  ],
+  "novel_critical_history": [
+    1
+  ],
+  "cumulative_context_chars": 76871,
+  "consecutive_churn_rounds": 0,
+  "itc_model_state": {
+    "ChatGPT-SIM": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        0.6666666666666666
+      ],
+      "last_adaptive_threshold": 0.5
+    }
+  },
+  "itc_hil_flags": [],
+  "burst_state": null
+}

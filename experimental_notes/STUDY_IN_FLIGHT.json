@@ -24,8 +24,27 @@
       "id": "arm5",
       "what": "Paired baseline: pre-window a2a0197 vs HEAD, same target, same seed. THE effectiveness question.",
       "founder_ruling": "RUN IT (2026-10-03)",
-      "result": null,
-      "headline": "ARM5 IS STILL RUNNABLE AND ITS CORE CONFOUND IS STILL RULED OUT \u2014 the target is byte-identical at a2a0197 and today's HEAD, 3,498 bytes and the same SHA-1 \u2014 BUT ITS HEAD ARM HAS GONE STALE. The design names study_run1b_2026-10-03 as the HEAD arm because that run WAS HEAD when the design was verified; HEAD has since moved 141 commits, 3 touching the composer and 24 the runner, including today's directive repair. So arm5 is now 2 free runs rather than 1 if it is to speak about the current machinery, and his standing RUN IT ruling makes this a question of when and how many rather than whether.",
+      "result": {
+        "measured_at": "2026-10-15T23:23:08+01:00",
+        "ANSWERED_HALF": "SPEC DELIVERY. 0 of 22 HARD blocks reached a live seat at a2a0197, 0.0000%, 95% Wilson [0.0000%, 14.8655%], 2 interval routes agreeing to 8.33e-17. Measured from the prompt a real dispatch actually carried, recovered from the process table during round 0 and decoded (66,852 chars after decoding; 70,956 raw minus 1,368 x 3 for the newline encoding, which reconciles exactly). HEAD carries 22 of 22 from live code.",
+        "WHY THE HEAD ARM NEEDED NO SECOND RUN": "The reconstruction instrument was VALIDATED against the live capture at the one commit where both exist: `_pre_repair_minimal` says 0 of 22 and the live baseline dispatch says 0 of 22. An instrument that agrees with ground truth where ground truth exists may be used where it does not, so the HEAD figure of 22 of 22 from `_render_universal_minimal()` stands without a second 85-minute run on his machine.",
+        "CONTROLS CHECKED, NOT ASSUMED": {
+          "target": "byte-identical, 3,498 bytes, sha256 4dc03b519c9da1b4 both sides",
+          "core_directive_file": "byte-identical, 28,183 bytes, sha256 46cca0a9c81d1f57 both sides, so the HARD-block population is shared by construction",
+          "_block_is_hard": "AST-identical across commits (81a5e75f8b3e)",
+          "_split_packet_directives": "AST-identical across commits (2d1ff3ee736b)",
+          "_render_universal_minimal": "DIFFERS (13b470f91e8d vs 5b7a9ae575be) -- the function under test, and the only one of the 3 that moved",
+          "seats": "6 on both sides, VENDORS identical including Fable-SIM",
+          "domain": "statistics on both sides (hard-coded at baseline, defaulted at HEAD)",
+          "timeout": "pinned to 3600 s on both arms because the defaults differ, 900 at baseline against 3600 now; seat times measured at 202-213 s so it would not have bitten, but a killed seat reads as a composer effect"
+        },
+        "UNANSWERABLE_HALF_AND_WHY": "FINDING COUNTS AND CONVERGENCE CANNOT BE COMPARED BETWEEN THESE 2 COMMITS, for a documented reason with a precedent. The baseline commit predates the citation-quoting repair of 2026-10-03, so a model that writes a path in backticks has the backtick captured into the path and the skin barrier reports 'Cited file not found'. Observed live in the baseline arm: 6 of 7 findings blocked in round 0, every one citing `bench/run_benchmark.py`, a file that EXISTS at both commits. This is the identical defect for which study run 1 was STOPPED on 2026-10-03 -- 16 findings blocked, 12 of them citing this same arm5 target by its bare basename in backticks. A starved finding supply makes any convergence an artefact.",
+        "SECOND_CONFOUND_NAMED": "The stand-in seat model also differs and the gap is large. The baseline shim cannot dispatch anything but `sonnet` -- `SHIM.install(timeout=...)` passes no model -- while HEAD runs a MIXED LADDER of claude-opus-4-8, opus and fable. Legs 1, 2 and 3 all carry that ladder. So seat capability and composer moved together, and opus against sonnet is plausibly the larger effect.",
+        "RUN_STOPPED_AT_A_CLEAN_BOUNDARY": "The baseline arm was stopped after round 0 completed, once the delivered prompt was captured and the remaining output was established as uninterpretable. Continuing would have occupied the machine for 45-70 minutes to produce a figure already determined not to be an arm5 result, and it would have delayed leg 3. All 17 evidence files are preserved in the versioned repo at bench/logs/arm5_baseline_a2a0197_evidence/.",
+        "producer": "scripts/arm5_paired_baseline_2026-10-15.py",
+        "A_JUDGEMENT CC1 MADE ON HIS BEHALF": "Stopping the baseline arm early, and closing arm5 on its spec-delivery half alone, are CC1's calls made while he was asleep under his instruction to work through the night. Both are reversible: the worktree at a2a0197 still exists and a full paired run can be re-commissioned on his word."
+      },
+      "headline": "ARM5'S ANSWERABLE HALF IS ANSWERED AND IT IS DECISIVE: 0 of 22 HARD blocks reached a live seat at a2a0197 against 22 of 22 now, measured from a real dispatch rather than reconstructed. ITS OTHER HALF IS UNANSWERABLE BETWEEN THESE COMMITS and that is a demonstrated reason rather than a failure: the baseline carries the citation-backtick defect that stopped study run 1 on 2026-10-03, so its finding supply is starved, and its stand-in seat model is sonnet against today's opus ladder. The programme's 12th measurement therefore carries a result, with its boundary named.",
       "design_verified": {
         "at": "2026-10-03T11:55:58+01:00",
         "baseline_commit": "a2a0197 (2026-09-06 17:06:24 +0100), the pre-window commit the programme names",
@@ -41,13 +60,14 @@
       "design_recheck_2026_10_15": {
         "at": "2026-10-15T08:58:25+01:00",
         "status": "STILL RUNNABLE, BUT ITS HEAD ARM HAS GONE STALE AND ITS COST HAS DOUBLED",
-        "what_still_holds": "The paired design's own named confound is still ruled out: arm5's target, bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md, is BYTE-IDENTICAL at a2a0197 and at today's HEAD \u2014 3,498 bytes at both, SHA-1 identical. So a difference between the arms is still attributable to the machinery rather than to target drift.",
-        "what_has_gone_stale": "The design, verified 2026-10-03T11:55:58+01:00, names study_run1b_2026-10-03 as the HEAD arm because study_run1b WAS HEAD at that moment. HEAD has since moved 141 commits, 3 of them touching bench/cdsfl_registry/composer.py and 24 touching bench/reference_runner_v3.py \u2014 including today's directive repair, which changes what every model receives. So running only the baseline arm now would compare a2a0197 against the machinery of 2026-10-03, not against the machinery the programme is actually asking about.",
+        "what_still_holds": "The paired design's own named confound is still ruled out: arm5's target, bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md, is BYTE-IDENTICAL at a2a0197 and at today's HEAD — 3,498 bytes at both, SHA-1 identical. So a difference between the arms is still attributable to the machinery rather than to target drift.",
+        "what_has_gone_stale": "The design, verified 2026-10-03T11:55:58+01:00, names study_run1b_2026-10-03 as the HEAD arm because study_run1b WAS HEAD at that moment. HEAD has since moved 141 commits, 3 of them touching bench/cdsfl_registry/composer.py and 24 touching bench/reference_runner_v3.py — including today's directive repair, which changes what every model receives. So running only the baseline arm now would compare a2a0197 against the machinery of 2026-10-03, not against the machinery the programme is actually asking about.",
         "the_consequence_for_cost": "As recorded, arm5 is 1 run (the baseline arm in a worktree at a2a0197) because its HEAD arm already exists. To answer the effectiveness question as of NOW it is 2 runs: the baseline arm at a2a0197 AND a fresh HEAD arm on the same target at today's HEAD. Both are free.",
         "a_second_observation": "arm5's recorded invocation passes --domain statistics, and statistics is one of the names measured on 2026-10-15 to resolve to no directory at all, so both arms would compose NO DOMAIN LAYER. That confound is SHARED by both arms and therefore cancels in the comparison, but it means arm5 measures the machinery without a domain layer and should be reported in those terms.",
-        "recommendation": "Run BOTH arms \u2014 the baseline at a2a0197 and a fresh HEAD arm \u2014 so the comparison speaks about the machinery as it now stands, since today's directive repair is precisely the change arm5 exists to evaluate. NOT launched tonight: the founder authorised 2 free runs, this is a third and a fourth, and the baseline arm needs a worktree checkout of a pre-window commit. His standing ruling on arm5 is RUN IT (2026-10-03), so this is a question of WHEN and HOW MANY, not WHETHER.",
+        "recommendation": "Run BOTH arms — the baseline at a2a0197 and a fresh HEAD arm — so the comparison speaks about the machinery as it now stands, since today's directive repair is precisely the change arm5 exists to evaluate. NOT launched tonight: the founder authorised 2 free runs, this is a third and a fourth, and the baseline arm needs a worktree checkout of a pre-window commit. His standing ruling on arm5 is RUN IT (2026-10-03), so this is a question of WHEN and HOW MANY, not WHETHER.",
         "measured_by": "git show a2a0197:<target> and git show HEAD:<target>, byte counts and SHA-1; git log counts over the window"
-      }
+      },
+      "design_defect_found_2026_10_15": "THE DESIGN SAYS 'same target, same seed' AND NEITHER LAUNCHER HAS A SEED. Measured: 0 occurrences of any seed argument in `bench/tools/run_simulated_experiment.py` at a2a0197 or at HEAD. So the arms could never have been seed-matched, and with n=1 per arm the run-to-run variance measured on 2026-10-15 -- round-0 finding counts of 14 and 14 but per-round series of 14,2,5,1 against 14,0,2,3,0 -- cannot be separated from a machinery effect. This does not affect the spec-delivery result, which is deterministic given the composer."
     },
     {
       "id": "m10",
@@ -125,7 +145,7 @@
           "mathematical -> code_behavioral": 1
         },
         "founders_composition_clause_by_clause": {
-          "haiku_decides": "HOLDS in SEMI-ACTIVE mode \u2014 it reclassified 10 of 22 findings",
+          "haiku_decides": "HOLDS in SEMI-ACTIVE mode — it reclassified 10 of 22 findings",
           "never_blocks": "HOLDS. 0 findings were withheld by the classifier. The 3 log lines reading 'BLOCKED by MATHEMATICAL guard' are Haiku's OVERRIDE being refused and the regex's mathematical label kept, which is the guard blocking Haiku rather than Haiku blocking anything.",
           "syntax_raises_confidence": "NOT MEASURABLE FROM A RUN LOG, and recorded as unmeasured rather than assumed. The log records a single confidence per classification and no pre-syntax value, so no before/after pair exists to compare. Closing this needs the classifier to log both the pre-syntax and post-syntax confidence."
         },
@@ -291,7 +311,7 @@
         "promotion_criterion": "agreement with the real discrimination control on the overlap where both can speak, measured over the 3 runs, before the outcome is allowed to escalate anything"
       },
       "result": {
-        "status": "ANSWERED, and the answer has 2 halves \u2014 one good, one blocked",
+        "status": "ANSWERED, and the answer has 2 halves — one good, one blocked",
         "at": "2026-10-15T09:34:44+01:00",
         "half_1_the_probe_population_is_nearly_empty_and_that_is_good_news": {
           "corrected_copies_pooled": "40 accepted of 57 offered, 70.1754%, Wilson [57.3357%, 80.4674%], Clopper-Pearson [56.5974%, 81.5712%]",
@@ -301,19 +321,19 @@
             "run_1": 0,
             "run_2": 1
           },
-          "what_it_means": "The invariance probe only sees falsifiers that arrived WITHOUT a corrected copy, because the real discrimination control can act whenever one was supplied. Corrected copies ARE arriving, so the gap the probe was built to fill has largely closed on this target \u2014 the opposite of the 2026-10-03 position in which 0 archived entries carried the control's NO_CONTROL stamp."
+          "what_it_means": "The invariance probe only sees falsifiers that arrived WITHOUT a corrected copy, because the real discrimination control can act whenever one was supplied. Corrected copies ARE arriving, so the gap the probe was built to fill has largely closed on this target — the opposite of the 2026-10-03 position in which 0 archived entries carried the control's NO_CONTROL stamp."
         },
         "half_2_the_one_probe_that_existed_could_not_speak": {
           "the_probe": "C0017 in run 2, the single distinct falsifier lacking a corrected copy",
           "verdict": "INTEGRITY_VIOLATION -> indeterminate",
           "cause": "The same refusal recorded as B9: a read of bench/logs/<run>/working/prose_with_computable_listings.md, the run's OWN working copy of the review target, denied because _is_evidence refuses any bench/logs path even inside an allowed root.",
-          "cannot_fail_rate": "0 of 1, Wilson [0.0000%, 79.3451%] \u2014 the single probe could not speak in either direction",
+          "cannot_fail_rate": "0 of 1, Wilson [0.0000%, 79.3451%] — the single probe could not speak in either direction",
           "one_sidedness_retained": "invariant:true demonstrates a falsifier cannot fail; invariant:false demonstrates nothing about whether it tests its claim; and an INTEGRITY_VIOLATION is not a verdict in either direction. No outcome here clears a falsifier."
         },
         "a_second_small_finding": "The sweep could not read the target from either run's own config and refused with 'no target article: pass --target', so --target had to be supplied by hand. Its --help documents the auto-read as the default behaviour. Minor, and recorded rather than fixed while the fixes are being batched.",
         "producer": "scripts/the_invariance_probe_had_almost_nothing_to_probe_2026-10-15.py"
       },
-      "headline": "GUARD_REACH ANSWERED IN 2 HALVES. The probe's population is nearly empty and that is GOOD NEWS: 40 corrected copies were accepted of 57 offered, 70.1754%, Wilson [57.3357%, 80.4674%], so the REAL discrimination control could act on nearly everything and the synthesised side was needed for just 1 falsifier across 2 runs \u2014 0 in run 1 and 1 in run 2. But that single probe, C0017, returned INTEGRITY_VIOLATION and could not speak, because of B9. So B9 blocks the POST-RUN sweep as well as in-run verification, and 2 programme measurements now depend on the same 1-line staging fix: this arm and the severity specification's key property.",
+      "headline": "GUARD_REACH ANSWERED IN 2 HALVES. The probe's population is nearly empty and that is GOOD NEWS: 40 corrected copies were accepted of 57 offered, 70.1754%, Wilson [57.3357%, 80.4674%], so the REAL discrimination control could act on nearly everything and the synthesised side was needed for just 1 falsifier across 2 runs — 0 in run 1 and 1 in run 2. But that single probe, C0017, returned INTEGRITY_VIOLATION and could not speak, because of B9. So B9 blocks the POST-RUN sweep as well as in-run verification, and 2 programme measurements now depend on the same 1-line staging fix: this arm and the severity specification's key property.",
       "live_observations": [
         {
           "at": "2026-10-03T10:35:49+01:00",
@@ -414,7 +434,7 @@
       "founder_ruling": "IF IT STILL NEEDS FIXING, FIX IT (2026-10-03)",
       "implemented": {
         "at": "2026-10-03T07:44:18+01:00",
-        "instance": "shakedown_2026-09-29/arm1_harvest/C0041 \u2014 CONFIRMED, verified=true, severity 0.8, falsifier NON_DISCRIMINATING, claim withdrawn by its own source model",
+        "instance": "shakedown_2026-09-29/arm1_harvest/C0041 — CONFIRMED, verified=true, severity 0.8, falsifier NON_DISCRIMINATING, claim withdrawn by its own source model",
         "producer": "scripts/verified_on_a_voided_instrument_2026-10-03.py",
         "exposure": "13 of 3208 archived entries, 0.4052%, Wilson [0.237%, 0.6921%]; all 13 verified=true and terminal; 12 already CLOSED below critical severity; exactly 1 critical",
         "convergence_effect": "none: unverified_critical_count skips any entry whose status is not UNCONFIRMED and never reads `verified`. The status is left CONFIRMED, so CONFIRM-only is unchanged and the founder's deferred blocking ruling is untouched.",
@@ -458,7 +478,7 @@
       "what": "Does the in-round falsifier re-attachment actually clear A4 blockers while the gate can still see it, and does the UNRESOLVED section elicit the id-addressed form at all? Baseline for the elicitation half is 0 of 3473 archived round replies, Wilson [0.0000%, 0.1105%].",
       "founder_ruling": "build the closing sweep machinery into the schema rather than leave it as an afterthought (2026-10-04)",
       "result": {
-        "status": "ELICITATION HALF MEASURED ON RUN 1: NO_OPPORTUNITY \u2014 not a negative result",
+        "status": "ELICITATION HALF MEASURED ON RUN 1: NO_OPPORTUNITY — not a negative result",
         "at": "2026-10-15T08:40:32+01:00",
         "run": "free_run1_directive_whole_20261015T061123Z",
         "predicate": "lifted from record_in_round_falsifier_reattachments in the runner, not invented",
@@ -475,7 +495,7 @@
         "why_the_zero_carries_no_verdict": "The id-addressed form can only be supplied if an UNCONFIRMED critical was rendered under UNRESOLVED for a seat to address. Run 1 converged with 0 unresolved criticals, so the mechanism had nothing to fire on. The zero is a property of THIS RUN, not of the elicitation.",
         "producer": "scripts/the_unresolved_section_elicitation_2026-10-15.py"
       },
-      "headline": "THE ELICITATION HALF CANNOT BE READ FROM RUN 1, AND THE REASON IS A TENSION IN THE PROGRAMME'S OWN DESIGN. 0 of 29 seat replies carried the id-addressed form, Wilson [0.0000%, 11.6970%], against an archived baseline of 0 of 3473 \u2014 but the maximum unconfirmed-critical count in run 1 was 0, so no finding was ever rendered under UNRESOLVED for any seat to address. A clean convergence is exactly the condition under which this arm is unmeasurable, so the programme's success criterion and this measurement pull against each other and the arm needs a run that carries an A4 blocker into a round.",
+      "headline": "THE ELICITATION HALF CANNOT BE READ FROM RUN 1, AND THE REASON IS A TENSION IN THE PROGRAMME'S OWN DESIGN. 0 of 29 seat replies carried the id-addressed form, Wilson [0.0000%, 11.6970%], against an archived baseline of 0 of 3473 — but the maximum unconfirmed-critical count in run 1 was 0, so no finding was ever rendered under UNRESOLVED for any seat to address. A clean convergence is exactly the condition under which this arm is unmeasurable, so the programme's success criterion and this measurement pull against each other and the arm needs a run that carries an A4 blocker into a round.",
       "implemented": {
         "at": "2026-10-05T00:44:03+01:00",
         "why": "UNCONFIRMED is the only status unverified_critical_count treats as an A4 blocker, and build_summary rendered it inside the SETTLED block under 'confirmed, closed, or merged. Do not CHALLENGE or re-describe them.' So every blocker was shown to the panel as settled, with challenge forbidden: 175 of 175 attributed blockers, 100.0000%, Wilson [97.8520%, 100.0000%], across 22 of 59 archived registries.",
@@ -522,7 +542,7 @@
       },
       "what_it_can_and_cannot_say": "2 free runs compare 2 runs, so they cannot establish a rate. They CAN show whether findings per round, rounds to convergence, HIL referrals and the irreducible queue move, and whether any seat degrades on the longer prompt.",
       "result": {
-        "status": "PARTIAL \u2014 run 1 converged at round 3; its post-convergence sweep was still running at this stamp",
+        "status": "PARTIAL — run 1 converged at round 3; its post-convergence sweep was still running at this stamp",
         "at": "2026-10-15T08:21:27+01:00",
         "run": "free_run1_directive_whole_20261015T061123Z",
         "convergence": "HARDENED_CONVERGED at round 3 of a 10-round budget",
@@ -548,11 +568,11 @@
         "spec_chars_delivered_per_seat": 27803,
         "spec_chars_delivered_before_the_repair": 2503,
         "hard_blocks_reaching_each_seat": "22 of 22 (was 0 of 22)",
-        "round_budget_status": "ABSENT \u2014 no projection possible; the critical series hit zero too fast to fit an intensity decay",
+        "round_budget_status": "ABSENT — no projection possible; the critical series hit zero too fast to fit an intensity decay",
         "round_budget_advisory_emitted": true,
         "producer": "scripts/run1_converged_and_a19_is_by_design_2026-10-15.py",
         "futility_guard_in_a_live_run": {
-          "status": "HELD \u2014 the B6(3) confound did NOT fire",
+          "status": "HELD — the B6(3) confound did NOT fire",
           "at": "2026-10-15T08:29:18+01:00",
           "guard_decisions": 24,
           "seats_observed": 6,
@@ -631,7 +651,7 @@
           "SymPy closed form ceil(ln(1/5)/ln(1-7/2994))",
           "mpmath 40-digit"
         ],
-        "what_run_2_therefore_measures": "Run 2 measures whether the switch, turned on live, BREAKS anything \u2014 that the promoted severity computes, gates, and reports without fault, and that the run still converges. The EFFECT question is already answered by the archive replay at n = 2,994. Reporting run 2's 22 findings as the effect measurement would be reporting an under-powered instrument in place of an adequate one that has already run.",
+        "what_run_2_therefore_measures": "Run 2 measures whether the switch, turned on live, BREAKS anything — that the promoted severity computes, gates, and reports without fault, and that the run still converges. The EFFECT question is already answered by the archive replay at n = 2,994. Reporting run 2's 22 findings as the effect measurement would be reporting an under-powered instrument in place of an adequate one that has already run.",
         "producer": "scripts/run1_converged_and_a19_is_by_design_2026-10-15.py",
         "the_arm_is_answered_and_by_what": {
           "instrument": "replay of the section 7.7 severity over the archive",
@@ -639,11 +659,11 @@
           "n_needed_for_adequate_power": 688,
           "adequately_powered": true,
           "answer": "promoting the severity changes 7 A4 releases",
-          "why_it_is_small": "the release test joins 2 halves with AND, so a lower severity only helps when the other half \u2014 a proven calculation \u2014 holds, and that holds for 295 of 2,994 findings, 9.8531%, Wilson [8.8364%, 10.9726%]"
+          "why_it_is_small": "the release test joins 2 halves with AND, so a lower severity only helps when the other half — a proven calculation — holds, and that holds for 295 of 2,994 findings, 9.8531%, Wilson [8.8364%, 10.9726%]"
         },
         "run_2_contrast_verified_at_the_deciding_layer": {
           "at": "2026-10-15T09:13:33+01:00",
-          "status": "VERIFIED \u2014 run 2 is a genuine contrast, not a replicate",
+          "status": "VERIFIED — run 2 is a genuine contrast, not a replicate",
           "why_this_check_was_run": "The launcher passing --severity-spec proves the LAUNCH, not the mechanism. feedback_verify_the_mechanism_not_the_launch exists because a prior session burned 924,535 tokens on a dispatch that never touched the credit it was meant to.",
           "the_observable": "reference_runner_v3.py:16935 logs 'Severity: SECTION 7.7 SPECIFICATION (deciding)' when _SEVERITY_SPEC['on'] is true and 'Severity: asserted (specification recorded only)' otherwise, so the deciding layer states its own mode in the run log.",
           "measured": {
@@ -659,12 +679,12 @@
           "at": "2026-10-15T09:16:26+01:00",
           "observed": "At the same point in the schedule run 1 had produced 14, 2, 5 findings and run 2 has produced 14, 0, 2. Round 0 matches exactly at 14; rounds 1 and 2 do not.",
           "why_it_is_not_the_severity_spec": "The section 7.7 severity governs RELEASE decisions at the A4 door, not finding GENERATION. A promoted severity cannot cause a seat to report fewer findings in a round. The seats are simulated subagents and are non-deterministic, so round-level finding counts vary between otherwise identical runs.",
-          "the_consequence_for_attribution": "A difference between the 2 runs is therefore NOT automatically attributable to the flag, and with n = 2 the run-to-run variance cannot be estimated from the pair itself. This compounds the 31.27x under-powering already recorded: the contrast can only detect a LARGE effect, and the archive replay has already measured the effect as small (7 releases in 2,994 findings). Run 2's value is therefore confirmed as a MACHINERY test \u2014 does the switch compute, gate and report without fault, and does the run still converge \u2014 and not as an effect measurement.",
+          "the_consequence_for_attribution": "A difference between the 2 runs is therefore NOT automatically attributable to the flag, and with n = 2 the run-to-run variance cannot be estimated from the pair itself. This compounds the 31.27x under-powering already recorded: the contrast can only detect a LARGE effect, and the archive replay has already measured the effect as small (7 releases in 2,994 findings). Run 2's value is therefore confirmed as a MACHINERY test — does the switch compute, gate and report without fault, and does the run still converge — and not as an effect measurement.",
           "what_IS_attributable": "The deciding-layer mode, verified: 'SECTION 7.7 SPECIFICATION (deciding)' in run 2 against 'asserted (specification recorded only)' in run 1. Whether the promoted severity produces a fault, a crash, a key-property violation or a failure to converge is attributable to the flag, because those are properties of the mechanism rather than of the sample."
         },
         "the_key_property_was_never_exercised": {
           "at": "2026-10-15T09:24:58+01:00",
-          "status": "\u2605 THE SHARPEST BOUND ON THIS ARM, and it was not visible before run 2",
+          "status": "★ THE SHARPEST BOUND ON THIS ARM, and it was not visible before run 2",
           "what_section_7_7_says": "Sev(f) = W(class) x confidence x V(verification) with V(True)=1.0, V(None)=0.5, V(False)=0.0. The appendix's own stated KEY PROPERTY is that a DISPROVED finding scores ZERO regardless of the model's confidence, so a tool outcome annihilates the model's number. That annihilation is what makes the specification structurally unlike a vote, and it is the reason promotion was asked for.",
           "the_v_census_closes_in_both_runs": {
             "run_1_round_3": {
@@ -681,7 +701,7 @@
               "total_findings": 19,
               "closes": true
             },
-            "parsed_with": "ast.literal_eval, not a regex \u2014 a regex that fails to match a key reports absence, and absence reads like zero"
+            "parsed_with": "ast.literal_eval, not a regex — a regex that fails to match a key reports absence, and absence reads like zero"
           },
           "findings_with_a_disproved_verification": "0 of 41, Wilson [0.0000%, 8.5668%], Clopper-Pearson [0.0000%, 8.6044%]",
           "cp_upper_cross_verified": "1 - 0.025^(1/41) closed form and mpmath at 40 digits both give 8.6044%, agreeing with statsmodels to 1e-9",
@@ -692,7 +712,7 @@
         },
         "run_2_exercised_a_gate_path_run_1_never_reached": {
           "at": "2026-10-15T09:24:58+01:00",
-          "observed": "Run 2 did NOT converge at round 3 where run 1 did. The gate refused: 'hardened REFUSED at R3: 1 contested finding(s) still in dispute, so the critical picture is not settled [gamma_crit=1.000, gamma_all diag=0.875]', in mode 'contested_blocked'. Every other condition was satisfied \u2014 gamma_crit 1.000, zero_crit_ok True, the location-keyed series tail [0, 0, 0], 0 unresolved criticals.",
+          "observed": "Run 2 did NOT converge at round 3 where run 1 did. The gate refused: 'hardened REFUSED at R3: 1 contested finding(s) still in dispute, so the critical picture is not settled [gamma_crit=1.000, gamma_all diag=0.875]', in mode 'contested_blocked'. Every other condition was satisfied — gamma_crit 1.000, zero_crit_ok True, the location-keyed series tail [0, 0, 0], 0 unresolved criticals.",
           "assessment": "CORRECT BEHAVIOUR, not a fault. A contested finding means the critical picture is genuinely unsettled and the gate declined to declare convergence on it. Run 1 had contested=0 at round 3 and converged. So running 2 runs bought coverage of a third gate path that 1 run could not reach, which is a benefit of the pair independent of the severity contrast.",
           "a_note_on_the_watchdog": "The cy watchdog classified the refusal as TROUBLE. A correct refusal is not trouble, so that is a false positive in the watchdog's severity labelling. Recorded, not chased: it costs a notification and misleads nobody who reads the line itself."
         },
@@ -801,10 +821,10 @@
             },
             "note": "The V_true and V_none splits differ between the 2 moments because the post-convergence settle confirmed more falsifiers after the round-3 telemetry was written. Both totals match their finding counts, and V_false is 0 at BOTH moments in BOTH runs, so '0 of 41' holds under the runner's own census and under an independent recomputation from the final reports."
           },
-          "a_further_observation_about_B9s_refusals": "The falsifier_verdict census carries INTEGRITY_VIOLATION 1 time in run 1 and 2 times in run 2 \u2014 B9's refusals landing in the registry as a verdict VALUE. spec_verification_factor maps them to V=0.5, the same bucket as a falsifier that never ran at all. That is defensible, because a refusal is explicitly NOT a verdict, and it is worth recording because it means a confinement refusal is absorbed into the neutral bucket rather than surfaced as its own category."
+          "a_further_observation_about_B9s_refusals": "The falsifier_verdict census carries INTEGRITY_VIOLATION 1 time in run 1 and 2 times in run 2 — B9's refusals landing in the registry as a verdict VALUE. spec_verification_factor maps them to V=0.5, the same bucket as a falsifier that never ran at all. That is defensible, because a refusal is explicitly NOT a verdict, and it is worth recording because it means a confinement refusal is absorbed into the neutral bucket rather than surfaced as its own category."
         }
       },
-      "headline": "THE SEVERITY ARM IS ANSWERED BY THE ARCHIVE REPLAY, NOT BY THE RUNS: promoting the section 7.7 severity changes 7 A4 releases across 2,994 archived findings, small because the release test's other half \u2014 a proven calculation \u2014 holds for only 295 of 2,994, 9.8531%, Wilson [8.8364%, 10.9726%]. Run 1's shadow reports 0 of 22 crossing downward, which is the EXPECTED outcome (probability 0.9498) and refutes nothing: 688 findings are needed before a zero is informative, so the 2-run contrast is under-powered by 31.27x. Run 2 therefore tests whether the switch BREAKS anything, not what it CHANGES."
+      "headline": "THE SEVERITY ARM IS ANSWERED BY THE ARCHIVE REPLAY, NOT BY THE RUNS: promoting the section 7.7 severity changes 7 A4 releases across 2,994 archived findings, small because the release test's other half — a proven calculation — holds for only 295 of 2,994, 9.8531%, Wilson [8.8364%, 10.9726%]. Run 1's shadow reports 0 of 22 crossing downward, which is the EXPECTED outcome (probability 0.9498) and refutes nothing: 688 findings are needed before a zero is informative, so the 2-run contrast is under-powered by 31.27x. Run 2 therefore tests whether the switch BREAKS anything, not what it CHANGES."
     },
     {
       "id": "coherence_budget_recalibration",
@@ -817,7 +837,7 @@
       "explicitly_not_done": "The budgets were NOT hand-retuned. A hand-set cap with no measurement behind it is precisely what the founder objected to on 2026-10-13 and 2026-10-14.",
       "producer": "scripts/the_spec_is_not_work_2026-10-15.py",
       "result": {
-        "status": "CANNOT BE SATISFIED BY THE RUNS \u2014 the mechanism is inert on 3 independent layers",
+        "status": "CANNOT BE SATISFIED BY THE RUNS — the mechanism is inert on 3 independent layers",
         "at": "2026-10-15T08:36:17+01:00",
         "task_list_entry": "B8",
         "layer_1_no_caller": {
@@ -851,7 +871,7 @@
         "not_fixed_because": "Changing the composer's budgets between run 1 and run 2 would destroy the matched pair the runs exist to form. Scheduled for after run 2.",
         "producer": "scripts/the_coherence_recalibration_is_inert_three_ways_2026-10-15.py"
       },
-      "headline": "THE RECALIBRATION IS INERT ON 3 INDEPENDENT LAYERS, EACH SUFFICIENT ALONE: 0 AST call sites and 0 imports; a mutation that does not survive the process, since the budgets are a source literal at composer.py:69; and 0 of 61 run-1 JSON entries carrying the keys it reads, Wilson [0.0000%, 5.9244%], so on real logs it returns its own defaults byte-identically. The ALGORITHM is sound \u2014 on a correctly shaped fixture it moves opus_4_6 from 0.02 to 0.0571 \u2014 so the gap is a SCHEMA MISMATCH, and the pruner ablation arm stays un-runnable until it is closed."
+      "headline": "THE RECALIBRATION IS INERT ON 3 INDEPENDENT LAYERS, EACH SUFFICIENT ALONE: 0 AST call sites and 0 imports; a mutation that does not survive the process, since the budgets are a source literal at composer.py:69; and 0 of 61 run-1 JSON entries carrying the keys it reads, Wilson [0.0000%, 5.9244%], so on real logs it returns its own defaults byte-identically. The ALGORITHM is sound — on a correctly shaped fixture it moves opus_4_6 from 0.02 to 0.0571 — so the gap is a SCHEMA MISMATCH, and the pruner ablation arm stays un-runnable until it is closed."
     }
   ],
   "run_conditions": {
@@ -929,7 +949,7 @@
       "priority": "HIGH",
       "at": "2026-10-15T02:15:57+01:00",
       "severity": "the situation packet's code extracts are collapsed for 4 of 5 models",
-      "status": "FOUND 2026-10-15, NOT FIXED \u2014 recorded honestly per his instruction",
+      "status": "FOUND 2026-10-15, NOT FIXED — recorded honestly per his instruction",
       "what": "`_apply_phenotype_transform` with `format_style=\"concise\"` runs the semantic-duplicate dedup over the SITUATION packet, which carries the review target, the code extracts and the adversarial brief. Measured 2026-10-15 on a 1,492-character situation packet holding 20 repeated function definitions: opus_4_6 (style \"full\") receives 1,491 characters; chatgpt_5_4, codex_5_3, deepseek_v3 and gemini_3_1_pro (all \"concise\") receive 339 -- the repeats collapsed to 1 and every line stripped of indentation. 4 of 5 models, 80.0000%, Wilson [37.5535%, 96.3776%].",
       "why_it_is_bounded": "The code under review ALSO reaches the model through the user prompt, which `_build_prompt` builds from `full_code`, so a model is not reviewing nothing. The situation packet is supplementary context. The harm is that 2 genuinely different functions with similar token sets can be collapsed into 1, and indentation -- which is syntax in Python -- is destroyed.",
       "why_not_fixed_tonight": "Dedup-over-code is a design change to the phenotype layer, it is not in the causal path of either free run's hypothesis, and 3 large changes in one night with no measurement between them is how a confound becomes unattributable.",
@@ -941,7 +961,7 @@
       "priority": "HIGH",
       "at": "2026-10-15T02:15:57+01:00",
       "severity": "a seat's observed capacity can never rise",
-      "status": "FOUND 2026-10-15, NOT FIXED \u2014 a futility guard was added instead",
+      "status": "FOUND 2026-10-15, NOT FIXED — a futility guard was added instead",
       "what": "`_should_decompose` step 2 reads `max_successful_prompt_chars` and returns `payload_chars > observed * 0.9`. Its own docstring calls that figure a PROVEN FLOOR -- \"The model has PROVEN it can handle at least that much input\" -- and the code uses it as a CEILING. A seat that has only ever been sent 72,934 characters can never be sent more, so the observed maximum never rises: a ratchet that cannot climb, structurally the same defect as the routing ladder's.",
       "what_it_cost_tonight": "With the specification delivered whole the system prompt is 74,177 characters, and 6 of 6 simulated seats (100.0000%, Wilson [60.9666%, 100.0000%], Clopper-Pearson [54.0742%, 100.0000%]) have an effective limit below that: CC2-SIM 72,465, ChatGPT-SIM 65,640, Codex-SIM 70,922, DeepSeek-SIM 72,465, Fable-SIM 69,775, Gemini-SIM 67,510. Every simulated dispatch would have force-decomposed on the size of its own instructions. NO PAID SEAT WOULD HAVE -- CC2 sits at 418,685 and DeepSeek at 99,068 -- so this is a confound that fires only in simulation, which is the exact hazard he named.",
       "what_was_done_instead": "A futility guard: when the NON-DECOMPOSABLE part of the payload already exceeds the effective limit, decomposition is dominated on per-request bytes, total bytes and request count, so the monolithic dispatch is sent and the transport is allowed to speak. Proof: SymPy `S*n > 0`, z3 `unsat` on all 3 negations, mpmath on the concrete case. An explicit `pre_decompose_models` override is honoured over the futility argument.",
@@ -976,7 +996,7 @@
       "at": "2026-10-15T08:02:21+01:00",
       "severity": "a false HIL referral in the first 2 rounds of every run",
       "status": "OBSERVED LIVE 2026-10-15 in free run 1, NOT FIXED (run in flight)",
-      "what": "At round 1 of free run 1 the console printed `gamma_all: 0.000 (telemetry, passed) \u2014 Gamma disagrees with state closure \u2014 recommend HIL audit`. That sentence is a BAND LABEL, not a detected disagreement: `GAMMA_BANDS` at bench/reference_runner_v3.py:4671 maps the range 0.00 to 0.20 to that wording, and `_estimate_gamma` RETURNS 0.0 when it has fewer than 3 points. So the label is applied to a gamma that is not a measurement at all.",
+      "what": "At round 1 of free run 1 the console printed `gamma_all: 0.000 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit`. That sentence is a BAND LABEL, not a detected disagreement: `GAMMA_BANDS` at bench/reference_runner_v3.py:4671 maps the range 0.00 to 0.20 to that wording, and `_estimate_gamma` RETURNS 0.0 when it has fewer than 3 points. So the label is applied to a gamma that is not a measurement at all.",
       "why_it_matters": "The wording recommends a HIL audit. A diagnostic that asks for the founder's attention in the first 2 rounds of EVERY run is noise that can mask a real disagreement later, and gamma is load-bearing by standing directive.",
       "the_falsifiable_prediction": "gamma becomes estimable at round 3 and the band label moves off the 0.00-0.20 band. Testable inside this run; the result is recorded here rather than assumed.",
       "not_fixed_because": "the run is in flight and gamma is load-bearing. Changing a gamma-adjacent code path mid-experiment would make the run uninterpretable, which is a worse outcome than a noisy advisory line.",
@@ -993,7 +1013,7 @@
       "restamped": "5 of 5 real paid seats, Wilson [56.5518%, 100.0000%]",
       "values_altered": "0 of 5, Clopper-Pearson [0.0000%, 52.1824%]",
       "sim_real_decision_field_collisions": 0,
-      "cause": "bench/reference_runner_v3.py:11324-11350 \u2014 _load_fingerprints globs all, _save_fingerprints writes all",
+      "cause": "bench/reference_runner_v3.py:11324-11350 — _load_fingerprints globs all, _save_fingerprints writes all",
       "prior_finding_by": "fable seat, 2026-10-05, never promoted out of its sandbox",
       "not_fixed_because": "run in flight; the save path is live run machinery and fixes are SUGGESTED to HIL",
       "mitigation_applied": "restore the 5 real-seat files to HEAD after each run exits; commit only the 6 -SIM files",
@@ -1075,10 +1095,10 @@
       "added": "2026-10-15T10:09:19+01:00",
       "priority": "MEDIUM",
       "task_list_entry": "B10",
-      "severity": "a GUARD BLIND TO A RULE CLASS \u2014 sound as a ratchet, incomplete as a detector",
+      "severity": "a GUARD BLIND TO A RULE CLASS — sound as a ratchet, incomplete as a detector",
       "cause": "note_vagueness_lint.py fires NOTE_STANDARD_STAMP only under a directory named experimental_notes; hooks/pre-commit:375-392 flattens both sides into mktemp, so the rule fires on neither",
       "measured": "4 of 6 sampled notes lose exactly that finding on a flat path; the same-directory copy agrees with the real path every time",
-      "what_slipped_past": "73 of 522 notes postdate the standard and name none, 13.9847%, Wilson [11.2717%, 17.2238%] \u2014 an UPPER BOUND, since several are working scratch files",
+      "what_slipped_past": "73 of 522 notes postdate the standard and name none, 13.9847%, Wilson [11.2717%, 17.2238%] — an UPPER BOUND, since several are working scratch files",
       "not_a_defect": "the 161 notes naming an OLDER standard are correct; the convention retains version-specific foot-lines",
       "found_by": "CC1 being wrong twice and chasing the contradiction with the pre-commit",
       "producer": "scripts/the_note_lint_ratchet_is_blind_to_the_stamp_2026-10-15.py"
@@ -1088,16 +1108,47 @@
       "added": "2026-10-15T11:20:37+01:00",
       "priority": "HIGH",
       "task_list_entry": "B11",
-      "severity": "PROVENANCE \u2014 a bare vendor name inside a finding identifier makes a simulated result greppable as a real one",
+      "severity": "PROVENANCE — a bare vendor name inside a finding identifier makes a simulated result greppable as a real one",
       "measured": "run 2: 2 distinct identifiers, 64 instances, all Gemini-SIM_GEMINI_F00N; run 1: 0",
       "mechanism": "the seat emitted GEMINI_F001..F005 as its own local identifiers; reference_runner_v3.py:4602 joins the seat label to them and carries the bare name through",
       "why_the_test_must_stay_red": "greening it needs run 2's artefacts rewritten, which falsifies evidence, or exempted, which hides the gap",
       "fix_proposed_not_applied": "normalise model-supplied local identifiers at the composition site, dropping a vendor token the seat label already carries in -SIM form"
+    },
+    {
+      "at": "2026-10-15T23:23:08+01:00",
+      "id": "maths-guard-blocks-the-exp38-rescue-outside-software",
+      "severity": "starves the only cell that can ground a code claim",
+      "what": "`math_guard` in bench/immune_agents.py blocks ANY move away from a regex `mathematical` label outside the software domain, at ANY confidence -- including the move TO a code type. But only the CT (code-verifier) cell can ground a claim against the target source, so that destination is the one the guard's own reasoning would permit. The classifier's stated purpose is to 'RESCUE code bugs that the regex misroutes to math (non-code -> code, Exp 38)', and that rescue is reachable in the software domain ONLY.",
+      "live_instance": "Measured over 220 archived classifier logs: of 539 mathematical-guard block log lines, 408 had a CODE destination -- 75.6957%, 95% Wilson [71.9011%, 79.1267%] -- across 327 distinct (run, finding, move) occasions, 104 distinct finding identifiers and 32 runs. More than 3 in 4 of everything the guard refused was an attempt to put a claim onto the only path that can ground it, many at confidence 0.95 to 0.98.",
+      "also": "FOUND BY EXECUTION, NOT BY READING. A test written to confirm the Exp 38 rescue survived the 2026-10-15 code-path change instead refuted the belief that the rescue worked outside software at all.",
+      "needs": "a founder ruling. The fix is one clause -- `and llm_type not in _code_types` -- but it NARROWS a guard rather than adding one, so under the additive standard it needs his ruling and a named dominated property rather than CC1's judgement. The named property is whether a code claim can reach the only cell that can ground it: today, outside software, it cannot, ever.",
+      "status": "FOUND, MEASURED, NOT FIXED. Pinned by a test that asserts the CURRENT behaviour and inverts when he rules: bench/tests/test_the_code_path_guard_is_domain_independent_2026-10-15.py",
+      "producer": "scripts/the_code_path_guard_is_off_in_non_software_2026-10-15.py"
+    },
+    {
+      "at": "2026-10-15T23:23:08+01:00",
+      "id": "immune-memory-names-2-of-its-5-experiments",
+      "severity": "counts can be silently doubled",
+      "what": "The live immune memory records 5 experiments but its `experiment_ids` ledger names only 2 -- the 2 free runs of 2026-10-15. The 3 pre-ledger runs (exp47, exp48, exp49) are unnamed, and the memory says so itself on every load: 'The duplicate-ingestion guard CANNOT refuse a re-run of an unnamed one, so those counts can still be silently doubled. Backfill experiment_ids to close this.'",
+      "live_instance": "bench/state/immune_memory.json, experiment_count=5, experiment_ids names 2, provenance_complete=False.",
+      "also": "The replay IS available: the suite's 3 pre-ledger names plus the ledger's 2 is exactly 5, and replaying all 5 reproduces the disk memory with a worst per-class difference of 0.0. So the backfill is mechanical and verifiable, not a reconstruction from prose.",
+      "needs": "no ruling -- it is a mechanical backfill, deferred only because it writes to live state during a run. Raised here so it is not lost.",
+      "status": "FOUND, NOT FIXED"
+    },
+    {
+      "at": "2026-10-15T23:23:08+01:00",
+      "id": "the-projects-working-vocabulary-is-largely-undocumented",
+      "severity": "the founder repeatedly meets terms he cannot look up",
+      "what": "Rule 30 was added to scripts/note_vagueness_lint.py to refuse a note using a compound technical term that exists nowhere the founder can look it up. Measured over the project's own 523 notes with the live rule: 734 instances across 243 of them, 46.46%. The flagged phrases are mostly REAL project mechanisms -- confinement guard, provenance gate, integrity guard, literature cell, falsifier ladder, post-run sweep -- that are neither in docs/GLOSSARY.md nor emitted by the code.",
+      "live_instance": "His complaint of 2026-10-15, twice in one day: 'You are using non-project terms again. You said you had fixed it so you would stop.' Of the 4 terms he challenged, 3 existed nowhere in the project and 1 (coherence budget) was real but undefined.",
+      "also": "The rule is a RATCHET, not a retrospective block: historical notes are reported and the baseline may only fall; notes written from now carry 0. 2 glossary entries were added with code anchors for the real term.",
+      "needs": "a founder ruling on whether to invest in a glossary sweep of the 734, or to let the ratchet drain it over time.",
+      "status": "CAUSE FIXED (Rule 30 wired into both surfaces, 13 tests, mutation-proven). THE BACKLOG IS WHAT NEEDS HIS RULING."
     }
   ],
   "high_priority_2026_10_15": {
     "added": "2026-10-15T03:21:37+01:00",
-    "founder_instruction": "\"Apply any outstanding fixes you have identified first, including any as yet unbuilt/unapplied machinery, before you begin the runs. Make sure you mark these items as high priority considerations in the accompanying/outstanding program of study\" \u2014 2026-10-15",
+    "founder_instruction": "\"Apply any outstanding fixes you have identified first, including any as yet unbuilt/unapplied machinery, before you begin the runs. Make sure you mark these items as high priority considerations in the accompanying/outstanding program of study\" — 2026-10-15",
     "measurements": [
       "directive_delivery",
       "severity_promotion",
@@ -1109,8 +1160,8 @@
       "cross-layer-soft-deletion-on-a-spurious-topic-match"
     ],
     "runs": {
-      "run_1": "directive_delivery \u2014 the specification delivered whole, severity shadow UNCHANGED",
-      "run_2": "severity_promotion \u2014 MACHINERY test of the severity specification switch plus a second convergence. NOT a measurement of its effect: under-powered 31.27x at 22 findings per run (688 needed).",
+      "run_1": "directive_delivery — the specification delivered whole, severity shadow UNCHANGED",
+      "run_2": "severity_promotion — MACHINERY test of the severity specification switch plus a second convergence. NOT a measurement of its effect: under-powered 31.27x at 22 findings per run (688 needed).",
       "why_2_and_not_1": "Promoting the severity specification alters what counts as critical, which alters convergence. Running it alongside the directive repair makes neither attributable, which is the same error the programme already rejects for per-fix attribution. 2 free runs cost nothing."
     },
     "replay_cost_accepted_by_him": "\"We cannot go back and change time, so the confounds discovered in the last 24 hours can only be noted and added to the record honestly.\" Delivering the specification whole changes every dispatch and invalidates replay against the 81 archived runs. That is the cost C0040 was parked for and he has now paid it knowingly."
@@ -1121,7 +1172,7 @@
       "withdrawn_at": "2026-10-15T08:21:27+01:00",
       "formed_at": "2026-10-15T08:14 BST",
       "claim_as_formed": "The close-the-loop verifier points ruff, mypy and bandit at the whole .md file and so cannot reach the fenced Python listings A19 taught S_k to score, making the 3 non-closures of C0018, C0019 and C0020 a gap in the capability run 1 commissions.",
-      "why_it_is_wrong": "The prose path is a documented design decision with 3 rejected alternatives recorded beside it at bench/bugzilla_loop.py:440-465, each measured on 2026-08-01. The listings reference imports the document declares in PROSE, so ruff and mypy report undefined names on any extracted fragment no matter what the fix did. What IS checkable without a baseline is whether the code still parses, and that runs as a VETO recorded in vetoes_run, never in checks_run. A clean parse yields NO_APPLICABLE_CHECKS rather than PASS because attempt_close closes on PASS, and calling an unchecked fix verified is rejected alternative 2 \u2014 measured to have waved through a fix injecting shell=True.",
+      "why_it_is_wrong": "The prose path is a documented design decision with 3 rejected alternatives recorded beside it at bench/bugzilla_loop.py:440-465, each measured on 2026-08-01. The listings reference imports the document declares in PROSE, so ruff and mypy report undefined names on any extracted fragment no matter what the fix did. What IS checkable without a baseline is whether the code still parses, and that runs as a VETO recorded in vetoes_run, never in checks_run. A clean parse yields NO_APPLICABLE_CHECKS rather than PASS because attempt_close closes on PASS, and calling an unchecked fix verified is rejected alternative 2 — measured to have waved through a fix injecting shell=True.",
       "established_by_execution_not_reading": {
         "clean_prose_target": {
           "outcome": "NO_APPLICABLE_CHECKS",
@@ -1145,7 +1196,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T11:20:37+01:00",
+  "last_updated": "2026-10-15T23:23:08+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
@@ -1165,8 +1216,8 @@
     "criterion": "3 consecutive CLEAN convergences on the prose target",
     "achieved": 2,
     "detail": [
-      "free_run1_directive_whole_20261015T061123Z \u2014 HARDENED_CONVERGED at round 3, 0 unresolved criticals, 0 contested",
-      "free_run2_severity_spec_20261015T073418Z \u2014 HARDENED_CONVERGED at round 4, 0 unresolved criticals, contested settled"
+      "free_run1_directive_whole_20261015T061123Z — HARDENED_CONVERGED at round 3, 0 unresolved criticals, 0 contested",
+      "free_run2_severity_spec_20261015T073418Z — HARDENED_CONVERGED at round 4, 0 unresolved criticals, contested settled"
     ],
     "remaining": 1,
     "note": "Both are CLEAN by the gate's own hardened criterion. A third run would complete the criterion; the founder authorised 2, so whether to run a third is his."
@@ -1177,18 +1228,26 @@
     "before_the_runs": "1 failed, 11278 passed, 18 skipped in 3497.35 s",
     "fixed_by_cc1": 21,
     "honest_red_arithmetic": [
-      "test_task_list_burndown \u2014 7 gained against 4 closed"
+      "test_task_list_burndown — 7 gained against 4 closed"
     ],
     "honest_red_evidence": [
-      "test_sim_naming \u2014 run 2's artefacts must not be rewritten"
+      "test_sim_naming — run 2's artefacts must not be rewritten"
     ],
     "archive_grew_needs_his_ruling": [
-      "test_immune_memory_evaluation x3 \u2014 memory records 5 experiments, the suite describes 3",
-      "test_latent_tagger_evaluation x2 \u2014 20 tagged against 19 pinned",
-      "test_field_envelope_2026-10-04 x2 \u2014 archived replies now carry envelopes"
+      "test_immune_memory_evaluation x3 — memory records 5 experiments, the suite describes 3",
+      "test_latent_tagger_evaluation x2 — 20 tagged against 19 pinned",
+      "test_field_envelope_2026-10-04 x2 — archived replies now carry envelopes"
     ],
     "mechanical_outstanding": [
-      "test_precommit_gate_cost \u2014 the declaration needs refreshing from 510 to the collected count"
-    ]
+      "test_precommit_gate_cost — the declaration needs refreshing from 510 to the collected count"
+    ],
+    "archive_grew_FIXED_2026_10_15": {
+      "at": "2026-10-15T23:23:08+01:00",
+      "result": "all 7 FIXED by deriving each baseline from the archive, on his ruling 'Then yes, OK do it this way and test it in the next simulated run.' 259 passed, 0 failed across the 5 suites.",
+      "immune_memory_x3": "the recording set is now DERIVED as the union of the suite's pre-ledger names and the memory's own experiment_ids ledger; the union is 5, the count is 5, and replaying all 5 reproduces disk with a worst per-class difference of 0.0. The pinned S* of 0.0724 is replaced by the 2 claims the docstring actually makes: nothing flips (the weakest sk over 1,160 archived decisions is 0.740, which must exceed the threshold) and it rests on ONE observation (-log(total)/decay_rate is a non-negative integer; SymPy, mpmath and NumPy agree to 0.000e+00 that it is 3, consistent with the count moving 3 to 5). The load test is now a monotone ratchet.",
+      "latent_tagger_x2": "the 2 equalities are now SUBSET RATCHETS. The suite's own author had already built the growth-immune half next door, whose docstring reads 'THE REGRESSION HALF OF THE PIN, immune to archive growth.' Nothing previously tagged may stop being tagged; new entries are reported.",
+      "field_envelope_x2": "the identity test is restricted to the DERIVED non-adopting subset, because its premise -- that no archived reply carries an envelope -- was falsified by the 2 free runs adopting them. The premise test is replaced by a direct non-vacuity check on that subset, which is the concern its own failure message named.",
+      "the_cost_he_was_warned_of": "He was told deriving 'weakens them slightly as regression detectors.' On the immune-memory threshold it STRENGTHENS it: a pinned 0.0724 could not notice a threshold rising past the weakest archived fix score, which is the only way the gate could start rejecting. On the other 2 the loss is confined to 'nothing was added', which successful runs falsify by design."
+    }
   }
 }

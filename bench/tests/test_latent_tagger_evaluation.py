@@ -301,7 +301,29 @@ class TestArchiveExposure:
             for cid, e in data["registry"]["entries"].items()
             if tag_entry(dict(e))
         )
-        assert tagged == PINNED_PROSE_TAGGED, tagged
+        # ★ A SUBSET RATCHET, NOT AN EQUALITY (2026-10-15). This asserted
+        # equality and went red the moment a run landed, which is every time the
+        # programme makes progress. The founder's ruling: "Make each suite
+        # derive its baseline from the archive rather than pin a number... Then
+        # yes, OK do it this way and test it in the next simulated run."
+        #
+        # THE DETECTION THAT MATTERS IS PRESERVED EXACTLY, and this suite's own
+        # author had already identified which half that is -- see
+        # `test_no_previously_tagged_entry_stopped_being_tagged` immediately
+        # below, whose docstring reads "THE REGRESSION HALF OF THE PIN, immune
+        # to archive growth. The equality above moves whenever a run lands. This
+        # does not." So: nothing previously tagged may stop being tagged, and
+        # new entries are REPORTED rather than failing the suite. A tagger that
+        # silently stopped tagging is the regression worth catching; an archive
+        # that grew is the programme working.
+        missing = sorted(set(PINNED_PROSE_TAGGED) - set(tagged))
+        assert not missing, (
+            f"{len(missing)} entry(s) the tagger was measured to tag are no "
+            f"longer tagged, so the tagger has REGRESSED: {missing}")
+        added = sorted(set(tagged) - set(PINNED_PROSE_TAGGED))
+        if added:
+            print(f"\n    archive grew: {len(added)} newly tagged entry(s) "
+                  f"beyond the {len(PINNED_PROSE_TAGGED)} pinned: {added}")
 
     def test_no_previously_tagged_entry_stopped_being_tagged(self):
         """THE REGRESSION HALF OF THE PIN, immune to archive growth.
@@ -825,6 +847,15 @@ class TestNoCallerNeedsAnAbsenceNotAModifier:
                         for cid, e in data["registry"]["entries"].items()
                         if tag_entry(dict(e)))
         by_prose = [t for t in tagged if t]
-        assert len(by_prose) == len(PINNED_PROSE_TAGGED), (
-            f"{len(by_prose)} tagged against {len(PINNED_PROSE_TAGGED)} pinned")
-        assert tagged == PINNED_PROSE_TAGGED
+        # ★ MONOTONE, NOT EQUAL (2026-10-15), for the reason given at the
+        # subset ratchet above. The anti-overreach claim this test exists to
+        # defend is that the archive STILL HAS TRUE POSITIVES after the
+        # tightening -- that is a lower bound, not an equality, and an archive
+        # that grew cannot weaken it.
+        assert len(by_prose) >= len(PINNED_PROSE_TAGGED), (
+            f"{len(by_prose)} tagged against {len(PINNED_PROSE_TAGGED)} "
+            f"measured: the tightening lost true positives")
+        missing = sorted(set(PINNED_PROSE_TAGGED) - set(tagged))
+        assert not missing, (
+            f"the tightening dropped {len(missing)} previously tagged "
+            f"entry(s): {missing}")

@@ -204,9 +204,27 @@ class TestCodePathGuard:
         assert "LLM classifier OVERRIDE" in text
         assert "BLOCKED by CODE-PATH guard" not in text
 
-    def test_guard_is_software_only(self, caplog):
-        # In a non-software domain (llm_primary False) the code-path guard does
-        # not apply; routing follows the normal threshold/math-guard logic.
+    def test_guard_is_NOT_software_only_superseded_2026_10_15(self, caplog):
+        # ★ THIS TEST ASSERTED THE OPPOSITE UNTIL 2026-10-15, AND IT WAS
+        # PINNING A DEFECT AS INTENDED BEHAVIOUR. It read: "In a non-software
+        # domain (llm_primary False) the code-path guard does not apply" and
+        # asserted the guard's ABSENCE.
+        #
+        # Every argument in the guard's own rationale in `immune_agents.py` is
+        # about CLAIM TYPE — only the CT cell can ground a claim against the
+        # target source — and none of it is about the domain label. Measured
+        # over 220 archived classifier logs and 2,273 override lines: 10
+        # DISTINCT findings of 333 distinct SEMI-ACTIVE overrides were code ->
+        # non-code demotions let through unguarded, 3.0030%, 95% Wilson
+        # [1.6392%, 5.4387%], 8 of them from exp38 — the live experiment the
+        # guard's comment cites as its motivation. The same move was refused
+        # 128 times in software.
+        #
+        # Producer:
+        #   scripts/the_code_path_guard_is_off_in_non_software_2026-10-15.py
+        # Full coverage of the new behaviour, asserting the DECISION and not
+        # only the log, lives in:
+        #   bench/tests/test_the_code_path_guard_is_domain_independent_2026-10-15.py
         text = _run_classifier(
             caplog,
             regex_type=ClaimType.CODE_BEHAVIORAL,
@@ -214,7 +232,8 @@ class TestCodePathGuard:
             conf=0.90,
             domain="mathematics",
         )
-        assert "BLOCKED by CODE-PATH guard" not in text
+        assert "BLOCKED by CODE-PATH guard" in text
+        assert "LLM classifier OVERRIDE" not in text
 
     def test_genuine_below_threshold_still_labelled(self, caplog):
         # Non-software, valid llm_type, conf=0.50 (below 0.70). This

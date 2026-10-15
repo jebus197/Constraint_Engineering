@@ -71,6 +71,36 @@ Four-label vocabulary describing a code component's maturity within the runtime 
 - **`shadow_integrated`** — code hooked into the live pipeline in observation-only capacity. Runs on every relevant input, emits logs and metrics, but does not drive verdicts, promotions, or gate decisions. Example: K/L/M shadow-audit logging.
 - **`live_operational`** — code drives live decisions; outputs affect verdicts, gates, or downstream state. Reversion requires explicit policy change. Examples: §17 feedback directive, §18 divergence directive.
 
+### Coherence Budget
+
+A per-model ceiling on CONSTRAINT DENSITY in a composed system prompt, where
+density is the constraint count divided by the estimated token length
+(`composer.py:1070`). When a model's density exceeds its budget the composer
+prunes SOFT content to get under it: first individual SOFT directives inside a
+packet, then whole SOFT packets (`composer.py:1057-1099`). HARD and universal
+layers are never pruned. If it cannot get under the ceiling it emits the
+"over coherence budget" warning and a coherence penalty, written in the model as
+kappa(m,g) < 1, applies to effective detection. Defaults are per model
+(`composer.py:65`).
+
+Added to this glossary on 2026-10-15 because the term is emitted at run time by
+the composer and appears in 4 documentation files while having had no definition
+here, so a reader who met it had nowhere to look it up.
+
+### Coherence Budget Recalibration
+
+`update_coherence_budgets_from_experiments()` (`composer.py:1536`): recomputes
+the per-model coherence budget ceilings from archived experiment data rather
+than using the hard-coded defaults.
+
+STATUS, measured 2026-10-15: inert in 3 independent ways, each sufficient on its
+own. No caller invokes it; it mutates a value that lives only in memory; and
+handed a real run's logs it returns the existing defaults, because none of the
+61 recorded entries carries the 2 fields it reads. Its arithmetic is sound —
+given data in the documented shape it moves the first seat's budget from 0.02 to
+0.0571 — so this is a mismatch between what the runner records and what the
+calibrator expects to read, not a calculation error.
+
 ### Composer
 
 The directive composition system (`bench/cdsfl_registry/composer.py`). Produces per-model phenotype-transformed versions of CDSFL directives. Each model receives the same underlying constraints but formatted for its processing characteristics (length caps, format density, stripping levels).

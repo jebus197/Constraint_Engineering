@@ -71,21 +71,14 @@
     "options": [],
     "evidence_line": "Without it, a DONE entry can cite evidence that passes for reasons unrelated to the fix — which is the mutation discipline applied to the task list itself."
   },
-  "study:arm5": {
-    "no_ruling_needed": true,
-    "title": "arm5 — the paired effectiveness baseline",
-    "what": "Paired baseline: the pre-window commit `a2a0197` against HEAD, same target, same seed. This is THE effectiveness question for the whole fix window.",
-    "why": "Your ruling is on record: RUN IT (2026-10-03). Outstanding work, not a decision.",
-    "options": [],
-    "evidence_line": "Design already verified: the target is byte-identical at both commits (3,498 bytes, 0 commits between them touch it), so a difference between arms is attributable to the machinery rather than target drift. The HEAD arm is already run, so only the baseline arm remains."
-  },
   "_archived_authored_detail": {
     "_why": [
       "POINT, NEVER PRUNE. Authored detail for an item that has CLOSED is stale to the",
       "generator and still a record of what was asked and why, so it is moved here",
       "rather than deleted. `_`-prefixed keys are metadata and the generator ignores",
       "them, a convention already held by",
-      "test_the_morning_report_is_generated_2026-10-12.py::test_underscore_keys_are_not_treated_as_items."
+      "test_the_morning_report_is_generated_2026-10-12.py::test_underscore_keys_are_not_treated_as_items.",
+      "2026-10-15 23:25: study:arm5 archived because the measurement now carries a result and is no longer a decision item; the immune-memory ledger gap archived because it needs no ruling (it is a mechanical backfill) and the generator correctly refuses authored detail for a non-decision. A `last_updated` key was also removed: the generator treats every top-level key as an item, so a timestamp there reads as an undecidable decision."
     ],
     "task:B1": {
       "no_ruling_needed": true,
@@ -168,6 +161,27 @@
         "Leave it off until confidence and the hard-or-soft class are actually collected, since only the verification factor is measured today."
       ],
       "_archived": "2026-10-15: this measurement now carries a result in experimental_notes/STUDY_IN_FLIGHT.json, so it is no longer a live item for the generator. The authored detail is kept because it records what was asked and why."
+    },
+    "study:arm5": {
+      "title": "Arm 5, the paired baseline — ANSWERED on its spec-delivery half",
+      "what": "Whether the runner and composer as they now stand deliver the project's own specification to a seat better than they did at commit a2a0197 (2026-09-06). It was the last of the 12 programme measurements without a result.",
+      "evidence_line": "0 of 22 HARD blocks reached a live seat at a2a0197, 95% Wilson [0.0000%, 14.8655%], against 22 of 22 now. Measured from the prompt a real dispatch carried, not reconstructed. Producer: scripts/arm5_paired_baseline_2026-10-15.py; evidence preserved at bench/logs/arm5_baseline_a2a0197_evidence/ (17 files).",
+      "no_ruling_needed": "The result stands on its own. 2 judgements CC1 made overnight are reversible on his word: stopping the baseline arm after round 0, and closing the arm on its spec-delivery half alone.",
+      "options": [
+        "ACCEPT as answered, boundary named (recommended). The spec-delivery half is decisive and the finding-count half is unanswerable between these commits for a documented reason with a precedent.",
+        "RE-COMMISSION a full paired run. The worktree at a2a0197 still exists. It would cost about 85 minutes of his machine and would still not yield a comparable finding count, because the baseline carries the citation-backtick defect that stopped study run 1 on 2026-10-03.",
+        "RE-SPEC arm 5 against a NEWER baseline that postdates the 2026-10-03 citation repair, which would make finding counts comparable at the cost of no longer spanning the window the programme named."
+      ]
+    },
+    "defect:immune-memory-names-2-of-its-5-experiments": {
+      "title": "The immune memory cannot police its own re-ingestion for 3 of its 5 experiments",
+      "what": "The live immune memory records 5 experiments but names only 2 in its ledger. It warns on every load that re-running an unnamed experiment would silently double its counts, and asks for a backfill.",
+      "evidence_line": "bench/state/immune_memory.json: experiment_count=5, experiment_ids names 2, provenance_complete=False. The backfill is verifiable rather than reconstructed: the suite's 3 pre-ledger names plus the ledger's 2 is exactly 5, and replaying all 5 reproduces the disk memory with a worst per-class difference of 0.0.",
+      "no_ruling_needed": "Mechanical. Deferred only because it writes live state while a run is in flight.",
+      "options": [
+        "BACKFILL after leg 3 lands (recommended).",
+        "LEAVE and accept that a re-run of exp47, exp48 or exp49 would double-count."
+      ]
     }
   },
   "defect:concise-style-deduplicates-the-code-under-review": {
@@ -233,13 +247,46 @@
     ]
   },
   "task:B10": {
-    "no_ruling_needed": true,
-    "title": "B10 — the note-lint ratchet is blind to the note-standard stamp, by construction",
-    "what": "`scripts/note_vagueness_lint.py` is PATH-SENSITIVE: its standard-stamp rule fires only for a file under a directory named `experimental_notes`. `hooks/pre-commit:375-392` materialises BOTH sides of its ratchet into a flat `mktemp -d` as `after_$base` and `before_$base`, so that parent is gone from both and the rule fires on neither. Measured on identical bytes across 6 notes: the real path and a same-directory copy agree every time, while a flat copy loses a finding in 4 of 6, and every lost finding is `MISSING NOTE STANDARD STAMP`. Being blind on BOTH sides makes it a SOUND RATCHET and an INCOMPLETE DETECTOR — it can never report a change that is not there, but it cannot notice a note delivered with a missing stamp. What slipped past: **73 of 522 notes postdate the standard and name none, 13.9847%, Wilson [11.2717%, 17.2238%]**, an UPPER BOUND since several are working scratch files. The 161 notes naming an OLDER standard are NOT defects — the convention retains version-specific foot-lines.",
-    "why": "Filed as work, not as a question. Found by the assistant being wrong twice: it compared a working file against a bare `/tmp` copy of its HEAD version, read a +1 that did not exist, and deleted good prose to fix a finding it had never created. The paragraph is restored and the lesson is recorded.",
-    "evidence_line": "scripts/the_note_lint_ratchet_is_blind_to_the_stamp_2026-10-15.py; experimental_notes/evidence/note_lint_is_path_sensitive_2026-10-15.json",
+    "title": "B10 — the cause of the non-project terminology, fixed rather than recorded",
+    "what": "You asked: 'Is the lesson is recorded the same as saying the problem that caused it has now been fixed? Because if not you should probably also fix the cause rather than just record the symptom.' It was not the same, and the cause is now mechanical. Rule 30 in the note lint refuses a note using a compound technical term that exists nowhere you can look it up, wired into both the blocking surface and the command-line report.",
+    "evidence_line": "Of the 4 terms you challenged, 3 existed NOWHERE in the project (discrimination guard, paired baseline, consequence gate: 0 glossary hits, 0 docs files) and 1 was real but undefined (coherence budget: 0 glossary hits, 4 docs files). 13 tests, and removing the rule's test-exclusion turns 7 of them red. 2 glossary entries added with code anchors.",
+    "no_ruling_needed": "The cause fix needs nothing from you. The BACKLOG it surfaced does: 734 instances across 243 of 523 notes, 46.46%, mostly real project mechanisms with no glossary entry.",
     "options": [
-      "Preserve the parent directory when the hook materialises both sides — write to `$STAGED_COPY/after/experimental_notes/<base>` and `$STAGED_COPY/before/experimental_notes/<base>` — which keeps the blind-on-both-sides soundness while letting the ratchet see path-sensitive rules, then re-run it over the 73 and either stamp them or record each exemption."
+      "DRAIN BY RATCHET (recommended): new notes carry 0, the committed baseline of 734 may only fall, and terms get defined as they are used.",
+      "COMMISSION A GLOSSARY SWEEP of the 734 now, which is real work and would make the whole archive look-up-able.",
+      "ACCEPT the backlog and enforce only on new notes."
+    ]
+  },
+  "defect:maths-guard-blocks-the-exp38-rescue-outside-software": {
+    "title": "Haiku cannot rescue a misrouted code bug outside the software domain",
+    "what": "You asked whether restricting the Haiku classifier to code-based issues risks making it redundant in non-code STEM experiments, and asked for a fix. The measured answer corrects the premise and then finds a real defect running the OTHER way. Haiku holds 3 live roles and only 1 is domain-gated at all: the claim classifier. The dedup assessor and the Ouroboros librarian reader run in every domain. Even the gated one is DEMOTED outside software, not switched off -- it still made 22 classifications in a mathematics run. But `math_guard` blocks ANY move away from a `mathematical` label outside software at ANY confidence, including the move TO a code type, which is the one destination that CAN ground a code claim. So the rescue the classifier exists to perform is reachable in software only.",
+    "evidence_line": "Over 220 archived classifier logs and 2,273 override lines: of 539 mathematical-guard blocks, 408 had a CODE destination -- 75.6957%, 95% Wilson [71.9011%, 79.1267%] -- across 327 distinct (run, finding, move) occasions, 104 finding identifiers and 32 runs. Producer: scripts/the_code_path_guard_is_off_in_non_software_2026-10-15.py",
+    "what_was_already_fixed": "The mirror-image hole WAS fixed tonight and needed no ruling because it only ADDS protection: the code-path guard was wired to the software domain, so outside software a true code claim could be demoted OFF the code path. Measured: 10 distinct findings of 333 SEMI-ACTIVE overrides, 3.0030%, 95% Wilson [1.6392%, 5.4387%], 8 of them from exp38 -- the experiment the guard's own comment cites as its motivation. Now domain-independent, 51 tests green, and 2 mutations turn them red (16 failures and 3 failures).",
+    "options": [
+      "RULE YES on the one-clause narrowing: `math_guard = (regex is MATHEMATICAL and not llm_primary and llm_type not in _code_types)` (recommended). It extends to every domain the behaviour software already has, and the named dominated property is whether a code claim can reach the only cell that can ground it.",
+      "RULE NO and keep the maths label absolute outside software. The cost is that 327 measured occasions of a proposed rescue stay refused, and Haiku stays unable to make its most valuable move in exactly the domains you asked about.",
+      "RULE a CONFIDENCE TEST instead: allow the move to a code type only above a stated confidence, rather than unconditionally. 0 of the 327 occasions fell below 0.65, so a 0.70 threshold would admit nearly all of them."
+    ]
+  },
+  "defect:the-projects-working-vocabulary-is-largely-undocumented": {
+    "title": "734 undefined compound terms across 243 of the project's 523 notes",
+    "what": "Fixing the cause of the non-project terminology you challenged surfaced a larger measured fact: the project's working vocabulary is substantially undocumented. The phrases flagged are mostly REAL mechanisms -- confinement guard, provenance gate, integrity guard, literature cell, falsifier ladder, post-run sweep -- appearing neither in docs/GLOSSARY.md nor in anything the code emits, so a reader who meets one has nowhere to look it up. This is why you keep meeting unfamiliar terms: it is systemic, not an occasional slip.",
+    "evidence_line": "Measured with the live Rule 30 over the project's own notes: 734 instances across 243 of 523 notes, 46.46%. Enforcement is a RATCHET -- the baseline is committed and may only fall, notes written from now carry 0 -- because blocking on the absolute count would refuse nearly half the archive and teach its reader the checker is noise. Rule: scripts/note_vagueness_lint.py Rule 30; guard: bench/tests/test_the_note_lint_catches_a_coined_term_2026-10-15.py, 13 tests, mutation-proven.",
+    "options": [
+      "DRAIN BY RATCHET (recommended). Costs nothing now, new notes are clean, terms get defined as they are next used.",
+      "COMMISSION A GLOSSARY SWEEP of all 734 now. Real work, and it would make the whole archive look-up-able for a third-party reader.",
+      "SWEEP ONLY THE COMMONEST and let the ratchet handle the tail."
+    ]
+  },
+  "task:B11": {
+    "title": "B11 — the board triage, and the honest answer to when the board goes fully green",
+    "what": "You asked twice: 'So when and in what circumstances will I get a fully green board back? What exactly do we have to do? And of course I mean honestly. Not faking it.' The board after the 2 free runs was 33 failed against 1 before them. 21 were mine and were fixed that morning. Of the 9 that remained, 7 were the archive-grew class and ARE NOW FIXED tonight on your ruling to derive each baseline rather than re-pin it: 259 passed, 0 failed across the 5 suites. That leaves 2, and only 1 needs anything from you.",
+    "evidence_line": "(a) test_task_list_burndown is HONEST RED ARITHMETIC: on 2026-10-15 the list gained 7 entries and closed 4, and the test requires closures to outpace discovery. It greens by closing work, which tonight does, and must never be greened by marking undone work done. (b) test_sim_naming_and_integrity_directive is HONEST RED EVIDENCE: run 2's artefacts carry 64 instances of identifiers like Gemini-SIM_GEMINI_F004, where the SEAT label is correct and the bare vendor name arrives inside the model's own self-chosen local identifier, joined through at bench/reference_runner_v3.py:4602. Run 1 carries 0, so it is non-deterministic.",
+    "options": [
+      "RULE on (b): authorise a FORWARD NORMALISATION at the composition site, so future runs strip a bare vendor name from a model-supplied identifier (recommended). Run 2's recorded artefacts stay untouched, so no evidence is rewritten, and the board greens as runs roll forward rather than retroactively.",
+      "RULE on (b): leave it red permanently as a standing provenance marker. Honest, but the board then never reads fully green and a future reader cannot tell this red from a regression.",
+      "REFUSED EXPLICITLY, named so it is not quietly available: do not exempt run 2's artefacts, which would hide a real provenance gap, and do not rewrite them, which would falsify experimental evidence.",
+      "THE HONEST BOTTOM LINE: the board cannot be fully green tonight by any legitimate route. With (b) ruled and (a) closing as work lands, the first fully green board is reachable on the next run after the normalisation, not before."
     ]
   }
 }
