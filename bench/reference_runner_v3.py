@@ -11773,11 +11773,32 @@ def _apply_back_setup(cfg, target_path: "Path", logs_dir: "Path") -> "Path":
         from bench.falsifier_verify import STAGED_TARGET_ROOT as _STAGED_ROOT
     except Exception:          # the guard module must never be a hard dependency
         _STAGED_ROOT = ""
+    # AND IT FALLS BACK LOUDLY RATHER THAN DYING. A first version of this edit
+    # called mkdir on the staged root with no guard, so a run would have crashed
+    # at setup if that root were unusable -- found by P-passing this fix against
+    # an unwritable root rather than by reading it, and the root is in the
+    # operator's home where this project does not control the permissions
+    # (`~/CDSFL_review_targets/current` is already read-only, dated 2026-08-01).
+    # A crashed run is worse than a run whose verification is refused, so the
+    # old location is used as a fallback and the log SAYS SO, naming the
+    # consequence, because a silent fallback would reintroduce B9 invisibly.
+    work_dir = None
     if _STAGED_ROOT:
-        work_dir = Path(_STAGED_ROOT) / logs_dir.name
-    else:
+        try:
+            work_dir = Path(_STAGED_ROOT) / logs_dir.name
+            work_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as _e:
+            _log(f"  apply-fixes-back WARNING: the staged target root "
+                 f"{_STAGED_ROOT!r} is unusable ({type(_e).__name__}: {_e}). "
+                 f"Falling back to {logs_dir / 'working'}, which "
+                 f"`falsifier_verify._is_evidence` REFUSES to a falsifier — so "
+                 f"verification will return INTEGRITY_VIOLATION on this target "
+                 f"(task B9). The run continues; its findings will need HIL "
+                 f"adjudication rather than an executed demonstration.")
+            work_dir = None
+    if work_dir is None:
         work_dir = logs_dir / "working"
-    work_dir.mkdir(parents=True, exist_ok=True)
+        work_dir.mkdir(parents=True, exist_ok=True)
     working_path = work_dir / target_path.name
     archive_dir = logs_dir / "working"
     archive_dir.mkdir(parents=True, exist_ok=True)

@@ -196,3 +196,44 @@ class TestAPromotionUpdatesBothCopies:
         arch.write_text("CHANGED\n", encoding="utf-8")
         assert arch.read_text(encoding="utf-8") == \
             ctx["working_path"].read_text(encoding="utf-8")
+
+class TestAnUnusableStagedRootFallsBackLoudlyRatherThanCrashing:
+    """The staged root lives in the operator's home, where this project does not
+    control the permissions -- `~/CDSFL_review_targets/current` is already
+    read-only, dated 2026-08-01. A first version of the B9 fix called mkdir with
+    no guard, so a run would have CRASHED AT SETUP if that root were unusable.
+    Found by P-passing the fix against an unwritable root, not by reading it.
+    """
+
+    def _setup_with_a_broken_root(self, runner, tmp_path, monkeypatch):
+        import bench.falsifier_verify as _fv
+        broken = tmp_path / "not_a_dir"
+        broken.write_text("x", encoding="utf-8")      # a FILE, so mkdir must fail
+        monkeypatch.setattr(_fv, "STAGED_TARGET_ROOT", str(broken), raising=True)
+        said: list[str] = []
+        monkeypatch.setattr(runner, "_log", lambda m: said.append(str(m)))
+        target = tmp_path / "doc.md"
+        target.write_text("A\n", encoding="utf-8")
+        logs = tmp_path / "bench" / "logs" / "run_x"
+        logs.mkdir(parents=True, exist_ok=True)
+        out = runner._apply_back_setup(_cfg(runner), target, logs)
+        return out, logs, said
+
+    def test_it_does_not_crash(self, runner, tmp_path, monkeypatch):
+        out, _, _ = self._setup_with_a_broken_root(runner, tmp_path, monkeypatch)
+        assert out.is_file(), "a crashed run is worse than a refused verification"
+
+    def test_it_falls_back_to_the_old_location(self, runner, tmp_path, monkeypatch):
+        out, logs, _ = self._setup_with_a_broken_root(runner, tmp_path, monkeypatch)
+        assert out == logs / "working" / "doc.md"
+
+    def test_the_fallback_is_LOUD_and_names_the_consequence(
+            self, runner, tmp_path, monkeypatch):
+        """A silent fallback would reintroduce B9 invisibly."""
+        _, _, said = self._setup_with_a_broken_root(runner, tmp_path, monkeypatch)
+        warn = [m for m in said if "WARNING" in m]
+        assert warn, f"no warning emitted; said={said}"
+        joined = " ".join(warn)
+        assert "B9" in joined, joined
+        assert "INTEGRITY_VIOLATION" in joined, joined
+        assert "unusable" in joined, joined
