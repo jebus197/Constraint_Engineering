@@ -18,10 +18,14 @@ PROVENANCE ON EVERY SAVE":
      profiles it did not measure -- real and -SIM alike. Any per-model
      falsification rate persisted here inherits this."
 
-That script exists ONLY at
-`bench/logs/fingerprint_ladder_review_2026-10-05/sandbox_harvest/fable/attempt-1/files/scripts/the_provenance_gate_reads_text_not_behaviour_2026-10-05.py`.
-It is not in `scripts/`, and `grep -i fingerprint` over the master task list
-returns 4 hits, none of them this. SO THE SECOND FINDING HERE IS THE PROCESS
+When this was written that script existed ONLY inside the 2026-10-05 fingerprint
+ladder review's sandbox harvest -- absent from `scripts/`, and `grep -i
+fingerprint` over the master task list returned 4 hits, none of them this. It
+has since been PROMOTED to
+`scripts/the_provenance_gate_reads_text_not_behaviour_2026-10-05.py`, 7,214
+bytes unchanged beneath a header naming the fable seat as its author, which is
+the reachable copy a reader should open. The harvest location is described
+rather than cited because `bench/logs/` is gitignored. SO THE SECOND FINDING HERE IS THE PROCESS
 ONE: a seat found a real defect, wrote the producer, and it never left the
 sandbox. Same shape as the 41 of 220 harvested seat files that existed nowhere
 else (`feedback_never_delete_bulk_resources`).

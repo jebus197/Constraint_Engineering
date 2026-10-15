@@ -83,6 +83,24 @@ A zero would need 688 findings before it carried information at the archive's me
 
 The pre-fix board was 1 failed, 11,278 passed, 18 skipped in 3497.35 s, from `python3 -m pytest bench/tests/ -q`. The single failure is `test_task_list_burndown_2026-09-11.py::TestTheConvergenceArgumentRestsOnTheRightThing::test_closure_outpaced_discovery_on_the_latest_full_day`, and it is red for the right reason: *"on 2026-10-15 the list gained 6 entries and closed 2; the convergence argument no longer holds and any ETA resting on it must be withdrawn."* Today created B4 through B9 and has closed B4, B5, B7 and B9, so the day stands at 6 gained against 4 closed. **The test requires closures to OUTPACE discovery, and that cannot be reached today by honest means**: it would need 7 closures against 6 entries created, and closing an item that is not done is exactly the dishonesty the test exists to prevent. A post-fix board is running at the time of writing.
 
+## FIGURE PROVENANCE
+
+Every measured figure above comes from a committed producer, listed here so a reader can re-run it rather than take it on trust. This section exists because `scripts/note_reproducibility_2026-09-10.py` found this note carrying 26 figures and naming 0 scripts, which is the defect `measured-rate-travels-with-its-script` exists to prevent.
+
+- Run 1's convergence, the withdrawn A19 hypothesis, and the severity shadow against the archive: `scripts/run1_converged_and_a19_is_by_design_2026-10-15.py`
+- The futility guard holding 24 of 24 with 0 splits: `scripts/the_futility_guard_held_in_a_live_run_2026-10-15.py`
+- The fingerprint restamping, 5 of 5 real seats and 0 values moved: `scripts/the_fingerprint_store_restamps_seats_it_never_measured_2026-10-15.py`
+- The coherence recalibration inert on 3 layers: `scripts/the_coherence_recalibration_is_inert_three_ways_2026-10-15.py`
+- The confinement guard refusing the run's own target, 18 of 18 against 0 of 81: `scripts/the_guard_refuses_the_runs_own_target_2026-10-15.py`
+- The severity specification's key property never firing, 0 of 41: `scripts/the_severity_key_property_never_fired_2026-10-15.py`
+- `guard_reach`, 40 corrected copies of 57 and the 1 indeterminate probe: `scripts/the_invariance_probe_had_almost_nothing_to_probe_2026-10-15.py`
+- Haiku at run scale, the 3-way accounting closing at 9 + 10 + 3: `scripts/haiku_as_classifier_at_run_scale_2026-10-15.py`
+- The elicitation half, 0 of 29 with its opportunity count: `scripts/the_unresolved_section_elicitation_2026-10-15.py`
+- The note lint's path sensitivity and the 73 unstamped notes: `scripts/the_note_lint_ratchet_is_blind_to_the_stamp_2026-10-15.py`
+- That all 5 producers above discriminate, by mutation: `scripts/p_pass_todays_producers_2026-10-15.py`
+
+The guards for the 2 fixes are `bench/tests/test_the_working_copy_is_readable_by_a_falsifier_2026-10-15.py` (B9, 18 tests) and `bench/tests/test_fingerprints_record_only_what_a_run_observed_2026-10-15.py` (B7, 8 tests). The evidence JSON each producer writes sits under `experimental_notes/evidence/`.
+
 ## Cost
 
 Neither run spent money. `bench/tools/sim_dispatch_shim.py` patches `_dispatch_single_model`, the single point at which a paid model would be called, every seat label carries the `-SIM` suffix at source, and the spending limit is 0.00. No archived run can be replayed against the current composer and expected to reproduce, which is the price the directive repair was parked for and which the founder accepted in terms.
