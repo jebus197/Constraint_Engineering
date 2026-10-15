@@ -455,6 +455,48 @@ def _apply_phenotype_transform(text: str, transform: PhenotypeTransform) -> str:
     if not text:
         return text
 
+    # --- 0. PROTECT CONTENT WHERE PRESENTATION *IS* SUBSTANCE (2026-10-15) ---
+    #
+    # THE DEFECT, MEASURED DIRECTLY. This function's own docstring promises that
+    # it "transforms the directive text without changing the underlying
+    # constraints" and that "only presentation is modified". For CODE UNDER
+    # REVIEW that promise is false, because in Python indentation IS syntax and
+    # a repeated definition IS the thing a reviewer must see.
+    #
+    # On a situation packet holding 20 repeated function definitions, measured
+    # 2026-10-15 by calling this function on both styles:
+    #
+    #     format_style="full"     2,277 chars, 20 `def `, 80 indented lines
+    #     format_style="concise"    193 chars,  1 `def `,  0 indented lines
+    #
+    # That is 2,085 characters lost, 91.5277%, and 19 of 20 function definitions
+    # DELETED. Step 5 strips every line and joins blocks with a space; step 6
+    # then deduplicates lines that are semantically similar, which near-identical
+    # function definitions always are. 4 of the 5 live models receive the concise
+    # rendering, so 4 of 5 seats asked to review code were being shown 1 function
+    # of 20, unindented.
+    #
+    # THE CODE IS NOT FENCED, so protecting fenced blocks alone would not have
+    # worked: `_build_situation_packet` emits it under a plain `=== CODE
+    # EXTRACTS ===` section marker. Both forms are protected here -- the named
+    # section because that is the project's own structure, and fenced blocks
+    # because that is how a model writes code back.
+    #
+    # RESTORED BEFORE THE LENGTH CAP, deliberately, so step 9 measures the true
+    # size. Restoring after it would let a seat's capacity limit be computed
+    # against a placeholder.
+    _verbatim_stash: list[str] = []
+
+    def _stash_verbatim(match: "re.Match[str]") -> str:
+        _verbatim_stash.append(match.group(0))
+        return f"\n\nZZVERBATIMBLOCK{len(_verbatim_stash) - 1}ZZ\n\n"
+
+    text = re.sub(r"```.*?```", _stash_verbatim, text, flags=re.DOTALL)
+    for _section in _VERBATIM_SITUATION_SECTIONS:
+        text = re.sub(
+            rf"(?m)^=== {re.escape(_section)} ===\n.*?(?=^=== |\Z)",
+            _stash_verbatim, text, flags=re.DOTALL)
+
     # --- 1. Strip examples ---
     if transform.strip_examples:
         lines = text.split("\n")
@@ -587,6 +629,10 @@ def _apply_phenotype_transform(text: str, transform: PhenotypeTransform) -> str:
             text = re.sub(
                 rf"\b{re.escape(src)}\b", dst, text, flags=re.IGNORECASE
             )
+
+    # --- 7b. RESTORE THE PROTECTED CONTENT, before the length cap ---
+    for _i, _block in enumerate(_verbatim_stash):
+        text = text.replace(f"ZZVERBATIMBLOCK{_i}ZZ", _block)
 
     # --- 8. Clean up blank lines ---
     text = re.sub(r"\n{3,}", "\n\n", text).strip()
@@ -812,6 +858,14 @@ def _load_domain_directive(
         domain=domain,
         tags={domain},
     )
+
+
+#: Situation-layer sections whose PRESENTATION IS SUBSTANCE, so the phenotype
+#: transform must pass them through character for character. `CODE EXTRACTS`
+#: carries the code under review, where indentation is Python syntax and a
+#: repeated definition is the thing the reviewer is being asked to look at.
+#: `INTERACTION SURFACE` carries signatures for the same reason.
+_VERBATIM_SITUATION_SECTIONS = ("CODE EXTRACTS", "INTERACTION SURFACE")
 
 
 def _build_situation_packet(

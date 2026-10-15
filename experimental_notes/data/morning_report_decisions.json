@@ -185,25 +185,47 @@
     }
   },
   "defect:concise-style-deduplicates-the-code-under-review": {
-    "title": "The concise rendering collapses the code under review for 4 of 5 models",
+    "title": "The concise rendering collapsed the code under review — FIXED 2026-10-15",
     "what": "On a situation packet holding 20 repeated function definitions, the largest seat receives all 1,491 characters and the other 4 receive 339, the repeats collapsed to one copy and every line stripped of its indentation. That is 4 of 5 models, 80.0000%, Wilson [37.5535%, 96.3776%].",
     "why": "The harm is bounded, because the code also reaches the model through the round prompt, so nobody reviews an empty page. But 2 genuinely different functions that look alike can be merged into one, and indentation is syntax in the language these targets are written in.",
     "evidence_line": "Found while sizing a test fixture, which now uses flat assignments precisely because a function definition is deleted by this mechanism before the cap can be measured.",
     "options": [
-      "Stop the dedup at the situation-packet boundary, so it still compresses directives but never the material under review.",
-      "Leave it, on the measured ground that the round prompt carries the code anyway."
-    ]
+      "NO RULING NEEDED — this was a repair, not a design decision: no reading of the project wants 19 of 20 functions deleted from a code review. Recorded for the record and for the next run to exercise."
+    ],
+    "FIXED_2026_10_15": {
+      "measured_before": "On a situation packet holding 20 repeated function definitions, called directly: format_style='full' gave 2,277 chars with 20 `def ` and 80 indented lines; format_style='concise' gave 193 chars with 1 `def ` and 0 indented lines. 2,085 characters lost, 91.5277%, and 19 of 20 definitions DELETED.",
+      "cause": "Step 5 of `_apply_phenotype_transform` strips every line and joins blocks with a space; step 6 then deduplicates lines that are semantically similar, which near-identical function definitions always are. The function's docstring promises 'only presentation is modified', and for Python that promise is false because indentation is syntax.",
+      "fix": "Content whose presentation IS substance is stashed before step 1 and restored before step 8, so every transform sees a placeholder and the code passes through character for character. The protected set is `_VERBATIM_SITUATION_SECTIONS` -- CODE EXTRACTS and INTERACTION SURFACE -- plus any ``` fenced block.",
+      "THE_DESIGN_POINT_THAT_HAD_TO_BE_MEASURED": "THE CODE IS NOT FENCED. `_build_situation_packet` emits it under a plain `=== CODE EXTRACTS ===` marker, so a fences-only fix would have passed its own review and changed nothing. Proved by mutation: removing the named-section protection and keeping only the fence protection turns 6 of the 11 tests red.",
+      "restore_ordering_is_load_bearing": "The restore happens BEFORE the length cap so the cap measures the true size; restoring after it would compute a seat's capacity limit against a placeholder. Proved by mutation: moving the restore after the cap turns 1 test red.",
+      "measured_after": "concise now gives 2,276 chars with all 20 definitions and all 80 indented lines, while prose is still compressed (175 against 181 chars), so the repair protects a capability rather than removing one.",
+      "status": "BUILT and TESTED. 11 tests in bench/tests/test_the_concise_rendering_keeps_the_code_2026-10-15.py, 2 mutations turning them red at 6 and 1, and the 4 composer-facing suites still green."
+    },
+    "no_ruling_needed": "Fixed. Exercised by the next simulated run."
   },
   "defect:proven-floor-used-as-a-ceiling-in-the-decomposition-decision": {
-    "title": "A seat's proven capacity is used as a ceiling, so its observed maximum can never rise",
+    "title": "The proven-floor ceiling: PARTLY FALSIFIED on measurement, and what remains is sharper",
     "what": "The decomposition decision reads the largest prompt a seat has accepted and splits the job above 90% of it. The code's own words call that a proven floor, meaning the model has shown it can handle at least that much, and then treats it as a limit.",
     "why": "With the specification delivered whole, the standing instructions are 74,177 characters, and all 6 simulated seats, 100.0000%, Wilson [60.9666%, 100.0000%], would have force-split every dispatch on the size of their own instructions, while no paid seat would have. A confound that fires only in the cheap runs is the worst shape there is.",
     "evidence_line": "A futility guard treats the symptom: when the unsplittable part already exceeds the limit, splitting is dominated on per-request bytes, total bytes and request count, proved by 3 tools agreeing.",
     "options": [
-      "Let the observed maximum rise when a larger payload succeeds, which is what a proven floor means, accepting that paid routing changes with it.",
-      "Keep the ceiling and keep the futility guard, so the symptom is handled and the ratchet stays conservative.",
-      "Separate the 2 numbers: a proven floor for capability, and a ceiling only where a failure was actually observed."
-    ]
+      "RULE: RESET the 4 paid seats' observed maximum to a per-seat figure before paid dispatch resumes (recommended). The shared 465,206 is not an observation of any one of them, and leaving it means the decomposition decision for every paid seat is driven by a number none of them produced.",
+      "RULE: RAISE or REMOVE the 80,000 hard floor so the figure can be re-exercised. This is the design decision the code's own comment names -- 'Changing it alters routing for paid seats and is a design decision, not a repair' -- and it reopens the Exp 39-0 quality-collapse risk the floor was added to prevent.",
+      "RULE: LEAVE BOTH and accept that paid decomposition routing rests on a 185-day-old shared constant. Honest, and it costs nothing until paid dispatch resumes.",
+      "NO ACTION IS TAKEN TONIGHT. The simulated half of the original claim is falsified, the paid half is a design decision about paid routing, and CC1 has twice been corrected for changing something on judgement where a measurement was available."
+    ],
+    "MEASURED_2026_10_15_AND_IT_REFUTES_PART_OF_THE_ORIGINAL_CLAIM": {
+      "the_claim_as_recorded": "A seat's proven capacity is used as a ceiling, so its observed maximum can never rise -- 'a ratchet that cannot climb'.",
+      "WHAT_REFUTED_IT": "The ratchet DOES climb wherever dispatches actually happen. Measured from git history of the fingerprint files across every revision: CC2-SIM's observed maximum rose 3 times -- 35,013 on 2026-08-30, 63,136 on 2026-08-31, 74,140 on 2026-09-08, 80,517 on 2026-10-04 -- monotone non-decreasing with 0 falls, cross-checked by NumPy (minimum successive difference 0) and SymPy (monotonicity over the exact integers).",
+      "A_SECOND_SELF_CORRECTION": "An intermediate hypothesis that the live runner only READS the key and never writes it was also wrong. An AST scan for assignment sites finds 2 writes in reference_runner_v3.py, at lines 11418 and 11461, where it takes max(existing, prompt_chars). The hypothesis came from grepping only the first few hundred lines and would have produced a confident wrong diagnosis; the AST check caught it.",
+      "WHAT_ACTUALLY_REMAINS_AND_IT_IS_WORSE_IN_ONE_RESPECT": [
+        "4 of the 5 PAID seats carry EXACTLY 465,206 -- CC2, ChatGPT, Codex and Gemini, identical to the character. DeepSeek alone differs at 110,076. An identical figure across 4 vendors of different architectures is not a per-seat observation.",
+        "It has not moved in 185 days, since 2026-04-13, across 26 revisions of the file. The mundane reason is that no paid seat has been dispatched in that window, which is the standing no-paid-dispatch directive working as intended -- NOT a write bug.",
+        "It is now structurally un-correctable. DECOMPOSE_HARD_FLOOR_CHARS is 80,000 and every payload above it is force-decomposed, so no single dispatch can exceed 80,000 chars. The derived ceiling from 465,206 is 0.9 x 465,206 = 418,685, far above the floor, so for a paid seat the size-based futility guard can effectively never fire and the 465,206 can never be re-exercised or corrected downward by ordinary running.",
+        "This is the figure already implicated in a measured quality collapse. The code's own comment records Exp 39-0: 'their fingerprints reported 465K observed capacity x 0.9 safety margin = 418K >= 369K, no decompose, quality crashed' on 369K dispatches to CC2, ChatGPT and Gemini."
+      ],
+      "producer": "measured inline from `git show <sha>:bench/fingerprints/*.json` across every revision; figures reproduced in this entry and in the session note."
+    }
   },
   "task:B3": {
     "title": "The parked file is never reconciled against the task list, and 14 of 21 parked items were already settled",
