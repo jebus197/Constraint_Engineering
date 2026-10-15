@@ -783,7 +783,14 @@
       "the_seam": "falsifier_verify._is_evidence refuses any bench/logs path even inside an allowed root (correct, closed 2026-10-12 by e8ee2e18 after both free seats found the hole); reference_runner_v3.py:11688 stages the target at logs_dir/'working' (since ce08914c, 2026-09-01); and STAGED_TARGET_ROOT = ~/CDSFL_review_targets is allowed for exactly this purpose and never referenced by the runner.",
       "bound": "Did NOT stop run 1 converging and left 0 unresolved criticals. The gate reads UNCONFIRMED criticals, of which run 1 ended with 0, and a refusal is not a disconfirmation. The cost is verification DEPTH, not convergence.",
       "not_fixed_because": "Run 2 was in flight carrying the identical defect, 18 and 18, so the matched pair is intact; a mid-pair fix would make neither run comparable.",
-      "producer": "scripts/the_guard_refuses_the_runs_own_target_2026-10-15.py"
+      "producer": "scripts/the_guard_refuses_the_runs_own_target_2026-10-15.py",
+      "fix": {
+        "the_one_option": "stage the review target under the existing STAGED_TARGET_ROOT (~/CDSFL_review_targets)",
+        "why_it_is_the_only_one": "_denied checks _protected, then _is_evidence, and only THEN the allow set. The evidence tier short-circuits before the allow list is consulted, so adding the run-scoped working/ directory to the declared roots cannot work. An exception would have to be carved into _is_evidence itself, reopening the tier both free seats closed on 2026-10-12.",
+        "cost": "1 line in the runner; the guard is not weakened at all",
+        "guard_required": "a test that EXECUTES a falsifier against a staged target and fails if the open is refused",
+        "correction": "CC1's first version of this entry offered adding the working directory to the declared roots as an alternative. That is forbidden by the denial order and is WITHDRAWN at 2026-10-15T08:53:12+01:00."
+      }
     }
   ],
   "high_priority_2026_10_15": {
@@ -836,7 +843,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T08:47:50+01:00",
+  "last_updated": "2026-10-15T08:53:12+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
