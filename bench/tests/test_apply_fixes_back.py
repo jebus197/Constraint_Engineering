@@ -42,6 +42,22 @@ def _fix(search, replace, path="_t.py"):
 
 
 @pytest.fixture(autouse=True)
+def _redirect_staged_root(tmp_path, monkeypatch):
+    """Keep the staged working copy out of the operator's real home.
+
+    ADDED 2026-10-15 with the B9 fix. `_apply_back_setup` now stages the working
+    copy under `falsifier_verify.STAGED_TARGET_ROOT`, because the old location
+    under `bench/logs/<run>/working/` is refused to a falsifier by
+    `_is_evidence` -- which is the whole point of that fix. Without this
+    redirect every test here would write into `~/CDSFL_review_targets/`, and
+    running the suite once already created a stray `logs/` directory there.
+    """
+    import bench.falsifier_verify as _fv
+    monkeypatch.setattr(_fv, "STAGED_TARGET_ROOT",
+                        str(tmp_path / "staged_root"), raising=True)
+
+
+@pytest.fixture(autouse=True)
 def _restore_ctx():
     saved = dict(rr._APPLY_BACK_CTX)
     yield
@@ -62,8 +78,20 @@ def test_setup_enabled_creates_working_copy(tmp_path):
     tgt.write_text("A = 1\nB = 2\n")
     logs = tmp_path / "logs"
     out = rr._apply_back_setup(_Cfg(True), tgt, logs)
-    assert out == logs / "working" / "_t.py"
+    # RE-PINNED 2026-10-15 (B9). This asserted `logs / "working" / "_t.py"`, and
+    # that location is exactly the defect: every round is pointed at this copy,
+    # so it IS the falsifier's review target, and `falsifier_verify._is_evidence`
+    # refuses any `bench/logs` path even inside an allowed root. Measured: 18
+    # refusals per run across both free runs of 2026-10-15, every one of them
+    # that path. The copy is now staged under `STAGED_TARGET_ROOT` and MIRRORED
+    # back into `logs / "working"` so nothing leaves the run's archive.
+    import bench.falsifier_verify as _fv
+    assert str(out).startswith(str(_fv.STAGED_TARGET_ROOT))
+    assert out.parent.name == logs.name, "the staged copy must be per-run"
     assert out.read_text() == "A = 1\nB = 2\n"
+    archived = logs / "working" / "_t.py"
+    assert archived.is_file(), "the working copy must still archive with the run"
+    assert archived.read_text() == out.read_text()
     assert tgt.read_text() == "A = 1\nB = 2\n"  # pristine untouched
     assert rr._APPLY_BACK_CTX["enabled"] is True
     assert rr._APPLY_BACK_CTX["pristine_path"] == tgt

@@ -11685,9 +11685,47 @@ def _apply_back_setup(cfg, target_path: "Path", logs_dir: "Path") -> "Path":
     _APPLY_BACK_CTX.clear()
     if not getattr(cfg, "apply_fixes_back_enabled", False):
         return target_path
-    work_dir = logs_dir / "working"
+    # ★ B9 (2026-10-15): THE WORKING COPY MUST NOT LIVE UNDER `bench/logs`.
+    # It used to, since ce08914c on 2026-09-01, and that is where every round is
+    # pointed -- so it IS the target the falsifiers are given. On 2026-10-12
+    # commit e8ee2e18 closed a real hole by making `falsifier_verify._is_evidence`
+    # refuse ANY `bench/logs` path even inside an allowed root, after both free
+    # seats found that a falsifier could read this project's run evidence. The 2
+    # changes are each correct and together they refuse the falsifier its own
+    # review target: measured on 2026-10-15, 18 refusals per run across both free
+    # runs, every one of them this path, against 0 of 81 in the pre-rule
+    # study_run1b -- Fisher exact p = 3.976950e-20.
+    #
+    # ADDING THE DIRECTORY TO THE DECLARED ROOTS CANNOT WORK, and that was CC1's
+    # first proposal, withdrawn. `_denied` reads `_protected`, then
+    # `_is_evidence`, and only THEN the allow set, so the evidence tier
+    # short-circuits before any allowance is consulted.
+    #
+    # So the copy is staged under `falsifier_verify.STAGED_TARGET_ROOT`, which is
+    # ALREADY in `_allow_roots` and documented as where "an exam falsifier opens
+    # the one document it is given". Verified by EXECUTING the guard's own
+    # predicates before this edit was written: the new path returns denied=False,
+    # the old one denied=True, the pristine repo target stays readable, and
+    # another run's evidence stays REFUSED. The guard is not weakened by one byte.
+    #
+    # NOTHING IS LOST: the working copy is still ARCHIVED with the run, mirrored
+    # into `logs_dir / "working"` on every write, because it is evidence of what
+    # the models actually reviewed. The mirror is never handed to a falsifier --
+    # the staged path is what rounds receive -- so it stays correctly refused as
+    # evidence, which is what it is.
+    try:
+        from bench.falsifier_verify import STAGED_TARGET_ROOT as _STAGED_ROOT
+    except Exception:          # the guard module must never be a hard dependency
+        _STAGED_ROOT = ""
+    if _STAGED_ROOT:
+        work_dir = Path(_STAGED_ROOT) / logs_dir.name
+    else:
+        work_dir = logs_dir / "working"
     work_dir.mkdir(parents=True, exist_ok=True)
     working_path = work_dir / target_path.name
+    archive_dir = logs_dir / "working"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    archive_path = archive_dir / target_path.name
     seed = getattr(cfg, "apply_fixes_back_seed", "") or ""
     if seed:
         seed_path = Path(seed)
@@ -11699,9 +11737,11 @@ def _apply_back_setup(cfg, target_path: "Path", logs_dir: "Path") -> "Path":
         src_text = target_path.read_text(encoding="utf-8")
         seed_desc = f"pristine {target_path}"
     working_path.write_text(src_text, encoding="utf-8")
+    archive_path.write_text(src_text, encoding="utf-8")
     _APPLY_BACK_CTX.update({
         "enabled": True,
         "working_path": working_path,
+        "archive_path": archive_path,
         "pristine_path": target_path,
         "rel_target": _rel_to_repo(target_path),
         "cumulative_source": src_text,
@@ -11809,6 +11849,14 @@ def _apply_back_promote(registry, round_idx: int) -> Optional[str]:
         return None
     _APPLY_BACK_CTX["cumulative_source"] = src
     _APPLY_BACK_CTX["working_path"].write_text(src, encoding="utf-8")
+    # Mirror into the run's archive so the bytes the models reviewed stay with
+    # the run. Best-effort: a failed mirror must never fail a promotion.
+    _arch = _APPLY_BACK_CTX.get("archive_path")
+    if _arch is not None:
+        try:
+            _arch.write_text(src, encoding="utf-8")
+        except OSError:
+            pass
     return src
 
 

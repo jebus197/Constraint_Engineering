@@ -990,6 +990,25 @@
           "the severity specification's key property, which needs a V_false that only a falsifier reaching a verdict can produce (0 of 41 across both runs)"
         ],
         "so": "2 programme measurements are gated on the same 1-line staging fix, which raises B9's priority above where it was filed"
+      },
+      "status": "FIXED, TESTED, COMMITTED 2026-10-15T09:43:15+01:00",
+      "fix_applied": {
+        "what": "_apply_back_setup stages under STAGED_TARGET_ROOT / <run dir name>; the copy is mirrored into logs_dir/'working' on every write so nothing leaves the run archive",
+        "verified_before_writing": "the guard's own _denied, extracted from the observer it ships, returns False on the new path and True on the old; pristine target readable; another run's evidence and a harvested seat file still REFUSED",
+        "guard": "bench/tests/test_the_working_copy_is_readable_by_a_falsifier_2026-10-15.py, 15 tests, all executing",
+        "mutations_that_turn_it_red": {
+          "revert the staging location": 3,
+          "drop the archive mirror": 3,
+          "drop the per-run subdirectory": 1,
+          "drop archive_path from the ctx": 2
+        },
+        "regressions_checked": {
+          "fold_forward": 7,
+          "discrimination_control": 47,
+          "corrected_copy": 25,
+          "evidence_guard_2026_10_12": 13
+        },
+        "an_existing_test_pinned_the_old_location": "test_apply_fixes_back.py re-pinned with the reason in place, plus an autouse fixture redirecting STAGED_TARGET_ROOT to tmp_path because its first run wrote a stray logs/ directory into the operator's real home"
       }
     },
     {
@@ -1052,7 +1071,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T09:34:44+01:00",
+  "last_updated": "2026-10-15T09:43:15+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
