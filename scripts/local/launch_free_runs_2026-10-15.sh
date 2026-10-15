@@ -97,9 +97,31 @@ echo "$LOG"  > /tmp/cdsfl_current_free_run.log
 echo "launching $NAME"
 echo "  target : $TARGET"
 echo "  log    : $LOG"
+# ★ `${EXTRA[@]+...}` IS NOT DECORATION. This machine runs GNU bash 3.2.57,
+# where `set -u` treats an EMPTY ARRAY as an unbound variable: `"${EXTRA[@]}"`
+# aborts with "EXTRA[@]: unbound variable" on run 1, whose EXTRA is empty by
+# design. Measured 2026-10-15 07:10 -- run 1 did NOT launch, and the script had
+# already printed its log path and PID, so it LOOKED launched.
+#
+# `${EXTRA[@]+"${EXTRA[@]}"}` expands to nothing when the array is empty and to
+# the quoted elements otherwise, on both bash 3.2 and 5.x.
 nohup python3 bench/tools/run_simulated_experiment.py \
-      "${COMMON[@]}" "${EXTRA[@]}" --name "$NAME" > "$LOG" 2>&1 &
+      "${COMMON[@]}" ${EXTRA[@]+"${EXTRA[@]}"} --name "$NAME" > "$LOG" 2>&1 &
 PID=$!
 disown
+
+# ★ AND THE PID IS WRITTEN ONLY ONCE THE PROCESS IS PROVEN ALIVE. The first
+# version wrote it unconditionally, so a launch that died instantly left a PID
+# file naming a dead process -- and `cy_watch_free_run` reads that file to decide
+# the run has ended. A stale PID would have made the watchdog report a completed
+# run that never started, which is the precise failure the watchdog exists to
+# prevent: silence that looks like success.
+sleep 2
+if ! ps -p "$PID" >/dev/null 2>&1; then
+  echo "  FAILED : the run exited within 2s. No PID file written." >&2
+  echo "  log tail:" >&2
+  tail -20 "$LOG" >&2 2>/dev/null || true
+  exit 1
+fi
 echo "$PID" > "${LOG%.log}.pid"
-echo "  pid    : $PID (written to ${LOG%.log}.pid)"
+echo "  pid    : $PID (alive after 2s; written to ${LOG%.log}.pid)"
