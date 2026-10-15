@@ -580,7 +580,7 @@
       "founder_ruling": "DO NOT RUN A SHADOW IN A SIMULATION (2026-10-15). His words, 2026-10-14: \"why run them in shadow in a simulated run, when the purpose of a simulated run is to test how they will behave in a real experiment and to fix any deficiencies/issues you encounter so that we don't run into those same issues in a paid run, and risk pointlessly burning money we don't have?\"",
       "why_it_needed_a_build_not_a_flag": "Measured 2026-10-15: of the 10 mechanisms listed in the programme revision, 6 are LIVE, 1 is a record by design, 1 is a measurement, and 2 are genuine record-only shadows -- 2 of 10, 20.0000%, Wilson [5.6682%, 50.9838%]. NEITHER of the 2 had a flag that makes it gate, so promoting them is a build. And their own promotion criterion asks for non-distortion evidence \"from a run\", which a shadow can never supply because a shadow never decides. That circle is what his question exposed.",
       "result": {
-        "status": "ANSWERED BY THE ARCHIVE REPLAY (2,994 findings, adequately powered). It is the RUN-2 CONTRAST that is under-powered by 31.27x, and that contrast was never the right instrument for the effect question.",
+        "status": "ANSWERED. The EFFECT question is settled by the archive replay at n = 2,994 (7 releases change). The MACHINERY question is settled by run 2: the switch computes, agrees, breaks nothing and still converges. The KEY PROPERTY is NOT exercised by either run, because 0 of 41 findings carried a disproved verification, and that is gated on B9.",
         "at": "2026-10-15T08:21:27+01:00",
         "run1_shadow": {
           "V_true": 15,
@@ -681,6 +681,70 @@
           "observed": "Run 2 did NOT converge at round 3 where run 1 did. The gate refused: 'hardened REFUSED at R3: 1 contested finding(s) still in dispute, so the critical picture is not settled [gamma_crit=1.000, gamma_all diag=0.875]', in mode 'contested_blocked'. Every other condition was satisfied \u2014 gamma_crit 1.000, zero_crit_ok True, the location-keyed series tail [0, 0, 0], 0 unresolved criticals.",
           "assessment": "CORRECT BEHAVIOUR, not a fault. A contested finding means the critical picture is genuinely unsettled and the gate declined to declare convergence on it. Run 1 had contested=0 at round 3 and converged. So running 2 runs bought coverage of a third gate path that 1 run could not reach, which is a benefit of the pair independent of the severity contrast.",
           "a_note_on_the_watchdog": "The cy watchdog classified the refusal as TROUBLE. A correct refusal is not trouble, so that is a false positive in the watchdog's severity labelling. Recorded, not chased: it costs a notification and misleads nobody who reads the line itself."
+        },
+        "run_2_converged": {
+          "at": "2026-10-15T09:28:27+01:00",
+          "convergence": "HARDENED_CONVERGED at round 4 of a 10-round budget",
+          "reason": "gamma_crit 1.000 >= 0.3 (sustained 2 rounds, loo_min 1.000) AND 3 consecutive settled zero-novel-critical at R4",
+          "gamma_all_diagnostic": 0.8202,
+          "cum_critical": 12,
+          "per_round_findings": [
+            14,
+            0,
+            2,
+            3,
+            0
+          ],
+          "total_findings": 19,
+          "why_a_round_later_than_run_1": "The gate REFUSED at round 3 on 1 contested finding, in mode 'contested_blocked', with every other condition already satisfied. The contested finding settled and the gate passed at round 4. That is correct behaviour and it exercised a third gate path run 1 never reached.",
+          "the_pair_side_by_side": {
+            "run_1_spec_RECORDED": {
+              "rounds": [
+                14,
+                2,
+                5,
+                1
+              ],
+              "total": 22,
+              "converged_at": 3,
+              "cum_critical": 12,
+              "contested_at_gate": 0
+            },
+            "run_2_spec_DECIDING": {
+              "rounds": [
+                14,
+                0,
+                2,
+                3,
+                0
+              ],
+              "total": 19,
+              "converged_at": 4,
+              "cum_critical": 12,
+              "contested_at_gate": 1
+            },
+            "identical": [
+              "round 0 finding count, 14 in both",
+              "cum_critical, 12 in both",
+              "critical_asserted == critical_spec == 12 in both",
+              "crossed_downward empty in both",
+              "key_property_violations empty in both",
+              "V_false 0 in both"
+            ]
+          },
+          "hil_flags": {
+            "run_1": [
+              "CC2-SIM, 3 consecutive ITC interventions, CAPABILITY_MISMATCH"
+            ],
+            "run_2": [
+              "CC2-SIM 3",
+              "ChatGPT-SIM 3",
+              "Codex-SIM 3 then 4",
+              "all CAPABILITY_MISMATCH"
+            ],
+            "attribution": "3 seats flagged in run 2 against 1 in run 1. NOT attributable to the severity flag, which governs release rather than routing, and the pair is non-deterministic with n = 2. Recorded as an observation needing a larger sample, not as an effect."
+          },
+          "the_machinery_verdict": "THE SWITCH BREAKS NOTHING. With the section 7.7 severity DECIDING, run 2 computed it, agreed with the asserted critical count at 12, recorded 0 key-property violations, exercised the contested-blocked gate path correctly, and converged cleanly. That is the question run 2 was able to answer, and the answer is clean."
         }
       },
       "headline": "THE SEVERITY ARM IS ANSWERED BY THE ARCHIVE REPLAY, NOT BY THE RUNS: promoting the section 7.7 severity changes 7 A4 releases across 2,994 archived findings, small because the release test's other half \u2014 a proven calculation \u2014 holds for only 295 of 2,994, 9.8531%, Wilson [8.8364%, 10.9726%]. Run 1's shadow reports 0 of 22 crossing downward, which is the EXPECTED outcome (probability 0.9498) and refutes nothing: 688 findings are needed before a zero is informative, so the 2-run contrast is under-powered by 31.27x. Run 2 therefore tests whether the switch BREAKS anything, not what it CHANGES."
@@ -964,7 +1028,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T09:24:58+01:00",
+  "last_updated": "2026-10-15T09:28:27+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
@@ -978,5 +1042,16 @@
       ],
       "producer": "scripts/the_unresolved_section_elicitation_2026-10-15.py"
     }
-  ]
+  ],
+  "success_criterion_progress": {
+    "at": "2026-10-15T09:28:27+01:00",
+    "criterion": "3 consecutive CLEAN convergences on the prose target",
+    "achieved": 2,
+    "detail": [
+      "free_run1_directive_whole_20261015T061123Z \u2014 HARDENED_CONVERGED at round 3, 0 unresolved criticals, 0 contested",
+      "free_run2_severity_spec_20261015T073418Z \u2014 HARDENED_CONVERGED at round 4, 0 unresolved criticals, contested settled"
+    ],
+    "remaining": 1,
+    "note": "Both are CLEAN by the gate's own hardened criterion. A third run would complete the criterion; the founder authorised 2, so whether to run a third is his."
+  }
 }
