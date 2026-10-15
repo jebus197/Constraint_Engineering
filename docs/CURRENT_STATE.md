@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 15 October 2026 09:04 BST (2026-10-15T09:04:02+01:00)
+Generated: 15 October 2026 10:13 BST (2026-10-15T10:13:20+01:00)
 
 ---
 
@@ -18,25 +18,23 @@ Generated: 15 October 2026 09:04 BST (2026-10-15T09:04:02+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `9fcc2d08` record: arm5's core confound still holds but its HEAD arm has gone stale
-- **Committed:** 2026-10-15 08:58:25 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 3
+- **Last commit (the PARENT of the commit containing this file):** `cb732717` B10: the note-lint ratchet is blind to the standard stamp, by construction
+- **Committed:** 2026-10-15 10:09:36 +0100
+- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/runner_state.json`
+- `M bench/logs/free_run2_severity_spec_20261015T073418Z_20261015T073418Z/runner_state.json`
 - `M bench/state/immune_memory.json`
+- `M resources/MEMORY_EXCLUSIONS.md`
 - `M resources/RECOVERY.md`
-- `?? bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/free_run1_directive_whole_20261015T061123Z_report.json`
-- `?? bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/panel_worktree_harvest/`
-- `?? bench/logs/free_run2_severity_spec_20261015T073418Z_20261015T073418Z/`
-- `?? scripts/p_pass_todays_producers_2026-10-15.py`
+- `?? bench/logs/free_run2_severity_spec_20261015T073418Z_20261015T073418Z/free_run2_severity_spec_20261015T073418Z_report.json`
 
 ---
 
 ## Tests
 
-**11324 tests collected** at 15 October 2026 09:04 BST, HEAD `9fcc2d08` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**11371 tests collected** at 15 October 2026 10:13 BST, HEAD `cb732717` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -66,13 +64,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `9fcc2d08 record: arm5's core confound still holds but its HEAD arm has gone stale`
-- `24e94ca4 measure: Haiku as the claim classifier at run scale, from run 1's own log`
-- `7b0b4a1d correct: B9's second fix option is forbidden by the denial order, and is withdrawn`
-- `e801ef04 notes: free run 1, technical and plain-English, with the TTS companion`
-- `7e9883bc measure: the confinement guard refuses the falsifier's own review target`
-- `3d381852 measure: the elicitation half cannot be read from a clean run`
-- `8c6f2e5a measure: the coherence recalibration is inert on 3 independent layers`
-- `33875e96 measure: the futility guard held in a live run, 24 of 24, 0 splits`
-- `76b1897e record: run 1 converged at round 3, and a simulated run restamps the real seats`
-- `7c690f74 record: a gamma band label is applied to a gamma that is not a measurement`
+- `cb732717 B10: the note-lint ratchet is blind to the standard stamp, by construction`
+- `21cb7e46 correct: the note lint is PATH-SENSITIVE, and my ratchet checks were unsound`
+- `d87fea07 tracker: advance the resume pointer — both runs done, both converged`
+- `87846b68 chore: carry the citation repairs the B9 hardening shifted`
+- `c9dcca45 harden B9: an unusable staged root now falls back loudly instead of crashing`
+- `90a9713d notes: the 2 free runs, technical and plain-English, with the TTS companion`
+- `92b2abd5 chore: carry the citation repairs the B7 fix shifted`
+- `c40db576 fix B7: a run no longer restamps a seat it never dispatched`
+- `149c4c5b chore: carry the citation repairs the B9 fix shifted`
+- `911c5053 fix B9: stage the working copy where a falsifier may read it`
