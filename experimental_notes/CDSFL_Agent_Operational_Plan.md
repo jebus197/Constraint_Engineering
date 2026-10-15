@@ -1,3 +1,28 @@
+## ★ RESUME POINTER — 2026-10-15T10:02:05+01:00. SUPERSEDES EVERY POINTER BELOW.
+
+**WHERE TO RESUME: BOTH FREE RUNS ARE DONE AND BOTH CONVERGED. The next action is the FULL BOARD RESULT, then his ruling on B8 and on arm5.** Branch `sim/shakedown-2026-09-29`, HEAD `87846b68`, pushed. A full board was launched at 09:52 BST and is still running at this stamp; it covers the B7 and B9 fixes but NOT the 3 tests added by the B9 hardening commit, which were verified separately at 18 passed with 3 going red when the guard is removed.
+
+**THE RUNS, BOTH CLEAN.** `free_run1_directive_whole_20261015T061123Z` converged `HARDENED_CONVERGED` at round 3 of 10, 4 rounds, 22 findings, 82.4 min, statuses CLOSED 18 / CORROBORATED 2 / REFUTED 2. `free_run2_severity_spec_20261015T073418Z` converged at round 4, 5 rounds, 19 findings, 57.2 min, CLOSED 17 / REFUTED 2. Both: gamma_critical 1.000 sustained 2 rounds with loo_min 1.000, 0 unresolved criticals, cum_critical 12, round 0 at exactly 14 findings. **That is 2 of the 3 consecutive clean convergences the success criterion requires.**
+
+**THE CONTRAST IS REAL AND WAS VERIFIED AT THE DECIDING LAYER**, not taken from `argv`: run 1 logs `Severity: asserted (specification recorded only)` and run 2 logs `Severity: SECTION 7.7 SPECIFICATION (deciding)`, 1 each and 0 of the other.
+
+**2 MEASUREMENTS NEED NOTHING FURTHER FROM ANYONE.** `guard_reach` and `haiku_extended` were both answered from the runs' own completed logs with no extra dispatch. The programme is **1 of 12 outstanding: `arm5` only.**
+
+**2 DEFECTS FIXED TODAY, EACH WITH EXECUTING GUARDS AND MUTATION EVIDENCE.** **B9** — the confinement guard refused the falsifier its own review target, 18 times per run; the working copy is now staged under `falsifier_verify.STAGED_TARGET_ROOT` and mirrored into `logs_dir / "working"` so nothing leaves the archive; 18 tests, 4 mutations red, and the 2026-10-12 evidence guard still passes 13 so its hole is not reopened. **B7** — a simulated run restamped all 5 real paid seats' fingerprints; `_save_fingerprints` now writes only seats whose payload changed; 8 tests, 4 mutations red; fable's producer promoted out of its sandbox and now reporting the repair from its own output.
+
+**2 THINGS NEED HIS RULING AND NO WORK SUBSTITUTES FOR THEM.** **(1) B8, the coherence-budget recalibration**, inert on 3 independent layers and NOT fixed deliberately, because the repair is a SCHEMA change — emitting `model` and `chars` per dispatch into the run's own JSON — which alters what every run writes and therefore belongs with the one batched replay-invalidation decision rather than being applied unilaterally. Until it is closed the coherence pruner's lean-versus-full ablation arm, the gate on every proposed cut since 2026-07-18, stays un-runnable. **(2) arm5**, whose cost has DOUBLED: its target is byte-identical at `a2a0197` and HEAD, 3,498 bytes and the same SHA-1, but its design names `study_run1b_2026-10-03` as the HEAD arm because that run WAS HEAD when the design was verified, and HEAD has since moved 141 commits including today's directive repair. So it is 2 free runs rather than 1 to speak about the current runner and composer. His standing ruling is RUN IT (2026-10-03), so this is WHEN and HOW MANY, not WHETHER.
+
+**THE BURNDOWN TEST IS RED BY ARITHMETIC AND CANNOT GO GREEN TODAY BY HONEST MEANS.** Today created B4 through B9 and has closed B4, B5, B7 and B9 — 6 gained against 4 closed — and the test requires closures to OUTPACE discovery, which would need 7 closures against 6 entries created. Closing an item that is not done would turn it green and is exactly the dishonesty the test exists to prevent.
+
+**THE SHARPEST SINGLE FINDING, and it only became visible because both runs ran.** Section 7.7's KEY PROPERTY is that `V(False)=0.0` annihilates the severity. **0 of 41 findings across both runs carried a disproved verification**, Wilson [0.0000%, 8.5668%], so the annihilating case never arose and the specification's distinguishing term could not bite. It was re-checked after looking contradicted — both runs show 2 findings with status REFUTED — and the fields are different: the specification reads `falsifier_verdict`, not `status`. Confirmed at 2 moments by 2 routes. **And it is B9 from the other end**: a finding reaches `V_false` only when its falsifier RUNS and REFUTES, which B9 was preventing. The B9 fix unblocks it for the next run.
+
+**A TENSION IN THE PROGRAMME'S OWN DESIGN NEEDS HIS DECISION TOO.** `in_round_clearance` cannot be read from a clean run: 0 of 29 seat replies carried the id-addressed form, and that zero carries no verdict because run 1 ended with 0 unconfirmed criticals, so the parser had nothing to fire on. The success criterion is 3 consecutive CLEAN convergences and a clean convergence is exactly the state in which this arm is unmeasurable. 3 options are on the record.
+
+**FILES FOR HIM.** `experimental_notes/The_Two_Free_Runs_Both_Converged_2026-10-15.md`, its plain-English companion, and `~/Desktop/CDSFL_tts/The_Two_Free_Runs_Both_Converged_2026-10-15.txt`. The run-1 note and its companions are alongside.
+
+
+---
+
 ## ★ RESUME POINTER — 2026-10-15T02:34:12+01:00. SUPERSEDES EVERY POINTER BELOW.
 
 **WHERE TO RESUME: FREE RUN 1 IS THE NEXT ACTION, then free run 2.** Branch
