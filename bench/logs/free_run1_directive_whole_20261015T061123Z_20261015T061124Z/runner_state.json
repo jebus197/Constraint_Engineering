@@ -795,8 +795,8 @@
           "round": 0
         },
         "fix_efficacy": {
-          "outcome": "NOT_PROBED_NO_FALSIFIER",
-          "detail": "finding carries a proposed fix but no falsifier, so there is nothing to run the fix against"
+          "outcome": "INDETERMINATE_NO_BASELINE",
+          "detail": "falsifier returned ERROR on the UNMODIFIED target, so it does not demonstrate the defect it accuses; there is nothing for a fix to cure"
         },
         "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / n\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)\n    p = k / n\n    centre = p + z ** 2 / (2 * n)\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n",
         "corrected_copy_anchor": {
@@ -865,7 +865,8 @@
             "finding_id": "Fable-SIM_F004",
             "similarity": 0.6103
           }
-        ]
+        ],
+        "fix_efficacy_attempted": true
       },
       "C0007": {
         "canonical_id": "C0007",
@@ -877,10 +878,37 @@
             "alias": "DeepSeek-SIM_F001",
             "from_canonical": "C0007",
             "via": "register"
+          },
+          {
+            "model": "Gemini-SIM",
+            "round": 2,
+            "alias": "Gemini-SIM_F001",
+            "from_canonical": "C0018",
+            "via": "codiscovery",
+            "similarity": 0.5651
+          },
+          {
+            "model": "Gemini-SIM",
+            "round": 2,
+            "alias": "Gemini-SIM_F002",
+            "from_canonical": "C0019",
+            "via": "codiscovery",
+            "similarity": 0.6787
+          },
+          {
+            "model": "Gemini-SIM",
+            "round": 2,
+            "alias": "Gemini-SIM_F003",
+            "from_canonical": "C0020",
+            "via": "codiscovery",
+            "similarity": 0.5083
           }
         ],
         "source_aliases": [
-          "DeepSeek-SIM_F001"
+          "DeepSeek-SIM_F001",
+          "Gemini-SIM:Gemini-SIM_F001",
+          "Gemini-SIM:Gemini-SIM_F002",
+          "Gemini-SIM:Gemini-SIM_F003"
         ],
         "severity": 0.9,
         "description": "Claim PL-01 is false. `round_dispersion` divides the sum of squared deviations by `n` (the biased / population-style estimator) while its docstring and the claim text assert it is the **unbiased** sample variance, which requires division by `n \u2212 1` (Bessel's correction). For `values = [1, 2, 3, 4]` the listing returns 1.25; the unbiased value is 5/3 \u2248 1.6667 \u2014 the listing systematically under-reports by the factor (n\u22121)/n. Because the note says the figure \"may be quoted directly as the variance of the underlying process\" to \"a reader who will not re-derive them,\" this is a silently-wrong-results defect (HIGH/CRITICAL), not a style issue. Secondary note within the same root cause: `n == 1` returns 0.0, where the unbiased variance is undefined \u2014 acceptable for a PoC guard, but the quoted claim applies only to n \u2265 2.",
@@ -980,7 +1008,24 @@
         "finding_category": "",
         "latent": false,
         "latent_source": "default_reachable",
-        "latent_evidence": ""
+        "latent_evidence": "",
+        "codiscovery": [
+          {
+            "model": "Gemini-SIM",
+            "finding_id": "Gemini-SIM_F001",
+            "similarity": 0.5651
+          },
+          {
+            "model": "Gemini-SIM",
+            "finding_id": "Gemini-SIM_F002",
+            "similarity": 0.6787
+          },
+          {
+            "model": "Gemini-SIM",
+            "finding_id": "Gemini-SIM_F003",
+            "similarity": 0.5083
+          }
+        ]
       },
       "C0008": {
         "canonical_id": "C0008",
@@ -1349,7 +1394,7 @@
         "falsifier_verdict": "INTEGRITY_VIOLATION",
         "status": "CORROBORATED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 3,
         "verdicts": [
           {
             "model": "DeepSeek-SIM",
@@ -1368,6 +1413,12 @@
             "verdict": "CONFIRM",
             "round": 1,
             "evidence": "Executed output:\n  round_dispersion([]) -> ('returned', 0.0)\n  round_dispersion([0.42]) -> ('returned', 0.0)\n  round_dispersion([0.42, 0.42]) -> ('returned', 0.0)\n  n<2 returns 0.0 silently: True | ge"
+          },
+          {
+            "model": "Codex-SIM",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`round_dispersion` returns `0.0` for `n < 2`. Mechanically demonstrated below; sample variance is undefined (not zero) at n=1. I attach the *settling* runnable falsifier the registry asks for (opens t"
           }
         ],
         "verified": false,
@@ -1400,8 +1451,8 @@
         },
         "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return float(\"nan\")\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / n\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)\n    p = k / n\n    centre = p + z ** 2 / n\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n",
         "corrected_copy_anchor": {
-          "original": "    if n < 2:\n        return 0.0",
-          "corrected": "    if n < 2:\n        return float(\"nan\")"
+          "original": "def round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0",
+          "corrected": "def round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return float(\"nan\")"
         },
         "corrected_copy_source": "Fable-SIM",
         "corrected_copy_target_sha": "890f9ae6795d55ad",
@@ -1478,14 +1529,50 @@
             "evidence": "DeepSeek-SIM:CONFIRM@r1; Gemini-SIM:CONFIRM@r1",
             "mechanism": "model_confirm_quorum (2/1 independent)",
             "reason": "CONFIRMED is TOOL-ONLY; its evidence requirement is 'falsifier source + exit status + target hash' and a model attestation is not that"
+          },
+          {
+            "requested": "MERGED",
+            "substituted": "WITHHELD",
+            "round": 2,
+            "adjudicator": "model",
+            "evidence": "merge requires a tool verdict; 1 model(s) proposed it, which is not sufficient authority",
+            "mechanism": "model_merge_vote",
+            "reason": "MERGED is TOOL-ONLY; its evidence requirement is 'adjudicate_by_repair verdict SAME in BOTH directions' and a model attestation is not that"
+          },
+          {
+            "requested": "CONFIRMED",
+            "substituted": "CORROBORATED",
+            "round": 2,
+            "adjudicator": "model",
+            "evidence": "DeepSeek-SIM:CONFIRM@r1; Gemini-SIM:CONFIRM@r1; Codex-SIM:CONFIRM@r2",
+            "mechanism": "model_confirm_quorum (3/1 independent)",
+            "reason": "CONFIRMED is TOOL-ONLY; its evidence requirement is 'falsifier source + exit status + target hash' and a model attestation is not that"
+          },
+          {
+            "requested": "MERGED",
+            "substituted": "WITHHELD",
+            "round": 3,
+            "adjudicator": "model",
+            "evidence": "merge requires a tool verdict; 1 model(s) proposed it, which is not sufficient authority",
+            "mechanism": "model_merge_vote",
+            "reason": "MERGED is TOOL-ONLY; its evidence requirement is 'adjudicate_by_repair verdict SAME in BOTH directions' and a model attestation is not that"
+          },
+          {
+            "requested": "CONFIRMED",
+            "substituted": "CORROBORATED",
+            "round": 3,
+            "adjudicator": "model",
+            "evidence": "DeepSeek-SIM:CONFIRM@r1; Gemini-SIM:CONFIRM@r1; Codex-SIM:CONFIRM@r2",
+            "mechanism": "model_confirm_quorum (3/1 independent)",
+            "reason": "CONFIRMED is TOOL-ONLY; its evidence requirement is 'falsifier source + exit status + target hash' and a model attestation is not that"
           }
         ],
-        "attestation_count": 2,
+        "attestation_count": 6,
         "merge_candidate_of": "C0014",
         "merge_blocked_reason": "merge requires a tool verdict; 1 model(s) proposed it, which is not sufficient authority",
         "status_adjudicator": "runner",
-        "status_evidence": "DeepSeek-SIM:CONFIRM@r1; Gemini-SIM:CONFIRM@r1",
-        "status_mechanism": "model_confirm_quorum (2/1 independent)",
+        "status_evidence": "DeepSeek-SIM:CONFIRM@r1; Gemini-SIM:CONFIRM@r1; Codex-SIM:CONFIRM@r2",
+        "status_mechanism": "model_confirm_quorum (3/1 independent)",
         "status_log": [
           {
             "from": "OPEN",
@@ -1503,6 +1590,42 @@
             "adjudicator": "runner",
             "evidence": "DeepSeek-SIM:CONFIRM@r1; Gemini-SIM:CONFIRM@r1",
             "mechanism": "model_confirm_quorum (2/1 independent)",
+            "refused": "CONFIRMED"
+          },
+          {
+            "from": "CORROBORATED",
+            "to": "WITHHELD",
+            "round": 2,
+            "adjudicator": "runner",
+            "evidence": "merge requires a tool verdict; 1 model(s) proposed it, which is not sufficient authority",
+            "mechanism": "model_merge_vote",
+            "refused": "MERGED"
+          },
+          {
+            "from": "WITHHELD",
+            "to": "CORROBORATED",
+            "round": 2,
+            "adjudicator": "runner",
+            "evidence": "DeepSeek-SIM:CONFIRM@r1; Gemini-SIM:CONFIRM@r1; Codex-SIM:CONFIRM@r2",
+            "mechanism": "model_confirm_quorum (3/1 independent)",
+            "refused": "CONFIRMED"
+          },
+          {
+            "from": "CORROBORATED",
+            "to": "WITHHELD",
+            "round": 3,
+            "adjudicator": "runner",
+            "evidence": "merge requires a tool verdict; 1 model(s) proposed it, which is not sufficient authority",
+            "mechanism": "model_merge_vote",
+            "refused": "MERGED"
+          },
+          {
+            "from": "WITHHELD",
+            "to": "CORROBORATED",
+            "round": 3,
+            "adjudicator": "runner",
+            "evidence": "DeepSeek-SIM:CONFIRM@r1; Gemini-SIM:CONFIRM@r1; Codex-SIM:CONFIRM@r2",
+            "mechanism": "model_confirm_quorum (3/1 independent)",
             "refused": "CONFIRMED"
           }
         ]
@@ -1545,6 +1668,12 @@
             "verdict": "EXTEND",
             "round": 1,
             "evidence": "New consequence, measured this round over every (k, n) with n <= 60 (1890 pairs):\n  bounds outside [0,1]: 273/1890 = 14.4%\n  worst upper bound: k=1, n=1 -> hi = 1.396725\n  k=10 n=10  buggy=(0.861234, "
+          },
+          {
+            "model": "Gemini-SIM",
+            "verdict": "EXTEND",
+            "round": 3,
+            "evidence": "New consequence class, mechanically measured over all 1890 `(k,n)` pairs with `n \u2264 60`, using the listing extracted from the real target:"
           }
         ],
         "verified": true,
@@ -1653,7 +1782,12 @@
             "finding_id": "ChatGPT-SIM_R1_CONVERGED",
             "similarity": 0.5154
           }
-        ]
+        ],
+        "fix_efficacy": {
+          "outcome": "INDETERMINATE_NO_APPLICABLE_FIX",
+          "detail": "the proposed fix did not apply to the target"
+        },
+        "fix_efficacy_attempted": true
       },
       "C0013": {
         "canonical_id": "C0013",
@@ -1770,7 +1904,12 @@
         "finding_category": "data_loss",
         "latent": false,
         "latent_source": "default_reachable",
-        "latent_evidence": ""
+        "latent_evidence": "",
+        "fix_efficacy": {
+          "outcome": "INDETERMINATE_NO_APPLICABLE_FIX",
+          "detail": "the proposed fix did not apply to the target"
+        },
+        "fix_efficacy_attempted": true
       },
       "C0014": {
         "canonical_id": "C0014",
@@ -1933,7 +2072,12 @@
         "finding_category": "data_loss",
         "latent": true,
         "latent_source": "prose",
-        "latent_evidence": "no_caller: ...umber.  ### FOLLOW  - No Python importer (as F001/F002), so no caller currently depends on the `0.0` return and the contract chan..."
+        "latent_evidence": "no_caller: ...umber.  ### FOLLOW  - No Python importer (as F001/F002), so no caller currently depends on the `0.0` return and the contract chan...",
+        "fix_efficacy": {
+          "outcome": "FIX_CURES_ITS_OWN_FALSIFIER",
+          "detail": "the finding's own falsifier goes quiet once the fix is applied"
+        },
+        "fix_efficacy_attempted": true
       },
       "C0015": {
         "canonical_id": "C0015",
@@ -1955,10 +2099,47 @@
         "proposed_fix": "",
         "falsifier_code": "",
         "falsifier_verdict": "",
-        "status": "OPEN",
+        "status": "CORROBORATED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
-        "verdicts": [],
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex-SIM",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Fable-SIM",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Independent convergence sweep executed this round over the remaining unexamined surface of the target, with tool receipts:\n1. z constant: listing's 1.959963984540054 vs bisection-computed norm.ppf(0.9"
+          },
+          {
+            "model": "DeepSeek-SIM",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Assessed against the \u00a710 categories by execution, not deference. (1) Wrong result: both false claims \u2014 PL-01 biased /n divisor, PL-02 wrong centre term p + z^2/n \u2014 are settled in the registry (C0013, "
+          },
+          {
+            "model": "Gemini-SIM",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "CHALLENGE C0015 | C0015 is a CONVERGED declaration carrying severity 0.50 and\nsitting OPEN. Two separate objections, with the second now measured.\n\n1. Category error. Per operational \u00a77.1 the registry"
+          },
+          {
+            "model": "Fable-SIM",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Reaffirming the CONVERGED declaration with fresh tool receipts rather than prior agreement. This round I re-swept every computable element of the target: z constant correct to 6.7e-16; Wilson half-wid"
+          },
+          {
+            "model": "DeepSeek-SIM",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Independent round-3 mechanical sweep of the full computable surface, receipts pasted this round:\n(1) The z default 1.959963984540054 matches NormalDist().inv_cdf(0.975) to 6.66e-16 \u2014 not a defect.\n(2)"
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 1,
@@ -1985,7 +2166,78 @@
         "finding_category": "data_loss",
         "latent": false,
         "latent_source": "default_reachable",
-        "latent_evidence": ""
+        "latent_evidence": "",
+        "refused_transitions": [
+          {
+            "requested": "CONFIRMED",
+            "substituted": "CORROBORATED",
+            "round": 3,
+            "adjudicator": "model",
+            "evidence": "Codex-SIM:CONFIRM@r2; Fable-SIM:CONFIRM@r2; DeepSeek-SIM:CONFIRM@r2; Fable-SIM:CONFIRM@r3; DeepSeek-SIM:CONFIRM@r3",
+            "mechanism": "model_confirm_quorum (3/1 independent)",
+            "reason": "CONFIRMED is TOOL-ONLY; its evidence requirement is 'falsifier source + exit status + target hash' and a model attestation is not that"
+          }
+        ],
+        "attestation_count": 1,
+        "status_adjudicator": "runner",
+        "status_evidence": "Codex-SIM:CONFIRM@r2; Fable-SIM:CONFIRM@r2; DeepSeek-SIM:CONFIRM@r2; Fable-SIM:CONFIRM@r3; DeepSeek-SIM:CONFIRM@r3",
+        "status_mechanism": "model_confirm_quorum (3/1 independent)",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "CORROBORATED",
+            "round": 3,
+            "adjudicator": "runner",
+            "evidence": "Codex-SIM:CONFIRM@r2; Fable-SIM:CONFIRM@r2; DeepSeek-SIM:CONFIRM@r2; Fable-SIM:CONFIRM@r3; DeepSeek-SIM:CONFIRM@r3",
+            "mechanism": "model_confirm_quorum (3/1 independent)",
+            "refused": "CONFIRMED"
+          }
+        ],
+        "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / (n - 1)\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)\n    p = k / n\n    centre = p + z ** 2 / n\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n",
+        "corrected_copy_anchor": {
+          "original": "    return sum((v - mean) ** 2 for v in values) / n",
+          "corrected": "    return sum((v - mean) ** 2 for v in values) / (n - 1)"
+        },
+        "corrected_copy_source": "CC2-SIM",
+        "corrected_copy_target_sha": "890f9ae6795d55ad",
+        "computed_evidence": [
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "DeepSeek-SIM",
+            "detail": "Not a defect claim at all \u2014 the entry is the run's convergence verdict and \u00a710 justification text mislabeled as a residual finding; it anchors to no passage and asserts nothing falsifiable about the t",
+            "falsifier_code": "",
+            "proposed_fix": ""
+          },
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "ChatGPT-SIM",
+            "detail": "It is the convergence meta-record (\"CONVERGED\") plus an assessment summary, not a defect anchored to any passage or listing in the target; there is nothing in the document to falsify or correct.",
+            "falsifier_code": "",
+            "proposed_fix": ""
+          },
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Gemini-SIM",
+            "detail": "its recorded text is the convergence verdict and its justification prose, not a defect claim \u2014 it names no passage, no listing, and no predicate that could be made to fail, so there is nothing a falsi",
+            "falsifier_code": "",
+            "proposed_fix": ""
+          },
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Codex-SIM",
+            "detail": "\"CONVERGED\" is a run-status marker, not a claim about the target text; it carries no passage and no reference implementation to execute against, so there is nothing independently falsifiable in it (it",
+            "falsifier_code": "",
+            "proposed_fix": ""
+          },
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "Fable-SIM",
+            "detail": "The residual carries no claim text \u2014 its body is only the convergence marker \"CONVERGED\" \u2014 so there is no stated defect to falsify or passage to correct.",
+            "falsifier_code": "",
+            "proposed_fix": ""
+          }
+        ],
+        "hil_has_computed_evidence": true
       },
       "C0016": {
         "canonical_id": "C0016",
@@ -1997,20 +2249,42 @@
             "alias": "Fable-SIM_F004",
             "from_canonical": "C0016",
             "via": "register"
+          },
+          {
+            "model": "DeepSeek-SIM",
+            "round": 2,
+            "alias": "DeepSeek-SIM_F017",
+            "from_canonical": "C0017",
+            "via": "codiscovery",
+            "similarity": 0.5432
           }
         ],
         "source_aliases": [
-          "Fable-SIM_F004"
+          "Fable-SIM_F004",
+          "DeepSeek-SIM:DeepSeek-SIM_F017"
         ],
         "severity": 0.4,
         "description": "`wilson_interval` (lines 36\u201337) returns `(0.0, 0.0)` when `n == 0`. Zero trials carry zero information, yet the function reports a zero-width interval at 0 \u2014 a certainty claim manufactured from no data. This falsifies Claim PL-02 (\"agrees with the standard implementation to within floating-point error\") by a second, independent mechanism: standard implementations (e.g. statsmodels `proportion_confint(..., method=\"wilson\")`) produce NaN or raise at n = 0; none return a degenerate certain interval. Distinct from the settled centre-term findings (C0002/C0004/C0006/C0008/C0010/C0012): those falsify PL-02 for n \u2265 1 via a formula error in the centre; this falsifies the n = 0 branch via a sentinel return \u2014 different mechanism (sentinel vs algebra), different scope (n = 0 only). Distinct from C0014/C0011: different function, and the failure mode is a false *certainty* interval rather than a zero variance.",
         "proposed_fix": "<<<< SEARCH bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/working/prose_with_computable_listings.md\nif n == 0:\n        return (0.0, 0.0)\n==== REPLACE\nif n == 0:\n        raise ValueError(\"Wilson interval is undefined for n = 0 trials\")\n>>>>",
         "falsifier_code": "import re, os\nCANDIDATES = [\n    \"prose_with_computable_listings.md\",\n    \"working/prose_with_computable_listings.md\",\n    \"bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/working/prose_with_computable_listings.md\",\n]\npath = next((c for c in CANDIDATES if os.path.exists(c)), None)\nassert path is not None, \"target document not found\"\ntext = open(path).read()\nm = re.search(r\"```python\\n(def wilson_interval.*?)```\", text, re.S)\nassert m is not None, \"wilson_interval listing not found in document\"\nns = {}\nexec(m.group(1), ns)\ntry:\n    out = ns[\"wilson_interval\"](0, 0)\nexcept Exception:\n    out = None  # raising on n = 0 is corrected behaviour: stay quiet\ndef is_degenerate(o):\n    try:\n        lo, hi = o\n    except Exception:\n        return False\n    return lo == 0.0 and hi == 0.0\nif out is not None and is_degenerate(out):\n    print(\"FALSIFIED\")  # defect present: zero-data input yields a certainty interval (0.0, 0.0)",
         "falsifier_verdict": "CONFIRMED",
-        "status": "CONFIRMED",
+        "status": "CLOSED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
-        "verdicts": [],
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Fable-SIM",
+            "verdict": "EXTEND",
+            "round": 2,
+            "evidence": "The prior falsifier's discrimination control returned INDETERMINATE_NOT_INTERCEPTED: it behaved identically when the target was replaced wholesale, so the control could not establish that it reads the"
+          },
+          {
+            "model": "DeepSeek-SIM",
+            "verdict": "EXTEND",
+            "round": 2,
+            "evidence": "The prior falsifier behaved identically under wholesale target replacement, so the control could not establish that it reads the target. Replacement falsifier below extracts wilson_interval from the d"
+          }
+        ],
         "verified": true,
         "escalated": false,
         "flaw_class": 6,
@@ -2034,10 +2308,10 @@
           "delta": 0.018661418223408277,
           "round": 1
         },
-        "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / n\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        raise ValueError(\"Wilson interval is undefined for n = 0 trials\")\n    p = k / n\n    centre = p + z ** 2 / n\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n",
+        "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / n\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        raise ValueError(\"no interval is defined for zero trials\")\n    p = k / n\n    centre = p + z ** 2 / n\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n",
         "corrected_copy_anchor": {
           "original": "    if n == 0:\n        return (0.0, 0.0)",
-          "corrected": "    if n == 0:\n        raise ValueError(\"Wilson interval is undefined for n = 0 trials\")"
+          "corrected": "    if n == 0:\n        raise ValueError(\"no interval is defined for zero trials\")"
         },
         "corrected_copy_source": "Fable-SIM",
         "corrected_copy_target_sha": "890f9ae6795d55ad",
@@ -2069,8 +2343,8 @@
         "hil_escalated": true,
         "hil_reason": "discrimination control INDETERMINATE_NOT_INTERCEPTED: this falsifier behaves identically when the target file is replaced wholesale, so the control cannot reach the target it reads and cannot test whether it discriminates. Nothing is concluded \u2014 this is NOT a finding against the falsifier.",
         "status_adjudicator": "tool",
-        "status_evidence": "",
-        "status_mechanism": "",
+        "status_evidence": "verified fix, no unresolved challenges",
+        "status_mechanism": "verified_flag",
         "status_log": [
           {
             "from": "OPEN",
@@ -2079,6 +2353,15 @@
             "adjudicator": "tool",
             "evidence": "",
             "mechanism": "",
+            "refused": null
+          },
+          {
+            "from": "CONFIRMED",
+            "to": "CLOSED",
+            "round": 2,
+            "adjudicator": "tool",
+            "evidence": "verified fix, no unresolved challenges",
+            "mechanism": "verified_flag",
             "refused": null
           }
         ],
@@ -2135,10 +2418,884 @@
         "finding_category": "",
         "latent": false,
         "latent_source": "default_reachable",
-        "latent_evidence": ""
+        "latent_evidence": "",
+        "extensions": [
+          {
+            "model": "Fable-SIM",
+            "round": 2,
+            "consequence": "The prior falsifier's discrimination control returned INDETERMINATE_NOT_INTERCEPTED: it behaved identically when the target was replaced wholesale, so the control could not establish that it reads the"
+          },
+          {
+            "model": "DeepSeek-SIM",
+            "round": 2,
+            "consequence": "The prior falsifier behaved identically under wholesale target replacement, so the control could not establish that it reads the target. Replacement falsifier below extracts wilson_interval from the d"
+          }
+        ],
+        "extension_count": 2,
+        "fix_efficacy_attempted": true,
+        "fix_efficacy": {
+          "outcome": "INDETERMINATE_NOT_INTERCEPTED",
+          "detail": "falsifier returned CONFIRMED against a target that only raises, and no absolute path was rewritten; no verdict is available"
+        },
+        "codiscovery": [
+          {
+            "model": "DeepSeek-SIM",
+            "finding_id": "DeepSeek-SIM_F017",
+            "similarity": 0.5432
+          }
+        ]
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "DeepSeek-SIM",
+        "occasions": [
+          {
+            "model": "DeepSeek-SIM",
+            "round": 2,
+            "alias": "DeepSeek-SIM_F017",
+            "from_canonical": "C0017",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "DeepSeek-SIM_F017"
+        ],
+        "severity": 0.4,
+        "description": "`wilson_interval` (target lines 34\u201342) silently returns complex numbers when k lies outside [0, n]. For k > n or k < 0, `p*(1-p)` is negative; when it dominates `z2/(4*n2)` the radicand is negative, and Python's ` 0.5` on a negative float returns a complex value rather than raising. Executed evidence: `wilson_interval(5, 3)` \u2192 `((1.2923-0.4413j), (1.2923+0.4413j))`; `wilson_interval(-1, 4)` \u2192 complex pair. No exception, no warning \u2014 the tuple shape is identical to a valid result. This mechanism (domain violation \u2192 silent complex output) is distinct from C0012 and its Gemini extension, which concern real-valued bounds outside [0,1] for *valid* k \u2264 n.",
+        "proposed_fix": "<<<< SEARCH bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/working/prose_with_computable_listings.md\np = k / n\n==== REPLACE\nif not 0 <= k <= n:\n        raise ValueError(\"k must be between 0 and n\")\n    p = k / n\n>>>>",
+        "falsifier_code": "import pathlib, re\nCANDIDATES = [\n    pathlib.Path(\"prose_with_computable_listings.md\"),\n    pathlib.Path(\"working/prose_with_computable_listings.md\"),\n    pathlib.Path(\"/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/working/prose_with_computable_listings.md\"),\n]\ntarget = next(p for p in CANDIDATES if p.exists())\nns = {}\nfor block in re.findall(r\"```python\\n(.*?)```\", target.read_text(), re.S):\n    exec(block, ns)\nwi = ns[\"wilson_interval\"]\ntry:\n    lo, hi = wi(5, 3)   # k > n: impossible count pair\nexcept ValueError:\n    lo, hi = 0.0, 0.0   # corrected behaviour: domain rejected at entry\nif isinstance(lo, complex) or isinstance(hi, complex):\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "DeepSeek-SIM",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Executed the falsifier below against the real target: wilson_interval(15, 10) returns ((1.3612336000685554-0.3621120612426938j), (1.3612336000685554+0.3621120612426938j)) \u2014 complex on both bounds; wil"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "severity_proof_history": [
+          {
+            "from": "ABSENT",
+            "to": "PASS",
+            "round": 2
+          }
+        ],
+        "severity_proof": {
+          "status": "PASS",
+          "model_rk": 0.25,
+          "recomputed_rk": 0.24961198090207237,
+          "delta": 0.0003880190979276277,
+          "round": 2
+        },
+        "fix_efficacy_attempted": true,
+        "fix_efficacy": {
+          "outcome": "INDETERMINATE_NO_BASELINE",
+          "detail": "falsifier returned ERROR on the UNMODIFIED target, so it does not demonstrate the defect it accuses; there is nothing for a fix to cure"
+        },
+        "corrected_copy_from_fix": {
+          "used": false,
+          "reason": "the original passage is shorter than 12 characters, which is too short to locate reliably; quote a whole line or more"
+        },
+        "status_adjudicator": "tool",
+        "status_evidence": "verified fix, no unresolved challenges",
+        "status_mechanism": "verified_flag",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "CONFIRMED",
+            "round": 2,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          },
+          {
+            "from": "CONFIRMED",
+            "to": "CLOSED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "verified fix, no unresolved challenges",
+            "mechanism": "verified_flag",
+            "refused": null
+          }
+        ],
+        "sk_result": {
+          "sk": 0.0,
+          "A": 1,
+          "E": 0.9782,
+          "tristate": "NO_SCORE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g0_code_retained": {
+              "score": 1,
+              "detail": "gating 2 fenced listing(s) extracted from a non-Python target"
+            },
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded (gating 2 fenced listing(s) extracted from a non-Python target)"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e1_efficacy": {
+              "score": null,
+              "detail": "fix efficacy not measured: INDETERMINATE_NO_BASELINE"
+            },
+            "e2_regression": {
+              "score": 0.9454545454545454,
+              "detail": "52/55 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM/0 LOW (baseline: 0H/0M/0L, new: 0H/0M/0L)"
+            },
+            "_unavailable": [
+              "e1_efficacy"
+            ],
+            "_prose_one_sided": {
+              "outcome": "NO_SCORE",
+              "new_low_severity_security_findings": 0,
+              "computed_sk": 0.9782,
+              "detail": "no gate registered a new defect (sk would have been 0.9782), but a clean static sweep is not evidence a prose fix is correct -- the harm class here is semantic. Unscored: neither admitted nor rejected, R_k unmoved. Resolution runs through the falsifier path."
+            }
+          },
+          "R_old": 0.5,
+          "R_new": 0.5,
+          "rk_note": "NO_SCORE: R_k unchanged. The fix was never assessed, so its efficacy enters as zero MOVEMENT, not as a zero SCORE."
+        },
+        "finding_category": "",
+        "latent": false,
+        "latent_source": "default_reachable",
+        "latent_evidence": "",
+        "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / n\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)\n    if not 0 <= k <= n:\n        raise ValueError(\"k must be in [0, n]\")\n    p = k / n\n    centre = p + z ** 2 / n\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n",
+        "corrected_copy_anchor": {
+          "original": "    if n == 0:\n        return (0.0, 0.0)\n    p = k / n",
+          "corrected": "    if n == 0:\n        return (0.0, 0.0)\n    if not 0 <= k <= n:\n        raise ValueError(\"k must be in [0, n]\")\n    p = k / n"
+        },
+        "corrected_copy_source": "DeepSeek-SIM",
+        "corrected_copy_target_sha": "890f9ae6795d55ad"
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "Gemini-SIM",
+        "occasions": [
+          {
+            "model": "Gemini-SIM",
+            "round": 2,
+            "alias": "Gemini-SIM_F001",
+            "from_canonical": "C0018",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "Gemini-SIM_F001"
+        ],
+        "severity": 0.65,
+        "description": "\u00a73 (lines 52\u201354) instructs the reviewer: *\"PL-01 and PL-02 are statements about the listings beneath them and can be settled by executing those listings against a reference.\"* It never names the reference. For PL-01 the two standard references in Python's own `statistics` module disagree about the quantity, so the prescribed procedure yields opposite verdicts depending on which is picked. Measured on the target's own listing with `xs = [0.1, 0.4, 0.35, 0.8, 0.2, 0.55]`:\nlisting=0.0525   statistics.pvariance=0.052500000000000005   statistics.variance=0.06300000000000001\nagrees with statistics.pvariance: True  | with statistics.variance: False\nA reviewer who reaches for `pvariance` settles PL-01 PASS; one who reaches for `variance` settles it FAIL. Worse, the claim at issue is *unbiasedness*, which is a property of the estimator's expectation over the sampling distribution \u2014 no single execution against any reference can settle it, because both the listing and a reference could share the same bias.",
+        "proposed_fix": "<<<< SEARCH bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/working/prose_with_computable_listings.md\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference.\n==== REPLACE\nshould not be answered the same way. PL-02 is a statement about its listing and\ncan be settled by executing that listing against a named reference --\n`statsmodels.stats.proportion.proportion_confint(method=\"wilson\")`. PL-01 cannot\nbe settled that way: \"unbiased\" is a property of the estimator's expectation over\nthe sampling distribution, not of any single evaluation, and the two standard\nreferences disagree about it (`statistics.pvariance` divides by n,\n`statistics.variance` by n - 1), so execution against an unnamed \"reference\"\nreturns whichever verdict the reference was chosen to give.\n>>>>",
+        "falsifier_code": "import re, statistics\nPATH = \"/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/targets/prose_with_computable_listings.md\"\nsrc = open(PATH).read()\nsec3 = src[src.index(\"## 3.\"):]\nflat = re.sub(r\"\\s+\", \" \", sec3).strip()\n# \u00a73 prescribes \"executing those listings against a reference\" but never names it.\n# For PL-01 the two standard Python references disagree, so the procedure is\n# underdetermined.\ndisagree = statistics.variance([0.0, 2.0]) != statistics.pvariance([0.0, 2.0])\nnamed = any(t in sec3 for t in (\"statistics.\", \"pvariance\", \"numpy\", \"ddof\", \"Bessel\", \"statsmodels\"))\nif \"executing those listings against a reference\" in flat and disagree and not named:\n    raise AssertionError(\"FALSIFIED: 'against a reference' names no reference; candidates disagree\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "severity_proof_history": [
+          {
+            "from": "ABSENT",
+            "to": "WARN",
+            "round": 2
+          }
+        ],
+        "severity_proof": {
+          "status": "WARN",
+          "model_rk": 0.3137,
+          "recomputed_rk": 0.28530280649926143,
+          "delta": 0.02839719350073855,
+          "round": 2
+        },
+        "fix_efficacy": {
+          "outcome": "FIX_CURES_ITS_OWN_FALSIFIER",
+          "detail": "the finding's own falsifier goes quiet once the fix is applied"
+        },
+        "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / n\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)\n    p = k / n\n    centre = p + z ** 2 / n\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference \u2014 for PL-01 the Bessel-corrected sample variance of `statistics.variance` (divisor n \u2212 1), for PL-02 the standard Wilson score interval formula. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n",
+        "corrected_copy_anchor": {
+          "original": "listings beneath them and can be settled by executing those listings against a\nreference.",
+          "corrected": "listings beneath them and can be settled by executing those listings against a\nreference \u2014 for PL-01 the Bessel-corrected sample variance of `statistics.variance` (divisor n \u2212 1), for PL-02 the standard Wilson score interval formula."
+        },
+        "corrected_copy_source": "CC2-SIM",
+        "corrected_copy_target_sha": "890f9ae6795d55ad",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "CONFIRMED",
+            "round": 2,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          },
+          {
+            "from": "CONFIRMED",
+            "to": "CONFIRMED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          },
+          {
+            "from": "CONFIRMED",
+            "to": "CLOSED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "sk_result": {
+          "sk": 0.0,
+          "A": 1,
+          "E": 0.9782,
+          "tristate": "NO_SCORE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g0_code_retained": {
+              "score": 1,
+              "detail": "gating 2 fenced listing(s) extracted from a non-Python target"
+            },
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded (gating 2 fenced listing(s) extracted from a non-Python target)"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e1_efficacy": {
+              "score": null,
+              "detail": "fix efficacy not measured: NOT_PROBED_NO_FALSIFIER"
+            },
+            "e2_regression": {
+              "score": 0.9454545454545454,
+              "detail": "52/55 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM/0 LOW (baseline: 0H/0M/0L, new: 0H/0M/0L)"
+            },
+            "_unavailable": [
+              "e1_efficacy"
+            ],
+            "_prose_one_sided": {
+              "outcome": "NO_SCORE",
+              "new_low_severity_security_findings": 0,
+              "computed_sk": 0.9782,
+              "detail": "no gate registered a new defect (sk would have been 0.9782), but a clean static sweep is not evidence a prose fix is correct -- the harm class here is semantic. Unscored: neither admitted nor rejected, R_k unmoved. Resolution runs through the falsifier path."
+            }
+          },
+          "R_old": 0.5,
+          "R_new": 0.5,
+          "rk_note": "NO_SCORE: R_k unchanged. The fix was never assessed, so its efficacy enters as zero MOVEMENT, not as a zero SCORE."
+        },
+        "finding_category": "",
+        "latent": false,
+        "latent_source": "default_reachable",
+        "latent_evidence": "",
+        "bugzilla_attempted": true,
+        "resolved_by_sweep": "CC2-SIM",
+        "fix_efficacy_attempted": true,
+        "settled_post_convergence": true
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "Gemini-SIM",
+        "occasions": [
+          {
+            "model": "Gemini-SIM",
+            "round": 2,
+            "alias": "Gemini-SIM_F002",
+            "from_canonical": "C0019",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "Gemini-SIM_F002"
+        ],
+        "severity": 0.6,
+        "description": "PL-01 (lines 16\u201317) states *\"the figure it prints may be quoted directly as the variance of the underlying process.\"* This conflates an estimator with the parameter it estimates, and it is the one part of PL-01 that survives the divisor correction. With `/ (n - 1)` applied \u2014 i.e. with every registry finding about this listing honoured \u2014 the estimator is unbiased, and still unquotable as the parameter. Measured, true variance 1.0, n = 5 rounds, 40 000 replications:\ntrue variance=1.0  n=5  mean_estimate=0.9992\ncentral 95% range = [0.1216, 2.7833]  spread factor = 22.9x\nUnbiasedness constrains the *mean* of the estimator (0.9992 \u2713). It says nothing about the spread. One run in twenty returns a figure below 0.12 or above 2.78 for a process whose variance is 1.0. \u00a71 states the figure is *\"quoted to a reader who will not re-derive\"* it, so the reader has no recourse.",
+        "proposed_fix": "<<<< SEARCH bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/working/prose_with_computable_listings.md\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.\n==== REPLACE\nthe population variance from a sample of rounds. The figure it prints is a point\nestimate, not the parameter: at n = 5 rounds its central 95% range spans a factor\nof 23 about the truth, so it must be quoted with an interval and with the round\ncount, and never directly as the variance of the underlying process.\n>>>>",
+        "falsifier_code": "import re\nPATH = \"/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/targets/prose_with_computable_listings.md\"\nsrc = open(PATH).read()\nflat = re.sub(r\"\\s+\", \" \", src).strip()\n# Even with the divisor fixed, an unbiased estimate from a finite sample is not the\n# population parameter, so it cannot be \"quoted directly as the variance of the\n# underlying process.\"\nif \"quoted directly as the variance of the underlying process\" in flat:\n    raise AssertionError(\"FALSIFIED: conflates the estimate with the parameter\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "severity_proof_history": [
+          {
+            "from": "ABSENT",
+            "to": "WARN",
+            "round": 2
+          }
+        ],
+        "severity_proof": {
+          "status": "WARN",
+          "model_rk": 0.3293,
+          "recomputed_rk": 0.30158501440922186,
+          "delta": 0.02771498559077812,
+          "round": 2
+        },
+        "fix_efficacy": {
+          "outcome": "FIX_CURES_ITS_OWN_FALSIFIER",
+          "detail": "the finding's own falsifier goes quiet once the fix is applied"
+        },
+        "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted as an unbiased estimate of the variance of the underlying process.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / n\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)\n    p = k / n\n    centre = p + z ** 2 / n\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n",
+        "corrected_copy_anchor": {
+          "original": "the population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.",
+          "corrected": "the population variance from a sample of rounds, so the figure it prints may be\nquoted as an unbiased estimate of the variance of the underlying process."
+        },
+        "corrected_copy_source": "CC2-SIM",
+        "corrected_copy_target_sha": "890f9ae6795d55ad",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "CONFIRMED",
+            "round": 2,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          },
+          {
+            "from": "CONFIRMED",
+            "to": "CONFIRMED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          },
+          {
+            "from": "CONFIRMED",
+            "to": "CLOSED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "sk_result": {
+          "sk": 0.0,
+          "A": 1,
+          "E": 0.9782,
+          "tristate": "NO_SCORE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g0_code_retained": {
+              "score": 1,
+              "detail": "gating 2 fenced listing(s) extracted from a non-Python target"
+            },
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded (gating 2 fenced listing(s) extracted from a non-Python target)"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e1_efficacy": {
+              "score": null,
+              "detail": "fix efficacy not measured: NOT_PROBED_NO_FALSIFIER"
+            },
+            "e2_regression": {
+              "score": 0.9454545454545454,
+              "detail": "52/55 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM/0 LOW (baseline: 0H/0M/0L, new: 0H/0M/0L)"
+            },
+            "_unavailable": [
+              "e1_efficacy"
+            ],
+            "_prose_one_sided": {
+              "outcome": "NO_SCORE",
+              "new_low_severity_security_findings": 0,
+              "computed_sk": 0.9782,
+              "detail": "no gate registered a new defect (sk would have been 0.9782), but a clean static sweep is not evidence a prose fix is correct -- the harm class here is semantic. Unscored: neither admitted nor rejected, R_k unmoved. Resolution runs through the falsifier path."
+            }
+          },
+          "R_old": 0.5,
+          "R_new": 0.5,
+          "rk_note": "NO_SCORE: R_k unchanged. The fix was never assessed, so its efficacy enters as zero MOVEMENT, not as a zero SCORE."
+        },
+        "finding_category": "",
+        "latent": false,
+        "latent_source": "default_reachable",
+        "latent_evidence": "",
+        "bugzilla_attempted": true,
+        "resolved_by_sweep": "CC2-SIM",
+        "fix_efficacy_attempted": true,
+        "settled_post_convergence": true
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "Gemini-SIM",
+        "occasions": [
+          {
+            "model": "Gemini-SIM",
+            "round": 2,
+            "alias": "Gemini-SIM_F003",
+            "from_canonical": "C0020",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "Gemini-SIM_F003"
+        ],
+        "severity": 0.55,
+        "description": "PL-01 (line 15) claims the helper reports an unbiased estimate \"from a sample of rounds\". Unbiasedness of the sample variance requires the draws to be i.i.d. The PL-01 paragraph states no such precondition \u2014 I checked the paragraph programmatically for `independent`, `i.i.d`, `identically distributed`, `uncorrelated`, `autocorrel`: none present. And the data source \u00a71 names \u2014 successive rounds of one run \u2014 is the canonical case where independence fails, since a review panel's rounds are serially dependent by construction (round k+1 sees round k's registry). Measured on the target's listing with the divisor already corrected to `n - 1`, AR(1) with \u03c6 = 0.8, stationary variance exactly 1.0, n = 10 rounds, 20 000 replications:\nAR(1) phi=0.8 n=10 stationary variance=1.0 -> E[estimator]=0.5073 (bias -49.3%)\nThe `n - 1` divisor \u2014 the fix every registry entry asks for \u2014 does not touch this. It corrects the i.i.d. bias and leaves a \u221249% dependence bias standing.",
+        "proposed_fix": "<<<< SEARCH bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/working/prose_with_computable_listings.md\nClaim PL-01. The dispersion helper below reports an unbiased estimate of\n==== REPLACE\nClaim PL-01. The dispersion helper below reports an estimate -- unbiased only\nwhen the per-round scalars are independent and identically distributed, which\nsuccessive rounds of a single run are not -- of\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "REFUTED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "severity_proof_history": [
+          {
+            "from": "ABSENT",
+            "to": "WARN",
+            "round": 2
+          }
+        ],
+        "severity_proof": {
+          "status": "WARN",
+          "model_rk": 0.346,
+          "recomputed_rk": 0.31897458369851006,
+          "delta": 0.027025416301489913,
+          "round": 2
+        },
+        "fix_efficacy": {
+          "outcome": "NOT_PROBED_NO_FALSIFIER",
+          "detail": "finding carries a proposed fix but no falsifier, so there is nothing to run the fix against"
+        },
+        "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, provided those per-round scalars\nare independent and identically distributed. Where successive rounds are serially\ncorrelated, as the rounds of a single run generally are, the figure understates the\nvariance of the underlying process and may not be quoted as it until the rounds\nhave been shown to be uncorrelated.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / n\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)\n    p = k / n\n    centre = p + z ** 2 / n\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n",
+        "corrected_copy_anchor": {
+          "original": "**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.",
+          "corrected": "**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, provided those per-round scalars\nare independent and identically distributed. Where successive rounds are serially\ncorrelated, as the rounds of a single run generally are, the figure understates the\nvariance of the underlying process and may not be quoted as it until the rounds\nhave been shown to be uncorrelated."
+        },
+        "corrected_copy_source": "Gemini-SIM",
+        "corrected_copy_target_sha": "890f9ae6795d55ad",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "CONFIRMED",
+            "round": 2,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          },
+          {
+            "from": "CONFIRMED",
+            "to": "REFUTED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        },
+        "finding_category": "",
+        "latent": false,
+        "latent_source": "default_reachable",
+        "latent_evidence": "",
+        "bugzilla_attempted": true,
+        "withdrawn_by_sweep": "Codex-SIM",
+        "withdraw_reason": "The unbiasedness failure is fully attributable to the divisor (listing uses `/n`, matching `pvariance`, not `/(n-1)`), which holds even under i.i.d. draws \u2014 so the \"missing i.i.d. precondition\" is not"
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "Gemini-SIM",
+        "occasions": [
+          {
+            "model": "Gemini-SIM",
+            "round": 2,
+            "alias": "Gemini-SIM_F005",
+            "from_canonical": "C0021",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "Gemini-SIM_F005"
+        ],
+        "severity": 0.35,
+        "description": "\u00a71 states the summary reports \"the dispersion of those scalars and, separately, a 95% interval on a proportion derived from counts of findings\" \u2014 two different quantities, explicitly so. PL-03 then claims that showing both makes a reader \"less likely to over-read a single round's movement\". That inference only follows if the interval bears on the per-round scalar whose movement is at issue. By \u00a71's own wording it does not: the interval is on a proportion over findings counts. Nothing anywhere in the document tells the reader the two figures describe different quantities \u2014 checked programmatically for `different quantit`, `distinct quantit`, `not an uncertainty band`, `not the dispersion of`, `same quantity`:\nsetup declares two distinct quantities: True\nPL-03 claims the pairing aids reading a single round's movement: True\ndocument anywhere distinguishes the two quantities for the reader: False",
+        "proposed_fix": "<<<< SEARCH bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/working/prose_with_computable_listings.md\nover-read a single round's movement than one who sees only a central value.\n==== REPLACE\nover-read a single round's movement than one who sees only a central value. The\ntwo figures describe different quantities -- the dispersion is of the per-round\nscalars, the interval is on a proportion derived from counts of findings -- so\neach must be labelled with the quantity it describes.\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "REFUTED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Fable-SIM",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "Challenged on materiality, not on textual accuracy. The quoted \u00a71 sentence (\"A summary reports the dispersion of those scalars and, separately, a 95% interval on a proportion derived from counts of fi"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "severity_proof_history": [
+          {
+            "from": "ABSENT",
+            "to": "WARN",
+            "round": 2
+          }
+        ],
+        "severity_proof": {
+          "status": "WARN",
+          "model_rk": 0.4326,
+          "recomputed_rk": 0.40432618683001537,
+          "delta": 0.02827381316998462,
+          "round": 2
+        },
+        "fix_efficacy": {
+          "outcome": "NOT_PROBED_NO_FALSIFIER",
+          "detail": "finding carries a proposed fix but no falsifier, so there is nothing to run the fix against"
+        },
+        "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / n\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)\n    p = k / n\n    centre = p + z ** 2 / n\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value. The\ntwo figures describe different quantities -- the dispersion is of the per-round\nscalars, the interval is on a proportion derived from counts of findings -- so\neach must be labelled with the quantity it describes.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n",
+        "corrected_copy_anchor": {
+          "original": "over-read a single round's movement than one who sees only a central value.",
+          "corrected": "over-read a single round's movement than one who sees only a central value. The\ntwo figures describe different quantities -- the dispersion is of the per-round\nscalars, the interval is on a proportion derived from counts of findings -- so\neach must be labelled with the quantity it describes."
+        },
+        "corrected_copy_source": "Gemini-SIM",
+        "corrected_copy_target_sha": "890f9ae6795d55ad",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 1,
+          "E": 0.9782,
+          "tristate": "NO_SCORE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g0_code_retained": {
+              "score": 1,
+              "detail": "gating 2 fenced listing(s) extracted from a non-Python target"
+            },
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded (gating 2 fenced listing(s) extracted from a non-Python target)"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e1_efficacy": {
+              "score": null,
+              "detail": "fix efficacy not measured: NOT_PROBED_NO_FALSIFIER"
+            },
+            "e2_regression": {
+              "score": 0.9454545454545454,
+              "detail": "52/55 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM/0 LOW (baseline: 0H/0M/0L, new: 0H/0M/0L)"
+            },
+            "_unavailable": [
+              "e1_efficacy"
+            ],
+            "_prose_one_sided": {
+              "outcome": "NO_SCORE",
+              "new_low_severity_security_findings": 0,
+              "computed_sk": 0.9782,
+              "detail": "no gate registered a new defect (sk would have been 0.9782), but a clean static sweep is not evidence a prose fix is correct -- the harm class here is semantic. Unscored: neither admitted nor rejected, R_k unmoved. Resolution runs through the falsifier path."
+            }
+          },
+          "R_old": 0.5,
+          "R_new": 0.5,
+          "rk_note": "NO_SCORE: R_k unchanged. The fix was never assessed, so its efficacy enters as zero MOVEMENT, not as a zero SCORE."
+        },
+        "finding_category": "",
+        "latent": false,
+        "latent_source": "default_reachable",
+        "latent_evidence": "",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "UNCONFIRMED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          },
+          {
+            "from": "UNCONFIRMED",
+            "to": "REFUTED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "withdrawn_by_sweep": "CC2-SIM",
+        "withdraw_reason": "Not a real defect \u2014 PL-03 says a reader who \"sees both\" is less likely to over-read a single round's movement, and the dispersion (one of the two things shown) is exactly the spread of the per-round s"
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "Gemini-SIM",
+        "occasions": [
+          {
+            "model": "Gemini-SIM",
+            "round": 3,
+            "alias": "Gemini-SIM_F006",
+            "from_canonical": "C0022",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "Gemini-SIM_F006"
+        ],
+        "severity": 0.5,
+        "description": "\u00a73 (final sentence) disposes of PL-03 as: *\"it carries no listing and no reference implementation, so it is not settled by execution.\"* That is where \u00a73 stops. A token scan over the whole of \u00a73 returns zero occurrences of `experiment`, `evidence`, `survey`, `measur`, `trial`, `study`, `data`, or `falsif`. The section names a route for PL-01/PL-02 and names no route whatsoever for PL-03. The inference \"carries no listing \u2192 not settled by execution\" is sound; the document then silently converts it into \"requires no test,\" which is a non-sequitur. PL-03 is not a matter of taste \u2014 *\"a reader who sees both is less likely to over-read a single round's movement than one who sees only a central value\"* is a comparative empirical claim over two presentation conditions, falsifiable by a reader study. It is unexecutable, not unfalsifiable.",
+        "proposed_fix": "<<<< SEARCH bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/working/prose_with_computable_listings.md\nPL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n==== REPLACE\nPL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution. It is not thereby exempt from test: it is a comparative\nempirical claim about two presentation conditions, and the evidence that would\nsettle it is a reader study measuring over-reading rates under each. Until that\nmeasurement exists PL-03 must be marked [SPECULATIVE] and may not be accepted.\n>>>>",
+        "falsifier_code": "PATH = \"/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/targets/prose_with_computable_listings.md\"\ntext = open(PATH).read()\nsec = text.split(\"## 3.\")[1]\nlow = sec.lower()\nroutes = [\"experiment\", \"evidence\", \"survey\", \"measur\", \"trial\",\n          \"study\", \"data\", \"falsif\"]\nassert any(t in low for t in routes), (\n    \"FALSIFIED: section 3 disposes of PL-03 as 'not settled by execution' \"\n    \"and names no empirical route by which it could be settled at all\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "severity_proof_history": [
+          {
+            "from": "ABSENT",
+            "to": "SKIP",
+            "round": 3
+          }
+        ],
+        "severity_proof": {
+          "status": "SKIP",
+          "model_rk": null,
+          "recomputed_rk": null,
+          "delta": null,
+          "round": 3
+        },
+        "fix_efficacy": {
+          "outcome": "FIX_CURES_ITS_OWN_FALSIFIER",
+          "detail": "the finding's own falsifier goes quiet once the fix is applied"
+        },
+        "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / n\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)\n    p = k / n\n    centre = p + z ** 2 / n\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution. It is an empirical claim about readers, and would be\nsettled, if at all, by evidence from a reader study or survey, which this note\ndoes not supply.\n",
+        "corrected_copy_anchor": {
+          "original": "PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.",
+          "corrected": "PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution. It is an empirical claim about readers, and would be\nsettled, if at all, by evidence from a reader study or survey, which this note\ndoes not supply."
+        },
+        "corrected_copy_source": "DeepSeek-SIM",
+        "corrected_copy_target_sha": "890f9ae6795d55ad",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 1,
+          "E": 0.9782,
+          "tristate": "NO_SCORE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g0_code_retained": {
+              "score": 1,
+              "detail": "gating 2 fenced listing(s) extracted from a non-Python target"
+            },
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded (gating 2 fenced listing(s) extracted from a non-Python target)"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e1_efficacy": {
+              "score": null,
+              "detail": "fix efficacy not measured: NOT_PROBED_NO_FALSIFIER"
+            },
+            "e2_regression": {
+              "score": 0.9454545454545454,
+              "detail": "52/55 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM/0 LOW (baseline: 0H/0M/0L, new: 0H/0M/0L)"
+            },
+            "_unavailable": [
+              "e1_efficacy"
+            ],
+            "_prose_one_sided": {
+              "outcome": "NO_SCORE",
+              "new_low_severity_security_findings": 0,
+              "computed_sk": 0.9782,
+              "detail": "no gate registered a new defect (sk would have been 0.9782), but a clean static sweep is not evidence a prose fix is correct -- the harm class here is semantic. Unscored: neither admitted nor rejected, R_k unmoved. Resolution runs through the falsifier path."
+            }
+          },
+          "R_old": 0.5,
+          "R_new": 0.5,
+          "rk_note": "NO_SCORE: R_k unchanged. The fix was never assessed, so its efficacy enters as zero MOVEMENT, not as a zero SCORE."
+        },
+        "finding_category": "",
+        "latent": false,
+        "latent_source": "default_reachable",
+        "latent_evidence": "",
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "UNCONFIRMED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          },
+          {
+            "from": "UNCONFIRMED",
+            "to": "CONFIRMED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          },
+          {
+            "from": "CONFIRMED",
+            "to": "CLOSED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "computed_evidence": [
+          {
+            "kind": "reasoned_withdrawal",
+            "by": "CC2-SIM",
+            "detail": "Not a testable defect \u2014 \u00a73's stated scope is computational reducibility, and \"it is not settled by execution\" is a correct claim about PL-03; a note on what execution can settle is under no obligation",
+            "falsifier_code": "",
+            "proposed_fix": "<<<< SEARCH bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/working/prose_with_computable_listings.md\nPL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n==== REPLACE\nPL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution. It is not thereby exempt from test: it is a comparative\nempirical claim about two presentation conditions, and the evidence that would\nsettle it is a reader study measuring over-reading rates under each. Until that\nmeasurement exists PL-03 must be marked [SPECULATIVE] and may not be accepted.\n>>>>"
+          }
+        ],
+        "hil_has_computed_evidence": true,
+        "resolved_by_sweep": "DeepSeek-SIM",
+        "fix_efficacy_attempted": true,
+        "settled_post_convergence": true
       }
     },
-    "next_id": 17,
+    "next_id": 23,
     "alias_map": {
       "Codex-SIM:Codex-SIM_F001": "C0001",
       "Codex-SIM:Codex-SIM_F002": "C0002",
@@ -2151,86 +3308,139 @@
       "Fable-SIM:Fable-SIM_F001": "C0009",
       "Fable-SIM:Fable-SIM_F002": "C0010",
       "Fable-SIM:Fable-SIM_F003": "C0011",
-      "Gemini-SIM:Gemini-SIM_F002": "C0012",
-      "Gemini-SIM:Gemini-SIM_F001": "C0013",
-      "Gemini-SIM:Gemini-SIM_F003": "C0014",
+      "Gemini-SIM:Gemini-SIM_F002": "C0019",
+      "Gemini-SIM:Gemini-SIM_F001": "C0018",
+      "Gemini-SIM:Gemini-SIM_F003": "C0020",
       "ChatGPT-SIM:ChatGPT-SIM_R1_CONVERGED": "C0015",
-      "Fable-SIM:Fable-SIM_F004": "C0016"
+      "Fable-SIM:Fable-SIM_F004": "C0016",
+      "DeepSeek-SIM:DeepSeek-SIM_F017": "C0017",
+      "Gemini-SIM:Gemini-SIM_F005": "C0021",
+      "Gemini-SIM:Gemini-SIM_F006": "C0022"
     }
   },
   "novelty_counts": [
     3,
-    0
+    0,
+    1,
+    1
   ],
   "raw_counts": [
     14,
-    2
+    2,
+    5,
+    1
   ],
   "novelty_counts_per_model": {
     "ChatGPT-SIM": [
       2,
-      1
+      1,
+      0,
+      0
     ],
     "Gemini-SIM": [
       3,
-      0
+      0,
+      4,
+      1
     ],
     "DeepSeek-SIM": [
       2,
+      0,
+      1,
       0
     ],
     "Codex-SIM": [
       2,
+      0,
+      0,
       0
     ],
     "Fable-SIM": [
       3,
-      1
+      1,
+      0,
+      0
     ],
     "CC2-SIM": [
       2,
+      0,
+      0,
       0
     ]
   },
   "raw_counts_per_model": {
     "ChatGPT-SIM": [
       2,
-      1
+      1,
+      0,
+      0
     ],
     "Gemini-SIM": [
       3,
-      0
+      0,
+      4,
+      1
     ],
     "DeepSeek-SIM": [
       2,
+      0,
+      1,
       0
     ],
     "Codex-SIM": [
       2,
+      0,
+      0,
       0
     ],
     "Fable-SIM": [
       3,
-      1
+      1,
+      0,
+      0
     ],
     "CC2-SIM": [
       2,
+      0,
+      0,
       0
     ]
   },
   "rho_history": [
     0.214286,
-    0.0
+    0.0,
+    0.2,
+    1.0
   ],
   "gamma_history": [
     0.0,
-    0.0
+    0.0,
+    0.649928,
+    0.652057
   ],
   "gamma_critical_history": [
     0.0,
-    0.0
+    0.0,
+    1.0,
+    1.0
   ],
   "round_withdrawals": [
+    {
+      "recorded": 0,
+      "seen": 0,
+      "skipped_terminal": 0,
+      "skipped_unknown": 0,
+      "by_model": {},
+      "ids": []
+    },
+    {
+      "recorded": 0,
+      "seen": 0,
+      "skipped_terminal": 0,
+      "skipped_unknown": 0,
+      "by_model": {},
+      "ids": []
+    },
     {
       "recorded": 0,
       "seen": 0,
@@ -2276,14 +3486,54 @@
       "by_model": {},
       "ids": [],
       "cleared_ids": []
+    },
+    {
+      "seen": 0,
+      "executed": 0,
+      "cleared": 0,
+      "withdrawn": 0,
+      "critical_refuted_recorded": 0,
+      "no_verdict": 0,
+      "skipped_terminal": 0,
+      "skipped_unknown": 0,
+      "skipped_not_unresolved": 0,
+      "by_model": {},
+      "ids": [],
+      "cleared_ids": []
+    },
+    {
+      "seen": 0,
+      "executed": 0,
+      "cleared": 0,
+      "withdrawn": 0,
+      "critical_refuted_recorded": 0,
+      "no_verdict": 0,
+      "skipped_terminal": 0,
+      "skipped_unknown": 0,
+      "skipped_not_unresolved": 0,
+      "by_model": {},
+      "ids": [],
+      "cleared_ids": []
     }
   ],
   "gate_history": [
     false,
-    false
+    false,
+    false,
+    true
   ],
-  "open_ch_history": [],
+  "open_ch_history": [
+    0
+  ],
   "stall_history": [
+    {
+      "open_ch": 0,
+      "contested": 0
+    },
+    {
+      "open_ch": 0,
+      "contested": 0
+    },
     {
       "open_ch": 0,
       "contested": 0
@@ -2295,15 +3545,30 @@
   ],
   "novel_critical_history": [
     2,
+    0,
+    0,
     0
   ],
-  "cumulative_context_chars": 211763,
+  "cumulative_context_chars": 381462,
   "consecutive_churn_rounds": 0,
   "itc_model_state": {
     "ChatGPT-SIM": {
-      "history": [],
-      "adaptation": null,
-      "retry_count": 0,
+      "history": [
+        {
+          "round": 2,
+          "classification": "TRANSIENT_FAILURE",
+          "suppressed": null,
+          "findings": 0
+        },
+        {
+          "round": 3,
+          "classification": "CAPABILITY_MISMATCH",
+          "suppressed": null,
+          "findings": 0
+        }
+      ],
+      "adaptation": "strip_context",
+      "retry_count": 1,
       "escalation_level": 0,
       "parse_yield_history": [
         1.0
@@ -2327,10 +3592,16 @@
           "classification": "TRANSIENT_FAILURE",
           "suppressed": null,
           "findings": 0
+        },
+        {
+          "round": 3,
+          "classification": "CAPABILITY_MISMATCH",
+          "suppressed": null,
+          "findings": 0
         }
       ],
-      "adaptation": "retry",
-      "retry_count": 1,
+      "adaptation": "strip_context",
+      "retry_count": 0,
       "escalation_level": 0,
       "parse_yield_history": [
         1.0
@@ -2354,9 +3625,21 @@
           "classification": "TRANSIENT_FAILURE",
           "suppressed": null,
           "findings": 0
+        },
+        {
+          "round": 2,
+          "classification": "CAPABILITY_MISMATCH",
+          "suppressed": null,
+          "findings": 0
+        },
+        {
+          "round": 3,
+          "classification": "CAPABILITY_MISMATCH",
+          "suppressed": null,
+          "findings": 0
         }
       ],
-      "adaptation": "retry",
+      "adaptation": "section_assign",
       "retry_count": 1,
       "escalation_level": 0,
       "parse_yield_history": [
@@ -2375,6 +3658,45 @@
       "last_adaptive_threshold": 0.5
     }
   },
-  "itc_hil_flags": [],
-  "burst_state": null
+  "itc_hil_flags": [
+    {
+      "model": "CC2-SIM",
+      "round": 3,
+      "classification": "CAPABILITY_MISMATCH",
+      "consecutive_failures": 3,
+      "message": "CC2-SIM has 3 consecutive ITC interventions (latest: CAPABILITY_MISMATCH). Flagged for HIL review."
+    }
+  ],
+  "burst_state": null,
+  "post_convergence_sweep": {
+    "cleared": 3,
+    "withdrawn": 2,
+    "rounds": 1,
+    "remaining": 2,
+    "items": {
+      "C0018": {
+        "disposition": "cleared",
+        "by": "CC2-SIM"
+      },
+      "C0019": {
+        "disposition": "cleared",
+        "by": "CC2-SIM"
+      },
+      "C0021": {
+        "disposition": "withdrawn",
+        "by": "CC2-SIM",
+        "reason": "Not a real defect \u2014 PL-03 says a reader who \"sees both\" is less likely to over-read a single round's movement, and the dispersion (one of the two things shown) is exactly the spread of the per-round s"
+      },
+      "C0022": {
+        "disposition": "cleared",
+        "by": "DeepSeek-SIM"
+      },
+      "C0020": {
+        "disposition": "withdrawn",
+        "by": "Codex-SIM",
+        "reason": "The unbiasedness failure is fully attributable to the divisor (listing uses `/n`, matching `pvariance`, not `/(n-1)`), which holds even under i.i.d. draws \u2014 so the \"missing i.i.d. precondition\" is not"
+      }
+    },
+    "computed_evidence": 6
+  }
 }

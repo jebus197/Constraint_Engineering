@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 14 October 2026 23:03 BST (2026-10-14T23:03:35+01:00)
+Generated: 15 October 2026 09:04 BST (2026-10-15T09:04:02+01:00)
 
 ---
 
@@ -18,19 +18,25 @@ Generated: 14 October 2026 23:03 BST (2026-10-14T23:03:35+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `c50abdb6` sv: the run is launch-ready, the board went 32 red to 6, and 4 items need his ruling
-- **Committed:** 2026-10-14 23:00:35 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
+- **Last commit (the PARENT of the commit containing this file):** `9fcc2d08` record: arm5's core confound still holds but its HEAD arm has gone stale
+- **Committed:** 2026-10-15 08:58:25 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 3
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
+- `M bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/runner_state.json`
+- `M bench/state/immune_memory.json`
 - `M resources/RECOVERY.md`
+- `?? bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/free_run1_directive_whole_20261015T061123Z_report.json`
+- `?? bench/logs/free_run1_directive_whole_20261015T061123Z_20261015T061124Z/panel_worktree_harvest/`
+- `?? bench/logs/free_run2_severity_spec_20261015T073418Z_20261015T073418Z/`
+- `?? scripts/p_pass_todays_producers_2026-10-15.py`
 
 ---
 
 ## Tests
 
-**11217 tests collected** at 14 October 2026 23:03 BST, HEAD `c50abdb6` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**11324 tests collected** at 15 October 2026 09:04 BST, HEAD `9fcc2d08` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -60,13 +66,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `c50abdb6 sv: the run is launch-ready, the board went 32 red to 6, and 4 items need his ruling`
-- `797f3dab board: 32 red to 6, and 3 of the 6 are not defects`
-- `f0405a6e fix: the script documenting POST had never run its own part 1, and its verdict label lied`
-- `d13c28e2 docs: tracker un-stalled and the programme of study revised for the hotel window`
-- `da23d286 fix: the cap now records what it cut, the glob sees every run, and arm 4 has a verified prose target`
-- `6a29a27f harden: the pre-machinery producer now prefers live registries explicitly`
-- `3d942502 measure: the falsifier gap is 83% pre-machinery, and the 2026-10-03 panel already said so`
-- `5fb360b5 panel: the directive set and measured capability, 6 items, both seats landed`
-- `c6115986 fix: a joint round must ANSWER to discharge a debt; and the joint half lands`
-- `8590f6cf t: the directive-set analysis, with the 4 decisions it leaves him`
+- `9fcc2d08 record: arm5's core confound still holds but its HEAD arm has gone stale`
+- `24e94ca4 measure: Haiku as the claim classifier at run scale, from run 1's own log`
+- `7b0b4a1d correct: B9's second fix option is forbidden by the denial order, and is withdrawn`
+- `e801ef04 notes: free run 1, technical and plain-English, with the TTS companion`
+- `7e9883bc measure: the confinement guard refuses the falsifier's own review target`
+- `3d381852 measure: the elicitation half cannot be read from a clean run`
+- `8c6f2e5a measure: the coherence recalibration is inert on 3 independent layers`
+- `33875e96 measure: the futility guard held in a live run, 24 of 24, 0 splits`
+- `76b1897e record: run 1 converged at round 3, and a simulated run restamps the real seats`
+- `7c690f74 record: a gamma band label is applied to a gamma that is not a measurement`
