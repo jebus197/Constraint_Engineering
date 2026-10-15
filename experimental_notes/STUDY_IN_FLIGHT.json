@@ -73,8 +73,55 @@
       "id": "haiku_extended",
       "what": "Haiku as the decidable-claim classifier at run scale, and the founder's confidence composition (Haiku decides, syntax raises confidence, never blocks).",
       "founder_ruling": "DO IT, mark as a significant study area (2026-10-03)",
-      "result": null,
-      "headline": null,
+      "result": {
+        "status": "MEASURED ON RUN 1 IN SEMI-ACTIVE MODE; PRIMARY MODE IS NOT ESTABLISHED",
+        "at": "2026-10-15T08:56:24+01:00",
+        "run": "free_run1_directive_whole_20261015T061123Z",
+        "it_needed_no_new_run": "bench/immune_agents.py:4967 sets _CLASSIFIER_MODEL = 'haiku', dispatched through the Claude CLI on the Max plan, and run 1 exercised it 22 times.",
+        "the_bound": "immune_agents.py sets llm_primary = (domain == 'software'). Both free runs use domain=mathematics, so Haiku ran SEMI-ACTIVE with an override threshold of 0.70 and never PRIMARY. A PRIMARY reading requires a software-domain run.",
+        "batches": [
+          14,
+          2,
+          5,
+          1
+        ],
+        "findings_classified": 22,
+        "three_way_accounting_closes": true,
+        "agreed_with_regex": "9 of 22, 40.9091%, Wilson [23.2558%, 61.2652%], Clopper-Pearson [20.7093%, 63.6453%]",
+        "overrode_regex": "10 of 22, 45.4545%, Wilson [26.9203%, 65.3402%]",
+        "override_blocked_by_the_mathematical_guard": "3 of 22, 13.6364%, Wilson [4.7490%, 33.3350%]",
+        "agreement_vs_one_in_six_chance_p": 0.006131,
+        "agreement_vs_a_coin_flip_p": 0.523467,
+        "confidence": {
+          "min": 0.7,
+          "max": 0.9,
+          "mean": 0.8238,
+          "median": 0.8,
+          "all_at_or_above_threshold": true
+        },
+        "latency_s": {
+          "min": 10.6,
+          "max": 36.5,
+          "mean": 18.61,
+          "median": 15.4,
+          "total": 241.9
+        },
+        "reclassifications": {
+          "statistical -> mathematical": 7,
+          "statistical -> code_behavioral": 3
+        },
+        "blocked_reclassifications": {
+          "mathematical -> logical": 2,
+          "mathematical -> code_behavioral": 1
+        },
+        "founders_composition_clause_by_clause": {
+          "haiku_decides": "HOLDS in SEMI-ACTIVE mode \u2014 it reclassified 10 of 22 findings",
+          "never_blocks": "HOLDS. 0 findings were withheld by the classifier. The 3 log lines reading 'BLOCKED by MATHEMATICAL guard' are Haiku's OVERRIDE being refused and the regex's mathematical label kept, which is the guard blocking Haiku rather than Haiku blocking anything.",
+          "syntax_raises_confidence": "NOT MEASURABLE FROM A RUN LOG, and recorded as unmeasured rather than assumed. The log records a single confidence per classification and no pre-syntax value, so no before/after pair exists to compare. Closing this needs the classifier to log both the pre-syntax and post-syntax confidence."
+        },
+        "producer": "scripts/haiku_as_classifier_at_run_scale_2026-10-15.py"
+      },
+      "headline": "HAIKU RAN 22 CLASSIFICATIONS IN RUN 1 AND THE 3-WAY ACCOUNTING CLOSES EXACTLY: 9 agreed with the regex, 10 overrode it, 3 had the override refused by the MATHEMATICAL guard. Agreement at 40.9091%, Wilson [23.2558%, 61.2652%], beats a 1-in-6 chance baseline (p = 0.006131) but is indistinguishable from a coin flip (p = 0.523467). Confidence ran 0.70 to 0.90, mean 0.8238, every value at or above the threshold; latency 10.6 to 36.5 s, mean 18.61 s, 241.9 s in total. Of the founder's 3 clauses, 'Haiku decides' and 'never blocks' both HOLD, and 'syntax raises confidence' is NOT MEASURABLE from a run log because no pre-syntax confidence is recorded. Bounded to SEMI-ACTIVE: llm_primary is (domain == 'software') and these runs are mathematics.",
       "run_on_the_15_document_set": {
         "at": "2026-10-03T10:59:46+01:00",
         "producer": "scripts/haiku_claim_boundary_arm_2026-10-03.py",
@@ -791,6 +838,15 @@
         "guard_required": "a test that EXECUTES a falsifier against a staged target and fails if the open is refused",
         "correction": "CC1's first version of this entry offered adding the working directory to the declared roots as an alternative. That is forbidden by the denial order and is WITHDRAWN at 2026-10-15T08:53:12+01:00."
       }
+    },
+    {
+      "id": "the-classifier-logs-no-pre-syntax-confidence-so-one-clause-cannot-be-checked",
+      "added": "2026-10-15T08:56:24+01:00",
+      "priority": "MEDIUM",
+      "severity": "INSTRUMENTATION GAP, not a behavioural defect",
+      "what": "The founder's confidence composition has 3 clauses and 2 are measurable from a run log. 'Syntax raises confidence' is not, because the classifier records a single confidence per classification with no pre-syntax value, so no before/after pair exists. Measured on run 1: 13 confidence values recorded, 0 of them paired.",
+      "for_done": "log both the pre-syntax and the post-syntax confidence per classification",
+      "producer": "scripts/haiku_as_classifier_at_run_scale_2026-10-15.py"
     }
   ],
   "high_priority_2026_10_15": {
@@ -843,7 +899,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T08:53:12+01:00",
+  "last_updated": "2026-10-15T08:56:24+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",

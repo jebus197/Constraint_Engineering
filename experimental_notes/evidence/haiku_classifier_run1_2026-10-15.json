@@ -1,0 +1,61 @@
+{
+  "run": "free_run1_directive_whole_20261015T061123Z_20261015T061124Z",
+  "mode": [
+    "SEMI-ACTIVE"
+  ],
+  "override_threshold": [
+    0.7
+  ],
+  "primary_ever_engaged": false,
+  "bound": "llm_primary = (domain == 'software'); both free runs are domain=mathematics, so this measures SEMI-ACTIVE only",
+  "batches": [
+    14,
+    2,
+    5,
+    1
+  ],
+  "findings_classified": 22,
+  "agreed_with_regex": 9,
+  "overrode_regex": 10,
+  "override_blocked_by_guard": 3,
+  "accounting_closes": true,
+  "agreement_wilson": [
+    0.2325581619647187,
+    0.6126518152368489
+  ],
+  "override_wilson": [
+    0.2692029418081332,
+    0.6534020467926506
+  ],
+  "blocked_wilson": [
+    0.0474900371405525,
+    0.3333498716657173
+  ],
+  "agreement_vs_one_in_six_p": 0.006130793918705943,
+  "agreement_vs_coin_flip_p": 0.5234670639038086,
+  "confidence": {
+    "min": 0.7,
+    "max": 0.9,
+    "mean": 0.8238461538461538
+  },
+  "latency_s": {
+    "min": 10.6,
+    "max": 36.5,
+    "mean": 18.607692307692307,
+    "total": 241.9
+  },
+  "reclassifications": {
+    "statistical -> mathematical": 7,
+    "statistical -> code_behavioral": 3
+  },
+  "blocked_reclassifications": {
+    "mathematical -> code_behavioral (refused by MATHEMATICAL)": 1,
+    "mathematical -> logical (refused by MATHEMATICAL)": 2
+  },
+  "composition": {
+    "haiku_decides": true,
+    "never_blocks": true,
+    "syntax_raises_confidence": "NOT MEASURABLE FROM THIS LOG \u2014 no pre-syntax confidence is recorded"
+  },
+  "all_assertions_hold": true
+}
