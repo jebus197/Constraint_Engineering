@@ -233,8 +233,16 @@
         "one_sided": "invariant=true demonstrates cannot-fail; invariant=false demonstrates nothing",
         "promotion_criterion": "agreement with the real discrimination control on the overlap where both can speak, measured over the 3 runs, before the outcome is allowed to escalate anything"
       },
-      "result": null,
-      "headline": null,
+      "result": {
+        "status": "DEFERRED TO AFTER RUN 2 \u2014 instrument exists and is feasible; the machine does not have the headroom while a run is live",
+        "at": "2026-10-15T08:40:32+01:00",
+        "instrument": "scripts/invariance_sweep_2026-10-03.py",
+        "help_is_free": true,
+        "containment_verified": "The overlay is built in tempfile.mkdtemp, not the repository, and uses an APFS clone giving REAL FILES so a falsifier's writes stay inside the overlay. The earlier absolute-symlink form, under which a falsifier modified the real working tree, was fixed on 2026-09-06 under founder ruling 35.",
+        "why_deferred": "Each probe clones about 683 MB and 8,403 files, built 3 times per finding (baseline, tripwire, corrected) on purpose so one stage cannot contaminate the next. The runner's own comment records the machine's swap as already near full, and free pages measured 3,526 at 16 KiB, about 57.8 MB, with run 2 live. The hardware budget allows 2 heavy processes and run 2 holds one, so this is numerically permitted and imprudent: creating the condition that forces a pause is what cy exists to avoid. It is a post-run sweep by design and loses nothing by waiting.",
+        "scheduled": "immediately after run 2 exits, over run 1 and run 2 together"
+      },
+      "headline": "DEFERRED, NOT BLOCKED. The invariance sweep exists, its --help is free, and its containment was verified: overlays are APFS clones in a temp directory, so a falsifier's writes cannot reach the real tree. It clones about 683 MB three times per finding, and with run 2 live the machine had about 57.8 MB of free pages, so it runs after run 2 over both runs together.",
       "live_observations": [
         {
           "at": "2026-10-03T10:35:49+01:00",
@@ -378,8 +386,25 @@
       "id": "in_round_clearance",
       "what": "Does the in-round falsifier re-attachment actually clear A4 blockers while the gate can still see it, and does the UNRESOLVED section elicit the id-addressed form at all? Baseline for the elicitation half is 0 of 3473 archived round replies, Wilson [0.0000%, 0.1105%].",
       "founder_ruling": "build the closing sweep machinery into the schema rather than leave it as an afterthought (2026-10-04)",
-      "result": null,
-      "headline": null,
+      "result": {
+        "status": "ELICITATION HALF MEASURED ON RUN 1: NO_OPPORTUNITY \u2014 not a negative result",
+        "at": "2026-10-15T08:40:32+01:00",
+        "run": "free_run1_directive_whole_20261015T061123Z",
+        "predicate": "lifted from record_in_round_falsifier_reattachments in the runner, not invented",
+        "pattern": "FALSIFIER:\\s*(C\\d{4})\\s*```(?:python)?\\s*\\n(.*?)```",
+        "seat_replies_read": 29,
+        "replies_carrying_the_form": 0,
+        "run1_wilson": [
+          0.0,
+          0.1169703
+        ],
+        "archive_baseline": "0 of 3473, Wilson [0.0000%, 0.1105%], Clopper-Pearson [0.0000%, 0.1062%]",
+        "fisher_exact_run1_vs_archive": 1.0,
+        "max_unconfirmed_critical_count_in_run_1": 0,
+        "why_the_zero_carries_no_verdict": "The id-addressed form can only be supplied if an UNCONFIRMED critical was rendered under UNRESOLVED for a seat to address. Run 1 converged with 0 unresolved criticals, so the mechanism had nothing to fire on. The zero is a property of THIS RUN, not of the elicitation.",
+        "producer": "scripts/the_unresolved_section_elicitation_2026-10-15.py"
+      },
+      "headline": "THE ELICITATION HALF CANNOT BE READ FROM RUN 1, AND THE REASON IS A TENSION IN THE PROGRAMME'S OWN DESIGN. 0 of 29 seat replies carried the id-addressed form, Wilson [0.0000%, 11.6970%], against an archived baseline of 0 of 3473 \u2014 but the maximum unconfirmed-critical count in run 1 was 0, so no finding was ever rendered under UNRESOLVED for any seat to address. A clean convergence is exactly the condition under which this arm is unmeasurable, so the programme's success criterion and this measurement pull against each other and the arm needs a run that carries an A4 blocker into a round.",
       "implemented": {
         "at": "2026-10-05T00:44:03+01:00",
         "why": "UNCONFIRMED is the only status unverified_critical_count treats as an A4 blocker, and build_summary rendered it inside the SETTLED block under 'confirmed, closed, or merged. Do not CHALLENGE or re-describe them.' So every blocker was shown to the panel as settled, with challenge forbidden: 175 of 175 attributed blockers, 100.0000%, Wilson [97.8520%, 100.0000%], across 22 of 59 archived registries.",
@@ -792,5 +817,19 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T08:36:17+01:00"
+  "last_updated": "2026-10-15T08:40:32+01:00",
+  "programme_design_notes": [
+    {
+      "added": "2026-10-15T08:40:32+01:00",
+      "id": "clean-convergence-and-in-round-clearance-pull-against-each-other",
+      "priority": "HIGH",
+      "note": "The programme's success criterion is 3 consecutive CLEAN convergences, and in_round_clearance measures whether an A4 blocker can be cleared in-round while the gate can still see it. A clean convergence produces 0 unresolved criticals, which is precisely the state in which the in-round mechanism has nothing to act on. Measured on run 1: 0 unconfirmed criticals, so 0 of 29 seat replies carried the id-addressed form and that zero carries no verdict. The better the runs go, the less measurable this arm becomes.",
+      "options_for_the_founder": [
+        "accept the arm as unmeasurable on clean runs and read it only from runs that stall",
+        "measure it on a deliberately seeded run carrying a known unconfirmable critical",
+        "replay the archive's 175 attributed blockers through the repaired build_summary and measure elicitation against the corrected prompt rather than against a live run"
+      ],
+      "producer": "scripts/the_unresolved_section_elicitation_2026-10-15.py"
+    }
+  ]
 }
