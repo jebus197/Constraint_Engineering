@@ -25,7 +25,7 @@
       "what": "Paired baseline: pre-window a2a0197 vs HEAD, same target, same seed. THE effectiveness question.",
       "founder_ruling": "RUN IT (2026-10-03)",
       "result": null,
-      "headline": null,
+      "headline": "ARM5 IS STILL RUNNABLE AND ITS CORE CONFOUND IS STILL RULED OUT \u2014 the target is byte-identical at a2a0197 and today's HEAD, 3,498 bytes and the same SHA-1 \u2014 BUT ITS HEAD ARM HAS GONE STALE. The design names study_run1b_2026-10-03 as the HEAD arm because that run WAS HEAD when the design was verified; HEAD has since moved 141 commits, 3 touching the composer and 24 the runner, including today's directive repair. So arm5 is now 2 free runs rather than 1 if it is to speak about the current machinery, and his standing RUN IT ruling makes this a question of when and how many rather than whether.",
       "design_verified": {
         "at": "2026-10-03T11:55:58+01:00",
         "baseline_commit": "a2a0197 (2026-09-06 17:06:24 +0100), the pre-window commit the programme names",
@@ -37,6 +37,16 @@
         },
         "invocation": "python3 bench/tools/run_simulated_experiment.py --target bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md --rounds 8 --domain statistics --name arm5_baseline_a2a0197",
         "what_it_can_and_cannot_say": "It compares 1 run against 1 run, so it cannot establish a rate. It CAN show whether the figures the fixes were meant to move -- blocked findings, irreducible queue, HIL referrals, rounds to convergence -- moved in the predicted direction on the same target."
+      },
+      "design_recheck_2026_10_15": {
+        "at": "2026-10-15T08:58:25+01:00",
+        "status": "STILL RUNNABLE, BUT ITS HEAD ARM HAS GONE STALE AND ITS COST HAS DOUBLED",
+        "what_still_holds": "The paired design's own named confound is still ruled out: arm5's target, bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md, is BYTE-IDENTICAL at a2a0197 and at today's HEAD \u2014 3,498 bytes at both, SHA-1 identical. So a difference between the arms is still attributable to the machinery rather than to target drift.",
+        "what_has_gone_stale": "The design, verified 2026-10-03T11:55:58+01:00, names study_run1b_2026-10-03 as the HEAD arm because study_run1b WAS HEAD at that moment. HEAD has since moved 141 commits, 3 of them touching bench/cdsfl_registry/composer.py and 24 touching bench/reference_runner_v3.py \u2014 including today's directive repair, which changes what every model receives. So running only the baseline arm now would compare a2a0197 against the machinery of 2026-10-03, not against the machinery the programme is actually asking about.",
+        "the_consequence_for_cost": "As recorded, arm5 is 1 run (the baseline arm in a worktree at a2a0197) because its HEAD arm already exists. To answer the effectiveness question as of NOW it is 2 runs: the baseline arm at a2a0197 AND a fresh HEAD arm on the same target at today's HEAD. Both are free.",
+        "a_second_observation": "arm5's recorded invocation passes --domain statistics, and statistics is one of the names measured on 2026-10-15 to resolve to no directory at all, so both arms would compose NO DOMAIN LAYER. That confound is SHARED by both arms and therefore cancels in the comparison, but it means arm5 measures the machinery without a domain layer and should be reported in those terms.",
+        "recommendation": "Run BOTH arms \u2014 the baseline at a2a0197 and a fresh HEAD arm \u2014 so the comparison speaks about the machinery as it now stands, since today's directive repair is precisely the change arm5 exists to evaluate. NOT launched tonight: the founder authorised 2 free runs, this is a third and a fourth, and the baseline arm needs a worktree checkout of a pre-window commit. His standing ruling on arm5 is RUN IT (2026-10-03), so this is a question of WHEN and HOW MANY, not WHETHER.",
+        "measured_by": "git show a2a0197:<target> and git show HEAD:<target>, byte counts and SHA-1; git log counts over the window"
       }
     },
     {
@@ -899,7 +909,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T08:56:24+01:00",
+  "last_updated": "2026-10-15T08:58:25+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
