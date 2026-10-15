@@ -626,6 +626,20 @@
           "adequately_powered": true,
           "answer": "promoting the severity changes 7 A4 releases",
           "why_it_is_small": "the release test joins 2 halves with AND, so a lower severity only helps when the other half \u2014 a proven calculation \u2014 holds, and that holds for 295 of 2,994 findings, 9.8531%, Wilson [8.8364%, 10.9726%]"
+        },
+        "run_2_contrast_verified_at_the_deciding_layer": {
+          "at": "2026-10-15T09:13:33+01:00",
+          "status": "VERIFIED \u2014 run 2 is a genuine contrast, not a replicate",
+          "why_this_check_was_run": "The launcher passing --severity-spec proves the LAUNCH, not the mechanism. feedback_verify_the_mechanism_not_the_launch exists because a prior session burned 924,535 tokens on a dispatch that never touched the credit it was meant to.",
+          "the_observable": "reference_runner_v3.py:16935 logs 'Severity: SECTION 7.7 SPECIFICATION (deciding)' when _SEVERITY_SPEC['on'] is true and 'Severity: asserted (specification recorded only)' otherwise, so the deciding layer states its own mode in the run log.",
+          "measured": {
+            "run_1_deciding_lines": 0,
+            "run_1_recorded_only_lines": 1,
+            "run_2_deciding_lines": 1,
+            "run_2_recorded_only_lines": 0
+          },
+          "wiring_traced_end_to_end": "run_simulated_experiment.py:335 defines --severity-spec; :765 passes severity_spec_enabled=bool(args.severity_spec) into RunnerConfig; reference_runner_v3.py:1755 declares the field default False; :9778 mirrors it into the module-level _SEVERITY_SPEC['on']; :9838 is the early return that makes effective_severity a no-op when it is off.",
+          "a_false_lead_recorded": "A first grep counted 52 'severity_spec_' hits in run 2's log and 1 in run 1's, which looked like strong evidence and was not: all 52 are the RUN NAME, free_run2_severity_spec_20261015T073418Z, which contains the string. The 1 hit in run 1 is the real telemetry key. Counting a substring that the run name happens to carry is the same instrument-defect class as the 6 figures withdrawn this week."
         }
       },
       "headline": "THE SEVERITY ARM IS ANSWERED BY THE ARCHIVE REPLAY, NOT BY THE RUNS: promoting the section 7.7 severity changes 7 A4 releases across 2,994 archived findings, small because the release test's other half \u2014 a proven calculation \u2014 holds for only 295 of 2,994, 9.8531%, Wilson [8.8364%, 10.9726%]. Run 1's shadow reports 0 of 22 crossing downward, which is the EXPECTED outcome (probability 0.9498) and refutes nothing: 688 findings are needed before a zero is informative, so the 2-run contrast is under-powered by 31.27x. Run 2 therefore tests whether the switch BREAKS anything, not what it CHANGES."
@@ -909,7 +923,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T08:58:25+01:00",
+  "last_updated": "2026-10-15T09:13:33+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
