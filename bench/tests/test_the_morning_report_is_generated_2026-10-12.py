@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -73,16 +74,45 @@ class TestItAgreesWithTheMarkers:
         assert items["A19"]["already_built"] is True
         assert items["R1"]["already_built"] is False
 
-    def test_all_three_ruling_seeking_defects_are_found(self):
-        """One of the 3 records its request under `provenance_question_for_the_founder`
-        rather than `needs`; keying on one field name reported a false zero."""
+    def test_no_ruling_seeking_defect_is_missed(self):
+        """One of the original 3 records its request under
+        `provenance_question_for_the_founder` rather than `needs`; keying on one
+        field name reported a FALSE ZERO. That miss is what this guards.
+
+        ★ REBASED 2026-10-15 FROM A COUNT PIN TO A SHRINK-ONLY RATCHET. It
+        asserted `len(defects) == 3`, which made a legitimate 4th defect fail a
+        test whose whole subject is defects being MISSED. Growth is honest --
+        2 more ruling-seeking defects were found on 2026-10-15 while repairing
+        the specification delivery, and hiding them to satisfy a count would be
+        the exact failure this file was written against. A FALL is the defect,
+        so the floor ratchets and the original 3 are named individually: a
+        regression in the extractor shows up as a named member going missing,
+        not merely as a number moving.
+        """
         import importlib.util
         spec = importlib.util.spec_from_file_location("g2", str(GEN))
         g = importlib.util.module_from_spec(spec)
         sys.modules["g2"] = g
         spec.loader.exec_module(g)
         defects = [i for i in g.study_items() if i["key"].startswith("defect:")]
-        assert len(defects) == 3, f"found {len(defects)} of 3 ruling-seeking defects"
+        keys = {i["key"] for i in defects}
+        #: The 3 this file was written against, by name. The 3rd is the one whose
+        #: request lives under a different field, and is why a name-set beats a count.
+        ORIGINAL = {
+            "defect:A4-counter-valve-severity-mismatch",
+            "defect:integrity-gate-interpreter-carve-out",
+        }
+        missing = ORIGINAL - keys
+        assert not missing, (
+            f"a ruling-seeking defect the extractor used to find has gone "
+            f"missing: {sorted(missing)}. That is the false-zero this guards.")
+        assert any(k.startswith("defect:A finding can reach UNCONFIRMED") for k in keys), (
+            "the defect that records its request under "
+            "`provenance_question_for_the_founder` is no longer found; keying on "
+            "one field name is exactly the defect this test exists for")
+        assert len(defects) >= 3, (
+            f"found {len(defects)} ruling-seeking defects, fewer than the 3 this "
+            f"file was written against; the floor only ratchets upward")
 
     def test_an_item_with_a_ruling_on_record_is_not_a_decision(self):
         """V9 was approved 2026-09-18 and the 4 measurements all carry rulings."""
@@ -173,9 +203,23 @@ class TestTheWorkDoneLedgerIsOneLinePerCommit:
         i2 = md.index("## 2. Work done this session")
         i3 = md.index("## 3. Work outstanding")
         lines = [l for l in md[i2:i3].splitlines() if l.startswith("- `")]
-        assert len(lines) >= 5, f"only {len(lines)} commits in the ledger"
+        # ★ REBASED 2026-10-15. This asserted `>= 5`, which was a proxy for "the
+        # ledger is real and not prose" and silently assumed a session contains
+        # at least 5 commits. That held only because `--since` was a HARD-CODED
+        # 2026-10-11T12:00 that had gone 4 days stale, so "this session" was 67
+        # commits. With the window derived from the last `sv:` commit -- the
+        # project's own session marker -- a real session can legitimately hold 4
+        # commits, or 1.
+        #
+        # THE PROPERTY IT MEANS TO TEST IS SHAPE, NOT COUNT, so it now tests
+        # shape: every line is a commit line, hash and date and subject, and
+        # none is prose. That catches narrative at ANY ledger size, where
+        # `>= 5` could only catch it when commits were few.
+        assert lines, "the ledger is empty; no commit since the session marker"
         for l in lines:
             assert len(l) < 220, f"a ledger line is narrative, not one line: {l[:90]}"
+            assert re.match(r"^- `[0-9a-f]{7,40}` \d{4}-\d{2}-\d{2} \d{2}:\d{2} ", l), (
+                f"a ledger line is not shaped like a commit: {l[:90]}")
 
 
 class TestTheTTSVersionIsSpeakable:

@@ -34,6 +34,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import warnings
 try:
     import tomllib
 except ModuleNotFoundError:
@@ -78,8 +79,41 @@ MODEL_COHERENCE_BUDGETS: dict[str, float] = {
 # transformation operator (functor), not an additive constraint set.
 @dataclass
 class PhenotypeTransform:
-    """Transform rules for rendering directives for a specific model."""
-    max_directive_chars: int = 8000     # cap total directive text length
+    """Transform rules for rendering directives for a specific model.
+
+    ★ `max_directive_chars` BOUNDS WORK, NOT SPECIFICATION — founder's ruling,
+    2026-10-14. His words: *"as far as any caps have ever existed, their
+    intention was to never feed any model more work than they were demonstrably
+    able to handle, especially for weaker models like Deepseek, and we built
+    considerable machinery around this principle. There was never an intent as
+    far as I recall to applying this same reasoning to the core operational
+    directives themselves."* And: *"7000 or so words for a system prompt is
+    hardly excessive for any modern model? Why should we need to cut it at all?"*
+
+    So the 2 bounds are now SEPARATE FIELDS and they mean different things:
+
+      * `max_directive_chars` — the WORK bound. It governs the domain and
+        situation layers: the review target, the code extracts, the adversarial
+        brief, the domain checklist. This is the quantity the harness measures
+        per experiment and the quantity the routing ladder exists to respect.
+        Values and behaviour are UNCHANGED.
+      * `spec_chars` — the SPECIFICATION bound, and `None` means "deliver the
+        project's own specification whole". Every model defaults to `None`,
+        because no measurement has ever shown that any panel model cannot take
+        3,991 words of specification, and the project gates its models on that
+        specification. A model that genuinely cannot take it is given an
+        explicit integer here, and then `_render_universal_minimal` is used --
+        which, since 2026-10-15, carries EVERY HARD block rather than 0 of 22.
+
+    Measured 2026-10-15 by `scripts/the_spec_is_not_work_2026-10-15.py`: with
+    the bounds conflated, 5 of 5 models had a cap below the core specification
+    (100.0000%, Wilson [56.5518%, 100.0000%]) so the reduced form was served
+    unconditionally, and that reduced form carried 0 of 22 HARD blocks
+    (0.0000%, Wilson [0.0000%, 14.8655%]) -- the 22 it dropped including the
+    whole of "Falsifier Integrity -- Do Not Reach for the Answer".
+    """
+    max_directive_chars: int = 8000     # cap total WORK (domain + situation) length
+    spec_chars: int | None = None        # cap on the SPECIFICATION; None = deliver whole
     strip_examples: bool = False         # remove example blocks from directives
     strip_rationale: bool = False        # remove "Why:" explanations
     simplify_language: bool = False      # use shorter sentences, simpler vocab
@@ -107,12 +141,22 @@ PHENOTYPE_TRANSFORMS: dict[str, PhenotypeTransform] = {
         format_style="concise",
     ),
     "deepseek_v3": PhenotypeTransform(
+        # ★ WORK settings UNCHANGED: the 4000-char work bound, the example and
+        # rationale stripping, the language simplification and the table
+        # compression all stand. This is the weakest seat and the machinery
+        # built around that is exactly what the founder's ruling protects.
         max_directive_chars=4000,
         strip_examples=True,
         strip_rationale=True,
         simplify_language=True,
         compress_tables=True,
-        format_style="minimal",
+        # `format_style` moved "minimal" -> "concise" on 2026-10-15. "minimal"
+        # was the ONLY route by which a per-model style setting decided whether
+        # the project's own specification was delivered, and the ruling of
+        # 2026-10-14 separates the 2 questions. The reduced form remains
+        # reachable for this or any seat by setting `spec_chars`, and it now
+        # carries every HARD block rather than 0 of 22.
+        format_style="concise",
     ),
 }
 
@@ -150,7 +194,13 @@ class ComposedDirectiveSet:
 
 @dataclass(frozen=True)
 class ConflictRecord:
-    """Record of a detected and resolved inter-layer conflict."""
+    """Record of a detected and resolved inter-layer conflict.
+
+    `deleted` distinguishes a conflict that was RECORDED from one that removed
+    text. Added 2026-10-15: a HARD directive is now always kept, and a record
+    that cannot say whether its loser survived is a record a reader can
+    misread. Defaulted to True so every pre-existing construction is unchanged.
+    """
     topic: str
     winner_layer: str
     winner_packet: str
@@ -159,6 +209,7 @@ class ConflictRecord:
     loser_packet: str
     loser_text: str
     reason: str
+    deleted: bool = True
 
 
 # ---------------------------------------------------------------------------
@@ -237,11 +288,37 @@ def _extract_hard_behavioural_directives(universal_text: str) -> list[str]:
 
 
 def _render_universal_minimal(max_chars: int | None = None) -> str:
-    """Render Layer 1 in minimal form preserving all HARD constraints.
+    """Render Layer 1 in minimal form, carrying EVERY HARD block of the spec.
 
-    Deterministically flattens universal.toml policy + extracts behavioural
-    directives from cdsfl_core_formal.md. Result is <3500 chars — fits
-    within DeepSeek's 4000-char phenotype cap with room for other layers.
+    ★ THE DOCSTRING USED TO SAY "preserving all HARD constraints" AND IT WAS
+    FALSE. Measured 2026-10-15 by `scripts/the_spec_is_not_work_2026-10-15.py`,
+    over the 22 blocks that `_block_is_hard()` -- the project's OWN HARD
+    predicate -- identifies in
+    `cdsfl_core_formal.md`, BY VERBATIM CONTAINMENT: **0 of 22 carried,
+    0.0000%, Wilson [0.0000%, 14.8655%], Clopper-Pearson [0.0000%, 15.4373%]**,
+    against **22 of 22 after this repair, 100.0000%, Wilson [85.1345%,
+    100.0000%], Clopper-Pearson [84.5627%, 100.0000%]**. Among the 22 dropped were
+    the whole of "Falsifier Integrity -- Do Not Reach for the Answer", "Do not
+    read a scoring key or answer file", "Do not modify, delete, weaken or skip
+    a test to make it pass" and "Do not terminate early to obtain a passing
+    result" -- the anti-cheating section every verdict in this project rests on.
+
+    WHY IT WAS FALSE. It extracted bullets from ONE section,
+    `## Non-Formalisable Directives`, and called that the HARD set. The HARD set
+    is whatever `_block_is_hard()` says it is, and that predicate reads MUST,
+    NEVER, HARD, REQUIRED and the rest across the WHOLE file. 2 definitions of
+    HARD existed in 1 module and only 1 of them was live code the models saw.
+
+    WHAT IT DOES NOW, in order, so a reader can predict the output:
+      1. the flattened `universal.toml` policy keys, as before;
+      2. the behavioural bullets of `## Non-Formalisable Directives`, as before;
+      3. EVERY block of `cdsfl_core_formal.md` that `_block_is_hard()` accepts,
+         verbatim, deduplicated against what 1 and 2 already carried.
+
+    `max_chars` is unchanged in meaning and still RAISES rather than silently
+    truncating: a specification cut to fit is the defect this repair exists to
+    close, so a caller that cannot afford the HARD set must learn that from an
+    exception and not from a shorter prompt. It is `None` on every live call.
     """
     universal_policy = _load_toml(REGISTRY_DIR / "universal.toml")
 
@@ -259,6 +336,34 @@ def _render_universal_minimal(max_chars: int | None = None) -> str:
         _extract_hard_behavioural_directives(universal_text), 1
     ):
         lines.append(f"behaviour.{i}={directive}")
+
+    # ★ EVERY HARD BLOCK, BY THE PROJECT'S OWN PREDICATE (2026-10-15).
+    #
+    # THE DEDUP IS ON VERBATIM CONTAINMENT, AND THE FIRST ATTEMPT USED A
+    # FIRST-8-WORDS PROBE INSTEAD. That probe space-joins the first 8 words
+    # ACROSS NEWLINES, so it can never match a multi-line block against text
+    # that keeps its newlines -- and 9 of the 22 HARD blocks are multi-line. It
+    # reported 13 of 22 carried where verbatim containment reports 22 of 22, and
+    # it reported the PRE-REPAIR render as carrying 1 of 22 where the honest
+    # figure is 0 of 22. THE INSTRUMENT WAS THE DEFECT, NOT THE RENDER, which is
+    # this project's recurring shape: check what could make a check return
+    # nothing even though the thing is there. Dedup and measurement now use the
+    # same verbatim test.
+    already_text = "\n".join(lines)
+    hard_blocks = [
+        b for b in _split_packet_directives(universal_text) if _block_is_hard(b)
+    ]
+    carried: list[str] = []
+    for block in hard_blocks:
+        if block in already_text or block in carried:
+            continue
+        carried.append(block)
+    if carried:
+        lines.append("")
+        lines.append("HARD CONSTRAINTS — VERBATIM, EVERY BLOCK")
+        for block in carried:
+            lines.append("")
+            lines.append(block)
 
     rendered = "\n".join(lines)
     if max_chars is not None and len(rendered) > max_chars:
@@ -576,11 +681,24 @@ def _prune_packet_directives(
 # ---------------------------------------------------------------------------
 
 def _load_universal_directive(model: str | None = None) -> DirectivePacket:
-    """Load the universal CDSFL directive (Layer 1).
+    """Load the universal CDSFL directive (Layer 1) — the SPECIFICATION.
 
-    For small-context models (format_style="minimal" or text exceeds
-    max_directive_chars), renders a minimal form from universal.toml +
-    extracted behavioural directives. Full text for large-context models.
+    ★ THE DECISION IS NO LONGER ABOUT CAPACITY (2026-10-15). It used to read
+    "For small-context models (format_style=minimal or text exceeds
+    max_directive_chars) ... Full text for large-context models", and that last
+    clause described a branch NO MODEL COULD REACH: the specification is 27,803
+    characters and the most generous `max_directive_chars` is 12,000, so 5 of 5
+    models received the reduced form unconditionally. Finding C0040.
+
+    It now reads `spec_chars`, which is `None` for every model, so the
+    specification is delivered WHOLE. `max_directive_chars` is the WORK bound
+    and is not consulted here at all. A model is put on the reduced form only by
+    an explicit `spec_chars` or by `format_style="minimal"`, and the reduced
+    form itself now carries every HARD block verbatim rather than 0 of 22.
+
+    See `PhenotypeTransform` for the founder's ruling that separates the 2
+    bounds, and `bench/tests/test_falsifier_C0040_universal_directive_2026-09-10.py`
+    for the executing guard.
     """
     formal_path = DIRECTIVES_DIR / "universal" / "cdsfl_core_formal.md"
     prose_path = DIRECTIVES_DIR / "universal" / "cdsfl_core.txt"
@@ -589,12 +707,32 @@ def _load_universal_directive(model: str | None = None) -> DirectivePacket:
     full_text = path.read_text(encoding="utf-8") if path.exists() else ""
 
     transform = PHENOTYPE_TRANSFORMS.get(model or "", PhenotypeTransform())
+    # ★ THE SPECIFICATION IS NOT WORK (founder's ruling 2026-10-14; see
+    # `PhenotypeTransform`). This decision used to read `max_directive_chars`,
+    # the WORK bound, whose most generous value is 12,000 against a 27,803-char
+    # specification -- so the reduced form was served to 5 of 5 models
+    # unconditionally and the docstring's "Full text for large-context models"
+    # described a branch no model could reach. It now reads `spec_chars`, which
+    # is `None` for every model, so the specification is delivered whole.
+    #
+    # `format_style == "minimal"` is RETAINED as an explicit per-model request
+    # and still selects the reduced form, because a model that genuinely needs
+    # it must still be able to say so. The reduced form itself is now faithful.
     use_minimal = (
         transform.format_style == "minimal"
-        or len(full_text) > transform.max_directive_chars
+        or (transform.spec_chars is not None
+            and len(full_text) > transform.spec_chars)
     )
     text = (
-        _render_universal_minimal(max_chars=transform.max_directive_chars)
+        # ★ THE SPECIFICATION BOUND, NOT THE WORK BOUND (2026-10-15). This
+        # passed `max_directive_chars` and would now RAISE for any model
+        # configured `format_style="minimal"` with a work bound under 8,367,
+        # because the faithful render is 8,367 characters and `max_chars`
+        # raises rather than truncating. `deepseek_v3` was the only such model
+        # and moved to "concise", so no live model reaches it -- but a latent
+        # raise on a reachable branch is a defect whether or not a current
+        # config hits it, and the same spec/work distinction fixes it.
+        _render_universal_minimal(max_chars=transform.spec_chars)
         if use_minimal
         else full_text
     )
@@ -611,21 +749,60 @@ def _load_universal_directive(model: str | None = None) -> DirectivePacket:
 def _load_domain_directive(
     domain: str, variant: str | None = None
 ) -> DirectivePacket | None:
-    """Load a domain-specific directive (Layer 2)."""
+    """Load a domain-specific directive (Layer 2), or None, LOUDLY.
+
+    ★ A DOMAIN NAME THAT MATCHES NOTHING USED TO RETURN `None` IN SILENCE
+    (2026-10-15). The manifest records `"domain": "statistics"` whether the
+    layer was composed or not, so a reader could not tell a run that wasted its
+    entire domain layer from one whose domain simply had little to say.
+
+    FOUND WHILE CHOOSING THE DOMAIN FOR THE 2 FREE RUNS: the launcher's own
+    resume command says `--domain statistics` and there is no `statistics`
+    directory, so every such run composed NO domain layer. Measured by
+    `scripts/a_domain_name_that_matches_nothing_2026-10-15.py` over every
+    `"domain"` value in every shipped `bench/exp*_configs/*.json`, resolved
+    through this function rather than by comparing strings:
+
+      * **16 of 47 references resolve to nothing — 34.0426%, Wilson [22.1674%,
+        48.3291%], Clopper-Pearson [20.8641%, 49.3132%]**.
+      * **6 of the 9 distinct names match nothing — 66.6667%, Wilson [35.4202%,
+        87.9416%]**: `biology`, `cs_software`, `engineering`,
+        `information_science`, `physics`, `statistics`.
+
+    IT WARNS AND DOES NOT REFUSE, DELIBERATELY. Refusing would break 16 of 47
+    shipped config references at once, and deciding that those 6 names should
+    either acquire directories or be renamed is the founder's call, not a
+    repair. The warning uses the same channel the coherence budget already
+    warns on, so a run's console carries it where a reader is already looking.
+    """
     domain_dir = DIRECTIVES_DIR / domain
-    if not domain_dir.exists():
+
+    def _nothing(reason: str) -> None:
+        available = sorted(
+            d.name for d in DIRECTIVES_DIR.iterdir()
+            if d.is_dir() and d.name != "universal"
+        )
+        warnings.warn(
+            f"Composer: domain {domain!r} composes NO DOMAIN LAYER ({reason}). "
+            f"The manifest will still record domain={domain!r}, so this is the "
+            f"only notice. Shipped domains: {', '.join(available)}.",
+            stacklevel=3,
+        )
         return None
+
+    if not domain_dir.exists():
+        return _nothing("no such directory under bench/directives")
 
     if variant:
         path = domain_dir / f"{domain}_{variant}.txt"
     else:
         txt_files = sorted(domain_dir.glob("*.txt"))
         if not txt_files:
-            return None
+            return _nothing("the directory exists but holds no .txt directive")
         path = txt_files[0]
 
     if not path.exists():
-        return None
+        return _nothing(f"the named variant file {path.name!r} is missing")
 
     return DirectivePacket(
         layer="domain",
@@ -986,17 +1163,69 @@ def _specificity_score(packet: DirectivePacket) -> int:
     return score
 
 
+#: Does a cross-layer SOFT loser get DELETED, or RECORDED and kept?
+#:
+#: ★ DEFAULT CHANGED TO RECORD-ONLY, 2026-10-15, AND THE CAPABILITY IS RETAINED
+#: BEHIND THIS FLAG -- the same treatment the mechanical directive pruner got on
+#: the founder's ruling of 2026-10-13, retired from the default path and left
+#: reachable so the lean-versus-full comparison can still be run.
+#:
+#: THE MEASUREMENT BEHIND THE CHANGE, on the named property "fraction of domain
+#: directive blocks delivered": with deletion on, 1 domain block is deleted
+#: across 10 domains; with it off, 0 are. The deletion that fires is
+#: `product_automotive`'s *"Material specification per OEM standard (VW TL, BMW
+#: GS, GM GMW, Ford WSS-M)"* losing to the core specification's FORMALISATION
+#: TABLE, on topic `table`, because `_directive_topic_and_stance` assigns that
+#: topic to any text containing the word "table" or a pipe-delimited row. The 2
+#: texts are about different things; the conflict is an artefact of a keyword
+#: heuristic, and the cost of the artefact is an engineering requirement a model
+#: is then never told. Producer: `scripts/the_spec_is_not_work_2026-10-15.py`.
+#:
+#: WHAT IS GIVEN UP, STATED RATHER THAN DISCOVERED: a model may now receive 2
+#: directives that a cruder reading calls contradictory. Whether that costs
+#: anything is exactly the question a simulated run answers, and it is carried
+#: into the programme of study as a high-priority item rather than assumed.
+CONFLICT_DELETES_SOFT_LOSER = False
+
+
 def resolve_layer_conflicts(
     composed: ComposedDirectiveSet,
+    *,
+    delete_soft_loser: bool | None = None,
 ) -> tuple[ComposedDirectiveSet, list[ConflictRecord]]:
     """Resolve conflicts between directives from different layers.
 
     Resolution rules:
-    1. HARD always wins over SOFT, regardless of layer.
+    1. HARD always wins over SOFT, regardless of layer. A HARD loser is
+       RECORDED and KEPT -- never deleted (2026-10-15). Rule 1 never licensed
+       deleting a HARD, and `p-pass-hard-precedence` RANKS conflicting HARD
+       constraints rather than discarding one.
     2. For SOFT vs SOFT conflicts: higher layer wins.
        Layer priority: universal > domain > phenotype > situation.
     3. For same-layer SOFT conflicts: more specific (domain-tagged) wins.
+    4. A PACKET NEVER RESOLVES AGAINST ITSELF (2026-10-15). This function
+       resolves conflicts "between directives from different layers", and 2
+       blocks of 1 packet are 1 author's text at 1 layer with 1 specificity, so
+       rules 1 to 3 have nothing to decide and the tie broke on list order.
+    5. Whether a cross-layer SOFT loser is DELETED or merely RECORDED is
+       `CONFLICT_DELETES_SOFT_LOSER`, default False; `delete_soft_loser`
+       overrides it per call.
+
+    MEASURED 2026-10-15 with the specification delivered whole, over 10 domains
+    (`scripts/the_spec_is_not_work_2026-10-15.py`): before these rules, 40 of 42
+    conflicts were SAME-PACKET (95.2381%, Wilson [84.2101%, 98.6842%]), 0 were
+    same-layer and 2 were cross-layer. **41 of the 42 deletions had a HARD
+    loser** by this function's OWN HARD predicate -- `constraint_class == "HARD"
+    or _block_is_hard(text)`, the same tuple it sorts on -- because the
+    universal packet IS classed HARD, so 40 of them were removing the project's
+    own specification and the 41st was the biomedical
+    pre-specified-sample-size formula. **A FIRST READING SAID 11 AND IS
+    WITHDRAWN**: it applied `_block_is_hard` to `ConflictRecord.loser_text`,
+    which is truncated to 100 characters and drops the packet class entirely.
+    After: 2 conflicts recorded, 0 HARD deletions, 0 packets altered.
     """
+    if delete_soft_loser is None:
+        delete_soft_loser = CONFLICT_DELETES_SOFT_LOSER
     entries: list[dict[str, Any]] = []
     for packet_index, packet in enumerate(composed.packets):
         for directive_index, directive_text in enumerate(
@@ -1032,8 +1261,35 @@ def resolve_layer_conflicts(
 
         losing = False
         for winner in kept:
+            # ★ GUARD 1: A PACKET MAY NOT RESOLVE AGAINST ITSELF (2026-10-15).
+            # This function is `resolve_layer_conflicts` and its own docstring
+            # says it resolves conflicts "between directives from different
+            # layers". Two blocks of the SAME packet are one author's text at
+            # one layer with one `_specificity_score`, so every rule below has
+            # nothing to decide on and the tie broke on list order -- deleting
+            # half of a document because its own §3 says "concise" and its own
+            # §7 says "full proof", which are different scopes, not a conflict.
+            # MEASURED 2026-10-15 over 10 domains with the specification
+            # delivered whole: 40 of 42 conflicts were SAME-PACKET, 95.2381%,
+            # Wilson [84.2101%, 98.6842%], against 2 genuinely cross-layer and
+            # 0 same-layer. Producer:
+            # `scripts/the_spec_is_not_work_2026-10-15.py`.
+            if winner["packet_index"] == entry["packet_index"]:
+                continue
             winner_topic, winner_stance = _directive_topic_and_stance(winner["text"])
             if winner_topic == topic and winner_stance != stance:
+                # ★ GUARD 2: A HARD DIRECTIVE IS RECORDED, NEVER DELETED
+                # (2026-10-15). Rule 1 of this function is "HARD always wins
+                # over SOFT". It never said a HARD may be deleted by anything,
+                # and `p-pass-hard-precedence` RANKS conflicting HARD
+                # constraints rather than discarding one. Measured on the same
+                # run: 41 of 42 deletions had a HARD loser by this
+                # function's own predicate -- 40 of them blocks of the
+                # project's own specification, which the universal packet
+                # classes HARD, and 1 the biomedical
+                # pre-specified-sample-size formula. An earlier reading of 11
+                # is WITHDRAWN: it tested the 100-character truncated
+                # `loser_text` and so could not see the packet class.
                 conflicts.append(ConflictRecord(
                     topic=topic,
                     winner_layer=winner["packet"].layer,
@@ -1043,17 +1299,40 @@ def resolve_layer_conflicts(
                     loser_packet=entry["packet"].name,
                     loser_text=entry["text"][:100],
                     reason=(
-                        "HARD wins; else higher layer wins; "
-                        "same-layer tie goes to more specific packet."
+                        "HARD is recorded and KEPT; a SOFT loser is dropped. "
+                        "Higher layer wins; same-layer tie goes to the more "
+                        "specific packet; a packet never resolves against itself."
                     ),
+                    deleted=bool(delete_soft_loser) and not entry["hard"],
                 ))
+                if entry["hard"] or not delete_soft_loser:
+                    break
                 losing = True
                 break
         if not losing:
             kept.append(entry)
 
     # Rebuild packets from kept directives
+    #
+    # ★ A PACKET THAT LOST NOTHING PASSES THROUGH BYTE-IDENTICAL (2026-10-15).
+    # The rebuild joins blocks with a SINGLE newline and `_split_packet_directives`
+    # strips every line, so a round trip through here used to destroy blank-line
+    # structure and indentation even when it dropped nothing: measured on the
+    # structural domain packet, 4,515 characters and 18 blocks in, 4,403 and 5
+    # out, with 0 blocks lost. Harmless for a flat checklist; NOT harmless for
+    # the project's own specification, which is markdown carrying fenced blocks,
+    # formal notation and tables, all of which are delimited by blank lines.
+    #
+    # FOUND BY THE GUARD, NOT BY READING: once the specification was delivered
+    # whole, `test_the_specification_survives_every_models_cap` compared its
+    # first 400 characters against the render and they differed at the first
+    # blank line. A rebuild that preserves content while silently reflowing
+    # structure is the kind of lossy no-op this project keeps finding.
     kept_ids = {e["id"] for e in kept}
+    total_by_packet: dict[int, int] = {}
+    for e in entries:
+        total_by_packet[e["packet_index"]] = total_by_packet.get(
+            e["packet_index"], 0) + 1
     rebuilt_packets: list[DirectivePacket] = []
     for packet_index, packet in enumerate(composed.packets):
         kept_texts = [
@@ -1061,6 +1340,10 @@ def resolve_layer_conflicts(
             if e["packet_index"] == packet_index and e["id"] in kept_ids
         ]
         if not kept_texts:
+            continue
+        if len(kept_texts) == total_by_packet.get(packet_index, 0):
+            # Nothing was dropped from this packet: hand back the original text.
+            rebuilt_packets.append(packet)
             continue
         rebuilt_packets.append(DirectivePacket(
             layer=packet.layer,
@@ -1469,14 +1752,37 @@ def compose(
     # this was applied.
     #
     # Producer: `scripts/the_cap_cuts_what_the_manifest_claims_2026-10-14.py`.
+    # ★ THE CAP BOUNDS WORK AND EXEMPTS THE SPECIFICATION — founder's ruling
+    # 2026-10-14, applied 2026-10-15. Before this, the cap ran against the whole
+    # assembled render with the universal specification FIRST in packet order.
+    # Delivering the specification whole under that arithmetic would have
+    # truncated INSIDE the specification and deleted the domain and situation
+    # packets outright for every seat whose work bound is below 27,803 -- which
+    # is all 5. So the repair that delivers the specification and the repair
+    # that keeps the cap meaningful are the SAME repair, and neither is safe
+    # alone.
+    #
+    # `max_directive_chars` KEEPS ITS VALUE AND ITS JOB: deepseek_v3 still
+    # receives at most 4000 characters of domain-plus-situation work, which is
+    # the quantity the harness measures per experiment and the quantity the
+    # routing ladder respects. What changes is that the specification no longer
+    # competes with the work for that budget.
+    _spec_chars = sum(
+        len(p.text.strip()) for p in packets if p.layer == "universal"
+    )
+    _sep_chars = len("\n\n---\n\n") if _spec_chars else 0
+    _effective_cap = _spec_chars + _sep_chars + transform.max_directive_chars
     length_cap_record: dict[str, Any] = {
         "fired": False,
         "cap": transform.max_directive_chars,
+        "work_cap": transform.max_directive_chars,
+        "spec_chars_exempt": _spec_chars,
+        "effective_cap": _effective_cap,
         "chars_cut": 0,
         "packets_cut": [],
     }
-    if len(rendered) > transform.max_directive_chars:
-        kept = rendered[: transform.max_directive_chars]
+    if len(rendered) > _effective_cap:
+        kept = rendered[: _effective_cap]
         length_cap_record["fired"] = True
         length_cap_record["chars_cut"] = len(rendered) - len(kept)
         offset = 0
@@ -1494,7 +1800,8 @@ def compose(
                     "chars_total": len(body),
                 })
             offset += len(body) + sep
-        rendered = kept + "\n[... truncated for model capacity]"
+        rendered = kept + "\n[... work truncated for model capacity; "\
+                   "the CDSFL specification above is complete]"
 
     # --- Metrics ---
     token_estimate = max(len(rendered) // 4, 1)
@@ -1533,6 +1840,7 @@ def compose(
         ],
         "phenotype_transform": {
             "max_directive_chars": transform.max_directive_chars,
+            "spec_chars": transform.spec_chars,
             "strip_examples": transform.strip_examples,
             "strip_rationale": transform.strip_rationale,
             "simplify_language": transform.simplify_language,

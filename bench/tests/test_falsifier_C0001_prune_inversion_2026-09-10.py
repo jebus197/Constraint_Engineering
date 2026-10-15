@@ -119,9 +119,26 @@ class TestItHappensOnRealPackets:
         pkts.append(dp)
         pkts.append(build_interaction_pattern("meta_structured"))
         policy = load_effective_policy(domain=domain, model=model)
-        budget = MODEL_COHERENCE_BUDGETS[model]
+        # ★ 2026-10-15: THE BUDGET IS SUPPLIED EXPLICITLY, because the live
+        # budgets no longer bind. Delivering the specification whole (founder's
+        # ruling 2026-10-14) multiplies the rendered length by about 5.7, and
+        # that length is the DENOMINATOR of constraint density while
+        # `_count_constraints` reads only the TOML policy and does not grow.
+        # Measured 2026-10-15: 0 of 50 real compositions over budget, 0.0000%,
+        # Wilson [0.0000%, 7.1348%]; max density 0.002835 against a smallest
+        # live budget of 0.010. Producer:
+        # `scripts/the_spec_is_not_work_2026-10-15.py`.
+        #
+        # THE INVERSION BEING PROVED IS A PROPERTY OF THE ARITHMETIC, NOT OF A
+        # PARTICULAR BUDGET -- `d(L2) - d(L1) = 4*C*(L1-L2)/(L1*L2) > 0` for
+        # `L2 < L1` holds for every budget -- so supplying one that binds tests
+        # exactly the same claim. The live budgets are NOT hand-retuned here;
+        # they are derived from experiment logs by
+        # `update_coherence_budgets_from_experiments` and the next 2 free runs
+        # are where that measurement comes from.
         C = _count_constraints(policy)
         before = C / max(sum(len(p.text) for p in pkts) // 4, 1)
+        budget = before / 2.0
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             out, pruned = _prune_for_coherence(pkts, policy, budget)
@@ -249,11 +266,28 @@ class TestTheHarmRateIsNotOverstated:
                             coherence_pruning=True)
                 if "domain" not in {p.layer for p in c.packets}:
                     on_lost += 1
-        assert on_lost > 0, (
-            "with the pruner switched back ON no domain directive is deleted, "
-            "so the ablation arm cannot reproduce C0001 and the retirement "
-            "rests on a finding this file can no longer demonstrate")
+        # ★ REBASED 2026-10-15, AND THE LOSS IS NAMED RATHER THAN HIDDEN.
+        # With the specification delivered whole no live composition exceeds a
+        # coherence budget, so the pruner deletes nothing EVEN WITH THE FLAG ON
+        # and the ablation arm cannot reproduce C0001 on the live grid. That is
+        # a real, stated consequence of the founder's 2026-10-14 ruling: the
+        # lean-versus-full comparison is BLOCKED until the budgets are
+        # recalibrated from the next 2 free runs. It is carried into the
+        # programme of study as a high-priority item, and it is NOT closed by
+        # hand-retuning a cap -- the objection that produced the ruling was
+        # precisely that the caps had no measurement behind them.
+        #
+        # SO BOTH HALVES ARE PINNED AT THEIR MEASURED VALUES: 0 deletions with
+        # the pruner retired (the retirement is in force) and 0 with it on (the
+        # arm is inert). The REACHABILITY of the mechanism is pinned instead by
+        # `test_composer_pruning_ablation_switch_2026-10-13.py`, which supplies
+        # a binding budget explicitly and still shows the flag flipping it.
+        assert on_lost == 0, (
+            f"{on_lost} of {on_had} compositions lose a domain directive with "
+            f"the pruner switched ON; it was 0 on 2026-10-15 because no live "
+            f"budget binds, so a budget or a directive file has changed and "
+            f"this file's figures must be remeasured")
         on_lo, on_hi = proportion_confint(on_lost, on_had, method="wilson")
-        assert on_hi < 0.6, (
+        assert on_hi < 0.1, (
             f"with pruning ON the deletion rate rose to [{on_lo:.4%}, "
             f"{on_hi:.4%}]; the parked disposition should be revisited")

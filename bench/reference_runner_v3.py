@@ -237,6 +237,11 @@ from run_exp17_immune import (
     RoundTelemetry,
     run_layer1_preflight,
     _should_decompose,
+    # ★ ADDED 2026-10-15 for `_decomposition_is_futile`. The futility guard must
+    # read the SAME cache `_should_decompose` reads, or the 2 would disagree
+    # about a seat's effective limit and the guard would fire on the wrong seats.
+    # One definition, one cache, imported rather than re-derived.
+    _load_fingerprint_cache,
     _invalidate_fingerprint_cache,
     _build_verified_facts,
     _build_explicit_unknowns,
@@ -318,8 +323,86 @@ DECOMPOSE_HARD_FLOOR_CHARS = 80_000
 
 def should_decompose_v2(
     model_label: str, mgr, payload_chars: int = 0,
+    decomposable_chars: int | None = None,
+    fixed_chars: int = 0,
 ) -> bool:
     """v2 decomposition decision with a fingerprint-agnostic hard floor.
+
+    ★ THE 2 LAYERS ARE CALIBRATED AGAINST DIFFERENT QUANTITIES, AND UNTIL
+    2026-10-15 BOTH WERE GIVEN THE SAME ONE.
+
+      * `payload_chars` -- the TOTAL bytes sent. This is the right quantity for
+        :func:`_should_decompose`, whose steps 2 and 3 compare against
+        `max_successful_prompt_chars` and `max_failed_prompt_chars`, both of
+        which are total prompt sizes an API actually accepted or rejected.
+      * `decomposable_chars` -- the bytes decomposition can actually SPLIT,
+        which is the user prompt and the target it embeds. This is the right
+        quantity for the hard floor, whose own rationale below is parse-yield
+        collapse over the material the model must reason across.
+
+    WHY THE CONFLATION MATTERS, AND IT IS NOT MERELY IMPRECISE -- IT IS
+    SELF-DEFEATING. :func:`_multiturn_fallback` passes `system_prompt=cdsfl_text`
+    and `cdsfl_directives=cdsfl_text` WHOLE into `decomposed_dispatch` and
+    splits `full_code` only, so the system prompt is re-sent on every chunk
+    turn. SymPy over `(n + 1) * S + W` against `S + W` gives the extra system
+    prompt bytes as exactly `S*n`, strictly positive for every n >= 1 and S > 0;
+    z3 returns `unsat` for "decomposing sends no more system-prompt bytes"; and
+    mpmath agrees on the concrete case. So counting the system prompt toward
+    the floor triggers a mechanism that MULTIPLIES the system prompt.
+
+    MEASURED 2026-10-15 (`scripts/the_spec_is_not_work_2026-10-15.py`):
+    delivering the project's own specification whole adds 25,300 characters to
+    the system prompt, cutting work headroom before the 80,000 floor from
+    31,123 to 5,823 -- 81.2904% of it. z3 confirms a 20,000-character work
+    payload is `unsat` against the floor under the old counting and `sat` under
+    it, so nearly every dispatch in the next run would have force-decomposed on
+    the size of its own instructions.
+
+    ★ AND A FUTILITY GUARD, WHICH THE P-PASS OF THE FIRST VERSION FORCED
+    (2026-10-15). The hard-floor change ALONE was INERT -- an addition nothing
+    reached, which is the half of the additive standard this project keeps
+    tripping over. Mutating the floor basis back to the total changed 0 of 3
+    test cases, because :func:`_should_decompose` judges the TOTAL at every one
+    of its 4 steps, so exceeding the static 80,000 fallback still returned True
+    by another route.
+
+    `fixed_chars` is the part of the payload decomposition CANNOT split -- the
+    system prompt. When it alone exceeds the effective limit, decomposition is
+    DOMINATED on all 3 measures that matter, and 3 tools agree:
+
+      * per-request bytes: `S + W/n > L` for every n >= 1 when `S > L`
+        (SymPy True; z3 `unsat` on "some chunk count brings a turn under the
+        limit");
+      * total bytes: `(n+1)S + W - (S+W) = S*n > 0` (SymPy; z3 `unsat` on
+        "decomposing sends no more total bytes");
+      * request count: `n + 1 > 1` (z3 `unsat` on the negation).
+
+    So in that case the monolithic dispatch is sent and the transport is allowed
+    to speak, which is the function's own stated data-driven design: a rejection
+    records `max_failed_prompt_chars` and every later round decomposes on
+    evidence instead of on a proxy.
+
+    MEASURED AGAINST THE PROJECT'S OWN FINGERPRINT CACHE, 2026-10-15: with the
+    specification delivered whole the system prompt is 74,177 characters, and
+    **6 of 6 simulated seats, 100.0000%, Wilson [60.9666%, 100.0000%],
+    Clopper-Pearson [54.0742%, 100.0000%]**, have an effective limit below that
+    -- CC2-SIM 72,465, ChatGPT-SIM 65,640, Codex-SIM 70,922, DeepSeek-SIM
+    72,465, Fable-SIM 69,775, Gemini-SIM 67,510. Every simulated dispatch would
+    have force-decomposed on the size of its own instructions. **No paid seat
+    would have**: CC2 sits at 418,685 and DeepSeek at 99,068. A confound that
+    fires only in simulation is the exact hazard the founder named when he asked
+    why a simulated run would test anything in shadow.
+
+    NOT CHANGED HERE, AND CARRIED INTO THE PROGRAMME OF STUDY INSTEAD:
+    `max_successful_prompt_chars` is a PROVEN FLOOR by its own docstring
+    (*"The model has PROVEN it can handle at least that much input"*) and
+    :func:`_should_decompose` uses it as a CEILING, so the observed maximum can
+    never rise -- a ratchet that cannot climb, the same shape as the routing
+    ladder defect already in the record. Changing it alters routing for paid
+    seats and is a design decision, not a repair.
+
+    `decomposable_chars=None` and `fixed_chars=0` preserve the previous
+    behaviour exactly, so every legacy caller is unchanged.
 
     The underlying :func:`_should_decompose` is fingerprint-driven: a model
     whose fingerprint reports high observed capacity will accept large
@@ -342,9 +425,40 @@ def should_decompose_v2(
 
     Returns ``True`` iff the caller should decompose the payload.
     """
-    if payload_chars > DECOMPOSE_HARD_FLOOR_CHARS:
+    floor_basis = payload_chars if decomposable_chars is None else decomposable_chars
+    if floor_basis > DECOMPOSE_HARD_FLOOR_CHARS:
         return True
-    return _should_decompose(model_label, mgr, payload_chars=payload_chars)
+    verdict = _should_decompose(model_label, mgr, payload_chars=payload_chars)
+    if verdict and fixed_chars > 0 and _decomposition_is_futile(
+        model_label, mgr, fixed_chars
+    ):
+        return False
+    return verdict
+
+
+def _decomposition_is_futile(model_label: str, mgr, fixed_chars: int) -> bool:
+    """Would decomposition fail to bring any single turn under the limit?
+
+    True exactly when the NON-DECOMPOSABLE part of the payload already exceeds
+    the effective limit the decision was made against. See
+    :func:`should_decompose_v2` for the 3-measure dominance proof and its
+    SymPy/z3/mpmath verification.
+
+    An explicit `pre_decompose_models` override is HONOURED, not overridden: it
+    is a human or an immune escalation saying "decompose this one", and a
+    derived futility argument must not silently countermand an instruction.
+    """
+    if model_label in getattr(mgr.config, "pre_decompose_models", ()):  # noqa: B009
+        return False
+    fps = _load_fingerprint_cache()
+    fp = fps.get(model_label, {})
+    observed = int(fp.get("max_successful_prompt_chars", 0) or 0)
+    if observed > 0:
+        effective = int(observed * 0.9)
+    else:
+        failed = int(fp.get("max_failed_prompt_chars", 0) or 0)
+        effective = failed if failed > 0 else DECOMPOSE_HARD_FLOOR_CHARS
+    return fixed_chars > effective
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1616,6 +1730,29 @@ class RunnerConfig:
     # `max_directive_chars` over cdsfl_core_formal.md, and both panel seats had
     # to correct the conflation of the 2 in the brief. It is untouched.
     composer_coherence_pruning: bool = False
+    # ★ SECTION 7.7 SEVERITY: DECIDING OR RECORDED? (2026-10-15)
+    #
+    # `False` keeps the A4 door reading the asserted severity, exactly as every
+    # run before 2026-10-15 did, with `severity_spec_shadow` recording what the
+    # specification would have said. `True` makes the specification DECIDE, via
+    # `effective_severity`.
+    #
+    # BUILT BECAUSE A SHADOW CANNOT BE TESTED BY A SIMULATION — the founder,
+    # 2026-10-14: *"why run them in shadow in a simulated run, when the purpose
+    # of a simulated run is to test how they will behave in a real
+    # experiment ... and risk pointlessly burning money we don't have?"* The
+    # shadow's own promotion criterion asked for evidence "from a RUN", which a
+    # shadow can never supply because a shadow never decides.
+    #
+    # MEASURED AS REACHED BEFORE IT WAS BUILT, over 2,994 archived entries in 59
+    # runs: 7 A4 releases change, and the door's conjunctive proof half holds
+    # for 295 of 2,994 entries, 9.8530%, Wilson [8.8364%, 10.9726%]. Producer:
+    # `scripts/would_the_severity_promotion_reach_anything_2026-10-15.py`.
+    #
+    # THE 2 FREE RUNS OF 2026-10-15 SPLIT ON THIS FLAG: run 1 OFF (the directive
+    # repair alone), run 2 ON. Both changes in one run would make neither
+    # attributable.
+    severity_spec_enabled: bool = False
     # Severity a demoted finding is pinned to (must be < CRITICAL_SEVERITY_THRESHOLD).
     severity_calibration_floor: float = 0.69
     # LATENT TAGGER (2026-07-31) — the upstream producer severity calibration has
@@ -3659,7 +3796,15 @@ class FindingRegistry:
             # reports and FEWER in 0 of 87, Wilson [0.0%, 4.2%], so restoring it
             # moves the gate in the opposite direction. That is the intended effect
             # and it is his ruling.
-            _sev = float(e.get("severity") or 0.0)
+            # ★ THE SPECIFICATION DECIDES HERE WHEN IT IS PROMOTED (2026-10-15).
+            # `effective_severity` returns the asserted float unchanged while
+            # `_SEVERITY_SPEC["on"]` is False, so the default path is unchanged;
+            # with it True this is section 7.7. This is the ONLY decision site
+            # moved, deliberately: it is the site convergence turns on, and the
+            # measurement that justified the build is a measurement of exactly
+            # this door. Every reporting read still shows the asserted number,
+            # so a reader can always see both.
+            _sev = effective_severity(e)
             if _sev < CRITICAL_SEVERITY_THRESHOLD and severity_is_proven(e):
                 continue
             _fc = (e.get("falsifier_code") or "").strip()
@@ -9589,6 +9734,112 @@ def severity_is_proven(entry: dict) -> bool:
     return severity_proof_status(entry) in _RK_PROOF_ACCEPTED
 
 
+#: Is the appendix's section 7.7 severity specification DECIDING, or merely
+#: recorded? Mirrored from `RunnerConfig.severity_spec_enabled` at experiment
+#: start, the same pattern `_COMPOSER_COHERENCE_PRUNING` uses, so the dispatch
+#: chain need not be re-threaded.
+#:
+#: ★ BUILT 2026-10-15 BECAUSE A SHADOW CANNOT BE TESTED BY A SIMULATION. The
+#: founder's words, 2026-10-14: *"why run them in shadow in a simulated run,
+#: when the purpose of a simulated run is to test how they will behave in a real
+#: experiment and to fix any deficiencies/issues you encounter so that we don't
+#: run into those same issues in a paid run, and risk pointlessly burning money
+#: we don't have?"* He is right, and the circularity is sharper than he put it:
+#: `severity_spec_shadow`'s own promotion criterion asks for non-distortion
+#: evidence "from a RUN", which a shadow can never supply, because a shadow
+#: never decides. Promotion needed a BUILD, not a setting, and this is it.
+#:
+#: DEFAULT OFF, AND THAT IS THE EXPERIMENTAL DESIGN RATHER THAN TIMIDITY. Free
+#: run 1 measures the directive repair with this OFF; free run 2 turns it ON.
+#: Running both changes at once would make neither attributable.
+_SEVERITY_SPEC: Dict[str, Any] = {"on": False}
+
+
+def wire_module_mirrors(cfg) -> dict:
+    """Set every module-level mirror from a RunnerConfig, and return what was set.
+
+    ★ EXTRACTED 2026-10-15 SO A TEST CAN EXECUTE IT. The wiring used to be an
+    inline assignment inside `run_experiment`, which cannot be called without
+    dispatching a round, so the only available check was a SOURCE-TEXT assertion
+    that the line exists. `bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py`
+    caught that immediately -- 99 source-text assertions against a ceiling of 98 --
+    and its message names the right remedy rather than the easy one: *"Prefer
+    CONVERTING an assertion to one that executes over raising this ceiling."*
+    This is that conversion.
+
+    A source-text check could only ever say the line is PRESENT. This lets a test
+    pass a config and observe the mirror actually move, which is the difference
+    between a module describing itself consistently and a producer and a consumer
+    agreeing (`execute-do-not-grep`).
+
+    It returns the values it set so a caller or a test can assert on them without
+    reaching into module globals.
+    """
+    _SEVERITY_SPEC["on"] = bool(getattr(cfg, "severity_spec_enabled", False))
+    return {"severity_spec": _SEVERITY_SPEC["on"]}
+
+
+def spec_verification_factor(entry: dict) -> float:
+    """Section 7.7's `V`, taken from THIS harness's own falsifier verdict.
+
+    `V(True)=1.0`, `V(None)=0.5`, `V(False)=0.0`. The last is the appendix's KEY
+    PROPERTY: a disproved finding scores zero regardless of confidence, so the
+    product is annihilated rather than merely reduced. Using the harness's
+    verdict rather than the model's assertion is what makes this the opposite of
+    a vote, which is the founder's own point of 2026-10-12.
+    """
+    verdict = str(entry.get("falsifier_verdict") or "").strip().upper()
+    if verdict == "CONFIRMED":
+        return 1.0
+    if verdict == "REFUTED":
+        return 0.0
+    return 0.5
+
+
+def effective_severity(entry: dict) -> float:
+    """The severity the gate decides on: asserted, or specification-computed.
+
+    With `_SEVERITY_SPEC["on"]` False this returns `float(entry["severity"])`
+    exactly as every call site read it before 2026-10-15, so the default path is
+    byte-identical in behaviour.
+
+    With it True it returns `asserted * V`, which is section 7.7 with the
+    uncollected `W . confidence` standing in as the asserted number -- the half
+    of the specification that needs no schema change, because `V` is the
+    harness's own measurement.
+
+    MEASURED BEFORE IT WAS BUILT, over 2,994 archived entries in 59 runs
+    (`scripts/would_the_severity_promotion_reach_anything_2026-10-15.py`):
+
+      * `severity_is_proven` holds for 295 of 2,994, **9.8530%**, Wilson
+        [8.8364%, 10.9726%] -- so the A4 door's conjunctive proof half DOES
+        open, about 1 entry in 10.
+      * The A4 population is 196 of 2,994, **6.5464%**, Wilson [5.7149%,
+        7.4893%]. Of those, 85, **43.3673%**, Wilson [36.6227%, 50.3670%], are
+        asserted-critical and specification-sub-critical.
+      * Of those 85, 7 are also proven and would therefore actually be
+        RELEASED: **8.2353%**, Wilson [4.0464%, 16.0360%].
+
+    SO IT IS REACHED, AND THAT WAS CHECKED FIRST RATHER THAN ASSUMED. A first
+    version of the producer read `finding_registry` and returned 0 entries
+    across 59 runs; the archive key is `registry.entries`. An empty answer from
+    a guessed predicate is an instrument result, not a measurement.
+
+    WHY THE EFFECT IS CONCENTRATED IN `V=0.5`: the A4 population is BY
+    DEFINITION the entries whose falsifier has not resolved, so 195 of its 196
+    members carry V=0.5, **99.4898%**, Wilson [97.1671%, 99.9099%]. The
+    specification halves them, and a 0.8 becomes a 0.4.
+
+    THE PROOF REQUIREMENT IS NOT WEAKENED. The release remains conjunctive --
+    specification-sub-critical AND proven -- so an unproven number still buys
+    nothing, which is the discipline the founder restored on 2026-10-06.
+    """
+    asserted = float(entry.get("severity") or 0.0)
+    if not _SEVERITY_SPEC.get("on"):
+        return asserted
+    return asserted * spec_verification_factor(entry)
+
+
 def _apply_severity_calibration(registry, cfg: "RunnerConfig", round_idx: int) -> int:
     """GATED sweep: demote every demotion-eligible over-rated critical.
 
@@ -10294,8 +10545,25 @@ def _check_hardened_convergence(
     except ImportError:                                      # pragma: no cover
         from bench.round_budget import project_optimal_rounds
     try:
-        telem.update(project_optimal_rounds(
-            crit_s, theta=getattr(cfg, "round_budget_theta", 1.0)).as_dict())
+        _budget = project_optimal_rounds(
+            crit_s, theta=getattr(cfg, "round_budget_theta", 1.0))
+        telem.update(_budget.as_dict())
+        # ★ AND IT IS NOW SAID OUT LOUD (his ruling, 2026-10-15).
+        #
+        # `RoundBudget.line()` has existed since 2026-10-11 with the docstring
+        # "One human-readable line for the round log", and its ONLY caller was
+        # `round_budget.py`'s own `main()` -- so it was emitted only if someone
+        # ran the module by hand as a CLI. Measured 2026-10-15: **0** `_log`
+        # calls in this file mentioned `round_budget`, and `line()` had **0**
+        # test coverage. The number reached telemetry and reached no human.
+        #
+        # HIS ASK, verbatim: *"We also discussed implementing an advisory,
+        # advising a researcher if convergence looked close when the max round
+        # budget had been exhausted, and recommending how many rounds should be
+        # added."* The number for that was already computed; only the saying
+        # was missing. It is ADVISORY and gates nothing -- nothing in `telem` is
+        # read by any convergence decision.
+        _log(_budget.line())
     except Exception as exc:                                 # noqa: BLE001
         # A diagnostic must not fell a run — the same contract the threshold
         # profile above states in its own except clause.
@@ -11685,9 +11953,25 @@ def _dispatch_single_model_inner(
     # Payload-aware decomposition (Exp 39 confound fix, 13 April 2026):
     # total payload = system prompt + user prompt (which already embeds full_code
     # via _build_prompt). Do NOT add full_code again — that double-counts ~64K.
+    #
+    # ★ THE HARD FLOOR NOW SEES THE DECOMPOSABLE PAYLOAD, THE FINGERPRINT STILL
+    # SEES THE TOTAL (2026-10-15). `_multiturn_fallback` splits `full_code` and
+    # carries `model_cdsfl` whole into every turn, so the system prompt is not
+    # decomposable and counting it toward the floor triggers a mechanism that
+    # re-sends it per chunk. See `should_decompose_v2` for the derivation and
+    # the measurement. Both figures are logged so the record carries each.
     _total_payload_chars = len(model_cdsfl) + len(prompt)
+    _decomposable_chars = len(prompt)
+    if _total_payload_chars > DECOMPOSE_HARD_FLOOR_CHARS >= _decomposable_chars:
+        _log(f"  {mc.label}: payload {_total_payload_chars} chars exceeds the "
+             f"{DECOMPOSE_HARD_FLOOR_CHARS} floor but only {_decomposable_chars} "
+             f"of it is decomposable (system prompt "
+             f"{len(model_cdsfl)} chars is re-sent per chunk, not split) — "
+             f"the floor is judged on the decomposable payload.")
     if should_decompose_v2(
         mc.label, mgr, payload_chars=_total_payload_chars,
+        decomposable_chars=_decomposable_chars,
+        fixed_chars=len(model_cdsfl),
     ):
         fallback = _multiturn_fallback(
             mc, prompt, model_cdsfl, full_code, round_idx, pattern_text,
@@ -16647,6 +16931,8 @@ def run_experiment(
     _FALSIFIER_GATE["on"] = bool(getattr(cfg, "falsifier_gate_enabled", False))
     _COMPOSER_COHERENCE_PRUNING["on"] = bool(
         getattr(cfg, "composer_coherence_pruning", False))
+    wire_module_mirrors(cfg)
+    _log(f"  Severity: {'SECTION 7.7 SPECIFICATION (deciding)' if _SEVERITY_SPEC['on'] else 'asserted (specification recorded only)'}")
     _log(f"  Target: {cfg.test_article}")
     _log(f"  Context: {cfg.context_files}")
     _log(f"  Models: {sorted(baseline)}")
@@ -19578,10 +19864,70 @@ def run_experiment(
                      or result.get("terminated")
                      or result.get("failure_reason")
                      or "")
+        # ★ THE SENTINEL STAYS. It was renamed to `ROUND_CAP_REACHED` on
+        # 2026-10-15 and REVERTED the same night: 4 guards objected, led by
+        # `test_the_unrecorded_case_is_distinguishable_from_a_named_halt`, and
+        # they were right. `stop_reason_fields` treats `UNRECORDED_STOP` as
+        # WORSE than any named halt precisely so that "the runner did not
+        # record why" cannot be mistaken for a reason. Naming this branch would
+        # have made the 2 indistinguishable, which is the defect the sentinel
+        # exists to prevent. The round-cap case is reported in words by the
+        # exhaustion advisory below, which is where it belonged.
         brain.state.stop_reason = _fallback.strip() or (
             "UNRECORDED_STOP (the round loop exited by a path that names no "
             "reason; see the run log)")
+
     signal = brain.signal_complete()
+
+    # NOTE ON PLACEMENT (2026-10-15): this sits AFTER `signal_complete()`
+    # because `test_a_fallback_runs_before_signal_complete` and
+    # `test_the_fallback_at_head_does_what_the_entry_says` require the
+    # fallback `if` to be the statement IMMEDIATELY BEFORE the signal is
+    # built -- an adjacency proof that anything inserted between them
+    # breaks. The advisory needs nothing from the signal, so it belongs
+    # here. 4 guards caught the first placement; they were right.
+    # ★ THE EXHAUSTION ADVISORY (his ruling, 2026-10-15). His ask, verbatim:
+    # *"advising a researcher if convergence looked close when the max round
+    # budget had been exhausted, and recommending how many rounds should be
+    # added to reliably increase the likelihood of all convergence conditions
+    # being met, within that extended round budget allowance"*.
+    #
+    # THE NUMBER ALREADY EXISTED AND NOTHING SAID IT. `round_budget.py` has
+    # computed `n*` and `rounds_remaining` on every round since 2026-10-11, into
+    # telemetry that no human reads. This is the saying.
+    #
+    # WHY IT MATTERS, from the archive: `study_run1b_2026-10-03` exited at the
+    # cap having CLEARED gamma at 0.4274 and being exactly 1 round short of the
+    # 3-consecutive-zero streak -- the advisory case, and it passed in silence.
+    #
+    # ADVISORY, GATES NOTHING. It runs after the verdict is written and changes
+    # no field the verdict reads.
+    try:
+        if not result.get("converged"):
+            _rb = (result.get("rounds") or [{}])[-1].get("telemetry", {}) \
+                if result.get("rounds") else {}
+            _n_star = _rb.get("round_budget_n_star")
+            _remaining = _rb.get("round_budget_rounds_remaining")
+            _ran = len(brain.state.all_findings)
+            if _n_star is None:
+                _log(f"  ROUND BUDGET ADVISORY: no projection is available for "
+                     f"this run ({_rb.get('round_budget_status', 'absent')}); a "
+                     f"run whose novelty does not decay has no optimal round "
+                     f"count, and that is a result rather than a gap.")
+            elif _remaining and _remaining > 0:
+                _log(f"  ROUND BUDGET ADVISORY: the run stopped at {_ran} round(s) "
+                     f"and the projection says n*={_n_star:.2f}, so roughly "
+                     f"{_remaining} MORE round(s) were worth running. Convergence "
+                     f"may have been close. ADVISORY — it gates nothing and this "
+                     f"run's verdict stands.")
+            else:
+                _log(f"  ROUND BUDGET ADVISORY: the run stopped at {_ran} round(s) "
+                     f"against a projection of n*={_n_star:.2f}, so the budget was "
+                     f"NOT the binding constraint — adding rounds is not indicated. "
+                     f"Look to the blockers named above instead.")
+    except Exception as _adv_exc:                            # noqa: BLE001
+        _log(f"  ROUND BUDGET ADVISORY unavailable: "
+             f"{type(_adv_exc).__name__}: {_adv_exc}")
 
     total_elapsed = time.monotonic() - experiment_start
     total_findings = sum(len(rnd) for rnd in brain.state.all_findings)

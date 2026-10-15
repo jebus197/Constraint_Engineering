@@ -104,16 +104,44 @@ class TestTheMechanismIsExactlyAsBothModelsDescribed:
 class TestTheMechanismIsLoudNotSilent:
     """MY OWN CLAIM, REFUTED. Recorded so it is not made again."""
 
-    def test_going_over_budget_raises_a_warning_naming_the_numbers(self):
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            for domain in list(DOMAIN_MAP)[:6]:
-                for model in MODEL_COHERENCE_BUDGETS:
-                    compose(task_domain=domain, model=model,
-                            situation=build_interaction_pattern("meta_structured"))
-        msgs = [str(w.message) for w in caught if "coherence budget" in str(w.message)]
+    def test_the_warning_still_fires_when_a_budget_is_actually_exceeded(self):
+        """★ REBASED 2026-10-15. NO REAL COMPOSITION EXCEEDS A BUDGET ANY MORE,
+        so this can no longer be demonstrated on the live grid and is
+        demonstrated on an explicitly tightened budget instead.
+
+        WHY. Delivering the project's own specification whole (founder's ruling
+        2026-10-14) multiplies the rendered length by about 5.7, and
+        `constraint_density = constraint_count / (len(rendered) // 4)` has the
+        rendered length in its DENOMINATOR while `constraint_count` is derived
+        from the TOML policy and does NOT grow. So density fell from above the
+        budget to a measured max of 0.002835 against a smallest budget of
+        0.010 -- 3.5277 times below it. Producer:
+        `scripts/the_spec_is_not_work_2026-10-15.py`.
+
+        THE BUDGETS ARE THEREFORE STALE BY CONSTRUCTION, NOT WRONG. They were
+        calibrated when the universal packet was the 2,503-character reduced
+        form. They are NOT hand-retuned here: the project derives them from
+        experiment logs (`update_coherence_budgets_from_experiments`) and the
+        next 2 free runs are where that measurement comes from. Carried into
+        the programme of study as a high-priority item.
+        """
+        budgets = dict(MODEL_COHERENCE_BUDGETS)
+        try:
+            for model in budgets:
+                MODEL_COHERENCE_BUDGETS[model] = 1e-6
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                for domain in list(DOMAIN_MAP)[:6]:
+                    for model in list(budgets):
+                        compose(task_domain=domain, model=model,
+                                situation=build_interaction_pattern("meta_structured"))
+            msgs = [str(w.message) for w in caught
+                    if "coherence budget" in str(w.message)]
+        finally:
+            MODEL_COHERENCE_BUDGETS.clear()
+            MODEL_COHERENCE_BUDGETS.update(budgets)
         assert msgs, (
-            "no warning was raised for any over-budget composition, so the "
+            "no warning was raised even with the budget forced to 1e-6, so the "
             "failure IS silent after all and the finding is larger than recorded")
         assert any("density=" in m and "budget=" in m for m in msgs), (
             f"the warning does not carry the numbers: {msgs[:1]}")
@@ -127,13 +155,29 @@ class TestTheMechanismIsLoudNotSilent:
 
 
 class TestTheRateIsHighAndThatIsTheRealFinding:
-    def test_most_real_compositions_exceed_the_budget(self):
-        """65.56% of 90, Wilson [55.28%, 74.55%]. Not a defect; an operating point.
+    def test_no_real_composition_exceeds_the_budget_any_more(self):
+        """★ REBASED 2026-10-15, AND THE DIRECTION OF THE FINDING IS INVERTED.
 
-        This is what survives of C0019 and C0031 once the harm is checked: the
-        classifier is generous, the budget is missed on most real compositions,
-        and the system says so every time. Whether that rate is acceptable is a
-        design question for the founder, not a defect to fix silently.
+        IT WAS 65.56% of 90, Wilson [55.28%, 74.55%] -- the budget missed on
+        most real compositions, recorded as an operating point rather than a
+        defect. IT IS NOW 0 of 50, 0.0000%, Wilson [0.0000%, 7.1348%],
+        Clopper-Pearson [0.0000%, 7.1122%], because the specification is
+        delivered whole and sits in the density DENOMINATOR while
+        `constraint_count` does not grow.
+
+        SO THE COHERENCE PRUNER IS NOW INERT ON THE LIVE GRID, and that is a
+        NAMED LOSS rather than a silent one: the pruner was already retired
+        from the default path on the founder's ruling of 2026-10-13, but its
+        ablation arm -- the lean-versus-full comparison every cut was gated on
+        -- cannot fire while no composition is over budget. The trigger for
+        closing this is a recalibration from the next 2 free runs via
+        `update_coherence_budgets_from_experiments`, NOT a hand-retune, because
+        a hand-set cap with no measurement behind it is the defect the founder
+        objected to in the first place.
+
+        THE ASSERTION IS A RATCHET IN THE HONEST DIRECTION: 0 is pinned, and
+        any composition going over budget again means a budget was changed or a
+        directive file moved, either of which needs this docstring remeasured.
         """
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -152,9 +196,12 @@ class TestTheRateIsHighAndThatIsTheRealFinding:
         from scipy.stats import beta as sbeta
         slo = sbeta.ppf(0.025, over, n - over + 1) if over else 0.0
         assert abs(slo - lo_c) < 1e-9, "statsmodels and scipy disagree"
-        assert 0.4 < over / n < 0.9, (
-            f"the over-budget rate moved to {over / n:.4f} "
-            f"[{lo:.4f}, {hi:.4f}]; the finding's premise has changed")
+        assert over == 0, (
+            f"the over-budget rate moved to {over}/{n} = {over / n:.4f} "
+            f"[{lo:.4f}, {hi:.4f}]; it was 0 of 50 on 2026-10-15, so either a "
+            f"coherence budget or a directive file has changed and this file's "
+            f"docstring figures must be remeasured before this is edited")
+        assert hi < 0.08, (lo, hi)
 
 
 class TestTheProxyThatFooledMe:

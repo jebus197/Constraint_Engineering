@@ -481,6 +481,31 @@
       "fix": "scripts/panel_brief_validate.py now holds the brief to the detector's OWN definition, importing DISAGREEMENT_RE from panel_condition_compliance_2026-09-10.py rather than restating the pattern, so a brief whose declared field the detector cannot read is REFUSED with a message naming the qualifier problem. Verified both ways by execution: the joint brief is now refused, and bench/directives/universal/panel_brief_template.md still passes all 8 required sections. The detector was deliberately NOT widened, because the 2026-10-02 entry records that widening makes it match mentions as well as assertions.",
       "held_by": "bench/tests/test_a_brief_names_disagreement_as_a_field_2026-10-02.py",
       "recorded_at": "2026-10-06T07:52:47+01:00"
+    },
+    {
+      "round": "joint_the_directive_set_2026-10-14",
+      "seat": "cc2",
+      "condition": "P5",
+      "what": "The round carried 2 seats and 1 disagreement. `fable.json` carries a disagreement section with a body; `cc2.json`, 37,768 characters of substantive reply, carries no disagreement heading at all.",
+      "cause": [
+        "NOT an empty or failed seat, which is what every earlier P5 shortfall in this",
+        "file was. cc2 replied at length and its reply was used: the round's own FULL",
+        "RECORD note quotes it, and CC1 reproduced one of its findings independently.",
+        "The seat simply did not emit the section.",
+        "MEASURED 2026-10-15 by reading both replies: the disagreement heading is",
+        "present in fable's reply and absent from cc2's. The compliance script",
+        "(scripts/panel_condition_compliance_2026-09-10.py) reports the round as",
+        "'2 seats, 100 tool calls, 13 src files, disagree 1'.",
+        "WHY IT SURFACED ONLY NOW: the guard reads every archived reply, and this",
+        "round was archived on 2026-10-14 at 23:50. It was red at commit 748fc044",
+        "before any of the 2026-10-15 work began -- reproduced in a clean worktree at",
+        "that commit -- so it is not a regression from tonight's changes."
+      ],
+      "fix": "NOT FIXED, and deliberately not. The only ways to clear it are to re-dispatch cc2 for a disagreement it did not give, which would be manufacturing a panel record after the fact, or to drop the round from the population, which this file exists to prevent. It is RECORDED with its measured cause instead, which is the convention this file states in its own header.",
+      "fixed": false,
+      "needs_founder": "whether a seat that replies substantively but omits the disagreement section should be re-prompted for it within the round, or whether the omission is itself information worth keeping. CC1 has no view it can support with evidence.",
+      "held_by": "bench/tests/test_panel_conditions_are_met_2026-09-10.py",
+      "recorded_at": "2026-10-15T05:03:20+01:00"
     }
   ]
 }

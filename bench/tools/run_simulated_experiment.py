@@ -285,9 +285,13 @@ def build_parser() -> argparse.ArgumentParser:
     # control arm and nothing is removed.
     ap.add_argument("--seat-models", choices=("uniform", "ladder"),
                     default="ladder",
-                    help="uniform = one model for all seats (default); "
-                         "ladder = the per-seat capability ladder in "
-                         "sim_dispatch_shim.DEFAULT_LADDER")
+                    help="ladder (THE DEFAULT since commit e228a214, "
+                         "2026-10-07) = the per-seat capability ladder in "
+                         "sim_dispatch_shim.DEFAULT_LADDER; uniform = one model "
+                         "for all seats. The default was `uniform` until "
+                         "2026-10-07 and this help text still said so until "
+                         "2026-10-15, so a reader asking --help was told the "
+                         "wrong default for 8 days.")
     # SEVERITY CALIBRATION, wired 2026-09-07. Measured the same day: the harness
     # built RunnerConfig with 24 keyword arguments and this was not among them, so
     # it took its default of False and `_apply_severity_calibration` returned 0
@@ -313,6 +317,25 @@ def build_parser() -> argparse.ArgumentParser:
     # deliberate simulation-only divergence, not a parity break.
     ap.add_argument("--no-severity-calibration", action="store_true",
                     help="run WITHOUT the severity-calibration sweep (default: on)")
+    # ★ THE SECTION 7.7 SEVERITY SPECIFICATION, PROMOTED FROM SHADOW TO DECIDING
+    # (2026-10-15). The founder's objection, 2026-10-14: *"why run them in
+    # shadow in a simulated run, when the purpose of a simulated run is to test
+    # how they will behave in a real experiment and to fix any
+    # deficiencies/issues you encounter so that we don't run into those same
+    # issues in a paid run, and risk pointlessly burning money we don't have?"*
+    #
+    # IT IS A FLAG AND NOT A DEFAULT BECAUSE THE 2 FREE RUNS SPLIT ON IT. Run 1
+    # measures the directive repair alone; run 2 adds this. Enabling both in one
+    # run would make neither attributable, which is the same error the programme
+    # already rejects for per-fix attribution.
+    #
+    # MEASURED AS REACHED BEFORE IT WAS BUILT, over 2,994 archived entries in 59
+    # runs: 7 A4 releases change. Producer:
+    # `scripts/would_the_severity_promotion_reach_anything_2026-10-15.py`.
+    ap.add_argument("--severity-spec", action="store_true",
+                    help="make the appendix section 7.7 severity specification "
+                         "DECIDE the A4 door instead of merely being recorded "
+                         "(default: recorded only)")
     # MERGE ARBITRATION HAD NO SWITCH, and the pre-registered arm design needs it
     # off. `merge_arbitration_enabled=True` was a bare literal in the config
     # below, while `CDSFL_Programme_of_Study_2026-09-17.txt` specifies the 3 arms
@@ -738,6 +761,8 @@ def main() -> int:
         # The half of the overnight severity work a simulated run could not reach.
         severity_calibration_enabled=not args.no_severity_calibration,
         latent_tagger_enabled=not args.no_severity_calibration,
+        # See `--severity-spec` above and `RunnerConfig.severity_spec_enabled`.
+        severity_spec_enabled=bool(getattr(args, "severity_spec", False)),
         # ── COMMISSIONED 2026-09-21 ON THE FOUNDER'S INSTRUCTION ───────────
         # He ruled: "enable it all now and test it in the next simulated run
         # and add them all to the programme of study". These 2 are the only

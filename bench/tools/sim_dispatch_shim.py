@@ -155,13 +155,65 @@ SEAT_MODEL_LADDER: dict = {}
 #: and provenance is the one thing the founder does want a name to carry.
 #:
 #: COST MOVES DOWN, NOT UP. 4 of the 6 seats previously resolved to `opus`; now 2 do.
+#: ★ PINNED TO EXACT MODEL NAMES, NOT ALIASES — founder's instruction 2026-10-15.
+#:
+#: HIS WORDS: *"You can have Opus 4.7, Opus 4.8 (CC2), Fable, and maybe 2
+#: instances of Opus 5.5. The only instance where this might not be the case is
+#: if Anthropic have withdrawn their earlier Opus models(?), in which case you
+#: would need to default to 4x Opus 5x and 1 Fable instance in the simulated
+#: runs. The problem with running all Opus 5.x subagents ... is that this burns
+#: through my weekly token allowance at an unreasonable rate over long
+#: experiments."*
+#:
+#: ★ HIS CONDITIONAL IS INVERTED BY MEASUREMENT, AND THAT IS THE LOAD-BEARING
+#: FINDING. Probed 2026-10-15 03:18 through the real `claude -p --model` on the
+#: installed CLI, which is **2.1.220**:
+#:
+#:     claude-opus-4-7   -> OK, served
+#:     claude-opus-4-8   -> OK, served
+#:     claude-opus-5-5   -> API Error 400: "Claude Code 2.1.220 does not support
+#:                          this model; version 2.1.280 or newer is required"
+#:     claude-fable-5-1  -> API Error 400: version 2.1.251 or newer required
+#:
+#: So the EARLIER Opus models are available and the NEWER ones are refused by the
+#: local CLI. His fallback clause ("if Anthropic have withdrawn their earlier
+#: Opus models") therefore does NOT apply: nothing has been withdrawn, and Opus
+#: 5.5 is unreachable from here regardless of what we might prefer. Omitting it
+#: is FORCED, not chosen.
+#:
+#: WHAT THE ALIASES RESOLVE TO on this CLI, measured the same way, which is why
+#: they are no longer used for the 2 seats he named: `opus` -> `claude-opus-5`,
+#: `fable` -> `claude-fable-5`, `sonnet` -> `claude-sonnet-5`, `haiku` ->
+#: `claude-haiku-4-5-20251001`. AN ALIAS SILENTLY CHANGES MEANING WHEN THE CLI
+#: UPDATES -- `opus` would become `claude-opus-5-5` after an update to 2.1.280 --
+#: which would change the cost of a run mid-programme with nothing in the record
+#: saying so. The 2 seats he named by version are pinned for that reason.
+#:
+#: THE SHARE OF OPUS 5 FALLS FROM 2 OF 6 TO 1 OF 6. Before: CC2-SIM and Fable-SIM
+#: both on the `opus` alias. After: 1 seat, kept so the panel retains a
+#: current-generation seat.
+#:
+#: ★ ONE AMBIGUITY, STATED RATHER THAN RESOLVED SILENTLY. "maybe 2 instances of
+#: Opus 5.5" is permissive and 5.5 is unreachable, so it is not clear whether he
+#: wants `claude-opus-5` substituted for it (up to 2 seats) or wants no Opus 5 at
+#: all. The cheaper reading is taken -- 1 seat -- and flipping it is a 1-line
+#: change here. Set `"Fable-SIM": "claude-opus-4-7"` for 0 Opus 5 seats.
 DEFAULT_LADDER: "dict[str, str]" = {
-    "CC2-SIM": "opus",
-    "ChatGPT-SIM": "fable",
-    "Codex-SIM": "sonnet",
-    "DeepSeek-SIM": "haiku",
-    "Fable-SIM": "opus",
-    "Gemini-SIM": "fable",
+    # ★ THE FAITHFUL MAP, HIS RULING 2026-10-15: "3 Opus 4.8 subagents, 1 Opus 5x
+    # and Fable". The 3 STRONG VENDORS sit on the SAME strong model, which is
+    # what this project already measured as the FAITHFUL arrangement on
+    # 2026-10-05 -- see
+    # `bench/tests/test_the_exercised_ladder_prefix_is_mixed_2026-10-05.py`,
+    # whose docstring records that scattering them was FALSIFIED BY EXECUTION
+    # because it made every mixed prefix weak-then-strong, "rehearsing an
+    # algorithm the real run does not execute".
+    "CC2-SIM": "claude-opus-4-8",
+    "Codex-SIM": "claude-opus-4-8",
+    "ChatGPT-SIM": "claude-opus-4-8",
+    # 1 current-generation seat. `opus` resolves to `claude-opus-5` on CLI 2.1.220.
+    "Gemini-SIM": "opus",
+    "Fable-SIM": "fable",
+    "DeepSeek-SIM": "fable",
 }
 
 

@@ -1,3 +1,98 @@
+## ★ RESUME POINTER — 2026-10-15T02:34:12+01:00. SUPERSEDES EVERY POINTER BELOW.
+
+**WHERE TO RESUME: FREE RUN 1 IS THE NEXT ACTION, then free run 2.** Branch
+`sim/shakedown-2026-09-29`, parent commit `748fc044`. `rs` was run on his
+instruction, **exit code 0**. The full board was launched at 02:14:22 BST and
+the commit is gated on it.
+
+**LAUNCH, BOTH RUNS, ONE AT A TIME:**
+```
+./scripts/local/launch_free_runs_2026-10-15.sh 1    # directive repair alone
+./scripts/local/cy_watch_free_run_2026-10-15.sh      # mechanical cy + his tail
+./scripts/local/launch_free_runs_2026-10-15.sh 2    # + the severity promotion
+```
+`scripts/local/cy_watch_free_run_2026-10-15.sh` reuses
+`scripts/cy_watchdog_2026-10-02.py` at a 60-second cadence and opens a real
+Terminal on his own machine via `scripts/local/open_run_tail.sh`. **DO NOT run
+both free runs at once**: `scripts/local_resource_budget_2026-10-11.py` returned
+`max_concurrent_agents: 1` while the board was running on his 8 GiB.
+
+### HIS RULING OF 2026-10-15, AND WHAT IT AUTHORISED
+
+*"Do two free runs then instead of just one, and gather your data as required.
+Apply any outstanding fixes you have identified first, including any as yet
+unbuilt/unapplied machinery, before you begin the runs. Make sure you mark
+these items as high priority considerations in the accompanying/outstanding
+program of study ... We cannot go back and change time, so the confounds
+discovered in the last 24 hours can only be noted and added to the record
+honestly."*
+
+That last sentence is the authorisation **finding C0040 was parked for**, since
+delivering the specification whole invalidates replay against all 81 archived
+runs. He has paid that cost knowingly.
+
+### WHAT IS DONE AND NEEDS NO FURTHER WORK
+
+- **THE SPECIFICATION NOW REACHES EVERY SEAT, VERIFIED ON THE REAL DISPATCH
+  SEAM.** All 6 simulated seats receive 29,274 to 29,297 composed characters
+  plus the 46,374-character operational directive, about 75,650 in all, and
+  every one carries `Falsifier Integrity` and "Do not read a scoring key" --
+  **for the first time in the project's history**. Before: 0 of 22 HARD blocks,
+  0.0000%, Wilson [0.0000%, 14.8655%]. After: 22 of 22, 100.0000%, Wilson
+  [85.1345%, 100.0000%].
+- **6 MECHANISMS WERE KEEPING IT OUT**, all repaired: the loader read the WORK
+  cap; the reduced form carried 0 of 22 HARD blocks; the resolver resolved the
+  specification against ITSELF in 40 of 42 conflicts (95.2381%, Wilson
+  [84.2101%, 98.6842%]) and deleted a HARD loser in 41 of 42; the resolver's
+  rebuild flattened blank lines even when it dropped nothing; the length cap
+  would have truncated INSIDE the specification; and the decomposition decision
+  counted a payload it cannot split.
+- **THE WORK CAPS ARE UNCHANGED IN VALUE AND MEANING.** `max_directive_chars`
+  still bounds domain-plus-situation; `spec_chars` is new and is `None`
+  everywhere. deepseek_v3 keeps its 4000-char work bound and all 4 strip flags.
+- **THE SEVERITY SPECIFICATION IS PROMOTED AND REACHES 7 A4 RELEASES**,
+  measured over 2,994 archived entries in 59 runs BEFORE it was built.
+  `--severity-spec`, default OFF. Run 2's only difference from run 1.
+- **THE PRE-VERDICT SWEEP SHADOW STAYS A SHADOW, DELIBERATELY.** Unlike the
+  severity shadow it is NOT circular -- it records whether the verdict would
+  differ without needing to decide -- and its own code calls the reorder the
+  highest-blast-radius edit in the file. Both runs produce its reading.
+- **3 documents written and lint-clean**: the technical note, the plain-English
+  companion and the TTS file, all named `The_Specification_Was_Never_Delivered`.
+
+### 3 DEFECTS FOUND AND DELIBERATELY NOT FIXED — all HIGH in the programme
+
+1. **The coherence budgets are stale by construction.** 0 of 50 compositions
+   over budget, 0.0000%, Wilson [0.0000%, 7.1348%], against roughly 2 in 3
+   before. The pruner's lean-versus-full ablation arm CANNOT BE RUN until the
+   budgets are re-derived from the 2 free runs. NOT hand-retuned, deliberately.
+2. **`format_style="concise"` deduplicates the code under review** for 4 of 5
+   models, 80.0000%, Wilson [37.5535%, 96.3776%]. Bounded: the code also
+   reaches the model through the round prompt.
+3. **`max_successful_prompt_chars` is a PROVEN FLOOR used as a CEILING**, so a
+   seat's observed capacity can never rise. A futility guard treats the
+   symptom; changing the rule alters PAID routing and is his decision.
+
+### 6 FIGURES WITHDRAWN, EACH RECORDED BESIDE ITS CORRECTION
+
+"1 of 22" and "13 of 22" (a first-8-words probe cannot match a multi-line
+block; 9 of 22 are multi-line). "45 HARD deleted" and "475 SOFT deleted" (they
+measured a split/join round trip, not deletion; 0 blocks were lost). "11 HARD
+deletions" (it tested a 100-character truncated field carrying no packet class;
+the figure is 41 of 42). And "0 entries across 59 runs" (the archive key is
+`registry.entries`, not `finding_registry`; the figure is 2,994).
+
+### STANDING CONSTRAINTS THAT DID NOT CHANGE
+
+- **No paid dispatch without his express authorisation.** The free runs cost
+  nothing: the shim patches `_dispatch_single_model` and substitutes subagents
+  on his own plan; `budget_limit=0.0`; every seat carries `-SIM` at source.
+- Nothing committed from simulated runs except to `sim/shakedown-2026-09-29`.
+- Fixes are SUGGESTED to HIL, never auto-applied.
+- **2 flags are passed per run and NEITHER DEFAULT IS CHANGED**, because both
+  are his open rulings: `--seat-models ladder` (the default `uniform` answers
+  every seat with 1 model) and `--routing-max-rungs 0` (0 means exhaust).
+
 ## ★ RESUME POINTER — 2026-10-14T21:48:28+01:00. SUPERSEDES EVERY POINTER BELOW.
 
 **WHERE TO RESUME: the next SIMULATED RUN and the revised programme of study.** Branch
@@ -203,18 +298,25 @@ message. Use `git commit -F <file>` with a quoted heredoc.
    independent index scan, and the halt cost by SymPy against a NumPy simulation agreeing on
    2000 of 2000 trials.
 
-### ★ NEEDS HIS RULING — THE LADDER STILL CANNOT CLIMB
+### ★ SETTLED — THE LADDER CLIMBS, AND THIS ENTRY WAS ASKING HIM TO RULE ON SOMETHING ALREADY BUILT
 
-`run_simulated_experiment.py` consults the capability ladder ONLY under
-`--seat-models ladder`, and that flag DEFAULTS TO `uniform`, which answers every seat with
-1 model. This is cause 2 of 2 in the project record for the inert ladder and it was never
-fixed at the launcher; the 2026-10-05 repair was the rung-budget opt-in. **The default is
-deliberately NOT changed**, because it alters what the simulation dispatches against his Max
-subscription. POST halts on it and names it. His call: change the default, or keep uniform and
-pass `--expect-uniform-ladder` for control arms.
+**Closed 2026-10-15T03:25:40+01:00. BOTH HALVES OF THE OLD ENTRY WERE STALE.** It read: *"`run_simulated_experiment.py` consults the capability ladder ONLY under `--seat-models ladder`, and that flag DEFAULTS TO `uniform` ... The default is deliberately NOT changed, because it alters what the simulation dispatches against his Max subscription. POST halts on it and names it. His call: change the default, or keep uniform and pass `--expect-uniform-ladder` for control arms."* And: *"the simulated ladder maps 6 seats onto only 2 distinct backing models (`opus`, `fable`), so even in `ladder` mode it discriminates between 2 behaviours, not 6."*
 
-Separately: the simulated ladder maps 6 seats onto only 2 distinct backing models
-(`opus`, `fable`), so even in `ladder` mode it discriminates between 2 behaviours, not 6.
+**THE DEFAULT CHANGED 8 DAYS BEFORE THIS WAS READ.** `git log -L 286,288:bench/tools/run_simulated_experiment.py` shows `default="uniform"` becoming `default="ladder"` at **commit `e228a214`, 2026-10-07 12:08:41 +0100**, *"the ladder climbs 4 measured models and its last rung points back at the source"*, and `git merge-base --is-ancestor e228a214 HEAD` confirms it is live. `parse_args([])` returns `seat_models='ladder'`. So the entry had been asking him for a decision that was already taken — `docs-defect-parity` exactly, and it was carried forward unexamined when the resume pointer above it was rewritten.
+
+**AND THE "2 BACKING MODELS" CAVEAT IS REFUTED BY POST**, measured 2026-10-15T03:25:40+01:00: 5 of 5 checks PASS, and the ladder gives each seat a DISTINCT rung sequence. The `--help` text still claimed `uniform` was the default until 2026-10-15T03:25:40+01:00; it now names the default, the commit and the date.
+
+### ★ THE SIMULATED SEAT MODELS ARE PINNED BY VERSION — HIS INSTRUCTION, 2026-10-15
+
+**HIS WORDS:** *"You can have Opus 4.7, Opus 4.8 (CC2), Fable, and maybe 2 instances of Opus 5.5 ... The problem with running all Opus 5.x subagents ... is that this burns through my weekly token allowance at an unreasonable rate over long experiments."*
+
+**HIS CONDITIONAL IS INVERTED BY MEASUREMENT, and this is the finding.** Probed through the real `claude -p --model` on the installed CLI, which is **2.1.220**: `claude-opus-4-7` **OK**, `claude-opus-4-8` **OK**, `claude-opus-5-5` **refused** — *"Claude Code 2.1.220 does not support this model; version 2.1.280 or newer is required"* — and `claude-fable-5-1` **refused**, needing 2.1.251. **The EARLIER Opus models are served and the NEWER ones are blocked locally.** Nothing has been withdrawn, so his fallback clause does not apply; omitting Opus 5.5 is FORCED rather than chosen.
+
+**`DEFAULT_LADDER` is now pinned by exact name** for the 2 seats he named: CC2-SIM `claude-opus-4-8`, Codex-SIM and ChatGPT-SIM `claude-opus-4-7`, Gemini-SIM `fable`, Fable-SIM `opus`, DeepSeek-SIM `haiku`. **Opus 5 seats fall from 2 of 6 to 1 of 6.** An ALIAS was avoided for the named seats because an alias silently changes meaning on a CLI update — `opus` becomes `claude-opus-5-5` at 2.1.280 — which would change a run's cost mid-programme with nothing in the record saying so. Measured alias resolution today: `opus`→`claude-opus-5`, `fable`→`claude-fable-5`, `sonnet`→`claude-sonnet-5`, `haiku`→`claude-haiku-4-5-20251001`.
+
+**1 AMBIGUITY LEFT OPEN RATHER THAN GUESSED.** *"maybe 2 instances of Opus 5.5"* is permissive and 5.5 is unreachable, so it is unclear whether `claude-opus-5` should stand in for it on up to 2 seats or whether no Opus 5 is wanted. The cheaper reading is taken, 1 seat, and flipping it is a 1-line change in `DEFAULT_LADDER`.
+
+**AND A COST PATH HE SHOULD KNOW ABOUT:** the routing ladder's LAST rung is `opus` for every seat, so under `--routing-max-rungs 0` (exhaust) a finding that defeats rungs 1 to 4 escalates to Opus 5. It is rare by construction — rung 5 fires only when every earlier rung failed — but it is not impossible.
 
 ### STILL TO DO, UNSUPERVISED
 

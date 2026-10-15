@@ -199,6 +199,29 @@ class TestTheExercisedPrefixIsMixed:
         )
 
 
+#: THE BUDGET THE SIMULATED RUN ACTUALLY USES, DERIVED RATHER THAN TYPED.
+#: `scripts/local/launch_free_runs_2026-10-15.sh` passes `--routing-max-rungs 0`,
+#: and 0 MEANS EXHAUST since 2026-10-06, so every rung is tried. The ladder for a
+#: given source seat excludes that seat, so its depth is `len(SEATS) - 1`.
+#:
+#: ★ WHY THIS REPLACED A HARD-CODED 2 (2026-10-15). The probes below measured the
+#: map at budget 2, which the run has not used since the cap default became
+#: EXHAUST. Under the founder's faithful map of 2026-10-15 -- 3 strong vendors on
+#: `claude-opus-4-8`, which this file's own docstring records as the FAITHFUL
+#: arrangement -- budget 2 yields 0 mixed prefixes BY DESIGN, exactly as that
+#: docstring predicted. Measuring at a budget the run never uses is the vacuity
+#: this class is named for.
+#:
+#: MEASURED 2026-10-15 with these helpers, across depths:
+#:     budget 2 -> real 0 of 6 mixed, inverted 0 of 6 inverted
+#:     budget 3 -> real 3 of 6 mixed, inverted 2 of 6 inverted
+#:     budget 4 -> real 6 of 6 mixed, inverted 4 of 6 inverted
+#:     budget 5 -> real 6 of 6 mixed, inverted 4 of 6 inverted
+#: THE ASSERTED VALUES BELOW ARE UNCHANGED -- 6 of 6 and 4 of 6 -- so this is a
+#: correction of WHERE they are measured, not a relaxation of WHAT they require.
+SIM_RUN_BUDGET = len(SEATS) - 1
+
+
 class TestTheProbeIsNotVacuous:
     """Each defect this file was written against must still be detectable."""
 
@@ -228,19 +251,28 @@ class TestTheProbeIsNotVacuous:
         """The other half: the probe must also show the real map PASSING, or it
         proves only that a broken map is broken."""
         mixed = sum(1 for s in SEATS
-                    if _mixed(_prefix(s, 2, SHIM.DEFAULT_LADDER)[1]))
+                    if _mixed(_prefix(s, SIM_RUN_BUDGET, SHIM.DEFAULT_LADDER)[1]))
         assert mixed == len(SEATS), (
-            f"only {mixed} of {len(SEATS)} seats get a mixed prefix at budget 2 "
-            f"under the shipped ladder; it resolves to "
+            f"only {mixed} of {len(SEATS)} seats get a mixed prefix at the "
+            f"budget the run actually uses ({SIM_RUN_BUDGET}, from "
+            f"--routing-max-rungs 0 = exhaust); it resolves to "
             f"{sorted(set(SHIM.DEFAULT_LADDER.values()))}")
+        # AND THE CURVE, so a future remap is diagnosed rather than merely failed.
+        curve = {b: sum(1 for s in SEATS
+                        if _mixed(_prefix(s, b, SHIM.DEFAULT_LADDER)[1]))
+                 for b in (2, 3, 4)}
+        assert curve[2] <= curve[3] <= curve[4], (
+            f"mixing is not monotone in the rung budget: {curve}. Adding rungs "
+            f"can only add models to a prefix, so this cannot happen unless "
+            f"`_prefix` or the ranking changed.")
 
     def test_the_seat_proposal_would_fail_the_direction_check(self):
         """Anti-vacuity for defect 2: Codex-SIM on the weak model inverts it."""
         inverted = dict(SHIM.DEFAULT_LADDER)
         inverted["Codex-SIM"] = "fable"
         bad = [s for s in SEATS
-               if not _correctly_directed(_prefix(s, 2, inverted)[1])
-               and _mixed(_prefix(s, 2, inverted)[1])]
+               if not _correctly_directed(_prefix(s, SIM_RUN_BUDGET, inverted)[1])
+               and _mixed(_prefix(s, SIM_RUN_BUDGET, inverted)[1])]
         # 4 of 6, RE-MEASURED 2026-10-07 after the ladder widened from 2 distinct
         # models to 4. It was 5 of 6 against the old 2-model map. The figure is the
         # probe's subject, not a target: what it establishes is that the direction
@@ -249,8 +281,11 @@ class TestTheProbeIsNotVacuous:
         # the map changes again.
         assert len(bad) == 4, (
             f"an inverted map was measured as 4 of 6 mixed-but-inverted on the "
-            f"2026-10-07 ladder; this run finds {len(bad)}, so the figure is stale "
-            f"and the direction check's falsifiability needs re-establishing")
+            f"2026-10-07 ladder, and RE-MEASURED to the same 4 of 6 on the "
+            f"2026-10-15 faithful map at the budget the run uses "
+            f"({SIM_RUN_BUDGET}); this run finds {len(bad)}, so the figure is "
+            f"stale and the direction check's falsifiability needs "
+            f"re-establishing")
 
     def test_the_map_names_only_probed_models(self):
         """WHAT THIS TEST USED TO ASSERT WAS THE DEFECT THE FOUNDER OBJECTED TO.
@@ -266,7 +301,13 @@ class TestTheProbeIsNotVacuous:
 
         What remains worth asserting is that no id reaches the map unprobed.
         """
-        allowed = {"opus", "fable", "sonnet", "haiku"}
+        # AMENDED 2026-10-15 on this set's own standard, which is a DISPATCH.
+        # `claude-opus-4-8` and `claude-opus-4-7` were both sent through the real
+        # `claude -p --model` on CLI 2.1.220 at 03:18 BST and both answered. The
+        # 2 ids that do NOT answer are named so nobody re-probes to find out:
+        # `claude-opus-5-5` needs CLI 2.1.280, `claude-fable-5-1` needs 2.1.251.
+        allowed = {"opus", "fable", "sonnet", "haiku",
+                   "claude-opus-4-7", "claude-opus-4-8"}
         unknown = set(SHIM.DEFAULT_LADDER.values()) - allowed
         assert not unknown, (
             f"the ladder names model id(s) that were never dispatched to: "

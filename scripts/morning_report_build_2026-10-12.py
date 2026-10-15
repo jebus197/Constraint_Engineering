@@ -145,10 +145,51 @@ def study_items() -> list[dict]:
 
 
 def parked_items() -> list[str]:
+    """The parked file's LIVE portion, derived from the task list's markers.
+
+    ★ TASK B3, BUILT 2026-10-15 ON HIS RULING: *"Build it and implement it."*
+    Nothing removed an item from the parked file when its underlying entry
+    closed, so it re-presented settled business and buried the live items among
+    it. Measured 2026-10-13 by
+    `scripts/has_he_already_ruled_on_the_parked_2026-10-13.py`: **14 of 21
+    parked items were already settled, 66.6667%, Wilson [45.3735%, 82.8052%],
+    Clopper-Pearson [43.0325%, 85.4123%]**.
+
+    The filter is the one B3 names: a parked heading that NAMES a task-list
+    entry now recorded DONE or WITHDRAWN is dropped, because its question has
+    been answered. A heading naming no entry is KEPT, since absence of a marker
+    is not evidence of closure -- the measurement's own caveat is that
+    identifier matching under-reports, so the residue is an UPPER BOUND on what
+    still needs him and this filter must not make it a lower one.
+    """
     if not PARKED.is_file():
         return []
-    return [l[3:].strip() for l in PARKED.read_text(encoding="utf-8").splitlines()
-            if l.startswith("## ")]
+    headings = [l[3:].strip() for l in PARKED.read_text(encoding="utf-8").splitlines()
+                if l.startswith("## ")]
+    # THE WHOLE TASK LIST, not this report's live subset. `task_items()` returns
+    # only the LIVE items, so deriving closure from it gave 0 closed and dropped
+    # nothing -- an instrument that cannot see the thing it is filtering on.
+    # `has_he_already_ruled_on_the_parked_2026-10-13.py` is the committed
+    # producer for exactly this question and parses every entry.
+    try:
+        triage = _load(REPO / "scripts" /
+                       "has_he_already_ruled_on_the_parked_2026-10-13.py",
+                       "parked_triage")
+        states = triage.task_states()
+        closed = {k for k, (st, _status) in states.items()
+                  if str(st).upper() in {"DONE", "WITHDRAWN"}}
+        known = set(states)
+    except Exception:                                    # pragma: no cover
+        return headings                                  # fail OPEN, never hide
+    if not closed:
+        return headings
+    live = []
+    for h in headings:
+        named = set(re.findall(r"\b([A-Z]{1,2}\d{1,4}[a-z]?)\b", h)) & known
+        if named and named <= closed:
+            continue
+        live.append(h)
+    return live
 
 
 SUPERSEDED = REPO / "experimental_notes" / "data" / "explanations_superseded.json"
@@ -186,6 +227,30 @@ def head_sha() -> str:
     r = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
                        cwd=str(REPO), capture_output=True, text=True)
     return (r.stdout or "").strip() or "unknown"
+
+
+#: The hard-coded session start this replaced, kept so the change is legible.
+_FALLBACK_SINCE = "2026-10-11T12:00:00+01:00"
+
+
+def _session_start() -> str:
+    """When did THIS session begin? Derived from the last `sv:` commit.
+
+    ★ IT WAS A HARD-CODED DATE AND IT WENT STALE (2026-10-15). The default was
+    2026-10-11T12:00, so "Work done this session" listed **67 commits spanning 4
+    days** -- 72 of the report's 376 lines -- and pushed the whole report past
+    the note standard's 300-line ceiling (Rule 10). A session boundary that is
+    typed once is a session boundary that is wrong from the next session on.
+
+    `sv` IS THIS PROJECT'S OWN SESSION MARKER, so the last `sv:` commit is the
+    boundary rather than a guess. Falls back to the old constant if no `sv:`
+    commit is reachable, so a shallow clone degrades to the previous behaviour
+    rather than to nothing.
+    """
+    r = subprocess.run(["git", "log", "--grep", "^sv:", "-1", "--pretty=%cI"],
+                       capture_output=True, text=True, cwd=str(REPO))
+    stamp = (r.stdout or "").strip()
+    return stamp if r.returncode == 0 and stamp else _FALLBACK_SINCE
 
 
 def work_done(since: str) -> list[tuple[str, str, str]]:
@@ -425,12 +490,15 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=()) -> s
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--since", default="2026-10-11T12:00:00+01:00",
-                    help="session start for the work-done ledger")
+    ap.add_argument("--since", default=None,
+                    help="session start for the work-done ledger; derived from "
+                         "the most recent `sv:` commit when omitted")
     ap.add_argument("--write", action="store_true", help="write the report files")
     ap.add_argument("--check", action="store_true",
                     help="verify every derived item has authored detail, and exit")
     args = ap.parse_args(argv[1:])
+    if args.since is None:
+        args.since = _session_start()
 
     items = task_items() + study_items()
     decs, missing, orphan = decisions(items)

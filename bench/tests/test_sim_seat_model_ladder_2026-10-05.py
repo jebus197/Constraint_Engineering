@@ -81,7 +81,34 @@ class TestThePremiseIsAlive:
         could not say which model replied, and provenance is precisely what the
         founder does want a name to carry.
         """
-        allowed = {"opus", "fable", "sonnet", "haiku"}
+        # ★ AMENDED 2026-10-15 ON THE SET'S OWN EVIDENCE STANDARD, which is a
+        # DISPATCH, not a belief. `claude-opus-4-8` was sent through the real
+        # `claude -p --model` on CLI 2.1.220 at 03:18 BST and answered; so did
+        # `claude-opus-4-7`. The 2 ids that do NOT answer on this CLI are
+        # recorded beside them so a reader does not have to re-probe to learn
+        # why they are absent: `claude-opus-5-5` returns "API Error: 400 Claude
+        # Code 2.1.220 does not support this model; version 2.1.280 or newer is
+        # required", and `claude-fable-5-1` wants 2.1.251.
+        #
+        # WHY A PINNED ID AND NOT THE ALIAS, for the 3 strong-vendor seats: an
+        # alias silently changes meaning when the CLI updates -- `opus` becomes
+        # `claude-opus-5-5` at 2.1.280 -- which would change a run's cost and
+        # its model mid-programme with nothing in the record saying so. The
+        # reason `opusplan` is excluded below is exactly this, in the set's own
+        # words: it "could not say which model replied, and provenance is
+        # precisely what the founder does want a name to carry". A pinned id
+        # carries MORE provenance than an alias, not less.
+        #
+        # FOUNDER'S RULING, 2026-10-15: "3 Opus 4.8 subagents, 1 Opus 5x and
+        # Fable". Sonnet and Haiku are retained as ADMISSIBLE here but are no
+        # longer used by `DEFAULT_LADDER`: Sonnet because of his 2026-09-07
+        # ruling ("Sonnet is its 'chatbot' cousin and significantly less
+        # capable"), Haiku because it already holds 3 harness roles --
+        # `immune_agents._CLASSIFIER_MODEL`, the `cc2_manager` dedup model and
+        # the default ouroboros reader -- so seating it as a REVIEWER would make
+        # one model both the classifier and a thing being classified.
+        allowed = {"opus", "fable", "sonnet", "haiku",
+                   "claude-opus-4-7", "claude-opus-4-8"}
         unknown = set(SHIM.DEFAULT_LADDER.values()) - allowed
         assert not unknown, (
             f"the ladder names model id(s) this project does not dispatch: {unknown}"
