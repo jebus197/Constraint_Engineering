@@ -647,6 +647,40 @@
           "why_it_is_not_the_severity_spec": "The section 7.7 severity governs RELEASE decisions at the A4 door, not finding GENERATION. A promoted severity cannot cause a seat to report fewer findings in a round. The seats are simulated subagents and are non-deterministic, so round-level finding counts vary between otherwise identical runs.",
           "the_consequence_for_attribution": "A difference between the 2 runs is therefore NOT automatically attributable to the flag, and with n = 2 the run-to-run variance cannot be estimated from the pair itself. This compounds the 31.27x under-powering already recorded: the contrast can only detect a LARGE effect, and the archive replay has already measured the effect as small (7 releases in 2,994 findings). Run 2's value is therefore confirmed as a MACHINERY test \u2014 does the switch compute, gate and report without fault, and does the run still converge \u2014 and not as an effect measurement.",
           "what_IS_attributable": "The deciding-layer mode, verified: 'SECTION 7.7 SPECIFICATION (deciding)' in run 2 against 'asserted (specification recorded only)' in run 1. Whether the promoted severity produces a fault, a crash, a key-property violation or a failure to converge is attributable to the flag, because those are properties of the mechanism rather than of the sample."
+        },
+        "the_key_property_was_never_exercised": {
+          "at": "2026-10-15T09:24:58+01:00",
+          "status": "\u2605 THE SHARPEST BOUND ON THIS ARM, and it was not visible before run 2",
+          "what_section_7_7_says": "Sev(f) = W(class) x confidence x V(verification) with V(True)=1.0, V(None)=0.5, V(False)=0.0. The appendix's own stated KEY PROPERTY is that a DISPROVED finding scores ZERO regardless of the model's confidence, so a tool outcome annihilates the model's number. That annihilation is what makes the specification structurally unlike a vote, and it is the reason promotion was asked for.",
+          "the_v_census_closes_in_both_runs": {
+            "run_1_round_3": {
+              "V_true": 15,
+              "V_none": 7,
+              "V_false": 0,
+              "total_findings": 22,
+              "closes": true
+            },
+            "run_2_round_3": {
+              "V_true": 14,
+              "V_none": 5,
+              "V_false": 0,
+              "total_findings": 19,
+              "closes": true
+            },
+            "parsed_with": "ast.literal_eval, not a regex \u2014 a regex that fails to match a key reports absence, and absence reads like zero"
+          },
+          "findings_with_a_disproved_verification": "0 of 41, Wilson [0.0000%, 8.5668%], Clopper-Pearson [0.0000%, 8.6044%]",
+          "cp_upper_cross_verified": "1 - 0.025^(1/41) closed form and mpmath at 40 digits both give 8.6044%, agreeing with statsmodels to 1e-9",
+          "what_run_2_DOES_establish": "The promoted severity COMPUTES, AGREES and BREAKS NOTHING: critical_spec equals critical_asserted at 12 in both runs, with 0 key_property_violations and 0 crossed downward, and the run still reached the gate.",
+          "what_run_2_DOES_NOT_establish": "That the key property WORKS. The annihilating input never occurred, so the specification's distinguishing term could not bite. crossed_downward being empty therefore has 2 causes rather than 1: the low base rate measured over the archive, AND the absence of any V_false finding.",
+          "and_it_is_B9_from_the_other_end": "A finding reaches V_false only when its falsifier RUNS and REFUTES. B9 measures the confinement guard refusing the falsifier's own review target 18 times per run on this target, so falsifiers here largely cannot reach a verdict at all. A verification that cannot run cannot produce the refutation the severity specification needs. The 2 findings are the same gap seen from opposite ends, and fixing B9 is the precondition for ever exercising the key property on this target.",
+          "producer": "scripts/the_severity_key_property_never_fired_2026-10-15.py"
+        },
+        "run_2_exercised_a_gate_path_run_1_never_reached": {
+          "at": "2026-10-15T09:24:58+01:00",
+          "observed": "Run 2 did NOT converge at round 3 where run 1 did. The gate refused: 'hardened REFUSED at R3: 1 contested finding(s) still in dispute, so the critical picture is not settled [gamma_crit=1.000, gamma_all diag=0.875]', in mode 'contested_blocked'. Every other condition was satisfied \u2014 gamma_crit 1.000, zero_crit_ok True, the location-keyed series tail [0, 0, 0], 0 unresolved criticals.",
+          "assessment": "CORRECT BEHAVIOUR, not a fault. A contested finding means the critical picture is genuinely unsettled and the gate declined to declare convergence on it. Run 1 had contested=0 at round 3 and converged. So running 2 runs bought coverage of a third gate path that 1 run could not reach, which is a benefit of the pair independent of the severity contrast.",
+          "a_note_on_the_watchdog": "The cy watchdog classified the refusal as TROUBLE. A correct refusal is not trouble, so that is a false positive in the watchdog's severity labelling. Recorded, not chased: it costs a notification and misleads nobody who reads the line itself."
         }
       },
       "headline": "THE SEVERITY ARM IS ANSWERED BY THE ARCHIVE REPLAY, NOT BY THE RUNS: promoting the section 7.7 severity changes 7 A4 releases across 2,994 archived findings, small because the release test's other half \u2014 a proven calculation \u2014 holds for only 295 of 2,994, 9.8531%, Wilson [8.8364%, 10.9726%]. Run 1's shadow reports 0 of 22 crossing downward, which is the EXPECTED outcome (probability 0.9498) and refutes nothing: 688 findings are needed before a zero is informative, so the 2-run contrast is under-powered by 31.27x. Run 2 therefore tests whether the switch BREAKS anything, not what it CHANGES."
@@ -930,7 +964,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T09:16:26+01:00",
+  "last_updated": "2026-10-15T09:24:58+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
