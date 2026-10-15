@@ -146,7 +146,10 @@ def main() -> int:
 
     import json
     out = {
-        "log": str(log.relative_to(REPO)),
+        # The run NAME, not the log path: `bench/logs/` is gitignored, so a full
+        # path here reads as a citation a reader could open and is not one.
+        "run": log.parent.name,
+        "log_note": "read from console.log inside that run directory under bench/logs/, which is gitignored",
         "guard_decisions": n,
         "payload_over_floor": [over_floor, n],
         "payload_over_floor_wilson": [lo1, hi1],

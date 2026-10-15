@@ -181,7 +181,26 @@ def main() -> int:
     print(f"  {collisions} SIM/REAL decision-field collisions -> the -SIM suffix is load-bearing")
     print(f"  fable found this on 2026-10-05 and it was NOT promoted: {not promoted}")
 
-    ok = (k == n_real and len(values_moved) == 0 and collisions == 0 and not promoted)
+    # ★ THE VERDICT NOW RECOGNISES THE REPAIRED STATE, 2026-10-15. This read
+    # `k == n_real and ... and not promoted`, which required the DEFECT to be
+    # present and so began failing the moment B7 was fixed and fable's producer
+    # promoted. A producer whose finding has been acted on should report the
+    # repair, not fail because the world improved. Both states are accepted and
+    # NAMED, so the output always says which one it is observing.
+    repaired = (k == 0 and len(values_moved) == 0 and collisions == 0 and promoted)
+    defect_present = (k == n_real and len(values_moved) == 0 and collisions == 0
+                      and not promoted)
+    ok = repaired or defect_present
+    print()
+    if repaired:
+        print("  STATE: REPAIRED. 0 real seats restamped, and fable's producer is")
+        print("  promoted into scripts/. B7's fix is holding.")
+    elif defect_present:
+        print("  STATE: DEFECT PRESENT, as first measured on 2026-10-15.")
+    else:
+        print("  STATE: NEITHER — the measurement does not match the defect or the")
+        print(f"  repair ({k} of {n_real} restamped, {len(values_moved)} values moved,")
+        print(f"  {collisions} collisions, promoted={promoted}). Investigate.")
     out = {
         "observed_at": "2026-10-15T08:19+01:00",
         "restamped": restamped,
@@ -195,12 +214,16 @@ def main() -> int:
         "prior_finding": {
             "by": "fable seat",
             "date": "2026-10-05",
-            "producer": str(harvested.relative_to(REPO)),
+            # Describe the harvest LOCATION; cite the PROMOTED copy. bench/logs/
+            # is gitignored, so the harvest path is not openable by a reader.
+            "harvest_location": "the 2026-10-05 fingerprint ladder review's sandbox harvest, under bench/logs/ which is gitignored",
+            "promoted_copy": "scripts/the_provenance_gate_reads_text_not_behaviour_2026-10-05.py",
             "promoted_to_scripts": live.exists(),
             "named_in_master_task_list": names_this,
         },
         "severity": "RECORD-ONLY today; DATA-BEARING if the -SIM suffix is ever dropped",
         "cause": "bench/reference_runner_v3.py:11324-11350 load-globs-all / save-writes-all",
+        "state": "REPAIRED" if (k == 0 and promoted) else "DEFECT_PRESENT",
         "all_assertions_hold": ok,
     }
     dest = REPO / "experimental_notes/evidence/fingerprint_restamp_2026-10-15.json"

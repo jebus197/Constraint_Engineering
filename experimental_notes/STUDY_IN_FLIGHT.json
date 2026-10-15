@@ -1082,6 +1082,17 @@
       "not_a_defect": "the 161 notes naming an OLDER standard are correct; the convention retains version-specific foot-lines",
       "found_by": "CC1 being wrong twice and chasing the contradiction with the pre-commit",
       "producer": "scripts/the_note_lint_ratchet_is_blind_to_the_stamp_2026-10-15.py"
+    },
+    {
+      "id": "the-sim-suffix-is-not-enforced-on-model-supplied-identifiers",
+      "added": "2026-10-15T11:20:37+01:00",
+      "priority": "HIGH",
+      "task_list_entry": "B11",
+      "severity": "PROVENANCE \u2014 a bare vendor name inside a finding identifier makes a simulated result greppable as a real one",
+      "measured": "run 2: 2 distinct identifiers, 64 instances, all Gemini-SIM_GEMINI_F00N; run 1: 0",
+      "mechanism": "the seat emitted GEMINI_F001..F005 as its own local identifiers; reference_runner_v3.py:4602 joins the seat label to them and carries the bare name through",
+      "why_the_test_must_stay_red": "greening it needs run 2's artefacts rewritten, which falsifies evidence, or exempted, which hides the gap",
+      "fix_proposed_not_applied": "normalise model-supplied local identifiers at the composition site, dropping a vendor token the seat label already carries in -SIM form"
     }
   ],
   "high_priority_2026_10_15": {
@@ -1134,7 +1145,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T10:09:19+01:00",
+  "last_updated": "2026-10-15T11:20:37+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
@@ -1159,5 +1170,25 @@
     ],
     "remaining": 1,
     "note": "Both are CLEAN by the gate's own hardened criterion. A third run would complete the criterion; the founder authorised 2, so whether to run a third is his."
+  },
+  "board_after_the_runs": {
+    "at": "2026-10-15T11:20:37+01:00",
+    "result": "33 failed, 11313 passed, 18 skipped in 3559.58 s, from python3 -m pytest bench/tests/ -q",
+    "before_the_runs": "1 failed, 11278 passed, 18 skipped in 3497.35 s",
+    "fixed_by_cc1": 21,
+    "honest_red_arithmetic": [
+      "test_task_list_burndown \u2014 7 gained against 4 closed"
+    ],
+    "honest_red_evidence": [
+      "test_sim_naming \u2014 run 2's artefacts must not be rewritten"
+    ],
+    "archive_grew_needs_his_ruling": [
+      "test_immune_memory_evaluation x3 \u2014 memory records 5 experiments, the suite describes 3",
+      "test_latent_tagger_evaluation x2 \u2014 20 tagged against 19 pinned",
+      "test_field_envelope_2026-10-04 x2 \u2014 archived replies now carry envelopes"
+    ],
+    "mechanical_outstanding": [
+      "test_precommit_gate_cost \u2014 the declaration needs refreshing from 510 to the collected count"
+    ]
   }
 }
