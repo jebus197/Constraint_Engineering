@@ -954,7 +954,14 @@
       "prior_finding_by": "fable seat, 2026-10-05, never promoted out of its sandbox",
       "not_fixed_because": "run in flight; the save path is live run machinery and fixes are SUGGESTED to HIL",
       "mitigation_applied": "restore the 5 real-seat files to HEAD after each run exits; commit only the 6 -SIM files",
-      "producer": "scripts/the_fingerprint_store_restamps_seats_it_never_measured_2026-10-15.py"
+      "producer": "scripts/the_fingerprint_store_restamps_seats_it_never_measured_2026-10-15.py",
+      "status": "FIXED, TESTED, COMMITTED 2026-10-15T09:48:57+01:00",
+      "fix_applied": {
+        "part_1": "_save_fingerprints writes only seats whose payload differs from what was loaded; _load_fingerprints snapshots by value with deepcopy",
+        "part_2": "fable's producer promoted to scripts/, 7,214 bytes unchanged under a provenance header, and it now reports the repair from its own output",
+        "part_3": "8 executing tests; 4 mutations turn it red (3, 5, 3, 3); 158 regression tests green",
+        "a_near_miss": "a first draft wrote copy.deepcopy, which parses but raises NameError because the module binds deepcopy by name and 'import copy' appears 0 times"
+      }
     },
     {
       "id": "the-confinement-guard-refuses-the-falsifiers-own-review-target",
@@ -1071,7 +1078,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T09:43:15+01:00",
+  "last_updated": "2026-10-15T09:48:57+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",

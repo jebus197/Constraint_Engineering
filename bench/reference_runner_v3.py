@@ -11323,6 +11323,11 @@ def _itc_build_recovery_prompt(
 # Fingerprints
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: What `_load_fingerprints` read, kept so `_save_fingerprints` can tell an
+#: OBSERVATION from a seat it merely loaded. See B7 below.
+_FINGERPRINTS_AT_LOAD: Dict[str, Dict[str, Any]] = {}
+
+
 def _load_fingerprints() -> Dict[str, Dict[str, Any]]:
     fingerprints: Dict[str, Dict[str, Any]] = {}
     FINGERPRINT_DIR.mkdir(parents=True, exist_ok=True)
@@ -11333,20 +11338,71 @@ def _load_fingerprints() -> Dict[str, Dict[str, Any]]:
             fingerprints[model_id] = data.get("observed", {})
         except (json.JSONDecodeError, OSError):
             pass
+    # Snapshot by VALUE. `deepcopy` rather than dict(): the runner mutates the
+    # per-seat payloads in place, so a shallow copy would alias them and the
+    # comparison at save time would always report "unchanged". The module
+    # imports `deepcopy` by name (`from copy import deepcopy`), so there is no
+    # `copy` binding to reach through -- a first draft here wrote
+    # `copy.deepcopy` and would have raised NameError on every run while
+    # parsing perfectly.
+    _FINGERPRINTS_AT_LOAD.clear()
+    _FINGERPRINTS_AT_LOAD.update(deepcopy(fingerprints))
     return fingerprints
 
 
 def _save_fingerprints(observed: Dict[str, Dict[str, Any]], experiment_name: str):
+    """Write only the seats this run actually OBSERVED.
+
+    ★ B7 (2026-10-15). This wrote EVERY key of `observed`, and `observed` comes
+    from `_load_fingerprints`, which globs every file in the directory. So the
+    last run to save re-attributed every profile it did not measure. Measured on
+    free run 1: all 11 files written at the convergence moment, restamping 5 of 5
+    REAL PAID SEATS -- CC2, ChatGPT, Codex, DeepSeek, Gemini -- none of which is
+    ever dispatched in a simulated run, and confirmed again on free run 2. The
+    true last real observation, `study_run1b_2026-10-03`, was overwritten in the
+    working tree both times.
+
+    THE `fable` SEAT FOUND THIS ON 2026-10-05 and named the mechanism exactly,
+    under its own heading "THE FINGERPRINT STORE ERASES RUN PROVENANCE ON EVERY
+    SAVE". Its producer was harvested into `bench/logs/` and never promoted, so
+    the defect survived 10 days and was rediscovered by watching a run restamp.
+
+    THE TEST IS ON THE DATA, NOT ON BOOKKEEPING. A seat is written when its
+    payload DIFFERS from what was loaded, or when it has no prior file at all.
+    Tracking "which seats were dispatched" separately would be a second source
+    of truth that can drift from the first; an unchanged payload means nothing
+    was observed, which is the question being asked.
+
+    IT IS RECORD-ONLY TODAY AND THE REASON IS LOAD-BEARING. 0 of 5 real seats
+    had any observed VALUE altered, because they were never dispatched and so
+    nothing was appended. What kept the records apart is the mandatory `-SIM`
+    suffix making `CC2-SIM` a different key from `CC2`. That naming rule is
+    therefore the sole guard on the real seats' accumulated counters --
+    `total_findings` 400 for CC2, `rounds_participated` 274, `D_decay`,
+    `quality_at_capacity` -- of which `compression_threshold`,
+    `decomposition_recommended` and `max_successful_prompt_chars` feed live
+    routing and decomposition decisions.
+    """
     FINGERPRINT_DIR.mkdir(parents=True, exist_ok=True)
     ts = datetime.now(timezone.utc).isoformat()
+    written, skipped = [], []
     for model_id, obs in observed.items():
+        prior = _FINGERPRINTS_AT_LOAD.get(model_id)
+        if prior is not None and prior == obs:
+            # Loaded and returned untouched: this run observed nothing about it,
+            # so stamping it with this run's name would be a false attribution.
+            skipped.append(model_id)
+            continue
         fp_data = {
             "model_id": model_id, "experiment": experiment_name,
             "timestamp": ts, "observed": obs,
         }
         fp_path = FINGERPRINT_DIR / f"{model_id}.json"
         fp_path.write_text(json.dumps(fp_data, indent=2), encoding="utf-8")
-    _log(f"  Fingerprints saved: {len(observed)} models -> {FINGERPRINT_DIR}")
+        written.append(model_id)
+    _log(f"  Fingerprints saved: {len(written)} observed -> {FINGERPRINT_DIR}"
+         + (f"; {len(skipped)} loaded-but-unobserved left untouched "
+            f"({', '.join(sorted(skipped))})" if skipped else ""))
     # Invalidate decomposition cache so next _should_decompose() call
     # sees the updated fingerprint data.
     _invalidate_fingerprint_cache()
