@@ -1069,6 +1069,19 @@
       "what": "The founder's confidence composition has 3 clauses and 2 are measurable from a run log. 'Syntax raises confidence' is not, because the classifier records a single confidence per classification with no pre-syntax value, so no before/after pair exists. Measured on run 1: 13 confidence values recorded, 0 of them paired.",
       "for_done": "log both the pre-syntax and the post-syntax confidence per classification",
       "producer": "scripts/haiku_as_classifier_at_run_scale_2026-10-15.py"
+    },
+    {
+      "id": "the-note-lint-ratchet-is-blind-to-the-standard-stamp",
+      "added": "2026-10-15T10:09:19+01:00",
+      "priority": "MEDIUM",
+      "task_list_entry": "B10",
+      "severity": "a GUARD BLIND TO A RULE CLASS \u2014 sound as a ratchet, incomplete as a detector",
+      "cause": "note_vagueness_lint.py fires NOTE_STANDARD_STAMP only under a directory named experimental_notes; hooks/pre-commit:375-392 flattens both sides into mktemp, so the rule fires on neither",
+      "measured": "4 of 6 sampled notes lose exactly that finding on a flat path; the same-directory copy agrees with the real path every time",
+      "what_slipped_past": "73 of 522 notes postdate the standard and name none, 13.9847%, Wilson [11.2717%, 17.2238%] \u2014 an UPPER BOUND, since several are working scratch files",
+      "not_a_defect": "the 161 notes naming an OLDER standard are correct; the convention retains version-specific foot-lines",
+      "found_by": "CC1 being wrong twice and chasing the contradiction with the pre-commit",
+      "producer": "scripts/the_note_lint_ratchet_is_blind_to_the_stamp_2026-10-15.py"
     }
   ],
   "high_priority_2026_10_15": {
@@ -1121,7 +1134,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-15T09:53:11+01:00",
+  "last_updated": "2026-10-15T10:09:19+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",
