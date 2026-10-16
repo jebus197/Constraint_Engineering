@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 15 October 2026 12:46 BST (2026-10-15T12:46:51+01:00)
+Generated: 16 October 2026 11:05 BST (2026-10-16T11:05:29+01:00)
 
 ---
 
@@ -18,20 +18,28 @@ Generated: 15 October 2026 12:46 BST (2026-10-15T12:46:51+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `82efc9b1` board: 24 of 33 fixed, and the rest classified in B11 rather than suppressed
-- **Committed:** 2026-10-15 11:24:47 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
+- **Last commit (the PARENT of the commit containing this file):** `5e2ba7ee` THE KEY PROPERTY BIT: leg 3 is the first run where a falsifier disproved anything
+- **Committed:** 2026-10-16 11:02:24 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 11
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M resources/MEMORY_EXCLUSIONS.md`
+- `M bench/fingerprints/CC2-SIM.json`
+- `M bench/fingerprints/ChatGPT-SIM.json`
+- `M bench/fingerprints/Codex-SIM.json`
+- `M bench/fingerprints/DeepSeek-SIM.json`
+- `M bench/fingerprints/Fable-SIM.json`
+- `M bench/fingerprints/Gemini-SIM.json`
+- `M bench/state/immune_memory.json`
+- `M experimental_notes/data/output_hashes.json`
+- `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**11371 tests collected** at 15 October 2026 12:46 BST, HEAD `82efc9b1` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**11469 tests collected** at 16 October 2026 11:05 BST, HEAD `5e2ba7ee` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -61,13 +69,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `82efc9b1 board: 24 of 33 fixed, and the rest classified in B11 rather than suppressed`
-- `dac69496 board: 3 more of the 33, and 2 of them were my notes citing what nobody can open`
-- `9148e0a3 board: fix 20 of the 33 failures, all of them mine`
-- `ce820098 sv: both free runs converged, B7 and B9 fixed, B10 found, programme down to arm5`
-- `cb732717 B10: the note-lint ratchet is blind to the standard stamp, by construction`
-- `21cb7e46 correct: the note lint is PATH-SENSITIVE, and my ratchet checks were unsound`
-- `d87fea07 tracker: advance the resume pointer — both runs done, both converged`
-- `87846b68 chore: carry the citation repairs the B9 hardening shifted`
-- `c9dcca45 harden B9: an unusable staged root now falls back loudly instead of crashing`
-- `90a9713d notes: the 2 free runs, technical and plain-English, with the TTS companion`
+- `5e2ba7ee THE KEY PROPERTY BIT: leg 3 is the first run where a falsifier disproved anything`
+- `c65aaa7f the answer to "why so many rulings": 11 of 13 are genuinely new, and that corrects what I implied last night`
+- `99e2c179 the `ruled` marker field: an item he has already ruled on is no longer a decision`
+- `84393b83 his question answered: 5 of the 13 decisions should not have been put to him, and the cause is the marker schema`
+- `4e6cb40c leg 3 closes: 38 findings, 71.5 min, and the closing sweep acted for the first time in 3 legs`
+- `3bc7c412 name the corpus: leg 3's own logs moved the figure the session had already quoted`
+- `4bbc84c5 LEG 3 CONVERGED: 3 of 3 consecutive clean convergences, the success criterion is met`
+- `4a4a1d74 notes: the session pair at 0 findings, and Rule 30 scoped to reporting after it refused a compliant note`
+- `7fad7911 Rule 30 had to be defended against 4 self-legitimising paths, the 4th only visible once it worked`
+- `baeb184c B6.1: the concise rendering was deleting 19 of 20 functions from the code under review`

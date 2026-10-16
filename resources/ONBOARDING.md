@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 15 October 2026 12:46 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 16 October 2026 11:05 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -38,6 +38,18 @@ of its 124 lines mentioning install, setup, prerequisite or dependency. The inst
 never the problem: it is 1214 lines, it was added on 2026-04-08, and a probe that replaced
 `subprocess.run` with a recorder caught it dispatching real `pip install` and `brew install`
 commands. The documents simply never routed anyone to it.
+
+## CURRENT STATE — 2026-10-16 11:04 BST
+
+**THE PROGRAMME OF STUDY IS ANSWERED AND ITS SUCCESS CRITERION IS MET.** All 12 measurements carry a result and a headline. 3 consecutive clean convergences achieved: legs 1, 2 and 3 of the shakedown converged at rounds 3, 4 and 4, all reaching gamma_critical 1.000. Leg 3 ran 5 rounds, 38 findings, 71.5 minutes. The study is still marked OPEN because closing it is the founder's ruling to give.
+
+**THE SECTION 7.7 KEY PROPERTY HAS BEEN EXERCISED FOR THE FIRST TIME.** Leg 3 carries 2 of 38 entries with a REFUTED falsifier verdict, 5.2632%, 95% Wilson [1.4554%, 17.2855%], against 0 of 41 across the 2 preceding legs. The annihilating term — a disproved finding scores zero regardless of the model's claim, which is what makes the scheme structurally unlike a vote — had never fired before, because the confinement mechanism was refusing falsifiers permission to read their own review target. That repair landed immediately before leg 3.
+
+**ARM 5 IS ANSWERED ON ITS SPEC-DELIVERY HALF.** 0 of 22 HARD blocks reached a live seat at commit `a2a0197`, against 22 of 22 at HEAD. Its finding-count half is unanswerable between those commits, for a documented reason with a precedent.
+
+**THE TASK MARKER NOW RECORDS A RULING.** A `ruled:` field was added on 2026-10-16 after the founder diagnosed an over-large HIL queue from the symptom alone. `state` and `status` both describe the WORK; nothing recorded that he had DECIDED, so a ruling not yet executed was indistinguishable from one never given. Measured: 5 of 13 decisions should not have been put to him, 38.4615%, 95% Wilson [17.7097%, 64.4771%]. The morning report now routes a ruled item into outstanding work carrying its date.
+
+**THE OPEN RULING THAT MATTERS MOST.** The mathematical guard refuses to move a finding onto the code-checking path outside software experiments, at any confidence. 408 of 539 recorded refusals were that move, and 5 fired inside leg 3. The repair narrows a guard, so the additive standard sends it to the founder.
 
 ## CURRENT STATE — 2026-10-08 11:09 BST
 

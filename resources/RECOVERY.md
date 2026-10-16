@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 15 October 2026 12:46 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 16 October 2026 11:05 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -2156,6 +2156,26 @@ context" regain had compressed five confer-round combined logs into a
 
 **NEXT, IN ORDER (founder, 2026-09-21):** write-back -> full scope for the study programme (base: `~/Desktop/CDSFL_Programme_of_Study_2026-09-17.txt`, 161 lines) -> panel brief -> paid panel review (£12 ceiling) -> fix what it finds -> simulated runs under FULL `cy` with cc2 and Fable in full CDSFL panel review mode.
 
+
+## SESSION STATE 2026-10-16T11:04:02+01:00 — THE SUCCESS CRITERION IS MET, THE KEY PROPERTY BIT, AND THE HIL QUEUE WAS PARTLY AN ARTEFACT
+
+**THE PROGRAMME OF STUDY IS ANSWERED.** All 12 measurements now carry a result and a headline, which is the condition `STUDY_IN_FLIGHT.json` sets in its own `closes_when`. The study is still marked OPEN because closing it is the founder's call. Arm 5, the last outstanding measurement, is answered on its spec-delivery half: **0 of 22 HARD blocks reached a LIVE seat at `a2a0197`, 95% Wilson [0.0000%, 14.8655%], against 22 of 22 now.** Its finding-count half is unanswerable between those 2 commits because the baseline predates the 2026-10-03 citation repair, which discarded 6 of 7 findings in round 0 for quoting a filename in backticks — the identical defect that stopped study run 1.
+
+**3 OF 3 CONSECUTIVE CLEAN CONVERGENCES.** Legs 1, 2 and 3 converged at rounds 3, 4 and 4, all reaching gamma_critical 1.000. Leg 3: runner v3.2, 5 rounds, 38 findings, 71.5 min, gamma final 0.359, reason `HARDENED_CONVERGED` with a leave-one-out minimum of 1.000. The gate refused once at round 3 on the A4 condition and that refusal was verified as a TRUE positive from the run's own severity census — round 0 carried 12 findings at or above 0.7 while rounds 1 to 3 peaked at 0.5.
+
+**★ THE SECTION 7.7 KEY PROPERTY HAS BITTEN FOR THE FIRST TIME.** Leg 3 carries **2 of 38 entries with a REFUTED falsifier verdict, 5.2632%, 95% Wilson [1.4554%, 17.2855%]**, against **0 of 41** across legs 1 and 2, 95% Wilson [0.0000%, 8.5668%]. C0018 and C0034. The annihilating term — a disproved finding scores zero whatever the model claimed — had never been exercised, and was blocked by the confinement fault that refused a falsifier permission to read its own review target. Independently visible in the immune memory: class 1's refutation weight rose 4.1503 to 9.7554 in that one run.
+
+**THE CLOSING SWEEP AND THE IN-ROUND ARM BOTH HAVE DATA AT LAST.** The sweep took 15 residuals and reported 0 cleared, 4 withdrawn, 9 remaining; legs 1 and 2 gave it nothing, which the founder ruled is not a fault. 2 in-round falsifiers executed.
+
+**THE HIL QUEUE WAS PARTLY MECHANICAL, AND HE DIAGNOSED IT FROM THE SYMPTOM.** Of 13 decisions put to him, 5 should not have been, 38.4615%, 95% Wilson [17.7097%, 64.4771%]. Cause: across 108 task markers the fields were exactly `task`, `state`, `status`, `evidence` — all describing the WORK, none recording that HE HAD RULED. R1 was ruled 2026-08-07 and again 2026-09-06 and still presented as a decision 70 days later. A `ruled:` field now exists, optional exactly as `evidence` is (0 of 107 markers parse differently), and the generator routes a ruled item into outstanding work carrying its date. **Queue 13 to 11.** Note also: rulings live in 29 dated documents created at 1.1469 per week over 177 days, and the one named the founder decision register has 3 commits and was last touched 2026-08-15.
+
+**BUT MOST OF THE QUEUE IS GENUINELY NEW,** which corrects CC1's first framing: 11 of 13 dated items were recorded on 15-16 October, only 2 predate the run, 15.3846% predating, 95% Wilson [4.3258%, 42.2346%].
+
+**FIXED THIS SESSION, each with mutation evidence.** The code-path guard is domain-independent (10 of 333 non-primary overrides had demoted a code claim off its only grounding path, 8 of them from exp38). Rule 30 refuses a coined term in a note, after being defended against 4 self-legitimising paths. The 7 archive-grew board failures derive their baselines. The concise rendering no longer deletes 19 of 20 functions from a code review. B7 and B9. And `_spoken()` now actually strips file paths — its docstring had promised that for months while 12 paths shipped to him in a spoken file, past a guard that checked one literal prefix.
+
+**NOT FIXED, AWAITING HIS RULING.** The mathematical guard blocks the Exp 38 rescue outside software: 408 of 539 guard blocks had a code destination, and 5 fired inside leg 3 itself. It NARROWS a guard, so the additive standard sends it to him.
+
+**SUITE.** 526 passed on the pre-commit gate at every commit this session.
 
 ## SESSION STATE 2026-09-21T01:58:07+01:00 — THE APPENDIX WON. NOW-1 to NOW-5 WORKED THROUGH OVERNIGHT.
 
