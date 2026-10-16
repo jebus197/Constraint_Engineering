@@ -289,6 +289,23 @@ flags all 85 pairs at 47% precision, which is the base rate.
 
 ---
 
+> **★★★ STAGE 3 IS UNBLOCKED — FOUNDER RULING, 2026-10-16.** His words: *"The fact that
+> the answer keys were public for a very brief time has already been answered also and has
+> been ruled as not significant. It is highly unlikely that anyone ever saw them, including
+> the models. Verdict: strike from the list of reoccurring issues also."*
+>
+> **So exp50, exp51 and the 4 exp52 cells are no longer blocked on a ruling.** This was the
+> longest-standing open item in the project, requested 2026-08-08 and carried 69 days.
+>
+> **THE DATE IS 2026-10-16 AND NOT EARLIER, stated because he believed it was already
+> answered.** 570 annotations searched: 2 touch the question and only today's rules on the
+> exposure. The 2026-08-22 founder rulings cover 9 items and this is not among them, and
+> `Handover_Decisions_2026-08-24.md` item FOUR records it as outstanding with 3 options.
+>
+> **THE CONDITION THAT TRAVELS WITH IT.** Of those 3 options he has taken the first,
+> *accept the exposure and report it*. The reporting half is part of the option: if these
+> are published as blind exams, the exposure window is disclosed with the result.
+
 ## STAGE 3 — THE REMAINING ARC
 
 | # | Run | Config | STATUS |
