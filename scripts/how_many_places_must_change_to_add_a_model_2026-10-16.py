@@ -155,6 +155,10 @@ def method_b(models: list[str]) -> dict:
     from cdsfl_registry import composer as C  # noqa: PLC0415
     import runner_core as rc  # noqa: PLC0415
 
+    def _runner_source() -> str:
+        return (REPO / "bench" / "reference_runner_v3.py").read_text(
+            errors="replace")
+
     known = models[0]
     steps: list[dict] = []
 
@@ -190,10 +194,50 @@ def method_b(models: list[str]) -> dict:
     record("initial fingerprint (runner_core.INITIAL_FINGERPRINTS)",
            lambda m: rc.INITIAL_FINGERPRINTS.get(m),
            silent_default_when=lambda g: g is None)
-    record("directive composition (composer.compose)",
-           lambda m: type(C.compose(
-               "mathematics", C.COMPOSER_MODEL_MAP.get(m, m),
-               coherence_pruning=False)).__name__)
+    # ★ CORRECTED 2026-10-16 ON CC2'S FINDING. This step used to be classified
+    # as a loud RAISE, because `compose` does raise in isolation. In the LIVE
+    # chain it is CAUGHT: `_dispatch_single_model_inner` wraps the call and its
+    # handler logs "COMPOSER FALLBACK for <seat>" and continues on a degraded
+    # prompt. So the run does not halt, and counting it as loud understated the
+    # silent-degradation share.
+    _composer_caught = "COMPOSER FALLBACK for" in _runner_source()
+    if _composer_caught:
+        steps.append({
+            "step": "directive composition (composer.compose) -- CAUGHT by the "
+                    "dispatcher, run continues on a degraded prompt",
+            "outcome": "SILENT DEGRADE",
+            "detail": "compose() raises, but _dispatch_single_model_inner's "
+                      "handler logs COMPOSER FALLBACK and carries on",
+        })
+    else:
+        record("directive composition (composer.compose)",
+               lambda m: type(C.compose(
+                   "mathematics", C.COMPOSER_MODEL_MAP.get(m, m),
+                   coherence_pruning=False)).__name__)
+
+    # ★ THE TABLES THE STRUCTURAL FILTER MISSED, added on CC2's finding. Both
+    # are keyed on COMPOSER keys (`opus_4_6`) rather than roster labels, so a
+    # scan looking for 2 or more current roster names as keys skips them
+    # entirely -- the filter's own blind spot.
+    record("coherence budget table keyed on composer keys",
+           lambda m: C.MODEL_COHERENCE_BUDGETS.get(C.COMPOSER_MODEL_MAP.get(m, m)),
+           silent_default_when=lambda g: g is None)
+    record("phenotype transform table keyed on composer keys",
+           lambda m: (getattr(C, "PHENOTYPE_TRANSFORMS", {})
+                      .get(C.COMPOSER_MODEL_MAP.get(m, m))),
+           silent_default_when=lambda g: g is None)
+
+    # ★ THE WORST SINGLE INSTANCE, which the original 7 steps missed entirely.
+    # `runner_core.py` reads the context budget as
+    # `MODEL_SPECS.get(_spec_key(label), {}).get("L", float("inf"))`, and the
+    # next line gates on `estimated_tokens > model_L`. A missing entry therefore
+    # sets L to INFINITY and the gate can NEVER fire -- a capability gate that
+    # silently becomes a no-op. `_spec_key`'s own docstring names this hazard.
+    def _context_budget(m):
+        return rc.MODEL_SPECS.get(rc._spec_key(m), {}).get("L", float("inf"))
+    record("context-budget ceiling L (runner_core.MODEL_SPECS)",
+           _context_budget,
+           silent_default_when=lambda g: g == float("inf"))
 
     # A per-model registry file is a FILE, not a dict entry, so it is checked
     # as one. Its absence is what makes `compose` raise above.
@@ -204,9 +248,20 @@ def method_b(models: list[str]) -> dict:
         "outcome": "MISSING FILE" if NEW_MODEL not in present else "PASS",
         "detail": f"present: {present}",
     })
-    counts = {k: sum(1 for s in steps if s["outcome"] == k)
-              for k in ("PASS", "SILENT DEFAULT", "RAISE", "MISSING FILE")}
-    return {"steps": steps, "counts": counts, "step_total": len(steps)}
+    # ★ EVERY OUTCOME IS COUNTED, 2026-10-16. The first version tallied only 4
+    # categories while emitting a 5th, "SILENT DEGRADE", so 1 of 10 steps was
+    # reported and not counted -- the same shape of defect this script exists to
+    # find. The assertion below refuses to print a total that does not add up.
+    OUTCOMES = ("PASS", "SILENT DEFAULT", "SILENT DEGRADE", "RAISE",
+                "MISSING FILE")
+    counts = {k: sum(1 for s in steps if s["outcome"] == k) for k in OUTCOMES}
+    unknown = sorted({s["outcome"] for s in steps} - set(OUTCOMES))
+    assert not unknown, f"uncounted outcome(s): {unknown}"
+    assert sum(counts.values()) == len(steps), (counts, len(steps))
+    silent = counts["SILENT DEFAULT"] + counts["SILENT DEGRADE"]
+    loud = counts["RAISE"] + counts["MISSING FILE"]
+    return {"steps": steps, "counts": counts, "step_total": len(steps),
+            "silent": silent, "loud": loud}
 
 
 def main() -> int:
@@ -243,15 +298,15 @@ def main() -> int:
         print(f"                  {s['detail'][:150]}")
     c = b["counts"]
     print()
-    print(f"  PASS {c['PASS']}   SILENT DEFAULT {c['SILENT DEFAULT']}   "
-          f"RAISE {c['RAISE']}   MISSING FILE {c['MISSING FILE']}   "
-          f"of {b['step_total']} steps")
+    print("  " + "   ".join(f"{k} {v}" for k, v in c.items())
+          + f"   of {b['step_total']} steps")
     n = b["step_total"]
-    k = c["SILENT DEFAULT"]
+    k = b["silent"]
     from statsmodels.stats.proportion import proportion_confint
     lo_w, hi_w = proportion_confint(k, n, alpha=0.05, method="wilson")
     lo_e, hi_e = proportion_confint(k, n, alpha=0.05, method="beta")
-    print(f"  steps that FAIL SILENTLY: {k} of {n} ({100*k/n:.4f}%, "
+    print(f"  steps that FAIL SILENTLY (default or degrade): {k} of {n} "
+          f"({100*k/n:.4f}%, "
           f"Wilson [{100*lo_w:.4f}%, {100*hi_w:.4f}%], "
           f"Clopper-Pearson [{100*lo_e:.4f}%, {100*hi_e:.4f}%])")
     print()
@@ -265,8 +320,8 @@ def main() -> int:
     print()
     print("  THE REAL PROBLEM IS NOT THE COUNT, IT IS THE FAILURE MODE. Of the "
           f"{n} steps")
-    print(f"  a new seat passes through, {k} default SILENTLY and only "
-          f"{c['RAISE'] + c['MISSING FILE']} fail loudly. A")
+    print(f"  a new seat passes through, {k} fail SILENTLY and only "
+          f"{b['loud']} fail loudly. A")
     print("  researcher who misses a table gets a seat that RUNS while losing")
     print("  whatever that table gated -- the class `base_model_label`'s own")
     print("  docstring calls \"a capability lost with no error\", recorded 8 times")
