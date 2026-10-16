@@ -87,6 +87,9 @@ def task_items() -> list[dict]:
             # THE DISTINCTION THE HAND-WRITTEN REPORT LOST on A19.
             "already_built": built,
             "evidence": list(r.evidence),
+            # ★ CARRIED SO A RULING CANNOT BE RE-ASKED (2026-10-16). See the
+            # routing at the assembly below.
+            "ruled": r.ruled,
             "headline": _first_sentence(r.text),
         })
     return out
@@ -344,6 +347,18 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
     A("")
     for o in outstanding:
         extra = f" — ruling on record: {o['founder_ruling']}" if o.get("founder_ruling") else ""
+        # The marker's own `ruled:` date, shown so a ruled-but-unexecuted item
+        # reads as "you ruled this, the work is outstanding" rather than as a
+        # mystery that quietly left the decision list.
+        if o.get("ruled"):
+            extra += f" — **YOU RULED THIS ON {o['ruled']}; the work is outstanding**"
+        # ★ THE BUILT STATE TRAVELS WITH THE ITEM INTO SECTION 3 (2026-10-16).
+        # The mislabel that caused this generator to exist was calling A19
+        # unbuilt when its marker read TESTED. Routing a ruled item out of the
+        # decision list would have reproduced exactly that mislabel one section
+        # further down, because only section 1 rendered the state.
+        if o.get("already_built"):
+            extra += f" — already BUILT and TESTED (`{o.get('status')}`)"
         A(f"- **{o['ident']}** ({o['source']}){extra}")
         A(f"  {o['headline']}")
     A("")
@@ -393,6 +408,41 @@ def _spoken(text: str) -> str:
     """
     t = text.replace("**", "").replace("*", "")
     t = re.sub(r"`([^`]*)`", lambda m: m.group(1), t)
+
+    # ★ THE PATH STRIP WAS DESCRIBED AND NEVER IMPLEMENTED (found 2026-10-16).
+    #
+    # The docstring above has always promised that "FILE PATHS ... are dropped
+    # entirely, because note standard Rule 6 forbids spelling paths
+    # phonetically". The body did no such thing: it removed emphasis, unwrapped
+    # backticks and replaced em-dashes, and every path in the authored detail
+    # passed straight through into the spoken file.
+    #
+    # MEASURED on the file actually delivered to the founder on 2026-10-16: 12
+    # path-like tokens, among them `scripts/the_coherence_recalibration_is_inert_
+    # three_ways_2026-10-15.py` and `experimental_notes/evidence/coherence_
+    # recalibration_inert_2026-10-15.json`, which a text-to-speech reader
+    # pronounces character by character.
+    #
+    # THE GUARD DID NOT CATCH IT EITHER, because it asserted on ONE literal
+    # prefix, `bench/tests/`. 11 of the 12 leaked tokens do not start with that
+    # prefix, so the test passed while the defect shipped. Same shape as a module
+    # that describes itself consistently: the description and the code agreed
+    # with each other and both were wrong.
+    #
+    # A LABELLED CLAUSE IS DROPPED WHOLE, because deleting only the path leaves
+    # "guard: , 13 tests" -- wreckage, which is what
+    # `feedback_no_mechanical_tts` forbids. A bare path is dropped and the
+    # punctuation around it tidied.
+    t = re.sub(
+        r"(?:[;.]\s*)?\b(?:Producer|Producers|Guard|Guards|Evidence|Script|"
+        r"Scripts|Rule|Pinned by a test|Held by)\b\s*:?\s*[^.;]*?"
+        r"[\w./-]*/[\w.-]+\.(?:py|json|md|txt|toml)[^.;]*", "", t)
+    t = re.sub(r"[\w./-]*/[\w.-]+\.(?:py|json|md|txt|toml)", "", t)
+    t = re.sub(r"\(\s*\)", "", t)
+    t = re.sub(r"\s*,\s*,", ",", t)
+    t = re.sub(r"\s+([,.;])", r"\1", t)
+    t = re.sub(r"([,;])\s*\.", ".", t)
+
     t = t.replace(" — ", ", ").replace("—", ", ").replace(" – ", ", ")
     t = re.sub(r"\s+", " ", t)
     return t.strip()
@@ -449,6 +499,11 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=()) -> s
     for o in outstanding:
         A(_spoken(o.get("title") or o["ident"]) + ".")
         A("")
+        # Spoken aloud, so he hears that he already settled it and on what date.
+        if o.get("ruled"):
+            A(f"You ruled on this on {o['ruled']}. The work is outstanding, "
+              f"not the decision.")
+            A("")
         A(_spoken(o.get("what", o.get("headline", ""))))
         if o.get("why"):
             A("")
@@ -520,6 +575,28 @@ def main(argv: list[str]) -> int:
     # anything whose authored detail marks it as needing no ruling moves to section 3
     outstanding += [d for d in decs if d.get("no_ruling_needed")]
     decs = [d for d in decs if not d.get("no_ruling_needed")]
+
+    # ★ AN ENTRY HE HAS ALREADY RULED ON IS NOT A DECISION (2026-10-16).
+    #
+    # HIS QUESTION: *"are you certain none of these are items I have previously
+    # ruled on? This seems an unusually large HIL queue, which traditionally has
+    # been a strong indicator of mechanical, and/or implementation/process
+    # failure."* It was. 5 of the 13 put to him should not have been, 38.4615%,
+    # 95% Wilson [17.7097%, 64.4771%].
+    #
+    # `state` is lifecycle and `status` is build state; BOTH describe the work.
+    # Until the `ruled` marker field existed there was nothing to read, so a
+    # ruling he had given and that was not yet executed was indistinguishable
+    # from one he had never seen. R1: ruled 2026-08-07 and again 2026-09-06, and
+    # 70 days later it still appeared under "decisions that need you".
+    #
+    # IT MOVES, IT DOES NOT VANISH. A ruled item goes to section 3 carrying the
+    # DATE he ruled, so he reads "you ruled this on X, the work is outstanding"
+    # rather than losing sight of it. Silently dropping it would replace a queue
+    # that over-asks with a queue that under-reports, which is worse.
+    ruled_now = [d for d in decs if d.get("ruled")]
+    outstanding += ruled_now
+    decs = [d for d in decs if not d.get("ruled")]
 
     owed, superseded = explanations_owed()
     parked = parked_items()

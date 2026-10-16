@@ -260,7 +260,19 @@ class TestTheTTSVersionIsSpeakable:
     def test_it_omits_file_paths_rather_than_spelling_them(self):
         """Rule 6 forbids phonetic path spelling. The markdown carries the locators."""
         t = self._tts()
-        assert "bench/tests/" not in t
+        # ★ THE PREDICATE WAS ONE LITERAL PREFIX AND IT LET THE DEFECT SHIP
+        # (corrected 2026-10-16). `_spoken()`'s docstring promised that file
+        # paths "are dropped entirely" and the body never stripped one.
+        # Measured on the file actually delivered to the founder: 12 path-like
+        # tokens, of which 11 do NOT begin with `bench/tests/`, so this
+        # assertion passed while a text-to-speech reader was being handed
+        # `scripts/the_coherence_recalibration_is_inert_three_ways_2026-10-15.py`
+        # to pronounce character by character. It now tests the general shape.
+        import re as _re
+        leaked = _re.findall(r"[\w./-]*/[\w.-]+\.(?:py|json|md|txt|toml)", t)
+        assert not leaked, (
+            f"{len(leaked)} path(s) would be spelled aloud: "
+            f"{sorted(set(leaked))[:6]}")
         assert "**State.**" not in t and "State." not in t.split("SECTION 2")[0][:200]
 
     def test_it_carries_every_decision_with_its_options(self):

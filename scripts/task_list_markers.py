@@ -83,9 +83,36 @@ ENTRY = re.compile(r"^\*\*((?:[A-Z]{1,2})?\d+(?:\.\d+)?[a-z]?)(?:\.\*\*|\*\*|\.|
 #:
 #: The field is optional in the REGEX and required by the suite guard, so adding
 #: it cannot break an entry that predates it while a DONE entry without it fails.
+#: WHY `ruled` WAS ADDED (2026-10-16), and it closes a defect the founder
+#: predicted from the symptom. He asked: *"Of the 13 decisions, are you certain
+#: none of these are items I have previously ruled on? This seems an unusually
+#: large HIL queue, which traditionally has been a strong indicator of
+#: mechanical, and/or implementation/process failure."* It was.
+#:
+#: THE GAP. `state` is lifecycle (OPEN/DONE/BLOCKED/WITHDRAWN) and `status` is
+#: build state (PROPOSED/BUILT/TESTED/COMMITTED/ENABLED). BOTH describe the
+#: WORK. Nothing recorded whether the FOUNDER HAD RULED. So a ruling he gave
+#: that was not immediately executed left its entry indistinguishable from one
+#: he had never seen, and the morning report re-presented it as a decision.
+#:
+#: MEASURED 2026-10-16: of the 13 decisions put to him, 5 should not have been,
+#: 38.4615%, 95% Wilson [17.7097%, 64.4771%]. R1 is the clearest: he ruled
+#: "Restart it" on 2026-08-07 and again on 2026-09-06, and 70 days later the
+#: marker still read BLOCKED/PROPOSED and the item still presented as a decision.
+#: Separately, rulings live in 29 dated documents in `experimental_notes/`
+#: created at 1.1469 per week over 177 days, and the one named
+#: `CDSFL_Founder_Decision_Register_2026-07-06.md` has 3 commits and was last
+#: touched 2026-08-15 -- so no canonical register exists to consult either.
+#:
+#: THE FIELD IS OPTIONAL, exactly as `evidence` is and for the same stated
+#: reason: adding it cannot break an entry that predates it. Verified before the
+#: change rather than after -- 0 of 107 existing markers parse differently under
+#: the new pattern, and 0 evidence values contain a pipe, which is what makes
+#: bounding the evidence group at `|` safe.
 MARKER = re.compile(
     r"^<!--\s*task:\s*(\S+)\s*\|\s*state:\s*(\w+)\s*\|\s*status:\s*(\w+)"
-    r"(?:\s*\|\s*evidence:\s*([^>]*?))?\s*-->")
+    r"(?:\s*\|\s*evidence:\s*([^>|]*?))?"
+    r"(?:\s*\|\s*ruled:\s*([^>|]*?))?\s*-->")
 
 #: Lines that LOOK like entries but are prose opening with a number in bold.
 #: Listed explicitly rather than filtered by a heuristic, so that adding a real
@@ -101,6 +128,11 @@ class Entry:
     state: str | None
     status: str | None
     evidence: tuple = ()
+    #: The date the FOUNDER RULED on this entry, or None if he has not. A
+    #: DEFAULT is given deliberately: `parse_entries` and every other caller
+    #: constructs `Entry` positionally with 6 arguments, so a 7th field without
+    #: a default would break ~20 importers at once.
+    ruled: str | None = None
 
 
 def _is_entry(line: str) -> bool:
@@ -143,13 +175,15 @@ def parse_entries(path: Path = LIST) -> list[Entry]:
         ident = ENTRY.match(line).group(1)
         state = status = None
         evidence: tuple = ()
+        ruled: str | None = None
         if i + 1 < len(lines):
             m = MARKER.match(lines[i + 1])
             if m:
                 state, status = m.group(2), m.group(3)
                 raw = (m.group(4) or "").strip()
                 evidence = tuple(x.strip() for x in raw.split(",") if x.strip())
-        out.append(Entry(ident, i + 1, line, state, status, evidence))
+                ruled = (m.group(5) or "").strip() or None
+        out.append(Entry(ident, i + 1, line, state, status, evidence, ruled))
     return out
 
 
