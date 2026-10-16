@@ -1858,6 +1858,41 @@ class RunnerConfig:
     # decision and must be made per experiment, deliberately, never inherited.
     immune_memory_consume_rk0: bool = False
     immune_memory_path: str = "bench/state/immune_memory.json"
+
+    # ★ STATE SCOPE BETWEEN EXPERIMENTS — HIS RULING, 2026-10-16.
+    #
+    # ON THE IMMUNE MEMORY, verbatim: *"We reset immune memory for the upcoming
+    # live experiments, since simulation can probably only tell us so much about
+    # how this facility will function in real live/paid experiments. There should
+    # be a facility for researchers to select a switch in the upcoming UX build
+    # if they want immune memory to persist between different experiments, or if
+    # they want it to be reset between experiments. For us in our upcoming use
+    # case, since our models won't change ... probably the best strategy is to
+    # leave the default in this case set to on, so that it can persist between
+    # experiments?"*
+    #
+    # So the DEFAULT IS PERSIST, which is also the behaviour that existed before
+    # this field, making the addition behaviour-preserving. The one-off reset he
+    # ordered for the upcoming live experiments is a separate act on the store,
+    # not a default: `scripts/reset_experiment_scoped_state_2026-10-16.py`.
+    immune_memory_scope: str = "persist"      # "persist" | "experiment"
+
+    # ON THE FINGERPRINTS, verbatim: *"The fingerprints should be recomputed in
+    # the first/blind run of any experiment anyway. So they should be reset after
+    # the next live experiment runs. Please make sure that is the case and that
+    # is how this facility will work?"*
+    #
+    # IT WAS NOT THE CASE. Measured 2026-10-16: `_save_fingerprints` takes
+    # max(stored, new), so a seat's recorded maximum only ever rises, and nothing
+    # anywhere reset or scoped them. The 4 paid seats' records had not moved in
+    # 185 days and still carried a figure identical across all 4.
+    #
+    # THIS DEFAULT THEREFORE CHANGES BEHAVIOUR, deliberately and on his
+    # instruction: a run starts from no observations and measures afresh in its
+    # blind round. `_load_fingerprints` keeps its own default of "persist" so
+    # that every other caller is untouched; the policy lives here, where he can
+    # switch it.
+    fingerprint_scope: str = "experiment"     # "experiment" | "persist"
     # ρ (rho) — appendix §1.5 memory blending weight in π(k) = (1-ρ)·π_base +
     # ρ·π_mem(k). 0.0 = ignore memory entirely (blended prior collapses to
     # π_base, i.e. byte-identical to consumption-off). Default 0.2 matches
@@ -11328,9 +11363,25 @@ def _itc_build_recovery_prompt(
 _FINGERPRINTS_AT_LOAD: Dict[str, Dict[str, Any]] = {}
 
 
-def _load_fingerprints() -> Dict[str, Dict[str, Any]]:
+def _load_fingerprints(scope: str = "persist") -> Dict[str, Dict[str, Any]]:
+    """Observed per-seat fingerprints, or none at all under experiment scope.
+
+    `scope="experiment"` returns an EMPTY mapping, so the run measures its seats
+    afresh in its blind round rather than inheriting observations from earlier
+    experiments. The snapshot below is still taken, and taken EMPTY, so the
+    save-time comparison correctly treats every seat as changed and writes what
+    this run actually observed.
+
+    The parameter defaults to "persist", which is the behaviour that existed
+    before it, so no existing caller changes. The runner passes
+    `cfg.fingerprint_scope`, which defaults to "experiment" on his ruling of
+    2026-10-16.
+    """
     fingerprints: Dict[str, Dict[str, Any]] = {}
     FINGERPRINT_DIR.mkdir(parents=True, exist_ok=True)
+    if scope == "experiment":
+        _FINGERPRINTS_AT_LOAD.clear()
+        return fingerprints
     for fp_file in FINGERPRINT_DIR.glob("*.json"):
         try:
             data = json.loads(fp_file.read_text(encoding="utf-8"))
@@ -16785,7 +16836,13 @@ def _build_rk0_prior(
         return None, receipt
     try:
         from bench.dm._memory import ImmuneMemory
-        mem = ImmuneMemory.load(str(Path(REPO_ROOT) / cfg.immune_memory_path))
+        if getattr(cfg, "immune_memory_scope", "persist") == "experiment":
+            # Experiment scope: start from no priors, so this run's R_k(0) rests
+            # on what THIS experiment observes. His ruling of 2026-10-16.
+            mem = ImmuneMemory()
+            _log("  immune memory: EXPERIMENT scope — starting from no priors")
+        else:
+            mem = ImmuneMemory.load(str(Path(REPO_ROOT) / cfg.immune_memory_path))
         rho = max(0.0, min(1.0, float(getattr(cfg, "immune_memory_rho", 0.2))))
     except Exception as exc:  # noqa: BLE001 — never kill a run over a prior
         _log(f"  WARNING: immune memory load failed ({exc}); "
@@ -17401,7 +17458,8 @@ def run_experiment(
              f"refutation tally will count SEATS, which over-counts dissent")
 
     # Fingerprints
-    observed_fingerprints = _load_fingerprints()
+    observed_fingerprints = _load_fingerprints(
+        getattr(cfg, "fingerprint_scope", "persist"))
 
     # Resume
     start_round = 0
