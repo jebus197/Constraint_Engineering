@@ -12,6 +12,16 @@ Two things that had never been exercised were exercised. The closing sweep was h
 
 The gate also refused once, at round 3, while both of its conditions already held. That refusal was checked rather than assumed: round 0 produced 13 findings of which 12 carry severity at or above 0.7, while rounds 1, 2 and 3 produced a maximum severity of 0.5 and no criticals at all. So the blocker was one of round 0's genuine criticals and the refusal was correct. Leg 2 took the identical path.
 
+## The result I missed in the first brief, and it is the most important one
+
+Leg 3 is the first run in the programme where a falsifier actually disproved something. Its catalogue carries 2 entries of 38 with a refuted falsifier verdict, 5.2632%, on a 95 per cent interval from 1.4554% to 17.2855%. Legs 1 and 2 together carried 0 of 41, on an interval from 0% to 8.5668%.
+
+That matters because the whole distinguishing feature of the section 7.7 severity specification is that a disproved finding scores zero regardless of what the model claimed. A tool outcome annihilating the model's number is what makes it structurally unlike a vote. Until last night that term had never been exercised, and it was blocked by the confinement fault that refused a falsifier permission to read the very document it was asked to review. That fault was repaired before leg 3 launched, and leg 3 is the evidence the repair worked.
+
+It also shows up independently in the immune memory. Flaw class 1's decayed refutation weight rose from 4.1503 to 9.7554 in that single run, which is roughly 6 fresh refutations, and the ratio of confirmations to terminal decisions for that class fell from 0.9254 to 0.8356. A test that had asserted this ratio stays above 0.9, on the premise that the pipeline confirms and never refutes, correctly failed. It has been re-derived to assert the structural claim instead, plus a ratchet that now catches a return to a confirm-only pipeline, which the old numeric floor would have reported as healthy.
+
+I did not have this in the first version of this brief, because the figures measured were the ones covering the whole archive rather than leg 3's own falsifier verdicts. It is the single clearest piece of evidence that the last 15 days of repairs did what they were meant to do.
+
 ## Why it produced so many rulings, measured rather than asserted
 
 The honest answer has 3 parts, and the first one corrects what I implied to you last night.

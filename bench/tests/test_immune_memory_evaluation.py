@@ -278,10 +278,48 @@ class TestWhatTheMemoryHolds:
 
         mem = _memory_on_disk()
         well_populated = [fc for fc, r in mem._records.items() if r.total >= 5]
+
+        # ★ RE-DERIVED 2026-10-16, AND THE OLD FLOOR FELL BECAUSE A REPAIR
+        # WORKED, not because anything regressed.
+        #
+        # This asserted π_mem > 0.9 for every well-populated class, on the
+        # docstring's premise that the rate is "near 1 by construction in a
+        # CONFIRM-only pipeline". Class 1 fell to 0.8356 when leg 3 landed, and
+        # the cause is the point of the whole exercise: REFUTATIONS NOW HAPPEN.
+        # Class 1's decayed refutation weight rose from 4.1503 to 9.7554 in that
+        # one run, and leg 3's own catalogue carries 2 of 38 entries with a
+        # REFUTED falsifier verdict, 5.2632%, 95% Wilson [1.4554%, 17.2855%],
+        # against 0 of 41 across legs 1 and 2, 95% Wilson [0.0000%, 8.5668%].
+        # The confinement repair of 2026-10-15 is what let a falsifier read the
+        # document it was asked to review, so the pipeline stopped being
+        # confirm-only.
+        #
+        # A NUMERIC FLOOR WOULD NOW HAVE TO BE LOWERED AFTER EVERY SUCCESSFUL
+        # RUN, which is the stale-pin shape this suite has already been
+        # corrected for 3 times. So the assertions below are the 2 claims the
+        # docstring actually makes, and the second is STRONGER than the floor it
+        # replaces: it catches a regression BACK to a confirm-only pipeline,
+        # which a 0.9 floor would have reported as healthy.
+        assert excluded > 0, "already asserted above; kept for the reader"
         for fc in well_populated:
-            assert mem.pi_mem(fc) > 0.9, (
-                f"class {fc} π_mem={mem.pi_mem(fc):.4f} — the near-unanimous "
-                f"rate this caveat explains no longer holds; re-derive it")
+            pi = mem.pi_mem(fc)
+            assert 0.0 <= pi <= 1.0, f"class {fc} π_mem={pi!r} is not a ratio"
+
+        # THE STRUCTURAL CLAIM: π_mem is a terminal confirm-or-refute ratio, so
+        # a class carrying refutations must score strictly below 1.
+        refuting = [fc for fc, r in mem._records.items() if (r.rejected or 0) > 0]
+        for fc in refuting:
+            assert mem.pi_mem(fc) < 1.0, (
+                f"class {fc} carries refutations yet π_mem is 1.0 — the ratio is "
+                f"no longer reading the refute side")
+
+        # THE RATCHET: refutations have been observed, so a return to a
+        # confirm-only pipeline is a regression and must fail here.
+        assert refuting, (
+            "NO class carries any refutation weight. Refutations were observed "
+            "from leg 3 onward, so this means falsifiers have stopped reaching "
+            "a refutation — the confinement defect of 2026-10-15, or one like "
+            "it, is back")
 
     def test_experiments_seen_counts_appearances_not_observations(self):
         """A flaw class present in a run but contributing (0, 0) — every one
