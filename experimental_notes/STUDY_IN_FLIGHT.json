@@ -904,7 +904,9 @@
       "live_instance": "C0042, severity 0.6, 0-character falsifier, emitted round 2 and never given one. Leave-one-out on the live registry: removing it drops A4 from 1 to 0. It blocks the zero-critical streak for every remaining round, so study_run1b CANNOT converge.",
       "also": "the counter's docstring claims it counts 'severity >= CRITICAL_SEVERITY_THRESHOLD', which the body does not do -- stale since the severity gate was removed on 2026-09-06",
       "needs": "a founder ruling: counter and valve must share ONE severity predicate",
-      "status": "FOUND, NOT FIXED (founder issued 'd' - discuss before proceeding)"
+      "status": "FOUND, NOT FIXED (founder issued 'd' - discuss before proceeding)",
+      "ruled": "2026-10-16",
+      "his_words": "Fix it all."
     },
     {
       "at": "2026-10-03T14:40:54+01:00",
@@ -926,7 +928,9 @@
           "A4 quiescence streak": "C0042, sub-critical with no falsifier and no exit",
           "state gate contested": "C0050, the falsely refused finding"
         }
-      }
+      },
+      "ruled": "2026-10-16",
+      "his_words": "Fix it all."
     },
     {
       "name": "A finding can reach UNCONFIRMED without the routing ladder ever serving it, and then blocks convergence for the life of the run",
@@ -942,7 +946,9 @@
         "scripts/gate_replay_on_registry_2026-10-03.py",
         "scripts/routing_severity_gate_2026-10-03.py"
       ],
-      "recorded_at": "2026-10-03T16:48:33+01:00"
+      "recorded_at": "2026-10-03T16:48:33+01:00",
+      "struck_permanently": true,
+      "ruled": "2026-10-16"
     },
     {
       "id": "concise-style-deduplicates-the-code-under-review",
@@ -954,7 +960,9 @@
       "why_it_is_bounded": "The code under review ALSO reaches the model through the user prompt, which `_build_prompt` builds from `full_code`, so a model is not reviewing nothing. The situation packet is supplementary context. The harm is that 2 genuinely different functions with similar token sets can be collapsed into 1, and indentation -- which is syntax in Python -- is destroyed.",
       "why_not_fixed_tonight": "Dedup-over-code is a design change to the phenotype layer, it is not in the causal path of either free run's hypothesis, and 3 large changes in one night with no measurement between them is how a confound becomes unattributable.",
       "pre_existing": "Not introduced by the 2026-10-15 repair. `format_style=\"concise\"` predates it for chatgpt_5_4, codex_5_3 and gemini_3_1_pro.",
-      "needs": "a founder ruling: should the phenotype layer dedup the code under review at all?"
+      "needs": "a founder ruling: should the phenotype layer dedup the code under review at all?",
+      "ruled": "2026-10-16",
+      "his_words": "Fix it all."
     },
     {
       "id": "proven-floor-used-as-a-ceiling-in-the-decomposition-decision",
@@ -965,7 +973,9 @@
       "what": "`_should_decompose` step 2 reads `max_successful_prompt_chars` and returns `payload_chars > observed * 0.9`. Its own docstring calls that figure a PROVEN FLOOR -- \"The model has PROVEN it can handle at least that much input\" -- and the code uses it as a CEILING. A seat that has only ever been sent 72,934 characters can never be sent more, so the observed maximum never rises: a ratchet that cannot climb, structurally the same defect as the routing ladder's.",
       "what_it_cost_tonight": "With the specification delivered whole the system prompt is 74,177 characters, and 6 of 6 simulated seats (100.0000%, Wilson [60.9666%, 100.0000%], Clopper-Pearson [54.0742%, 100.0000%]) have an effective limit below that: CC2-SIM 72,465, ChatGPT-SIM 65,640, Codex-SIM 70,922, DeepSeek-SIM 72,465, Fable-SIM 69,775, Gemini-SIM 67,510. Every simulated dispatch would have force-decomposed on the size of its own instructions. NO PAID SEAT WOULD HAVE -- CC2 sits at 418,685 and DeepSeek at 99,068 -- so this is a confound that fires only in simulation, which is the exact hazard he named.",
       "what_was_done_instead": "A futility guard: when the NON-DECOMPOSABLE part of the payload already exceeds the effective limit, decomposition is dominated on per-request bytes, total bytes and request count, so the monolithic dispatch is sent and the transport is allowed to speak. Proof: SymPy `S*n > 0`, z3 `unsat` on all 3 negations, mpmath on the concrete case. An explicit `pre_decompose_models` override is honoured over the futility argument.",
-      "needs": "a founder ruling: should the observed maximum be allowed to rise, and by what rule? Changing it alters routing for PAID seats."
+      "needs": "a founder ruling: should the observed maximum be allowed to rise, and by what rule? Changing it alters routing for PAID seats.",
+      "ruled": "2026-10-16",
+      "his_words": "Fix it all."
     },
     {
       "id": "cross-layer-soft-deletion-on-a-spurious-topic-match",
@@ -1001,7 +1011,9 @@
       "the_falsifiable_prediction": "gamma becomes estimable at round 3 and the band label moves off the 0.00-0.20 band. Testable inside this run; the result is recorded here rather than assumed.",
       "not_fixed_because": "the run is in flight and gamma is load-bearing. Changing a gamma-adjacent code path mid-experiment would make the run uninterpretable, which is a worse outcome than a noisy advisory line.",
       "candidate_fix": "gate the band lookup on estimability -- the runner already computes `gamma_crit_estimable` -- and print 'not yet estimable (n < 3)' instead of a band label. Advisory either way; it gates nothing.",
-      "needs": "no founder ruling; it is a diagnostic-wording repair once the runs land"
+      "needs": "no founder ruling; it is a diagnostic-wording repair once the runs land",
+      "ruled": "2026-10-16",
+      "his_words": "Fix it all."
     },
     {
       "id": "a-simulated-run-restamps-the-real-paid-seats-fingerprints",
@@ -1123,7 +1135,9 @@
       "also": "FOUND BY EXECUTION, NOT BY READING. A test written to confirm the Exp 38 rescue survived the 2026-10-15 code-path change instead refuted the belief that the rescue worked outside software at all.",
       "needs": "a founder ruling. The fix is one clause -- `and llm_type not in _code_types` -- but it NARROWS a guard rather than adding one, so under the additive standard it needs his ruling and a named dominated property rather than CC1's judgement. The named property is whether a code claim can reach the only cell that can ground it: today, outside software, it cannot, ever.",
       "status": "FOUND, MEASURED, NOT FIXED. Pinned by a test that asserts the CURRENT behaviour and inverts when he rules: bench/tests/test_the_code_path_guard_is_domain_independent_2026-10-15.py",
-      "producer": "scripts/the_code_path_guard_is_off_in_non_software_2026-10-15.py"
+      "producer": "scripts/the_code_path_guard_is_off_in_non_software_2026-10-15.py",
+      "ruled": "2026-10-16",
+      "his_words": "Verdict, yes, fix it."
     },
     {
       "at": "2026-10-15T23:23:08+01:00",
@@ -1143,7 +1157,9 @@
       "live_instance": "His complaint of 2026-10-15, twice in one day: 'You are using non-project terms again. You said you had fixed it so you would stop.' Of the 4 terms he challenged, 3 existed nowhere in the project and 1 (coherence budget) was real but undefined.",
       "also": "The rule is a RATCHET, not a retrospective block: historical notes are reported and the baseline may only fall; notes written from now carry 0. 2 glossary entries were added with code anchors for the real term.",
       "needs": "a founder ruling on whether to invest in a glossary sweep of the 734, or to let the ratchet drain it over time.",
-      "status": "CAUSE FIXED (Rule 30 wired into both surfaces, 13 tests, mutation-proven). THE BACKLOG IS WHAT NEEDS HIS RULING."
+      "status": "CAUSE FIXED (Rule 30 wired into both surfaces, 13 tests, mutation-proven). THE BACKLOG IS WHAT NEEDS HIS RULING.",
+      "ruled": "2026-10-16",
+      "his_words": "Fix it all."
     }
   ],
   "high_priority_2026_10_15": {
@@ -1196,7 +1212,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-16T00:13:43+01:00",
+  "last_updated": "2026-10-16T12:41:44+01:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",

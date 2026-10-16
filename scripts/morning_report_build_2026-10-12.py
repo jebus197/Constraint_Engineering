@@ -127,11 +127,30 @@ def study_items() -> list[dict]:
         # thing under `provenance_question_for_the_founder` ending "AWAITING FOUNDER
         # RULING; no code changed." Keying on one field name is how a false zero gets
         # reported -- the exact failure class this generator exists to remove.
+        # ★ A RULED DEFECT STAYS DERIVED AND IS ROUTED, NOT SKIPPED (2026-10-16).
+        #
+        # A first version skipped it here. That made its authored detail an
+        # ORPHAN, the generator refused at exit 3 as it is designed to, and the
+        # report silently stayed 2 hours stale while appearing to regenerate --
+        # so the strike he asked for did not happen and the queue still read 11.
+        # Archiving the detail instead would have been worse: it carries his
+        # VERBATIM WORDS, and those are the record of the ruling.
+        #
+        # So the escape lives in `decisions()`, which marks the item
+        # `no_ruling_needed` and sends it to section 3 with his ruling attached.
+        # That satisfies "strike this permanently from your list of outstanding
+        # decisions" -- it leaves the DECISION list -- while keeping the ruling
+        # visible rather than vanishing.
         blob = json.dumps(drec).lower()
         if not any(k in blob for k in ("founder ruling", "awaiting founder",
                                        "needs a founder", "ruling that awaits")):
             continue
         out.append({
+            # Carried for the same reason `task_items()` carries it: without
+            # this the date never reaches the renderer and a ruled defect
+            # appears in section 3 with no indication he had settled it.
+            "ruled": drec.get("ruled"),
+            "struck_permanently": bool(drec.get("struck_permanently")),
             "key": f"defect:{drec.get('id') or drec.get('name','')[:40]}",
             "ident": str(drec.get("id") or drec.get("name", ""))[:48],
             "source": "programme of study, open defect",
@@ -285,6 +304,12 @@ def decisions(items: list[dict]) -> tuple[list[dict], list[str], list[str]]:
         if d is None:
             missing.append(it["key"])
             continue
+        # The same escape for an item whose AUTHORED DETAIL records his ruling,
+        # since not every decision originates from a task marker.
+        if d.get("struck_permanently") or d.get("ruled"):
+            attached.append({**it, **d, "no_ruling_needed": d.get(
+                "ruled") or "struck permanently"})
+            continue
         attached.append({**it, **d})
     orphan = sorted(set(detail) - {i["key"] for i in items})
     return attached, sorted(missing), orphan
@@ -350,7 +375,10 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
         # The marker's own `ruled:` date, shown so a ruled-but-unexecuted item
         # reads as "you ruled this, the work is outstanding" rather than as a
         # mystery that quietly left the decision list.
-        if o.get("ruled"):
+        if o.get("struck_permanently"):
+            extra += (" — **STRUCK PERMANENTLY ON YOUR INSTRUCTION, 2026-10-16. "
+                      "It may not re-enter the decision list by any route.**")
+        elif o.get("ruled"):
             extra += f" — **YOU RULED THIS ON {o['ruled']}; the work is outstanding**"
         # ★ THE BUILT STATE TRAVELS WITH THE ITEM INTO SECTION 3 (2026-10-16).
         # The mislabel that caused this generator to exist was calling A19
