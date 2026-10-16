@@ -22,9 +22,9 @@ Stage 3 has all 7 items outstanding. Six are built and have never been run, and 
 
 ## The migration, surveyed rather than estimated
 
-The branch is 245 commits ahead of main and main has 1 commit we lack, so this is a merge and not a fast-forward. 1,242 paths differ. Of those, 1,201 are applicable to main, which is 96.6989% on a 95 per cent interval from 95.5524% to 97.5574%. Your suspicion was right: the overwhelming majority of what was learned transfers.
+The branch is 245 commits ahead of main and main has 1 commit we lack, so this is a merge and not a fast-forward. 1,244 paths differ, counted at commit b1f73115. Of those, 1,203 are applicable to main, which is 96.7042% on a 95 per cent interval from 95.5595% to 97.5613%. The count drifts upward with every commit, so it is about 96.7% as of this commit rather than a fixed figure. Your suspicion was right: the overwhelming majority of what was learned transfers.
 
-The simulation surface is 35 paths, 2.8180% on an interval from 2.0331% to 3.8939%, and it divides into 3 kinds.
+The simulation surface is 35 paths, 2.8135% on an interval from 2.0299% to 3.8877%, unchanged at exactly 35 across every re-measurement, and it divides into 3 kinds.
 
 **Two entry points exist only to run a simulated experiment:** the stand-in dispatch shim and the launcher that runs a simulated experiment. Both are additive and inert on main unless something invokes them, and nothing in the live path does. My view is that they should go to main, because the ability to rehearse a run without spending money is a capability worth having there, not a branch artefact.
 
@@ -44,7 +44,7 @@ There is also one small reconciliation. Main's single extra commit touches only 
 
 ## My view
 
-Yes, it is safe, with the fingerprint correction done first and your decision taken on the immune memory. Nothing else in the 1,242 paths changes live behaviour in a way that depends on simulation. The runner repairs, the composer repair, the guard that routes a claim to its checking tool, the note machinery, the report generator, the marker schema and every test are all substrate-neutral: they fix how findings are routed, recorded and reported, not who produces them.
+Yes, it is safe, with the fingerprint correction done first and your decision taken on the immune memory. Nothing else in the 1,244 paths changes live behaviour in a way that depends on simulation. The runner repairs, the composer repair, the guard that routes a claim to its checking tool, the note machinery, the report generator, the marker schema and every test are all substrate-neutral: they fix how findings are routed, recorded and reported, not who produces them.
 
 I would do it in this order. Correct the 5 fingerprints. Take your ruling on the memory. Merge to main. Then run the Stage 1 replay there, because it costs nothing and it is the exit test that tells us whether the repaired accounting reproduces the archive. If it does, the migration is validated by the cheapest possible instrument rather than by assertion.
 
