@@ -2555,6 +2555,32 @@ NO_READING_ROUTING_VERDICTS = frozenset({"", "UNRESOLVED"})
 NO_READING_SEVERITY_PROOF_STATUSES = frozenset({"ABSENT", "SKIP"})
 
 
+def _routing_would_admit(e) -> bool:
+    """Would `_apply_routing` admit this entry into the ladder?
+
+    ★ ONE PREDICATE, TWO READERS, 2026-10-16. `_apply_routing`'s admission is 2
+    conditions spread over 25 lines of commentary, and `blockers_routing_cannot_serve`
+    has to ask the same question. Asking it in a second place would be a mirror
+    that drifts, which is this project's recorded failure mode -- so the test
+    executes this function and the real `_apply_routing` against the same
+    entries and compares which ones get served.
+
+    Mirrors the two gates at `_apply_routing`: the escalated-or-never-served
+    admission, and the sub-critical door that admits a routable instrument
+    fault or a never-served entry whose one attempt is unspent.
+    """
+    never_served = (
+        e.get("status") == "UNCONFIRMED" and _routing_ladder_never_served(e))
+    if not e.get("escalated") and not never_served:
+        return False
+    if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+        if ((e.get("falsifier_verdict") not in ROUTABLE_INSTRUMENT_FAULTS
+                and not never_served)
+                or e.get("error_routed")):
+            return False
+    return True
+
+
 def _routing_ladder_never_served(e) -> bool:
     """True when NO instrument ever touched this entry: no verdict, no routing
     history, no falsifier code.
@@ -3567,6 +3593,53 @@ class FindingRegistry:
             "and a replay-invalidating decision for the founder."
         )
         return spec
+
+    def blockers_routing_cannot_serve(self) -> List[str]:
+        """★ Entries that BLOCK release and that the ladder would REFUSE to serve.
+
+        HIS LIST, 2026-10-16, item 3 of the 7 smaller defects: *"A counter whose
+        release condition disagrees with it about severity."* His ruling on the
+        list: *"Fix it all."*
+
+        THE DISAGREEMENT, MEASURED ACROSS EVERY ARCHIVED runner_state.json. Of
+        3,400 entries, 212 are counted as blockers by
+        `unverified_critical_count`, and **94 of those 212 -- 44.3396%, Wilson
+        95% [37.8121%, 51.0686%], Clopper-Pearson [37.5377%, 51.3020%] -- are
+        entries `_apply_routing` would decline to admit**, across 18 runs. Those
+        findings block release and cannot be worked: permanent limbo. 2
+        sub-classes appear in the archive -- an `error_routed` entry whose
+        one-attempt guard is already consumed, and a sub-critical carrying
+        routing history but no routable instrument fault, so it is neither
+        never-served nor re-admissible.
+
+        WHY THIS REPORTS RATHER THAN RELEASES. Releasing them would loosen the
+        A4 gate on a model-assigned severity float, which is the change the
+        founder has rejected 4 times and struck permanently on 2026-10-16.
+        Widening routing instead costs a paid dispatch per entry per round and
+        changes paid-run behaviour, so it is his decision and not a repair. What
+        is additive without a ruling is to SAY SO: his ruling of 2026-10-12 is
+        that a finding no instrument has read must be *"fed back into the
+        mechanics of the harness for resolution"*, and a run that cannot feed it
+        back should report that rather than burn silently to the round cap. This
+        is the module's own excluded-implies-reported discipline.
+
+        PURE READER. No state is mutated and no count changes, so every existing
+        caller is byte-identical in behaviour.
+
+        The predicate mirrors `_apply_routing`'s own admission test. A test
+        executes both against the same entries so they cannot drift.
+        """
+        out: List[str] = []
+        for cid, e in self.entries.items():
+            if e.get("status") != "UNCONFIRMED":
+                continue
+            if e.get("irreducible_escalation") and not e.get("integrity_unobserved"):
+                continue
+            if e.get("exhausted"):
+                continue
+            if not _routing_would_admit(e):
+                out.append(cid)
+        return sorted(out)
 
     def unverified_critical_count(self, current_round: Optional[int] = None) -> int:
         """A4 fail-safe signal: UNCONFIRMED candidates no tool has resolved.
@@ -19603,6 +19676,20 @@ def run_experiment(
             _log(f"  A4: {_unresolved_crit} unverified critical-severity "
                  f"candidate(s) (UNCONFIRMED, no resolved falsifier) pending — "
                  f"zero-critical streak blocked, HIL review required")
+        # ★ AND SAY WHICH OF THEM THE LADDER WOULD REFUSE TO SERVE, 2026-10-16.
+        # A blocker the ladder declines is in permanent limbo: it cannot be
+        # resolved and it cannot be released. Measured across the archive, 94 of
+        # 212 blockers are in that state. His ruling of 2026-10-12 is that such
+        # a finding must be fed back into the harness rather than excused, so a
+        # run that CANNOT feed it back must report it instead of burning
+        # silently to the round cap.
+        _unservable = registry.blockers_routing_cannot_serve()
+        if _unservable:
+            _log(f"  A4 LIMBO: {len(_unservable)} of {_unresolved_crit} "
+                 f"blocker(s) would be REFUSED by the routing ladder, so they "
+                 f"can neither be resolved nor released — HIL decision needed: "
+                 f"{', '.join(_unservable[:12])}"
+                 + (" ..." if len(_unservable) > 12 else ""))
         # Static-queue closure: ladder-exhausted irreducible criticals handed to HIL.
         _irreducible_q = registry.irreducible_queue_count()
         if _irreducible_q > 0:
