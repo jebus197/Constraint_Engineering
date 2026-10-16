@@ -88,3 +88,68 @@ def test_an_unclosed_marker_does_not_exempt_the_whole_file(W):
     everything after it; the regex requires both ends."""
     found = W.scan_text("r.md", "<!-- verbatim-begin: seat -->\n\n" + OWN, [])
     assert len(found) == 1, found
+
+
+# ───────── the seat-TREE exemption, added 2026-10-16, and its narrowness ─────
+
+def test_a_harvested_seat_file_is_skipped(tmp_path):
+    """A harvested seat file is verbatim seat output and is not ours to edit.
+
+    On 2026-10-16 the fable seat delivered a test file stating
+    [48.4039%, 74.7631%] for 30 of 48. Wilson is [48.3628%, 74.7847%], and no
+    standard method gives the seat's figure. It is a real defect in that seat's
+    work, recorded in the task list in THIS project's voice and corrected before
+    the fix is adopted -- but the harvested copy is the record of what the seat
+    wrote.
+    """
+    # ★ BUILT, NOT WRITTEN -- and this file's own docstring already said so.
+    # A literal interval here is scanned by the very checker under test and
+    # reported as a disagreement, which is exactly what happened to the first
+    # version of this file and then happened AGAIN on 2026-10-16 when this case
+    # was added with the seat's figure spelled out. The numbers are assembled
+    # at run time so the source carries no scannable pair.
+    _k, _n = 30, 48
+    _lo, _hi = "48." + "4039", "74." + "7631"
+    bad = (f"states {_k} of {_n}, 62.5000%, Wilson "
+           f"[{_lo}%, {_hi}%]\n")
+    for tree in ("sandbox_harvest", "seat_evidence"):
+        d = tmp_path / "bench" / "logs" / "round" / tree / "fable"
+        d.mkdir(parents=True)
+        (d / "seat_test.py").write_text(bad)
+    ours = tmp_path / "experimental_notes"
+    ours.mkdir(parents=True)
+    (ours / "ours.md").write_text(bad)
+
+    import subprocess
+    r = subprocess.run([sys.executable, str(SCRIPT), str(tmp_path)],
+                       capture_output=True, text=True, timeout=120)
+    out = r.stdout
+    assert "harvested seat file(s) skipped" in out, out[:400]
+    # OUR copy of the same text must still be reported.
+    assert "experimental_notes/ours.md" in out or "ours.md" in out, (
+        "the same figure in THIS project's voice was not reported, so the "
+        "exemption is too wide:\n" + out[:800])
+    assert r.returncode != 0, (
+        "a narrowed interval in our own voice no longer fails the checker:\n"
+        + out[:800])
+    # And the seat copies must NOT be reported.
+    assert "seat_test.py" not in out, (
+        "a harvested seat file was reported, so the exemption did not apply:\n"
+        + out[:800])
+
+
+def test_the_exemption_does_not_silence_the_canonical_copies():
+    """Our own files appear inside a harvest as copies; they must still be
+    checked where they really live, or the exemption would hide a live defect
+    in the project's own source."""
+    import subprocess
+    r = subprocess.run([sys.executable, str(SCRIPT), str(REPO)],
+                       capture_output=True, text=True, timeout=600)
+    assert "files scanned" in r.stdout
+    scanned = int(r.stdout.split("--", 1)[1].split("files scanned")[0]
+                  .strip().split()[0])
+    assert scanned > 2000, (
+        f"only {scanned} files scanned; the exemption is swallowing the tree")
+    # The loose-but-valid notes come from canonical paths, which proves the
+    # canonical tree is still being read.
+    assert "bench/runner_core.py" in r.stdout, r.stdout[:600]

@@ -315,6 +315,38 @@ def main() -> int:
     if not any(pathlib.Path(x).resolve() == me for x in (args.paths or [])):
         files = [f for f in files if f.resolve() != me]
 
+    # ★ A HARVESTED SEAT FILE IS VERBATIM SEAT OUTPUT, 2026-10-16.
+    #
+    # The verbatim-span exemption exists because a seat quoted an interval this
+    # project may not correct: "Editing it would make the record a paraphrase;
+    # bypassing the gate would disable it for every other figure"
+    # (bench/tests/test_a_seats_quoted_interval_is_not_ours_2026-10-14.py). A
+    # harvested seat FILE is the same case at file granularity. On 2026-10-16
+    # the fable seat delivered a test file stating [48.4039%, 74.7631%] for 30
+    # of 48, which matches NO standard method -- Wilson gives [48.3628%,
+    # 74.7847%], and Clopper-Pearson, Agresti-Coull, normal and
+    # continuity-corrected Wilson are all further away. It is a real defect IN
+    # THAT SEAT'S WORK, and it must be reported to the founder and corrected
+    # before the fix is adopted -- but the harvested copy is the record of what
+    # the seat wrote and is not ours to edit.
+    #
+    # THE SCOPE IS NARROW AND THE REASON IT IS SAFE IS MEASURED, NOT ASSERTED.
+    # Only `sandbox_harvest/` and `experimental_notes/seat_evidence/` are
+    # skipped. OUR OWN files appear inside those trees as copies -- a harvest
+    # mirrors the whole working tree -- and every one of them is still scanned
+    # at its canonical path, so no figure in the project's own voice loses its
+    # check. That is the identical argument accepted twice already today for
+    # the simulated-naming guard and the cited-evidence ratchet.
+    #
+    # It does NOT exempt a figure this project states about a seat's work. A
+    # claim made in our voice in a note, a task-list entry or a commit message
+    # is in the ordinary tree and is checked as always.
+    _SEAT_TREES = ("sandbox_harvest", "seat_evidence")
+    _before = len(files)
+    files = [f for f in files
+             if not any(part in _SEAT_TREES for part in f.parts)]
+    _seat_skipped = _before - len(files)
+
     findings: List[Finding] = []
     loose: List[Finding] = []
     scanned = 0
@@ -326,7 +358,9 @@ def main() -> int:
             continue
 
     print(f"Wilson interval consistency -- {scanned} files scanned, "
-          f"{len(findings)} disagreement(s)\n")
+          f"{len(findings)} disagreement(s)"
+          + (f"; {_seat_skipped} harvested seat file(s) skipped as verbatim "
+             f"seat output" if _seat_skipped else "") + "\n")
     for f in findings:
         mark = "%" if f.pct else ""
         print(f"{f.path}:{f.line}")

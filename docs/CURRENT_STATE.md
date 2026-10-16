@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 16 October 2026 11:05 BST (2026-10-16T11:05:29+01:00)
+Generated: 16 October 2026 17:20 BST (2026-10-16T17:20:35+01:00)
 
 ---
 
@@ -18,28 +18,16 @@ Generated: 16 October 2026 11:05 BST (2026-10-16T11:05:29+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `5e2ba7ee` THE KEY PROPERTY BIT: leg 3 is the first run where a falsifier disproved anything
-- **Committed:** 2026-10-16 11:02:24 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 11
-- **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
-
-Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M bench/fingerprints/CC2-SIM.json`
-- `M bench/fingerprints/ChatGPT-SIM.json`
-- `M bench/fingerprints/Codex-SIM.json`
-- `M bench/fingerprints/DeepSeek-SIM.json`
-- `M bench/fingerprints/Fable-SIM.json`
-- `M bench/fingerprints/Gemini-SIM.json`
-- `M bench/state/immune_memory.json`
-- `M experimental_notes/data/output_hashes.json`
-- `M resources/ONBOARDING.md`
-- `M resources/RECOVERY.md`
+- **Last commit (the PARENT of the commit containing this file):** `cd14a2d7` the panel closed 2 of 2, and the set-form ratchet immediately named what my count form could not
+- **Committed:** 2026-10-16 17:18:29 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 19
+- **Working tree at snapshot time:** clean
 
 ---
 
 ## Tests
 
-**11469 tests collected** at 16 October 2026 11:05 BST, HEAD `5e2ba7ee` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**11651 tests collected** at 16 October 2026 17:20 BST, HEAD `cd14a2d7` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -69,13 +57,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `5e2ba7ee THE KEY PROPERTY BIT: leg 3 is the first run where a falsifier disproved anything`
-- `c65aaa7f the answer to "why so many rulings": 11 of 13 are genuinely new, and that corrects what I implied last night`
-- `99e2c179 the `ruled` marker field: an item he has already ruled on is no longer a decision`
-- `84393b83 his question answered: 5 of the 13 decisions should not have been put to him, and the cause is the marker schema`
-- `4e6cb40c leg 3 closes: 38 findings, 71.5 min, and the closing sweep acted for the first time in 3 legs`
-- `3bc7c412 name the corpus: leg 3's own logs moved the figure the session had already quoted`
-- `4bbc84c5 LEG 3 CONVERGED: 3 of 3 consecutive clean convergences, the success criterion is met`
-- `4a4a1d74 notes: the session pair at 0 findings, and Rule 30 scoped to reporting after it refused a compliant note`
-- `7fad7911 Rule 30 had to be defended against 4 self-legitimising paths, the 4th only visible once it worked`
-- `baeb184c B6.1: the concise rendering was deleting 19 of 20 functions from the code under review`
+- `cd14a2d7 the panel closed 2 of 2, and the set-form ratchet immediately named what my count form could not`
+- `4aac3124 a gate whose exit code is discarded is not a gate`
+- `61c33af7 my admission figure was understated, and the producer had the defect it reports`
+- `bedf9717 the panel's first seat found a regression I shipped, and 2 of my 3 repairs were worse than inert`
+- `e0832bee I repeated the citation omission 40 minutes after recording it, so it is now a script`
+- `18eeb705 94 of 212 blockers could never be worked, and now a run says so`
+- `d5428c01 end-of-day report: 6 built, 5 needing a ruling, and 3 of my own claims corrected`
+- `8197faf3 the capacity number measured, his admission question answered, and a hypothesis that died on the way`
+- `47c51b1b a ratchet that could not say what tripped it now names the path, and the swap it used to miss`
+- `60d0d536 re-point the citations the band gate shifted, with the instrument that exists`
