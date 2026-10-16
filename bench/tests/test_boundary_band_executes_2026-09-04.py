@@ -53,6 +53,30 @@ def _band_inert() -> _Registry:
     return _Registry([_finding(r, 0.95) for r in range(0, 4) for _ in range(4 - r)])
 
 
+def _band_discriminating() -> _Registry:
+    """Both edges MEASURED, and they differ. Added 2026-10-16 (CC3).
+
+    This is what `_band_sensitive` was always trying to be. That fixture puts
+    every critical INSIDE [0.65, 0.75), so the upper edge sees an all-zero
+    series and `_estimate_gamma` returns its 0.0 sentinel: the upper edge is
+    not a different slope, it is no slope at all. The pre-2026-10-16 code
+    compared the two numbers for equality and called that False, which is the
+    "one real edge against a sentinel" false alarm that
+    `scripts/the_band_verdict_rests_on_a_sentinel_2026-10-16.py` counts at
+    4 of 26 archived blocks.
+
+    Here the above-band series 4,3,2,1 at severity 0.95 keeps the UPPER edge
+    estimable on its own, and ONE extra in-band critical in the final round
+    moves the LOWER edge only. Executed 2026-10-16: lower 0.2727, upper
+    0.3247, both estimable and both non-zero, so the inequality is between two
+    MEASURED slopes and `verdict_robust_to_band` is genuinely False.
+    """
+    return _Registry(
+        [_finding(r, 0.95) for r in range(0, 4) for _ in range(4 - r)]
+        + [_finding(3, 0.70)]
+    )
+
+
 class TestTheProfileActuallyProducesTheBandEdges:
     def test_both_band_edge_keys_exist_in_the_output(self):
         prof = R.gamma_threshold_profile(_band_inert(), max_round=3)
@@ -64,7 +88,9 @@ class TestTheProfileActuallyProducesTheBandEdges:
                 "0.75 onto their neighbours and the edges are overwritten.")
 
     def test_the_edges_are_not_none(self):
-        for name, reg in (("inert", _band_inert()), ("sensitive", _band_sensitive())):
+        for name, reg in (("inert", _band_inert()),
+                          ("sensitive", _band_sensitive()),
+                          ("discriminating", _band_discriminating())):
             s = R.gamma_threshold_profile(reg, max_round=3)["boundary_band_sensitivity"]
             assert s.get("gamma_at_lower_edge") is not None, f"{name}: lower edge None"
             assert s.get("gamma_at_upper_edge") is not None, f"{name}: upper edge None"
@@ -79,18 +105,65 @@ class TestTheVerdictDiscriminates:
             "criticals well above the band must give identical gamma at both "
             f"edges, so the verdict is robust; got {s}")
 
-    def test_it_returns_false_for_a_band_sensitive_registry(self):
-        s = R.gamma_threshold_profile(_band_sensitive(), max_round=3)["boundary_band_sensitivity"]
-        assert s["verdict_robust_to_band"] is False, (
-            "criticals inside the band are counted at the lower edge and not at "
-            f"the upper, so gamma must differ; got {s}")
+    def test_it_returns_false_for_a_band_discriminating_registry(self):
+        """Two MEASURED slopes that differ. The genuine False.
 
-    def test_both_outcomes_are_reachable(self):
-        """The single assertion the source-text guard could never make."""
+        CORRECTED 2026-10-16 (CC3). This assertion previously ran against
+        `_band_sensitive()`, whose upper edge is the `_estimate_gamma` 0.0
+        SENTINEL rather than a slope, so it was asserting a verdict on a
+        quantity that was never measured -- the defect the estimability gate
+        was added to remove. The assertion is not weakened: it is moved onto a
+        fixture where both edges are real, and `_band_sensitive()` keeps its
+        own assertion immediately below. Both edges are additionally required
+        to be estimable and non-zero here, so the test cannot pass by the two
+        edges being a clamped zero apiece.
+        """
+        s = R.gamma_threshold_profile(_band_discriminating(),
+                                      max_round=3)["boundary_band_sensitivity"]
+        assert s["gamma_estimable_at_lower_edge"] is True, s
+        assert s["gamma_estimable_at_upper_edge"] is True, s
+        assert s["gamma_at_lower_edge"] not in (None, 0.0), s
+        assert s["gamma_at_upper_edge"] not in (None, 0.0), s
+        assert s["gamma_at_lower_edge"] != s["gamma_at_upper_edge"], s
+        assert s["band_is_readable"] is True, s
+        assert s["verdict_robust_to_band"] is False, (
+            "one in-band critical is counted at the lower edge and not at the "
+            f"upper, and both edges are measured, so the verdict is fragile; got {s}")
+
+    def test_a_sentinel_upper_edge_reports_no_verdict_rather_than_a_false_one(self):
+        """`_band_sensitive()` is the false-alarm class, and must now be null.
+
+        Its whole critical set sits inside the band, so at the 0.75 edge the
+        novelty series is all zeros and gamma is the sentinel. Reading that as
+        "the verdict changed across the band" is a false alarm. The edge values
+        are still reported -- only the verdict that cannot rest on them is
+        withheld.
+        """
+        s = R.gamma_threshold_profile(_band_sensitive(),
+                                      max_round=3)["boundary_band_sensitivity"]
+        assert s["gamma_estimable_at_lower_edge"] is True, s
+        assert s["gamma_estimable_at_upper_edge"] is False, s
+        assert s["band_is_readable"] is False, s
+        assert s["verdict_robust_to_band"] is None, s
+        assert s["gamma_at_lower_edge"] is not None, s
+        assert s["gamma_at_upper_edge"] is not None, s
+
+    def test_all_three_outcomes_are_reachable(self):
+        """The single assertion the source-text guard could never make.
+
+        STRENGTHENED 2026-10-16 (CC3) from {True, False} to {True, False,
+        None}. The estimability gate added a third value, and an unreachable
+        third value would be exactly the constant this class exists to forbid.
+        Every registry here is a REAL one driven through the real series
+        reader: `test_the_band_verdict_is_gated_on_estimability_2026-10-16.py`
+        reaches the same three values by monkeypatching
+        `_settled_novelty_series`, which stubs out one of the two halves this
+        file's docstring says must be run against each other.
+        """
         got = {
             R.gamma_threshold_profile(r, max_round=3)["boundary_band_sensitivity"]["verdict_robust_to_band"]
-            for r in (_band_inert(), _band_sensitive())
+            for r in (_band_inert(), _band_sensitive(), _band_discriminating())
         }
-        assert got == {True, False}, (
+        assert got == {True, False, None}, (
             f"verdict_robust_to_band produced only {got}; a diagnostic that "
-            "cannot take both values is reporting a constant")
+            "cannot take all three values is reporting a constant")

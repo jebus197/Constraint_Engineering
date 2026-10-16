@@ -207,8 +207,20 @@ def _strip_redundant_vendor_prefix(finding_id: str, model_id: str) -> str:
     # with his ruling of 2026-10-07 than deriving the set from `MODEL_SPECS` did.
     #
     # The seat label is LONGER than the vendor token inside it, so sorting
-    # longest-first makes `Gemini-SIM` win over `Gemini` by construction, and an
-    # already-composed identifier is not shortened to `SIM_F004`.
+    # longest-first makes `Gemini-SIM` win over `Gemini` by construction.
+    #
+    # ★ THE SCOPE OF THAT GUARANTEE, CORRECTED 2026-10-16 ON CC2'S FINDING. This
+    # comment claimed unconditionally that an already-composed identifier "is not
+    # shortened to `SIM_F004`". It is not unconditional: the guarantee holds when
+    # `model_id` carries the simulation suffix, and under a BARE seat label it
+    # does not. Executed -- `STRIP("CC2-SIM_F004", "CC2")` returns `SIM_F004`,
+    # while `STRIP("CC2-SIM_F004", "CC2-SIM")` returns `F004`.
+    #
+    # It is unreachable in a live run, because a seat is dispatched under one
+    # label and a bare label never receives a `-SIM`-composed identifier, and
+    # `SIM_F004` resolves to nothing in either case. So it is recorded rather
+    # than repaired -- but the claim as written was false, and a false statement
+    # in a comment is a defect in this project whether or not it is reachable.
     mid = str(model_id)
     base = mid[:-len(_SIM_SUFFIX)] if mid.endswith(_SIM_SUFFIX) else mid
     candidates = sorted({mid, base}, key=len, reverse=True)

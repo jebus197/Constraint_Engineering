@@ -1496,6 +1496,41 @@ def calibrate_coherence_thresholds(
             _meta = entry.get("metadata") or {}
             if not isinstance(_meta, dict):
                 _meta = {}
+            # ★ 2026-10-16 (CC3): A COMPOSER FALLBACK CARRIES NO CONSTRAINT
+            # DATA, SO NO DENSITY IS ESTIMATED FROM IT.
+            #
+            # `_composer_record_fields` (bench/reference_runner_v3.py) writes
+            # `composer_fallback: true` at 4 dispatch sites, deliberately
+            # recording a FAILED composition rather than omitting the keys,
+            # "since an absent key and a failed composition are different
+            # facts". That is right, and until now nothing read the flag: it
+            # was written at 4 sites and consumed at 0, which is the
+            # addition-nothing-reaches class this project has confirmed 11
+            # times since 2026-08-01.
+            #
+            # Worse than inert. The same helper writes `directive_chars` and
+            # `prompt_chars_full` on the FALLBACK branch too, and both sit
+            # AHEAD of `prompt_length` in the `or`-chain below, while
+            # `constraint_count` is absent on that branch. So a fallback entry
+            # took the `floor(c/70)/floor(c/4)` estimator on the FULL prompt
+            # size. Executed 2026-10-16 on an 8-entry fixture: the archive's
+            # old shape calibrates to 0.04 (the forced 1/25 that
+            # scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py
+            # measures at 3589/3709 entries), and the same entries with the
+            # new fallback keys calibrate to 0.0567 -- the asymptote 2/35 of
+            # the very same character arithmetic. The repair would therefore
+            # have replaced an obviously-constant artefact with a
+            # varying-and-so-credible one, computed from a prompt in which the
+            # composer placed no constraints at all.
+            #
+            # Skipping is `simplest sufficient`: one guard, no new flag, no new
+            # table. Archived entries carry no `composer_fallback` key, so
+            # `is True` leaves every one of them on exactly the path it took
+            # before and replay is unchanged.
+            if (_meta.get("composer_fallback") is True
+                    or entry.get("composer_fallback") is True):
+                continue
+
             density = None
             _recorded = entry.get("constraint_density")
             if not isinstance(_recorded, (int, float)):
@@ -1934,7 +1969,19 @@ def compose(
         warnings.warn(
             f"Composer: {model} over coherence budget "
             f"(density={density:.4f}, budget={budget}). "
-            f"Coherence penalty κ(m,g) < 1 applies to effective detection. "
+            # ★ 2026-10-16 (CC3): THE WARNING NO LONGER ASSERTS A PENALTY
+            # THAT IS NOT IN FORCE. It read "Coherence penalty κ(m,g) < 1
+            # applies to effective detection", and nothing in this repository
+            # computes or applies such a κ. Executed: the only match for
+            # "κ" in bench/cdsfl_registry/ was this string, and every
+            # `kappa` in the live tree is `kappa_set`, the convergence metric
+            # of §7.13 -- a different quantity entirely. An operator reading
+            # the log was told a detection penalty had been applied to this
+            # dispatch. None had. The budget comparison IS real and is still
+            # reported; only the unsupported consequence is withdrawn.
+            f"No detection penalty is applied: this is a density report, and "
+            f"the only effectful consumer of the budget, _prune_for_coherence, "
+            f"is retired by default (founder ruling 2026-10-13). "
             f"Pruned: {pruned_soft or 'nothing further prunable'}.",
             stacklevel=2,
         )
