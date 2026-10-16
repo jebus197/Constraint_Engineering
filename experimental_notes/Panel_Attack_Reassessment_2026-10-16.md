@@ -82,4 +82,22 @@ Ordered by dependency, cheapest first, nothing applied.
 
 **5. Then Stage 1 item 1.7, the replay, which costs nothing and is the stage's exit test.** And re-open 1.2, because it is marked DONE on an incomplete repair.
 
+## Smaller corrections that go with them, so nothing is left without an action
+
+**6. Correct the reasoning behind claim (b) in the record, not only its conclusion.** The conclusion is now known wrong and the reason given was never an argument. The next patch to either side will otherwise be assessed against the same unsound test — that code in different functions cannot interact. It shares the entry dict, so it can.
+
+**7. When the blocker figure is corrected, record that the checker's replacement was also wrong.** It gave 93 over 28 runs against the real readers' 94 over 18. Neither figure should be quoted again without its producer.
+
+**8. Decide what to do about the leaky success marker, because it undermines BOTH composer repairs rather than either.** `compose(task_domain='no_such_domain_xyz')` returns non-None after dropping a whole directive layer, so the record carries `composer_fallback: False` beside a degraded density. Recommendation: record the dropped-layer COUNT in the dispatch record and have both guards read that, not the boolean. A flag that says nothing about degradation cannot do the job either guard gives it.
+
+**9. Handle Fable's known hole rather than inheriting it silently.** A single `.`, `-` or `_` between 2 identifiers defeats the token scan and restores the mis-attribution. That seat already pinned the residual it did not build for; keep that pin and add the separator case to it.
+
+**10. Re-derive Fable's new test or drop it.** `test_fallback_records_do_not_pollute_a_calibration_from_real_densities` passes on `47c51b1b`, where neither guard exists, so it cannot detect the absence of the thing it guards. Its other changed assertion IS discriminating and should be kept.
+
+**11. Correct Fable's own safety comment.** It justifies the widening by `lookup_alias_any` refusing ambiguity, and that refusal cannot fire for a prefixed token, because composed ids embed the seat label and are all-distinct by construction. The widening may still be right; the stated reason is not.
+
+**12. Put the runway into the repository.** It exists only as `~/Desktop/CDSFL_RUNWAY.md`, unversioned — the same single point of failure already fixed for the operational tracker by keeping the canonical copy in `experimental_notes/` with a Desktop mirror. Refresh the 6 stale Stage 3 rows at the same time.
+
+**13. A habit, not a repair: make the predicate part of every reported figure.** Three times today a numerator agreed across 2 independent measurements while the denominator was disputed — the identifier count (64 / 81 / 98), the dispatch-entry count (5,946 / 30,442), and the blocker count (212 / 197). `scripts/how_many_identifiers_carry_a_bare_vendor_name_2026-10-16.py` already prints its whole predicate lattice for this reason; the blocker and dispatch-entry producers should do the same.
+
 Written under CDSFL note standard v1.7, 26 August 2026.
