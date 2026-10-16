@@ -144,6 +144,121 @@ CONTEXT_CHAR_BUDGET_CEILING = {
 _DEFAULT_BUDGET_CEILING = 40_000
 
 
+
+#: ★ FORWARD NORMALISATION OF A MODEL-SUPPLIED IDENTIFIER — HIS RULING, 2026-10-16.
+#:
+#: His words: *"We normalise going forward, since recording vendor names is purely
+#: a recording statistic and has no impact on capability, or how our experiments
+#: work."*
+#:
+#: THE DEFECT. A seat is dispatched under a label carrying the mandatory
+#: simulation suffix, and the composition below prefixes that label to whatever
+#: identifier the model chose for itself. A model that names its own finding
+#: `GEMINI_F004` therefore produces `Gemini-SIM_GEMINI_F004`, and a reader
+#: grepping identifiers meets a BARE vendor name. The seat label is correct; the
+#: bare name arrives inside the model's own text.
+#:
+#: MEASURED 2026-10-16 over the archive: 38 instances across 2 distinct
+#: identifiers, `Gemini-SIM_GEMINI_F004` and `_F005`, all of them in free run 2
+#: of 2026-10-15. Leg 3 carries 0, because the format was the model's own
+#: non-deterministic choice rather than anything the runner did. The master task
+#: list records 64 under a different predicate; this figure is the one this
+#: function's own producer reproduces.
+#:
+#: FORWARD ONLY. No recorded artefact is rewritten, which is the half of his
+#: ruling that matters: rewriting run 2's findings would be falsifying
+#: experimental evidence, and that was refused explicitly.
+#:
+#: NO VENDOR TABLE IS CONSULTED. The only tokens stripped are the seat's own
+#: label and that label minus the mandatory simulation suffix, both derived from
+#: the `model_id` argument. So adding or removing a model needs no edit here,
+#: and nothing in this function is keyed on a table of model names.
+#: The mandatory simulation suffix (founder ruling 2026-08-08). Declared here
+#: rather than imported, because `runner_core` is the lower-level module and
+#: must not depend on the runner that imports it.
+_SIM_SUFFIX = "-SIM"
+
+
+def _strip_redundant_vendor_prefix(finding_id: str, model_id: str) -> str:
+    """Drop a leading bare vendor token the model put in its own identifier.
+
+    `GEMINI_F004` under seat `Gemini-SIM` becomes `F004`. An identifier that
+    does not open with a vendor token is returned unchanged, and so is one whose
+    remainder would be empty -- a finding called exactly `GEMINI` keeps its name
+    rather than becoming anonymous.
+    """
+    # ★ ONLY THE SEAT'S OWN VENDOR TOKEN IS STRIPPED, AND THAT NARROWING IS
+    # LOAD-BEARING. An earlier version of this function took its candidates from
+    # the whole of `MODEL_SPECS`, so under seat `CC2-SIM` the identifier
+    # `GEMINI_F004` -- a CC2 reply REFERRING to Gemini's finding -- stripped to
+    # `F004` and composed to `CC2-SIM_F004`, which can resolve to CC2's OWN
+    # F004. That is a cross-model mis-attribution, and `lookup_alias_any`'s
+    # docstring records the 2026-08-30 defect of exactly that shape. Measured
+    # over the roster-wide form: the added candidates were new in 36 of 48
+    # key/seat pairs (75.0000%, Wilson [61.2156%, 85.0794%]), so the hazard was
+    # reachable rather than theoretical.
+    #
+    # Restricting to the seat's own token loses NOTHING measured: both archived
+    # instances are `Gemini-SIM` emitting a `GEMINI` prefix, i.e. a seat
+    # prefixing its own name, which is the only case the defect ever took.
+    #
+    # It also removes this function's dependency on the roster entirely, so no
+    # behaviour here is keyed on a table of model names -- which sits better
+    # with his ruling of 2026-10-07 than deriving the set from `MODEL_SPECS` did.
+    #
+    # The seat label is LONGER than the vendor token inside it, so sorting
+    # longest-first makes `Gemini-SIM` win over `Gemini` by construction, and an
+    # already-composed identifier is not shortened to `SIM_F004`.
+    mid = str(model_id)
+    base = mid[:-len(_SIM_SUFFIX)] if mid.endswith(_SIM_SUFFIX) else mid
+    candidates = sorted({mid, base}, key=len, reverse=True)
+    low = finding_id.lower()
+    for tok in candidates:
+        if not low.startswith(tok.lower()):
+            continue
+        rest = finding_id[len(tok):]
+        if rest[:1] not in ("_", "-", ":"):
+            continue
+        rest = rest[1:]
+        if not rest:
+            return finding_id
+        return rest
+    return finding_id
+
+
+#: ★ ONE COMPOSITION SITE, BECAUSE THERE WERE SIX AND THEY COULD DIVERGE.
+#:
+#: `_structurally_valid_fid`'s own docstring records five model-supplied paths --
+#: JSON array, JSON object, tuple, marker and bare -- and each carried its OWN
+#: copy of the two-line compose, with a sixth copy on the verdict-owner path.
+#: Applying the vendor strip to the marker path alone would have left the others
+#: still producing `Gemini-SIM_GEMINI_F004`, so the strip is applied here, once.
+#:
+#: WHAT IS *NOT* CLAIMED FOR THIS UNIFICATION, having been checked rather than
+#: assumed. The heading fallback also builds a title lookup keyed on the composed
+#: identifier, and an earlier draft of this comment claimed that a strip applied
+#: in the parser but not in that key would make every lookup miss. THAT CLAIM IS
+#: FALSE and is withdrawn. `_MD_HDR` constrains its captured token to
+#: `F\d{2,4}`, so the token can never carry a vendor name and the strip is
+#: provably INERT at that site: measured over all 15 tokens the capture admits
+#: against 9 seat labels, 0 of 135 pairs change. A heading written as
+#: `## GEMINI_F004` does not match the header pattern at all. The key is routed
+#: through this function for uniformity, not to repair a live defect there.
+#:
+#: So six copies are replaced by one function. This is the `simplest sufficient`
+#: form: strictly less code than six copies, and one place where composition can
+#: change rather than six that can disagree.
+def _compose_finding_id(finding_id: str, model_id: str) -> str:
+    """Compose the canonical finding identifier from a model-supplied one.
+
+    Strips a redundant bare vendor token, then prefixes the seat label unless it
+    is already there. Idempotent: composing a composed identifier returns it
+    unchanged.
+    """
+    fid = _strip_redundant_vendor_prefix(finding_id, model_id)
+    return fid if fid.startswith(f"{model_id}_") else f"{model_id}_{fid}"
+
+
 def get_effective_context_budget(
     model_label: str,
     fingerprints: Optional[Dict[str, Dict]] = None,
@@ -560,11 +675,8 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
                         verified = verified_raw.upper() == "TRUE"
                     else:
                         verified = bool(verified_raw)
-                    # Avoid double-prefixing if model already prefixed its IDs
-                    if fid.startswith(f"{model_id}_"):
-                        full_id = fid
-                    else:
-                        full_id = f"{model_id}_{fid}"
+                    # Strips a bare vendor token, then avoids double-prefixing.
+                    full_id = _compose_finding_id(fid, model_id)
                     findings.append(Finding(
                         finding_id=full_id,
                         model_id=model_id,
@@ -653,10 +765,7 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
                     verified = verified_raw.upper() == "TRUE"
                 else:
                     verified = bool(verified_raw)
-                if fid.startswith(f"{model_id}_"):
-                    full_id = fid
-                else:
-                    full_id = f"{model_id}_{fid}"
+                full_id = _compose_finding_id(fid, model_id)
                 findings.append(Finding(
                     finding_id=full_id,
                     model_id=model_id,
@@ -710,7 +819,7 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
             proposed_fix = m.group(6).replace('\\"', '"')
             target_file = _infer_target_file(description, proposed_fix)
             verified = m.group(7).upper() == "TRUE"
-            full_id = fid if fid.startswith(f"{model_id}_") else f"{model_id}_{fid}"
+            full_id = _compose_finding_id(fid, model_id)
             findings.append(Finding(
                 finding_id=full_id,
                 model_id=model_id,
@@ -959,7 +1068,7 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
         if _VERDICT_AS_FINDING:
             continue
 
-        full_id = finding_id if finding_id.startswith(f"{model_id}_") else f"{model_id}_{finding_id}"
+        full_id = _compose_finding_id(finding_id, model_id)
         findings.append(Finding(
             finding_id=full_id,
             model_id=model_id,
@@ -1034,7 +1143,9 @@ def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[F
                 if "FINDING_ID:" in _synth:
                     _md = _parse_findings_core(model_id, round_idx, _synth)
                     # Title carries the claim when the body's own field is thin.
-                    _tmap = {f"{model_id}_{m.group(1)}": (m.group(2) or "").strip()
+                    # Keyed through the SAME composition the parser used, or
+                    # every lookup misses once a vendor token is stripped.
+                    _tmap = {_compose_finding_id(m.group(1), model_id): (m.group(2) or "").strip()
                              for m in _hits}
                     import dataclasses as _dc
                     for _f in _md:
@@ -1630,7 +1741,7 @@ def _apply_field_envelopes(
         # `Fable-SIM_F609` can still enrich a finding that already exists.
         if not _structurally_valid_fid(owner):
             continue
-        fid = owner if owner.startswith(f"{model_id}_") else f"{model_id}_{owner}"
+        fid = _compose_finding_id(owner, model_id)
         # AND NEVER MINT A SECOND FINDING UNDER AN ID THAT IS ALREADY TAKEN.
         # It can only happen when `idx` came back None because the key was
         # AMBIGUOUS -- 2 parsed findings normalising to the same key -- and

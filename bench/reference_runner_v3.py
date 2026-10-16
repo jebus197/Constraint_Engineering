@@ -219,6 +219,12 @@ from field_envelope import (
 from runner_core import (
     falsifier_intake_telemetry,
     source_env,
+    # ★ 2026-10-16: the SAME composition the parser uses, so a verdict that
+    # names a model-supplied identifier resolves to the finding the parser
+    # actually stored. See `_resolve_merge_source` below for why a miss here is
+    # high-consequence rather than cosmetic.
+    _compose_finding_id,
+    _strip_redundant_vendor_prefix,
     build_model_specs,
     parse_findings,
     dispatch_to_model,
@@ -1724,6 +1730,32 @@ class RunnerConfig:
     # experiment feeds different directive text to different models and no
     # record says which text any seat received. Producer:
     # scripts/retiring_the_pruner_dominates_2026-10-13.py.
+    #
+    # ★ THIS CLAIM WAS ATTACKED ON 2026-10-16 AND THE ATTACK FAILED. Recorded
+    # because a claim that has survived a real falsification attempt is worth
+    # more than one that was never tested, and because the attack's error is
+    # instructive. The challenge measured the budget as
+    # `MODEL_COHERENCE_BUDGETS.get(base_model_label(seat), DEFAULT)`, got the
+    # default for all 12 live labels, and concluded that 0 of the 5 keys was
+    # reachable and every seat shared one budget. IT HAD DROPPED A HOP.
+    # `_compose_for_model` resolves `COMPOSER_MODEL_MAP.get(model_label,
+    # model_label)` FIRST -- CC2 -> opus_4_6, Codex -> codex_5_3, ChatGPT ->
+    # chatgpt_5_4, Gemini -> gemini_3_1_pro, DeepSeek -> deepseek_v3 -- so the
+    # keys resolve and the 4 distinct budgets are real. Re-measured through the
+    # full path: 0.02, 0.015, 0.012, 0.01, with Fable alone falling through to
+    # the 0.015 default. The original claim stands unaltered.
+    #
+    # WHAT THE FAILED ATTACK DID TURN UP, and it is a SEPARATE live issue
+    # needing his ruling rather than a repair: the resolution chain keys a
+    # per-model CAPABILITY number on a model NAME, with `opus_4_6: 0.020 #
+    # handles dense instructions well` as the clearest case, and 4 of the 5 keys
+    # name SUPERSEDED versions against the current `MODEL_ROSTER` -- `opus_4_6`
+    # vs Opus 4.7, `chatgpt_5_4` and `codex_5_3` vs GPT-5.5, `deepseek_v3` vs
+    # DeepSeek V4 Pro. His ruling of 2026-10-07 is that "Names are recorded for
+    # provenance only!", so a live seat inheriting a dense-instruction allowance
+    # from a superseded version's name is exactly the pattern that ruling
+    # addresses. It is NOT silently changed here. Producer:
+    # scripts/what_budget_does_each_seat_actually_get_2026-10-16.py.
     #
     # WHAT THIS DOES NOT FIX, stated so retirement is not sold as free: the
     # reduced rendering of C0040 is a SEPARATE mechanism keyed on
@@ -4634,6 +4666,28 @@ def _resolve_merge_source(
     # was recorded as a model AGREEING the target is real. The spec is right and
     # the resolver was wrong, which is why the repair belongs here and not at the
     # call site.
+    # ★ NO VENDOR STRIP IS NEEDED HERE, AND ADDING ONE WAS REVERTED, 2026-10-16.
+    #
+    # On his ruling of that date the parser strips a seat's own vendor token
+    # from a model-supplied identifier, so `GEMINI_F004` under `Gemini-SIM` is
+    # STORED as `Gemini-SIM_F004`. That looked like it would break this
+    # resolver, and a miss here is high-consequence: the comment above records
+    # that an unresolved source is MANDATED to be read as a CONFIRM on the
+    # target, so a model saying "these two are the same defect" would be
+    # recorded as AGREEING the target is real -- a silent verdict inversion.
+    #
+    # IT DOES NOT BREAK IT, established by execution rather than by reading.
+    # `local_id` comes from `re.search(r'(?:F|C)(\d+)')` above, which can only
+    # ever yield `F<digits>` or `C<digits>`: handed `Gemini-SIM_GEMINI_F004` it
+    # returns `F004`. So no vendor token can reach this point. Measured over 48
+    # id/seat pairs the strip changed 0 of them, and the composed form equalled
+    # candidate 2 in 48 of 48.
+    #
+    # The 2 extra candidates were therefore REMOVED again rather than left in
+    # place. An addition nothing reaches is not additive, and dead candidates
+    # here would imply a hazard that the regex above already excludes. The
+    # resolver that DID need them is `_resolve_finding_key`, which takes a raw
+    # model-written key.
     for candidate in (local_id, f"{model_id}_{local_id}"):
         canonical = registry.lookup_alias(model_id, candidate)
         if canonical:
@@ -6297,8 +6351,15 @@ def _resolve_finding_key(registry, model_id: str, key: str) -> str:
         return ""
     if k.upper() in registry.entries:
         return k.upper()
+    # ★ 2026-10-16: the vendor-stripped forms are APPENDED for the same reason
+    # as in `_resolve_merge_source` -- the parser now stores `Gemini-SIM_F004`
+    # where a seat wrote `GEMINI_F004`. Original candidates first and unchanged,
+    # so nothing that resolved before resolves differently.
+    _comp = _compose_finding_id(k, model_id)
+    _strip = _strip_redundant_vendor_prefix(k, model_id)
     for cand in (k, k.upper(), k.lower(),
-                 f"{model_id}_{k}", f"{model_id.lower()}_{k}"):
+                 f"{model_id}_{k}", f"{model_id.lower()}_{k}",
+                 _comp, _strip, _strip.upper()):
         cid = registry.lookup_alias(model_id, cand)
         if cid:
             return cid
@@ -11662,6 +11723,66 @@ _RELAY_TOPOLOGY_INSTRUCTION = (
 # Dispatch helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: ★ COMPOSER PROVENANCE IN THE DISPATCH RECORD. His ruling, 2026-10-16.
+#:
+#: His words on the coherence budget recalibration: *"It should be fixed,
+#: providing it doesn't trim the operational directives. It exists so that
+#: models never get fed work that is larger than they have been demonstrably
+#: proven to be able to handle in any experiment."*
+#:
+#: WHY THE RECALIBRATION COULD NOT WORK, MEASURED END TO END ON 2026-10-16.
+#: `calibrate_coherence_thresholds` prefers a recorded `constraint_density` and
+#: falls back to `(chars//70)/(chars//4)` when it is absent. Measured over the
+#: archive: 0 of 30,442 dispatch entries carry `constraint_density`,
+#: `constraint_count`, `token_estimate`, `coherence_budget` or `cid` -- not one.
+#: What they do carry is `prompt_length`, and 3,589 of 3,709 of those
+#: (96.7646%) equal 203, because every `save_output` call in this function
+#: passes `prompt[:200] + "..."`. So the fallback evaluated
+#: (203//70)/(203//4) = 2/50 = 0.04 for essentially every entry, and every
+#: threshold the calibrator ever produced was an artefact of a truncation
+#: constant rather than a measurement of a model.
+#:
+#: THE SIMPLEST SUFFICIENT FIX IS A WRITE, NOT A REWRITE. The composer already
+#: computes all five values; they were simply never persisted. The consumer
+#: already prefers `constraint_density` when present, so recording it needs no
+#: change to the calibration arithmetic at all.
+#:
+#: NOTHING IS REINTERPRETED. `prompt_length` keeps its existing meaning -- the
+#: length of the truncated copy actually stored -- and the true figure is
+#: recorded ALONGSIDE it as `prompt_chars_full`. Rewriting `prompt_length`
+#: would silently change what 3,709 archived entries mean.
+#:
+#: REPLAY IS NOT INVALIDATED, which is narrower than was reported to him on
+#: 2026-10-15. Older runs simply lack the new keys and take the existing
+#: fallback exactly as before; nothing that parses today stops parsing.
+def _composer_record_fields(
+    composed: Optional[ComposedDirectiveSet], prompt: str, directive_text: str,
+) -> Dict[str, Any]:
+    """Composer provenance for a dispatch record, or an explicit absence marker.
+
+    Returns the five composer fields plus the untruncated prompt size. On a
+    composer fallback `composed` is None, and the record says so rather than
+    omitting the keys -- an absent key and a failed composition are different
+    facts, and the calibrator must not read the second as the first.
+    """
+    base: Dict[str, Any] = {
+        "prompt_chars_full": len(prompt) + len(directive_text or ""),
+        "directive_chars": len(directive_text or ""),
+    }
+    if composed is None:
+        base["composer_fallback"] = True
+        return base
+    base.update({
+        "composer_fallback": False,
+        "constraint_count": composed.constraint_count,
+        "token_estimate": composed.token_estimate,
+        "constraint_density": composed.constraint_density,
+        "coherence_budget": composed.coherence_budget,
+        "cid": composed.cid,
+    })
+    return base
+
+
 def _compose_for_model(
     model_label: str, pattern_name: str, domain: str,
 ) -> ComposedDirectiveSet:
@@ -12064,6 +12185,12 @@ def _dispatch_single_model_inner(
     # assert, unable to run anything, i.e. able only to vote. The standing
     # directive is TOOLS DECIDE, NOT VOTES, and the ruling extends it to "all
     # models under all conditions ... without exception".
+    # Bound BEFORE the try, because the except branch below sets only
+    # `model_cdsfl` and every `save_output` in this function reads `composed`
+    # for its composer-provenance fields. Without this, a composer fallback
+    # would raise NameError at the first record write instead of recording the
+    # fallback, which is the opposite of what the LOUD comment below intends.
+    composed = None
     try:
         # Resolve the SIM suffix: `CC2-SIM` must compose as CC2, or a simulated
         # panellist silently loses its per-model directive.
@@ -12162,7 +12289,8 @@ def _dispatch_single_model_inner(
                 logs_dir, f"r{round_idx}", mc.label, prompt[:200] + "...", text,
                 metadata={"round": round_idx, "elapsed": round(elapsed, 1),
                           "chars": len(text), "findings_count": len(model_findings),
-                          "decomposed": True, "multiturn": True})
+                          "decomposed": True, "multiturn": True,
+                          **_composer_record_fields(composed, prompt, model_cdsfl)})
             return model_findings, text
 
     # THE WATCHDOG MUST NOT CUT INSIDE THE CONFIGURED RETRY BUDGET (task 6.2).
@@ -12226,7 +12354,8 @@ def _dispatch_single_model_inner(
             logs_dir, f"r{round_idx}", mc.label, prompt[:200] + "...", text,
             metadata={"round": round_idx, "elapsed": round(elapsed, 1),
                       "chars": len(text), "findings_count": len(model_findings),
-                      "decomposed": False, "inround_reask": _reasked})
+                      "decomposed": False, "inround_reask": _reasked,
+                      **_composer_record_fields(composed, prompt, model_cdsfl)})
         return model_findings, text
     except (CircuitBreakerTripped, TimeoutError, Exception) as e:
         _log(f"  {mc.label}: {type(e).__name__} — {e}")
@@ -12249,7 +12378,8 @@ def _dispatch_single_model_inner(
                     metadata={"round": round_idx, "elapsed": round(elapsed, 1),
                               "chars": len(text), "findings_count": len(model_findings),
                               "decomposed": True, "multiturn": True,
-                              "route_used": "primary"})
+                              "route_used": "primary",
+                              **_composer_record_fields(composed, prompt, model_cdsfl)})
                 return model_findings, text
             _log(f"  {mc.label}: decomposed fallback returned empty content "
                  f"— escalating to secondary route")
@@ -12295,7 +12425,9 @@ def _dispatch_single_model_inner(
                                   "primary_api": mc.api,
                                   "primary_model_id": mc.model_id,
                                   "secondary_api": mc.secondary_api,
-                                  "secondary_model_id": mc.secondary_model_id})
+                                  "secondary_model_id": mc.secondary_model_id,
+                                  **_composer_record_fields(
+                                      composed, prompt, model_cdsfl)})
                     _secondary_route_usage.append({
                         "round": round_idx, "model": mc.label,
                         "primary_api": mc.api,

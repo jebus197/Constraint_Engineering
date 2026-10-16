@@ -374,6 +374,50 @@ def _is_harvest_of_a_demonstrably_real_round(path: Path) -> bool:
     return _round_is_demonstrably_real(round_dir)
 
 
+def _is_harvest_of_a_repository_file(path: Path) -> bool:
+    """A harvested worktree copy of a REPOSITORY file is out of this guard's scope.
+
+    THE FALSE POSITIVE, 2026-10-16, and it is the same class as the two recorded
+    above one level deeper again. This guard scans `bench/logs` and the
+    simulation tool. It does NOT scan the repository's own documentation, and it
+    must not: `resources/ONBOARDING.md` names every participating model for
+    provenance, `resources/RECOVERY.md` quotes the mandated launch argument
+    `PANEL_ONLY=cc2,fable`, and both are correct as written. His ruling of
+    2026-10-07 is explicit that names are recorded for provenance.
+
+    A panel seat's worktree harvest copies those very files INTO a run
+    directory, where the run's own SIM markers then classify the copy as a
+    simulated artefact. 8 violations across `ONBOARDING.md` and `RECOVERY.md`
+    were produced that way on 2026-10-15 -- `ChatGPT` x4, `cc2` x2, `Gemini`,
+    `Codex` -- none of which is a provenance failure. The identical text at its
+    real repository path is not scanned at all, so flagging the copy is a scope
+    error and nothing else.
+
+    THIS IS A SCOPE FIX AND NOT A WEAKENING, AND IT IS CONDITIONED ON EVIDENCE.
+    The exemption applies ONLY when the harvested path resolves to a file that
+    actually exists in this repository AND lies outside the directory this guard
+    scans. A fabricated path under the harvest tree is NOT exempt, because
+    nothing in the repository corresponds to it. A harvested copy of a
+    `bench/logs` artefact is NOT exempt either, because that one IS in scope --
+    and it is additionally scanned at its canonical location, so the copy's
+    verdict can never be the only one.
+    """
+    parts = path.parts
+    if "panel_worktree_harvest" not in parts:
+        return False
+    i = parts.index("panel_worktree_harvest")
+    if len(parts) < i + 3 or parts[i + 1] != "files":
+        return False
+    mirrored = REPO_ROOT.joinpath(*parts[i + 2:])
+    if not mirrored.is_file():
+        return False
+    try:
+        mirrored.relative_to(LOGS_DIR)
+    except ValueError:
+        return True   # outside the scanned tree -> out of scope, like the original
+    return False      # a copy of an in-scope artefact stays in scope
+
+
 def content_marks_simulated(data: bytes) -> bool:
     if not any(tok in data for tok in _CONTENT_PREFILTER):
         return False
@@ -691,6 +735,8 @@ def survey_artefacts() -> Survey:
             return
         if _is_harvest_of_a_demonstrably_real_round(path):
             return
+        if _is_harvest_of_a_repository_file(path):
+            return
         if name_marks_simulated(relative) or content_marks_simulated(data):
             simulated.append((path, relative, data))
         elif b"imulated" in data:
@@ -900,6 +946,84 @@ class TestDetectorGoesRedAndGreen:
                              self.TOKENS) == []
 
 
+class TestRepositoryCopyScope:
+    """`_is_harvest_of_a_repository_file` must exempt copies and nothing else.
+
+    Each condition in the predicate is falsified separately, because a scope fix
+    that over-matches is a dead guard -- the exact outcome this file's own
+    docstrings say it exists to prevent.
+    """
+
+    def test_a_harvested_copy_of_a_repository_doc_is_exempt(self):
+        """The measured case: ONBOARDING.md copied into a run directory."""
+        assert (REPO_ROOT / "resources" / "ONBOARDING.md").is_file(), (
+            "the fixture this test is built on is gone; re-derive it rather than "
+            "deleting the test"
+        )
+        path = (LOGS_DIR / "somerun" / "panel_worktree_harvest" / "files"
+                / "resources" / "ONBOARDING.md")
+        assert _is_harvest_of_a_repository_file(path)
+
+    def test_a_fabricated_harvest_path_is_not_exempt(self):
+        """Nothing in the repository corresponds to it, so it stays in scope."""
+        path = (LOGS_DIR / "somerun" / "panel_worktree_harvest" / "files"
+                / "resources" / "NO_SUCH_FILE_2026-10-16.md")
+        assert not (REPO_ROOT / "resources" / "NO_SUCH_FILE_2026-10-16.md").exists()
+        assert not _is_harvest_of_a_repository_file(path)
+
+    def test_a_harvested_copy_of_an_in_scope_artefact_is_not_exempt(self):
+        """A `bench/logs` file IS scanned, so its copy must not slip the net."""
+        candidates = [q for q in LOGS_DIR.rglob("*.json")
+                      if q.is_file() and "panel_worktree_harvest" not in q.parts]
+        assert candidates, "no bench/logs artefact to build the fixture from"
+        inner = candidates[0].relative_to(REPO_ROOT)
+        path = (LOGS_DIR / "somerun" / "panel_worktree_harvest" / "files" / inner)
+        assert not _is_harvest_of_a_repository_file(path)
+
+    def test_a_path_outside_the_harvest_tree_is_not_exempt(self):
+        assert not _is_harvest_of_a_repository_file(
+            LOGS_DIR / "somerun" / "resources" / "ONBOARDING.md")
+
+    def test_the_files_segment_is_required(self):
+        """`panel_worktree_harvest/<x>` without the `files` segment is not a copy."""
+        assert not _is_harvest_of_a_repository_file(
+            LOGS_DIR / "somerun" / "panel_worktree_harvest" / "manifest.json")
+        assert not _is_harvest_of_a_repository_file(
+            LOGS_DIR / "somerun" / "panel_worktree_harvest" / "notfiles"
+            / "resources" / "ONBOARDING.md")
+
+    def test_the_exemption_is_actually_load_bearing_on_this_archive(self):
+        """It must suppress real violations, or it is an addition nothing reaches.
+
+        Counted by EXECUTION over the live archive: with the exemption disabled
+        the survey yields violations in harvested repository docs; with it
+        enabled it yields none from that tree.
+        """
+        tokens = load_vendor_tokens()
+        harvest_hits = 0
+        for path in sorted(LOGS_DIR.rglob("*")):
+            if not path.is_file() or not _is_harvest_of_a_repository_file(path):
+                continue
+            try:
+                data = path.read_bytes()
+            except OSError:
+                continue
+            if name_marks_simulated(str(path.relative_to(REPO_ROOT))) or \
+                    content_marks_simulated(data):
+                harvest_hits += len(scan_artefact(
+                    path, str(path.relative_to(REPO_ROOT)), data, tokens))
+        assert harvest_hits > 0, (
+            "the exemption suppresses nothing on this archive, so it is an "
+            "addition nothing reaches. Either the harvest tree is gone or the "
+            "predicate no longer matches it."
+        )
+        survey = survey_artefacts()
+        leaked = [rel for _, rel, _ in survey.simulated
+                  if "panel_worktree_harvest" in Path(rel).parts
+                  and _is_harvest_of_a_repository_file(REPO_ROOT / rel)]
+        assert not leaked, leaked
+
+
 class TestSimulatedPredicate:
     """The predicate must select self-declared simulated artefacts and nothing else."""
 
@@ -933,6 +1057,22 @@ class TestSimulatedPredicate:
             assert all(not name_marks_simulated(p) for p in sample), sample
 
 
+#: ★ PRE-REPAIR HISTORY, PINNED BY NAME. His ruling, 2026-10-16.
+#:
+#: These identifiers were recorded by free run 2 of 2026-10-15, before the
+#: runner stripped a bare vendor token from a model-supplied identifier. They
+#: are experimental evidence and are NOT rewritten. The guard below treats them
+#: as known history and fails on anything else, so the regression detector still
+#: works while history stays intact.
+#:
+#: Reproduce with:
+#:   python3 scripts/how_many_identifiers_carry_a_bare_vendor_name_2026-10-16.py
+ARCHIVED_BARE_VENDOR_IDS = frozenset({
+    "Gemini-SIM_GEMINI_F004",
+    "Gemini-SIM_GEMINI_F005",
+})
+
+
 class TestLiveArtefacts:
     """The actual guard, over the repository's real simulated artefacts."""
 
@@ -962,13 +1102,112 @@ class TestLiveArtefacts:
         for path, relative, data in survey.simulated:
             violations.extend(scan_artefact(path, relative, data, tokens))
 
-        assert not violations, (
-            f"{len(violations)} bare vendor name(s) in simulated artefacts. Every "
+        # ── His ruling of 2026-10-16 ──────────────────────────────────────
+        # *"We normalise going forward, since recording vendor names is purely a
+        # recording statistic and has no impact on capability, or how our
+        # experiments work."*
+        #
+        # WHY THIS CHECK CHANGED SHAPE. It used to assert the archive carries no
+        # bare vendor name anywhere. That became unreachable on 2026-10-15, when
+        # a seat wrote `GEMINI_F004` as its OWN finding identifier and the runner
+        # prefixed the correct seat label to it, yielding
+        # `Gemini-SIM_GEMINI_F004`. The seat label was never wrong; the bare name
+        # arrived inside the model's own text. The only two ways to turn this
+        # green were to rewrite recorded findings -- falsifying experimental
+        # evidence, refused -- or to normalise what future runs write, which is
+        # what he ruled.
+        #
+        # So the archive exceptions are PINNED BY NAME rather than tolerated by
+        # pattern. A new bare vendor name anywhere still fails, which is the
+        # regression this check exists to detect. What it no longer does is
+        # demand that history be rewritten.
+        #
+        # Measured by `scripts/how_many_identifiers_carry_a_bare_vendor_name_
+        # 2026-10-16.py`: 2 distinct identifiers, 4 recorded findings, 1 run.
+        historical = [v for v in violations if v.value in ARCHIVED_BARE_VENDOR_IDS]
+        fresh = [v for v in violations if v.value not in ARCHIVED_BARE_VENDOR_IDS]
+
+        assert not fresh, (
+            f"{len(fresh)} NEW bare vendor name(s) in simulated artefacts. Every "
             f"simulated panel member must carry the mandatory {REQUIRED_SUFFIX} "
             f"suffix (founder ruling 2026-08-08): CC2-SIM, Codex-SIM, Gemini-SIM, "
             f"DeepSeek-SIM, ChatGPT-SIM. A bare vendor name here is a provenance "
             f"failure — it makes a simulated result indistinguishable from a real "
-            f"one.\n" + "\n".join(v.render() for v in violations)
+            f"one. These are not among the {len(ARCHIVED_BARE_VENDOR_IDS)} "
+            f"identifiers pinned as pre-repair history, so either a run regressed "
+            f"or the pin is incomplete.\n"
+            + "\n".join(v.render() for v in fresh)
+        )
+
+        # THE PIN MUST NOT GO STALE IN THE OTHER DIRECTION EITHER. If the
+        # archived occurrences ever disappear -- because someone rewrote the
+        # evidence, or pruned the run -- this check would silently become
+        # vacuous while still reading green. So it states what it found.
+        assert historical, (
+            "the pinned pre-repair identifiers are no longer present in the "
+            "archive. Either the recorded evidence was rewritten (which is "
+            "forbidden) or the run was removed. If the archive is genuinely "
+            "clean now, delete ARCHIVED_BARE_VENDOR_IDS and restore the "
+            "unconditional assertion -- do not leave a pin that guards nothing."
+        )
+
+    def test_every_pinned_identifier_is_actually_in_the_archive(self):
+        """The pin may not grow to pre-excuse an identifier that does not exist.
+
+        Without this, adding `Gemini-SIM_GEMINI_F999` to the pin would silently
+        authorise that identifier in advance, and the guard would wave through
+        the very regression it exists to catch. Measured by EXECUTION: every
+        pinned value must be found in the live archive, so the pin can only ever
+        describe history, never licence a future.
+        """
+        tokens = load_vendor_tokens()
+        survey = survey_artefacts()
+        if not survey.simulated:
+            pytest.skip("no simulated artefacts to check the pin against")
+        found = set()
+        for path, relative, data in survey.simulated:
+            for v in scan_artefact(path, relative, data, tokens):
+                found.add(v.value)
+        unjustified = sorted(ARCHIVED_BARE_VENDOR_IDS - found)
+        assert not unjustified, (
+            f"{len(unjustified)} pinned identifier(s) do not occur anywhere in "
+            f"the archive, so the pin is excusing something that has not "
+            f"happened. Remove them: {unjustified}"
+        )
+
+    def test_the_forward_path_cannot_produce_a_bare_vendor_name(self):
+        """The archive exceptions above are only defensible if the cause is fixed.
+
+        `execute-do-not-grep`: this CALLS the runner's composition function on
+        the exact identifier shape the models emitted, rather than asserting on
+        the text of the composer. A pin on history plus a live defect would be
+        the worst of both.
+        """
+        import sys as _sys
+
+        _sys.path.insert(0, str(REPO_ROOT / "bench"))
+        import runner_core  # noqa: PLC0415
+
+        compose = getattr(runner_core, "_compose_finding_id", None)
+        assert compose is not None, (
+            "the shared composition function is gone, so the forward repair that "
+            "justifies ARCHIVED_BARE_VENDOR_IDS no longer exists."
+        )
+        tokens = load_vendor_tokens()
+        offenders = []
+        for vendor in sorted(runner_core.MODEL_SPECS):
+            for seat in (f"{vendor}{REQUIRED_SUFFIX}", vendor):
+                for supplied in (f"{vendor.upper()}_F004", f"{vendor}_F004",
+                                 f"{vendor.lower()}-F004"):
+                    out = compose(supplied, seat)
+                    for tok in tokens:
+                        if re.search(rf"{REQUIRED_SUFFIX}_{re.escape(tok)}[_\-:]",
+                                     out, re.I):
+                            offenders.append((supplied, seat, out))
+        assert not offenders, (
+            "the runner still composes identifiers carrying a bare vendor name, "
+            "so the archive pin is hiding a live defect:\n  "
+            + "\n  ".join(f"{a} @ {b} -> {c}" for a, b, c in offenders)
         )
 
     def test_integrity_directive_section_is_present(self):

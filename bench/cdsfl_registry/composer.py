@@ -1480,18 +1480,40 @@ def calibrate_coherence_thresholds(
             if not isinstance(model, str) or not model:
                 continue
 
-            # Extract density
+            # Extract density.
+            #
+            # ★ 2026-10-16: ALSO LOOK IN `metadata`, matching the idiom this
+            # function already uses for `findings_count` two blocks below.
+            # The runner records composer provenance through `save_output`'s
+            # free-form `metadata` dict, so a top-level-only read found 0 of
+            # 30,442 archived entries and fell through to the estimator every
+            # time. The estimator is `(chars//70)/(chars//4)`, and 3,589 of
+            # 3,709 entries carry `prompt_length = 203` -- the length of the
+            # TRUNCATED prompt copy that `save_output` is passed -- so it
+            # returned 2/50 = 0.04 for essentially every entry and every
+            # calibrated threshold was an artefact of that constant.
+            # Producer: scripts/what_budget_does_each_seat_actually_get_2026-10-16.py
+            _meta = entry.get("metadata") or {}
+            if not isinstance(_meta, dict):
+                _meta = {}
             density = None
-            if isinstance(entry.get("constraint_density"), (int, float)):
-                density = float(entry["constraint_density"])
+            _recorded = entry.get("constraint_density")
+            if not isinstance(_recorded, (int, float)):
+                _recorded = _meta.get("constraint_density")
+            if isinstance(_recorded, (int, float)):
+                density = float(_recorded)
             else:
                 chars = (
                     entry.get("directive_chars")
+                    or _meta.get("directive_chars")
+                    or _meta.get("prompt_chars_full")
                     or entry.get("chars")
                     or entry.get("prompt_length")
                 )
                 if isinstance(chars, (int, float)) and chars > 0:
                     constraint_count = entry.get("constraint_count")
+                    if not isinstance(constraint_count, (int, float)):
+                        constraint_count = _meta.get("constraint_count")
                     if isinstance(constraint_count, (int, float)) and constraint_count > 0:
                         density = float(constraint_count) / max(int(chars) // 4, 1)
                     else:
