@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 16 October 2026 17:20 BST (2026-10-16T17:20:35+01:00)
+Generated: 16 October 2026 17:28 BST (2026-10-16T17:28:18+01:00)
 
 ---
 
@@ -18,16 +18,16 @@ Generated: 16 October 2026 17:20 BST (2026-10-16T17:20:35+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `cd14a2d7` the panel closed 2 of 2, and the set-form ratchet immediately named what my count form could not
-- **Committed:** 2026-10-16 17:18:29 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 19
+- **Last commit (the PARENT of the commit containing this file):** `46bb8cd9` a harvested seat file is verbatim seat output, and I walked into the trap its own test documents
+- **Committed:** 2026-10-16 17:28:02 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 20
 - **Working tree at snapshot time:** clean
 
 ---
 
 ## Tests
 
-**11651 tests collected** at 16 October 2026 17:20 BST, HEAD `cd14a2d7` (`python3 -m pytest bench/tests/ --co -q`)
+**11653 tests collected** at 16 October 2026 17:28 BST, HEAD `46bb8cd9` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,6 +57,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `46bb8cd9 a harvested seat file is verbatim seat output, and I walked into the trap its own test documents`
 - `cd14a2d7 the panel closed 2 of 2, and the set-form ratchet immediately named what my count form could not`
 - `4aac3124 a gate whose exit code is discarded is not a gate`
 - `61c33af7 my admission figure was understated, and the producer had the defect it reports`
@@ -66,4 +67,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `d5428c01 end-of-day report: 6 built, 5 needing a ruling, and 3 of my own claims corrected`
 - `8197faf3 the capacity number measured, his admission question answered, and a hypothesis that died on the way`
 - `47c51b1b a ratchet that could not say what tripped it now names the path, and the swap it used to miss`
-- `60d0d536 re-point the citations the band gate shifted, with the instrument that exists`
