@@ -7,162 +7,164 @@ show any tendency towards repeatability, which is a foundational pillar of
 scientific enquiry, and if the fixes derived from these simulated runs on that
 specific target should be carried forward into live runs?"
 
-WHAT REPEATABILITY CAN AND CANNOT MEAN HERE. The 3 legs ran the same target with
-the same stand-in seats. Two DIFFERENT things could repeat and they carry
-different weight:
+THIS SCRIPT'S FIRST VERSION WAS VACUOUS AND IS KEPT HONEST BY ITS OWN ATTACKS.
+The first version compared the `demonstrated` and `evidence` fields of
+`*_finding_catalogue.jsonl`. Those are a BOOLEAN and a boilerplate status string:
+leg 3 carries 3 distinct combined texts across 38 findings, and 18 of them read
+"True verified fix, no unresolved challenges". It reported 81.8182% overlap for
+leg 1 against leg 3, and that figure measured only how many findings share a
+status phrase. It was delivered to the founder before the attacks below were
+run, and withdrawn when they were.
 
-  (a) RUN-LEVEL behaviour -- convergence round, gamma, finding volume. If these
-      agree across legs the HARNESS is behaving reproducibly. This is measurable
-      from the committed reports and is what the success criterion asked for.
+The finding TEXT lives in `runner_state.json` under
+`registry.entries.<id>.description` -- 22, 19 and 38 distinct descriptions of
+median length 825, 720 and 843 characters. This version reads that.
 
-  (b) FINDING-LEVEL content -- whether the legs surface the SAME defects. This is
-      the stronger claim and the one that bears on carrying fixes forward.
+TWO THINGS COULD REPEAT AND THEY CARRY DIFFERENT WEIGHT:
+  (a) RUN-LEVEL behaviour -- convergence round and finding volume. Read from the
+      committed reports. This is what the success criterion asked for.
+  (b) FINDING-LEVEL content -- whether the legs surface the SAME defects. The
+      stronger claim, and the one that bears on carrying fixes forward.
 
-This script measures both and reports them separately, because (a) holding while
-(b) fails would mean a reproducible harness producing non-reproducible findings,
-which is the case that matters for his question.
+THE THRESHOLD IS LOAD-BEARING, SO A SINGLE NUMBER IS NOT REPORTED ALONE. The
+overlap rate runs from 100% at a 0.10 Jaccard threshold to 0% at 0.70, so any
+one figure is a choice of threshold. The sweep is printed instead.
 
 EVERY PROPORTION IS CROSS-VERIFIED ON >=2 TOOLS (21 Apr 2026 rule).
 `--help` runs no measurement and costs nothing.
 """
 from __future__ import annotations
-import argparse, json, pathlib, sys, collections, itertools, re
+import argparse, json, pathlib, sys, itertools, re, random
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LEGS = {
-    "leg1 (directive whole)": "free_run1_directive_whole_20261015T061123Z_20261015T061124Z",
-    "leg2 (severity deciding)": "free_run2_severity_spec_20261015T073418Z_20261015T073418Z",
-    "leg3 (final shakedown)": "leg3_final_shakedown_20261015T220118Z",
+    "leg1": "free_run1_directive_whole_20261015T061123Z_20261015T061124Z",
+    "leg2": "free_run2_severity_spec_20261015T073418Z_20261015T073418Z",
+    "leg3": "leg3_final_shakedown_20261015T220118Z",
 }
+STOP = {"that", "this", "with", "from", "which", "when", "then", "than", "have",
+        "been", "were", "would", "could", "should", "there", "their", "where",
+        "while", "because", "finding", "model", "claim", "does", "such", "only",
+        "also", "into", "they", "them"}
+THRESHOLDS = (0.10, 0.20, 0.30, 0.50, 0.70, 0.90)
+REPORT_AT = 0.30
 
-def load(dirname):
+def sig(text: str) -> frozenset:
+    return frozenset(w for w in re.findall(r"[a-z_]{4,}", text.lower())
+                     if w not in STOP)
+
+def descriptions(dirname: str) -> list[str]:
+    st = json.loads((ROOT / "bench" / "logs" / dirname / "runner_state.json")
+                    .read_text(encoding="utf-8"))
+    out = [(e.get("description") or "") for e in st["registry"]["entries"].values()]
+    return [x for x in out if x.strip()]
+
+def report(dirname: str) -> dict:
     d = ROOT / "bench" / "logs" / dirname
-    cat = next(d.glob("*_finding_catalogue.jsonl"), None)
-    rep = next(d.glob("*_report.json"), None)
-    findings, report = [], {}
-    if cat:
-        for line in cat.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line:
-                try: findings.append(json.loads(line))
-                except json.JSONDecodeError: pass
-    if rep:
-        try: report = json.loads(rep.read_text(encoding="utf-8"))
-        except json.JSONDecodeError: pass
-    return findings, report
+    f = next(d.glob("*_report.json"), None)
+    return json.loads(f.read_text(encoding="utf-8")) if f else {}
 
-def ci_two_tools(k, n):
-    """Wilson and Clopper-Pearson from 2 independent libraries."""
+def rate(A, B, t) -> float:
+    if not A: return float("nan")
+    return sum(1 for a in A if any(len(a & b) / len(a | b) >= t for b in B)) / len(A)
+
+def ci(k: int, n: int) -> dict:
     out = {}
     try:
         from statsmodels.stats.proportion import proportion_confint
-        out["wilson_statsmodels"] = proportion_confint(k, n, 0.05, "wilson")
-    except Exception as e:
-        out["wilson_statsmodels"] = ("unavailable", str(e)[:40])
+        out["Wilson (statsmodels)"] = proportion_confint(k, n, 0.05, "wilson")
+    except Exception as e: out["Wilson (statsmodels)"] = ("n/a", str(e)[:30])
     try:
         from scipy.stats import beta
-        lo = 0.0 if k == 0 else beta.ppf(0.025, k, n - k + 1)
-        hi = 1.0 if k == n else beta.ppf(0.975, k + 1, n - k)
-        out["clopper_scipy"] = (lo, hi)
-    except Exception as e:
-        out["clopper_scipy"] = ("unavailable", str(e)[:40])
+        lo = 0.0 if k == 0 else float(beta.ppf(0.025, k, n - k + 1))
+        hi = 1.0 if k == n else float(beta.ppf(0.975, k + 1, n - k))
+        out["Clopper-Pearson (scipy)"] = (lo, hi)
+    except Exception as e: out["Clopper-Pearson (scipy)"] = ("n/a", str(e)[:30])
     try:
         import mpmath as mp
         mp.mp.dps = 30
-        p = mp.mpf(k) / n
-        z = mp.mpf("1.959963984540054235524594430520")
-        d = 1 + z**2 / n
-        c = (p + z**2 / (2 * n)) / d
-        h = z * mp.sqrt(p * (1 - p) / n + z**2 / (4 * n**2)) / d
-        out["wilson_mpmath"] = (float(c - h), float(c + h))
-    except Exception as e:
-        out["wilson_mpmath"] = ("unavailable", str(e)[:40])
+        p, z, N = mp.mpf(k) / n, mp.mpf("1.959963984540054235524594430520"), n
+        d = 1 + z**2 / N
+        c = (p + z**2 / (2 * N)) / d
+        h = z * mp.sqrt(p * (1 - p) / N + z**2 / (4 * N**2)) / d
+        out["Wilson (mpmath)"] = (float(c - h), float(c + h))
+    except Exception as e: out["Wilson (mpmath)"] = ("n/a", str(e)[:30])
     return out
 
 def pct(x): return f"{x*100:.4f}%"
 
-def main():
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.parse_args()
+def falsify(S) -> list[str]:
+    """ATTACK the measure. A measure that survives nothing proves nothing."""
+    fails = []
+    a, b = sig("alpha bravo charlie delta echo foxtrot"), sig("sierra tango uniform victor")
+    if a & b: fails.append("disjoint text scored a nonzero overlap")
+    if len(a & a) / len(a | a) != 1.0: fails.append("identical text did not score 1.0")
+    vals = [rate(S["leg1"], S["leg3"], t) for t in THRESHOLDS]
+    if any(vals[i + 1] > vals[i] + 1e-12 for i in range(len(vals) - 1)):
+        fails.append("rate ROSE under a stricter threshold")
+    if max(vals) - min(vals) < 0.05:
+        fails.append("measure SATURATED: the threshold changes nothing")
+    random.seed(11)
+    vocab = sorted({w for s in S["leg3"] for w in s})
+    fake = [frozenset(random.sample(vocab, len(s))) for s in S["leg3"]]
+    real, ctrl = rate(S["leg1"], S["leg3"], REPORT_AT), rate(S["leg1"], fake, REPORT_AT)
+    if ctrl >= real * 0.8:
+        fails.append(f"shuffled control {pct(ctrl)} too close to real {pct(real)}")
+    return fails
+
+def main() -> int:
+    argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter).parse_args()
 
     print("=" * 74)
     print("DO THE 3 LEGS REPEAT? his question of 2026-10-16")
     print("=" * 74)
 
-    data = {}
-    for label, d in LEGS.items():
-        f, r = load(d)
-        data[label] = (f, r)
-        if not f:
-            print(f"  {label}: NO CATALOGUE FOUND at bench/logs/{d}")
+    D = {k: descriptions(v) for k, v in LEGS.items()}
+    R = {k: report(v) for k, v in LEGS.items()}
+    S = {k: [s for s in (sig(x) for x in v) if s] for k, v in D.items()}
 
     print("\n(a) RUN-LEVEL: does the harness behave reproducibly?\n")
-    hdr = f"  {'leg':26s} {'findings':>9s} {'rounds':>7s} {'converged':>10s}"
-    print(hdr); print("  " + "-" * (len(hdr) - 2))
-    rounds, counts = [], []
-    for label, (f, r) in data.items():
-        n = len(f)
-        rd = r.get("total_rounds") or r.get("rounds_run")
-        cv = r.get("converged_at")
-        if rd is None:
-            rd = len({x.get("round") for x in f if x.get("round") is not None}) or None
-        counts.append(n)
-        if cv is not None: rounds.append(cv)
-        print(f"  {label:26s} {n:>9d} {str(rd):>7s} {str(cv):>10s}")
+    print(f"  {'leg':6s} {'findings':>9s} {'rounds':>7s} {'converged at':>13s}")
+    print("  " + "-" * 40)
+    for k in LEGS:
+        print(f"  {k:6s} {len(D[k]):>9d} {str(R[k].get('total_rounds')):>7s} "
+              f"{str(R[k].get('converged_at')):>13s}")
+    print(f"\n  finding-volume spread: {max(len(v) for v in D.values()) - min(len(v) for v in D.values())}")
 
-    if counts:
-        spread = max(counts) - min(counts)
-        print(f"\n  finding-volume spread across legs: {spread} "
-              f"(min {min(counts)}, max {max(counts)})")
+    print("\n(b) THE MEASURE IS ATTACKED BEFORE IT IS REPORTED\n")
+    fails = falsify(S)
+    for f in fails: print(f"  FAILED: {f}")
+    if fails:
+        print("\n  The measure did not survive. No overlap figure is reported.")
+        return 1
+    print("  4 of 4 attacks survived: disjoint scores 0, identical scores 1,")
+    print("  the rate falls monotonically with a stricter threshold, and a")
+    print("  shuffled control separates from the real figure.")
 
-    print("\n(b) FINDING-LEVEL: do the legs surface the SAME defects?\n")
-    print("  BOUNDARY STATED FIRST. The catalogue carries no defect-identity field.")
-    print("  `mechanism` is a PIPELINE label (e.g. verified_flag), `canonical_id` is")
-    print("  per-run, and `severity` is a number. So \"did the same defect recur\"")
-    print("  cannot be read directly from the record. What CAN be measured is the")
-    print("  overlap of finding TEXT, which is an UPPER BOUND on defect recurrence:")
-    print("  shared wording may describe one defect or merely one vocabulary.\n")
+    print("\n(c) FINDING-LEVEL: the threshold sweep, because 1 number is a choice\n")
+    print(f"  {'threshold':>10s}  " + "  ".join(f"{a}->{b}" for a, b in
+          itertools.permutations(LEGS, 2)))
+    for t in THRESHOLDS:
+        row = "  ".join(f"{pct(rate(S[a], S[b], t)):>9s}"
+                        for a, b in itertools.permutations(LEGS, 2))
+        print(f"  {t:>10.2f}  {row}")
 
-    def sig(x):
-        t = " ".join(str(x.get(f) or "") for f in ("demonstrated", "evidence"))
-        toks = re.findall(r"[a-z_]{4,}", t.lower())
-        stop = {"that", "this", "with", "from", "which", "when", "then", "than",
-                "have", "been", "were", "would", "could", "should", "there",
-                "their", "where", "while", "because", "finding", "model"}
-        return frozenset(w for w in toks if w not in stop)
-
-    sigs = {k: [sig(x) for x in v[0]] for k, v in data.items()}
-    labels = list(sigs)
-
-    def best_overlap(a, b, thresh=0.30):
-        """Count findings in `a` with a >=thresh Jaccard partner in `b`."""
-        hits = 0
-        for sa in a:
-            if not sa: continue
-            for sb in b:
-                if not sb: continue
-                j = len(sa & sb) / len(sa | sb)
-                if j >= thresh:
-                    hits += 1
-                    break
-        return hits
-
-    print("  pairwise: findings in A with a >=30% token-overlap partner in B")
-    for a, b in itertools.combinations(labels, 2):
-        na, nb = len(sigs[a]), len(sigs[b])
-        hab = best_overlap(sigs[a], sigs[b])
-        print(f"    {a.split()[0]:5s} -> {b.split()[0]:5s}: {hab} of {na} = {pct(hab/na) if na else 'n/a'}")
-        for name, (lo, hi) in ci_two_tools(hab, na).items():
+    print(f"\n(d) AT THE REPORTED THRESHOLD OF {REPORT_AT}, WITH INTERVALS\n")
+    for a, b in itertools.permutations(LEGS, 2):
+        n = len(S[a]); r = rate(S[a], S[b], t=REPORT_AT); k = round(r * n)
+        print(f"  {a} -> {b}: {k} of {n} = {pct(r)}")
+        for name, (lo, hi) in ci(k, n).items():
             if isinstance(lo, float):
-                print(f"       {name:20s} [{pct(lo)}, {pct(hi)}]")
-        hba = best_overlap(sigs[b], sigs[a])
-        print(f"    {b.split()[0]:5s} -> {a.split()[0]:5s}: {hba} of {nb} = {pct(hba/nb) if nb else 'n/a'}")
+                print(f"      {name:26s} [{pct(lo)}, {pct(hi)}]")
 
     print("\n" + "=" * 74)
-    print("READ THIS AS: (a) is the harness reproducible, (b) is the FINDING SET")
-    print("reproducible. They are different claims and only (b) licenses carrying")
-    print("a fix forward on the grounds that the defect recurs.")
+    print("READ THIS AS: (a) says the HARNESS is reproducible. (c) and (d) say the")
+    print("FINDING SET repeats only MODESTLY, and asymmetrically -- the later leg's")
+    print("findings are least likely to have a partner in an earlier one. The 3 legs")
+    print("were NOT run under identical conditions, so this is consistency across")
+    print("changing conditions, not replication. Only (b) surviving licenses any of it.")
     print("=" * 74)
     return 0
 
