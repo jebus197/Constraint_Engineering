@@ -10366,6 +10366,25 @@ def gamma_threshold_profile(registry, max_round: int,
         fired.append((round(g, 4), quiet))
         out["thresholds"][repr(float(thr))] = {
             "gamma_critical": round(g, 4),
+            # ★ ESTIMABILITY TRAVELS WITH THE NUMBER, 2026-10-16.
+            #
+            # `_estimate_gamma` returns 0.0 for 4 distinct reasons and only 1 of
+            # them is a slope of 0.0 -- its own mirror `_gamma_is_estimable`
+            # documents the other 3. A consumer handed `gamma_critical` alone
+            # cannot tell a measured zero from a sentinel, and the band
+            # sensitivity block below did exactly that: it compared the 2 edges
+            # for equality, so two sentinels compared EQUAL and the run was
+            # reported robust to the whole rubric disagreement. Measured over
+            # the archive: 10 of 26 reports carrying the block claim
+            # `verdict_robust_to_band: true` on two 0.0 sentinels -- 38.4615%,
+            # Wilson [22.4286%, 57.4651%], Clopper-Pearson [20.2260%, 59.4292%]
+            # -- and 4 more compare a real edge against a sentinel, so 14 of 26
+            # verdicts carried no information. Producer:
+            # scripts/the_band_verdict_rests_on_a_sentinel_2026-10-16.py
+            #
+            # The SAME predicate the gate uses is reported here, so the band
+            # block can gate on it rather than re-deriving a second opinion.
+            "gamma_is_estimable": bool(_gamma_is_estimable(_crit, min_rounds)),
             "critical_novelty_series": list(_crit),
             "criticals_total": int(sum(_crit)),
             "zero_novel_critical_tail": list(tail),
@@ -10394,14 +10413,40 @@ def gamma_threshold_profile(registry, max_round: int,
     # the disputed band, then nothing inside that band could have moved the
     # verdict, and the run is robust to the whole disagreement.
     try:
-        _lo = (out.get("thresholds", {}).get("0.65") or {}).get("gamma_critical")
-        _hi = (out.get("thresholds", {}).get("0.75") or {}).get("gamma_critical")
+        _lo_d = out.get("thresholds", {}).get("0.65") or {}
+        _hi_d = out.get("thresholds", {}).get("0.75") or {}
+        _lo = _lo_d.get("gamma_critical")
+        _hi = _hi_d.get("gamma_critical")
+        # ★ THE VERDICT IS GATED ON ESTIMABILITY, 2026-10-16.
+        #
+        # `_lo == _hi` treated 2 sentinels as agreement and reported the run
+        # robust to a 46% rubric disagreement on the strength of a quantity that
+        # was never measured. `None` is now reported where the band cannot be
+        # read, because a boolean here is read as a finding and there is no
+        # finding to report. Both edge values are still emitted unchanged -- the
+        # inputs are not withheld, only the verdict that cannot rest on them.
+        _lo_est = bool(_lo_d.get("gamma_is_estimable"))
+        _hi_est = bool(_hi_d.get("gamma_is_estimable"))
+        _readable = (_lo is not None and _hi is not None and _lo_est and _hi_est)
+        _why = []
+        if _lo is None or _hi is None:
+            _why.append("an edge threshold produced no gamma at all")
+        if _lo is not None and not _lo_est:
+            _why.append("gamma is NOT ESTIMABLE at the 0.65 edge, so its "
+                        "value is the 0.0 sentinel rather than a slope")
+        if _hi is not None and not _hi_est:
+            _why.append("gamma is NOT ESTIMABLE at the 0.75 edge, so its "
+                        "value is the 0.0 sentinel rather than a slope")
         out["boundary_band_sensitivity"] = {
             "band": [0.65, 0.75],
             "gamma_at_lower_edge": _lo,
             "gamma_at_upper_edge": _hi,
+            "gamma_estimable_at_lower_edge": _lo_est,
+            "gamma_estimable_at_upper_edge": _hi_est,
+            "band_is_readable": bool(_readable),
+            "not_readable_because": _why or None,
             "verdict_robust_to_band": (
-                _lo is not None and _hi is not None and _lo == _hi),
+                (_lo == _hi) if _readable else None),
             "basis": (
                 "Rubric-adherence audit 2026-09-02 (runway 0C.8): across 286 "
                 "archived findings in this band the numeric proxy and the "
