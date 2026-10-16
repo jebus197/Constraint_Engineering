@@ -1,0 +1,384 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 20414,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level files\"}"
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"scripts/*2026-10-16*\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/runner_core.py bench/reference_runner_v3.py bench/cdsfl_registry/composer.py bench/tests/test_sim_naming_and_integrity_directive.py 2>&1\", \"description\": \"Count lines in key files\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_strip_redundant_vendor_prefix|_compose_finding_id|_structurally_valid_fid\", \"path\": \"bench\", \"output_mode\": \"files_with_matches\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_strip_redundant_vendor_prefix|_compose_finding_id|_structurally_valid_fid|_seat_vendor_token|VENDOR\", \"path\": \"bench/runner_core.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/runner_core.py\", \"offset\": 60, \"limit\": 230}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_resolve_finding_key\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 6341, \"limit\": 130}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def lookup_alias|def lookup_alias_any|def register_alias|_resolve_merge_source\", \"path\": \"bench\", \"output_mode\": \"content\", \"-n\": true, \"glob\": \"*.py\"}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def lookup_alias|def lookup_alias_any|def _resolve_merge_source|def register_finding|def add_alias\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 3380, \"limit\": 120}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 4644, \"limit\": 120}"
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"verdict_robust_to_band|gamma_is_estimable|boundary_band|_composer_record_fields|composer_fallback|prompt_chars_full\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 80}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 10340, \"limit\": 140}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 11740, \"limit\": 110}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python scripts/what_budget_does_each_seat_actually_get_2026-10-16.py 2>&1 | tail -40\", \"description\": \"Run coherence-budget producer script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py 2>&1 | tail -30\", \"description\": \"Run prompt-length estimator producer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python scripts/the_band_verdict_rests_on_a_sentinel_2026-10-16.py 2>&1 | tail -30\", \"description\": \"Run band-verdict sentinel producer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py 2>&1 | tail -40\", \"description\": \"Run model-admission producer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which python3 && python3 -V && python3 -c \\\"import sympy, numpy, mpmath, scipy, statsmodels, z3\\\" 2>&1\", \"description\": \"Locate python3 and check math libraries\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/what_budget_does_each_seat_actually_get_2026-10-16.py 2>&1 | tail -45\", \"description\": \"Run coherence-budget producer script\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py 2>&1 | tail -30\", \"description\": \"Run prompt-length estimator producer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_band_verdict_rests_on_a_sentinel_2026-10-16.py 2>&1 | tail -30\", \"description\": \"Run band-verdict sentinel producer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py 2>&1 | tail -45\", \"description\": \"Run model-admission producer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_sim_naming_and_integrity_directive.py bench/tests/test_the_vendor_prefix_is_stripped_going_forward_2026-10-16.py -q 2>&1 | tail -15\", \"description\": \"Run naming/vendor-prefix tests\", \"timeout\": 240000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_merge_integrity.py bench/tests/test_finding_id_structural_validation.py -q 2>&1 | tail -8\", \"description\": \"Run merge integrity and fid validation tests\", \"timeout\": 240000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def register\\\" bench/reference_runner_v3.py | head; grep -n \\\"_alias_map\\\\[\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Find alias registration sites\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 6540, \"limit\": 80}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_resolve_merge_source\\\" bench/reference_runner_v3.py\", \"description\": \"Find merge-source call sites in v3\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 3176, \"limit\": 60}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 18595, \"limit\": 75}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/panelchk && cat > /tmp/panelchk/resolve_sweep.py <<'EOF'\\nimport sys, itertools\\nsys.path.insert(0, \\\".\\\")\\nfrom bench.reference_runner_v3 import FindingRegistry, Finding, _resolve_finding_key, _resolve_merge_source\\nfrom bench.runner_core import _compose_finding_id\\n\\ndef mk(fid, model, sev=0.8):\\n    try:\\n        return Finding(finding_id=fid, severity=sev, descriptio"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/panelchk && sed -i '' 's/return Finding(finding_id=fid, severity=sev, description=\\\"d\\\"\\\\*40, proposed_fix=\\\"\\\", location=\\\"x.py:1\\\")/return Finding(finding_id=fid, model_id=model, round_idx=0, flaw_class=1, severity=sev, abstraction_index=0.5, description=\\\"d\\\"*40)/' resolve_sweep.py && cd - >/dev/null && python3 /tmp/panelchk/resolve_sweep.py\", \"description\": \"Fix Finding co"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"MERGE\\\" bench/reference_runner_v3.py | grep -in \\\"parse\\\\|regex\\\\|re\\\\.\\\\|evidence\\\" | head; grep -n \\\"_parse_verdicts\\\" bench/reference_runner_v3.py | head -3\", \"description\": \"Locate verdict parser\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 12320, \"limit\": 40}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 4569, \"limit\": 78}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '12380,12500p' bench/reference_runner_v3.py\", \"description\": \"Read remaining dispatch record sites\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"composed\\\\b\\\" bench/reference_runner_v3.py | sed -n '1,40p'; grep -n \\\"def save_output\\\" bench/*.py\", \"description\": \"Trace composed variable and save_output\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 12225, \"limit\": 80}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"calibrate_coherence_thresholds\\\\|constraint_density\\\\|prompt_length\\\\|prompt_chars_full\\\\|kappa\\\" bench/cdsfl_registry/composer.py | head -40\", \"description\": \"Locate calibrator and kappa warning in composer\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1449,1560p' bench/cdsfl_registry/composer.py\", \"description\": \"Read calibrate_coherence_thresholds\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"kappa\\\\|Coherence penalty\\\" bench/cdsfl_registry/composer.py | head; grep -n \\\"MODEL_COHERENCE_BUDGETS\\\\|COMPOSER_MODEL_MAP\\\\|DEFAULT_COHERENCE_BUDGET\\\" bench/cdsfl_registry/composer.py bench/reference_runner_v3.py bench/routing.py 2>/dev/null | head -20\", \"description\": \"Find kappa warning and budget tables\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2222,2280p' bench/experiment_11_orchestrator.py\", \"description\": \"Read save_output structure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '60,110p' bench/cdsfl_registry/composer.py; sed -n '1590,1625p' bench/cdsfl_registry/composer.py; sed -n '1920,1965p' bench/cdsfl_registry/composer.py\", \"description\": \"Read budgets table, calibrator tail, kappa warning\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"composer_fallback\\\" bench --include=\\\"*.py\\\" | grep -v logs\", \"description\": \"Find readers of composer_fallback flag\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_composer_record_fields\\\\|prompt_chars_full\\\\|composer_fallback\\\" bench/tests/*.py | head\", \"description\": \"Find tests covering the new record fields\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/tests/test_the_dispatch_record_carries_composer_provenance_2026-10-16.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_dispatch_record_carries_composer_provenance_2026-10-16.py -q 2>&1 | tail -3\", \"description\": \"Run provenance tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sympy as sp\\nfrom z3 import Int, Solver, sat\\nimport numpy as np\\nfrom scipy import stats\\nfrom statsmodels.stats.proportion import proportion_confint\\n\\n# (1) floor(203/70)/floor(203/4)\\nv = sp.Rational(sp.floor(sp.Rational(203,70)), sp.floor(sp.Rational(203,4)))\\nprint(\\\"sympy:\\\", v, float(v))\\n# full integer band where ratio == 1/25, z3\\nc = Int('c'); s = "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"max_successful_context_chars\\\\|max_successful_prompt_chars\\\\|measured_attention_span\\\\|compression_threshold\\\\|decomposition_recommended\\\" bench/*.py | grep -v test | head -15\", \"description\": \"Locate fingerprint size-ceiling fields\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"band\\\\|floor\\\\|z3\\\\|200\\\" scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py | head -30\", \"description\": \"Inspect producer's band predicate\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py\", \"offset\": 128, \"limit\": 60}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/panelchk/gamma_mirror_fuzz.py <<'EOF'\\nimport sys, itertools, math\\nsys.path.insert(0, \\\".\\\")\\nfrom bench.reference_runner_v3 import _estimate_gamma, _gamma_is_estimable\\nimport numpy as np\\nimport sympy as sp\\n\\n# Exhaustive over small series: lengths 0..6, counts in {0,1,2,5}\\nvals = [0,1,2,5]\\ndisagree = []\\nchecked = 0\\ndef reaches_slope(counts, min_rounds=3):\\n    # in"
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"bench/reference_runner_v3.py\", \"old_string\": \"    # The 2 extra candidates were therefore REMOVED again rather than left in\\n    # place. An addition nothing reaches is not additive, and dead candidates\\n    # here would imply a hazard that the regex above already excludes. The\\n    # resolver that DID need them is `_resolve_finding_key`, which takes a raw\\n   "
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"bench/reference_runner_v3.py\", \"old_string\": \"    # The 2 extra candidates were therefore REMOVED again rather than left in\\n    # place. An addition nothing reaches is not additive, and dead candidates\\n    # here would imply a hazard that the regex above already excludes. The\\n    # resolver that DID need them is `_resolve_finding_key`, which takes a raw\\n   "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"bench/reference_runner_v3.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = \\\"\\\"\\\"    # The 2 extra candidates were therefore REMOVED again rather than left in\\n    # place. An addition nothing reaches is not additive, and dead candidates\\n    # here would imply a hazard that the regex above already excludes. The\\n    # resolve"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"bench/reference_runner_v3.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = \\\"\\\"\\\"    for cand in (k, k.upper(), k.lower(),\\n                 f\\\"{model_id}_{k}\\\", f\\\"{model_id.lower()}_{k}\\\",\\n                 _comp, _strip, _strip.upper()):\\n        cid = registry.lookup_alias(model_id, cand)\\n        if cid:\\n            retu"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_merge_source_resolves_as_written_2026-10-16.py <<'EOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"A merge source names its owner; the resolver must not strip the owner away.\\n\\nTHE DEFECT, EXECUTED 2026-10-16 (joint panel round). `_resolve_merge_source`\\nreduces its evidence to the first `[FC]\\\\\\\\d+` match, discarding everything to the\\nleft -- including the one token that "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_merge_source_resolves_as_written_2026-10-16.py -q 2>&1 | grep -A8 \\\"test_every_cross\\\\|test_an_ambiguous\\\" | head -30\", \"description\": \"Show failure details\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"bench/reference_runner_v3.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = \\\"\\\"\\\"    # The prefix is expanded LEFT from the SAME match the regex found, so an\\n    # unprefixed source is untouched and the search cannot jump to a different\\n    # token. `lookup_alias_any` refuses ambiguity -- two models minting one\\n    # alias "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/reference_runner_v3.py /tmp/panelchk/rrv3.bak\\npython3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"bench/reference_runner_v3.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\n# MUTATION: make the as-written step unreachable\\ns2 = s.replace(\\\"    if _tok:\\\\n        _as_written = (registry.lookup_alias(model_id, _tok)\\\",\\n               \\\"    if _tok and False:  # MUTATION\\\\n  "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"bench/cdsfl_registry/composer.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = \\\"\\\"\\\"            if isinstance(_recorded, (int, float)):\\n                density = float(_recorded)\\n            else:\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"            if isinstance(_recorded, (int, float)):\\n                density = float(_recorded)\\n            "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"bench/tests/test_the_dispatch_record_carries_composer_provenance_2026-10-16.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = '''def test_a_recorded_fallback_does_not_silently_become_an_estimate():\\n    \\\"\\\"\\\"A record that says the composer failed must not be calibrated from.\\n\\n    It carries no density, so the estimator would"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/cdsfl_registry/composer.py /tmp/panelchk/composer.bak\\npython3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"bench/cdsfl_registry/composer.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\ns2 = s.replace('''            elif (entry.get(\\\"composer_fallback\\\") is True\\n                    or _meta.get(\\\"composer_fallback\\\") is True):''',\\n'''            elif False and (entry.get(\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\n\\nold = \\\"\\\"\\\"    # The COMPLETE integer band on which the ratio equals this value, by two\\n    # independent routes over a window that brackets the truncation length.\\n    lo_w, hi_w = 150, 260\\n    by_sympy = [\\n    "
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"VERDICT\\\" scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py | head -5; sed -n '/VERDICT:/,/+3p/p' scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py | sed -n '1,6p'\", \"description\": \"Check verdict wording lines\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = \\\"\\\"\\\"    print(f\\\"  VERDICT: {RECORDED_LENGTH} lies at the top edge of the only integer\\\")\\n    print(f\\\"  estimator returns {a['ratio_exact']}, and at its top edge. So the value was\\\")\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"    pr"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = \\\"\\\"\\\"    ok = (a[\\\"sympy_numpy_mpmath_agree\\\"] and a[\\\"band_methods_agree\\\"]\\n          and RECORDED_LENGTH in a[\\\"band_by_z3\\\"])\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"    ok = (a[\\\"sympy_numpy_mpmath_agree\\\"] and a[\\\"band_methods"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"coherence_budget\\\\|_prune_for_coherence\\\\|coherence_pruning\\\" bench/cdsfl_registry/composer.py bench/reference_runner_v3.py | grep -v \\\"^\\\\s*#\\\" | grep -v test | head -25\", \"description\": \"Trace coherence budget consumers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"kappa\\\\|\\u03ba\\\" bench/cdsfl_registry/*.py docs/MATHEMATICAL_APPENDIX.md 2>/dev/null | grep -iv \\\"cohen\\\" | head -15; grep -n \\\"MODEL_ROSTER\\\\s*=\\\" bench/reference_runner_v3.py\", \"description\": \"Find any kappa penalty implementation\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,60p' bench/routing.py; grep -n \\\"def \\\\|WRITER_LADDER\\\\|capab\\\" bench/routing.py | head -30\", \"description\": \"Read routing module structure\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_apply_routing\\\\|routing ladder\\\\|def _apply_routing\\\" bench/reference_runner_v3.py | head -5; grep -rn \\\"derived.capabilit\\\\|derived_capab\\\" bench experimental_notes docs --include=\\\"*.md\\\" --include=\\\"*.py\\\" -il | head -8\", \"description\": \"Find derived-capability design references\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '60,125p' bench/routing.py\", \"description\": \"Read Fable cold-start note in routing\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"cold\\\\|no record\\\\|retirement\\\\|unmeasured\\\\|never measured\\\" experimental_notes/Dynamic_Roster_Panel_Synthesis_2026-10-08.md | head -15\", \"description\": \"Find cold-start discussion in panel synthesis\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '125,160p' bench/routing.py\", \"description\": \"Read rank_falsifier_writers\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1940,1958p' bench/cdsfl_registry/composer.py\", \"description\": \"Read exact warning block\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"bench/cdsfl_registry/composer.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = \\\"\\\"\\\"    # --- Budget warning ---\\n    if density > budget:\\n        import warnings\\n        warnings.warn(\\n            f\\\"Composer: {model} over coherence budget \\\"\\n            f\\\"(density={density:.4f}, budget={budget}). \\\"\\n            f\\\"Coh"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -30 bench/gemini_math_audit.py; grep -rn \\\"Coherence penalty\\\\|over coherence budget\\\" bench/tests bench/*.py 2>/dev/null | grep -v gemini_math_audit | head -5\", \"description\": \"Classify gemini_math_audit and find warning-text tests\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"calibrate_coherence_thresholds\\\\|_resolve_merge_source\\\\|_resolve_finding_key\\\\|boundary_band\\\\|_gamma_is_estimable\\\\|compose(\\\" bench/tests/*.py | head -20\", \"description\": \"Find all tests touching modified code\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_boundary_band_executes_2026-09-04.py bench/tests/test_boundary_band_sensitivity_2026-09-02.py bench/tests/test_gamma_gates_wherever_it_exists_2026-10-08.py bench/tests/test_the_band_verdict_is_gated_on_estimability_2026-10-16.py bench/tests/test_composer_pruning_ablation_switch_2026-10-13.py bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_boundary_band_executes_2026-09-04.py -q 2>&1 | grep -B5 -A25 \\\"test_it_returns_false_for_a_band_sensitive_registry\\\" | head -60\", \"description\": \"Inspect boundary band test failures\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git stash -q 2>/dev/null && python3 -m pytest bench/tests/test_boundary_band_executes_2026-09-04.py -q 2>&1 | tail -2 && git stash pop -q && echo \\\"--- after pop:\\\" && python3 -m pytest bench/tests/test_merge_source_resolves_as_written_2026-10-16.py -q 2>&1 | tail -1\", \"description\": \"Verify band test fails on pristine tree\"}"
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/tests/test_boundary_band_executes_2026-09-04.py\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -1 2>&1 | head -2; git status --short 2>&1 | head -8\", \"description\": \"Confirm repo state and my changed files\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0, \\\"bench\\\")\\nimport reference_runner_v3 as R\\nclass Reg:\\n    def __init__(self, entries): self.entries = {f\\\"C{i:04d}\\\": e for i, e in enumerate(entries)}\\ndef f(r, s): return {\\\"open_since_round\\\": r, \\\"severity\\\": s, \\\"status\\\": \\\"OPEN\\\"}\\n# candidate: both edges estimable, gammas differ\\nents = [f(r, 0.95) for r in range(0, 4) for _"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"bench/tests/test_boundary_band_executes_2026-09-04.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\n\\nold = '''def _band_sensitive() -> _Registry:\\n    \\\"\\\"\\\"Criticals sitting INSIDE [0.65, 0.75): counted at the lower edge, not the upper.\\\"\\\"\\\"\\n    return _Registry([_finding(r, 0.70) for r in range(0, 4) for _ in range(4 - r)])\\n''"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/reference_runner_v3.py /tmp/panelchk/rrv3.bak2\\npython3 - <<'PYEOF'\\nfrom pathlib import Path\\np = Path(\\\"bench/reference_runner_v3.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\ns2 = s.replace('''            \\\"verdict_robust_to_band\\\": (\\n                (_lo == _hi) if _readable else None),''',\\n'''            \\\"verdict_robust_to_band\\\": (_lo == _hi),  # MUTATION: ungated''')\\"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"command -v wolframscript >/dev/null && wolframscript -code 'N[{Floor[203/70]/Floor[203/4], Floor[100/70]/Floor[100/4], Reduce[Floor[c/70]==2 && Floor[c/4]==50, c, Integers]}]' 2>&1 | head -5 || echo \\\"wolframscript NOT INSTALLED\\\"\", \"description\": \"Wolfram cross-check of floor arithmetic\"}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_hardened_gate.py bench/tests/test_convergence_location.py bench/tests/test_execution_based_matcher_2026-09-05.py bench/tests/test_target_attribution_attaches_2026-09-17.py -q 2>&1 | tail -2\", \"description\": \"Wider regression batch\", \"timeout\": 300000}"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"update_coherence_budgets_from_experiments\\\\|calibrate_coherence_thresholds\\\" bench/*.py bench/cdsfl_registry/*.py scripts/*.py 2>/dev/null | grep -v \\\"def \\\\|tests\\\\|#\\\" | head; grep -rn \\\"metadata\\\\[\\\" bench/reference_runner_v3.py | head -3; grep -rn \\\"\\\\\\\"metadata\\\\\\\"\\\\|'metadata'\\\" bench/reference_runner_v3.py | grep -v save_output | wc -l\", \"description\": \"Find live cal"
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_dispatch_record_carries_composer_provenance_2026-10-16.py bench/tests/test_merge_source_resolves_as_written_2026-10-16.py bench/tests/test_boundary_band_executes_2026-09-04.py bench/tests/test_merge_integrity.py bench/tests/test_sim_naming_and_integrity_directive.py bench/tests/test_the_vendor_prefix_is_stripped_going_forward_2026-10-16.py bench/"
+    }
+  ],
+  "n_tool_calls": 91,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1439.7,
+  "response": "All checks converged: two consecutive passes produced nothing new above threshold. Final report.\n\n---\n\n# HALF ONE \u2014 the built work, checked and corrected\n\n## 3.1 Identifier normalisation \u2014 SOUND, with one adjacent defect found and fixed\n\n**FINDING_ID: F1 \u2014 `_resolve_merge_source` resolves a cross-seat merge source onto the WRITER's own finding**\n\n- **CLAIM.** The vendor-strip itself is sound (the narrowing to the seat's own token holds under execution), but the resolver the brief pointed me at mis-attributes: in a registry where every seat holds its own F004, `MERGE \u2026 <- Gemini-SIM_F004` written by `CC2-SIM` resolved to **CC2-SIM's own F004** \u2014 the writer's distinct finding merged away (silent evidence loss) and the named finding got no verdict. 30 of 48 cross-seat forms mis-attributed (62.50%, Wilson [48.40%, 74.76%]). A second, worse sub-case: on `CC2-SIM_F004` the regex `(?:F|C)(\\d+)` matches **`C2` inside the prefix**, so that form resolved to `None` \u2014 which `cdsfl_topology_formal.md:126-127` mandates reading as a **CONFIRM on the target**: a verdict inversion. The form is real, not hypothetical \u2014 the v3.1 run's duplicate records cite foreign composed ids (`Fable-SIM_F003`, `DeepSeek-SIM_F002`) verbatim.\n- **EVIDENCE.** Executed sweep (`/tmp/panelchk/resolve_sweep.py`) over a 4-seat registry, pre-fix: `_resolve_merge_source: correct 12, unmatched 6, MIS-RESOLVED 30`. Post-fix: all 12 composed foreign forms correct, 0 regressions in `test_merge_integrity.py` (13 passed).\n- **INSTRUMENT.** Exhaustive enumeration over the 48-form product space (deterministic, so the sweep IS the proof); Wilson interval via statsmodels, Clopper\u2013Pearson cross-checked against `scipy.stats.beta.ppf` (agree to 6 d.p.).\n- **FIX.** `bench/reference_runner_v3.py`: the source id is resolved **as written** before the digits-strip guesses \u2014 the prefixed token whose span *contains* the regex match is looked up via the writer's own alias key, then `lookup_alias_any` (which refuses ambiguity); a miss falls through to the prior candidates unchanged, so nothing that resolved before resolves differently. Companion: `_resolve_finding_key` gains `lookup_alias_any(k)` as its **last** candidate, so a corrected copy offered against a foreign composed id resolves instead of dropping UNMATCHED (the non-owner refusal downstream still governs who may act).\n- **FALSIFIER.** `bench/tests/test_merge_source_resolves_as_written_2026-10-16.py` (10 tests, executed). Mutation (`if _tok and False`) \u2192 **4 failed**; restored \u2192 **10 passed**. The undemonstrated residual (bare-vendor foreign form `GEMINI_F004` cross-seat) is **pinned** by `test_known_limit_\u2026`, not built for: it appears 0 times in the archive as a foreign reference.\n- **STANDARD.** Simplest sufficient: one containment-anchored lookup before the existing chain; no vendor table, no roster key (consistent with the 2026-10-16 \"no vendor table is consulted\" narrowing). Additive: nothing removed; new path wired and executed. Composable: it reuses `lookup_alias_any`, the registry's existing ambiguity-refusing resolver, rather than a second alias notion.\n- **REFUTED_BY.** A run artefact showing a previously-resolving merge source now resolving to a different canonical than before the fix (the sweep and `test_an_own_model_prefixed_source_resolves_exactly_as_before` say none exists).\n\nOn the brief's specific question: **CC1's narrowing is verified** \u2014 under the current strip, no seat's reference resolves onto another seat's finding *through the strip*; foreign composed ids went loudly UNMATCHED in `_resolve_finding_key`. The mis-attribution lived next door, in the resolver whose comment claimed \"no vendor strip is needed here\" \u2014 true, but the regex's prefix-blindness was the live hazard the comment's 48-pair measurement did not cover, because it measured the strip, not the resolver.\n\n## 3.2 Composer provenance \u2014 SOUND, with the written-but-unread marker now wired\n\n- **Verdict checks, executed.** Recording cannot change any verdict: `calibrate_coherence_thresholds` has **no live caller** in the runner (only measurement scripts and `update_coherence_budgets_from_experiments`, itself uncalled by the harness), and the runner reads `metadata` from 0 sites. Replay NOT invalidated: older entries lack the keys and take the estimator exactly as before \u2014 CC1's narrower claim **CONFIRMED**. Arithmetic re-derived independently: SymPy `Rational(203//70, 203//4) = 1/25`; Wolfram Language (local Wolfram Engine) `Floor[203/70]/Floor[203/4] = 0.04`.\n\n**FINDING_ID: F2 \u2014 `composer_fallback` was written but read by nothing; a marked fallback still calibrated to an estimator constant**\n\n- **CLAIM.** The marker whose own docstring says \"the calibrator must not read the second as the first\" had no reader outside tests \u2014 the written-but-never-read half of the additive standard (the project's 11-defect class) \u2014 and a marked fallback fell into the estimator, whose large-chars value tends to the constant 2/35 = 0.0571\u2026 (SymPy limit, confirmed by the producer's mpmath/NumPy path): a property of the estimator, not of any model. CC1's own test pinned this gap explicitly (\"not yet gated on the marker\"); I closed it.\n- **FIX.** `bench/cdsfl_registry/composer.py`: the calibrator `continue`s on an entry marked `composer_fallback: true` with no recorded density. Pre-2026-10-16 archive entries (marker absent) are untouched.\n- **FALSIFIER.** `test_a_recorded_fallback_does_not_silently_become_an_estimate` upgraded from pin-the-gap to assert-the-gate (fallback-only records \u2192 the declared `MODEL_COHERENCE_BUDGETS` value, never an estimate), plus a new mixed-archive pollution test with densities disjoint from both estimator constants. Mutation (`elif False and \u2026`) \u2192 **red**; restored \u2192 **11 passed**.\n- **STANDARD.** Simplest sufficient: one guard clause. Additive: completes an existing flag's wiring; removes nothing. Composable: the gate reads the marker the dispatch record already writes \u2014 one mechanism, both ends.\n- **REFUTED_BY.** A measurement showing marked-fallback entries carry information about density\u2192quality (they cannot: a fallback has no composed directive set, hence no density).\n\n**FINDING_ID: F3 \u2014 the producer's \"complete integer band\" claim was false for the predicate it named**\n\n- **CLAIM.** `scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py` enumerated a **window [150, 260]** and called the result \"the COMPLETE integer band on which the ratio equals this value\". False: the reduced ratio 1/25 also holds on **[100, 103]** (`floor(100/70)/floor(100/4) = 1/25`). Two tools agreeing over the same truncated domain is not completeness. The claim is true only for the unreduced **pair** floor(c/70)=2 \u2227 floor(c/4)=50, whose complete solution over all integers is [140, 209] \u2229 [200, 203] = [200, 203].\n- **EVIDENCE/INSTRUMENT.** SymPy + z3 enumeration found {100\u2013103, 200\u2013203} for the ratio predicate; Wolfram Language confirmed both the 0.04 value at c=100 and, via `Reduce[Floor[c/70]==2 && Floor[c/4]==50, c, Integers]`, the unbounded pair-band {200, 201, 202, 203}. z3 in the repaired script now proves completeness unboundedly (pair constraints \u2227 outside-[200,203] \u2192 **unsat**).\n- **FIX.** Script rewritten: windowed enumeration replaced by the SymPy interval derivation + z3 unbounded completeness proof; the ratio predicate's other band is enumerated and printed so the wording cannot rot; the VERDICT names the pair. Its own pass gate now requires the completeness proof. Executed: exit 0, headline conclusion unchanged \u2014 203 is the top edge of a 4-integer band forced by the truncation.\n- **STANDARD/REFUTED_BY.** Headline figures untouched (additive); refuted by any integer outside [200,203] satisfying the pair, which z3's unsat excludes. This is a \u00a710 category-3 class defect (a defect in the measurement machinery itself); the brief's sentence repeating the claim should be read as corrected.\n\n## 3.3 Boundary-band verdict \u2014 SOUND, composability claim CONFIRMED; one red-at-HEAD test repaired\n\n- **The composability question, answered by execution and derivation.** Can the band block and the gate's predicate disagree? **No, on any practical input.** Exhaustive check over 5,461 series plus 3,000 random fuzz: `_gamma_is_estimable` and an independent SymPy reimplementation of the estimator's early returns agree on every one, and `estimable=False \u21d2 gamma == 0.0` held without exception. The one condition the mirror omits (degenerate denominator) is unreachable: by the Lagrange identity, denom = \u03a3_{i<j}(log(i+1) \u2212 log(j+1))\u00b2, and the guard 1e-12 cannot fire before ~10\u2076 rounds (1/(e^{10\u207b\u2076}\u22121) \u2248 999 999.5). Reporting the flag from the gate's own predicate is therefore strictly better than the band block re-deriving it \u2014 there is exactly one mirror and it is executed against its producer. Archive proportions re-derived: 10/26 (38.46%, Wilson [22.43%, 57.47%], CP [20.23%, 59.43%] \u2014 statsmodels and scipy agree) and 14/26 uninformative verdicts confirmed.\n\n**FINDING_ID: F4 \u2014 the tree was red at HEAD: `test_boundary_band_executes_2026-09-04.py` was not updated for the gate**\n\n- **CLAIM.** CC1 shipped the estimability gate without repairing the pre-existing executor test: its \"band-sensitive\" fixture holds only severity-0.70 criticals, so at the 0.75 edge the series is empty, the gate now (correctly) returns `None`, and 2 of its 5 tests failed on the delivered tree.\n- **EVIDENCE.** `pytest bench/tests/test_boundary_band_executes_2026-09-04.py` \u2192 2 failed before my edits touched anything near the band.\n- **FIX.** `bench/tests/test_boundary_band_executes_2026-09-04.py`: new `_band_sensitive` fixture with **both edges estimable and slopes unequal** (executed: lower 0.0682, upper 0.3247, verdict False); the old fixture retained as `_band_vanishes_at_the_upper_edge` pinning the new null-with-named-reason semantics; the reachability test now demands all **three** outcomes {True, False, None}. I side with CC1's tri-state on the substance: a gamma that was never measured grounds neither boolean, and the information is not lost \u2014 `band_is_readable`, `not_readable_because` and the per-threshold series carry it.\n- **FALSIFIER.** Mutated the gate back to ungated `_lo == _hi` \u2192 2 failed (including the tri-state reachability test); restored \u2192 all green.\n- **REFUTED_BY.** An argument that an empty critical series at one edge should read as \"not robust\": I considered and rejected it \u2014 the verdict is defined over gamma equality, and the live gate handles a vacuous critical curve through a separate branch (`gate_would_fire`'s removal note documents the executed counterexample), so asserting False there would fabricate a comparison. **DISAGREEMENT candidate preserved** if the other seat reads it the other way.\n\n## 3.4 Model admission \u2014 measurement VERIFIED\n\nProducer executed and reproduced: 12 live tables across 6 files + 1 `.toml`; 'Kimi' through the real chain: 5 of 7 steps default silently (71.43%, Wilson [35.89%, 91.78%], CP [29.04%, 96.33%] \u2014 both re-derived, statsmodels = scipy). The structural threefold-overstatement decomposition (86 test sites, 50 historical runners) is a fair reading; no correction needed.\n\n---\n\n# HALF TWO \u2014 the three open questions\n\n## Q1. Should the density budget govern anything?\n\n**CC1 is right on the central distinction, verified by trace.** His ruling describes a **work-size** ceiling, and that quantity is already measured and enforced: `max_successful_prompt_chars` is a proven floor feeding `get_effective_context_budget`, capped by `CONTEXT_CHAR_BUDGET_CEILING`; `DECOMPOSITION_CONTEXT_THRESHOLD` routes oversize work to decomposed dispatch. The coherence budget is constraints-per-token of the **directive text** \u2014 a different quantity. Verified, not assumed: with `_prune_for_coherence` retired by default (`composer_coherence_pruning: bool = False`), the budget's sole remaining effect was the composer warning, and the penalty that warning asserted \u2014 \"\u03ba(m,g) < 1 applies to effective detection\" \u2014 **exists nowhere**: every \u03ba in the tree is the convergence metric (`kappa_set/rate/adopt`, `bench/dm/_convergence.py`) or the HIL calibration metric (appendix \u00a77); \u03ba(m,g) appears only inside a prompt payload in `bench/gemini_math_audit.py` \u2014 a proposal delivered for audit, never implemented.\n\n**Disposition (simplest sufficient): correct the false warning; leave the budget as recorded provenance; do not implement \u03ba; do not wire it to the size ceiling.** Implementing \u03ba fails simplest-sufficient \u2014 its only designed consumer was the retired pruner, and no committed measurement shows a density penalty predicts anything (the one calibration attempt measured a truncation constant, per 3.2). Wiring density to the size ceiling repeats the exact conflation his 2026-10-14 ruling just separated into `max_directive_chars` vs `spec_chars`. The budget is not dead weight once inert: since today it is **recorded per dispatch** (`constraint_density` vs `coherence_budget`), which is precisely the data a future ruling would need.\n\n**Delivered (defect half only):** `bench/cdsfl_registry/composer.py` \u2014 the warning now states what is true: over-budget, recorded in the dispatch record, no penalty in force. The *disposition* beyond that, including the stale-key trap, is his to rule on. On that trap: 4 of 5 `MODEL_COHERENCE_BUDGETS` keys name superseded versions and a live seat inherits an allowance selected by NAME through `COMPOSER_MODEL_MAP` \u2014 any answer making the table more reachable must first re-key it the way the rest of the harness keys capability (per-model registry `.toml` / `base_model_label`), with values marked inherited-not-measured, exactly as `MODEL_SPECS` does for Fable. I did not change it: it is behavioural and gated on his Q1 ruling.\n\n**Measurement that would show the budget working, if he wants it live:** a pre-registered two-arm run (density above vs below budget at matched work size) showing a drop in findings-per-1000-response-tokens at the threshold \u2014 the calibrator's own curve, now computable for the first time since the provenance fields exist. **REFUTED_BY:** such a run showing a real quality cliff at the budget \u2014 that would justify implementing the penalty, and my \"leave inert\" answer falls.\n\n## Q2. Derived-capability routing cold start\n\n**The simplest sufficient cold-start rule: lower-confidence-bound ranking with the committed tuple as tie-break \u2014 which is the structure `bench/routing.py` already carries in embryo.** A seat with no record has Wilson lower bound exactly 0 and sorts **last among the ranked**, as Fable's entry documents (\"needs 12 consecutive successes before its lower bound can pass a seat at 60 of 70\"); ties among no-record seats break by `DEFAULT_FALSIFIER_STRENGTH` (itself a committed Exp-42 measurement \u2014 the previous panel's finding that without it 12 shuffled inputs gave 12 distinct orders stands), then `extras` input order. No new exploration machinery: with `DEFAULT_MAX_RUNGS = 0` meaning EXHAUST, a cold seat is reached whenever every stronger rung fails, so its record accumulates without a new flag \u2014 an exploration bonus would be an addition nothing requires.\n\n**Where it lives:** the ordering in `rank_falsifier_writers` (`bench/routing.py` \u2014 sort key becomes `(-wilson_lcb(resolved, attempts), tuple_rank)`, `-SIM` normalised as now); the attempts/successes counters in the per-seat fingerprint the runner already persists; the cap interaction at `route`'s `rungs[:_budget]` slice, called from `_apply_routing` in `bench/reference_runner_v3.py`.\n\n**The measurement that shows it is neither starving nor privileging \u2014 and the trap it must catch:** two numbers per seat in `_routing_telemetry`: (1) **attempts within the cap** \u2014 if a configured cap (not EXHAUST) leaves a cold seat at 0 attempts after N runs, last place is self-perpetuating and the rule starves it: the falsifying test is a simulated roster with cap=2 and one cold seat, asserting the seat's attempt count is reachable; (2) **rung-depth-stratified resolve rate** \u2014 a cold seat reached only under exhaustion is measured only on the residuals every stronger seat failed, so its raw rate is biased DOWN by selection; compare Wilson intervals at matched rung depth, never raw. And the standing guard from `routing.py`'s own header applies unchanged: run `scripts/competence_provenance.py` before any re-ranking \u2014 a contaminated confirm rate contaminates the mechanics. **REFUTED_BY:** telemetry showing a cold seat with nonzero attempts whose depth-stratified interval still cannot converge \u2014 that would show LCB-ranking needs an explicit exploration provision after all.\n\n## Q3. Single registration point \u2014 is loudness-first the right order?\n\n**Yes, and the project's own record is the proof:** since 2026-08-01, 11 confirmed defects were additions that did nothing and the silent-default class (\"a capability lost with no error\") is recorded 8 times; a single registration point that still defaulted silently would hide 12 misses behind 1, and the consolidation itself cannot be *verified* without the loud check existing first \u2014 loudness is the measurement instrument for the consolidation.\n\n**The loud failure should be a run-level preflight that refuses to start, not a raise at first lookup and not a per-seat refusal.** Grounds, by the project's own precedents: the vault-keys precondition (\"NO PLAINTEXT SCORING KEY MAY EXIST WHILE AN EXAM RUNS\") refuses start; `set_panel_cwd` refuses a missing directory. Comparison of the three options on the measurement that distinguishes them \u2014 *(a) paid/dispatched calls before the miss surfaces, (b) misses reported per failure, (c) whether a run can silently narrow*:\n\n| option | paid calls wasted | misses per failure | silent narrowing |\n|---|---|---|---|\n| raise at first lookup | \u22651 round, mid-run | 1 | no, but partial run |\n| refuse that seat only | 0 for that seat | 1 per seat | **yes** \u2014 a 6-seat run silently proceeds as 5, which is itself the lost-capability class |\n| **run-level preflight** | **0** | **all seats \u00d7 all 7 steps, named** | **no** |\n\nConcretely: extend the existing `run_preflight` in `bench/reference_runner_v3.py` to walk each configured seat through the same 7 resolution steps the producer script already exercises (roster description, composer map, coherence budget, `MODEL_SPECS`, `INITIAL_FINGERPRINTS`, `compose()`, per-model `.toml`) and refuse the run with the complete per-seat miss list. The acceptance measurement is the producer's own figure: steps-that-fail-silently drops from 5/7 (71.43%, Wilson [35.89%, 91.78%]) to 0/7, tested by putting a nonexistent label through the chain with preflight on. Consolidation to one registration point (the per-model `.toml` is the natural home \u2014 it is the only admission step that is already one-file-per-model) comes second, landing table by table **behind** the preflight that proves each migration lost nothing. **REFUTED_BY:** a founder requirement that a run must degrade gracefully when one seat of six is misconfigured \u2014 that would argue for per-seat refusal plus a run-level WARNING; I think it wrong here because a panel's statistics (ladder order, convergence, co-discovery) are roster-conditioned, so a silently smaller panel is a different experiment wearing the same name.\n\n**DISAGREEMENT with CC1:** none of substance on Q1/Q3; on Q3 I sharpen his \"a raise, a refusal, or a preflight\" to: preflight is not merely the best option, it is the only one of the three that cannot produce a silently narrowed run. On 3.3 I *confirm* rather than merely accept his composability claim, with the Lagrange-identity bound showing the one unmirrored estimator condition is unreachable below ~10\u2076 rounds.\n\n**Files delivered** (all tested, all falsified by executed mutation): `bench/reference_runner_v3.py` (F1), `bench/tests/test_merge_source_resolves_as_written_2026-10-16.py` (F1, new), `bench/cdsfl_registry/composer.py` (F2 + Q1 warning), `bench/tests/test_the_dispatch_record_carries_composer_provenance_2026-10-16.py` (F2), `scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py` (F3), `bench/tests/test_boundary_band_executes_2026-09-04.py` (F4). Final state: **203 tests green** across every touched file; nothing under `bench/logs/` modified. Wolfram results above are attributed to Wolfram Language (local Wolfram Engine); it served as second falsifier only \u2014 every claim stands on the open-source tools alone.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_bx_nz6z4/repo",
+      "built": false
+    }
+  ]
+}

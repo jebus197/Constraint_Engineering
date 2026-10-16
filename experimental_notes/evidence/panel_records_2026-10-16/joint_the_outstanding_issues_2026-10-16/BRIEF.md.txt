@@ -1,0 +1,277 @@
+# Joint round: the outstanding issues from his rulings of 2026-10-16
+
+## 1. Why you are being asked
+
+The founder ruled on a list of outstanding issues on 2026-10-16. Four are now
+built and tested. Three are NOT built, deliberately, because each one turns out
+to need a design decision rather than code — and his standing instruction is
+that a fix is suggested to him, never auto-applied.
+
+Your job has two halves, and the second is the one that matters most.
+
+**Half one: check the built work and APPLY what you find.** Everything below is
+CC1's own work from today. Check it under `a` (analyse dispassionately), `f`
+(FFAFP — Find, Follow, Analyse with tools, Fix, P-pass) and `sy` (use SymPy,
+z3, SciPy, NumPy, statsmodels or mpmath, and cross-verify every computational
+claim with at least two of them). Where you find a defect, FIX IT and deliver
+the fix as a file.
+
+**Half two: answer the three open design questions in section 4.** CC1 has a
+position on each and states it, so you are not guessing at a blank page. The
+positions may be wrong. Disagreement is preserved as information here: this
+round runs WITHOUT compelled convergence, so if you disagree with CC1 or with
+each other, say so and say why rather than converging for its own sake.
+
+## 2. The three formal standards every answer is judged against
+
+These are the founder's own terms. Use them explicitly.
+
+**`simplest sufficient`.** The simplest fix that addresses the root cause and
+the downstream consequences. Not the most general, not the most configurable.
+If a fix needs a new flag, a new table or a new module, say why the simpler form
+fails.
+
+**`additive`.** Work must ADD to reliability, functionality, accuracy and
+robustness. A feature may not be removed or narrowed without a COMMITTED
+MEASUREMENT showing the replacement dominates on a named property — a judgement
+that something is better is not evidence that it is. The standard is SYMMETRIC:
+an addition that nothing reaches is not additive either. Every new flag, gate,
+subcommand or entry point must be wired to a caller and executed by a test. Over
+this project's record since 2026-08-01, 11 confirmed defects were additions that
+did nothing and 0 were removals of something needed.
+
+**`composability`.** A fix must compose with what is already there rather than
+sitting beside it. Two mechanisms that answer the same question in two places
+will diverge; this round contains a worked example of exactly that.
+
+## 3. The built work, to check and correct
+
+Read these files. Run the tests. Run the producers.
+
+### 3.1 Identifier normalisation — `bench/runner_core.py`
+
+HIS RULING, verbatim: *"We normalise going forward, since recording vendor names
+is purely a recording statistic and has no impact on capability, or how our
+experiments work."*
+
+The runner prefixed the seat label to whatever identifier a model chose for
+itself, so a seat dispatched as `Gemini-SIM` writing `GEMINI_F004` produced
+`Gemini-SIM_GEMINI_F004`, in which a reader meets a bare vendor name. The seat
+label was always correct; the bare name arrived inside the model's own text.
+
+What was done: `_strip_redundant_vendor_prefix` removes the seat's OWN vendor
+token, and one shared `_compose_finding_id` replaces the six separate copies of
+the composition that previously existed. Five of the six were
+model-supplied paths that `_structurally_valid_fid`'s own docstring already
+enumerated; the sixth was the verdict-owner path.
+
+Nothing recorded is rewritten. Rewriting run 2's findings to clear a cosmetic
+defect would falsify experimental evidence, so the archive's two pre-repair
+identifiers are PINNED BY NAME in
+`bench/tests/test_sim_naming_and_integrity_directive.py`, which fails on any
+other and also refuses a pin naming something the archive does not contain.
+
+<!-- figure: distinct per-seat coherence budgets in force | scripts/what_budget_does_each_seat_actually_get_2026-10-16.py | [0.01, 0.012, 0.015, 0.02] -->
+
+**Check in particular:** CC1's first version of this fix took its candidate
+tokens from the whole of `MODEL_SPECS`, which meant that under seat `CC2-SIM`
+the identifier `GEMINI_F004` — a CC2 reply REFERRING to Gemini's finding —
+stripped to `F004` and composed to `CC2-SIM_F004`, resolving to CC2's own F004.
+A cross-model mis-attribution. It was narrowed to the seat's own token. Execute
+the current form and try to find a remaining case where one seat's reference
+can be resolved onto another seat's finding. `_resolve_finding_key` in
+`bench/reference_runner_v3.py` is where that would bite, because an unresolved
+MERGE source is mandated to be read as a CONFIRM — a silent verdict inversion.
+
+### 3.2 Composer provenance in the dispatch record — `bench/reference_runner_v3.py`
+
+The coherence budget recalibration in `bench/cdsfl_registry/composer.py` could
+never work, and the reason is arithmetic. `calibrate_coherence_thresholds`
+prefers a recorded `constraint_density` and otherwise estimates
+`floor(c/70)/floor(c/4)`. No archived dispatch entry carried any composer
+field. What they carried was `prompt_length`, which is the length of the
+TRUNCATED prompt copy that `save_output` is passed — `prompt[:200] + "..."`,
+i.e. 203 characters. SymPy, NumPy and mpmath agree that
+floor(203/70)/floor(203/4) = 2/50 = 1/25 exactly, and z3 and SymPy
+independently agree that {200, 201, 202, 203} is the complete integer band on
+which that ratio holds. So the truncation length lands at the top of that band
+and the value was FORCED for essentially every entry.
+
+<!-- figure: share of dispatch entries at the truncation length | scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py | 96.7646% -->
+<!-- figure: the estimator's forced ratio at that length | scripts/the_recorded_prompt_length_forces_the_estimator_2026-10-16.py | 1/25 -->
+
+What was done: `_composer_record_fields` records `constraint_count`,
+`token_estimate`, `constraint_density`, `coherence_budget` and `cid`, plus the
+untruncated `prompt_chars_full`, at all four dispatch record sites.
+`prompt_length` is NOT reinterpreted, because rewriting it would silently change
+what every archived entry means. A composer fallback is recorded as
+`composer_fallback: true` rather than by omitting the keys, since an absent key
+and a failed composition are different facts.
+
+**Check in particular:** whether recording these fields can change any verdict,
+and whether a replay of an older run still parses. CC1 claims replay is NOT
+invalidated — older runs simply lack the new keys and take the existing fallback
+— which is narrower than what the founder was told on 2026-10-15. Try to refute
+that.
+
+### 3.3 The boundary-band verdict — `bench/reference_runner_v3.py`
+
+`_estimate_gamma` returns 0.0 for four distinct reasons and only one of them is
+a slope of 0.0; its own mirror `_gamma_is_estimable` names the other three. The
+boundary-band block compared the two band edges for equality, so two SENTINELS compared equal and the run was reported *robust to the whole rubric
+disagreement* on the strength of a gamma that was never measured.
+
+<!-- figure: archived blocks claiming robust on two sentinels | scripts/the_band_verdict_rests_on_a_sentinel_2026-10-16.py | 38.4615% -->
+
+It failed in both directions, which is why the repair is a gate and not a sign
+flip: two sentinels read TRUE where the answer is "unreadable", and one real edge
+against a sentinel read FALSE, a false alarm. Estimability now travels with the
+number, from the SAME predicate the gate uses, and `verdict_robust_to_band` is
+null where either edge is not estimable.
+
+**Check in particular:** the composability claim. CC1 asserts that reporting
+`gamma_is_estimable` per threshold, from the gate's own predicate, is better than
+having the band block re-derive estimability itself. Test whether the two can
+still disagree.
+
+### 3.4 Model admission — the measurement, not yet a fix
+
+HIS QUESTION, verbatim: *"adding, removing, or changing models in the harness
+should be an entirely trivial affair (by design) and should not require major
+code changes to enable researchers to do so. The question is, is it? Have we
+adequately addressed this particular design objective?"*
+
+Answered two ways. Structurally, an AST walk finds 156 per-model tables across
+67 files, but that total overstates the answer about threefold: 86 sites are
+tests, which guard the roster rather than admit to it, 50 are historical one-off
+experiment runners whose edit would alter what those runs did, and the LIVE
+harness is 12 tables across 6 files plus one per-model registry `.toml`.
+
+The count is modest. The failure mode is not.
+
+<!-- figure: admission steps that fail silently | scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py | 71.4286% -->
+
+A model that does not exist was put through the real resolution chain. Most steps
+default SILENTLY and only two fail loudly, so a researcher who misses one table
+gets a seat that RUNS while losing whatever that table gated — the class
+`base_model_label`'s own docstring calls *"a capability lost with no error"*.
+
+## 4. The three open questions. This is the substance.
+
+### Q1. Should the coherence DENSITY budget govern anything at all now?
+
+CC1's position: probably not, and saying so is more useful than wiring it up.
+
+The reasoning. The budget's only effectful consumer was `_prune_for_coherence`,
+which the founder retired by default on 2026-10-13: *"I also agree the
+mechanical directive pruner should be retired. We have no way of knowing what it
+feeds, or has been feeding our models."* With pruning off, the budget's sole
+remaining effect is a warning in `bench/cdsfl_registry/composer.py` stating that
+*"Coherence penalty kappa(m,g) < 1 applies to effective detection"* — and
+nothing computes or applies that kappa. Every kappa in the tree is the
+convergence metric. So the warning asserts a penalty that is not in force.
+
+And the purpose his ruling names is a different quantity. *"It exists so that
+models never get fed work that is larger than they have been demonstrably proven
+to be able to handle in any experiment"* is a SIZE ceiling, and the per-seat
+fingerprint already measures `max_successful_context_chars`,
+`max_successful_prompt_chars`, `measured_attention_span`,
+`compression_threshold` and `decomposition_recommended` from real runs. The
+coherence budget is a directive-DENSITY ceiling.
+
+**What you are asked.** Is CC1 right that these are two mechanisms for two
+different quantities, and that the fingerprint ceiling is the one his ruling
+describes? If so, what is the `simplest sufficient` disposition of the density
+budget — correct the false kappa warning and leave the budget inert, implement
+kappa, or wire the budget to the size ceiling? If CC1 is wrong, say what the
+density budget should govern and what measurement would show it working.
+
+Note the composability trap before answering: `MODEL_COHERENCE_BUDGETS` resolves
+through `COMPOSER_MODEL_MAP`, and four of its five keys name SUPERSEDED model
+versions against the current `MODEL_ROSTER` — `opus_4_6` against Opus 4.7,
+`chatgpt_5_4` and `codex_5_3` against GPT-5.5, `deepseek_v3` against DeepSeek V4
+Pro. So a live seat inherits a dense-instruction allowance written for a model
+no longer in the roster, selected by its NAME. His ruling of 2026-10-07 is
+*"Names are recorded for provenance only!"* Any answer that makes the table
+MORE reachable has to deal with that.
+
+### Q2. Derived-capability routing: what happens on a cold start?
+
+A previous free panel designed the derived-capability fix and both seats rejected
+the operator's proposed retirement rule, on different grounds, and both were
+right. The design was never merged. The open part is the cold start: if a seat's
+routing weight is derived from its measured record, a seat with no record yet has
+no weight.
+
+**What you are asked.** The `simplest sufficient` cold-start rule, and the
+measurement that would show it is not quietly privileging or starving a new
+seat. Be concrete about where it lives in `bench/reference_runner_v3.py`.
+
+### Q3. Should model admission become a single registration point?
+
+CC1's position: yes, but the loudness comes first.
+
+The reasoning. Reducing 12 edits to 1 is worth having, but it is the silent
+defaulting that costs capability, and a single registration point that still
+defaults silently would hide 12 misses behind 1. So the `simplest sufficient`
+first step is to make a missing registration FAIL LOUDLY at dispatch, and the
+consolidation second.
+
+**What you are asked.** Whether that ordering is right, and what the loud
+failure should be — a raise, a refusal to dispatch that seat, or a run-level
+preflight. This changes how every seat is configured, so it is being put to the
+founder either way; your job is to give him the strongest version of the options
+and the measurement that distinguishes them.
+
+## 5. How to work, and what to deliver
+
+RUN things. Do not describe them. Execute the tests named above, execute the
+producers named above, and execute your own checks. The tool output IS the
+evidence; reasoning selects and interprets it but never substitutes for it.
+
+Use `sy`: SymPy, z3, SciPy, NumPy, statsmodels, mpmath. Every computational
+claim needs at least two independent tools agreeing, and every proportion you
+report needs a confidence interval — Wilson and Clopper-Pearson, the exact one
+cross-checked between statsmodels and scipy. Name the instrument: say what
+gamma, rho, S_k, sigma, nu, the two-sided gate, severity, or a Wilson interval
+tells you about the question you are answering, and why that instrument rather
+than another.
+
+**Deliver each fix as a file, written INTO the sandbox repository tree at its
+real path.** A fix left in prose or in scratch space is destroyed at teardown
+and is not delivered. Rounds 5 and 6 of an earlier panel returned 0 source files
+for exactly this reason.
+
+**Every fix needs a runnable falsifier that you have EXECUTED, and its output.**
+A fix you have not tried to break is a hypothesis, not a fix. Mutate your own
+repair and show the test going red; a test that survives the mutation of the
+thing it guards is verifying nothing.
+
+**State what would refute you.** For each answer, name the evidence that would
+overturn it. An answer with no refutation condition is an opinion.
+
+Do not propose demoting gamma. It is load-bearing and that is settled.
+
+Do not rewrite anything under `bench/logs/`. It is experimental evidence.
+
+### Output fields, per question and per finding
+
+- `QUESTION` or `FINDING_ID`
+- `CLAIM` — one sentence
+- `EVIDENCE` — the command you ran and its output
+- `INSTRUMENT` — which mathematical tool, and what it told you
+- `FIX` — the file you wrote and its real path
+- `FALSIFIER` — the test you ran against your own fix, and its output before
+  and after the mutation
+- `STANDARD` — how the fix satisfies `simplest sufficient`, `additive` and
+  `composability`
+- `REFUTED_BY` — what evidence would overturn your answer
+- `DISAGREEMENT` — where you disagree with CC1 or the other seat, and why
+
+### Termination
+
+Stop when further passes produce no new above-threshold findings, or when you
+reach diminishing returns. A finding is above threshold if missing it could
+cause real-world failure. Do not nitpick, do not generate findings for their own
+sake, and do not push back on valid design choices. Two consecutive passes with
+nothing new is the stop condition.
