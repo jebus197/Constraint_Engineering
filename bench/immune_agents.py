@@ -5053,9 +5053,47 @@ def typed_llm_classifier(
             # In software domain, LLM is primary (regex ~15% agreement).
             # In non-software domains, LLM overrides only when confident
             # and MATHEMATICAL guard is retained for safety.
+            # ★ MOVED ABOVE `math_guard` ON 2026-10-16. The narrowing below
+            # references `_code_types`, and this assignment used to sit 23
+            # lines LOWER -- a forward reference that COMPILES CLEANLY and
+            # raises NameError only when the branch executes. Caught by
+            # running the tests rather than by reading the diff; the same
+            # shape as the `copy.deepcopy` slip recorded on 2026-10-15.
+            _code_types = (ClaimType.CODE_BEHAVIORAL, ClaimType.CODE_STRUCTURAL)
+
+            # ★ NARROWED ON HIS RULING, 2026-10-16: "Verdict, yes, fix it."
+            #
+            # THE DEFECT. This blocked ANY move away from a regex `mathematical`
+            # label outside the software domain, at ANY confidence, INCLUDING the
+            # move to a CODE type. But only the CT cell can ground a claim
+            # against the target source, so a code type is the one destination
+            # that CAN check such a claim. The single most valuable move this
+            # classifier makes -- spotting that something filed as mathematics is
+            # really a code defect, which is the Exp 38 rescue the module's own
+            # comment names as its reason for existing -- was therefore
+            # reachable in the software domain ONLY.
+            #
+            # MEASURED over 220 archived classifier logs: of 539 mathematical-
+            # guard block lines, 408 had a CODE destination, 75.6957%, 95% Wilson
+            # [71.9011%, 79.1267%] over the archive as it stood before leg 3, and
+            # 71.3322% [67.5644%, 74.8254%] after it, across 327 distinct
+            # (run, finding, move) occasions and 32 runs. 5 of those fired inside
+            # leg 3 itself, at confidences 0.65 to 0.92, on a target that is
+            # prose carrying real Python.
+            #
+            # WHY THE NARROWING IS THE SAME PRINCIPLE, NOT AN EXCEPTION TO IT.
+            # Both guards exist to stop a claim being moved to a verifier that
+            # CANNOT ground it. Moving mathematical -> logical or -> statistical
+            # is still refused here, because z3 and statsmodels cannot ground a
+            # claim the regex read as mathematical without a confidence test.
+            # Moving mathematical -> CODE is permitted because the CT cell can.
+            # The confidence threshold still applies to it.
+            #
+            # Producer: scripts/the_code_path_guard_is_off_in_non_software_2026-10-15.py
             math_guard = (
                 regex_tf.claim_type == ClaimType.MATHEMATICAL
                 and not llm_primary
+                and llm_type not in _code_types
             )
             # Code-path guard (2026-05-29): in the software domain the review
             # target IS code, and ONLY the CT (code-verifier) cell structurally
@@ -5075,7 +5113,6 @@ def typed_llm_classifier(
             # keeping a stray non-code claim on the CT path costs an UNCERTAIN
             # (-> HIL); demoting a true code claim off it causes false
             # convergence. (llm_primary is True iff the domain is software.)
-            _code_types = (ClaimType.CODE_BEHAVIORAL, ClaimType.CODE_STRUCTURAL)
             # ★ DOMAIN-INDEPENDENT SINCE 2026-10-15, AND THE RATIONALE ABOVE
             # IS WHY. Every argument in the comment above — that only the CT
             # cell can ground a claim against the target source, that the

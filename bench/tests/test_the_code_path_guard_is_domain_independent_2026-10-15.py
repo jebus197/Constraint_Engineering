@@ -161,50 +161,65 @@ def test_the_rescue_direction_works_in_software(caplog, llm_line):
 @pytest.mark.parametrize("domain", ["mathematics", "statistics", "physics"])
 @pytest.mark.parametrize("llm_line", ["code_behavioral", "code_structural"])
 @pytest.mark.parametrize("conf", [0.70, 0.90, 0.98])
-def test_the_rescue_direction_is_REFUSED_outside_software(
-    caplog, domain, llm_line, conf,
-):
-    """★ THIS PINS A DEFECT, DELIBERATELY, AND IT AWAITS THE FOUNDER'S RULING.
+def test_the_rescue_direction_now_WORKS_outside_software(caplog, domain, llm_line, conf):
+    """★ INVERTED ON HIS RULING, 2026-10-16: "Verdict, yes, fix it."
 
-    `math_guard` blocks ANY move away from a regex `mathematical` label outside
-    software, at ANY confidence — including the move to a CODE type. So the one
-    rescue the classifier exists to perform, "RESCUE code bugs that the regex
-    misroutes to math (non-code -> code, Exp 38)", is reachable in the software
-    domain ONLY.
+    This test previously asserted the OPPOSITE and said so in its own docstring:
+    it pinned the defect deliberately and recorded that it would invert when he
+    ruled. He has. `math_guard` now carries `and llm_type not in _code_types`,
+    so the Exp 38 rescue -- moving a claim the regex filed as mathematical onto
+    the only path that can ground a claim about code -- is reachable in EVERY
+    domain, subject to the confidence threshold.
 
-    FOUND BY EXECUTION, NOT BY READING. A test written to confirm the rescue
-    survived the 2026-10-15 code-path change instead refuted the belief that
-    the rescue worked outside software at all.
+    WHAT THE RULING RESTED ON. Of 539 mathematical-guard block lines across 220
+    archived classifier logs, 408 had a CODE destination: 75.6957%, 95% Wilson
+    [71.9011%, 79.1267%] over the archive before leg 3 and 71.3322% [67.5644%,
+    74.8254%] after it, across 327 distinct (run, finding, move) occasions and 32
+    runs. 5 fired inside leg 3 itself at confidences 0.65 to 0.92, on a target
+    that is prose carrying real Python.
 
-    MEASURED over 220 archived classifier logs: of 539 mathematical-guard block
-    log lines, 408 had a CODE destination — 75.6957%, 95% Wilson [71.9011%,
-    79.1267%] — across 327 distinct (run, finding, move) occasions, 104 distinct
-    finding identifiers and 32 runs. More than 3 in 4 of everything the
-    mathematical guard refused was an attempt to put a claim onto the only path
-    that can ground it.
-    Producer: scripts/the_code_path_guard_is_off_in_non_software_2026-10-15.py
-
-    THE FIX IS ONE CLAUSE, AND IT IS NOT APPLIED:
-        math_guard = (regex is MATHEMATICAL and not llm_primary
-                      and llm_type not in _code_types)
-    It NARROWS a guard rather than adding one, so under the additive standard it
-    needs a committed measurement and the founder's ruling, not CC1's judgement.
-    When he rules, this test inverts and the assertion below becomes the
-    software-domain one above.
+    AND IT IS A NARROWING, NOT A REMOVAL. The 3 tests below hold the other
+    directions: mathematical -> logical is still refused, the confidence
+    threshold still applies, and the code-path guard still stops a code claim
+    leaving the code path. If this test passes while any of those fails, the
+    guard was deleted rather than narrowed.
     """
     text, final, rec = _classify(
         caplog, regex_type=ClaimType.MATHEMATICAL, llm_line=llm_line,
         conf=conf, domain=domain,
     )
+    assert final in CODE_TYPES, (
+        f"the rescue is still refused in {domain!r} at conf={conf}: the claim "
+        f"stayed {final}. His ruling of 2026-10-16 is not in force."
+    )
+    assert "LLM classifier OVERRIDE" in text
+    assert "BLOCKED by MATHEMATICAL guard" not in text
+    assert rec.get("overridden") is True
+
+
+def test_the_narrowing_did_not_delete_the_guard(caplog):
+    """mathematical -> logical must STILL be refused outside software."""
+    text, final, _ = _classify(
+        caplog, regex_type=ClaimType.MATHEMATICAL, llm_line="logical",
+        conf=0.99, domain="mathematics",
+    )
     assert final == ClaimType.MATHEMATICAL, (
-        "the rescue fired outside software — if this now passes, the maths "
-        "guard was narrowed and this test must be inverted"
+        "the guard was removed, not narrowed: a mathematical claim moved to a "
+        "verifier that cannot ground it"
     )
     assert "BLOCKED by MATHEMATICAL guard" in text
-    # The REFUSAL is the maths guard's, not the code-path guard's. Keeping these
-    # distinguishable is what let the second hole be seen at all.
-    assert "BLOCKED by CODE-PATH guard" not in text
-    assert rec.get("code_path_protected") is False
+
+
+def test_the_confidence_threshold_still_applies_to_the_rescue(caplog):
+    """The rescue is permitted, not unconditional."""
+    _text, final, _ = _classify(
+        caplog, regex_type=ClaimType.MATHEMATICAL, llm_line="code_behavioral",
+        conf=0.50, domain="mathematics",
+    )
+    assert final == ClaimType.MATHEMATICAL, (
+        "a sub-threshold rescue was applied; the narrowing removed the "
+        "confidence test as well as the type test"
+    )
 
 
 # --------------------------------------------------------------------------
