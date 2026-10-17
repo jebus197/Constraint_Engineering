@@ -62,6 +62,78 @@ def _headroom_mib():
     return tot * page / (1024 * 1024)
 
 
+#: WHAT COUNTS AS INSTRUCTING A HEAVY VERIFICATION RUN, and why polarity matters.
+#:
+#: HIS RULING, 2026-10-17: "Make the guard aware of negation as you have
+#: suggested."
+#:
+#: THE DEFECT, OBSERVED TWICE IN ONE TURN ON 2026-10-17. The predicate was a bare
+#: substring search over the whole prompt, so a delegated brief whose text
+#: FORBADE the tooling matched on the very words expressing the prohibition. The
+#: first refusal fired on an explicit "do NOT run pytest"; the second, after that
+#: word was removed, fired on "cost more than a full board run" inside the same
+#: prohibition.
+#:
+#: WHY THAT IS WORSE THAN AN ANNOYANCE. An author who cannot state the limit in a
+#: brief has 2 options left: drop the limit, or rephrase around the matcher.
+#: Dropping it is actively dangerous, because a delegated agent with no stated
+#: limit is MORE likely to invoke the tooling. So the false positive selected for
+#: exactly the behaviour the guard exists to prevent. It is the same defect class
+#: as `execute-do-not-grep`: a text matcher standing in for a judgement.
+#:
+#: THE RULE NOW: a mention must be IMPERATIVE -- a command form, or governed by a
+#: verb of execution -- and must NOT sit inside a negation. The window is
+#: deliberately short, because a negation 200 characters earlier does not govern
+#: the sentence in hand, and treating it as though it did would let any brief
+#: smuggle an instruction past the guard by opening with a disclaimer.
+#: TWO CLASSES OF MENTION, because they are different parts of speech and the
+#: existing contract test of 2026-10-11 is right about the first one.
+#:
+#: A COMMAND NAME is imperative by itself. `pytest` is an executable, so
+#: `agent('pytest')` instructs it exactly as typing it at a shell would; no verb
+#: is needed and demanding one let a real instruction through.
+#: A NOUN PHRASE is not. "the suite has 606 tests" commands nothing, so "the
+#: suite" and "full board" require a verb of execution nearby before they count.
+#: Negation suppresses BOTH, which is the whole point of the change.
+_COMMAND_MENTION = re.compile(
+    r"\bpytest\b|python3?\s+-m\s+pytest", re.IGNORECASE)
+_NOUN_MENTION = re.compile(
+    r"\bfull board\b|\bthe suite\b|\bwhole suite\b|\bentire suite\b",
+    re.IGNORECASE)
+_IMPERATIVE = re.compile(
+    r"\b(run|runs|running|invoke|invokes|invoking|execute|executes|executing|"
+    r"call|calls|calling|launch|launches|launching|start|starts|starting|"
+    r"fire|fires|spawn|spawns)\b", re.IGNORECASE)
+_NEGATION = re.compile(
+    r"\b(do not|don't|dont|never|must not|mustn't|cannot|can't|without|avoid|"
+    r"refrain|no need to|skip|forbid|forbidden|prohibit|prohibited|"
+    r"not to|rather than|instead of)\b", re.IGNORECASE)
+_BEFORE, _AFTER = 140, 60
+
+
+def _instructs_heavy_verification(text: str) -> bool:
+    """True only where the text COMMANDS a heavy verification run.
+
+    Returns False for a prohibition, which is the point: a brief that forbids the
+    tooling must be writable without tripping the guard that forbids it.
+    """
+    for pattern, needs_a_verb in ((_COMMAND_MENTION, False),
+                                  (_NOUN_MENTION, True)):
+        for m in pattern.finditer(text):
+            before = text[max(0, m.start() - _BEFORE):m.start()]
+            after = text[m.end():m.end() + _AFTER]
+            if _NEGATION.search(before) or _NEGATION.search(after):
+                continue                  # a prohibition, not an instruction
+            if not needs_a_verb:
+                return True               # a command name needs no verb
+            if _IMPERATIVE.search(before) or _IMPERATIVE.search(after):
+                return True
+            # A noun phrase with neither a verb nor a negation nearby is
+            # AMBIGUOUS, and ambiguity is allowed. Refusing on ambiguity is
+            # what produced both false positives of 2026-10-17.
+    return False
+
+
 def budget(per_mib):
     cores = _sysctl("hw.ncpu", os.cpu_count() or 1)
     head = _headroom_mib()
@@ -95,7 +167,7 @@ def main():
     heavy_b, core_c, mem_c, head, cores, la1 = budget(HEAVY_MIB)
     light_b, *_ = budget(LIGHT_MIB)
 
-    wants_pytest = bool(re.search(r"\bpytest\b|python3? -m pytest|full board|the suite\b", low))
+    wants_pytest = _instructs_heavy_verification(low)
     fans_out = bool(re.search(r"\bparallel\s*\(|\bpipeline\s*\(|batch|fan.?out", low))
 
     if wants_pytest and (tool in ("Agent", "Task") or fans_out):
