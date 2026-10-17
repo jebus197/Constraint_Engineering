@@ -23,8 +23,15 @@ THE VERDICTS, AND THE DISTINCTIONS MATTER MORE THAN THE LABELS:
   GAP      -- nothing carries it. Evidence: what was searched and came back
               empty. A GAP is raised as a task entry, which then supersedes
               this row.
-  RULING   -- it is a question or a decision for him, so no amount of work
-              settles it. Evidence: what is owed and from whom.
+  RULING   -- a question HE must decide, so no work of mine settles it and the
+              ticket stays live until he rules. Evidence: what is owed and from
+              whom.
+  NOTED    -- a decision, agreement or priority HE has already given. Nothing
+              is owed from anyone, so it settles. The distinction from RULING
+              is not cosmetic: conflating them either leaves his settled
+              agreements counted as outstanding for ever, or quietly settles
+              questions he has not yet answered. Evidence: the annotation
+              itself, which is the whole of it.
   UNDECIDABLE -- its words cannot be attributed, because his short verdicts
               repeat verbatim and the referent lives in the surrounding report.
               This is NOT a soft GAP: it is a statement that this instrument
@@ -59,11 +66,11 @@ RECORD = ROOT / "experimental_notes" / "data" / "annotation_verdicts_2026-10-17.
 READER = ROOT / "scripts" / "read_founder_responses_2026-10-11.py"
 WINDOW_FROM = "2026-10-01"
 
-VERDICTS = ("TRACKED", "ACTED_ON", "GAP", "RULING", "UNDECIDABLE")
+VERDICTS = ("TRACKED", "ACTED_ON", "GAP", "RULING", "NOTED", "UNDECIDABLE")
 #: Verdicts that SETTLE a register ticket. A GAP does not: it becomes a task
 #: entry, and the entry's own state governs it from then on. A RULING does not:
 #: nothing I do settles a question of his.
-SETTLING = ("TRACKED", "ACTED_ON", "UNDECIDABLE")
+SETTLING = ("TRACKED", "ACTED_ON", "NOTED", "UNDECIDABLE")
 
 
 def _reader():

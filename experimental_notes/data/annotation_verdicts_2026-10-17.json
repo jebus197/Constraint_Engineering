@@ -1,6 +1,24 @@
 {
   "rows": [
     {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#14322594",
+      "audited": "2026-10-17",
+      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster and governs this annotation",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "That sounds like a potential solution. But why can\u2019t it measure something the ladder actually does, even if that means changing the ladder somewhat to take account of this?",
+      "verdict": "TRACKED",
+      "why": "his question about measuring what the ladder does rather than a proxy, carried by the consolidated ladder entry"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#15404706",
+      "audited": "2026-10-17",
+      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "This goes back to my original question above, how do we define \u2018weak from strong\u2019. Indeed I\u2019m certain this is a discussion we had a long time ago. Where I advised strongly against basing this on hearsay and vendor marketing gathered from the internet, and where you said you would fix this then? Clearly you didn\u2019t?",
+      "verdict": "TRACKED",
+      "why": "the question entry C7 answers by measurement: the archive cannot support any pairwise ordering at all"
+    },
+    {
       "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#24394693",
       "audited": "2026-10-17",
       "evidence": "entry C18 is OPEN at status TESTED; it governs this annotation and is not yet settled",
@@ -28,6 +46,15 @@
       "why": "his challenge to the ladder order is the subject of entry C7, which measured that the order is not estimable from the archive at all"
     },
     {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#2784493",
+      "audited": "2026-10-17",
+      "evidence": "entry C18 is OPEN at status TESTED; it keys capability on a hashed identity rather than a model name",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "Is that sensible, given what I said about capability being measured statistic? What if vendor improves their model? Or creates a new model? Simply going by a model name is unlikely to resolve any of these issues.",
+      "verdict": "TRACKED",
+      "why": "his point that a model name cannot stand in for capability, which the hashed-identity work answers"
+    },
+    {
       "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#31262170",
       "audited": "2026-10-17",
       "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
@@ -35,6 +62,15 @@
       "text": "So were these historical blockers ever fixed, by the rest of the machinery of the schema? Such as the closing sweep? (Which should now be an internalised feature of the schema.)",
       "verdict": "ACTED_ON",
       "why": "his question was whether the closing sweep serviced them; it could not, because it runs after the verdict, so in-round falsification was built and now services them during rounds"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#33317293",
+      "audited": "2026-10-17",
+      "evidence": "his own annotations of 2026-10-05 on immune memory, the hardened gate and folding fixes forward, each audited separately",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "I believe I addressed these above?",
+      "verdict": "NOTED",
+      "why": "he is pointing back at his own earlier answers in the same file, which are recorded as their own rows; nothing further is owed"
     },
     {
       "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#3521387",
@@ -60,8 +96,62 @@
       "evidence": "his own annotation of 2026-10-05; no work is owed, so no test can settle it",
       "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
       "text": "This remains the case, since as you said, the objective here is to test everything, before enabling them in a real/live runner and experiment/s.",
-      "verdict": "RULING",
-      "why": "he is agreeing with the stated position and asks for nothing further, so no work settles it and none is owed"
+      "verdict": "NOTED",
+      "why": "he is agreeing with the stated position and asks for nothing further, so nothing is owed from anyone, so it settles rather than waiting on him; no work settles it and none is owed"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#55649629",
+      "audited": "2026-10-17",
+      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster and governs this annotation",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "That sounds like something we could/should do anyway, regardless of how capability is calculated, but perhaps it is simply pointing in the same direction I have indicated?",
+      "verdict": "TRACKED",
+      "why": "his view that the first-attempts correction is worth doing anyway, carried by the consolidated ladder entry"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#57870367",
+      "audited": "2026-10-17",
+      "evidence": "entry B11 is DONE on bench/tests/test_task_list_burndown_2026-09-11.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "This should almost certainly all be looked at and fixed.",
+      "verdict": "TRACKED",
+      "why": "the remaining board failures, which the post-run board triage classified rather than suppressed"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#58574581",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-05, which sets a priority",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "I don\u2019t think we should waste too much time and resources pouring over historical results either. As stated many times the purpose of simulated runs is to find issues exactly like these and fix them going forward.",
+      "verdict": "NOTED",
+      "why": "a direction about where effort should go rather than a defect; nothing is owed from anyone, so it settles"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#59700518",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-05; nothing is owed, so no test can settle it",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "I agree.",
+      "verdict": "NOTED",
+      "why": "an agreement with the stated position; nothing is owed from anyone, so it settles rather than waiting on him; no work settles an agreement and none is owed"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#59831117",
+      "audited": "2026-10-17",
+      "evidence": "entry B21 is OPEN at status TESTED; it carries the declarative-policy work this concern names",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "Then clearly they should be! I have concern about this and potentially other elements of our machinery working in isolation, but not as a unified whole? Clearly the second of these is the preferred outcome. Is it in all relevant cases?",
+      "verdict": "TRACKED",
+      "why": "his concern that the machinery works piecewise rather than as a whole, which is what the declarative-policy work addresses"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#61532876",
+      "audited": "2026-10-17",
+      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster and governs this annotation",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "This has echoes of what I just said? But perhaps combining both these elements would give a more robust overall result, depending on what the models say?",
+      "verdict": "TRACKED",
+      "why": "a design point on combining capability signals, which the consolidated routing-ladder entry carries"
     },
     {
       "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#72351499",
@@ -100,6 +190,42 @@
       "why": "the blockers-shown-as-settled defect was repaired and a preflight check now refuses a run whose blockers are labelled settled"
     },
     {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#78934430",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_the_cap_default_is_exhaust_2026-10-08.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "I don\u2019t think there should be a cap at all. If it\u2019s a measured statistic, along with capability fingerprinting then the problem should run until it is either resolved, or the ladder is exhausted. (No more models to try.)",
+      "verdict": "ACTED_ON",
+      "why": "the rung cap default was changed to exhaust the ladder on his ruling, so a finding runs until it is resolved or the ladder is spent"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#79045413",
+      "audited": "2026-10-17",
+      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "You keep going back to that and I keep giving you the same solution. The system shouldn\u2019t care at all what a model is called, only what it can be statistically demonstrated to have done, as per its capability fingerprint. So it shouldn\u2019t matter if all the models are different, or all the models are the same, or if they are all models from a single vendor, or even a single model operating on its own (in which case the ladder would just route the issue back to itself and would have another go at resolving it by using the rest of the machinery of the harness.",
+      "verdict": "TRACKED",
+      "why": "the ruling entry C7 quotes and answers: the order is not estimable from the archive, and a routing pass now records whether its order was measured"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#79193205",
+      "audited": "2026-10-17",
+      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "No, you\u2019re right. Capability should as close as possible be a real function of measured capability. No model should get a free pass in this regard, whether simulated or real.",
+      "verdict": "TRACKED",
+      "why": "his ruling that capability must be a real function of measured capability, which entry C7 records and answers with a measurement"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#80364860",
+      "audited": "2026-10-17",
+      "evidence": "scripts/the_provenance_gate_reads_text_not_behaviour_2026-10-05.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "So again, no work to do here?",
+      "verdict": "ACTED_ON",
+      "why": "work was owed: the provenance condition was a text pattern and a seat defeated it twice, which the producer records and the repair addresses"
+    },
+    {
       "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#96933794",
       "audited": "2026-10-17",
       "evidence": "bench/tests/test_severity_proof_2026-09-07.py",
@@ -109,12 +235,30 @@
       "why": "the severity test was restored to the blocker counter on his rejection and is executed rather than read"
     },
     {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#97113119",
+      "audited": "2026-10-17",
+      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster and governs this annotation",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "Moving models around this way and assigning fixed numbers of rungs to the ladder seems more like an act of \u2018performance theatre\u2019 than the actual engineering/technical facility it was always intended to be (as I have now said repeatedly). It was always envisaged as a way of making the best possible use of available resources along with our other mechanical and load balancing facilities, not as an exercises in simple \u2018musical chairs\u2019 (albeit sans the music), as you appear to have designed it.",
+      "verdict": "TRACKED",
+      "why": "his objection to moving seats and fixing rung counts, carried by the consolidated ladder entry"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#97686492",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_operational_scripts.py::TestNoScriptSwallowsAnErrorIntoSilence",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "So that\u2019s good then? All fixed?",
+      "verdict": "ACTED_ON",
+      "why": "the swallowed-failure guard was widened and still bites: it refused a commit of mine on 2026-10-17 over an exception handler that dropped every confidence interval"
+    },
+    {
       "anchor": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt#3913666",
       "audited": "2026-10-17",
       "evidence": "his annotation of 2026-10-16 in Runway_Status_And_Is_It_Safe_To_Merge; no work is owed, so no test can settle it",
       "file": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt",
       "text": "The fact that the answer keys were public for a very brief time has already been answered also and has been ruled as not significant. It is highly unlikely that anyone ever saw them, including the models. Verdict: strike from the list of reoccurring issues also.",
-      "verdict": "RULING",
+      "verdict": "NOTED",
       "why": "he struck the public-answer-keys question permanently; nothing further is owed from me, and the record of the strike is the ruling itself"
     },
     {

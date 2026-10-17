@@ -126,3 +126,38 @@ def test_it_refuses_an_unknown_flag():
     out = subprocess.run([sys.executable, str(PRODUCER), "--bogus"],
                          capture_output=True, text=True, cwd=str(REPO))
     assert out.returncode != 0
+
+
+def test_a_tracked_row_whose_entry_is_open_has_not_settled_its_ticket(rows):
+    """THE PROPERTY, CHECKED AGAINST THE LIVE REGISTER rather than against the
+    close path's source. A TRACKED verdict says an entry GOVERNS the
+    annotation; it does not say the entry is finished. Settling a ticket
+    governed by an OPEN entry would record an instruction of his as handled
+    while the work is still outstanding.
+
+    Mutation on 2026-10-17 showed 8 rows would have settled wrongly if the
+    condition were dropped, and nothing asserted it -- so this does."""
+    if not rows:
+        pytest.skip("the record is empty")
+    from bench.ticket_store import TicketStore
+    store = TicketStore()
+    store.load()
+
+    def key(f, text):
+        return (str(f).split("#")[0], " ".join(str(text).split()).lower())
+
+    unconfirmed = {key(t.anchor, t.verbatim or t.title)
+                   for t in store.unconfirmed()}
+    wrong = []
+    for r in rows:
+        if r.get("verdict") != "TRACKED":
+            continue
+        if "is DONE" in (r.get("evidence") or ""):
+            continue
+        if key(r["file"], r["text"]) not in unconfirmed:
+            wrong.append(r["text"][:60])
+    assert not wrong, (
+        f"{len(wrong)} annotation(s) are recorded as TRACKED by an entry that "
+        f"is NOT done, and their tickets have been settled anyway: {wrong[:3]}. "
+        f"That records an instruction of his as handled while the work is "
+        f"outstanding.")
