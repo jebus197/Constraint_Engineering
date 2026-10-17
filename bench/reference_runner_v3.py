@@ -1814,7 +1814,29 @@ class RunnerConfig:
     # convergence verdict is RECORDED, run up to this many bounded epilogue
     # rounds whose ONLY duty is clearing residual non-terminal findings
     # (runnable falsifier or reasoned withdrawal). 0 = off (byte-identical).
-    post_convergence_sweep_rounds: int = 0
+    #: ON BY DEFAULT FROM 2026-10-17, on his ruling of 2026-10-12: "If a record
+    #: exists that says a problem was never read by a model, this should simply
+    #: be fed back into the mechanics of the harness for resolution, this can
+    #: include routing, the sweep mechanics and the other machinery we have for
+    #: dealing with problems of this nature."
+    #:
+    #: THE SWEEP IS THAT MACHINERY, AND IT WAS OFF BY DEFAULT. Measured
+    #: 2026-10-17: 18 of 49 configs enable it, 36.7347%, Wilson [24.6652%,
+    #: 50.7329%] -- including every live exam config -- while 31 leave it unset
+    #: and therefore at 0, so a run that simply forgets gets no feed-back at all.
+    #:
+    #: WHY ENABLING IT CANNOT COST CONVERGENCE, which is his concern of
+    #: 2026-10-13 that feeding findings back "could block or severely delay
+    #: convergence". `_post_convergence_sweep`'s own contract is that it "runs
+    #: strictly after the verdict -- can never block, reverse, or improve
+    #: convergence", registers no new findings, and is bounded in rounds. So the
+    #: 2 statements are satisfied together rather than traded off: the feed-back
+    #: happens, and it happens where it cannot delay anything.
+    #:
+    #: 1 round, not more, because leftovers are reported honestly rather than
+    #: ground at. Leg 3 of the shakedown was handed 9 and cleared 0, which is the
+    #: honest residue and not an argument for a bigger budget.
+    post_convergence_sweep_rounds: int = 1
     # IMMUNE MEMORY (founder-approved 2026-07-28; CONSUMPTION added 2026-07-31).
     # The cross-experiment ImmuneMemory (bench/dm/_memory.py, appendix §1.5)
     # has TWO separable jobs, and they are separately switched — see below.
@@ -3604,7 +3626,8 @@ class FindingRegistry:
         )
         return spec
 
-    def blockers_routing_cannot_serve(self) -> List[str]:
+    def blockers_routing_cannot_serve(
+            self, current_round: Optional[int] = None) -> List[str]:
         """★ Entries that BLOCK release and that the ladder would REFUSE to serve.
 
         HIS LIST, 2026-10-16, item 3 of the 7 smaller defects: *"A counter whose
@@ -3639,19 +3662,20 @@ class FindingRegistry:
         The predicate mirrors `_apply_routing`'s own admission test. A test
         executes both against the same entries so they cannot drift.
         """
+        # ★ ONE PREDICATE FOR THE BLOCKER HALF TOO, 2026-10-17. This loop used to
+        # carry a COPY of 3 of the counter's doors while the counter has 6, so it
+        # named entries the counter does not count as blockers:
+        # `commissioning_arm3_contrast_20260922T025824Z` gave 4 from the counter
+        # and 11 from here, a numerator larger than its denominator. It now reads
+        # `blocking_entry_ids`, which holds the doors once.
         out: List[str] = []
-        for cid, e in self.entries.items():
-            if e.get("status") != "UNCONFIRMED":
-                continue
-            if e.get("irreducible_escalation") and not e.get("integrity_unobserved"):
-                continue
-            if e.get("exhausted"):
-                continue
+        for cid in self.blocking_entry_ids(current_round):
+            e = self.entries.get(cid) or {}
             if not _routing_would_admit(e):
                 out.append(cid)
         return sorted(out)
 
-    def unverified_critical_count(self, current_round: Optional[int] = None) -> int:
+    def blocking_entry_ids(self, current_round: Optional[int] = None) -> List[str]:
         """A4 fail-safe signal: UNCONFIRMED candidates no tool has resolved.
 
         THE SEVERITY RULE IS NOT `severity >= CRITICAL_SEVERITY_THRESHOLD`, and
@@ -3693,8 +3717,8 @@ class FindingRegistry:
             gated on a PROVEN (tool-recomputed R_k) severity, never on the
             raw model-assigned float. An unproven sub-critical still counts.
         """
-        count = 0
-        for e in self.entries.values():
+        blocking: List[str] = []
+        for _cid, e in self.entries.items():
             if e.get("status") != "UNCONFIRMED":
                 continue
             # Static-queue closure (2026-06-09): a critical locked as irreducible AFTER
@@ -3960,8 +3984,33 @@ class FindingRegistry:
             _fc = (e.get("falsifier_code") or "").strip()
             _fv = (e.get("falsifier_verdict") or "").strip().upper()
             if (not _fc) or _fv not in _FALSIFIER_RESOLVED_VERDICTS:
-                count += 1
-        return count
+                blocking.append(_cid)
+        return blocking
+    def unverified_critical_count(self, current_round: Optional[int] = None) -> int:
+        """The number of entries blocking release. A thin wrapper, deliberately.
+
+        ONE PREDICATE, ONE SET, AND THE REASON IS A MEASURED DISAGREEMENT. Until
+        2026-10-17 this method held the doors and `blockers_routing_cannot_serve`
+        held a COPY of 3 of them -- a status other than UNCONFIRMED, an
+        irreducible escalation, and the `exhausted` marking -- while this method
+        has 6, the extra 3 being an excluded integrity violation, a PROVEN
+        sub-critical severity, and the round-gated never-served door.
+
+        So the reader over-reported. Measured across every archived run:
+        `commissioning_arm3_contrast_20260922T025824Z` returned 4 blockers from
+        this counter and 11 from that reader -- a numerator larger than its own
+        denominator, which makes any ratio between them meaningless. That is the
+        defect behind the 3 denominators the founder was shown for one quantity,
+        212, 197 and 174, and behind his question of 2026-10-17 asking whether
+        the figure was real.
+
+        `blocking_entry_ids` now holds the doors ONCE and both callers read it,
+        so the claim in the reader's docstring that the 2 "cannot drift" is
+        finally true of the blocker half as well as the routing half.
+        """
+        return len(self.blocking_entry_ids(current_round))
+
+        return len(blocking)
 
     def ladder_unserved_findings(self, current_round: Optional[int] = None) -> List[str]:
         """Canonical ids of non-terminal entries the routing ladder never served.

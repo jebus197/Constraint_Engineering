@@ -62,31 +62,64 @@ def _counter_blocks(e: dict) -> bool:
 
 
 def measure() -> dict:
+    """Count by CALLING the live counter, never by reimplementing its conditions.
+
+    THE DEFECT THIS REPLACES, and it is the one `execute-do-not-grep` exists for.
+    A first version carried `_counter_blocks`, a local copy of the counter's skip
+    conditions with THREE checks: a status other than UNCONFIRMED, an irreducible
+    escalation, and the `exhausted` marking. The live
+    `FindingRegistry.unverified_critical_count` has FIVE, the 2 missing ones being
+    an excluded integrity violation and a sub-critical severity that is PROVEN. So
+    the copy over-counted, and 3 different denominators for one quantity reached
+    the founder's desk: 212 from this producer, 197 from a correction of
+    2026-10-16, and 174 from calling the counter across the archive on 2026-10-17.
+    He asked, reasonably, whether the figure was real at all.
+
+    A producer that reimplements the predicate it reports on measures the copy.
+    This one now instantiates a registry per archived run and calls the runner's
+    own `unverified_critical_count()` and `blockers_routing_cannot_serve()`, which
+    are the methods the live gate uses.
+    """
     R = _runner()
     total = blocked = unservable = 0
     per_run: dict[str, dict] = {}
     why = collections.Counter()
+    unreadable = 0
+    # TOP-LEVEL RUN STATES ONLY. `rglob` found 74 files where there are 61 runs:
+    # 10 sit inside `sandbox_harvest/`, which are archived copies of what a SEAT
+    # saw, and 3 at other nesting. Counting them inflates every figure, and it is
+    # half of why 3 different denominators -- 212, 197 and 174 -- reached the
+    # founder for one quantity. A run state is `bench/logs/<run>/runner_state.json`
+    # and nothing deeper.
     for path in sorted(LOGS.rglob("runner_state.json")):
+        if len(path.relative_to(LOGS).parts) != 2:
+            continue
         try:
             ents = (json.loads(path.read_text(errors="replace"))
                     .get("registry") or {}).get("entries") or {}
         except (OSError, ValueError):
+            unreadable += 1
+            continue
+        if not ents:
             continue
         run = path.relative_to(LOGS).parts[0]
-        row = per_run.setdefault(run, {"blocked": 0, "unservable": 0})
-        for e in ents.values():
-            if not isinstance(e, dict):
-                continue
-            total += 1
-            if not _counter_blocks(e):
-                continue
-            blocked += 1
-            row["blocked"] += 1
-            if R._routing_would_admit(e):
-                continue
-            unservable += 1
-            row["unservable"] += 1
-            # Name the reason, so the fix can be aimed rather than guessed at.
+        reg = R.FindingRegistry()
+        reg.entries = ents
+        try:
+            n_blocked = reg.unverified_critical_count()
+            unservable_ids = reg.blockers_routing_cannot_serve()
+        except Exception:                               # noqa: BLE001
+            unreadable += 1
+            continue
+        total += len(ents)
+        blocked += n_blocked
+        unservable += len(unservable_ids)
+        per_run[run] = {"blocked": n_blocked, "unservable": len(unservable_ids)}
+        # Name the reason, so the fix can be aimed rather than guessed at. The
+        # reasons are read off the entries the LIVE reader named, not off a
+        # locally re-derived set.
+        for eid in unservable_ids:
+            e = ents.get(eid) or {}
             ns = R._routing_ladder_never_served(e)
             if e.get("error_routed"):
                 why["the one-attempt guard is already spent"] += 1
@@ -98,7 +131,7 @@ def measure() -> dict:
                 why["other"] += 1
     return {
         "entries": total, "blocked": blocked, "unservable": unservable,
-        "reasons": dict(why),
+        "reasons": dict(why), "unreadable_states": unreadable,
         "runs_affected": sorted(k for k, v in per_run.items() if v["unservable"]),
         "per_run": per_run,
     }
