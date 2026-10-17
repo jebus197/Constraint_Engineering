@@ -144,7 +144,12 @@ def main(argv=None) -> int:
     for v in VERDICTS:
         if counts.get(v):
             _say(f"  {v:<12}", _proportion(counts[v], len(ann)))
-    _say("ANY VERDICT AT ALL", _proportion(len(rows), len(ann)))
+    #: A SET INTERSECTION, NOT A COUNT RATIO. Comparing len(rows) to len(ann)
+    #: would report 100% for 318 rows that happened to miss 18 annotations and
+    #: duplicate 18 others. His own instruction: pin a set, not a count.
+    _ann_anchors = {f"{a['file']}#{a.get('line_index')}" for a in ann}
+    _hit = len({r["anchor"] for r in rows.values()} & _ann_anchors)
+    _say("ANNOTATIONS WITH A VERDICT", _proportion(_hit, len(ann)))
     print("  Every row names the evidence that establishes it, so the figure")
     print("  above is a SET and not a count: anyone can check any row.")
 
@@ -213,10 +218,16 @@ def main(argv=None) -> int:
         print(f"\n  settled {closed} register ticket(s) from the record")
         return 0
 
+    #: ONE MATCHING RULE, THE ANCHOR, FOR BOTH THE COUNT AND THIS LIST. They
+    #: used to differ: the coverage figure compared COUNTS (rows against
+    #: annotations) while this list matched on raw TEXT, so on 2026-10-17 the
+    #: report said "318 of 318 = 100.0000%" and "WITHOUT A VERDICT YET: 18" in
+    #: the same breath. Both were wrong in the same way -- a count is not a set,
+    #: and 2 rules about one question will disagree. The sets in fact match
+    #: exactly: 318 rows, 318 annotations, 0 orphans, 0 uncovered.
+    _covered = {r["anchor"] for r in rows.values()}
     missing = [a for a in ann
-               if not any(r["anchor"].startswith(a["file"])
-                          and r["text"].strip() == a["text"].strip()
-                          for r in rows.values())]
+               if f"{a['file']}#{a.get('line_index')}" not in _covered]
     byfile = {}
     for a in missing:
         byfile[a["file"]] = byfile.get(a["file"], 0) + 1

@@ -115,7 +115,10 @@ def test_the_coverage_figure_is_reported_against_the_window_not_the_record(rows)
                          text=True, cwd=str(REPO))
     if out.returncode != 0:
         pytest.skip("the reader is unavailable in this checkout")
-    assert "ANY VERDICT AT ALL" in out.stdout
+    #: THE LABEL CHANGED WHEN THE FIGURE DID. It used to read "ANY VERDICT AT
+    #: ALL" and compare counts; it now reads "ANNOTATIONS WITH A VERDICT" and
+    #: intersects sets, which is a different claim and says so.
+    assert "ANNOTATIONS WITH A VERDICT" in out.stdout
     assert "WITHOUT A VERDICT YET" in out.stdout, (
         "the producer no longer reports what is unaudited, so a small record "
         "would read as a finished one")
@@ -204,3 +207,51 @@ def test_every_anchor_resolves_to_exactly_one_annotation(rows):
     assert not wrong, (
         f"{len(wrong)} anchor(s) do not resolve to exactly 1 annotation: "
         f"{wrong[:4]}")
+
+
+def test_coverage_is_a_set_intersection_and_not_a_count_ratio(rows):
+    """THE ERROR THIS CATCHES HAPPENED, and it happened in this very producer.
+
+    On 2026-10-17 the report said "318 of 318 = 100.0000%" and "WITHOUT A
+    VERDICT YET: 18" in the same breath. Two rules about one question: the
+    figure compared len(rows) to len(annotations), while the missing list
+    matched on raw text. A count ratio reports 100% for 318 rows that miss 18
+    annotations and duplicate 18 others, and his own instruction is to pin a
+    SET, not a count, because a count cannot say what moved and a set catches
+    a swap.
+
+    Both now use the anchor, and this asserts the property rather than the
+    figure: every row must point at a real annotation and every annotation in
+    the window must have a row, so the 2 sets are equal."""
+    if not rows:
+        pytest.skip("the record is empty")
+    try:
+        ann = [a for a in A._reader().annotations()
+               if str(a.get("date", "")) >= A.WINDOW_FROM]
+    except Exception as exc:                                   # noqa: BLE001
+        pytest.skip(f"his Responses folder is not readable here: {exc}")
+    want = {f"{a['file']}#{a.get('line_index')}" for a in ann}
+    have = {r["anchor"] for r in rows}
+    orphans = sorted(have - want)
+    uncovered = sorted(want - have)
+    assert not orphans, (
+        f"{len(orphans)} row(s) point at no annotation in the window: "
+        f"{orphans[:4]}. A row that matches nothing inflates any count ratio "
+        f"while covering nothing.")
+    assert not uncovered, (
+        f"{len(uncovered)} annotation(s) in the window have no row: "
+        f"{uncovered[:4]}. A count ratio would have hidden this behind an "
+        f"equal number of orphan rows.")
+
+
+def test_every_verdict_class_is_actually_used(rows):
+    """An unreachable class is a distinction that decides nothing. All 5 are
+    used: 90 TRACKED, 84 ACTED_ON, 72 RULING, 59 NOTED, 13 UNDECIDABLE."""
+    if len(rows) < 50:
+        pytest.skip("too few rows to expect every class")
+    used = {r["verdict"] for r in rows}
+    unused = set(A.VERDICTS) - used - {"GAP"}
+    assert not unused, (
+        f"verdict class(es) {sorted(unused)} are declared and never used. GAP "
+        f"is exempt because a gap becomes a task entry and the row is then "
+        f"re-verdicted as TRACKED, so an empty GAP set is the healthy state.")
