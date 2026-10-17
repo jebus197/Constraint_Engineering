@@ -4789,10 +4789,66 @@ def _parse_verdicts(
 def _resolve_merge_source(
     evidence: str, model_id: str, registry: FindingRegistry,
 ) -> Optional[str]:
-    m = re.search(r'(?:F|C)(\d+)', evidence)
-    if not m:
+    # ★ 2026-10-17: THE PATTERN COULD MATCH INSIDE A SEAT LABEL, and for 1 seat
+    # it always did. `re.search` is unanchored, so it returns the FIRST place a
+    # C or an F is followed by digits -- and `CC2` is exactly that. Handed the
+    # composed id `CC2_F004` it returned `C2`, which no alias key holds, so the
+    # resolver returned None. The comment below records what None costs: the
+    # specification MANDATES reading an unresolved source as a CONFIRM on the
+    # target, so every merge CC2 ever proposed was recorded as CC2 AGREEING the
+    # target is real. The verdict inverted rather than being lost.
+    #
+    # MEASURED by `scripts/does_the_alias_resolver_handle_every_seat_label_2026-10-17.py`,
+    # which CALLS this function with the alias map populated the way `register()`
+    # populates it: 2 of 12 seat labels failed, 16.6667% with a Clopper-Pearson
+    # interval from 2.0863% to 48.4138%, and the 2 are `CC2` and `CC2-SIM`. His
+    # correction of 2026-10-16 reported 2 of 8 over a smaller label set and named
+    # the same 2 seats.
+    #
+    # THE ARCHIVE CANNOT SHOW THIS, which is why it survived a DONE marker. A
+    # resolved merge is recorded as `merged_into=...`; a failed one is recorded
+    # as an ordinary CONFIRM, indistinguishable from a genuine one. All 800
+    # archived MERGE verdicts are successes by construction. So the only way to
+    # see the fault is to call the resolver, not to read the record.
+    #
+    # THE REPAIR IS ADDITIVE RATHER THAN A REWRITE. Every candidate id in the
+    # string is tried, IN THE ORDER THE STRING GIVES THEM, so the historical
+    # first match is still tried first and anything that resolved before
+    # resolves identically. What is added is that a later candidate is tried
+    # when an earlier one does not resolve. The resolver can therefore only
+    # resolve MORE than it did, never less.
+    #
+    # A LOOKBEHIND GUARD WAS TRIED HERE AND REMOVED, 2026-10-17. It excluded a
+    # candidate beginning inside a longer alphanumeric token, so `CC2_F004`
+    # yielded only `F004` instead of `C2` and then `F004`. Mutation testing
+    # showed it was UNREACHABLE: with every candidate tried in order, `C2`
+    # simply fails its 2 lookups and `F004` resolves on the next pass, so
+    # deleting the guard left all 18 guard tests green. It could only ever
+    # matter if a 1-digit id like `C2` were itself resolvable, and canonical ids
+    # are `C\d{4,}` by construction while alias keys are minted prefixed. An
+    # addition no test can reach is not additive, so the simpler pattern stands.
+    _seen_ids: List[str] = []
+    for _m in re.finditer(r'(?:F|C)(\d+)', evidence):
+        if _m.group(0) not in _seen_ids:
+            _seen_ids.append(_m.group(0))
+    if not _seen_ids:
         return None
-    local_id = m.group(0)
+    for local_id in _seen_ids:
+        _hit = _resolve_one_merge_candidate(local_id, model_id, registry)
+        if _hit:
+            return _hit
+    return None
+
+
+def _resolve_one_merge_candidate(
+    local_id: str, model_id: str, registry: FindingRegistry,
+) -> Optional[str]:
+    """One candidate id, resolved exactly as the 2026-08-18 repair resolves it.
+
+    Split out 2026-10-17 so the candidate ORDER and the per-candidate LOOKUP are
+    separate concerns. The lookup below is unchanged; only the set of ids offered
+    to it grew.
+    """
     # ALIAS-KEY NORMALISATION, repaired 2026-08-18.
     #
     # The regex above strips any model prefix, so `Codex_F001` reduces to `F001`.
