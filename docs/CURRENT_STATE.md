@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 17 October 2026 20:07 BST (2026-10-17T20:07:08+01:00)
+Generated: 17 October 2026 22:52 BST (2026-10-17T22:52:36+01:00)
 
 ---
 
@@ -18,8 +18,8 @@ Generated: 17 October 2026 20:07 BST (2026-10-17T20:07:08+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `2169e7c6` The task list's code work is complete; B24 raised on a measured linter gap
-- **Committed:** 2026-10-17 20:01:24 +0100
+- **Last commit (the PARENT of the commit containing this file):** `31a85e94` B25 is complete: all 318 of his annotations carry a verdict with its evidence
+- **Committed:** 2026-10-17 22:44:14 +0100
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** clean
 
@@ -27,7 +27,7 @@ Generated: 17 October 2026 20:07 BST (2026-10-17T20:07:08+01:00)
 
 ## Tests
 
-**12557 tests collected** at 17 October 2026 20:07 BST, HEAD `2169e7c6` (`python3 -m pytest bench/tests/ --co -q`)
+**12602 tests collected** at 17 October 2026 22:52 BST, HEAD `31a85e94` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,13 +57,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `2169e7c6 The task list's code work is complete; B24 raised on a measured linter gap`
-- `27a2a853 B23 backfills 1,701 commits; A19 closes by construction; B20 deferred`
-- `c595db96 B21 step 4 wired; step 1 refused on measurement; and a skip survey that lied`
-- `bb04b721 C1: the claim channel's commissioning measurement, which was never produced`
-- `cbe4bd53 C6, C7 and B17: the notice now delivers the work instead of naming it`
-- `edabd00a Close C2 and C9; a dropped-in brief was being read as his verdicts`
-- `8e2af8b5 C29: my own forecast was invalidated by the commit that carried it`
-- `dee78c5c his word-plus-hash register, his 3-element dupe test, and 0 of 6 needing him`
-- `4d9b146a C21: the terminology he rejected is absent from the ranking code, measured by AST`
-- `6028976d B11: a reset immune memory was being reported as the confinement defect returning`
+- `31a85e94 B25 is complete: all 318 of his annotations carry a verdict with its evidence`
+- `ed4c0ee0 B25: 241 of 318 verdicted, and his duplicate rule is the register's own rule`
+- `efe1c313 B28: he ruled state be detected not declared, and the runners still declare it`
+- `0136a324 B25: past halfway, 173 of 318 annotations verdicted`
+- `d77333b4 The timestamp hook was right and my reason for it was wrong`
+- `480c9379 I typed 10 timestamps instead of reading the clock; now a hook refuses it`
+- `29565256 B25: 9 files audited, 140 of 318 annotations verdicted`
+- `d5c668bb B25: 8 files audited, and a correction that stopped 2 wrong entries`
+- `07ce845d B25: a keying defect that would have silently lost up to 37 verdicts`
+- `c3c6b83e B27: the review stop fires on a flag, and he gave it a condition it lacks`
