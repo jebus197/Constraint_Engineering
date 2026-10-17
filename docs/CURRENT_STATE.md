@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 17 October 2026 07:41 BST (2026-10-17T07:41:49+01:00)
+Generated: 17 October 2026 07:47 BST (2026-10-17T07:47:50+01:00)
 
 ---
 
@@ -18,16 +18,19 @@ Generated: 17 October 2026 07:41 BST (2026-10-17T07:41:49+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `d21cc047` B10 built, and the ticket store had 3 defects of its own, the worst one mine
-- **Committed:** 2026-10-17 07:40:11 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 14
-- **Working tree at snapshot time:** clean
+- **Last commit (the PARENT of the commit containing this file):** `88cb5cf1` sv: the ticket store plus 4 of his rulings, and the store's own checks found 3 defects in it
+- **Committed:** 2026-10-17 07:41:50 +0100
+- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
+- **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
+
+Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
+- `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**11858 tests collected** at 17 October 2026 07:41 BST, HEAD `d21cc047` (`python3 -m pytest bench/tests/ --co -q`)
+**11858 tests collected** at 17 October 2026 07:47 BST, HEAD `88cb5cf1` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,6 +60,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `88cb5cf1 sv: the ticket store plus 4 of his rulings, and the store's own checks found 3 defects in it`
 - `d21cc047 B10 built, and the ticket store had 3 defects of its own, the worst one mine`
 - `a4e32982 B16 built: one fingerprint scope, declared once, honoured by both loaders`
 - `eebbe7b8 all 12 session hooks are now one file, reachable from the repo and unlosable`
@@ -66,4 +70,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `3049ae97 the harvester, the subject narrowing, and the Stop gate that prods until done`
 - `609407b8 the ticket store: settled is now a recorded field, and the subject tier is what works`
 - `95299314 the 94 blockers block nothing that matters, and the figure itself is withdrawn`
-- `2b9752bb the 48-hour task list, work remaining, answers owed, and the 3 rulings still needed`
