@@ -105,7 +105,12 @@ def test_experiment_scope_empties_the_save_time_snapshot():
                                                 ("persist", False)])
 def test_the_runner_config_drives_the_loader(scope, expect_empty):
     cfg = R.RunnerConfig(fingerprint_scope=scope)
-    got = R._load_fingerprints(getattr(cfg, "fingerprint_scope", "persist"))
+    # THE FALLBACK IS THE RUNNER'S, NOT A LITERAL. This line used to repeat
+    # `"persist"` while `RunnerConfig.fingerprint_scope` declares
+    # `"experiment"`, so it mirrored the defect it was meant to catch.
+    got = R._load_fingerprints(
+        getattr(cfg, "fingerprint_scope",
+                R.scope_default("fingerprint_scope")))
     assert (got == {}) is expect_empty
 
 

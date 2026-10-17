@@ -2222,6 +2222,28 @@ class TargetKindMismatch(RuntimeError):
     """
 
 
+
+def scope_default(field: str) -> str:
+    """The default `RunnerConfig` declares for a scope field.
+
+    READ FROM THE DATACLASS rather than repeated as a literal, because a
+    `getattr` fallback typed by hand is a SECOND default, and on 2026-10-17 the
+    two disagreed: `fingerprint_scope` declares "experiment" on his ruling that
+    fingerprints are recomputed in the blind round, while the runtime fallback
+    said "persist". A config object missing the field would have inherited a
+    prior experiment's 465,206-character ceiling while the run believed it was
+    measuring afresh.
+
+    Raises on an unknown field rather than returning a guess: a silent default
+    is how this defect existed in the first place.
+    """
+    import dataclasses as _dc
+    for f in _dc.fields(RunnerConfig):
+        if f.name == field:
+            return str(f.default)
+    raise KeyError(f"RunnerConfig declares no field {field!r}")
+
+
 def _parses_as_python(text: str) -> bool:
     """True iff the whole text is syntactically valid Python."""
     try:
@@ -17361,7 +17383,8 @@ def _build_rk0_prior(
         return None, receipt
     try:
         from bench.dm._memory import ImmuneMemory
-        if getattr(cfg, "immune_memory_scope", "persist") == "experiment":
+        if getattr(cfg, "immune_memory_scope",
+                    scope_default("immune_memory_scope")) == "experiment":
             # Experiment scope: start from no priors, so this run's R_k(0) rests
             # on what THIS experiment observes. His ruling of 2026-10-16.
             mem = ImmuneMemory()
@@ -17988,7 +18011,19 @@ def run_experiment(
     # experiments' capacities off disk while this path returned nothing, so his
     # ruling that fingerprints are recomputed in the blind round held on the
     # observation path and was bypassed on the splitting decision.
-    _fp_scope_declared = getattr(cfg, "fingerprint_scope", "persist")
+    # THE FALLBACK IS DERIVED FROM THE DECLARED DEFAULT, NOT TYPED AGAIN.
+    # Until 2026-10-17 this read `getattr(cfg, "fingerprint_scope", "persist")`
+    # while `RunnerConfig.fingerprint_scope` declares `"experiment"`, so a config
+    # object missing the field silently inverted his ruling that fingerprints are
+    # recomputed in the blind round: the run would believe it was measuring
+    # afresh and split payloads on a prior experiment's 465,206-character
+    # ceiling. Two spellings of one default is one too many, and the second was
+    # the wrong one. `scope_default()` reads the dataclass field so they cannot
+    # disagree. The same hazard sat in
+    # `bench/tests/test_experiment_scoped_state_2026-10-16.py`, which repeated
+    # the wrong literal and so could not have caught it.
+    _fp_scope_declared = getattr(cfg, "fingerprint_scope",
+                                 scope_default("fingerprint_scope"))
     set_fingerprint_scope(_fp_scope_declared)
     observed_fingerprints = _load_fingerprints(_fp_scope_declared)
 

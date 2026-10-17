@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""The per-experiment fingerprint reset is PARTIAL. Measured by execution.
+"""Is the per-experiment fingerprint reset total, or bypassed on one path?
+
+MEASURED AS PARTIAL ON 2026-10-16, REPAIRED 2026-10-17, and this script is
+kept because it is the only thing that would notice the bypass returning.
+THE FILENAME IS LEFT ALONE DELIBERATELY: it records the finding as it stood
+on 2026-10-16, it is cited by task B12 and by the task list, and renaming a
+cited producer costs more than the stale adjective it would fix. This
+docstring and the verdict are the authority on the current state.
+Its own verdict was VACUOUS until 2026-10-17: it read the second loader once
+without declaring a scope, so its condition held whatever the code did and it
+would have reported PARTIAL for ever, including after the repair.
 
 HIS QUESTION, verbatim from Responses/Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt:
 "The fingerprints should be recomputed in the first/blind run of any experiment
@@ -66,10 +76,26 @@ def main() -> int:
     print(f"  LOADER 1  at-load snapshot after 'experiment': "
           f"{len(m._FINGERPRINTS_AT_LOAD)} entries")
 
+    # LOADER 2 IS ASKED UNDER BOTH SCOPES, which is the whole measurement.
+    # Until 2026-10-17 this read loader 2 ONCE, without declaring a scope, so it
+    # got the module default `persist` and 11 records -- and the verdict's
+    # condition `len(main_exp) == 0 and len(cache) > 0` was then TRUE whatever
+    # the code did. It would have reported "the reset is PARTIAL" for ever,
+    # including after the repair, which is a check that cannot see its own
+    # subject being fixed.
+    im.set_fingerprint_scope("persist")
     im._fp_cache = None
     cache = im._load_fingerprint_cache()
-    print(f"\n  LOADER 2  _load_fingerprint_cache()        -> {len(cache)} records"
-          f"   <-- NO scope parameter")
+    im.set_fingerprint_scope("experiment")
+    cache_exp = im._load_fingerprint_cache()
+    im.set_fingerprint_scope("persist")
+    im._fp_cache = None
+    print(f"\n  LOADER 2  _load_fingerprint_cache() under 'persist'    -> "
+          f"{len(cache)} records")
+    print(f"  LOADER 2  _load_fingerprint_cache() under 'experiment' -> "
+          f"{len(cache_exp)} records"
+          + ("   <-- honours the scope" if not cache_exp
+             else "   <-- IGNORES the scope"))
 
     paid = {k: v.get("max_successful_prompt_chars") for k, v in cache.items()
             if not k.endswith("-SIM")}
@@ -93,17 +119,30 @@ def main() -> int:
         shared = max(set(carrying.values()), key=list(carrying.values()).count)
         n = list(carrying.values()).count(shared)
         print(f"  {n} of {len(carrying)} paid seats share the identical value {shared}."
-              f" This is task B12's high-water-mark finding, and this script shows the"
-              f" shared value is what the decomposition guard ACTUALLY USES.")
+              f" This is task B12's high-water-mark finding, and it is what the"
+              f" decomposition guard uses UNDER 'persist' -- under"
+              f" 'experiment' it has none and falls to the hard floor.")
 
-    ok = len(main_exp) == 0 and len(cache) > 0
+    partial = len(main_exp) == 0 and len(cache_exp) > 0
     print("\n" + "=" * 72)
-    print("VERDICT: the reset is PARTIAL." if ok else
-          "VERDICT: no discrepancy detected -- re-examine before citing.")
-    print("The main observation path re-measures. The decomposition decision does")
-    print("not. `_invalidate_fingerprint_cache` exists"
-          f" ({hasattr(im, '_invalidate_fingerprint_cache')}), so a repair is small;")
-    print("whether it should also be scope-aware is a design question, not a typo.")
+    if partial:
+        print("VERDICT: the reset is PARTIAL.")
+        print("The main observation path re-measures under 'experiment' and the")
+        print("decomposition decision does not, so a run that believes it is")
+        print("measuring afresh splits payloads on a prior experiment's ceiling.")
+        print("=" * 72)
+        return 1
+    print("VERDICT: the reset is TOTAL. Both loaders honour the scope.")
+    print("MEASURED AS PARTIAL ON 2026-10-16 and repaired on 2026-10-17: loader 2")
+    print("took no scope at all, so with the main path returning 0 records it")
+    print("returned 11, and the ceiling that decides whether a payload is SPLIT")
+    print("came from a prior experiment. Through the live routing predicate the")
+    print("difference is 418,686 characters under 'persist' against 80,001 under")
+    print("'experiment', and the seats have actually handled 70,045 to 95,045.")
+    print("This script is kept because it is the only thing that would notice")
+    print("the bypass returning, and its own verdict was vacuous until today:")
+    print("it read loader 2 once without declaring a scope, so it would have")
+    print("reported PARTIAL for ever, including now.")
     print("=" * 72)
     return 0
 
