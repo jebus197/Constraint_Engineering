@@ -606,3 +606,97 @@ The check in `runner_core.py` that a composed prompt fits the recorded context
 limit of the seat it is bound for. Its failure mode is silent: a seat missing
 from `MODEL_SPECS` yields a limit of infinity, so the gate can never fire and
 the capability is lost with no error.
+
+### Density budget
+
+Also called the coherence budget: a per-model ceiling on how densely packed with
+constraints a composed prompt may be, expressed as directives per thousand
+characters. When a model exceeds its ceiling the composer prunes optional
+content until it is under.
+
+The founder's position, 2026-10-16: *"The 'density' of a prompt shouldn't matter
+to a model, so long as the core system/directives prompt survives untouched, and
+the overall prompt length stays within a model's measured capability ceiling."*
+So the quantity that should bound a prompt is LENGTH against measured capability,
+which is what the `fingerprint scope` records, not density. See `calibrated
+budget`.
+
+### Calibrated budget
+
+A `density budget` recomputed from past experiments rather than taken from a
+hard-coded default. The recalibration routine is inert on 3 independent layers:
+nothing calls it, it changes a value held only in memory, and handed real logs it
+returns its existing defaults because the runner never records the 2 fields it
+reads. Tracked as task B8.
+
+### Structural filter
+
+The AST walk over `bench/` and `scripts/` that counts how many per-model tables a
+new seat must be added to. Its raw total overstates the admission cost about
+threefold, because most hits are tests that GUARD the roster rather than admit to
+it, and historical one-off experiment runners whose edit would alter what those
+runs did. The live figure is 12 tables across 6 files plus 1 registry file. See
+task B13.
+
+### Verdict-tuple guard
+
+The check that a function returning a verdict returns the whole tuple its caller
+expects, rather than a truthy object that passes a bare `if`. Its own defect,
+recorded as task A17: it matched function names across the WHOLE repository, so
+an unrelated function sharing a name could be flagged by collision.
+
+### Block sweep
+
+Reading a document by blank-line-separated block rather than by line, so a
+finding is attributed to the paragraph that contains it. Contrast `heading-line
+sweep`, which walks only the bold heading lines; the two disagree whenever an
+entry's heading and its body are split differently, which is how 47 of 141 task
+entries were missed by a harvester on 2026-10-17.
+
+### Heading-line sweep
+
+Reading a document by matching its bold heading lines only. Cheaper than a
+`block sweep` and systematically blind to any entry whose identifier is written
+differently from the rest, or which shares a paragraph with another entry.
+
+### Commit-time gate
+
+Any check wired into `hooks/pre-commit` that can refuse the commit. Distinguished
+from an advisory check because its verdict stops work: the project's measured
+experience over 2026-10-16 and 2026-10-17 is that advisory output was repeatedly
+ignored while every refusal was acted on.
+
+### Blocking ratchet
+
+A `commit-time gate` that compares a measurement before and after the change and
+refuses when it worsens, rather than requiring an absolute standard. It is the
+idiom this project uses where an archive cannot honestly be retrofitted: the
+`pre-commit ratchet` on note findings is the main instance.
+
+### Sandbox-independence guard
+
+The check that a panel seat's sandbox contains no trace of another seat's work,
+so a blind round is genuinely blind. Its motivating failure: 5 of 7 sandboxes
+were never entered at all, and one seat read a rival's reply mid-round.
+
+### Except arm
+
+The `except` branch of a try block, named when the point is that the branch
+itself is the defect -- for example an exception swallowed near a dispatch point
+so a failure continues as a degraded success. This codebase has a recorded
+tendency to swallow broad exceptions near dispatch.
+
+### Named guard
+
+A test or check cited by name in a DONE marker as the evidence for that entry.
+The DONE-evidence rule requires the named file to exist, to hold a real test, and
+to sit somewhere the suite collects -- all 3 checked, because a marker naming a
+file that nothing runs is a completion claim with no support.
+
+### Fingerprint ladder
+
+A proposed `capability ladder` whose rung order is derived from recorded seat
+fingerprints rather than from a hard-coded vendor list. REFUTED by a free seat on
+2026-10-06: the heterogeneity figure justifying it is computed on FINDING RATE,
+which is productivity, not falsification capability, and ranking on it reproduces
+the inversion `competence_provenance` exists to prevent.
