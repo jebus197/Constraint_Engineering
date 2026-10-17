@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 17 October 2026 13:59 BST (2026-10-17T13:59:50+01:00)
+Generated: 17 October 2026 14:28 BST (2026-10-17T14:28:08+01:00)
 
 ---
 
@@ -18,19 +18,16 @@ Generated: 17 October 2026 13:59 BST (2026-10-17T13:59:50+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `98710718` B3: regenerate the parked file, and stop a teardown chmodding his machine
-- **Committed:** 2026-10-17 13:56:38 +0100
+- **Last commit (the PARENT of the commit containing this file):** `559b1d0b` the written note for today's findings, in both required formats
+- **Committed:** 2026-10-17 14:24:24 +0100
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
-- **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
-
-Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `?? experimental_notes/Parked_File_And_A_Teardown_Reaching_Out_2026-10-17.md`
+- **Working tree at snapshot time:** clean
 
 ---
 
 ## Tests
 
-**12206 tests collected** at 17 October 2026 13:59 BST, HEAD `98710718` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**12225 tests collected** at 17 October 2026 14:28 BST, HEAD `559b1d0b` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -60,13 +57,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `559b1d0b the written note for today's findings, in both required formats`
+- `f8ecadfb B6: all 3 parts settled, and the suspected harm was not where it looked`
+- `8eae8dfb the duration recorder was silently discarded by a later trap`
+- `2a5950c6 sv could no longer save: its commit timeout was outgrown by its own hook`
 - `98710718 B3: regenerate the parked file, and stop a teardown chmodding his machine`
 - `73025e95 C32: the harness registry does not work like the ticket register, and should not`
 - `63955c65 C31: the register beats a word search on the error that matters`
 - `e3c94518 C30: the register was dropping his shortest rulings, and they are his most decisive`
 - `7534743e C5: the serialisation cure is a hypothesis, and its measurement is now scheduled`
 - `ed3c1d73 C3: the note standard is v1.8, and half of its new rule was already a rule`
-- `ab1bf1be A19 measured: the script that seemed to argue against the flag says the opposite`
-- `542bca49 V9: the evidence must go red, and 2 of 19 DONE entries do not`
-- `4949d5f9 sv: the overnight task list, 19 commits, guard set 793 to 927`
-- `545f9405 Closing report on the overnight task list, paired TTS and markdown`
