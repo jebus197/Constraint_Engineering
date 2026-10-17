@@ -175,7 +175,7 @@ def _norm_tokens(text: str) -> list[str]:
     return sorted(k for k in keep if len(k) > 2)
 
 
-def tid_of(kind: str, verbatim: str, task_ref: str = "") -> str:
+def tid_of(kind: str, verbatim: str, task_ref: str = "", anchor: str = "") -> str:
     """Exact identity digest: kind, text, and any explicit task reference.
 
     THE TASK REFERENCE IS PART OF THE IDENTITY, and leaving it out was a defect
@@ -208,12 +208,26 @@ def tid_of(kind: str, verbatim: str, task_ref: str = "") -> str:
     is that the identifier a reader cites survives every subsequent edit to the
     entry's prose, which is what the founder's ruling of 2026-10-17 requires of
     a register that must be searched before any work is proposed.
+    AND AN `anchor` SERVES THE SAME PURPOSE WHERE NO REFERENCE EXISTS, added
+    2026-10-17. His annotations carry no task reference, so they were addressed
+    purely by content -- and his shortest rulings are his most repeated words.
+    Measured: "Do it." appears 3 times and "Fix it." twice among the annotations
+    of October 2026, each on a DIFFERENT subject. Content addressing collapses
+    those 3 rulings into 1 ticket, which loses 2 of them silently. The anchor is
+    the annotation's own `file:line`, which is unique and stable, so each ruling
+    becomes its own ticket while 2 harvests of the SAME line still agree.
+
+    PRECEDENCE: a task reference wins, then an anchor, then the content. Content
+    addressing survives untouched for any caller that supplies neither, which is
+    what makes deduplication work for chat.
     """
     h = hashlib.sha256()
     h.update(kind.encode())
     h.update(b"\x00")
     if task_ref:
         h.update(str(task_ref).encode())
+    elif anchor:
+        h.update(str(anchor).encode())
     else:
         h.update(" ".join(str(verbatim).split()).encode())
     return h.hexdigest()[:12]
@@ -271,6 +285,14 @@ class Ticket:
     verification: str = ""         # what tool set a terminal status
     created: str = ""
     task_ref: str = ""             # the master-task-list identifier, if any
+    #: THE STABLE IDENTITY OF AN ANNOTATION, where no task reference exists:
+    #: `<file>#<ordinal among identical texts in that file>`. His shortest
+    #: rulings repeat verbatim -- "Do it." 3 times across October 2026, twice in
+    #: one file -- so content addressing collapsed separate rulings into one
+    #: ticket. The ordinal is used rather than a line number because he
+    #: RE-ANNOTATES files, which shifts every line below the insertion and would
+    #: re-mint every identity in that file.
+    anchor: str = ""
     #: The MECHANISMS this ticket concerns, as exact code identifiers. This is
     #: the tier that survives rewording, and the one that would have caught the
     #: routing-ladder rediscovery of 2026-10-17.
@@ -336,8 +358,9 @@ class TicketStore:
     def get(self, tid: str) -> Optional[Ticket]:
         return self._by_tid.get(tid)
 
-    def exact(self, kind: str, verbatim: str, task_ref: str = "") -> Optional[Ticket]:
-        return self._by_tid.get(tid_of(kind, verbatim, task_ref))
+    def exact(self, kind: str, verbatim: str, task_ref: str = "",
+              anchor: str = "") -> Optional[Ticket]:
+        return self._by_tid.get(tid_of(kind, verbatim, task_ref, anchor))
 
     def similar(self, verbatim: str) -> list[Ticket]:
         """Tickets whose NORMALISED digest matches. Catches a rewording."""
@@ -417,7 +440,7 @@ class TicketStore:
     def propose(self, kind: str, title: str, verbatim: str, source: str,
                 source_ref: str = "", ruled: str = "", created: str = "",
                 task_ref: str = "", subjects: Iterable[str] = (),
-                status: str = "OPEN") -> tuple[Ticket, str]:
+                status: str = "OPEN", anchor: str = "") -> tuple[Ticket, str]:
         """Create or return a ticket. Returns (ticket, outcome).
 
         outcome is one of: created, exists, settled-already, reworded-match,
@@ -427,12 +450,22 @@ class TicketStore:
         """
         if kind not in KINDS:
             raise ValueError(f"kind must be one of {KINDS}, not {kind!r}")
-        want = tid_of(kind, verbatim, task_ref)
+        want = tid_of(kind, verbatim, task_ref, anchor)
         self.record_search(verbatim, [t.tid for t in self.similar(verbatim)])
 
         def _distinct(hit: "Ticket") -> bool:
-            """A caller naming a DIFFERENT task reference is a different item."""
-            return bool(task_ref) and hit.task_ref != task_ref
+            """A caller naming a DIFFERENT explicit identity is a different item.
+
+            AN ANCHOR COUNTS, added 2026-10-17. Without it the alias tiers
+            absorbed every annotation into whichever content-matching ticket
+            already existed: a harvest of all 318 annotations created only 16
+            tickets and reported 302 `reworded-match`, so his 3 separate "Do
+            it." rulings stayed collapsed into 1. An anchor is as explicit as a
+            task reference and is treated the same way.
+            """
+            if task_ref and hit.task_ref != task_ref:
+                return True
+            return bool(anchor) and hit.anchor != anchor
         hit = self._by_tid.get(want)
         if hit is not None and not _distinct(hit):
             self._note_alias(hit, task_ref, subjects)
@@ -476,7 +509,7 @@ class TicketStore:
                    title=norm_title(title),
                    verbatim=" ".join(str(verbatim).split()),
                    source=source, source_ref=source_ref, ruled=ruled,
-                   created=created, task_ref=task_ref,
+                   created=created, task_ref=task_ref, anchor=anchor,
                    subjects=sorted(set(subjects)))
         self._append(t)
         return t, "created"

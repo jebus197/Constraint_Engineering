@@ -32,7 +32,7 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "scripts"))
 
-from bench.ticket_store import TicketStore, tid_of, TERMINAL, REJECTED  # noqa: E402
+from bench.ticket_store import TicketStore, tid_of, TERMINAL, REJECTED, LIVE  # noqa: E402
 
 
 def _harvester():
@@ -49,6 +49,9 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--apply", action="store_true",
                     help="write the migration (default is a dry run)")
+    ap.add_argument("--sweep-responses", action="store_true",
+                    help="retire unanchored annotation tickets into their "
+                         "anchored successors")
     ap.add_argument("--sweep-stale", action="store_true",
                     help="also merge LIVE tickets left at a superseded identity "
                          "into their reference's canonical ticket")
@@ -119,7 +122,53 @@ def main() -> int:
 
     if a.sweep_stale:
         print(_sweep(store, rows))
+    if a.sweep_responses:
+        print(_sweep_responses(store))
     return 0
+
+
+def _sweep_responses(store: TicketStore) -> str:
+    """Retire unanchored annotation tickets into their anchored successors.
+
+    WHY THEY EXIST AT ALL. His annotations were addressed purely by content
+    until 2026-10-17, and his shortest rulings repeat verbatim -- "Do it." 3
+    times, "Fix it." twice -- so separate rulings collapsed into one ticket.
+    Anchoring each annotation to `<file>#<digest>#<ordinal>` gives 318 distinct
+    identities for 318 annotations, but the 286 content-keyed records are still
+    live beside them and would be counted twice.
+
+    AN OLD TICKET CANNOT SAY WHICH OCCURRENCE IT WAS, and that is recorded
+    rather than guessed. Where its text has several anchored successors it is
+    merged into the FIRST by file and ordinal, and the resolution says so, so a
+    reader is never left believing the mapping was certain.
+    """
+    live = [t for t in store.all()
+            if (t.source or "").startswith("responses") and t.status in LIVE]
+    anchored, unanchored = {}, []
+    for t in live:
+        key = " ".join((t.verbatim or "").split())
+        if t.anchor:
+            anchored.setdefault(key, []).append(t)
+        else:
+            unanchored.append(t)
+    for v in anchored.values():
+        v.sort(key=lambda x: x.anchor)
+    done, skipped = 0, 0
+    for old in unanchored:
+        key = " ".join((old.verbatim or "").split())
+        succ = anchored.get(key)
+        if not succ:
+            skipped += 1
+            continue
+        n = len(succ)
+        note = (f"annotation re-identified by anchor {succ[0].anchor}"
+                + (f"; this text has {n} occurrences and an unanchored record "
+                   f"cannot say which one it was, so it is merged into the "
+                   f"first by file and ordinal" if n > 1 else ""))
+        store.merge(old.tid, succ[0].tid, note)
+        done += 1
+    return (f"\nretired {done} unanchored annotation ticket(s) into their "
+            f"anchored successors; {skipped} had no successor and were left")
 
 
 def _sweep(store: TicketStore, rows: dict) -> str:

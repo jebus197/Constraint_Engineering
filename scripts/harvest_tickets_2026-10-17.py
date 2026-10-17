@@ -45,6 +45,7 @@ nothing.
 from __future__ import annotations
 
 import argparse
+import hashlib as _hashlib
 import json
 import pathlib
 import re
@@ -139,17 +140,58 @@ def from_responses(since: str) -> list[dict]:
         return []
     rows = json.loads(r.stdout)["annotations"]
     out = []
+    # THE ANCHOR IS `<file>#<ordinal among identical texts in that file>`, and
+    # the ordinal is used rather than the line number ON PURPOSE. He
+    # RE-ANNOTATES his files, which shifts every line below the insertion and
+    # would re-mint every identity in that file -- the same instability that
+    # made 5 task references carry 2 tickets each. Measured 2026-10-17: only 5
+    # (file, text) pairs repeat at all across his 318 annotations, and
+    # file + text + ordinal yields 318 distinct anchors for 318 annotations.
+    _seen_in_file: dict = {}
     for v in rows:
         if v.get("date", "") < since:
             continue
         txt = " ".join(str(v.get("text", "")).split())
-        if len(txt) < 25:
+        # NO LENGTH FLOOR. It was `if len(txt) < 25: continue`, with no stated
+        # reason, and it silently dropped 43 of his 318 annotations since
+        # 2026-10-01 -- 37 of them simply for being short.
+        #
+        # THOSE ARE HIS MOST DECISIVE RULINGS. Measured 2026-10-17, every
+        # distinct one under 25 characters: "Do it." 3 times, "Fix it." twice,
+        # "Fix them.", "Fix them now.", "Fix it all.", "Add it.",
+        # "Implement it.", "Yes adopt it.", "Yes run it.", "Verdict: do the
+        # work.", "Verdict. fix it.", "Verdict, yes, fix it.", "Already ruled.
+        # Fix it.", "Then fix them.", "Yes. Use both." Brevity here correlates
+        # with DECISIVENESS, so a length filter drops exactly the instructions
+        # that matter most -- and that is the failure he named on 2026-10-17
+        # when he said he was "suspicious that you are not reading/parsing my
+        # responses in full".
+        #
+        # Triage decides what matters; the register's job is completeness. A
+        # floor that discards content is the wrong instrument for either.
+        if not txt:
             continue
+        # `<file>#<text digest>#<ordinal among identical texts>`. The DIGEST is
+        # part of it, which a first version omitted: keying the ordinal on
+        # (file, text) while emitting only `file#ordinal` gave every distinct
+        # text in a file the ordinal 0, so 318 annotations produced 29 anchors
+        # and 24 of those collided. Caught by asserting distinct-anchors equals
+        # row-count before anything was written.
+        _k = (pathlib.Path(v["file"]).name, txt)
+        _n = _seen_in_file.get(_k, 0)
+        _seen_in_file[_k] = _n + 1
+        _digest = _hashlib.sha256(txt.encode()).hexdigest()[:8]
+        _anchor = f"{_k[0]}#{_digest}#{_n}"
         out.append({"verbatim": txt,
                     "kind": marked_kind(txt) or "pf",
                     "marked": marked_kind(txt) is not None,
                     "source": "responses",
                     "source_ref": f"{pathlib.Path(v['file']).name}:{v['line_index']}",
+                    # THE ANCHOR IS THE IDENTITY for an annotation, because his
+                    # shortest rulings repeat verbatim: "Do it." 3 times on 3
+                    # different subjects. Content addressing collapsed those to
+                    # 1 ticket and lost 2 rulings silently.
+                    "anchor": _anchor,
                     "ruled": v.get("date", ""),
                     "subjects": subjects_in(txt)})
     return out
@@ -414,7 +456,8 @@ def main() -> int:
                              ruled=r.get("ruled", ""),
                              task_ref=r.get("task_ref", ""),
                              subjects=r.get("subjects", ()),
-                             status=initial)
+                             status=initial,
+                             anchor=r.get("anchor", ""))
         outcomes[o] += 1
         # REFRESH A STALE SEARCH LABEL, 2026-10-17. `propose` returns `exists`
         # without touching the stored record, which is correct -- silently
