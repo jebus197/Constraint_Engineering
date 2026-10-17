@@ -636,3 +636,61 @@ class TestAMissingHelperRefuses:
                            capture_output=True, text=True, timeout=120)
         assert "stage0_restage.sh is missing" not in p.stderr
         assert "guard file(s) missing" in p.stderr, p.stderr
+
+
+class TestAFullyStagedFileThatARepairTouches:
+    """The scenario that cried wolf twice on 2026-10-17.
+
+    `git add -A` stages everything, so nothing is withheld. A stage-0 repair
+    then writes to one of those files, and from that moment the file has BOTH
+    staged and unstaged changes -- which is what `cdsfl_is_partially_staged`
+    tests for, because it is evaluated AFTER the repairs run. The file has no
+    snapshot copy, since it was not partially staged when the snapshot was
+    taken, so the delta mechanism cannot run and the caller reported a collision
+    that had not happened. The repair then lagged a commit behind on a file
+    where a plain `git add` was always safe.
+
+    Observed on 2 consecutive commits, on the master task list, with the message
+    "staging it would commit work you withheld" when no work had been withheld.
+    This is the 3rd distinct cause of a false collision message in this helper,
+    after a word-split path and an empty patch, which is why the condition is
+    now keyed on the snapshot rather than re-derived after the fact.
+    """
+
+    def _fully_staged_then_repaired(self, repo: Path) -> subprocess.CompletedProcess:
+        f = repo / "experimental_notes" / "Note.md"
+        f.write_text("".join(f"L{i}\n" for i in range(1, 9)), encoding="utf-8")
+        _git(repo, "add", "experimental_notes/Note.md")      # NOTHING withheld
+        script = (f'. "{LIB}"\n'
+                  'cdsfl_snapshot_partially_staged\n'
+                  'python3 -c "'
+                  "import pathlib;"
+                  "p=pathlib.Path('experimental_notes/Note.md');"
+                  "t=p.read_text().replace('L4','L4 REPAIRED');"
+                  'p.write_text(t)"\n'
+                  'printf "experimental_notes/Note.md\\n" | cdsfl_restage_paths\n'
+                  'cdsfl_snapshot_cleanup\n')
+        return subprocess.run(["sh", "-c", script], cwd=repo,
+                              capture_output=True, text=True)
+
+    def test_the_repair_reaches_the_index(self, repo):
+        r = self._fully_staged_then_repaired(repo)
+        idx = _git(repo, "show", ":experimental_notes/Note.md")
+        assert "REPAIRED" in idx, (
+            f"the repair did not reach the index, so it lags a commit behind "
+            f"on a file where nothing was withheld.\nstdout={r.stdout}\n"
+            f"stderr={r.stderr}")
+
+    def test_no_collision_is_reported(self, repo):
+        r = self._fully_staged_then_repaired(repo)
+        assert "collides" not in r.stderr, (
+            f"a collision was reported although `git add -A` had staged "
+            f"everything and nothing was withheld:\n{r.stderr}")
+        assert "work you withheld" not in r.stderr, r.stderr
+
+    def test_it_takes_the_plain_add_and_says_so(self, repo):
+        r = self._fully_staged_then_repaired(repo)
+        assert "re-staged experimental_notes/Note.md" in r.stdout, r.stdout
+        assert "delta" not in r.stdout, (
+            "the delta mechanism is for a file the AUTHOR partially staged; "
+            "this one was fully staged and only the repair wrote to it")

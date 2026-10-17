@@ -48,7 +48,29 @@ cdsfl_restage_paths() {
             echo "pre-commit: repair named $_p, which is not a file; not staged" >&2
             continue
         fi
-        if cdsfl_is_partially_staged "$_p"; then
+        # THE SNAPSHOT IS THE AUTHORITY ON WHAT WAS WITHHELD, not the index as
+        # it stands now. FOUND 2026-10-17, after the hook printed "the repair
+        # collides with a hunk you left out" on 2 consecutive commits where
+        # nothing had been withheld at all -- `git add -A` had staged
+        # everything.
+        #
+        # `cdsfl_is_partially_staged` is evaluated AFTER the stage-0 repairs have
+        # written, so a fully staged file that a repair has just touched now has
+        # both staged and unstaged changes and looks partially staged. It has no
+        # snapshot copy, because it was not partially staged when the snapshot
+        # was taken, so `cdsfl_stage_repair_delta` cannot compute a delta and
+        # returns 1 -- and the caller reports a collision that did not happen.
+        # The repair then lagged a commit behind on a file where a plain
+        # `git add` was always safe.
+        #
+        # This is the 3rd time this branch has cried wolf -- once from
+        # word-splitting a path with a space, once from an empty patch returning
+        # 1, now from re-deriving the predicate after the fact -- and a guard
+        # that cries wolf on the ordinary case is one an operator learns to
+        # ignore. Keying on the snapshot cannot drift, because the snapshot is
+        # taken once, before anything writes.
+        if cdsfl_is_partially_staged "$_p" \
+           && [ -n "${CDSFL_SNAP:-}" ] && [ -f "$CDSFL_SNAP/$_p" ]; then
             cdsfl_stage_repair_delta "$_p"
             _rc=$?
             if [ "$_rc" -eq 0 ]; then
