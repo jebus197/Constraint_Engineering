@@ -481,3 +481,22 @@ outside the harness: monitoring a run, pausing on anything anomalous, applying t
 five-step reasoning cycle, resuming, and discussing findings with the researcher.
 His design is that a model bound inside the harness should hold this role and serve
 as the primary researcher interface. Tracked as task B20; nothing is built.
+
+### Adversarial verifier
+
+The second stage of a 2-stage audit: an agent given one claimed finding and
+briefed to REFUTE it, defaulting to "not a finding" when uncertain, with no
+access to the reasoning that produced the claim. Introduced for the
+verdict-coverage audit of 2026-10-17, where it refuted 24 of 44 claimed gaps
+(54.5455%), so the unverified first pass would have overstated the result by
+more than double. It is the operational form of the isolated adversarial pass
+in the extended falsification procedure.
+
+### Bidirectional ladder
+
+The founder's requirement for the routing ladder, 2026-10-07: a ladder must go
+both down AND up, so a seat whose measured capability improves can climb it
+rather than being fixed at the rank it first earned. His words: *"A ladder is
+bidirectional. It goes both up and down."* His stated reason is that model
+capability changes over time, so a one-way ladder locks a seat into a stale
+ranking. Tracked as task C9; the ladder currently demotes only.
