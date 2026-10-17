@@ -317,3 +317,37 @@ def test_retitle_refuses_a_ticket_whose_identity_does_not_match_its_content(
     monkeypatch.setattr(TS, "tid_of", label_sensitive)
     with pytest.raises(AssertionError):
         store.retitle(t.tid, "a new label")
+
+
+def test_every_non_canonical_record_is_a_redirect():
+    """THE REGISTER'S COUNTING INVARIANT.
+
+    A record away from the canonical identity must be MERGED or DUPLICATE, so
+    that following it reaches the live ticket and so that the status counts
+    describe work rather than history. The first sweep covered only LIVE
+    stranded records and left 73 CLOSED duplicates, which made the register
+    report 257 settled tickets against 111 settled task entries. With the
+    invariant held, CLOSED equals the task list's DONE plus WITHDRAWN exactly.
+    """
+    H = _harvester()
+    store = TicketStore()
+    rows = {r["task_ref"]: r for r in H.from_task_list() if r.get("task_ref")}
+    canonical = {tid_of(r["kind"], r["verbatim"], ref) for ref, r in rows.items()}
+    rogue = [(t.task_ref, t.tid, t.status) for t in store.all()
+             if t.task_ref and t.tid not in canonical
+             and t.status not in ("MERGED", "DUPLICATE")]
+    assert not rogue, (f"{len(rogue)} non-canonical record(s) are not redirects: "
+                       f"{rogue[:6]}")
+
+
+def test_the_closed_count_equals_the_task_lists_own():
+    """A count that disagrees with the list it describes is not evidence."""
+    import task_list_markers as T
+    store = TicketStore()
+    entries = T.parse_entries(REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md")
+    expect = sum(1 for e in entries
+                 if getattr(e, "state", "") in ("DONE", "WITHDRAWN"))
+    closed = sum(1 for t in store.all() if t.status == "CLOSED" and t.task_ref)
+    assert closed == expect, (
+        f"the register reports {closed} closed task entries, the list records "
+        f"{expect}")

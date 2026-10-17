@@ -144,7 +144,16 @@ def _sweep(store: TicketStore, rows: dict) -> str:
         if not t.task_ref:
             continue
         want = canon.get(t.task_ref)
-        if want and t.tid != want and t.status not in TERMINAL and t.status != REJECTED:
+        # ANY record away from the canonical identity, not merely a live one.
+        # The first form swept only live records, which left 73 CLOSED
+        # duplicates behind -- so the register reported 257 settled tickets
+        # against 111 settled task entries. A register whose counts are wrong
+        # is the thing it was built to replace. MERGED and DUPLICATE are
+        # skipped because they ARE the retirement marker: re-merging a redirect
+        # would loop.
+        if (want and t.tid != want
+                and t.status not in ("MERGED", "DUPLICATE")
+                and t.status != REJECTED):
             stale.append((t, want))
     for t, want in stale:
         target = store.get(want)
@@ -155,8 +164,8 @@ def _sweep(store: TicketStore, rows: dict) -> str:
         store.merge(t.tid, want,
                     f"same task entry {t.task_ref}: identity superseded "
                     f"2026-10-17, status {t.status} identical on both records")
-    return (f"\nswept {len(stale)} stale live record(s) into their "
-            f"reference's canonical ticket")
+    return (f"\nswept {len(stale)} record(s) away from the canonical identity "
+            f"into their reference's canonical ticket")
 
 
 

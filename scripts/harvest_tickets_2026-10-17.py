@@ -453,7 +453,14 @@ def main() -> int:
     print(f"\nstore summary: {json.dumps(store.summary(), indent=2)}")
     print(f"\nOPEN work (task-list derived, state recorded): {len(store.open_tickets())}")
     print(f"UNCONFIRMED (harvested, needs triage not work)  : {len(store.unconfirmed())}")
-    print(f"SETTLED (closed, withdrawn or rejected)         : {len(store.settled())}")
+    # SETTLED WORK AND RETIRED IDENTIFIERS ARE COUNTED SEPARATELY. MERGED is
+    # terminal, so `settled()` includes every redirect left behind by an
+    # identity migration -- 146 of them. Reporting that as settled work
+    # overstated it by more than twice: 257 against 111 settled task entries.
+    redirects = [t for t in store.settled() if t.status in ("MERGED", "DUPLICATE")]
+    print(f"SETTLED work (closed, withdrawn or rejected)    : "
+          f"{len(store.settled()) - len(redirects)}")
+    print(f"RETIRED identifiers (redirects to a live record): {len(redirects)}")
     print("\n" + "=" * 74)
     print("An outcome other than `created` means the item was ALREADY KNOWN.")
     print("That is the whole point: it is the step that stops a rediscovery.")
