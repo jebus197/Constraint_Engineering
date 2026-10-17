@@ -1645,7 +1645,59 @@ def calibrate_coherence_thresholds(
 
 
 def update_coherence_budgets_from_experiments(log_root: str | Path) -> None:
-    """Convenience: calibrate and update the global MODEL_COHERENCE_BUDGETS."""
+    """RETIRED 2026-10-17 on his ruling. Raises rather than recalibrating.
+
+    HIS RULING, 2026-10-16, which is his latest word on the subject and
+    supersedes his earlier position that the recalibration "should be fixed":
+    *"What would be the consequence of retiring it completely? If there will be
+    no consequence, then surely this is a fourth and more sensible option? Why
+    leave code in place that effectively does nothing. The 'density' of a prompt
+    shouldn't matter to a model, so long as the core system/directives prompt
+    survives untouched, and the overall prompt length stays within a model's
+    measured capability ceiling."*
+
+    WHY RETIREMENT AND NOT REPAIR, which is the additive standard's test. The
+    mechanism this would recalibrate is PROVABLY counterproductive, and the proof
+    is committed: `bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py`
+    establishes by z3 that "pruning shortened the text AND density did not
+    worsen" is UNSATISFIABLE. Density is constraints over tokens, so removing
+    text shrinks the denominator while the constraint count is unchanged --
+    pruning to reduce density RAISES it. 6 tests, passing.
+
+    WHAT REPLACES IT, so this is a removal with a named successor rather than a
+    deletion. The operative bound is the one he states: overall prompt LENGTH
+    against a seat's MEASURED capability, which the fingerprint records as
+    `max_successful_prompt_chars` and which the decomposition guard already
+    enforces at 0.9 of that figure. That bound is measured per seat from observed
+    behaviour; the density ceiling was a hand-set constant.
+
+    AND IT CLOSES TASK B8 BY SUPERSESSION rather than by work. B8 asked whether
+    the recalibration should be repaired, which would have meant emitting 2 extra
+    fields per dispatch into every run's records and invalidating replay against
+    every older run. Retiring the thing being calibrated costs none of that.
+
+    IT RAISES RATHER THAN NO-OPPING, deliberately. A retired function that
+    silently does nothing is indistinguishable from a working one, which is the
+    defect class this project keeps recording. Anyone who wires this up learns
+    immediately.
+    """
+    raise RuntimeError(
+        "update_coherence_budgets_from_experiments is RETIRED (2026-10-17, "
+        "founder ruling 2026-10-16). The density ceiling it calibrates is "
+        "provably counterproductive -- pruning to reduce density raises it, by "
+        "z3 in bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py. "
+        "The operative bound is prompt LENGTH against the seat's measured "
+        "capability (max_successful_prompt_chars), not constraint density. If "
+        "you need this, reopen the decision with him rather than calling it.")
+
+
+def _retired_update_coherence_budgets_from_experiments(log_root: str | Path) -> None:
+    """The original body, KEPT VISIBLE rather than deleted (point, never prune).
+
+    Preserved so the retirement is reviewable and reversible: this is what the
+    recalibration did, and `calibrate_coherence_thresholds` above is untouched so
+    its arithmetic can still be inspected and tested.
+    """
     calibrated = calibrate_coherence_thresholds(log_root)
     MODEL_COHERENCE_BUDGETS.update(calibrated)
 
