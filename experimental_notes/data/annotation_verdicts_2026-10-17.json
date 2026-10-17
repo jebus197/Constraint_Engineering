@@ -1,697 +1,1044 @@
 {
   "rows": [
     {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#14322594",
-      "audited": "2026-10-17",
-      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster and governs this annotation",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "That sounds like a potential solution. But why can\u2019t it measure something the ladder actually does, even if that means changing the ladder somewhat to take account of this?",
-      "verdict": "TRACKED",
-      "why": "his question about measuring what the ladder does rather than a proxy, carried by the consolidated ladder entry"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#15404706",
-      "audited": "2026-10-17",
-      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "This goes back to my original question above, how do we define \u2018weak from strong\u2019. Indeed I\u2019m certain this is a discussion we had a long time ago. Where I advised strongly against basing this on hearsay and vendor marketing gathered from the internet, and where you said you would fix this then? Clearly you didn\u2019t?",
-      "verdict": "TRACKED",
-      "why": "the question entry C7 answers by measurement: the archive cannot support any pairwise ordering at all"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#24394693",
-      "audited": "2026-10-17",
-      "evidence": "entry C18 is OPEN at status TESTED; it governs this annotation and is not yet settled",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "The fingerprint machinery and capability ladder and all other machinery are supposed to work in harmony with each other. There is no reason why any of this should no either work, work in the envisaged way, and work in harmony with everything else in the harness as a whole. The singe unifying goal of this project has been that of a science/STEM calculator, problem entered into the system and a definitive, reliable, repeatable answer out, just as is the case with any normal calculator. After all 4+4 will always equal 8. How can a system that gives a different answer every time be considered a serious or useful tool? LLM\u2019s are a little different however. Answers can sometimes vary defending on their training data, how the question is formed, the skill of the researcher asking it, what area of their training data they might access on any given day (which doesn\u2019t always appear to be the same), but providing this remains our direction of travel and any results produced by the system stands up to subsequent scrutiny and testing, this variability may be regarded as acceptable. Reproducibility in these conditions, may however ultimately become a separate step, either performed by the models, or the HIL, or both. I am undecided how this should work. We should probably ask the other models in a free panel review for their take on this. Reproducibility is after all a founding principle of the scientific method. We probably shouldn\u2019t neglect it.",
-      "verdict": "TRACKED",
-      "why": "the harmony he describes is what entry C18 addresses by keying capability on a hashed identity rather than a model name"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#27027424",
-      "audited": "2026-10-17",
-      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "Then we should implement this fully too, if not already done!",
-      "verdict": "ACTED_ON",
-      "why": "model-supplied tests are now accepted and run during a round rather than discarded until the closing sweep"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#27386731",
-      "audited": "2026-10-17",
-      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "That ordering from weak to strong seems like the reverse that one would expect? Codex has always seemed to be one of our strongest performers, with DeepSeek being the weakest?",
-      "verdict": "TRACKED",
-      "why": "his challenge to the ladder order is the subject of entry C7, which measured that the order is not estimable from the archive at all"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#2784493",
-      "audited": "2026-10-17",
-      "evidence": "entry C18 is OPEN at status TESTED; it keys capability on a hashed identity rather than a model name",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "Is that sensible, given what I said about capability being measured statistic? What if vendor improves their model? Or creates a new model? Simply going by a model name is unlikely to resolve any of these issues.",
-      "verdict": "TRACKED",
-      "why": "his point that a model name cannot stand in for capability, which the hashed-identity work answers"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#31262170",
-      "audited": "2026-10-17",
-      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "So were these historical blockers ever fixed, by the rest of the machinery of the schema? Such as the closing sweep? (Which should now be an internalised feature of the schema.)",
-      "verdict": "ACTED_ON",
-      "why": "his question was whether the closing sweep serviced them; it could not, because it runs after the verdict, so in-round falsification was built and now services them during rounds"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#33317293",
-      "audited": "2026-10-17",
-      "evidence": "his own annotations of 2026-10-05 on immune memory, the hardened gate and folding fixes forward, each audited separately",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "I believe I addressed these above?",
-      "verdict": "NOTED",
-      "why": "he is pointing back at his own earlier answers in the same file, which are recorded as their own rows; nothing further is owed"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#3521387",
-      "audited": "2026-10-17",
-      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "Then we should test it in the next simulated run.",
-      "verdict": "ACTED_ON",
-      "why": "the shakedown legs ran with the arm live and leg 3 executed 2 in-round falsifiers, which is the first data the arm has from a clean run"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#39370932",
-      "audited": "2026-10-17",
-      "evidence": "check_facilities_armed in scripts/preflight_health_check_2026-10-06.py",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "Then this also should be fixed going forward.",
-      "verdict": "ACTED_ON",
-      "why": "immune memory is one of the named facilities the preflight now requires to be set explicitly rather than left at a default"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#43383897",
-      "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-05; no work is owed, so no test can settle it",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "This remains the case, since as you said, the objective here is to test everything, before enabling them in a real/live runner and experiment/s.",
-      "verdict": "NOTED",
-      "why": "he is agreeing with the stated position and asks for nothing further, so nothing is owed from anyone, so it settles rather than waiting on him; no work settles it and none is owed"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#55601008",
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#109",
       "audited": "2026-10-17",
       "evidence": "entry B26 is OPEN; it was raised on 2026-10-17 from this very annotation after a search of all 154 entries found 0 covering it",
       "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 109,
       "text": "That is largely just expected behaviour in simulated runs. However I pointed (at least 2 times before now) to a partial solution for simulated runs too, where we could have a mixed panel of Opus 4.8, Opus 5x and Fable.",
       "verdict": "TRACKED",
       "why": "his proposal for a mixed simulated panel, which nothing tracked until it was raised as its own entry today"
     },
     {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#55649629",
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#148",
       "audited": "2026-10-17",
-      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster and governs this annotation",
+      "evidence": "check_facilities_armed in scripts/preflight_health_check_2026-10-06.py",
       "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "That sounds like something we could/should do anyway, regardless of how capability is calculated, but perhaps it is simply pointing in the same direction I have indicated?",
-      "verdict": "TRACKED",
-      "why": "his view that the first-attempts correction is worth doing anyway, carried by the consolidated ladder entry"
+      "line_index": 148,
+      "text": "Then this also should be fixed going forward.",
+      "verdict": "ACTED_ON",
+      "why": "immune memory is one of the named facilities the preflight now requires to be set explicitly rather than left at a default"
     },
     {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#57870367",
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#162",
       "audited": "2026-10-17",
-      "evidence": "entry B11 is DONE on bench/tests/test_task_list_burndown_2026-09-11.py",
+      "evidence": "his own annotation of 2026-10-05; no work is owed, so no test can settle it",
       "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "This should almost certainly all be looked at and fixed.",
-      "verdict": "TRACKED",
-      "why": "the remaining board failures, which the post-run board triage classified rather than suppressed"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#58574581",
-      "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-05, which sets a priority",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "I don\u2019t think we should waste too much time and resources pouring over historical results either. As stated many times the purpose of simulated runs is to find issues exactly like these and fix them going forward.",
+      "line_index": 162,
+      "text": "This remains the case, since as you said, the objective here is to test everything, before enabling them in a real/live runner and experiment/s.",
       "verdict": "NOTED",
-      "why": "a direction about where effort should go rather than a defect; nothing is owed from anyone, so it settles"
+      "why": "he is agreeing with the stated position and asks for nothing further, so nothing is owed from anyone, so it settles rather than waiting on him; no work settles it and none is owed"
     },
     {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#59700518",
-      "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-05; nothing is owed, so no test can settle it",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "I agree.",
-      "verdict": "NOTED",
-      "why": "an agreement with the stated position; nothing is owed from anyone, so it settles rather than waiting on him; no work settles an agreement and none is owed"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#59831117",
-      "audited": "2026-10-17",
-      "evidence": "entry B21 is OPEN at status TESTED; it carries the declarative-policy work this concern names",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "Then clearly they should be! I have concern about this and potentially other elements of our machinery working in isolation, but not as a unified whole? Clearly the second of these is the preferred outcome. Is it in all relevant cases?",
-      "verdict": "TRACKED",
-      "why": "his concern that the machinery works piecewise rather than as a whole, which is what the declarative-policy work addresses"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#61532876",
-      "audited": "2026-10-17",
-      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster and governs this annotation",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "This has echoes of what I just said? But perhaps combining both these elements would give a more robust overall result, depending on what the models say?",
-      "verdict": "TRACKED",
-      "why": "a design point on combining capability signals, which the consolidated routing-ladder entry carries"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#72351499",
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#166",
       "audited": "2026-10-17",
       "evidence": "scripts/preflight_health_check_2026-10-06.py and its order in scripts/post_semantics_2026-10-06.py",
       "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 166,
       "text": "Then why didn\u2019t that check alert us as you said? We should probably have some kind of integrity check anyway, before an experiment runs to report if all prerequisite modes are live and the system overall is green \u2013 before an experiment can proceed. I believe some time ago I gave an analogy of a computer bios health check. But I don\u2019t remember this exact context, or if this principle should be/could be extended?",
       "verdict": "ACTED_ON",
       "why": "the preflight health check is that integrity check: 7 checks run before an experiment and the boot halts at the first failure"
     },
     {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#73737803",
-      "audited": "2026-10-17",
-      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "Same answer and same question. Now this process has been internalised, with other fixes applied, or still to be applied, will this resolve this issue going forward?",
-      "verdict": "ACTED_ON",
-      "why": "the in-round arm is the internalisation he asks about, and it clears a finding only on execution rather than on a claim"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#75898932",
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#188",
       "audited": "2026-10-17",
       "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
       "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 188,
       "text": "But this brings us back to a point I made a short time ago. The routing ladder should be a measured statistic, not simply a list of named vendors based on what you, or I may have read about them on the internet. In that sense, our runners shouldn\u2019t care if a particularly named vendor model is available or not. It should just shunt data around the system based on the performance of all models (regardless if they are simulated or real) that may be available to the system, given the other mechanics of the system as a whole.",
       "verdict": "TRACKED",
       "why": "this is the ruling entry C7 records and answers: the order is not estimable from the archive, and a pass now records whether its order rested on measurement"
     },
     {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#78280974",
-      "audited": "2026-10-17",
-      "evidence": "scripts/the_blockers_are_shown_as_settled_2026-10-05.py plus check_blockers_are_not_labelled_settled in scripts/preflight_health_check_2026-10-06.py",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "Then clearly this must be fixed!",
-      "verdict": "ACTED_ON",
-      "why": "the blockers-shown-as-settled defect was repaired and a preflight check now refuses a run whose blockers are labelled settled"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#78934430",
-      "audited": "2026-10-17",
-      "evidence": "bench/tests/test_the_cap_default_is_exhaust_2026-10-08.py",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "I don\u2019t think there should be a cap at all. If it\u2019s a measured statistic, along with capability fingerprinting then the problem should run until it is either resolved, or the ladder is exhausted. (No more models to try.)",
-      "verdict": "ACTED_ON",
-      "why": "the rung cap default was changed to exhaust the ladder on his ruling, so a finding runs until it is resolved or the ladder is spent"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#79045413",
-      "audited": "2026-10-17",
-      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "You keep going back to that and I keep giving you the same solution. The system shouldn\u2019t care at all what a model is called, only what it can be statistically demonstrated to have done, as per its capability fingerprint. So it shouldn\u2019t matter if all the models are different, or all the models are the same, or if they are all models from a single vendor, or even a single model operating on its own (in which case the ladder would just route the issue back to itself and would have another go at resolving it by using the rest of the machinery of the harness.",
-      "verdict": "TRACKED",
-      "why": "the ruling entry C7 quotes and answers: the order is not estimable from the archive, and a routing pass now records whether its order was measured"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#79193205",
-      "audited": "2026-10-17",
-      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "No, you\u2019re right. Capability should as close as possible be a real function of measured capability. No model should get a free pass in this regard, whether simulated or real.",
-      "verdict": "TRACKED",
-      "why": "his ruling that capability must be a real function of measured capability, which entry C7 records and answers with a measurement"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#80364860",
-      "audited": "2026-10-17",
-      "evidence": "scripts/the_provenance_gate_reads_text_not_behaviour_2026-10-05.py",
-      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "So again, no work to do here?",
-      "verdict": "ACTED_ON",
-      "why": "work was owed: the provenance condition was a text pattern and a seat defeated it twice, which the producer records and the repair addresses"
-    },
-    {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#96933794",
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#197",
       "audited": "2026-10-17",
       "evidence": "bench/tests/test_severity_proof_2026-09-07.py",
       "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 197,
       "text": "This is now at least the 3rd or 4th time I have rejected this change. This change is rejected. You should fix it.",
       "verdict": "ACTED_ON",
       "why": "the severity test was restored to the blocker counter on his rejection and is executed rather than read"
     },
     {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#97113119",
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#242",
+      "audited": "2026-10-17",
+      "evidence": "entry C18 is OPEN at status TESTED; it governs this annotation and is not yet settled",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 242,
+      "text": "The fingerprint machinery and capability ladder and all other machinery are supposed to work in harmony with each other. There is no reason why any of this should no either work, work in the envisaged way, and work in harmony with everything else in the harness as a whole. The singe unifying goal of this project has been that of a science/STEM calculator, problem entered into the system and a definitive, reliable, repeatable answer out, just as is the case with any normal calculator. After all 4+4 will always equal 8. How can a system that gives a different answer every time be considered a serious or useful tool? LLM\u2019s are a little different however. Answers can sometimes vary defending on their training data, how the question is formed, the skill of the researcher asking it, what area of their training data they might access on any given day (which doesn\u2019t always appear to be the same), but providing this remains our direction of travel and any results produced by the system stands up to subsequent scrutiny and testing, this variability may be regarded as acceptable. Reproducibility in these conditions, may however ultimately become a separate step, either performed by the models, or the HIL, or both. I am undecided how this should work. We should probably ask the other models in a free panel review for their take on this. Reproducibility is after all a founding principle of the scientific method. We probably shouldn\u2019t neglect it.",
+      "verdict": "TRACKED",
+      "why": "the harmony he describes is what entry C18 addresses by keying capability on a hashed identity rather than a model name"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#249",
       "audited": "2026-10-17",
       "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster and governs this annotation",
       "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
-      "text": "Moving models around this way and assigning fixed numbers of rungs to the ladder seems more like an act of \u2018performance theatre\u2019 than the actual engineering/technical facility it was always intended to be (as I have now said repeatedly). It was always envisaged as a way of making the best possible use of available resources along with our other mechanical and load balancing facilities, not as an exercises in simple \u2018musical chairs\u2019 (albeit sans the music), as you appear to have designed it.",
+      "line_index": 249,
+      "text": "This has echoes of what I just said? But perhaps combining both these elements would give a more robust overall result, depending on what the models say?",
       "verdict": "TRACKED",
-      "why": "his objection to moving seats and fixing rung counts, carried by the consolidated ladder entry"
+      "why": "a design point on combining capability signals, which the consolidated routing-ladder entry carries"
     },
     {
-      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#97686492",
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#25",
+      "audited": "2026-10-17",
+      "evidence": "scripts/the_blockers_are_shown_as_settled_2026-10-05.py plus check_blockers_are_not_labelled_settled in scripts/preflight_health_check_2026-10-06.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 25,
+      "text": "Then clearly this must be fixed!",
+      "verdict": "ACTED_ON",
+      "why": "the blockers-shown-as-settled defect was repaired and a preflight check now refuses a run whose blockers are labelled settled"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#256",
+      "audited": "2026-10-17",
+      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 256,
+      "text": "No, you\u2019re right. Capability should as close as possible be a real function of measured capability. No model should get a free pass in this regard, whether simulated or real.",
+      "verdict": "TRACKED",
+      "why": "his ruling that capability must be a real function of measured capability, which entry C7 records and answers with a measurement"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#264",
+      "audited": "2026-10-17",
+      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster and governs this annotation",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 264,
+      "text": "That sounds like a potential solution. But why can\u2019t it measure something the ladder actually does, even if that means changing the ladder somewhat to take account of this?",
+      "verdict": "TRACKED",
+      "why": "his question about measuring what the ladder does rather than a proxy, carried by the consolidated ladder entry"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#271",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-05; nothing is owed, so no test can settle it",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 271,
+      "text": "I agree.",
+      "verdict": "NOTED",
+      "why": "an agreement with the stated position; nothing is owed from anyone, so it settles rather than waiting on him; no work settles an agreement and none is owed"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#275",
+      "audited": "2026-10-17",
+      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 275,
+      "text": "You keep going back to that and I keep giving you the same solution. The system shouldn\u2019t care at all what a model is called, only what it can be statistically demonstrated to have done, as per its capability fingerprint. So it shouldn\u2019t matter if all the models are different, or all the models are the same, or if they are all models from a single vendor, or even a single model operating on its own (in which case the ladder would just route the issue back to itself and would have another go at resolving it by using the rest of the machinery of the harness.",
+      "verdict": "TRACKED",
+      "why": "the ruling entry C7 quotes and answers: the order is not estimable from the archive, and a routing pass now records whether its order was measured"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#285",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-05, which sets a priority",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 285,
+      "text": "I don\u2019t think we should waste too much time and resources pouring over historical results either. As stated many times the purpose of simulated runs is to find issues exactly like these and fix them going forward.",
+      "verdict": "NOTED",
+      "why": "a direction about where effort should go rather than a defect; nothing is owed from anyone, so it settles"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#303",
+      "audited": "2026-10-17",
+      "evidence": "entry B11 is DONE on bench/tests/test_task_list_burndown_2026-09-11.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 303,
+      "text": "This should almost certainly all be looked at and fixed.",
+      "verdict": "TRACKED",
+      "why": "the remaining board failures, which the post-run board triage classified rather than suppressed"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#311",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_the_cap_default_is_exhaust_2026-10-08.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 311,
+      "text": "I don\u2019t think there should be a cap at all. If it\u2019s a measured statistic, along with capability fingerprinting then the problem should run until it is either resolved, or the ladder is exhausted. (No more models to try.)",
+      "verdict": "ACTED_ON",
+      "why": "the rung cap default was changed to exhaust the ladder on his ruling, so a finding runs until it is resolved or the ladder is spent"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#315",
+      "audited": "2026-10-17",
+      "evidence": "entry B21 is OPEN at status TESTED; it carries the declarative-policy work this concern names",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 315,
+      "text": "Then clearly they should be! I have concern about this and potentially other elements of our machinery working in isolation, but not as a unified whole? Clearly the second of these is the preferred outcome. Is it in all relevant cases?",
+      "verdict": "TRACKED",
+      "why": "his concern that the machinery works piecewise rather than as a whole, which is what the declarative-policy work addresses"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#331",
+      "audited": "2026-10-17",
+      "evidence": "his own annotations of 2026-10-05 on immune memory, the hardened gate and folding fixes forward, each audited separately",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 331,
+      "text": "I believe I addressed these above?",
+      "verdict": "NOTED",
+      "why": "he is pointing back at his own earlier answers in the same file, which are recorded as their own rows; nothing further is owed"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#35",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 35,
+      "text": "So were these historical blockers ever fixed, by the rest of the machinery of the schema? Such as the closing sweep? (Which should now be an internalised feature of the schema.)",
+      "verdict": "ACTED_ON",
+      "why": "his question was whether the closing sweep serviced them; it could not, because it runs after the verdict, so in-round falsification was built and now services them during rounds"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#366",
       "audited": "2026-10-17",
       "evidence": "bench/tests/test_operational_scripts.py::TestNoScriptSwallowsAnErrorIntoSilence",
       "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 366,
       "text": "So that\u2019s good then? All fixed?",
       "verdict": "ACTED_ON",
       "why": "the swallowed-failure guard was widened and still bites: it refused a commit of mine on 2026-10-17 over an exception handler that dropped every confidence interval"
     },
     {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#11724774",
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#375",
       "audited": "2026-10-17",
-      "evidence": "bench/tests/test_the_round_count_is_computed_per_run_2026-10-11.py and bench/tests/test_the_round_advisory_is_said_aloud_2026-10-15.py",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "The recommendation should be printed. But it should preferably be a non-arbitrary number, and should be based (if possible) on the data we have available at that time. Given the current trajectory and the available data, what number of additional rounds is advisable before convergence is likely to be reached? Ultimately however, since 10 itself is an average number derived from this particular projects experiments, there is a case to be considered at where that average number might sit in experiments ran by other researchers on other STEM topics unrelated to CDSLF itself and how that average number should be calculated? Otherwise in experiments not related to CDSFL itself, this number risks becoming an arbitrary limit.",
-      "verdict": "ACTED_ON",
-      "why": "the round advisory is computed per run from the available data and is said aloud rather than left in a log"
-    },
-    {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#19245317",
-      "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-11",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "No one ever said we should go back and \u2018fake the record\u2019. Like every confound, or deficit we find, when we find them, we mark them explicitly in our docs and correct them going forward. Verdict fix it. Do exactly that.",
-      "verdict": "NOTED",
-      "why": "his ruling on method: a confound is marked explicitly in the documents rather than rewritten away; it bounds how findings are recorded"
-    },
-    {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#22711270",
-      "audited": "2026-10-17",
-      "evidence": "entry B27 is OPEN; it was raised on 2026-10-17 from this annotation after a search of all 155 entries found only C9, which answered a different question",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "A human review stop anywhere in the run should only be triggered if there is substantial evidence that a an experimental run is unlikely to converge under the given conditions and with the available resources. This includes all the factors that might influence this outcome, including mechanical errors, number of rounds in any given experiment, available compute resources etc.",
+      "evidence": "entry C18 is OPEN at status TESTED; it keys capability on a hashed identity rather than a model name",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 375,
+      "text": "Is that sensible, given what I said about capability being measured statistic? What if vendor improves their model? Or creates a new model? Simply going by a model name is unlikely to resolve any of these issues.",
       "verdict": "TRACKED",
-      "why": "his design for when a review stop may fire, which nothing tracked until it was raised as its own entry today"
+      "why": "his point that a model name cannot stand in for capability, which the hashed-identity work answers"
     },
     {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#30084058",
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#382",
       "audited": "2026-10-17",
-      "evidence": "his own question of 2026-10-11; it remains owed to him",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "Abandoned in what sense? Are we talking about resources we have not yet studied, or the sandboxed outputs of our models during simulated and real runs where the outcomes have already been harvested?",
-      "verdict": "RULING",
-      "why": "he asks what the abandoned working copies actually are before deciding, so the clarification is owed back TO him"
-    },
-    {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#37289008",
-      "audited": "2026-10-17",
-      "evidence": "his own instruction of 2026-10-11; it remains owed to him",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "Yes, but I also asked if there was better way. You said there was. I can\u2019t remember what that better way was, but you should try to recover it and to see if your way really is the better option. If so this is the option you should implement.",
-      "verdict": "RULING",
-      "why": "he asks me to recover a better approach he remembers being offered, so the recovery is owed back TO him"
-    },
-    {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#3886238",
-      "audited": "2026-10-17",
-      "evidence": "routing.season_strength_order, exercised by 9 call sites across the suite",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "I remember this. We measure at the start and keep those rankings until and experiment completes as stated. As I recall there were problems with every other ranking method we tried. So this appears to remain the most sensible/simple option.",
-      "verdict": "ACTED_ON",
-      "why": "his season design is implemented: handed a frozen order the ranking returns it unchanged, and handed none it measures once for the experiment"
-    },
-    {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#47201174",
-      "audited": "2026-10-17",
-      "evidence": "his own question of 2026-10-11; it remains owed to him",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "You need to explain this one to me further in plain English. What is the recommendation and why?",
-      "verdict": "RULING",
-      "why": "he asks for the recommendation and its reasoning in plain English, so an answer is owed back TO him"
-    },
-    {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#5207559",
-      "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-11",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "Yes. Use both.",
-      "verdict": "NOTED",
-      "why": "a decision given on the 2 properties required of a capability gate; nothing is owed from anyone, so it settles"
-    },
-    {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#63551417",
-      "audited": "2026-10-17",
-      "evidence": "his own question of 2026-10-11; it remains owed to him",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "Then I don\u2019t get it? You ay we need to rebuild the premise? Then you say the item should be parked? So there is, or is no work to do here? If there is valid work to do, then you should do it. If not, then fair enough.",
-      "verdict": "RULING",
-      "why": "he asks whether there is work to do here or not, having read the position change; an answer is owed back TO him"
-    },
-    {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#67753782",
-      "audited": "2026-10-17",
-      "evidence": "the MISSING NOTE STANDARD STAMP rule in scripts/note_vagueness_lint.py",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "You have returned again to not printing the CDSFL notes standard used to produce these files. This is a small glitch, but meaningful and should be fixed (prerably mechanically so you don\u2019t forget again), as it helps me to track which notes standards you are using across files.",
-      "verdict": "ACTED_ON",
-      "why": "the note checker now reports a missing standard stamp as a finding, which it raised against a note of mine today before delivery"
-    },
-    {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#68355905",
-      "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-11",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "Yes. Use the two sided setting.",
-      "verdict": "NOTED",
-      "why": "a decision given on the error convention; it bounds the design rather than requesting work"
-    },
-    {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#71902988",
-      "audited": "2026-10-17",
-      "evidence": "scripts/read_founder_responses_2026-10-11.py and bench/tests/test_no_ruling_is_dropped_for_being_short_2026-10-17.py",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "So you can parse the tts response files I complete like this properly now or not? You suggest saving ad .md files. But Word cannot save in this format (as far as I know). But I use word for readability and editability on your tts outputs, since attempting to read and edit in a simple .txt compatible app is extremely difficult for me.",
-      "verdict": "ACTED_ON",
-      "why": "a dedicated reader now parses his annotated files whatever format they are in, including the ones a naive reader treats as binary, so he does not have to change how Word saves them"
-    },
-    {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#73732287",
-      "audited": "2026-10-17",
-      "evidence": "bench.reference_runner_v3.RunnerConfig().immune_memory_enabled is True",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "This feels like at least the second time I have ruled on this. But yes, immune memory should be on by default. \u2018Sing in harmony\u2019, simply means it should work exactly as specified, and we should pay attention to ensure that it does, and fix it if it doesn\u2019t.",
-      "verdict": "ACTED_ON",
-      "why": "the default is now on, verified by execution rather than by reading the configuration files"
-    },
-    {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#75555579",
-      "audited": "2026-10-17",
-      "evidence": "entry B18 is DONE on bench/tests/test_fold_fixes_back_folds_at_the_close_2026-10-17.py",
-      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
-      "text": "Folding fixes forward should be on by default, providing that means folding forward at the end of an experiment and not during it so that the target under study does not keep constantly changing. We had problems with this in the past, where because the modes were looking at a constantly moving target, convergence effectively became impossible.",
+      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 382,
+      "text": "This goes back to my original question above, how do we define \u2018weak from strong\u2019. Indeed I\u2019m certain this is a discussion we had a long time ago. Where I advised strongly against basing this on hearsay and vendor marketing gathered from the internet, and where you said you would fix this then? Clearly you didn\u2019t?",
       "verdict": "TRACKED",
-      "why": "his ruling with its condition that folding happens at the end of an experiment and never during it, which is what that entry holds"
+      "why": "the question entry C7 answers by measurement: the archive cannot support any pairwise ordering at all"
     },
     {
-      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#96207522",
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#390",
+      "audited": "2026-10-17",
+      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster and governs this annotation",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 390,
+      "text": "Moving models around this way and assigning fixed numbers of rungs to the ladder seems more like an act of \u2018performance theatre\u2019 than the actual engineering/technical facility it was always intended to be (as I have now said repeatedly). It was always envisaged as a way of making the best possible use of available resources along with our other mechanical and load balancing facilities, not as an exercises in simple \u2018musical chairs\u2019 (albeit sans the music), as you appear to have designed it.",
+      "verdict": "TRACKED",
+      "why": "his objection to moving seats and fixing rung counts, carried by the consolidated ladder entry"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#397",
+      "audited": "2026-10-17",
+      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster and governs this annotation",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 397,
+      "text": "That sounds like something we could/should do anyway, regardless of how capability is calculated, but perhaps it is simply pointing in the same direction I have indicated?",
+      "verdict": "TRACKED",
+      "why": "his view that the first-attempts correction is worth doing anyway, carried by the consolidated ladder entry"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#401",
+      "audited": "2026-10-17",
+      "evidence": "scripts/the_provenance_gate_reads_text_not_behaviour_2026-10-05.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 401,
+      "text": "So again, no work to do here?",
+      "verdict": "ACTED_ON",
+      "why": "work was owed: the provenance condition was a text pattern and a seat defeated it twice, which the producer records and the repair addresses"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#58",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 58,
+      "text": "Same answer and same question. Now this process has been internalised, with other fixes applied, or still to be applied, will this resolve this issue going forward?",
+      "verdict": "ACTED_ON",
+      "why": "the in-round arm is the internalisation he asks about, and it clears a finding only on execution rather than on a claim"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#64",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 64,
+      "text": "Then we should implement this fully too, if not already done!",
+      "verdict": "ACTED_ON",
+      "why": "model-supplied tests are now accepted and run during a round rather than discarded until the closing sweep"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#85",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 85,
+      "text": "Then we should test it in the next simulated run.",
+      "verdict": "ACTED_ON",
+      "why": "the shakedown legs ran with the arm live and leg 3 executed 2 in-round falsifiers, which is the first data the arm has from a clean run"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#96",
+      "audited": "2026-10-17",
+      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "line_index": 96,
+      "text": "That ordering from weak to strong seems like the reverse that one would expect? Codex has always seemed to be one of our strongest performers, with DeepSeek being the weakest?",
+      "verdict": "TRACKED",
+      "why": "his challenge to the ladder order is the subject of entry C7, which measured that the order is not estimable from the archive at all"
+    },
+    {
+      "anchor": "Closing_Rulings_2026-10-03.txt#18",
+      "audited": "2026-10-17",
+      "evidence": "entry C4 is OPEN; it is the owed free-panel review on making that measure less coarse",
+      "file": "Closing_Rulings_2026-10-03.txt",
+      "line_index": 18,
+      "text": "I did ask you to run a free panel review with the question of how to make this ruler more effective, less course, more accurate and more useful, potentially across a broad range of similar scenarios. Did you do this? What were the panel\u2019s findings?",
+      "verdict": "TRACKED",
+      "why": "the free-panel review he asked for on the severity measure, which is the owed run itself"
+    },
+    {
+      "anchor": "Closing_Rulings_2026-10-03.txt#26",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_severity_proof_2026-09-07.py",
+      "file": "Closing_Rulings_2026-10-03.txt",
+      "line_index": 26,
+      "text": "If you mean restoring the severity count/gate fully makes convergence easier, simply because convergence without a severity count does not make much sense for the project and because severity count is a central part of both the schema and maths model itself, that is not wilfully making convergence \u2018easier to reach\u2019 (or in other words \u2018cheating\u2019). That is simply making the schema and convergence work in exactly the way it was always intended to work. Clearly. It is almost nonsensical to say \u2018I (as in you) have convergence harder (and potentially impossible) to reach (for some unknown reason), by removing a central plank of our machinery, so that convergence could potentially never be reached, because that somehow make things seem (to you) more \u2018honest\u2019? Wtf? Or am I misreading you? This is also not the only instance of non-working and misconfigured machinery you found? (Or that you appeared to find). Did you fix everything? If so list what all your fixes were in chat. Also \u2018proven severity\u2019 sounds like a better instrument than a \u2018raw number\u2019. But since you are being so vague (again)it\u2019s impossible to know which is preferable?",
+      "verdict": "ACTED_ON",
+      "why": "the severity test is back inside the blocker counter, gated on proven severity, and is executed rather than read"
+    },
+    {
+      "anchor": "Closing_Rulings_2026-10-03.txt#34",
+      "audited": "2026-10-17",
+      "evidence": "entry C3 is DONE; it carries his instruction to use official project terminology",
+      "file": "Closing_Rulings_2026-10-03.txt",
+      "line_index": 34,
+      "text": "\u201dRelease valve\u201d? Why do you keep inventing these non-project terms? I already told you to avoid doing this many times. Yet the problem persists? What is this in reality? I also recently said that the notes standard needed significant tweaking to avoid this happening again, and to attempt again to get you to avoid being overtly vague in my notes, while respecting my non-coding engineer status. You should use official project terminology, or direct formal process/methodological names taken from software engineering. Not names you invent, nor should you engage in overt vagueness by attempting to omit the actual name of whatever it is you are talking about.",
+      "verdict": "TRACKED",
+      "why": "his instruction to use the project's own terminology rather than invented names, which that entry carries"
+    },
+    {
+      "anchor": "Closing_Rulings_2026-10-03.txt#40",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
+      "file": "Closing_Rulings_2026-10-03.txt",
+      "line_index": 40,
+      "text": "So this would have be taken care of if the sweep mechanism (which we have now also said we should adopt as a methodology in the harness directly, rather than just leave it as an afterthought after runs have mostly completed? If you have not done this work then you should do it too.",
+      "verdict": "ACTED_ON",
+      "why": "the sweep's distinctive capability now runs inside the round loop rather than only after the verdict, which is the adoption he describes"
+    },
+    {
+      "anchor": "Closing_Rulings_2026-10-03.txt#44",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_in_round_withdrawal_is_a_metric_2026-10-04.py",
+      "file": "Closing_Rulings_2026-10-03.txt",
+      "line_index": 44,
+      "text": "OK. I remember now. I said it should simply be a recorded metric, and should not block anything? Again if this hasn\u2019t been done, then do it before restarting the next simulated run.",
+      "verdict": "ACTED_ON",
+      "why": "the withdrawal is recorded as a metric and blocks nothing, which is what he recalls ruling"
+    },
+    {
+      "anchor": "Closing_Rulings_2026-10-03.txt#52",
+      "audited": "2026-10-17",
+      "evidence": "the text appears twice in this file at different lines, so matching on it alone would settle an arbitrary one",
+      "file": "Closing_Rulings_2026-10-03.txt",
+      "line_index": 52,
+      "text": "Do it.",
+      "verdict": "UNDECIDABLE",
+      "why": "his shortest instruction, whose referent is the item immediately above it in the report; the text repeats in this same file, so it cannot be attributed from its own words and each occurrence is recorded separately by line"
+    },
+    {
+      "anchor": "Closing_Rulings_2026-10-03.txt#56",
+      "audited": "2026-10-17",
+      "evidence": "the text appears twice in this file at different lines, so matching on it alone would settle an arbitrary one",
+      "file": "Closing_Rulings_2026-10-03.txt",
+      "line_index": 56,
+      "text": "Do it.",
+      "verdict": "UNDECIDABLE",
+      "why": "his shortest instruction, whose referent is the item immediately above it in the report; the text repeats in this same file, so it cannot be attributed from its own words and each occurrence is recorded separately by line"
+    },
+    {
+      "anchor": "Closing_Rulings_2026-10-03.txt#62",
+      "audited": "2026-10-17",
+      "evidence": "his own question of 2026-10-03; it remains owed to him",
+      "file": "Closing_Rulings_2026-10-03.txt",
+      "line_index": 62,
+      "text": "So barring this one small issue (which the above fixes should have addressed?), the run would have converged?",
+      "verdict": "RULING",
+      "why": "he asks whether the run would have converged but for that issue; the answer is owed back TO him"
+    },
+    {
+      "anchor": "Closing_Rulings_2026-10-03.txt#66",
+      "audited": "2026-10-17",
+      "evidence": "his own question of 2026-10-03; it remains owed to him",
+      "file": "Closing_Rulings_2026-10-03.txt",
+      "line_index": 66,
+      "text": "So in theory we should encounter far less parsing issues, if any? I don\u2019t recall using almost any major software package in the past, and then being told it couldn\u2019t do what I asked it to do, \u2018because of a parsing issue\u2019. That would make using major software packages of this nature largely nonsensical, and at the very least deeply frustrating for most users. That is why we need a definitive fix to this issue for once and for all. If your proposed fix is it, then we should go with it for sure.",
+      "verdict": "RULING",
+      "why": "he asks whether parsing problems should now be rare, and makes a wider point about software that cannot read its own inputs; an answer is owed back TO him"
+    },
+    {
+      "anchor": "Closing_Rulings_2026-10-03.txt#70",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-03",
+      "file": "Closing_Rulings_2026-10-03.txt",
+      "line_index": 70,
+      "text": "That is fine for now. If ONBOARDING.md needs further refinement. We can look at it again before final release.",
+      "verdict": "NOTED",
+      "why": "he accepts the onboarding route for now and defers further refinement to before release; nothing is owed now"
+    },
+    {
+      "anchor": "Closing_Rulings_2026-10-03.txt#74",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-03",
+      "file": "Closing_Rulings_2026-10-03.txt",
+      "line_index": 74,
+      "text": "Good job! Well done!",
+      "verdict": "NOTED",
+      "why": "an acknowledgement of the memory-index trimming; nothing is owed"
+    },
+    {
+      "anchor": "Closing_Rulings_2026-10-03.txt#90",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-03, which defers it explicitly",
+      "file": "Closing_Rulings_2026-10-03.txt",
+      "line_index": 90,
+      "text": "I will deal with this in due course once all outstanding work has been done and applied to the runner for the next simulated run.",
+      "verdict": "NOTED",
+      "why": "he defers the sandbox storage himself until the outstanding work is done, so nothing is owed from me"
+    },
+    {
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#101",
       "audited": "2026-10-17",
       "evidence": "his own annotation of 2026-10-11",
       "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 101,
       "text": "And that pattern continues it seems!",
       "verdict": "NOTED",
       "why": "an observation agreeing with the recorded pattern; nothing is owed"
     },
     {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#19675561",
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#114",
       "audited": "2026-10-17",
-      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
-      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
-      "text": "Wait. If that holds then you are saying (again) that the only measure we can have of capability, is the model names? We can\u2019t measure capability, as we have now extensively discussed and use that? Or are you saying that we need to keep both, because if we have both we can identify which models can be derived from a given capability? But you still keep referring to \u20185 or 6 models\u2019, when I have already said, the system should be able to cope with 5, or 6, or 70, or 700 models (or whatever), and that the only goal is to use all the available resources efficiently to effect the best outcome in all cases.",
-      "verdict": "TRACKED",
-      "why": "his challenge that capability must be measurable rather than named, which entry C7 answers with the measurement that no ordering is estimable"
+      "evidence": "scripts/read_founder_responses_2026-10-11.py and bench/tests/test_no_ruling_is_dropped_for_being_short_2026-10-17.py",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 114,
+      "text": "So you can parse the tts response files I complete like this properly now or not? You suggest saving ad .md files. But Word cannot save in this format (as far as I know). But I use word for readability and editability on your tts outputs, since attempting to read and edit in a simple .txt compatible app is extremely difficult for me.",
+      "verdict": "ACTED_ON",
+      "why": "a dedicated reader now parses his annotated files whatever format they are in, including the ones a naive reader treats as binary, so he does not have to change how Word saves them"
     },
     {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#39527291",
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#16",
       "audited": "2026-10-17",
-      "evidence": "his own question of 2026-10-08; it remains owed to him",
-      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
-      "text": "What is the significance of this? Please explain in plain English.",
+      "evidence": "his own annotation of 2026-10-11",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 16,
+      "text": "Yes. Use both.",
+      "verdict": "NOTED",
+      "why": "a decision given on the 2 properties required of a capability gate; nothing is owed from anyone, so it settles"
+    },
+    {
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#166",
+      "audited": "2026-10-17",
+      "evidence": "the MISSING NOTE STANDARD STAMP rule in scripts/note_vagueness_lint.py",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 166,
+      "text": "You have returned again to not printing the CDSFL notes standard used to produce these files. This is a small glitch, but meaningful and should be fixed (prerably mechanically so you don\u2019t forget again), as it helps me to track which notes standards you are using across files.",
+      "verdict": "ACTED_ON",
+      "why": "the note checker now reports a missing standard stamp as a finding, which it raised against a note of mine today before delivery"
+    },
+    {
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#20",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-11",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 20,
+      "text": "Yes. Use the two sided setting.",
+      "verdict": "NOTED",
+      "why": "a decision given on the error convention; it bounds the design rather than requesting work"
+    },
+    {
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#24",
+      "audited": "2026-10-17",
+      "evidence": "his own question of 2026-10-11; it remains owed to him",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 24,
+      "text": "You need to explain this one to me further in plain English. What is the recommendation and why?",
       "verdict": "RULING",
-      "why": "he asks for a plain-English explanation, so an answer is owed back TO him and no work of mine settles it"
+      "why": "he asks for the recommendation and its reasoning in plain English, so an answer is owed back TO him"
     },
     {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#42372661",
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#28",
+      "audited": "2026-10-17",
+      "evidence": "routing.season_strength_order, exercised by 9 call sites across the suite",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 28,
+      "text": "I remember this. We measure at the start and keep those rankings until and experiment completes as stated. As I recall there were problems with every other ranking method we tried. So this appears to remain the most sensible/simple option.",
+      "verdict": "ACTED_ON",
+      "why": "his season design is implemented: handed a frozen order the ranking returns it unchanged, and handed none it measures once for the experiment"
+    },
+    {
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#32",
+      "audited": "2026-10-17",
+      "evidence": "his own question of 2026-10-11; it remains owed to him",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 32,
+      "text": "Then I don\u2019t get it? You ay we need to rebuild the premise? Then you say the item should be parked? So there is, or is no work to do here? If there is valid work to do, then you should do it. If not, then fair enough.",
+      "verdict": "RULING",
+      "why": "he asks whether there is work to do here or not, having read the position change; an answer is owed back TO him"
+    },
+    {
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#36",
+      "audited": "2026-10-17",
+      "evidence": "bench.reference_runner_v3.RunnerConfig().immune_memory_enabled is True",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 36,
+      "text": "This feels like at least the second time I have ruled on this. But yes, immune memory should be on by default. \u2018Sing in harmony\u2019, simply means it should work exactly as specified, and we should pay attention to ensure that it does, and fix it if it doesn\u2019t.",
+      "verdict": "ACTED_ON",
+      "why": "the default is now on, verified by execution rather than by reading the configuration files"
+    },
+    {
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#40",
+      "audited": "2026-10-17",
+      "evidence": "entry B18 is DONE on bench/tests/test_fold_fixes_back_folds_at_the_close_2026-10-17.py",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 40,
+      "text": "Folding fixes forward should be on by default, providing that means folding forward at the end of an experiment and not during it so that the target under study does not keep constantly changing. We had problems with this in the past, where because the modes were looking at a constantly moving target, convergence effectively became impossible.",
+      "verdict": "TRACKED",
+      "why": "his ruling with its condition that folding happens at the end of an experiment and never during it, which is what that entry holds"
+    },
+    {
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#46",
+      "audited": "2026-10-17",
+      "evidence": "his own instruction of 2026-10-11; it remains owed to him",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 46,
+      "text": "Yes, but I also asked if there was better way. You said there was. I can\u2019t remember what that better way was, but you should try to recover it and to see if your way really is the better option. If so this is the option you should implement.",
+      "verdict": "RULING",
+      "why": "he asks me to recover a better approach he remembers being offered, so the recovery is owed back TO him"
+    },
+    {
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#50",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_the_round_count_is_computed_per_run_2026-10-11.py and bench/tests/test_the_round_advisory_is_said_aloud_2026-10-15.py",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 50,
+      "text": "The recommendation should be printed. But it should preferably be a non-arbitrary number, and should be based (if possible) on the data we have available at that time. Given the current trajectory and the available data, what number of additional rounds is advisable before convergence is likely to be reached? Ultimately however, since 10 itself is an average number derived from this particular projects experiments, there is a case to be considered at where that average number might sit in experiments ran by other researchers on other STEM topics unrelated to CDSLF itself and how that average number should be calculated? Otherwise in experiments not related to CDSFL itself, this number risks becoming an arbitrary limit.",
+      "verdict": "ACTED_ON",
+      "why": "the round advisory is computed per run from the available data and is said aloud rather than left in a log"
+    },
+    {
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#56",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-11",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 56,
+      "text": "No one ever said we should go back and \u2018fake the record\u2019. Like every confound, or deficit we find, when we find them, we mark them explicitly in our docs and correct them going forward. Verdict fix it. Do exactly that.",
+      "verdict": "NOTED",
+      "why": "his ruling on method: a confound is marked explicitly in the documents rather than rewritten away; it bounds how findings are recorded"
+    },
+    {
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#64",
+      "audited": "2026-10-17",
+      "evidence": "entry B27 is OPEN; it was raised on 2026-10-17 from this annotation after a search of all 155 entries found only C9, which answered a different question",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 64,
+      "text": "A human review stop anywhere in the run should only be triggered if there is substantial evidence that a an experimental run is unlikely to converge under the given conditions and with the available resources. This includes all the factors that might influence this outcome, including mechanical errors, number of rounds in any given experiment, available compute resources etc.",
+      "verdict": "TRACKED",
+      "why": "his design for when a review stop may fire, which nothing tracked until it was raised as its own entry today"
+    },
+    {
+      "anchor": "Consolidated_For_Your_Evening_2026-10-11.txt#68",
+      "audited": "2026-10-17",
+      "evidence": "his own question of 2026-10-11; it remains owed to him",
+      "file": "Consolidated_For_Your_Evening_2026-10-11.txt",
+      "line_index": 68,
+      "text": "Abandoned in what sense? Are we talking about resources we have not yet studied, or the sandboxed outputs of our models during simulated and real runs where the outcomes have already been harvested?",
+      "verdict": "RULING",
+      "why": "he asks what the abandoned working copies actually are before deciding, so the clarification is owed back TO him"
+    },
+    {
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#100",
       "audited": "2026-10-17",
       "evidence": "his own annotation of 2026-10-08; the acted-on row names bench/tests/test_gamma_gates_wherever_it_exists_2026-10-08.py",
       "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 100,
       "text": "Gamma remains a core measure for the project. As stated above.",
       "verdict": "NOTED",
       "why": "a restatement of his gamma ruling, which is recorded and acted on in its own row earlier in this file"
     },
     {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#42650890",
-      "audited": "2026-10-17",
-      "evidence": "entry C12 is OPEN at status TESTED; it carries the false-quiet repair and its owed panel check",
-      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
-      "text": "Verdict. Fix it and check your fix with the free panel.",
-      "verdict": "TRACKED",
-      "why": "his ruling on the false-quiet repair, including the panel check he asked for, which is the owed half of that entry"
-    },
-    {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#44409795",
-      "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-08; the capability work of entry C18 is where it bears on code",
-      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
-      "text": "If it needs fixing then fix it. But we don\u2019t \u2018bench\u2019 any model. The schema operates on the basis of derived capability. In that framing, even if a model can do no better than a standard $6 calculator, then we use it for the kind of tasks that kind of capability is best suited for. The original framing I gave is that even an old 386 computer is still capable of doing work that is beyond many humans.",
-      "verdict": "NOTED",
-      "why": "his standing position that no model is benched and the schema works on derived capability; it is a ruling that bounds design rather than a defect to repair"
-    },
-    {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#68635984",
-      "audited": "2026-10-17",
-      "evidence": "entry C18 is OPEN at status TESTED; it keys capability on a hashed identity rather than a model name",
-      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
-      "text": "Is this the same issue as recording the model names as above?",
-      "verdict": "TRACKED",
-      "why": "it is the same subject: whether a name may stand in for capability, which the hashed-identity work addresses"
-    },
-    {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#73137253",
-      "audited": "2026-10-17",
-      "evidence": "the report he annotated states the factor directly; no repair follows",
-      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
-      "text": "So nothing to be fixed here?",
-      "verdict": "NOTED",
-      "why": "the report's own finding is that a simulated run sits where this hazard nearly vanishes, so his reading is right and nothing is owed"
-    },
-    {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#78268760",
-      "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-08, earlier in the same file",
-      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
-      "text": "Already addressed.",
-      "verdict": "NOTED",
-      "why": "he points at his own earlier answer in the same file, which is audited as its own row"
-    },
-    {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#79508146",
-      "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-08, restating a prior ruling",
-      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
-      "text": "Yes, we already ruled that failed attempts should be recorded in the registry. A researcher can then choose to export/save, or delete any record as they choose.",
-      "verdict": "NOTED",
-      "why": "he restates his own earlier ruling that failed attempts are recorded and a researcher chooses what to keep; it bounds the design rather than asking for work"
-    },
-    {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#82942927",
-      "audited": "2026-10-17",
-      "evidence": "bench/tests/test_gamma_gates_wherever_it_exists_2026-10-08.py",
-      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
-      "text": "Verdict. Gamma should remain active in all cases. Fix it.",
-      "verdict": "ACTED_ON",
-      "why": "his ruling that gamma must gate everywhere rather than being demoted to a recorded statistic was carried out and is guarded"
-    },
-    {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#83431119",
-      "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-08, which accepts the design",
-      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
-      "text": "This sounds fine. But we can\u2019t really test it fully until the next paid run, involving all the models.",
-      "verdict": "NOTED",
-      "why": "he accepts the reserve-the-expensive-model design and notes it cannot be fully tested before a paid run; nothing further is owed from me now"
-    },
-    {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#89732073",
-      "audited": "2026-10-17",
-      "evidence": "bench/tests/test_gamma_does_not_cover_the_quiet_arm_2026-10-08.py and bench/tests/test_the_quiet_run_is_seven_where_it_can_be_2026-10-17.py",
-      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
-      "text": "What do you mean \u2018quiet round\u2019? Which round would that be?",
-      "verdict": "ACTED_ON",
-      "why": "his question about which round is quiet was answered by measurement: the quiet arm is not covered by gamma, and the quiet-run figure is derived rather than pinned"
-    },
-    {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#95350744",
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#108",
       "audited": "2026-10-17",
       "evidence": "bench/tests/test_the_cap_default_is_exhaust_2026-10-08.py",
       "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 108,
       "text": "I\u2019m sure I\u2019ve already ruled on this multiple times today. But if you haven\u2019t done it yet, do it.",
       "verdict": "ACTED_ON",
       "why": "the ladder depth default was flipped to exhaust the ladder, which is what he had ruled more than once"
     },
     {
-      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#98981383",
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#112",
       "audited": "2026-10-17",
       "evidence": "his own question of 2026-10-08; it remains owed to him",
       "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 112,
       "text": "What \u2018degraded convergence policy\u2019? Again \u2018degraded\u2019 reads like gamma demotion? Why are the seats recommending it? Or did I already rule on this above?",
       "verdict": "RULING",
       "why": "he asks what it is, why the seats recommend it, and whether he has already ruled; all 3 are owed back TO him"
     },
     {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#21594685",
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#116",
       "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-06, earlier in the same file",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "Addressed above.",
+      "evidence": "his own annotation of 2026-10-08, earlier in the same file",
+      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 116,
+      "text": "Already addressed.",
       "verdict": "NOTED",
-      "why": "he is pointing at his own earlier answer in the same file, which is audited as its own row"
+      "why": "he points at his own earlier answer in the same file, which is audited as its own row"
     },
     {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#24019905",
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#14",
       "audited": "2026-10-17",
-      "evidence": "entry B26 is OPEN; it was raised on 2026-10-17 from this very annotation after a search of all 154 entries found 0 covering it",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "I have now addressed this multiple times. The simulated runs can involve a mix of models from Anthropic, from Opus 4.8 (and possibly 4.7), to you Opus 5.5, to Fable, and possible Sonnet 5.5 (the last of which is pretty much equivalent to ChatGPT from Anthropic.) This would theoretically restore at least 5 models in the count. But why should the schema, or capability fingerprints, or the ladder care about model names at all? If these are measured statistics, then all that happens is if a problem isn\u2019t resolved, it gets passed to another model with at least equivalent, or demonstrably proven better capability? We can record model names, as per the rest of your work in this regard. But hyper focusing on the model name as the sole measure of capability is not, as I said, particularly sensible.",
+      "evidence": "bench/tests/test_gamma_gates_wherever_it_exists_2026-10-08.py",
+      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 14,
+      "text": "Verdict. Gamma should remain active in all cases. Fix it.",
+      "verdict": "ACTED_ON",
+      "why": "his ruling that gamma must gate everywhere rather than being demoted to a recorded statistic was carried out and is guarded"
+    },
+    {
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#22",
+      "audited": "2026-10-17",
+      "evidence": "entry C12 is OPEN at status TESTED; it carries the false-quiet repair and its owed panel check",
+      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 22,
+      "text": "Verdict. Fix it and check your fix with the free panel.",
       "verdict": "TRACKED",
-      "why": "the same proposal stated a second time, with the capability argument that a schema measuring capability should not care about a name"
+      "why": "his ruling on the false-quiet repair, including the panel check he asked for, which is the owed half of that entry"
     },
     {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#24035351",
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#28",
       "audited": "2026-10-17",
-      "evidence": "scripts/the_provenance_gate_reads_text_not_behaviour_2026-10-05.py",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "Verdict. Fix it.",
+      "evidence": "his own annotation of 2026-10-08; the capability work of entry C18 is where it bears on code",
+      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 28,
+      "text": "If it needs fixing then fix it. But we don\u2019t \u2018bench\u2019 any model. The schema operates on the basis of derived capability. In that framing, even if a model can do no better than a standard $6 calculator, then we use it for the kind of tasks that kind of capability is best suited for. The original framing I gave is that even an old 386 computer is still capable of doing work that is beyond many humans.",
+      "verdict": "NOTED",
+      "why": "his standing position that no model is benched and the schema works on derived capability; it is a ruling that bounds design rather than a defect to repair"
+    },
+    {
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#32",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_gamma_does_not_cover_the_quiet_arm_2026-10-08.py and bench/tests/test_the_quiet_run_is_seven_where_it_can_be_2026-10-17.py",
+      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 32,
+      "text": "What do you mean \u2018quiet round\u2019? Which round would that be?",
       "verdict": "ACTED_ON",
-      "why": "the provenance gate crediting the model that wrote a routed test rather than the one that filed the finding"
+      "why": "his question about which round is quiet was answered by measurement: the quiet arm is not covered by gamma, and the quiet-run figure is derived rather than pinned"
     },
     {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#33781170",
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#36",
       "audited": "2026-10-17",
-      "evidence": "scripts/post_semantics_2026-10-06.py orders the checks and halts at the first failure; scripts/preflight_health_check_2026-10-06.py holds the 7",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "This is expected behaviour in the sense that the boot/health check should not simply be \u2018pleasing decoration\u2019. It should perform real work. But you should fix if not already done.",
-      "verdict": "ACTED_ON",
-      "why": "the boot check performs real work and halts at the first failure rather than reporting decoratively; it is called by the launcher rather than left to be remembered"
+      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
+      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 36,
+      "text": "Wait. If that holds then you are saying (again) that the only measure we can have of capability, is the model names? We can\u2019t measure capability, as we have now extensively discussed and use that? Or are you saying that we need to keep both, because if we have both we can identify which models can be derived from a given capability? But you still keep referring to \u20185 or 6 models\u2019, when I have already said, the system should be able to cope with 5, or 6, or 70, or 700 models (or whatever), and that the only goal is to use all the available resources efficiently to effect the best outcome in all cases.",
+      "verdict": "TRACKED",
+      "why": "his challenge that capability must be measurable rather than named, which entry C7 answers with the measurement that no ordering is estimable"
     },
     {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#34643604",
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#40",
       "audited": "2026-10-17",
-      "evidence": "his own instruction of 2026-10-06; it remains owed TO him",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "What is the question? In plain English? Have I already answered? Ask me again when this work is complete if not.",
+      "evidence": "his own annotation of 2026-10-08, which accepts the design",
+      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 40,
+      "text": "This sounds fine. But we can\u2019t really test it fully until the next paid run, involving all the models.",
+      "verdict": "NOTED",
+      "why": "he accepts the reserve-the-expensive-model design and notes it cannot be fully tested before a paid run; nothing further is owed from me now"
+    },
+    {
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#58",
+      "audited": "2026-10-17",
+      "evidence": "his own question of 2026-10-08; it remains owed to him",
+      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 58,
+      "text": "What is the significance of this? Please explain in plain English.",
       "verdict": "RULING",
-      "why": "he asks to be re-asked once the work is done, so the question stays live and is owed back to him rather than settled by me"
+      "why": "he asks for a plain-English explanation, so an answer is owed back TO him and no work of mine settles it"
     },
     {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#41335294",
-      "audited": "2026-10-17",
-      "evidence": "bench/tests/test_cy_watchdog_wakes_on_silence_2026-10-02.py and bench/tests/test_cy_watchdog_sees_truncation_2026-10-02.py",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "This observation about networking issues and how to deal with them should be incorporated into our runners",
-      "verdict": "ACTED_ON",
-      "why": "the dead-route problem he refers to is handled by a watchdog that wakes on silence, sees truncation and reports the outcome"
-    },
-    {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#4236379",
-      "audited": "2026-10-17",
-      "evidence": "experimental_notes/CDSFL_MASTER_TASK_LIST.md, whose open entries each name their own state and evidence",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "Then as I said if there is something that still needs to be fixed then you should fix it.",
-      "verdict": "NOTED",
-      "why": "a standing instruction to fix what remains rather than a specific defect; the task list is what carries the remainder, entry by entry"
-    },
-    {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#43642033",
-      "audited": "2026-10-17",
-      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "At the worst, even in the above conditions, it does nothing. But even with all our models being the same, that is not what you reported when you measured this. Nor is there any harm in turning it on and leaving it on. If no better models exist, at least one rung on the ladder should point back to the original model and say, \u2018your solution didn\u2019t work\u2019 or \u2018your falsifier is broken\u2019 please fix\u2019.",
-      "verdict": "TRACKED",
-      "why": "the ladder being inert on a flat simulated panel, carried by the consolidated ladder entry"
-    },
-    {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#45433454",
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#68",
       "audited": "2026-10-17",
       "evidence": "entry C18 is OPEN at status TESTED; it keys capability on a hashed identity rather than a model name",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "I don\u2019t get why a models name is so important? Yes we should record which models did what for sure. But you already did quite a lot of work on this, where a weaker model was bein attributed for a fix (and/or falsifier) that was in fact subsequently built by a stronger model on the ladder?",
+      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 68,
+      "text": "Is this the same issue as recording the model names as above?",
       "verdict": "TRACKED",
-      "why": "his objection to a name standing in for capability, answered by keying capability on a hashed identity"
+      "why": "it is the same subject: whether a name may stand in for capability, which the hashed-identity work addresses"
     },
     {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#55407461",
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#80",
       "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-06, which accepts the measured result",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "So no work to do here? Fine if so.",
+      "evidence": "the report he annotated states the factor directly; no repair follows",
+      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 80,
+      "text": "So nothing to be fixed here?",
       "verdict": "NOTED",
-      "why": "he accepts the computed reversal and asks for nothing further"
+      "why": "the report's own finding is that a simulated run sits where this hazard nearly vanishes, so his reading is right and nothing is owed"
     },
     {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#70409026",
+      "anchor": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt#92",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-08, restating a prior ruling",
+      "file": "Dynamic_Roster_Panel_Synthesis_2026-10-08.txt",
+      "line_index": 92,
+      "text": "Yes, we already ruled that failed attempts should be recorded in the registry. A researcher can then choose to export/save, or delete any record as they choose.",
+      "verdict": "NOTED",
+      "why": "he restates his own earlier ruling that failed attempts are recorded and a researcher chooses what to keep; it bounds the design rather than asking for work"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#102",
       "audited": "2026-10-17",
       "evidence": "entry B11 is DONE on bench/tests/test_task_list_burndown_2026-09-11.py",
       "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "Fix them.",
-      "verdict": "TRACKED",
-      "why": "the remaining diagnosed suite failures, carried by the board triage entry"
-    },
-    {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#71055719",
-      "audited": "2026-10-17",
-      "evidence": "entry B11 is DONE on bench/tests/test_task_list_burndown_2026-09-11.py",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 102,
       "text": "Then if it can be fixed, you almost certainly should.",
       "verdict": "TRACKED",
       "why": "the suite failures not attributable to that session, which the board triage classified rather than suppressed"
     },
     {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#81601492",
-      "audited": "2026-10-17",
-      "evidence": "his own annotation of 2026-10-06",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "Agreed.",
-      "verdict": "NOTED",
-      "why": "an agreement with the recorded gap; nothing is owed from anyone, so it settles"
-    },
-    {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#89201382",
-      "audited": "2026-10-17",
-      "evidence": "entry B20 is DEFERRED on his own instruction not to be sidetracked on it",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "Verdict, do the investigation and do the work.",
-      "verdict": "TRACKED",
-      "why": "the design brief covering every switch and dial, which is the orchestrator and interface work he later told me not to be sidetracked on"
-    },
-    {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#89506254",
-      "audited": "2026-10-17",
-      "evidence": "the referent is the preceding annotation in the same file, which is audited as its own row",
-      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
-      "text": "Same answer as before.",
-      "verdict": "UNDECIDABLE",
-      "why": "a back-reference to his previous annotation rather than a statement of its own, so its content cannot be established from its own words"
-    },
-    {
-      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#99091339",
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#106",
       "audited": "2026-10-17",
       "evidence": "entry B11 is DONE on bench/tests/test_task_list_burndown_2026-09-11.py",
       "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 106,
       "text": "Verdict: do the work.",
       "verdict": "TRACKED",
       "why": "the remaining panel-round failures, carried by the board triage entry"
     },
     {
-      "anchor": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt#3913666",
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#112",
+      "audited": "2026-10-17",
+      "evidence": "entry B20 is DEFERRED on his own instruction not to be sidetracked on it",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 112,
+      "text": "Verdict, do the investigation and do the work.",
+      "verdict": "TRACKED",
+      "why": "the design brief covering every switch and dial, which is the orchestrator and interface work he later told me not to be sidetracked on"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#116",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-06",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 116,
+      "text": "Agreed.",
+      "verdict": "NOTED",
+      "why": "an agreement with the recorded gap; nothing is owed from anyone, so it settles"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#122",
+      "audited": "2026-10-17",
+      "evidence": "scripts/the_provenance_gate_reads_text_not_behaviour_2026-10-05.py",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 122,
+      "text": "Verdict. Fix it.",
+      "verdict": "ACTED_ON",
+      "why": "the provenance gate crediting the model that wrote a routed test rather than the one that filed the finding"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#132",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-06, which accepts the measured result",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 132,
+      "text": "So no work to do here? Fine if so.",
+      "verdict": "NOTED",
+      "why": "he accepts the computed reversal and asks for nothing further"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#136",
+      "audited": "2026-10-17",
+      "evidence": "his own instruction of 2026-10-06; it remains owed TO him",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 136,
+      "text": "What is the question? In plain English? Have I already answered? Ask me again when this work is complete if not.",
+      "verdict": "RULING",
+      "why": "he asks to be re-asked once the work is done, so the question stays live and is owed back to him rather than settled by me"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#150",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-06, earlier in the same file",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 150,
+      "text": "Addressed above.",
+      "verdict": "NOTED",
+      "why": "he is pointing at his own earlier answer in the same file, which is audited as its own row"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#154",
+      "audited": "2026-10-17",
+      "evidence": "entry B11 is DONE on bench/tests/test_task_list_burndown_2026-09-11.py",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 154,
+      "text": "Fix them.",
+      "verdict": "TRACKED",
+      "why": "the remaining diagnosed suite failures, carried by the board triage entry"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#28",
+      "audited": "2026-10-17",
+      "evidence": "entry B26 is OPEN; it was raised on 2026-10-17 from this very annotation after a search of all 154 entries found 0 covering it",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 28,
+      "text": "I have now addressed this multiple times. The simulated runs can involve a mix of models from Anthropic, from Opus 4.8 (and possibly 4.7), to you Opus 5.5, to Fable, and possible Sonnet 5.5 (the last of which is pretty much equivalent to ChatGPT from Anthropic.) This would theoretically restore at least 5 models in the count. But why should the schema, or capability fingerprints, or the ladder care about model names at all? If these are measured statistics, then all that happens is if a problem isn\u2019t resolved, it gets passed to another model with at least equivalent, or demonstrably proven better capability? We can record model names, as per the rest of your work in this regard. But hyper focusing on the model name as the sole measure of capability is not, as I said, particularly sensible.",
+      "verdict": "TRACKED",
+      "why": "the same proposal stated a second time, with the capability argument that a schema measuring capability should not care about a name"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#32",
+      "audited": "2026-10-17",
+      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 32,
+      "text": "At the worst, even in the above conditions, it does nothing. But even with all our models being the same, that is not what you reported when you measured this. Nor is there any harm in turning it on and leaving it on. If no better models exist, at least one rung on the ladder should point back to the original model and say, \u2018your solution didn\u2019t work\u2019 or \u2018your falsifier is broken\u2019 please fix\u2019.",
+      "verdict": "TRACKED",
+      "why": "the ladder being inert on a flat simulated panel, carried by the consolidated ladder entry"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#40",
+      "audited": "2026-10-17",
+      "evidence": "scripts/post_semantics_2026-10-06.py orders the checks and halts at the first failure; scripts/preflight_health_check_2026-10-06.py holds the 7",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 40,
+      "text": "This is expected behaviour in the sense that the boot/health check should not simply be \u2018pleasing decoration\u2019. It should perform real work. But you should fix if not already done.",
+      "verdict": "ACTED_ON",
+      "why": "the boot check performs real work and halts at the first failure rather than reporting decoratively; it is called by the launcher rather than left to be remembered"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#48",
+      "audited": "2026-10-17",
+      "evidence": "experimental_notes/CDSFL_MASTER_TASK_LIST.md, whose open entries each name their own state and evidence",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 48,
+      "text": "Then as I said if there is something that still needs to be fixed then you should fix it.",
+      "verdict": "NOTED",
+      "why": "a standing instruction to fix what remains rather than a specific defect; the task list is what carries the remainder, entry by entry"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#56",
+      "audited": "2026-10-17",
+      "evidence": "the referent is the preceding annotation in the same file, which is audited as its own row",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 56,
+      "text": "Same answer as before.",
+      "verdict": "UNDECIDABLE",
+      "why": "a back-reference to his previous annotation rather than a statement of its own, so its content cannot be established from its own words"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#64",
+      "audited": "2026-10-17",
+      "evidence": "entry C18 is OPEN at status TESTED; it keys capability on a hashed identity rather than a model name",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 64,
+      "text": "I don\u2019t get why a models name is so important? Yes we should record which models did what for sure. But you already did quite a lot of work on this, where a weaker model was bein attributed for a fix (and/or falsifier) that was in fact subsequently built by a stronger model on the ladder?",
+      "verdict": "TRACKED",
+      "why": "his objection to a name standing in for capability, answered by keying capability on a hashed identity"
+    },
+    {
+      "anchor": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt#72",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_cy_watchdog_wakes_on_silence_2026-10-02.py and bench/tests/test_cy_watchdog_sees_truncation_2026-10-02.py",
+      "file": "Overnight_Ladder_And_Boot_Check_2026-10-06.txt",
+      "line_index": 72,
+      "text": "This observation about networking issues and how to deal with them should be incorporated into our runners",
+      "verdict": "ACTED_ON",
+      "why": "the dead-route problem he refers to is handled by a watchdog that wakes on silence, sees truncation and reports the outcome"
+    },
+    {
+      "anchor": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt#22",
       "audited": "2026-10-17",
       "evidence": "his annotation of 2026-10-16 in Runway_Status_And_Is_It_Safe_To_Merge; no work is owed, so no test can settle it",
       "file": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt",
+      "line_index": 22,
       "text": "The fact that the answer keys were public for a very brief time has already been answered also and has been ruled as not significant. It is highly unlikely that anyone ever saw them, including the models. Verdict: strike from the list of reoccurring issues also.",
       "verdict": "NOTED",
       "why": "he struck the public-answer-keys question permanently; nothing further is owed from me, and the record of the strike is the ruling itself"
     },
     {
-      "anchor": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt#60027094",
+      "anchor": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt#52",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_immune_memory_evaluation.py:187 quotes this ruling as its own skip reason; verified by execution 2026-10-17, 161 passed 6 skipped",
+      "file": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt",
+      "line_index": 52,
+      "text": "No. We reset immune memory for the upcoming live experiments, since simulation can probably only tell us so much about how this facility will function in real live/paid experiments. There should be a facility for researchers to select a switch in the upcoming UX build if they want immune memory to persist between different experiments, or if they want it to be reset between experiments. For us in our upcoming use case, since our models won\u2019t change (or perhaps at least not much, as we may add Kimi K3 back into the mix at some point), probably the best strategy is to leave the default in this case set to on, so that it can persist between experiments? Which brings up another issue we have discussed in the recent past, which is that overall, adding, removing, or changing models in the harness should be an entirely trivial affair (by design) and should not require major code changes to enable researchers to do so. The question is, is it? Have we adequately addressed this particular design objective?",
+      "verdict": "ACTED_ON",
+      "why": "the immune memory was reset and the suite records the reset as the reason its 6 memory tests skip, re-arming as soon as a run writes a record"
+    },
+    {
+      "anchor": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt#66",
       "audited": "2026-10-17",
       "evidence": "experimental_notes/CDSFL_MASTER_TASK_LIST.md, 154 entries with 13 open, each naming its own state and evidence",
       "file": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt",
+      "line_index": 66,
       "text": "Verdict: Do all the outstanding work, once any questions/issues emerging from the above are addressed.",
       "verdict": "TRACKED",
       "why": "a blanket approval of the outstanding work rather than a single item; the master task list is what carries it, entry by entry"
     },
     {
-      "anchor": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt#66131198",
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#102",
       "audited": "2026-10-17",
-      "evidence": "bench/tests/test_immune_memory_evaluation.py:187 quotes this ruling as its own skip reason; verified by execution 2026-10-17, 161 passed 6 skipped",
-      "file": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt",
-      "text": "No. We reset immune memory for the upcoming live experiments, since simulation can probably only tell us so much about how this facility will function in real live/paid experiments. There should be a facility for researchers to select a switch in the upcoming UX build if they want immune memory to persist between different experiments, or if they want it to be reset between experiments. For us in our upcoming use case, since our models won\u2019t change (or perhaps at least not much, as we may add Kimi K3 back into the mix at some point), probably the best strategy is to leave the default in this case set to on, so that it can persist between experiments? Which brings up another issue we have discussed in the recent past, which is that overall, adding, removing, or changing models in the harness should be an entirely trivial affair (by design) and should not require major code changes to enable researchers to do so. The question is, is it? Have we adequately addressed this particular design objective?",
+      "evidence": "entry C4 is OPEN; it is the owed free-panel run itself",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 102,
+      "text": "Run it. Add this to the master task list too.",
+      "verdict": "TRACKED",
+      "why": "the free-panel review he asked for on 2026-10-04, which is the owed run itself"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#108",
+      "audited": "2026-10-17",
+      "evidence": "entry C9 is DONE on bench/tests/test_the_review_pause_is_a_pause_not_a_review_2026-10-17.py",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 108,
+      "text": "And the conclusion is/was? Or perhaps you should add this to one of the panel review questions too. However your statement in this regard is too vague for me to remember exactly what you are referring to? But as I will go to sleep, it probably is best to put this question to the panel in one of the panel reviews too, and then explain it in more detail once your full master task list is complete, so that you can complete all of the work in your master task list without requiring further interaction from me. If the models recommend the fix is sound, then apply it, and then explain it more fully to me once all the work from your master task list is complete. However logically the HIL review stage is always part of the process anyway, because first the HIL proposes and reviews their own experiment, and can monitor it through cy protocol in their local machine terminal as it proceeds, where they can intervene at any time of they wish, and finally they are presented with the opportunity to review all work when an experiment completes. The only other potential exception to this is if the models encounter a genuinely computationally irreducible problem, or if a problem emerges that impacts on core system safety, legal issues/prohibition, ethics that could lead to real world harm to the HIL (or to other humans), or that impacts negatively on core system performance, or unresolvable errors. But these have all been longstanding principles of the project from the outset, and so should continue to stand for all our models now. (Including the proposed new CDSFL bounded orchestrator.) Indeed these constraints are almost certainly part of the core CDSFL directive set/system prompt, currently fed to all our models.",
+      "verdict": "TRACKED",
+      "why": "the conclusion he asks for is what that entry delivers: the facility is a mid-run halt at neither boundary he reviews"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#114",
+      "audited": "2026-10-17",
+      "evidence": "his own question of 2026-10-17; it remains owed to him",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 114,
+      "text": "What are the \u201894\u2019 unsavable blockers?\u2019 I don\u2019t remember hearing about this before? What exactly if anything do they block? If the answer is nothing that would prevent you from completing your work, then save your explanation of this until the end of your work on the master task list too. But I won\u2019t tell you to make 94 potentially significant code changes to clear these \u2018blockers\u2019 without first knowing if they are real, or what they are, or if it I just you again regurgitating old material?",
+      "verdict": "RULING",
+      "why": "he asks what they are, what they block, and says so plainly that he does not recall hearing of them; an explanation is owed back TO him"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#116",
+      "audited": "2026-10-17",
+      "evidence": "bench/ticket_store.py with bench/tests/test_the_register_holds_the_whole_history_2026-10-17.py",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 116,
+      "text": "One thing I have noticed that is missing from the above task list is the Bugzilla mechanics we have only just been discussing. Again this work should be done first and placed at the top of your outstanding",
       "verdict": "ACTED_ON",
-      "why": "the immune memory was reset and the suite records the reset as the reason its 6 memory tests skip, re-arming as soon as a run writes a record"
+      "why": "the register is built, holds every commit since the project opened, and its own backfill and audit are tracked as their own entries"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#40",
+      "audited": "2026-10-17",
+      "evidence": "entry C21 is OPEN at status TESTED; it consolidates the routing-ladder cluster including the season design",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 40,
+      "text": "Then if this isn\u2019t built, add it to the master task list and build it, then check and test your work, both first with the free panel and in 1 (hopefully final) simulated run, to test how this facility performs exactly. Just reuse the same target as the last 3 simulated runs in this task.",
+      "verdict": "TRACKED",
+      "why": "his season design: the ranking half is built and the panel check he asks for is the owed half of the consolidated ladder entry"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#48",
+      "audited": "2026-10-17",
+      "evidence": "bench/ticket_store.py propose and merge, guarded by bench/tests/test_a_shared_mechanism_does_not_decide_2026-10-17.py",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 48,
+      "text": "There may be a need for a small amount of adaption in this facility where if I (or you) make a new proposal like the CDSFL bounded orchestrator model, this can count as an open ticket until it is either resolved/implemented, merged or rejected, just as real Firefox Bugzilla proposals/feature requests are treated, and largely as the current CDSFL Bugzilla mechanics deals with these kind of issues now. The knack will be in building this facility in such a way that it can be recognised by you and by any mechanical extractor in chat, or from my tts responses, in such a way that it can extract them reliably. I propose a small extension to out MC command list where I (or you) will either mark/label new proposes with either \u2018fr\u2019 (feature request) or \u2018pr\u2019 (proposed fix). Then perhaps your extractor can look for these signals in our exchanges and extract them and place them within the Bugzilla framework with two distinct sections? (Again one for \u2018fr\u2019 and one for \u2018pr\u2019.) Would this work, or do you have a better way? If you do gauge this to be optimal, you will need to update your own MC command list in your local and global CLAUDE.md files and in my existing desktop MC command list too. (Although don\u2019t alter the format pf my desktop version. Just append these new MC commands to the end of the excising file.)",
+      "verdict": "ACTED_ON",
+      "why": "the register takes a new proposal as its own ticket and applies his 3-element duplicate test, so a fresh proposal is raised rather than absorbed"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#54",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-17",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 54,
+      "text": "Agreed.",
+      "verdict": "NOTED",
+      "why": "an agreement that the harvest must cover chat as well as his written replies; nothing further is owed"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#58",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-17",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 58,
+      "text": "We can see. Given the above framing, it might work better than expected. We will soon see!",
+      "verdict": "NOTED",
+      "why": "he accepts the framing and reserves judgement until it runs; nothing is owed from anyone now"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#66",
+      "audited": "2026-10-17",
+      "evidence": "entry B20 is DEFERRED on his own instruction not to be sidetracked on the orchestrator",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 66,
+      "text": "So would running the test as two simulated experiments, rather than just the proposed 1 settle it? If so that is what you should do. I would also like to nominate Fable as the proposed orchestrator model for this experiment. We can also test it relatively cheaply, and relatively quickly, by having fable sit in as the orchestrator in one of the two simulated experiments. Then we get useful feedback, without risking anything very much, and I assume the risk of a meaningful confound then also evaporates, since the experiment itself is largely simulated and it remains cheap, because Fable already comes with my paid Max subscription, and is often significantly underused anyway. As for when to run this experiment, I would say there is no need to delay it unnecessarily and that it should be safe to run it at the end of all of the work resulting from your master task list. Again we can use the same target as in all our other recent simulated experiments, as this at least gives us a bassline against which to measure its performance. Your job during this test would be minimalist. You would simply monitor/observe the performance of the orchestrator and make sure the whole experiment runs smoothly and as expected. You would only step in if something was broken, or looked as though it wasn\u2019t functioning correctly, pause the test, fix the issue under cy protocol, and then either resume the experiment, or restart it; whichever presets the saner choice at that time. It might be worth noting that the \u2018job description\u2019 for the orchestrator model would be slightly different from the job description given to the other models, in that it would perform your current role exactly when monitoring experiments under full cy discipline/protocol. The goal should be to have it run end to end in experiments with the minimum of human/HIL intervention, while remaining fully bound within the framework of the harness. (Which means it should continue to use the full machinery of the harness throughout). In a certain very real sense, this will be the first real test of how the harness was always envisaged to work. There is little point having all of the complex machinery of the harness and CDSFL in general, if any model can continue to function almost fully outside of the harness and of any of the constraints that the harness places on it.",
+      "verdict": "TRACKED",
+      "why": "his instruction on how the orchestrator shadow should be run, which belongs to the entry he then told me not to be sidetracked on"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#70",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-17",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 70,
+      "text": "Well I guess that will be the test. The prediction (and the bet) made overall about CDSFL is that it could/should potentially make all our models more useful, more accurate and more reliable. However the converse could be proved to be true, and the kind of degradation you have observed in your own performance could persist. This initial prediction could be falsified. Again we will have to see. That is the point of this particular test.",
+      "verdict": "NOTED",
+      "why": "his statement of the prediction the programme is testing; it is the bet rather than a task"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#74",
+      "audited": "2026-10-17",
+      "evidence": "entry B20 is DEFERRED on his own instruction not to be sidetracked on the orchestrator",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 74,
+      "text": "If there is more than one opportunity to test it then fine, that is what we should do. First in shadow as you have suggested, then in a subsequent simulated experiment (all being well) in live mode in that experiment. Then report all your findings. You can add this to your master task list too.",
+      "verdict": "TRACKED",
+      "why": "his placement instruction for the shadow run, carried by the orchestrator entry"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#80",
+      "audited": "2026-10-17",
+      "evidence": "scripts/note_vagueness_lint.py strips double-quoted text before testing, and its own comment records that only verbatim quotation is exempt",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 80,
+      "text": "We fix going forward and leave the archive alone. Going back and rewriting the archive, as I have said before could potentially be seen as dishonest, and as an attempt to rewrite history. So as ever we simply record our decisions honestly and appropriately and focus our attention on what can and should be fixed going forward.",
+      "verdict": "ACTED_ON",
+      "why": "the note checker exempts his verbatim quotations by construction: double quotes mark a quotation and are removed before the undefined-term and number rules run, so quoting him cannot trip them"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#84",
+      "audited": "2026-10-17",
+      "evidence": "his own question of 2026-10-17; it remains owed to him",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 84,
+      "text": "Is this where you said there was a conflict/collision between CC2\u2019s findings and Fable\u2019s? Did you not look at this and find that the collision was overstated and that the solution was potentially composable (under our formal simplest sufficient fix, additive and composability standards?) Or did you say that one of these fixes was preferable in isolation over the other? Or are we talking about something else? And why would we adopt a fix whose conclusions we cannot reproduce? Either way if you can\u2019t fix it simply, or if the \u2018collision\u2019 continues to exist, you should attempt to resolve it and then put your fix to the free panel, before then subsequently testing their work and then applying the final fix. You can do this in a separate panel review of its own, or in one of the other recently agreed panel reviews that may still be outstanding. In either case the objective will be to clear this problem so that it can unblock access to our remaining runway items. It should not simply be left as untesolved.",
+      "verdict": "RULING",
+      "why": "he asks whether the collision between 2 seats was overstated and whether I checked it; the answer is owed back TO him"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#88",
+      "audited": "2026-10-17",
+      "evidence": "the negation handling in the local resource budget hook under his home directory, which entry B17 notes is unversioned by nature",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 88,
+      "text": "Make the guard aware of negation as you have suggested.",
+      "verdict": "ACTED_ON",
+      "why": "the local budget hook now distinguishes an instruction from a prohibition, so it stops refusing a call that merely mentions a limit"
+    },
+    {
+      "anchor": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt#92",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-17, earlier in the same file",
+      "file": "TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt",
+      "line_index": 92,
+      "text": "Already addressed.",
+      "verdict": "NOTED",
+      "why": "he points at his own earlier answer on the shadow-run placement"
     }
   ],
   "window_from": "2026-10-01"

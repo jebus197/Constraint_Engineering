@@ -172,9 +172,18 @@ def main(argv=None) -> int:
         #: finding.
         def _k(f, text):
             return (f.split("#")[0], " ".join(str(text).split()).lower())
-        unc = {}
+        #: A COLLIDING TEXT MUST REFUSE, NOT PICK ONE. 37 of his annotations
+        #: across 12 files share their exact text with a sibling in the SAME
+        #: file -- "Do it." appears twice in one report with different
+        #: referents, and "Already ruled above." 3 times in another. Keying a
+        #: close on the text alone would settle an arbitrary one of them and
+        #: look successful, so a collision is reported and skipped.
+        unc, collided = {}, set()
         for ticket in store.unconfirmed():
-            unc[_k(ticket.anchor, ticket.verbatim or ticket.title)] = ticket
+            k = _k(ticket.anchor, ticket.verbatim or ticket.title)
+            if k in unc:
+                collided.add(k)
+            unc[k] = ticket
         closed = 0
         for r in rows.values():
             if r["verdict"] not in SETTLING:
@@ -188,7 +197,13 @@ def main(argv=None) -> int:
                 print(f"    left open: tracked by an entry that is not DONE -- "
                       f"{r['text'][:52]}")
                 continue
-            t = unc.get(_k(r["file"], r["text"]))
+            k = _k(r["file"], r["text"])
+            if k in collided:
+                print(f"    AMBIGUOUS, not settled: {r['text'][:52]} -- its "
+                      f"text repeats in the same file, so a close would pick "
+                      f"an arbitrary one")
+                continue
+            t = unc.get(k)
             if t is None:
                 continue
             store.close(t.tid,

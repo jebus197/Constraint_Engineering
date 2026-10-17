@@ -161,3 +161,46 @@ def test_a_tracked_row_whose_entry_is_open_has_not_settled_its_ticket(rows):
         f"is NOT done, and their tickets have been settled anyway: {wrong[:3]}. "
         f"That records an instruction of his as handled while the work is "
         f"outstanding.")
+
+
+def test_no_two_rows_share_an_anchor(rows):
+    """A COLLAPSED ROW IS A LOST VERDICT, and this was nearly one.
+
+    The record was first keyed on the file plus a hash of his words, and 37 of
+    his annotations across 12 files share their exact text with a sibling in
+    the SAME file: "Do it." appears twice in one report with different
+    referents, and "Already ruled above." 3 times in another. Two such rows
+    would have collapsed into 1 and the loss would have been invisible. The
+    anchor now carries the line index."""
+    if not rows:
+        pytest.skip("the record is empty")
+    seen = {}
+    for r in rows:
+        seen.setdefault(r["anchor"], []).append(r["text"][:40])
+    dupes = {k: v for k, v in seen.items() if len(v) > 1}
+    assert not dupes, (
+        f"{len(dupes)} anchor(s) carry more than 1 row, so a verdict has been "
+        f"collapsed into another: {list(dupes.items())[:2]}")
+
+
+def test_every_anchor_resolves_to_exactly_one_annotation(rows):
+    """An anchor that resolves to 2 annotations cannot say which it judged, and
+    one that resolves to none is an invented row by another name."""
+    if not rows:
+        pytest.skip("the record is empty")
+    try:
+        reader = A._reader()
+        ann = reader.annotations()
+    except Exception as exc:                                   # noqa: BLE001
+        pytest.skip(f"his Responses folder is not readable here: {exc}")
+    by_anchor = {}
+    for a in ann:
+        by_anchor.setdefault(f"{a['file']}#{a.get('line_index')}", []).append(a)
+    wrong = []
+    for r in rows:
+        hits = by_anchor.get(r["anchor"], [])
+        if len(hits) != 1:
+            wrong.append((r["anchor"], len(hits)))
+    assert not wrong, (
+        f"{len(wrong)} anchor(s) do not resolve to exactly 1 annotation: "
+        f"{wrong[:4]}")
