@@ -151,7 +151,11 @@ def fired(scope: str) -> tuple[list[tuple[str, str]], str]:
     if scope == "guards":
         targets = [f for f in guard_files() if (REPO / f).is_file()]
     else:
-        targets = [str(p.relative_to(REPO)) for p in sorted(TESTS.rglob("*.py"))]
+        #: THE DIRECTORY, not every file. Enumerating ~700 paths into argv made
+        #: the subprocess produce no output at all, which the readability check
+        #: then correctly refused -- so the refusal was right and the call was
+        #: wrong. pytest collects a directory itself and far more cheaply.
+        targets = [str(TESTS.relative_to(REPO))]
     if not targets:
         return [], "no targets"
     proc = subprocess.run(
@@ -169,7 +173,16 @@ def fired(scope: str) -> tuple[list[tuple[str, str]], str]:
             rows.append((m.group(1), m.group(2)))
     tail = [l for l in proc.stdout.splitlines()
             if re.search(r"\d+ (passed|skipped|failed)", l)]
-    return rows, (tail[-1] if tail else "no summary line")
+    #: THE RETURN CARRIES WHETHER THE RUN WAS READABLE AT ALL. Without this the
+    #: caller could not distinguish "0 skips" from "the run died", and on
+    #: 2026-10-17 it did not: an all-scope pass whose pytest subprocess was
+    #: killed produced no summary line, 0 parsed skip reports, and this script
+    #: printed "NOTHING SKIPPED IN THIS SCOPE. That is the strongest possible
+    #: answer" -- a conclusion drawn from a dead process. That is the
+    #: checker-that-decides-nothing shape, in the very script written to find
+    #: it, and it was caught within the hour only because the output looked too
+    #: good for a 12,000-test suite.
+    return rows, (tail[-1] if tail else ""), bool(tail)
 
 
 def main(argv=None) -> int:
@@ -215,7 +228,16 @@ def main(argv=None) -> int:
         return 0
 
     print(f"\nLIVE: WHAT ACTUALLY FIRES, scope={args.scope}")
-    rows, summary = fired(args.scope)
+    rows, summary, readable = fired(args.scope)
+    if not readable:
+        print("  THE RUN DID NOT COMPLETE. pytest produced no summary line, so")
+        print("  this pass measured NOTHING and no conclusion may be drawn from")
+        print("  it -- least of all that nothing was skipped. A killed or")
+        print("  crashed subprocess yields 0 parsed skip reports, which is")
+        print("  indistinguishable from a clean run unless the readability of")
+        print("  the run is checked separately, which is what this is.")
+        print(f"  partial output tail: {summary or '(none)'}")
+        return 3
     print(f"  pytest says: {summary}")
     print(f"  skip reports parsed: {len(rows)}")
     if not rows:

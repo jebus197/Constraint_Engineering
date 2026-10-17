@@ -411,12 +411,57 @@ def check_every_seat_is_fully_registered(seats, expect_uniform=False,
 
 #: (name, fn, wants_seats). ORDER IS LOAD-BEARING — see the module docstring and
 #: `post_semantics_2026-10-06.py` part 2, which holds it with z3.
+def check_policy_layers_merge():
+    """B21 step 4: every policy layer must merge against universal.
+
+    HIS DIRECTION on B21, 2026-10-17: wire `validate_all_policies()` as the
+    run-level preflight CC2 recommended, "reporting every missing registration
+    at once and refusing the run".
+
+    WHY THIS ONE IS SAFE WHERE STEP 1 IS NOT. This validator only ever refuses
+    a run whose layers do not merge; it cannot change what a passing run does.
+    Measured when it was wired: 17 layers validate and 0 are broken, so it
+    lands GREEN and acts as a ratchet against a future break rather than
+    fixing a present one. That is the honest description -- a check that lands
+    green is not evidence that it was needed, only that it is not yet earning
+    its keep.
+
+    STEP 1, by contrast, was measured and REFUSED: wiring `load_effective_policy`
+    so the merged policy decides would cap 46 of 47 shipped configs below their
+    configured round count, 97.8723% Wilson [88.8870%, 99.6234%], because the
+    policy's `protocol.max_rounds = 5` matches 0 of 47 configs and 0 configs
+    leave the field unset. See
+    scripts/would_wiring_the_policy_engine_change_a_run_2026-10-17.py.
+    """
+    try:
+        from bench.cdsfl_registry.registry import validate_all_policies
+    except Exception as exc:                                   # noqa: BLE001
+        return FAIL, f"the policy registry could not be imported: {exc}", []
+    results = validate_all_policies()
+    if not results:
+        return FAIL, ("the validator returned nothing at all, so it validated "
+                      "nothing and a broken layer would pass"), []
+    bad = {k: v for k, v in results.items() if v != "ok"}
+    if bad:
+        return FAIL, (f"{len(bad)} of {len(results)} policy layer(s) do not "
+                      f"merge against universal, so the effective policy for a "
+                      f"run is undefined"), [f"{k}: {v[:120]}"
+                                             for k, v in sorted(bad.items())]
+    return PASS, f"all {len(results)} policy layers merge against universal", []
+
+
 CHECKS = [
     ("facilities armed explicitly", check_facilities_armed, False),
     ("severity test present", check_severity_test_is_present, False),
     ("clearance is monotone", check_in_round_clearance_is_monotone, False),
     ("blockers not labelled SETTLED", check_blockers_are_not_labelled_settled, False),
     ("capability ladder climbs", check_capability_ladder_climbs, True),
+    # BEFORE the seat check, because that one must stay LAST. Placing this
+    # after it broke `test_the_check_is_on_the_screen_and_last` immediately:
+    # the seat check is last deliberately -- it depends on nothing and REPORTS
+    # rather than refuses, so under halt-on-first-failure it can never hide a
+    # check above it. A refusing check placed after it would hide it.
+    ("policy layers merge", check_policy_layers_merge, False),
     # LAST, because it depends on nothing and reports rather than refuses, so
     # under halt-on-first-failure it can never hide a check above it.
     ("every seat is fully registered", check_every_seat_is_fully_registered,

@@ -140,3 +140,42 @@ def test_help_costs_nothing_and_an_unknown_flag_is_refused():
     assert bad.returncode != 0, (
         "an unknown flag was accepted silently, which is the 118-day no-op "
         "shape: a script that takes a flag and does nothing with it")
+
+
+def test_a_dead_pytest_run_is_not_reported_as_nothing_skipped(monkeypatch):
+    """THE DEFECT THIS SCRIPT ITSELF HAD, for about an hour on 2026-10-17.
+
+    The all-scope pass's pytest subprocess was killed. It produced no summary
+    line and 0 parsed skip reports, and the script printed "NOTHING SKIPPED IN
+    THIS SCOPE. That is the strongest possible answer for it" -- a conclusion
+    drawn from a dead process. 0 skips and a dead run are indistinguishable
+    unless the READABILITY of the run is checked separately."""
+    import subprocess as sp
+
+    class _Dead:
+        returncode = -9
+        stdout = "collecting ...\n"
+        stderr = "Killed"
+
+    monkeypatch.setattr(M.subprocess, "run", lambda *a, **k: _Dead())
+    rows, summary, readable = M.fired("guards")
+    assert rows == []
+    assert readable is False, (
+        "a run with no summary line was reported as readable, so 0 skips "
+        "cannot be told apart from a crash")
+
+
+def test_a_completed_run_is_reported_as_readable(monkeypatch):
+    """The other direction, so the readability flag is not simply always False."""
+    class _Ok:
+        returncode = 0
+        stdout = ("SKIPPED [1] bench/tests/t.py:4: his Responses folder is not "
+                  "present\n1 passed, 1 skipped in 0.10s\n")
+        stderr = ""
+
+    monkeypatch.setattr(M.subprocess, "run", lambda *a, **k: _Ok())
+    rows, summary, readable = M.fired("guards")
+    assert readable is True
+    assert "1 skipped" in summary
+    assert rows and "Responses folder" in rows[0][1]
+    assert M.classify(rows[0][1]) == "SAFE"

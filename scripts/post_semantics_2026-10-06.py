@@ -97,6 +97,8 @@ DEPENDENCIES = {
     # must never sit above one that can, or it would delay the refusal without
     # adding information. Added 2026-10-17 for tasks B13 and B21.
     "every seat is fully registered": [],
+    #: Depends on nothing: it reads the TOML layers and no seat state.
+    "policy layers merge": [],
 }
 
 #: The order the POST screen runs them in. Most fundamental first, BIOS fashion.
@@ -106,6 +108,7 @@ POST_ORDER = [
     "clearance is monotone",
     "blockers not labelled SETTLED",
     "capability ladder climbs",
+    "policy layers merge",
     "every seat is fully registered",
 ]
 
