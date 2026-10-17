@@ -1381,6 +1381,27 @@ def arm_directive_omission(cfg: "RunnerConfig", exp_config=None) -> Tuple[int, i
 FINGERPRINT_DIR = REPO_ROOT / "bench" / "fingerprints"
 
 
+#: THE ONE DEFAULT for the hardened convergence gate. Written once because the
+#: rule previously lived in 4 places -- the dataclass field and 3 `getattr`
+#: fallbacks -- and 2 expressions of one default is how a stub config silently
+#: gets the behaviour the ruling replaced.
+#:
+#: TRUE ON HIS RULING OF 2026-10-05, carried out 2026-10-17: *"Then this should
+#: also be on, by default in all our runners."* It had stayed False for 12 days,
+#: on in `bench/tools/run_simulated_experiment.py` alone, which is the opposite
+#: of what he ruled.
+#:
+#: WHAT IT CHANGES. The gate becomes the CONJUNCTION of a sustained,
+#: leave-one-round-out-robust critical gamma and N consecutive settled rounds
+#: with no novel critical, computed on the settled post-reconciliation registry;
+#: the legacy gamma-alt path is bypassed and all-novelty gamma is kept as a
+#: diagnostic. It is not merely a stricter threshold, so the direction of the
+#: change is stated rather than assumed: the 3 shakedown legs all ran with it ON
+#: and converged at rounds 3, 4 and 4, each reaching 1.000 on the decay curve,
+#: which is the evidence that it converges at all rather than stalling.
+HARDENED_GATE_DEFAULT = True
+
+
 @dataclass
 class RunnerConfig:
     """All parameters for a reference experiment run."""
@@ -1465,7 +1486,7 @@ class RunnerConfig:
     # pool is too small for a stable slope the gate falls back to the
     # count-based zero-novel-critical criterion alone (γ reported, not
     # gated).
-    hardened_gate_enabled: bool = False
+    hardened_gate_enabled: bool = HARDENED_GATE_DEFAULT
     gamma_crit_sustain_rounds: int = 2
     gamma_crit_min_cumulative: int = 8
     gamma_crit_loo_tol: float = 0.05
@@ -18308,7 +18329,7 @@ def run_experiment(
             "gamma_alt_consecutive_zero_crit": getattr(
                 cfg, "gamma_alt_consecutive_zero_crit", None),
             "gamma_alt_earliest_round": getattr(cfg, "gamma_alt_earliest_round", None),
-            "hardened_gate_enabled": bool(getattr(cfg, "hardened_gate_enabled", False)),
+            "hardened_gate_enabled": bool(getattr(cfg, "hardened_gate_enabled", HARDENED_GATE_DEFAULT)),
             "critical_severity_threshold": CRITICAL_SEVERITY_THRESHOLD,
             # Named limitation, carried in the record rather than in a note that
             # travels separately from it.
@@ -19891,7 +19912,7 @@ def run_experiment(
                  f"({_q_locked} ladder-exhausted, {_q_deferred} never assessed "
                  f"— no runnable falsifier) — excluded from the A4 blocker; "
                  f"HALT ALARM if > {cfg.max_irreducible_queue}")
-        if getattr(cfg, "hardened_gate_enabled", False):
+        if getattr(cfg, "hardened_gate_enabled", HARDENED_GATE_DEFAULT):
             # F4/F6/conjunction hardened gate: settled-registry γ,
             # critical/structural conjunction, all-novelty γ as
             # diagnostic only. Legacy γ-alt is bypassed entirely.

@@ -809,3 +809,22 @@ critical finding remains. At `bench/reference_runner_v3.py` it reads
 mode `a4_blocked` and returns False, so the run continues to its round cap
 instead of converging. A blocker the routing ladder will not serve therefore
 holds this gate shut while being impossible to work.
+
+### Legacy gate
+
+The gamma-alt convergence path the hardened gate bypasses. It tests the
+all-novelty gamma slope on its own, without the critical/structural conjunction
+and without recomputing on the settled post-reconciliation registry. Still
+selectable per experiment by setting `hardened_gate_enabled=False`, because an
+experiment reproducing an archived run needs the gate that run used — the
+founder's ruling of 2026-10-05 sets the default, not the only option.
+
+### Hardened gate
+
+The convergence gate enabled by `hardened_gate_enabled`, on by default since
+2026-10-17 on the founder's ruling of 2026-10-05. It converges only on the
+CONJUNCTION of a sustained, leave-one-round-out-robust critical gamma and N
+consecutive settled rounds carrying no novel critical finding, computed on the
+settled post-reconciliation registry rather than the live-at-round transient.
+All-novelty gamma is kept as a diagnostic and reaches no decision. The 3
+shakedown legs ran under it and converged at rounds 3, 4 and 4.
