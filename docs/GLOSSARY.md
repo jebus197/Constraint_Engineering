@@ -612,7 +612,7 @@ The two terms are interchangeable in this project's notes; the mechanism is one.
 ### Note-standard stamp
 
 The line a delivered note or TTS file carries naming the CDSFL note standard it
-was written under, for example "Written under CDSFL note standard v1.7". Founder
+was written under, for example "Written under CDSFL note standard v1.8". Founder
 instruction 2026-10-11: "it helps me to track which notes standards you are
 using across files."
 

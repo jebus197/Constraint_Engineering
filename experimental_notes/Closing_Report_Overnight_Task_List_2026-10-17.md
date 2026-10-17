@@ -86,4 +86,4 @@ Treating each closed entry as producing new entries, the ratio was 0.4444 with a
 
 What drove it is worth saying plainly. The list gained 34 entries and closed 17 on the 17th, and the audit of his own instructions added 22 of those 34, each recording a ruling or a question that nothing tracked. The rise is substantially the cost of having looked, which is the opposite of a quality problem. The bar for what becomes an entry has not been changed on the assistant's own initiative, because the figure of 0.8148 new entries per entry closed is a number he is entitled to see move for real reasons only.
 
-Written under CDSFL note standard v1.7.
+Written under CDSFL note standard v1.8.

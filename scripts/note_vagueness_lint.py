@@ -343,13 +343,19 @@ def partition(path) -> tuple[list, list]:
 
 
 #: The note standard a delivered note or TTS file must name. Bumped WITH the standard.
-CURRENT_NOTE_STANDARD = "v1.7"
+CURRENT_NOTE_STANDARD = "v1.8"
 
 #: Standards this project has genuinely used. A note stamped with one of these
 #: is correctly stamped, whatever the current standard is. Bumped WHEN a standard
 #: is superseded, never when one is invented.
 ARCHIVAL_NOTE_STANDARDS = frozenset({
     "v1", "v1.0", "v1.1", "v1.2", "v1.3", "v1.4", "v1.5", "v1.6",
+    # SUPERSEDED BY v1.8 ON 2026-10-17, which adds Rule 31 (name the subject,
+    # name the quantity) on his instruction of 2026-10-04 that the standard
+    # itself needed tweaking to cover vagueness by OMISSION. 191 notes carry
+    # the v1.7 stamp and every one of them is correctly stamped; moving it here
+    # is what keeps that true rather than making them retrospectively wrong.
+    "v1.7",
 })
 
 #: Set by `--as` when the bytes being linted live somewhere other than the path
