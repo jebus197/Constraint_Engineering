@@ -187,14 +187,35 @@ def tid_of(kind: str, verbatim: str, task_ref: str = "") -> str:
 
     A caller that names no reference still gets pure content addressing, which is
     what makes deduplication work for chat and for his replies.
+
+    WHERE A REFERENCE EXISTS IT IS THE WHOLE IDENTITY, and the text is excluded.
+    CORRECTED 2026-10-17 after the first form was measured and found unstable.
+    Digesting the text as well means the identity moves whenever the entry is
+    reworded -- and the entry is reworded every time an addendum is written. The
+    consequences were both observed, not predicted:
+
+      * 5 references -- R10, 3.2, 6.2, B15 and B20 -- already carried 2 tickets
+        each, because an addendum recording a NEIGHBOUR as built sat above the
+        entry in a shared block and changed the text the digest read.
+      * Improving the extraction rule itself re-minted 114 of 141 identities in
+        one step, which would have duplicated the entire register and orphaned
+        every hashed identifier already cited.
+
+    A reference is unique within the list -- 141 entries, 141 distinct
+    references, verified -- so excluding the text cannot cause the collision the
+    reference was added to prevent. Two identically-worded entries still get
+    different identities, because they have different references. What it buys
+    is that the identifier a reader cites survives every subsequent edit to the
+    entry's prose, which is what the founder's ruling of 2026-10-17 requires of
+    a register that must be searched before any work is proposed.
     """
     h = hashlib.sha256()
     h.update(kind.encode())
     h.update(b"\x00")
-    h.update(" ".join(str(verbatim).split()).encode())
     if task_ref:
-        h.update(b"\x00")
         h.update(str(task_ref).encode())
+    else:
+        h.update(" ".join(str(verbatim).split()).encode())
     return h.hexdigest()[:12]
 
 
@@ -203,6 +224,27 @@ def nid_of(verbatim: str) -> str:
     h = hashlib.sha256()
     h.update(" ".join(_norm_tokens(verbatim)).encode())
     return h.hexdigest()[:12]
+
+
+def norm_title(title: str) -> str:
+    """THE ONE normalisation of a ticket's search label.
+
+    WRITTEN ONCE BECAUSE 2 EXPRESSIONS OF IT CAUSED UNBOUNDED CHURN. Measured
+    2026-10-17: `propose` and `retitle` each normalised whitespace and then
+    truncated to 160, while the harvester compared the stored label against
+    its OWN untruncated computation. Truncating a normalised string at 160 can
+    leave a TRAILING SPACE, which `" ".join(split())` then strips, so the
+    stored label was 159 characters where the caller held 160. The comparison
+    could never succeed: 18 of 141 rows re-wrote an identical record on every
+    single run, appending to a file that is append-only by design.
+
+    This is the same shape the note linter records in `paragraphs()`, where 2
+    expressions of one paragraph rule drifted apart and silently broke an
+    exemption set. So the rule lives here, callers compare against this
+    function rather than against their own spelling of it, and the strip comes
+    AFTER the truncation rather than before.
+    """
+    return " ".join(str(title).split())[:160].strip()
 
 
 def rid_of(tid: str, resolution: str) -> str:
@@ -431,7 +473,7 @@ class TicketStore:
                 "terminal status is tool-only and is reached through close(), "
                 "reject() or merge(), never by creation.")
         t = Ticket(tid=want, nid=nid_of(verbatim), kind=kind, status=status,
-                   title=" ".join(str(title).split())[:160],
+                   title=norm_title(title),
                    verbatim=" ".join(str(verbatim).split()),
                    source=source, source_ref=source_ref, ruled=ruled,
                    created=created, task_ref=task_ref,
@@ -484,6 +526,151 @@ class TicketStore:
                        "resolution": " ".join(str(resolution).split()),
                        "rid": rid_of(tid, resolution),
                        "verification": " ".join(str(verification).split())})
+        self._append(nt)
+        return nt
+
+    def restate(self, tid: str, verbatim: str, verification: str) -> Ticket:
+        """Track an entry's CURRENT wording without moving its identity.
+
+        WHY THIS IS SAFE NOW AND WAS NOT BEFORE. While identity digested the
+        text, any restatement minted a new ticket -- which is how 5 references
+        came to hold 2 tickets each. Identity is now the reference, so the text
+        can be brought up to date and the hashed identifier a reader has cited
+        still resolves to the same record. The guard below asserts that rather
+        than assuming it.
+
+        WHY IT IS WORTH DOING. The reworded-match tier is what catches the same
+        issue arriving in different words, and it reads `nid`, which is derived
+        from the stored text. A stale record therefore weakens exactly the tier
+        that stops a rediscovery. 22 of 141 entries held a stub of the form
+        `task A1: A1. DONE ...` because a status stamp defeated the first-
+        sentence rule, and a stub matches nothing.
+
+        WHAT IT REFUSES. The status is carried across untouched, so this is not
+        a route to reopening settled work: a CLOSED ticket stays closed, and
+        the resolution and verification that closed it are preserved.
+        """
+        t = self._by_tid.get(tid)
+        if t is None:
+            raise KeyError(f"no ticket {tid}")
+        if not str(verification).strip():
+            raise ValueError("a restatement must name what authorised it")
+        clean = " ".join(str(verbatim).split())
+        if not clean:
+            raise ValueError("refusing to blank a ticket's text")
+        if clean == t.verbatim:
+            return t
+        # RECOMPUTE, DO NOT COMPARE A COPIED FIELD. Found 2026-10-17 by
+        # mutation: the first form asserted `nt.tid != t.tid`, and `tid` is a
+        # STORED field that `asdict` copies across, so the comparison could
+        # never fail whatever `tid_of` did. Deleting the assertion entirely
+        # left all 19 guards green, which is how a vacuous gate announces
+        # itself. Digesting the NEW text and comparing that to the stored
+        # identity is the real question: it fires the moment identity starts
+        # depending on the text again, which is the regression that minted 5
+        # duplicate tickets.
+        if tid_of(t.kind, clean, t.task_ref) != t.tid:
+            raise AssertionError(
+                "restating this text would move the hashed identity, so identity "
+                "is digesting the text again. Refusing to write it.")
+        nt = Ticket(**{**asdict(t), "verbatim": clean, "nid": nid_of(clean)})
+        self._append(nt)
+        return nt
+
+    def migrate_identity(self, old_tid: str, new_tid: str,
+                         verification: str) -> tuple[Ticket, Ticket]:
+        """Move a ticket to a new identity, preserving status and substance.
+
+        WHY A NAMED PATH AND NOT A REWRITE. The identity rule changed on
+        2026-10-17: where an entry carries a reference, the reference alone is
+        the identity, because digesting the text as well moved the identity
+        every time the entry was reworded. 56 of 141 references were left at
+        their old text-derived identity, so a lookup by reference found
+        nothing and the register under-reported.
+
+        Rewriting those records in place would be the easy fix and the wrong
+        one: an identifier already cited in a note or a commit message would
+        silently stop resolving. So the OLD record is kept and marked MERGED,
+        naming its successor, and a NEW record is written at the new identity
+        carrying the status, resolution and verification across unchanged. A
+        reader following either identifier arrives at the same place.
+
+        The status is carried, not re-derived. A CLOSED ticket stays closed
+        through the migration -- 113 of the 146 task-list tickets were settled,
+        and a migration that re-opened them would resurrect every one, which is
+        the precise failure this register exists to prevent.
+        """
+        old = self._by_tid.get(old_tid)
+        if old is None:
+            raise KeyError(f"no ticket {old_tid}")
+        if not str(verification).strip():
+            raise ValueError("an identity migration must name what authorised it")
+        if new_tid == old_tid:
+            raise ValueError("migrate_identity called with identical identities")
+        if new_tid in self._by_tid:
+            raise ValueError(
+                f"{new_tid} already exists; merge into it rather than migrating")
+        # NO GUARD HERE, DELIBERATELY. The status and the text are carried by
+        # the `asdict` copy, so a guard comparing them to the original could
+        # never fail -- the vacuous shape that mutation testing exposed in
+        # `restate` on 2026-10-17. The property is held BY CONSTRUCTION and is
+        # verified behaviourally by
+        # `test_a_migration_carries_a_closure_across`, which closes a ticket,
+        # migrates it, and fails if the closure is lost. An unreachable gate
+        # would be an addition nothing reaches, which the additive standard
+        # forbids in the same breath as a removal.
+        moved = Ticket(**{**asdict(old), "tid": new_tid})
+        self._append(moved)
+        retired = Ticket(**{**asdict(old), "status": "MERGED",
+                            "resolution": f"identity migrated to {new_tid}",
+                            "rid": rid_of(old_tid, f"identity migrated to {new_tid}"),
+                            "verification": " ".join(str(verification).split())})
+        self._append(retired)
+        return moved, retired
+
+    def retitle(self, tid: str, title: str) -> Ticket:
+        """Correct a ticket's SEARCH LABEL. Substance and identity are untouched.
+
+        WHY THIS EXISTS, AND WHY IT IS NOT A WAY ROUND THE TERMINAL STATUSES.
+        The founder's ruling of 2026-10-17 requires this registry to be
+        searched before any work is proposed, so a title naming the wrong
+        entry is a defect at the point of use: measured 2026-10-17 by
+        `scripts/do_the_ticket_titles_name_their_own_entry_2026-10-17.py`, 9
+        of 141 titles named a DIFFERENT entry -- 6.3830%, Wilson [3.3941%,
+        11.6854%] -- because an addendum recording entry N as built sits
+        above entry N+1's heading in a shared block.
+
+        `propose` deliberately returns `exists` without refreshing anything,
+        because silently rewriting a stored record is how a settled issue
+        comes back wearing new words. So correcting a label needs its own
+        named path, and this one can only ever move the label: the new
+        record is built field-by-field from the old one with `title` alone
+        replaced, so `verbatim`, `status`, `resolution`, `verification` and
+        the hashed `tid` itself are carried across unchanged BY CONSTRUCTION
+        rather than by promise. The identifier a reader has already cited
+        therefore still resolves after a retitle, which is the whole point.
+
+        A CLOSED ticket may be retitled, and that is deliberate: a settled
+        record whose label points at the wrong entry is the case most likely
+        to cause a rediscovery, since the reader concludes the real issue was
+        never filed.
+        """
+        t = self._by_tid.get(tid)
+        if t is None:
+            raise KeyError(f"no ticket {tid}")
+        clean = norm_title(title)
+        if not clean:
+            raise ValueError("a retitle must supply a title; refusing to blank one")
+        if clean == t.title:
+            return t
+        # RECOMPUTED for the same reason as in `restate`: comparing the copied
+        # field could never fail. This asks whether the LABEL has become part
+        # of the identity, which is the only way a retitle could move one.
+        if tid_of(t.kind, t.verbatim, t.task_ref) != t.tid:
+            raise AssertionError(
+                "this ticket's stored identity does not match its own content, so "
+                "a retitle cannot be shown to be safe. Refusing to write it.")
+        nt = Ticket(**{**asdict(t), "title": clean})
         self._append(nt)
         return nt
 
@@ -549,10 +736,24 @@ class TicketStore:
         was lost -- but nothing was CHECKING, and that is the defect.
 
         Pass the identifiers the task list currently records as open.
+
+        A MERGED RECORD IS A REDIRECT, NOT A CONCEALMENT, and excluding it was
+        added 2026-10-17 after this check reported 4 false positives. MERGED
+        means "see that other ticket", and the resolution names which one, so a
+        reader following it arrives at the live record. Counting a redirect as
+        concealment made the check fire on every identity migrated that day --
+        and a check that cries wolf is one an operator learns to wave through,
+        which is a defect this project has already recorded once in the
+        containment alarm.
+
+        What still counts is a record that ENDS the trail: CLOSED, CONFIRMED,
+        REFUTED or REJECTED while an aliased reference is open.
         """
         want = set(open_idents)
         out = []
         for t in self.settled():
+            if t.status in ("MERGED", "DUPLICATE"):
+                continue
             refs = ([t.task_ref] if t.task_ref else []) + [
                 n.split("also tracked as ", 1)[1]
                 for n in t.notes if n.startswith("also tracked as ")]

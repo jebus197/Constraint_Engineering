@@ -367,3 +367,30 @@ def test_the_store_reports_settled_tickets_that_hide_open_work(store):
     assert refs == ["B10"] and tk.status == "CLOSED"
     assert store.settled_with_open_aliases([]) == [], (
         "with nothing open there is nothing to hide")
+
+
+def test_a_redirect_is_not_reported_as_a_concealment(store):
+    """MERGED means "see that other ticket", so it ends no trail.
+
+    ADDED 2026-10-17 after the over-merge check reported 4 false positives on
+    records retired by an identity migration. A check that cries wolf is one an
+    operator learns to wave through, which this project has already recorded
+    once in the containment alarm. The exclusion is pinned here so that it
+    cannot later be widened to cover a record that really does end the trail.
+    """
+    a, _ = store.propose("pf", "x", "a defect", "task_list", task_ref="7.1")
+    b, _ = store.propose("pf", "y", "the surviving record", "task_list",
+                         task_ref="B10")
+    store._note_alias(store.get(a.tid), "B10")
+    store.merge(a.tid, b.tid, "same fault and same repair, established by test")
+    assert store.get(a.tid).status == "MERGED"
+    assert store.settled_with_open_aliases(["B10"]) == [], (
+        "a MERGED redirect must not be reported as concealing open work")
+
+    # ...but a CLOSED record aliasing the same open reference still must be.
+    c, _ = store.propose("pf", "z", "a different defect", "task_list",
+                         task_ref="7.2")
+    store.close(c.tid, "done", "test_q passed")
+    store._note_alias(store.get(c.tid), "B10")
+    assert store.settled_with_open_aliases(["B10"]), (
+        "excluding redirects must not have made the check vacuous")

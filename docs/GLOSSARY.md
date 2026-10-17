@@ -700,3 +700,56 @@ fingerprints rather than from a hard-coded vendor list. REFUTED by a free seat o
 2026-10-06: the heterogeneity figure justifying it is computed on FINDING RATE,
 which is productivity, not falsification capability, and ranking on it reproduces
 the inversion `competence_provenance` exists to prevent.
+
+### Status stamp
+
+The leading `DONE 2026-09-10.` or `WITHDRAWN 2026-09-11.` clause on a master
+task-list entry's heading, recording when the entry was settled. It is
+provenance, not substance, so the ticket harvester strips it along with the
+entry's identifier before taking the first sentence as the ticket's text.
+Measured 2026-10-17: leaving it in place made 22 of 141 ticket texts a bare
+stub, because once the identifier was removed the remaining sentence was a
+15-character stamp, under the 20-character floor that triggers the fallback.
+
+### Recomputing gate
+
+A guard that re-derives a value and compares it to the stored one, rather than
+comparing two copies of the stored value. Introduced 2026-10-17 after mutation
+testing showed the opposite form was vacuous: `Ticket.tid` is a stored field
+that `asdict` copies, so `new.tid != old.tid` could never fire however the
+identity digest behaved, and deleting the check left all 19 guards green. The
+`ticket_store` paths that change a ticket now recompute the digest from the new
+content, so the gate fires the moment identity starts depending on the text
+again.
+
+### Reference-keyed identity
+
+A ticket identity digested from its kind and the master task-list reference it
+carries, with the entry's prose excluded. Adopted 2026-10-17 because digesting
+the prose moved the identity on every reword: 5 references already held 2
+tickets each, and improving the text-extraction rule alone re-minted 114 of 141
+identities. References are unique across the 141 entries, so excluding the text
+cannot cause the collision the reference was introduced to prevent.
+
+### Search label
+
+A ticket's human-readable title, as distinct from its substance. It is what the
+pre-work search reads, so a label naming the wrong entry defeats the search even
+when the record itself is correct — measured 2026-10-17 at 9 of 141, 6.3830%
+with a Wilson interval from 3.3941% to 11.6854%. `retitle` is the one path that
+may change it, and it moves nothing else.
+
+### Superseded identity
+
+The identity a ticket held before an identity migration. The old record is kept
+and marked MERGED, naming its successor, so an identifier already cited in a
+note or a commit message still resolves. A record left LIVE at a superseded
+identity is a defect: 17 such records made the register report 46 open items
+against 31 live references until they were swept into their canonical tickets.
+
+### Redirect record
+
+A ticket whose status is MERGED or DUPLICATE. It ends no trail — its resolution
+names the surviving ticket, so a reader following it reaches the live record.
+The over-merge check therefore excludes redirects, added 2026-10-17 after it
+reported 4 false positives on records retired by an identity migration.

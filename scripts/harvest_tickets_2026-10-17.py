@@ -54,7 +54,7 @@ from collections import Counter
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
-from bench.ticket_store import TicketStore, KINDS  # noqa: E402
+from bench.ticket_store import TicketStore, norm_title, KINDS  # noqa: E402
 
 READER = REPO / "scripts" / "read_founder_responses_2026-10-11.py"
 TASKLIST = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
@@ -197,6 +197,60 @@ def from_chat(since: str, limit_per_file: int = 400) -> list[dict]:
     return out
 
 
+def _own_body(block: str, ident: str) -> str:
+    """The part of a shared block that belongs to THIS entry.
+
+    The block runs from the previous marker to this entry's marker, so where
+    entries share a block it also contains whatever was written above this
+    entry -- typically an addendum recording a neighbour as built. Slicing
+    from this entry's own heading line removes that, which keeps `tid_of`
+    stable under an unrelated edit nearby. Where no heading is found the whole
+    block is returned, because a wrong narrowing would be worse than none.
+    """
+    lines = block.splitlines()
+    pat = re.compile(r"^\s*(?:★\s*)?\*{0,2}" + re.escape(ident) + r"(?:\.|\b)")
+    for i, line in enumerate(lines):
+        if pat.match(line.lstrip()):
+            return "\n".join(lines[i:])
+    return block
+
+
+#: An entry identifier in HEADING position on a line: an optional star
+#: marker, optional bold asterisks, then the identifier, then a dot or a
+#: word boundary. Covers all 3 recorded heading forms -- `**B18. His ruling`,
+#: `**1.2 The gap`, and `**10.1** Build a script`.
+def _heading_line(body: str, ident: str) -> str:
+    """The line in `body` that names THIS entry, or '' if none does.
+
+    WHY A TITLE CANNOT BE THE BLOCK'S FIRST 160 CHARACTERS. Measured
+    2026-10-17 by `scripts/do_the_ticket_titles_name_their_own_entry_2026-10-17.py`:
+    9 of 141 titles, 6.3830% with a Wilson interval from 3.3941% to 11.6854%,
+    named a DIFFERENT entry. 8 of the 9 are the same shape -- an addendum
+    recording that entry N is built, written above entry N+1's heading
+    because the two share one blank-line-separated block, so N+1's title
+    became prose about N.
+
+    That is harmful rather than untidy. The founder's ruling of 2026-10-17
+    requires the registry to be searched before any work is proposed, so a
+    lookup of B11 returning prose about B10 either re-proposes settled work
+    or passes over open work. Picking the line that names the entry is exact
+    and needs no guess about which neighbour wrote last.
+    """
+    pat = re.compile(r"^\s*(?:★\s*)?\*{0,2}" + re.escape(ident) + r"(?:\.|\b)")
+    for line in body.splitlines():
+        if pat.match(line.lstrip()):
+            return " ".join(re.sub(r"\*+", "", line).split())
+    return ""
+
+
+def _title_for(body: str, ident: str) -> str:
+    """This entry's own heading where it has one, else the block's opening."""
+    own = _heading_line(body, ident)
+    if own:
+        return own[:160]
+    return " ".join(re.sub(r"\*+", "", body.strip()).split())[:160]
+
+
 def from_task_list() -> list[dict]:
     """Seed from the recorded task list, carrying its state across.
 
@@ -239,21 +293,57 @@ def from_task_list() -> list[dict]:
     prev = 0
     for ln, ident in ordered:
         e = next(x for x in entries if x.ident == ident)
-        body = "\n".join(lines[prev:ln - 1])
+        block = "\n".join(lines[prev:ln - 1])
         prev = ln
+        # ANCHOR THE BODY ON THE ENTRY'S OWN HEADING, 2026-10-17. The slice
+        # between 2 markers is the entry PLUS anything written above it in a
+        # shared block, so an addendum recording a NEIGHBOUR as built changed
+        # this entry's text -- and `tid_of` digests the text. Measured: B15
+        # and B20 each acquired a SECOND open ticket that way, because the
+        # addenda written above them on 2026-10-17 changed their verbatim and
+        # therefore their hashed identity.
+        #
+        # That is the exact failure this store exists to prevent, arriving by
+        # the back door: an entry whose identity moves when an unrelated edit
+        # lands nearby cannot be relied on to say whether an issue is already
+        # filed. Anchoring on the entry's own heading makes the identity a
+        # property of the entry rather than of its neighbours' edit history.
+        body = _own_body(block, ident)
         quoted = re.search(
             r"\*\*HIS (?:WORDS|QUESTION|RULING)[^:]*:\*\*\s*(.{40,700}?)(?:\*\*|$)",
             body, re.DOTALL)
         if quoted:
             verbatim = " ".join(quoted.group(1).split())
         else:
-            # the entry's own first sentence, which is its headline
-            first = re.sub(r"\*+", "", body.strip().split(". ")[0])
+            # the entry's own first sentence, which is its headline.
+            #
+            # THE LEADING IDENTIFIER IS STRIPPED FIRST, 2026-10-17. Anchoring
+            # the body on the entry's own heading makes it begin `P1. Full
+            # CDSFL format ...`, and `split(". ")` then returns the bare
+            # identifier `P1` as the first sentence. That is 2 characters, so
+            # it fell under the 20-character floor below and the fallback
+            # rewrote the verbatim -- which would have changed the hashed
+            # identity of 95 of 141 entries and minted a duplicate for each.
+            # Measured before the fix, which is why the migration never ran.
+            stem = re.sub(r"\*+", "", body.strip())
+            stem = re.sub(r"^(?:★\s*)?" + re.escape(ident) + r"[.)]?\s*", "", stem)
+            # A LEADING STATUS STAMP IS NOT THE ENTRY'S SUBSTANCE. 22 of 141
+            # headings open `<ref>. DONE 2026-09-10.`, so once the reference is
+            # removed the first sentence is a 15-character stamp, under the
+            # 20-character floor below, and the whole verbatim fell back to a
+            # stub. A stub still gets a correct identity, because identity is
+            # the reference, but it defeats the reworded-match tier that catches
+            # a paraphrase of the same issue -- which is the tier that stops a
+            # rediscovery arriving in different words.
+            stem = re.sub(
+                r"^(?:DONE|WITHDRAWN|CLOSED|PARTIAL|BLOCKED)\b[^.]*\.\s*",
+                "", stem, flags=re.IGNORECASE)
+            first = stem.split(". ")[0]
             verbatim = " ".join(first.split())[:400]
         if len(verbatim) < 20:
             verbatim = f"task {ident}: " + " ".join(
                 re.sub(r"\*+", "", body).split())[:300]
-        title = " ".join(re.sub(r"\*+", "", body.strip()).split())[:160]
+        title = _title_for(body, ident)
         out.append({"verbatim": verbatim, "title": title or f"task {ident}",
                     "kind": "fr" if ("orchestrator" in title.lower()
                                      or "selection" in title.lower()) else "pf",
@@ -326,6 +416,29 @@ def main() -> int:
                              subjects=r.get("subjects", ()),
                              status=initial)
         outcomes[o] += 1
+        # REFRESH A STALE SEARCH LABEL, 2026-10-17. `propose` returns `exists`
+        # without touching the stored record, which is correct -- silently
+        # rewriting one is how a settled issue returns wearing new words. But
+        # the label is what the pre-work search reads, and 9 of 141 named a
+        # DIFFERENT entry before `_title_for` was fixed. So the label alone is
+        # refreshed, through the one path that cannot move identity or
+        # substance, and only for a task-list row, whose entry is the
+        # authority on its own heading.
+        if r["source"] == "task_list" and t.title != norm_title(title):
+            store.retitle(t.tid, title)
+            outcomes["retitled"] += 1
+        # AND TRACK THE CURRENT WORDING, for the same reason. The reworded-match
+        # tier reads `nid`, which is derived from the stored text, so a record
+        # left at an old wording weakens the tier that catches a rediscovery
+        # arriving in different words. Safe only because identity is the
+        # reference: `restate` asserts the identity did not move and refuses
+        # the write if it did.
+        if (r["source"] == "task_list" and r.get("task_ref")
+                and t.verbatim != " ".join(r["verbatim"].split())):
+            store.restate(t.tid, r["verbatim"],
+                          "task-list entry reworded; tracked by "
+                          "scripts/harvest_tickets_2026-10-17.py")
+            outcomes["restated"] += 1
         # carry a recorded DONE state across as a verified close
         if o == "created" and r.get("state") == "DONE":
             store.close(t.tid, f"recorded DONE in the master task list as {r['task_ref']}",
