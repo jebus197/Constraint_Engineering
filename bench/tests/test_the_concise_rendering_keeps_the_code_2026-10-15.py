@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import sys
 import pathlib
+import re
 
 import pytest
 
@@ -178,3 +179,74 @@ def test_the_protected_section_list_is_reachable():
     """A constant nothing reads is not additive."""
     assert "CODE EXTRACTS" in C._VERBATIM_SITUATION_SECTIONS
     assert "INTERACTION SURFACE" in C._VERBATIM_SITUATION_SECTIONS
+
+
+def test_every_section_the_builder_emits_is_classified():
+    """A new section may not arrive unprotected BY OMISSION.
+
+    ADDED 2026-10-17. `_VERBATIM_SITUATION_SECTIONS` was a 2-entry tuple while
+    `_build_situation_packet` emitted 7 sections, so the other 5 were
+    indistinguishable from 5 deliberate decisions to let them compress -- and a
+    section added later would inherit that silence rather than a decision. The
+    mapping is now complete and the protected tuple is DERIVED from it, so this
+    compares what the builder emits against what has been classified.
+
+    The emitted names are read from the builder's SOURCE deliberately: calling
+    it would only reveal the sections a particular call happens to fill, and a
+    section is unclassified whether or not today's arguments reach it.
+    """
+    src = pathlib.Path(C.__file__).read_text(encoding="utf-8")
+    start = src.index("def _build_situation_packet(")
+    end = src.index("\ndef ", start + 10)
+    emitted = set(re.findall(r'f"=== ([A-Z][A-Z ]+) ===', src[start:end]))
+    assert emitted, "no sections found; this test has gone blind"
+    unclassified = sorted(emitted - set(C.SITUATION_SECTION_IS_VERBATIM))
+    assert not unclassified, (
+        "these sections are emitted but not classified as verbatim or "
+        "compressible, so they are unprotected by omission: "
+        + ", ".join(unclassified))
+    # AND THE DERIVATION HOLDS: the tuple is exactly the True entries.
+    assert set(C._VERBATIM_SITUATION_SECTIONS) == {
+        k for k, v in C.SITUATION_SECTION_IS_VERBATIM.items() if v}
+
+
+def test_a_compressible_section_really_does_compress():
+    """The False entries are a decision, so it must be a decision with effect.
+
+    Without this, every section could be marked True and the mapping would look
+    complete while the phenotype transform did nothing -- the protection turned
+    into a no-op, which is the other half of the additive standard.
+
+    THE FIRST VERSION OF THIS ASSERTION WAS WRONG ABOUT THE CODE, not the other
+    way round. It fed 12 identical unbulleted sentences and demanded the
+    character count halve. Measured, that input goes 515 chars to 514 while
+    going 13 lines to 1: step 5 joins a block into a single line, so step 6's
+    LINE dedup never sees the repeats. Dedup fires across BLOCK boundaries, which
+    is why 20 repeated `def ` lines collapsed to 1 -- each opened a new block.
+    Both properties are now asserted on inputs where each one is real.
+    """
+    # PRESENTATION CHANGES on ordinary block-structured prose: 17 lines to 9.
+    bulleted = "=== VERIFIED FACTS ===\n" + "\n".join(
+        f"- The reading was repeated and agreed.\n  Supporting detail {i}."
+        for i in range(8))
+    out = C._apply_phenotype_transform(
+        bulleted, C.PhenotypeTransform(format_style="concise"))
+    assert len(out.split("\n")) < len(bulleted.split("\n")), (
+        "a section marked compressible did not change presentation at all")
+
+    # AND REPEATS ARE REMOVED where dedup can see them: 490 chars to 61.
+    repeated = "=== VERIFIED FACTS ===\n" + "\n".join(
+        "- The reading was repeated and agreed." for _ in range(12))
+    out = C._apply_phenotype_transform(
+        repeated, C.PhenotypeTransform(format_style="concise"))
+    assert len(out) < len(repeated) / 2, (
+        f"repeated lines in a compressible section were not deduplicated: "
+        f"{len(repeated)} -> {len(out)} chars")
+
+    # THE CONTRAST THAT MAKES THE MAPPING MEAN SOMETHING: the same repeated
+    # lines inside a VERBATIM section survive untouched.
+    protected = repeated.replace("VERIFIED FACTS", "CODE EXTRACTS")
+    out = C._apply_phenotype_transform(
+        protected, C.PhenotypeTransform(format_style="concise"))
+    assert out.count("- The reading was repeated and agreed.") == 12, (
+        "a verbatim section was deduplicated; the protection is not working")

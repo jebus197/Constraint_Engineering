@@ -461,7 +461,7 @@ def _apply_phenotype_transform(text: str, transform: PhenotypeTransform) -> str:
     # it "transforms the directive text without changing the underlying
     # constraints" and that "only presentation is modified". For CODE UNDER
     # REVIEW that promise is false, because in Python indentation IS syntax and
-    # a repeated definition IS the thing a reviewer must see.
+    # a repeated definition IS the evidence a reviewer must see.
     #
     # On a situation packet holding 20 repeated function definitions, measured
     # 2026-10-15 by calling this function on both styles:
@@ -865,7 +865,37 @@ def _load_domain_directive(
 #: carries the code under review, where indentation is Python syntax and a
 #: repeated definition is the thing the reviewer is being asked to look at.
 #: `INTERACTION SURFACE` carries signatures for the same reason.
-_VERBATIM_SITUATION_SECTIONS = ("CODE EXTRACTS", "INTERACTION SURFACE")
+#: EVERY section `_build_situation_packet` emits, and whether its presentation
+#: IS its substance. True means stash it verbatim through the phenotype
+#: transform; False means it is prose and SHOULD compress for a small-context
+#: seat, which is what the transform exists to do.
+#:
+#: WHY A COMPLETE MAPPING RATHER THAN A LIST OF THE PROTECTED ONES. Until
+#: 2026-10-17 this was a 2-entry tuple while the builder emitted 7 sections, so
+#: the other 5 were unprotected BY OMISSION and indistinguishable from 5
+#: deliberate decisions to compress them. A section added tomorrow would have
+#: inherited that silence. `test_the_concise_rendering_keeps_the_code_2026-10-15`
+#: now refuses when the builder emits a section this mapping does not classify,
+#: so the choice has to be made rather than defaulted into.
+#:
+#: The 5 False entries are a DECISION, not an oversight: a review target is a
+#: path or a one-line description, verified facts and explicit unknowns are
+#: prose, and the adversarial brief is prose whose compression is the whole
+#: point of a phenotype transform. Code reaches a seat through CODE EXTRACTS,
+#: which `_build_situation_packet` is the only producer of.
+SITUATION_SECTION_IS_VERBATIM: dict[str, bool] = {
+    "REVIEW TARGET": False,
+    "CODE EXTRACTS": True,
+    "INTERACTION SURFACE": True,
+    "VERIFIED FACTS": False,
+    "EXPLICIT UNKNOWNS": False,
+    "ADVERSARIAL BRIEF": False,
+    "END ADVERSARIAL BRIEF": False,
+}
+
+#: Derived, so the 2 cannot drift apart.
+_VERBATIM_SITUATION_SECTIONS = tuple(
+    name for name, verbatim in SITUATION_SECTION_IS_VERBATIM.items() if verbatim)
 
 
 def _build_situation_packet(
