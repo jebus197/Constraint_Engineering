@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 16 October 2026 17:31 BST (2026-10-16T17:31:51+01:00)
+Generated: 17 October 2026 02:23 BST (2026-10-17T02:23:36+01:00)
 
 ---
 
@@ -18,16 +18,16 @@ Generated: 16 October 2026 17:31 BST (2026-10-16T17:31:51+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `ed95a77e` the panel round's FULL RECORD, which sv refused to save without
-- **Committed:** 2026-10-16 17:31:41 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 21
+- **Last commit (the PARENT of the commit containing this file):** `13f4e6d8` the ownership distinction is now guarded, and 1 of 3 mutations exposed it as too weak
+- **Committed:** 2026-10-17 02:20:29 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 10
 - **Working tree at snapshot time:** clean
 
 ---
 
 ## Tests
 
-**11654 tests collected** at 16 October 2026 17:31 BST, HEAD `ed95a77e` (`python3 -m pytest bench/tests/ --co -q`)
+**11716 tests collected** at 17 October 2026 02:23 BST, HEAD `13f4e6d8` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,13 +57,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `ed95a77e the panel round's FULL RECORD, which sv refused to save without`
-- `46bb8cd9 a harvested seat file is verbatim seat output, and I walked into the trap its own test documents`
-- `cd14a2d7 the panel closed 2 of 2, and the set-form ratchet immediately named what my count form could not`
-- `4aac3124 a gate whose exit code is discarded is not a gate`
-- `61c33af7 my admission figure was understated, and the producer had the defect it reports`
-- `bedf9717 the panel's first seat found a regression I shipped, and 2 of my 3 repairs were worse than inert`
-- `e0832bee I repeated the citation omission 40 minutes after recording it, so it is now a script`
-- `18eeb705 94 of 212 blockers could never be worked, and now a run says so`
-- `d5428c01 end-of-day report: 6 built, 5 needing a ruling, and 3 of my own claims corrected`
-- `8197faf3 the capacity number measured, his admission question answered, and a hypothesis that died on the way`
+- `13f4e6d8 the ownership distinction is now guarded, and 1 of 3 mutations exposed it as too weak`
+- `c6ee54b3 only 3 items await his ruling; 4 await an answer from me, and the distinction was wrong`
+- `9054389b the audit found 20 confirmed gaps in his record, 12 of them rulings never carried out`
+- `1df51094 his fold-fixes-back ruling was 0 of 2 built, and 10 of 15 open items hid his own rulings`
+- `130d9358 WITHDRAWN: my repeatability figure measured a status phrase, and my own P-pass broke it`
+- `f7a3c930 the final discussion before authorisation, with 2 findings made since the last report`
+- `21f3cbb5 the fingerprint reset is partial, and the 3 legs repeat by containment not replication`
+- `a01090d0 2 unread reports, and reading only the newer one would have cost him a decision`
+- `84eeed28 his question was right: the TTS explained 18 findings and recommended on 10`
+- `180471d9 the attack broke 3 of my claims, I broke 2 of its findings, and my own published denominator was wrong`
