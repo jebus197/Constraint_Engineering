@@ -154,6 +154,90 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 # Path setup
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+# ── B27: the human-review stop's evidence predicate ───────────────────────────
+# Imported both ways because this file is run as a script (its own directory on
+# sys.path) AND imported as `bench.reference_runner_v3` by the test suite. A
+# single-form import works in one case and raises in the other, and a facility
+# that raises on import is worse than one that is off.
+try:                                                               # pragma: no cover
+    from bench import hil_review_trigger as _hil_trigger
+except ImportError:                                                # pragma: no cover
+    import hil_review_trigger as _hil_trigger
+
+
+def _hil_evidence(cfg, round_idx, gamma_critical, gamma_critical_history,
+                  registry, experiment_start):
+    """Assemble the B27 evidence for a candidate human-review stop.
+
+    ONE builder for BOTH call sites. Duplicating it let the monolithic and
+    burst-mode sites drift apart on which factors they read, which is how the
+    original defect -- a stop that consulted nothing at all -- survived in two
+    places at once.
+    """
+    return _hil_trigger.RunEvidence(
+        round_idx=round_idx,
+        max_rounds=int(getattr(cfg, "max_rounds", 0) or 0),
+        gamma_critical=float(gamma_critical),
+        gamma_critical_threshold=float(getattr(cfg, "gamma_alt_threshold", 0.30)),
+        earliest_round=int(getattr(cfg, "gamma_alt_earliest_round", 3)),
+        gamma_critical_history=tuple(gamma_critical_history),
+        mechanical_faults=_hil_count_mechanical(registry),
+        total_findings=len(getattr(registry, "entries", ()) or ()),
+        elapsed_s=max(0.0, time.monotonic() - experiment_start),
+        wall_clock_cap_s=float(getattr(cfg, "wall_clock_cap_s", 0) or 0),
+    )
+
+
+def _hil_log_verdict(log, verdict, heading, extra=()):
+    """Say whether the review gate fired and WHY, in one voice for both sites.
+
+    A pause that does not record its reasons is indistinguishable from an
+    arbitrary interruption, which is the thing his 2026-10-11 condition exists to
+    rule out. So the reasons are logged whether the gate fires or not: a reader of
+    a run that was NOT paused is equally entitled to see what was weighed.
+    """
+    if not verdict.should_pause:
+        log(f"  ─── review gate CONSULTED, not firing: {heading} ───")
+        for why in verdict.reasons:
+            log(f"    · {why}")
+        return
+    log(f"\n  ═══ HUMAN REVIEW STOP — {heading} ═══")
+    log(f"  FIRED ON EVIDENCE: {verdict.clause}")
+    for why in verdict.reasons:
+        log(f"    · {why}")
+    if verdict.caveat:
+        log(f"  CAVEAT: {verdict.caveat}")
+    for line in extra:
+        log(f"  {line}")
+    log("  Checkpoint saved. Resume with --resume --hil-review")
+    log("  ═══════════════════════════════════════════════════\n")
+
+
+def _hil_count_mechanical(registry) -> int:
+    """How many registry entries carry a mechanical-fault stamp.
+
+    Tolerant by design: entries are dicts in the live registry but a test or a
+    future store may hand objects, and a counter that raises would take the whole
+    run down over a diagnostic. An unreadable entry counts as 0 rather than
+    inventing a fault, because over-counting mechanical faults is what fires the
+    MECHANICALLY_BROKEN clause and a false pause is the expensive error.
+    """
+    try:
+        entries = list(getattr(registry, "entries", ()) or ())
+    except Exception:                                              # noqa: BLE001
+        return 0
+    n = 0
+    for e in entries:
+        try:
+            if isinstance(e, dict):
+                if e.get("mechanical_fault"):
+                    n += 1
+            elif getattr(e, "mechanical_fault", False):
+                n += 1
+        except Exception:                                          # noqa: BLE001, PERF203
+            continue
+    return n
+
 #: Seconds allowed for `bench/vault_keys.sh status` before the exam-run guard
 #: refuses. NOT a round number picked by feel -- it is pinned to the scan's
 #: MEASURED cost by `bench/tests/test_vault_guard_timeout_has_headroom_2026-09-29.py`,
@@ -20493,22 +20577,30 @@ def run_experiment(
         # In burst mode: pause only at phase transitions (handled below).
         # The operator reviews findings with CC, fixes issues, and resumes.
         if cfg.hil_review and not (burst_plan and burst_state):
-            _log(f"\n  ═══ HIL REVIEW GATE — Round {round_idx} complete ═══")
-            _log(f"  Findings this round: {len(findings)}, novel: {novel_this_round}")
-            _log(f"  Registry total: {len(registry.entries)}")
-            _log(f"  γ={gamma:.4f}, ρ={rho_current:.4f}, ρ_avg={rho_avg:.4f}")
-            _log(f"  Checkpoint saved. Resume with --resume --hil-review")
-            _log(f"  ═══════════════════════════════════════════════════\n")
-            # Pre-launch review fix: save checkpoint AGAIN here to capture
-            # immune pipeline results and convergence stats that occurred
-            # after the initial persist() call (which only has raw findings).
-            brain._save_checkpoint()
-            # Write partial report for review
-            result["hil_paused_at_round"] = round_idx
-            result["hil_status"] = "paused_for_review"
-            partial_report = logs_dir / f"{cfg.experiment_name}_hil_r{round_idx:02d}.json"
-            _write_report_json(partial_report, result)
-            sys.exit(42)
+            # B27: a stop requires EVIDENCE, not merely the flag. His design of
+            # 2026-10-11, the clauses, the thresholds and the archive replay are
+            # all in `bench/hil_review_trigger.py`. It reads `gamma_critical`.
+            _hil_verdict = _hil_trigger.assess(_hil_evidence(
+                cfg, round_idx, gamma_critical, gamma_critical_history,
+                registry, experiment_start))
+            result.update(_hil_verdict.as_report_fields())
+            _hil_log_verdict(_log, _hil_verdict, f"round {round_idx} complete", extra=(
+                f"Findings this round: {len(findings)}, novel: {novel_this_round}",
+                f"Registry total: {len(registry.entries)}",
+                f"γ_crit={gamma_critical:.4f} (gating), γ_all={gamma:.4f} "
+                f"(reported, never gates), ρ={rho_current:.4f}, ρ_avg={rho_avg:.4f}",
+            ))
+            if _hil_verdict.should_pause:
+                # Pre-launch review fix: save checkpoint AGAIN here to capture
+                # immune pipeline results and convergence stats that occurred
+                # after the initial persist() call (which only has raw findings).
+                brain._save_checkpoint()
+                # Write partial report for review
+                result["hil_paused_at_round"] = round_idx
+                result["hil_status"] = "paused_for_review"
+                partial_report = logs_dir / f"{cfg.experiment_name}_hil_r{round_idx:02d}.json"
+                _write_report_json(partial_report, result)
+                sys.exit(42)
 
         # ── Phase transition or final convergence ──
         phase_transition = False
@@ -20544,21 +20636,41 @@ def run_experiment(
                 )
 
                 # ── HIL review gate at burst-mode phase boundary ──
+                # B27: gated on the same evidence predicate as the monolithic
+                # site, so the two cannot drift apart. His condition says "a human
+                # review stop ANYWHERE in the run", so a phase boundary is not
+                # exempt from needing evidence just because it is a natural pause.
                 if cfg.hil_review:
-                    _log(f"\n  ═══ HIL REVIEW GATE — Phase '{current_phase_name}' "
-                         f"converged ({reason_type}) ═══")
-                    _log(f"  Findings summary:\n{burst_state['phase_findings'][current_phase_name]}")
-                    _log(f"  Registry total: {len(registry.entries)}")
-                    remaining = len(burst_plan.phases) - phase_idx - 1
-                    _log(f"  Phases remaining: {remaining} + integration")
-                    _log(f"  Checkpoint saved. Resume with --resume --hil-review")
-                    _log(f"  ═══════════════════════════════════════════════════\n")
-                    result["hil_paused_at_round"] = round_idx
-                    result["hil_paused_at_phase"] = current_phase_name
-                    result["hil_status"] = "paused_for_review"
-                    partial_report = logs_dir / f"{cfg.experiment_name}_hil_phase_{phase_idx}.json"
-                    _write_report_json(partial_report, result)
-                    sys.exit(42)
+                    _hil_verdict = _hil_trigger.assess(_hil_evidence(
+                        cfg, round_idx, gamma_critical, gamma_critical_history,
+                        registry, experiment_start))
+                    result.update(_hil_verdict.as_report_fields())
+                    if not _hil_verdict.should_pause:
+                        _log(f"\n  ─── HIL review gate CONSULTED at phase "
+                             f"'{current_phase_name}', not firing ───")
+                        for _why in _hil_verdict.reasons:
+                            _log(f"    · {_why}")
+                        _log("  ────────────────────────────────────────────────\n")
+                    else:
+                        _log(f"\n  ═══ HIL REVIEW GATE — Phase '{current_phase_name}' "
+                             f"converged ({reason_type}) ═══")
+                        _log(f"  FIRED ON EVIDENCE: {_hil_verdict.clause}")
+                        for _why in _hil_verdict.reasons:
+                            _log(f"    · {_why}")
+                        if _hil_verdict.caveat:
+                            _log(f"  CAVEAT: {_hil_verdict.caveat}")
+                        _log(f"  Findings summary:\n{burst_state['phase_findings'][current_phase_name]}")
+                        _log(f"  Registry total: {len(registry.entries)}")
+                        remaining = len(burst_plan.phases) - phase_idx - 1
+                        _log(f"  Phases remaining: {remaining} + integration")
+                        _log(f"  Checkpoint saved. Resume with --resume --hil-review")
+                        _log(f"  ═══════════════════════════════════════════════════\n")
+                        result["hil_paused_at_round"] = round_idx
+                        result["hil_paused_at_phase"] = current_phase_name
+                        result["hil_status"] = "paused_for_review"
+                        partial_report = logs_dir / f"{cfg.experiment_name}_hil_phase_{phase_idx}.json"
+                        _write_report_json(partial_report, result)
+                        sys.exit(42)
 
                 if phase_idx + 1 < len(burst_plan.phases):
                     # Transition to next phase
