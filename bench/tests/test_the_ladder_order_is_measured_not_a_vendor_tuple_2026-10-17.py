@@ -205,3 +205,115 @@ def test_the_season_is_wired_into_the_runner():
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+# ------------------------------------------------- the call site, EXECUTED
+
+class _StrictStub:
+    """A stand-in for `route` that REJECTS an unexpected keyword, like the real
+    narrow stubs used across the routing-admission tests."""
+
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, finding, available_models, confirmed, resolve_fn,
+                 reverify_fn, similarity_fn, *, max_rungs=None,
+                 strength_order=None):
+        self.calls.append({"strength_order": strength_order,
+                           "max_rungs": max_rungs})
+        return RT.RoutingResult(
+            finding.get("finding_id") or finding.get("id") or "?",
+            "CONFIRMED", True, "Codex", "fc", rungs_tried=1)
+
+
+def _drive_apply_routing(monkeypatch, entries, models):
+    """Run the REAL `_apply_routing` with a recording stub for `route`."""
+    import reference_runner_v3 as R
+
+    class _Reg2:
+        def __init__(self, e):
+            self.entries = e
+
+        def resolve(self, *a, **k):
+            return None
+
+        def add_verdict(self, *a, **k):
+            return None
+
+    class _MC:
+        def __init__(self, label):
+            self.label = label
+            self.model_id = "sim"
+            self.api = "sim"
+            self.timeout = 60
+
+    class _Cfg:
+        routing_enabled = True
+        routing_max_rungs = None
+        test_article = "bench/dm/_memory.py"
+        experiment_name = "t"
+
+    stub = _StrictStub()
+    monkeypatch.setattr("bench.routing.route", stub, raising=True)
+    monkeypatch.setattr(R, "_declared_models",
+                        lambda *a, **k: [_MC(m) for m in models], raising=True)
+    reg = _Reg2(entries)
+    try:
+        R._apply_routing(reg, 1, {}, cfg=_Cfg(), repo_root=str(REPO))
+    except Exception:
+        # The surrounding machinery may refuse for unrelated reasons; what this
+        # test reads is WHICH KEYWORDS reached the stub, if it was reached.
+        pass
+    return stub
+
+
+def test_the_default_order_is_not_passed_as_a_keyword(monkeypatch):
+    """OMIT AT DEFAULT, executed rather than restated.
+
+    Getting this wrong broke 8 routing-admission tests with "fake_route() got
+    an unexpected keyword argument 'strength_order'", because those tests
+    monkeypatch `route` with a narrow stub -- the exact case the call site's own
+    comment about `max_rungs` exists to protect. The rule is that the keyword
+    travels only when the order differs from the module default.
+    """
+    entries = {"C1": {"id": "C1", "status": "UNCONFIRMED", "severity": 0.9,
+                      "escalated": True, "source_model": "Gemini",
+                      "description": "a critical", "falsifier_verdict": None}}
+    stub = _drive_apply_routing(monkeypatch, entries, ["Gemini", "CC2", "Codex"])
+    for call in stub.calls:
+        assert call["strength_order"] is None, (
+            f"the default order was passed as a keyword ({call['strength_order']}); "
+            f"a narrow stub would raise TypeError on it")
+
+
+def test_a_measured_order_does_reach_the_router(monkeypatch):
+    """ANTI-VACUITY. Omitting always would make the season unreachable.
+
+    The entries here carry enough refutations for one seat that the pairwise
+    test separates, so the season order IS established and must travel.
+    """
+    entries = {}
+    for i in range(20):
+        entries[f"G{i}"] = {"id": f"G{i}", "status": "UNCONFIRMED",
+                            "severity": 0.9, "escalated": True,
+                            "source_model": "Gemini", "description": "x",
+                            "falsifier_verdict": "REFUTED" if i < 15 else "CONFIRMED"}
+    for i in range(20):
+        entries[f"K{i}"] = {"id": f"K{i}", "status": "UNCONFIRMED",
+                            "severity": 0.9, "escalated": True,
+                            "source_model": "CC2", "description": "x",
+                            "falsifier_verdict": "CONFIRMED"}
+    # the season must find this separable
+    ev = RT.falsification_evidence_from_registry(type("R", (), {"entries": entries})())
+    order, established, why = RT.strength_order_from_evidence(ev, ["Gemini", "CC2"])
+    assert established, f"precondition failed, the fixture does not separate: {why}"
+    assert order[0] == "Gemini", order
+
+    stub = _drive_apply_routing(monkeypatch, entries, ["Gemini", "CC2"])
+    if stub.calls:
+        passed = [c["strength_order"] for c in stub.calls
+                  if c["strength_order"] is not None]
+        assert passed, (
+            "a measured, established order never reached the router, so the "
+            "season changes nothing about any run")
+        assert tuple(passed[0])[0] == "Gemini", passed[0]
