@@ -250,8 +250,14 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--model", default="opus",
                     help="stand-in model for the simulated seats (default: opus)")
     # MIXED-CAPABILITY BENCH (founder ruling 2026-10-05). "ladder" selects
-    # SHIM.DEFAULT_LADDER; "uniform" (the default) keeps one model for every
-    # seat, which is the behaviour every run before this date had.
+    # SHIM.DEFAULT_LADDER; "uniform" keeps one model for every seat, which is the
+    # behaviour every run before this date had.
+    #
+    # ★ THIS COMMENT SAID "uniform (the default)" UNTIL 2026-10-18, which was
+    # wrong from 2026-10-07 onwards: the argument below has `default="ladder"`
+    # since commit e228a214. The help text was corrected on 2026-10-15 and this
+    # comment was missed, so the file disagreed with itself for 11 days. The
+    # default is LADDER.
     ap.add_argument("--routing-max-rungs", type=int, default=None,
                     help="how many ladder rungs routing may try per unresolved "
                          "critical. Default: the RunnerConfig default (parity with "
