@@ -4085,8 +4085,6 @@ class FindingRegistry:
         """
         return len(self.blocking_entry_ids(current_round))
 
-        return len(blocking)
-
     def ladder_unserved_findings(self, current_round: Optional[int] = None) -> List[str]:
         """Canonical ids of non-terminal entries the routing ladder never served.
 

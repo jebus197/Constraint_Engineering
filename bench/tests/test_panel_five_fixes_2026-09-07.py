@@ -70,13 +70,44 @@ def test_the_predicate_is_the_property_that_already_exists():
 def test_a_deferred_critical_can_stop_blocking_A4_eventually():
     """Without the release valve a deferred critical blocks A4 for the life of the
     run. `exhausted` already exists and is already honoured by the sibling counter
-    open_crit_high_count, whose comment reads 'this cannot block for ever.'"""
-    src = (REPO / "bench" / "reference_runner_v3.py").read_text()
-    i = src.index("def unverified_critical_count")
-    j = src.index("def ", i + 40)          # the whole function, not a fixed window
-    body = src[i:j]
-    assert 'e.get("exhausted")' in body, (
-        "unverified_critical_count no longer honours the exhausted valve")
+    open_crit_high_count, whose comment reads 'this cannot block for ever.'
+
+    IT NOW CALLS THE COUNTER INSTEAD OF READING ITS SOURCE, 2026-10-17. The
+    earlier form searched the text of `unverified_critical_count` for the string
+    `e.get("exhausted")`. On 2026-10-17 the 6 doors were moved into
+    `blocking_entry_ids` so that `blockers_routing_cannot_serve` could stop
+    holding a divergent COPY of 3 of them, and this method became a thin
+    wrapper. The valve was still honoured -- the behaviour was unchanged -- but
+    the string had moved, so the test went red on a refactor it had no opinion
+    about.
+
+    That is the `execute-do-not-grep` shape from the other side: a test which
+    asserts on source text cannot tell a behaviour change from a rename. This
+    one builds a registry, marks a critical exhausted, and requires the counter
+    to stop counting it -- which is what the valve actually means.
+    """
+    reg = R.FindingRegistry()
+    reg.entries["C0001"] = {
+        "id": "C0001", "model": "CC2", "status": "UNCONFIRMED",
+        "severity": 0.9, "description": "a deferred critical",
+    }
+    blocking_before = reg.unverified_critical_count()
+    assert blocking_before == 1, (
+        f"an UNCONFIRMED critical must block before the valve is opened; the "
+        f"counter returned {blocking_before}, so this test is not exercising it")
+
+    reg.entries["C0001"]["exhausted"] = True
+    blocking_after = reg.unverified_critical_count()
+    assert blocking_after == 0, (
+        "an exhausted critical still blocks A4, so a deferred finding blocks "
+        "release for the life of the run -- the defect the valve exists to "
+        "prevent")
+
+    # AND THE SIBLING READER MUST AGREE, since the whole point of moving the
+    # doors into one predicate was that these 2 can no longer drift.
+    assert reg.blockers_routing_cannot_serve() == [], (
+        "the routing reader still treats an exhausted entry as a blocker, so "
+        "the 2 callers have drifted apart again")
 
 
 # ---------------------------------------------------------------- fix 4

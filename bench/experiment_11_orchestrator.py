@@ -371,27 +371,161 @@ def _get_tool_log_sink() -> "str | None":
     return getattr(_TOOL_LOG_TLS, "value", None)
 
 
+def _stream_json_line(line: str):
+    """Parse ONE stream-json line. Returns (final_text_or_None, [calls]).
+
+    THE ONE EXPRESSION of the stream-json parsing rule, factored out 2026-10-17.
+    `_parse_stream_json` loops over it for a complete capture and the
+    incremental reader calls it per line as the line arrives. Two spellings of
+    one parsing rule drift apart -- the shape the note linter's own
+    `paragraphs()` records breaking an exemption set -- and here a drift would
+    mean the mid-flight call count disagreed with the recorded one.
+    """
+    line = line.strip()
+    if not line:
+        return None, []
+    try:
+        rec = json.loads(line)
+    except ValueError:
+        return None, []
+    final, calls = None, []
+    for blk in ((rec.get("message") or {}).get("content") or []):
+        if not isinstance(blk, dict):
+            continue
+        if blk.get("type") == "tool_use":
+            calls.append({"name": blk.get("name"),
+                          "input_preview": json.dumps(blk.get("input") or {})[:400]})
+        elif blk.get("type") == "text" and rec.get("type") == "assistant":
+            final = blk.get("text") or final
+    if rec.get("type") == "result" and isinstance(rec.get("result"), str):
+        final = rec["result"] or final
+    return final, calls
+
+
+def _run_cli_incrementally(cmd, user_prompt, timeout, cwd, env, on_call=None):
+    """Run the CLI consuming stdout AS IT ARRIVES, not after the process exits.
+
+    HIS RULING OF 2026-10-08: *"clearly the cap doesn't need to be arbitrary, at
+    900, or 1800, or however many seconds. We can tell the models to print 'I am
+    done' at the end of all their outputs, then watch for this signal in their
+    output logs. Or perhaps there is a better way to do this?"* And on 2026-10-11:
+    *"I also asked if there was better way. You said there was ... you should try
+    to recover it and to see if your way really is the better option."*
+
+    THE BETTER WAY, RECOVERED from `experimental_notes/What_Was_Actually_Implemented_2026-10-11.md`:
+    incremental stream-json parsing. It dominates a completion marker on a named
+    property, which is what choosing between them requires:
+
+      * A COMPLETION MARKER separates "printed" from "not printed", and a DEAD
+        seat never prints it either. So the marker cannot tell finished from died.
+      * THE CLOCK separates nothing. Measured by
+        `scripts/the_cap_was_measured_on_censored_data_2026-10-08.py`: a degraded
+        attempt issued 88 tool calls at 20.455 s per call and never converged,
+        while a healthy one converged in 49 at 20.816 s per call, and a third
+        seat ran at 15.024 s per call -- a spread of 5.792 s across all 3. The
+        RATE is stable whether a seat is working or churning; only the COUNT
+        differs. A longer clock therefore buys churn, which is why the
+        dispatcher's own record of a 3600 s raise reverted within the hour
+        stands.
+      * A LIVE CALL COUNT separates all 3 states: working (count rising),
+        churning (count rising, never resolving), dead (count static).
+
+    WHAT THIS BUYS TODAY, and it is not only the cap:
+
+      1. PARTIAL OUTPUT SURVIVES A TIMEOUT. `subprocess.run(capture_output=True)`
+         discards everything when it raises, and the old handler did not even
+         read `e.output`. That is the recorded "1800 s for 0 words": a killed
+         attempt left no trace at all. The TimeoutExpired raised here carries
+         what had been captured, so the caller can keep it.
+      2. PER-CALL TIMESTAMPS ARE RECORDED, which do not exist anywhere in the
+         archive: all 135 archived per-attempt records carry a total count and a
+         total elapsed, and not one carries a time per call. So the inter-call
+         gap distribution -- the thing a NON-ARBITRARY stall bound has to be
+         derived from -- is unmeasurable today. Building this is what makes it
+         measurable, which is why it comes first and the derived bound second.
+
+    STRICTLY ADDITIVE. It is used only where a tool-log sink is set, which is
+    already the only place the CLI is asked for stream-json; the text path keeps
+    `subprocess.run` untouched. On success it returns what `subprocess.run`
+    returned. On timeout it raises the same exception type the caller already
+    handles, so the retry behaviour is unchanged.
+    """
+    import threading
+    proc = subprocess.Popen(
+        cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, text=True, cwd=cwd, env=env)
+    out_parts: list = []
+    err_parts: list = []
+    calls: list = []
+    final_text: list = [""]
+    t0 = time.monotonic()
+
+    def _drain_out():
+        try:
+            for line in proc.stdout:                     # blocks per line
+                out_parts.append(line)
+                txt, cs = _stream_json_line(line)
+                for c in cs:
+                    c = dict(c)
+                    c["t_offset_s"] = round(time.monotonic() - t0, 3)
+                    calls.append(c)
+                    if on_call is not None:
+                        try:
+                            on_call(c, len(calls))
+                        except Exception:                # noqa: BLE001
+                            pass                         # a progress hook must never kill a dispatch
+                if txt:
+                    final_text[0] = txt
+        except Exception:                                # noqa: BLE001
+            pass
+
+    def _drain_err():
+        try:
+            for line in proc.stderr:
+                err_parts.append(line)
+        except Exception:                                # noqa: BLE001
+            pass
+
+    t_out = threading.Thread(target=_drain_out, daemon=True)
+    t_err = threading.Thread(target=_drain_err, daemon=True)
+    t_out.start(); t_err.start()
+    try:
+        if user_prompt is not None:
+            proc.stdin.write(user_prompt)
+        proc.stdin.close()
+    except Exception:                                    # noqa: BLE001
+        pass
+
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+        t_out.join(timeout=5); t_err.join(timeout=5)
+        raise subprocess.TimeoutExpired(
+            cmd, timeout, output="".join(out_parts),
+            stderr="".join(err_parts))
+    t_out.join(timeout=30); t_err.join(timeout=30)
+    done = subprocess.CompletedProcess(
+        cmd, proc.returncode, "".join(out_parts), "".join(err_parts))
+    # THE TIMED CALLS TRAVEL WITH THE RESULT, because re-parsing the whole
+    # capture afterwards would throw the arrival times away -- and those times
+    # are the only reason this records anything the archive does not already
+    # have. The caller compares them against its own parse of the same bytes,
+    # which is a 2-form check on the parsing rule rather than a promise.
+    done._cdsfl_timed_calls = calls            # noqa: SLF001
+    done._cdsfl_final_text = final_text[0]     # noqa: SLF001
+    return done
+
+
 def _parse_stream_json(raw: str):
     """(final_text, [{"name":..., "input_preview":...}, ...]) from a stream-json run."""
     final, calls = "", []
     for line in raw.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            rec = json.loads(line)
-        except ValueError:
-            continue
-        for blk in ((rec.get("message") or {}).get("content") or []):
-            if not isinstance(blk, dict):
-                continue
-            if blk.get("type") == "tool_use":
-                calls.append({"name": blk.get("name"),
-                              "input_preview": json.dumps(blk.get("input") or {})[:400]})
-            elif blk.get("type") == "text" and rec.get("type") == "assistant":
-                final = blk.get("text") or final
-        if rec.get("type") == "result" and isinstance(rec.get("result"), str):
-            final = rec["result"] or final
+        txt, cs = _stream_json_line(line)
+        calls.extend(cs)
+        if txt:
+            final = txt
     return final.strip(), calls
 
 
@@ -1378,20 +1512,61 @@ def call_claude_cli(
         t0 = time.monotonic()
         try:
             _confined_cmd, _confinement = _confine_seat_command(cmd, _cwd)
-            result = subprocess.run(
-                _confined_cmd,
-                input=user_prompt,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                cwd=_cwd,
-                env=seat_environment(seat=model_id),
-            )
+            # INCREMENTAL ONLY WHERE STREAM-JSON IS ALREADY ASKED FOR, 2026-10-17.
+            # That is exactly where a sink is set, so the text path keeps
+            # `subprocess.run` and nothing about it changes. See
+            # `_run_cli_incrementally` for the measurement that chose this over a
+            # completion marker.
+            if _get_tool_log_sink():
+                _progress = {"calls": 0, "last_s": 0.0}
+
+                def _note_call(_c, _n, _p=_progress, _m=model_id, _a=attempt):
+                    _p["calls"] = _n
+                    _p["last_s"] = _c.get("t_offset_s") or 0.0
+                    # A PROGRESS SIGNAL WHERE THERE WAS NONE. Every 10th call,
+                    # so a long attempt says it is alive without flooding.
+                    if _n % 10 == 0:
+                        _log(f"  [claude-cli:{_m}] attempt {_a}: {_n} tool "
+                             f"call(s) at {_p['last_s']:.0f}s")
+
+                result = _run_cli_incrementally(
+                    _confined_cmd, user_prompt, timeout, _cwd,
+                    seat_environment(seat=model_id), on_call=_note_call)
+            else:
+                result = subprocess.run(
+                    _confined_cmd,
+                    input=user_prompt,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                    cwd=_cwd,
+                    env=seat_environment(seat=model_id),
+                )
             elapsed = time.monotonic() - t0
             text = result.stdout.strip()
             _sink = _get_tool_log_sink()
             if _sink and text:
                 text, _calls = _parse_stream_json(text)
+                # PREFER THE TIMED CALLS, AND CHECK THE 2 PARSES AGREE.
+                # `_run_cli_incrementally` parsed each line as it arrived and
+                # stamped it; this re-parse of the same bytes must produce the
+                # same number. A disagreement means the per-line rule and the
+                # whole-capture loop have drifted, which is precisely what
+                # factoring them into one function was meant to prevent, so it
+                # is reported rather than silently resolved either way.
+                _timed = getattr(result, "_cdsfl_timed_calls", None)
+                if _timed is not None:
+                    if len(_timed) == len(_calls):
+                        _calls = _timed
+                    else:
+                        _log(f"  [claude-cli:{model_id}] PARSE DISAGREEMENT: "
+                             f"incremental saw {len(_timed)} tool call(s), the "
+                             f"whole-capture parse saw {len(_calls)}. Keeping "
+                             f"the whole-capture set and recording both.")
+                        _sink_attempts.append(
+                            {"attempt": attempt, "parse_disagreement":
+                             {"incremental": len(_timed),
+                              "whole_capture": len(_calls)}})
                 _sink_calls.extend(_calls)
                 _sink_attempts.append({"attempt": attempt,
                                        "elapsed_s": round(elapsed, 1),
@@ -1465,10 +1640,32 @@ def call_claude_cli(
                         time.sleep(backoff_base * (2 ** (attempt - 1)))
                     continue
             return text
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as _te:
             elapsed = time.monotonic() - t0
+            # WHAT THE SEAT HAD ALREADY PRODUCED IS KEPT, 2026-10-17. The old
+            # handler ignored `_te.output` entirely, so a killed attempt left no
+            # trace -- the record of "1800 s for 0 words" on 2026-10-06. Under
+            # incremental capture the output is whatever had arrived, and the
+            # tool-call count tells a reader whether the seat was WORKING or
+            # CHURNING, which the clock alone cannot.
+            _partial = getattr(_te, "output", None) or ""
+            _p_calls = 0
+            if _partial:
+                try:
+                    _p_text, _p_list = _parse_stream_json(_partial)
+                    _p_calls = len(_p_list)
+                except Exception:                            # noqa: BLE001
+                    _p_text = ""
+                _sink = _get_tool_log_sink()
+                if _sink:
+                    try:
+                        pathlib.Path(str(_sink) + ".partial").write_text(
+                            _partial, encoding="utf-8")
+                    except OSError:
+                        pass
             last_error = TimeoutError(
-                f"claude CLI timed out after {elapsed:.1f}s")
+                f"claude CLI timed out after {elapsed:.1f}s "
+                f"({_p_calls} tool call(s) seen, {len(_partial)} chars kept)")
             _log(f"  [claude-cli:{model_id}] attempt {attempt} failed "
                  f"({elapsed:.1f}s): {last_error}")
         except CircuitBreakerTripped:
