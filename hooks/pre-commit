@@ -81,7 +81,8 @@ bench/tests/test_fold_fixes_back_folds_at_the_close_2026-10-17.py
 bench/tests/test_the_budget_hook_knows_negation_2026-10-17.py
 bench/tests/test_ticket_harvest_2026-10-17.py
 bench/tests/test_the_hooks_cannot_be_lost_2026-10-17.py
-bench/tests/test_the_fingerprint_reset_is_total_2026-10-17.py"
+bench/tests/test_the_fingerprint_reset_is_total_2026-10-17.py
+bench/tests/test_the_stamp_rule_reaches_the_ratchet_2026-10-17.py"
 
 # THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
 # recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite
@@ -392,8 +393,15 @@ if [ -n "$STAGED_NOTES" ]; then
     # A linter that errors prints "0 finding(s)" on its way out, so the count
     # read 0 and the commit passed. That is failing OPEN in a guard whose own
     # header says it fails closed.
-    _lint_count() {   # $1 = file; echoes the count, returns the linter's status
-        _out=$(python3 scripts/note_vagueness_lint.py "$1" 2>&1); _rc=$?
+    # $2 IS THE LOGICAL PATH, and passing it closed a hole measured 2026-10-17.
+    # This function lints a COPY under a mktemp directory. A temporary path is
+    # under neither `experimental_notes/` nor a `*_tts/` folder, so every
+    # path-sensitive rule -- above all the note-standard stamp -- returned
+    # nothing for BOTH sides of every comparison. The stamp rule therefore never
+    # participated in the ratchet, and a note could lose its stamp with nothing
+    # to say so. `--as` tells the linter what the bytes REPRESENT.
+    _lint_count() {   # $1 = file to read; $2 = logical path; echoes the count
+        _out=$(python3 scripts/note_vagueness_lint.py --as "$2" "$1" 2>&1); _rc=$?
         printf '%s\n' "$_out" | grep -oE '^[[:space:]]*[0-9]+ finding' \
             | tail -1 | grep -oE '[0-9]+'
         return $_rc
@@ -403,9 +411,9 @@ if [ -n "$STAGED_NOTES" ]; then
         base=$(basename "$f")
         git show ":$f" > "$STAGED_COPY/after_$base" 2>/dev/null || continue
 
-        A=$(_lint_count "$STAGED_COPY/after_$base") || LINT_BROKE="$LINT_BROKE $f(staged)"
+        A=$(_lint_count "$STAGED_COPY/after_$base" "$f") || LINT_BROKE="$LINT_BROKE $f(staged)"
         if git show "HEAD:$f" > "$STAGED_COPY/before_$base" 2>/dev/null; then
-            B=$(_lint_count "$STAGED_COPY/before_$base") || LINT_BROKE="$LINT_BROKE $f(HEAD)"
+            B=$(_lint_count "$STAGED_COPY/before_$base" "$f") || LINT_BROKE="$LINT_BROKE $f(HEAD)"
         else
             B=0   # a NEW note has no baseline and is held to the whole standard
         fi
@@ -419,7 +427,7 @@ if [ -n "$STAGED_NOTES" ]; then
   $f: ${B:-0} -> ${A:-0} finding(s)"
             echo "" >&2
             echo "pre-commit: $f went from ${B:-0} to ${A:-0} note finding(s)." >&2
-            python3 scripts/note_vagueness_lint.py "$STAGED_COPY/after_$base" 2>&1 \
+            python3 scripts/note_vagueness_lint.py --as "$f" "$STAGED_COPY/after_$base" 2>&1 \
                 | tail -20 >&2
         fi
     done

@@ -551,3 +551,58 @@ ruling of 2026-10-16 that fingerprints are recomputed in each experiment's blind
 round. Under `experiment` no seat observations are inherited from an earlier run;
 under `persist` they are. Declared once per run and honoured by both the main
 observation path and the `decomposition guard`.
+
+### Pre-commit ratchet
+
+The rule in `hooks/pre-commit` that a commit may not make any single note worse
+by the note linter's count. Judged PER FILE, never on a total: a first version
+summed every staged note and compared totals, so cleaning one note paid for
+dirtying another.
+
+It lints COPIES of the staged and HEAD versions under a temporary directory,
+which is why `--as` exists: a temporary path is under neither
+`experimental_notes/` nor a `*_tts/` folder, so every path-sensitive rule
+returned nothing for both sides and the `note-standard stamp` rule never
+participated at all until 2026-10-17.
+
+### Note-lint ratchet
+
+The same mechanism as the `pre-commit ratchet`, named from the linter's side.
+The two terms are interchangeable in this project's notes; the mechanism is one.
+
+### Note-standard stamp
+
+The line a delivered note or TTS file carries naming the CDSFL note standard it
+was written under, for example "Written under CDSFL note standard v1.7". Founder
+instruction 2026-10-11: "it helps me to track which notes standards you are
+using across files."
+
+The requirement is TRACEABILITY, not uniformity. A note written in April under
+v1.3 and stamped v1.3 is correctly stamped and is not a defect; rewriting it to
+name the current standard would make the record worse and is the retroactive
+editing he refused on 2026-10-17. A stamp naming a standard the project never
+used is a defect, because it tells him nothing.
+
+### Confinement guard
+
+The rule in `bench/falsifier_verify.py` that a falsifier may not read this
+project's own run evidence, so that it demonstrates a defect rather than reading
+a prior verdict. `EVIDENCE_SEGMENTS` names the directories it refuses.
+
+Its known regression: it also refused the run's own working copy of the document
+under review, 18 times per run, until the target was staged under the allowed
+root on 2026-10-15.
+
+### Estimability gate
+
+The check that the decay measure gamma has enough data to be estimated at a
+given threshold before a band label is printed for it. Without it a band was
+printed for a quantity that was not yet measurable, which reads as a measurement
+and is not one.
+
+### Context-budget gate
+
+The check in `runner_core.py` that a composed prompt fits the recorded context
+limit of the seat it is bound for. Its failure mode is silent: a seat missing
+from `MODEL_SPECS` yields a limit of infinity, so the gate can never fire and
+the capability is lost with no error.

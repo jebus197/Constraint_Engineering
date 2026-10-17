@@ -344,6 +344,18 @@ def partition(path) -> tuple[list, list]:
 
 #: The note standard a delivered note or TTS file must name. Bumped WITH the standard.
 CURRENT_NOTE_STANDARD = "v1.7"
+
+#: Standards this project has genuinely used. A note stamped with one of these
+#: is correctly stamped, whatever the current standard is. Bumped WHEN a standard
+#: is superseded, never when one is invented.
+ARCHIVAL_NOTE_STANDARDS = frozenset({
+    "v1", "v1.0", "v1.1", "v1.2", "v1.3", "v1.4", "v1.5", "v1.6",
+})
+
+#: Set by `--as` when the bytes being linted live somewhere other than the path
+#: they represent. Only the PATH-SENSITIVE rules consult it; every content rule
+#: reads the bytes it was given either way.
+_LOGICAL_PATH: str = ""
 NOTE_STANDARD_STAMP = re.compile(r"note standard\s+v(\d+(?:\.\d+)?)", re.I)
 
 
@@ -364,10 +376,24 @@ def missing_standard_stamp(path) -> list:
     notes and are not stamped, so checking them would make the rule noise and get it switched off.
     """
     pth = pathlib.Path(path)
-    parts = {q.lower() for q in pth.parts}
+    #: THE LOGICAL PATH, when the bytes are being read from somewhere else.
+    #:
+    #: THE DEFECT THIS CLOSES, measured 2026-10-17. The pre-commit ratchet copies
+    #: the staged and HEAD versions of each note into a `mktemp -d` directory and
+    #: lints THOSE paths. A temporary path contains neither `experimental_notes`
+    #: nor a `*_tts` folder, so this rule returned [] for both sides of every
+    #: comparison -- it never participated in the ratchet at all, and a note
+    #: could lose its standard stamp with nothing to say so.
+    #:
+    #: His ruling of 2026-10-17 was "We fix going forward and leave the archive
+    #: alone", so the archive is not rewritten. What changes is that from now on
+    #: the rule is REACHED, and because both sides of the ratchet are linted with
+    #: the same declared path, a commit still cannot make a note worse.
+    logical = pathlib.Path(_LOGICAL_PATH or path)
+    parts = {q.lower() for q in logical.parts}
     is_note = ("experimental_notes" in parts
                or any(q.endswith("_tts") for q in parts))
-    if not is_note or pth.suffix.lower() not in (".md", ".txt"):
+    if not is_note or logical.suffix.lower() not in (".md", ".txt"):
         return []
     try:
         text = pth.read_bytes().decode("utf-8", errors="ignore")
@@ -379,11 +405,32 @@ def missing_standard_stamp(path) -> list:
                  f"name the standard in the file, e.g. 'Written under CDSFL note standard "
                  f"{CURRENT_NOTE_STANDARD}.' He tracks which standard produced which file.")]
     found = "v" + m.group(1)
-    if found != CURRENT_NOTE_STANDARD:
-        return [(0, f"NOTE STANDARD STAMP IS {found}, CURRENT IS {CURRENT_NOTE_STANDARD}",
-                 "note standard",
-                 "either update the file, or say explicitly why it is pinned to an older one.")]
-    return []
+    if found == CURRENT_NOTE_STANDARD:
+        return []
+    #: A STAMP NAMING A REAL EARLIER STANDARD IS COMPLIANT, NOT A DEFECT.
+    #:
+    #: His instruction of 2026-10-11 asks for TRACEABILITY, not uniformity: the
+    #: stamp exists because "it helps me to track which notes standards you are
+    #: using across files". A note written in April under v1.3 and stamped v1.3
+    #: does exactly that. Rewriting it to say v1.7 would make the record WORSE
+    #: and is the retroactive editing he refused on 2026-10-17: "Going back and
+    #: rewriting the archive, as I have said before could potentially be seen as
+    #: dishonest, and as an attempt to rewrite history."
+    #:
+    #: MEASURED 2026-10-17, when `--as` first let this rule reach the archive:
+    #: 357 of 536 notes produced a finding, 66.6045%, Wilson [62.5061%,
+    #: 70.4665%] -- of which 161 were WRONG VERSION on correctly-stamped archive
+    #: notes. Reporting those is the noise this module's own docstring warns
+    #: gets a rule switched off, and it would have buried the 196 that are a
+    #: real absence.
+    if found in ARCHIVAL_NOTE_STANDARDS:
+        return []
+    return [(0, f"NOTE STANDARD STAMP IS {found}, WHICH IS NOT A STANDARD THIS "
+                f"PROJECT HAS USED (current {CURRENT_NOTE_STANDARD})",
+             "note standard",
+             "a stamp must name a real standard. An earlier one is fine and is "
+             "how he tracks which standard produced which file; an invented one "
+             "tells him nothing.")]
 
 
 # ---------------------------------------------------------------------------
@@ -848,9 +895,25 @@ def main() -> int:
     # teaches its reader that its diagnostics are unreliable.
     if any(a in ("-h", "--help") for a in sys.argv[1:]):
         print((__doc__ or "").strip())
-        print("\n  usage: note_vagueness_lint.py <file> [file ...]")
+        print("\n  usage: note_vagueness_lint.py [--as LOGICAL_PATH] <file> [file ...]")
+        print("    --as declares the path the bytes REPRESENT, for the")
+        print("        path-sensitive rules, when linting a copy.")
         return 0
-    paths = [pathlib.Path(a) for a in sys.argv[1:]]
+    # `--as <path>` declares the LOGICAL path of the bytes being linted, for the
+    # path-sensitive rules only. The pre-commit ratchet lints temporary copies of
+    # the staged and HEAD versions, and a temporary path is under neither
+    # `experimental_notes/` nor a `*_tts/` folder, so the standard-stamp rule
+    # silently returned nothing for BOTH sides of every comparison and never
+    # participated in the ratchet at all. Measured 2026-10-17.
+    global _LOGICAL_PATH
+    argv = list(sys.argv[1:])
+    if "--as" in argv:
+        i = argv.index("--as")
+        if i + 1 >= len(argv):
+            print("  --as needs a path"); return 1
+        _LOGICAL_PATH = argv[i + 1]
+        del argv[i:i + 2]
+    paths = [pathlib.Path(a) for a in argv]
     if not paths:
         print("  usage: note_vagueness_lint.py <file> [file ...]"); return 1
     total = 0

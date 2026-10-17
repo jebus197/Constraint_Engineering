@@ -310,3 +310,60 @@ def test_the_store_survives_a_reload(tmp_path):
     again = TicketStore(p)
     assert again.summary() == before
     assert len(again.settled()) == 3
+
+
+# -------------------------------------------- over-merging, the dangerous error
+
+def test_an_explicit_task_reference_beats_an_inferred_similarity(store):
+    """Two entries about one mechanism are still TWO entries.
+
+    MEASURED 2026-10-17 on the seeded store: 3 settled tickets were concealing 5
+    OPEN task entries. A ticket owned by 3.1a hid B14 and C12, one owned by A12
+    hid A19 and C17, and one owned by V8 hid B11. Over-merging is the dangerous
+    direction of a matching error: a rediscovery wastes effort, while a hidden
+    open item means the work is never done and the store SAYS it is done.
+
+    A task reference is a human-assigned identifier for a distinct item; text and
+    subject similarity are inferences about items. So the identifier wins.
+    """
+    a, oa = store.propose("pf", "the stamp rule misses notes",
+                          "The note-lint stamp rule does not reach the ratchet.",
+                          "task_list", task_ref="7.1", subjects=["missing_standard_stamp"])
+    assert oa == "created"
+    store.close(a.tid, "done", "test_x passed")
+
+    b, ob = store.propose("pf", "the stamp rule misses notes",
+                          "The note-lint stamp rule does not reach the ratchet.",
+                          "task_list", task_ref="B10", subjects=["missing_standard_stamp"])
+    assert ob == "created", (
+        f"B10 names its own task reference, so it is a DISTINCT item and must get "
+        f"its own ticket even though 7.1 shares its subject and its wording; got "
+        f"{ob!r}, which would have hidden B10 behind a closed 7.1")
+    assert b.tid != a.tid
+    assert b.status in LIVE, "the new ticket must be live, not inherit CLOSED"
+
+
+def test_dedup_still_works_when_no_task_reference_is_named(store):
+    """Anti-vacuity: the identifier rule must not disable deduplication."""
+    a, _ = store.propose("pf", "x", "The loader ignores the declared scope.",
+                         "chat", subjects=["_load_fingerprint_cache"])
+    store.close(a.tid, "done", "test_y passed")
+    _, o = store.propose("pf", "x", "a loader ignoring declared scopes",
+                         "chat", subjects=["_load_fingerprint_cache"])
+    assert o == "subject-settled", (
+        f"with no task reference named, subject settlement must still block a "
+        f"rediscovery; got {o!r}")
+
+
+def test_the_store_reports_settled_tickets_that_hide_open_work(store):
+    a, _ = store.propose("pf", "x", "a defect", "task_list", task_ref="7.1",
+                         subjects=["mod.fn"])
+    store.close(a.tid, "done", "test_z passed")
+    # force the hiding case by recording an alias by hand
+    store._note_alias(store.get(a.tid), "B10")
+    hidden = store.settled_with_open_aliases(["B10"])
+    assert hidden, "a settled ticket aliasing an OPEN task must be reported"
+    tk, refs = hidden[0]
+    assert refs == ["B10"] and tk.status == "CLOSED"
+    assert store.settled_with_open_aliases([]) == [], (
+        "with nothing open there is nothing to hide")

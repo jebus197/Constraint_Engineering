@@ -175,12 +175,26 @@ def _norm_tokens(text: str) -> list[str]:
     return sorted(k for k in keep if len(k) > 2)
 
 
-def tid_of(kind: str, verbatim: str) -> str:
-    """Exact content digest. Same sentence, same kind -> same id, always."""
+def tid_of(kind: str, verbatim: str, task_ref: str = "") -> str:
+    """Exact identity digest: kind, text, and any explicit task reference.
+
+    THE TASK REFERENCE IS PART OF THE IDENTITY, and leaving it out was a defect
+    worse than the one it was meant to fix. Found 2026-10-17 by this module's own
+    test: 2 task entries about the same mechanism, worded identically, produced
+    the SAME digest. So creating a separate ticket for the second overwrote the
+    first in the index -- and the first was CLOSED, so a closed record was
+    destroyed by a later open one. Over-merging hides work; this DELETED it.
+
+    A caller that names no reference still gets pure content addressing, which is
+    what makes deduplication work for chat and for his replies.
+    """
     h = hashlib.sha256()
     h.update(kind.encode())
     h.update(b"\x00")
     h.update(" ".join(str(verbatim).split()).encode())
+    if task_ref:
+        h.update(b"\x00")
+        h.update(str(task_ref).encode())
     return h.hexdigest()[:12]
 
 
@@ -280,8 +294,8 @@ class TicketStore:
     def get(self, tid: str) -> Optional[Ticket]:
         return self._by_tid.get(tid)
 
-    def exact(self, kind: str, verbatim: str) -> Optional[Ticket]:
-        return self._by_tid.get(tid_of(kind, verbatim))
+    def exact(self, kind: str, verbatim: str, task_ref: str = "") -> Optional[Ticket]:
+        return self._by_tid.get(tid_of(kind, verbatim, task_ref))
 
     def similar(self, verbatim: str) -> list[Ticket]:
         """Tickets whose NORMALISED digest matches. Catches a rewording."""
@@ -371,21 +385,41 @@ class TicketStore:
         """
         if kind not in KINDS:
             raise ValueError(f"kind must be one of {KINDS}, not {kind!r}")
-        want = tid_of(kind, verbatim)
+        want = tid_of(kind, verbatim, task_ref)
         self.record_search(verbatim, [t.tid for t in self.similar(verbatim)])
+
+        def _distinct(hit: "Ticket") -> bool:
+            """A caller naming a DIFFERENT task reference is a different item."""
+            return bool(task_ref) and hit.task_ref != task_ref
         hit = self._by_tid.get(want)
-        if hit is not None:
+        if hit is not None and not _distinct(hit):
             self._note_alias(hit, task_ref, subjects)
             if hit.status in TERMINAL or hit.status == REJECTED:
                 return hit, "settled-already"
             return hit, "exists"
-        # THE SUBJECT TIER FIRST, because it is the one that survives rewording.
+        # AN EXPLICIT IDENTIFIER BEATS AN INFERRED SIMILARITY.
+        #
+        # MEASURED 2026-10-17, and it is the dangerous direction of a matching
+        # error. Over-merging hides the open item behind the closed one, which is
+        # worse than the rediscovery this store exists to prevent. An integrity
+        # check over the seeded store found 3 settled tickets concealing 5 OPEN
+        # task entries: a ticket owned by 3.1a hid B14 and C12, one owned by A12
+        # hid A19 and C17, and one owned by V8 hid B11.
+        #
+        # A `task_ref` is a human-assigned identifier for a distinct item. Text
+        # and subject similarity are inferences ABOUT items. So when the caller
+        # names a task reference that the matched ticket does not own, the match
+        # is recorded as a relation and a SEPARATE ticket is created. Two entries
+        # about the same mechanism are still 2 entries.
         for sub in subjects:
             blocked = self.settled_on_subject(sub)
             if blocked:
+                if _distinct(blocked[0]):
+                    break                 # related, not the same item
                 self._note_alias(blocked[0], task_ref, subjects)
                 return blocked[0], "subject-settled"
-        near = [t for t in self.similar(verbatim) if t.kind == kind]
+        near = [t for t in self.similar(verbatim)
+                if t.kind == kind and not _distinct(t)]
         if near:
             settled = [t for t in near if t.status in TERMINAL or t.status == REJECTED]
             chosen = settled[0] if settled else near[0]
@@ -499,6 +533,33 @@ class TicketStore:
                        "verification": " ".join(str(verification).split())})
         self._append(nt)
         return nt
+
+    def settled_with_open_aliases(self, open_idents) -> list[tuple[Ticket, list[str]]]:
+        """Settled tickets whose ALIASED task references are still open.
+
+        WHY THIS EXISTS. Dedup is the store's whole purpose, and over-merging is
+        its matching failure in the dangerous direction: collapsing 2 genuinely
+        distinct items hides the open one behind the closed one, which is worse
+        than the rediscovery it was built to prevent.
+
+        OBSERVED 2026-10-17, benignly. Tasks 7.1, V2 and B10 all concern the
+        note-lint stamp rule, so they collapsed into 1 ticket; the ticket closed
+        when 7.1 seeded from a DONE marker, while B10 was still open. It turned
+        out to be the same work and B10 completed the same morning, so nothing
+        was lost -- but nothing was CHECKING, and that is the defect.
+
+        Pass the identifiers the task list currently records as open.
+        """
+        want = set(open_idents)
+        out = []
+        for t in self.settled():
+            refs = ([t.task_ref] if t.task_ref else []) + [
+                n.split("also tracked as ", 1)[1]
+                for n in t.notes if n.startswith("also tracked as ")]
+            still_open = sorted({r for r in refs if r in want})
+            if still_open:
+                out.append((t, still_open))
+        return out
 
     # ------------------------------------------------------------- reporting
     def summary(self) -> dict[str, Any]:

@@ -173,3 +173,57 @@ def test_each_harvested_entry_carries_substantive_text():
     thin = [r["task_ref"] for r in H.from_task_list()
             if len(r["verbatim"].strip()) < 20]
     assert not thin, f"{len(thin)} entries harvested with no usable text: {thin[:8]}"
+
+
+def test_the_seeded_store_holds_three_integrity_properties():
+    """The 3 ways the store could lie, checked against the live task list.
+
+    Each was a REAL defect found on 2026-10-17 while building it:
+
+    1. COVERAGE. A heading-driven harvest missed 47 of 141 entries, 33.3333%,
+       Wilson [26.0856%, 41.4651%]. A store missing a third of the record
+       under-reports outstanding work.
+    2. OVER-MERGING. 3 settled tickets concealed 5 OPEN task entries, because
+       subject and text similarity were allowed to outrank an explicit task
+       reference. A hidden open item is worse than a rediscovery: the work is
+       never done and the store says it is.
+    3. DESTRUCTION. Fixing 2 naively made it worse. The ticket identity was a
+       digest of kind and text only, so 2 distinct entries worded identically
+       produced the SAME id and the second OVERWROTE the first -- which was
+       CLOSED, so a closed record was deleted by a later open one. The task
+       reference is now part of the identity.
+    """
+    import sys as _sys
+    REPO_ = pathlib.Path(__file__).resolve().parents[2]
+    _sys.path.insert(0, str(REPO_))
+    _sys.path.insert(0, str(REPO_ / "scripts"))
+    from bench.ticket_store import TicketStore, TERMINAL, REJECTED
+    import task_list_markers as tlm
+
+    store_path = REPO_ / "bench" / "tickets" / "tickets.jsonl"
+    if not store_path.is_file():
+        pytest.skip("the ticket store is not populated in this checkout")
+    store = TicketStore(store_path)
+    entries = tlm.parse_entries(REPO_ / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md")
+    idents = {e.ident for e in entries}
+    open_idents = [e.ident for e in entries if e.state == "OPEN"]
+
+    missing = sorted(i for i in idents if not store.by_task_ref(i))
+    assert not missing, f"1. coverage: {len(missing)} entries absent: {missing[:8]}"
+
+    hidden = store.settled_with_open_aliases(open_idents)
+    assert not hidden, (
+        "2. over-merging: settled tickets conceal open work: "
+        + ", ".join(f"{t.tid} hides {r}" for t, r in hidden[:4]))
+
+    settled_states = TERMINAL | {REJECTED}
+    unsettled_done = []
+    for e in entries:
+        if e.state != "DONE":
+            continue
+        tks = store.by_task_ref(e.ident)
+        if tks and not any(t.status in settled_states for t in tks):
+            unsettled_done.append(e.ident)
+    assert not unsettled_done, (
+        "3. a DONE task whose ticket is not settled means a closed record was "
+        f"overwritten by a later one: {unsettled_done[:8]}")

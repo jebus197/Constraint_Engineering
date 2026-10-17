@@ -311,7 +311,14 @@ def main() -> int:
         # established, so it starts UNCONFIRMED: it needs triage, not work. A
         # first version made all of them OPEN and the store reported 306 open
         # items when most were long handled.
-        initial = "OPEN" if r["source"] == "task_list" else "UNCONFIRMED"
+        # A BLOCKED task is live work that cannot proceed, and the status
+        # vocabulary already has a word for that: WITHHELD. Mapping it to OPEN
+        # overstated open work by 1, which is small but is exactly the kind of
+        # drift that makes a count untrustworthy.
+        if r["source"] == "task_list":
+            initial = "WITHHELD" if r.get("state") == "BLOCKED" else "OPEN"
+        else:
+            initial = "UNCONFIRMED"
         t, o = store.propose(r["kind"], title, r["verbatim"], r["source"],
                              source_ref=r.get("source_ref", ""),
                              ruled=r.get("ruled", ""),
