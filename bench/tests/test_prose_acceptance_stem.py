@@ -105,6 +105,7 @@ from bench.reference_runner_v3 import (  # noqa: E402
     _extract_routing_falsifier,
     _sweep_prompt,
     compute_sk,
+    _fix_touches_reducible,
     detect_target_kind,
     parse_search_replace_blocks,
 )
@@ -1154,14 +1155,44 @@ class TestTheFlagCanConvictButNeverAdmit:
         # discard, and the computed gate outcome travels in `gate_details` as a
         # NUMBER a human reviewer can read.
         assert result.tristate == SK_NO_SCORE
+        # RETARGETED AGAIN 2026-10-17, for task A19's per-FIX classification.
+        # `_scoring_prose` used to be decided from the TARGET, so one fenced
+        # listing anywhere put EVERY fix on the gated path -- and 4 of these 5
+        # fixtures have a `correct_fix` that edits ONLY PROSE. The gates were
+        # therefore run over listings those fixes never touched, and the outcome
+        # was recorded as "what the gates would have said" about them when it was
+        # never about them at all. His design point of 2026-09-10 is about
+        # reducible ELEMENTS, so the decision is now per fix.
+        #
+        # THE REQUIREMENT IS UNCHANGED AND IS SPLIT, NOT WEAKENED. A fix that
+        # REACHES a listing must still carry its gate evidence, which is
+        # asserted below for whichever fixtures do. A fix that reaches no
+        # listing has no gate evidence to carry, because no gate spoke about it,
+        # and what must travel instead is the REASON -- asserted here, so the
+        # branch is still not a silent discard.
+        touches, why = _fix_touches_reducible(
+            _fix_text(fixture, fixture.correct_fix, fixture.doc_path),
+            fixture.document, str(fixture.doc_path))
         veto = result.gate_details.get("_prose_one_sided")
-        assert veto is not None, (
-            "the veto branch discarded its evidence: nothing in gate_details "
-            "records what the gates would have said")
-        assert veto["outcome"] == SK_NO_SCORE
-        assert 0.0 < veto["computed_sk"] <= 1.0, (
-            f"computed_sk absent or out of range: {veto.get('computed_sk')!r}")
-        assert "not evidence a prose fix is correct" in veto["detail"]
+        if touches:
+            assert veto is not None, (
+                f"{fixture.key}: this fix reaches a fenced listing, so the veto "
+                f"branch ran and must record what the gates said; nothing in "
+                f"gate_details does")
+            assert veto["outcome"] == SK_NO_SCORE
+            assert 0.0 < veto["computed_sk"] <= 1.0, (
+                f"computed_sk absent or out of range: "
+                f"{veto.get('computed_sk')!r}")
+            assert "not evidence a prose fix is correct" in veto["detail"]
+        else:
+            assert veto is None, (
+                f"{fixture.key}: this fix touches no fenced listing, so no gate "
+                f"spoke about it, yet gate evidence was recorded as though one "
+                f"had")
+            reason = result.gate_details.get("target_kind_reason", "")
+            assert "touches prose only" in reason and "no opinion" in reason, (
+                f"{fixture.key}: the reason does not say why S_k is silent, so "
+                f"the branch IS a silent discard: {reason!r}")
 
     def test_with_the_flag_on_a_fix_that_breaks_a_listing_is_convicted(
             self, fixture, tmp_path):

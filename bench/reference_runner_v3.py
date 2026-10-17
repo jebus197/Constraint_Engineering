@@ -14061,6 +14061,70 @@ def _strip_listing_prefix(body: str, prefix: str) -> str:
     return "\n".join(lines)
 
 
+def _fix_touches_reducible(
+    fix_text: str, source: str, source_path: str
+) -> Tuple[bool, str]:
+    """Does THIS fix edit a fenced listing, or only the prose around it?
+
+    TASK A19, HIS DESIGN POINT 2026-09-10, verbatim: a prose input should be
+    marked inadmissible *"while still solving any computationally reducible
+    elements within that prose! This is STEM."* The operative word is ELEMENTS.
+    `_gateable_source` answers the TARGET-level question -- does this document
+    contain any Python at all -- and until 2026-10-17 `_scoring_prose` used only
+    that, so a single fenced listing anywhere put EVERY fix on the gated path,
+    including fixes that touch nothing but prose. The flag is veto-only, so the
+    consequence was not a wrong admission but a wrong REJECTION: a correct
+    prose-only edit could be convicted by gates run over listings it never
+    touched.
+
+    This answers the per-FIX question instead. Each SEARCH text is located in
+    the source and tested against the character ranges of the fenced listings.
+    A fix that lands inside a listing is reducible; one that lands only outside
+    is prose and returns NO_SCORE whatever the flag says, which is exactly his
+    "purely prose" case applied one level down.
+
+    A SEARCH TEXT THAT CANNOT BE FOUND COUNTS AS REDUCIBLE, deliberately. The
+    alternative is to treat an unlocatable edit as prose and exempt it from
+    every gate, which would turn a parse failure into an exemption -- the shape
+    of defect this project keeps finding. An edit the harness cannot place is
+    one the gates should be allowed to speak about.
+
+    Returns (touches_reducible, reason).
+    """
+    if source_path.endswith(".py") or not source_path:
+        return True, "python target"
+    normalised = source.replace("\r\n", "\n").replace("\r", "\n")
+    spans = [(m.start("body"), m.end("body"))
+             for m in _MD_PY_FENCE_ANY.finditer(normalised)]
+    if not spans:
+        return False, "target carries no fenced listing"
+    blocks = parse_search_replace_blocks(fix_text)
+    if not blocks:
+        return True, "no parsable edit block; the gates may speak"
+    inside = outside = unplaced = 0
+    for b in blocks:
+        needle = (b.search or "").replace("\r\n", "\n").replace("\r", "\n")
+        if not needle.strip():
+            unplaced += 1
+            continue
+        at = normalised.find(needle.strip())
+        if at < 0:
+            unplaced += 1
+            continue
+        end = at + len(needle.strip())
+        if any(at < hi and end > lo for lo, hi in spans):
+            inside += 1
+        else:
+            outside += 1
+    if inside or unplaced:
+        return True, (
+            f"{inside} of {len(blocks)} edit block(s) land inside a fenced "
+            f"listing" + (f", {unplaced} could not be placed" if unplaced else ""))
+    return False, (
+        f"all {outside} edit block(s) land outside every fenced listing, so "
+        f"this fix touches prose only")
+
+
 def _gateable_source(modified_source: str, source_path: str) -> Tuple[Optional[str], str]:
     """The Python the syntax gates should actually check, for any target type.
 
@@ -14960,12 +15024,34 @@ def compute_sk(
     # still returns NO_SCORE whatever the flag says -- there is nothing
     # computationally reducible in it, which is exactly his "purely prose" case.
     _reducible, _why_reducible = _gateable_source(source, source_path)
+    # PER FIX, NOT PER TARGET (task A19, 2026-10-17). `_gateable_source` says
+    # whether the DOCUMENT holds Python; `_fix_touches_reducible` says whether
+    # THIS fix edits any of it. Using only the first put every fix on the gated
+    # path once the document held a single listing, so a correct prose-only edit
+    # could be REJECTED by gates run over listings it never touched -- the flag
+    # is veto-only, so the cost was a wrong conviction rather than a wrong
+    # admission. His design point is about reducible ELEMENTS, which is this
+    # granularity.
+    _touches, _why_touches = _fix_touches_reducible(fix_text, source, source_path)
     _scoring_prose = (kind != TARGET_KIND_PYTHON and score_prose_listings
-                      and bool(_reducible))
+                      and bool(_reducible) and _touches)
     if _scoring_prose:
         kind_reason = (f"{kind_reason}; scored anyway because the target carries "
-                       f"reducible code ({_why_reducible})")
-    elif kind != TARGET_KIND_PYTHON:
+                       f"reducible code ({_why_reducible}) and this fix reaches "
+                       f"it ({_why_touches})")
+    elif (kind != TARGET_KIND_PYTHON and score_prose_listings
+          and bool(_reducible) and not _touches):
+        # SETS THE REASON AND FALLS INTO THE `NO_SCORE` RETURN BELOW, which it
+        # must not bypass. Written first as an `elif` that set the reason and
+        # returned nothing, which intercepted the very case it was added for:
+        # with the flag on, a prose-only fix fell through both branches to the
+        # gates and came back ESCALATE instead of NO_SCORE -- the opposite of
+        # the intent, and the exact reverse of the defect being fixed. Found by
+        # executing `compute_sk` on a crafted prose-only fix, not by reading.
+        kind_reason = (f"{kind_reason}; the target carries reducible code "
+                       f"({_why_reducible}) but {_why_touches}, so S_k has no "
+                       f"opinion on it")
+    if not _scoring_prose and kind != TARGET_KIND_PYTHON:
         return SkResult(
             sk=0.0, A=0.0, E=0.0, tristate=SK_NO_SCORE,
             gate_details={

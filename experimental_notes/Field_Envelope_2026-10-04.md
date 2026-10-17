@@ -90,7 +90,7 @@ A scalar that does not parse is **refused, not coerced**: an enveloped severity 
 
 ### `bench/reference_runner_v3.py` — the two consumers
 
-`_corroboration_sections_by_owner` at `bench/reference_runner_v3.py:16248` is a **third** reader layered over the two that exist. `_extract_corroboration_sections` is untouched and keeps its signature, its callers in the frozen v1 runner, in `scripts/measure_rk_proof_compliance.py`, in two committed panel falsifiers and in `bench/tests/test_rk_clip_stops_at_an_arrow_2026-09-22.py`. `_extract_corroboration_sections_with_ids` keeps its signature and its callers. The new function prefers an envelope, falls back to the owner-aware prose reader, and reports which answered, so the preference is visible in the run log rather than silent.
+`_corroboration_sections_by_owner` at `bench/reference_runner_v3.py:16334` is a **third** reader layered over the two that exist. `_extract_corroboration_sections` is untouched and keeps its signature, its callers in the frozen v1 runner, in `scripts/measure_rk_proof_compliance.py`, in two committed panel falsifiers and in `bench/tests/test_rk_clip_stops_at_an_arrow_2026-09-22.py`. `_extract_corroboration_sections_with_ids` keeps its signature and its callers. The new function prefers an envelope, falls back to the owner-aware prose reader, and reports which answered, so the preference is visible in the run log rather than silent.
 
 `validate_round_rk` calls it, and its `_section_for` helper now reports `envelope` alongside `id`, `id_suffix`, `position` and `none`. Every path that existed before is still reachable.
 
