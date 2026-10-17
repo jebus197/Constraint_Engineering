@@ -653,6 +653,45 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     )
 
 
+def restore_modes_for_cleanup(root) -> None:
+    """Make a pytest temp tree deletable, WITHOUT reaching outside it.
+
+    Extracted from the autouse fixture on 2026-10-17 so a guard can CALL it
+    rather than depend on test ordering to observe its teardown. A test that
+    asserted on this by running after another test would prove nothing the
+    moment the order changed.
+    """
+    try:
+        for p in sorted(pathlib.Path(root).rglob("*"), reverse=True):
+            # A SYMLINK IS SKIPPED, BECAUSE `Path.chmod` FOLLOWS IT OUT OF THE
+            # SANDBOX. Found 2026-10-17 by execution: a new test symlinked the
+            # repo's `scripts/` tree into `tmp_path`, and this teardown chmodded
+            # 22 REAL REPO FILES to 600, stripping the execute bit git records as
+            # 100755. The reach is not limited to the repo --
+            # `test_desktop_mirrors_stay_current_2026-09-10` symlinks EVERY entry
+            # of `Path.home()` into `tmp_path`, and
+            # `test_canary_seeding_2026-08-28` symlinks the repository root, so
+            # every run of those has been setting real files to 600 and real
+            # directories to 700. The evidence is the pair of literals: the umask
+            # here is 022, so anything created by a tool on this machine is 644,
+            # yet `~/.zshrc`, `~/.gitconfig`, `~/AGENTS.md` and 361 of 400 tracked
+            # scripts stand at exactly 600 and the repository root at exactly 700.
+            #
+            # SKIPPING LOSES NOTHING. `rm_rf` unlinks a symlink without reading
+            # its target, so the target's permissions were never needed to delete
+            # the tree -- which is all this fixture exists to make possible.
+            if p.is_symlink():
+                continue
+            try:
+                p.chmod(0o700 if p.is_dir() else 0o600)
+            except OSError:
+                pass
+        if not pathlib.Path(root).is_symlink():
+            pathlib.Path(root).chmod(0o700)
+    except OSError:
+        pass
+
+
 @pytest.fixture(autouse=True)
 def _restore_tmp_permissions_for_cleanup(request):
     """Give pytest back the permissions it needs to delete its own temp trees.
@@ -678,12 +717,4 @@ def _restore_tmp_permissions_for_cleanup(request):
     tmp = request.node.funcargs.get("tmp_path") if hasattr(request.node, "funcargs") else None
     if tmp is None:
         return
-    try:
-        for p in sorted(pathlib.Path(tmp).rglob("*"), reverse=True):
-            try:
-                p.chmod(0o700 if p.is_dir() else 0o600)
-            except OSError:
-                pass
-        pathlib.Path(tmp).chmod(0o700)
-    except OSError:
-        pass
+    restore_modes_for_cleanup(tmp)

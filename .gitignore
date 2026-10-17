@@ -89,3 +89,8 @@ bench/logs/*/panel_worktree_harvest/**/files/bench/logs/**
 #   python3 scripts/morning_report_build_2026-10-12.py --write
 # at the HEAD the file names in its own header, and it reproduces byte for byte.
 experimental_notes/Morning_Report_*_GENERATED.md
+
+# Superseded copies kept beside a regenerated document (scripts/regenerate_*).
+# Kept on disk for recovery, deliberately NOT committed: they are byte copies of
+# a file whose history git already holds, so committing them is churn.
+*.superseded-*

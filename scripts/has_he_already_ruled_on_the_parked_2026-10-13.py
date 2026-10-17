@@ -98,23 +98,20 @@ def annotations():
     return d.get("annotations", [])
 
 
-def main() -> int:
-    answer_help(__doc__, __file__)
-    items = parked_items()
-    anns = annotations()
-    if not items:
-        print("no parked items found; measurement void.")
-        return 3
-    if not anns:
-        print("the reader returned no annotations; measurement void.")
-        return 3
+def classify_items(items, states, ann_text):
+    """(closed, ruled, undecided, body_only) — THE ONE classification.
 
-    ann_text = [(a.get("date", "?"), (a.get("text") or "")) for a in anns]
-    print(f"parked headings: {len(items)}   annotations read: {len(anns)}")
-
-    states = task_states()
-    closed, ruled, undecided = [], [], []
-    body_only = []
+    EXTRACTED FROM `main` ON 2026-10-17, unchanged, because task B3's generator
+    needs the SAME verdicts this measurement reports. A second implementation was
+    written first and disagreed with this one on 5 of 21 items IN BOTH
+    DIRECTIONS: it read identifiers from the body as well as the heading, did not
+    split a compound identifier, required EVERY named entry to be settled rather
+    than any, and had no `VERIFIED_STALE` route. Moving a live item into a
+    "settled" section would bury something he still needs, which is exactly the
+    harm B3 exists to fix, inverted. So the rule lives here once and the
+    generator calls it.
+    """
+    closed, ruled, undecided, body_only = [], [], [], []
     for heading, body in items:
         # THE MARKER MUST BE IN THE HEADING, NOT MERELY SOMEWHERE IN THE ITEM.
         # A body mentioning "RESOLVED" about a NEIGHBOURING fact would
@@ -161,7 +158,36 @@ def main() -> int:
             ruled.append((heading, hits))
         else:
             undecided.append((heading, sorted(idents)))
+    return closed, ruled, undecided, body_only
 
+
+def annotation_text(anns):
+    """[(date, text)] -- the projection `classify_items` reads.
+
+    EXTRACTED 2026-10-17 alongside `classify_items`, for the same reason: task
+    B3's generator needs the same annotations this measurement reads, and a
+    second spelling of "which field holds his words" is a place for the two to
+    drift apart silently.
+    """
+    return [(a.get("date", "?"), (a.get("text") or "")) for a in anns]
+
+
+def main() -> int:
+    answer_help(__doc__, __file__)
+    items = parked_items()
+    anns = annotations()
+    if not items:
+        print("no parked items found; measurement void.")
+        return 3
+    if not anns:
+        print("the reader returned no annotations; measurement void.")
+        return 3
+
+    ann_text = annotation_text(anns)
+    print(f"parked headings: {len(items)}   annotations read: {len(anns)}")
+
+    states = task_states()
+    closed, ruled, undecided, body_only = classify_items(items, states, ann_text)
     print(f"\nSETTLED, AND BY WHAT                   : {len(closed)}")
     for h, why in closed:
         print(f"    [{why[:46]:<46}] {h[:62]}")

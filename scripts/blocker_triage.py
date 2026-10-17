@@ -250,8 +250,23 @@ def park(title: str, detail: str, stamp: str | None = None) -> pathlib.Path:
     existing = PARKED.read_text(encoding="utf-8") if PARKED.is_file() else ""
     if _normalise(title) in {_normalise(h) for h in _headings(existing)}:
         return None
-    with PARKED.open("a", encoding="utf-8") as f:
-        f.write(f"\n## {title}\n\n*Parked {stamp}.*\n\n{detail.strip()}\n")
+    # A NEW ITEM GOES IN FRONT OF THE SETTLED SECTION, NOT AFTER IT.
+    #
+    # Since 2026-10-17 `scripts/regenerate_the_parked_file_2026-10-17.py` moves
+    # every settled item to a section at the FOOT of this file, so the end of the
+    # file is no longer the live queue -- it is the archive. A plain append would
+    # have put each newly parked item inside that archive, buried on arrival,
+    # which is the defect task B3 exists to fix reproduced by a different route.
+    # Found by tracing what else writes to this file rather than by a failure.
+    entry = f"\n## {title}\n\n*Parked {stamp}.*\n\n{detail.strip()}\n"
+    marker = "\n---\n\n# Settled — kept for the record"
+    cut = existing.find(marker)
+    if cut == -1:
+        with PARKED.open("a", encoding="utf-8") as f:
+            f.write(entry)
+    else:
+        PARKED.write_text(existing[:cut] + entry + existing[cut:],
+                          encoding="utf-8")
     return PARKED
 
 
