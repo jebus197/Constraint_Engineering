@@ -164,6 +164,11 @@ try:                                                               # pragma: no 
 except ImportError:                                                # pragma: no cover
     import hil_review_trigger as _hil_trigger
 
+try:                                                               # pragma: no cover
+    from bench import runner_mode_detection as _mode_detect
+except ImportError:                                                # pragma: no cover
+    import runner_mode_detection as _mode_detect
+
 
 def _hil_evidence(cfg, round_idx, gamma_critical, gamma_critical_history,
                   registry, experiment_start):
@@ -21044,6 +21049,21 @@ def run_experiment(
         getattr(cfg, "location_keyed_convergence", False))
     result["location_crit_shadow_history"] = location_crit_history  # DEPRECATED alias
     result["registry"] = registry.to_dict()
+
+    # ── B28: reconcile each declared mode against what the run actually did ──
+    # His ruling, 2026-10-07 and 2026-10-11: state should be DETECTED rather than
+    # declared, because forgetting a flag silently downgraded a check. This does
+    # not override anything -- it compares and RECORDS, so a forgotten flag is
+    # reported instead of absorbed. 4 of the 5 modes are currently undecidable
+    # from a report at all, and `bench/runner_mode_detection.py` says why for
+    # each. Wrapped because a diagnostic must never take a run down.
+    try:
+        _mode_findings = _mode_detect.reconcile(result)
+        result["mode_reconciliation"] = _mode_detect.as_report_field(_mode_findings)
+        for _line in _mode_detect.summarise(_mode_findings):
+            _log(_line)
+    except Exception as _mx:                                       # noqa: BLE001
+        result["mode_reconciliation"] = {"error": f"{type(_mx).__name__}: {_mx}"}
     result["hil_flags"] = _itc_hil_flags[:]
     # Secondary-route fallback accumulators (2026-05-22). Surfaced in
     # the report so end-of-run review can see per-turn fallback usage
