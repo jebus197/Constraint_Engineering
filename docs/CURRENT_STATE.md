@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 17 October 2026 22:52 BST (2026-10-17T22:52:36+01:00)
+Generated: 17 October 2026 23:29 BST (2026-10-17T23:29:11+01:00)
 
 ---
 
@@ -18,16 +18,26 @@ Generated: 17 October 2026 22:52 BST (2026-10-17T22:52:36+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `31a85e94` B25 is complete: all 318 of his annotations carry a verdict with its evidence
-- **Committed:** 2026-10-17 22:44:14 +0100
+- **Last commit (the PARENT of the commit containing this file):** `2944e376` sv: B25 complete, all 318 annotations verdicted; B26, B27 and B28 raised
+- **Committed:** 2026-10-17 22:52:36 +0100
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
-- **Working tree at snapshot time:** clean
+- **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
+
+Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
+- `M  bench/tickets/tickets.jsonl`
+- `M  bench/tickets/tickets_searches.jsonl`
+- `M  docs/CURRENT_STATE.md`
+- `MM experimental_notes/CDSFL_MASTER_TASK_LIST.md`
+- `M  resources/MEMORY_EXCLUSIONS.md`
+- `M  resources/ONBOARDING.md`
+- `M  resources/RECOVERY.md`
+- `A  scripts/how_often_is_a_second_sv_refused_2026-10-17.py`
 
 ---
 
 ## Tests
 
-**12602 tests collected** at 17 October 2026 22:52 BST, HEAD `31a85e94` (`python3 -m pytest bench/tests/ --co -q`)
+**12604 tests collected** at 17 October 2026 23:29 BST, HEAD `2944e376` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,6 +67,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `2944e376 sv: B25 complete, all 318 annotations verdicted; B26, B27 and B28 raised`
 - `31a85e94 B25 is complete: all 318 of his annotations carry a verdict with its evidence`
 - `ed4c0ee0 B25: 241 of 318 verdicted, and his duplicate rule is the register's own rule`
 - `efe1c313 B28: he ruled state be detected not declared, and the runners still declare it`
@@ -66,4 +77,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `29565256 B25: 9 files audited, 140 of 318 annotations verdicted`
 - `d5c668bb B25: 8 files audited, and a correction that stopped 2 wrong entries`
 - `07ce845d B25: a keying defect that would have silently lost up to 37 verdicts`
-- `c3c6b83e B27: the review stop fires on a flag, and he gave it a condition it lacks`
