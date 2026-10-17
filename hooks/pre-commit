@@ -7,15 +7,24 @@
 # once goes stale the next time the set grows, so the duration is MEASURED here
 # and read there. The file is scratch and is not committed.
 CDSFL_HOOK_T0=$(date +%s)
-_cdsfl_record_hook_seconds() {
+# ONE EXIT HANDLER, BECAUSE `trap` REPLACES RATHER THAN CHAINS. A second
+# `trap ... EXIT` later in this file silently discarded the recorder, so the
+# duration was never written and `sv` fell back to its floor forever -- a new
+# mechanism nothing reached, which is the failure the additive standard names.
+# Later cleanup registers into CDSFL_EXIT_EXTRA instead of taking the trap.
+CDSFL_EXIT_EXTRA=""
+_cdsfl_on_exit() {
     _rc=$?
+    if [ -n "$CDSFL_EXIT_EXTRA" ]; then
+        eval "$CDSFL_EXIT_EXTRA"
+    fi
     if [ -n "${CDSFL_HOOK_T0:-}" ]; then
         mkdir -p .cdsfl_tmp 2>/dev/null
         echo "$(( $(date +%s) - CDSFL_HOOK_T0 ))" > .cdsfl_tmp/precommit_seconds 2>/dev/null
     fi
     return $_rc
 }
-trap _cdsfl_record_hook_seconds EXIT
+trap _cdsfl_on_exit EXIT
 # CDSFL pre-commit guard. Refuses a commit when the cheap correctness guards are red.
 #
 # WHY THIS EXISTS, with the evidence rather than the intention.
@@ -416,7 +425,10 @@ if [ -n "$STAGED_NOTES" ]; then
     AFTER_TOTAL=0
     LINT_BROKE=""
     STAGED_COPY=$(mktemp -d -t cdsfl_note_lint)
-    trap 'rm -rf "$STAGED_COPY"' EXIT
+    # REGISTERED, NOT TRAPPED. This used to be `trap 'rm -rf ...' EXIT`, which
+    # REPLACED the hook's own exit handler and so discarded the duration record
+    # that `scripts/cdsfl_sv.py` sizes its commit timeout from.
+    CDSFL_EXIT_EXTRA="rm -rf \"$STAGED_COPY\"; $CDSFL_EXIT_EXTRA"
 
     # THE LINTER'S OWN EXIT CODE, CAPTURED WHERE IT RUNS.
     #

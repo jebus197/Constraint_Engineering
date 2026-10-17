@@ -72,20 +72,57 @@ def test_an_unusable_record_falls_back_to_the_floor(sv, tmp_path, junk):
     assert sv.commit_timeout(tmp_path) == sv.COMMIT_TIMEOUT_FLOOR
 
 
-def test_the_hook_actually_records_what_sv_reads(sv):
-    """Producer and consumer must agree on the path, not merely describe it.
+def test_the_hook_really_writes_the_record(sv, tmp_path):
+    """EXECUTED, not read. The hook's exit handler must write the duration.
 
-    Asserted against the hook's own text for the PATH only -- the behaviour is
-    asserted by `test_the_live_record_leaves_headroom` below, which reads a file
-    a real commit wrote.
+    THE DEFECT THIS CAUGHT. The first version registered the recorder with
+    `trap _recorder EXIT`, and 400 lines later the note-lint stage ran
+    `trap 'rm -rf "$STAGED_COPY"' EXIT`. In POSIX shell a second trap on the same
+    signal REPLACES the first rather than chaining, so the recorder was silently
+    discarded, no duration was ever written, and `commit_timeout` fell back to
+    its floor forever -- a new mechanism nothing reached. The assertion that
+    missed it checked that the strings "trap" and "EXIT" appeared in the file,
+    which they did, in the line that broke it. So this one RUNS the handler.
     """
     hook = HOOK.read_text(encoding="utf-8")
     assert sv.HOOK_SECONDS_FILE in hook, (
-        f"the hook does not write {sv.HOOK_SECONDS_FILE}, so the wait can never "
-        "track the duration")
-    assert "trap" in hook and "EXIT" in hook, (
-        "the duration must be recorded on EXIT, or a refused commit records "
-        "nothing and the next wait is sized from a stale number")
+        f"the hook does not write {sv.HOOK_SECONDS_FILE}")
+    # The preamble is everything up to and including the trap registration.
+    cut = hook.index("trap _cdsfl_on_exit EXIT") + len("trap _cdsfl_on_exit EXIT")
+    script = tmp_path / "preamble.sh"
+    script.write_text(
+        hook[:cut]
+        + '\nCDSFL_EXIT_EXTRA="echo cleaned > cleanup.marker; $CDSFL_EXIT_EXTRA"'
+          '\nsleep 1\nexit 0\n',
+        encoding="utf-8")
+    import subprocess
+    r = subprocess.run(["sh", str(script)], cwd=str(tmp_path),
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    rec = tmp_path / sv.HOOK_SECONDS_FILE
+    assert rec.is_file(), (
+        "the exit handler wrote no duration record. Something later in the hook "
+        "has taken the EXIT trap again.")
+    assert int(rec.read_text().strip()) >= 1, "the recorded duration is not real"
+    # AND THE CLEANUP IT SHARES THE HANDLER WITH STILL RUNS.
+    assert (tmp_path / "cleanup.marker").is_file(), (
+        "registered cleanup did not run; the handler drops what it chains")
+
+
+def test_nothing_later_in_the_hook_steals_the_exit_trap(sv):
+    """Structural, and paired with the executing test above rather than instead.
+
+    A later `trap ... EXIT` would pass the executing test if it appeared after
+    the preamble this slice runs, so the file is also scanned for one.
+    """
+    hook = HOOK.read_text(encoding="utf-8").splitlines()
+    reg = next(i for i, l in enumerate(hook) if "trap _cdsfl_on_exit EXIT" in l)
+    thieves = [(i + 1, l.strip()) for i, l in enumerate(hook[reg + 1:], reg + 1)
+               if l.strip().startswith("trap ") and "EXIT" in l]
+    assert not thieves, (
+        "a later trap replaces the exit handler and discards the duration "
+        "record; register into CDSFL_EXIT_EXTRA instead:\n"
+        + "\n".join(f"    line {n}: {l}" for n, l in thieves))
 
 
 def test_the_live_record_leaves_headroom(sv):
