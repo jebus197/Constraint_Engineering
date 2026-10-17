@@ -29,12 +29,21 @@ import pathlib
 import re
 import sys
 
-#: Seconds of drift tolerated. A commit takes real time -- this repository's
-#: pre-commit hook runs over 1,300 tests and takes about 4.5 minutes -- so the
-#: stamp is written BEFORE that and legitimately precedes the commit by minutes.
-#: The tolerance is therefore generous in the EARLY direction and tight in the
-#: LATE one: a stamp cannot be AHEAD of the clock by more than a few seconds,
-#: because the future has not happened yet.
+#: Seconds of drift tolerated, and the asymmetry is the whole design.
+#:
+#: GIT SETS THE AUTHOR DATE WHEN `git commit` STARTS, not when the hooks finish.
+#: That was measured rather than assumed, and it corrects the reason first
+#: written here: a stamp captured immediately before the commit command lands
+#: within a second of the author date, NOT minutes behind it. The first version
+#: of this comment claimed the 4.5-minute pre-commit run sat between the 2,
+#: which is false -- the hook runs AFTER the author date is fixed.
+#:
+#: So a stamp may still legitimately PRECEDE its commit, but for a different
+#: reason: the clock is read, then other work happens, then the commit is made.
+#: That is honest, merely stale, and the generous tolerance covers it.
+#:
+#: A stamp AHEAD of the author date cannot be honest under either account,
+#: because the future has not happened yet. That direction stays tight.
 BEHIND_ALLOWED = 900      # 15 minutes: the stamp may precede a long hook run
 AHEAD_ALLOWED = 120       # 2 minutes: a stamp in the future is typed, not read
 

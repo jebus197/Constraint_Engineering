@@ -10,13 +10,17 @@ session from +3.1 to +19.6 minutes. That monotone growth is the signature: a
 guess falling steadily behind a clock nobody read. It was invisible until the
 stamp and the author date were compared, which no test did.
 
-THE CHECK IS ASYMMETRIC, AND THAT IS THE WHOLE DESIGN. A stamp legitimately
-PRECEDES its commit, because this repository's pre-commit hook runs over 1,300
-tests and takes about 4.5 minutes: capture the clock, run the hook, land the
-commit. So a stamp minutes BEHIND the commit is honest and must be allowed. A
-stamp AHEAD of the commit cannot be honest, because the future has not
-happened yet. A symmetric tolerance would either refuse every honest commit or
-permit every typed one.
+THE CHECK IS ASYMMETRIC, AND THAT IS THE WHOLE DESIGN. A stamp AHEAD of the
+commit cannot be honest, because the future has not happened yet. A stamp
+BEHIND it can be, and must be allowed.
+
+THE REASON WHY WAS WRONG WHEN FIRST WRITTEN HERE, and the correction is worth
+keeping. I claimed the 4.5-minute pre-commit run sits between the stamp and the
+commit. It does not: GIT SETS THE AUTHOR DATE WHEN `git commit` STARTS, before
+the hooks run, which the first commit through this hook demonstrated with a
+drift of -0.02 minutes rather than the -4.9 the claim predicted. A stamp
+precedes its commit for a duller reason: the clock is read, other work happens,
+and the commit is made later. Honest, merely stale.
 
 HISTORY IS NOT REWRITTEN. 12 of those commits are pushed, and his ruling
 elsewhere is "I am not suggesting rewriting history". The figures are recorded
@@ -72,9 +76,10 @@ def test_a_stamp_captured_now_is_accepted(tmp_path):
     assert r.returncode == 0, r.stderr
 
 
-def test_a_stamp_minutes_behind_is_accepted_because_the_hook_runs_long(tmp_path):
-    """THE DIRECTION THAT MUST NOT BE REFUSED. The pre-commit suite takes about
-    4.5 minutes, so an honest stamp precedes its commit."""
+def test_a_stamp_minutes_behind_is_accepted(tmp_path):
+    """THE DIRECTION THAT MUST NOT BE REFUSED. A stamp read earlier in a
+    session and committed later is honest but stale, and refusing it would
+    refuse ordinary work."""
     behind = (datetime.datetime.now().astimezone()
               - datetime.timedelta(minutes=6)).isoformat()
     r = _run(f"subject\n\nTimestamp: {behind}\n", tmp_path)
