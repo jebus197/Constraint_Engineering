@@ -38,6 +38,32 @@ Files in the founder's home directory were deliberately NOT changed. A permissio
 
 Two new guard files carry 14 tests and are both in the commit time set, which now stands at 1,001 tests across 35 files. Every assertion executes the code rather than reading its text. Three separate mutations were applied to confirm the tests can fail: truncating each body makes the preservation check refuse, bypassing the strip makes the idempotence check refuse, and removing the symbolic link skip makes 3 of the 4 permission tests refuse. The new suite also carries a ratchet comparing every tracked file's on disk execute bit against the git index, so the same drift cannot return unnoticed.
 
+## The save mechanism could no longer save
+
+Recorded 2026-10-17 14:22 BST.
+
+The state-save routine, `scripts/cdsfl_sv.py`, commits through a subprocess with a timeout. That timeout was 60 seconds. The set of tests the commit-time hook runs had grown during this session to 1,001 across 35 files, taking 143 seconds, so every state save died partway through and no state could be saved at all. The error it printed named a git timeout, which reads as a git problem rather than as a guard set that had outgrown the routine waiting for it. The cause was this session's own additions to that set.
+
+A larger typed number would only have moved the date of the next failure, which is the objection the founder raised on the 13th and 14th of October to a cap with no measurement behind it. So the hook now records its own elapsed time when it exits, and sv sizes its wait at 4 times that figure, with a floor of 300 seconds for a fresh checkout that has no record yet. The hook's own measurement is 144 seconds, so the wait is now 576 seconds.
+
+## The new recorder was discarded the moment it was added
+
+Checking that the recorder actually ran showed that it did not. The hook registered it with a shell trap on the EXIT signal, and 400 lines further down the note-lint stage registered its own cleanup on the same signal. In POSIX shell a second trap on a signal REPLACES the first rather than chaining, so the recorder was silently thrown away, nothing was ever written, and the wait would have fallen back to its floor for ever. That is a new mechanism nothing reaches, which is the failure the project's additive standard names in its second half.
+
+The assertion written to hold the recorder had read the hook's source text for the words trap and EXIT. Both were present, in the very line that broke it. It was replaced with one that extracts the hook's exit-handler section, RUNS it, and requires both a written duration of at least 1 second and a separately registered cleanup to have executed. A second, structural assertion scans for any later trap on EXIT, because a thief appearing after the executed section would pass the executing test. There is now one exit handler, and later cleanup appends to a variable the handler evaluates before recording.
+
+## Task B6, and four wrong predicates
+
+Task B6 held 3 defects recorded during an earlier repair and deliberately left unfixed. Two were already settled by later rulings. The stale coherence budgets were superseded when the founder retired the prompt-density ceiling outright on the 16th of October, which also removed the owed schema change and closed task B8 with it. The third, a proven floor used as a ceiling for a seat's capacity, is task B12's subject and stays tracked there.
+
+The second, a compression style that was deleting the code under review, is closed, and the suspected harm turned out not to be where it looked. The protection added on the 15th of October holds under execution: 20 identical function definitions inside the marked code section survive as 20, while the same code with no marker goes from 1,406 characters, 20 definitions and 40 indented lines to 85 characters, 1 definition and 0 indented lines. No live path produces the unmarked form.
+
+Deduplication was the suspect and it is innocent. Across the 5 largest live directive files it removes 2 characters in total, which is arithmetic from joining lines rather than lost content. The cutting is done by the length cap. Every rendering comes out at 8,035 characters against a cap of 8,000, so the operational directive loses 38,339 of its 46,374 characters, 82.6735%, and the 5 largest lose between 27.1400% and 82.6735%. That is not a new finding: it is the already-open parked item C0040, which records that every model receives only a fraction of the universal directive.
+
+What the task added, since 2 of its 3 parts were already settled, is that the section classification is now complete. The list of sections protected from compression held 2 entries while the packet builder emitted 7, so the other 5 were unprotected by omission and indistinguishable from 5 deliberate decisions to let them compress. A section added later would have inherited that silence. All 7 are now classified explicitly and the protected list is derived from that classification, with 2 new assertions: one refuses when the builder emits a section the classification does not cover, and one requires a section marked compressible to actually compress while the same repeated lines survive inside a protected one.
+
+Four predicates were wrong before the right one, and each produced a figure that had to be withdrawn. Searching the wrong directory gave 3 files and a confidence interval running to 70.7598%, which supports no claim. Counting indented runs read wrapped bullet continuations as code. Requiring a source line to appear verbatim in the output flagged every re-wrapped line, giving 19.4444%. Allowing for re-wrapping but not for heading-marker normalisation flagged 6 surviving headings as missing, because a heading written with hash marks is rendered as a label with a colon. Only reading one small file from beginning to end produced the truth. The aggregate over a proxy produced a number every time, and all 4 errors are recorded in the producer's own description so the next reader sees the shape of the mistake rather than only its conclusion.
+
 ## What remains
 
 The task list stands at 151 entries with 22 open, and 17 of those wait on the founder. The next unblocked item is A19.
