@@ -4,13 +4,34 @@
 HIS LIST, 2026-10-16, item 3 of the 7 smaller defects: *"A counter whose release
 condition disagrees with it about severity."* His ruling: *"Fix it all."*
 
-THE DISAGREEMENT, MEASURED ACROSS EVERY ARCHIVED runner_state.json. Of 3,400
-entries, 212 are counted as blockers by `unverified_critical_count`, and 94 of
-those 212 -- 44.3396%, Wilson 95% [37.8121%, 51.0686%], Clopper-Pearson
-[37.5377%, 51.3020%] -- are entries `_apply_routing` would decline to admit,
-across 18 runs. On the most recent run, leg 3 of the shakedown, A4 stands at 9
-and 5 of those 9 are in that state. Such a finding can neither be resolved nor
+THE DISAGREEMENT, MEASURED ACROSS EVERY ARCHIVED runner_state.json. Of 3,020
+entries in 61 runs, 167 are counted as blockers by `unverified_critical_count`
+and 73 of those 167 -- 43.7126%, Wilson 95% [36.4145%, 51.2934%],
+Clopper-Pearson [36.0626%, 51.5897%] -- are entries `_apply_routing` would
+decline to admit, across 16 runs. On leg 3 of the shakedown, A4 stands at 9 and
+5 of those 9 are in that state. Such a finding can neither be resolved nor
 released: permanent limbo.
+
+THE FIGURE THIS FILE FIRST CARRIED WAS 94 OF 212, AND BOTH CAUSES ARE NOW
+QUANTIFIED. His correction of 2026-10-16: *"A figure published earlier today,
+94 of 212, does not reproduce. The producer carries a hand written copy of the
+counter's release conditions instead of calling the counter."* Measured
+2026-10-17 by `scripts/does_the_test_predicate_agree_with_the_counter_2026-10-17.py`,
+which runs both forms over the same archive and compares them per entry rather
+than in total:
+
+  * SCOPE. This file walked `rglob` with no depth restriction, so 13 of the 74
+    run states it read are nested -- archived copies of what a SEAT saw inside
+    `sandbox_harvest/`. They contributed 35 of the 45 excess blockers and 11 of
+    the 21 excess unservable entries.
+  * PREDICATE. At the same scope the hand-rolled conditions return 177 blockers
+    and 83 unservable against the counter's 167 and 73, disagreeing on 10
+    entries across 2 runs.
+
+Both together reproduce the old figure exactly: the test's own scope and
+predicate return 212 and 94. So the number was not invented, it was measuring
+something else -- which is why a test must CALL the counter rather than
+describe it. This file now does.
 
 WHY THE REPAIR REPORTS RATHER THAN RELEASES. Releasing them would loosen the A4
 gate on a model-assigned severity float, which is the change the founder has
@@ -222,27 +243,46 @@ def test_the_reader_mutates_nothing():
 
 
 def test_the_archive_carries_the_disagreement_this_file_records():
-    """The ratchet on the measured figure, so it cannot go stale unnoticed."""
+    """The ratchet on the measured figure, so it cannot go stale unnoticed.
+
+    IT CALLS THE COUNTER. The earlier form walked the archive applying its own
+    conditions, which is the defect his correction of 2026-10-16 names: a test
+    that re-derives a predicate agrees with itself by construction and cannot
+    see a producer and a consumer that disagree, because each is individually
+    self-consistent. At the same scope the 2 forms differ on 10 entries, and
+    with this file's old unrestricted scope they differ by 45 blockers and 21
+    unservable entries -- enough to turn 73 of 167 into 94 of 212.
+
+    THE SCOPE IS TOP-LEVEL RUN STATES ONLY. `bench/logs/<run>/runner_state.json`
+    and nothing deeper, because a file inside `sandbox_harvest/` is an archived
+    copy of what one SEAT saw and counting it inflates every figure.
+
+    THE BAND IS THE ARCHIVE'S OWN INTERVAL, not a pinned number, per his ruling
+    to derive each baseline from the archive. A share outside the 95% Wilson
+    interval of the recorded measurement is a real behaviour change rather than
+    sampling noise, and that is what this fails on.
+    """
     logs = REPO_ROOT / "bench" / "logs"
     if not logs.is_dir():
         pytest.skip("no archive")
     blocked = unservable = 0
     for path in sorted(logs.rglob("runner_state.json")):
+        if len(path.relative_to(logs).parts) != 2:
+            continue
         try:
             ents = (json.loads(path.read_text(errors="replace"))
                     .get("registry") or {}).get("entries") or {}
         except (OSError, ValueError):
             continue
-        for e in ents.values():
-            if not isinstance(e, dict) or e.get("status") != "UNCONFIRMED":
-                continue
-            if e.get("irreducible_escalation") and not e.get("integrity_unobserved"):
-                continue
-            if e.get("exhausted"):
-                continue
-            blocked += 1
-            if not R._routing_would_admit(e):
-                unservable += 1
+        if not ents:
+            continue
+        reg = R.FindingRegistry()
+        reg.entries = ents
+        try:
+            blocked += reg.unverified_critical_count()
+            unservable += len(reg.blockers_routing_cannot_serve())
+        except Exception:                                  # noqa: BLE001
+            continue
     assert blocked > 100, blocked
     assert unservable > 0, (
         "no archived blocker is now unservable. If the router was widened or "
@@ -250,10 +290,15 @@ def test_the_archive_carries_the_disagreement_this_file_records():
         "not a green test."
     )
     share = unservable / blocked
-    assert 0.30 < share < 0.60, (
+    # 73 of 167 = 43.7126%, Wilson 95% [36.4145%, 51.2934%], agreed to 4 d.p.
+    # by statsmodels and mpmath, with Clopper-Pearson [36.0626%, 51.5897%] from
+    # statsmodels and scipy. Producer:
+    # scripts/a_blocker_the_ladder_will_not_serve_2026-10-16.py
+    assert 0.364145 <= share <= 0.512934, (
         f"the unservable share moved to {100*share:.4f}% ({unservable} of "
-        f"{blocked}), outside the band this file records around 44.3396%. "
-        f"Re-measure before citing the figure."
+        f"{blocked}), outside the 95% Wilson interval of the recorded "
+        f"measurement 73 of 167. That is a behaviour change, not noise: "
+        f"re-measure with the producer before citing any figure."
     )
 
 

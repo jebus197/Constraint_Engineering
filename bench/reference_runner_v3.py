@@ -3635,10 +3635,23 @@ class FindingRegistry:
         list: *"Fix it all."*
 
         THE DISAGREEMENT, MEASURED ACROSS EVERY ARCHIVED runner_state.json. Of
-        3,400 entries, 212 are counted as blockers by
-        `unverified_critical_count`, and **94 of those 212 -- 44.3396%, Wilson
-        95% [37.8121%, 51.0686%], Clopper-Pearson [37.5377%, 51.3020%] -- are
-        entries `_apply_routing` would decline to admit**, across 18 runs. Those
+        3,020 entries in 61 runs, 167 are counted as blockers by
+        `unverified_critical_count`, and **73 of those 167 -- 43.7126%, Wilson
+        95% [36.4145%, 51.2934%], Clopper-Pearson [36.0626%, 51.5897%] -- are
+        entries `_apply_routing` would decline to admit**, across 16 runs.
+
+        CORRECTED 2026-10-17 FROM 94 OF 212, on his correction of 2026-10-16
+        that the earlier figure "does not reproduce". Both causes are now
+        quantified by
+        `scripts/does_the_test_predicate_agree_with_the_counter_2026-10-17.py`,
+        which runs both forms over the same archive and compares them per entry:
+        13 of the 74 run states read were NESTED copies of what a seat saw
+        inside `sandbox_harvest/`, contributing 35 excess blockers and 11 excess
+        unservable entries; and at the same scope a hand-rolled copy of these
+        release conditions returns 177 and 83 against the counter's 167 and 73,
+        disagreeing on 10 entries. Together they reproduce 212 and 94 exactly,
+        so the old number was measuring something else rather than being
+        invented. Those
         findings block release and cannot be worked: permanent limbo. 2
         sub-classes appear in the archive -- an `error_routed` entry whose
         one-attempt guard is already consumed, and a sub-critical carrying

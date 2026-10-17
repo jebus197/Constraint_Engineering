@@ -233,3 +233,62 @@ def test_no_entry_is_swallowed_by_an_edit():
         f"tree: {lost}. The usual cause is an addendum written without a blank "
         "line before the next entry's heading, which merges the 2 paragraphs and "
         "removes the later entry from the index silently.")
+
+
+def test_an_orphaned_marker_is_reported(tmp_path):
+    """A marker whose heading the parser cannot see makes the entry invisible.
+
+    FOUND 2026-10-17 BY A CONTROLLED TEST. C24 was written with a heading
+    opening `★ **C24.` instead of `**C24.`; `ENTRY` requires the line to begin
+    with the bold span, so the heading was not recognised. The entry then did
+    not exist for ANY consumer -- the ticket register, the DONE-evidence guard,
+    the entry counts, the resume pointer -- and `check` still answered
+    "coherent, 0 problems".
+
+    `test_no_entry_is_swallowed_by_an_edit` does not cover this: it compares the
+    identifier SET against HEAD, so it catches an entry that DISAPPEARS, while
+    one that never appeared is absent from both sides and passes. The 2 checks
+    are complementary.
+    """
+    import task_list_markers as tlm
+
+    good = (
+        "**A1. A real entry.** Added today.\n"
+        "<!-- task: A1 | state: OPEN | status: PROPOSED | evidence: x | ruled:  -->\n"
+    )
+    p = tmp_path / "list.md"
+    p.write_text(good, encoding="utf-8")
+    code, problems = tlm.check(p)
+    assert code == 0 and not problems, problems
+
+    # the same entry with a star before the bold span: heading unrecognised
+    p.write_text(good + "\n★ **A2. An orphan.** Added today.\n"
+                 "<!-- task: A2 | state: OPEN | status: PROPOSED | evidence: x | ruled:  -->\n",
+                 encoding="utf-8")
+    code, problems = tlm.check(p)
+    assert code == 1, "an orphaned marker must be reported, not passed"
+    assert any("A2" in s and "invisible" in s for s in problems), problems
+
+
+def test_an_addendum_is_not_mistaken_for_an_entry(tmp_path):
+    """The star convention must keep working: an addendum names an identifier.
+
+    This pins the decision NOT to widen `ENTRY` to admit a leading star. An
+    addendum's first line routinely reads `★ **C19 IS BUILT ...`, so admitting
+    the star would mint a phantom entry for every addendum written -- a cure
+    worse than the fault.
+    """
+    import task_list_markers as tlm
+
+    p = tmp_path / "list.md"
+    p.write_text(
+        "**C19. A real entry.** Added today.\n"
+        "\n"
+        "★ **C19 IS BUILT, 2026-10-17, and here is the addendum.**\n"
+        "\n"
+        "**C20. Another real entry.** Added today.\n"
+        "<!-- task: C20 | state: OPEN | status: PROPOSED | evidence: x | ruled:  -->\n",
+        encoding="utf-8")
+    idents = [e.ident for e in tlm.parse_entries(p)]
+    assert idents.count("C19") == 1, (
+        f"the addendum was counted as a second C19 entry: {idents}")

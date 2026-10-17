@@ -259,6 +259,38 @@ def check(path: Path = LIST) -> tuple[int, list[str]]:
     problems: list[str] = []
     if not entries:
         return 1, [f"{path}: no entries parsed at all, which cannot be right"]
+
+    # AN ORPHANED MARKER IS AN INVISIBLE ENTRY, and this reported nothing.
+    #
+    # FOUND 2026-10-17 BY A CONTROLLED TEST, after C24 was written with a
+    # heading opening `★ **C24.` rather than `**C24.`. `ENTRY` requires the
+    # line to start with the bold span, so the heading was not recognised, the
+    # entry did not exist for any consumer -- the ticket register, the
+    # DONE-evidence guard, the counts, the resume pointer -- and this checker
+    # still answered "coherent, 0 problems". Injecting a deliberately orphaned
+    # marker reproduced it exactly.
+    #
+    # THE EXISTING GUARD DOES NOT COVER THIS. `test_no_entry_is_swallowed_by_an_edit`
+    # compares the identifier SET against HEAD, so it catches an entry that
+    # DISAPPEARS. An entry that never appeared is absent from both sides and
+    # passes. The 2 checks are complementary, which is why this is a separate
+    # one rather than a widening of that.
+    #
+    # `ENTRY` is deliberately NOT widened to admit a leading star: the star
+    # marks an ADDENDUM in this file, and an addendum's first line routinely
+    # names an identifier -- `★ **C19 IS BUILT ...` -- so admitting it would
+    # mint a phantom entry for every addendum written. Naming the orphan is
+    # exact; loosening the pattern would guess.
+    parsed = {e.ident for e in entries}
+    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        m = MARKER.match(line.strip())
+        if m and m.group(1) not in parsed:
+            problems.append(
+                f"{path.name}:{n}: marker for {m.group(1)} has no entry heading "
+                f"the parser recognises, so the entry is invisible to every "
+                f"consumer. An entry heading must begin with its bold "
+                f"identifier, as in **{m.group(1)}. ...**")
+
     seen: dict[str, int] = {}
     for e in entries:
         if e.state is None:

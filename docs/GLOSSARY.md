@@ -753,3 +753,20 @@ A ticket whose status is MERGED or DUPLICATE. It ends no trail — its resolutio
 names the surviving ticket, so a reader following it reaches the live record.
 The over-merge check therefore excludes redirects, added 2026-10-17 after it
 reported 4 false positives on records retired by an identity migration.
+
+### One-attempt guard
+
+The rule that a finding whose routing has already been attempted once is not
+re-admitted, so a single entry cannot consume a paid dispatch every round. It is
+one of the two reasons the routing ladder refuses an archived blocker: measured
+2026-10-17, 1 of the 73 refusals is a spent one-attempt guard, the other 72
+being entries not escalated and already served.
+
+### Release gate
+
+The convergence check that refuses to release a run while any unverified
+critical finding remains. At `bench/reference_runner_v3.py` it reads
+`unverified_critical_count` and, on any non-zero value, records the telemetry
+mode `a4_blocked` and returns False, so the run continues to its round cap
+instead of converging. A blocker the routing ladder will not serve therefore
+holds this gate shut while being impossible to work.
