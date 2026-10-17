@@ -150,9 +150,11 @@ def main() -> int:
             store.propose("pf", q[:120], q, "task_list", task_ref=ident,
                           subjects=H.subjects_in(block), status="OPEN")
         a_tp = a_fp = a_tn = a_fn = 0
+        a_said = []
         for q, known in queries:
             _, outcome = store.propose("pf", q[:120], q, "probe", status="OPEN")
             said_known = outcome != "created"
+            a_said.append(said_known)
             if known and said_known: a_tp += 1
             elif known and not said_known: a_fn += 1
             elif not known and said_known: a_fp += 1
@@ -175,6 +177,12 @@ def main() -> int:
         acc = (tp + tn) / max(1, tp + tn + fp + fn)
         if best is None or acc > best[0]:
             best = (acc, thr, tp, fp, tn, fn)
+    # the per-query verdicts at the BEST threshold, for the combination rules
+    b_said = []
+    for q, known in queries:
+        qw = _words(q)
+        share = (len(qw & old_words) / len(qw)) if qw else 0.0
+        b_said.append(share >= best[1])
 
     def report(name, tp, fp, tn, fn, extra=""):
         n = tp + fp + tn + fn
@@ -206,6 +214,51 @@ def main() -> int:
     b_acc, b_tpr, b_tnr = report("METHOD B -- distinctive-word overlap",
                                  tp, fp, tn, fn,
                                  f", at its BEST threshold {thr:.2f} of 19 swept")
+
+    # ------------------------------------------------- THE COMBINATION RULES
+    #
+    # HIS INSTRUCTION, 2026-10-17: *"The registry search can contain both a word
+    # and hashed ID search, so it can contain the best of both approaches."*
+    # That is right, but NOT by a simple AND or OR, and the bounds say why
+    # before any measurement is taken: a UNION says "known" whenever either
+    # method does, so its specificity cannot exceed the WORSE of the two; an
+    # INTERSECTION requires both, so its recall cannot exceed the worse of the
+    # two. Neither can give the best of both -- that is arithmetic, not an
+    # empirical question.
+    #
+    # THE TIERED RULE IS THE ONE HIS OWN DUPE DEFINITION IMPLIES. He requires a
+    # duplicate to be the same issue AND the same proposed fix AND now the same
+    # hash, which is a judgement rather than a string match. So the word layer
+    # SURFACES candidates and the hash tiers DECIDE: recall is measured on
+    # whether the true match is SURFACED at all, and specificity on whether a
+    # genuinely new item is wrongly MERGED. Nothing the word layer finds is
+    # auto-merged, so it cannot cost specificity, and it can only add recall.
+    def _rates(said, label):
+        tp = sum(1 for (q, k), s in zip(queries, said) if k and s)
+        fn = sum(1 for (q, k), s in zip(queries, said) if k and not s)
+        fp = sum(1 for (q, k), s in zip(queries, said) if not k and s)
+        tn = sum(1 for (q, k), s in zip(queries, said) if not k and not s)
+        return report(label, tp, fp, tn, fn)
+
+    union = [x or y for x, y in zip(a_said, b_said)]
+    inter = [x and y for x, y in zip(a_said, b_said)]
+    u_acc, u_tpr, u_tnr = _rates(union, "METHOD D -- UNION (either says known)")
+    i_acc, i_tpr, i_tnr = _rates(inter, "METHOD E -- INTERSECTION (both must)")
+
+    # METHOD C: surfaced by either, DECIDED by the register alone.
+    c_surfaced_tp = sum(1 for (q, k), u in zip(queries, union) if k and u)
+    c_surfaced_fn = sum(1 for (q, k), u in zip(queries, union) if k and not u)
+    n_pos = c_surfaced_tp + c_surfaced_fn
+    print("\nMETHOD C -- TIERED: the word layer SURFACES, the register DECIDES")
+    print(f"  a known item is SURFACED      : {c_surfaced_tp} of {n_pos} = "
+          f"{100*c_surfaced_tp/max(1,n_pos):.4f}%")
+    from statsmodels.stats.proportion import proportion_confint as _pc
+    lo, hi = _pc(c_surfaced_tp, max(1, n_pos), method="wilson")
+    print(f"    surfacing recall Wilson [{lo*100:.4f}%, {hi*100:.4f}%]")
+    print(f"  a new item is wrongly MERGED  : {a_fp} of {a_fp + a_tn} = "
+          f"{100*a_fp/max(1, a_fp + a_tn):.4f}%   (the register decides, so this"
+          f" is unchanged from METHOD A)")
+    print(f"  so specificity               : {100*a_tnr:.4f}%  == METHOD A")
 
     print("\n" + "=" * 74)
     print("VERDICT")

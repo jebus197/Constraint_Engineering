@@ -110,6 +110,33 @@ STORE = STORE_DIR / "tickets.jsonl"
 SEARCH_LOG = STORE_DIR / "tickets_searches.jsonl"
 
 #: The runner's own vocabulary, version 2026-08-22. Terminal states are TOOL-ONLY.
+def _subjects_in(text: str) -> list[str]:
+    """The code subjects a proposal names, through the harvester's own parser.
+
+    Imported lazily so the store does not depend on `scripts/` at import time;
+    returns an empty list if the harvester is unavailable, because surfacing by
+    subject is an ADDITION to the hashed tiers and its absence must not stop a
+    proposal being registered.
+    """
+    try:
+        import importlib.util
+        import pathlib as _pl
+        import sys as _sys
+        path = (_pl.Path(__file__).resolve().parents[1] / "scripts"
+                / "harvest_tickets_2026-10-17.py")
+        if not path.is_file():
+            return []
+        if "ticket_harvester" not in _sys.modules:
+            spec = importlib.util.spec_from_file_location(
+                "ticket_harvester", path)
+            mod = importlib.util.module_from_spec(spec)
+            _sys.modules["ticket_harvester"] = mod
+            spec.loader.exec_module(mod)
+        return list(_sys.modules["ticket_harvester"].subjects_in(text))
+    except Exception:                                              # noqa: BLE001
+        return []
+
+
 TERMINAL = frozenset({"CLOSED", "CONFIRMED", "DUPLICATE", "MERGED", "REFUTED"})
 LIVE = frozenset({"OPEN", "REOPENED", "UNCONFIRMED", "CONTESTED",
                   "CORROBORATED", "WITHHELD"})
@@ -365,6 +392,84 @@ class TicketStore:
     def similar(self, verbatim: str) -> list[Ticket]:
         """Tickets whose NORMALISED digest matches. Catches a rewording."""
         return [self._by_tid[i] for i in self._by_nid.get(nid_of(verbatim), [])]
+
+    #: How much of a proposal's distinctive vocabulary must already appear in a
+    #: ticket for that ticket to be SURFACED as a candidate. Swept over 19
+    #: thresholds on 150 queries by
+    #: `scripts/does_the_register_beat_word_search_2026-10-17.py`; 0.95 was the
+    #: most accurate single point and is used here. It governs SURFACING only.
+    WORD_OVERLAP_SURFACE = 0.95
+
+    def similar_by_words(self, verbatim: str,
+                         threshold: float | None = None) -> list[Ticket]:
+        """Tickets sharing most of this proposal's distinctive vocabulary.
+
+        HIS INSTRUCTION, 2026-10-17: *"The registry search can contain both a
+        word and hashed ID search, so it can contain the best of both
+        approaches."*
+
+        HE IS RIGHT, AND NOT BY A UNION, WHICH IS WHY THIS LAYER ONLY SURFACES.
+        Measured on 150 queries over 106 known and 44 genuinely new items:
+
+          * the hashed tiers        recall 95.2830%, specificity 95.4545%
+          * distinctive-word overlap recall 98.1132%, specificity 86.3636%
+          * UNION, either says known recall 98.1132%, specificity 81.8182%
+          * INTERSECTION, both must  recall 95.2830%, specificity 100.0000%
+
+        A UNION IS WORSE ON SPECIFICITY THAN EITHER METHOD ALONE, and that is
+        arithmetic rather than an accident: saying "known" whenever either
+        method does cannot be more specific than the less specific of the two.
+        So the word layer is NOT allowed to decide. It surfaces candidates --
+        98.1132% of known items are surfaced, Wilson [93.3801%, 99.4810%] --
+        and `propose` still decides by the hashed tiers, holding specificity at
+        95.4545%.
+
+        THE ASYMMETRY SETTLES THE DESIGN. A wrong merge BURIES a finding under a
+        closed ticket; a missed match merely creates a duplicate ticket that can
+        be merged later. The costs are not comparable, so the stricter rule
+        wins, which is also what his own duplicate test requires: the same
+        issue AND the same proposed fix AND, since 2026-10-17, the same hash.
+
+        Returns candidates ranked by overlap, most similar first.
+        """
+        share = self.WORD_OVERLAP_SURFACE if threshold is None else threshold
+        wanted = set(_norm_tokens(verbatim))
+        if not wanted:
+            return []
+        scored: list[tuple[float, Ticket]] = []
+        for ticket in self._by_tid.values():
+            have = set(_norm_tokens(ticket.verbatim or ticket.title or ""))
+            if not have:
+                continue
+            overlap = len(wanted & have) / len(wanted)
+            if overlap >= share:
+                scored.append((overlap, ticket))
+        scored.sort(key=lambda pair: (-pair[0], pair[1].tid))
+        return [ticket for _, ticket in scored]
+
+    def candidates(self, kind: str, verbatim: str, task_ref: str = "",
+                   anchor: str = "") -> dict:
+        """Everything the register can surface about a proposal, DECIDING nothing.
+
+        The one place a caller should look before raising a ticket, and the
+        reason the register is a register rather than a log: it answers "has this
+        been raised, fixed, refused or merged before?" across all 3 hashed tiers
+        AND the word layer, and leaves the merge decision to `propose` and to his
+        duplicate test.
+        """
+        exact = self.exact(kind, verbatim, task_ref=task_ref, anchor=anchor)
+        return {
+            "exact": [exact] if exact else [],
+            "reworded": self.similar(verbatim),
+            # THE SUBJECT EXTRACTOR LIVES IN THE HARVESTER, not here, and this
+            # calls it rather than carrying a second copy. `subjects_of` was
+            # written into this method first and does not exist -- an invented
+            # name that would have raised on the first call, which is why this
+            # method is executed by its guard rather than only read.
+            "by_subject": [t for s in _subjects_in(verbatim)
+                           for t in self.by_subject(s)],
+            "by_words": self.similar_by_words(verbatim),
+        }
 
     def by_subject(self, subject: str) -> list[Ticket]:
         """Every ticket touching a named mechanism. Survives any rewording."""
@@ -738,7 +843,31 @@ class TicketStore:
         return nt
 
     def merge(self, tid: str, into: str, verification: str) -> Ticket:
-        """DUPLICATE -> MERGED. His 2 elements: same fault AND same repair."""
+        """DUPLICATE -> MERGED. His 3 elements: same fault, same repair, same hash.
+
+        HIS DEFINITION, restated and EXTENDED on 2026-10-17: *"if it\'s the same
+        issue and the fix/proposed feature etc is the same (and now also if its
+        hash value is the same), then it can/should be marked as a dupe. However
+        if a new fix/feature request is genuinely new, it should be raised as a
+        new ticket."* The first 2 elements are his of 2026-10-16: *"a duplicate
+        can only be called a duplicate, if a) it finds the same fault and b) if
+        the proposed repair is in fact identical."*
+
+        THE HASH IS A NECESSARY CONDITION, NOT A SUFFICIENT ONE, and the
+        distinction is load-bearing. Two proposals sharing a digest are the same
+        TEXT, which is strong evidence of the same fault; they are not thereby
+        the same REPAIR, because a digest is taken over the finding rather than
+        over the fix. So a matching hash admits a merge to consideration and the
+        2 substantive elements still have to hold, which is why `verification`
+        is mandatory here and names them.
+
+        WHY THE WORD LAYER CANNOT MERGE ANYTHING. `similar_by_words` surfaces
+        candidates at 98.1132% recall, and a UNION rule admitting its matches
+        would drop specificity to 81.8182% -- worse than either tier alone.
+        Measured by `scripts/does_the_register_beat_word_search_2026-10-17.py`.
+        A wrong merge BURIES a finding under a closed ticket; a missed match
+        only leaves a duplicate to merge later. The costs are not comparable.
+        """
         t = self._by_tid.get(tid)
         if t is None:
             raise KeyError(f"no ticket {tid}")
