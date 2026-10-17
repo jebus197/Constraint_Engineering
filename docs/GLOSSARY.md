@@ -828,3 +828,22 @@ consecutive settled rounds carrying no novel critical finding, computed on the
 settled post-reconciliation registry rather than the live-at-round transient.
 All-novelty gamma is kept as a diagnostic and reaches no decision. The 3
 shakedown legs ran under it and converged at rounds 3, 4 and 4.
+
+### Count arm
+
+The side of the two-sided convergence gate that requires a run of consecutive
+rounds with no novel critical finding — the quiet-run condition. The other side
+is the gamma arm, which requires the critical decay curve to have flattened.
+Both must be satisfied: measured 2026-10-08, the gamma arm blocked 0 of 23
+archived premature windows, so the count arm alone determined the false-quiet
+rate, and raising its required run from 3 to 7 on the founder's ruling is what
+reduced that rate.
+
+### Critical threshold
+
+In the branching analysis of the task list, R = 1 — the point at which a process
+producing R new entries per entry closed changes from terminating with
+probability 1 to possibly never terminating. Equivalently p = 1/2 for
+p = additions / (additions + closures), which is why the test against it is an
+ordinary proportion test. Not to be confused with `CRITICAL_SEVERITY_THRESHOLD`,
+the severity at or above which a finding counts as critical.

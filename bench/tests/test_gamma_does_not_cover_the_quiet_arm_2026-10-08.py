@@ -79,12 +79,46 @@ class TestGammaBlockedNoneOfThem:
     'fix it' could be answered by doing nothing."""
 
     def test_the_real_gate_fires_on_every_premature_window(self, M):
-        d = M.claim_gamma_does_not_cut_the_joint_rate()
+        """AT THE WINDOW THIS CLAIM WAS MEASURED AT, which is 3.
+
+        The call took no argument and the window was hard-coded twice, so when
+        his ruling of 2026-10-08 raised the required quiet run to 7 the gate
+        stopped firing on 3-round windows and this read as REFUTED. It was not
+        refuted: it was being asked a different question. The claim is that
+        GIVEN a satisfied count arm, gamma blocks none of these windows, so the
+        window and the gate's quiet run have to agree.
+        """
+        d = M.claim_gamma_does_not_cut_the_joint_rate(window=3)
         assert d["with_a_recorded_gamma"] >= 20, (
             f"only {d['with_a_recorded_gamma']} windows carry a gamma; a smaller "
             "set cannot support the claim")
         assert d["gamma_blocked_none"], d
         assert d["gate_fire_rate"] == 1.0, d
+
+    def test_the_raised_quiet_run_removes_the_windows_rather_than_blocking_them(self, M):
+        """WHAT HIS RULING ACTUALLY BOUGHT, measured rather than asserted.
+
+        Gamma never blocked a premature window -- that is the claim above, and
+        it is why "fix it" could not be answered by doing nothing. The fix works
+        by making the windows themselves disappear: at the configured quiet run
+        the archive holds 0 premature windows at all.
+
+        A vacuous `gamma_blocked_none` is distinguished from a confirmed one
+        here, because with no windows to block the flag is True for the wrong
+        reason, and a guard that cannot tell those apart would read an empty
+        measurement as a success.
+        """
+        import bench.reference_runner_v3 as rr
+        K = rr.RunnerConfig().gamma_alt_consecutive_zero_crit
+        d = M.claim_gamma_does_not_cut_the_joint_rate(window=K)
+        assert d["window"] == K
+        assert d["premature_windows"] == 0, (
+            f"at the configured quiet run of {K} the archive still holds "
+            f"{d['premature_windows']} premature window(s); his ruling of "
+            f"2026-10-08 was carried out on the premise that 7 leaves none")
+        assert d["gate_fire_rate"] is None, (
+            "with no windows there is no rate; a number here would mean the "
+            "window detector and the gate disagree about the length")
 
     def test_gamma_was_above_its_threshold_in_all_of_them(self, M):
         d = M.claim_gamma_does_not_cut_the_joint_rate()

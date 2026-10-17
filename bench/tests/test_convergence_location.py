@@ -144,7 +144,29 @@ def test_location_keyed_series_makes_real_gate_converge():
         return None
 
     assert first_converge(idp) is None, "ID-proxy series must NOT converge (the bug)"
-    assert first_converge(loc) == 6, "location-keyed series must converge at round 6"
+
+    # THE ROUND IS DERIVED FROM THE CONFIGURED QUIET RUN, NOT PINNED.
+    #
+    # It read `== 6`, which was `first_zero + K - 1` with K at its old value of
+    # 3. Raising the required quiet run to 7 on his ruling of 2026-10-08 moved
+    # the answer to 10 and turned this red -- correctly: the behaviour really did
+    # change. But the CLAIM this test exists to make is that the location-keyed
+    # series converges while the ID-proxy series does not, and the exact round is
+    # an artefact of K.
+    #
+    # The derivation is checked against the original literal rather than merely
+    # asserted to be equivalent: at K=3 it yields 6, which is what this line said
+    # before. That is why it is a derivation and not a convenience.
+    K = cfg.gamma_alt_consecutive_zero_crit
+    first_zero = next(i for i, n in enumerate(loc) if n == 0)
+    expected = first_zero + K - 1
+    assert first_zero + 3 - 1 == 6, (
+        "the derivation must reproduce this test's original pinned round under "
+        "the original K of 3; if it does not, the derivation is wrong")
+    assert first_converge(loc) == expected, (
+        f"the location-keyed series must converge once {K} consecutive "
+        f"zero-critical rounds have passed, which from round {first_zero} is "
+        f"round {expected}")
 
 
 class TestMarkdownTargets:

@@ -208,33 +208,53 @@ def claim_the_empirical_rate_agrees_and_needs_no_model(
     }
 
 
-def claim_gamma_does_not_cut_the_joint_rate() -> dict:
+def claim_gamma_does_not_cut_the_joint_rate(window: int = 3) -> dict:
     """CALL THE REAL GATE on every premature window in the record.
 
     `execute-do-not-grep`: a test that read the gate's source could only confirm
     that the gate describes itself consistently. Calling it on the archive's own
     gamma values is the only thing that shows whether the second arm bites.
+
+    THE WINDOW LENGTH IS A PARAMETER, 2026-10-17, and it defaults to 3 because
+    that is the length this claim was MEASURED at. It was hard-coded twice -- the
+    window detector read `(i-2, i-1, i)` and the gate was handed a literal
+    `[0, 0, 0]` -- so when his ruling of 2026-10-08 raised the required quiet run
+    to 7 the gate stopped firing on 3-round windows and this claim read as
+    refuted. It was not refuted; it was being asked a different question.
+
+    THE QUESTION THIS CLAIM ASKS is: GIVEN that the count arm is satisfied, does
+    the gamma arm block any of these windows? So the configuration handed to the
+    gate must have its quiet run EQUAL to the window being tested, or the count
+    arm fails and the measurement is of the wrong arm entirely. That is now
+    explicit rather than incidental.
+
+    This is the `a_producer_outlives_its_defect` pattern: fixing the thing a
+    producer measured broke the producer. The figure stays reproducible at
+    `window=3`, and the caller may ask at any other length.
     """
     sys.path.insert(0, str(REPO))
     from bench.reference_runner_v3 import (RunnerConfig,
                                            _check_gamma_alt_convergence)
     cfg = RunnerConfig()
+    # THE GATE MUST BE ASKED ABOUT THE WINDOW IT IS HANDED. Without this the
+    # count arm refuses and the gamma arm is never reached.
+    cfg.gamma_alt_consecutive_zero_crit = window
     reports = collect_reports()
     windows = []
     for recs in reports:
         last = max([rn for rn, _, h, _, _ in recs if h > 0], default=-1)
-        for i in range(2, len(recs)):
+        for i in range(window - 1, len(recs)):
             rn, _, _, g, src = recs[i]
             if rn >= last:
                 continue
-            if all(recs[j][2] == 0 for j in (i - 2, i - 1, i)):
+            if all(recs[j][2] == 0 for j in range(i - window + 1, i + 1)):
                 windows.append((src, rn, g))
     with_gamma = [(s, r, g) for s, r, g in windows if isinstance(g, (int, float))]
     fired, above = 0, 0
     detail = []
     for src, rn, g in with_gamma:
         conv, reason = _check_gamma_alt_convergence(
-            rn, float(g), [0, 0, 0], cfg, unresolved_critical=0, contested=0,
+            rn, float(g), [0] * window, cfg, unresolved_critical=0, contested=0,
             gamma_critical=float(g), total_findings=10)
         fired += bool(conv)
         above += float(g) >= float(getattr(cfg, "gamma_alt_threshold", 0.30))
@@ -243,6 +263,8 @@ def claim_gamma_does_not_cut_the_joint_rate() -> dict:
     lo, hi = wilson(fired, len(with_gamma))
     return {
         "gamma_alt_threshold": float(getattr(cfg, "gamma_alt_threshold", 0.30)),
+        "window": window,
+        "configured_quiet_run": int(RunnerConfig().gamma_alt_consecutive_zero_crit),
         "premature_windows": len(windows),
         "with_a_recorded_gamma": len(with_gamma),
         "gate_fired_on": fired,

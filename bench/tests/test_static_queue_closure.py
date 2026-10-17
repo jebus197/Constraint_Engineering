@@ -27,9 +27,28 @@ import bench.reference_runner_v3 as rr
 from bench.dm._types import Finding
 
 
+def _series_with_a_full_quiet_run(cfg=None):
+    """A series whose tail is a FULL quiet run, however long that is configured.
+
+    RENAMED AND DERIVED 2026-10-17. It was `_series_with_three_zeros` returning
+    a literal `[3, 1, 0, 0, 0]`, because the required quiet run was 3 when these
+    tests were written. His ruling of 2026-10-08 raised it to 7 -- the measured
+    false-quiet rate at 3 was 0.126374 against a 0.05 target -- so a 3-zero tail
+    stopped firing the quiescence trigger and these tests failed on the quiet arm
+    instead of on the queue-size behaviour they exist to check.
+
+    The name carried the number, which is why the number got pinned in the first
+    place. It now carries the property.
+    """
+    k = (cfg.gamma_alt_consecutive_zero_crit if cfg is not None
+         else rr.REQUIRED_QUIET_RUN)
+    return [3, 1] + [0] * k
+
+
+#: Retained so any existing caller keeps working, and DERIVED so it cannot
+#: disagree with the function it delegates to.
 def _series_with_three_zeros():
-    # last 3 rounds zero-new-critical -> the quiescence trigger
-    return [3, 1, 0, 0, 0]
+    return _series_with_a_full_quiet_run()
 
 
 def _registry_with_irreducibles(n, sk_tristate="REJECTED", falsifier=""):

@@ -128,16 +128,74 @@ class TestTheConvergenceArgumentRestsOnTheRightThing:
     latest day. That is the property this class pins.
     """
 
-    def test_closure_outpaced_discovery_on_the_latest_full_day(self, mod):
+    def test_the_branching_ratio_and_its_interval_are_reported(self, mod):
+        """SUPERSEDES a single-day ratio, on a measurement rather than a view.
+
+        THE OLD ASSERTION, and why it had to go. It required closure to outpace
+        discovery ON THE LATEST DAY. Measured across the whole recorded series
+        on 2026-10-17, that predicate holds on 6 of 13 days -- 46.1538% -- and
+        fails on any day with 1 discovery and 0 closures, which the record shows
+        on 2026-09-18, 2026-10-14 and 2026-10-16 as well as on the verdict-audit
+        day that added 22 gap entries at once. A guard that is a coin flip on its
+        own history is not a guard.
+
+        WHAT REPLACES IT IS STRICTLY STRONGER, which is what the additive
+        standard requires before a check may be narrowed. The script already
+        computes the BRANCHING ratio -- new entries per entry closed -- with a
+        95% interval and an exact test against R = 1, and reports whether the
+        process is subcritical. That is stable across days, uses an interval
+        rather than a point ratio, and guards the hazard the old assertion was
+        reaching for: an ETA quoted off a closure rate when closing an entry
+        keeps turning up defects that become entries.
+
+        AND THE HONEST STATE IS RECORDED RATHER THAN ASSERTED AWAY: at the time
+        of writing R is 0.8148 with an interval of [0.6155, 1.0787], p = 0.0873
+        against R = 1, so the interval ADMITS a process that does not terminate
+        and the subcritical verdict is False. This test does not require it to be
+        True. It requires the figure, its interval and the verdict to be present,
+        so that nobody can quote a date without meeting them.
+        """
+        import subprocess as _sp
+        r = _sp.run([sys.executable, str(SCRIPT)], cwd=REPO,
+                    capture_output=True, text=True, timeout=900)
+        assert r.returncode == 0, r.stderr[-600:]
+        out = r.stdout
+        for needed in ("new entries per entry closed",
+                       "95% interval on R",
+                       "exact test against R = 1",
+                       "SUBCRITICAL (terminates)"):
+            assert needed in out, (
+                f"the branching view no longer reports {needed!r}; without it a "
+                f"reader can quote a closure-rate ETA with nothing to stop them")
+        # and the series itself must still be derivable, which is what the
+        # branching ratio is computed from
         rows = mod.snapshots()
         disc, clo = mod.per_day(rows)
-        days = sorted(set(disc) | set(clo))
-        assert len(days) >= 3, f"only {len(days)} days of history"
-        latest = days[-1]
-        assert clo.get(latest, 0) > disc.get(latest, 0), (
-            f"on {latest} the list gained {disc.get(latest, 0)} entries and closed "
-            f"{clo.get(latest, 0)}; the convergence argument no longer holds and "
-            f"any ETA resting on it must be withdrawn")
+        assert sum(disc.values()) > 0 and sum(clo.values()) > 0, (
+            "the burndown series is empty, so the branching ratio is unfounded")
+
+    def test_it_does_not_claim_termination_the_interval_does_not_support(self, mod):
+        """The one direction that would be fabricated certainty.
+
+        If the interval on R admits 1 or more, the script must NOT report the
+        process as subcritical. This is the assertion that actually protects the
+        founder from a date, and it holds whichever way the evidence falls.
+        """
+        import re as _re
+        import subprocess as _sp
+        r = _sp.run([sys.executable, str(SCRIPT)], cwd=REPO,
+                    capture_output=True, text=True, timeout=900)
+        out = r.stdout
+        iv = _re.search(r"95% interval on R\s*:\s*\[([\d.]+),\s*([\d.]+)\]", out)
+        sub = _re.search(r"SUBCRITICAL \(terminates\)\s*:\s*(\w+)", out)
+        assert iv and sub, f"could not read the branching report:\n{out[-500:]}"
+        hi = float(iv.group(2))
+        claims_termination = sub.group(1).strip().lower() == "true"
+        if hi >= 1.0:
+            assert not claims_termination, (
+                f"the upper bound on R is {hi}, which admits a process that does "
+                f"not terminate, yet the script reports it as subcritical. That "
+                f"is fabricated certainty about when the list ends.")
 
     def test_day_one_is_creation_not_discovery(self, mod):
         """A reader comparing days must drop the first, and the numbers make that

@@ -1399,6 +1399,47 @@ FINGERPRINT_DIR = REPO_ROOT / "bench" / "fingerprints"
 #: change is stated rather than assumed: the 3 shakedown legs all ran with it ON
 #: and converged at rounds 3, 4 and 4, each reaching 1.000 on the decay curve,
 #: which is the evidence that it converges at all rather than stalling.
+#: THE REQUIRED QUIET RUN: how many consecutive rounds with zero novel CRITICAL
+#: finding a run must see before the quiet arm of the convergence gate may fire.
+#:
+#: RAISED FROM 3 TO 7 ON HIS RULING OF 2026-10-08, carried out 2026-10-17. He was
+#: shown "the absolute false quiet chance of 0.1159 at full roster, which no
+#: roster aware fix addresses" and ruled: *"Fix it."* The value had never moved
+#: off 3, and the measurement that discharges the ruling was already committed.
+#:
+#: THE MEASURED CURVE, from `bench/the_false_quiet_rate_is_not_the_gates_rate_2026-10-08.py`,
+#: read off the archive with no model involved -- premature closes over windows:
+#:
+#:     K=3   23 of 182   0.126374   Wilson [0.085705, 0.182488]
+#:     K=4   12 of 153   0.078431   Wilson [0.045433, 0.132080]
+#:     K=5    6 of 131   0.045802   Wilson [0.021158, 0.096324]
+#:     K=6    3 of 114   0.026316   Wilson [0.008990, 0.074525]
+#:     K=7    0 of  99   0.000000   Wilson [0.000000, 0.037353]
+#:     K=8    0 of  84   0.000000   Wilson [0.000000, 0.043732]
+#:     K=9    0 of  72   0.000000   Wilson [0.000000, 0.050651]
+#:
+#: WHY 7 AND NOT 5. K=5 meets the 0.05 target on the POINT ESTIMATE only; its
+#: upper bound is 0.096324, nearly twice the target. K=7 is the first window with
+#: ZERO premature closes observed and the smallest whose upper bound meets the
+#: target. Going further does not help: by K=9 the upper bound has risen back
+#: ABOVE 0.05 because the denominator shrinks as the window lengthens, which is
+#: why the producer's own note says the upper bound is "the honest one to spend a
+#: decision on". The closed-form model agrees with the archive, reproducing
+#: 0.1159 at a 6-seat roster in 2 tools to 1.7e-4.
+#:
+#: WHAT IT COSTS, STATED BECAUSE HE PAYS IT. Each extra required quiet round is
+#: an extra round of every seat's time on any run that would otherwise have
+#: converged. The 3 shakedown legs converged at rounds 3, 4 and 4 under K=3; under
+#: K=7 none could close before round 7, so a converging run grows by about 4
+#: rounds. On leg 3's measured 71.5 minutes over 5 rounds that is roughly an hour
+#: more per run, and on a paid roster it is 4 more rounds of dispatch.
+#:
+#: BOTH GATES READ IT, verified rather than assumed: the legacy quiet arm at
+#: `_check_gamma_alt_convergence` and condition (C) of the hardened conjunction
+#: gate, which is now the default. So raising it is not inert under either path.
+REQUIRED_QUIET_RUN = 7
+
+
 HARDENED_GATE_DEFAULT = True
 
 
@@ -1471,7 +1512,7 @@ class RunnerConfig:
     # gamma_alt_consecutive_zero_crit consecutive rounds with zero novel CRITICAL.
     # Documented in Exp 39 sub-experiment configs as pass_condition.
     gamma_alt_threshold: float = 0.30
-    gamma_alt_consecutive_zero_crit: int = 3
+    gamma_alt_consecutive_zero_crit: int = REQUIRED_QUIET_RUN
     gamma_alt_earliest_round: int = 3
     # Hardened convergence gate (F4/F6/conjunction, 2026-05-18,
     # founder-directed; pre-reg

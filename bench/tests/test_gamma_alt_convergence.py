@@ -42,6 +42,24 @@ def _default_cfg(**overrides) -> RunnerConfig:
     return cfg
 
 
+def _quiet_tail(cfg, leading=()):
+    """A zero-critical tail exactly as long as the CONFIGURED quiet run.
+
+    ADDED 2026-10-17. These tests built a literal `[0, 0, 0]`, which was the
+    required quiet run when they were written. His ruling of 2026-10-08 raised
+    it -- the measured false-quiet rate at 3 consecutive quiet rounds was
+    0.126374 against a 0.05 target, and 7 is the smallest window with zero
+    premature closes observed -- so a literal tail of 3 no longer satisfies the
+    gate and 4 of these tests went red.
+    
+    The tests are about WHETHER the quiet arm fires, not about the number 3, so
+    the tail is derived from `cfg.gamma_alt_consecutive_zero_crit`. A test that
+    deliberately supplies a SHORT tail keeps its literal, because the shortness
+    is the point there.
+    """
+    return list(leading) + [0] * cfg.gamma_alt_consecutive_zero_crit
+
+
 class TestEarliestRound:
     def test_before_earliest_round_returns_false(self):
         cfg = _default_cfg(gamma_alt_earliest_round=3)
@@ -60,7 +78,8 @@ class TestEarliestRound:
         """
         cfg = _default_cfg(gamma_alt_earliest_round=3)
         converged, reason = _check_gamma_alt_convergence(
-            round_idx=3, gamma=0.50, novel_critical_history=[0, 0, 0, 0], cfg=cfg,
+            round_idx=3, gamma=0.50,
+            novel_critical_history=_quiet_tail(cfg, [0]), cfg=cfg,
         )
         assert converged is True  # zero-critical tail, not γ
         assert "CRITICAL_QUIESCENCE_CONVERGED" in reason
@@ -147,10 +166,16 @@ class TestGammaCriticalIsActiveCondition:
         It must still block, and the reason must still name gamma_critical so this
         class's guarantee — gamma is an active condition — remains visible.
         """
+        # THE QUIET TAIL MUST BE LONG ENOUGH, or this blocks for the wrong
+        # reason. With a literal 3 against the configured quiet run of 7 the
+        # gate refused on the COUNT arm, so the dead-panel condition this test
+        # exists to check was never reached and the assertion below failed on a
+        # message about consecutive rounds. Deriving the tail puts the decision
+        # back where the test aims it.
         cfg = _default_cfg(gamma_alt_threshold=0.30)
         converged, reason = _check_gamma_alt_convergence(
-            round_idx=6, gamma=0.10, novel_critical_history=[0, 0, 0], cfg=cfg,
-            gamma_critical=0.20, total_findings=0,
+            round_idx=6, gamma=0.10, novel_critical_history=_quiet_tail(cfg),
+            cfg=cfg, gamma_critical=0.20, total_findings=0,
         )
         assert converged is False
         assert "gamma_critical" in reason
@@ -159,7 +184,8 @@ class TestGammaCriticalIsActiveCondition:
     def test_gamma_critical_above_threshold_with_zero_tail_converges(self):
         cfg = _default_cfg(gamma_alt_threshold=0.30)
         converged, reason = _check_gamma_alt_convergence(
-            round_idx=6, gamma=0.10, novel_critical_history=[0, 0, 0], cfg=cfg,
+            round_idx=6, gamma=0.10, novel_critical_history=_quiet_tail(cfg),
+            cfg=cfg,
             gamma_critical=0.45,  # >= 0.30 — curve flattened, count clean
         )
         assert converged is True
@@ -435,9 +461,11 @@ class TestReasonFormatting:
     def test_converged_reason_contains_round_idx(self):
         cfg = _default_cfg()
         _, reason = _check_gamma_alt_convergence(
-            round_idx=7, gamma=0.50, novel_critical_history=[0, 0, 0], cfg=cfg,
+            round_idx=7, gamma=0.50, novel_critical_history=_quiet_tail(cfg),
+            cfg=cfg,
         )
-        assert "round 7" in reason
+        assert "round 7" in reason, (
+            f"the CONVERGED reason must name the round it fired on; got {reason!r}")
 
     def test_not_met_reason_contains_recent_history(self):
         cfg = _default_cfg()
