@@ -29,6 +29,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Callable, Optional, Sequence
+import hashlib as _hashlib
 
 
 # Capability ordering for the FALSIFICATION task, strongest first. Ordered by the
@@ -176,6 +177,82 @@ VENDOR_ORDER_SUPERSEDED = DEFAULT_FALSIFIER_STRENGTH
 FALSIFIER_STRENGTH_IS_ESTABLISHED = False
 
 
+#: How many hex characters of the identity digest to keep. 12 gives a collision
+#: probability under 1e-7 for any plausible roster: with 1,000 distinct
+#: identities the birthday bound is about 1.8e-8, and the project has seated 6.
+#: Short enough to read in a log line, long enough that a collision is not a
+#: thing to design around -- and `capability_provenance` records the inputs, so
+#: a collision would be visible rather than silent.
+CAPABILITY_IDENTITY_CHARS = 12
+
+
+def capability_identity(provider: str, model_identifier: str,
+                        version: str = "") -> str:
+    """A STABLE HASH over (provider, model identifier, version).
+
+    HIS RULING, 2026-10-16, after asking why it had not been built: *"The hashed
+    model ID's rather than deriving capability by name is a relatively new
+    feature. ... the only thing that governs capability is demonstrated measured
+    capability, not model names."* And the design as put to the free panel on
+    2026-10-14: *"Key every capability decision on a STABLE IDENTITY -- a hash
+    over (provider, model identifier, version) -- with the vendor name recorded
+    as PROVENANCE and deciding nothing."*
+
+    WHY A HASH AND NOT THE READABLE TRIPLE. The runner already carries
+    `registry.model_identity`, which maps a seat label to `model_id@api`. That is
+    an identity, and it is used to count DISTINCT MODELS in a refutation tally so
+    two seats of one model cannot be read as two dissenting voices. But it is a
+    name, and a name invites a capability decision keyed on it -- which is the
+    practice he has rejected 4 times. A digest cannot be read as a vendor, so a
+    ranking keyed on it cannot smuggle one in. The readable triple travels
+    separately, through `capability_provenance`, where it informs a reader and
+    decides nothing.
+
+    NORMALISED BEFORE HASHING, because the same model reached two ways must be
+    one identity: case folded, surrounding whitespace dropped, and the mandatory
+    simulation suffix REMOVED, so a stand-in seat shares the identity of the
+    model standing in. That last choice is deliberate and is the conservative
+    direction: merging two records that are the same model under-separates, and
+    under-separation makes auto-refutation HARDER rather than easier, which is
+    the direction that preserves findings.
+
+    EMPTY INPUTS ARE REFUSED rather than hashed. An identity derived from
+    nothing would be stable, identical for every such model, and silently wrong
+    -- the shape of defect this project keeps finding. The caller must say what
+    it is identifying.
+    """
+    def _norm(value: str) -> str:
+        text = str(value or "").strip()
+        if text.upper().endswith("-SIM"):
+            text = text[:-4]
+        return " ".join(text.split()).casefold()
+
+    prov, mid, ver = _norm(provider), _norm(model_identifier), _norm(version)
+    if not mid:
+        raise ValueError(
+            "capability_identity needs a model identifier; an identity derived "
+            "from nothing would be stable, shared by every such model, and "
+            "silently wrong")
+    payload = "\x1f".join((prov, mid, ver)).encode("utf-8")
+    return _hashlib.sha256(payload).hexdigest()[:CAPABILITY_IDENTITY_CHARS]
+
+
+def capability_provenance(provider: str, model_identifier: str,
+                          version: str = "") -> dict:
+    """The readable inputs behind an identity, for a reader and for nothing else.
+
+    Returned as a record rather than printed, so a manifest can carry it and a
+    human can map a digest back to the model it stands for. It is DELIBERATELY
+    not accepted anywhere a capability decision is taken.
+    """
+    return {
+        "identity": capability_identity(provider, model_identifier, version),
+        "provider": str(provider or "").strip(),
+        "model_identifier": str(model_identifier or "").strip(),
+        "version": str(version or "").strip(),
+    }
+
+
 def falsification_evidence_from_registry(registry) -> dict:
     """Per-seat ``(refuted, total)`` from a LIVE registry.
 
@@ -282,6 +359,63 @@ class RoutingResult:
     ladder_was_empty: bool = False
 
 
+def seat_identities(registry, labels) -> dict:
+    """seat label -> capability identity, using the registry's own resolution.
+
+    HIS DESIGN: capability belongs to an identity, not to a seat label. Two
+    seats of the SAME model must pool their falsification outcomes rather than
+    be ranked against each other as if they were different models -- the runner
+    already applies that reasoning when counting distinct models in a refutation
+    tally, and this applies it to capability.
+
+    THE REGISTRY'S `resolve_model` IS THE SOURCE, not a second parse of the
+    config. It returns `model_id@api` normalised, and it already handles the
+    case- and whitespace-insensitivity that hand-written seat labels need. A
+    label it cannot resolve resolves to ITSELF, which this turns into an identity
+    of its own rather than a shared bucket -- over-separating, which is the
+    direction that makes refutation HARDER and so preserves findings.
+    """
+    resolve = getattr(registry, "resolve_model", None)
+    out: dict = {}
+    for label in labels or ():
+        text = str(label or "").strip()
+        if not text:
+            continue
+        resolved = str(resolve(text) if callable(resolve) else text).strip()
+        if "@" in resolved:
+            mid, _, api = resolved.rpartition("@")
+        else:
+            mid, api = resolved, ""
+        try:
+            out[text] = capability_identity(api, mid or text)
+        except ValueError:
+            out[text] = capability_identity("", text)
+    return out
+
+
+def falsification_evidence_by_identity(registry, labels) -> tuple:
+    """``(evidence_by_identity, seat_to_identity)``, pooled per model.
+
+    The per-seat reader stays as it is, because its contract is per-seat and the
+    refutation tally depends on it. This pools each seat's refuted-of-total pair onto
+    the identity the seat resolves to, which is where capability lives under his design.
+    """
+    per_seat = falsification_evidence_from_registry(registry)
+    ident = seat_identities(registry, labels or list(per_seat))
+    pooled: dict = {}
+    for seat, (ref, tot) in per_seat.items():
+        key = ident.get(str(seat).strip())
+        if key is None:
+            try:
+                key = capability_identity("", str(seat))
+            except ValueError:
+                continue
+            ident[str(seat).strip()] = key
+        r, n = pooled.get(key, (0, 0))
+        pooled[key] = (r + ref, n + tot)
+    return pooled, ident
+
+
 def season_strength_order(registry, labels, frozen=None, alpha: float = 0.05):
     """``(order, established, why)`` for THIS experiment, measured once then kept.
 
@@ -310,14 +444,42 @@ def season_strength_order(registry, labels, frozen=None, alpha: float = 0.05):
         return tuple(frozen), True, (
             "frozen from an earlier round of this experiment; a season's "
             "positions stay fixed")
-    evidence = falsification_evidence_from_registry(registry)
-    order, established, why = strength_order_from_evidence(
-        evidence, labels=labels, alpha=alpha)
+    # CAPABILITY IS MEASURED PER IDENTITY, AND THE LADDER IS A SEQUENCE OF
+    # SEATS. His ruling of 2026-10-16, after asking why the hashed identifiers
+    # had not been built: *"the only thing that governs capability is
+    # demonstrated measured capability, not model names."* So the outcomes are
+    # pooled onto the identity each seat resolves to, the identities are ranked,
+    # and the seats are then ordered by the rank of the identity they carry. Two
+    # seats of one model therefore share a position rather than being ranked
+    # against each other, which is the same reasoning the refutation tally
+    # already applies when it counts distinct models.
+    pooled, seat_to_identity = falsification_evidence_by_identity(
+        registry, labels)
+    id_order, established, why = strength_order_from_evidence(
+        pooled, labels=sorted(set(seat_to_identity.values())) or None,
+        alpha=alpha)
     if established:
-        return order, True, why
+        rank = {identity: n for n, identity in enumerate(id_order)}
+        seats = sorted(
+            (str(l).strip() for l in (labels or seat_to_identity) if str(l).strip()),
+            key=lambda s: (rank.get(seat_to_identity.get(s), len(rank)), s))
+        return tuple(seats), True, (
+            f"{why}; ranked over {len(rank)} capability identity(ies) and "
+            f"applied to {len(seats)} seat(s)")
+    # AN IDENTITY ABSENT FROM THE EVIDENCE IS NAMED, NEVER SILENTLY DEFAULTED.
+    # His design, 2026-10-14: *"An identity absent from the tables must be LOUD,
+    # never defaulted."* Before this the fallback said it was a fallback but not
+    # WHICH seats went unmeasured, so a reader could not tell a roster with no
+    # evidence from one whose evidence failed to separate -- two different
+    # situations with the same sentence.
+    _unmeasured = sorted(
+        f"{seat} ({ident})" for seat, ident in seat_to_identity.items()
+        if ident not in pooled or pooled.get(ident, (0, 0))[1] == 0)
+    _loud = (f"; {len(_unmeasured)} seat(s) carry NO falsification evidence at "
+             f"all: {', '.join(_unmeasured)}" if _unmeasured else "")
     return tuple(DEFAULT_FALSIFIER_STRENGTH), False, (
         f"{why}; falling back to the vendor order, which rests on no "
-        f"measurement (FALSIFIER_STRENGTH_IS_ESTABLISHED is False)")
+        f"measurement (FALSIFIER_STRENGTH_IS_ESTABLISHED is False){_loud}")
 
 
 def rank_falsifier_writers(
