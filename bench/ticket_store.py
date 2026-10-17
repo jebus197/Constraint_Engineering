@@ -298,6 +298,22 @@ class TicketStore:
         return [t for t in self._by_tid.values() if t.status in want]
 
     def open_tickets(self) -> list[Ticket]:
+        """Work that is actually OPEN. Excludes UNCONFIRMED, which means only
+        that something was harvested and its state has not yet been established.
+
+        THE DISTINCTION MATTERS AND WAS FOUND BY MEASUREMENT on 2026-10-17: a
+        first harvest created 281 tickets from his annotations and called them
+        all OPEN, so the store reported 306 open items when most were long
+        handled. A store that overstates open work is as useless as one that
+        understates it, and both make it decoration.
+        """
+        return [t for t in self._by_tid.values() if t.status == "OPEN"]
+
+    def unconfirmed(self) -> list[Ticket]:
+        """Harvested, state not yet established. These need triage, not work."""
+        return [t for t in self._by_tid.values() if t.status == "UNCONFIRMED"]
+
+    def live(self) -> list[Ticket]:
         return [t for t in self._by_tid.values() if t.status in LIVE]
 
     def settled(self) -> list[Ticket]:
@@ -332,7 +348,8 @@ class TicketStore:
     # ------------------------------------------------------------ transitions
     def propose(self, kind: str, title: str, verbatim: str, source: str,
                 source_ref: str = "", ruled: str = "", created: str = "",
-                task_ref: str = "", subjects: Iterable[str] = ()) -> tuple[Ticket, str]:
+                task_ref: str = "", subjects: Iterable[str] = (),
+                status: str = "OPEN") -> tuple[Ticket, str]:
         """Create or return a ticket. Returns (ticket, outcome).
 
         outcome is one of: created, exists, settled-already, reworded-match,
@@ -358,7 +375,12 @@ class TicketStore:
         if near:
             settled = [t for t in near if t.status in TERMINAL or t.status == REJECTED]
             return (settled[0] if settled else near[0]), "reworded-match"
-        t = Ticket(tid=want, nid=nid_of(verbatim), kind=kind, status="OPEN",
+        if status not in LIVE:
+            raise ValueError(
+                f"a new ticket must start in a LIVE status, not {status!r}. A "
+                "terminal status is tool-only and is reached through close(), "
+                "reject() or merge(), never by creation.")
+        t = Ticket(tid=want, nid=nid_of(verbatim), kind=kind, status=status,
                    title=" ".join(str(title).split())[:160],
                    verbatim=" ".join(str(verbatim).split()),
                    source=source, source_ref=source_ref, ruled=ruled,
