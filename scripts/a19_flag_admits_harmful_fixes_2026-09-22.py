@@ -5,6 +5,33 @@ R_k and to the admissible tally for the HARMFUL fix of each fixture.
 Property 1 of bench/tests/test_prose_acceptance_stem.py: "A harmful fix is never
 admitted, and never closes a finding."
 Property 2: "an unmeasured fix may not move R_k in either direction."
+
+★ THIS FILE'S NAME IS NOT SUPPORTED BY ITS OWN OUTPUT, and the name is kept only
+because renaming it would break the citations that point here. Re-measured
+2026-10-17 over all 5 fixtures, both fix kinds and both flag states -- 20 rows:
+
+    harmful fix, flag OFF : 5 of 5 NO_SCORE    (passes through UNSCORED)
+    harmful fix, flag ON  : 3 of 5 REJECTED, 2 of 5 NO_SCORE
+    correct fix, flag OFF : 5 of 5 NO_SCORE
+    correct fix, flag ON  : 5 of 5 NO_SCORE    (0 wrongly rejected)
+
+So the flag does not ADMIT a harmful fix -- the `admitted` column is 0 on all 20
+rows, which is Property 1 holding in BOTH states. What the flag changes is that
+3 of the 5 harmful fixes become actively REJECTED instead of silently unscored.
+The state that lets a harmful prose fix through without an opinion is the flag
+being OFF, which is the opposite of what the filename says.
+
+WHAT THE EVIDENCE DOES NOT SETTLE, and why the default is still the founder's
+call. 0 of 5 correct fixes were wrongly rejected, and 0 of 5 bounds the
+false-rejection rate only at [0.0000%, 43.4482%] on a 95% Wilson interval. A
+default that decides which fixes reach a verdict should not be flipped on an
+upper bound that wide, so the measurement is reported and the ruling is left
+where task A19 already puts it.
+
+THE `nan` IN THE R_old AND R_new COLUMNS IS EXPECTED, not a defect. Those keys
+are absent from `sk_result` on a REJECTED outcome because Property 2 governs an
+UNMEASURED fix, and a rejected fix has been measured. Reading them as a fault
+was an error made and corrected on 2026-10-17.
 """
 import os
 import pathlib
