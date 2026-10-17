@@ -60,27 +60,32 @@ def main() -> int:
 
     main_persist = m._load_fingerprints("persist")
     main_exp = m._load_fingerprints("experiment")
-    print(f"\n  LOADER 1  _load_fingerprints('persist')    -> {len(main_persist)} seats")
-    print(f"  LOADER 1  _load_fingerprints('experiment') -> {len(main_exp)} seats"
+    print(f"\n  LOADER 1  _load_fingerprints('persist')    -> {len(main_persist)} records")
+    print(f"  LOADER 1  _load_fingerprints('experiment') -> {len(main_exp)} records"
           f"   <-- honours the scope")
     print(f"  LOADER 1  at-load snapshot after 'experiment': "
           f"{len(m._FINGERPRINTS_AT_LOAD)} entries")
 
     im._fp_cache = None
     cache = im._load_fingerprint_cache()
-    print(f"\n  LOADER 2  _load_fingerprint_cache()        -> {len(cache)} seats"
+    print(f"\n  LOADER 2  _load_fingerprint_cache()        -> {len(cache)} records"
           f"   <-- NO scope parameter")
 
     paid = {k: v.get("max_successful_prompt_chars") for k, v in cache.items()
             if not k.endswith("-SIM")}
     carrying = {k: v for k, v in paid.items() if v}
-    print(f"\n  of the {len(cache)} seats loader 2 sees, {len(carrying)} are PAID seats"
+    print(f"\n  of the {len(cache)} records loader 2 sees, {len(carrying)} are PAID"
           f" carrying a capacity:")
     for k, v in sorted(carrying.items()):
         print(f"    {k:10s} max_successful_prompt_chars = {v:>8d}"
               f"  -> effective ceiling {int(v * 0.9)}")
     sim = sorted(k for k in cache if k.endswith("-SIM"))
-    print(f"  and {len(sim)} stand-in seats: {sim}")
+    print(f"  and {len(sim)} stand-in records: {sim}")
+    base = {k[:-4] if k.endswith("-SIM") else k for k in cache}
+    print(f"\n  THESE ARE RECORDS, NOT SEATS. {len(cache)} records cover"
+          f" {len(base)} DISTINCT MODELS: {sorted(base)}.")
+    print("  The loaders return a dict keyed by LABEL, so its length counts")
+    print("  labels accumulated across ALL runs. No run has ever seated 11.")
 
     distinct = sorted(set(carrying.values()))
     print(f"\n  distinct capacities among the {len(carrying)} paid seats: {distinct}")

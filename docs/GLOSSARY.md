@@ -454,3 +454,30 @@ Cryptographic audit trail (`bench/verification_chain.py`). Implements RFC 9162 w
 ### Y (Cognitive Yield)
 
 Total cognitive yield: finding count times mean abstraction depth. When findings decrease but depth increases, total yield can still rise. Captures ascending abstraction as a distinct cognitive mode. Defined in Mathematical Appendix Section 7.
+
+### Simple classifier
+
+The founder's term, 2026-10-17, for the role that assigns a finding to the checking
+instrument its content calls for, as distinct from a role that judges the finding
+itself. Haiku performs it today for routing. His point in naming it is that a
+decision of this shape is **not** model voting: the classifier selects which
+instrument adjudicates, and the instrument's output then decides. His words: *"not
+'model voting'... more akin to the simple classifier work already done by Haiku"*.
+The same role is proposed for comparing candidate fixes once fold-fixes-back moves
+to the close of a run, deciding which fixes compose and which meet the
+simplest-sufficient and additive standards. See `worker role`, `orchestrator role`.
+
+### Worker role
+
+One of the 3 roles the founder names for a seat in the harness, 2026-10-17: the
+role the panel models currently perform, reviewing a target and producing findings.
+Named alongside `simple classifier` and `orchestrator role` as the 3 separately
+selectable and configurable roles a researcher should be able to assign per model.
+
+### Orchestrator role
+
+The third of the founder's 3 roles, 2026-10-17, and the one CC1 performs today from
+outside the harness: monitoring a run, pausing on anything anomalous, applying the
+five-step reasoning cycle, resuming, and discussing findings with the researcher.
+His design is that a model bound inside the harness should hold this role and serve
+as the primary researcher interface. Tracked as task B20; nothing is built.
