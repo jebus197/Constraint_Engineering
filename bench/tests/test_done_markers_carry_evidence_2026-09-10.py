@@ -78,40 +78,32 @@ def test_a_done_entry_names_its_evidence(entry):
 
 @pytest.mark.parametrize("entry", DONE, ids=lambda e: e.ident)
 def test_every_named_file_exists(entry):
-    gone = [f for f in entry.evidence if not (REPO / f).is_file()]
-    assert not gone, f"task {entry.ident} names files that do not exist: {gone}"
+    """Executes the shared predicate rather than keeping a second copy.
+
+    THE CHECKS USED TO LIVE ONLY HERE, inline, so the only thing that could
+    object to a bad evidence value was this suite -- AFTER the marker had been
+    written and a commit attempted. Three entries in one session (C16, B15 and
+    the C2/C9 pair) were marked DONE naming either a prose annotation or a
+    directory, and each refusal arrived as a red suite rather than as a refusal
+    to write. `task_list_markers.set_marker` now calls the same function BEFORE
+    writing. Both forms EXECUTE it; neither asserts on the other's source."""
+    objections = [o for o in M.evidence_objections(entry.ident, entry.evidence)
+                  if "does not exist" in o or "is a directory" in o]
+    assert not objections, "\n".join(objections)
 
 
 @pytest.mark.parametrize("entry", DONE, ids=lambda e: e.ident)
 def test_every_named_file_holds_a_real_test(entry):
     """A NAMED FILE THAT ASSERTS NOTHING IS NOT EVIDENCE.
 
-    Parsed rather than grepped: a file can contain the string `def test_` in a
-    docstring. This counts function definitions and requires at least one to
-    contain an assertion or a pytest.raises."""
-    for f in entry.evidence:
-        src = (REPO / f).read_text(encoding="utf-8", errors="replace")
-        tree = ast.parse(src, filename=f)
-        funcs = [n for n in ast.walk(tree)
-                 if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
-                 and n.name.startswith("test_")]
-        assert funcs, f"task {entry.ident}: {f} defines no test function"
-        # A TRUTHY CONSTANT IS NOT AN ASSERTION. `def test_hollow(): assert True`
-        # satisfied the first version — cc2, panel review 2026-09-10.
-        def _real_assert(node):
-            for k in ast.walk(node):
-                if isinstance(k, ast.Assert):
-                    t = k.test
-                    if isinstance(t, ast.Constant) and bool(t.value):
-                        continue          # assert True / assert 1 / assert "x"
-                    return True
-            return "raises" in (ast.get_source_segment(src, node) or "")
-
-        with_assert = [n for n in funcs if _real_assert(n)]
-        assert with_assert, (
-            f"task {entry.ident}: {f} has {len(funcs)} test function(s) and not "
-            f"one of them asserts anything")
-
+    Parsed rather than grepped, and parsed in ONE place: a file can contain the
+    string `def test_` in a docstring, and `def test_hollow(): assert True`
+    satisfied the first version of this check -- cc2, panel review 2026-09-10.
+    """
+    objections = [o for o in M.evidence_objections(entry.ident, entry.evidence)
+                  if ("test function" in o or "asserts anything" in o
+                      or "does not parse" in o)]
+    assert not objections, "\n".join(objections)
 
 @pytest.mark.parametrize("entry", DONE, ids=lambda e: e.ident)
 def test_every_named_file_is_somewhere_the_suite_collects(entry):

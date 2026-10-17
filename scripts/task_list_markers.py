@@ -310,6 +310,158 @@ def check(path: Path = LIST) -> tuple[int, list[str]]:
     return (1 if problems else 0), problems
 
 
+#: Where a DONE entry's evidence must live for the suite to run it. The
+#: DONE-evidence guard resolves containment rather than matching this as a
+#: prefix, because `bench/tests/../../../tmp/test_x.py` matches the prefix and
+#: resolves outside the repository -- cc2 defeated the first version that way
+#: in panel review on 2026-09-10.
+#: RELATIVE, and resolved against the caller's root. Written first as
+#: `REPO / "bench" / "tests"`, an absolute path, which made `evidence_objections`
+#: ignore its own `root` argument: every check against a temporary tree refused
+#: a perfectly sound file as "outside". Its own guard caught it on the first run
+#: -- 6 of 13 red -- which is what a parameter that nothing exercises looks like.
+EVIDENCE_HOME = Path("bench") / "tests"
+
+
+def _asserts_something(node, src: str) -> bool:
+    """Does this test function assert anything that is not a truthy constant?
+
+    `def test_hollow(): assert True` satisfied the first version of the
+    DONE-evidence guard -- found by cc2 in panel review, 2026-09-10.
+    """
+    import ast
+    for inner in ast.walk(node):
+        if isinstance(inner, ast.Assert):
+            test = inner.test
+            if isinstance(test, ast.Constant) and bool(test.value):
+                continue
+            return True
+    return "raises" in (ast.get_source_segment(src, node) or "")
+
+
+def evidence_objections(ident: str, evidence, root: Path = REPO) -> list[str]:
+    """Every reason a DONE entry's named evidence is not evidence. [] if sound.
+
+    ONE DEFINITION, TWO CALLERS, and that is the whole point of extracting it.
+    The checks lived inline in `test_done_markers_carry_evidence_2026-09-10.py`
+    and nowhere else, so the only thing that could object to a bad evidence
+    value was the suite -- AFTER the marker had been written and a commit
+    attempted. Three times in one session (tasks C16, B15 and the C2/C9 pair)
+    an entry was marked DONE carrying either a prose annotation or a directory
+    as its evidence, and each time the refusal arrived as a red suite rather
+    than as a refusal to write.
+
+    `set_marker` now calls this BEFORE writing, and the guard calls it instead
+    of keeping its own copy, so the two cannot drift apart. Neither form
+    asserts on the other's source text: both execute this function.
+    """
+    import ast
+
+    out: list[str] = []
+    if not evidence:
+        return [f"task {ident}: DONE with no evidence named"]
+    for name in evidence:
+        target = (root / name)
+        if not target.exists():
+            out.append(f"task {ident}: {name} does not exist")
+            continue
+        if target.is_dir():
+            out.append(f"task {ident}: {name} is a directory, not a test file")
+            continue
+        resolved = target.resolve()
+        home = (root / EVIDENCE_HOME).resolve()
+        if not (home in resolved.parents or resolved.parent == home):
+            out.append(f"task {ident}: {name} resolves to {resolved}, outside "
+                       f"{home}, so nothing in the suite runs it")
+            continue
+        src = resolved.read_text(encoding="utf-8", errors="replace")
+        try:
+            tree = ast.parse(src, filename=name)
+        except SyntaxError as exc:
+            out.append(f"task {ident}: {name} does not parse ({exc})")
+            continue
+        funcs = [n for n in ast.walk(tree)
+                 if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+                 and n.name.startswith("test_")]
+        if not funcs:
+            out.append(f"task {ident}: {name} defines no test function")
+            continue
+        if not any(_asserts_something(n, src) for n in funcs):
+            out.append(f"task {ident}: {name} has {len(funcs)} test "
+                       f"function(s) and not one of them asserts anything")
+    return out
+
+
+def set_marker(ident: str, *, state: str | None = None,
+               status: str | None = None, evidence=None,
+               ruled: str | None = None, path: Path = LIST) -> str:
+    """Rewrite one entry's marker, REFUSING unsound DONE evidence.
+
+    Fields not passed are carried over from the existing marker, so advancing
+    `state` alone cannot silently drop a `ruled:` date the founder earned.
+
+    THE REFUSAL IS THE POINT. Every previous close was an ad-hoc inline script,
+    and three of them wrote an evidence value the suite then rejected. The
+    worst shape was the quietest: a script guarded with `if "evidence:" not in
+    marker`, which SKIPPED entries that already carried a `Responses annotation
+    dated ...` value -- provenance for the question, not verification of the
+    answer -- and so left the stale value in place while reporting success.
+
+    Raises KeyError for an unknown identifier, ValueError for an unknown state
+    or status, and ValueError listing every objection when the resulting entry
+    would be DONE on evidence that is not a test the suite runs.
+    """
+    lines = path.read_text(encoding="utf-8").splitlines()
+    idx = None
+    for i, line in enumerate(lines):
+        if _is_entry(line) and ENTRY.match(line).group(1) == ident:
+            idx = i
+            break
+    if idx is None:
+        raise KeyError(f"no task entry {ident!r} in {path}")
+
+    marker_at = idx + 1
+    existing = MARKER.match(lines[marker_at]) if marker_at < len(lines) else None
+    if existing:
+        cur_state, cur_status = existing.group(2), existing.group(3)
+        cur_ev = tuple(x.strip() for x in (existing.group(4) or "").split(",")
+                       if x.strip())
+        cur_ruled = (existing.group(5) or "").strip() or None
+    else:
+        cur_state = cur_status = None
+        cur_ev, cur_ruled = (), None
+
+    new_state = state or cur_state
+    new_status = status or cur_status
+    new_ev = cur_ev if evidence is None else (
+        (evidence,) if isinstance(evidence, str) else tuple(evidence))
+    new_ruled = cur_ruled if ruled is None else (ruled or None)
+
+    if new_state not in STATES:
+        raise ValueError(f"state {new_state!r} not in {STATES}")
+    if new_status not in STATUSES:
+        raise ValueError(f"status {new_status!r} not in {STATUSES}")
+    if new_state == "DONE":
+        objections = evidence_objections(ident, new_ev, root=path.parents[1])
+        if objections:
+            raise ValueError(
+                f"refusing to mark {ident} DONE: " + "; ".join(objections))
+
+    parts = [f"task: {ident}", f"state: {new_state}", f"status: {new_status}"]
+    if new_ev:
+        parts.append("evidence: " + ", ".join(new_ev))
+    if new_ruled:
+        parts.append(f"ruled: {new_ruled}")
+    line = "<!-- " + " | ".join(parts) + " -->"
+
+    if existing:
+        lines[marker_at] = line
+    else:
+        lines.insert(marker_at, line)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return line
+
+
 def apply_markers(path: Path = LIST) -> int:
     """Insert a marker under every entry that lacks one. Returns how many added."""
     lines = path.read_text().splitlines()

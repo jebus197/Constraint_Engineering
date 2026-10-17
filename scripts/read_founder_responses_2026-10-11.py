@@ -71,6 +71,60 @@ def wilson(k: int, n: int) -> tuple:
     return (round(max(0.0, c - h), 4), round(min(1.0, c + h), 4))
 
 
+#: FILES IN THAT FOLDER THAT ARE NOT HIS ANNOTATED RESPONSES, named one by one
+#: with the evidence, because every shape-based discriminator tried for this was
+#: MEASURED AND REFUTED on 2026-10-17:
+#:
+#:   * a dated-filename filter would drop 8 of 598 annotations, 1.3378%,
+#:     Wilson [0.6794%, 2.6174%];
+#:   * a markdown-structure test (fences, '##' heading density) marks
+#:     FINAL_REPORT_FOR_OPUS_2026-08-27.md, which carries a real verdict, and
+#:     does NOT mark design_brief.txt, which carries none;
+#:   * removing the `.md`-only gate on `_looks_like_a_markdown_heading` so it
+#:     applies to `.txt` as well would drop 18 of 598, 3.0100%,
+#:     Wilson [1.9123%, 4.7076%] -- 12 of them REAL verdicts of his, including
+#:     "Verdict: y", "Go with option B" and "Go with option A". That is exactly
+#:     the failure `no-ruling-is-dropped-for-being-short` exists to prevent.
+#:
+#: So the exclusion is EXPLICIT and PER FILE. It cannot lose a verdict by
+#: accident, because nothing is excluded unless it is named here with a reason,
+#: and `--verify` reports what was skipped rather than dropping it silently.
+#: Measured by scripts/what_would_partitioning_the_register_buy_2026-10-17.py's
+#: sibling check and recorded in experimental_notes/.
+#:
+#: WHY THE GATE FAILED IN THE FIRST PLACE. `_looks_like_a_markdown_heading` was
+#: applied only to `.md` and `.markdown`, on the stated assumption that "he
+#: annotates .txt, .rtf and .docx in Word". That assumption held until he began
+#: dropping FOREIGN DOCUMENTS into the folder -- a Gemini design brief, a
+#: YouTube auto-transcript, a pasted chat log -- whose own title lines open with
+#: a hash. The filter was correct; the set of files it reached was not.
+NOT_HIS_ANNOTATIONS = {
+    #: Gemini Web's register design brief, attached by him 2026-10-17. Its 3
+    #: '#' lines are the document's own title block: "DESIGN BRIEF: CHRONOS
+    #: MEMORY SYSTEM (CMS)", "TARGET AGENT: ...", "SPECIFICATION VERSION: 2.0".
+    "design_brief.txt": "a design brief from another model, not his annotation",
+    #: A YouTube auto-transcript. Its 3 '#' lines are the transcript tool's
+    #: header: "tactiq.io free youtube transcript", the video title, the URL.
+    "tactiq-free-transcript-4S8I22ybG2c.txt":
+        "an auto-generated transcript header, not his annotation",
+    #: A pasted chat log. Its 2 '#' lines open "Me: Does DeepSeek API support
+    #: tool calls?Gemini:..." -- a transcript of someone else's exchange.
+    "DeepSeek Tool use.docx":
+        "a pasted chat transcript, not his annotation",
+}
+
+
+def is_one_of_his_annotated_responses(path: Path) -> bool:
+    """A response file he actually annotated, excluding foreign documents.
+
+    SEPARATE FROM `is_a_response_file` DELIBERATELY. That predicate answers
+    "can the reader read this file at all?" and the reader-gap check depends on
+    it: narrowing it would make a file the reader cannot parse stop being
+    reported as a gap, which is the opposite of what is wanted.
+    """
+    return is_a_response_file(path) and path.name not in NOT_HIS_ANNOTATIONS
+
+
 def is_a_response_file(path: Path) -> bool:
     """One predicate, three call sites, so they cannot drift apart.
 
@@ -202,7 +256,7 @@ def annotations(since: _dt.date | None = None, until: _dt.date | None = None) ->
     """Every `#`-prefixed annotation the founder wrote, with its file and date."""
     out = []
     for p in sorted(RESPONSES.glob("*")):
-        if not is_a_response_file(p):
+        if not is_one_of_his_annotated_responses(p):
             continue
         d = _dt.date.fromtimestamp(p.stat().st_mtime)
         if since and d < since:
