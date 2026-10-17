@@ -500,3 +500,31 @@ rather than being fixed at the rank it first earned. His words: *"A ladder is
 bidirectional. It goes both up and down."* His stated reason is that model
 capability changes over time, so a one-way ladder locks a seat into a stale
 ranking. Tracked as task C9; the ladder currently demotes only.
+
+### Classifier arm
+
+The measurable half of the bound-orchestrator experiment (task B20): the
+orchestrator decides which of several candidate repairs is better, which
+compose, and which meet the simplest-sufficient and additive standards. It is
+scorable against ground truth because `bench/fix_efficacy.py` already provides
+an executable criterion for a single repair, namely whether the repair cures the
+defect its own falsifier demonstrates. See `monitor arm`, `shadow arm`.
+
+### Monitor arm
+
+The unmeasurable half of the bound-orchestrator experiment (task B20): the
+founder's `cy` protocol performed from inside the harness, meaning noticing that
+a running experiment has gone wrong, pausing it, analysing, repairing and
+resuming. It has no defined predicate, because "gone wrong" is not specified
+anywhere, so there is nothing to score it against. Keeping it separate from the
+`classifier arm` prevents a measurable result being confounded with an
+unmeasurable one.
+
+### Shadow arm
+
+A run in which a candidate mechanism observes and records what it would have
+decided, while the existing mechanism continues to decide, so agreement can be
+measured afterwards without the candidate affecting the run. Proposed for the
+bound orchestrator (task B20) because it needs no stable harness and risks no
+decision. The same pattern is used elsewhere in the project for calibrators
+promoted only on non-distortion evidence.
