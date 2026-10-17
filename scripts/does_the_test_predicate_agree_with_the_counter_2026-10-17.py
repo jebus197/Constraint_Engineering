@@ -66,6 +66,7 @@ def main() -> int:
 
     h_blocked = h_unserv = c_blocked = c_unserv = 0
     t_blocked = t_unserv = nested_blocked = nested_unserv = 0
+    f_c_blocked = f_c_unserv = 0
     disagree_runs, entry_diffs = [], 0
     runs = 0
     runs_nested = 0
@@ -95,6 +96,7 @@ def main() -> int:
         except Exception:                                 # noqa: BLE001
             continue
         h_blocked += hb; h_unserv += len(hu)
+        f_c_blocked += cb; f_c_unserv += len(cu)
         if top_level:
             c_blocked += cb; c_unserv += len(cu)
             t_blocked += hb; t_unserv += len(hu)
@@ -128,6 +130,32 @@ def main() -> int:
         print("  run                                        hand  cnt  hU  cU  sym")
         for r in disagree_runs:
             print(f"  {r[0][:42]:<42} {r[1]:>4} {r[2]:>4} {r[3]:>3} {r[4]:>3} {r[5]:>4}")
+
+    # THE FULL LADDER, so every figure that has ever been quoted for this
+    # quantity can be placed. Each row is the SAME archive read a different
+    # way, and the 4 rows reproduce all 3 denominators that reached the founder.
+    print()
+    print("EVERY FIGURE QUOTED FOR THIS QUANTITY, AND WHAT PRODUCED IT:")
+    rows = [
+        ("hand-rolled predicate, all nesting", h_blocked, h_unserv,
+         "the original 94 of 212"),
+        ("live counter, all nesting", f_c_blocked, f_c_unserv,
+         "his correction list's denominator"),
+        ("hand-rolled predicate, top-level only", t_blocked, t_unserv, ""),
+        ("live counter, top-level only", c_blocked, c_unserv,
+         "AUTHORITATIVE"),
+    ]
+    for label, b, u, note in rows:
+        pct = (100.0 * u / b) if b else 0.0
+        tail = f"   <- {note}" if note else ""
+        print(f"  {label:<40} {u:>4} of {b:<4} = {pct:7.4f}%{tail}")
+    print()
+    print("  His correction of 2026-10-16 said the denominator 212 was wrong and")
+    print("  the numerator 94 was right. The denominator correction is EXACTLY")
+    print("  reproduced -- the counter returns 197 at that scope, and 212 - 197")
+    print("  is the 15-entry width he named. But the numerator moves too: the")
+    print("  counter returns 79 unservable at that scope, not 94. Restricting to")
+    print("  top-level run states then gives 73 of 167.")
 
     if h_blocked == c_blocked and entry_diffs == 0:
         print("\nVERDICT: the 2 forms agree today. The test is still unsound,")

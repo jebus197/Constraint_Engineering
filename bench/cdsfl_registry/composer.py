@@ -2024,10 +2024,26 @@ def compose(
             # ★ 2026-10-16 (CC3): THE WARNING NO LONGER ASSERTS A PENALTY
             # THAT IS NOT IN FORCE. It read "Coherence penalty κ(m,g) < 1
             # applies to effective detection", and nothing in this repository
-            # computes or applies such a κ. Executed: the only match for
-            # "κ" in bench/cdsfl_registry/ was this string, and every
-            # `kappa` in the live tree is `kappa_set`, the convergence metric
-            # of §7.13 -- a different quantity entirely. An operator reading
+            # computes or applies such a κ.
+            #
+            # THE JUSTIFICATION WAS FALSE BY COUNT AND IS CORRECTED 2026-10-17, on
+            # his correction of 2026-10-16. It claimed "every `kappa` in the live
+            # tree is `kappa_set`". Enumerated by
+            # `scripts/what_kappa_actually_is_in_the_tree_2026-10-17.py`: 355
+            # occurrences across 10 distinct identifiers, of which `kappa_set` is
+            # 53. The other 302 are `kappa` bare at 187, `kappa_stuck` 60,
+            # `kappa_rate` 24, `κ` 13, `kappa_adopt` 9, `κ_load` and `κ_focus` 3
+            # each, `kappa_converged` 2 and `kappa_values` 1. The claim about THIS
+            # directory was wrong too: composer.py holds 3 Greek-κ occurrences.
+            #
+            # THE OPERATIVE HALF SURVIVES, re-checked rather than assumed. κ(m,g)
+            # in the penalty sense appears at 6 live sites: this comment,
+            # `bench/gemini_math_audit.py:72,77,116` -- where it sits inside a
+            # PROMPT PAYLOAD describing the mathematics to a model rather than in a
+            # computation -- and 2 assertions in
+            # `test_the_composer_fallback_flag_is_consumed_2026-10-16.py`. No code
+            # computes or applies it, so the warning's withdrawal of the penalty
+            # claim is correct; only its arithmetic was not. An operator reading
             # the log was told a detection penalty had been applied to this
             # dispatch. None had. The budget comparison IS real and is still
             # reported; only the unsupported consequence is withdrawn.

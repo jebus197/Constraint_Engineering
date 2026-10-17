@@ -102,14 +102,35 @@ Four-label vocabulary describing a code component's maturity within the runtime 
 ### Coherence Budget
 
 A per-model ceiling on CONSTRAINT DENSITY in a composed system prompt, where
-density is the constraint count divided by the estimated token length
-(`composer.py:1070`). When a model's density exceeds its budget the composer
-prunes SOFT content to get under it: first individual SOFT directives inside a
-packet, then whole SOFT packets (`composer.py:1057-1099`). HARD and universal
-layers are never pruned. If it cannot get under the ceiling it emits the
-"over coherence budget" warning and a coherence penalty, written in the model as
-kappa(m,g) < 1, applies to effective detection. Defaults are per model
-(`composer.py:65`).
+density is the constraint count divided by the estimated token length. The
+comparison is still computed and still reported in the "over coherence budget"
+warning. **It governs nothing.**
+
+CORRECTED 2026-10-17, on his correction of 2026-10-16 that this entry "still
+states the penalty claim both panel seats retracted, and still describes the
+retired pruner as active". Two sentences were wrong, and this is the definition
+an operator looks up, so both mattered:
+
+- **The pruner is retired by default**, on his ruling of 2026-10-13.
+  `_prune_for_coherence` is the only effectful consumer of the budget, and the
+  earlier wording described it as routinely pruning SOFT directives and then
+  whole SOFT packets. It does not run unless deliberately enabled.
+- **No detection penalty is applied.** The earlier wording said a coherence
+  penalty written kappa(m,g) < 1 applies to effective detection. Both panel
+  seats retracted that from the code on 2026-10-16, because nothing in the
+  repository computes or applies such a quantity. Re-checked by execution
+  2026-10-17: kappa(m,g) in the penalty sense occurs at 6 live sites, of which
+  3 are a PROMPT PAYLOAD in `bench/gemini_math_audit.py` describing the
+  mathematics to a model, 2 are test assertions, and 1 is the composer comment
+  recording this withdrawal. None is a computation. Producer:
+  `scripts/what_kappa_actually_is_in_the_tree_2026-10-17.py`.
+
+The ceiling itself was RETIRED as a governing mechanism on 2026-10-17 — see
+[Density budget](#density-budget) — on his ruling that "the 'density' of a
+prompt shouldn't matter to a model, so long as the core system/directives prompt
+survives untouched, and the overall prompt length stays within a model's
+measured capability ceiling." What replaces it is prompt LENGTH against a seat's
+measured `max_successful_prompt_chars`.
 
 Added to this glossary on 2026-10-15 because the term is emitted at run time by
 the composer and appears in 4 documentation files while having had no definition
@@ -117,17 +138,35 @@ here, so a reader who met it had nowhere to look it up.
 
 ### Coherence Budget Recalibration
 
-`update_coherence_budgets_from_experiments()` (`composer.py:1536`): recomputes
+`update_coherence_budgets_from_experiments()` (`composer.py:1647`): recomputed
 the per-model coherence budget ceilings from archived experiment data rather
 than using the hard-coded defaults.
 
-STATUS, measured 2026-10-15: inert in 3 independent ways, each sufficient on its
-own. No caller invokes it; it mutates a value that lives only in memory; and
-handed a real run's logs it returns the existing defaults, because none of the
-61 recorded entries carries the 2 fields it reads. Its arithmetic is sound —
-given data in the documented shape it moves the first seat's budget from 0.02 to
-0.0571 — so this is a mismatch between what the runner records and what the
-calibrator expects to read, not a calculation error.
+**RETIRED 2026-10-17. It now RAISES**, and the refusal names his ruling, the
+proof and the replacement, because a retired function that silently no-ops
+cannot be told from a working one. The original body is kept visible as
+`_retired_update_coherence_budgets_from_experiments` (`composer.py:1694`), since
+a removal a reader cannot inspect is not reviewable.
+
+WHY, and it is a committed measurement rather than a judgement. The quantity it
+calibrated is provably counterproductive:
+`bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py` establishes by
+z3 that "pruning shortened the text AND density did not worsen" is
+UNSATISFIABLE — density is constraints over tokens, so removing text shrinks the
+denominator while the constraint count stands, and pruning to REDUCE density
+RAISES it. His ruling of 2026-10-16 asked what retiring it would cost, and the
+answer was nothing: repairing it instead meant emitting 2 extra fields per
+dispatch into every run's records and invalidating replay against every older
+run.
+
+STATUS BEFORE RETIREMENT, measured 2026-10-15 and kept here because it is why
+retirement was cheap: inert in 3 independent ways, each sufficient on its own.
+No caller invoked it; it mutated a value that lived only in memory; and handed a
+real run's logs it returned the existing defaults, because none of the 61
+recorded entries carried the 2 fields it read. Its arithmetic was sound — given
+data in the documented shape it moved the first seat's budget from 0.02 to
+0.0571 — so this was a mismatch between what the runner records and what the
+calibrator expected to read, not a calculation error.
 
 ### Composer
 
