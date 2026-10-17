@@ -391,6 +391,42 @@ def _extract_task_area(code: str, task_key: str) -> Optional[str]:
 # ── Fingerprint cache for decomposition decisions ──────────────────────────
 _fp_cache: Optional[Dict[str, Dict[str, Any]]] = None
 
+#: THE SCOPE THE RUN DECLARED, honoured here as well as on the runner's main
+#: observation path. His ruling of 2026-10-16: "The fingerprints should be
+#: recomputed in the first/blind run of any experiment anyway."
+#:
+#: THE DEFECT THIS CLOSES, measured 2026-10-16 by execution. 2 loaders read
+#: `bench/fingerprints/` inside one run. `reference_runner_v3._load_fingerprints`
+#: honours `cfg.fingerprint_scope` and returns an EMPTY mapping under
+#: "experiment", so the run re-measures its seats in the blind round. This one
+#: took no scope at all, so with the main path returning 0 records it returned
+#: 11, and the value it hands out -- `max_successful_prompt_chars`, multiplied by
+#: 0.9 -- is the ceiling that decides whether a payload is SPLIT. A run that
+#: believed it was measuring afresh was splitting payloads on a prior
+#: experiment's numbers, and 4 of the 5 paid seats shared the identical 465,206.
+#:
+#: So the reset was PARTIAL: total on the observation path, bypassed on the
+#: decomposition decision. It is total now.
+_fp_scope: str = "persist"
+
+
+def set_fingerprint_scope(scope: str) -> None:
+    """Declare the run's fingerprint scope and drop any cached observations.
+
+    Called once by the runner from `cfg.fingerprint_scope`. Invalidating here
+    rather than asking the caller to remember is deliberate: a setter that
+    leaves a stale cache behind is a setter that silently does nothing on the
+    second call, which is the shape of defect this whole repair is about.
+    """
+    global _fp_scope
+    _fp_scope = str(scope or "persist")
+    _invalidate_fingerprint_cache()
+
+
+def fingerprint_scope() -> str:
+    """The scope in force, so a caller can report it rather than assume it."""
+    return _fp_scope
+
 
 def _load_fingerprint_cache() -> Dict[str, Dict[str, Any]]:
     """Load fingerprint observation data from bench/fingerprints/.
@@ -405,6 +441,11 @@ def _load_fingerprint_cache() -> Dict[str, Dict[str, Any]]:
     decomposition for models with valid fingerprint data (Exp 39-0 R2 bug).
     """
     global _fp_cache
+    # EXPERIMENT SCOPE MEANS NO INHERITED OBSERVATIONS, here as on the main path.
+    # Returned fresh each time rather than cached, so a scope change mid-process
+    # cannot be defeated by a cached empty dict that outlives it.
+    if _fp_scope == "experiment":
+        return {}
     if _fp_cache is not None:
         return _fp_cache
     # Build locally, then assign atomically to avoid race condition.

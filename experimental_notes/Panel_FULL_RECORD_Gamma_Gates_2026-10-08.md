@@ -155,7 +155,7 @@ A4-ONLY fix would close this divergence?  NO
 Neither block subsumes the other, so the composed fix is justified on a demonstrated advantage over A4 alone.
 
 ### F2 — `_gamma_is_estimable` was added and then applied in 1 of the 4 places the estimator meets a threshold. **OBSERVED**
-`bench/reference_runner_v3.py:4786-9341` and `:9346-9350`
+`bench/reference_runner_v3.py:4787-9341` and `:9346-9350`
 
 The `sustained` and leave-one-round-out loops call `_estimate_gamma` on **shorter** sub-series and compare the result to theta raw. Shorter is where the sentinel is *most* likely, not least. By the fix's own standard — "gating on a sentinel is not gating on gamma" (`:9248`) — that is the same defect one branch over, running in the opposite direction.
 

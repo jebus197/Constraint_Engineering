@@ -249,6 +249,7 @@ from run_exp17_immune import (
     # One definition, one cache, imported rather than re-derived.
     _load_fingerprint_cache,
     _invalidate_fingerprint_cache,
+    set_fingerprint_scope,
     _build_verified_facts,
     _build_explicit_unknowns,
     _find_model_spec,
@@ -17760,8 +17761,14 @@ def run_experiment(
              f"refutation tally will count SEATS, which over-counts dissent")
 
     # Fingerprints
-    observed_fingerprints = _load_fingerprints(
-        getattr(cfg, "fingerprint_scope", "persist"))
+    # ONE SCOPE, DECLARED ONCE, HONOURED BY BOTH LOADERS. Until 2026-10-17 the
+    # decomposition futility guard's loader took no scope and read prior
+    # experiments' capacities off disk while this path returned nothing, so his
+    # ruling that fingerprints are recomputed in the blind round held on the
+    # observation path and was bypassed on the splitting decision.
+    _fp_scope_declared = getattr(cfg, "fingerprint_scope", "persist")
+    set_fingerprint_scope(_fp_scope_declared)
+    observed_fingerprints = _load_fingerprints(_fp_scope_declared)
 
     # Resume
     start_round = 0

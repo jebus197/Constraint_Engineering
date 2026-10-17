@@ -528,3 +528,26 @@ measured afterwards without the candidate affecting the run. Proposed for the
 bound orchestrator (task B20) because it needs no stable harness and risks no
 decision. The same pattern is used elsewhere in the project for calibrators
 promoted only on non-distortion evidence.
+
+### Decomposition guard
+
+The routine that decides whether a payload is too large for a seat and must be
+split before dispatch. It reads that seat's recorded
+`max_successful_prompt_chars` from `bench/fingerprints/`, multiplies it by 0.9,
+and splits when the non-decomposable part of the payload exceeds the result. Its
+full name in code is the decomposition futility guard, because it also declines
+to split where splitting cannot help.
+
+It is the consumer that made the per-experiment fingerprint reset only partial
+until 2026-10-17: it loaded fingerprints through a path that took no scope, so
+under `fingerprint_scope="experiment"` the run re-measured its seats while this
+guard still split payloads on a prior experiment's capacities. Both loaders now
+honour one declared scope. See `fingerprint scope`.
+
+### Fingerprint scope
+
+`RunnerConfig.fingerprint_scope`, defaulting to `experiment` on the founder's
+ruling of 2026-10-16 that fingerprints are recomputed in each experiment's blind
+round. Under `experiment` no seat observations are inherited from an earlier run;
+under `persist` they are. Declared once per run and honoured by both the main
+observation path and the `decomposition guard`.
