@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 17 October 2026 02:23 BST (2026-10-17T02:23:36+01:00)
+Generated: 17 October 2026 07:41 BST (2026-10-17T07:41:49+01:00)
 
 ---
 
@@ -18,16 +18,16 @@ Generated: 17 October 2026 02:23 BST (2026-10-17T02:23:36+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `13f4e6d8` the ownership distinction is now guarded, and 1 of 3 mutations exposed it as too weak
-- **Committed:** 2026-10-17 02:20:29 +0100
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 10
+- **Last commit (the PARENT of the commit containing this file):** `d21cc047` B10 built, and the ticket store had 3 defects of its own, the worst one mine
+- **Committed:** 2026-10-17 07:40:11 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 14
 - **Working tree at snapshot time:** clean
 
 ---
 
 ## Tests
 
-**11716 tests collected** at 17 October 2026 02:23 BST, HEAD `13f4e6d8` (`python3 -m pytest bench/tests/ --co -q`)
+**11858 tests collected** at 17 October 2026 07:41 BST, HEAD `d21cc047` (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,13 +57,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `13f4e6d8 the ownership distinction is now guarded, and 1 of 3 mutations exposed it as too weak`
-- `c6ee54b3 only 3 items await his ruling; 4 await an answer from me, and the distinction was wrong`
-- `9054389b the audit found 20 confirmed gaps in his record, 12 of them rulings never carried out`
-- `1df51094 his fold-fixes-back ruling was 0 of 2 built, and 10 of 15 open items hid his own rulings`
-- `130d9358 WITHDRAWN: my repeatability figure measured a status phrase, and my own P-pass broke it`
-- `f7a3c930 the final discussion before authorisation, with 2 findings made since the last report`
-- `21f3cbb5 the fingerprint reset is partial, and the 3 legs repeat by containment not replication`
-- `a01090d0 2 unread reports, and reading only the newer one would have cost him a decision`
-- `84eeed28 his question was right: the TTS explained 18 findings and recommended on 10`
-- `180471d9 the attack broke 3 of my claims, I broke 2 of its findings, and my own published denominator was wrong`
+- `d21cc047 B10 built, and the ticket store had 3 defects of its own, the worst one mine`
+- `a4e32982 B16 built: one fingerprint scope, declared once, honoured by both loaders`
+- `eebbe7b8 all 12 session hooks are now one file, reachable from the repo and unlosable`
+- `4bc7dc4c B19 built: the budget guard now tells a command from a prohibition`
+- `d55890c5 B18 built: his 2026-10-11 ruling is 2 of 2, and a third condition it never stated`
+- `d43c180c his proposed marker `pr` was already his panel-review command, so the fix marker is `pf``
+- `3049ae97 the harvester, the subject narrowing, and the Stop gate that prods until done`
+- `609407b8 the ticket store: settled is now a recorded field, and the subject tier is what works`
+- `95299314 the 94 blockers block nothing that matters, and the figure itself is withdrawn`
+- `2b9752bb the 48-hour task list, work remaining, answers owed, and the 3 rulings still needed`
