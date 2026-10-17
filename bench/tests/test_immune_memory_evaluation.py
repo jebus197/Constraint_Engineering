@@ -110,6 +110,90 @@ _CONFIRMED_STATUSES = {"CONFIRMED", "CLOSED"}  # runner _CONF, line ~9479
 _REJECTED_STATUS = "REFUTED"
 
 
+_ARCHIVE = os.path.join(_project_root, "bench", "state",
+                        "immune_memory_archive")
+
+
+def reset_record() -> "dict | None":
+    """The record of a DELIBERATE reset, or None if the memory was not reset.
+
+    ADDED 2026-10-17, and it exists because this suite raised a FALSE ALARM of
+    the most expensive kind. His ruling of 2026-10-16 was *"We reset immune
+    memory for the upcoming live experiments, since simulation can probably only
+    tell us so much about how this facility will function in real live/paid
+    experiments."* That reset was carried out, archiving 6 experiments' priors
+    and leaving the live store at 0 records.
+
+    THE SUITE THEN REPORTED A CONFINEMENT REGRESSION. Its own message read *"NO
+    class carries any refutation weight. Refutations were observed from leg 3
+    onward, so this means falsifiers have stopped reaching a refutation -- the
+    confinement defect of 2026-10-15, or one like it, is back"*. It is not back.
+    The memory is empty because he ordered it emptied, and a reader following
+    that message would have gone looking for a defect that does not exist.
+
+    A RESET IS DETECTABLE, so the suite has no excuse for the confusion: the
+    reset writes an archived copy beside a `.why.json` naming the ruling, the
+    archived sha, and which experiments it held. This reads that evidence.
+
+    IT IS NOT AN EXEMPTION. The condition is "0 records on disk AND an archive
+    exists". The moment a run writes a record the condition fails and every
+    assertion below applies again, so the suite re-arms itself rather than
+    staying quiet.
+    """
+    if not os.path.isdir(_ARCHIVE):
+        return None
+    whys = sorted(glob.glob(os.path.join(_ARCHIVE, "*.why.json")))
+    if not whys:
+        return None
+    try:
+        with open(whys[-1]) as fh:
+            record = json.load(fh)
+    except (OSError, ValueError):
+        return None
+    try:
+        live = ImmuneMemory.load(_STATE) if os.path.exists(_STATE) else None
+    except Exception:                                              # noqa: BLE001
+        return None
+    # THE ATTRIBUTE IS `_records`, AND GETTING THAT WRONG MADE THE EXEMPTION
+    # PERMANENT. The first version read `getattr(live, "records", None)`, which
+    # is always None on this class, so the reset record was returned even with
+    # records present and the 6 assertions would have stayed skipped for ever --
+    # exactly the permanent exemption this function's docstring promises it is
+    # not. Caught by the one check written to verify the re-arm, which is the
+    # reason to write that check rather than trust the promise.
+    #
+    # RAISES ON A RENAME rather than defaulting to "reset". If the attribute
+    # moves again, a loud failure is correct: defaulting would silently restore
+    # the exemption, and this suite's whole subject is a memory whose emptiness
+    # must be explained rather than assumed.
+    if live is not None:
+        if not hasattr(live, "_records"):
+            raise AttributeError(
+                "ImmuneMemory no longer exposes `_records`, so a reset can no "
+                "longer be told from a populated memory. Fix this rather than "
+                "letting it default, or the 6 populated-memory assertions in "
+                "this suite become permanently skipped.")
+        if live._records:
+            return None
+    return record
+
+
+def _require_populated_memory() -> None:
+    """Skip with the RESET's own reason, rather than failing as a regression."""
+    record = reset_record()
+    if record is None:
+        return
+    held = (record.get("state_when_archived") or {})
+    pytest.skip(
+        "the immune memory was DELIBERATELY RESET and holds 0 records: "
+        + str(record.get("reason", "no reason recorded"))[:160]
+        + f" (archived {record.get('archived_utc', '?')}, holding "
+        + f"{held.get('experiment_count', '?')} experiment(s)). This suite "
+        + "describes a POPULATED memory and re-arms itself as soon as a run "
+        + "writes a record."
+    )
+
+
 def _memory_on_disk() -> ImmuneMemory:
     if not os.path.exists(_STATE):
         pytest.skip("no recorded immune memory on disk")
@@ -202,6 +286,7 @@ class TestWhatTheMemoryHolds:
         difference of 0.0. The old form replayed 3 runs and compared them
         against a 5-run memory, so it could only ever have failed.
         """
+        _require_populated_memory()
         disk = _memory_on_disk()
         recording_runs = list(_RECORDING_RUNS) + [
             r for r in disk.experiment_ids if r not in _RECORDING_RUNS]
@@ -264,6 +349,7 @@ class TestWhatTheMemoryHolds:
         construction in a CONFIRM-only pipeline — not 'P(a claimed flaw of
         this class is real)'. The gap is measured here so it cannot be
         glossed."""
+        _require_populated_memory()
         counted = excluded = 0
         for run in _RECORDING_RUNS:
             for entry in _report_for(run)["registry"]["entries"].values():
@@ -447,6 +533,7 @@ class TestCounterfactual:
         below it (min 0.740), so nothing flips; but this is a threshold
         derived from one observation, and it is the whole of the memory's
         current decision-relevant content."""
+        _require_populated_memory()
         mem = _memory_on_disk()
         binding = {}
         for fc in sorted(mem._records):
@@ -749,6 +836,7 @@ class TestIntegrityGuards:
         """Stated as a fact about the real file, not an abstraction. A red here
         means the gap was CLOSED (experiment_ids backfilled) — update this test
         and delete the exposure note in `provenance_complete`."""
+        _require_populated_memory()
         mem = _memory_on_disk()
         assert not mem.provenance_complete, (
             f"the live memory now names its sources ({mem.experiment_ids}); "
@@ -825,6 +913,7 @@ class TestIntegrityGuards:
         A memory that LOST experiments is the corruption worth catching, and a
         pinned equality cannot distinguish that from ordinary growth.
         """
+        _require_populated_memory()
         mem = _memory_on_disk()
         assert mem._experiment_count >= len(_RECORDING_RUNS), (
             f"the memory records {mem._experiment_count} experiments, fewer "
@@ -913,6 +1002,7 @@ class TestAdvisoryOnlyUnderAttack:
         (weakest is 0.740 against a 0.0724 threshold), so the exposure is
         latent rather than realised. It is not zero, and 'advisory-only' is a
         property of the current ρ and the current counts, not of the design."""
+        _require_populated_memory()
         mem = _memory_on_disk()
         R_mem = mem.blended_prior(8, RK0_PI_BASE, RHO)
         weak_sk = 0.05  # below class 8's threshold, above zero
