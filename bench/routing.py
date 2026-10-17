@@ -94,7 +94,167 @@ from typing import Callable, Optional, Sequence
 #: 2 defaults in lockstep by construction.
 DEFAULT_MAX_RUNGS = 0
 
+#: THE VENDOR ORDER, RETAINED AND NO LONGER THE DEFAULT (2026-10-17).
+#:
+#: It was `DEFAULT_FALSIFIER_STRENGTH` and it ranks seats by VENDOR NAME, which
+#: is the one thing the founder has ruled four times must not determine
+#: capability. His words, 2026-10-09: *"there should probably be no distinction
+#: between models participating in an experiment other than a 'ranking number'
+#: ... the only things that should denote a model's ranking in any given
+#: experiment is derived/demonstrable capability, either above that. Or below
+#: that of its peers"*.
+#:
+#: IT IS KEPT, NOT DELETED, because point-never-prune applies to code: it is
+#: what every archived run used, so replaying one needs it, and a reader can
+#: still inspect what was superseded. Pass it explicitly to get the old
+#: behaviour.
+#: THE LITERAL LIVES ON `DEFAULT_FALSIFIER_STRENGTH`, below, and this name is
+#: DERIVED from it. Putting the literal here instead was tried on 2026-10-17
+#: and reverted: `scripts/competence_provenance.py` reads the constant out of
+#: this file's SOURCE with `ast.literal_eval`, which accepts a literal and not
+#: a name, so 5 guards failed with "malformed node or string" the moment the
+#: assignment became `DEFAULT_FALSIFIER_STRENGTH = VENDOR_ORDER_SUPERSEDED`.
+#: That probe's fragility is recorded rather than worked around, because
+#: rewriting it reaches several dependants, and the naming point is carried by
+#: the comment below and by `FALSIFIER_STRENGTH_IS_ESTABLISHED` instead.
+
+#: THE DEFAULT MAKES NO CAPABILITY CLAIM, and that is deliberate.
+#:
+#: MEASURED by `scripts/is_the_ladder_order_estimable_2026-10-17.py` over every
+#: archived registry -- 3,020 entries, the only recorded quantity that measures
+#: falsification capability rather than productivity being `falsifier_verdict`:
+#:
+#:     Gemini    10 of 701   1.4265%  Wilson [0.7767%, 2.6058%]
+#:     DeepSeek   6 of 521   1.1516%  Wilson [0.5288%, 2.4895%]
+#:     ChatGPT    0 of 373   0.0000%  Wilson [0.0000%, 1.0194%]
+#:     CC2        0 of 366   0.0000%  Wilson [0.0000%, 1.0387%]
+#:     Codex      0 of 342   0.0000%  Wilson [0.0000%, 1.1108%]
+#:
+#: 26 REFUTED verdicts in the whole archive, and ZERO for 3 of the 5 paid seats.
+#: The omnibus test REJECTS equality -- chi2 = 14.5802, dof 4, p = 0.005656, so
+#: the seats genuinely differ -- but **0 of 10 pairwise comparisons survive
+#: either Holm or Bonferroni correction at 0.05**, and a ranking IS a set of
+#: pairwise orderings. So the archive supports "they differ" and supports no
+#: statement about which is stronger.
+#:
+#: AND YET THE VENDOR ORDER REMAINS THE FALLBACK, WHICH IS **HIS** DECISION TO
+#: CHANGE AND NOT MINE. [NEEDS HIS RULING]
+#:
+#: Emptying it was tried on 2026-10-17 and REVERTED within the hour, because it
+#: collides with an EARLIER ruling of his rather than with a test's convenience.
+#: On 2026-10-07 he ruled *"Then yes we should add it"* about putting Fable on
+#: the ladder, and that ruling is implemented AS MEMBERSHIP OF THIS TUPLE and
+#: verified by `test_every_free_seat_is_now_on_the_ladder`, which asserts
+#: `ladder_length == 6` and `free_rungs == ["CC2", "Fable"]`. An empty tuple
+#: satisfies his 2026-10-09 ruling about order and destroys the implementation
+#: of his 2026-10-07 ruling about membership. 8 guards went red, and they were
+#: red for that reason rather than from staleness.
+#:
+#: THE 2 CONCERNS ARE SEPARABLE AND THAT IS THE PROPOSAL. Ladder MEMBERSHIP (is
+#: every available seat tried?) and ladder ORDER (which is tried first?) are
+#: different questions; his 2026-10-07 ruling is about the first and his
+#: 2026-10-09 ruling about the second. Expressing membership as a tuple of
+#: vendor names makes them one thing, which is why they collide. Separating them
+#: changes recorded behaviour, so it is put to him rather than taken.
+#:
+#: WHAT IS BUILT MEANWHILE, and it is the half that needs no ruling:
+#: `strength_order_from_evidence` derives the order from the experiment's own
+#: observations and TAKES PRECEDENCE whenever it is established. That is his
+#: season design -- *"one round of an experimental run could potentially
+#: constitute a season ... then for the rest of the rounds the positions of these
+#: models in their rankings stays fixed"*. Where the round does not discriminate,
+#: this tuple is used AND the fact is recorded, so a reader can always tell a
+#: measured order from a defaulted one. Before this, the fallback was silent.
 DEFAULT_FALSIFIER_STRENGTH = ("Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek", "Fable")
+
+#: The same tuple under the name that says what it IS. Derived, so the 2 can
+#: never disagree.
+VENDOR_ORDER_SUPERSEDED = DEFAULT_FALSIFIER_STRENGTH
+
+#: Whether the DEFAULT order rests on measured capability. False, and said out
+#: loud: the archive cannot support an ordering, so the default is a convention.
+FALSIFIER_STRENGTH_IS_ESTABLISHED = False
+
+
+def falsification_evidence_from_registry(registry) -> dict:
+    """Per-seat ``(refuted, total)`` from a LIVE registry.
+
+    This is the season measurement: the evidence a single experiment produces
+    about its own seats, which is what `strength_order_from_evidence` ranks on.
+    It reads `falsifier_verdict`, the only recorded quantity that measures
+    falsification capability -- finding rate measures PRODUCTIVITY and ranking on
+    it was refuted by a free seat on 2026-10-06, because it reproduces the
+    inversion `competence_provenance` exists to prevent.
+    """
+    out: dict = {}
+    entries = getattr(registry, "entries", None) or {}
+    for e in entries.values():
+        if not isinstance(e, dict):
+            continue
+        seat = e.get("source_model") or "?"
+        ref, tot = out.get(seat, (0, 0))
+        tot += 1
+        if (e.get("falsifier_verdict") or "").strip().upper() == "REFUTED":
+            ref += 1
+        out[seat] = (ref, tot)
+    return out
+
+
+def strength_order_from_evidence(
+    evidence: dict,
+    labels: "Sequence[str] | None" = None,
+    alpha: float = 0.05,
+) -> tuple:
+    """``(order, established, why)`` from measured falsification outcomes.
+
+    RETURNS AN EMPTY ORDER UNLESS THE EVIDENCE SEPARATES AT LEAST ONE PAIR after
+    correcting for the number of comparisons. That refusal is the point: a
+    ranking read off 26 refutations in 3,020 entries, with 0 for 3 of 5 seats,
+    would be noise wearing the authority of a measurement. The archive-wide
+    figures are in this module's `DEFAULT_FALSIFIER_STRENGTH` comment.
+
+    `established` is False when no pair separates, and `why` says so in words a
+    run log can carry, so a reader never has to infer whether the order in force
+    was measured or defaulted.
+    """
+    seats = [s for s in evidence if s and s != "?"]
+    if labels is not None:
+        seats = [s for s in seats if s in set(labels)]
+    if len(seats) < 2:
+        return (), False, (
+            f"fewer than 2 seats carry falsification evidence ({len(seats)}), "
+            f"so no pair can be compared")
+    try:
+        import itertools as _it
+        from scipy.stats import fisher_exact
+        from statsmodels.stats.multitest import multipletests
+    except Exception as exc:                                  # noqa: BLE001
+        return (), False, (f"the statistics tools are unavailable ({exc}), so "
+                           f"estimability cannot be established")
+    pairs, ps = [], []
+    for x, y in _it.combinations(seats, 2):
+        rx, nx = evidence[x]
+        ry, ny = evidence[y]
+        if nx == 0 or ny == 0:
+            continue
+        _, p = fisher_exact([[rx, nx - rx], [ry, ny - ry]])
+        pairs.append((x, y))
+        ps.append(p)
+    if not ps:
+        return (), False, "no seat pair has any observations to compare"
+    rejected, _, _, _ = multipletests(ps, alpha=alpha, method="holm")
+    n_sep = int(sum(rejected))
+    if n_sep == 0:
+        return (), False, (
+            f"0 of {len(ps)} seat pairs separate after Holm correction at "
+            f"alpha={alpha}; a ranking is a set of pairwise orderings, so the "
+            f"order is NOT ESTABLISHED and no capability claim is made")
+    order = tuple(sorted(
+        seats, key=lambda s: (-(evidence[s][0] / evidence[s][1]) if evidence[s][1]
+                              else 0.0, s)))
+    return order, True, (
+        f"{n_sep} of {len(ps)} seat pairs separate after Holm correction at "
+        f"alpha={alpha}; ranked by measured refutation rate")
 
 
 @dataclass
@@ -120,6 +280,44 @@ class RoutingResult:
     #: 1-seat arm. A proxy that was exact under the old mechanics is the first
     #: thing a new mechanic breaks, so the fact is recorded directly instead.
     ladder_was_empty: bool = False
+
+
+def season_strength_order(registry, labels, frozen=None, alpha: float = 0.05):
+    """``(order, established, why)`` for THIS experiment, measured once then kept.
+
+    HIS SEASON DESIGN, 2026-10-09, verbatim: *"one round of an experimental run
+    could potentially constitute a season, and players/teams should get demoted
+    promoted based on the evidence derived from this first experimental round.
+    Then for the rest of the rounds in an experiment the positions of these
+    models in their rankings stays fixed"*. Confirmed 2026-10-11: *"We measure
+    at the start and keep it."*
+
+    SO THERE ARE EXACTLY 2 BEHAVIOURS. Handed a `frozen` order, it returns that
+    order unchanged -- the positions stay fixed for the rest of the experiment,
+    and no later round can reshuffle them. Handed none, it measures this
+    experiment's own falsification outcomes and freezes the result IF they
+    discriminate.
+
+    WHERE THEY DO NOT DISCRIMINATE the vendor fallback is returned AND `why`
+    says so, so a run log distinguishes a measured order from a defaulted one.
+    Before this the fallback was silent, which is how a tuple of vendor names
+    came to look like a capability ranking. Whether that fallback should exist
+    at all is recorded as needing his ruling beside
+    `DEFAULT_FALSIFIER_STRENGTH`, because removing it collides with his earlier
+    ruling about ladder MEMBERSHIP.
+    """
+    if frozen:
+        return tuple(frozen), True, (
+            "frozen from an earlier round of this experiment; a season's "
+            "positions stay fixed")
+    evidence = falsification_evidence_from_registry(registry)
+    order, established, why = strength_order_from_evidence(
+        evidence, labels=labels, alpha=alpha)
+    if established:
+        return order, True, why
+    return tuple(DEFAULT_FALSIFIER_STRENGTH), False, (
+        f"{why}; falling back to the vendor order, which rests on no "
+        f"measurement (FALSIFIER_STRENGTH_IS_ESTABLISHED is False)")
 
 
 def rank_falsifier_writers(

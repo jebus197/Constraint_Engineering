@@ -8428,6 +8428,50 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
         _raw = getattr(cfg, "routing_max_rungs", _fn_default)
         _rungs = _fn_default if _raw is None else int(_raw)
         _route_kw = {} if _rungs == _fn_default else {"max_rungs": _rungs}
+        # THE SEASON ORDER, 2026-10-17, on his ruling of 2026-10-09: *"one round
+        # of an experimental run could potentially constitute a season ... then
+        # for the rest of the rounds the positions of these models in their
+        # rankings stays fixed"*, confirmed 2026-10-11 as *"We measure at the
+        # start and keep it."*
+        #
+        # Measured from THIS experiment's own falsification outcomes and then
+        # frozen on the registry, so no later round can reshuffle it. Where the
+        # evidence does not discriminate the vendor fallback is used and the
+        # reason is LOGGED, which is the part that was silent before: a tuple of
+        # vendor names looked like a capability ranking because nothing ever
+        # said it was a default.
+        #
+        # THE ARCHIVE CANNOT FOUND THIS ORDER, which is why it is measured in
+        # the run. Of 3,020 archived entries only 26 carry a REFUTED falsifier
+        # verdict and 3 of the 5 paid seats carry none; the omnibus test rejects
+        # equality at p = 0.005656 while 0 of 10 pairs survive Holm correction.
+        # Producer: scripts/is_the_ladder_order_estimable_2026-10-17.py.
+        try:
+            from bench.routing import season_strength_order as _season
+            _frozen = getattr(registry, "_season_strength_order", None)
+            _order, _est, _why = _season(registry, models, frozen=_frozen)
+            if _frozen is None:
+                registry._season_strength_order = _order
+                _log(f"  ladder order [{'MEASURED' if _est else 'DEFAULTED'}]: "
+                     f"{list(_order)}")
+                _log(f"    why: {_why}")
+            # OMIT AT DEFAULT, the same rule this call site already applies to
+            # `max_rungs` 20 lines above and for the same reason: a test may
+            # monkeypatch `route` with a narrow stub, and passing a keyword it
+            # does not accept raises TypeError. Measured 2026-10-17 by doing it
+            # wrong first -- 8 routing-admission tests failed with
+            # "fake_route() got an unexpected keyword argument
+            # 'strength_order'". So the keyword travels ONLY when the order
+            # actually differs from the module default, which is exactly when it
+            # carries information.
+            from bench.routing import DEFAULT_FALSIFIER_STRENGTH as _dfs
+            if tuple(_order) != tuple(_dfs):
+                _route_kw["strength_order"] = _order
+        except Exception as _so:                                # noqa: BLE001
+            # A ranking helper must never kill a run; the pre-existing default
+            # applies and the failure is said out loud rather than swallowed.
+            _log(f"  ladder order: could not be measured "
+                 f"({type(_so).__name__}: {_so}); the module default applies")
         result = route(
             finding, models, confirmed, resolve_fn, reverify_falsifier,
             _routing_similarity, **_route_kw,
