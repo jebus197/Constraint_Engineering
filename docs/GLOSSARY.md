@@ -847,3 +847,14 @@ probability 1 to possibly never terminating. Equivalently p = 1/2 for
 p = additions / (additions + closures), which is why the test against it is an
 ordinary proportion test. Not to be confused with `CRITICAL_SEVERITY_THRESHOLD`,
 the severity at or above which a finding counts as critical.
+
+### Full harness
+
+The complete experimental apparatus as it runs a real experiment — the runner,
+the panel dispatch, the registry, the routing ladder, the falsifier arm, the
+immune memory and the policy layers together — as distinguished from a simulated
+run, a standalone script, or a single module exercised by a test. The founder
+uses the term when asking whether a mechanism built for one part of the system
+also applies to the apparatus as a whole, as in his question of 2026-10-17 about
+whether the harness's own `FindingRegistry` should adopt the ticket register's
+hashed-identity principles.
