@@ -102,9 +102,8 @@ def test_an_entry_may_honestly_have_no_subject():
 
 def test_the_marker_is_strict_enough_to_avoid_noise():
     assert H.marked_kind("fr: add a shadow arm") == "fr"
-    assert H.marked_kind("pr: the loader ignores scope") == "pr"
+    assert H.marked_kind("pf: the loader ignores scope") == "pf"
     assert H.marked_kind("[fr] a new facility") == "fr"
-    # must NOT fire on ordinary prose containing the letters
     for noise in ("the panel review found 3 defects",
                   "a free run converged",
                   "prefer the simplest fix",
@@ -112,8 +111,27 @@ def test_the_marker_is_strict_enough_to_avoid_noise():
         assert H.marked_kind(noise) is None, f"marker fired on noise: {noise!r}"
 
 
+def test_his_panel_review_command_is_never_harvested_as_a_proposal():
+    """THE COLLISION THAT FORCED `pf`, pinned so it cannot be reintroduced.
+
+    He proposed `pr` for the proposed-fix marker on 2026-10-17. His own command
+    list already defines `pr` as a full panel review and he uses it constantly to
+    order a round. Measured before the change, 4 of 4 of his real usages were
+    harvested as proposed fixes, which would have turned every panel order into a
+    ticket. These are those 4 usages, and none may produce a kind.
+    """
+    for usage in ("a, f, sy, d\n\npr",
+                  "pr",
+                  "pr: run the full panel on the outstanding issues",
+                  "Put it to the panel. pr",
+                  "pr on the outstanding questions"):
+        assert H.marked_kind(usage) is None, (
+            f"his panel-review command {usage!r} was harvested as a proposal; "
+            "`pr` belongs to the panel and must never be a ticket marker")
+
+
 def test_both_sections_are_produced_from_the_real_record():
     rows = H.from_task_list()
     kinds = {r["kind"] for r in rows}
-    assert kinds <= {"fr", "pr"}, f"unexpected kinds: {kinds}"
-    assert "pr" in kinds, "the proposed-fix section must be populated"
+    assert kinds <= {"fr", "pf"}, f"unexpected kinds: {kinds}"
+    assert "pf" in kinds, "the proposed-fix section must be populated"

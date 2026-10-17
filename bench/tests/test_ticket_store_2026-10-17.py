@@ -64,14 +64,14 @@ def test_a_resolution_digest_is_scoped_to_its_ticket():
 
 
 def test_a_terminal_status_cannot_be_asserted(store):
-    t, _ = store.propose("pr", "t", "a defect", "chat", subjects=["mod.fn"])
+    t, _ = store.propose("pf", "t", "a defect", "chat", subjects=["mod.fn"])
     with pytest.raises(ValueError, match="tool-only"):
         store.close(t.tid, "fixed it", verification="")
     assert store.get(t.tid).status in LIVE, "an unverified close must not land"
 
 
 def test_closing_requires_and_records_its_verification(store):
-    t, _ = store.propose("pr", "t", "a defect", "chat", subjects=["mod.fn"])
+    t, _ = store.propose("pf", "t", "a defect", "chat", subjects=["mod.fn"])
     c = store.close(t.tid, "repaired", "executed mod.fn: 3 of 3 cases correct")
     assert c.status == "CLOSED"
     assert "executed" in c.verification
@@ -91,8 +91,8 @@ def test_only_the_founder_may_reopen_or_reject(store):
 
 
 def test_merging_requires_both_of_his_two_elements(store):
-    a, _ = store.propose("pr", "a", "fault one", "chat", subjects=["m.a"])
-    b, _ = store.propose("pr", "b", "fault two", "chat", subjects=["m.b"])
+    a, _ = store.propose("pf", "a", "fault one", "chat", subjects=["m.a"])
+    b, _ = store.propose("pf", "b", "fault two", "chat", subjects=["m.b"])
     with pytest.raises(ValueError, match="fault AND the proposed repair"):
         store.merge(b.tid, into=a.tid, verification="")
     m = store.merge(b.tid, into=a.tid,
@@ -102,7 +102,7 @@ def test_merging_requires_both_of_his_two_elements(store):
 
 def test_a_proposal_records_its_search_before_deciding(store):
     assert store.searches() == []
-    store.propose("pr", "t", "something", "chat", subjects=["m.f"])
+    store.propose("pf", "t", "something", "chat", subjects=["m.f"])
     assert len(store.searches()) >= 1, (
         "the search obligation must be recorded, not conventional -- a convention "
         "is what failed 6 times on 2026-10-17"
@@ -111,9 +111,9 @@ def test_a_proposal_records_its_search_before_deciding(store):
 
 def test_both_of_his_sections_exist_and_separate(store):
     store.propose("fr", "a feature", "please add X", "chat", subjects=["m.x"])
-    store.propose("pr", "a fix", "Y is broken", "chat", subjects=["m.y"])
+    store.propose("pf", "a fix", "Y is broken", "chat", subjects=["m.y"])
     assert {t.kind for t in store.all()} == set(KINDS)
-    assert len(store.by_kind("fr")) == 1 and len(store.by_kind("pr")) == 1
+    assert len(store.by_kind("fr")) == 1 and len(store.by_kind("pf")) == 1
 
 
 def test_the_exact_digest_path_is_exercised_without_a_subject(store):
@@ -125,13 +125,13 @@ def test_the_exact_digest_path_is_exercised_without_a_subject(store):
     executes, which this project's additive standard forbids in both directions.
     """
     text = "the A4 counter and the routing ladder disagree about severity"
-    a, oa = store.propose("pr", "t", text, "chat")          # no subjects
+    a, oa = store.propose("pf", "t", text, "chat")          # no subjects
     assert oa == "created"
-    b, ob = store.propose("pr", "t", text, "chat")          # byte-identical
+    b, ob = store.propose("pf", "t", text, "chat")          # byte-identical
     assert ob == "exists", "an identical proposal must not be admitted twice"
     assert b.tid == a.tid
     store.close(a.tid, "done", "test_x passed")
-    c, oc = store.propose("pr", "t", text, "chat")
+    c, oc = store.propose("pf", "t", text, "chat")
     assert oc == "settled-already", (
         "once closed, an identical proposal must report settled-already so the "
         "caller cannot treat it as new work")
@@ -140,9 +140,9 @@ def test_the_exact_digest_path_is_exercised_without_a_subject(store):
 
 def test_the_reworded_tier_is_exercised_without_a_subject(store):
     """The normalised tier, ALONE, on a rewording it is measured to catch."""
-    a, _ = store.propose("pr", "t", "The gate refuses the stale target", "chat")
+    a, _ = store.propose("pf", "t", "The gate refuses the stale target", "chat")
     store.close(a.tid, "staged elsewhere", "15 tests pass")
-    _, o = store.propose("pr", "t", "stale targets, and the gates refuse", "chat")
+    _, o = store.propose("pf", "t", "stale targets, and the gates refuse", "chat")
     assert o in ("reworded-match", "settled-already"), (
         f"plural rewording must be caught by the normalised digest, got {o!r}")
 
@@ -233,7 +233,7 @@ def _seeded(path) -> TicketStore:
          ["reference_runner_v3._load_fingerprints"],
          "executed _load_fingerprints('experiment'): 0 records against 11 under persist"),
     ):
-        t, _ = s.propose("pr", title, verbatim, "chat", subjects=subs)
+        t, _ = s.propose("pf", title, verbatim, "chat", subjects=subs)
         s.close(t.tid, "already implemented", ver)
     return s
 
@@ -255,7 +255,7 @@ def test_the_store_beats_word_overlap_on_the_known_cases(tmp_path):
     store_right = words_right = 0
     detail = []
     for text, subs, should_block in CASES:
-        _, outcome = s.propose("pr", "candidate", text, "chat", subjects=subs)
+        _, outcome = s.propose("pf", "candidate", text, "chat", subjects=subs)
         blocked = outcome != "created"
         w = _word_overlap_blocks(s, text)
         store_right += (blocked == should_block)
@@ -284,7 +284,7 @@ def test_text_similarity_alone_would_have_failed():
 
 def test_the_store_does_not_over_block_genuinely_new_work(tmp_path):
     s = _seeded(tmp_path / "t.jsonl")
-    _, outcome = s.propose("pr", "new", NEW_WORK,
+    _, outcome = s.propose("pf", "new", NEW_WORK,
                            "chat", subjects=["run_exp17_immune._load_fingerprint_cache"])
     assert outcome == "created", (
         "a store that blocks everything is worse than none: new work on an "
@@ -297,7 +297,7 @@ def test_a_settled_subject_blocks_regardless_of_wording(tmp_path):
     for wording in ("the ladder cannot climb",
                     "promotion should work in both directions",
                     "seats need to be able to move between rungs"):
-        _, outcome = s.propose("pr", "c", wording, "chat",
+        _, outcome = s.propose("pf", "c", wording, "chat",
                                subjects=["routing.rank_falsifier_writers"])
         assert outcome == "subject-settled", (
             f"wording {wording!r} slipped past the subject tier")

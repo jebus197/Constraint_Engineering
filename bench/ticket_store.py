@@ -33,10 +33,22 @@ vocabulary**: a model may not assert them. This store preserves that property, s
 the assistant cannot declare a ticket CLOSED by saying so — `close()` requires a
 verification record, and `reopen()` requires the founder.
 
-HIS TWO SECTIONS, 2026-10-17. `fr` is a feature request, a new proposal, which is
-OPEN until it is implemented, merged or rejected, exactly as a Firefox Bugzilla
-feature request behaves. `pr` is a proposed fix against an observed defect. Both
-live in one store with a `kind` field so either section can be listed alone.
+HIS TWO SECTIONS, 2026-10-17, WITH ONE MARKER CHANGED AND THE REASON RECORDED.
+`fr` is a feature request, a new proposal, which is OPEN until it is implemented,
+merged or rejected, exactly as a Firefox Bugzilla feature request behaves. The
+second section is `pf`, a proposed fix against an observed defect.
+
+HE PROPOSED `pr` FOR THAT SECOND MARKER, AND `pr` IS ALREADY TAKEN. His own
+command list at ~/Desktop/keyboard_shortcuts.txt reads "pr = Full panel review.
+cc2, cx, ge, cgpt, ds, sy, sth, f, e, d", and he uses it often to order a panel
+round. Measured before the change: 4 of 4 of his real panel-review usages --
+a bare `pr` on its own line, `pr` after a command list, `pr:` with a sentence,
+and `pr` at the end of a sentence -- were harvested by the marker as proposed
+fixes. So registering `pr` would have turned every panel order into a ticket and
+left the panel command ambiguous. `pf` is unused in all 3 command lists and
+collides with nothing. The substance of his design is unchanged: 2 sections, 2
+markers, extracted from chat and from his replies alike. HE MAY OVERRULE THIS
+NAMING; the collision is the reason, not a preference.
 
 HIS HASHED IDENTIFIERS, 2026-10-17. Every ticket and every resolution carries a
 content-addressed identifier, and the store is searched by identifier before any
@@ -106,7 +118,7 @@ LIVE = frozenset({"OPEN", "REOPENED", "UNCONFIRMED", "CONTESTED",
 REJECTED = "REJECTED"
 STATUSES = TERMINAL | LIVE | {REJECTED}
 
-KINDS = ("fr", "pr")
+KINDS = ("fr", "pf")
 
 _STOP = frozenset("""a an and are as at be been being but by can could did do does
 for from had has have he her him his how i if in into is it its me my no nor not

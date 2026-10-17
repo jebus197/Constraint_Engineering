@@ -42,6 +42,12 @@ Smoke-test record (2026-05-10, prompt: anchor "17 is prime", schema-conforming J
 
 ## Metacognitive Commands (MC)
 
+- `fr` = FEATURE REQUEST. Marks a new proposal, from the founder or from CC1, as a ticket in the project ticket store (`bench/ticket_store.py`). It stays OPEN until it is implemented, merged or rejected, exactly as a Firefox Bugzilla feature request behaves, and only the founder may REJECT one. Founder instruction 2026-10-17.
+- `pf` = PROPOSED FIX. Marks a proposed repair against an observed defect as a ticket. **He proposed `pr` for this and `pr` WAS ALREADY TAKEN** -- his own command list defines `pr` as a full panel review, and 4 of 4 of his real panel-review usages were harvested as proposed fixes before the marker was changed, which would have turned every panel order into a ticket. `pf` collides with nothing in any of the 3 command lists. He may overrule the naming; the collision is the reason, not a preference.
+
+Both markers are read out of chat AND out of his annotated replies by `scripts/harvest_tickets_2026-10-17.py`. The chat half is necessary rather than convenient: 0 of his 579 recorded annotations mention the bounded-orchestrator question he has asked 3 times, because it exists only in chat. A ticket's state is RECORDED, never inferred, and CLOSED is tool-only -- `close()` refuses without a verification. A Stop gate (`~/.claude/hooks/ticket_queue_gate.py`) prods until every ticket is resolved and refuses at most once per commit so it cannot loop.
+
+
 Single-letter and short commands that direct model behaviour. Combinable
 (e.g. `p a e d` = P-pass, analyse, extrapolate, discuss). Full reference:
 `docs/REPRODUCING.md` § Metacognitive Commands.

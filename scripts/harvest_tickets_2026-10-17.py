@@ -28,9 +28,11 @@ THREE SOURCES, and each is read with the instrument that can actually read it.
               by populating it with work already done, work proposed, work
               completed etc".
 
-MARKERS. A line or sentence carrying `fr` or `pr` as a standalone token, or the
-forms `fr:`, `pr:`, `[fr]`, `[pr]`, is an explicit proposal and is harvested as
-that kind. Without a marker, a task-list entry is harvested by its recorded
+MARKERS. A line or sentence carrying `fr` or `pf` as a standalone token, or the
+forms `fr:`, `pf:`, `[fr]`, `[pf]`, is an explicit proposal and is harvested as
+that kind. HE PROPOSED `pr` FOR THE SECOND MARKER AND IT IS ALREADY TAKEN: his
+own list defines `pr` as a full panel review, and 4 of 4 of his real panel-review
+usages were mis-harvested as proposed fixes before this was changed to `pf`. Without a marker, a task-list entry is harvested by its recorded
 state, and a founder annotation is harvested as `pr` when it reads as an
 instruction about an existing defect and as `fr` when it proposes something new.
 That last split is a judgement, so every unmarked ticket records
@@ -63,7 +65,7 @@ TRANSCRIPTS = (pathlib.Path.home() /
 #: ordinary words and inside "panel review", so a bare substring match would
 #: harvest noise. Requires a boundary and one of the marker punctuations, or the
 #: token alone on its own line.
-MARKER = re.compile(r"(?:(?<=^)|(?<=[\s(\[]))(fr|pr)(?:[:\]\)]|\s*[-—]\s|$)",
+MARKER = re.compile(r"(?:(?<=^)|(?<=[\s(\[]))(fr|pf)(?:[:\]\)]|\s*[-—]\s|$)",
                     re.IGNORECASE | re.MULTILINE)
 
 #: WHAT MAY BE A BLOCKING SUBJECT, and the measurement that narrowed it.
@@ -144,7 +146,7 @@ def from_responses(since: str) -> list[dict]:
         if len(txt) < 25:
             continue
         out.append({"verbatim": txt,
-                    "kind": marked_kind(txt) or "pr",
+                    "kind": marked_kind(txt) or "pf",
                     "marked": marked_kind(txt) is not None,
                     "source": "responses",
                     "source_ref": f"{pathlib.Path(v['file']).name}:{v['line_index']}",
@@ -168,7 +170,7 @@ def from_chat(since: str, limit_per_file: int = 400) -> list[dict]:
         for line in f.open(errors="ignore"):
             if taken >= limit_per_file:
                 break
-            if not re.search(r'"(fr|pr)[:\]]', line, re.IGNORECASE):
+            if not re.search(r'"(fr|pf)[:\]]', line, re.IGNORECASE):
                 continue
             try:
                 d = json.loads(line)
@@ -217,7 +219,7 @@ def from_task_list() -> list[dict]:
         verbatim = " ".join((quoted.group(1) if quoted else title).split())
         out.append({"verbatim": verbatim, "title": title,
                     "kind": "fr" if "orchestrator" in title.lower()
-                                    or "selection" in title.lower() else "pr",
+                                    or "selection" in title.lower() else "pf",
                     "marked": False, "source": "task_list",
                     "source_ref": f"{ident} state={e.state} status={e.status}",
                     "ruled": e.ruled or "", "task_ref": ident,
