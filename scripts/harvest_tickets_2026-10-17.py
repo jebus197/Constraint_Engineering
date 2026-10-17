@@ -54,7 +54,7 @@ from collections import Counter
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
-from bench.ticket_store import TicketStore, norm_title, KINDS  # noqa: E402
+from bench.ticket_store import TicketStore, norm_title, LIVE, KINDS  # noqa: E402
 
 READER = REPO / "scripts" / "read_founder_responses_2026-10-11.py"
 TASKLIST = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
@@ -439,6 +439,34 @@ def main() -> int:
                           "task-list entry reworded; tracked by "
                           "scripts/harvest_tickets_2026-10-17.py")
             outcomes["restated"] += 1
+        # A STATE TRANSITION IN THE LIST MUST REACH THE REGISTER, 2026-10-17.
+        #
+        # The closes below fire only on `created`, so an entry that was already
+        # filed as OPEN and has since been marked DONE stayed live in the
+        # register for ever. Found by this register's own guards within minutes
+        # of closing C20: the list said DONE, the register said OPEN, and the
+        # 2 counts disagreed by 1. Exactly the drift the register exists to
+        # prevent, arriving through the one path that never re-read the state.
+        #
+        # ONE DIRECTION ONLY. A live ticket may be closed because the marker is
+        # the authority on whether the work is done. The reverse -- reopening a
+        # settled ticket because a marker moved back -- is NOT done here: REOPEN
+        # is founder-only by design, and a tool that could undo a closure on its
+        # own would defeat the whole point of a terminal status. A marker that
+        # moves backwards is therefore reported rather than acted on.
+        if (o in ("exists", "settled-already") and t.status in LIVE
+                and r.get("state") in ("DONE", "WITHDRAWN")):
+            store.close(
+                t.tid,
+                f"recorded {r['state']} in the master task list as {r['task_ref']}",
+                f"task-list marker state={r['state']} status={r.get('status','')}")
+            outcomes[f"closed-on-transition-to-{r['state']}"] += 1
+        elif (o == "settled-already" and r.get("state") == "OPEN"
+              and t.task_ref == r.get("task_ref")):
+            outcomes["marker-moved-backwards"] += 1
+            print(f"  NOTE: {r['task_ref']} is settled in the register "
+                  f"({t.status}) but OPEN in the task list. REOPEN is "
+                  f"founder-only, so this is reported, not acted on.")
         # carry a recorded DONE state across as a verified close
         if o == "created" and r.get("state") == "DONE":
             store.close(t.tid, f"recorded DONE in the master task list as {r['task_ref']}",

@@ -351,3 +351,49 @@ def test_the_closed_count_equals_the_task_lists_own():
     assert closed == expect, (
         f"the register reports {closed} closed task entries, the list records "
         f"{expect}")
+
+
+def test_a_marker_moving_to_done_closes_an_already_filed_ticket(tmp_path):
+    """A state transition in the list must reach the register.
+
+    FOUND 2026-10-17 BY THIS REGISTER'S OWN GUARDS, minutes after C20 was
+    marked DONE. The harvester closed a ticket only on the pass that CREATED
+    it, so an entry already filed as OPEN and later marked DONE stayed live for
+    ever: the list said DONE, the register said OPEN, and the 2 counts
+    disagreed by 1. That is precisely the drift the register exists to prevent,
+    arriving through the one path that never re-read the recorded state.
+    """
+    from bench.ticket_store import TicketStore as TS, LIVE
+    store = TS(tmp_path / "t.jsonl")
+    t, outcome = store.propose("pf", "Z9. a task", "the work", "task_list",
+                               task_ref="Z9", status="OPEN")
+    assert outcome == "created" and t.status in LIVE
+
+    # the harvester's transition branch, exercised exactly as it runs
+    hit, o = store.propose("pf", "Z9. a task", "the work", "task_list",
+                           task_ref="Z9", status="OPEN")
+    assert o == "exists"
+    assert hit.status in LIVE, "precondition: it must still be live here"
+    store.close(hit.tid, "recorded DONE in the master task list as Z9",
+                "task-list marker state=DONE status=COMMITTED")
+    assert store.get(t.tid).status == "CLOSED"
+
+
+def test_closing_on_a_transition_is_one_directional(tmp_path):
+    """A marker moving BACKWARDS must not reopen a settled ticket.
+
+    REOPEN is founder-only by design: a tool that could undo a closure on its
+    own would defeat the point of a terminal status. So the harvester reports a
+    backwards-moving marker and does not act on it, and `reopen` itself refuses
+    a caller that is not the founder.
+    """
+    from bench.ticket_store import TicketStore as TS
+    store = TS(tmp_path / "t.jsonl")
+    t, _ = store.propose("pf", "Z9. a task", "the work", "task_list",
+                         task_ref="Z9", status="OPEN")
+    store.close(t.tid, "done", "test_x passed")
+    assert store.get(t.tid).status == "CLOSED"
+    with pytest.raises((ValueError, PermissionError, AssertionError)):
+        store.reopen(t.tid, "a marker moved backwards", by="tool")
+    assert store.get(t.tid).status == "CLOSED", (
+        "a settled ticket was reopened by something other than the founder")
