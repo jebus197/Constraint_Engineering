@@ -135,3 +135,41 @@ def test_both_sections_are_produced_from_the_real_record():
     kinds = {r["kind"] for r in rows}
     assert kinds <= {"fr", "pf"}, f"unexpected kinds: {kinds}"
     assert "pf" in kinds, "the proposed-fix section must be populated"
+
+
+def test_every_task_list_entry_reaches_the_store():
+    """A coverage RATCHET. The gap was 33.3333% and is now 0.
+
+    Measured on 2026-10-17 as the harvester was built. A heading-driven rule
+    missed 47 of 141 entries, 33.3333%, Wilson [26.0856%, 41.4651%], for 3
+    independent reasons no single example would have shown: numeric entries carry
+    no dot after the identifier, some entries bold the identifier alone with the
+    title outside the bold span, and several entries SHARE one paragraph block so
+    no paragraph-level rule can separate them. Driving extraction off the HTML
+    markers instead -- which `task_list_markers.parse_entries` already handles,
+    since it is what reports 141 -- closed the gap to 0 of 141.
+
+    A silent third of the record missing is the exact failure this store exists
+    to stop, so it is a test rather than a comment.
+    """
+    import sys as _sys
+    REPO_ = pathlib.Path(__file__).resolve().parents[2]
+    _sys.path.insert(0, str(REPO_ / "scripts"))
+    import task_list_markers as tlm
+    tasklist = REPO_ / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
+    entries = {e.ident for e in tlm.parse_entries(tasklist)}
+    harvested = {r["task_ref"] for r in H.from_task_list() if r.get("task_ref")}
+    missing = sorted(entries - harvested)
+    assert not missing, (
+        f"{len(missing)} of {len(entries)} task-list entries never reach the "
+        f"ticket store: {missing[:10]}. A silent gap here means the store "
+        "under-reports outstanding work, which is how a settled issue gets "
+        "rediscovered in the first place.")
+
+
+def test_each_harvested_entry_carries_substantive_text():
+    """An entry whose verbatim text is empty cannot be recognised by a human,
+    and a human read is the only reliable settler of identity."""
+    thin = [r["task_ref"] for r in H.from_task_list()
+            if len(r["verbatim"].strip()) < 20]
+    assert not thin, f"{len(thin)} entries harvested with no usable text: {thin[:8]}"

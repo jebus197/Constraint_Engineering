@@ -263,6 +263,7 @@ from decomposed_dispatch import (
     save_decomposed_result,
 )
 from bench.insect_brain import InsectBrain
+from bench.bugzilla_loop import is_python_target  # noqa: E402
 from bench.cdsfl_registry.composer import (
     compose,
     DirectivePacket,
@@ -1504,7 +1505,15 @@ class RunnerConfig:
     # The repo file is never written; the pristine original is kept.
     # Changes Exp 40 from static-stimulus to iterative repair-and-
     # reconverge — an intended, recorded design change. Default OFF.
-    apply_fixes_back_enabled: bool = False
+    #: ON BY DEFAULT ON HIS RULING OF 2026-10-11: "Folding fixes forward should
+    #: be on by default, providing that means folding forward at the end of an
+    #: experiment and not during it." The second half of that condition is what
+    #: made the first half safe to grant, and it is met: the promotion now runs
+    #: once after the round loop, so no round ever reviews a changed artefact.
+    #: Flipping this without that move would have put the moving target he ruled
+    #: against onto EVERY run, which is why the 2 were built together and the
+    #: timing first.
+    apply_fixes_back_enabled: bool = True
     apply_fixes_back_seed: str = ""  # optional cleaned-baseline seed path
     # Round-context helpers (Exp 40 1D.1, 1D.2, 1D.4).
     prior_fix_summary_enabled: bool = True
@@ -12132,12 +12141,55 @@ def _apply_back_gate(candidate_source: str, rel_target: str,
                      test_cmd: str) -> Tuple[bool, str]:
     """Full canonical-suite gate: overlay candidate_source at rel_target
     in a sandbox repo copy and run test_cmd. Green-only promotion (the
-    C0001 lesson: the run-time S_k score tolerates regressions)."""
-    try:
-        ast.parse(candidate_source)
-    except (SyntaxError, ValueError) as e:
-        return False, f"ast:{e}"
+    C0001 lesson: the run-time S_k score tolerates regressions).
+
+    THE PYTHON SYNTAX CHECK IS CONDITIONAL, and it was NOT, which made the whole
+    fold-fixes-back facility inert. Measured 2026-10-17 across every archived run
+    log: 8 of 8 promotion attempts were REJECTED, 100.0000%, Clopper-Pearson
+    [63.0583%, 100.0000%], every one with the identical cause
+    `ast:unterminated string literal (detected at line 47)`. The target of those
+    runs was `prose_with_computable_listings.md`, a 56-line PROSE document, and
+    line 47 reads `"over-read a single round's movement than one who sees only a
+    central value."` -- an apostrophe inside a quoted sentence, which `ast.parse`
+    correctly reports as an unterminated string because it is parsing English as
+    Python.
+
+    So the facility was enabled in the simulated launcher, attempted promotions
+    in all 3 shakedown legs, and folded NOTHING. His ruling of 2026-10-11 has 2
+    conditions -- on by default, and at the close rather than between rounds --
+    and both were necessary but not sufficient: without this, flipping the
+    default would still fold nothing.
+
+    `bugzilla_loop.is_python_target` already existed for exactly this decision and
+    returns False for that file. The runner did not import it. It does now.
+    """
+    if is_python_target(rel_target):
+        try:
+            ast.parse(candidate_source)
+        except (SyntaxError, ValueError) as e:
+            return False, f"ast:{e}"
+    elif not candidate_source.strip():
+        # A non-Python target still must not be replaced by nothing. There is no
+        # syntax to check, so emptiness is the only structural check available.
+        return False, "empty candidate for a non-Python target"
     if not test_cmd:
+        # THE REFUSAL IS CORRECT AND ITS REASON MUST BE TRUE. Green-only
+        # promotion means a fix is folded back only when a suite says it is
+        # safe, so no suite means no promotion -- that part is right and is the
+        # C0001 lesson. What was WRONG until 2026-10-17 is that a prose target
+        # never reached this line: the unconditional `ast.parse` above rejected
+        # it first and the log recorded a syntax error in English prose, so a
+        # reader learned the models were writing broken code when the truth is
+        # that a prose fix has no suite to gate it.
+        #
+        # A PROSE FIX NEEDS A DIFFERENT VERIFIER, namely the finding's own
+        # falsifier, which `bench/fix_efficacy.py` already knows how to ask. That
+        # is a design change rather than a repair and is tracked separately, so
+        # the honest behaviour for now is to refuse and SAY WHY.
+        if not is_python_target(rel_target):
+            return False, ("no suite can gate a non-Python target "
+                           f"({rel_target}); a prose fix needs its falsifier, "
+                           "not pytest")
         return False, "no test_cmd configured (cannot gate)"
     with tempfile.TemporaryDirectory() as td:
         sb = Path(td) / "sb"
@@ -18221,22 +18273,19 @@ def run_experiment(
         _log(f"Round {round_idx}/{effective_max - 1} ({round_type})")
         _log(f"{'---' * 20}")
 
-        # plan-C: promote the prior round's fully-closed fixes into the
-        # working copy (full-suite gated, cumulative, idempotent) and
-        # rebuild full_code so THIS round reviews the repaired artefact.
-        # Loop-top placement avoids the many mid-body exit paths.
-        if _APPLY_BACK_CTX.get("enabled") and round_idx > start_round:
-            _new_src = _apply_back_promote(registry, round_idx - 1)
-            if _new_src is not None:
-                full_code = (
-                    f"=== TARGET FILE (REVIEW THIS): {_absolute_target(target_rel)} "
-                    f"({len(_new_src):,} chars) ===\n{_new_src}\n\n"
-                    + "\n\n".join(context_parts)
-                )
-                _log(f"  apply-back: artefact repaired — "
-                     f"{len(_APPLY_BACK_CTX['applied'])} fix(es) applied, "
-                     f"{len(_APPLY_BACK_CTX['rejected'])} rejected; "
-                     f"full_code rebuilt for round {round_idx}")
+        # HIS RULING OF 2026-10-11 MOVED THIS OUT OF THE LOOP. Verbatim:
+        # "Folding fixes forward should be on by default, providing that means
+        # folding forward at the end of an experiment and not during it so that
+        # the target under study does not keep constantly changing. We had
+        # problems with this in the past, where because the models were looking
+        # at a constantly moving target, convergence effectively became
+        # impossible."
+        #
+        # The promotion now runs ONCE after the round loop; see the closing
+        # stage. Nothing is promoted mid-run, so the artefact every round
+        # reviews is the artefact the run started with. The project's own notes
+        # carried the same warning before he restated it: "fold forward
+        # (carefully -- moving target)", Overnight_Run_Report_2026-06-10.md:50.
 
         # Update relay budgets from fingerprint data before dispatch.
         # Each model's budget adapts to its measured prompt performance.
@@ -20292,6 +20341,42 @@ def run_experiment(
     for canonical_id, entry in list(registry.entries.items()):
         if entry["status"] in ("OPEN", "CONTESTED"):
             registry.resolve(canonical_id, "UNCONFIRMED", final_round)
+
+    # ───────────────────────────────────────────────────────────────────────
+    # FOLD FIXES BACK — AT THE CLOSE, which is where his ruling of 2026-10-11
+    # puts it: "folding forward at the end of an experiment and not during it so
+    # that the target under study does not keep constantly changing."
+    #
+    # The run is over, so there is no next round to disturb and no moving
+    # target. What this buys is the thing he asked for on 2026-10-05: "Fold
+    # fixes forward is a useful facility, so we don't lose fixes suggested by
+    # the models, providing it never touches the live tree and we can still
+    # review those fixes (and change and revert them as needed) in the
+    # subsequent simulated and real experimental runners." The promotion writes
+    # to the run's own working copy under its log directory, never to the
+    # repository tree, which
+    # `bench/tests/test_fold_fixes_forward_never_touches_the_live_tree_2026-10-06.py`
+    # holds by executing a round and comparing the tracked tree before and after.
+    #
+    # EVERY CANDIDATE IS STILL SUITE-GATED. Moving the call does not loosen
+    # `_apply_back_gate`: a Python target must parse and the canonical suite must
+    # be green, and a non-Python target is refused with a reason that says so.
+    if _APPLY_BACK_CTX.get("enabled"):
+        try:
+            _closing_src = _apply_back_promote(registry, len(gamma_history))
+        except Exception as _ab_exc:  # noqa: BLE001 — folding is additive, never a gate
+            _closing_src = None
+            _log(f"  apply-back: closing promotion failed "
+                 f"({type(_ab_exc).__name__}: {_ab_exc}); the run is unaffected")
+        _ab_applied = len(_APPLY_BACK_CTX.get("applied") or ())
+        _ab_rejected = len(_APPLY_BACK_CTX.get("rejected") or ())
+        if _closing_src is not None:
+            _log(f"  apply-back CLOSE: {_ab_applied} fix(es) folded into the "
+                 f"working copy, {_ab_rejected} refused. The reviewed artefact "
+                 f"did NOT change during the run.")
+        else:
+            _log(f"  apply-back CLOSE: nothing folded "
+                 f"({_ab_applied} applied, {_ab_rejected} refused).")
 
     _save_fingerprints(observed_fingerprints, cfg.experiment_name)
     # LAST-RESORT FALLBACK, added 2026-09-09. Measured across the archive: 23 of

@@ -375,6 +375,7 @@ class TicketStore:
         self.record_search(verbatim, [t.tid for t in self.similar(verbatim)])
         hit = self._by_tid.get(want)
         if hit is not None:
+            self._note_alias(hit, task_ref, subjects)
             if hit.status in TERMINAL or hit.status == REJECTED:
                 return hit, "settled-already"
             return hit, "exists"
@@ -382,11 +383,14 @@ class TicketStore:
         for sub in subjects:
             blocked = self.settled_on_subject(sub)
             if blocked:
+                self._note_alias(blocked[0], task_ref, subjects)
                 return blocked[0], "subject-settled"
         near = [t for t in self.similar(verbatim) if t.kind == kind]
         if near:
             settled = [t for t in near if t.status in TERMINAL or t.status == REJECTED]
-            return (settled[0] if settled else near[0]), "reworded-match"
+            chosen = settled[0] if settled else near[0]
+            self._note_alias(chosen, task_ref, subjects)
+            return chosen, "reworded-match"
         if status not in LIVE:
             raise ValueError(
                 f"a new ticket must start in a LIVE status, not {status!r}. A "
@@ -400,6 +404,36 @@ class TicketStore:
                    subjects=sorted(set(subjects)))
         self._append(t)
         return t, "created"
+
+    def _note_alias(self, hit: Ticket, task_ref: str,
+                    subjects: Iterable[str] = ()) -> None:
+        """Record a task reference that resolved to an EXISTING ticket.
+
+        WITHOUT THIS THE LINK IS LOST, measured 2026-10-17: task B18 matched an
+        existing ticket, `propose` returned that ticket, and B18's own identifier
+        went nowhere -- so a search for "the ticket for B18" found nothing while
+        the work was in fact tracked under another id. A store that silently
+        drops the caller's reference cannot be searched by that reference, which
+        defeats the point of the reference.
+        """
+        note = f"also tracked as {task_ref}" if task_ref else ""
+        new_subs = [s for s in subjects if s and s not in hit.subjects]
+        if not note and not new_subs:
+            return
+        if note and note in hit.notes:
+            note = ""
+        if not note and not new_subs:
+            return
+        nt = Ticket(**{**asdict(hit),
+                       "notes": list(hit.notes) + ([note] if note else []),
+                       "subjects": sorted(set(list(hit.subjects) + new_subs))})
+        self._append(nt)
+
+    def by_task_ref(self, task_ref: str) -> list[Ticket]:
+        """Tickets whose own reference matches, OR which record it as an alias."""
+        needle = f"also tracked as {task_ref}"
+        return [t for t in self._by_tid.values()
+                if t.task_ref == task_ref or needle in t.notes]
 
     def close(self, tid: str, resolution: str, verification: str) -> Ticket:
         """CLOSED is TOOL-ONLY: a verification record is required, not a claim."""

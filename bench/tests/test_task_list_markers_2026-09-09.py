@@ -186,3 +186,50 @@ def test_the_hook_surfaces_a_contradiction_rather_than_hiding_it(tmp_path):
     p.write_text("# t\n\n**R1. A.** B.\n<!-- task: R1 | state: DONE | status: PROPOSED -->\n")
     line = tlm.summarise(p)
     assert "MARKER PROBLEM" in line, f"the contradiction must reach the line: {line}"
+
+
+def test_no_entry_is_swallowed_by_an_edit():
+    """The entry SET may grow but must never shrink without a deliberate removal.
+
+    THIS HAS HAPPENED TWICE, both times by the same mechanism and both times
+    caught only by counting afterwards. On 2026-10-16 an addendum inserted before
+    a marker orphaned it, so the entry parsed with no state. On 2026-10-17 an
+    addendum written without a trailing blank line ran straight into the NEXT
+    entry's heading -- "...all green.**B19. The local memory-budget hook..." --
+    and B19 vanished from the index entirely, 141 entries becoming 140, while
+    both the marker checker and the note linter reported no problem.
+
+    A count cannot say WHAT moved, which is `feedback_pin_a_set_not_a_count`. So
+    this compares the SET of identifiers in the working tree against the set at
+    HEAD and names anything missing. An intentional removal is still possible: it
+    just has to be made in a commit of its own, where the diff shows it.
+    """
+    import pathlib as _p
+    import subprocess as _sp
+    import sys as _sys
+    repo = _p.Path(__file__).resolve().parents[2]
+    _sys.path.insert(0, str(repo / "scripts"))
+    import task_list_markers as tlm
+
+    rel = "experimental_notes/CDSFL_MASTER_TASK_LIST.md"
+    live = repo / rel
+    if not live.is_file():
+        pytest.skip("no task list in this checkout")
+    r = _sp.run(["git", "show", f"HEAD:{rel}"], cwd=repo,
+                capture_output=True, text=True)
+    if r.returncode != 0:
+        pytest.skip("no committed version to compare against")
+
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        prev = _p.Path(td) / "head.md"
+        prev.write_text(r.stdout, encoding="utf-8")
+        head_idents = {e.ident for e in tlm.parse_entries(prev)}
+    live_idents = {e.ident for e in tlm.parse_entries(live)}
+
+    lost = sorted(head_idents - live_idents)
+    assert not lost, (
+        f"{len(lost)} entry/entries present at HEAD are missing from the working "
+        f"tree: {lost}. The usual cause is an addendum written without a blank "
+        "line before the next entry's heading, which merges the 2 paragraphs and "
+        "removes the later entry from the index silently.")

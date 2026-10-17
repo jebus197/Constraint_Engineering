@@ -198,33 +198,70 @@ def from_chat(since: str, limit_per_file: int = 400) -> list[dict]:
 
 
 def from_task_list() -> list[dict]:
-    """Seed from the recorded task list, carrying its state across."""
+    """Seed from the recorded task list, carrying its state across.
+
+    MARKER-DRIVEN, NOT HEADING-DRIVEN, and the reason is measured. A first
+    version matched a bold heading at the start of each blank-line-separated
+    block and missed 47 of 141 entries, 33.3333%, Wilson [26.0856%, 41.4651%].
+    Two causes, both invisible from one example: numerically-identified entries
+    are written `**1.2 The gap ...**` with no dot after the number while
+    letter-prefixed ones are written `**B18. His ruling ...**`, and some entries
+    bold the identifier ALONE as `**10.1** Build a script ...` with the title
+    outside the bold span. Fixing those left 18 still missing, because several
+    entries SHARE one paragraph block, so no paragraph-level rule can separate
+    them at all.
+
+    `task_list_markers.parse_entries` already handles every one of those forms --
+    it is what reports 141 entries -- and every entry carries an HTML comment
+    marker on its own line. So the markers are the index: for each parsed entry,
+    the text between the previous marker and this one is its body. That is exact
+    and needs no heading pattern.
+    """
     if not TASKLIST.exists():
         return []
     sys.path.insert(0, str(REPO / "scripts"))
     import task_list_markers as t
-    entries = {e.ident: e for e in t.parse_entries(TASKLIST)}
-    body = TASKLIST.read_text(encoding="utf-8")
+
+    entries = t.parse_entries(TASKLIST)
+    lines = TASKLIST.read_text(encoding="utf-8").splitlines()
+    marker_line = {}
+    for e in entries:
+        # `line` on an Entry is the 1-indexed marker line; fall back to a scan
+        ln = getattr(e, "line", None) or getattr(e, "marker_line", None)
+        if not ln:
+            ln = next((i + 1 for i, l in enumerate(lines)
+                       if l.lstrip().startswith(f"<!-- task: {e.ident} ")), None)
+        if ln:
+            marker_line[e.ident] = ln
+
+    ordered = sorted((ln, ident) for ident, ln in marker_line.items())
     out = []
-    for para in body.split("\n\n"):
-        m = re.match(r"\*\*([A-Z]{0,2}\d+(?:\.\d+)?[a-z]?)\.\s*(.{0,180}?)\*\*", para.strip())
-        if not m:
-            continue
-        ident, title = m.group(1), " ".join(m.group(2).split())
-        e = entries.get(ident)
-        if e is None:
-            continue
-        quoted = re.search(r"\*\*HIS (?:WORDS|QUESTION|RULING)[^:]*:\*\*\s*(.{40,700}?)(?:\*\*|$)",
-                           para, re.DOTALL)
-        verbatim = " ".join((quoted.group(1) if quoted else title).split())
-        out.append({"verbatim": verbatim, "title": title,
-                    "kind": "fr" if "orchestrator" in title.lower()
-                                    or "selection" in title.lower() else "pf",
+    prev = 0
+    for ln, ident in ordered:
+        e = next(x for x in entries if x.ident == ident)
+        body = "\n".join(lines[prev:ln - 1])
+        prev = ln
+        quoted = re.search(
+            r"\*\*HIS (?:WORDS|QUESTION|RULING)[^:]*:\*\*\s*(.{40,700}?)(?:\*\*|$)",
+            body, re.DOTALL)
+        if quoted:
+            verbatim = " ".join(quoted.group(1).split())
+        else:
+            # the entry's own first sentence, which is its headline
+            first = re.sub(r"\*+", "", body.strip().split(". ")[0])
+            verbatim = " ".join(first.split())[:400]
+        if len(verbatim) < 20:
+            verbatim = f"task {ident}: " + " ".join(
+                re.sub(r"\*+", "", body).split())[:300]
+        title = " ".join(re.sub(r"\*+", "", body.strip()).split())[:160]
+        out.append({"verbatim": verbatim, "title": title or f"task {ident}",
+                    "kind": "fr" if ("orchestrator" in title.lower()
+                                     or "selection" in title.lower()) else "pf",
                     "marked": False, "source": "task_list",
                     "source_ref": f"{ident} state={e.state} status={e.status}",
                     "ruled": e.ruled or "", "task_ref": ident,
                     "state": e.state, "status": e.status,
-                    "subjects": subjects_in(para)})
+                    "subjects": subjects_in(body)})
     return out
 
 
