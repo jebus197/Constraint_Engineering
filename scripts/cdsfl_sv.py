@@ -607,6 +607,44 @@ def _co_author_trailer() -> Optional[str]:
     return None
 
 
+#: Seconds `sv` will wait for a `git commit`, which runs the pre-commit hook.
+#: FLOOR, not the whole story -- `commit_timeout()` sizes it against the hook's
+#: own recorded duration.
+COMMIT_TIMEOUT_FLOOR = 300
+#: How much headroom over the hook's measured duration. 4x covers a loaded
+#: machine: the 2026-10-17 measurement was 143 s on an idle run of 1,001 tests
+#: and the same set has been seen at over 200 s while a panel was dispatching.
+COMMIT_TIMEOUT_HEADROOM = 4
+#: Where `hooks/pre-commit` records how long it took. Scratch, not committed.
+HOOK_SECONDS_FILE = ".cdsfl_tmp/precommit_seconds"
+
+
+def commit_timeout(root: Path | None = None) -> int:
+    """How long to wait for a commit, DERIVED from the hook's own duration.
+
+    THE DEFECT THIS REPLACES. `sv` committed with a fixed 60-second timeout. On
+    2026-10-17 the set of tests `hooks/pre-commit` runs had grown to 1,001,
+    taking 143
+    seconds, so every `sv --commit` died with `subprocess.TimeoutExpired` and
+    state could not be saved at all. The failure read as a git problem rather
+    than as a guard set that had outgrown its waiter.
+
+    A LARGER TYPED NUMBER WOULD ONLY MOVE THE DATE OF THE NEXT FAILURE, which is
+    the objection he raised on 2026-10-13 and 2026-10-14 to a cap with no
+    measurement behind it. So the hook records its own elapsed seconds and this
+    reads them. With no record -- a fresh checkout, or a commit made with
+    `--no-verify` -- the floor applies.
+    """
+    base = Path(root) if root else repo_root()
+    try:
+        recorded = int((base / HOOK_SECONDS_FILE).read_text().strip())
+    except (OSError, ValueError):
+        return COMMIT_TIMEOUT_FLOOR
+    if recorded <= 0:
+        return COMMIT_TIMEOUT_FLOOR
+    return max(COMMIT_TIMEOUT_FLOOR, COMMIT_TIMEOUT_HEADROOM * recorded)
+
+
 def _git(
     *args: str,
     root: Path | None = None,
@@ -1008,7 +1046,7 @@ def _commit_and_push(
                 or os.environ.get("ANTHROPIC_MODEL", "").strip()):
             print("         (no model version recorded — this environment exposes "
                   "none; set ANTHROPIC_MODEL or CDSFL_SV_CO_AUTHOR)")
-    _git("commit", "-m", full_msg, root=root, timeout=60)
+    _git("commit", "-m", full_msg, root=root, timeout=commit_timeout(root))
 
     new_hash = _git("log", "--oneline", "-1", root=root)
     print(f"  Committed: {new_hash} ({n_files} files)")

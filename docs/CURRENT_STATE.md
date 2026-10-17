@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 17 October 2026 11:38 BST (2026-10-17T11:38:19+01:00)
+Generated: 17 October 2026 13:59 BST (2026-10-17T13:59:50+01:00)
 
 ---
 
@@ -18,16 +18,19 @@ Generated: 17 October 2026 11:38 BST (2026-10-17T11:38:19+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `545f9405` Closing report on the overnight task list, paired TTS and markdown
-- **Committed:** 2026-10-17 11:32:36 +0100
+- **Last commit (the PARENT of the commit containing this file):** `98710718` B3: regenerate the parked file, and stop a teardown chmodding his machine
+- **Committed:** 2026-10-17 13:56:38 +0100
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
-- **Working tree at snapshot time:** clean
+- **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
+
+Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
+- `?? experimental_notes/Parked_File_And_A_Teardown_Reaching_Out_2026-10-17.md`
 
 ---
 
 ## Tests
 
-**12111 tests collected** at 17 October 2026 11:38 BST, HEAD `545f9405` (`python3 -m pytest bench/tests/ --co -q`)
+**12206 tests collected** at 17 October 2026 13:59 BST, HEAD `98710718` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -57,13 +60,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `98710718 B3: regenerate the parked file, and stop a teardown chmodding his machine`
+- `73025e95 C32: the harness registry does not work like the ticket register, and should not`
+- `63955c65 C31: the register beats a word search on the error that matters`
+- `e3c94518 C30: the register was dropping his shortest rulings, and they are his most decisive`
+- `7534743e C5: the serialisation cure is a hypothesis, and its measurement is now scheduled`
+- `ed3c1d73 C3: the note standard is v1.8, and half of its new rule was already a rule`
+- `ab1bf1be A19 measured: the script that seemed to argue against the flag says the opposite`
+- `542bca49 V9: the evidence must go red, and 2 of 19 DONE entries do not`
+- `4949d5f9 sv: the overnight task list, 19 commits, guard set 793 to 927`
 - `545f9405 Closing report on the overnight task list, paired TTS and markdown`
-- `bc90f3d6 C15 follow-up: the omit-at-default rule is executed, not restated`
-- `24beda17 C15: the season is built and wired; the ladder order is measured, not a vendor tuple`
-- `a72c2fb4 C17: the immune memory is reset, the priors are archived, and a promised script existed only in a comment`
-- `1d443708 C14: the better way is recovered, verified and built -- incremental stream-json`
-- `f50d6ead C13: the required quiet run is 7, and C29 reports that the list may not terminate`
-- `65d8a110 Ledger citation repair: runner line numbers moved with the C8 constant`
-- `12eca9d4 C8: the hardened gate is on by default, 12 days after he ruled it`
-- `45215ee0 C20 CLOSED: all 5 of his corrections discharged, and 2 were faults in the list itself`
-- `9b38f66e C28: the commit gate cried wolf twice, and the repair it declined was safe`

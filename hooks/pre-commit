@@ -1,4 +1,21 @@
 #!/bin/sh
+# HOW LONG THIS HOOK TAKES IS RECORDED, because something downstream waits on it.
+# `scripts/cdsfl_sv.py` commits through a subprocess with a timeout, and on
+# 2026-10-17 that timeout was 60 seconds while this hook had grown to 143 --
+# so `sv` could no longer save state at all, and the failure looked like a git
+# problem rather than a guard set that had outgrown its waiter. A number typed
+# once goes stale the next time the set grows, so the duration is MEASURED here
+# and read there. The file is scratch and is not committed.
+CDSFL_HOOK_T0=$(date +%s)
+_cdsfl_record_hook_seconds() {
+    _rc=$?
+    if [ -n "${CDSFL_HOOK_T0:-}" ]; then
+        mkdir -p .cdsfl_tmp 2>/dev/null
+        echo "$(( $(date +%s) - CDSFL_HOOK_T0 ))" > .cdsfl_tmp/precommit_seconds 2>/dev/null
+    fi
+    return $_rc
+}
+trap _cdsfl_record_hook_seconds EXIT
 # CDSFL pre-commit guard. Refuses a commit when the cheap correctness guards are red.
 #
 # WHY THIS EXISTS, with the evidence rather than the intention.
@@ -99,7 +116,8 @@ bench/tests/test_no_ruling_is_dropped_for_being_short_2026-10-17.py
 bench/tests/test_the_register_beats_word_search_2026-10-17.py
 bench/tests/test_the_harness_registry_needs_no_prehash_2026-10-17.py
 bench/tests/test_the_parked_file_regenerates_without_losing_him_2026-10-17.py
-bench/tests/test_the_cleanup_fixture_stays_inside_the_sandbox_2026-10-17.py"
+bench/tests/test_the_cleanup_fixture_stays_inside_the_sandbox_2026-10-17.py
+bench/tests/test_sv_can_still_commit_through_its_own_hook_2026-10-17.py"
 
 # THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
 # recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite
