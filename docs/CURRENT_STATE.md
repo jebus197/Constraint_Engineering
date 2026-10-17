@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 17 October 2026 23:29 BST (2026-10-17T23:29:11+01:00)
+Generated: 18 October 2026 00:37 BST (2026-10-18T00:37:18+01:00)
 
 ---
 
@@ -18,26 +18,20 @@ Generated: 17 October 2026 23:29 BST (2026-10-17T23:29:11+01:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `2944e376` sv: B25 complete, all 318 annotations verdicted; B26, B27 and B28 raised
-- **Committed:** 2026-10-17 22:52:36 +0100
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
+- **Last commit (the PARENT of the commit containing this file):** `5a7d7e76` B26 WITHDRAWN: it was already built, and my audit missed it by breaking a rule I wrote the day before
+- **Committed:** 2026-10-18 00:31:04 +0100
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 3
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M  bench/tickets/tickets.jsonl`
-- `M  bench/tickets/tickets_searches.jsonl`
-- `M  docs/CURRENT_STATE.md`
-- `MM experimental_notes/CDSFL_MASTER_TASK_LIST.md`
-- `M  resources/MEMORY_EXCLUSIONS.md`
-- `M  resources/ONBOARDING.md`
-- `M  resources/RECOVERY.md`
-- `A  scripts/how_often_is_a_second_sv_refused_2026-10-17.py`
+- `M experimental_notes/EXPERIMENT_RUN_LEDGER.md`
+- `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**12604 tests collected** at 17 October 2026 23:29 BST, HEAD `2944e376` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**12653 tests collected** at 18 October 2026 00:37 BST, HEAD `5a7d7e76` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -67,13 +61,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `5a7d7e76 B26 WITHDRAWN: it was already built, and my audit missed it by breaking a rule I wrote the day before`
+- `b0cb254f B28: declared modes are now reconciled against what the run did`
+- `cca6cfe5 B27: the human-review stop now fires on evidence, not on a flag`
+- `76d2c6e7 sv: B29 raised, the save gate refuses the follow-up that fixes its own postcondition`
 - `2944e376 sv: B25 complete, all 318 annotations verdicted; B26, B27 and B28 raised`
 - `31a85e94 B25 is complete: all 318 of his annotations carry a verdict with its evidence`
 - `ed4c0ee0 B25: 241 of 318 verdicted, and his duplicate rule is the register's own rule`
 - `efe1c313 B28: he ruled state be detected not declared, and the runners still declare it`
 - `0136a324 B25: past halfway, 173 of 318 annotations verdicted`
 - `d77333b4 The timestamp hook was right and my reason for it was wrong`
-- `480c9379 I typed 10 timestamps instead of reading the clock; now a hook refuses it`
-- `29565256 B25: 9 files audited, 140 of 318 annotations verdicted`
-- `d5c668bb B25: 8 files audited, and a correction that stopped 2 wrong entries`
-- `07ce845d B25: a keying defect that would have silently lost up to 37 verdicts`
