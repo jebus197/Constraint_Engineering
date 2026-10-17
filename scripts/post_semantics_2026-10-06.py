@@ -92,6 +92,11 @@ DEPENDENCIES = {
     # the run will use.
     "clearance is monotone": ["severity test present"],
     "blockers not labelled SETTLED": ["severity test present"],
+    # DEPENDS ON NOTHING and reports rather than refuses, so it is placed LAST:
+    # under halt-on-first-failure a check that cannot FAIL on a degraded seat
+    # must never sit above one that can, or it would delay the refusal without
+    # adding information. Added 2026-10-17 for tasks B13 and B21.
+    "every seat is fully registered": [],
 }
 
 #: The order the POST screen runs them in. Most fundamental first, BIOS fashion.
@@ -101,6 +106,7 @@ POST_ORDER = [
     "clearance is monotone",
     "blockers not labelled SETTLED",
     "capability ladder climbs",
+    "every seat is fully registered",
 ]
 
 
@@ -138,7 +144,8 @@ def part3_runs_to_clear_k() -> None:
 
     Exactly k, because each run reveals exactly 1. Trivial, and worth deriving
     because it is the whole justification for keeping a diagnostic mode that shows
-    every failure: at k = 5 the halting screen costs 5 boot cycles to enumerate
+    every failure: with k independent failures the halting screen costs k boot
+    cycles to enumerate
     what 1 diagnostic run lists.
     """
     import sympy as sp
@@ -168,8 +175,16 @@ def part3_runs_to_clear_k() -> None:
         agree += (runs == kk)
     print(f"        NumPy simulation: {agree} of {trials} trials give runs == k")
     assert agree == trials, "the simulation contradicts the symbolic result"
-    sub = int(halt_runs.subs(k, 5))
-    print(f"        at k = 5: {sub} boot cycles against 1 diagnostic run")
+    # DERIVED FROM THE SCREEN, not typed. The illustration used to substitute a
+    # literal 5, which was the number of checks when it was written; the screen
+    # now carries more, and a reader takes "at k = 5" as a statement about the
+    # screen rather than about the formula. Deriving it means the sentence stays
+    # true as checks are added, which is the rule this project applies to every
+    # other figure.
+    _k = len(POST_ORDER)
+    sub = int(halt_runs.subs(k, _k))
+    print(f"        at k = {_k} (every check failing): {sub} boot cycles "
+          f"against 1 diagnostic run")
 
 
 def main() -> int:

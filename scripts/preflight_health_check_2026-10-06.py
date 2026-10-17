@@ -299,6 +299,116 @@ def check_capability_ladder_climbs(seats, expect_uniform=False, seat_models=None
     return PASS, f"all {mixed} of {len(seats)} seats get a mixed climb", notes
 
 
+def check_every_seat_is_fully_registered(seats, expect_uniform=False,
+                                         seat_models=None):
+    """Is every seated model present in every per-model table, or does it default?
+
+    TASKS B13 AND B21. HIS RULING, 2026-10-16: *"adding and removing models can
+    become much simpler, because the only thing that governs capability is
+    demonstrated measured capability, not model names"*, and *"The ideal scenario
+    is that ... this should become a trivial feature of the harness for a
+    researcher to do."*
+
+    WHY A LOUD CHECK AND NOT A SINGLE REGISTRATION POINT YET.
+    `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py` measures
+    what a new seat costs: a researcher must edit **12 per-model tables across 6
+    live-harness files** and add 1 registry `.toml`, and of the 10 steps a new
+    seat passes through, **9 fail SILENTLY and only 1 fails loudly -- 90.0000%,
+    Wilson [59.5850%, 98.2124%], Clopper-Pearson [55.4984%, 99.7471%]**. That
+    producer's own conclusion is that *"the real problem is not the count, it is
+    the failure mode"*, and that making admission trivial means making the misses
+    LOUD first. A single registration point changes how every seat is configured
+    and is recorded as needing his ruling; making the misses loud does not change
+    any configuration at all, so it is built here.
+
+    WHAT A MISS COSTS WITHOUT THIS. A researcher who misses a table gets a seat
+    that RUNS while losing whatever that table gated -- what `base_model_label`'s
+    own docstring calls *"a capability lost with no error"*, a shape recorded 8
+    times in this project.
+
+    REPORTS RATHER THAN REFUSES, deliberately, AND THE SCREEN STAYS 2-STATE. A
+    missing per-model entry degrades a seat; it does not invalidate the run, and
+    a POST check that refuses every run with an unregistered stand-in would be
+    switched off -- the same reasoning the suite gate already applies to STALE.
+    A third status was considered and rejected: this screen is PASS or FAIL and
+    halts at the first FAIL, and `post_semantics_2026-10-06.py` reasons over that
+    with z3. So an incomplete seat returns PASS with the absences NAMED in the
+    headline and every missing table in the notes, which the screen prints on a
+    PASS as well as on a FAIL. The operator sees them and decides.
+    """
+    notes = []
+    missing_total = 0
+    try:
+        import importlib
+        rc = importlib.import_module("runner_core")
+    except Exception:                                              # noqa: BLE001
+        try:
+            from bench import runner_core as rc                    # type: ignore
+        except Exception as exc:                                   # noqa: BLE001
+            return FAIL, f"per-model tables unreadable ({exc})", notes
+    try:
+        from bench.cdsfl_registry import composer as comp
+    except Exception as exc:                                       # noqa: BLE001
+        return FAIL, f"composer tables unreadable ({exc})", notes
+
+    #: table name -> (mapping, how to key it from a seat label).
+    #:
+    #: THE COMPOSER TABLES ARE KEYED DIFFERENTLY, and getting that wrong
+    #: produced a FALSE POSITIVE on the first run of this check: it reported CC2
+    #: and ChatGPT as absent from `PHENOTYPE_TRANSFORMS` when both are present
+    #: under the composer's own keys (`opus_4_6`, `chatgpt_5_4`). The mapping is
+    #: `composer.COMPOSER_MODEL_MAP`, which is what
+    #: `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py`
+    #: already uses -- a reminder that the instrument for this existed and the
+    #: first version of this check reinvented its key derivation and got it
+    #: wrong.
+    base = getattr(rc, "base_model_label", lambda s: s)
+    cmap = getattr(comp, "COMPOSER_MODEL_MAP", {}) or {}
+
+    def composer_key(label):
+        return cmap.get(label, cmap.get(base(label), base(label)))
+
+    tables = {
+        "runner_core.MODEL_SPECS": (getattr(rc, "MODEL_SPECS", {}), base),
+        "runner_core.INITIAL_FINGERPRINTS":
+            (getattr(rc, "INITIAL_FINGERPRINTS", {}), base),
+        "composer.PHENOTYPE_TRANSFORMS":
+            (getattr(comp, "PHENOTYPE_TRANSFORMS", {}), composer_key),
+        "composer.MODEL_COHERENCE_BUDGETS":
+            (getattr(comp, "MODEL_COHERENCE_BUDGETS", {}), composer_key),
+    }
+    for seat in seats or ():
+        label = str(seat or "").strip()
+        if not label:
+            continue
+        absent = []
+        for name, (mapping, key_fn) in tables.items():
+            try:
+                key = key_fn(label)
+            except Exception:                                      # noqa: BLE001
+                key = label
+            if not isinstance(mapping, dict):
+                continue
+            if key not in mapping and label not in mapping:
+                absent.append(f"{name} (looked for {key!r})")
+        if absent:
+            missing_total += len(absent)
+            notes.append(f"{label}: absent from {len(absent)} table(s) — "
+                         + "; ".join(absent))
+        else:
+            notes.append(f"{label}: present in all {len(tables)} table(s)")
+    if not seats:
+        return FAIL, "no seats declared, so registration cannot be checked", notes
+    if missing_total:
+        return PASS, (
+            f"{missing_total} per-model table entr(ies) MISSING across "
+            f"{len([n for n in notes if 'absent from' in n])} of {len(seats)} "
+            f"seat(s); each absence is a SILENT default at run time — named "
+            f"below rather than discovered afterwards"), notes
+    return PASS, (f"all {len(seats)} seat(s) present in all {len(tables)} "
+                  f"per-model table(s)"), notes
+
+
 #: (name, fn, wants_seats). ORDER IS LOAD-BEARING — see the module docstring and
 #: `post_semantics_2026-10-06.py` part 2, which holds it with z3.
 CHECKS = [
@@ -307,6 +417,10 @@ CHECKS = [
     ("clearance is monotone", check_in_round_clearance_is_monotone, False),
     ("blockers not labelled SETTLED", check_blockers_are_not_labelled_settled, False),
     ("capability ladder climbs", check_capability_ladder_climbs, True),
+    # LAST, because it depends on nothing and reports rather than refuses, so
+    # under halt-on-first-failure it can never hide a check above it.
+    ("every seat is fully registered", check_every_seat_is_fully_registered,
+     True),
 ]
 
 
