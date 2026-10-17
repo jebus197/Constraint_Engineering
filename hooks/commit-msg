@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""Refuse a commit message whose Timestamp line was TYPED rather than read.
+
+HIS STANDING RULE: never type a timestamp; capture the clock. It exists because
+a typed time is not a measurement of anything, and the project has a recorded
+instance of acting on an invented one.
+
+MEASURED 2026-10-17, which is why this hook exists rather than a resolution:
+12 of my own commits that day carried a `Timestamp:` line drifting between 3.1
+and 19.6 minutes from the commit's own author date. Every one was typed from
+memory while the clock was a single command away. The pattern is obvious in
+hindsight -- the drift grows through a working session as the typed guess falls
+behind the real time -- and it was invisible until the 2 were compared.
+
+WHAT IT CHECKS AND WHAT IT DOES NOT. It compares a `Timestamp:` line, if the
+message has one, against the clock at commit time, and refuses beyond a
+tolerance. It does NOT require a message to carry one: adding a new requirement
+is not this hook's business, and a commit without a stamp is not making a false
+claim about when it happened.
+
+IT MUST NEVER FELL A COMMIT FOR THE WRONG REASON. Any failure inside this hook
+exits 0, because a broken checker that blocks every commit is far worse than a
+missed stamp. A deliberate bypass remains `git commit --no-verify`.
+"""
+from __future__ import annotations
+
+import datetime
+import pathlib
+import re
+import sys
+
+#: Seconds of drift tolerated. A commit takes real time -- this repository's
+#: pre-commit hook runs over 1,300 tests and takes about 4.5 minutes -- so the
+#: stamp is written BEFORE that and legitimately precedes the commit by minutes.
+#: The tolerance is therefore generous in the EARLY direction and tight in the
+#: LATE one: a stamp cannot be AHEAD of the clock by more than a few seconds,
+#: because the future has not happened yet.
+BEHIND_ALLOWED = 900      # 15 minutes: the stamp may precede a long hook run
+AHEAD_ALLOWED = 120       # 2 minutes: a stamp in the future is typed, not read
+
+#: THE WHOLE REST OF THE LINE, not the first token. Written first as
+#: `(\S+)` and its own guard caught the hole immediately: a line reading
+#: "Timestamp: yesterday afternoon" matched NOTHING, so the hook found no
+#: stamp and allowed the commit. A checker that cannot see the worst case
+#: of what it checks is the shape this project keeps finding.
+STAMP = re.compile(r"^\s*Timestamp:\s*(.+?)\s*$", re.M)
+
+
+def main(argv) -> int:
+    try:
+        if len(argv) < 2:
+            return 0
+        text = pathlib.Path(argv[1]).read_text(encoding="utf-8", errors="replace")
+        m = STAMP.search(text)
+        if not m:
+            return 0
+        try:
+            claimed = datetime.datetime.fromisoformat(m.group(1))
+        except ValueError:
+            print(f"commit-msg: the Timestamp line is not an ISO instant: "
+                  f"{m.group(1)!r}. Capture it with `date -Iseconds`.",
+                  file=sys.stderr)
+            return 1
+        now = datetime.datetime.now().astimezone()
+        if claimed.tzinfo is None:
+            claimed = claimed.replace(tzinfo=now.tzinfo)
+        drift = (claimed - now).total_seconds()
+        if drift > AHEAD_ALLOWED:
+            print(f"commit-msg: REFUSED. The Timestamp line is "
+                  f"{drift/60:.1f} minutes IN THE FUTURE "
+                  f"({claimed.isoformat()} against a clock reading "
+                  f"{now.isoformat()}). A stamp ahead of the clock was typed, "
+                  f"not read.", file=sys.stderr)
+            print("commit-msg: capture it with `date -Iseconds` and paste that "
+                  "value.", file=sys.stderr)
+            print("commit-msg: bypass deliberately with: git commit "
+                  "--no-verify", file=sys.stderr)
+            return 1
+        if -drift > BEHIND_ALLOWED:
+            print(f"commit-msg: REFUSED. The Timestamp line is "
+                  f"{-drift/60:.1f} minutes STALE "
+                  f"({claimed.isoformat()} against a clock reading "
+                  f"{now.isoformat()}). Re-capture it with `date -Iseconds`.",
+                  file=sys.stderr)
+            print("commit-msg: bypass deliberately with: git commit "
+                  "--no-verify", file=sys.stderr)
+            return 1
+        return 0
+    except Exception as exc:                                   # noqa: BLE001
+        # A BROKEN CHECKER MUST NOT BLOCK EVERY COMMIT.
+        print(f"commit-msg: the timestamp check could not run ({exc}); "
+              f"allowing the commit.", file=sys.stderr)
+        return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))
