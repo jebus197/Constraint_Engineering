@@ -1,13 +1,121 @@
 {
   "rows": [
     {
-      "anchor": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt#66131198",
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#24394693",
       "audited": "2026-10-17",
-      "evidence": "bench/tests/test_immune_memory_evaluation.py:187 quotes this ruling as its own skip reason; verified by execution 2026-10-17, 161 passed 6 skipped",
-      "file": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt",
-      "text": "No. We reset immune memory for the upcoming live experiments, since simulation can probably only tell us so much about how this facility will function in real live/paid experiments. There should be a facility for researchers to select a switch in the upcoming UX build if they want immune memory to persist between different experiments, or if they want it to be reset between experiments. For us in our upcoming use case, since our models won\u2019t change (or perhaps at least not much, as we may add Kimi K3 back into the mix at some point), probably the best strategy is to leave the default in this case set to on, so that it can persist between experiments? Which brings up another issue we have discussed in the recent past, which is that overall, adding, removing, or changing models in the harness should be an entirely trivial affair (by design) and should not require major code changes to enable researchers to do so. The question is, is it? Have we adequately addressed this particular design objective?",
+      "evidence": "entry C18 is OPEN at status TESTED; it governs this annotation and is not yet settled",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "The fingerprint machinery and capability ladder and all other machinery are supposed to work in harmony with each other. There is no reason why any of this should no either work, work in the envisaged way, and work in harmony with everything else in the harness as a whole. The singe unifying goal of this project has been that of a science/STEM calculator, problem entered into the system and a definitive, reliable, repeatable answer out, just as is the case with any normal calculator. After all 4+4 will always equal 8. How can a system that gives a different answer every time be considered a serious or useful tool? LLM\u2019s are a little different however. Answers can sometimes vary defending on their training data, how the question is formed, the skill of the researcher asking it, what area of their training data they might access on any given day (which doesn\u2019t always appear to be the same), but providing this remains our direction of travel and any results produced by the system stands up to subsequent scrutiny and testing, this variability may be regarded as acceptable. Reproducibility in these conditions, may however ultimately become a separate step, either performed by the models, or the HIL, or both. I am undecided how this should work. We should probably ask the other models in a free panel review for their take on this. Reproducibility is after all a founding principle of the scientific method. We probably shouldn\u2019t neglect it.",
+      "verdict": "TRACKED",
+      "why": "the harmony he describes is what entry C18 addresses by keying capability on a hashed identity rather than a model name"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#27027424",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "Then we should implement this fully too, if not already done!",
       "verdict": "ACTED_ON",
-      "why": "the immune memory was reset and the suite records the reset as the reason its 6 memory tests skip, re-arming as soon as a run writes a record"
+      "why": "model-supplied tests are now accepted and run during a round rather than discarded until the closing sweep"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#27386731",
+      "audited": "2026-10-17",
+      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "That ordering from weak to strong seems like the reverse that one would expect? Codex has always seemed to be one of our strongest performers, with DeepSeek being the weakest?",
+      "verdict": "TRACKED",
+      "why": "his challenge to the ladder order is the subject of entry C7, which measured that the order is not estimable from the archive at all"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#31262170",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "So were these historical blockers ever fixed, by the rest of the machinery of the schema? Such as the closing sweep? (Which should now be an internalised feature of the schema.)",
+      "verdict": "ACTED_ON",
+      "why": "his question was whether the closing sweep serviced them; it could not, because it runs after the verdict, so in-round falsification was built and now services them during rounds"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#3521387",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "Then we should test it in the next simulated run.",
+      "verdict": "ACTED_ON",
+      "why": "the shakedown legs ran with the arm live and leg 3 executed 2 in-round falsifiers, which is the first data the arm has from a clean run"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#39370932",
+      "audited": "2026-10-17",
+      "evidence": "check_facilities_armed in scripts/preflight_health_check_2026-10-06.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "Then this also should be fixed going forward.",
+      "verdict": "ACTED_ON",
+      "why": "immune memory is one of the named facilities the preflight now requires to be set explicitly rather than left at a default"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#43383897",
+      "audited": "2026-10-17",
+      "evidence": "his own annotation of 2026-10-05; no work is owed, so no test can settle it",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "This remains the case, since as you said, the objective here is to test everything, before enabling them in a real/live runner and experiment/s.",
+      "verdict": "RULING",
+      "why": "he is agreeing with the stated position and asks for nothing further, so no work settles it and none is owed"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#72351499",
+      "audited": "2026-10-17",
+      "evidence": "scripts/preflight_health_check_2026-10-06.py and its order in scripts/post_semantics_2026-10-06.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "Then why didn\u2019t that check alert us as you said? We should probably have some kind of integrity check anyway, before an experiment runs to report if all prerequisite modes are live and the system overall is green \u2013 before an experiment can proceed. I believe some time ago I gave an analogy of a computer bios health check. But I don\u2019t remember this exact context, or if this principle should be/could be extended?",
+      "verdict": "ACTED_ON",
+      "why": "the preflight health check is that integrity check: 7 checks run before an experiment and the boot halts at the first failure"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#73737803",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_in_round_falsifier_clears_only_on_execution_2026-10-05.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "Same answer and same question. Now this process has been internalised, with other fixes applied, or still to be applied, will this resolve this issue going forward?",
+      "verdict": "ACTED_ON",
+      "why": "the in-round arm is the internalisation he asks about, and it clears a finding only on execution rather than on a claim"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#75898932",
+      "audited": "2026-10-17",
+      "evidence": "entry C7 is DONE on bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "But this brings us back to a point I made a short time ago. The routing ladder should be a measured statistic, not simply a list of named vendors based on what you, or I may have read about them on the internet. In that sense, our runners shouldn\u2019t care if a particularly named vendor model is available or not. It should just shunt data around the system based on the performance of all models (regardless if they are simulated or real) that may be available to the system, given the other mechanics of the system as a whole.",
+      "verdict": "TRACKED",
+      "why": "this is the ruling entry C7 records and answers: the order is not estimable from the archive, and a pass now records whether its order rested on measurement"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#78280974",
+      "audited": "2026-10-17",
+      "evidence": "scripts/the_blockers_are_shown_as_settled_2026-10-05.py plus check_blockers_are_not_labelled_settled in scripts/preflight_health_check_2026-10-06.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "Then clearly this must be fixed!",
+      "verdict": "ACTED_ON",
+      "why": "the blockers-shown-as-settled defect was repaired and a preflight check now refuses a run whose blockers are labelled settled"
+    },
+    {
+      "anchor": "Blockers_Shown_As_Settled_2026-10-05.txt#96933794",
+      "audited": "2026-10-17",
+      "evidence": "bench/tests/test_severity_proof_2026-09-07.py",
+      "file": "Blockers_Shown_As_Settled_2026-10-05.txt",
+      "text": "This is now at least the 3rd or 4th time I have rejected this change. This change is rejected. You should fix it.",
+      "verdict": "ACTED_ON",
+      "why": "the severity test was restored to the blocker counter on his rejection and is executed rather than read"
+    },
+    {
+      "anchor": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt#3913666",
+      "audited": "2026-10-17",
+      "evidence": "his annotation of 2026-10-16 in Runway_Status_And_Is_It_Safe_To_Merge; no work is owed, so no test can settle it",
+      "file": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt",
+      "text": "The fact that the answer keys were public for a very brief time has already been answered also and has been ruled as not significant. It is highly unlikely that anyone ever saw them, including the models. Verdict: strike from the list of reoccurring issues also.",
+      "verdict": "RULING",
+      "why": "he struck the public-answer-keys question permanently; nothing further is owed from me, and the record of the strike is the ruling itself"
     },
     {
       "anchor": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt#60027094",
@@ -19,13 +127,13 @@
       "why": "a blanket approval of the outstanding work rather than a single item; the master task list is what carries it, entry by entry"
     },
     {
-      "anchor": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt#3913666",
+      "anchor": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt#66131198",
       "audited": "2026-10-17",
-      "evidence": "his annotation of 2026-10-16 in Runway_Status_And_Is_It_Safe_To_Merge; no work is owed, so no test can settle it",
+      "evidence": "bench/tests/test_immune_memory_evaluation.py:187 quotes this ruling as its own skip reason; verified by execution 2026-10-17, 161 passed 6 skipped",
       "file": "Runway_Status_And_Is_It_Safe_To_Merge_2026-10-16.txt",
-      "text": "The fact that the answer keys were public for a very brief time has already been answered also and has been ruled as not significant. It is highly unlikely that anyone ever saw them, including the models. Verdict: strike from the list of reoccurring issues also.",
-      "verdict": "RULING",
-      "why": "he struck the public-answer-keys question permanently; nothing further is owed from me, and the record of the strike is the ruling itself"
+      "text": "No. We reset immune memory for the upcoming live experiments, since simulation can probably only tell us so much about how this facility will function in real live/paid experiments. There should be a facility for researchers to select a switch in the upcoming UX build if they want immune memory to persist between different experiments, or if they want it to be reset between experiments. For us in our upcoming use case, since our models won\u2019t change (or perhaps at least not much, as we may add Kimi K3 back into the mix at some point), probably the best strategy is to leave the default in this case set to on, so that it can persist between experiments? Which brings up another issue we have discussed in the recent past, which is that overall, adding, removing, or changing models in the harness should be an entirely trivial affair (by design) and should not require major code changes to enable researchers to do so. The question is, is it? Have we adequately addressed this particular design objective?",
+      "verdict": "ACTED_ON",
+      "why": "the immune memory was reset and the suite records the reset as the reason its 6 memory tests skip, re-arming as soon as a run writes a record"
     }
   ],
   "window_from": "2026-10-01"

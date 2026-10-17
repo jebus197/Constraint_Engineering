@@ -157,12 +157,31 @@ def main(argv=None) -> int:
         from bench.ticket_store import TicketStore, LIVE
         store = TicketStore()
         store.load()
-        unc = {t.anchor: t for t in store.unconfirmed()}
+        #: MATCHED ON THE FILE AND HIS OWN WORDS, not on the anchor. A verdict
+        #: row's anchor is minted by this script and a ticket's anchor by the
+        #: harvester, so the 2 are not the same string and matching them found
+        #: NOTHING on the first attempt -- a close that silently settles 0
+        #: tickets while reporting success is the shape this project keeps
+        #: finding.
+        def _k(f, text):
+            return (f.split("#")[0], " ".join(str(text).split()).lower())
+        unc = {}
+        for ticket in store.unconfirmed():
+            unc[_k(ticket.anchor, ticket.verbatim or ticket.title)] = ticket
         closed = 0
         for r in rows.values():
             if r["verdict"] not in SETTLING:
                 continue
-            t = unc.get(r["anchor"])
+            #: A TRACKED ROW SETTLES ONLY WHEN ITS ENTRY IS DONE. The verdict
+            #: says an entry governs the annotation; it does not say the entry
+            #: is finished. Closing a ticket governed by an OPEN entry would
+            #: record an instruction of his as settled while the work is still
+            #: outstanding, which is the direction that cannot be caught later.
+            if r["verdict"] == "TRACKED" and "is DONE" not in r["evidence"]:
+                print(f"    left open: tracked by an entry that is not DONE -- "
+                      f"{r['text'][:52]}")
+                continue
+            t = unc.get(_k(r["file"], r["text"]))
             if t is None:
                 continue
             store.close(t.tid,
