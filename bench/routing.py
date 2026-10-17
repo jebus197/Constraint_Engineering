@@ -357,6 +357,59 @@ class RoutingResult:
     #: 1-seat arm. A proxy that was exact under the old mechanics is the first
     #: thing a new mechanic breaks, so the fact is recorded directly instead.
     ladder_was_empty: bool = False
+    #: True iff this routing pass ordered its rungs by the VENDOR TUPLE, which
+    #: rests on no measurement.
+    #:
+    #: HIS RULING, 2026-10-05: *"The routing ladder should be a measured
+    #: statistic, not simply a list of named vendors based on what you, or I may
+    #: have read about them on the internet."* And: *"The system shouldn't care
+    #: at all what a model is called, only what it can be statistically
+    #: demonstrated to have done."*
+    #:
+    #: THE ORDER IS NOT ESTIMABLE FROM THE ARCHIVE, measured by
+    #: scripts/is_the_ladder_order_estimable_2026-10-17.py: the omnibus test
+    #: rejects equality, so the seats really do differ, but 0 of 10 pairwise
+    #: orderings survive Holm or Bonferroni at 0.05 -- and a ranking IS a set of
+    #: pairwise orderings. So the archive supports "they differ" and supports no
+    #: statement about which is stronger.
+    #:
+    #: WHICH LEAVES THE DEFAULT AS A CONVENTION, and a convention must not be
+    #: mistaken for a finding. `season_strength_order` already says so loudly
+    #: when IT falls back, but 6 of 7 live `route` call sites never reach that
+    #: function: they take the module default silently (85.7143%, Wilson
+    #: [48.6872%, 97.4320%]). Only `reference_runner_v3` passes a measured
+    #: order, through `**_route_kw`.
+    #:
+    #: STAMPED IN ONE PLACE RATHER THAN AT 4 CONSTRUCTION SITES, so the 6
+    #: callers are reached without touching any of them and the 2 forms cannot
+    #: drift. It is DETECTIVE ONLY: no routing behaviour depends on it.
+    strength_order_was_unestablished: bool = False
+    #: HOW MANY AVAILABLE LABELS THE ORDER ACTUALLY MATCHED. 0 means the ladder
+    #: ranked nothing and the rung order is simply the order the caller passed.
+    #:
+    #: MEASURED 2026-10-17, and this is the substantive half of his ruling of
+    #: 2026-10-05. The live panel roster is
+    #: ['cx', 'cgpt', 'ge', 'ds', 'cc2', 'fable', 'kimi'] and the order is
+    #: ('Codex', 'CC2', 'ChatGPT', 'Gemini', 'DeepSeek', 'Fable'). NOT ONE of
+    #: the roster's keys matches a name in the order, so
+    #: `rank_falsifier_writers` returns the roster UNCHANGED: reverse the input
+    #: and the "ranking" reverses with it. It looks like a ranking and is an
+    #: identity function -- the checker-that-decides-nothing class, 11 instances
+    #: of which this project has confirmed since 2026-08-01.
+    #:
+    #: `bench/allocation_by_measured_capability_2026-10-07.py` has been
+    #: reporting the roster disagreement that causes this
+    #: (`the_two_disagree: True`, 5 on-panel-not-on-ladder, 4
+    #: on-ladder-not-on-panel) and NO TEST EVER EXECUTED IT, so the finding sat
+    #: in a producer nobody ran.
+    #:
+    #: BEHAVIOUR IS UNCHANGED ON PURPOSE. Matching case-insensitively, or
+    #: through the roster's alias map, would REORDER the live panel, and
+    #: reordering the rungs of a falsification ladder changes which seat is
+    #: asked first. That is a behaviour change requiring his ruling and a
+    #: measurement, not something to slip into a visibility fix. What changes
+    #: here is only that a ladder which ranked nothing says so.
+    strength_order_matched: int = 0
 
 
 def seat_identities(registry, labels) -> dict:
@@ -480,6 +533,36 @@ def season_strength_order(registry, labels, frozen=None, alpha: float = 0.05):
     return tuple(DEFAULT_FALSIFIER_STRENGTH), False, (
         f"{why}; falling back to the vendor order, which rests on no "
         f"measurement (FALSIFIER_STRENGTH_IS_ESTABLISHED is False){_loud}")
+
+
+def labels_the_order_ranks(labels, strength_order) -> list:
+    """Which of `labels` the given order actually RANKS. MEMBERSHIP, not order.
+
+    Returned in LABEL order, deliberately, and the distinction is not academic:
+    `rank_falsifier_writers` returns the same labels in STRENGTH order, so for
+    `["CC2-SIM", "Codex-SIM"]` this gives CC2-SIM first and the ranking gives
+    Codex-SIM first. Both are correct about different questions. An early test
+    compared the two as sequences and failed on exactly that pair, which is why
+    the contract is stated here rather than inferred.
+
+    THE COUNTER AND THE RANKING MUST NOT MATCH DIFFERENTLY. Written first as a
+    lowercase set comparison inside `route`, which reported 2 of 7 matched for
+    the live panel while `rank_falsifier_writers` ranked 0 of 7 -- the ranking
+    compares EXACTLY, modulo the `-SIM` suffix, and does not fold case. A
+    producer and a consumer that disagree about the same question is this
+    project's most-caught defect shape, and it cannot be caught by reading
+    either one: both are individually consistent.
+
+    So this is the single rule, and `rank_falsifier_writers` is checked against
+    it by an executing test rather than by inspection.
+    """
+    known = set(strength_order)
+    out = []
+    for m in labels:
+        base = m[:-4] if str(m).endswith("-SIM") else str(m)
+        if base in known:
+            out.append(m)
+    return out
 
 
 def rank_falsifier_writers(
@@ -688,15 +771,36 @@ def route(
     """
     fid = finding.get("finding_id") or finding.get("id") or "?"
 
+    #: ONE STAMP, BOTH EXITS. Computed before either return so that a duplicate
+    #: verdict carries it too: a duplicate was still reached by a ladder, and a
+    #: reader asking "was this order measured?" needs the same answer whichever
+    #: verdict came back.
+    _unestablished = (tuple(strength_order) == tuple(DEFAULT_FALSIFIER_STRENGTH)
+                      and not FALSIFIER_STRENGTH_IS_ESTABLISHED)
+
     dup = confirmed_duplicate(finding, confirmed_findings, similarity_fn, dup_threshold)
     if dup is not None:
-        return RoutingResult(fid, "DUPLICATE", True, None, "", duplicate_of=dup, rungs_tried=0)
+        return RoutingResult(fid, "DUPLICATE", True, None, "", duplicate_of=dup,
+                             rungs_tried=0,
+                             strength_order_was_unestablished=_unestablished,
+                             strength_order_matched=len(
+                                 labels_the_order_ranks(available_models,
+                                                        strength_order)))
 
     source = finding.get("source_model")
     rungs = rank_falsifier_writers(
         available_models, strength_order=strength_order,
         exclude=(source,) if source else (),
     )
-    return resolve_via_routing(
+    #: ONE RULE, CALLED, not a second copy of the matching logic.
+    _matched = len(labels_the_order_ranks(available_models, strength_order))
+    out = resolve_via_routing(
         finding, rungs, resolve_fn, reverify_fn, max_rungs=max_rungs,
         self_rung=source if (self_rung_enabled and source) else None)
+    out.strength_order_matched = _matched
+    #: `resolve_via_routing` is also called DIRECTLY by other code, so the stamp
+    #: is applied here rather than inside it: only `route` knows which order was
+    #: used. A direct caller gets the field's default of False, which is honest
+    #: -- it means "not recorded", and nothing reads it as "measured".
+    out.strength_order_was_unestablished = _unestablished
+    return out

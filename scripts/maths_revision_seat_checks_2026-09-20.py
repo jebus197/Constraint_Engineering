@@ -87,9 +87,26 @@ check("3.4 ATTACK: expected detection rate at R*=b/p is p*(b/p)=b, NOT 0",
       "b=0.20 -> 1 detection per 5 rounds: observable, so 'decays to 0 in EVERY case' overreaches")
 
 cfg = rr.RunnerConfig()
-g1 = rr._estimate_gamma([5, 3, 1, 0, 0, 0])
-c1, r1 = rr._check_gamma_alt_convergence(6, g1, [5,3,1,0,0,0], cfg, gamma_critical=g1, total_findings=9)
-check("3.5 decayed-to-zero series converges", c1, f"gamma={g1:.3f}")
+# THE SETTLED-ROUND COUNT IS DERIVED FROM THE CONFIG, NOT PINNED. This check
+# read `[5, 3, 1, 0, 0, 0]` -- 3 trailing settled rounds -- and went red when
+# C8 was built on 2026-10-17 on his ruling of 2026-10-05, because the gate
+# became the CONJUNCTION of a sustained critical gamma AND
+# `gamma_alt_consecutive_zero_crit` consecutive zero-new-critical rounds, which
+# is 7. The gamma half always passed (0.685 against a 0.3 threshold); the
+# settled half could not, because the fixture was 4 rounds too short.
+#
+# MEASURED, so the fixture is not merely longer but correct: convergence turns
+# on at exactly 7 trailing zeros and stays on at 8 and 9, and is refused at 3,
+# 4, 5 and 6. Deriving the count means the check follows the configured rule
+# instead of going stale the next time it moves -- his own instruction to
+# derive a baseline rather than pin a number.
+_zeros = getattr(cfg, "gamma_alt_consecutive_zero_crit", 7)
+_decayed = [5, 3, 1] + [0] * _zeros
+g1 = rr._estimate_gamma(_decayed)
+c1, r1 = rr._check_gamma_alt_convergence(len(_decayed), g1, _decayed, cfg,
+                                         gamma_critical=g1, total_findings=9)
+check("3.5 decayed-to-zero series converges", c1,
+      f"gamma={g1:.3f}, {_zeros} settled rounds required")
 g2 = rr._estimate_gamma([5, 3, 2, 2, 2, 2])
 c2, r2 = rr._check_gamma_alt_convergence(6, g2, [5,3,2,2,2,2], cfg, gamma_critical=g2, total_findings=16)
 check("3.5 flat 2-criticals/round REFUSES", not c2, f"gamma={g2:.3f}")

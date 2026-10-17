@@ -108,6 +108,45 @@ class TestTheBundleCountsDefectsNotJustItems:
 
 
 class TestTheRoutingEvidenceIsActuallyWritten:
+    @staticmethod
+    def _routing_history_keys(src: str) -> set:
+        """The keys of the dict appended to `routing_history`, PARSED.
+
+        THIS IS THE THIRD TIME A TEXT WINDOW IN THIS CLASS HAS FAILED FOR A
+        REASON THAT HAD NOTHING TO DO WITH THE PROPERTY. `test_it_cannot_fell_a_run`
+        below records the first two and was converted to the syntax tree; these
+        2 tests kept a 1,100-character slice, so the lesson was applied to 1 of
+        3. On 2026-10-17 a comment added beside the write pushed
+        `last_falsifier_code` past the cut and the guard reported it missing
+        while it sat a few lines below. A guard whose verdict depends on comment
+        length is measuring the comment.
+
+        Parsing also makes the check STRICTER, not merely more robust: a key
+        named inside a neighbouring comment or string used to satisfy the slice
+        and now cannot, because only real dict keys are returned.
+        """
+        import ast
+        tree = ast.parse(src)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            if not (isinstance(func, ast.Attribute) and func.attr == "append"):
+                continue
+            inner = func.value
+            if not (isinstance(inner, ast.Call)
+                    and isinstance(inner.func, ast.Attribute)
+                    and inner.func.attr == "setdefault"
+                    and inner.args
+                    and isinstance(inner.args[0], ast.Constant)
+                    and inner.args[0].value == "routing_history"):
+                continue
+            for arg in node.args:
+                if isinstance(arg, ast.Dict):
+                    return {k.value for k in arg.keys
+                            if isinstance(k, ast.Constant)}
+        return set()
+
     def test_routing_history_is_appended_by_the_router(self, src):
         assert 'e.setdefault("routing_history", []).append(' in src, (
             "the alarm attaches routing_history and nothing writes it; the "
@@ -115,18 +154,23 @@ class TestTheRoutingEvidenceIsActuallyWritten:
             "off the record")
 
     def test_it_records_what_a_human_would_need(self, src):
-        i = src.index('e.setdefault("routing_history", []).append(')
-        block = src[i:i + 1100]
-        for key in ("verdict", "model_used", "rungs_tried", "rungs_available",
-                    "last_falsifier_code"):
-            assert f'"{key}"' in block, f"routing_history omits {key}"
+        keys = self._routing_history_keys(src)
+        assert keys, ("no dict is appended to routing_history at all; the "
+                      "parser found nothing, so every key check below would "
+                      "be vacuous")
+        missing = [k for k in ("verdict", "model_used", "rungs_tried",
+                               "rungs_available", "last_falsifier_code")
+                   if k not in keys]
+        assert not missing, (
+            f"routing_history omits {missing}. Keys present: {sorted(keys)}")
 
     def test_rungs_available_is_recorded_next_to_rungs_tried(self, src):
         """Two of five asked reads very differently from two of two."""
-        i = src.index('e.setdefault("routing_history", []).append(')
-        block = src[i:i + 1100]
-        assert '"rungs_available"' in block and '"rungs_tried"' in block, (
-            "without both, 'the ladder was exhausted' cannot be checked")
+        keys = self._routing_history_keys(src)
+        assert keys, "no routing_history dict found; this check is vacuous"
+        assert {"rungs_available", "rungs_tried"} <= keys, (
+            f"without both, 'the ladder was exhausted' cannot be checked; "
+            f"keys present: {sorted(keys)}")
 
     def test_it_cannot_fell_a_run(self, src):
         """The write must sit INSIDE a try/except, asserted over the syntax tree.

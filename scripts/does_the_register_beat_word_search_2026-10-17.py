@@ -198,8 +198,16 @@ def main() -> int:
             for k, d, what in ((tp, tp+fn, "recall"), (tn, tn+fp, "specificity")):
                 lo, hi = proportion_confint(k, max(1, d), method="wilson")
                 print(f"    {what:<12} Wilson [{lo*100:.4f}%, {hi*100:.4f}%]")
-        except Exception:
-            pass
+        except ImportError as exc:
+            #: NAMED AND REPORTED, not swallowed. `except Exception: pass`
+            #: here meant a missing statsmodels silently dropped every
+            #: confidence interval while the point estimates still printed --
+            #: a proportion quoted with no interval, which this project's own
+            #: rule forbids. The figure is still printed; what changes is that
+            #: its missing interval is now visible.
+            print(f"    INTERVALS UNAVAILABLE: {exc}. The percentages above "
+                  f"are point estimates with no interval, so they must not be "
+                  f"quoted as measurements until this is installed.")
         return acc, tpr, tnr
 
     print("=" * 74)

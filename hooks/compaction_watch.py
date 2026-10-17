@@ -235,9 +235,36 @@ def _auto_restore(root: pathlib.Path) -> str:
         if grabbing:
             keep.append(line)
     body = "\n".join(keep[:40]) if keep else "\n".join(out[:30])
+    # THE OPEN WORK ARRIVES INLINE, NOT AS A PATH. Task B17, on his question of
+    # 2026-10-16: *"If you can detect compaction mechanically, why can't you
+    # also make rs run mechanically too after compaction?"* Running the script
+    # was already mechanical; what a hook cannot do is make the assistant OPEN
+    # a document it names. On the compaction of 2026-10-16 the notice supplied
+    # 10 paths and the session still spent hours recovering, because a notice
+    # delivers information only if something reads it.
+    #
+    # THE LOGIC IS IN THE REPOSITORY, deliberately. This file is unversioned and
+    # exists on one machine, so the brief is built by
+    # scripts/compaction_resume_brief_2026-10-17.py, which is reviewable,
+    # testable and recoverable. This stays a shim.
+    #
+    # IT CAN NEVER FELL THE HOOK: any failure degrades to the path list, which
+    # is what was delivered before, and the hook still exits 0.
+    inline = ""
+    try:
+        brief_script = script.parent / "compaction_resume_brief_2026-10-17.py"
+        if brief_script.is_file():
+            b = subprocess.run([sys.executable, str(brief_script)],
+                               capture_output=True, text=True, timeout=30,
+                               cwd=str(brief_script.parents[1]))
+            if b.returncode == 0 and (b.stdout or "").strip():
+                inline = "\n" + b.stdout.rstrip()
+    except Exception:                                          # noqa: BLE001
+        inline = ("\n  (the inline open-work brief could not be built; the "
+                  "paths above are the fallback)")
     return ("  AUTO-RESTORE RAN AND SUCCEEDED (exit 0). Its marker acknowledges this "
             "compaction, so this notice will not repeat.\n"
-            "  READ THESE BEFORE RELYING ON ANYTHING RECALLED:\n" + body)
+            "  READ THESE BEFORE RELYING ON ANYTHING RECALLED:\n" + body + inline)
 
 
 def _desktop_notify(when_iso, ago):

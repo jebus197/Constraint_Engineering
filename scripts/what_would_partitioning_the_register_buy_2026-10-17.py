@@ -123,8 +123,26 @@ def _definition_index() -> dict:
     return index
 
 
+def _parse(argv=None) -> None:
+    """A REAL PARSER, so an unknown flag FAILS instead of being ignored.
+
+    `answer_help` answers `--help` but accepts anything else silently, which is
+    this project's "118-day no-op" shape: a script that takes `--fix-whatever`
+    and does nothing with it reports success for work it never did. This
+    measurement takes no options at all, so saying so explicitly is the whole
+    of it.
+    """
+    import argparse
+    parser = argparse.ArgumentParser(
+        prog=pathlib.Path(__file__).name,
+        description=__doc__.splitlines()[0],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__)
+    parser.parse_args(argv)
+
+
 def main() -> int:
-    answer_help(__doc__, __file__)
+    _parse()
     from bench.ticket_store import TicketStore
 
     t0 = time.perf_counter()
@@ -290,37 +308,49 @@ def main() -> int:
     postings: dict[str, set[str]] = {}
     sizes_tok: dict[str, int] = {}
     for t in tickets:
-        toks = set(_norm_tokens(t.verbatim))
+        # THE LIVE METHOD FALLS BACK TO THE TITLE when verbatim is empty. The
+        # first prototype indexed verbatim only, which was 1 of 3 reasons it
+        # agreed with the live answer on 2 of 200 queries.
+        toks = set(_norm_tokens(t.verbatim or t.title or ""))
         sizes_tok[t.tid] = len(toks)
         for tok in toks:
             postings.setdefault(tok, set()).add(t.tid)
     build_ms = (time.perf_counter() - t_build) * 1000.0
     print(f"  index build             : {build_ms:.2f} ms, "
           f"{len(postings)} distinct tokens")
+    print("  WHY THE POSTINGS SET IS EXACT AND NOT AN APPROXIMATION: a ticket")
+    print("  scoring overlap >= 0.95 must share at least 0.95 of the query's")
+    print("  tokens, so it appears in the postings list of at least 1 query")
+    print("  token. The postings union is therefore a SUPERSET of the answer,")
+    print("  and scoring within it reproduces the live ranking exactly.")
 
     by_tid = {t.tid: t for t in tickets}
     indexed_ms, agree, checked = [], 0, 0
     for t in sample:
         s = time.perf_counter()
-        qt = set(_norm_tokens(t.verbatim))
-        if qt:
+        wanted = set(_norm_tokens(t.verbatim))
+        hits = []
+        if wanted:
             counts: dict[str, int] = {}
-            for tok in qt:
-                for tid in postings.get(tok, ()):  # only tickets sharing a token
+            for tok in wanted:
+                for tid in postings.get(tok, ()):
                     counts[tid] = counts.get(tid, 0) + 1
-            hits = []
+            scored = []
             for tid, shared in counts.items():
-                if tid == t.tid:
+                if not sizes_tok[tid]:
                     continue
-                denom = min(len(qt), sizes_tok[tid]) or 1
-                if shared / denom >= WORD_OVERLAP_SURFACE:
-                    hits.append(by_tid[tid])
-        else:
-            hits = []
+                # DENOMINATOR IS THE QUERY'S TOKEN COUNT, and the live method
+                # does NOT exclude the query's own ticket. Both were wrong in
+                # the first prototype.
+                overlap = shared / len(wanted)
+                if overlap >= WORD_OVERLAP_SURFACE:
+                    scored.append((overlap, by_tid[tid]))
+            scored.sort(key=lambda pair: (-pair[0], pair[1].tid))
+            hits = [x for _, x in scored]
         indexed_ms.append((time.perf_counter() - s) * 1000)
-        baseline = {x.tid for x in store.similar_by_words(t.verbatim)}
+        baseline = [x.tid for x in store.similar_by_words(t.verbatim)]
         checked += 1
-        if {x.tid for x in hits} == baseline:
+        if [x.tid for x in hits] == baseline:
             agree += 1
     st_i = _interval(indexed_ms)
     st_b = _interval(timings["similar_by_words()"])
@@ -331,7 +361,7 @@ def main() -> int:
     if st_i["mean"] > 0:
         print(f"  speed-up on the mean    : {st_b['mean']/st_i['mean']:.2f}x")
     ag = _proportion(agree, checked)
-    print(f"  SAME ANSWER AS THE LIVE METHOD: {ag['k']} of {ag['n']} = "
+    print(f"  SAME ORDERED ANSWER AS THE LIVE METHOD: {ag['k']} of {ag['n']} = "
           f"{ag['pct']:.4f}%  Wilson [{ag['wilson'][0]:.4f}%, "
           f"{ag['wilson'][1]:.4f}%]")
     print("  AN INDEX THAT IS FASTER AND WRONG IS NOT AN IMPROVEMENT. The")

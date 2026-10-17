@@ -344,6 +344,8 @@ class TicketStore:
         self._by_tid: dict[str, Ticket] = {}
         self._by_nid: dict[str, list[str]] = {}
         self._by_subject: dict[str, list[str]] = {}
+        #: token -> tids, built lazily, dropped on any mutation.
+        self._word_index: tuple | None = None
         self.load()
 
     # ---------------------------------------------------------------- loading
@@ -368,10 +370,23 @@ class TicketStore:
                 self._by_subject.setdefault(sub, [])
                 if t.tid not in self._by_subject[sub]:
                     self._by_subject[sub].append(t.tid)
+        #: A RELOAD INVALIDATES THE INDEX AS SURELY AS AN APPEND. Placed after
+        #: the loop, at method level: the first attempt put it inside the loop
+        #: body at the wrong indent and would have rebuilt the index once per
+        #: line of a 1,925-line log. It raised IndentationError immediately,
+        #: which is the cheap kind of mistake; the expensive kind is the one
+        #: that parses.
+        self._word_index = None
 
     def _append(self, t: Ticket) -> None:
         with self.path.open("a", encoding="utf-8") as fh:
             fh.write(t.to_json() + "\n")
+        #: EVERY MUTATION FUNNELS THROUGH HERE -- 10 call sites, verified by
+        #: grep over `_append(` -- so this plus `load` are the only 2 places the
+        #: word index can go stale. A stale index is the dangerous failure: a
+        #: newly raised ticket would be INVISIBLE to word search, which is the
+        #: duplicate the register exists to catch.
+        self._word_index = None
         self._by_tid[t.tid] = t
         self._by_nid.setdefault(t.nid, [])
         if t.tid not in self._by_nid[t.nid]:
@@ -401,7 +416,8 @@ class TicketStore:
     WORD_OVERLAP_SURFACE = 0.95
 
     def similar_by_words(self, verbatim: str,
-                         threshold: float | None = None) -> list[Ticket]:
+                         threshold: float | None = None,
+                         include_notes: bool = False) -> list[Ticket]:
         """Tickets sharing most of this proposal's distinctive vocabulary.
 
         HIS INSTRUCTION, 2026-10-17: *"The registry search can contain both a
@@ -436,14 +452,106 @@ class TicketStore:
         wanted = set(_norm_tokens(verbatim))
         if not wanted:
             return []
+        if include_notes:
+            #: OPT-IN, AND OFF BY DEFAULT ON PURPOSE. The measured operating
+            #: characteristic above -- 98.1132% recall at 86.3636%
+            #: specificity -- was derived over ticket TEXT, so folding notes
+            #: into the default would invalidate it and every figure quoted
+            #: from it. The reason the option exists is that an absorbed
+            #: proposal's words are kept as a note, and a record nobody can
+            #: search for is barely better than a discarded one.
+            #:
+            #: It routes through the scan rather than the index because the
+            #: postings index is built over text only. Adding a second index
+            #: for an opt-in path would be a second thing to keep in step for
+            #: no measured gain.
+            return self._similar_by_words_scan(wanted, share, notes=True)
+        if share <= 0:
+            # AT A THRESHOLD OF 0 EVERY TICKET QUALIFIES, including those
+            # sharing no token at all, and such a ticket appears in NO postings
+            # list. The superset argument below fails there, so the scan is
+            # used. Measured rather than assumed: the index and the scan are
+            # compared on every call in the guard, and a 0 threshold is one of
+            # the cases it compares.
+            return self._similar_by_words_scan(wanted, share)
+        return self._similar_by_words_indexed(wanted, share)
+
+    def _similar_by_words_scan(self, wanted: set, share: float,
+                               notes: bool = False) -> list[Ticket]:
+        """THE REFERENCE IMPLEMENTATION. Linear, obvious, and kept.
+
+        It is not dead code: it is what the indexed path is CHECKED AGAINST,
+        by a guard that calls both and compares their ordered output. The
+        project's own rule is that a test asserting on the source text of two
+        forms proves only that each describes itself consistently -- so both
+        forms stay live and the guard executes them.
+        """
         scored: list[tuple[float, Ticket]] = []
         for ticket in self._by_tid.values():
-            have = set(_norm_tokens(ticket.verbatim or ticket.title or ""))
+            text = ticket.verbatim or ticket.title or ""
+            if notes and ticket.notes:
+                text = text + " " + " ".join(ticket.notes)
+            have = set(_norm_tokens(text))
             if not have:
                 continue
             overlap = len(wanted & have) / len(wanted)
             if overlap >= share:
                 scored.append((overlap, ticket))
+        scored.sort(key=lambda pair: (-pair[0], pair[1].tid))
+        return [ticket for _, ticket in scored]
+
+    def _build_word_index(self) -> tuple[dict, dict]:
+        """token -> set of tids, plus each ticket's token count.
+
+        Built lazily and thrown away on any mutation. Measured on the live
+        902-ticket store: 21.58 ms to build, 1,905 distinct tokens.
+        """
+        postings: dict[str, set] = {}
+        sizes: dict[str, int] = {}
+        for ticket in self._by_tid.values():
+            toks = set(_norm_tokens(ticket.verbatim or ticket.title or ""))
+            sizes[ticket.tid] = len(toks)
+            for tok in toks:
+                postings.setdefault(tok, set()).add(ticket.tid)
+        return postings, sizes
+
+    def _similar_by_words_indexed(self, wanted: set, share: float) -> list[Ticket]:
+        """The same answer as the scan, without touching every ticket.
+
+        WHY THIS IS EXACT AND NOT AN APPROXIMATION. A ticket scoring
+        `shared / len(wanted) >= share` with `share > 0` must share at least 1
+        of the query's tokens, so it appears in the postings list of at least 1
+        of them. The union of those lists is therefore a SUPERSET of the
+        answer, and scoring inside it reproduces the scan's ranking exactly --
+        measured at 200 of 200 identical ordered results, Wilson [98.1155%,
+        100.0000%], at 203.44x the speed (20.6045 ms to 0.1013 ms on the mean).
+
+        PRODUCED BY scripts/what_would_partitioning_the_register_buy_2026-10-17.py
+        AND THE FIRST VERSION WAS FAST AND WRONG: it agreed with the scan on 2
+        of 200, because it used `min(len(query), len(ticket))` as the
+        denominator, excluded the query's own ticket, and indexed `verbatim`
+        without the title fallback. The speed-up was already 200x then. A
+        speed-up is not evidence of correctness.
+
+        THE IDEA IS GEMINI WEB'S, from the design brief of 2026-10-17, which
+        proposed SQLite FTS5. The mechanism here is a plain dict because the
+        store already loads wholly into memory, so FTS5 would add a second copy
+        on disk that can drift from the append-only log for no measured gain.
+        """
+        if self._word_index is None:
+            self._word_index = self._build_word_index()
+        postings, sizes = self._word_index
+        counts: dict[str, int] = {}
+        for tok in wanted:
+            for tid in postings.get(tok, ()):
+                counts[tid] = counts.get(tid, 0) + 1
+        scored: list[tuple[float, Ticket]] = []
+        for tid, shared in counts.items():
+            if not sizes.get(tid):
+                continue
+            overlap = shared / len(wanted)
+            if overlap >= share:
+                scored.append((overlap, self._by_tid[tid]))
         scored.sort(key=lambda pair: (-pair[0], pair[1].tid))
         return [ticket for _, ticket in scored]
 
@@ -596,6 +704,46 @@ class TicketStore:
             if blocked:
                 if _distinct(blocked[0]):
                     break                 # related, not the same item
+                #: THE SUBJECT TIER STILL DECIDES, AND THE PROPOSAL'S TEXT
+                #: IS NO LONGER LOST. Both halves were established on
+                #: 2026-10-17 and the second was found by the register
+                #: refusing my own work: a genuinely new feature request --
+                #: namespace paths, from the design brief he attached -- was
+                #: NOT CREATED, because it shares exactly 1 identifier,
+                #: `area_of`, with the ticket for the new command-line entry
+                #: point, closed minutes earlier. The text went nowhere.
+                #:
+                #: THE FIRST REPAIR TRIED WAS WRONG AND THE SUITE PROVED IT.
+                #: Requiring the word layer to corroborate a subject match is
+                #: CIRCULAR: the subject tier exists precisely to catch
+                #: rewordings the word layer misses, so demanding its agreement
+                #: destroys the tier's whole value. Measured: the store fell
+                #: from 4 of 4 to 1 of 4 on the known rediscovery cases.
+                #:
+                #: A PARTIAL-OVERLAP THRESHOLD WAS MEASURED AND REFUSED AS
+                #: OVERFITTING. The 3 true rediscoveries score 0.1429 to
+                #: 0.2500 on shared vocabulary and the 2 genuinely-new items
+                #: score 0.0000 to 0.1111, so any threshold in (0.1111,
+                #: 0.1429) separates them -- a margin of 0.0318 fitted to 5
+                #: data points. That is a tuned constant pretending to be a
+                #: finding, and this project has retired one of those before.
+                #:
+                #: SO THE DECISION IS UNCHANGED and the loss is fixed instead.
+                #: `_distinct` already provides the designed escape hatch: a
+                #: caller naming a `task_ref` or an `anchor` that the matched
+                #: ticket does not own gets a SEPARATE ticket. My call simply
+                #: omitted one. What was not acceptable is that omitting it
+                #: discarded his words, so the proposal's own text is now
+                #: recorded on the settled ticket, where a word search will
+                #: find it and a reader can split the two by hand.
+                #:
+                #: 291 of 907 tickets, 32.0838% Wilson [29.1269%, 35.1918%],
+                #: carry neither a task_ref nor an anchor, so this path is
+                #: reached often rather than rarely, and the historical
+                #: backfill will reach it for every item it raises.
+                #: Measured by
+                #: scripts/can_a_shared_mechanism_hide_a_new_item_2026-10-17.py
+                self._note_proposal_text(blocked[0], title, verbatim, sub)
                 self._note_alias(blocked[0], task_ref, subjects)
                 return blocked[0], "subject-settled"
         near = [t for t in self.similar(verbatim)
@@ -618,6 +766,29 @@ class TicketStore:
                    subjects=sorted(set(subjects)))
         self._append(t)
         return t, "created"
+
+    def _note_proposal_text(self, hit: Ticket, title: str, verbatim: str,
+                            subject: str) -> None:
+        """Keep a proposal's own words when a subject match absorbs it.
+
+        WITHOUT THIS THE TEXT IS GONE. `propose` returns the settled ticket and
+        the caller's wording is discarded, so nothing can later ask what was
+        proposed or notice that it was a different item. On 2026-10-17 that
+        swallowed a genuinely new feature request whole.
+
+        POINT, NEVER PRUNE. The note is appended to the settled ticket rather
+        than used to create a second one, because creating one would change the
+        tier's decision -- which the known-rediscovery cases show is right 4
+        times out of 4 when it fires on a reworded repeat. Recording the text
+        changes nothing about the decision and makes it reviewable.
+        """
+        folded = " ".join(str(verbatim).split())
+        note = (f"absorbed over subject {subject!r}: proposed as "
+                f"{norm_title(title)!r} -- {folded}")
+        if note in hit.notes:
+            return
+        nt = Ticket(**{**asdict(hit), "notes": list(hit.notes) + [note]})
+        self._append(nt)
 
     def _note_alias(self, hit: Ticket, task_ref: str,
                     subjects: Iterable[str] = ()) -> None:

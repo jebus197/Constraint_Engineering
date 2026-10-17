@@ -8519,6 +8519,24 @@ def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
                 "rungs_tried": getattr(result, "rungs_tried", None),
                 "rungs_available": len(models),
                 "duplicate_of": result.duplicate_of,
+                #: WHETHER THE LADDER THAT PRODUCED THIS WAS MEASURED, carried
+                #: into the artefact rather than left on the object. His ruling
+                #: of 2026-10-05 is that the order must be a measured statistic
+                #: and not a vendor list; the archive cannot support an order
+                #: (0 of 10 pairwise comparisons survive correction), so the
+                #: default is a CONVENTION. A reader opening a bundle and asking
+                #: "was this rung order measured?" could not answer it from the
+                #: artefact at all before this -- the same gap fable found in
+                #: `routing_history` itself on 2026-09-02.
+                "strength_order_was_unestablished":
+                    bool(getattr(result, "strength_order_was_unestablished",
+                                 False)),
+                #: HOW MANY SEATS THE LADDER ACTUALLY RANKED. 0 means the rung
+                #: order was the order the caller passed, not a ranking. For
+                #: the live panel roster that figure is 0 of 7, because not one
+                #: of its keys matches a vendor name in the order.
+                "strength_order_matched":
+                    int(getattr(result, "strength_order_matched", 0)),
                 # The falsifier the last rung actually ran. Truncated because a
                 # bundle a human has to read is worth more than a complete one
                 # nobody opens; the full body lands on the entry when resolved.
