@@ -28,7 +28,7 @@
   "stall_gamma_advisory": 1.01,
   "_stall_gamma_note": "Stall-path gamma thresholds sit above the gamma ceiling (1.0) so the stall detector can never fire via gamma; convergence rests on the two-sided gamma-alt gate. Config-level guard, identical to Exp 42/53/55.",
   "gamma_alt_threshold": 0.3,
-  "gamma_alt_consecutive_zero_crit": 3,
+  "gamma_alt_consecutive_zero_crit": 7,
   "gamma_alt_earliest_round": 3,
   "merge_arbitration_enabled": false,
   "_merge_arbitration_note": "OFF IN ALL THREE ARMS, AND THIS IS A DECLARED DELTA FROM EVERY CONFIG exp40-exp55, WHICH ALL SET IT TRUE. Two reasons, and the second is the binding one. (1) The merge path is dead code: when arbitration votes MERGE the runner records merge_blocked_reason, logs MERGE WITHHELD and returns KEEP_DISTINCT, closed deliberately by the no-voting ruling of 2026-08-19. So arbitration buys nothing and costs dispatches. (2) THE CONTEXT IT ARMS READS THE WRONG PANEL LIST. In run_experiment, `_merge_arb_ctx` is populated with `\"panel\": list(exp_config.models)` -- the orchestrator's full 5 ModelConfigs -- never intersected with cfg.models. Every experiment to date declared all 5, so the two lists agreed and the bug was latent. Arm A declares 1 seat, so an armed arbitration would dispatch the other 4 vendors INSIDE the single-model arm and silently convert it into a panel. Off in all three arms holds it constant and closes the leak.",
