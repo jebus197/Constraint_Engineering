@@ -133,6 +133,69 @@ def test_a_ruling_gap_records_the_date_he_ruled():
     )
 
 
+def test_an_instruction_he_gave_also_records_its_date():
+    """An instruction is a decision of his, so it carries a date like a ruling.
+
+    THE DISTINCTION THIS GUARDS, drawn 2026-10-17. The audit's 3 severities are not
+    3 kinds of work, they are 3 kinds of OWNERSHIP:
+
+      a ruling he gave          -> he decided; it needs DOING
+      an instruction nothing tracks -> he decided; it needs DOING
+      a question never answered -> HE is owed an answer; nothing to decide
+
+    The first readout conflated all 3 and queued 11 items to him when only 3 were
+    his. Both of the first 2 therefore carry a `ruled:` date, and only the third
+    may lack one. Without this test the distinction would hold for exactly as long
+    as the memory of drawing it, which is the failure mode the whole audit measured.
+    """
+    import task_list_markers as t
+    entries = {e.ident: e for e in t.parse_entries(TASKLIST)}
+    offenders = []
+    for ident in sorted(CONFIRMED):
+        para = _paragraph(ident)
+        if "AN INSTRUCTION NOTHING TRACKS" in para:
+            e = entries.get(ident)
+            if e is None or not e.ruled:
+                offenders.append(ident)
+    assert not offenders, (
+        f"{len(offenders)} entries record an instruction he already gave but carry no "
+        f"date, so the decision queue will present them to him as though he had never "
+        f"seen them: {offenders}"
+    )
+
+
+def test_only_a_question_may_lack_a_date():
+    """The converse, so the rule cannot be satisfied by dating everything."""
+    import task_list_markers as t
+    entries = {e.ident: e for e in t.parse_entries(TASKLIST)}
+    undated = [i for i in sorted(CONFIRMED)
+               if not (entries.get(i) and entries[i].ruled)]
+    wrong = [i for i in undated
+             if "A DIRECT QUESTION NEVER ANSWERED" not in _paragraph(i)]
+    assert not wrong, (
+        f"{len(wrong)} undated entries are not questions, so they are his decisions "
+        f"being presented back to him: {wrong}"
+    )
+    assert undated, (
+        "every entry now carries a date, which means the 4 questions he is owed an "
+        "answer to have been mislabelled as decisions of his -- the opposite error"
+    )
+    # THE DIRECT FORM, added after mutation on 2026-10-17 exposed the clause above
+    # as too weak. Dating ONE question left the other 3 undated, so "every undated
+    # entry is a question" still held and the mutation passed. The rule has to be
+    # stated positively: a question may not carry a date AT ALL, because a dated
+    # question is presented to him as a decision he already took when in fact he
+    # is owed an answer.
+    dated_questions = [i for i in sorted(CONFIRMED)
+                       if entries.get(i) and entries[i].ruled
+                       and "A DIRECT QUESTION NEVER ANSWERED" in _paragraph(i)]
+    assert not dated_questions, (
+        f"{len(dated_questions)} entries are questions he asked but carry a ruling "
+        f"date, so the queue will show them as settled by him rather than owed to "
+        f"him: {dated_questions}"
+    )
+
+
 def test_the_severity_mix_still_matches_what_the_audit_reported():
     counts = {k: 0 for k in EXPECTED_SEVERITY_TOTALS}
     for ident in sorted(CONFIRMED):
