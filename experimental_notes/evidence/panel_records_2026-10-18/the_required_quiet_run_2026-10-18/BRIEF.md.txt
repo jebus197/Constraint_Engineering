@@ -1,0 +1,56 @@
+# PANEL BRIEF — is a longer quiet run the right lever against premature convergence?
+
+## REQUIRED SECTION 1 — The question
+
+**The required quiet run was raised from 3 rounds to 7 to suppress premature convergence. Was that the right lever, or is the other identified lever — more seats — better, and what would each cost?**
+
+The founder ruled on 2026-10-08, verbatim: *"Verdict. Fix it and check your fix with the free panel."* The fix has since been applied. **This brief is the second half of that ruling, which is the check.** It is task C12 on the master task list.
+
+**The artefact under review** is the convergence gate in `bench/reference_runner_v3.py`: the constant `REQUIRED_QUIET_RUN`, the config field `gamma_alt_consecutive_zero_crit` it feeds, and the function `_check_gamma_alt_convergence` that reads it. The measurement behind the change is `bench/the_false_quiet_rate_is_not_the_gates_rate_2026-10-08.py`.
+
+**THE DEFECT.** The gate may declare convergence after a run of consecutive rounds producing zero new critical findings. At a required run of 3, the measured chance that such a run arises WITHOUT the problem space being exhausted is **0.126374** — roughly 1 run in 8 converging prematurely. The panel finding that raised it put the figure at 0.1159 and stated: *"The only levers identified are a longer required quiet run, or more seats."*
+
+**THE FIX APPLIED.** `REQUIRED_QUIET_RUN` is now 7. The committed measurement reports the premature-window rate falling 0.126374 at 3, through 0.0784 at 4, 0.0458 at 5 and 0.0263 at 6, to **0.0000 at 7**. Against a 0.05 target the smallest sufficient value is **5 on the point estimate and 7 on the upper confidence bound**, and the producer's own note is that the upper bound is the honest one to spend a decision on, because the denominator shrinks as the window lengthens. 7 was chosen for that reason.
+
+**THE COST, which is why this needs checking rather than celebrating.** Each extra required quiet round is an extra round of every seat's time on every run that would otherwise have converged. The default round ceiling is 21, so a 7-round quiet requirement consumes a third of the budget in confirmation alone. Against that, all 3 shakedown legs converged at rounds 3, 4 and 4 — meaning a 7-round quiet requirement would have prevented every one of them from converging when it did.
+
+**AND A SECOND FINDING THAT BEARS ON THE CHOICE.** The same producer reports that the gamma arm of the two-sided gate **blocked zero premature windows**, so the joint false-quiet rate equals the quiet-window arm's rate alone. The 2 arms are positively dependent: median gamma is 0.497 inside a quiet run against 0.3939 elsewhere, Mann-Whitney one-sided p = 0.0022. So the gate's second arm is not providing the independent protection its name implies, and lengthening the first arm may be compensating for an arm that does not work.
+
+## REQUIRED SECTION 2 — Use the harness
+
+**Form your answer by RUNNING the machinery, not by describing it.**
+
+**Execute the committed measurement** and confirm or contradict its figures. Report what you ran and what it printed. If you cannot reproduce 0.126374 at 3 and 0.0000 at 7, say so with the number you got — a figure that does not reproduce is the most important thing you could return.
+
+**`gamma` is the instrument at the centre of this question.** Compute it over the archived runs and test the dependence claim yourself: is gamma genuinely higher inside a quiet run than outside it, and by how much? If the 2 arms are dependent, say what follows for the gate's design — whether a two-sided gate whose arms correlate is worth keeping, and what an independent second arm would have to measure.
+
+**The two-sided gate is the consumer.** Execute `_check_gamma_alt_convergence`, or a faithful reconstruction, over an archived run at a required quiet run of 3 and again at 7, and report at which round each would have declared convergence. Do this against the 3 shakedown legs specifically, since they are the runs the programme's success criterion rests on.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+**A finding without a fix is incomplete, and a fix without a runnable falsifier that has been EXECUTED is a hypothesis, not a fix.**
+
+Deliver your fix as a file written INTO the sandbox repository tree at its real path. Report the exact command you ran and the output you saw, verbatim.
+
+If your conclusion is that 7 is correct, your fix is a falsifier that would FAIL if the value were lowered — deliver it and show it failing at 3. If your conclusion is that more seats is the better lever, deliver the calculation that sizes the roster needed, and state what the required quiet run should then be. If your conclusion is that the second gate arm should be repaired or replaced rather than the first lengthened, deliver the predicate for an arm that is independent of the quiet-window count, and demonstrate its independence on the archive.
+
+**The simplest sufficient fix is the correct one, and it must be additive.** Note that LOWERING the required quiet run would be a narrowing of an existing protection and would need a committed measurement showing the replacement dominates.
+
+## REQUIRED SECTION 4 — What would refute you
+
+Before you conclude, state what evidence would overturn your own answer. Be specific: name the archived run, or the roster size, or the gamma behaviour that would change your mind.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return these fields, each under its own heading:
+
+1. `## Verdict` — is a required quiet run of 7 the right lever, in one sentence.
+2. `## Reasoning` — the argument, premises first.
+3. `## Falsifier and its executed result` — the command, and the output you saw.
+4. `## The fix` — the real path you wrote it to, and what it changes.
+5. `## What would refute this` — your own refutation condition.
+6. `## Disagreement` — your strongest disagreement with this brief's own framing. State it even if you agree with the conclusion. A round that reconciles is the one most likely to converge by deference, and deference is not evidence.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new findings above the real-world-consequence threshold. State how many passes you ran.

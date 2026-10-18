@@ -1,0 +1,270 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 13936,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ssd/claude 2>/dev/null || cd ~; pwd; ls\", \"description\": \"Locate repo root\"}",
+      "t_offset_s": 5.737
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find / -name \\\"reference_runner_v3.py\\\" -not -path \\\"*/node_modules/*\\\" 2>/dev/null | head -5\", \"description\": \"Find the runner file\"}",
+      "t_offset_s": 6.686
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls && git log --oneline -3 2>/dev/null | cat\", \"description\": \"Inspect sandbox repo\"}",
+      "t_offset_s": 85.126
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"spec_verification_factor\\\\|def effective_severity\\\\|_SEVERITY_SPEC\\\\|CRITICAL_SEVERITY_THRESHOLD\\\\|_apply_severity_calibration\\\" bench/reference_runner_v3.py | head -60\", \"description\": \"Locate severity model symbols\"}",
+      "t_offset_s": 86.816
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10280,10440p bench/reference_runner_v3.py\", \"description\": \"Read severity spec core\"}",
+      "t_offset_s": 89.796
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10100,10180p bench/reference_runner_v3.py\", \"description\": \"Read calibration helper\"}",
+      "t_offset_s": 90.463
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"effective_severity\\\\|spec_verification_factor\\\" --include=*.py --include=*.md . | grep -v \\\"^./bench/reference_runner_v3.py:103[0-9][0-9]\\\" | head -40\", \"description\": \"Find all call sites of the severity functions\"}",
+      "t_offset_s": 103.156
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/ | head -40; echo \\\"---COUNT---\\\"; ls bench/logs/ | wc -l\", \"description\": \"List archived logs\"}",
+      "t_offset_s": 103.92
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"effective_severity\\\\|spec_verification_factor\\\" . --include=\\\"*.py\\\" 2>/dev/null | head -40\", \"description\": \"Find call sites in python\"}",
+      "t_offset_s": 106.08
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/ | grep -i \\\"shakedown\\\\|2026-10-1[5-8]\\\" | head -30\", \"description\": \"Find shakedown logs\"}",
+      "t_offset_s": 106.936
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 4140,4200p bench/reference_runner_v3.py\", \"description\": \"Read the A4 door site\"}",
+      "t_offset_s": 112.94
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"gamma\\\" bench/reference_runner_v3.py | head -40; echo ---; ls bench/logs/severity_ruler_coarseness_2026-10-18/ 2>/dev/null | head\", \"description\": \"Find gamma\"}",
+      "t_offset_s": 113.981
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"def compute_gamma_input\\\\|def compute_gamma_output\\\\|def estimate_gamma\\\\|def _settled_novelty_series\\\" bench/*.py | head\", \"description\": \"Find gamma definitions\"}",
+      "t_offset_s": 117.219
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/leg3_final_shakedown_20261015T220118Z/ | head -30\", \"description\": \"List leg3 shakedown artefacts\"}",
+      "t_offset_s": 118.425
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10534,10640p bench/reference_runner_v3.py\", \"description\": \"Read settled novelty series\"}",
+      "t_offset_s": 120.434
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 180,300p bench/input_complexity.py\", \"description\": \"Read gamma computation\"}",
+      "t_offset_s": 120.889
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"gamma_critical\\\\s*=\\\\|gamma_critical,\\\\|def .*decay\\\\|_fit_decay\\\\|gamma_all\\\\s*=\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Find gamma_critical computation\"}",
+      "t_offset_s": 125.236
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,collections\\np='bench/logs/leg3_final_shakedown_20261015T220118Z/leg3_final_shakedown_report.json'\\nd=json.load(open(p))\\nprint(type(d), list(d.keys())[:40])\\n\\\"\", \"description\": \"Inspect leg3 report keys\"}",
+      "t_offset_s": 126.869
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _estimate_gamma\\\" bench/reference_runner_v3.py; sed -n \\\"$(grep -n 'def _estimate_gamma' bench/reference_runner_v3.py | head -1 | cut -d: -f1),+60p\\\" bench/reference_runner_v3.py\", \"description\": \"Read _estimate_gamma\"}",
+      "t_offset_s": 131.577
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/leg3_final_shakedown_20261015T220118Z/leg3_final_shakedown_report.json'))\\nfor k in ['gamma_threshold_profile','critical_boundary_census','gamma_critical_history','gamma_all_history','converged_at','convergence_reason','severity_admissibility','total_findings','total_rounds']:\\n    print('==',k); print(json.dumps(d.get(k))[:1500",
+      "t_offset_s": 133.449
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\np='bench/logs/leg3_final_shakedown_20261015T220118Z/leg3_final_shakedown_report.json'\\nd=json.load(open(p))\\nr=d['rounds'][-1]\\nprint('round keys:', list(r.keys())[:40])\\nreg=r.get('registry') or {}\\nprint('registry keys:', list(reg.keys())[:20] if isinstance(reg,dict) else type(reg))\\n\\\"\", \"description\": \"Inspect registry shape\"}",
+      "t_offset_s": 200.605
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -c 1200 bench/logs/leg3_final_shakedown_20261015T220118Z/leg3_final_shakedown_finding_catalogue.jsonl\", \"description\": \"Inspect catalogue\"}",
+      "t_offset_s": 201.894
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"0.1419\\\\|273 duplicate\\\" scripts/ bench/*.py docs/ 2>/dev/null | head -20\", \"description\": \"Find the sigma measurement script\"}",
+      "t_offset_s": 206.328
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json,glob,collections\\nf=glob.glob('bench/logs/**/*finding_catalogue.jsonl',recursive=True)\\nprint(len(f),'catalogues')\\nkeys=collections.Counter()\\nn=0\\nfor p in f:\\n    for line in open(p):\\n        line=line.strip()\\n        if not line: continue\\n        try: e=json.loads(line)\\n        except: continue\\n        n+=1; keys.update(e.keys())\\nprint('entries',n)",
+      "t_offset_s": 208.416
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"0.1419\\\\|273 duplicate\\\\|duplicate pairs\\\" docs/MATHEMATICAL_APPENDIX.md | head; echo \\\"=== 7.7 ===\\\"; awk '/^#+.*7\\\\.7/,/^#+.*7\\\\.8/' docs/MATHEMATICAL_APPENDIX.md | head -120\", \"description\": \"Read appendix 7.7\"}",
+      "t_offset_s": 213.86
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep -i \\\"sever\\\\|sigma\\\\|dup\\\" | head -20\", \"description\": \"Find severity scripts\"}",
+      "t_offset_s": 214.533
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"awk '/^### 7\\\\.8/,/^### 7\\\\.9/' docs/MATHEMATICAL_APPENDIX.md | head -140\", \"description\": \"Read appendix 7.8\"}",
+      "t_offset_s": 221.477
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_NON_NOVEL_TERMINAL_STATUSES\\\\s*=\\\" -A8 bench/reference_runner_v3.py | head -20\", \"description\": \"Get non-novel terminal statuses\"}",
+      "t_offset_s": 290.452
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys, json, glob\\nsys.path.insert(0,'bench')\\nimport reference_runner_v3 as R\\nprint('threshold', R.CRITICAL_SEVERITY_THRESHOLD, 'spec', R._SEVERITY_SPEC)\\np='bench/logs/leg3_final_shakedown_20261015T220118Z/leg3_final_shakedown_finding_catalogue.jsonl'\\nrows=[json.loads(l) for l in open(p) if l.strip()]\\nprint('leg3 entries', len(rows))\\nref=[r for r in rows if r",
+      "t_offset_s": 296.126
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp && cat > d1.py <<'EOF'\\n# Claim 1: with the spec ON, eff_sev >= 0.7 is IDENTICALLY (V==1 and asserted>=0.7).\\n# i.e. the V=0.5 (unresolved) class can NEVER be critical. z3 over the real asserted\\n# interval and the three discrete V values.\\nfrom z3 import *\\na = Real('asserted'); V = Real('V'); th = RealVal(7)/10\\ns = Solver()\\ns.add(a >= 0, a <= 1)\\ns.add(Or(V == 0, V == Real",
+      "t_offset_s": 308.598
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp && cat > d2.py <<'EOF'\\nimport sympy as sp\\nsev, th, sig = sp.symbols('sev th sigma', real=True, positive=True)\\nPhi = sp.Rational(1,2)*(1+sp.erf((sev-th)/(sig*sp.sqrt(2))))\\n# (i) Phi(th) = 1/2 exactly, for every sigma>0\\nprint(\\\"Phi at sev=th :\\\", sp.simplify(Phi.subs(sev, th)))\\n# (ii) monotone increasing in sev\\nd = sp.simplify(sp.diff(Phi, sev))\\nprint(\\\"dPhi/dsev     :\\\"",
+      "t_offset_s": 315.349
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/g.py <<'PY'\\nimport sys, json, glob, math, os\\nsys.path.insert(0,'bench')\\nimport reference_runner_v3 as R\\nSIG=0.1419; TH=R.CRITICAL_SEVERITY_THRESHOLD\\nNN=R._NON_NOVEL_TERMINAL_STATUSES\\ndef w(e):\\n    if str(e.get('falsifier_verdict') or '').strip().upper()=='REFUTED': return 0.0\\n    s=float(e.get('severity') or 0.0)\\n    return 0.5*(1.0+math.erf((s-TH)/(SIG*math.sqrt(2",
+      "t_offset_s": 331.71
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def gamma_threshold_profile\\\" -A14 bench/reference_runner_v3.py | head -30; echo \\\"=== callers ===\\\"; grep -n \\\"gamma_threshold_profile(\\\" bench/reference_runner_v3.py | head\", \"description\": \"Find gamma_threshold_profile producer and callers\"}",
+      "t_offset_s": 364.508
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && timeout 300 wolframscript -code 'With[{th=7/10,s=1419/10000},{N[CDF[NormalDistribution[th,s],th]],N[CDF[NormalDistribution[th,s],6/10]],N[CDF[NormalDistribution[th,s],65/100]],N[CDF[NormalDistribution[th,s],78/100]],N[CDF[NormalDistribution[th,s],9/10]],Limit[CDF[NormalDistribution[th,sig],9/10],sig->0,Direction->\\\"FromAbove\\\"],Limit[CDF[NormalDistribution[th,si",
+      "t_offset_s": 368.235
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10764,10850p bench/reference_runner_v3.py; echo \\\"=== caller ===\\\"; sed -n 21030,21050p bench/reference_runner_v3.py\", \"description\": \"Read full gamma_threshold_profile and its caller\"}",
+      "t_offset_s": 370.673
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'With[{th=7/10,s=1419/10000},{N[CDF[NormalDistribution[th,s],th]],N[CDF[NormalDistribution[th,s],6/10]],N[CDF[NormalDistribution[th,s],65/100]],N[CDF[NormalDistribution[th,s],78/100]],N[CDF[NormalDistribution[th,s],9/10]],Limit[CDF[NormalDistribution[th,sig],9/10],sig->0,Direction->\\\"FromAbove\\\"],Limit[CDF[NormalDistribution[th,sig],1/2],sig->0,Direction->\\\"FromAbo",
+      "t_offset_s": 373.262
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"^from bench\\\\.\\\\|^import bench\\\\|^from \\\\.\\\\|^from input_complexity\\\\|^    from bench\\\" bench/reference_runner_v3.py | head -8; echo ---; sed -n 360,375p bench/reference_runner_v3.py\", \"description\": \"Check sibling import style\"}",
+      "t_offset_s": 394.519
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_xy_mtjbp/repo/bench/severity_instrument.py\", \"content\": \"\\\"\\\"\\\"The instrument-noise half of the severity ruler (C4, free panel 2026-10-18).\\n\\nWHAT THIS ADDS, AND WHY THE EXISTING RULER CANNOT ADD IT. The gate decides\\ncriticality with the indicator `1[severity >= CRITICAL_SEVERITY_THRESHOLD]`.\\n`docs/MATHEMATICAL_",
+      "t_offset_s": 453.44
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"test -w bench && echo \\\"bench writable\\\" || echo \\\"bench NOT writable\\\"; ls -ld bench . | cat\", \"description\": \"Check writability\"}",
+      "t_offset_s": 456.731
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/severity_instrument.py <<'PYEOF'\\n\\\"\\\"\\\"The instrument-noise half of the severity ruler (C4, free panel 2026-10-18).\\n\\nWHAT THIS ADDS, AND WHY THE EXISTING RULER CANNOT ADD IT. The gate decides\\ncriticality with the indicator `1[severity >= CRITICAL_SEVERITY_THRESHOLD]`.\\n`docs/MATHEMATICAL_APPENDIX.md` line 765 measures the per-assignment noise in\\nthat severity number a",
+      "t_offset_s": 501.924
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport re\\np='bench/reference_runner_v3.py'\\ns=open(p).read()\\n\\n# 1. import, next to the other bench siblings\\nanchor=\\\"from bench.insect_brain import InsectBrain\\\\n\\\"\\nassert s.count(anchor)==1\\ns=s.replace(anchor, anchor+\\\"from bench.severity_instrument import instrument_noise_profile  # noqa: E402\\\\n\\\",1)\\n\\n# 2. wire into gamma_threshold_profile, which the repor",
+      "t_offset_s": 518.788
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_severity_ruler_instrument_noise_2026-10-18.py <<'PYEOF'\\n\\\"\\\"\\\"Falsifiers for `bench/severity_instrument.py` (C4, free panel 2026-10-18).\\n\\nWHAT EACH TEST WOULD PRINT IF THE FIX WERE WRONG is written into its own\\nassertion message, because a falsifier that cannot say what failure looks like\\nis not a falsifier. Every test here runs against the REAL archive",
+      "t_offset_s": 567.514
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/severity_instrument.py /tmp/si.bak\\n# MUTATION 1: break the one-way property (centre the weight 0.1 BELOW the threshold)\\npython3 - <<'PY'\\np='bench/severity_instrument.py'; s=open(p).read()\\ns=s.replace(\\\"return 0.5 * (1.0 + math.erf((sev - threshold) / (sigma * math.sqrt(2.0))))\\\",\\n            \\\"return 0.5 * (1.0 + math.erf((sev - threshold - 0.10) / (sigma * math.sqrt(2.0",
+      "t_offset_s": 578.697
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py bench/tests/test_a_declared_mode_is_reconciled_2026-10-18.py -q 2>&1 | tail -8\", \"description\": \"Regression-check existing severity tests\"}",
+      "t_offset_s": 579.996
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py\\\" -q 2>&1 | tail -6\", \"description\": \"Run the source-text ceiling audit\"}",
+      "t_offset_s": 595.435
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nfrom statsmodels.stats.proportion import proportion_confint as ci\\nfor k,n,lab in [(5,19,'quiescence verdict differs'),(0,19,'became EASIER'),(4,19,'hard gamma undefined'),(82,273,'straddle 0.7 (appendix)')]:\\n    lo,hi=ci(k,n,method='wilson'); lo2,hi2=ci(k,n,method='beta')\\n    print(f'{lab:32s} {k}/{n} = {100*k/n:7.4f}%  Wilson [{100*lo:.4f}%, {100*hi:.4f}%]  Clopper-",
+      "t_offset_s": 598.43
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py::TestTheCensusIsCurrent::test_the_class_has_not_grown_silently\\\" -q 2>&1 | grep -E \\\"assert|ceiling|count|Census|census|[0-9]+ (vs|against)\\\" | head -20\", \"description\": \"Inspect the census failure\"}",
+      "t_offset_s": 640.081
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git stash list | cat; git status --short | head; echo \\\"=== does it fail WITHOUT my change? ===\\\"\\ngit stash push -q -- bench/severity_instrument.py bench/reference_runner_v3.py \\\"bench/tests/test_the_severity_ruler_instrument_noise_2026-10-18.py\\\" 2>&1 | tail -2\\npython3 -m pytest \\\"bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py::TestTheCensusIsCurrent::test_the_class",
+      "t_offset_s": 663.097
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/hold && mv bench/severity_instrument.py \\\"bench/tests/test_the_severity_ruler_instrument_noise_2026-10-18.py\\\" /tmp/hold/\\ncp bench/reference_runner_v3.py /tmp/hold/rr_patched.py\\npython3 - <<'PY'\\np='bench/reference_runner_v3.py'; s=open(p).read()\\ns=s.replace(\\\"from bench.severity_instrument import instrument_noise_profile  # noqa: E402\\\\n\\\",\\\"\\\")\\ni=s.find('    # \\u26",
+      "t_offset_s": 693.427
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys,json,glob,os\\nsys.path.insert(0,'.')\\nimport bench.reference_runner_v3 as R\\nfrom bench.severity_instrument import instrument_noise_profile as P\\nprint(f\\\"{'run':52s} {'g_hard':>7s} {'g_soft':>7s} {'hard tail':>12s} {'soft tail':>26s} {'flip'}\\\")\\nn=d=0\\nfor p in sorted(glob.glob('bench/logs/**/*finding_catalogue.jsonl',recursive=True)):\\n    rows=[json.lo",
+      "t_offset_s": 722.808
+    }
+  ],
+  "n_tool_calls": 50,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 799.0,
+  "response": "Two passes run. Writing up.\n\n## Verdict\n\n**Yes** \u2014 the ruler can be made meaningfully less coarse by replacing the hard indicator `1[severity \u2265 0.7]` with its expectation under the project's own measured instrument noise, `\u03a6((sev\u22120.7)/\u03c3)`; this changes the quiescence verdict on **5 of 19** archived runs, and in the strict direction on all 5.\n\n## Reasoning\n\n**Premise 1 \u2014 the gate's decision rule discards exactly the information the founder's evidence is about.** `_settled_novelty_series` counts criticals with `(e.get(\"severity\") or 0.0) >= _thr`. The appendix (line 765) measures that number's per-assignment noise at \u03c3 = 0.1419, CI [0.1241, 0.1575]. An indicator on a quantity with that \u03c3 rounds a coin toss at 0.700 to a certainty and a 0.699 to a zero. The noise is in the data; the rule has no channel to carry it.\n\n**Premise 2 \u2014 `effective_severity` does not address this, and it fails in the *opposite* direction from the brief's description.** With the spec on, `eff = asserted \u00b7 V`, V \u2208 {0, 0.5, 1}. Since sup(asserted) = 1 and 1\u00b70.5 = 0.5 < 0.7:\n\n> `eff_sev \u2265 0.7` is **identically** `V == 1.0 \u2227 asserted \u2265 0.7`.\n\nz3 returns `unsat` for the negation of that equivalence, and `unsat` for \"\u2203 unresolved entry that is critical\". Wolfram Language independently returns `True` for `Reduce[ForAll[{a}, 0\u2264a\u22641, a/2 < 7/10]]`. Executed on the whole archive: **33 of 191** unresolved entries are asserted-critical, **0** are specification-critical. So the specification does not \"rescale the band and let the wobble travel with it\" \u2014 it moves the entire unresolved population to the non-critical side, and the asserted ordering stops reaching the gate at all. \u00a77.7's caution 1 records the same collapse algebraically.\n\n**Premise 3 \u2014 the minimal repair is one formula, and it *nests* the current ruler.** `w(f) = \u03a6((sev\u2212\u03b8)/\u03c3)`. Four properties, derived in SymPy and re-checked in Wolfram Language:\n\n| property | value | consequence |\n|---|---|---|\n| `\u03a6(\u03b8)` | exactly `1/2` | a finding on the line is worth half a critical \u2014 what a coin toss is worth |\n| `d\u03a6/dsev` | `\u221a2\u00b7e^{\u2212(sev\u2212\u03b8)\u00b2/2\u03c3\u00b2}/(2\u221a\u03c0 \u03c3) > 0` | the asserted ordering is preserved, not flattened |\n| `lim_{\u03c3\u21920\u207a} \u03a6` | `1` for sev>\u03b8, `0` for sev<\u03b8 | **the current ruler is the \u03c3=0 member of this family** |\n| REFUTED | short-circuit to `0.0` | \u00a77.7's key property held *exactly*; \u03a6's tail is 4.1e-7, which is not zero |\n\nThe \u03c3\u21920 nesting is what discharges the additive standard: nothing is removed, and the test executes the value-for-value equality against `_settled_novelty_series` on all 24 catalogues rather than asserting it.\n\n**Premise 4 \u2014 direction of effect, derived then measured.** The quiescence test `all(w_r < 0.5)` is one-way. Proof: a countable finding with sev \u2265 \u03b8 and not REFUTED has `w \u2265 \u03a6(0) = 1/2`, so the round sum is \u2265 0.5 and the test fails. Hence `soft_quiescent \u27f9 hard_quiescent`: the instrument can **refuse** a convergence the hard rule permits and can **never permit** one it refuses. Measured: 0 of 19 runs became easier, Wilson [0.0000%, 16.8179%]. The brief's \"a change that makes convergence easier must be argued for\" therefore does not bite.\n\n**Premise 5 \u2014 it reaches something, and across scenarios rather than one.** 5 of 19 flip (26.3158%, Wilson [11.8064%, 48.7916%]). Separately, **4 of 19** runs have an identically-zero hard critical series, so `_estimate_gamma` returns its 0.0 sentinel \u2014 which lands in the worst `GAMMA_BANDS` text, \"recommend HIL audit\" \u2014 while the soft series is non-degenerate and yields 0.4769 / 0.4757 / 0.6819 / 0.7369. The hard ruler has *no resolution at all* in the common regime where nothing crosses 0.7.\n\n**Why not the alternatives.** Aggregating repeats (\u03c3/\u221am) is the textbook answer and I rejected it on measurement: all 722 archived catalogue entries carry exactly **one** `severity` and one `source_model` \u2014 the duplicate's number is destroyed at merge, so aggregation needs a schema change *and* reaches only m\u22652 findings. \u00a77.8 Approach B (`S_v = 1/(1+exp(\u2212\u039b_total))`) is the appendix's own preferred answer but requires per-finding SymPy/dimensional/numerical verifiers this harness does not run \u2014 that is a build, not a fix. Scaling the threshold by V (`eff \u2265 V\u00b7\u03b8`) exactly cancels V except for annihilation, so it is a no-op dressed up and restores the \u00b10.14 wobble at full strength.\n\n**On gamma, computed not hypothesised.** Driving the production `gamma_threshold_profile` on leg3: \u03b3_hard = 1.0000, \u03b3_soft = 0.9597; hard tail [0,0,0], soft tail **[0.2541, 0.1184, 0.4248]**. leg3 converges either way \u2014 my change does not move its verdict. But its final round carries 0.4248 *expected* novel criticals: under the project's own \u03c3, there is roughly a 42% chance that round was not actually quiet, and the hard ruler reported it as 0. That is the single sharpest number here. Note also that the existing threshold *sweep* needs a correlated shift of 0.2 (down to \u03b8=0.5) to break leg3's quiescence, whereas 5 runs break under uncorrelated noise at the **live** threshold \u2014 the sweep and this block answer different questions, and the uncorrelated one is the question the 273-pair measurement is about.\n\n## Falsifier and its executed result\n\n```\n$ python3 -m pytest \"bench/tests/test_the_severity_ruler_instrument_noise_2026-10-18.py\" -q -s\n..\nquiescence verdict differs on 5/19: ['commissioning_arm1_panel_20260929T194414Z', 'commissioning_arm2_single_20260922T020120Z', 'commissioning_arm3_contrast_20260930T051219Z', 'free_run1_directive_whole_20261015T061123Z_20261015T061124Z', 'sim45_postfix_20260901T231824Z_20260901T231827Z']\n..\n33 of 191 unresolved entries are asserted-critical; 0 are specification-critical (collapse holds)\n.\nleg3 via production caller: gamma_hard=1.0, gamma_soft=0.9597, soft tail=[0.2541, 0.1184, 0.4248], differs=False\n..\n7 passed in 0.98s\n```\n\n**It is capable of failing, demonstrated by mutation rather than claimed.** Mutant 1 \u2014 re-centre the weight 0.10 below the threshold:\n\n```\nE  AssertionError: ONE-WAY PROPERTY VIOLATED -- the soft rule permitted a convergence the hard\n   rule refused on 2 run(s): [('commissioning_arm2_single_20260930T031047Z', [0.0008, 0.0, 0.2405],\n   [1, 0, 1, 0, 0, 0, 0, 1]), ('study_run1b_2026-10-03_20261003T100439Z', ...)]\n2 failed, 5 passed\n```\n\nMutant 2 \u2014 delete the REFUTED short-circuit:\n\n```\nE  AssertionError: C0018 (severity 0.5, REFUTED) got weight 0.07935206851650323, not exactly 0.0.\n   A disproved finding must be ANNIHILATED, not merely reduced\n1 failed, 6 passed\n```\n\nRestored: `7 passed`. The brief's own exercise reproduces: 38 leg3 findings, 2 REFUTED at stored severity 0.5, `effective_severity` \u2192 0.5 (spec off) / 0.0 (spec on).\n\nRegression: `test_the_severity_spec_decides_when_promoted_2026-10-15.py` + `test_a_declared_mode_is_reconciled_2026-10-18.py` \u2192 **38 passed**.\n\n**One pre-existing failure, which I established is not mine.** `test_source_text_and_neighbour_audit_2026-09-11.py::test_the_class_has_not_grown_silently` fails at **106 source-text assertions against a ceiling of 98**. I removed my change entirely and re-ran: still **106**. So it pre-exists, and my test contributes zero to that class \u2014 it executes rather than greps.\n\n**Tool attribution.** Open-source primary: z3 (collapse equivalence, `unsat`), SymPy (\u03a6(\u03b8)=1/2, monotonicity, \u03c3\u21920 limits), statsmodels (Wilson, Clopper\u2013Pearson), `math.erf` (series). Wolfram second falsifier \u2014 Wolfram Language, local Wolfram Engine via `wolframscript`, exit 0, values returned: `{0.5, 0.24049174238756052, 0.36228384156955123, 0.7135471515289855, 0.9206479314834969, 1, 0, True}`, agreeing with SymPy to 9 digits and confirming both \u03c3\u21920 limits and the collapse.\n\n## The fix\n\n**`bench/severity_instrument.py`** (new, 190 lines) \u2014 `critical_weight`, `expected_critical_series`, `tail_is_quiescent_soft`, `instrument_noise_profile`, and `SEVERITY_INSTRUMENT_SIGMA = 0.1419` carrying its CI and its producer citation.\n\n**`bench/reference_runner_v3.py`** (2 edits) \u2014 one import beside the other `bench` siblings, and a wrapped call inside `gamma_threshold_profile`, which the report path already invokes at line 21039. The result is written to every report as `instrument_noise_profile`. Nothing is removed; no existing call site changes; the live gate still decides on the hard indicator.\n\n**`bench/tests/test_the_severity_ruler_instrument_noise_2026-10-18.py`** (new, 7 tests) \u2014 all against the real archive, all driving production functions.\n\nThe population filter inside `expected_critical_series` deliberately mirrors `_settled_novelty_series`' admission rules exactly, so the *only* difference between the two series is indicator-versus-\u03a6. A second, independently-written filter would make any difference between them unattributable \u2014 the failure `gamma_threshold_profile` already records in its own comment about a reimplemented gate.\n\n**I did not promote it to a deciding gate, and that is deliberate.** Promotion needs an end-to-end measurement on a live run, which one seat cannot commit. The 5 flips are the evidence for taking that step, not the step itself. I have stated this in the module docstring rather than leaving a reader to infer it.\n\n## What would refute this\n\n1. **\u03c3 is not the right noise model.** The 0.1419 is a *between-model* standard deviation on duplicate pairs. If the pairs the runner ruled identical are not in fact the same defect, \u03c3 is an upper bound inflated by genuine disagreement about distinct defects, and the soft series over-counts. Refutation: adjudicate a sample of the 273 pairs and show that the within-defect \u03c3 is below **0.045** \u2014 at which point `\u03a6((0.6\u22120.7)/0.045) = 0.013`, every flipping run's soft tail drops under 0.5, and all 5 flips vanish. That single number is my refutation threshold.\n\n2. **The flips are an artefact of simulated severity.** 17 of the 19 catalogues are `*-SIM` runs, and `severity_admissibility` stamps them \"MAGNITUDES are uncalibrated against a real panel and do not transfer.\" If a real-panel run shows a severity distribution with no mass in [0.5, 0.7), the soft and hard series coincide and the fix reaches nothing. Refutation: a real run whose `instrument_noise_profile` reports `quiescence_verdict_differs: false` with every soft tail entry below 0.05.\n\n3. **The named run on which my ruler decides worse.** `prose_convergence_run1b_2026-10-02` \u2014 hard tail [9,4,8], soft tail [8.78, 2.77, 7.27]. Here the soft count is *lower* than the hard count in every round. If a run's criticals are clustered just above 0.7, the soft count systematically under-reports the number of blockers, and a future gate reading the soft count as a *magnitude* rather than a quiescence test would be looser than the hard one. My one-way proof covers only the `< 0.5` quiescence predicate; it does **not** cover any gate that compares the soft count to a threshold above 0.5. Anyone promoting this must re-derive the direction for their own predicate.\n\n4. **The 0.5 cut.** If someone shows an archived run where the maximum-likelihood critical count is 0 but the sum exceeds 0.5 by accumulation of many tiny weights \u2014 10 findings at 0.45, say, summing to 0.5+ \u2014 then `all(w < 0.5)` is not \"the most likely count is zero\" and my claim that the cut is derived rather than chosen fails. `commissioning_arm1_panel_20260929T194414Z`'s first tail entry of 1.2019 is the closest the archive comes; it is driven by two findings near 0.65, not accumulation, so it survives \u2014 but this is the weakest of my four claims.\n\n## Disagreement\n\n**The brief's description of what \u00a77.7 fails to fix is wrong, and wrong in the direction that matters.** It states: *\"the specification halves those findings uniformly and preserves their relative ordering, noise included. A 0.8 becomes a 0.4 and a 0.7 becomes a 0.35; the band is rescaled and the wobble travels with it.\"* That is true of the stored numbers and false of the gate. Because the threshold was **not** transformed with the quantity, `asserted\u00b70.5 \u2265 0.7` is unsatisfiable on [0,1] \u2014 z3 `unsat`, Wolfram `True`. At the decision site the ordering does not survive and the wobble does not travel; the whole unresolved population lands on one side. That is not \"rescaled with the noise intact,\" it is zero bits where there was one, and it is a *worse* problem than the one the brief describes. \u00a77.7's caution 1 already records the algebra; the brief argues from a mental model the appendix had already corrected.\n\n**Second, smaller disagreement with the framing.** The brief frames the ruler as \"deciding criticality partly at random\" and implies that less randomness is the goal. I would not have assumed that. A finding at a true severity of 0.70, measured by an instrument with \u03c3 = 0.14, *is* a coin toss \u2014 the randomness is in the world, not only the ruler. The achievable goal is not to remove it but to stop the gate from laundering it into a certainty. That reframing is why my fix reports an expected count rather than making the threshold sharper: sharpening a threshold on a noisy input makes the ruler look more decisive without making it more accurate, and that is the failure mode the \u00b10.14/0.09 ratio actually describes.\n\n**Third.** The brief directs that the fix be delivered into the repository tree, but the tree is a torn-down sandbox with no git. I have written the three files at their real paths and reported them above; they will not survive teardown, so the paths and the diffs in this reply are the deliverable of record.\n\n---\n\n**Passes: 2.** Pass 1 produced the collapse proof, the \u03a6 derivation, the 5/19 measurement and the fix. Pass 2 added the mutation testing, the audit-test attribution (106 pre-existing, not mine), the Clopper\u2013Pearson intervals, and refutation condition 3 \u2014 the `prose_convergence_run1b` case where the soft count is *lower* than the hard count, which bounds my own one-way proof to the quiescence predicate and no further. A third pass surfaced nothing above the real-world-consequence threshold, so I stopped.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_xy_mtjbp/repo",
+      "built": false
+    }
+  ]
+}

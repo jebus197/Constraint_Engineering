@@ -169,6 +169,17 @@ try:                                                               # pragma: no 
 except ImportError:                                                # pragma: no cover
     import runner_mode_detection as _mode_detect
 
+# C18's loud-lookup half lives in `bench/routing.py` BESIDE `capability_identity`,
+# which is the function every capability decision already uses. A second identity
+# module was written here on 2026-10-18 and DELETED the same night: it reproduced
+# `capability_identity` bit for bit (both return 273630e1d5dc for the same
+# triple) and added a second label parse, which `seat_identities` explicitly
+# forbids -- "THE REGISTRY'S `resolve_model` IS THE SOURCE, not a second parse".
+try:                                                               # pragma: no cover
+    from bench import routing as _cap_identity
+except ImportError:                                                # pragma: no cover
+    import routing as _cap_identity
+
 
 def _hil_evidence(cfg, round_idx, gamma_critical, gamma_critical_history,
                   registry, experiment_start):
@@ -12265,7 +12276,14 @@ def _composer_record_fields(
 def _compose_for_model(
     model_label: str, pattern_name: str, domain: str,
 ) -> ComposedDirectiveSet:
-    composer_model = COMPOSER_MODEL_MAP.get(model_label, model_label)
+    # C18: an identity absent from the table is now LOUD instead of silent.
+    # BEHAVIOUR IS UNCHANGED -- it still falls back to the label -- because the
+    # 2026-08-30 failure was a seat composing to 0 characters and raising here
+    # would turn that degradation into a dead run. What changes is that the
+    # fallback is recorded and announced once per identity.
+    composer_model = _cap_identity.resolve_or_alarm(
+        COMPOSER_MODEL_MAP, model_label, "composer directive-set mapping",
+        default=model_label, log=_log)
     situation = build_interaction_pattern(pattern_name)
     return compose(task_domain=domain, model=composer_model, situation=situation,
                    coherence_pruning=bool(_COMPOSER_COHERENCE_PRUNING.get("on", False)))
@@ -21115,6 +21133,29 @@ def run_experiment(
     except Exception:                                              # noqa: BLE001
         pass
     result["mode_effects"] = mode_effects
+
+    # ── C18: every capability lookup that fell back, with its stable identity ──
+    # His ruling of 2026-10-16. The realised cost of silence is on the record: a
+    # seat with no composer entry composed to 0 characters and nothing said so.
+    # This does not change a single lookup's RESULT; it records which ones were
+    # answered by a default, keyed on a hash over (provider, model, version) with
+    # the vendor name carried as provenance that decides nothing.
+    try:
+        _cap_misses = _cap_identity.lookup_misses()
+        result["capability_lookup_misses"] = {
+            "count": len(_cap_misses),
+            "by_table": {w: sum(1 for m in _cap_misses if m["what"] == w)
+                         for w in sorted({m["what"] for m in _cap_misses})},
+            "identities": sorted({m["identity"] for m in _cap_misses}),
+            "misses": _cap_misses[:200],
+            "what_this_means": (
+                "Each entry is a capability decision answered by a DEFAULT rather "
+                "than by a value for that model. Behaviour is unchanged; the "
+                "silence is not. A non-empty list means some model was scored, "
+                "budgeted or composed for using a number that was not about it."),
+        }
+    except Exception as _cx:                                       # noqa: BLE001
+        result["capability_lookup_misses"] = {"error": f"{type(_cx).__name__}: {_cx}"}
 
     # ── B28: reconcile each declared mode against what the run actually did ──
     # His ruling, 2026-10-07 and 2026-10-11: state should be DETECTED rather than

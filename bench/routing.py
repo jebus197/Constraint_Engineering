@@ -237,6 +237,77 @@ def capability_identity(provider: str, model_identifier: str,
     return _hashlib.sha256(payload).hexdigest()[:CAPABILITY_IDENTITY_CHARS]
 
 
+#: ── C18's SECOND CLAUSE: an absent identity must be LOUD, never defaulted ──
+#:
+#: The identity above was built on 2026-10-17. The clause it did NOT cover is the
+#: panel design's last sentence: *"An identity absent from the tables must be
+#: LOUD, never defaulted."* Every live capability table was read by a bare
+#: `.get(key, default)`, so a missing entry was indistinguishable from a present
+#: one at the call site.
+#:
+#: THE REALISED COST, which is why this is not tidiness. The runner records a
+#: panel finding of 2026-08-30: *"Fable had no COMPOSER_MODEL_MAP entry and no
+#: .toml, so it composed to FileNotFoundError -> 0 chars"* -- a model ran on an
+#: EMPTY SYSTEM PROMPT and nothing said so, while 2 other seats received 6,008
+#: and 5,559 characters.
+#:
+#: BEHAVIOUR IS DELIBERATELY UNCHANGED. `resolve_or_alarm` still returns the
+#: default: raising would convert that degradation into a dead run, and a crashed
+#: experiment is not an improvement on a reported one. Only the silence is
+#: removed.
+_LOOKUP_MISSES: list = []
+_LOOKUP_ANNOUNCED: set = set()
+
+
+def reset_lookup_misses() -> None:
+    _LOOKUP_MISSES.clear()
+    _LOOKUP_ANNOUNCED.clear()
+
+
+def lookup_misses() -> list:
+    """Every capability lookup answered by a DEFAULT, in call order."""
+    return list(_LOOKUP_MISSES)
+
+
+def resolve_or_alarm(table: dict, key, what: str, default=None, log=None,
+                     provider: str = "", version: str = "",
+                     announce_once: bool = True):
+    """Look `key` up in `table` and ANNOUNCE a miss instead of defaulting silently.
+
+    The identity in the announcement comes from `capability_identity` above --
+    the SAME function every capability decision uses, not a second parse. That
+    matters: 2 identity functions is the producer/consumer drift this project
+    keeps finding, and an announcement keyed on a different digest from the
+    decision it describes would be worse than no announcement.
+
+    A miss is RECORDED every time and ANNOUNCED once per (table, identity): the
+    composer runs once per seat per round, so over a 20-round run with 6 seats an
+    un-deduplicated alarm would print 120 lines for 1 defect.
+    """
+    if key in table:
+        return table[key]
+    text = str(key or "")
+    try:
+        ident = capability_identity(provider, text or "unknown", version)
+    except Exception:                                              # noqa: BLE001
+        ident = "unresolved"
+    rec = {"what": what, "key": text, "identity": ident,
+           "provider": provider, "version": version}
+    _LOOKUP_MISSES.append(rec)
+    seen = (what, ident)
+    first = seen not in _LOOKUP_ANNOUNCED
+    _LOOKUP_ANNOUNCED.add(seen)
+    if log is not None and (first or not announce_once):
+        try:
+            log(f"  ★ CAPABILITY LOOKUP MISS: no {what} for {text!r} "
+                f"(identity {ident}). Falling back, and saying so: on 2026-08-30 "
+                f"a seat with no composer entry composed to 0 characters and "
+                f"nothing reported it.")
+        except Exception:                                          # noqa: BLE001
+            pass
+    return default
+
+
 def capability_provenance(provider: str, model_identifier: str,
                           version: str = "") -> dict:
     """The readable inputs behind an identity, for a reader and for nothing else.

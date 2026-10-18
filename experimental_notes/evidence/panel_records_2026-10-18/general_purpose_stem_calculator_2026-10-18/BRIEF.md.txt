@@ -1,0 +1,56 @@
+# PANEL BRIEF — what "a fix" means outside code, and whether this is yet a general-purpose STEM calculator
+
+## REQUIRED SECTION 1 — The question
+
+**Is this harness yet as useful against a wide range of STEM topics as it is against code, and if not, what specific modifications would bring it meaningfully closer?**
+
+The question is the founder's, verbatim: *"there is also a separate question of what 'fixes' should mean in a setting that is not coding related, but is specific to any other given STEM topic?... CDSFL has been envisaged from the outset as a general purpose STEM calculator, operating on strict Popperian falsification principles. But in order for that to be true the entire harness has to be as equally useful against a wide range of STEM related topics, as it currently is for code."* He directs it to a free panel review *"not only asking if we are there already or not, but if any improvements or modifications may be required in order to bring us meaningfully closer to that goal?"* It is task B22 on the master task list.
+
+**The artefacts under review** are `bench/reference_runner_v3.py`, the domain layer under `bench/cdsfl_registry/domains`, the ground-truth corpus at `bench/tests/fixtures/stem`, and the routing module `bench/routing.py`.
+
+**THE EVIDENCE FOR domain-generality, so the panel argues from the record and not from impressions.** The policy registry's domain layer already holds 10 STEM domains, not 1. The ground-truth corpus holds 5 independently written STEM documents with 29 tagged claims and a runnable falsifier template each. All 3 shakedown legs of 2026-10-15 ran as `domain=mathematics` against a prose target carrying embedded computable listings, and all 3 converged.
+
+**THE EVIDENCE AGAINST IT, which is the harder half.** The score `S_k` is defined over Python source and is forced off for a non-Python target, because on prose its gates cannot fail and its ranking inverts: a shell-injection call inside a fenced listing once scored 1.0000 admissible while a correct prose fix scored 0.6667, because the linter's markdown baseline made the delta a measure of added English and the security scanner, unable to parse the file at all, reported a clean bill at the heaviest weight. Separately, the falsification instrument for a code defect is an executable test, and for a mathematical claim it is a symbolic or numerical check; for a claim in, say, experimental biology or materials science it is not obvious that any instrument in this harness applies at all.
+
+**SO THE QUESTION HAS A SHARP FORM:** what is the general definition of "a fix" and "a falsifier" such that the same machinery scores a repair to a proof, a correction to a derivation, a revised experimental protocol and a patch to a function, without one of them silently scoring better merely because its instrument happens to exist?
+
+## REQUIRED SECTION 2 — Use the harness
+
+**Form your answer by RUNNING the machinery, not by describing it.** A seat that returns prose about a fix without having executed anything has not answered this brief.
+
+**Exercise the domain layer directly.** Read and run the registry's domain selection against the corpus in `bench/tests/fixtures/stem`, and report which of the 10 domains resolve to a usable falsifier and which do not. A claim that the harness generalises must name the domains where it does.
+
+**`S_k` is the instrument that bears most directly on this question**, because it is the one component known to be defined over code alone. Execute it, or its guarded entry point, against at least one non-code target from the corpus and report exactly what it returns and why. State whether `S_k` can be generalised, replaced by a domain-dispatched family of scorers, or must remain code-only with an explicit refusal on other targets.
+
+**`gamma` is the instrument that shows whether generality has been achieved rather than asserted.** The convergence gate is domain-blind by construction: it counts critical findings and watches their decay. Compute gamma over an archived non-code run and say whether its behaviour differs from a code run in any way that matters. If gamma is genuinely domain-blind, that is positive evidence for generality and you should say so; if its inputs are not, name which.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+**A finding without a fix is incomplete, and a fix without a runnable falsifier that has been EXECUTED is a hypothesis, not a fix.**
+
+Deliver your fix as a file written INTO the sandbox repository tree at its real path, not described in prose and not left in scratch space, which is destroyed when the sandbox is torn down. Report the exact command you ran and the output you saw, verbatim.
+
+**The fix this brief most wants is a DEFINITION that executes.** If you propose a general notion of "a fix" across STEM domains, deliver it as a predicate in code that takes a candidate repair and a domain and returns whether the repair is admissible, with the domain-specific part dispatched rather than hard-coded. A definition that cannot be run on the corpus is prose.
+
+**The simplest sufficient fix is the correct one, and it must be additive.** A change that removes or narrows an existing capability requires a committed measurement showing the replacement dominates on a named property.
+
+## REQUIRED SECTION 4 — What would refute you
+
+Before you conclude, state what evidence would overturn your own answer.
+
+Be specific. If you conclude the harness already generalises, name the STEM domain and the claim type that would break it. If you conclude it does not, name the single modification whose absence you are relying on, and what you would expect to see if that modification were made and generality still did not follow.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return these fields, each under its own heading:
+
+1. `## Verdict` — is the harness yet as useful across STEM as it is for code, yes or no, in one sentence.
+2. `## Reasoning` — the argument, premises first, naming the domains you tested.
+3. `## Falsifier and its executed result` — the command, and the output you saw.
+4. `## The fix` — the real path you wrote it to, and what it changes.
+5. `## What would refute this` — your own refutation condition.
+6. `## Disagreement` — your strongest disagreement with this brief's own framing. State it even if you agree with the conclusion: name what this brief assumes that you would not have assumed. A round that reconciles is the one most likely to converge by deference, and deference is not evidence.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new findings above the real-world-consequence threshold, which is the project's own diminishing-returns criterion. State how many passes you ran.

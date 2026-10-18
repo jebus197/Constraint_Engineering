@@ -31,6 +31,7 @@ from __future__ import annotations
 import pathlib
 import ast
 import re
+import re as _re
 import sys
 
 # Generic nouns that stand in for a name. Each has appeared in a real violation.
@@ -739,6 +740,74 @@ def marker_events(text: str):
             yield n, off, kind
 
 
+#: ── RULE 30 WAS OUTSIDE THE VERBATIM EXEMPTION, AND THAT DEFEATED ITS PURPOSE ──
+#:
+#: MEASURED 2026-10-18 on `Panel_FULL_RECORD_Severity_Ruler_Coarseness_2026-10-18.md`,
+#: a record carrying 2 seats' replies in full: `lint()` found 4 findings and
+#: `partition()` exempted all 4, while `undefined_project_terms()` separately
+#: found 6 -- every one of them inside a seat's own reply -- and `main()` appends
+#: those AFTER the split, so they never reach the exemption. The commit ratchet
+#: then refused the record for the seats' vocabulary.
+#:
+#: That is the exact failure the exemption exists to prevent, recorded in its own
+#: comment for 2026-09-10: *"the record could not be committed without editing
+#: what the models actually said. Editing it would falsify the record, which is
+#: worse than any vagueness in it."* And task V8 exists so a seat's words reach
+#: the record unedited.
+#:
+#: WHY THE TEST IS ON TEXT AND NOT ON A PARAGRAPH NUMBER. The 2 splitters
+#: DISAGREE about numbering -- on that file `paragraphs()` yields 119 and
+#: `verbatim_paragraphs()` 99 -- so filtering Rule 30 by the `marked` set would
+#: exempt the wrong paragraphs. Containment in the region's own text is
+#: numbering-independent and cannot drift.
+def verbatim_spans(text: str) -> list:
+    """Character ranges covered by `verbatim-begin` / `verbatim-end` markers."""
+    spans, open_at = [], None
+    for m in _re.finditer(r"<!--\s*verbatim-(begin|end)\b[^>]*-->", text):
+        if m.group(1) == "begin":
+            if open_at is None:
+                open_at = m.end()
+        else:
+            if open_at is not None:
+                spans.append((open_at, m.start()))
+                open_at = None
+    if open_at is not None:                     # unclosed region runs to the end
+        spans.append((open_at, len(text)))
+    return spans
+
+
+def inside_verbatim(text: str, fragment: str) -> bool:
+    """True when `fragment` sits wholly inside a verbatim region."""
+    frag = (fragment or "").strip()
+    if not frag:
+        return False
+    spans = verbatim_spans(text)
+    if not spans:
+        return False
+    probe = frag[:160]
+    start = 0
+    while True:
+        i = text.find(probe, start)
+        if i < 0:
+            return False
+        if any(a <= i and i + len(probe) <= b for a, b in spans):
+            return True
+        start = i + 1
+
+
+def split_reported_terms(path) -> tuple:
+    """(counted, exempted) for Rule 30, honouring the verbatim exemption.
+
+    ONE implementation, so the command line and `blocking()` cannot drift -- the
+    defect this repairs was 2 paths disagreeing about the same file.
+    """
+    text = pathlib.Path(path).read_text(encoding="utf-8", errors="ignore")
+    counted, exempted = [], []
+    for hit in undefined_project_terms(path):
+        (exempted if inside_verbatim(text, hit[3]) else counted).append(hit)
+    return counted, exempted
+
+
 def region_state(text: str) -> dict:
     """One ordered walk; every consumer reads its answer from here.
 
@@ -942,8 +1011,9 @@ def main() -> int:
         # Rule 30 is wired HERE as well as in `blocking()`, for the reason the
         # comment above gives: `main()` calls `partition()` directly, so a rule
         # added only to `blocking()` reports 0 findings to a human reader.
-        counted = (counted + missing_standard_stamp(p)
-                   + undefined_project_terms(p))
+        _terms_counted, _terms_exempt = split_reported_terms(p)
+        counted = counted + missing_standard_stamp(p) + _terms_counted
+        exempted = list(exempted) + _terms_exempt
         total += len(counted)
         print(f"\n  {p.name}: {len(counted)} finding(s)")
         for para_no, kind, token, s in counted:

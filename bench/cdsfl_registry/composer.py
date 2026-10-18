@@ -66,6 +66,11 @@ DIRECTIVES_DIR = Path(__file__).parent.parent / "directives"
 # Conservative defaults. Calibrate from experiment data via
 # calibrate_coherence_thresholds().
 DEFAULT_COHERENCE_BUDGET = 0.015  # ~15 constraints per 1000 tokens
+try:                                               # pragma: no cover
+    from bench import routing as _cap_identity
+except ImportError:                                # pragma: no cover
+    import routing as _cap_identity
+
 MODEL_COHERENCE_BUDGETS: dict[str, float] = {
     "opus_4_6": 0.020,       # handles dense instructions well
     "chatgpt_5_4": 0.015,    # moderate
@@ -752,7 +757,14 @@ def _load_universal_directive(model: str | None = None) -> DirectivePacket:
     path = formal_path if formal_path.exists() else prose_path
     full_text = path.read_text(encoding="utf-8") if path.exists() else ""
 
-    transform = PHENOTYPE_TRANSFORMS.get(model or "", PhenotypeTransform())
+    # C18: a model with NO phenotype entry silently inherits the dataclass
+    # default, whose `max_directive_chars` is 8000 against the 12000 that
+    # `opus_4_6` is given. That is the named defect: `Fable -> no entry,
+    # silently inheriting the 8,000 default`. The default still applies; it is
+    # now recorded and announced against the model's stable identity.
+    transform = _cap_identity.resolve_or_alarm(
+        PHENOTYPE_TRANSFORMS, model or "", "phenotype transform",
+        default=PhenotypeTransform())
     # ★ THE SPECIFICATION IS NOT WORK (founder's ruling 2026-10-14; see
     # `PhenotypeTransform`). This decision used to read `max_directive_chars`,
     # the WORK bound, whose most generous value is 12,000 against a 27,803-char
@@ -1818,7 +1830,9 @@ def compose(
         packets.append(domain_packet)
 
     # --- Layer 3: Phenotype transform (applied to existing packets) ---
-    transform = PHENOTYPE_TRANSFORMS.get(model, PhenotypeTransform())
+    transform = _cap_identity.resolve_or_alarm(
+        PHENOTYPE_TRANSFORMS, model, "phenotype transform",
+        default=PhenotypeTransform())
 
     # Apply phenotype transform to domain packet text (NOT to universal — HARD).
     #
@@ -1877,7 +1891,14 @@ def compose(
     # next simulated run carries an arm with coherence_pruning=False
     # (cfg.composer_coherence_pruning) and the lean-vs-full comparison the
     # 2026-07-18 pruning review already gates every cut on.
-    budget = MODEL_COHERENCE_BUDGETS.get(model, DEFAULT_COHERENCE_BUDGET)
+    # C18: the named defect was `Fable -> no entry, silently inheriting the
+    # 8,000 default`, with 2 further live models mapped onto stale phenotypes
+    # (Opus 4.7 onto a 4.6 entry, DeepSeek V4 Pro onto a v3 entry). The default
+    # still applies -- removing it would refuse to compose for any new model --
+    # but it is now recorded and announced against the model's stable identity.
+    budget = _cap_identity.resolve_or_alarm(
+        MODEL_COHERENCE_BUDGETS, model, "coherence budget",
+        default=DEFAULT_COHERENCE_BUDGET)
     if coherence_pruning:
         packets, pruned_soft = _prune_for_coherence(packets, policy, budget)
     else:

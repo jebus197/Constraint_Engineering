@@ -1,0 +1,60 @@
+# PANEL BRIEF — how to make the severity ruler less coarse
+
+## REQUIRED SECTION 1 — The question
+
+**How can the severity ruler be made less coarse, more accurate and more useful, across a broad range of scenarios and not only the one it was tuned on?**
+
+This question is the founder's, asked on 2026-10-04 and never put to a panel. His words: *"I did ask you to run a free panel review with the question of how to make this ruler more effective, less course [coarse], more accurate and more useful, potentially across a broad range of similar scenarios."* It is task C4 on the master task list.
+
+**The artefact under review** is the severity model as it is implemented in `bench/reference_runner_v3.py`: the functions `spec_verification_factor` and `effective_severity`, the module-level state `_SEVERITY_SPEC`, the constant `CRITICAL_SEVERITY_THRESHOLD`, and the demotion sweep `_apply_severity_calibration`.
+
+**WHAT THE RULER IS.** A finding carries an asserted severity in the interval 0 to 1, produced by the model that raised it. A finding counts as CRITICAL when that number is at or above a threshold of 0.7, and the critical count feeds the convergence gate, the blocker counter and the release decision. So the ruler is not a label: it decides when an experiment is allowed to stop.
+
+**THE EVIDENCE THAT MOTIVATES THE QUESTION, and it is the founder's own.** The asserted number wobbles by about 0.14 between repeat assessments of the same defect, against a decision band roughly 0.09 wide, and 82 of 273 identical defects landed on opposite sides of the 0.7 line. A ruler whose noise exceeds its decision band is, on those figures, deciding criticality partly at random.
+
+**WHAT HAS SINCE BEEN BUILT, so the panel argues from the current code and not from the state of 2026-10-04.** Section 7.7 of the mathematical appendix is implemented and live. `effective_severity` returns the asserted number multiplied by a verification factor V taken from this harness's own falsifier verdict, not from any model's assertion: V is 1.0 for CONFIRMED, 0.5 for an unresolved verdict, and 0.0 for REFUTED. The last is the appendix's key property, that a disproved finding is annihilated rather than merely reduced, and it is what makes the scheme structurally unlike a vote.
+
+**IT IS EXERCISED, DEMONSTRATED BY EXECUTION RATHER THAN ASSERTED.** The third leg of the shakedown of 2026-10-15 produced 38 findings of which 2 carry a REFUTED falsifier verdict. Both store an asserted severity of 0.5. Calling `effective_severity` on those 2 entries with the specification on returns 0.0 for both, and with it off returns 0.5 for both. So the annihilation term fires on real data. Note carefully that the STORED field keeps the asserted number: the specification does not mutate it, and reading the stored field instead of calling the function reports a working specification as broken.
+
+**WHAT THE SPECIFICATION DOES NOT ADDRESS, which is the heart of the question.** V corrects the asserted number using a falsifier outcome. It does nothing about the asserted number's own noise when no falsifier has resolved, which is the common case: in the archive the unresolved population carries V equal to 0.5 almost entirely, so the specification halves those findings uniformly and preserves their relative ordering, noise included. A 0.8 becomes a 0.4 and a 0.7 becomes a 0.35; the band is rescaled and the wobble travels with it.
+
+## REQUIRED SECTION 2 — Use the harness
+
+**Form your answer by RUNNING the machinery, not by describing it.** A seat that returns prose about a fix without having executed anything has not answered this brief.
+
+**The severity model is the instrument this question is about**, and you must exercise it directly: import `effective_severity` and `spec_verification_factor` from `bench/reference_runner_v3.py` and call them on real archived entries, which you will find in the finding catalogues under `bench/logs/`. State what the functions return and on which entries.
+
+**`gamma` is the instrument that shows whether the ruler's coarseness matters.** The convergence gate decides on the critical series, and a finding's criticality is exactly what the ruler determines, so a change to the ruler propagates into gamma and therefore into when a run is permitted to converge. Execute the convergence code path, or a faithful reconstruction of it, over an archived run with and without your proposed change, and report what gamma does in each case. A proposal that moves gamma without the proposer having computed gamma is a hypothesis.
+
+**The two-sided gate is the consumer that would feel the change.** Say explicitly what your fix does to the critical count it reads, and whether it makes convergence easier, harder or unchanged. A change that makes convergence easier must be argued for, because this programme's success criterion is clean convergence and a ruler that converges more readily is not obviously better.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+**A finding without a fix is incomplete, and a fix without a runnable falsifier that has been EXECUTED is a hypothesis, not a fix.**
+
+Deliver your fix as a file written INTO the sandbox repository tree at its real path, not described in prose and not left in scratch space, which is destroyed when the sandbox is torn down. Report the exact command you ran and the output you saw, verbatim.
+
+Your falsifier must be capable of failing. State what it would print if your fix were wrong, and show that it prints something different now.
+
+**The simplest sufficient fix is the correct one, and it must be additive.** A change that removes or narrows an existing capability requires a committed measurement showing the replacement dominates on a named property; a judgement that something is better is not evidence that it is.
+
+## REQUIRED SECTION 4 — What would refute you
+
+Before you conclude, state what evidence would overturn your own answer. A verdict with no stated refutation condition is an opinion.
+
+Be specific. If your proposal is that the ruler should aggregate repeated assessments, name the number of repeats below which your own scheme would be no better than the single assessment it replaces. If your proposal is a recalibration, name the archived run on which it would produce a worse decision than the current ruler.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return these fields, each under its own heading, so replies can be compared without a parser guessing:
+
+1. `## Verdict` — can the ruler be made meaningfully less coarse, yes or no, in one sentence.
+2. `## Reasoning` — the argument, premises first.
+3. `## Falsifier and its executed result` — the command, and the output you saw.
+4. `## The fix` — the real path you wrote it to, and what it changes.
+5. `## What would refute this` — your own refutation condition.
+6. `## Disagreement` — your strongest disagreement with this brief's own framing. State it even if you agree with the conclusion: name what this brief assumes that you would not have assumed. A round that reconciles is the one most likely to converge by deference, and deference is not evidence.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new findings above the real-world-consequence threshold, which is the project's own diminishing-returns criterion. State how many passes you ran. Do not pad: a second pass that repeats the first is not a second pass.
