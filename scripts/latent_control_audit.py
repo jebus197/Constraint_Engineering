@@ -103,20 +103,81 @@ def _report_key_writes(source: str) -> dict:
     branch makes the answer yes.
     """
     tree = ast.parse(source)
-    writes = defaultdict(lambda: {"gated": True, "lines": []})
+    writes = defaultdict(lambda: {"gated": True, "lines": [], "funcs": set(),
+                                  "blocks": set()})
 
     class V(ast.NodeVisitor):
+        """Records, per write, the ENCLOSING EXECUTED BLOCK rather than a position.
+
+        ★ WHY, MEASURED 2026-10-18 (entry B30). The sibling relation used to be a
+        40-line window, and a comment occupies lines without executing anything:
+        2 padding comment lines flipped `hil_status` from SILENT_BUT_RAN to
+        AMBIGUOUS with no change in behaviour, and the live margin was 39 against
+        the window of 40. A classification that prose can move is measuring the
+        wrong thing.
+
+        `blocks` is the stack of enclosing LOOP bodies, identified by node
+        position. `If` is deliberately NOT in that stack: any `if` in a write's
+        ancestry already makes it gated, which is tracked separately. `Try` and
+        `With` are transparent, for the measured reason given below.
+
+        TWO WEAKER RELATIONS WERE TRIED AND REJECTED. "Same enclosing function"
+        is unsound because `run_experiment` is over 20,000 lines and an
+        unconditional write near its start proves only that the function BEGAN.
+        Adding "and positioned after" is still unsound for a write inside the
+        round loop: a witness after the loop is reached even when the loop body
+        never executed once, so it cannot witness anything inside it. Requiring
+        the SAME block stack closes both holes.
+        """
+
         def __init__(self):
             self.depth = 0
+            self.funcs = []
+            self.blocks = []
 
         def visit_If(self, node):
             self.depth += 1
             self.generic_visit(node)
             self.depth -= 1
 
+        def _in_block(self, node):
+            self.blocks.append(f"{type(node).__name__}@{node.lineno}")
+            self.generic_visit(node)
+            self.blocks.pop()
+
+        # ★ LOOPS ONLY. `Try` and `With` were block-forming in the first version
+        # and that was too strict: measured 2026-10-18, it left 6 unconditional
+        # keys alone in their own `try` body -- critical_boundary_census,
+        # gamma_threshold_profile, mode_reconciliation, non_cure_ledger,
+        # severity_admissibility and target_complexity -- so no witness could
+        # share their block and all 6 fell through to the line-distance fallback,
+        # which is the thing this relation exists to replace.
+        #
+        # The distinction is what can fail to execute. A LOOP BODY can run ZERO
+        # times, so a statement outside the loop proves nothing about one inside
+        # it. A `try` or `with` body executes whenever it is reached, and a
+        # witness INSIDE one that is SEEN in the archive proves it completed in
+        # real runs. So loops form blocks and the others are transparent.
+        visit_For = _in_block
+        visit_AsyncFor = _in_block
+        visit_While = _in_block
+
+        def visit_FunctionDef(self, node):
+            self.funcs.append(node.name)
+            saved_d, self.depth = self.depth, 0   # a new function restarts gating
+            saved_b, self.blocks = self.blocks, []
+            self.generic_visit(node)
+            self.depth, self.blocks = saved_d, saved_b
+            self.funcs.pop()
+
+        visit_AsyncFunctionDef = visit_FunctionDef
+
         def _record(self, key, line):
             w = writes[key]
             w["lines"].append(line)
+            if self.funcs:
+                w["funcs"].add(self.funcs[-1])
+            w["blocks"].add((self.funcs[-1] if self.funcs else "", tuple(self.blocks)))
             if self.depth == 0:
                 w["gated"] = False
 
@@ -492,6 +553,7 @@ def audit(quiet: bool = False, newest_override: int | None = None) -> dict:
         first = _key_first_committed(key)
         too_new = bool(first and newest and first > newest)
         sibling = None
+        sibling_rule = "enclosing-block"
         # THE SIBLING CHECK APPLIES TO UNCONDITIONAL WRITES TOO (2026-09-04).
         #
         # It was gated on `w["gated"]`, so a write that is UNCONDITIONAL and
@@ -512,11 +574,47 @@ def audit(quiet: bool = False, newest_override: int | None = None) -> dict:
         # a witnessed sibling within 40 lines proves the code ran, and that
         # proof does not depend on whether THIS write is gated.
         if seen == 0:
-            for other in unconditional:
-                if any(abs(a - b) <= 40
-                       for a in w["lines"] for b in writes[other]["lines"]):
-                    if counts[other] > 0:
+            # ★ STRUCTURAL FIRST, LINE DISTANCE ONLY AS A FALLBACK (entry B30,
+            # 2026-10-18). A witness counts when it is unconditional, seen in the
+            # archive, and sits in the SAME ENCLOSING EXECUTED BLOCK -- same
+            # function and same stack of enclosing loops, try and with bodies.
+            # Then it genuinely proves this write's position was reached: an
+            # unconditional statement in the same loop body cannot have run
+            # without the loop running.
+            #
+            # Measured the same day: the previous 40-line window let 2 padding
+            # COMMENT lines flip `hil_status` from SILENT_BUT_RAN to AMBIGUOUS
+            # with no change in executed behaviour, and the live margin was 39
+            # lines against the window of 40.
+            # STRUCTURAL VALIDITY decides WHETHER a witness counts; PROXIMITY
+            # decides WHICH of the valid ones to name. Those are different
+            # questions and conflating them cost a test: returning the
+            # alphabetically first valid witness reported `registry` for
+            # `target_integrity_events` where `target_hashes` is written 12 lines
+            # away, which is the same verdict reached through a less informative
+            # explanation. The relation is unchanged -- every candidate here has
+            # already passed the enclosing-block test.
+            _valid = [o for o in unconditional
+                      if o != key and counts[o] > 0
+                      and (w["blocks"] & writes[o]["blocks"])]
+            if _valid:
+                def _nearest(o):
+                    return min(abs(a - b)
+                               for a in w["lines"] for b in writes[o]["lines"])
+                sibling = min(sorted(_valid), key=_nearest)
+            if sibling is None:
+                # FALLBACK, kept rather than removed: a write the visitor could
+                # not place in any block (no enclosing function, for instance)
+                # has an empty stack and the structural test cannot answer for
+                # it. Line distance is weak but it is better than silence, and
+                # the row records which rule answered.
+                for other in sorted(unconditional):
+                    if counts[other] <= 0 or other == key:
+                        continue
+                    if any(abs(a - b) <= 40
+                           for a in w["lines"] for b in writes[other]["lines"]):
                         sibling = other
+                        sibling_rule = "line-distance-fallback"
                         break
         if too_new:
             verdict = "TOO_NEW"
@@ -531,7 +629,8 @@ def audit(quiet: bool = False, newest_override: int | None = None) -> dict:
         rows.append({"key": key, "seen_in_reports": seen,
                      "gated": w["gated"], "sibling": sibling,
                      "first_committed": first, "verdict": verdict,
-                     "lines": w["lines"][:3]})
+                     "lines": w["lines"][:3],
+                     "sibling_rule": sibling_rule if sibling else None})
 
     if not quiet:
         order = {"UNREACHABLE": 0, "AMBIGUOUS": 1, "SILENT_BUT_RAN": 2,

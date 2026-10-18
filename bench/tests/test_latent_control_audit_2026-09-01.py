@@ -431,16 +431,103 @@ class TestTheClassificationRuleItselfIsPinned:
             f"a witnessed sibling proves the code ran, and that proof does not "
             f"depend on whether THIS write is gated; got {row['verdict']}")
 
-    def test_a_gated_key_without_a_witness_is_ambiguous(self, result):
-        """The only actionable verdict, and the one the mutation erased."""
-        rows = {r["key"]: r for r in result["rows"]}
-        row = rows.get("burst_phases")
-        assert row is not None, "`burst_phases` is no longer written"
-        assert row["verdict"] == "AMBIGUOUS", (
-            f"a gated key with no unconditional sibling and no sightings is "
-            f"genuinely ambiguous -- it is the only class needing work; got "
-            f"{row['verdict']}")
-        assert row["gated"] is True and not row["sibling"]
+    def test_a_gated_key_without_a_witness_is_ambiguous(self):
+        """The only actionable verdict, pinned on a CONSTRUCTED source.
+
+        ★ REPRESENTATIVE REPLACED 2026-10-18 (entry B30), and the reason is the
+        same one that moved the representative on 2026-09-04 and dropped
+        UNREACHABLE from the populated list on 2026-09-05: a genuine repair
+        emptied the class, and a test pinned to a live key then failed on the
+        improvement.
+
+        It used `burst_phases`. The sibling relation was a 40-LINE WINDOW, and a
+        comment occupies lines without executing anything: 2 padding comment
+        lines flipped `hil_status` between SILENT_BUT_RAN and AMBIGUOUS with no
+        change in behaviour, and the live margin was 39 against the window of 40.
+        The relation is now STRUCTURAL -- a witness must be unconditional, seen
+        in the archive, and in the same enclosing executed block, meaning the
+        same function and the same stack of enclosing loops. Under that relation
+        `burst_phases` has a sound witness: `registry` is written
+        unconditionally inside the same round loop, so the loop demonstrably ran
+        and the key's absence is its gate rather than dead code.
+
+        SO THE RULE IS PINNED ON A SOURCE THIS TEST OWNS, which is strictly
+        stronger than pinning a live key: it cannot go vacuous as the runner
+        changes shape, and it exercises the discrimination directly -- a gated
+        write with an in-block witness is distinguished from one without, and a
+        witness OUTSIDE the loop is correctly refused for a write inside it.
+        """
+        import textwrap
+        src = textwrap.dedent('''
+            def run_experiment(cfg):
+                result = {}
+                result["seen_outside"] = 1
+                for round_idx in range(3):
+                    if cfg.flag:
+                        result["gated_in_loop"] = 1
+                    result["seen_in_loop"] = 2
+                return result
+
+            def helper(cfg):
+                result = {}
+                if cfg.x:
+                    result["lonely_gated"] = 1
+                return result
+        ''')
+        sys.path.insert(0, str(REPO / "scripts"))
+        import latent_control_audit as A
+        writes = A._report_key_writes(src)
+        uncond = {k for k, w in writes.items() if not w["gated"]}
+        assert uncond == {"seen_outside", "seen_in_loop"}
+
+        def in_block_witnesses(key):
+            return {o for o in uncond
+                    if o != key and writes[key]["blocks"] & writes[o]["blocks"]}
+
+        # A gated write with an unconditional neighbour in the SAME loop body is
+        # witnessed: the neighbour cannot have run without the loop running.
+        assert in_block_witnesses("gated_in_loop") == {"seen_in_loop"}, (
+            "a write inside the loop must be witnessed only by one inside it; "
+            "`seen_outside` is reached even when the loop body never executes, "
+            "so it witnesses nothing in there")
+
+        # A gated write alone in its function has NO witness, and that is the
+        # AMBIGUOUS class the tool exists to report.
+        assert in_block_witnesses("lonely_gated") == set(), (
+            "a gated key with no unconditional sibling in its own executed block "
+            "must stay unwitnessed -- that is the only actionable verdict, and a "
+            "relation that witnesses everything reports nothing")
+
+    def test_the_verdict_is_reached_by_the_structural_rule_not_the_fallback(self, result):
+        """The enclosing-block relation must be what actually answers (entry B30).
+
+        ★ WHY THIS EXISTS AS A SEPARATE TEST. The constructed-source test above
+        exercises `_report_key_writes` directly, so it would still pass if
+        `audit()` ignored the block information and fell back to line distance.
+        That would leave the structural relation an addition nothing reaches --
+        and on the current runner the fallback happens to give the same answer
+        for most keys, so the substitution would be silent.
+
+        Every witnessed row must therefore name WHICH rule answered, and on this
+        archive every one of them must be answered structurally: a fallback
+        answer means a write the visitor could not place in any block, which is
+        worth knowing about rather than absorbing.
+        """
+        witnessed = [r for r in result["rows"] if r.get("sibling")]
+        assert witnessed, (
+            "no row has a sibling at all, so this check cannot be performed -- "
+            "that is a gap in the evidence, not a pass")
+        for row in witnessed:
+            assert "sibling_rule" in row, (
+                f"row {row['key']} names a sibling but not which rule found it, "
+                f"so a silent fall back to line distance would be invisible")
+        fell_back = sorted(r["key"] for r in witnessed
+                           if r["sibling_rule"] != "enclosing-block")
+        assert fell_back == [], (
+            f"these rows were answered by the LINE-DISTANCE FALLBACK rather than "
+            f"by the enclosing-block relation: {fell_back}. The fallback exists "
+            f"only for a write the visitor could not place in any block; if these "
+            f"are ordinary writes, the structural rule has stopped working")
 
     def test_the_classes_that_must_be_populated_are(self, result):
         """UNREACHABLE DROPPED OFF THIS LIST ON 2026-09-05, deliberately.
@@ -458,9 +545,23 @@ class TestTheClassificationRuleItselfIsPinned:
         """
         from collections import Counter
         c = Counter(r["verdict"] for r in result["rows"])
-        for verdict in ("SILENT_BUT_RAN", "AMBIGUOUS", "SEEN"):
+        for verdict in ("SILENT_BUT_RAN", "SEEN"):
             assert c[verdict] > 0, f"no key classified {verdict}"
         assert c["UNREACHABLE"] >= 0  # may legitimately be 0; see docstring
+        # ★ AMBIGUOUS DROPPED FROM THIS LIST 2026-10-18, on exactly the reasoning
+        # this docstring already records for UNREACHABLE: a genuine repair
+        # emptied the class and the assertion failed on the improvement. The
+        # sibling relation became STRUCTURAL rather than a 40-line window
+        # (entry B30), and every gated unseen key on the current runner turns
+        # out to have a sound witness in its own enclosing executed block -- so
+        # 0 actionable is the TRUE state, not a broken classifier.
+        #
+        # THE PIN DID NOT GO AWAY, IT MOVED SOMEWHERE STRONGER.
+        # `test_a_gated_key_without_a_witness_is_ambiguous` now exercises the
+        # rule on a source this file owns, so it cannot be emptied by the
+        # runner changing shape, and it checks the discrimination in BOTH
+        # directions.
+        assert c["AMBIGUOUS"] >= 0
 
 
 class TestItOverReportsRatherThanUnderReports:
