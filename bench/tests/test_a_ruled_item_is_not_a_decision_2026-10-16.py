@@ -275,13 +275,68 @@ def test_the_severity_gate_provenance_question_is_struck_permanently():
 
 def test_the_severity_gate_itself_still_functions():
     """His question: "The severity gate now functions as specified, as fa as
-    your recent tests indicate? So our repairs worked?" Answered by execution,
-    so a future removal cannot pass while this test reads a stale claim."""
-    import inspect
+    your recent tests indicate? So our repairs worked?"
+
+    ★ THIS TEST USED TO GREP, AND ITS OWN DOCSTRING CLAIMED OTHERWISE. It read
+    `inspect.getsource(FindingRegistry.unverified_critical_count)` and asserted
+    the string `severity_is_proven` appeared in it, under a docstring saying
+    "Answered by execution". It was a source-text assertion, which this
+    project's own rule forbids: such a test "asserts only that the module
+    describes itself consistently".
+
+    IT THEN FAILED ON A REFACTOR WHILE THE GATE WAS INTACT. `unverified_critical_count`
+    now delegates to `blocking_entry_ids`, where the severity test lives, so the
+    symbol left the shorter function and the assertion broke. Measured
+    2026-10-18: the failure predates that session's work -- the function body is
+    byte-identical to the pre-session baseline -- and the test is NOT in the
+    commit hook's guard set, so it had been red and unwatched. Its message read
+    "this is the change he has now rejected 4 times", which would have alarmed
+    the founder about a regression that had not happened.
+
+    IT NOW EXECUTES THE RULE. His rule, from the code: a sub-critical entry is
+    released from the blocker set only when its severity is PROVEN sub-critical;
+    an unproven severity, at any value, buys no release. 2 entries identical
+    except for that proof must therefore be counted differently.
+    """
     sys.path.insert(0, str(REPO / "bench"))
     import reference_runner_v3 as R  # noqa: E402
-    src = inspect.getsource(R.FindingRegistry.unverified_critical_count)
-    assert "severity_is_proven" in src, (
-        "the severity test has left the blocker counter again — this is the "
-        "change he has now rejected 4 times"
-    )
+
+    # The population is entries whose status is UNCONFIRMED and whose falsifier
+    # has not resolved; within it, the severity test is the only difference here.
+    base = {"severity": 0.5, "falsifier_code": "", "falsifier_verdict": "",
+            "status": "UNCONFIRMED", "source_model": "CC2", "open_since_round": 0}
+
+    proven = R.FindingRegistry()
+    proven.entries["C0001"] = dict(base, severity_proof={"status": "PASS"})
+    assert R.severity_is_proven(proven.entries["C0001"]) is True
+    assert proven.blocking_entry_ids() == [], (
+        "a PROVEN sub-critical entry must be released from the blocker set; it "
+        "was not, so the severity test has left the blocker path")
+    assert proven.unverified_critical_count() == 0
+
+    unproven = R.FindingRegistry()
+    unproven.entries["C0002"] = dict(base)          # no severity_proof at all
+    assert R.severity_is_proven(unproven.entries["C0002"]) is False
+    assert unproven.blocking_entry_ids() == ["C0002"], (
+        "an UNPROVEN sub-critical entry must still block; it did not, which "
+        "would mean an unproven severity now buys a release -- the inverse of "
+        "his ruling")
+    assert unproven.unverified_critical_count() == 1
+
+    # WARN is accepted alongside PASS, per severity_is_proven's own contract.
+    warn = R.FindingRegistry()
+    warn.entries["C0003"] = dict(base, severity_proof={"status": "WARN"})
+    assert warn.blocking_entry_ids() == [], "WARN must count as proven"
+
+    # SKIP is not a proof.
+    skip = R.FindingRegistry()
+    skip.entries["C0004"] = dict(base, severity_proof={"status": "SKIP"})
+    assert skip.blocking_entry_ids() == ["C0004"], "SKIP must not release"
+
+    # And both together, so the discrimination is shown on one registry.
+    both = R.FindingRegistry()
+    both.entries["C0005"] = dict(base, severity_proof={"status": "PASS"})
+    both.entries["C0006"] = dict(base)
+    assert sorted(both.blocking_entry_ids()) == ["C0006"], (
+        "on one registry the proven entry must be released and the unproven "
+        "one retained; the severity test is what separates them")

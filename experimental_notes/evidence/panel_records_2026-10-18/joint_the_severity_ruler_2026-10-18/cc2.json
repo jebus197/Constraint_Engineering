@@ -1,0 +1,185 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 16773,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd; ls; echo ---; ls bench | head -50; echo ---; ls bench/logs 2>/dev/null | head -40\", \"description\": \"Orient in repo\"}",
+      "t_offset_s": 4.849
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /; ls ~ 2>/dev/null | head; which wolframscript python3 z3; python3 -c \\\"import sympy,numpy,scipy,statsmodels,z3; print('ok')\\\" 2>&1 | tail -2\", \"description\": \"Check tooling availability\"}",
+      "t_offset_s": 6.168
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; ls -la bench/severity_instrument.py bench/tests/test_attested_severity_2026-10-18.py bench/tests/test_the_severity_ruler_instrument_noise_2026-10-18.py 2>&1; echo ---; git status 2>&1 | head -3; echo ---; grep -n \\\"def effective_severity\\\\|def spec_verification_factor\\\\|def _settled_novelty_series\\\\",
+      "t_offset_s": 16.927
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; sed -n '10320,10400p' bench/reference_runner_v3.py\", \"description\": \"Read effective_severity\"}",
+      "t_offset_s": 23.987
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; sed -n '5100,5165p' bench/reference_runner_v3.py; echo === SETTLED ===; sed -n '10545,10660p' bench/reference_runner_v3.py\", \"description\": \"Read gamma and settled novelty series\"}",
+      "t_offset_s": 25.468
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; sed -n '10545,10680p' bench/reference_runner_v3.py\", \"description\": \"Read _settled_novelty_series\"}",
+      "t_offset_s": 31.676
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; sed -n '10680,10880p' bench/reference_runner_v3.py\", \"description\": \"Read gamma_threshold_profile\"}",
+      "t_offset_s": 32.721
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; ls bench/logs/*/runner_state.json 2>/dev/null | wc -l; echo \\\"--- with severity entries ---\\\"; python3 - <<'EOF'\\nimport json,glob,os\\nrows=[]\\nfor p in sorted(glob.glob(\\\"bench/logs/*/runner_state.json\\\")):\\n    try: d=json.load(open(p))\\n    except Exception as e: continue\\n    reg=d.get(\\\"registr",
+      "t_offset_s": 60.112
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 - <<'EOF'\\n# Derive median-of-k sampling SD constants for normal noise, independently.\\nimport numpy as np, sympy as sp\\nfrom scipy import integrate, stats\\n# Exact via order statistics density\\ndef var_median(k):\\n    if k%2==1:\\n        r=(k+1)//2\\n        # density of r-th order stat of s",
+      "t_offset_s": 71.305
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; mkdir -p /tmp/sev; cat > /tmp/sev/rulers.py <<'PYEOF'\\n\\\"\\\"\\\"Reconstructions of the two blind-round fixes, plus their composition.\\n\\nRECONSTRUCTED FROM PROSE, NOT FROM THE OTHER SEATS' CODE: neither\\nbench/severity_instrument.py (cc2) nor bench/tests/test_attested_severity_*.py\\n(fable) exists in t",
+      "t_offset_s": 145.421
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 - <<'EOF'\\nimport re\\np=\\\"/tmp/sev/rulers.py\\\"; s=open(p).read()\\ns=s.replace('''import importlib.util\\nspec = importlib.util.spec_from_file_location(\\\"rr3\\\", \\\"bench/reference_runner_v3.py\\\")\\nrr3 = importlib.util.module_from_spec(spec)\\nspec.loader.exec_module(rr3)''','''import reference_r",
+      "t_offset_s": 155.175
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 - <<'EOF'\\nimport sys; sys.path.insert(0,\\\"/tmp/sev\\\")\\nimport rulers as R, glob, os, json\\nrows=[]\\nfor p in sorted(glob.glob(\\\"bench/logs/*/runner_state.json\\\")):\\n    reg,mr=R.load(p)\\n    if reg is None: continue\\n    run=os.path.basename(os.path.dirname(p))\\n    h=R.series(reg,mr,\\\"hard",
+      "t_offset_s": 173.391
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 - <<'EOF'\\nimport sys; sys.path.insert(0,\\\"/tmp/sev\\\")\\nimport rulers as R, glob, os\\nruns=[]\\nfor p in sorted(glob.glob(\\\"bench/logs/*/runner_state.json\\\")):\\n    reg,mr=R.load(p)\\n    if reg is None: continue\\n    runs.append((os.path.basename(os.path.dirname(p)),reg,mr))\\nprint(\\\"SIGMA SW",
+      "t_offset_s": 205.752
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 - <<'EOF'\\nimport sys; sys.path.insert(0,\\\"/tmp/sev\\\")\\nimport rulers as R, glob, os, statistics\\nruns=[]\\nfor p in sorted(glob.glob(\\\"bench/logs/*/runner_state.json\\\")):\\n    reg,mr=R.load(p)\\n    if reg is None: continue\\n    runs.append((os.path.basename(os.path.dirname(p)),reg,mr))\\nprin",
+      "t_offset_s": 232.229
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 - <<'EOF'\\nimport sys; sys.path.insert(0,\\\"/tmp/sev\\\")\\nimport rulers as R, glob, os\\nfrom statsmodels.stats.proportion import proportion_confint\\nfor run in (\\\"commissioning_arm1_panel_20260929T214647Z\\\",\\\"prose_convergence_run1b_2026-10-02_20261002T044234Z\\\",\\\"leg3_final_shakedown_20261015",
+      "t_offset_s": 280.724
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; timeout 300 /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/wolfram_gate/serial/wolframscript -code 'd=PDF[NormalDistribution[0,1],x];F=CDF[NormalDistribution[0,1],x];\\nv4=NIntegrate[(12 x^2 F[x](1-F[x])^2 d)/.x->x,{x,-10,10}];\\n(* median of 4 = mean of 2nd and 3rd order s",
+      "t_offset_s": 288.995
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/wolfram_gate/serial/wolframscript -code 'j[x_,y_]:=24 CDF[NormalDistribution[0,1],x] (1-CDF[NormalDistribution[0,1],y]) PDF[NormalDistribution[0,1],x] PDF[NormalDistribution[0,1],y];\\nm1=NIntegrate[((x+y)/2) j[x,y],{x,-9,9},{",
+      "t_offset_s": 306.694
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/wolfram_gate/serial/wolframscript -code 'Print[\\\"Phi0 = \\\",N[CDF[NormalDistribution[0,1],0],20]];\\nPrint[\\\"lim s->0+ sev>thr = \\\",Limit[CDF[NormalDistribution[0,1],(1/10)/s],s->0,Direction->\\\"FromAbove\\\"]];\\nPrint[\\\"lim s->0+",
+      "t_offset_s": 346.936
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo/bench/severity_noise_sweep.py\", \"content\": \"\\\"\\\"\\\"Is a de-coarsened severity verdict REACHING the gate, or FITTED to the archive?\\n\\nWHAT THIS ANSWERS, AND WHY IT IS THE MISSING INSTRUMENT. The joint round of\\n2026-10-18 put two standards against each other. One seat offered \\\"the\\nquiescence verdict ",
+      "t_offset_s": 528.724
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; touch bench/_wtest 2>&1 && echo WRITABLE && rm bench/_wtest; ls -ld bench bench/tests 2>&1\", \"description\": \"Check write permission on bench\"}",
+      "t_offset_s": 533.939
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; cat > bench/severity_noise_sweep.py <<'PYEOF'\\n\\\"\\\"\\\"Is a de-coarsened severity verdict REACHING the gate, or FITTED to the archive?\\n\\nWHAT THIS ANSWERS, AND WHY IT IS THE MISSING INSTRUMENT. The joint round of\\n2026-10-18 put two standards against each other. One seat offered \\\"the\\nquiescence ver",
+      "t_offset_s": 577.357
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; sed -n '10880,10925p' bench/reference_runner_v3.py; echo \\\"---- CALL SITE ----\\\"; sed -n '21045,21075p' bench/reference_runner_v3.py; echo \\\"---- IMPORTS ----\\\"; grep -n \\\"^from bench\\\\.\\\\|^import bench\\\\.\\\\|^from bench import\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Find wiring p",
+      "t_offset_s": 584.622
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 - <<'PYEOF'\\np=\\\"bench/reference_runner_v3.py\\\"; s=open(p).read()\\n\\nold_imp = \\\"from bench.panel_sandbox import secret_ignore\\\\n\\\"\\nnew_imp = (\\\"from bench.panel_sandbox import secret_ignore\\\\n\\\"\\n           \\\"from bench.severity_noise_sweep import (  # noqa: E402\\\\n\\\"\\n           \\\"    noi",
+      "t_offset_s": 600.224
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; cat > \\\"bench/tests/test_does_the_decoarsened_verdict_reach_or_fit_2026-10-18.py\\\" <<'PYEOF'\\n\\\"\\\"\\\"The joint round's two open questions, decided by execution on the archive.\\n\\nQ1 DO THE 2 FIXES COMPOSE? Answered NO, by measurement: composing pooled\\n   severity with the expected-count rule moves t",
+      "t_offset_s": 659.481
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 - <<'EOF'\\nimport sys; sys.path.insert(0,\\\"/tmp/sev\\\")\\nimport rulers as R, glob, os, collections\\nfrom statsmodels.stats.proportion import proportion_confint\\nn=tot=0; runs=[]\\nsev_hist=collections.Counter()\\nfor p in sorted(glob.glob(\\\"bench/logs/*/runner_state.json\\\")):\\n    reg,mr=R.load",
+      "t_offset_s": 683.154
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 - <<'EOF'\\nimport sys; sys.path.insert(0,\\\"/tmp/sev\\\")\\nimport rulers as R, collections\\nreg,mr=R.load(\\\"bench/logs/prose_convergence_run1b_2026-10-02_20261002T044234Z/runner_state.json\\\")\\ncrit=[e for b in R._admitted(reg,mr) for e in b if (e.get(\\\"severity\\\") or 0)>=0.7]\\nprint(\\\"prose_con",
+      "t_offset_s": 706.011
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 - <<'PYEOF'\\np=\\\"bench/tests/test_does_the_decoarsened_verdict_reach_or_fit_2026-10-18.py\\\"; s=open(p).read()\\ns=s.replace('''    assert live[\\\"tail_is_quiescent\\\"] is False''',\\n'''    # hard PERMITS quiescence here; the expected-count rule REFUSES it. That is\\n    # the one-way direction, ",
+      "t_offset_s": 740.562
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-37hr9c9u-repo/af8c8f26-93f6-4bdc-abaf-ff1aca2a453c/tasks/bobblab2n.output\\\" 2>&1 | head -40\", \"description\": \"Read Wolfram background output\"}",
+      "t_offset_s": 746.121
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; echo \\\"=== MUTANT 1: break the monotone-nesting discriminator (re-centre weight above threshold) ===\\\"; cp bench/severity_noise_sweep.py /tmp/sev/orig.py\\npython3 - <<'EOF'\\np=\\\"bench/severity_noise_sweep.py\\\"; s=open(p).read()\\ns=s.replace(\\\"    return _phi((float(severity) - float(threshold)) / fl",
+      "t_offset_s": 752.662
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/wolfram_gate/serial/wolframscript -code 'Print[\\\"Phi0 = \\\",N[CDF[NormalDistribution[0,1],0],20]];\\nPrint[\\\"lim s->0+ sev>thr = \\\",Limit[CDF[NormalDistribution[0,1],(1/10)/s],s->0,Direction->\\\"FromAbove\\\"]];\\nPrint[\\\"lim s->0+",
+      "t_offset_s": 771.862
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 - <<'EOF'\\nimport sympy as sp\\nv,s,t = sp.symbols('v s t', real=True); sp.init_printing()\\nPhi = (1+sp.erf((v-t)/(s*sp.sqrt(2))))/2\\nprint(\\\"SYMPY (primary):\\\")\\nprint(\\\"  Phi at v=t           :\\\", sp.simplify(Phi.subs(v,t)))\\nprint(\\\"  d/dv Phi             :\\\", sp.simplify(sp.diff(Phi,v)))\\",
+      "t_offset_s": 780.32
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 -m pytest bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py -q 2>&1 | grep -E \\\"assert|passed|failed\\\" | head -6; echo \\\"--- now with my 2 files removed, to attribute it ---\\\"; mv bench/severity_noise_sweep.py /tmp/sev/hold.py; mv \\\"bench/tests/test_does_the_decoarsened_verdict_",
+      "t_offset_s": 797.337
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo; python3 -m pytest bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py -q 2>&1 | tail -4; echo \\\"=== with mine removed ===\\\"; cp bench/reference_runner_v3.py /tmp/sev/rr3_mine.py; mv bench/severity_noise_sweep.py /tmp/sev/h.py; mv \\\"bench/tests/test_does_the_decoarsened_verdict_reach_or_fi",
+      "t_offset_s": 877.966
+    }
+  ],
+  "n_tool_calls": 33,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1044.3,
+  "response": "Two passes complete. All measurements in.\n\n## Verdict\n\n**The 2 fixes do not compose: composing them changes the quiescence verdict on 0 of 62 archived registries beyond cc2's fix alone \u2014 at every one of 14 swept \u03c3, not just at 0.1419 \u2014 because pooling acts on only 9 of the 734 entries sitting in the rounds that decide quiescence (1.2262%, Wilson [0.6464%, 2.3138%]), so build cc2's fix alone.**\n\n**Neither seat's standard as stated: verdict movement is evidence of reach iff the parameter producing it was committed independently *and* the departing set is monotonically nested in that parameter \u2014 a sweep neither of you ran, which I ran, and which comes out in cc2's favour (nested at all 14 \u03c3, 4 departures at the CI floor, 7 at the point estimate, 9 at the ceiling) while refuting fable's empirical invariance claim about its own fix.**\n\n## Reasoning\n\n**Premise 0 \u2014 both seats' published numbers reproduce, so the reconstructions are theirs.** Neither `bench/severity_instrument.py` nor `bench/tests/test_attested_severity_2026-10-18.py` exists in my sandbox (separate sandboxes, no git), so I could not execute your literal files. I reimplemented both from your prose and validated against every number you published. fable's leg3 star-size distribution `{1:24, 2:7, 3:3, 4:1, 5:1, 6:2}`, C0001\u21920.875 at k=6, C0011\u21920.64, hard `[12,0,0,0,0]`\u2192pooled `[7,0,0,0,0]`, \u03b3=1.000 both ways. cc2's leg3 soft tail `[0.2541, 0.1184, 0.4248]`, \u03b3_soft=0.9597, and refutation condition 3's `[9,4,8]`\u2192`[8.78, 2.77, 7.27]` on `prose_convergence_run1b`. All exact. My hard series equals production `_settled_novelty_series` on all 62 runs, asserted value-for-value.\n\n**Premise 1 \u2014 the composition is null at the gate, and the null is structural, not an artefact of \u03c3.** Over all 62 archived registries carrying entries (cc2's 19 is a subset):\n\n| ruler | quiescence verdict differs from hard | \u03b3 band differs |\n|---|---|---|\n| soft (cc2) | **7/62** | 10/62 |\n| pooled (fable) | **0/62** | 3/62 |\n| composed, \u03c3_k = \u03c3\u00b7c_k | **7/62** \u2014 identical set | 11/62 |\n| composed, naive constant \u03c3 | 7/62 \u2014 identical set | \u2014 |\n\n`composed vs soft-alone: []`. Swept across \u03c3 \u2208 {0.02 \u2026 0.50}, 14 values: the composition-only flip list is empty at **every** one. The mechanism is in the archive, not in the arithmetic: of **734** entries admitted into the 3 rounds that decide quiescence, **9** carry k\u22652. Pooling can only move those 9. It is structurally unable to reach the predicate.\n\n**Premise 2 \u2014 getting the composition *right* also buys nothing, which is the sharper half.** The naive composition (smooth the pooled median with the unpooled \u03c3=0.1419) is wrong: pooling already reduced that estimator's noise to \u03c3\u00b7c_k, so the naive form over-smooths. I derived the correct c_k by quadrature and Monte Carlo (2\u00d710\u2076 draws): {1, 0.7071067812, 0.6698291607, 0.5460765683, 0.5355685405}, agreeing with fable's Wolfram values at k=3 and k=5 to 10 dp. The correct and naive compositions give **identical verdicts on all 62 runs**. So the \u03c3_k correction \u2014 the one genuinely new term a composition contributes \u2014 is unobservable at the gate. A composed fix must still satisfy simplest-sufficient; this one adds an order-statistic table and a star traversal for zero verdict change.\n\n**Premise 3 \u2014 the single place composition does anything, and it fails the direction test.** `commissioning_arm1_panel_20260929T214647Z` is the only run where the composed \u03b3 crosses a `GAMMA_BANDS` edge that soft-alone does not: \u03b3_soft=0.1952 (\"Gamma disagrees with state closure \u2014 recommend HIL audit\") vs \u03b3_composed=0.2039 (\"Weak depletion\"). That is 1/62 = 1.6129%, Wilson [0.2853%, 8.5867%], a 0.0087 straddle of a hard band edge at 0.20, in the direction that **removes** an audit recommendation. That is not a demonstrated advantage; it is one multi-attested tail entry against a band boundary.\n\n**Premise 4 \u2014 the standard question, decided by the shape of the verdict, not its count.** Both of you were arguing from a scalar that cannot settle it. A fitted de-coarsening departs from the hard verdict near its committed parameter and returns either side; a reaching one departs above a threshold \u03c3* and stays departed. Measured:\n\n```\nsigma=0.0200 n=0   sigma=0.1241 n=4  (measured CI floor)   sigma=0.1575 n=9 (ceiling)\nsigma=0.0600 n=0   sigma=0.1419 n=7  (committed estimate)  sigma=0.2200 n=13\nsigma=0.1000 n=1                                           sigma=0.5000 n=19\nsuperset_of_previous = True at EVERY step; no run ever departs and returns.\n```\n\nMonotone nesting, 4 departures already at the CI floor. cc2's 0.1419 is not a knife edge, and \u03c3 is not cc2's knob \u2014 it is the appendix's duplicate-pair measurement (line 765), committed before the sweep. **So movement here is reach.** It also confirms cc2's own stated refutation threshold honestly: at \u03c3=0.04 the departure count is 0, exactly as cc2 said it would be below ~0.045.\n\n**Premise 5 \u2014 fable's invariance claim is refuted as an empirical claim about fable's own fix.** fable measured \u03b3 on 3 runs (leg3, free run 1, free run 2) and found invariance. Over 62, pooling moves \u03b3 on 3 runs and on **1** it converts an estimable \u03b3 into the 0.0 sentinel: `commissioning_arm1_panel_20260929T214647Z`, hard `[1,0,0,1,0,0,0,4]` \u03b3=0.3236 `_gamma_is_estimable=True` \u2192 pooled `[0,0,0,0,0,0,0,4]` \u03b3=0.0000 `_gamma_is_estimable=False`. The sentinel lands in the worst band text. The direction is conservative and production's `gamma_is_estimable` flag does carry the degeneracy, so this is not a hard-constraint violation \u2014 but \"gamma_critical is invariant\" is true on 3 runs and false on 62, and fable's own refutation condition 1 (reach below ~10%) is met at the deciding tail: 1.2262%.\n\n**Premise 6 \u2014 cc2's \u03c3=0 nesting claim fails at the archive's modal critical severity, and it costs a sixth of the instrument's effect.** Production compares `sev >= 0.7`, scoring a finding at exactly 0.7 as 1; lim_{\u03c3\u21920\u207a} \u03a6(0) = **1/2** for every \u03c3 (SymPy, and Wolfram Language independently). **0.7 is the third most common severity in the archive \u2014 174 of 3237 entries, 5.3753%, Wilson [4.6500%, 6.2065%], across 42 runs** \u2014 because models anchor on the published cut. So \"the current ruler is the \u03c3=0 member of this family\" holds for sev\u2260\u03b8 and fails on 5.4% of the population. Consequence, measured both ways: **zero** quiescence verdicts move (derived \u2014 \u03a6(0)=1/2 is not `< 0.5`, so such a round is non-quiescent under both rulers; cc2's 0.5 cut absorbs the discontinuity exactly, for a reason cc2 did not give), but these entries carry **16.12% of the archive's total |hard \u2212 soft| mass** and 3 of the 21 criticals in `prose_convergence_run1b`. That is the mechanism behind cc2's refutation condition 3 \u2014 not a rare cluster, a modal value.\n\n## Falsifier and its executed result\n\n```\n$ python3 -m pytest \"bench/tests/test_does_the_decoarsened_verdict_reach_or_fit_2026-10-18.py\" -q\n..........                                                               [100%]\n10 passed in 0.82s\n```\n\n**The other seat's fixes, executed via validated reconstruction** (their files absent \u2014 stated above, and this is the honest limit of this part). The test asserts their published numbers as a precondition, so if my reconstruction were not theirs, `test_both_seats_published_numbers_reproduce_from_this_reimplementation` fails naming the divergent value. It passes. cc2's fix reproduces 7/62 flips including all 5 cc2 named plus `exp35_pe` and `exp40_slice_collision` from the wider set; fable's reproduces 0/62.\n\n**Capability to fail, by mutation rather than claim.** Mutant 1 \u2014 re-centre the weight 0.12 above threshold, i.e. break the discriminator:\n```\nE  assert 12 == 0        (counts[0.04]: 12 departures where 0 is required)\nE  assert 0.02 == 0.1241 (verdict_flip_sigma collapses to the band floor)\n```\nMutant 2 \u2014 delete the REFUTED annihilation:\n```\nE  AssertionError: assert 0.97950804462579 == 0.0\n1 failed, 9 passed\n```\nRestored: `10 passed`. **If my answer were wrong**, `test_composition_moves_no_verdict_beyond_the_expected_count_rule_alone` prints `COMPOSITION EARNS ITS PLACE after all -- it moves the verdict beyond the expected-count rule alone on N run(s): [...]`, and `test_the_departing_set_is_monotonically_nested_in_sigma` prints `NOT NESTED -- fitted signature: runs [...] depart at sigma=X and stop departing at sigma=Y`. Both print nothing now.\n\n**Regression:** `test_the_severity_spec_decides_when_promoted_2026-10-15.py` + mine \u2192 `24 passed in 1.29s`.\n\n**The one pre-existing failure, attributed by removal.** `test_source_text_and_neighbour_audit_2026-09-11.py::test_the_class_has_not_grown_silently` fails. With my 3 edits reverted it fails identically (`1 failed, 9 passed` both ways). Pre-existing \u2014 independently confirming cc2's attribution.\n\n**Tool attribution.** Primary, open-source: SymPy (\u03a6(\u03b8)=1/2, d\u03a6/dv = \u221a2\u00b7e^{\u2212(t\u2212v)\u00b2/2s\u00b2}/(2\u221a\u03c0 s) > 0, all three \u03c3\u21920 limits including the 1/2 at v=\u03b8, concavity), z3 (`unsat` for \u2203a\u2208[0,1]: a/2 \u2265 0.7 \u2014 the \u00a77.7 collapse), SciPy quadrature + NumPy Monte Carlo (median-of-k constants), statsmodels (Wilson intervals). **Wolfram Language** (local Wolfram Engine via `wolframscript`, exit 0, no `Name::tag`): `Phi0 = 0.5`, `lim s->0+ sev>thr = 1`, `lim s->0+ sev=thr = 1/2`, `lim s->0+ sev<thr = 0`, `collapse unsat = True`, `dPhi/dsev > 0 = True`, `c2 = 0.70710678118654752440`. **Two earlier Wolfram calls emitted `NIntegrate::slwcon` and `NIntegrate::eincr`, so they verified nothing and the c3/c4 constants stay Wolfram-UNVERIFIED** \u2014 they rest on SciPy quadrature and 2\u00d710\u2076-draw Monte Carlo agreeing to \u22643.4e-4, plus fable's blind-round Wolfram confirmation. One of those calls was moved to background by a harness timeout, not by choice.\n\n## The fix\n\n- **`bench/severity_noise_sweep.py`** (new, 216 lines) \u2014 `critical_weight`, `expected_critical_series`, `tail_is_quiescent_soft`, `noise_robustness_profile`, `SWEPT_SIGMAS`, and \u03c3=0.1419 carrying its CI and its producer. Reports `verdict_flip_sigma`, `flip_inside_measured_ci`, `departs_monotonically`, `per_sigma`. The admission filter is **passed in** from the caller rather than restated, so the only difference from the production series is indicator-versus-\u03a6.\n- **`bench/reference_runner_v3.py`** (2 edits) \u2014 one import beside `bench.panel_sandbox`, one wrapped call at the end of `gamma_threshold_profile`, which the report path already invokes at line 21056. Nothing removed; no existing call site changed; the live gate still decides on the hard indicator.\n- **`bench/tests/test_does_the_decoarsened_verdict_reach_or_fit_2026-10-18.py`** (new, 10 tests) \u2014 all against the real archive, all driving production functions.\n\nSimplest sufficient: I did **not** build the composition, because the measurement says it adds nothing. I did not build a second expected-count series either \u2014 my module states the merge requirement with cc2's `severity_instrument.py` in its docstring rather than leaving a reader to infer that two blocks computing one series from two filters makes any difference between them unattributable, which is the failure `gamma_threshold_profile` already records about a reimplemented gate. Additive: reached by `run_experiment`'s existing report path, executed by a test.\n\n## What would refute this\n\n**Mine.** (1) A live non-SIM run whose `noise_robustness` reports `departs_monotonically: false` \u2014 a run departing at 0.1419 and not at 0.1575 \u2014 breaks the discriminator and with it my answer to question 2. (2) A promoted gate reading the expected count as a *magnitude* against any cut above 0.5: there my composition-null does not transfer, because the \u03c3_k sharpening changes the magnitude on every k\u22652 entry even where it changes no verdict; on `commissioning_arm1_panel_20260929T214647Z` the composed series is `[1.4167, 0.247, 0.5194, 1.1457, \u2026]` against soft `[1.5212, 0.2379, 0.713, 1.3926, \u2026]`. (3) **The named run where my answer decides worst**: that same run, where the composition is the only thing that moves a \u03b3 band \u2014 if the occasion-growth repair raises multi-attestation at the deciding tail from 1.2262% to above ~15%, the 9-entry reach that makes composition null disappears and the whole question must be re-measured. Threshold: 110 of 734 tail entries at k\u22652.\n\n**cc2's.** (1) The within-defect \u03c3. cc2 named 0.045 and I executed it: at \u03c3=0.04 the departure count is 0, so adjudicating a sample of the 273 duplicate pairs and showing within-defect \u03c3 below 0.08 (not 0.045 \u2014 my sweep puts the first departure between 0.08 and 0.10) removes every flip. 60 adjudicated pairs gives a \u03c3 estimate with roughly \u00b118% relative precision, enough to separate 0.08 from 0.14. (2) The \u03c3=0 nesting claim as written is already refuted on 174/3237 entries; what would refute the *fix* rather than the claim is a promoted magnitude gate, where that 16.12% mass systematically under-counts blockers at the modal severity.\n\n**fable's.** (1) Reach, already measured and failing at the deciding tail: 9/734 = 1.2262%, Wilson [0.6464%, 2.3138%], against fable's own ~10% bar. What would rescue it is a live run with \u226515% of tail entries at k\u22652. (2) The estimability degradation on `commissioning_arm1_panel_20260929T214647Z` is the named run where fable's ruler decides worse than fable reported \u2014 if an adjudicator shows the downward-crossing star links there are genuine same-defect links, the median is right and the sentinel is the honest answer; if they are mis-links, pooling inherits the linker's noise instead of cancelling the assessor's, which is fable's own refutation condition 3 and I have now located the run it bites on.\n\n## Disagreement\n\n**With cc2, on what the 5/19 was evidence of.** The count alone was not evidence that the fix reaches rather than fits \u2014 fable was right that a verdict-moving number is exactly what a fitted knob produces, and cc2 offered the count as though it settled the matter. What settles it is the monotone-nesting sweep, and cc2 did not run it; the nearest thing cc2 ran was the *threshold* sweep, which cc2 itself correctly distinguished as a different question. I have now run the parameter sweep and it comes out cc2's way \u2014 4 departures at the CI floor, nested at all 14 values. So cc2's conclusion survives on evidence cc2 did not produce. That is not the same as cc2 having been right about the standard.\n\n**With cc2, substantively.** \"The current ruler is the \u03c3=0 member of this family\" is false at exactly sev=0.7, and 0.7 is the archive's third most common severity \u2014 5.3753% of entries, carrying 16.12% of the instrument's total effect. The additive claim should be stated as holding for sev\u2260\u03b8 with the \u03b8 case named, not as a clean nesting.\n\n**With fable, on invariance as a desirable property.** I do not accept it as stated, and the evidence is fable's own fix measured over 62 runs instead of 3: it is not invariant (\u03b3 moves on 3, estimability dies on 1). More importantly the principle is wrong as a goal. An instrument that cannot move any verdict is not thereby trustworthy \u2014 it may simply be unable to reach the gate, which is what 9/734 says about pooling at the deciding tail, and which is the additive standard's \"an addition nothing reaches\" failure, not a virtue. Invariance is reassuring only once reach has been demonstrated separately. fable's *warning* \u2014 that a de-coarsening tuned until it moved an archived verdict would be fitting \u2014 is correct and is the better half of that paragraph; it just is not the same proposition as \"invariance is desirable.\"\n\n**With this brief.** It asks whether the fixes compose and offers \"the pooling may shrink the variance enough that the smoothing buys nothing\" as the reason a composition might be redundant. That mechanism is not what happens. Pooling does shrink the variance \u2014 from 0.1419 to 0.0775 at k=4, below the 0.09 half-band, exactly as fable derived \u2014 but the smoothing does not stop buying anything, because the shrinkage applies to 9 of 734 entries at the deciding tail and the other 725 are still smoothed at full \u03c3. The composition is null for a reason of **population**, not of variance. That distinction matters for the next round: if multi-attestation rises, the brief's mechanism becomes the live one and the null result expires, whereas the variance argument as stated would have predicted the smoothing becoming *more* redundant as pooling improved.\n\n**Passes run: 2.** Pass 1: the four-ruler archive sweep, the composition null, the structural reach measurement, the module, the wiring, the test. Pass 2: the \u03c3-sweep discriminator, the sev=0.7 mode census and its 16.12% mass, fable's estimability degradation, the naive-versus-correct composition comparison, mutation testing, and the audit-failure attribution by removal. A third pass surfaced nothing above the real-world-consequence threshold, so I stopped.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo",
+      "built": false
+    }
+  ]
+}

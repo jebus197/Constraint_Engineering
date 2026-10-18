@@ -311,6 +311,18 @@ class TestTheHookRefreshesButCannotRefuse:
 class TestTheOrderingActuallyHolds:
     """EXECUTED. The 2 assertions above read the hook; this one RUNS it."""
 
+    # TIMEOUT OVERRIDE, measured 2026-10-18. `pytest.ini` sets a GLOBAL
+    # per-test timeout of 300s. This test RUNS the whole pre-commit hook,
+    # which runs the guard suite: measured 334.83s at HEAD's 71-entry guard
+    # list and 333.84s at 77 entries, so it has been OVER the global limit
+    # regardless of the list's size. Without this marker pytest-timeout
+    # killed the thread at 300s and took the WHOLE suite down with it,
+    # which is why no full-suite figure exists after `1cfc30e`
+    # (2026-09-29, 8,878 passed) despite 382 later commits. The value
+    # exceeds this test's OWN subprocess budget of 900s below, so a genuine
+    # hang surfaces as that call's clean TimeoutExpired rather than as a
+    # suite-wide kill. This widens a timeout; it weakens no assertion.
+    @pytest.mark.timeout(960)
     def test_a_drifted_mirror_does_not_refuse_the_commit(self, tmp_path):
         """Reproduce the 2026-09-10 refusal and show it no longer happens.
 

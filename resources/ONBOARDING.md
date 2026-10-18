@@ -39,7 +39,19 @@ never the problem: it is 1214 lines, it was added on 2026-04-08, and a probe tha
 `subprocess.run` with a recorder caught it dispatching real `pip install` and `brew install`
 commands. The documents simply never routed anyone to it.
 
-## CURRENT STATE — 2026-10-16 11:04 BST
+## CURRENT STATE — 2026-10-18 12:38 BST
+
+**THE BOARD.** `sim/shakedown-2026-09-29`, parent `cfb7c970`. **165 entries: 141 DONE, 15 OPEN, 8 WITHDRAWN, 1 DEFERRED.** Every open entry waits on a ruling of the founder or on an experimental run.
+
+**A CORRECTION TO THE BLOCK BELOW.** It states that all 12 programme-of-study measurements carry a result. The programme holds **13**, and **1 is outstanding**: `serialisation_cures_matched_failures`, raised as entry B34. It was authorised to run and was NOT run, because the arithmetic says the design cannot answer the question at any sane cost — the rate it must reproduce is 1 of 68 rounds, needing 47 rounds for 50% power and 109 for 80%, which is 18.8 to 105.4 hours of the founder's own quota. That is a ruling owed to him, not a gap in the work. Producer: `scripts/can_the_serialisation_measurement_settle_it_2026-10-18.py`.
+
+**READ THIS BEFORE READING ANY DIFF OF `bench/reference_runner_v3.py`.** The runner shows 270 insertions and 31 deletions against `480c9379`, and it would be reasonable to conclude the severity gate was changed. **It was not.** All 7 severity functions are byte-for-byte identical to that baseline. What changed was a TEST that asserted on the source text of `unverified_critical_count` while the logic had moved into `blocking_entry_ids` in an earlier refactor; it now executes the gate instead, and 3 mutations of the real gate turn it red. Reproduce with `python3 -m pytest bench/tests/test_a_ruled_item_is_not_a_decision_2026-10-16.py -q`. **The one facility genuinely narrowed is the HIL review stop**, which is entry B27 and the founder's own design of 2026-10-11: `--hil-review` now pauses on evidence rather than on the flag alone, with thresholds not yet calibrated.
+
+**THE FULL SUITE IS RUNNABLE AGAIN, AND WAS NOT FOR 382 COMMITS.** `pytest.ini` sets a global per-test timeout of 300 s, and the test that runs the whole commit hook takes **334.83 s**, so pytest-timeout aborted every full run. The last complete figure is **8,878 passed at `1cfc30e` on 2026-09-29** under `python3 -m pytest bench/tests/ -q`. A 960 s marker on that one test fixes it. **Do not read the commit hook's figure as a suite figure:** `sh hooks/pre-commit` runs a GUARDS list of **71 of the repository's 668 test files** and reports about 1,348 to 1,420 passed. Entry B36 carries the measurement and withdraws 2 earlier claims of mine about its cause.
+
+**THE PANEL'S JOINT ROUND IS CLOSED AND ITS ANSWER IS NEGATIVE.** The 2 proposed severity-ruler fixes do **not** compose: measured across 62 archived catalogues the composition moved the verdict on **0 of 62** and lost the one-way guarantee that made the smoothing safe. Both seats reached this independently, with no instruction to agree. 5 seat-written files are preserved at `experimental_notes/seat_evidence/joint_the_severity_ruler_2026-10-18/` and deliberately **not wired**, because all of them alter the severity ruler — the subject of 4 separate rejections by the founder. Adopting any of it is his decision.
+
+## CURRENT STATE — 2026-10-16 11:04 BST (SUPERSEDED by the block above)
 
 **THE PROGRAMME OF STUDY IS ANSWERED AND ITS SUCCESS CRITERION IS MET.** All 12 measurements carry a result and a headline. 3 consecutive clean convergences achieved: legs 1, 2 and 3 of the shakedown converged at rounds 3, 4 and 4, all reaching gamma_critical 1.000. Leg 3 ran 5 rounds, 38 findings, 71.5 minutes. The study is still marked OPEN because closing it is the founder's ruling to give.
 
@@ -51,7 +63,7 @@ commands. The documents simply never routed anyone to it.
 
 **THE OPEN RULING THAT MATTERS MOST.** The mathematical guard refuses to move a finding onto the code-checking path outside software experiments, at any confidence. 408 of 539 recorded refusals were that move, and 5 fired inside leg 3. The repair narrows a guard, so the additive standard sends it to the founder.
 
-## CURRENT STATE — 2026-10-08 11:09 BST
+## CURRENT STATE — 2026-10-08 11:09 BST (SUPERSEDED by the block above)
 
 **BRANCH.** HEAD `3c7240bf` on `sim/shakedown-2026-09-29`; `main` untouched at `b536ff86`. The 2026-09-30 ruling still governs: simulated runs commit only to a simulated branch.
 

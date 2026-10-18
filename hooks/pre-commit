@@ -91,6 +91,27 @@ cd "$REPO" || exit 1
 # audit that morning had named exactly this gap: the hook does not run the test
 # that is red, so a code-only commit lands a red suite silently. It did, at
 # 9dfbc2e. Cost re-measured after adding it, not carried forward.
+# THE 11th GUARD BLOCK, added 2026-10-18, and the reason is a RED TEST NOBODY SAW.
+# `test_a_ruled_item_is_not_a_decision_2026-10-16.py` had 3 failing tests, one of
+# them reporting "the severity test has left the blocker counter again -- this is
+# the change he has now rejected 4 times". Measured that night: all 3 predated the
+# session, the function body was byte-identical to its baseline, and the gate was
+# INTACT -- the test asserted on the SOURCE TEXT of `unverified_critical_count`
+# and the logic had moved into `blocking_entry_ids` during a refactor. It is now
+# an executing test and 3 mutations of the real gate turn it red.
+#
+# IT WAS RED AND UNWATCHED BECAUSE IT WAS NOT IN THIS LIST. Measured the same
+# night: this list holds 64 of the repository's 668 test files, 9.58%, and the
+# last FULL-suite measurement is 8,878 passed at 1cfc30e on 2026-09-29, 382
+# commits earlier. The subset is deliberate -- these are the cheap guards -- but
+# a red outside it accumulates unseen, which is what happened here.
+#
+# The 6 files below add 75 tests, about 5% on top of the 1,348 this list already
+# holds, and each guards something a founder ruling turns on: the `ruled` field
+# the morning report routes on, the severity gate he has defended 4 times, the
+# capability-identity loudness, the verbatim exemption that lets a seat's words
+# reach the record unedited, the model-admission failure mode, and the
+# human-review stop's evidence condition.
 GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
 bench/tests/test_recovery_memory_doc_repairs.py
 bench/tests/test_memory_index_limits_match_the_loader_2026-09-01.py
@@ -154,7 +175,13 @@ bench/tests/test_a_typed_timestamp_is_refused_2026-10-17.py
 bench/tests/test_a_skip_is_classified_not_counted_2026-10-17.py
 bench/tests/test_a_shared_mechanism_does_not_decide_2026-10-17.py
 bench/tests/test_the_word_index_answers_what_the_scan_answers_2026-10-17.py
-bench/tests/test_the_review_pause_is_a_pause_not_a_review_2026-10-17.py"
+bench/tests/test_the_review_pause_is_a_pause_not_a_review_2026-10-17.py
+bench/tests/test_a_ruled_item_is_not_a_decision_2026-10-16.py
+bench/tests/test_an_absent_identity_is_loud_2026-10-18.py
+bench/tests/test_rule_30_honours_the_verbatim_region_2026-10-18.py
+bench/tests/test_admission_counts_announced_apart_from_silent_2026-10-18.py
+bench/tests/test_a_declared_mode_is_reconciled_2026-10-18.py
+bench/tests/test_the_review_stop_fires_on_evidence_2026-10-17.py"
 
 # THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
 # recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite

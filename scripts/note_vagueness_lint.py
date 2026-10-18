@@ -776,8 +776,43 @@ def verbatim_spans(text: str) -> list:
     return spans
 
 
+def _collapse_ws(s: str) -> tuple:
+    """(collapsed, index_map) with every whitespace run reduced to 1 space.
+
+    `index_map[j]` is the RAW index of the character that produced
+    `collapsed[j]`, so a hit found in collapsed space can be tested against
+    spans measured in raw space.
+    """
+    out, idx, prev_space = [], [], False
+    for i, ch in enumerate(s):
+        if ch.isspace():
+            if not prev_space:
+                out.append(" ")
+                idx.append(i)
+            prev_space = True
+        else:
+            out.append(ch)
+            idx.append(i)
+            prev_space = False
+    return "".join(out), idx
+
+
 def inside_verbatim(text: str, fragment: str) -> bool:
-    """True when `fragment` sits wholly inside a verbatim region."""
+    """True when `fragment` sits wholly inside a verbatim region.
+
+    WHY THE SECOND PASS EXISTS, measured 2026-10-18. The raw `str.find` below
+    is exact and fast, and it FAILS SILENTLY on any paragraph the splitter
+    joined across lines -- a markdown table or a list inside a seat's reply
+    becomes one line of `| a | b |` joins that exists nowhere in the file, so
+    `find` returns -1 and the paragraph is counted as if it were outside the
+    region. The commit ratchet then refuses the record, and the only way to
+    make it pass would be to EDIT WHAT A SEAT WROTE, which is exactly what the
+    exemption exists to prevent. Found on
+    `Panel_FULL_RECORD_Joint_Severity_Ruler_2026-10-18.md`, where all 4
+    occurrences of the flagged term sat inside a verbatim region and the
+    finding was still counted. The fallback collapses whitespace on BOTH sides
+    and maps the hit back to raw coordinates, so the span test is unchanged.
+    """
     frag = (fragment or "").strip()
     if not frag:
         return False
@@ -789,10 +824,27 @@ def inside_verbatim(text: str, fragment: str) -> bool:
     while True:
         i = text.find(probe, start)
         if i < 0:
-            return False
+            break
         if any(a <= i and i + len(probe) <= b for a, b in spans):
             return True
         start = i + 1
+
+    # Second pass: whitespace-insensitive, for splitter-joined paragraphs.
+    ctext, cmap = _collapse_ws(text)
+    cfrag, _ = _collapse_ws(probe)
+    cfrag = cfrag.strip()
+    if not cfrag:
+        return False
+    start = 0
+    while True:
+        j = ctext.find(cfrag, start)
+        if j < 0:
+            return False
+        raw_lo = cmap[j]
+        raw_hi = cmap[min(j + len(cfrag) - 1, len(cmap) - 1)] + 1
+        if any(a <= raw_lo and raw_hi <= b for a, b in spans):
+            return True
+        start = j + 1
 
 
 def split_reported_terms(path) -> tuple:

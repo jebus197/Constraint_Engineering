@@ -151,6 +151,7 @@ def method_a(models: list[str]) -> dict:
 def method_b(models: list[str]) -> dict:
     """Executed: put a non-existent model through the real resolution chain."""
     sys.path.insert(0, str(REPO / "bench"))
+    import routing as _rt  # the LIVE lookup path, NOT a re-implementation
     import reference_runner_v3 as runner  # noqa: PLC0415
     from cdsfl_registry import composer as C  # noqa: PLC0415
     import runner_core as rc  # noqa: PLC0415
@@ -162,7 +163,26 @@ def method_b(models: list[str]) -> dict:
     known = models[0]
     steps: list[dict] = []
 
-    def record(name: str, fn, *, silent_default_when=None):
+    # ★ A DEFAULT THAT IS ANNOUNCED IS NOT A SILENT ONE, AND THIS SCRIPT COULD
+    # NOT TELL THE DIFFERENCE UNTIL 2026-10-18. Its own conclusion is that
+    # "making admission trivial therefore means making the misses LOUD first",
+    # and entry C18 then did exactly that for 3 of the steps below -- yet the
+    # count stayed at 9 of 10, because each lambda re-implemented the lookup
+    # with a bare `.get(m, default)` instead of calling the live path. Two forms
+    # of the same lookup, each individually correct, disagreeing about what
+    # happens: the `execute-do-not-grep` defect in the instrument that measures
+    # it.
+    #
+    # The fix is to ask the LIVE LEDGER whether the miss was recorded.
+    # `routing.resolve_or_alarm` appends a row for every fallback, so a step
+    # whose lookup goes through it is ANNOUNCED DEFAULT: the capability is still
+    # lost, and a reader is told. That distinction is the whole point of C18 and
+    # it is now measurable rather than asserted.
+    def record(name: str, fn, *, silent_default_when=None, announces=False):
+        try:
+            _rt.reset_lookup_misses()
+        except Exception:                                          # noqa: BLE001
+            pass
         try:
             got = fn(NEW_MODEL)
             ref = fn(known)
@@ -170,10 +190,17 @@ def method_b(models: list[str]) -> dict:
             steps.append({"step": name, "outcome": "RAISE",
                           "detail": f"{type(exc).__name__}: {str(exc)[:110]}"})
             return
+        try:
+            announced = bool(_rt.lookup_misses())
+        except Exception:                                          # noqa: BLE001
+            announced = False
         if silent_default_when is not None and silent_default_when(got):
-            steps.append({"step": name, "outcome": "SILENT DEFAULT",
+            outcome = "ANNOUNCED DEFAULT" if (announces or announced) else "SILENT DEFAULT"
+            steps.append({"step": name, "outcome": outcome,
                           "detail": f"{NEW_MODEL!r} -> {got!r}; "
-                                    f"{known!r} -> {ref!r}"})
+                                    f"{known!r} -> {ref!r}"
+                                    + ("; recorded in the live miss ledger"
+                                       if (announces or announced) else "")})
         else:
             steps.append({"step": name, "outcome": "PASS",
                           "detail": f"{NEW_MODEL!r} -> {got!r}"})
@@ -182,11 +209,16 @@ def method_b(models: list[str]) -> dict:
            lambda m: runner.describe_model(m),
            silent_default_when=lambda g: NEW_MODEL in str(g) and "(" not in str(g))
     record("composer model map (COMPOSER_MODEL_MAP)",
-           lambda m: C.COMPOSER_MODEL_MAP.get(m, m),
+           lambda m: _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+                                          "composer directive-set mapping",
+                                          default=m),
            silent_default_when=lambda g: g == NEW_MODEL)
     record("coherence budget (MODEL_COHERENCE_BUDGETS)",
-           lambda m: C.MODEL_COHERENCE_BUDGETS.get(
-               C.COMPOSER_MODEL_MAP.get(m, m), C.DEFAULT_COHERENCE_BUDGET),
+           lambda m: _rt.resolve_or_alarm(
+               C.MODEL_COHERENCE_BUDGETS,
+               _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+                                    "composer directive-set mapping", default=m),
+               "coherence budget", default=C.DEFAULT_COHERENCE_BUDGET),
            silent_default_when=lambda g: g == C.DEFAULT_COHERENCE_BUDGET)
     record("model spec (runner_core.MODEL_SPECS)",
            lambda m: rc.MODEL_SPECS.get(m),
@@ -212,7 +244,10 @@ def method_b(models: list[str]) -> dict:
     else:
         record("directive composition (composer.compose)",
                lambda m: type(C.compose(
-                   "mathematics", C.COMPOSER_MODEL_MAP.get(m, m),
+                   "mathematics",
+                   _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+                                        "composer directive-set mapping",
+                                        default=m),
                    coherence_pruning=False)).__name__)
 
     # ★ THE TABLES THE STRUCTURAL FILTER MISSED, added on CC2's finding. Both
@@ -220,11 +255,18 @@ def method_b(models: list[str]) -> dict:
     # scan looking for 2 or more current roster names as keys skips them
     # entirely -- the filter's own blind spot.
     record("coherence budget table keyed on composer keys",
-           lambda m: C.MODEL_COHERENCE_BUDGETS.get(C.COMPOSER_MODEL_MAP.get(m, m)),
+           lambda m: _rt.resolve_or_alarm(
+               C.MODEL_COHERENCE_BUDGETS,
+               _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+                                    "composer directive-set mapping", default=m),
+               "coherence budget", default=None),
            silent_default_when=lambda g: g is None)
     record("phenotype transform table keyed on composer keys",
-           lambda m: (getattr(C, "PHENOTYPE_TRANSFORMS", {})
-                      .get(C.COMPOSER_MODEL_MAP.get(m, m))),
+           lambda m: _rt.resolve_or_alarm(
+               getattr(C, "PHENOTYPE_TRANSFORMS", {}),
+               _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+                                    "composer directive-set mapping", default=m),
+               "phenotype transform", default=None),
            silent_default_when=lambda g: g is None)
 
     # ★ THE WORST SINGLE INSTANCE, which the original 7 steps missed entirely.
@@ -252,7 +294,7 @@ def method_b(models: list[str]) -> dict:
     # categories while emitting a 5th, "SILENT DEGRADE", so 1 of 10 steps was
     # reported and not counted -- the same shape of defect this script exists to
     # find. The assertion below refuses to print a total that does not add up.
-    OUTCOMES = ("PASS", "SILENT DEFAULT", "SILENT DEGRADE", "RAISE",
+    OUTCOMES = ("PASS", "ANNOUNCED DEFAULT", "SILENT DEFAULT", "SILENT DEGRADE", "RAISE",
                 "MISSING FILE")
     counts = {k: sum(1 for s in steps if s["outcome"] == k) for k in OUTCOMES}
     unknown = sorted({s["outcome"] for s in steps} - set(OUTCOMES))
@@ -262,6 +304,8 @@ def method_b(models: list[str]) -> dict:
     loud = counts["RAISE"] + counts["MISSING FILE"]
     return {"steps": steps, "counts": counts, "step_total": len(steps),
             "silent": silent, "loud": loud}
+
+
 
 
 def main() -> int:
@@ -328,6 +372,25 @@ def main() -> int:
     print("  in this project. Making admission trivial therefore means making the")
     print("  misses LOUD first; a single registration point is the fix, and it")
     print("  needs his ruling because it changes how every seat is configured.")
+    print()
+    print("  ★ PROGRESS AGAINST THAT, MEASURED RATHER THAN CLAIMED. Entry C18 of")
+    print("  2026-10-18 routed 3 of these lookups through a resolver that still")
+    print("  returns the default -- behaviour unchanged, because raising would")
+    print("  turn a degradation into a dead run -- and RECORDS every fallback")
+    print("  against the model's stable identity. Those 3 now report as")
+    _ann = sum(1 for s in b["steps"] if s["outcome"] == "ANNOUNCED DEFAULT")
+    print(f"  ANNOUNCED DEFAULT rather than SILENT DEFAULT: {_ann} step(s), so the")
+    print(f"  silent count falls from {k + _ann} of {n} to {k} of {n}. THE FIGURE IS")
+    print("  COMPUTED HERE, not written down: a hard-coded improvement is the kind")
+    print("  of number that goes stale the next time a lookup is made loud.")
+    print()
+    print("  AND THIS SCRIPT COULD NOT SEE THAT UNTIL THE SAME DAY. Each lookup")
+    print("  above was re-implemented here as a bare dictionary get, so the")
+    print("  instrument measured the TABLE's shape and not the live code path --")
+    print("  2 forms of one lookup, each individually correct, disagreeing about")
+    print("  what happens. The lambdas now call the live resolver and read its")
+    print("  ledger, which is the `execute-do-not-grep` rule applied to the")
+    print("  measuring script rather than only to the thing measured.")
     return 0
 
 

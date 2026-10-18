@@ -1,0 +1,69 @@
+# PANEL BRIEF — 3 proposed mechanism repairs, each with a fix already written down
+
+## REQUIRED SECTION 1 — The question
+
+**For each of 3 defects found on 2026-10-17 and 2026-10-18, is the proposed repair the simplest sufficient one, is it additive, and do the 3 compose?**
+
+These are entries B29, B31 and B33 on the master task list. Each was raised with a measurement, and for each the founder's standing position is that a fix is suggested to him and never auto-applied. He has now asked that the panel resolve what it can first, with my own fix stated first, which is done below. **Your job is to attack the fixes, not to ratify them.**
+
+**The artefacts under review** are `scripts/cdsfl_sv.py`, `bench/reference_runner_v3.py` and `bench/runner_mode_detection.py`.
+
+### Defect 1 — the save gate refuses the follow-up that fixes its own failure (B29)
+
+`scripts/cdsfl_sv.py` commits and pushes, then fails its own postcondition that the `RECOVERY` session-state block is current — by design, because it deliberately preserves that block and will not write it. Writing the block leaves a second save to make, and the `memory-updated` check then refuses that one: its baseline is the previous commit whose subject begins `sv:`, which is now the first save, so this session's memory PREDATES the baseline, by 11 seconds in the case that prompted this.
+
+**Measured:** 14 of 83 consecutive save pairs since that check was introduced on 2026-08-06 are follow-ups inside 15 minutes, **16.8675%, Wilson [10.3221%, 26.3441%]**, and 8 of the 14 name this exact postcondition in their own commit subject.
+
+**My fix:** have the save RECORD whether its own postconditions passed, and have the memory check skip its baseline back to the last save that finished cleanly. That replaces an inference with a committed fact and keeps the guarantee exactly as strong for a first save. **I rejected a time-window special case**, because a 15-minute gap is also what 2 genuinely separate pieces of work look like, so time cannot draw the distinction being asked for, which is completeness rather than recency.
+
+### Defect 2 — the credential redactor withholds an ordinary run setting (B31)
+
+`_declared_config` in each run report exists so a reader can see what a run was told to do. **Measured: 4 of 4 reports carrying a declared config withhold exactly 1 field, and it is not a secret** — `location_keyed_convergence`, because the substring "key" appears in "keyed". No other withheld name occurs anywhere in the archive.
+
+The cost is concrete: that mode's declaration cannot be read back, so the reconciliation built under entry B32 cannot be performed for it. Worse, the placeholder text is itself truthy, so a check written without care reads a withheld `False` as a declared `True`.
+
+**My fix:** an explicit allow-list of known-safe configuration field names, checked BEFORE the credential pattern. The pattern itself is untouched, so nothing that currently redacts stops redacting, and an unlisted field is still withheld. **I rejected narrowing the pattern** to require a word boundary around "key", because it would also stop withholding a genuine secret written as `apikey`.
+
+### Defect 3 — a declared convergence mode has no consumer at all (B33)
+
+`hierarchical_novelty_convergence` is read **exactly once** in the whole runner, at the line that writes `result["hierarchical_crit_series_is_gating"] = bool(getattr(cfg, "hierarchical_novelty_convergence", False))` — a copy of itself. The series it would gate on, computed by `hierarchical_novelty_series`, reaches 1 report key and nothing else: no gate, no counter, no status. **So the mode cannot operate however it is set**, while the report publishes a field whose name asserts that it gates. That field is what misled this project's own reconciler into reporting agreement.
+
+**My fix:** WIRE it, rather than retire it. The location-keyed mode beside it demonstrates the pattern works, and the series is already computed on every run at no extra cost, so retiring would discard a computed measurement that merely lacks a consumer. **Retiring is a REMOVAL and would need a committed measurement showing nothing is lost.** Either way, the report must stop publishing a field whose name asserts gating for a mode that cannot gate.
+
+## REQUIRED SECTION 2 — Use the harness
+
+**Form your answer by RUNNING the machinery, not by describing it.**
+
+For defect 3, execute the mode-reconciliation in `bench/runner_mode_detection.py` and report what it returns for each of the 5 declared modes. The `severity_spec_enabled` detector is the instructive one: it must be computed by CALLING `effective_severity`, because the stored severity field holds the ASSERTED number and the specification does not mutate it. Demonstrate that distinction on real archived findings.
+
+For defect 1, execute the save script's completeness checks, or a faithful reconstruction, and show the refusal. A proposal about a gate that has not been made to refuse is a hypothesis.
+
+**`gamma` bears on defect 3 directly.** If the hierarchical series were wired, it would feed the convergence decision. Compute what it would have said on archived runs, and report whether wiring it would have changed any convergence verdict. If it would change none, say so — that is an argument about whether wiring is worth anything, and it is the strongest attack available on my fix.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+**A finding without a fix is incomplete, and a fix whose falsifier has not been EXECUTED is a hypothesis.** Deliver each fix as a file written INTO the sandbox repository tree at its real path, and report the command and the output.
+
+Address all 3 formal standards explicitly for each repair you endorse or replace:
+
+1. **ADDITIVE** — nothing removed or narrowed without a committed measurement showing the replacement dominates on a named property.
+2. **SIMPLEST SUFFICIENT** — the smallest change that addresses the root cause and its downstream consequences.
+3. **COMPOSABILITY** — say whether the 3 repairs compose, conflict, or are independent. If 2 of them touch the same path, say which wins and why.
+
+## REQUIRED SECTION 4 — What would refute you
+
+For each repair, state what evidence would overturn your endorsement. Name the run, the field, or the count.
+
+## REQUIRED SECTION 5 — Output shape
+
+1. `## Verdict` — for each of the 3, endorse, replace or reject, 1 sentence each.
+2. `## Reasoning` — premises first, per defect.
+3. `## Falsifier and its executed result` — the commands, and the outputs.
+4. `## The fix` — the real paths you wrote to.
+5. `## Standards` — additive, simplest sufficient, composability, per defect.
+6. `## What would refute this` — per defect.
+7. `## Disagreement` — your strongest disagreement with this brief's framing. I have stated a fix for each, and a brief that proposes its own answers is the easiest kind to agree with; say where I am wrong. Deference is not evidence.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new findings above the real-world-consequence threshold. State how many passes you ran.

@@ -4,7 +4,7 @@
 
 ## What was reviewed and why
 
-Section P of the master task list makes a panel review a precondition on closing any entry: *"No entry may move to DONE until its fix has been through a panel review meeting every clause below."* Round 3 covered the DONE-evidence guard and the note-lint commit guard. Three further pieces of work landed afterwards — the restore-order repair at `fc479bb`, the task 6.7 repair at `03254e8`, and the 9 corrected figures at `efbaf8a` — and none had been reviewed. Round 4 is that review.
+Section P of the master task list makes a panel review a precondition on closing any entry: *"No entry may move to DONE until its fix has been through a panel review meeting every clause below."* Round 3 covered DONE-evidence, the rule in `bench/tests/conftest.py` that refuses a task entry marked DONE whose named evidence does not pass, and the note-lint commit guard. Three further pieces of work landed afterwards — the restore-order repair at `fc479bb`, the task 6.7 repair at `03254e8`, and the 9 corrected figures at `efbaf8a` — and none had been reviewed. Round 4 is that review.
 
 ## Seats and cost
 

@@ -1,0 +1,55 @@
+# PANEL BRIEF — what breaks the capability tie, if not a model's name?
+
+## REQUIRED SECTION 1 — The question
+
+**When no pair of models separates on measured falsification evidence, what should decide the routing order — and what should happen when a model is not registered at all?**
+
+This is the founder's own question, and he has put it 4 times. His words: *"why should the schema, or capability fingerprints, or the ladder care about model names at all?"* and *"the only thing that governs capability is demonstrated measured capability, not model names."* It is the common root of 3 open items on the master task list: C21 (the routing-ladder cluster), C15 (no distinction between models other than a ranking) and B13 (admitting a model is not trivial, and the cost is silent defaulting).
+
+**The artefacts under review** are `bench/routing.py` — specifically `capability_identity`, `falsification_evidence_by_identity`, `season_strength_order`, `DEFAULT_FALSIFIER_STRENGTH` and `resolve_or_alarm` — and the policy engine at `bench/cdsfl_registry/registry.py`.
+
+**WHAT IS ALREADY BUILT, so you argue from the current code and not from an older description.** Capability is keyed on a stable identity: a hash over provider, model identifier and version, with the vendor name carried as provenance and excluded from the hash by construction. Falsification outcomes are pooled per identity rather than per seat, which raises the sample and cuts the number of pairwise comparisons a multiplicity correction must cover. `season_strength_order` measures the order once at the start of an experiment and holds it fixed for the remaining rounds, which is his season design of 2026-10-09, and it logs whether the order it used was MEASURED or DEFAULTED.
+
+**THE MEASURED FACT THAT MAKES THIS URGENT RATHER THAN TIDY.** Executed on 2026-10-18 against a constructed registry giving one identity 2 refutations of 2 and another 0 of 4, `season_strength_order` returned: *"0 of 3 seat pairs separate after Holm correction at alpha=0.05; a ranking is a set of pairwise orderings, so the order is NOT ESTABLISHED and no capability claim is made; falling back to the vendor order."* The same shape holds on the real archive, where the project measured **0 of 10 pairs separating** on 2026-10-17. **So the frozen tuple `('Codex', 'CC2', 'ChatGPT', 'Gemini', 'DeepSeek', 'Fable')` is the order actually in force in practice, not a rare fallback** — and it rests on a single measurement from June 2026 that has never been re-derived.
+
+**WHY SIMPLY DELETING THE TUPLE IS NOT THE ANSWER, and both of you have previously said so.** With no data every model scores identically, and the tuple is the only ordering with a validated end-to-end result behind it. That reasoning is on the record. The founder has rejected its conclusion 4 times. **So the question is not whether to delete it but what replaces it**, and an answer of "nothing, rank uniformly" must say what the ladder then does when it is asked to escalate.
+
+**THE SECOND HALF, B13.** An unregistered model currently reaches `load_effective_policy` and raises `FileNotFoundError`. Measured: layer 4 of the policy engine holds 6 model files while the live and simulated rosters between them carry 24 distinct identities. **My proposed fix, stated first as he requires:** a missing registration should be LOUD AND NON-FATAL — recorded against the model's stable identity and announced once, which `resolve_or_alarm` now does for 3 capability tables — rather than raising, refusing dispatch, or deferring to a preflight, which were the only 3 options previously considered. The realised cost of the silent alternative is on the record: a seat with no composer entry once composed to 0 characters and nothing reported it.
+
+## REQUIRED SECTION 2 — Use the harness
+
+**Form your answer by RUNNING the machinery.**
+
+**Execute `season_strength_order`** against the real archive and against cases you construct. Report the exact `why` string it returns. If you can construct evidence on which it DOES establish an order, say how much evidence that took — that number is the answer to "how far are we from a measured ladder".
+
+**`gamma` is the instrument that shows whether the ladder matters at all.** The ladder escalates an unresolved finding to a stronger seat; if the order is arbitrary, escalation is a random re-ask. Compute what fraction of archived escalations changed a finding's status, and report it with a confidence interval. If escalation changes nothing measurable, that is a finding about the ladder's value that outranks its ordering.
+
+**Exercise the policy engine's monotonicity.** `load_effective_policy` must refuse a lower layer that weakens a universal HARD constraint. Demonstrate that refusal by executing it, because it is the safety property that makes arbitrary model selection admissible at all.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+**A finding without a fix is incomplete, and a fix whose falsifier has not been EXECUTED is a hypothesis.** Deliver your fix as a file written INTO the sandbox repository tree at its real path, and report the command you ran and the output you saw.
+
+Your fix must satisfy 3 standards explicitly, and say how it does:
+
+1. **ADDITIVE** — nothing removed or narrowed without a committed measurement showing the replacement dominates on a named property. Retiring the frozen tuple is a removal and needs one.
+2. **SIMPLEST SUFFICIENT** — if a 1-line change and a new subsystem both answer the question, the 1-line change is correct.
+3. **COMPOSABILITY** — say whether your answer composes with the identity work already built, or replaces part of it. If it replaces something, name what and why.
+
+## REQUIRED SECTION 4 — What would refute you
+
+State what evidence would overturn your own answer. Be specific: name the number of falsification outcomes per identity at which your tie-break becomes unnecessary, or the archived escalation that your rule would have ordered wrongly.
+
+## REQUIRED SECTION 5 — Output shape
+
+1. `## Verdict` — what breaks the tie, and what happens to an unregistered model, 1 sentence each.
+2. `## Reasoning` — premises first.
+3. `## Falsifier and its executed result` — the command, and the output.
+4. `## The fix` — the real path, and what it changes.
+5. `## Standards` — additive, simplest sufficient, composability, addressed one by one.
+6. `## What would refute this` — your refutation condition.
+7. `## Disagreement` — your strongest disagreement with this brief's framing, and with the other seat if you can anticipate it. State it even if you agree with the conclusion. Deference is not evidence.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new findings above the real-world-consequence threshold. State how many passes you ran.

@@ -1,0 +1,1761 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-18 03:28:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo/.cdsfl_deny_canonical_writes.sb	2026-10-18 02:57:25
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-18 03:27:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo/bench/reference_runner_v3.py	2026-10-18 03:13:07
+@@ -417,6 +417,9 @@
+ # next-round request that makes the prompt's "will be rejected" promise true.
+ from bench.dm._rk_proof import build_proof_requests as build_rk_proof_requests
+ from bench.panel_sandbox import secret_ignore
++from bench.severity_noise_sweep import (  # noqa: E402
++    noise_robustness_profile as _noise_robustness_profile,
++)
+ # Exp 40 fix 1E.7: cross-model diversity metric (compliance-theatre detector).
+ from bench.dm._diversity import diversity_signal_from_round
+ # Exp 40 fix 1E.7: per-finding alternative extraction for diversity metric.
+@@ -10906,6 +10909,30 @@
+     except Exception as _bs_exc:  # noqa: BLE001 — a diagnostic must not fell a run
+         out["boundary_band_sensitivity"] = {
+             "error": f"{type(_bs_exc).__name__}: {_bs_exc}"}
++    # ★ DOES A DE-COARSENED VERDICT REACH, OR IS IT FITTED TO A SIGMA? 2026-10-18.
++    #
++    # The joint round put two standards against each other: one seat read "the
++    # quiescence verdict moves on archived runs" as evidence a de-coarsening
++    # reaches the gate, the other read a de-coarsening tuned until it moved an
++    # archived verdict as fitting the gate. Neither is decidable from a verdict
++    # COUNT, which is why both positions could be held on the same number. What
++    # decides it is the SHAPE of the verdict as a function of the free
++    # parameter: a departure that grows monotonically with sigma is a property
++    # of where the severities sit relative to 0.7; a departure that appears only
++    # near the committed sigma is a property of the knob.
++    #
++    # Reported at the LIVE threshold only, because that is the verdict the gate
++    # owns. DIAGNOSTIC: changes nothing, like everything else in this function.
++    try:
++        _live = out.get("thresholds", {}).get(repr(float(
++            CRITICAL_SEVERITY_THRESHOLD))) or {}
++        out["noise_robustness"] = _noise_robustness_profile(
++            registry, max_round, CRITICAL_SEVERITY_THRESHOLD,
++            _NON_NOVEL_TERMINAL_STATUSES,
++            bool(_live.get("tail_is_quiescent")))
++    except Exception as _nr_exc:  # noqa: BLE001 — a diagnostic must not fell a run
++        out["noise_robustness"] = {
++            "error": f"{type(_nr_exc).__name__}: {_nr_exc}"}
+     return out
+ 
+ 
+
+### cc2:attempt-1:bench/severity_noise_sweep.py
+--- /dev/null	2026-10-18 03:28:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo/bench/severity_noise_sweep.py	2026-10-18 03:10:00
+@@ -0,0 +1,216 @@
++"""Is a de-coarsened severity verdict REACHING the gate, or FITTED to the archive?
++
++WHAT THIS ANSWERS, AND WHY IT IS THE MISSING INSTRUMENT. The joint round of
++2026-10-18 put two standards against each other. One seat offered "the
++quiescence verdict moves on archived runs" as evidence that a de-coarsening
++reaches something. The other seat answered that a de-coarsening tuned until it
++moved an archived convergence verdict is fitting the gate. NEITHER STANDARD IS
++DECIDABLE FROM A SINGLE VERDICT COUNT, which is why both seats could hold
++opposite positions on the same number. What distinguishes the two cases is the
++SHAPE OF THE VERDICT AS A FUNCTION OF THE FREE PARAMETER:
++
++  * REACHING  -- the verdict departs from the hard indicator's verdict for every
++                 noise level above some threshold sigma*, and the departing set
++                 GROWS MONOTONICALLY with sigma. The movement is then a property
++                 of where the run's severities sit relative to the 0.7 cut, not
++                 of the particular sigma chosen.
++  * FITTED    -- the departure appears only in a narrow window around the
++                 committed sigma and vanishes either side. The movement is then a
++                 property of the knob.
++
++So this module reports, per run, the SMALLEST sigma at which the expected-count
++quiescence verdict departs from the hard indicator's, and whether the departing
++set is monotonically nested across the swept band. Both are computed, not
++asserted.
++
++MEASURED OVER THE WHOLE ARCHIVE BEFORE THIS WAS WRITTEN (62 archived
++runner_state.json registries carrying entries): the departing set is nested at
++EVERY one of 14 swept sigma values in [0.02, 0.50] -- 0 departures at
++sigma <= 0.08, 4 at the measured CI floor 0.1241, 7 at the point estimate
++0.1419, 9 at the CI ceiling 0.1575, 19 at 0.50. No run ever enters the set and
++leaves it again. On this archive the de-coarsening therefore REACHES and is not
++fitted, and the 0.1419 point estimate is not a knife edge -- it sits inside a
++band 4 runs wide at the floor and 9 wide at the ceiling.
++
++SIGMA IS NOT A KNOB THIS MODULE OWNS. 0.1419, CI [0.1241, 0.1575], is the
++between-model standard deviation of asserted severity over duplicate pairs
++measured in docs/MATHEMATICAL_APPENDIX.md (line 765) and committed before this
++sweep was run. It is carried here with its interval and its producer so a
++reader can see that the sweep's centre was not chosen by the sweep.
++
++WHAT THIS MODULE DOES NOT DO. It changes no verdict. The live gate keeps
++deciding on the hard indicator `severity >= CRITICAL_SEVERITY_THRESHOLD`.
++Promoting an expected-count rule to a deciding gate needs an end-to-end
++measurement on a live run, which this sweep does not supply and one seat cannot
++commit.
++
++MERGE REQUIREMENT, STATED RATHER THAN LEFT TO A READER. A sibling seat's
++`bench/severity_instrument.py` computes the same expected-count series for its
++own purpose. These are ONE diagnostic, not two: the series and its
++sigma-robustness belong in a single report block, and whichever lands second
++should absorb the other rather than sit beside it. Two blocks computing the
++same series from two independently-written admission filters is the exact
++failure `gamma_threshold_profile` records in its own comment about a
++reimplemented gate -- any difference between them becomes unattributable.
++
++WHY THE POOLED-SEVERITY FIX IS NOT COMPOSED IN HERE. Measured, not judged, over
++the same 62 registries: pooling the k independently-asserted severities of a
++co-discovered defect changes the quiescence verdict on 0 of 62 runs, and
++composing it with this expected-count rule changes the verdict on 0 of 62 runs
++BEYOND what this rule achieves alone -- at every one of the 14 swept sigmas, not
++only at 0.1419. The structural reason is in the archive: of 734 entries sitting
++in the 3 rounds that decide quiescence, 9 carry a star of size k >= 2, 1.2262%,
++Wilson [0.6464%, 2.3138%]. Pooling acts only on those 9. The founder's
++composability rule requires a demonstrated advantage over each fix alone; there
++is none here, so the composition is not built.
++"""
++
++import math
++from typing import Any, Dict, List, Sequence, Tuple
++
++# The committed instrument noise, with its interval and its producer.
++SEVERITY_INSTRUMENT_SIGMA = 0.1419
++SEVERITY_INSTRUMENT_SIGMA_CI: Tuple[float, float] = (0.1241, 0.1575)
++SEVERITY_INSTRUMENT_SIGMA_SOURCE = "docs/MATHEMATICAL_APPENDIX.md line 765"
++
++# The swept band. Spans two orders below the committed value and 3.5x above it,
++# so a knife edge at 0.1419 would be visible as a set that shrinks on BOTH
++# sides. The CI endpoints are swept explicitly because they are the two values a
++# reader is entitled to ask about.
++SWEPT_SIGMAS: Tuple[float, ...] = (
++    0.02, 0.04, 0.06, 0.08, 0.10, 0.1241, 0.13, 0.1419, 0.15, 0.1575,
++    0.18, 0.22, 0.30, 0.50,
++)
++
++
++def _phi(z: float) -> float:
++    """Standard normal CDF. `math.erf` rather than a dependency."""
++    return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
++
++
++def critical_weight(severity: float, verdict: str, threshold: float,
++                    sigma: float) -> float:
++    """P(this finding's TRUE severity is at or above `threshold`), given sigma.
++
++    THE SIGMA -> 0 LIMIT IS THE HARD INDICATOR, which is what keeps this
++    additive: the rule in production today is the sigma = 0 member of this
++    family, not something this replaces. Derived in SymPy:
++    lim_{sigma->0+} Phi((sev - thr)/sigma) is 1 for sev > thr, 0 for sev < thr.
++
++    A REFUTED finding is ANNIHILATED to exactly 0.0 rather than merely reduced,
++    which is section 7.7's key property and the reason the short circuit is a
++    branch and not a small sigma: Phi's tail at the archive's worst case is
++    4.1e-7, and 4.1e-7 is not 0.
++    """
++    if str(verdict or "").strip().upper() == "REFUTED":
++        return 0.0
++    if sigma <= 0.0:
++        return 1.0 if severity >= threshold else 0.0
++    return _phi((float(severity) - float(threshold)) / float(sigma))
++
++
++def expected_critical_series(registry, max_round: int, threshold: float,
++                             non_novel_terminal: Sequence[str],
++                             sigma: float = SEVERITY_INSTRUMENT_SIGMA,
++                             ) -> List[float]:
++    """Per-round EXPECTED novel-critical count under instrument noise `sigma`.
++
++    The admission rules are `_settled_novelty_series`' rules and nothing else --
++    same round window, same terminal-status filter -- passed in by the caller
++    rather than restated here, so the ONLY difference between this series and
++    the production one is indicator-versus-Phi. A second, independently written
++    filter would make any difference between the two series unattributable.
++    """
++    entries = registry.entries if hasattr(registry, "entries") else {}
++    vals = (list(entries.values()) if isinstance(entries, dict)
++            else list(entries))
++    out = [0.0] * (int(max_round) + 1)
++    for e in vals:
++        if not isinstance(e, dict):
++            continue
++        r = e.get("open_since_round")
++        if r is None or r < 0 or r > max_round:
++            continue
++        if e.get("status") in non_novel_terminal:
++            continue
++        out[r] += critical_weight(e.get("severity") or 0.0,
++                                  e.get("falsifier_verdict") or "",
++                                  threshold, sigma)
++    return out
++
++
++def tail_is_quiescent_soft(series: Sequence[float]) -> bool:
++    """The expected-count analogue of `zero_novel_critical_tail` all zero.
++
++    The cut is 0.5 and is DERIVED, not chosen: a finding at the threshold
++    carries weight Phi(0) = 1/2 exactly, so a round sum below 0.5 is a round
++    whose most likely novel-critical count is zero. ONE-WAY, derived: a
++    countable finding at or above the threshold that is not REFUTED carries
++    weight >= 1/2, so its round sum is >= 0.5 and the test fails. Hence soft
++    quiescent implies hard quiescent -- this predicate can REFUSE a convergence
++    the hard rule permits and can never permit one it refuses.
++
++    THE DERIVATION BOUNDS ITSELF TO THIS PREDICATE. It says nothing about a gate
++    comparing the expected count to any threshold above 0.5; on
++    `prose_convergence_run1b_2026-10-02` the expected count is LOWER than the
++    hard count in all 3 rounds ([9, 4, 8] -> [8.78, 2.77, 7.27]), so such a gate
++    would be looser, not stricter. Anyone promoting this must re-derive the
++    direction for their own predicate.
++    """
++    tail = list(series[-3:]) if len(series) >= 3 else list(series)
++    return bool(tail) and all(c < 0.5 for c in tail)
++
++
++def noise_robustness_profile(registry, max_round: int, threshold: float,
++                             non_novel_terminal: Sequence[str],
++                             hard_tail_is_quiescent: bool,
++                             sigmas: Sequence[float] = SWEPT_SIGMAS,
++                             ) -> Dict[str, Any]:
++    """Does this run's de-coarsened verdict REACH, or is it fitted to a sigma?
++
++    `hard_tail_is_quiescent` is passed in from the caller's own hard-indicator
++    computation rather than recomputed, for the same attributability reason as
++    above.
++
++    Fields, each computed:
++      verdict_flip_sigma        smallest swept sigma at which the expected-count
++                                verdict departs from the hard verdict; None if
++                                it never departs across the swept band.
++      flip_inside_measured_ci   does that sigma lie within the committed CI?
++      departs_monotonically     once the verdict departs, does it stay departed
++                                for every LARGER swept sigma? False is the
++                                signature of a knife edge.
++      per_sigma                 the swept verdicts, so a reader can see the shape
++                                rather than take this module's word for it.
++    """
++    per: Dict[str, Any] = {}
++    flips: List[bool] = []
++    for s in sigmas:
++        ser = expected_critical_series(registry, max_round, threshold,
++                                       non_novel_terminal, sigma=s)
++        q = tail_is_quiescent_soft(ser)
++        departed = bool(q != bool(hard_tail_is_quiescent))
++        flips.append(departed)
++        per[repr(float(s))] = {
++            "expected_critical_series": [round(x, 4) for x in ser],
++            "tail_is_quiescent_soft": q,
++            "departs_from_hard_verdict": departed,
++        }
++    first = next((i for i, f in enumerate(flips) if f), None)
++    lo, hi = SEVERITY_INSTRUMENT_SIGMA_CI
++    flip_sigma = float(sigmas[first]) if first is not None else None
++    return {
++        "verdict_flip_sigma": flip_sigma,
++        "flip_inside_measured_ci": (
++            None if flip_sigma is None else bool(lo <= flip_sigma <= hi)),
++        # Monotone from the first departure onward. A set that departs and then
++        # returns is the fitted signature this whole module exists to expose.
++        "departs_monotonically": (
++            None if first is None else bool(all(flips[first:]))),
++        "committed_sigma": SEVERITY_INSTRUMENT_SIGMA,
++        "committed_sigma_ci": list(SEVERITY_INSTRUMENT_SIGMA_CI),
++        "committed_sigma_source": SEVERITY_INSTRUMENT_SIGMA_SOURCE,
++        "hard_tail_is_quiescent": bool(hard_tail_is_quiescent),
++        "per_sigma": per,
++        "live_gate_unchanged": True,
++    }
+
+### cc2:attempt-1:bench/tests/test_does_the_decoarsened_verdict_reach_or_fit_2026-10-18.py
+--- /dev/null	2026-10-18 03:28:11
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo/bench/tests/test_does_the_decoarsened_verdict_reach_or_fit_2026-10-18.py	2026-10-18 03:09:45
+@@ -0,0 +1,360 @@
++"""The joint round's two open questions, decided by execution on the archive.
++
++Q1 DO THE 2 FIXES COMPOSE? Answered NO, by measurement: composing pooled
++   severity with the expected-count rule moves the quiescence verdict on 0 runs
++   BEYOND the expected-count rule alone, at every swept sigma.
++Q2 IS VERDICT MOVEMENT EVIDENCE OF REACH, OR OF FITTING? Answered: it is
++   evidence of reach IFF the departing set is monotonically nested in the free
++   parameter. On this archive it is, at all 14 swept sigmas.
++
++Every test drives production code: `gamma_threshold_profile`,
++`_settled_novelty_series`, `_estimate_gamma`, `_gamma_is_estimable`,
++`_NON_NOVEL_TERMINAL_STATUSES`, `spec_verification_factor`,
++`effective_severity`.
++"""
++import glob
++import json
++import math
++import os
++import statistics
++import sys
++
++import pytest
++
++sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
++import bench.reference_runner_v3 as rr3                       # noqa: E402
++from bench.severity_noise_sweep import (                      # noqa: E402
++    SWEPT_SIGMAS, critical_weight, expected_critical_series,
++    noise_robustness_profile, tail_is_quiescent_soft,
++)
++
++LOGS = os.path.join(os.path.dirname(__file__), "..", "logs")
++C_K = {1: 1.0, 2: 0.7071067812, 3: 0.6698291607, 4: 0.5460765683,
++       5: 0.5355685405, 6: 0.4634033519}
++
++
++class _Reg:
++    def __init__(self, entries):
++        self.entries = entries
++
++
++def _runs():
++    out = []
++    for p in sorted(glob.glob(os.path.join(LOGS, "*", "runner_state.json"))):
++        try:
++            d = json.load(open(p))
++        except Exception:
++            continue
++        ents = ((d.get("registry") or {}).get("entries") or {})
++        if not isinstance(ents, dict) or not ents:
++            continue
++        rounds = [e.get("open_since_round") for e in ents.values()
++                  if isinstance(e, dict) and e.get("open_since_round") is not None]
++        if not rounds:
++            continue
++        out.append((os.path.basename(os.path.dirname(p)), _Reg(ents), max(rounds)))
++    return out
++
++
++RUNS = _runs()
++
++
++def _star(entries):
++    """fable's DIRECT codiscovery star. Reproduces that seat's published leg3
++    k-distribution and C0001 -> 0.875 / C0011 -> 0.64 exactly."""
++    out = {}
++    for tid, t in entries.items():
++        if not isinstance(t, dict):
++            continue
++        sevs = [float(t.get("severity") or 0.0)]
++        for occ in (t.get("occasions") or []):
++            if not isinstance(occ, dict) or occ.get("via") != "codiscovery":
++                continue
++            did = occ.get("from_canonical")
++            if not did or did == tid or did not in entries:
++                continue
++            d = entries[did]
++            if (not isinstance(d, dict) or t.get("open_since_round") is None
++                    or d.get("open_since_round") is None):
++                continue
++            sevs.append(float(d.get("severity") or 0.0))
++        out[tid] = (sevs, len(sevs))
++    return out
++
++
++def _series(reg, max_round, ruler, naive=False, sigma=0.1419):
++    """hard / soft / pooled / composed, sharing ONE admission filter."""
++    stars = _star(reg.entries) if ruler in ("pooled", "composed") else None
++    buckets = [[] for _ in range(max_round + 1)]
++    for e in reg.entries.values():
++        if not isinstance(e, dict):
++            continue
++        r = e.get("open_since_round")
++        if r is None or r < 0 or r > max_round:
++            continue
++        if e.get("status") in rr3._NON_NOVEL_TERMINAL_STATUSES:
++            continue
++        buckets[r].append(e)
++    out = []
++    for bucket in buckets:
++        tot = 0.0
++        for e in bucket:
++            sev, k = float(e.get("severity") or 0.0), 1
++            if stars is not None:
++                sevs, k = stars.get(e.get("canonical_id") or "", ([sev], 1))
++                sev = statistics.median(sevs)
++            if ruler in ("hard", "pooled"):
++                tot += 1.0 if sev >= rr3.CRITICAL_SEVERITY_THRESHOLD else 0.0
++            else:
++                s = sigma if (ruler == "soft" or naive) else sigma * C_K.get(
++                    k, C_K[6] * math.sqrt(6.0 / max(k, 1)))
++                tot += critical_weight(sev, e.get("falsifier_verdict") or "",
++                                       rr3.CRITICAL_SEVERITY_THRESHOLD, s)
++        out.append(tot)
++    return out
++
++
++def _q_hard(s):
++    tail = s[-3:] if len(s) >= 3 else list(s)
++    return bool(tail) and all(c == 0 for c in tail)
++
++
++# ---------------------------------------------------------------- Q1: compose?
++def test_composition_moves_no_verdict_beyond_the_expected_count_rule_alone():
++    """WOULD PRINT, if composing earned its place: a non-empty list of runs
++    where the composed verdict differs from the expected-count rule alone."""
++    extra, pooled_only = [], []
++    for run, reg, mr in RUNS:
++        h = _series(reg, mr, "hard")
++        s, c = _series(reg, mr, "soft"), _series(reg, mr, "composed")
++        p = _series(reg, mr, "pooled")
++        if tail_is_quiescent_soft(c) != tail_is_quiescent_soft(s):
++            extra.append(run)
++        if _q_hard(p) != _q_hard(h):
++            pooled_only.append(run)
++    assert extra == [], (
++        f"COMPOSITION EARNS ITS PLACE after all -- it moves the verdict beyond "
++        f"the expected-count rule alone on {len(extra)} run(s): {extra}")
++    assert pooled_only == [], (
++        f"POOLING ALONE moves the quiescence verdict on {pooled_only}; the "
++        f"brief's premise that it does not would be refuted")
++
++
++def test_the_composition_null_is_robust_across_the_whole_sigma_band():
++    """Not an accident of 0.1419: the composition adds nothing at ANY sigma."""
++    offenders = {}
++    for sig in SWEPT_SIGMAS:
++        for run, reg, mr in RUNS:
++            s = _series(reg, mr, "soft", sigma=sig)
++            c = _series(reg, mr, "composed", sigma=sig)
++            if tail_is_quiescent_soft(c) != tail_is_quiescent_soft(s):
++                offenders.setdefault(sig, []).append(run)
++    assert offenders == {}, (
++        f"the composition's null result is sigma-dependent: {offenders}")
++
++
++def test_pooling_cannot_reach_the_deciding_tail_structurally():
++    """WHY the composition is null: pooling acts on 9 of 734 tail entries."""
++    tail_entries = multi = 0
++    for _run, reg, mr in RUNS:
++        stars = _star(reg.entries)
++        buckets = [[] for _ in range(mr + 1)]
++        for e in reg.entries.values():
++            if not isinstance(e, dict):
++                continue
++            r = e.get("open_since_round")
++            if (r is None or r < 0 or r > mr
++                    or e.get("status") in rr3._NON_NOVEL_TERMINAL_STATUSES):
++                continue
++            buckets[r].append(e)
++        for b in (buckets[-3:] if len(buckets) >= 3 else buckets):
++            for e in b:
++                tail_entries += 1
++                if stars.get(e.get("canonical_id") or "", ([0.0], 1))[1] >= 2:
++                    multi += 1
++    assert tail_entries == 734, f"archive shape changed: {tail_entries}"
++    assert multi == 9, f"k>=2 entries in deciding tails moved: {multi}"
++    assert multi / tail_entries < 0.05, "pooling now reaches the tail -- RE-TEST"
++
++
++# ----------------------------------------------------- Q2: reach, or fitted?
++def test_the_departing_set_is_monotonically_nested_in_sigma():
++    """THE DISCRIMINATOR. A fitted de-coarsening departs near the committed
++    sigma and returns either side. WOULD PRINT, if fitted: the run and the
++    sigma at which it stopped departing."""
++    sets = []
++    for sig in SWEPT_SIGMAS:
++        f = set()
++        for run, reg, mr in RUNS:
++            h, s = _series(reg, mr, "hard"), _series(reg, mr, "soft", sigma=sig)
++            if tail_is_quiescent_soft(s) != _q_hard(h):
++                f.add(run)
++        sets.append((sig, f))
++    for (s1, a), (s2, b) in zip(sets, sets[1:]):
++        assert a <= b, (
++            f"NOT NESTED -- fitted signature: runs {sorted(a - b)} depart at "
++            f"sigma={s1} and stop departing at sigma={s2}")
++    counts = {s: len(f) for s, f in sets}
++    assert counts[0.04] == 0, counts
++    assert counts[0.1241] == 4, counts          # measured CI floor
++    assert counts[0.1419] == 7, counts          # committed point estimate
++    assert counts[0.1575] == 9, counts          # measured CI ceiling
++
++
++def test_production_caller_emits_the_sweep_and_the_hard_verdict_is_untouched():
++    """The addition is REACHED: gamma_threshold_profile, which the report path
++    already invokes, now carries it."""
++    reg, mr = next((r, m) for n, r, m in RUNS
++                   if n == "free_run1_directive_whole_20261015T061123Z_20261015T061124Z")
++    prof = rr3.gamma_threshold_profile(reg, mr, 3)
++    nr = prof["noise_robustness"]
++    assert "error" not in nr, nr
++    assert nr["verdict_flip_sigma"] == 0.1241, nr["verdict_flip_sigma"]
++    assert nr["flip_inside_measured_ci"] is True
++    assert nr["departs_monotonically"] is True
++    assert nr["live_gate_unchanged"] is True
++    # the hard profile the gate reads is byte-identical to the archived one
++    live = prof["thresholds"][repr(float(rr3.CRITICAL_SEVERITY_THRESHOLD))]
++    _all, crit = rr3._settled_novelty_series(reg, mr)
++    assert live["critical_novelty_series"] == list(crit)
++    # hard PERMITS quiescence here; the expected-count rule REFUSES it. That is
++    # the one-way direction, observed rather than assumed.
++    assert live["tail_is_quiescent"] is True
++    assert tail_is_quiescent_soft(expected_critical_series(
++        reg, mr, rr3.CRITICAL_SEVERITY_THRESHOLD,
++        rr3._NON_NOVEL_TERMINAL_STATUSES)) is False
++
++
++def test_sigma_to_zero_is_exactly_the_production_indicator_on_every_run():
++    """The additive claim, executed value-for-value rather than asserted."""
++    for run, reg, mr in RUNS:
++        _all, crit = rr3._settled_novelty_series(reg, mr)
++        soft0 = expected_critical_series(
++            reg, mr, rr3.CRITICAL_SEVERITY_THRESHOLD,
++            rr3._NON_NOVEL_TERMINAL_STATUSES, sigma=0.0)
++        # sigma=0 differs from the indicator ONLY by REFUTED annihilation
++        refuted = [0] * (mr + 1)
++        for e in reg.entries.values():
++            if not isinstance(e, dict):
++                continue
++            r = e.get("open_since_round")
++            if (r is None or r < 0 or r > mr
++                    or e.get("status") in rr3._NON_NOVEL_TERMINAL_STATUSES):
++                continue
++            if (str(e.get("falsifier_verdict") or "").strip().upper() == "REFUTED"
++                    and (e.get("severity") or 0.0) >= rr3.CRITICAL_SEVERITY_THRESHOLD):
++                refuted[r] += 1
++        assert [int(a) for a in soft0] == [c - d for c, d in zip(crit, refuted)], run
++
++
++def test_refuted_is_annihilated_exactly_and_phi_at_threshold_is_one_half():
++    assert critical_weight(0.99, "REFUTED", 0.7, 0.1419) == 0.0
++    assert critical_weight(0.7, "", 0.7, 0.1419) == pytest.approx(0.5, abs=1e-12)
++    # THE NESTING CLAIM FAILS AT EXACTLY sev == thr, AND THAT IS NOT A MEASURE
++    # ZERO CAVEAT. The production indicator is `sev >= thr`, so it scores a
++    # finding at exactly 0.7 as 1; lim_{sigma->0+} Phi(0) is 1/2 for every
++    # sigma. 0.7 is the archive's THIRD most common severity -- 174 of 3237
++    # entries, 5.3753%, Wilson [4.6500%, 6.2065%] -- because models anchor on
++    # the published cut itself. So "the current ruler is the sigma=0 member of
++    # this family" holds for sev != thr and fails on 5.4% of the population.
++    assert critical_weight(0.7, "CONFIRMED", 0.7, 1e-9) == 0.5
++    assert critical_weight(0.7001, "CONFIRMED", 0.7, 1e-9) == 1.0
++    assert critical_weight(0.6999, "CONFIRMED", 0.7, 1e-9) == 0.0
++
++
++# ------------------------------- the other seat's fix, measured on the archive
++def test_pooling_can_destroy_gamma_ESTIMABILITY_which_the_other_seat_did_not_report():
++    """fable measured gamma invariance on 3 runs. Over 62 it is not invariant:
++    on 1 run pooling converts an estimable gamma into the 0.0 sentinel."""
++    degraded = []
++    for run, reg, mr in RUNS:
++        h = [int(x) for x in _series(reg, mr, "hard")]
++        p = [int(x) for x in _series(reg, mr, "pooled")]
++        if (rr3._gamma_is_estimable(h, 3)
++                and not rr3._gamma_is_estimable(p, 3)):
++            degraded.append(run)
++    assert degraded == ["commissioning_arm1_panel_20260929T214647Z"], degraded
++    reg, mr = next((r, m) for n, r, m in RUNS
++                   if n == "commissioning_arm1_panel_20260929T214647Z")
++    h = [int(x) for x in _series(reg, mr, "hard")]
++    p = [int(x) for x in _series(reg, mr, "pooled")]
++    assert h == [1, 0, 0, 1, 0, 0, 0, 4]
++    assert p == [0, 0, 0, 0, 0, 0, 0, 4]
++    assert rr3._estimate_gamma(h, 3) == pytest.approx(0.3236, abs=5e-4)
++    assert rr3._estimate_gamma(p, 3) == 0.0          # the sentinel, not a slope
++
++
++def test_both_seats_published_numbers_reproduce_from_this_reimplementation():
++    """Cross-validation: neither seat's module exists in this sandbox, so their
++    numbers are the only check that these reconstructions are theirs."""
++    reg, mr = next((r, m) for n, r, m in RUNS
++                   if n == "leg3_final_shakedown_20261015T220118Z")
++    st = _star(reg.entries)
++    assert statistics.median(st["C0001"][0]) == 0.875          # fable
++    assert st["C0001"][1] == 6
++    assert statistics.median(st["C0011"][0]) == 0.64           # fable
++    assert [int(x) for x in _series(reg, mr, "hard")] == [12, 0, 0, 0, 0]
++    assert [int(x) for x in _series(reg, mr, "pooled")] == [7, 0, 0, 0, 0]
++    soft = _series(reg, mr, "soft")
++    assert [round(x, 4) for x in soft[-3:]] == [0.2541, 0.1184, 0.4248]   # cc2
++    assert rr3._estimate_gamma(soft, 3) == pytest.approx(0.9597, abs=5e-5)  # cc2
++    # cc2's refutation condition 3, reproduced
++    reg2, mr2 = next((r, m) for n, r, m in RUNS
++                     if n == "prose_convergence_run1b_2026-10-02_20261002T044234Z")
++    assert [int(x) for x in _series(reg2, mr2, "hard")] == [9, 4, 8]
++    assert [round(x, 2) for x in _series(reg2, mr2, "soft")] == [8.78, 2.77, 7.27]
++    # the §7.7 collapse both seats established, on the live instrument
++    e18 = reg.entries["C0018"]
++    assert rr3.spec_verification_factor(e18) == 0.0
++    assert rr3.effective_severity(e18) == 0.5                  # spec off
++
++
++def test_the_modal_severity_is_where_the_nesting_claim_fails_and_it_costs_a_sixth():
++    """HOW MUCH the sev == threshold discontinuity costs, measured.
++
++    Harmless for the QUIESCENCE predicate -- derived: Phi(0) = 1/2 exactly, and
++    1/2 is not < 1/2, so a tail round holding such a finding is non-quiescent
++    under both rulers. Measured: 0 verdict differences between the limit rule
++    and the production indicator across all runs. The 0.5 cut is therefore
++    better chosen than its author argued, for a reason its author did not give.
++
++    NOT harmless for the expected-count MAGNITUDE, which a future gate may read:
++    each such finding contributes 1.0 hard and 0.5 soft, and that single point
++    carries 16.12% of the archive's total |hard - soft| mass. This is the
++    mechanism behind the other seat's own refutation condition 3.
++    """
++    at_thr = total = 0
++    d_total = d_mode = 0.0
++    verdict_diffs = []
++    for run, reg, mr in RUNS:
++        for e in reg.entries.values():
++            if not isinstance(e, dict) or e.get("severity") is None:
++                continue
++            total += 1
++            if abs(float(e["severity"]) - 0.7) < 1e-12:
++                at_thr += 1
++        for b in ([[e for e in reg.entries.values()
++                    if isinstance(e, dict)
++                    and e.get("open_since_round") == r
++                    and e.get("status") not in rr3._NON_NOVEL_TERMINAL_STATUSES]
++                   for r in range(mr + 1)]):
++            for e in b:
++                sev = float(e.get("severity") or 0.0)
++                w = critical_weight(sev, e.get("falsifier_verdict") or "",
++                                    rr3.CRITICAL_SEVERITY_THRESHOLD, 0.1419)
++                hard = 1.0 if sev >= rr3.CRITICAL_SEVERITY_THRESHOLD else 0.0
++                d_total += abs(hard - w)
++                if abs(sev - 0.7) < 1e-12:
++                    d_mode += abs(hard - w)
++        # the limit rule moves NO verdict despite the discontinuity
++        lim = expected_critical_series(
++            reg, mr, rr3.CRITICAL_SEVERITY_THRESHOLD,
++            rr3._NON_NOVEL_TERMINAL_STATUSES, sigma=1e-9)
++        _all, crit = rr3._settled_novelty_series(reg, mr)
++        if tail_is_quiescent_soft(lim) != _q_hard(list(crit)):
++            verdict_diffs.append(run)
++    assert at_thr == 174 and total == 3237, (at_thr, total)
++    assert verdict_diffs == [], (
++        "the sev == threshold discontinuity MOVES a quiescence verdict on "
++        f"{verdict_diffs}; the 0.5 cut no longer absorbs it")
++    assert 0.15 < d_mode / d_total < 0.17, d_mode / d_total
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-18 03:27:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-18 02:47:56
+@@ -937,7 +937,7 @@
+ **WHAT THIS CHANGES ABOUT HIS 3 OPTIONS.** Option 2, bound it by a measured failure, **requires changing the CONSUMER as well as the recorder**, and even then nothing moves until a dispatch actually overflows, which none ever has. Option 1, decay toward the recent window, moves the ceiling on every paid seat at once and needs a decay rate with a measurement behind it rather than a chosen constant. Option 3, rename it a proven floor and stop calling it a capacity, costs no routing change and leaves the overload detection he described unimplemented. **NOTHING WAS CHANGED AT THAT POINT.** The guard `bench/tests/test_a_measured_failure_cannot_lower_the_ceiling_2026-10-17.py` is a CHANGE DETECTOR rather than a correctness guard: it pins the present behaviour so it cannot move unnoticed, and 3 of its 4 parametrised cases go red under precisely the consumer change option 2 would need.
+ 
+ 
+-**B13. Admitting a model is not trivial, and the cost is silent defaulting rather than edit count.** Added 2026-10-16T16:53+01:00. HIS QUESTION, verbatim: *"adding, removing, or changing models in the harness should be an entirely trivial affair (by design) and should not require major code changes to enable researchers to do so. The question is, is it? Have we adequately addressed this particular design objective?"* **ANSWERED TWO WAYS.** Structurally, an AST walk over `bench/` and `scripts/` finds 156 per-model tables across 67 files, but that total overstates the answer about threefold and the split is load-bearing: 86 sites are TESTS, which guard the roster rather than admit to it; 50 are HISTORICAL one-off experiment runners whose edit would alter what those runs did; 5 are measurement scripts; 3 are simulated-seat tools. The LIVE harness is **12 tables across 6 files** -- `bench/reference_runner_v3.py`, `bench/runner_core.py`, `bench/cdsfl_registry/composer.py`, `bench/experiment_11_orchestrator.py`, `bench/routing.py`, `bench/dm/_types.py` -- plus 1 per-model registry `.toml`. **SO THE COUNT IS MODEST AND THE FAILURE MODE IS NOT.** Executed: a model that does not exist, `Kimi` (he names Kimi K3 as a candidate for re-admission), was put through the real resolution chain. Of 7 steps, **5 default SILENTLY** and only 2 fail loudly -- 71.4286%, Wilson [35.8934%, 91.7781%], Clopper-Pearson [29.0421%, 96.3307%]. A researcher who misses one table gets a seat that RUNS while losing whatever that table gated, which is the class `base_model_label`'s own docstring calls *"a capability lost with no error"* and which this project has recorded 8 times. **For DONE:** make a missing registration FAIL LOUDLY at dispatch FIRST, and consolidate to a single registration point SECOND -- a single point that still defaults silently would hide 12 misses behind 1. **NEEDS HIS RULING**, because it changes how every seat is configured, and the question of whether the loud failure should be a raise, a refusal to dispatch that seat, or a run-level preflight is his. Put to the free panel on 2026-10-16 as question 3 of `bench/logs/joint_the_outstanding_issues_2026-10-16/BRIEF.md`. Producer: `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py`. **★ MEASURED 2026-10-18T03:25:59+01:00, AND BOTH HALVES OF THE HEADLINE MOVE.** The entry says admitting a model is not trivial *"and the cost is silent defaulting rather than edit count"*. **THE COST HALF IS SMALLER THAN STATED, AND THE SILENT HALF IS HALF FIXED.** **First: the compose path is ALREADY LOUD, and has been since the panel review of 2026-08-30.** The runner wraps `_compose_for_model` and logs `COMPOSER FALLBACK for <label>: <exception>` on failure, so the incident that motivated this -- a seat composing to 0 characters on an empty system prompt -- is announced today. **My own proposed fix for this entry, "loud and non-fatal", was therefore already the behaviour at that site**, which is worth recording: I proposed the status quo as a repair and only found out by reading the call site. **Second: 0 of the labels archived runs actually use hits the fallback.** The live path resolves through `base_model_label` and then `COMPOSER_MODEL_MAP`, and the 11 labels the archive records -- `CC2`, `Codex`, `ChatGPT`, `Gemini`, `DeepSeek` across 40 runs each, plus the 6 simulated variants -- **all resolve to a policy file**. The OpenRouter identifiers and the pinned `claude-*` backing names never reach the composer. I measured this 3 times and got 3 answers -- 71.4286% on raw labels, 56.2500% on a semi-live path, and **0 of 11 on the path runs actually take** -- because the first 2 bypassed a resolution step. The deciding layer was the only one that mattered. **Third, and this is the part that remains real: the FAILURE MODE across admission as a whole.** `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py` puts a new seat through 10 admission steps. Before tonight **9 of 10 failed SILENTLY**, 90.0000%, Wilson [59.5850%, 98.2124%]. Entry C18 routed 4 of them through a resolver that still returns the default but RECORDS every fallback, so the count is now **5 of 10, 50.0000%, Wilson [23.6593%, 76.3407%]** -- the silent share roughly halved. **THE INSTRUMENT COULD NOT SEE THAT UNTIL THE SAME DAY**, because each lookup was re-implemented inside the producer as a bare dictionary get, so it measured the TABLE's shape rather than the live path: 2 forms of 1 lookup, each individually correct, disagreeing about what happens. The lambdas now call the live resolver and read its ledger, the improvement figure is COMPUTED rather than written down, and a guard refuses a return to a bare lookup -- `bench/tests/test_admission_counts_announced_apart_from_silent_2026-10-18.py`, 4 tests, mutation red. **WHAT STILL NEEDS DECIDING, and it is now well-posed:** a researcher must still edit 12 per-model tables across 6 live-harness files and add 1 registry file, and 5 of the 10 steps still fail silently. The producer's own recommendation stands -- a single registration point -- and it *"needs his ruling because it changes how every seat is configured"*. **TO THE PANEL** with that recommendation stated first.
++**B13. Admitting a model is not trivial, and the cost is silent defaulting rather than edit count.** Added 2026-10-16T16:53+01:00. HIS QUESTION, verbatim: *"adding, removing, or changing models in the harness should be an entirely trivial affair (by design) and should not require major code changes to enable researchers to do so. The question is, is it? Have we adequately addressed this particular design objective?"* **ANSWERED TWO WAYS.** Structurally, an AST walk over `bench/` and `scripts/` finds 156 per-model tables across 67 files, but that total overstates the answer about threefold and the split is load-bearing: 86 sites are TESTS, which guard the roster rather than admit to it; 50 are HISTORICAL one-off experiment runners whose edit would alter what those runs did; 5 are measurement scripts; 3 are simulated-seat tools. The LIVE harness is **12 tables across 6 files** -- `bench/reference_runner_v3.py`, `bench/runner_core.py`, `bench/cdsfl_registry/composer.py`, `bench/experiment_11_orchestrator.py`, `bench/routing.py`, `bench/dm/_types.py` -- plus 1 per-model registry `.toml`. **SO THE COUNT IS MODEST AND THE FAILURE MODE IS NOT.** Executed: a model that does not exist, `Kimi` (he names Kimi K3 as a candidate for re-admission), was put through the real resolution chain. Of 7 steps, **5 default SILENTLY** and only 2 fail loudly -- 71.4286%, Wilson [35.8934%, 91.7781%], Clopper-Pearson [29.0421%, 96.3307%]. A researcher who misses one table gets a seat that RUNS while losing whatever that table gated, which is the class `base_model_label`'s own docstring calls *"a capability lost with no error"* and which this project has recorded 8 times. **For DONE:** make a missing registration FAIL LOUDLY at dispatch FIRST, and consolidate to a single registration point SECOND -- a single point that still defaults silently would hide 12 misses behind 1. **NEEDS HIS RULING**, because it changes how every seat is configured, and the question of whether the loud failure should be a raise, a refusal to dispatch that seat, or a run-level preflight is his. Put to the free panel on 2026-10-16 as question 3 of `bench/logs/joint_the_outstanding_issues_2026-10-16/BRIEF.md`. Producer: `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py`.
+ <!-- task: B13 | state: OPEN | status: TESTED | evidence: scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py | ruled: 2026-10-17 -->
+ 
+ **THE PREREQUISITE IS BUILT 2026-10-17 16:13 BST: A MISS IS NOW NAMED RATHER THAN DEFAULTED.** `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py` measures what a new seat costs — **12 per-model tables across 6 live-harness files** plus 1 registry `.toml` — and its own conclusion is that *"the real problem is not the count, it is the failure mode"*: of the 10 steps a new seat passes through, **9 fail SILENTLY and 1 fails loudly — 90.0000%, Wilson [59.5850%, 98.2124%], Clopper-Pearson [55.4984%, 99.7471%]**. A researcher who misses a table gets a seat that RUNS while losing whatever that table gated, which `base_model_label`'s own docstring calls *"a capability lost with no error"*.
+@@ -1007,7 +1007,7 @@
+ 
+ ★ **B20's 3 QUESTIONS ANSWERED 2026-10-17T03:54:51+01:00, ON HIS 3RD ASKING.** He noted correctly that each prior turn mentioned the orchestrator and answered none of it. **(a) IS THE EXPERIMENT SOUND IN ITS OWN RIGHT? Yes, with 1 design correction: it is 2 arms, not 1, because the role he describes bundles 2 separable jobs.** The CLASSIFIER job — which candidate repair is better, which compose, which meet the simplest-sufficient and additive standards — has an executable criterion today, because `bench/fix_efficacy.py` already asks of a single repair whether it cures the defect its own falsifier demonstrates. So that arm can be scored against ground truth without a human in the loop. The MONITOR job — his `cy` protocol, noticing that something is *"screwy"*, pausing, analysing, fixing, resuming — has **no defined predicate at all**, so there is nothing to score it against. Running them as 1 experiment would confound a measurable arm with an unmeasurable one. **(b) WHAT CC1 PREDICTS, recorded before the run so it is falsifiable.** Across the 3 shakedown legs **77 of 79 adjudications were tool-made rather than assertion-made, 97.4684 per cent, Wilson [91.2314 per cent, 99.3030 per cent]**. A bound orchestrator therefore operates in a system where its own assertions mostly decide nothing, so the classifier arm should come close to parity. The monitor arm should degrade, because monitoring is the one judgement the harness does not instrument. **And this session is itself evidence for that prediction rather than an argument for it**: 6 of CC1's own monitoring judgements failed on 2026-10-17, each producing a clean-looking answer that was an artefact of search scope or a function signature. That failure set is a usable corpus for the monitor arm, because each case has a known correct answer. **(c) WHERE ON THE RUNWAY, and NOT last.** His instinct was that this is *"one of the last tests we run before final release"*. The argument against: the orchestrator role is where the measured failures are, so testing it last means discovering orchestration faults after everything else is frozen. The argument for waiting: a live bound arm needs a harness that is not still changing under it. **Both are satisfied by a SHADOW arm first** — the bound orchestrator observes a real run and records what it would have decided, while CC1 remains the acting orchestrator, and agreement is measured afterwards. That costs 1 run's observation, risks no decision, and needs no stable harness because it changes nothing. **Recommended placement: the shadow arm immediately after Stage 1's replay exit test, which is free and already the nearest actionable item; the live bound arm after the merge to the canonical branch and before Stage 3's capstone.** **NEEDS HIS RULING on that placement only.**
+ 
+-**B21. Making model and role selection trivial is NOT a large rewrite, because the 4-layer policy engine that does it already exists and the canonical runner does not call it.** Added 2026-10-17T01:25:30+01:00. **HIS QUESTION, verbatim:** *"can you build this and implement it in such a way that it doesn't require vast code rewrites and/or refactoring of large elements of the existing code base? If it is buildable, I would suggest building it, and then putting this work to the free panel to look at."* **HIS DESIGN INTENT, verbatim:** *"model selection should preferably be a simple box, containing a scrollable list of models available from OpenRouter and models available on a user's local machine... with available models on a user's local machine at the top of this list"*, with *"role management, such as 'worker'... 'classifier'... and 'orchestrator'"* individually selectable, plus a recommended list and a note that untested models in a given role carry unknown performance. His argument for it: the project claims substrate, model and vendor agnosticism, and *"We clearly cannot make such claims, and then say 'Oh, btw, that isn't really true. Here is a list of the only models you can use.'"* **THE ANSWER IS YES, AND MOST OF THE HARD PART IS BUILT.** `bench/cdsfl_registry/registry.py` is a 4-layer hierarchical policy merge engine with MONOTONICITY ENFORCEMENT: layer 1 `universal.toml` holds HARD constraints, layer 2 `domains/<domain>.toml`, layer 3 `tasks/<task_id>.toml`, layer 4 `models/<model>.toml`, and a lower layer that tries to weaken a universal HARD constraint raises `PolicyViolationError`. **That monotonicity is exactly the safety property arbitrary model selection requires**, because it means a researcher's choice of model cannot loosen a hard constraint. Measured by execution: layer 2 holds **10 domains** — biology, chemistry, code, cross_domain, cs_software, engineering, information_science, mathematics, physics, statistics — and layer 4 holds **6 model files**: Fable, chatgpt_5_4, codex_5_3, deepseek_v3, gemini_3_1_pro, opus_4_6. `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys; an unregistered model raises `FileNotFoundError`, which is a LOUD failure and the 1 of 10 admission steps that does fail loudly per B13. **THE GAP, AND IT IS WIRING RATHER THAN ARCHITECTURE.** `bench/reference_runner_v3.py` — the canonical runner — makes **0** calls to `load_effective_policy`. The engine is reached by `bench/run_round_robin.py:3631` and `:3647` and by `bench/cdsfl_registry/engine.py`, neither of which is the current runner. v3 passes `task_domain` to the composer at line 11909 and accepts `domain=args.domain` at 21194, so the domain reaches prompt composition but never the policy merge. Layer 3, `tasks/`, does not exist as a directory at all. And there is no role layer. **FOR DONE, in dependency order:** (1) wire `load_effective_policy` into v3, which is the single change that makes every later step declarative; (2) redirect B13's 12 live per-model tables to read the merged policy instead of their own dictionaries; (3) add a role dimension, either as a `roles/` layer or a `role` field in the model file, composing with the existing merge rule rather than beside it; (4) wire `validate_all_policies()` as the run-level preflight CC2 recommended, reporting every missing registration at once and refusing the run; (5) generate the selectable list from the registry plus an OpenRouter query plus a local-model probe, with local models first as he specified. **Steps 1 and 4 are each a handful of lines; step 2 is 12 small redirections; none is a refactor of large elements.** **THEN TO THE FREE PANEL**, as he directed, on design, implementation and integration with the coming interface build. **★ THE PREMISE IS WRONG, ESTABLISHED BY EXECUTION 2026-10-18T03:25:59+01:00.** The entry's headline says the 4-layer policy engine exists *"and the canonical runner does not call it"*. That is true of the SYMBOL and false of the BEHAVIOUR. `bench/reference_runner_v3.py` contains 0 textual references to `load_effective_policy` -- but the call sits inside `compose()` in `bench/cdsfl_registry/composer.py`, and `compose()` is exactly what the runner invokes through `_compose_for_model` once per seat per round. **Verified by running it:** `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys, and `compose(task_domain="mathematics", model="opus_4_6", ...)` returns a `ComposedDirectiveSet`. **SO THE RUNNER DOES CONSULT THE 4-LAYER MERGE, INCLUDING ITS MONOTONICITY ENFORCEMENT, ON EVERY COMPOSITION**, and wiring a second path into it would have duplicated working machinery -- the third time in one night I nearly rebuilt something that exists, and the first of the three caught BEFORE writing any code, by doing the FOLLOW step first. **WHAT IS GENUINELY MISSING IS NARROWER THAN THE ENTRY CLAIMS:** the engine has layers for universal constraints, domain, task and model, and NO LAYER FOR ROLE. His design asks for *"role management, such as 'worker' ... 'classifier' ... and 'orchestrator'"* to be individually selectable, and that is the part with no home in the 4 layers. **FOR DONE:** add the role layer, which is additive and does not disturb the merge, and put THAT to the panel rather than the wiring. **The brief is written and validated** at `bench/logs/what_breaks_the_capability_tie_2026-10-18/BRIEF.md`, which carries this correction.
++**B21. Making model and role selection trivial is NOT a large rewrite, because the 4-layer policy engine that does it already exists and the canonical runner does not call it.** Added 2026-10-17T01:25:30+01:00. **HIS QUESTION, verbatim:** *"can you build this and implement it in such a way that it doesn't require vast code rewrites and/or refactoring of large elements of the existing code base? If it is buildable, I would suggest building it, and then putting this work to the free panel to look at."* **HIS DESIGN INTENT, verbatim:** *"model selection should preferably be a simple box, containing a scrollable list of models available from OpenRouter and models available on a user's local machine... with available models on a user's local machine at the top of this list"*, with *"role management, such as 'worker'... 'classifier'... and 'orchestrator'"* individually selectable, plus a recommended list and a note that untested models in a given role carry unknown performance. His argument for it: the project claims substrate, model and vendor agnosticism, and *"We clearly cannot make such claims, and then say 'Oh, btw, that isn't really true. Here is a list of the only models you can use.'"* **THE ANSWER IS YES, AND MOST OF THE HARD PART IS BUILT.** `bench/cdsfl_registry/registry.py` is a 4-layer hierarchical policy merge engine with MONOTONICITY ENFORCEMENT: layer 1 `universal.toml` holds HARD constraints, layer 2 `domains/<domain>.toml`, layer 3 `tasks/<task_id>.toml`, layer 4 `models/<model>.toml`, and a lower layer that tries to weaken a universal HARD constraint raises `PolicyViolationError`. **That monotonicity is exactly the safety property arbitrary model selection requires**, because it means a researcher's choice of model cannot loosen a hard constraint. Measured by execution: layer 2 holds **10 domains** — biology, chemistry, code, cross_domain, cs_software, engineering, information_science, mathematics, physics, statistics — and layer 4 holds **6 model files**: Fable, chatgpt_5_4, codex_5_3, deepseek_v3, gemini_3_1_pro, opus_4_6. `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys; an unregistered model raises `FileNotFoundError`, which is a LOUD failure and the 1 of 10 admission steps that does fail loudly per B13. **THE GAP, AND IT IS WIRING RATHER THAN ARCHITECTURE.** `bench/reference_runner_v3.py` — the canonical runner — makes **0** calls to `load_effective_policy`. The engine is reached by `bench/run_round_robin.py:3631` and `:3647` and by `bench/cdsfl_registry/engine.py`, neither of which is the current runner. v3 passes `task_domain` to the composer at line 11909 and accepts `domain=args.domain` at 21194, so the domain reaches prompt composition but never the policy merge. Layer 3, `tasks/`, does not exist as a directory at all. And there is no role layer. **FOR DONE, in dependency order:** (1) wire `load_effective_policy` into v3, which is the single change that makes every later step declarative; (2) redirect B13's 12 live per-model tables to read the merged policy instead of their own dictionaries; (3) add a role dimension, either as a `roles/` layer or a `role` field in the model file, composing with the existing merge rule rather than beside it; (4) wire `validate_all_policies()` as the run-level preflight CC2 recommended, reporting every missing registration at once and refusing the run; (5) generate the selectable list from the registry plus an OpenRouter query plus a local-model probe, with local models first as he specified. **Steps 1 and 4 are each a handful of lines; step 2 is 12 small redirections; none is a refactor of large elements.** **THEN TO THE FREE PANEL**, as he directed, on design, implementation and integration with the coming interface build.
+ <!-- task: B21 | state: OPEN | status: TESTED | evidence: bench/cdsfl_registry/registry.py:286, bench/reference_runner_v3.py:11909 | ruled: 2026-10-17 -->
+ 
+ **THE PREREQUISITE IS BUILT 2026-10-17 16:13 BST: A MISS IS NOW NAMED RATHER THAN DEFAULTED.** `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py` measures what a new seat costs — **12 per-model tables across 6 live-harness files** plus 1 registry `.toml` — and its own conclusion is that *"the real problem is not the count, it is the failure mode"*: of the 10 steps a new seat passes through, **9 fail SILENTLY and 1 fails loudly — 90.0000%, Wilson [59.5850%, 98.2124%], Clopper-Pearson [55.4984%, 99.7471%]**. A researcher who misses a table gets a seat that RUNS while losing whatever that table gated, which `base_model_label`'s own docstring calls *"a capability lost with no error"*.
+@@ -1039,7 +1039,7 @@
+ **C0. An audit of 302 of his annotations found 20 confirmed gaps, and 12 of them are rulings he gave that were never carried out.** Added 2026-10-17T02:03:01+01:00. **HIS INSTRUCTION, verbatim, 2026-10-17:** *"before running it in full, carefully check off that you are parsing my fully responses and then tell me everything that is on that task list before executing it."* He added that the short work list made him *"suspicious that you are not reading/parsing my responses in full"*. **HE WAS RIGHT, AND A FIRST ATTEMPT TO ANSWER HIM WAS WRONG IN THE FLATTERING DIRECTION.** A word-overlap measure reported that 198 of 199 of his verdicts had at least half their distinctive words present in this list, 99.4975 per cent. That measure survived a control test — his verdicts averaged 81.38 per cent overlap against 33.65 per cent for unrelated STEM prose, separating by 47.74 points — but it answered the WRONG QUESTION. Whether his topic words appear in this list says nothing about whether his instructions were acted on. **THE AUDIT THAT ANSWERS THE RIGHT QUESTION.** 302 annotations dated 2026-10-01 or later, read with the dedicated reader because 319 of his 579 verdicts sit in files a naive text search treats as binary, were examined instruction by instruction against this list by 5 independent auditors, and every claimed gap was then handed to a separate adversarial verifier briefed to REFUTE it and to default to "not a gap" when uncertain. **266 instructions were identified. 44 gaps were claimed. The adversarial pass refuted 24 of the 44, 54.5455 per cent, so a single unverified pass would have overstated the gap count by more than double.** **20 survived: 20 of 266 instructions = 7.5188 per cent, Wilson [4.9197 per cent, 11.3274 per cent], Clopper-Pearson [4.6530 per cent, 11.3735 per cent].** statsmodels, mpmath and the local Wolfram Engine agree to 7 significant figures; Wolfram returned the pair 4.919703024776954 and 11.32741445387045, classified as verified by the project's Wolfram standard. Computed with Wolfram Language on the local Wolfram Engine. **Of the 20: 12 are rulings given and not carried out — 4.5113 per cent of all instructions, Wilson [2.5992 per cent, 7.7185 per cent] — 4 are instructions nothing tracks, and 4 are direct questions never answered.** They are entered below as C1 to C20, each carrying his words and the verifier's refutation attempt. **THE SHAPE OF THE FAILURE, which matters more than the rate.** Not one of the 20 was lost because it was hard. Each was answered in conversation, or partly built, and then never written into the list that survives a compaction. That is the same shape as the finding recorded on 2026-10-15 about a seat's work sitting unread in a sandbox for 10 days. **This entry is the measurement, not the work.** **THE 20 ENTRIES ARE NOW THEMSELVES GUARDED**, because the audit's own finding is that entries get lost rather than refuted: `bench/tests/test_the_verdict_audit_entries_survive_2026-10-17.py` holds 45 tests pinning the SET of 20 identifiers rather than a count, requiring each to carry his words and the verifier's failed refutation, and requiring every ruling entry to carry its ruling date. **5 mutations each turn it red:** deleting an entry fails 4, emptying his quotation fails 1, softening a severity label fails 1, stripping a ruling date fails 1, and altering C0's own point estimate fails 1. **2 of those mutations first PASSED and exposed real faults** — one in the mutation itself, which targeted a question entry as though it were a ruling, and one a genuinely vacuous assertion whose fixed 40-character window ran past a short quotation into the next heading, so an emptied quote still measured 40 characters of the following heading. Producer: `scripts/am_i_parsing_his_responses_in_full_2026-10-17.py` for the rejected word-overlap measure and its control; the audit transcript and all 34 agent records are at the workflow run directory named in the commit.
+ <!-- task: C0 | state: DONE | status: COMMITTED | evidence: bench/tests/test_the_verdict_audit_entries_survive_2026-10-17.py -->
+ 
+-**C1. AN INSTRUCTION NOTHING TRACKS, dated 2026-10-02: the claim channel's promotion was never implemented or measured.** Added 2026-10-17T02:03:01+01:00. **HIS WORDS:** "Also implement this and test it on the upcoming simulated runs." , his reply to: "The claim channel's promotion into the scoring equations waits on a commissioning run measuring how often it is wrong against known ground truth, which is the recommending seat's position and the founder's to confirm." **WHY NOTHING TRACKS IT:** The test half was done; the implement/promote half was not, and no task entry records it as outstanding. /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/claim_ledger.py:184 still reads `informative_only = True`, and its header at lines 37-40 still says the ledger is "`informative_only` like `target_complexity`, promoted only after a commissioning run measures its error". The channel DID run in both free runs of 2026-10-15 (Free_Run_1 note, line 27: "claim ledger | 22 claims, 19 decidable, 3 routed"), so it was exercised , but no commissioning measurement of its error against known ground trut **THE ADVERSARIAL VERIFIER TRIED TO REFUTE THIS AND FAILED:** REFUTATION ATTEMPTED AND FAILED ON BOTH ROUTES. (1) NO TASK ENTRY. /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md is 879 lines carrying 113 task markers (P1-P7, L1-L2, M1-M2, R1-R11, 0.1-10.2, Z1, A1-A26, V1-V9, W1, B1-B22). I read every marker id and state, every B-series heading, and every line matching `ledger|decidable|claim level|claim-level|admissibility|A19|classifier|Haiku|commissioning|informative only`. `ledger` occurs twice and both are unrelated: line 208 (a corrupted git ledger staged as pre-commit proof) and line 503 (`test_experiment_run_ **NEAREST THING IN THE RECORD, AND WHY IT IS NOT COVERAGE:** none , no entry in CDSFL_MASTER_TASK_LIST.md names the claim channel. Nearest in subject is A19 (state OPEN, lines 572-592), which concerns compute_sk and `sk_score_prose_listings` **Found by the verdict-coverage audit of 2026-10-17, entry C0.** **★ WHY THIS IS HIS DECISION AND NOT A BUILD, MEASURED 2026-10-18T03:03:02+01:00.** His instruction was *"Also implement this and test it on the upcoming simulated runs."* The TEST half is done: the channel ran in both free runs of 2026-10-15 and the commissioning measurement exists, the channel having transcribed 58 of 58 verdicts exactly, which bounds its error below about 6.2%. What remains is the IMPLEMENT half, and the obstacle is not effort. **THE LEDGER'S OWN HEADER NAMES A PRECEDENT THAT DOES NOT EXIST.** `bench/claim_ledger.py` lines 37 to 40 say the ledger is *`informative_only` like `target_complexity`, promoted only after a commissioning run measures its error*, which reads as an instruction to promote it the way that one was. **Searched 2026-10-18: `target_complexity` appears with `informative_only` NOWHERE in the code. 3 channels carry `informative_only = True` -- the claim ledger at `bench/claim_ledger.py:184` and 2 further sites in the runner at lines 10521 and 14499 -- and 0 of the 3 have ever been promoted.** So there is no template to copy, and the comparison in the header is to a sibling in the same unpromoted state rather than to a worked example. **WHAT THAT LEAVES.** Promotion means wiring the channel's verdict into sigma, S_k or R_k, which are the mathematical appendix's own terms. Choosing WHERE it enters and with what weight is a model-design decision, and inventing one would be inventing a model term without a derivation -- which the appendix has beaten this project on before, on 2026-09-21. **SO THE QUESTION PUT TO HIM IS NARROW AND ANSWERABLE:** into which of the 3 terms should a claim-level verdict enter, and should it enter as a multiplier on an existing term, as he ruled for the section 7.7 verification factor, or as an additive channel of its own? Either answer is buildable immediately; neither is derivable from the code. **AND IT IS WORTH ASKING ABOUT ALL 3 AT ONCE**, since the same question governs the 2 runner channels, and answering it once would retire a class rather than an item. **NEEDS HIS RULING.**
++**C1. AN INSTRUCTION NOTHING TRACKS, dated 2026-10-02: the claim channel's promotion was never implemented or measured.** Added 2026-10-17T02:03:01+01:00. **HIS WORDS:** "Also implement this and test it on the upcoming simulated runs." , his reply to: "The claim channel's promotion into the scoring equations waits on a commissioning run measuring how often it is wrong against known ground truth, which is the recommending seat's position and the founder's to confirm." **WHY NOTHING TRACKS IT:** The test half was done; the implement/promote half was not, and no task entry records it as outstanding. /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/claim_ledger.py:184 still reads `informative_only = True`, and its header at lines 37-40 still says the ledger is "`informative_only` like `target_complexity`, promoted only after a commissioning run measures its error". The channel DID run in both free runs of 2026-10-15 (Free_Run_1 note, line 27: "claim ledger | 22 claims, 19 decidable, 3 routed"), so it was exercised , but no commissioning measurement of its error against known ground trut **THE ADVERSARIAL VERIFIER TRIED TO REFUTE THIS AND FAILED:** REFUTATION ATTEMPTED AND FAILED ON BOTH ROUTES. (1) NO TASK ENTRY. /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md is 879 lines carrying 113 task markers (P1-P7, L1-L2, M1-M2, R1-R11, 0.1-10.2, Z1, A1-A26, V1-V9, W1, B1-B22). I read every marker id and state, every B-series heading, and every line matching `ledger|decidable|claim level|claim-level|admissibility|A19|classifier|Haiku|commissioning|informative only`. `ledger` occurs twice and both are unrelated: line 208 (a corrupted git ledger staged as pre-commit proof) and line 503 (`test_experiment_run_ **NEAREST THING IN THE RECORD, AND WHY IT IS NOT COVERAGE:** none , no entry in CDSFL_MASTER_TASK_LIST.md names the claim channel. Nearest in subject is A19 (state OPEN, lines 572-592), which concerns compute_sk and `sk_score_prose_listings` **Found by the verdict-coverage audit of 2026-10-17, entry C0.**
+ <!-- task: C1 | state: OPEN | status: TESTED | evidence: bench/tests/test_the_claim_channel_is_commissioned_2026-10-17.py | ruled: 2026-10-02 -->
+ 
+ **C2. A DIRECT QUESTION NEVER ANSWERED, dated 2026-10-02: can the 7 withdrawn-claim errors be prevented in future.** Added 2026-10-17T02:03:01+01:00. **HIS WORDS:** "Then can similar errors be prevented in the futre [future]? If not they might lead to unhelpful and erroneous descisions [decisions]." , his reply to the list of 7 withdrawn statements, which included a double count ("the producing script matched every run log under 2 patterns at once"), a unit error ("counted lines containing a match and reported them as occurrences, which is the same unit error caught once already the same day"), and a census that included the 3 documents written about the term it was counting. **WHY NOTHING TRACKS IT:** No task entry tracks a prevention mechanism for the counting-unit class, and no such guard exists in the tree. The nearest instruments address adjacent properties, not this one: scripts/wilson_interval_consistency.py guards count-and-interval PAIRS (it is the 8th commit guard), the `measured-rate-travels-with-its-script` rule and task V4 guard whether a figure has a producer at all. None of them catches a producer that double-matches, counts lines as occurrences, or includes its own artefacts in a census , the committed script reproduces the wrong number just as faithfully. His question invites either a mechanism **THE ADVERSARIAL VERIFIER TRIED TO REFUTE THIS AND FAILED:** Verified by reading the full task list and searching the tree. CDSFL_MASTER_TASK_LIST.md (879 lines, 118 task markers) has 0 hits for "similar errors", "in the future", "erroneous", "unit error", "double count", "stale-count", "seeded_fault", "guard_false_positive" or "Integrity_Guard", and no marker carries "ruled: 2026-10-02" (only 2026-08-07, 09-10, 09-17, 10-11, 10-15, 10-16 x6, 10-17 x5). The nearest entries are on different properties, confirming the auditor: V4 (line 615) only asks whether a figure names an existing producer; V6 (line 624) re-executes a DECLARED figure against its script's output, which a  **NEAREST THING IN THE RECORD, AND WHY IT IS NOT COVERAGE:** None. Nearest are V4 (CDSFL_MASTER_TASK_LIST.md:615, figure has a producer), V6 (:624, declared brief figure re-executed) and A25 (:665, metamorphic false-zero probe over boolean v **Found by the verdict-coverage audit of 2026-10-17, entry C0.**
+
+### cc2:attempt-1:scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py	2026-10-18 03:27:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_37hr9c9u/repo/scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py	2026-10-16 17:12:45
+@@ -151,7 +151,6 @@
+ def method_b(models: list[str]) -> dict:
+     """Executed: put a non-existent model through the real resolution chain."""
+     sys.path.insert(0, str(REPO / "bench"))
+-    import routing as _rt  # the LIVE lookup path, NOT a re-implementation
+     import reference_runner_v3 as runner  # noqa: PLC0415
+     from cdsfl_registry import composer as C  # noqa: PLC0415
+     import runner_core as rc  # noqa: PLC0415
+@@ -163,44 +162,18 @@
+     known = models[0]
+     steps: list[dict] = []
+ 
+-    # ★ A DEFAULT THAT IS ANNOUNCED IS NOT A SILENT ONE, AND THIS SCRIPT COULD
+-    # NOT TELL THE DIFFERENCE UNTIL 2026-10-18. Its own conclusion is that
+-    # "making admission trivial therefore means making the misses LOUD first",
+-    # and entry C18 then did exactly that for 3 of the steps below -- yet the
+-    # count stayed at 9 of 10, because each lambda re-implemented the lookup
+-    # with a bare `.get(m, default)` instead of calling the live path. Two forms
+-    # of the same lookup, each individually correct, disagreeing about what
+-    # happens: the `execute-do-not-grep` defect in the instrument that measures
+-    # it.
+-    #
+-    # The fix is to ask the LIVE LEDGER whether the miss was recorded.
+-    # `routing.resolve_or_alarm` appends a row for every fallback, so a step
+-    # whose lookup goes through it is ANNOUNCED DEFAULT: the capability is still
+-    # lost, and a reader is told. That distinction is the whole point of C18 and
+-    # it is now measurable rather than asserted.
+-    def record(name: str, fn, *, silent_default_when=None, announces=False):
++    def record(name: str, fn, *, silent_default_when=None):
+         try:
+-            _rt.reset_lookup_misses()
+-        except Exception:                                          # noqa: BLE001
+-            pass
+-        try:
+             got = fn(NEW_MODEL)
+             ref = fn(known)
+         except Exception as exc:  # noqa: BLE001
+             steps.append({"step": name, "outcome": "RAISE",
+                           "detail": f"{type(exc).__name__}: {str(exc)[:110]}"})
+             return
+-        try:
+-            announced = bool(_rt.lookup_misses())
+-        except Exception:                                          # noqa: BLE001
+-            announced = False
+         if silent_default_when is not None and silent_default_when(got):
+-            outcome = "ANNOUNCED DEFAULT" if (announces or announced) else "SILENT DEFAULT"
+-            steps.append({"step": name, "outcome": outcome,
++            steps.append({"step": name, "outcome": "SILENT DEFAULT",
+                           "detail": f"{NEW_MODEL!r} -> {got!r}; "
+-                                    f"{known!r} -> {ref!r}"
+-                                    + ("; recorded in the live miss ledger"
+-                                       if (announces or announced) else "")})
++                                    f"{known!r} -> {ref!r}"})
+         else:
+             steps.append({"step": name, "outcome": "PASS",
+                           "detail": f"{NEW_MODEL!r} -> {got!r}"})
+@@ -209,16 +182,11 @@
+            lambda m: runner.describe_model(m),
+            silent_default_when=lambda g: NEW_MODEL in str(g) and "(" not in str(g))
+     record("composer model map (COMPOSER_MODEL_MAP)",
+-           lambda m: _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+-                                          "composer directive-set mapping",
+-                                          default=m),
++           lambda m: C.COMPOSER_MODEL_MAP.get(m, m),
+            silent_default_when=lambda g: g == NEW_MODEL)
+     record("coherence budget (MODEL_COHERENCE_BUDGETS)",
+-           lambda m: _rt.resolve_or_alarm(
+-               C.MODEL_COHERENCE_BUDGETS,
+-               _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+-                                    "composer directive-set mapping", default=m),
+-               "coherence budget", default=C.DEFAULT_COHERENCE_BUDGET),
++           lambda m: C.MODEL_COHERENCE_BUDGETS.get(
++               C.COMPOSER_MODEL_MAP.get(m, m), C.DEFAULT_COHERENCE_BUDGET),
+            silent_default_when=lambda g: g == C.DEFAULT_COHERENCE_BUDGET)
+     record("model spec (runner_core.MODEL_SPECS)",
+            lambda m: rc.MODEL_SPECS.get(m),
+@@ -244,10 +212,7 @@
+     else:
+         record("directive composition (composer.compose)",
+                lambda m: type(C.compose(
+-                   "mathematics",
+-                   _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+-                                        "composer directive-set mapping",
+-                                        default=m),
++                   "mathematics", C.COMPOSER_MODEL_MAP.get(m, m),
+                    coherence_pruning=False)).__name__)
+ 
+     # ★ THE TABLES THE STRUCTURAL FILTER MISSED, added on CC2's finding. Both
+@@ -255,18 +220,11 @@
+     # scan looking for 2 or more current roster names as keys skips them
+     # entirely -- the filter's own blind spot.
+     record("coherence budget table keyed on composer keys",
+-           lambda m: _rt.resolve_or_alarm(
+-               C.MODEL_COHERENCE_BUDGETS,
+-               _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+-                                    "composer directive-set mapping", default=m),
+-               "coherence budget", default=None),
++           lambda m: C.MODEL_COHERENCE_BUDGETS.get(C.COMPOSER_MODEL_MAP.get(m, m)),
+            silent_default_when=lambda g: g is None)
+     record("phenotype transform table keyed on composer keys",
+-           lambda m: _rt.resolve_or_alarm(
+-               getattr(C, "PHENOTYPE_TRANSFORMS", {}),
+-               _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+-                                    "composer directive-set mapping", default=m),
+-               "phenotype transform", default=None),
++           lambda m: (getattr(C, "PHENOTYPE_TRANSFORMS", {})
++                      .get(C.COMPOSER_MODEL_MAP.get(m, m))),
+            silent_default_when=lambda g: g is None)
+ 
+     # ★ THE WORST SINGLE INSTANCE, which the original 7 steps missed entirely.
+@@ -294,7 +252,7 @@
+     # categories while emitting a 5th, "SILENT DEGRADE", so 1 of 10 steps was
+     # reported and not counted -- the same shape of defect this script exists to
+     # find. The assertion below refuses to print a total that does not add up.
+-    OUTCOMES = ("PASS", "ANNOUNCED DEFAULT", "SILENT DEFAULT", "SILENT DEGRADE", "RAISE",
++    OUTCOMES = ("PASS", "SILENT DEFAULT", "SILENT DEGRADE", "RAISE",
+                 "MISSING FILE")
+     counts = {k: sum(1 for s in steps if s["outcome"] == k) for k in OUTCOMES}
+     unknown = sorted({s["outcome"] for s in steps} - set(OUTCOMES))
+@@ -306,8 +264,6 @@
+             "silent": silent, "loud": loud}
+ 
+ 
+-
+-
+ def main() -> int:
+     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+     ap.add_argument("--json", action="store_true", help="machine-readable output")
+@@ -372,25 +328,6 @@
+     print("  in this project. Making admission trivial therefore means making the")
+     print("  misses LOUD first; a single registration point is the fix, and it")
+     print("  needs his ruling because it changes how every seat is configured.")
+-    print()
+-    print("  ★ PROGRESS AGAINST THAT, MEASURED RATHER THAN CLAIMED. Entry C18 of")
+-    print("  2026-10-18 routed 3 of these lookups through a resolver that still")
+-    print("  returns the default -- behaviour unchanged, because raising would")
+-    print("  turn a degradation into a dead run -- and RECORDS every fallback")
+-    print("  against the model's stable identity. Those 3 now report as")
+-    _ann = sum(1 for s in b["steps"] if s["outcome"] == "ANNOUNCED DEFAULT")
+-    print(f"  ANNOUNCED DEFAULT rather than SILENT DEFAULT: {_ann} step(s), so the")
+-    print(f"  silent count falls from {k + _ann} of {n} to {k} of {n}. THE FIGURE IS")
+-    print("  COMPUTED HERE, not written down: a hard-coded improvement is the kind")
+-    print("  of number that goes stale the next time a lookup is made loud.")
+-    print()
+-    print("  AND THIS SCRIPT COULD NOT SEE THAT UNTIL THE SAME DAY. Each lookup")
+-    print("  above was re-implemented here as a bare dictionary get, so the")
+-    print("  instrument measured the TABLE's shape and not the live code path --")
+-    print("  2 forms of one lookup, each individually correct, disagreeing about")
+-    print("  what happens. The lambdas now call the live resolver and read its")
+-    print("  ledger, which is the `execute-do-not-grep` rule applied to the")
+-    print("  measuring script rather than only to the thing measured.")
+     return 0
+ 
+ 
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-18 03:28:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uwqxemje/repo/.cdsfl_deny_canonical_writes.sb	2026-10-18 03:14:49
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-18 03:27:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uwqxemje/repo/bench/reference_runner_v3.py	2026-10-18 03:24:16
+@@ -10906,6 +10906,24 @@
+     except Exception as _bs_exc:  # noqa: BLE001 — a diagnostic must not fell a run
+         out["boundary_band_sensitivity"] = {
+             "error": f"{type(_bs_exc).__name__}: {_bs_exc}"}
++    # ★ THE INDICATOR'S EXPECTATION UNDER MEASURED INSTRUMENT NOISE, 2026-10-18.
++    #
++    # The hard ruler above decides criticality with 1[severity >= 0.7] on a
++    # quantity whose per-assignment noise is sigma = 0.1419 (273 duplicate
++    # pairs, docs/MATHEMATICAL_APPENDIX.md). `instrument_noise_profile` reports
++    # the same series under w = Phi((sev - thr)/sigma) -- ONE-WAY by derivation
++    # (it can refuse a convergence the hard tail permits, never permit one),
++    # and strictly stricter on 7 of 62 archived catalogues. DIAGNOSTIC ONLY:
++    # the live gate keeps the hard indicator; promotion is a founder decision
++    # taken on live-run evidence this block exists to collect. Joint round
++    # 2026-10-18; tests: bench/tests/test_the_two_rulers_compose_2026-10-18.py.
++    try:
++        from severity_instrument import instrument_noise_profile
++        out["instrument_noise_profile"] = instrument_noise_profile(
++            registry, max_round)
++    except Exception as _in_exc:  # noqa: BLE001 — a diagnostic must not fell a run
++        out["instrument_noise_profile"] = {
++            "error": f"{type(_in_exc).__name__}: {_in_exc}"}
+     return out
+ 
+ 
+
+### fable:attempt-1:bench/severity_instrument.py
+--- /dev/null	2026-10-18 03:28:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uwqxemje/repo/bench/severity_instrument.py	2026-10-18 03:25:28
+@@ -0,0 +1,152 @@
++"""The severity ruler's instrument-noise channel: expected critical counts.
++
++Joint round 2026-10-18. This module is the reconstruction of cc2's blind-round
++fix, rebuilt after sandbox teardown and adopted by the fable seat on a
++MEASUREMENT, not by deference: over 62 archived catalogues
++(`scripts/do_the_two_rulers_compose_2026-10-18.py`),
++
++  * this smoothing alone moves the production tail quiescence verdict on 7
++    runs, every one in the STRICT direction (refusing a convergence the hard
++    indicator permits; one-way property proved below and violated 0 times);
++  * the star-median pooling ruler (fable's blind fix) moves it on 0 of 62;
++  * the COMPOSITION Phi((star_median - thr) / (sigma * c_k)) moves it on 0 of
++    62 beyond this fix alone, AND loses the one-way guarantee: at the decision
++    line it disagrees with this ruler on exactly 14 archived entries, all 14
++    falsifier-CONFIRMED criticals pulled BELOW 0.5 by co-discoverers' lower
++    asserted numbers (leg3 C0006: CONFIRMED at 0.9, star [0.9, 0.45, 0.45],
++    composed weight 0.0043). That is votes overriding a tool.
++
++Under the founder's composability ruling (2026-10-02) the composition is
++therefore REFUSED: no measurement shows it dominating this fix alone, and the
++measurement that exists shows it strictly worse on a named property (one-way
++conservatism). The pooled ruler is not promoted either (0/62 reach on the
++quiescence channel).
++
++THE RULER ITSELF. `_settled_novelty_series` decides criticality with the hard
++indicator 1[severity >= 0.7] on a quantity whose per-assignment noise is
++measured at sigma = 0.1419, bootstrap 95% CI [0.1241, 0.1575], from 273
++duplicate pairs (docs/MATHEMATICAL_APPENDIX.md, "the instrument's noise
++floor"). This module reports the indicator's EXPECTATION under that noise:
++
++    w(f) = Phi((severity - threshold) / sigma),   REFUTED -> exactly 0.0.
++
++Properties, each executed by the test file
++`bench/tests/test_the_two_rulers_compose_2026-10-18.py`:
++
++  * Phi(threshold) = 1/2 exactly: a finding on the line is worth a coin toss.
++  * sigma -> 0 recovers the production ruler VALUE-FOR-VALUE on every
++    archived catalogue (the hard indicator is the sigma=0 member of this
++    family), which is what discharges the additive standard.
++  * ONE-WAY: a countable entry with severity >= threshold and no REFUTED
++    verdict has w >= 1/2, so a quiescent soft tail implies a quiescent hard
++    tail. The smoothing can refuse a convergence the hard rule permits and
++    can never permit one it refuses.
++
++DIAGNOSTIC ONLY. The live gate keeps deciding on the hard indicator; this is
++written into the report by `gamma_threshold_profile` so the reach measurement
++(the 7 strict flips) can be taken on live runs before any promotion, which is
++a founder decision. Promotion of ANY rule that reads these weights must
++re-derive the one-way direction for its own predicate: the proof covers the
++`< 0.5` quiescence test and nothing else (cc2's refutation condition 3,
++blind round 2026-10-18).
++"""
++from __future__ import annotations
++
++import math
++from typing import Any, Dict, List, Tuple
++
++#: Per-assignment severity noise, measured from 273 duplicate pairs in which 2
++#: different models independently scored the same defect. Producer:
++#: docs/MATHEMATICAL_APPENDIX.md ("the instrument's noise floor"), bootstrap
++#: 95% CI [0.1241, 0.1575].
++SEVERITY_INSTRUMENT_SIGMA = 0.1419
++
++#: Mirrors of the production constants. DELIBERATE mirror, not an import: a
++#: module-level import of reference_runner_v3 from one of its own siblings
++#: would be circular once the runner imports this module. The test file
++#: asserts both mirrors equal the production values, and asserts the sigma->0
++#: series equals `_settled_novelty_series` value-for-value on every archived
++#: catalogue, so a drift in either constant fails loudly.
++CRITICAL_SEVERITY_THRESHOLD_MIRROR = 0.7
++NON_NOVEL_TERMINAL_STATUSES_MIRROR = frozenset(
++    {"MERGED", "DUPLICATE", "UNCONFIRMED", "REFUTED"})
++
++
++def _phi(x: float) -> float:
++    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
++
++
++def critical_weight(entry: dict,
++                    sigma: float = SEVERITY_INSTRUMENT_SIGMA,
++                    threshold: float = CRITICAL_SEVERITY_THRESHOLD_MIRROR,
++                    ) -> float:
++    """Expected value of the critical indicator under instrument noise.
++
++    REFUTED short-circuits to exactly 0.0 -- the annihilation term of
++    `spec_verification_factor`, held exactly rather than approximated: a
++    disproved finding is worth nothing, not Phi's 4.1e-7 tail.
++    """
++    if str(entry.get("falsifier_verdict") or "").strip().upper() == "REFUTED":
++        return 0.0
++    sev = float(entry.get("severity") or 0.0)
++    if sigma <= 0.0:  # the sigma->0 member IS the production indicator
++        return 1.0 if sev >= threshold else 0.0
++    return _phi((sev - threshold) / sigma)
++
++
++def expected_critical_series(registry, max_round: int,
++                             sigma: float = SEVERITY_INSTRUMENT_SIGMA,
++                             ) -> List[float]:
++    """Per-round EXPECTED novel-critical counts from the settled registry.
++
++    The population filter deliberately mirrors `_settled_novelty_series`
++    admission (open_since_round window, non-novel terminal statuses), so the
++    ONLY difference between the two series is indicator-versus-Phi. A second,
++    independently-written filter would make any difference unattributable.
++    """
++    entries = registry.entries if hasattr(registry, "entries") else {}
++    vals = entries.values() if isinstance(entries, dict) else entries
++    s = [0.0] * (max_round + 1)
++    for e in vals:
++        r = e.get("open_since_round")
++        if r is None or r < 0 or r > max_round:
++            continue
++        if e.get("status") in NON_NOVEL_TERMINAL_STATUSES_MIRROR:
++            continue
++        s[r] += critical_weight(e, sigma=sigma)
++    return s
++
++
++def tail_is_quiescent_soft(series: List[float]) -> bool:
++    """all(w < 0.5) over the last-3 tail, the same window the production
++    `tail_is_quiescent` reads. 0.5 = Phi(0): the most likely critical count
++    in a quiet round is zero. ONE-WAY with respect to the hard tail, by the
++    module docstring's derivation."""
++    tail = series[-3:] if len(series) >= 3 else list(series)
++    return bool(tail) and all(w < 0.5 for w in tail)
++
++
++def instrument_noise_profile(registry, max_round: int) -> Dict[str, Any]:
++    """The report block: both rulers' series, tails, gammas, and whether the
++    quiescence verdict differs. Diagnostic; changes no verdict."""
++    import reference_runner_v3 as rr  # call-time import, no circularity
++    _, hard = rr._settled_novelty_series(registry, max_round)
++    soft = expected_critical_series(registry, max_round)
++    hard_tail = hard[-3:] if len(hard) >= 3 else list(hard)
++    soft_tail = soft[-3:] if len(soft) >= 3 else list(soft)
++    q_hard = bool(hard_tail) and all(c == 0 for c in hard_tail)
++    q_soft = tail_is_quiescent_soft(soft)
++    return {
++        "sigma": SEVERITY_INSTRUMENT_SIGMA,
++        "sigma_ci95": [0.1241, 0.1575],
++        "sigma_producer": "docs/MATHEMATICAL_APPENDIX.md, 273 duplicate pairs",
++        "expected_critical_series": [round(w, 4) for w in soft],
++        "soft_tail": [round(w, 4) for w in soft_tail],
++        "tail_is_quiescent_soft": q_soft,
++        "tail_is_quiescent_hard": q_hard,
++        "quiescence_verdict_differs": q_soft != q_hard,
++        "gamma_soft": round(rr._estimate_gamma(soft), 4),
++        "gamma_hard": round(rr._estimate_gamma(hard), 4),
++        "one_way": "soft-quiescent implies hard-quiescent; see module docstring",
++        "deciding": False,
++    }
+
+### fable:attempt-1:bench/tests/test_the_two_rulers_compose_2026-10-18.py
+--- /dev/null	2026-10-18 03:28:17
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uwqxemje/repo/bench/tests/test_the_two_rulers_compose_2026-10-18.py	2026-10-18 03:25:11
+@@ -0,0 +1,260 @@
++"""Do the 2 severity de-coarsening fixes compose? NO -- measured, 0/62 and a
++lost guarantee. Joint round 2026-10-18, fable seat.
++
++The two blind fixes: cc2's smoothing (Phi((sev-0.7)/sigma) in place of the
++hard indicator) and fable's pooling (star-median severity into the same
++indicator). The natural composition is Phi((star_median-0.7)/(sigma*c_k)).
++Executed over every archived catalogue with a settled registry (62):
++
++  * the composition changes NO quiescence verdict relative to the smoothing
++    alone (0/62), tail predicate and all-rounds predicate alike;
++  * the pooled indicator changes NO quiescence verdict relative to the hard
++    ruler (0/62);
++  * at the 0.5 decision line the composition disagrees with the smoothing on
++    exactly 14 archived entries -- ALL 14 falsifier-CONFIRMED criticals pulled
++    BELOW 0.5, none pulled above. The composition loses the smoothing's
++    one-way (conservative) guarantee and loses it in the anti-tool direction.
++
++Under the founder's composability ruling (2026-10-02): no measured advantage,
++one measured regression -> build the smoothing alone. These tests pin both
++halves of that measurement so the refusal stays evidenced.
++"""
++from __future__ import annotations
++
++import json
++import math
++import pathlib
++import statistics
++import sys
++
++import pytest
++
++ROOT = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(ROOT))
++sys.path.insert(0, str(ROOT / "bench"))
++
++import reference_runner_v3 as rr  # noqa: E402
++import severity_instrument as si  # noqa: E402
++
++LEG3 = "leg3_final_shakedown_20261015T220118Z"
++FREE1 = "free_run1_directive_whole_20261015T061123Z_20261015T061124Z"
++
++#: SD of the median of k independent normal assessments, as a multiple of the
++#: per-assessment sigma. k=1 exact; k=2 exact (median of 2 IS the mean of 2);
++#: k=3,5 by quadrature on the order-statistic density (SciPy), confirmed to 10
++#: digits by Wolfram Language (local Wolfram Engine): 0.6698291607404084,
++#: 0.5355685405302014. k=4,6,8 by seeded Monte Carlo (4e6 draws).
++MEDIAN_SD = {1: 1.0, 2: 1 / math.sqrt(2), 3: 0.66983, 4: 0.54605,
++             5: 0.53557, 6: 0.46325, 7: 0.45880, 8: 0.41005}
++
++
++class _Reg:
++    def __init__(self, entries):
++        self.entries = entries
++
++
++def _catalogues():
++    out = []
++    for p in sorted((ROOT / "bench" / "logs").glob("*/runner_state.json")):
++        try:
++            d = json.loads(p.read_text())
++        except Exception:
++            continue
++        entries = (d.get("registry") or {}).get("entries")
++        if not entries:
++            continue
++        nc = d.get("novelty_counts") or []
++        mr = max(len(nc) - 1,
++                 max((e.get("open_since_round") or 0) for e in entries.values()))
++        out.append((p.parent.name, entries, mr))
++    return out
++
++
++CATS = _catalogues()
++
++
++def _entries(run):
++    return json.loads((ROOT / "bench" / "logs" / run /
++                       "runner_state.json").read_text())["registry"]["entries"]
++
++
++def _star(cid, entries):
++    members = [cid]
++    for occ in entries[cid].get("occasions") or []:
++        fc = occ.get("from_canonical")
++        if (occ.get("via") == "codiscovery" and fc and fc != cid
++                and fc in entries and fc not in members):
++            members.append(fc)
++    return members
++
++
++def _pooled(cid, entries):
++    ms = _star(cid, entries)
++    return statistics.median(
++        float(entries[m].get("severity") or 0.0) for m in ms), len(ms)
++
++
++def _composed_weight(cid, entries):
++    e = entries[cid]
++    if str(e.get("falsifier_verdict") or "").strip().upper() == "REFUTED":
++        return 0.0
++    med, k = _pooled(cid, entries)
++    sd = si.SEVERITY_INSTRUMENT_SIGMA * MEDIAN_SD[min(k, 8)]
++    return si._phi((med - si.CRITICAL_SEVERITY_THRESHOLD_MIRROR) / sd)
++
++
++def _soft_series(entries, mr, weight_of):
++    s = [0.0] * (mr + 1)
++    for cid, e in entries.items():
++        r = e.get("open_since_round")
++        if r is None or r < 0 or r > mr:
++            continue
++        if e.get("status") in si.NON_NOVEL_TERMINAL_STATUSES_MIRROR:
++            continue
++        s[r] += weight_of(cid, e)
++    return s
++
++
++def test_the_mirrored_constants_match_production():
++    assert si.CRITICAL_SEVERITY_THRESHOLD_MIRROR == rr.CRITICAL_SEVERITY_THRESHOLD
++    assert si.NON_NOVEL_TERMINAL_STATUSES_MIRROR == frozenset(
++        rr._NON_NOVEL_TERMINAL_STATUSES)
++
++
++def test_the_sigma_zero_member_is_the_production_ruler():
++    """Additive-standard discharge: nothing is removed -- the hard indicator
++    is the sigma=0 member of the Phi family, value-for-value, every catalogue.
++
++    REFUTED-verdict entries are the one deliberate divergence (annihilation);
++    they are excluded from this comparison and pinned by their own test."""
++    assert CATS, "no archived catalogues discovered"
++    for name, entries, mr in CATS:
++        live = {cid: e for cid, e in entries.items()
++                if str(e.get("falsifier_verdict") or "").strip().upper()
++                != "REFUTED"}
++        _, hard = rr._settled_novelty_series(_Reg(live), mr)
++        limit = si.expected_critical_series(_Reg(live), mr, sigma=0.0)
++        assert [int(w) for w in limit] == hard, (
++            f"sigma->0 series diverges from production on {name}: "
++            f"{limit} != {hard}")
++
++
++def test_phi_at_the_threshold_is_exactly_half():
++    w = si.critical_weight({"severity": rr.CRITICAL_SEVERITY_THRESHOLD})
++    assert w == pytest.approx(0.5, abs=1e-15)
++
++
++def test_refuted_is_annihilated_exactly():
++    e = _entries(LEG3)["C0018"]
++    assert str(e.get("falsifier_verdict")).upper() == "REFUTED"
++    assert si.critical_weight(e) == 0.0, (
++        "a disproved finding must be ANNIHILATED, not merely reduced")
++
++
++def test_the_one_way_property_holds_on_the_whole_archive():
++    """Theorem: countable, sev >= thr, not REFUTED => w >= 1/2. Hence a
++    quiescent soft tail implies a quiescent hard tail. Checked per-entry and
++    per-run over all 62 catalogues."""
++    violations = []
++    for name, entries, mr in CATS:
++        for cid, e in entries.items():
++            if e.get("status") in si.NON_NOVEL_TERMINAL_STATUSES_MIRROR:
++                continue
++            if str(e.get("falsifier_verdict") or "").strip().upper() == "REFUTED":
++                continue
++            if float(e.get("severity") or 0.0) >= rr.CRITICAL_SEVERITY_THRESHOLD:
++                if si.critical_weight(e) < 0.5:
++                    violations.append((name, cid))
++        _, hard = rr._settled_novelty_series(_Reg(entries), mr)
++        soft = si.expected_critical_series(_Reg(entries), mr)
++        hard_tail = hard[-3:] if len(hard) >= 3 else hard
++        if si.tail_is_quiescent_soft(soft) and not all(c == 0 for c in hard_tail):
++            violations.append((name, "RUN-LEVEL"))
++    assert not violations, (
++        f"ONE-WAY PROPERTY VIOLATED -- the soft rule permitted where the hard "
++        f"rule refused: {violations}")
++
++
++def test_the_smoothing_reaches_7_runs_all_in_the_strict_direction():
++    stricter, looser = [], []
++    for name, entries, mr in CATS:
++        prof = si.instrument_noise_profile(_Reg(entries), mr)
++        if prof["quiescence_verdict_differs"]:
++            (stricter if prof["tail_is_quiescent_hard"] else looser).append(name)
++    assert looser == []
++    assert sorted(stricter) == [
++        "commissioning_arm1_panel_20260929T194414Z",
++        "commissioning_arm3_contrast_20260930T051219Z",
++        "exp35_pe_20260406T152126Z",
++        "exp40_slice_collision_20260518T130744Z",
++        FREE1,
++        "sim45_memory_20260830T235237Z",
++        "sim45_postfix_20260901T231824Z_20260901T231827Z",
++    ], f"reach changed: {sorted(stricter)}"
++
++
++def test_leg3_through_the_production_caller():
++    prof = rr.gamma_threshold_profile(_Reg(_entries(LEG3)), 4)
++    blk = prof["instrument_noise_profile"]
++    assert "error" not in blk, blk
++    assert blk["gamma_hard"] == 1.0
++    assert blk["gamma_soft"] == 0.9597          # cc2's blind number, reproduced
++    assert blk["soft_tail"] == [0.2541, 0.1184, 0.4248]
++    assert blk["quiescence_verdict_differs"] is False
++    assert blk["deciding"] is False
++
++
++def test_the_pooled_indicator_changes_no_quiescence_verdict():
++    """fable's blind fix, driven through the PRODUCTION counter: 0/62 reach on
++    the quiescence channel. Star-median assertions from the blind round
++    reproduce (C0001 -> 0.875, C0011 -> 0.64)."""
++    ents = _entries(LEG3)
++    assert _pooled("C0001", ents) == (0.875, 6)
++    assert _pooled("C0011", ents) == (0.64, 2)
++    diffs = []
++    for name, entries, mr in CATS:
++        _, hard = rr._settled_novelty_series(_Reg(entries), mr)
++        pooled_entries = {cid: {**e, "severity": _pooled(cid, entries)[0]}
++                          for cid, e in entries.items()}
++        _, pooled = rr._settled_novelty_series(_Reg(pooled_entries), mr)
++        th, tp = hard[-3:], pooled[-3:]
++        if (all(c == 0 for c in th)) != (all(c == 0 for c in tp)):
++            diffs.append(name)
++    assert diffs == [], f"pooling now reaches the quiescence verdict: {diffs}"
++
++
++def test_the_composition_is_refused_on_measurement():
++    """(a) 0/62: the composition never changes a quiescence verdict relative
++    to the smoothing alone, under BOTH the production last-3 tail predicate
++    and the all-rounds predicate. (b) Every archived entry where the two
++    disagree at the 0.5 line is a falsifier-CONFIRMED critical pulled DOWN --
++    the lost one-way guarantee, demonstrated on leg3 C0006."""
++    verdict_diffs, crossers = [], []
++    for name, entries, mr in CATS:
++        soft = _soft_series(entries, mr, lambda cid, e: si.critical_weight(e))
++        comp = _soft_series(entries, mr,
++                            lambda cid, e: _composed_weight(cid, entries))
++        for tail in (lambda s: s[-3:] if len(s) >= 3 else s, lambda s: s):
++            if (all(w < 0.5 for w in tail(soft))) != \
++               (all(w < 0.5 for w in tail(comp))):
++                verdict_diffs.append(name)
++        for cid, e in entries.items():
++            if e.get("status") in si.NON_NOVEL_TERMINAL_STATUSES_MIRROR:
++                continue
++            w_s, w_c = si.critical_weight(e), _composed_weight(cid, entries)
++            if (w_s >= 0.5) != (w_c >= 0.5):
++                crossers.append((name, cid, e.get("falsifier_verdict")))
++    assert verdict_diffs == [], (
++        f"the composition now moves a verdict beyond the smoothing alone -- "
++        f"re-run the composability measurement: {verdict_diffs}")
++    assert len(crossers) == 14 and all(v == "CONFIRMED" for _, _, v in crossers), (
++        f"the crosser population changed: {crossers}")
++    # the sharpest single counterexample, pinned
++    ents = _entries(LEG3)
++    assert ents["C0006"]["falsifier_verdict"] == "CONFIRMED"
++    assert float(ents["C0006"]["severity"]) == 0.9
++    assert si.critical_weight(ents["C0006"]) == pytest.approx(0.9206, abs=5e-4)
++    assert _composed_weight("C0006", ents) < 0.01, (
++        "composition must weight this CONFIRMED 0.9-severity critical below "
++        "0.01 (star [0.9, 0.45, 0.45]); if it no longer does, the refusal's "
++        "evidence base has changed")
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-18 03:27:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uwqxemje/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-18 02:47:56
+@@ -937,7 +937,7 @@
+ **WHAT THIS CHANGES ABOUT HIS 3 OPTIONS.** Option 2, bound it by a measured failure, **requires changing the CONSUMER as well as the recorder**, and even then nothing moves until a dispatch actually overflows, which none ever has. Option 1, decay toward the recent window, moves the ceiling on every paid seat at once and needs a decay rate with a measurement behind it rather than a chosen constant. Option 3, rename it a proven floor and stop calling it a capacity, costs no routing change and leaves the overload detection he described unimplemented. **NOTHING WAS CHANGED AT THAT POINT.** The guard `bench/tests/test_a_measured_failure_cannot_lower_the_ceiling_2026-10-17.py` is a CHANGE DETECTOR rather than a correctness guard: it pins the present behaviour so it cannot move unnoticed, and 3 of its 4 parametrised cases go red under precisely the consumer change option 2 would need.
+ 
+ 
+-**B13. Admitting a model is not trivial, and the cost is silent defaulting rather than edit count.** Added 2026-10-16T16:53+01:00. HIS QUESTION, verbatim: *"adding, removing, or changing models in the harness should be an entirely trivial affair (by design) and should not require major code changes to enable researchers to do so. The question is, is it? Have we adequately addressed this particular design objective?"* **ANSWERED TWO WAYS.** Structurally, an AST walk over `bench/` and `scripts/` finds 156 per-model tables across 67 files, but that total overstates the answer about threefold and the split is load-bearing: 86 sites are TESTS, which guard the roster rather than admit to it; 50 are HISTORICAL one-off experiment runners whose edit would alter what those runs did; 5 are measurement scripts; 3 are simulated-seat tools. The LIVE harness is **12 tables across 6 files** -- `bench/reference_runner_v3.py`, `bench/runner_core.py`, `bench/cdsfl_registry/composer.py`, `bench/experiment_11_orchestrator.py`, `bench/routing.py`, `bench/dm/_types.py` -- plus 1 per-model registry `.toml`. **SO THE COUNT IS MODEST AND THE FAILURE MODE IS NOT.** Executed: a model that does not exist, `Kimi` (he names Kimi K3 as a candidate for re-admission), was put through the real resolution chain. Of 7 steps, **5 default SILENTLY** and only 2 fail loudly -- 71.4286%, Wilson [35.8934%, 91.7781%], Clopper-Pearson [29.0421%, 96.3307%]. A researcher who misses one table gets a seat that RUNS while losing whatever that table gated, which is the class `base_model_label`'s own docstring calls *"a capability lost with no error"* and which this project has recorded 8 times. **For DONE:** make a missing registration FAIL LOUDLY at dispatch FIRST, and consolidate to a single registration point SECOND -- a single point that still defaults silently would hide 12 misses behind 1. **NEEDS HIS RULING**, because it changes how every seat is configured, and the question of whether the loud failure should be a raise, a refusal to dispatch that seat, or a run-level preflight is his. Put to the free panel on 2026-10-16 as question 3 of `bench/logs/joint_the_outstanding_issues_2026-10-16/BRIEF.md`. Producer: `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py`. **★ MEASURED 2026-10-18T03:25:59+01:00, AND BOTH HALVES OF THE HEADLINE MOVE.** The entry says admitting a model is not trivial *"and the cost is silent defaulting rather than edit count"*. **THE COST HALF IS SMALLER THAN STATED, AND THE SILENT HALF IS HALF FIXED.** **First: the compose path is ALREADY LOUD, and has been since the panel review of 2026-08-30.** The runner wraps `_compose_for_model` and logs `COMPOSER FALLBACK for <label>: <exception>` on failure, so the incident that motivated this -- a seat composing to 0 characters on an empty system prompt -- is announced today. **My own proposed fix for this entry, "loud and non-fatal", was therefore already the behaviour at that site**, which is worth recording: I proposed the status quo as a repair and only found out by reading the call site. **Second: 0 of the labels archived runs actually use hits the fallback.** The live path resolves through `base_model_label` and then `COMPOSER_MODEL_MAP`, and the 11 labels the archive records -- `CC2`, `Codex`, `ChatGPT`, `Gemini`, `DeepSeek` across 40 runs each, plus the 6 simulated variants -- **all resolve to a policy file**. The OpenRouter identifiers and the pinned `claude-*` backing names never reach the composer. I measured this 3 times and got 3 answers -- 71.4286% on raw labels, 56.2500% on a semi-live path, and **0 of 11 on the path runs actually take** -- because the first 2 bypassed a resolution step. The deciding layer was the only one that mattered. **Third, and this is the part that remains real: the FAILURE MODE across admission as a whole.** `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py` puts a new seat through 10 admission steps. Before tonight **9 of 10 failed SILENTLY**, 90.0000%, Wilson [59.5850%, 98.2124%]. Entry C18 routed 4 of them through a resolver that still returns the default but RECORDS every fallback, so the count is now **5 of 10, 50.0000%, Wilson [23.6593%, 76.3407%]** -- the silent share roughly halved. **THE INSTRUMENT COULD NOT SEE THAT UNTIL THE SAME DAY**, because each lookup was re-implemented inside the producer as a bare dictionary get, so it measured the TABLE's shape rather than the live path: 2 forms of 1 lookup, each individually correct, disagreeing about what happens. The lambdas now call the live resolver and read its ledger, the improvement figure is COMPUTED rather than written down, and a guard refuses a return to a bare lookup -- `bench/tests/test_admission_counts_announced_apart_from_silent_2026-10-18.py`, 4 tests, mutation red. **WHAT STILL NEEDS DECIDING, and it is now well-posed:** a researcher must still edit 12 per-model tables across 6 live-harness files and add 1 registry file, and 5 of the 10 steps still fail silently. The producer's own recommendation stands -- a single registration point -- and it *"needs his ruling because it changes how every seat is configured"*. **TO THE PANEL** with that recommendation stated first.
++**B13. Admitting a model is not trivial, and the cost is silent defaulting rather than edit count.** Added 2026-10-16T16:53+01:00. HIS QUESTION, verbatim: *"adding, removing, or changing models in the harness should be an entirely trivial affair (by design) and should not require major code changes to enable researchers to do so. The question is, is it? Have we adequately addressed this particular design objective?"* **ANSWERED TWO WAYS.** Structurally, an AST walk over `bench/` and `scripts/` finds 156 per-model tables across 67 files, but that total overstates the answer about threefold and the split is load-bearing: 86 sites are TESTS, which guard the roster rather than admit to it; 50 are HISTORICAL one-off experiment runners whose edit would alter what those runs did; 5 are measurement scripts; 3 are simulated-seat tools. The LIVE harness is **12 tables across 6 files** -- `bench/reference_runner_v3.py`, `bench/runner_core.py`, `bench/cdsfl_registry/composer.py`, `bench/experiment_11_orchestrator.py`, `bench/routing.py`, `bench/dm/_types.py` -- plus 1 per-model registry `.toml`. **SO THE COUNT IS MODEST AND THE FAILURE MODE IS NOT.** Executed: a model that does not exist, `Kimi` (he names Kimi K3 as a candidate for re-admission), was put through the real resolution chain. Of 7 steps, **5 default SILENTLY** and only 2 fail loudly -- 71.4286%, Wilson [35.8934%, 91.7781%], Clopper-Pearson [29.0421%, 96.3307%]. A researcher who misses one table gets a seat that RUNS while losing whatever that table gated, which is the class `base_model_label`'s own docstring calls *"a capability lost with no error"* and which this project has recorded 8 times. **For DONE:** make a missing registration FAIL LOUDLY at dispatch FIRST, and consolidate to a single registration point SECOND -- a single point that still defaults silently would hide 12 misses behind 1. **NEEDS HIS RULING**, because it changes how every seat is configured, and the question of whether the loud failure should be a raise, a refusal to dispatch that seat, or a run-level preflight is his. Put to the free panel on 2026-10-16 as question 3 of `bench/logs/joint_the_outstanding_issues_2026-10-16/BRIEF.md`. Producer: `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py`.
+ <!-- task: B13 | state: OPEN | status: TESTED | evidence: scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py | ruled: 2026-10-17 -->
+ 
+ **THE PREREQUISITE IS BUILT 2026-10-17 16:13 BST: A MISS IS NOW NAMED RATHER THAN DEFAULTED.** `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py` measures what a new seat costs — **12 per-model tables across 6 live-harness files** plus 1 registry `.toml` — and its own conclusion is that *"the real problem is not the count, it is the failure mode"*: of the 10 steps a new seat passes through, **9 fail SILENTLY and 1 fails loudly — 90.0000%, Wilson [59.5850%, 98.2124%], Clopper-Pearson [55.4984%, 99.7471%]**. A researcher who misses a table gets a seat that RUNS while losing whatever that table gated, which `base_model_label`'s own docstring calls *"a capability lost with no error"*.
+@@ -1007,7 +1007,7 @@
+ 
+ ★ **B20's 3 QUESTIONS ANSWERED 2026-10-17T03:54:51+01:00, ON HIS 3RD ASKING.** He noted correctly that each prior turn mentioned the orchestrator and answered none of it. **(a) IS THE EXPERIMENT SOUND IN ITS OWN RIGHT? Yes, with 1 design correction: it is 2 arms, not 1, because the role he describes bundles 2 separable jobs.** The CLASSIFIER job — which candidate repair is better, which compose, which meet the simplest-sufficient and additive standards — has an executable criterion today, because `bench/fix_efficacy.py` already asks of a single repair whether it cures the defect its own falsifier demonstrates. So that arm can be scored against ground truth without a human in the loop. The MONITOR job — his `cy` protocol, noticing that something is *"screwy"*, pausing, analysing, fixing, resuming — has **no defined predicate at all**, so there is nothing to score it against. Running them as 1 experiment would confound a measurable arm with an unmeasurable one. **(b) WHAT CC1 PREDICTS, recorded before the run so it is falsifiable.** Across the 3 shakedown legs **77 of 79 adjudications were tool-made rather than assertion-made, 97.4684 per cent, Wilson [91.2314 per cent, 99.3030 per cent]**. A bound orchestrator therefore operates in a system where its own assertions mostly decide nothing, so the classifier arm should come close to parity. The monitor arm should degrade, because monitoring is the one judgement the harness does not instrument. **And this session is itself evidence for that prediction rather than an argument for it**: 6 of CC1's own monitoring judgements failed on 2026-10-17, each producing a clean-looking answer that was an artefact of search scope or a function signature. That failure set is a usable corpus for the monitor arm, because each case has a known correct answer. **(c) WHERE ON THE RUNWAY, and NOT last.** His instinct was that this is *"one of the last tests we run before final release"*. The argument against: the orchestrator role is where the measured failures are, so testing it last means discovering orchestration faults after everything else is frozen. The argument for waiting: a live bound arm needs a harness that is not still changing under it. **Both are satisfied by a SHADOW arm first** — the bound orchestrator observes a real run and records what it would have decided, while CC1 remains the acting orchestrator, and agreement is measured afterwards. That costs 1 run's observation, risks no decision, and needs no stable harness because it changes nothing. **Recommended placement: the shadow arm immediately after Stage 1's replay exit test, which is free and already the nearest actionable item; the live bound arm after the merge to the canonical branch and before Stage 3's capstone.** **NEEDS HIS RULING on that placement only.**
+ 
+-**B21. Making model and role selection trivial is NOT a large rewrite, because the 4-layer policy engine that does it already exists and the canonical runner does not call it.** Added 2026-10-17T01:25:30+01:00. **HIS QUESTION, verbatim:** *"can you build this and implement it in such a way that it doesn't require vast code rewrites and/or refactoring of large elements of the existing code base? If it is buildable, I would suggest building it, and then putting this work to the free panel to look at."* **HIS DESIGN INTENT, verbatim:** *"model selection should preferably be a simple box, containing a scrollable list of models available from OpenRouter and models available on a user's local machine... with available models on a user's local machine at the top of this list"*, with *"role management, such as 'worker'... 'classifier'... and 'orchestrator'"* individually selectable, plus a recommended list and a note that untested models in a given role carry unknown performance. His argument for it: the project claims substrate, model and vendor agnosticism, and *"We clearly cannot make such claims, and then say 'Oh, btw, that isn't really true. Here is a list of the only models you can use.'"* **THE ANSWER IS YES, AND MOST OF THE HARD PART IS BUILT.** `bench/cdsfl_registry/registry.py` is a 4-layer hierarchical policy merge engine with MONOTONICITY ENFORCEMENT: layer 1 `universal.toml` holds HARD constraints, layer 2 `domains/<domain>.toml`, layer 3 `tasks/<task_id>.toml`, layer 4 `models/<model>.toml`, and a lower layer that tries to weaken a universal HARD constraint raises `PolicyViolationError`. **That monotonicity is exactly the safety property arbitrary model selection requires**, because it means a researcher's choice of model cannot loosen a hard constraint. Measured by execution: layer 2 holds **10 domains** — biology, chemistry, code, cross_domain, cs_software, engineering, information_science, mathematics, physics, statistics — and layer 4 holds **6 model files**: Fable, chatgpt_5_4, codex_5_3, deepseek_v3, gemini_3_1_pro, opus_4_6. `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys; an unregistered model raises `FileNotFoundError`, which is a LOUD failure and the 1 of 10 admission steps that does fail loudly per B13. **THE GAP, AND IT IS WIRING RATHER THAN ARCHITECTURE.** `bench/reference_runner_v3.py` — the canonical runner — makes **0** calls to `load_effective_policy`. The engine is reached by `bench/run_round_robin.py:3631` and `:3647` and by `bench/cdsfl_registry/engine.py`, neither of which is the current runner. v3 passes `task_domain` to the composer at line 11909 and accepts `domain=args.domain` at 21194, so the domain reaches prompt composition but never the policy merge. Layer 3, `tasks/`, does not exist as a directory at all. And there is no role layer. **FOR DONE, in dependency order:** (1) wire `load_effective_policy` into v3, which is the single change that makes every later step declarative; (2) redirect B13's 12 live per-model tables to read the merged policy instead of their own dictionaries; (3) add a role dimension, either as a `roles/` layer or a `role` field in the model file, composing with the existing merge rule rather than beside it; (4) wire `validate_all_policies()` as the run-level preflight CC2 recommended, reporting every missing registration at once and refusing the run; (5) generate the selectable list from the registry plus an OpenRouter query plus a local-model probe, with local models first as he specified. **Steps 1 and 4 are each a handful of lines; step 2 is 12 small redirections; none is a refactor of large elements.** **THEN TO THE FREE PANEL**, as he directed, on design, implementation and integration with the coming interface build. **★ THE PREMISE IS WRONG, ESTABLISHED BY EXECUTION 2026-10-18T03:25:59+01:00.** The entry's headline says the 4-layer policy engine exists *"and the canonical runner does not call it"*. That is true of the SYMBOL and false of the BEHAVIOUR. `bench/reference_runner_v3.py` contains 0 textual references to `load_effective_policy` -- but the call sits inside `compose()` in `bench/cdsfl_registry/composer.py`, and `compose()` is exactly what the runner invokes through `_compose_for_model` once per seat per round. **Verified by running it:** `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys, and `compose(task_domain="mathematics", model="opus_4_6", ...)` returns a `ComposedDirectiveSet`. **SO THE RUNNER DOES CONSULT THE 4-LAYER MERGE, INCLUDING ITS MONOTONICITY ENFORCEMENT, ON EVERY COMPOSITION**, and wiring a second path into it would have duplicated working machinery -- the third time in one night I nearly rebuilt something that exists, and the first of the three caught BEFORE writing any code, by doing the FOLLOW step first. **WHAT IS GENUINELY MISSING IS NARROWER THAN THE ENTRY CLAIMS:** the engine has layers for universal constraints, domain, task and model, and NO LAYER FOR ROLE. His design asks for *"role management, such as 'worker' ... 'classifier' ... and 'orchestrator'"* to be individually selectable, and that is the part with no home in the 4 layers. **FOR DONE:** add the role layer, which is additive and does not disturb the merge, and put THAT to the panel rather than the wiring. **The brief is written and validated** at `bench/logs/what_breaks_the_capability_tie_2026-10-18/BRIEF.md`, which carries this correction.
++**B21. Making model and role selection trivial is NOT a large rewrite, because the 4-layer policy engine that does it already exists and the canonical runner does not call it.** Added 2026-10-17T01:25:30+01:00. **HIS QUESTION, verbatim:** *"can you build this and implement it in such a way that it doesn't require vast code rewrites and/or refactoring of large elements of the existing code base? If it is buildable, I would suggest building it, and then putting this work to the free panel to look at."* **HIS DESIGN INTENT, verbatim:** *"model selection should preferably be a simple box, containing a scrollable list of models available from OpenRouter and models available on a user's local machine... with available models on a user's local machine at the top of this list"*, with *"role management, such as 'worker'... 'classifier'... and 'orchestrator'"* individually selectable, plus a recommended list and a note that untested models in a given role carry unknown performance. His argument for it: the project claims substrate, model and vendor agnosticism, and *"We clearly cannot make such claims, and then say 'Oh, btw, that isn't really true. Here is a list of the only models you can use.'"* **THE ANSWER IS YES, AND MOST OF THE HARD PART IS BUILT.** `bench/cdsfl_registry/registry.py` is a 4-layer hierarchical policy merge engine with MONOTONICITY ENFORCEMENT: layer 1 `universal.toml` holds HARD constraints, layer 2 `domains/<domain>.toml`, layer 3 `tasks/<task_id>.toml`, layer 4 `models/<model>.toml`, and a lower layer that tries to weaken a universal HARD constraint raises `PolicyViolationError`. **That monotonicity is exactly the safety property arbitrary model selection requires**, because it means a researcher's choice of model cannot loosen a hard constraint. Measured by execution: layer 2 holds **10 domains** — biology, chemistry, code, cross_domain, cs_software, engineering, information_science, mathematics, physics, statistics — and layer 4 holds **6 model files**: Fable, chatgpt_5_4, codex_5_3, deepseek_v3, gemini_3_1_pro, opus_4_6. `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys; an unregistered model raises `FileNotFoundError`, which is a LOUD failure and the 1 of 10 admission steps that does fail loudly per B13. **THE GAP, AND IT IS WIRING RATHER THAN ARCHITECTURE.** `bench/reference_runner_v3.py` — the canonical runner — makes **0** calls to `load_effective_policy`. The engine is reached by `bench/run_round_robin.py:3631` and `:3647` and by `bench/cdsfl_registry/engine.py`, neither of which is the current runner. v3 passes `task_domain` to the composer at line 11909 and accepts `domain=args.domain` at 21194, so the domain reaches prompt composition but never the policy merge. Layer 3, `tasks/`, does not exist as a directory at all. And there is no role layer. **FOR DONE, in dependency order:** (1) wire `load_effective_policy` into v3, which is the single change that makes every later step declarative; (2) redirect B13's 12 live per-model tables to read the merged policy instead of their own dictionaries; (3) add a role dimension, either as a `roles/` layer or a `role` field in the model file, composing with the existing merge rule rather than beside it; (4) wire `validate_all_policies()` as the run-level preflight CC2 recommended, reporting every missing registration at once and refusing the run; (5) generate the selectable list from the registry plus an OpenRouter query plus a local-model probe, with local models first as he specified. **Steps 1 and 4 are each a handful of lines; step 2 is 12 small redirections; none is a refactor of large elements.** **THEN TO THE FREE PANEL**, as he directed, on design, implementation and integration with the coming interface build.
+ <!-- task: B21 | state: OPEN | status: TESTED | evidence: bench/cdsfl_registry/registry.py:286, bench/reference_runner_v3.py:11909 | ruled: 2026-10-17 -->
+ 
+ **THE PREREQUISITE IS BUILT 2026-10-17 16:13 BST: A MISS IS NOW NAMED RATHER THAN DEFAULTED.** `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py` measures what a new seat costs — **12 per-model tables across 6 live-harness files** plus 1 registry `.toml` — and its own conclusion is that *"the real problem is not the count, it is the failure mode"*: of the 10 steps a new seat passes through, **9 fail SILENTLY and 1 fails loudly — 90.0000%, Wilson [59.5850%, 98.2124%], Clopper-Pearson [55.4984%, 99.7471%]**. A researcher who misses a table gets a seat that RUNS while losing whatever that table gated, which `base_model_label`'s own docstring calls *"a capability lost with no error"*.
+@@ -1039,7 +1039,7 @@
+ **C0. An audit of 302 of his annotations found 20 confirmed gaps, and 12 of them are rulings he gave that were never carried out.** Added 2026-10-17T02:03:01+01:00. **HIS INSTRUCTION, verbatim, 2026-10-17:** *"before running it in full, carefully check off that you are parsing my fully responses and then tell me everything that is on that task list before executing it."* He added that the short work list made him *"suspicious that you are not reading/parsing my responses in full"*. **HE WAS RIGHT, AND A FIRST ATTEMPT TO ANSWER HIM WAS WRONG IN THE FLATTERING DIRECTION.** A word-overlap measure reported that 198 of 199 of his verdicts had at least half their distinctive words present in this list, 99.4975 per cent. That measure survived a control test — his verdicts averaged 81.38 per cent overlap against 33.65 per cent for unrelated STEM prose, separating by 47.74 points — but it answered the WRONG QUESTION. Whether his topic words appear in this list says nothing about whether his instructions were acted on. **THE AUDIT THAT ANSWERS THE RIGHT QUESTION.** 302 annotations dated 2026-10-01 or later, read with the dedicated reader because 319 of his 579 verdicts sit in files a naive text search treats as binary, were examined instruction by instruction against this list by 5 independent auditors, and every claimed gap was then handed to a separate adversarial verifier briefed to REFUTE it and to default to "not a gap" when uncertain. **266 instructions were identified. 44 gaps were claimed. The adversarial pass refuted 24 of the 44, 54.5455 per cent, so a single unverified pass would have overstated the gap count by more than double.** **20 survived: 20 of 266 instructions = 7.5188 per cent, Wilson [4.9197 per cent, 11.3274 per cent], Clopper-Pearson [4.6530 per cent, 11.3735 per cent].** statsmodels, mpmath and the local Wolfram Engine agree to 7 significant figures; Wolfram returned the pair 4.919703024776954 and 11.32741445387045, classified as verified by the project's Wolfram standard. Computed with Wolfram Language on the local Wolfram Engine. **Of the 20: 12 are rulings given and not carried out — 4.5113 per cent of all instructions, Wilson [2.5992 per cent, 7.7185 per cent] — 4 are instructions nothing tracks, and 4 are direct questions never answered.** They are entered below as C1 to C20, each carrying his words and the verifier's refutation attempt. **THE SHAPE OF THE FAILURE, which matters more than the rate.** Not one of the 20 was lost because it was hard. Each was answered in conversation, or partly built, and then never written into the list that survives a compaction. That is the same shape as the finding recorded on 2026-10-15 about a seat's work sitting unread in a sandbox for 10 days. **This entry is the measurement, not the work.** **THE 20 ENTRIES ARE NOW THEMSELVES GUARDED**, because the audit's own finding is that entries get lost rather than refuted: `bench/tests/test_the_verdict_audit_entries_survive_2026-10-17.py` holds 45 tests pinning the SET of 20 identifiers rather than a count, requiring each to carry his words and the verifier's failed refutation, and requiring every ruling entry to carry its ruling date. **5 mutations each turn it red:** deleting an entry fails 4, emptying his quotation fails 1, softening a severity label fails 1, stripping a ruling date fails 1, and altering C0's own point estimate fails 1. **2 of those mutations first PASSED and exposed real faults** — one in the mutation itself, which targeted a question entry as though it were a ruling, and one a genuinely vacuous assertion whose fixed 40-character window ran past a short quotation into the next heading, so an emptied quote still measured 40 characters of the following heading. Producer: `scripts/am_i_parsing_his_responses_in_full_2026-10-17.py` for the rejected word-overlap measure and its control; the audit transcript and all 34 agent records are at the workflow run directory named in the commit.
+ <!-- task: C0 | state: DONE | status: COMMITTED | evidence: bench/tests/test_the_verdict_audit_entries_survive_2026-10-17.py -->
+ 
+-**C1. AN INSTRUCTION NOTHING TRACKS, dated 2026-10-02: the claim channel's promotion was never implemented or measured.** Added 2026-10-17T02:03:01+01:00. **HIS WORDS:** "Also implement this and test it on the upcoming simulated runs." , his reply to: "The claim channel's promotion into the scoring equations waits on a commissioning run measuring how often it is wrong against known ground truth, which is the recommending seat's position and the founder's to confirm." **WHY NOTHING TRACKS IT:** The test half was done; the implement/promote half was not, and no task entry records it as outstanding. /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/claim_ledger.py:184 still reads `informative_only = True`, and its header at lines 37-40 still says the ledger is "`informative_only` like `target_complexity`, promoted only after a commissioning run measures its error". The channel DID run in both free runs of 2026-10-15 (Free_Run_1 note, line 27: "claim ledger | 22 claims, 19 decidable, 3 routed"), so it was exercised , but no commissioning measurement of its error against known ground trut **THE ADVERSARIAL VERIFIER TRIED TO REFUTE THIS AND FAILED:** REFUTATION ATTEMPTED AND FAILED ON BOTH ROUTES. (1) NO TASK ENTRY. /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md is 879 lines carrying 113 task markers (P1-P7, L1-L2, M1-M2, R1-R11, 0.1-10.2, Z1, A1-A26, V1-V9, W1, B1-B22). I read every marker id and state, every B-series heading, and every line matching `ledger|decidable|claim level|claim-level|admissibility|A19|classifier|Haiku|commissioning|informative only`. `ledger` occurs twice and both are unrelated: line 208 (a corrupted git ledger staged as pre-commit proof) and line 503 (`test_experiment_run_ **NEAREST THING IN THE RECORD, AND WHY IT IS NOT COVERAGE:** none , no entry in CDSFL_MASTER_TASK_LIST.md names the claim channel. Nearest in subject is A19 (state OPEN, lines 572-592), which concerns compute_sk and `sk_score_prose_listings` **Found by the verdict-coverage audit of 2026-10-17, entry C0.** **★ WHY THIS IS HIS DECISION AND NOT A BUILD, MEASURED 2026-10-18T03:03:02+01:00.** His instruction was *"Also implement this and test it on the upcoming simulated runs."* The TEST half is done: the channel ran in both free runs of 2026-10-15 and the commissioning measurement exists, the channel having transcribed 58 of 58 verdicts exactly, which bounds its error below about 6.2%. What remains is the IMPLEMENT half, and the obstacle is not effort. **THE LEDGER'S OWN HEADER NAMES A PRECEDENT THAT DOES NOT EXIST.** `bench/claim_ledger.py` lines 37 to 40 say the ledger is *`informative_only` like `target_complexity`, promoted only after a commissioning run measures its error*, which reads as an instruction to promote it the way that one was. **Searched 2026-10-18: `target_complexity` appears with `informative_only` NOWHERE in the code. 3 channels carry `informative_only = True` -- the claim ledger at `bench/claim_ledger.py:184` and 2 further sites in the runner at lines 10521 and 14499 -- and 0 of the 3 have ever been promoted.** So there is no template to copy, and the comparison in the header is to a sibling in the same unpromoted state rather than to a worked example. **WHAT THAT LEAVES.** Promotion means wiring the channel's verdict into sigma, S_k or R_k, which are the mathematical appendix's own terms. Choosing WHERE it enters and with what weight is a model-design decision, and inventing one would be inventing a model term without a derivation -- which the appendix has beaten this project on before, on 2026-09-21. **SO THE QUESTION PUT TO HIM IS NARROW AND ANSWERABLE:** into which of the 3 terms should a claim-level verdict enter, and should it enter as a multiplier on an existing term, as he ruled for the section 7.7 verification factor, or as an additive channel of its own? Either answer is buildable immediately; neither is derivable from the code. **AND IT IS WORTH ASKING ABOUT ALL 3 AT ONCE**, since the same question governs the 2 runner channels, and answering it once would retire a class rather than an item. **NEEDS HIS RULING.**
++**C1. AN INSTRUCTION NOTHING TRACKS, dated 2026-10-02: the claim channel's promotion was never implemented or measured.** Added 2026-10-17T02:03:01+01:00. **HIS WORDS:** "Also implement this and test it on the upcoming simulated runs." , his reply to: "The claim channel's promotion into the scoring equations waits on a commissioning run measuring how often it is wrong against known ground truth, which is the recommending seat's position and the founder's to confirm." **WHY NOTHING TRACKS IT:** The test half was done; the implement/promote half was not, and no task entry records it as outstanding. /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/claim_ledger.py:184 still reads `informative_only = True`, and its header at lines 37-40 still says the ledger is "`informative_only` like `target_complexity`, promoted only after a commissioning run measures its error". The channel DID run in both free runs of 2026-10-15 (Free_Run_1 note, line 27: "claim ledger | 22 claims, 19 decidable, 3 routed"), so it was exercised , but no commissioning measurement of its error against known ground trut **THE ADVERSARIAL VERIFIER TRIED TO REFUTE THIS AND FAILED:** REFUTATION ATTEMPTED AND FAILED ON BOTH ROUTES. (1) NO TASK ENTRY. /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md is 879 lines carrying 113 task markers (P1-P7, L1-L2, M1-M2, R1-R11, 0.1-10.2, Z1, A1-A26, V1-V9, W1, B1-B22). I read every marker id and state, every B-series heading, and every line matching `ledger|decidable|claim level|claim-level|admissibility|A19|classifier|Haiku|commissioning|informative only`. `ledger` occurs twice and both are unrelated: line 208 (a corrupted git ledger staged as pre-commit proof) and line 503 (`test_experiment_run_ **NEAREST THING IN THE RECORD, AND WHY IT IS NOT COVERAGE:** none , no entry in CDSFL_MASTER_TASK_LIST.md names the claim channel. Nearest in subject is A19 (state OPEN, lines 572-592), which concerns compute_sk and `sk_score_prose_listings` **Found by the verdict-coverage audit of 2026-10-17, entry C0.**
+ <!-- task: C1 | state: OPEN | status: TESTED | evidence: bench/tests/test_the_claim_channel_is_commissioned_2026-10-17.py | ruled: 2026-10-02 -->
+ 
+ **C2. A DIRECT QUESTION NEVER ANSWERED, dated 2026-10-02: can the 7 withdrawn-claim errors be prevented in future.** Added 2026-10-17T02:03:01+01:00. **HIS WORDS:** "Then can similar errors be prevented in the futre [future]? If not they might lead to unhelpful and erroneous descisions [decisions]." , his reply to the list of 7 withdrawn statements, which included a double count ("the producing script matched every run log under 2 patterns at once"), a unit error ("counted lines containing a match and reported them as occurrences, which is the same unit error caught once already the same day"), and a census that included the 3 documents written about the term it was counting. **WHY NOTHING TRACKS IT:** No task entry tracks a prevention mechanism for the counting-unit class, and no such guard exists in the tree. The nearest instruments address adjacent properties, not this one: scripts/wilson_interval_consistency.py guards count-and-interval PAIRS (it is the 8th commit guard), the `measured-rate-travels-with-its-script` rule and task V4 guard whether a figure has a producer at all. None of them catches a producer that double-matches, counts lines as occurrences, or includes its own artefacts in a census , the committed script reproduces the wrong number just as faithfully. His question invites either a mechanism **THE ADVERSARIAL VERIFIER TRIED TO REFUTE THIS AND FAILED:** Verified by reading the full task list and searching the tree. CDSFL_MASTER_TASK_LIST.md (879 lines, 118 task markers) has 0 hits for "similar errors", "in the future", "erroneous", "unit error", "double count", "stale-count", "seeded_fault", "guard_false_positive" or "Integrity_Guard", and no marker carries "ruled: 2026-10-02" (only 2026-08-07, 09-10, 09-17, 10-11, 10-15, 10-16 x6, 10-17 x5). The nearest entries are on different properties, confirming the auditor: V4 (line 615) only asks whether a figure names an existing producer; V6 (line 624) re-executes a DECLARED figure against its script's output, which a  **NEAREST THING IN THE RECORD, AND WHY IT IS NOT COVERAGE:** None. Nearest are V4 (CDSFL_MASTER_TASK_LIST.md:615, figure has a producer), V6 (:624, declared brief figure re-executed) and A25 (:665, metamorphic false-zero probe over boolean v **Found by the verdict-coverage audit of 2026-10-17, entry C0.**
+
+### fable:attempt-1:scripts/do_the_two_rulers_compose_2026-10-18.py
+--- /dev/null	2026-10-18 03:28:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uwqxemje/repo/scripts/do_the_two_rulers_compose_2026-10-18.py	2026-10-18 03:19:26
+@@ -0,0 +1,249 @@
++"""Do the 2 de-coarsening fixes COMPOSE? Measured, not judged.
++
++Joint round 2026-10-18. The two fixes under test, reconstructed from the blind
++replies because the sandbox was torn down between rounds:
++
++  * cc2's: replace the hard indicator 1[severity >= 0.7] inside the critical
++    novelty count with its expectation under the measured instrument noise,
++    w = Phi((sev - 0.7) / sigma), sigma = 0.1419 (docs/MATHEMATICAL_APPENDIX.md
++    line 765, 273 duplicate pairs), with falsifier_verdict == REFUTED
++    short-circuiting to 0.0. Quiescence: all tail expected-counts < 0.5.
++  * fable's: replace the single asserted severity with the median over the
++    direct codiscovery star (the entry plus every `from_canonical` named by a
++    via=="codiscovery" occasion, self-reference refused), then apply the SAME
++    hard indicator. Informative-only in the blind round.
++  * the composition: Phi((star_median - 0.7) / (sigma * c_k)) where c_k is the
++    sampling-SD constant of the median of k independent normal assessments --
++    pooling shrinks the noise term, smoothing carries what remains.
++
++Every series is produced through the production path where one exists:
++`_settled_novelty_series` for both indicator rulers (hard and pooled), and
++`_estimate_gamma` for every gamma. The soft rulers mirror the production
++population filter; the mirror is verified value-for-value at sigma -> 0
++against `_settled_novelty_series` on every catalogue.
++"""
++from __future__ import annotations
++
++import json
++import math
++import pathlib
++import statistics
++import sys
++
++ROOT = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++sys.path.insert(0, str(ROOT / "bench"))
++
++import numpy as np  # noqa: E402
++
++import reference_runner_v3 as rr  # noqa: E402
++
++SIGMA = 0.1419  # docs/MATHEMATICAL_APPENDIX.md line 765, bootstrap CI [0.1241, 0.1575]
++THR = rr.CRITICAL_SEVERITY_THRESHOLD  # 0.7, pre-registered, frozen
++
++
++def phi(x: float) -> float:
++    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
++
++
++def median_sd_constants(max_k: int) -> dict:
++    """c_k = SD(median of k std normals). k=1 exact 1.0; k=2 exact 1/sqrt(2)
++    (median of 2 IS the mean of 2). k>=3 by seeded Monte Carlo, 4e6 draws."""
++    out = {1: 1.0, 2: 1.0 / math.sqrt(2.0)}
++    rng = np.random.default_rng(20261018)
++    for k in range(3, max_k + 1):
++        draws = rng.standard_normal((4_000_000, k))
++        out[k] = float(np.median(draws, axis=1).std(ddof=0))
++    return out
++
++
++class _Reg:
++    def __init__(self, entries):
++        self.entries = entries
++
++
++def star_members(cid: str, entries: dict) -> list:
++    """Direct codiscovery star of cid: itself plus every distinct
++    from_canonical named by a via=='codiscovery' occasion. Self-reference
++    refused (the `from_canonical` fallback case)."""
++    e = entries[cid]
++    members = [cid]
++    for occ in e.get("occasions") or []:
++        if occ.get("via") != "codiscovery":
++            continue
++        fc = occ.get("from_canonical")
++        if fc and fc != cid and fc in entries and fc not in members:
++            members.append(fc)
++    return members
++
++
++def pooled_severity(cid: str, entries: dict):
++    ms = star_members(cid, entries)
++    sevs = [float(entries[m].get("severity") or 0.0) for m in ms]
++    return statistics.median(sevs), len(ms)
++
++
++def soft_series(entries: dict, max_round: int, sev_of, sigma_of):
++    """Mirror of _settled_novelty_series' population filter with the indicator
++    replaced by Phi; REFUTED falsifier verdict annihilates to 0.0."""
++    s = [0.0] * (max_round + 1)
++    for cid, e in entries.items():
++        r = e.get("open_since_round")
++        if r is None or r < 0 or r > max_round:
++            continue
++        if e.get("status") in rr._NON_NOVEL_TERMINAL_STATUSES:
++            continue
++        if str(e.get("falsifier_verdict") or "").strip().upper() == "REFUTED":
++            continue  # annihilation: a disproved finding is worth exactly 0
++        s[r] += phi((sev_of(cid, e) - THR) / sigma_of(cid, e))
++    return s
++
++
++def indicator_series_check(entries: dict, max_round: int):
++    """sigma -> 0 limit of the mirror must equal the production series."""
++    s = [0] * (max_round + 1)
++    for cid, e in entries.items():
++        r = e.get("open_since_round")
++        if r is None or r < 0 or r > max_round:
++            continue
++        if e.get("status") in rr._NON_NOVEL_TERMINAL_STATUSES:
++            continue
++        if (e.get("severity") or 0.0) >= THR:
++            s[r] += 1
++    return s
++
++
++def discover_runs():
++    runs = []
++    for p in sorted((ROOT / "bench" / "logs").glob("*/runner_state.json")):
++        try:
++            d = json.loads(p.read_text())
++        except Exception:
++            continue
++        reg = d.get("registry") or {}
++        entries = reg.get("entries") if isinstance(reg, dict) else None
++        if not entries:
++            continue
++        nc = d.get("novelty_counts") or []
++        max_round = max(
++            len(nc) - 1,
++            max((e.get("open_since_round") or 0) for e in entries.values()),
++        )
++        if max_round < 0:
++            continue
++        runs.append((p.parent.name, entries, max_round))
++    return runs
++
++
++def main():
++    runs = discover_runs()
++    max_k = 1
++    for _, entries, _ in runs:
++        for cid in entries:
++            max_k = max(max_k, len(star_members(cid, entries)))
++    CK = median_sd_constants(max_k)
++    print(f"catalogues discovered: {len(runs)}; max star size: {max_k}")
++    print("median-of-k SD constants:",
++          {k: round(v, 4) for k, v in sorted(CK.items())})
++
++    rows = []
++    mirror_mismatch = 0
++    for name, entries, max_round in runs:
++        reg = _Reg(entries)
++        _, hard = rr._settled_novelty_series(reg, max_round)
++        if indicator_series_check(entries, max_round) != hard:
++            mirror_mismatch += 1
++
++        # fable's pooled ruler through the PRODUCTION counter
++        pooled_entries = {
++            cid: {**e, "severity": pooled_severity(cid, entries)[0]}
++            for cid, e in entries.items()
++        }
++        _, pooled = rr._settled_novelty_series(_Reg(pooled_entries), max_round)
++
++        # cc2's soft ruler
++        soft = soft_series(entries, max_round,
++                           lambda cid, e: float(e.get("severity") or 0.0),
++                           lambda cid, e: SIGMA)
++        # the composition
++        comp = soft_series(
++            entries, max_round,
++            lambda cid, e: pooled_severity(cid, entries)[0],
++            lambda cid, e: SIGMA * CK[pooled_severity(cid, entries)[1]])
++
++        def tail(s):
++            return s[-3:] if len(s) >= 3 else list(s)
++
++        row = {
++            "run": name,
++            "rounds": max_round + 1,
++            "k2_entries": sum(1 for cid in entries
++                              if len(star_members(cid, entries)) >= 2),
++            "hard": hard, "pooled": pooled,
++            "soft": [round(x, 4) for x in soft],
++            "comp": [round(x, 4) for x in comp],
++            "g_hard": round(rr._estimate_gamma(hard), 4),
++            "g_pooled": round(rr._estimate_gamma(pooled), 4),
++            "g_soft": round(rr._estimate_gamma(soft), 4),
++            "g_comp": round(rr._estimate_gamma(comp), 4),
++            "q_hard": all(c == 0 for c in tail(hard)) and bool(tail(hard)),
++            "q_pooled": all(c == 0 for c in tail(pooled)) and bool(tail(pooled)),
++            "q_soft": all(w < 0.5 for w in tail(soft)) and bool(tail(soft)),
++            "q_comp": all(w < 0.5 for w in tail(comp)) and bool(tail(comp)),
++        }
++        rows.append(row)
++
++    print(f"mirror mismatches (sigma->0 vs production): {mirror_mismatch}")
++    print()
++    hdr = ("run", "k>=2", "q_hard", "q_pool", "q_soft", "q_comp",
++           "g_hard", "g_pool", "g_soft", "g_comp")
++    print(("{:<58}" + "{:>8}" * 9).format(*hdr))
++    for r in rows:
++        print(("{:<58}" + "{:>8}" * 9).format(
++            r["run"][:57], r["k2_entries"],
++            str(r["q_hard"]), str(r["q_pooled"]),
++            str(r["q_soft"]), str(r["q_comp"]),
++            r["g_hard"], r["g_pooled"], r["g_soft"], r["g_comp"]))
++
++    flips_soft = [r["run"] for r in rows if r["q_soft"] != r["q_hard"]]
++    flips_pooled = [r["run"] for r in rows if r["q_pooled"] != r["q_hard"]]
++    flips_comp_vs_soft = [r["run"] for r in rows if r["q_comp"] != r["q_soft"]]
++    g_pooled_moves = [r["run"] for r in rows if r["g_pooled"] != r["g_hard"]]
++    g_comp_moves = [r["run"] for r in rows if r["g_comp"] != r["g_soft"]]
++    oneway_soft = [r["run"] for r in rows if r["q_soft"] and not r["q_hard"]]
++    oneway_comp = [r["run"] for r in rows if r["q_comp"] and not r["q_hard"]]
++
++    print()
++    print(f"quiescence: soft differs from hard on {len(flips_soft)}: {flips_soft}")
++    print(f"quiescence: pooled differs from hard on {len(flips_pooled)}: {flips_pooled}")
++    print(f"quiescence: COMPOSED differs from SOFT on {len(flips_comp_vs_soft)}: {flips_comp_vs_soft}")
++    print(f"gamma: pooled differs from hard on {len(g_pooled_moves)}: {g_pooled_moves}")
++    print(f"gamma: composed differs from soft on {len(g_comp_moves)}: {g_comp_moves}")
++    print(f"ONE-WAY violations, soft permits where hard refuses: {oneway_soft}")
++    print(f"ONE-WAY violations, composed permits where hard refuses: {oneway_comp}")
++
++    crossers = []
++    for name, entries, max_round in runs:
++        for cid, e in entries.items():
++            if e.get("status") in rr._NON_NOVEL_TERMINAL_STATUSES:
++                continue
++            if str(e.get("falsifier_verdict") or "").strip().upper() == "REFUTED":
++                continue
++            med, k = pooled_severity(cid, entries)
++            if k < 2:
++                continue  # k=1: composed weight IS cc2's weight, identically
++            sev = float(e.get("severity") or 0.0)
++            w_soft = phi((sev - THR) / SIGMA)
++            w_comp = phi((med - THR) / (SIGMA * CK[k]))
++            if (w_soft >= 0.5) != (w_comp >= 0.5):
++                crossers.append((name, cid, k, sev, med,
++                                 round(w_soft, 4), round(w_comp, 4),
++                                 str(e.get("falsifier_verdict") or "")))
++    print(f"\nk>=2 entries where composed and soft disagree at the 0.5 line: {len(crossers)}")
++    for c in crossers:
++        print("  ", c)
++    return rows
++
++
++if __name__ == "__main__":
++    main()
+
+### fable:attempt-1:scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py	2026-10-18 03:27:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uwqxemje/repo/scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py	2026-10-16 17:12:45
+@@ -151,7 +151,6 @@
+ def method_b(models: list[str]) -> dict:
+     """Executed: put a non-existent model through the real resolution chain."""
+     sys.path.insert(0, str(REPO / "bench"))
+-    import routing as _rt  # the LIVE lookup path, NOT a re-implementation
+     import reference_runner_v3 as runner  # noqa: PLC0415
+     from cdsfl_registry import composer as C  # noqa: PLC0415
+     import runner_core as rc  # noqa: PLC0415
+@@ -163,44 +162,18 @@
+     known = models[0]
+     steps: list[dict] = []
+ 
+-    # ★ A DEFAULT THAT IS ANNOUNCED IS NOT A SILENT ONE, AND THIS SCRIPT COULD
+-    # NOT TELL THE DIFFERENCE UNTIL 2026-10-18. Its own conclusion is that
+-    # "making admission trivial therefore means making the misses LOUD first",
+-    # and entry C18 then did exactly that for 3 of the steps below -- yet the
+-    # count stayed at 9 of 10, because each lambda re-implemented the lookup
+-    # with a bare `.get(m, default)` instead of calling the live path. Two forms
+-    # of the same lookup, each individually correct, disagreeing about what
+-    # happens: the `execute-do-not-grep` defect in the instrument that measures
+-    # it.
+-    #
+-    # The fix is to ask the LIVE LEDGER whether the miss was recorded.
+-    # `routing.resolve_or_alarm` appends a row for every fallback, so a step
+-    # whose lookup goes through it is ANNOUNCED DEFAULT: the capability is still
+-    # lost, and a reader is told. That distinction is the whole point of C18 and
+-    # it is now measurable rather than asserted.
+-    def record(name: str, fn, *, silent_default_when=None, announces=False):
++    def record(name: str, fn, *, silent_default_when=None):
+         try:
+-            _rt.reset_lookup_misses()
+-        except Exception:                                          # noqa: BLE001
+-            pass
+-        try:
+             got = fn(NEW_MODEL)
+             ref = fn(known)
+         except Exception as exc:  # noqa: BLE001
+             steps.append({"step": name, "outcome": "RAISE",
+                           "detail": f"{type(exc).__name__}: {str(exc)[:110]}"})
+             return
+-        try:
+-            announced = bool(_rt.lookup_misses())
+-        except Exception:                                          # noqa: BLE001
+-            announced = False
+         if silent_default_when is not None and silent_default_when(got):
+-            outcome = "ANNOUNCED DEFAULT" if (announces or announced) else "SILENT DEFAULT"
+-            steps.append({"step": name, "outcome": outcome,
++            steps.append({"step": name, "outcome": "SILENT DEFAULT",
+                           "detail": f"{NEW_MODEL!r} -> {got!r}; "
+-                                    f"{known!r} -> {ref!r}"
+-                                    + ("; recorded in the live miss ledger"
+-                                       if (announces or announced) else "")})
++                                    f"{known!r} -> {ref!r}"})
+         else:
+             steps.append({"step": name, "outcome": "PASS",
+                           "detail": f"{NEW_MODEL!r} -> {got!r}"})
+@@ -209,16 +182,11 @@
+            lambda m: runner.describe_model(m),
+            silent_default_when=lambda g: NEW_MODEL in str(g) and "(" not in str(g))
+     record("composer model map (COMPOSER_MODEL_MAP)",
+-           lambda m: _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+-                                          "composer directive-set mapping",
+-                                          default=m),
++           lambda m: C.COMPOSER_MODEL_MAP.get(m, m),
+            silent_default_when=lambda g: g == NEW_MODEL)
+     record("coherence budget (MODEL_COHERENCE_BUDGETS)",
+-           lambda m: _rt.resolve_or_alarm(
+-               C.MODEL_COHERENCE_BUDGETS,
+-               _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+-                                    "composer directive-set mapping", default=m),
+-               "coherence budget", default=C.DEFAULT_COHERENCE_BUDGET),
++           lambda m: C.MODEL_COHERENCE_BUDGETS.get(
++               C.COMPOSER_MODEL_MAP.get(m, m), C.DEFAULT_COHERENCE_BUDGET),
+            silent_default_when=lambda g: g == C.DEFAULT_COHERENCE_BUDGET)
+     record("model spec (runner_core.MODEL_SPECS)",
+            lambda m: rc.MODEL_SPECS.get(m),
+@@ -244,10 +212,7 @@
+     else:
+         record("directive composition (composer.compose)",
+                lambda m: type(C.compose(
+-                   "mathematics",
+-                   _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+-                                        "composer directive-set mapping",
+-                                        default=m),
++                   "mathematics", C.COMPOSER_MODEL_MAP.get(m, m),
+                    coherence_pruning=False)).__name__)
+ 
+     # ★ THE TABLES THE STRUCTURAL FILTER MISSED, added on CC2's finding. Both
+@@ -255,18 +220,11 @@
+     # scan looking for 2 or more current roster names as keys skips them
+     # entirely -- the filter's own blind spot.
+     record("coherence budget table keyed on composer keys",
+-           lambda m: _rt.resolve_or_alarm(
+-               C.MODEL_COHERENCE_BUDGETS,
+-               _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+-                                    "composer directive-set mapping", default=m),
+-               "coherence budget", default=None),
++           lambda m: C.MODEL_COHERENCE_BUDGETS.get(C.COMPOSER_MODEL_MAP.get(m, m)),
+            silent_default_when=lambda g: g is None)
+     record("phenotype transform table keyed on composer keys",
+-           lambda m: _rt.resolve_or_alarm(
+-               getattr(C, "PHENOTYPE_TRANSFORMS", {}),
+-               _rt.resolve_or_alarm(C.COMPOSER_MODEL_MAP, m,
+-                                    "composer directive-set mapping", default=m),
+-               "phenotype transform", default=None),
++           lambda m: (getattr(C, "PHENOTYPE_TRANSFORMS", {})
++                      .get(C.COMPOSER_MODEL_MAP.get(m, m))),
+            silent_default_when=lambda g: g is None)
+ 
+     # ★ THE WORST SINGLE INSTANCE, which the original 7 steps missed entirely.
+@@ -294,7 +252,7 @@
+     # categories while emitting a 5th, "SILENT DEGRADE", so 1 of 10 steps was
+     # reported and not counted -- the same shape of defect this script exists to
+     # find. The assertion below refuses to print a total that does not add up.
+-    OUTCOMES = ("PASS", "ANNOUNCED DEFAULT", "SILENT DEFAULT", "SILENT DEGRADE", "RAISE",
++    OUTCOMES = ("PASS", "SILENT DEFAULT", "SILENT DEGRADE", "RAISE",
+                 "MISSING FILE")
+     counts = {k: sum(1 for s in steps if s["outcome"] == k) for k in OUTCOMES}
+     unknown = sorted({s["outcome"] for s in steps} - set(OUTCOMES))
+@@ -306,8 +264,6 @@
+             "silent": silent, "loud": loud}
+ 
+ 
+-
+-
+ def main() -> int:
+     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+     ap.add_argument("--json", action="store_true", help="machine-readable output")
+@@ -372,25 +328,6 @@
+     print("  in this project. Making admission trivial therefore means making the")
+     print("  misses LOUD first; a single registration point is the fix, and it")
+     print("  needs his ruling because it changes how every seat is configured.")
+-    print()
+-    print("  ★ PROGRESS AGAINST THAT, MEASURED RATHER THAN CLAIMED. Entry C18 of")
+-    print("  2026-10-18 routed 3 of these lookups through a resolver that still")
+-    print("  returns the default -- behaviour unchanged, because raising would")
+-    print("  turn a degradation into a dead run -- and RECORDS every fallback")
+-    print("  against the model's stable identity. Those 3 now report as")
+-    _ann = sum(1 for s in b["steps"] if s["outcome"] == "ANNOUNCED DEFAULT")
+-    print(f"  ANNOUNCED DEFAULT rather than SILENT DEFAULT: {_ann} step(s), so the")
+-    print(f"  silent count falls from {k + _ann} of {n} to {k} of {n}. THE FIGURE IS")
+-    print("  COMPUTED HERE, not written down: a hard-coded improvement is the kind")
+-    print("  of number that goes stale the next time a lookup is made loud.")
+-    print()
+-    print("  AND THIS SCRIPT COULD NOT SEE THAT UNTIL THE SAME DAY. Each lookup")
+-    print("  above was re-implemented here as a bare dictionary get, so the")
+-    print("  instrument measured the TABLE's shape and not the live code path --")
+-    print("  2 forms of one lookup, each individually correct, disagreeing about")
+-    print("  what happens. The lambdas now call the live resolver and read its")
+-    print("  ledger, which is the `execute-do-not-grep` rule applied to the")
+-    print("  measuring script rather than only to the thing measured.")
+     return 0
+ 
+ 
