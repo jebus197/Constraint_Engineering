@@ -17956,8 +17956,22 @@ def run_experiment(
             f"{len(_refusals)} precondition(s) failed for target {target_path} "
             f"(kind={target_kind}): " + " | ".join(_refusals))
     sk_forced_off = False
+    # B32: the sk mode's EFFECT, not its declaration. `sk_forced_off` depends on
+    # the flag AND on the target kind AND on cfg.sk_enabled, so recording it is
+    # not a copy of any one switch: a declared mode that was overridden by the
+    # target shows up here as forced off.
+    _sk_effect: Dict[str, Any] = {
+        "declared": bool(getattr(cfg, "sk_score_prose_listings", False)),
+        "target_kind": str(target_kind),
+        "sk_enabled": bool(getattr(cfg, "sk_enabled", False)),
+        "forced_off": None,
+    }
     if (target_kind != TARGET_KIND_PYTHON and cfg.sk_enabled
             and getattr(cfg, "sk_score_prose_listings", False)):
+        # B32: the mode OPERATED -- sk runs on this prose target rather than
+        # being overridden. Recorded here and not left at None, because None
+        # must keep meaning "the decision was never reached".
+        _sk_effect["forced_off"] = False
         # TASK A19 REACHABLE THROUGH THE RUNNER (2026-09-22, panel seat on the
         # arm-4 anatomy). Before this branch existed, the forced-off override
         # below fired for EVERY non-Python target, and the flag's only call
@@ -18004,6 +18018,7 @@ def run_experiment(
         # capture, whose ~2752 phantom ruff diagnostics were the input to that
         # inversion.
         sk_forced_off = True
+        _sk_effect["forced_off"] = True
         cfg = replace(cfg, sk_enabled=False)
         _log("  *** S_k pipeline FORCED OFF: sk_enabled=true in config, but the "
              "target is not a Python module. S_k is defined over Python source; "
@@ -18241,6 +18256,26 @@ def run_experiment(
     round_falsifier_reattachments: List[Dict[str, Any]] = []
     gate_history: List[bool] = []
     open_ch_history: List[int] = []
+    # ── B32: the EFFECT of a declared mode, recorded where it happens ────────
+    # His ruling, 2026-10-07 and 2026-10-11: state should be DETECTED rather
+    # than declared. Entry B28 found that no archived report carried anything
+    # capable of showing one of these modes FAILING to operate: the
+    # `*_is_gating` keys are each written as `bool(getattr(cfg, <flag>, False))`
+    # -- a copy of the switch under a name that reads like a statement about
+    # behaviour -- and `gamma_gate_series` is a hardcoded string literal sitting
+    # beneath a comment claiming it "says which one decided".
+    #
+    # These accumulate what the run ACTUALLY DID, at the point it did it:
+    # `substituted` lists the rounds where the location-keyed series really
+    # overwrote the gate's input, and `fell_back` lists the rounds where the
+    # substitution was asked for and RAISED, which is the silent downgrade the
+    # ruling targets. A declared mode with 0 substitutions and 0 failures did
+    # not operate, and that is now visible rather than inferable.
+    mode_effects: Dict[str, Any] = {
+        "location_keyed_convergence": {"substituted": [], "fell_back": []},
+        "hierarchical_novelty_convergence": {"substituted": [], "fell_back": []},
+        "severity_spec_enabled": {"refuted_findings": 0, "refuted_scored_zero": 0},
+    }
     stall_history: List[Dict[str, int]] = []
     # Exp 40 fix 1A.3: track novel CRITICAL count per round for γ-alt gate.
     novel_critical_history: List[int] = []
@@ -20065,12 +20100,18 @@ def run_experiment(
                     _n = min(len(novel_critical_history), len(location_crit_history))
                     for _r in range(_n):
                         novel_critical_history[_r] = location_crit_history[_r]
+                    # B32: the EFFECT, recorded at the point of substitution.
+                    if _n:
+                        mode_effects["location_keyed_convergence"][
+                            "substituted"].append(round_idx)
                 _log(f"  [{'GATE' if _gates else 'shadow'}] location-keyed novel-crit this "
                      f"round={location_crit_history[round_idx]} (ID-proxy crit={_idprox}; "
                      f"series tail={_loc_tail}; "
                      f"{'FEEDS γ-alt convergence' if _gates else 'telemetry only, never gates'})")
         except Exception as _loc_exc:  # telemetry/gate-feed must never break a run
             if _gates:
+                # B32: a declared mode that was asked for and did NOT operate.
+                mode_effects["location_keyed_convergence"]["fell_back"].append(round_idx)
                 _log(f"  [GATE] location-keyed novelty FAILED: "
                      f"{type(_loc_exc).__name__}: {_loc_exc} — the run continues, but the "
                      f"COUNT side of the two-sided gate silently falls back to the ID-proxy "
@@ -21049,6 +21090,31 @@ def run_experiment(
         getattr(cfg, "location_keyed_convergence", False))
     result["location_crit_shadow_history"] = location_crit_history  # DEPRECATED alias
     result["registry"] = registry.to_dict()
+
+    # ── B32: the EFFECT of each declared mode, recorded rather than restated ──
+    # The severity half is computed by CALLING `effective_severity` rather than by
+    # reading `entry["severity"]`. That distinction is the whole point and it was
+    # found the hard way: the stored field holds the ASSERTED number and the
+    # specification does not mutate it, so leg 3's 2 refuted findings both read
+    # 0.5 while their effective severity is 0.0 -- the appendix's key property,
+    # a disproved finding annihilated rather than reduced. Reading the stored
+    # field would have reported the specification as broken when it was working.
+    try:
+        _ref = _spec_zero = 0
+        for _e in (registry.entries or []):
+            if str(_e.get("falsifier_verdict") or "").strip().upper() == "REFUTED":
+                _ref += 1
+                if effective_severity(_e) == 0.0:
+                    _spec_zero += 1
+        mode_effects["severity_spec_enabled"]["refuted_findings"] = _ref
+        mode_effects["severity_spec_enabled"]["refuted_scored_zero"] = _spec_zero
+    except Exception as _sx:                                       # noqa: BLE001
+        mode_effects["severity_spec_enabled"]["error"] = f"{type(_sx).__name__}: {_sx}"
+    try:
+        mode_effects["sk_score_prose_listings"] = _sk_effect
+    except Exception:                                              # noqa: BLE001
+        pass
+    result["mode_effects"] = mode_effects
 
     # ── B28: reconcile each declared mode against what the run actually did ──
     # His ruling, 2026-10-07 and 2026-10-11: state should be DETECTED rather than

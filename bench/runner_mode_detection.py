@@ -164,6 +164,81 @@ SOUND = "SOUND"
 CIRCULAR = "CIRCULAR"          # the artefact is a copy of the flag
 UNGATED = "UNGATED"            # the artefact appears whether the mode is on or not
 ABSENT = "ABSENT"              # no artefact exists at all
+#: ★ INERT is strictly worse than CIRCULAR and was found by trying to record the
+#: EFFECT under entry B32. A CIRCULAR artefact at least sits beside a mode that
+#: COULD operate. An INERT mode has NO CONSUMER: nothing reads the flag except
+#: the line that publishes a copy of it, and the series it computes reaches a
+#: report key and nothing else. Such a mode cannot operate however it is set, so
+#: there is no effect to record and no detector can be written -- the repair is to
+#: wire it or retire it, not to measure it.
+INERT = "INERT"
+
+
+def _effects(report: dict) -> dict:
+    """The run's own record of what each mode DID. Absent in older reports."""
+    e = report.get("mode_effects")
+    return e if isinstance(e, dict) else {}
+
+
+def _location_operating(report: dict) -> Optional[bool]:
+    """Did the location-keyed series actually feed the gate? (entry B32)
+
+    Read from `mode_effects`, which the runner writes AT THE POINT OF
+    SUBSTITUTION rather than restating the flag. `substituted` lists the rounds
+    where the location-keyed count really overwrote `novel_critical_history`;
+    `fell_back` lists the rounds where it was asked for and RAISED, which is the
+    silent downgrade the ruling targets.
+
+    A mode asked for that substituted in NO round is NOT operating, even when it
+    also failed in none: the series was computed as telemetry and never fed the
+    gate.
+    """
+    rec = _effects(report).get("location_keyed_convergence")
+    if not isinstance(rec, dict):
+        return None
+    sub, fell = rec.get("substituted"), rec.get("fell_back")
+    if sub is None and fell is None:
+        return None
+    return bool(sub)
+
+
+def _severity_operating(report: dict) -> Optional[bool]:
+    """Did a disproved finding actually score zero? (entry B32)
+
+    The specification's distinguishing effect is that a REFUTED finding is
+    annihilated rather than reduced. The runner computes this by CALLING
+    `effective_severity`, never by reading `entry["severity"]`: the stored field
+    holds the ASSERTED number and the specification does not mutate it, so leg
+    3's 2 refuted findings both read 0.5 while their effective severity is 0.0.
+    Reading the stored field would report the specification broken when it works.
+
+    UNDECIDABLE when the run produced NO refuted finding, because then nothing
+    could have been annihilated and absence witnesses nothing. Legs 1 and 2
+    together carried 0 refuted of 41, so this is the common case, not an edge.
+    """
+    rec = _effects(report).get("severity_spec_enabled")
+    if not isinstance(rec, dict) or "refuted_findings" not in rec:
+        return None
+    if int(rec.get("refuted_findings") or 0) == 0:
+        return None
+    return int(rec.get("refuted_scored_zero") or 0) > 0
+
+
+def _sk_operating_from_effects(report: dict) -> Optional[bool]:
+    """Did the sk pipeline run on this target, or was it overridden? (entry B32)
+
+    `forced_off` is not a copy of any one switch: it depends on the flag, on
+    `sk_enabled` and on the target kind, so a declared mode overridden by the
+    target shows up here as forced off. None keeps meaning the decision was
+    never reached.
+    """
+    rec = _effects(report).get("sk_score_prose_listings")
+    if not isinstance(rec, dict):
+        return None
+    forced = rec.get("forced_off")
+    if forced is None:
+        return None
+    return not bool(forced)
 
 
 @dataclass(frozen=True)
@@ -184,23 +259,37 @@ MODES: tuple[Mode, ...] = (
          "means defaults were used, and `--config` alone is undecidable because "
          "the file's contents are not in the report",
          artefact="_declared_argv", soundness=SOUND),
-    Mode("location_keyed_convergence",
-         lambda r: _gating_flag(r, "location_crit_series_is_gating"),
-         "no sound artefact: the candidate key is a copy of the flag, and "
-         "`gamma_gate_series` is a hardcoded literal that cannot show the "
-         "substitution this mode performs on the gate's input",
-         artefact="location_crit_series_is_gating", soundness=CIRCULAR),
+    Mode("location_keyed_convergence", _location_operating,
+         "`mode_effects.location_keyed_convergence`, which the runner writes AT "
+         "THE POINT OF SUBSTITUTION: the rounds where the location-keyed count "
+         "really overwrote the gate's input, and the rounds where it was asked "
+         "for and raised. Replaces `location_crit_series_is_gating`, which is a "
+         "copy of the flag, and `gamma_gate_series`, a hardcoded literal that "
+         "cannot show the substitution at all",
+         artefact="mode_effects", soundness=SOUND),
     Mode("hierarchical_novelty_convergence",
          lambda r: _gating_flag(r, "hierarchical_crit_series_is_gating"),
-         "no sound artefact: the candidate key is a copy of the flag",
-         artefact="hierarchical_crit_series_is_gating", soundness=CIRCULAR),
-    Mode("severity_spec_enabled", _severity_spec_operating,
-         "no sound artefact: `severity_admissibility` is stamped into every "
-         "report whether or not the mode is on",
-         artefact="severity_admissibility", soundness=UNGATED),
-    Mode("sk_score_prose_listings", _sk_operating,
-         "no artefact of any kind reaches the report",
-         artefact=None, soundness=ABSENT),
+         "THE MODE HAS NO CONSUMER. Measured 2026-10-18 on the syntax tree: the "
+         "flag is read exactly ONCE in the whole runner, at the line that writes "
+         "`hierarchical_crit_series_is_gating` as a copy of it, and the series "
+         "`hierarchical_novelty_series` computes reaches one report key and "
+         "nothing else. No gate, counter or status reads either. So the mode "
+         "cannot operate however it is set, and the report has been publishing a "
+         "field named `..._is_gating` that a reader would take as evidence it "
+         "gates. There is no effect to record: wire it or retire it",
+         artefact="hierarchical_crit_series_is_gating", soundness=INERT),
+    Mode("severity_spec_enabled", _severity_operating,
+         "`mode_effects.severity_spec_enabled`, counting refuted findings and "
+         "how many were ANNIHILATED, computed by calling `effective_severity` "
+         "rather than reading the stored asserted number. Replaces "
+         "`severity_admissibility`, which is stamped into every report whether "
+         "or not the mode is on",
+         artefact="mode_effects", soundness=SOUND),
+    Mode("sk_score_prose_listings", _sk_operating_from_effects,
+         "`mode_effects.sk_score_prose_listings.forced_off`, which depends on "
+         "the flag, on `sk_enabled` AND on the target kind, so a declared mode "
+         "overridden by the target is visible rather than silent",
+         artefact="mode_effects", soundness=SOUND),
 )
 
 

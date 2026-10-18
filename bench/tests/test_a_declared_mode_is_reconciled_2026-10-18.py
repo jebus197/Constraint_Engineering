@@ -41,7 +41,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
 from bench.runner_mode_detection import (  # noqa: E402
-    ABSENT, AGREE, CIRCULAR, SOUND, UNDECIDABLE, UNGATED,
+    ABSENT, AGREE, CIRCULAR, INERT, SOUND, UNDECIDABLE, UNGATED,
     MODES, Finding, as_report_field, disagreements, reconcile, summarise,
     unsound_modes,
 )
@@ -135,29 +135,113 @@ def test_each_soundness_annotation_matches_the_runner_source(mode):
             f"{mode.name} is annotated SOUND but nothing writes {mode.artefact!r}")
 
 
-def test_a_circular_artefact_is_never_treated_as_evidence():
-    """A copy of the flag must yield UNDECIDABLE, never AGREE."""
-    for mode in MODES:
-        if mode.soundness != CIRCULAR:
-            continue
-        report = {"_declared_config": {mode.name: True}, mode.artefact: True}
-        got = [f for f in reconcile(report) if f.mode == mode.name][0]
-        assert got.verdict == UNDECIDABLE, (
-            f"{mode.name} read a copy of its own flag as evidence and returned "
-            f"{got.verdict}; a comparison of the flag with itself can never "
-            f"disagree and must not be reported as agreement")
+def test_a_circular_or_ungated_artefact_is_never_treated_as_evidence():
+    """Pinned on CONSTRUCTED reports, so it cannot go vacuous (entry B32).
+
+    ★ WHY NOT A LOOP OVER MODES. It used to iterate the modes annotated CIRCULAR
+    and UNGATED. Under B32 those annotations were upgraded to SOUND -- the runner
+    now records each mode's EFFECT -- and the loop would then have iterated an
+    EMPTY set and passed while testing nothing. A guard that silently empties is
+    the defect class this project keeps finding, so the contract is now exercised
+    on reports this test owns.
+
+    The two refusals being pinned:
+      * a key that is a COPY OF THE FLAG proves nothing, so it must not produce
+        AGREE -- comparing the flag with itself can never disagree;
+      * an artefact written UNCONDITIONALLY appears whether the mode is on or
+        not, and reading it produced a disagreement on free_run1 that did not
+        exist.
+    """
+    # The legacy circular key, now ignored: a declared True with a copy of the
+    # flag beside it and NO effect record must be undecidable, not agreement.
+    circular = {"_declared_config": {"location_keyed_convergence": True},
+                "location_crit_series_is_gating": True}
+    got = [f for f in reconcile(circular) if f.mode == "location_keyed_convergence"][0]
+    assert got.verdict == UNDECIDABLE, (
+        f"a copy of the flag was read as evidence and gave {got.verdict}; the "
+        f"detector must require the effect record, not the restated switch")
+
+    # The legacy ungated key, now ignored for the same reason.
+    ungated = {"_declared_config": {"severity_spec_enabled": False},
+               "severity_admissibility": {"severity_provenance": "simulated"}}
+    got = [f for f in reconcile(ungated) if f.mode == "severity_spec_enabled"][0]
+    assert got.verdict == UNDECIDABLE, (
+        f"an unconditionally-written artefact was read as evidence and gave "
+        f"{got.verdict}; on free_run1 that mistake invented a disagreement")
 
 
-def test_an_ungated_artefact_is_never_treated_as_evidence():
+def test_an_inert_mode_has_no_consumer_in_the_runner():
+    """INERT means the flag is read ONLY where a copy of it is published.
+
+    Measured 2026-10-18 on the syntax tree: `hierarchical_novelty_convergence`
+    is read exactly once in the whole runner, at the line writing
+    `hierarchical_crit_series_is_gating`, and the series
+    `hierarchical_novelty_series` computes reaches one report key and nothing
+    else. The mode cannot operate however it is set, while the report publishes
+    a field named `..._is_gating` that a reader would take as proof it gates.
+
+    If the mode is ever WIRED, this test fails and the annotation must move off
+    INERT -- which is the point: an understated annotation is as wrong as an
+    overstated one.
+    """
+    tree = _tree()
     for mode in MODES:
-        if mode.soundness != UNGATED:
+        if mode.soundness != INERT:
             continue
-        report = {"_declared_config": {mode.name: False}, mode.artefact: {"x": 1}}
-        got = [f for f in reconcile(report) if f.mode == mode.name][0]
-        assert got.verdict == UNDECIDABLE, (
-            f"{mode.name} read an unconditionally-written artefact as evidence and "
-            f"returned {got.verdict}. On free_run1 that exact mistake produced a "
-            f"disagreement that did not exist")
+        reads = []
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                    and node.func.id == "getattr" and len(node.args) >= 2
+                    and isinstance(node.args[1], ast.Constant)
+                    and node.args[1].value == mode.name):
+                reads.append(node.lineno)
+            elif isinstance(node, ast.Attribute) and node.attr == mode.name:
+                reads.append(node.lineno)
+        assert reads, f"{mode.name} is annotated INERT but is not read at all"
+        # Every read must sit on a write of its own circular artefact.
+        publications = {a.lineno for a in _subscript_assigns(tree, mode.artefact)}
+        stray = []
+        for ln in sorted(set(reads)):
+            # a read belongs to a publication when it is within that statement
+            if not any(abs(ln - p) <= 2 for p in publications):
+                stray.append(ln)
+        assert stray == [], (
+            f"{mode.name} is annotated INERT, meaning its only read publishes a "
+            f"copy of itself, but it is also read at line(s) {stray}. If it has "
+            f"been WIRED, move the annotation off INERT and give it a detector; "
+            f"if those reads do nothing, the mode should be retired")
+
+
+def test_a_sound_mode_reads_an_effect_record_not_a_restated_flag():
+    """SOUND requires an artefact the runner WRITES and that is not the flag."""
+    tree = _tree()
+    for mode in MODES:
+        if mode.soundness != SOUND:
+            continue
+        assert mode.artefact, f"{mode.name} is SOUND with no artefact"
+        assigns = _subscript_assigns(tree, mode.artefact)
+        if not assigns:
+            # `_declared_argv` is written by the report assembler, not as a
+            # `result[...]` subscript; underscore-prefixed keys are allowed.
+            assert mode.artefact.startswith("_"), (
+                f"{mode.name} is SOUND but nothing writes {mode.artefact!r}")
+            continue
+        circularity = [a.lineno for a in assigns if _mentions_flag(a.value, mode.name)]
+        assert circularity == [], (
+            f"{mode.name} is annotated SOUND but its artefact is assigned FROM "
+            f"its own flag at line(s) {circularity}, which is the CIRCULAR "
+            f"defect wearing a SOUND label")
+
+
+def _mentions_flag(node, flag: str) -> bool:
+    for s in ast.walk(node):
+        if isinstance(s, ast.Attribute) and s.attr == flag:
+            return True
+        if (isinstance(s, ast.Call) and isinstance(s.func, ast.Name)
+                and s.func.id == "getattr" and len(s.args) >= 2
+                and isinstance(s.args[1], ast.Constant) and s.args[1].value == flag):
+            return True
+    return False
 
 
 # ── The honest-unknown contract ──────────────────────────────────────────────
@@ -263,10 +347,14 @@ def test_the_unsound_set_is_named_and_not_silently_empty():
     """B28's substance, callable rather than only written down."""
     unsound = {m.name: m.soundness for m in unsound_modes()}
     assert unsound == {
-        "location_keyed_convergence": CIRCULAR,
-        "hierarchical_novelty_convergence": CIRCULAR,
-        "severity_spec_enabled": UNGATED,
-        "sk_score_prose_listings": ABSENT,
+        # ★ 3 MODES CAME OFF THIS LIST ON 2026-10-18 (entry B32), because the
+        # runner now records their EFFECT: the rounds where the location-keyed
+        # series actually overwrote the gate's input, whether a refuted finding
+        # was actually annihilated, and whether the sk pipeline ran or was
+        # overridden by the target. The 1 that remains is worse than it looked:
+        # not a circular artefact beside a working mode, but a mode with NO
+        # CONSUMER AT ALL.
+        "hierarchical_novelty_convergence": INERT,
     }, (
         "the set of modes whose effect no report can witness has changed. If an "
         "effect record was wired, this is the test to update -- and the "
@@ -309,3 +397,171 @@ def test_the_reconciliation_reaches_the_report():
     assert logged, (
         "the reasons are never summarised into the run log, so a disagreement "
         "would reach the report but not the operator watching the run")
+
+
+# ── The effect records, contract by contract (entry B32) ─────────────────────
+#
+# ★ THESE EXIST BECAUSE 2 MUTATIONS ESCAPED. Making `_location_operating` return
+# True unconditionally, and making `_sk_operating_from_effects` treat an
+# unreached decision as operating, both left the suite green. A detector whose
+# None/False handling nothing pins is a detector that can quietly start agreeing
+# with everything, which is the failure these records were built to end.
+
+def _finding(mode: str, rec) -> Finding:
+    report = {"_declared_config": {mode: True}, "mode_effects": {mode: rec}}
+    return [f for f in reconcile(report) if f.mode == mode][0]
+
+
+def test_a_location_mode_asked_for_but_never_substituted_is_not_operating():
+    """0 substitutions means the series was telemetry and never fed the gate."""
+    got = _finding("location_keyed_convergence",
+                   {"substituted": [], "fell_back": []})
+    assert got.operating is False
+    assert got.verdict == "DECLARED_NOT_OPERATING", (
+        "a mode asked for that substituted in NO round did not operate, however "
+        "quietly it failed to")
+
+
+def test_a_location_mode_that_fell_back_every_round_is_not_operating():
+    """The silent downgrade his ruling names, now loud."""
+    got = _finding("location_keyed_convergence",
+                   {"substituted": [], "fell_back": [2, 3, 4]})
+    assert got.operating is False
+    assert got.verdict == "DECLARED_NOT_OPERATING"
+
+
+def test_a_location_mode_that_substituted_is_operating():
+    got = _finding("location_keyed_convergence",
+                   {"substituted": [1, 2], "fell_back": []})
+    assert got.operating is True and got.verdict == AGREE
+
+
+def test_a_missing_location_record_is_undecidable_not_false():
+    """Every archived report predates the record; absence must not read as off."""
+    report = {"_declared_config": {"location_keyed_convergence": True}}
+    got = [f for f in reconcile(report)
+           if f.mode == "location_keyed_convergence"][0]
+    assert got.operating is None and got.verdict == UNDECIDABLE
+
+
+def test_the_sk_decision_distinguishes_unreached_from_not_forced_off():
+    """None means the branch was never reached; False means the mode ran."""
+    assert _finding("sk_score_prose_listings",
+                    {"forced_off": None}).verdict == UNDECIDABLE
+    off = _finding("sk_score_prose_listings", {"forced_off": True})
+    assert off.operating is False and off.verdict == "DECLARED_NOT_OPERATING", (
+        "forced off means the target overrode the declared mode")
+    on = _finding("sk_score_prose_listings", {"forced_off": False})
+    assert on.operating is True and on.verdict == AGREE
+
+
+def test_the_severity_effect_needs_a_refuted_finding_to_witness_it():
+    """With 0 refuted findings nothing could be annihilated."""
+    assert _finding("severity_spec_enabled",
+                    {"refuted_findings": 0, "refuted_scored_zero": 0}
+                    ).verdict == UNDECIDABLE, (
+        "legs 1 and 2 together carried 0 refuted of 41, so this is the common "
+        "case and must not read as the specification failing")
+    good = _finding("severity_spec_enabled",
+                    {"refuted_findings": 2, "refuted_scored_zero": 2})
+    assert good.operating is True and good.verdict == AGREE
+    bad = _finding("severity_spec_enabled",
+                   {"refuted_findings": 2, "refuted_scored_zero": 0})
+    assert bad.operating is False and bad.verdict == "DECLARED_NOT_OPERATING", (
+        "refuted findings that were NOT annihilated means the specification's "
+        "key property did not fire")
+
+
+def test_the_severity_effect_must_be_computed_by_calling_not_by_reading():
+    """★ The stored field is the ASSERTED number and the spec does not mutate it.
+
+    Executed against leg 3's own catalogue rather than asserted: its 2 refuted
+    findings both STORE severity 0.5, and `effective_severity` returns 0.0 for
+    both with the specification on. A runner that counted zeros by reading
+    `entry["severity"]` would have recorded 0 of 2 annihilated and reported a
+    working specification as broken.
+    """
+    import json
+    cat = (REPO / "bench" / "logs" / "leg3_final_shakedown_20261015T220118Z"
+           / "leg3_final_shakedown_finding_catalogue.jsonl")
+    if not cat.exists():
+        pytest.skip("leg 3 catalogue absent; this check needs its real findings")
+    rows = [json.loads(l) for l in cat.read_text().splitlines() if l.strip()]
+    refuted = [r for r in rows
+               if str(r.get("falsifier_verdict") or "").strip().upper() == "REFUTED"]
+    assert refuted, "leg 3 carried refuted findings; if none are found, re-measure"
+
+    import bench.reference_runner_v3 as R
+    saved = R._SEVERITY_SPEC.get("on")
+    try:
+        R._SEVERITY_SPEC["on"] = True
+        by_calling = sum(1 for r in refuted if R.effective_severity(r) == 0.0)
+        by_reading = sum(1 for r in refuted
+                         if float(r.get("severity") or 0.0) == 0.0)
+    finally:
+        R._SEVERITY_SPEC["on"] = saved
+    assert by_calling == len(refuted), (
+        f"with the specification on, every refuted finding must be annihilated; "
+        f"{by_calling} of {len(refuted)} were")
+    assert by_reading == 0, (
+        "the stored severities are NOT zero -- that is the whole point. If they "
+        "are, the specification has started mutating the asserted number and the "
+        "runner's effect record should be re-derived")
+
+    # And the runner must CALL it IN THE EFFECT COMPUTATION, not merely
+    # somewhere in the file. A first version of this check only asserted that
+    # `effective_severity` is called at all, and a mutation that swapped the
+    # effect computation to read `entry["severity"]` left it green -- the gate
+    # calls the scorer elsewhere, so the call still existed. The check now finds
+    # the statement that assigns `refuted_scored_zero` and requires the call
+    # inside THAT enclosing block, which is the structural form of "here".
+    tree = _tree()
+
+    def _enclosing_blocks(target):
+        parents, found = {}, []
+        for node in ast.walk(tree):
+            for child in ast.iter_child_nodes(node):
+                parents[child] = node
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Assign)
+                    and any(isinstance(x, ast.Subscript)
+                            and isinstance(x.slice, ast.Constant)
+                            and x.slice.value == target for x in node.targets)):
+                cur, chain = node, []
+                while cur in parents:
+                    cur = parents[cur]
+                    chain.append(cur)
+                    if isinstance(cur, (ast.Try, ast.FunctionDef)):
+                        break
+                found.append(chain[-1] if chain else node)
+        return found
+
+    blocks = _enclosing_blocks("refuted_scored_zero")
+    assert blocks, (
+        "nothing assigns `refuted_scored_zero`, so the severity effect is not "
+        "recorded at all")
+    for blk in blocks:
+        calls = [n for n in ast.walk(blk)
+                 if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                 and n.func.id == "effective_severity"]
+        assert calls, (
+            "the block that records `refuted_scored_zero` does not call "
+            "`effective_severity`, so it is counting the STORED asserted number "
+            "-- which on leg 3 would have reported a working specification as "
+            "broken, 0 of 2 annihilated instead of 2 of 2")
+
+
+def test_an_empty_effect_record_is_undecidable_not_off():
+    """A record present but carrying neither key establishes nothing.
+
+    ★ A mutation escaped here. Deleting the `sub is None and fell is None` guard
+    left `bool(None)` returning False, so an effect record that exists but is
+    empty would have read as "the mode did not operate" -- a disagreement
+    manufactured out of a record that says nothing. The absent-record case was
+    already covered; the present-but-empty one was not.
+    """
+    got = _finding("location_keyed_convergence", {})
+    assert got.operating is None, (
+        "an effect record with neither `substituted` nor `fell_back` says "
+        "nothing about the mode and must not be read as False")
+    assert got.verdict == UNDECIDABLE

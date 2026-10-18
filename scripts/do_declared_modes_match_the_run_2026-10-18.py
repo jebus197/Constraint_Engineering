@@ -75,8 +75,23 @@ def main() -> int:
                 print(f"    ... and {len(rows) - 8} more")
     else:
         print("no disagreement in the archive. Every mode that COULD be compared")
-        print("agrees with what the run did. The undecidable column is where the")
-        print("remaining work is: those modes cannot be checked from a report at all.")
+        print("agrees with what the run did.")
+        print()
+        print("READ THE UNDECIDABLE COLUMN CORRECTLY. It is NOT a list of modes that")
+        print("cannot be checked. Under entry B32 the runner now writes a `mode_effects`")
+        print("record -- the rounds where the location-keyed series actually overwrote")
+        print("the gate's input, whether a refuted finding was actually annihilated, and")
+        print("whether the sk pipeline ran or was overridden by the target. No ARCHIVED")
+        print("report carries it, because it did not exist when they were written, so")
+        print("every archived row for those modes is undecidable BY CONSTRUCTION and")
+        print("will stay so. The comparison begins with the NEXT run; the constructed")
+        print("cases in bench/tests/test_a_declared_mode_is_reconciled_2026-10-18.py are")
+        print("what demonstrate the detectors meanwhile.")
+        print()
+        print("1 mode remains genuinely uncheckable and it is worse than undecidable:")
+        print("hierarchical_novelty_convergence is INERT -- its flag is read once, at the")
+        print("line publishing a copy of it, and the series it computes reaches a report")
+        print("key and nothing else. There is no effect to record. Wire it or retire it.")
     return 0
 
 
