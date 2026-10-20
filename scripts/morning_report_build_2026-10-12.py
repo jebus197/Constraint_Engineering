@@ -306,9 +306,24 @@ def decisions(items: list[dict]) -> tuple[list[dict], list[str], list[str]]:
             continue
         # The same escape for an item whose AUTHORED DETAIL records his ruling,
         # since not every decision originates from a task marker.
-        if d.get("struck_permanently") or d.get("ruled"):
-            attached.append({**it, **d, "no_ruling_needed": d.get(
-                "ruled") or "struck permanently"})
+        #
+        # ★ THE PREDICATE MUST READ BOTH HALVES (2026-10-19). It read only `d`,
+        # the authored detail, while a task entry's ruling arrives on `it` from
+        # the marker's `ruled:` field. `{**it, **d}` then carried the date into
+        # the OUTPUT, so a reader of the merged record saw the ruling and the
+        # routing predicate did not -- a producer and a consumer that disagree,
+        # each individually correct, which is the shape `execute-do-not-grep`
+        # names. The cost was his: he ruled on B31 on 2026-10-18 ("Your fix is
+        # approved", Review_Stop_And_Declared_Modes_2026-10-18.txt) and the
+        # report of 2026-10-19 asked him again, which he answered with "Then if
+        # I already ruled. Why are you presenting it as a decision required
+        # from me again?". 6 of the 7 live decisions that day were in this
+        # state. Measured safe: 0 of 29 authored-detail entries set `ruled` to
+        # a falsy value, so reading `d` first cannot mask a marker's date.
+        ruled = d.get("ruled") or it.get("ruled")
+        if d.get("struck_permanently") or ruled:
+            attached.append({**it, **d, "ruled": ruled,
+                             "no_ruling_needed": ruled or "struck permanently"})
             continue
         attached.append({**it, **d})
     orphan = sorted(set(detail) - {i["key"] for i in items})

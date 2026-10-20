@@ -83,14 +83,31 @@ def main() -> int:
     if h:
         marker.write_text(h, encoding="utf-8")
 
-    nxt = sorted(open_t, key=lambda t: (t.ruled or "9999", t.task_ref or "zz", t.tid))[0]
+    # ★ `wr` IS DEFERRED WORK, NOT A QUESTION, SO IT NEVER BECOMES 'NEXT OPEN'
+    # (2026-10-20). His instruction: "wr is a valid section in the Bugzilla
+    # registry, and you should use it to track all remaining outstanding work,
+    # and refer back to this before risking constantly referring back to me and
+    # requesting my verdict". A wr ticket is settled work whose execution is
+    # deferred behind other work; surfacing it as the next thing needing
+    # resolution is exactly how R1 was put back to him for 66 days. It is still
+    # COUNTED and still listed, so it cannot be lost -- it simply does not prod.
+    prodding = [t for t in open_t if t.kind != "wr"] or open_t
+    nxt = sorted(prodding, key=lambda t: (t.ruled or "9999", t.task_ref or "zz", t.tid))[0]
     by_kind = {}
     for t in open_t:
         by_kind[t.kind] = by_kind.get(t.kind, 0) + 1
 
     print(
         f"[ticket-gate] {len(open_t)} OPEN ticket(s) remain "
-        f"(fr {by_kind.get('fr', 0)}, pr {by_kind.get('pr', 0)}); "
+        # `pr` WAS NEVER A KIND. This line reported `by_kind.get('pr')` from the
+        # day it was written, so the second figure has always been 0 whatever the
+        # store held -- the kind is `pf`, renamed before the harvester shipped
+        # precisely because `pr` collides with his panel-review command. A counter
+        # that reads a key nothing writes is indistinguishable from a real zero,
+        # which is the defect class this project keeps finding. Corrected
+        # 2026-10-19, and `qs` added on his instruction of the same day.
+        f"(fr {by_kind.get('fr', 0)}, pf {by_kind.get('pf', 0)}, "
+        f"qs {by_kind.get('qs', 0)}, wr {by_kind.get('wr', 0)} deferred); "
         f"{len(unconf)} UNCONFIRMED awaiting triage; {len(settled)} settled.\n"
         f"  HIS INSTRUCTION, 2026-10-17: do not stop until every task is marked "
         f"complete or resolved in the ticket store.\n"

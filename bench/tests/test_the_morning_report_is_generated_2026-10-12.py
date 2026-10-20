@@ -54,14 +54,32 @@ class TestItAgreesWithTheMarkers:
         r = _run("--check", expect=0)
         assert "every one with authored detail" in r.stdout
 
-    def test_a19_is_reported_as_already_built(self):
-        """THE MISLABEL THAT PROMPTED THIS. Its marker says TESTED."""
+    def test_an_already_built_item_is_reported_as_such(self):
+        """THE MISLABEL THAT PROMPTED THIS: A19's marker said TESTED and the
+        hand-written report called it unbuilt.
+
+        ★ THE SUBJECT IS DERIVED, AS OF 2026-10-19. This named A19 outright, and
+        A19 has since closed, so the test failed with `ValueError: substring not
+        found` -- not because the property broke but because the example moved.
+        That is the 4th time in one day a test pinned an instance rather than the
+        property. It now asks the generator which live items ARE already built
+        and checks one of those, so the property outlives any single entry.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("g", str(GEN))
+        g = importlib.util.module_from_spec(spec)
+        sys.modules["g"] = g
+        spec.loader.exec_module(g)
+        built = [i for i in g.task_items() if i.get("already_built")]
+        if not built:
+            pytest.skip("no live item is currently already-built")
         md = _run(expect=0).stdout
-        i = md.index("A19")
+        ident = built[0]["ident"]
+        i = md.index(ident)
         block = md[i:i + 2500]
         assert "already BUILT and TESTED" in block, (
-            "A19 is reported without its BUILT/TESTED state, which is how the "
-            "hand-written report called it unbuilt")
+            f"{ident} is reported without its BUILT/TESTED state, which is how "
+            f"the hand-written report called A19 unbuilt")
 
     def test_the_state_comes_from_the_marker_not_from_prose(self):
         import importlib.util
@@ -70,9 +88,21 @@ class TestItAgreesWithTheMarkers:
         sys.modules["g"] = g
         spec.loader.exec_module(g)
         items = {i["ident"]: i for i in g.task_items()}
-        assert items["A19"]["status"] == "TESTED"
-        assert items["A19"]["already_built"] is True
-        assert items["R1"]["already_built"] is False
+        #: DERIVED, NOT NAMED. This asserted on A19 and R1 by name; A19 has since
+        #: closed and the test raised KeyError. The property is that the
+        #: already-built flag tracks the MARKER's status rather than any prose,
+        #: so it is checked over every live item at once -- which is stricter
+        #: than 2 named examples ever was.
+        assert items, "the generator returned no live items at all"
+        for ident, it in items.items():
+            expected = str(it.get("status", "")).upper() in ("BUILT", "TESTED")
+            assert it["already_built"] is expected, (
+                f"{ident} has status {it.get('status')!r} but already_built="
+                f"{it['already_built']}; the flag must come from the marker")
+        assert any(i["already_built"] for i in items.values()) or \
+            all(str(i.get("status", "")).upper() not in ("BUILT", "TESTED")
+                for i in items.values()), (
+            "no item is already-built and yet some carry a BUILT/TESTED marker")
 
     def test_no_ruling_seeking_defect_is_missed(self):
         """One of the original 3 records its request under
@@ -131,14 +161,28 @@ class TestTheTwoHalvesCannotDisagree:
     """A check that cannot refuse is not a check."""
 
     def test_a_live_item_with_no_authored_detail_refuses(self):
+        #: THE VICTIM IS CHOSEN FROM WHAT IS LIVE NOW. This popped `task:A19`
+        #: by name and raised KeyError once A19 closed and its stale detail was
+        #: removed. The property -- a live item with no authored detail must
+        #: REFUSE -- is unchanged; only the choice of which item to deprive is.
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("g2", str(GEN))
+        g = importlib.util.module_from_spec(spec)
+        sys.modules["g2"] = g
+        spec.loader.exec_module(g)
         original = DETAIL.read_text(encoding="utf-8")
         d = json.loads(original)
-        removed = d.pop("task:A19")
+        live_keys = [f"task:{i['ident']}" for i in g.task_items()
+                     if f"task:{i['ident']}" in d]
+        if not live_keys:
+            pytest.skip("no live item currently carries authored detail")
+        victim = live_keys[0]
+        d.pop(victim)
         try:
             DETAIL.write_text(json.dumps(d, indent=1, ensure_ascii=False),
                               encoding="utf-8")
             r = _run("--check", expect=3)
-            assert "NO AUTHORED DETAIL for a live item: task:A19" in r.stdout
+            assert f"NO AUTHORED DETAIL for a live item: {victim}" in r.stdout
         finally:
             DETAIL.write_text(original, encoding="utf-8")
 
@@ -251,6 +295,23 @@ class TestTheWorkDoneLedgerIsOneLinePerCommit:
 
 
 class TestTheTTSVersionIsSpeakable:
+    """★ THE SESSION BOUNDARY IS DERIVED HERE TOO, AS OF 2026-10-19.
+
+    These tests passed `"2026-10-11T12:00:00+01:00"` into `work_done`, which is
+    `morning_report_build`'s own `_FALLBACK_SINCE` -- the hard-coded date the
+    GENERATOR stopped using on 2026-10-15. Its `_session_start` docstring records
+    why: *"A session boundary that is typed once is a session boundary that is
+    wrong from the next session on."* The fix landed in the producer and not in
+    the test that guards it, so the test went on building a report from a window
+    that grows with every commit.
+
+    MEASURED 2026-10-19: the frozen date spanned 244 commits against the
+    generator's 6, which rendered 568 lines against the shipped file's 332 and
+    failed the standard's 60-to-400 ceiling. The test was failing with the
+    passage of time rather than with any defect in the report. It now derives the
+    boundary the same way the generator does, so the 2 cannot drift again.
+    """
+
     """He reads by text-to-speech, so a report with markup in it is unreadable."""
 
     def _tts(self):
@@ -272,7 +333,7 @@ class TestTheTTSVersionIsSpeakable:
         # the owed list raised `TypeError: list indices must be integers` in 5 tests:
         # a return type changed without its callers, which is a FOLLOW miss.
         live, superseded = g.explanations_owed()
-        return g.render_tts(decs, outstanding, g.work_done("2026-10-11T12:00:00+01:00"),
+        return g.render_tts(decs, outstanding, g.work_done(g._session_start()),
                             live, g.parked_items(), "x", superseded)
 
     def test_no_markdown_survives_into_the_spoken_form(self):

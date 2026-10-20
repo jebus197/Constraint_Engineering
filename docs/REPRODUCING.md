@@ -412,6 +412,9 @@ in the conversation and can be combined (e.g. `p a e d`).
 | `rg` | Regain full context on named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output. Name the resources consulted. |
 | `sq` | Sequential — strictly one tool call at a time, no parallel batches, to avoid stressing Anthropic servers during long autonomous runs. When dispatching sub-agents, the sequential constraint propagates to them. Does not change what work is done, only the rate at which requests are issued. |
 | `pr` | Panel review — dispatch the full model panel (cc2, cx, ge, cgpt, ds) on a completed analysis or design question under sy, sth, f, e, d, t. Run WITHOUT compelled convergence: each model returns an independent verdict and its strongest falsification, disagreement is preserved as information rather than smoothed to consensus, and CC1 actively participates with its own position and synthesizes the range. Output mirrored to TTS. |
+| `fr` | Feature request — record a new proposal as a ticket in `bench/ticket_store.py` with a hashed identity. Stays OPEN until implemented, merged or rejected; only the founder may REJECT one. Harvested from chat and from annotated reply files by `scripts/harvest_tickets_2026-10-17.py` |
+| `pf` | Proposed fix — record a proposed repair against an observed defect as a ticket, same registry and same hashed identity. Distinct from `pr`, which was already taken by panel review |
+| `qs` | Question — record a question as a ticket with its own hashed identity, so that it is tied to the problem it addresses and cannot be lost. Same registry as `fr` and `pf`; CLOSED is tool-only and requires a recorded verification |
 
 ### Panel round controls
 

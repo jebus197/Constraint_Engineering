@@ -8,20 +8,6 @@
     "The generator REFUSES (exit 3) if a live item has no entry here, or an entry here names",
     "no live item -- so a new decision cannot go unexplained and stale text cannot survive."
   ],
-  "task:A19": {
-    "title": "A19 — the admissibility scorer is BUILT and TESTED; the last step is a panel review and it is yours",
-    "what": "S_k, the admissibility scorer, classifies a whole TARGET rather than each element inside it, so a computable fragment sitting inside prose is never scored. Your design point of 2026-09-10, verbatim: *\"clearly it should simply mark a purely prose input as 'inadmissible', while still solving any computationally reducible elements within that prose! This is STEM.\"* The entry's own words are **\"BUILT AND TESTED 2026-09-11, NOT DONE — Section P applies, and the last step is HIS.\"**",
-    "why": "It is not waiting on engineering. It is waiting on a Section P panel review, which the list records as yours to call. My 2026-10-12 report wrongly listed this as 'approved, not built' — the marker says `state: OPEN / status: TESTED` and its evidence passes 20 tests, so the prose was wrong and the marker was right. That mislabel is the reason this report is now generated.",
-    "options": [
-      "**Call the Section P panel review** on the built work, using the free cc2 and fable seats, which costs nothing. This is the step the entry names.",
-      "**Accept it without a panel** and mark it DONE, on the grounds that both seats already found and fixed the one critical defect in it during panel round 13 on 2026-09-11.",
-      "**Defer it** behind the next simulated run, so the review sees it exercised rather than static."
-    ],
-    "evidence_line": "Panel round 13, 2026-09-11, had both seats independently find the same critical defect in it — a gate that could not fail moved from `e4` to `e3` inside the commit that removed it from `e4` — and that is repaired. Measured on a real design note, `bench/BUILD_BOT_TEST_BENCH_FIX_SPEC.md`: ruff reports 311 diagnostics over the extracted listings where the whole-file form reported none.",
-    "ruled": "2026-09-10",
-    "his_words": "clearly it should simply mark a purely prose input as 'inadmissible', while still solving any computationally reducible elements within that prose! This is STEM.",
-    "what_the_ruling_means": "DESIGN RULED. Built and tested."
-  },
   "task:R1": {
     "title": "R1 — Exp 53, the zero-plant control, has been ruled twice and never run",
     "what": "The zero-plant control experiment. You ruled it on 2026-08-07 — *\"7: Restart or resume Exp 53. Restart it.\"* — and again on 2026-09-06 with `# restart`. Two run directories exist and both PREDATE the first ruling, so no post-ruling run exists. It has been carried 66 days.",
@@ -80,17 +66,6 @@
       "WHY IT GOT THROUGH, and it is the gap he found hours after the fix shipped": "The `ruled:` marker field added this morning covers TASK-LIST ENTRIES. This item has no task marker -- 9 of the 13 decisions had none -- so the field could not reach it. The generator now also honours `ruled` and `struck_permanently` on a defect record and on authored detail, which is the route this item travelled.",
       "THE HALF THAT IS NOT STRUCK, stated so a real defect is not buried with a settled question": "The provenance question is struck. The MECHANICAL half is NOT: in study_run1b, C0066 at severity 0.45 and C0073 at 0.50 reached the blocker count with zero verdicts, no routing history and no falsifier code. That is a live defect and it falls under his 'Fix it all' of 2026-10-16, not under the strike."
     }
-  },
-  "task:V9": {
-    "no_ruling_needed": true,
-    "title": "V9 — you approved it on 2026-09-18 and it was never built",
-    "what": "Task V1 set three conditions for a DONE marker's evidence. Two are implemented and guarded: the evidence must exist, and it must pass. The third — that **reverting the fix makes that same evidence FAIL** — is implemented nowhere and no entry tracks it.",
-    "why": "Approved by you on 2026-09-18 at 01:26 BST, verbatim: *\"V9: Approved.\"* It is build work with your ruling already on record, so it needs no new decision from you. It belongs on the work queue, not in your inbox.",
-    "options": [],
-    "evidence_line": "Without it, a DONE entry can cite evidence that passes for reasons unrelated to the fix — which is the mutation discipline applied to the task list itself.",
-    "ruled": "2026-10-16",
-    "his_words": "This work remains approved and should be done.",
-    "what_the_ruling_means": "APPROVED."
   },
   "_archived_authored_detail": {
     "_why": [
@@ -254,32 +229,6 @@
     "his_words": "Fix it all.",
     "what_the_ruling_means": "FIX."
   },
-  "task:B3": {
-    "title": "The parked file is never reconciled against the task list, and 14 of 21 parked items were already settled",
-    "what": "Nothing removes an item from the parked file when its underlying entry closes, so it re-presents settled business and buries the live items among it. Measured 2026-10-13: 14 of 21 parked items were already settled, 66.6667%, Wilson [45.3735%, 82.8052%], 6 by their own heading, 6 naming entries recorded as done or withdrawn, and 2 refuted by execution.",
-    "why": "Your ruling on being shown that was to build it and implement it. The fix is to derive the parked file's live portion from the task list's markers at generation time, exactly as this report's own decision list already is.",
-    "evidence_line": "Its producer was the only script in the tree nothing reached, and the first attempt to fix that cited it inside the parked file, which cannot vouch for it because that file is itself one of the reach checker's instruments.",
-    "options": [
-      "Derive it from the markers, the way this report is derived, so a closed entry cannot reappear.",
-      "Leave it and read past the stale items, which is what has happened for 21 items so far."
-    ],
-    "ruled": "2026-10-16",
-    "his_words": "Fix it all.",
-    "what_the_ruling_means": "FIX."
-  },
-  "task:B6": {
-    "title": "3 defects found while repairing the specification, recorded and deliberately not fixed",
-    "what": "The coherence budgets are stale so the pruner's comparison cannot run, the concise rendering deduplicates the code under review for 4 of 5 models, and a proven capacity floor is used as a ceiling so a seat's maximum can never rise. Each has its own entry in this report.",
-    "why": "None is on the causal path of either free run's question, and 3 large changes in one night with nothing measured between them is how a result stops being attributable. They are recorded with their measured causes rather than fixed in passing.",
-    "evidence_line": "All 3 are marked high priority in the programme of study, each with its producing script and its measured figure.",
-    "options": [
-      "Rule on them individually, since each appears separately in this report with its own options.",
-      "Defer all 3 until the 2 free runs have reported, since 2 of the 3 are measured by those runs."
-    ],
-    "ruled": "2026-10-16",
-    "his_words": "Fix it all.",
-    "what_the_ruling_means": "FIX."
-  },
   "defect:gamma-band-label-is-applied-to-an-unestimable-gamma": {
     "title": "A gamma band label is applied to a gamma that is not a measurement, and it asks for you",
     "what": "At round 1 of free run 1 the console printed: gamma_all 0.000, Gamma disagrees with state closure, recommend HIL audit. That sentence is a BAND LABEL, not a detected disagreement. The band table maps the range 0.00 to 0.20 to that wording, and the gamma estimator returns 0.0 whenever it has fewer than 3 rounds to fit. So the label is applied to a value that is not yet a measurement.",
@@ -289,41 +238,6 @@
       "Gate the band lookup on estimability, which the runner already computes, and print not yet estimable rather than a band label.",
       "Leave it, on the ground that it is advisory and gates nothing, and read past it in the first 2 rounds."
     ],
-    "ruled": "2026-10-16",
-    "his_words": "Fix it all.",
-    "what_the_ruling_means": "FIX."
-  },
-  "task:B8": {
-    "title": "B8 — the coherence-budget recalibration is inert 3 ways, and its repair is a SCHEMA change that is yours to authorise",
-    "what": "`update_coherence_budgets_from_experiments` is the mechanism the programme names for re-deriving the coherence budgets from the free runs, and those budgets gate the coherence pruner's lean-versus-full ablation arm — the gate every proposed directive cut has been held to since 2026-07-18. It cannot be driven from the runs, for 3 reasons each sufficient alone. **Nothing calls it**: 0 `ast.Call` sites and 0 imports across `bench/` and `scripts/`, the 6 textual mentions being prose in test docstrings and scripts. **It persists nothing**: `MODEL_COHERENCE_BUDGETS` is a dict literal at `composer.py:69`, and mutating it to 0.123456 in one process reads back as 0.02 in a fresh one. **The runs do not emit its input shape**: 0 of free run 1's 61 JSON entries carry both `model` and `chars`, Wilson [0.0000%, 5.9244%], so on real logs it returns its own defaults byte-identically through its closing `setdefault`.",
-    "why": "NOT fixed, and deliberately. The algorithm is SOUND — on a fixture in the documented shape it moves `opus_4_6` from 0.02 to 0.0571 — so this is a schema mismatch between what the runner writes and what the calibrator reads, and the repair means emitting `model` and `chars` per dispatch into every run's own JSON. That changes what every future run records, which is a replay-invalidation decision and belongs with you rather than with an assistant's judgement at 10am. B7 and B9 were pure repairs with no schema impact and were applied; this one is not.",
-    "evidence_line": "scripts/the_coherence_recalibration_is_inert_three_ways_2026-10-15.py; experimental_notes/evidence/coherence_recalibration_inert_2026-10-15.json",
-    "options": [
-      "Authorise the schema change: emit `model` and `chars` per dispatch, wire a caller, persist the calibrated budgets to a file the composer reads at import, and guard it with a test that fails if the calibrator returns its own defaults on a real run's logs. The pruner ablation arm becomes runnable; archived runs stop replaying against the new log shape.",
-      "Defer it into the one batched replay-invalidation decision alongside anything else that changes run output, so the cost is paid once.",
-      "Leave it inert and accept that the lean-versus-full ablation arm stays un-runnable, which means every future proposed directive cut has no gate to pass."
-    ],
-    "ruled": "2026-10-16",
-    "his_words": "I'm pretty sure I already ruled on this too. It should be fixed, providing it doesn't trim the operational directives. It exists so that models never get fed work that is larger than they have been demonstrably proven to be able to handle in any experiment. Not to trim the operational directives. So fix it with this in mind, and add it to your list of work done and not to be repeated.",
-    "what_the_ruling_means": "FIX, with a HARD CONSTRAINT: the recalibration must never trim the operational directives. Its purpose is to stop a model being fed work larger than it has been demonstrably proven to handle."
-  },
-  "task:B10": {
-    "title": "B10 — the cause of the non-project terminology, fixed rather than recorded",
-    "what": "You asked: 'Is the lesson is recorded the same as saying the problem that caused it has now been fixed? Because if not you should probably also fix the cause rather than just record the symptom.' It was not the same, and the cause is now mechanical. Rule 30 in the note lint refuses a note using a compound technical term that exists nowhere you can look it up, wired into both the blocking surface and the command-line report.",
-    "evidence_line": "Of the 4 terms you challenged, 3 existed NOWHERE in the project (discrimination guard, paired baseline, consequence gate: 0 glossary hits, 0 docs files) and 1 was real but undefined (coherence budget: 0 glossary hits, 4 docs files). 13 tests, and removing the rule's test-exclusion turns 7 of them red. 2 glossary entries added with code anchors.",
-    "no_ruling_needed": "The cause fix needs nothing from you. The BACKLOG it surfaced does: 869 instances across 263 of 524 notes, 50.19%, mostly real project mechanisms with no glossary entry.",
-    "options": [
-      "DRAIN BY RATCHET (recommended): new notes carry 0, the committed baseline of 734 may only fall, and terms get defined as they are used.",
-      "COMMISSION A GLOSSARY SWEEP of the 734 now, which is real work and would make the whole archive look-up-able.",
-      "ACCEPT the backlog and enforce only on new notes."
-    ],
-    "VALIDATED_AGAINST_THE_ACTUAL_COMPLAINT": {
-      "method": "Rule 30 was run over the 2 TTS files he annotated on 2026-10-15, the ones carrying the complaint.",
-      "The_Two_Free_Runs_Both_Converged": "3 findings — 'confinement guard', 'discrimination guard', 'paired baseline'. He explicitly challenged 2 of those 3: \"What is the 'discrimination guard'? I am unfamiliar with this term\" and \"What is this 'paired baseline'? Plain English please.\"",
-      "Status_Decisions_And_Next_Steps": "4 findings — 'paired baseline', 'Haiku's classifier role', 'confinement guard', 'comparison arm'. He challenged 'paired baseline' here too.",
-      "WHY coherence budget IS NOT FLAGGED, AND THAT IS CORRECT": "He challenged it as well, but the composer EMITS the string 'over coherence budget' as a runtime warning, so the rule treats it as a real project term. The right repair for that class was never a refusal — it was a DEFINITION, and 'Coherence Budget' and 'Coherence Budget Recalibration' are now in docs/GLOSSARY.md with code anchors. So the 2 halves of the fix map exactly onto the 2 classes of term he complained about: coined terms are refused, real-but-undefined terms are defined.",
-      "the_boundary": "The rule catches compound terms introduced as a definite noun phrase. It does not and cannot catch a single-word coinage, nor a term used without 'the'. Measured trade-off: requiring the definite article cut false positives from 2,841 findings over 426 notes to 734 over 243, while still catching both terms he challenged."
-    },
     "ruled": "2026-10-16",
     "his_words": "Fix it all.",
     "what_the_ruling_means": "FIX."
@@ -370,18 +284,217 @@
     "his_words": "Fix it all.",
     "what_the_ruling_means": "FIX the 869 backlog."
   },
-  "task:B11": {
-    "title": "B11 — the board triage, and the honest answer to when the board goes fully green",
-    "what": "You asked twice: 'So when and in what circumstances will I get a fully green board back? What exactly do we have to do? And of course I mean honestly. Not faking it.' The board after the 2 free runs was 33 failed against 1 before them. 21 were mine and were fixed that morning. Of the 9 that remained, 7 were the archive-grew class and ARE NOW FIXED tonight on your ruling to derive each baseline rather than re-pin it: 259 passed, 0 failed across the 5 suites. That leaves 2, and only 1 needs anything from you.",
-    "evidence_line": "(a) test_task_list_burndown is HONEST RED ARITHMETIC: on 2026-10-15 the list gained 7 entries and closed 4, and the test requires closures to outpace discovery. It greens by closing work, which tonight does, and must never be greened by marking undone work done. (b) test_sim_naming_and_integrity_directive is HONEST RED EVIDENCE: run 2's artefacts carry 64 instances of identifiers like Gemini-SIM_GEMINI_F004, where the SEAT label is correct and the bare vendor name arrives inside the model's own self-chosen local identifier, joined through at bench/reference_runner_v3.py:4602. Run 1 carries 0, so it is non-deterministic.",
+  "task:B13": {
+    "title": "B13 — admitting a model is not trivial, and the cost is silent defaulting",
+    "what": "Putting a model that does not exist through the real resolution chain shows that of 7 steps, 5 default SILENTLY and only 2 fail loudly. A researcher who misses 1 table gets a seat that runs while quietly losing whatever that table controlled.",
+    "why": "You ruled that adding and removing models should be made relatively trivial and safe going forward. The repair order matters: make a missing registration fail loudly at the point of dispatch FIRST, consolidate to a single registration point SECOND, because a single point that still defaulted silently would hide many misses behind one.",
+    "evidence_line": "5 of 7 resolution steps default silently. Producer: scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py.",
+    "ruled": "2026-10-17",
+    "his_words": "As already stated, my preference was that although adding models/seats might not be entirely trivial at this time, that preferably it should be made relatively trivial and safe going forward.",
+    "what_the_ruling_means": "RULED. Work, not a decision. It is in the panel brief dispatched 2026-10-19.",
+    "no_ruling_needed": true
+  },
+  "task:B20": {
+    "title": "B20 — the orchestrator bound inside the harness: specified, nothing built",
+    "what": "Your design for an orchestrator operating from inside the harness is specified and no code exists for it. It is 2 arms rather than 1: a repair-adjudication arm that has an executable criterion today, and a monitoring arm with no defined predicate at all.",
+    "why": "Running both as 1 experiment would confound a measurable arm with an unmeasurable one. Across the 3 shakedown legs, 77 of 79 adjudications were made by tools rather than by assertion, so a bound orchestrator would operate where its own assertions mostly decide nothing.",
+    "evidence_line": "77 of 79 adjudications tool-decided, 97.4684%, interval 91.2314% to 99.3030%. 0 lines of orchestrator code exist.",
+    "ruled": "2026-10-17",
+    "his_words": "Already previously addressed.",
+    "what_the_ruling_means": "RULED on placement. The ambiguity raised 2026-10-19 remains: whether Fable standing in as orchestrator means this bound role or the synthesising seat in panel reviews.",
+    "no_ruling_needed": true
+  },
+  "task:B21": {
+    "title": "B21 — model and role selection is NOT a large rewrite",
+    "what": "The 4-layer policy engine that would make model and role selection declarative already exists. The premise that this needs a major refactor was disproved before any code was written.",
+    "why": "You asked that researchers be able to add, remove and reassign models without major code changes, and designed a selection surface for the coming interface build. The backend for that is largely present; what is missing is wiring the policy engine into the current runner.",
+    "evidence_line": "The merged policy holds 46 values and exactly 1 shares a name with a runner setting, and that 1 conflicts: the runner defaults to 21 rounds and the policy says 5.",
+    "ruled": "2026-10-17",
+    "his_words": "Ahh, I see this is already an issue you intend to deal with. Yes you should do exactly this!",
+    "what_the_ruling_means": "RULED. Work, not a decision. In the panel brief dispatched 2026-10-19.",
+    "no_ruling_needed": true
+  },
+  "task:B22": {
+    "title": "B22 — what a fix means outside code, and whether this is yet a general-purpose instrument",
+    "what": "Your panel question: not only whether the harness is already a general-purpose instrument for science, but what would bring it meaningfully closer.",
+    "why": "The evidence that should travel with the brief is assembled: the policy layer holds 10 scientific domains rather than 1, the ground-truth corpus holds 5 independently written documents with 29 tagged claims and a runnable checker each, and all 3 shakedown legs ran as a mathematics domain against prose and converged. Against that, the main runner never calls the policy merge engine.",
+    "evidence_line": "10 domains in the policy layer, 29 tagged claims across 5 documents, and 0 calls to the policy merge engine from the live runner.",
+    "ruled": "2026-10-17",
+    "his_words": "We also have the remaining B-Cell cellular builds/exams on our runway. You should probably alert the models to these too, and mention that this is work that has still to be done.",
+    "what_the_ruling_means": "RULED to go to the panel, with the B-cell builds named in the brief. Brief queued as general_purpose_stem_calculator_2026-10-18.",
+    "no_ruling_needed": true
+  },
+  "task:B24": {
+    "title": "B24 — the number-formatting rule forbids a spelled number and the checker catches only a compound one",
+    "what": "Rule 27 of the note standard forbids writing a number in words. The checker only catches compound forms such as twenty-nine, so a bare spelled number passes.",
+    "why": "Full enforcement is not a small change: it would take the note checker from 87 findings to roughly 16,743 across 522 of 539 notes. Almost all of that is archive.",
+    "evidence_line": "87 findings today against roughly 16,743 under full enforcement, across 522 of 539 notes.",
     "options": [
-      "RULE on (b): authorise a FORWARD NORMALISATION at the composition site, so future runs strip a bare vendor name from a model-supplied identifier (recommended). Run 2's recorded artefacts stay untouched, so no evidence is rewritten, and the board greens as runs roll forward rather than retroactively.",
-      "RULE on (b): leave it red permanently as a standing provenance marker. Honest, but the board then never reads fully green and a future reader cannot tell this red from a regression.",
-      "REFUSED EXPLICITLY, named so it is not quietly available: do not exempt run 2's artefacts, which would hide a real provenance gap, and do not rewrite them, which would falsify experimental evidence.",
-      "THE HONEST BOTTOM LINE: the board cannot be fully green tonight by any legitimate route. With (b) ruled and (a) closing as work lands, the first fully green board is reachable on the next run after the normalisation, not before."
+      "**Enforce going forward only**, leaving the archive as written. This is the recommendation and matches your ruling of 2026-10-18 on the same question for the note standard.",
+      "**Enforce everywhere**, which means editing 522 notes.",
+      "**Leave the rule as it is**, accepting that bare spelled numbers pass."
+    ]
+  },
+  "task:B29": {
+    "title": "B29 — the save mechanism refuses the follow-up save that fixes its own failed condition",
+    "what": "A save commits and pushes, then fails its own check that the recovery document is current, by design, because it deliberately will not write that document. Writing it leaves a second save to make, and the memory check then refuses that second save because it measures memory against the previous save.",
+    "why": "Measured: 14 of 83 consecutive save pairs since that check was introduced are such follow-ups, and 8 of the 14 name this exact condition in their own commit subject. You asked for a definitive fix at source rather than reverting to an older state.",
+    "evidence_line": "14 of 83 save pairs are follow-ups, 16.8675%, interval 10.3221% to 26.3441%.",
+    "options": [
+      "**Have the save record whether its own conditions passed, and have the memory check skip back to the last save that finished cleanly.** Additive, and it does not revert to an older state. This is the recommendation and answers your concern directly: nothing is undone or repeated, because the skip is only in what the memory check COMPARES against, not in what is saved.",
+      "**Put it to the free panel**, which you suggested given the number of previous attempts.",
+      "**Run the staleness check BEFORE invoking the save** rather than after it refuses. Costs under a third of a second and turns 2 saves into 1."
+    ]
+  },
+  "task:B31": {
+    "title": "B31 — the credential redactor withholds an ordinary run setting because its name contains key",
+    "what": "4 of the 4 reports that carry a declared configuration withhold exactly 1 field, and it is not a secret. That mode's declaration cannot be read back from any report.",
+    "why": "The hazard is worse than absence: the placeholder text is itself truthy, so a check written without care reads a withheld false as a declared true. The reconciler now detects the placeholder and refuses to judge, so the hazard is contained where it was found.",
+    "evidence_line": "4 of 4 reports withhold exactly 1 non-secret field.",
+    "options": [
+      "**An explicit list of known-safe setting names, checked before the pattern.** The pattern itself is untouched and it fails safe. Your ruling of 2026-10-18 was *\"Your fix is approved\"*, so this is recorded as settled unless you intended otherwise."
+    ]
+  },
+  "task:B33": {
+    "title": "B33 — a declared convergence mode has no consumer at all",
+    "what": "The mode's switch is read exactly once in the whole runner, at the line that publishes a copy of itself, and the series it would act on reaches a report field and nothing else. So the mode cannot operate however it is set, while the report ships a field whose name asserts that it does gate.",
+    "why": "Wiring it or retiring it are both your calls, because one adds a behaviour and the other removes a declared capability.",
+    "evidence_line": "1 read of the switch in the entire runner, at the line that publishes it.",
+    "options": [
+      "**Wire it**, so the mode does what its report field claims.",
+      "**Retire it**, removing both the switch and the field. The additive standard requires a measurement before removal, and the measurement is that it reaches nothing.",
+      "**Leave it and correct the field's name** so it no longer asserts gating."
+    ]
+  },
+  "task:B34": {
+    "title": "B34 — the last outstanding programme measurement cannot settle its question at any sane cost",
+    "what": "The serialisation measurement was authorised and was not run, because the arithmetic says the design cannot answer it. The rate it must reproduce is 1 in 68 rounds, needing 47 rounds for a 50% chance of seeing one event and 109 for 80%.",
+    "why": "At 2 seats and 12 to 29 minutes a seat that is 18.8 to 105.4 hours of your subscription. At 1 round each way the chance of a clean result even if the change cures nothing is 95.59%, and the best possible outcome is not significant.",
+    "evidence_line": "1 of 68 rounds, 1.4706%, interval 0.2601% to 7.8710%. 47 rounds for 50% power, 109 for 80%.",
+    "options": [
+      "**Build the progress signal the dispatcher names as the real repair** — consume the command-line tool's streaming output incrementally so the call count is observable mid-flight. This addresses the shared-deadline mechanism that 2 of the 3 co-failures are attributed to, and produces a lasting capability rather than a single number.",
+      "**Accept the stagger on the evidence already in hand**, which the 2026-10-07 producer concludes is at least as well supported as the full lock and strictly cheaper. Your note of 2026-10-18 indicates this is already your position.",
+      "**Spend the hours** for a 50% to 80% chance of observing 1 collision."
+    ]
+  },
+  "task:B35": {
+    "no_ruling_needed": true,
+    "title": "B35 — a guard reporting a change you rejected 4 times was red and nobody saw it",
+    "what": "A guard file carried 3 failing checks, one reporting that the severity test had left the blocker counter again. The message was false: the test asserted on the SOURCE TEXT of a function whose logic had moved into a neighbour during an earlier refactor.",
+    "why": "It went unseen because the commit hook runs a GUARDS list rather than the suite, and that list held 71 of the repository's 668 test files. A red outside the guard set accumulates unseen.",
+    "evidence_line": "All 7 severity functions byte-identical to 480c9379. 3 mutations of the real gate now turn the repaired test red."
+  },
+  "task:B36": {
+    "no_ruling_needed": true,
+    "title": "B36 — why no full-suite figure existed for 382 commits",
+    "what": "The test configuration sets a 300-second global per-test limit. A test that runs the whole commit hook was measured at 334.83 seconds, so it was killed and took the entire run with it.",
+    "why": "2 claims of mine are withdrawn on measurement: widening the hook's guard list did NOT cause it, and the 6 added files cost nothing measurable. The committed 71-entry hook takes 334.83 seconds and the widened 77-entry hook 333.84 while running 72 more tests.",
+    "evidence_line": "67 of 424 subprocess sites declare a ceiling above the global limit, 15.8019%, interval 12.6390% to 19.5789%."
+  },
+  "task:B37": {
+    "no_ruling_needed": true,
+    "title": "B37 — the suite contains 3 tests that run the suite inside themselves",
+    "what": "With the limit raised, the run did not time out; it DEADLOCKED at 0.0% CPU for 45 minutes. One test clones the repository and commits into the clone to prove the hook refuses, which fires the hook, which runs 70 test files inside the suite.",
+    "why": "The sandboxing is correct and was verified rather than assumed: HEAD had not moved during the deadlock. The 3 files are now measured separately, giving a complete figure for 665 of 668 files.",
+    "evidence_line": "0.0% CPU for 45 minutes with 2 idle children. 70 files and 1,423 tests run inside the nested hook."
+  },
+  "task:B39": {
+    "title": "B39 — the severity the gate reads is not traceable to the assessments beneath it",
+    "what": "Over 147 entries where 2 or more independent assessments of 1 defect are recoverable within a single run, the merged severity equals the median of its inputs in 21.0884% of cases and lies OUTSIDE their range entirely in 23.8095%, with 24 above every assessment and 11 below. One entry carries assessments of 0.35 and 0.45 and a kept value of 0.95.",
+    "why": "This bears directly on your severity question. On whether severity is inherently a confidence within a range, no archive can settle it, because that is a question about what the quantity means.",
+    "evidence_line": "35 of 147 outside their inputs, 23.8095%, interval 17.6469% to 31.3061%. Spread median 0.1200, mean 0.1786, against the brief's asserted 0.1419.",
+    "options": [
+      "**Identify the rule that produces the kept value first, and establish whether a value outside the range of its inputs is intended.** Neither panel fix should be built until that is answered. Recommended.",
+      "**Build the smoothing fix alone**, which the panel recommends and which your no-cooking directive favours over the pooling fix.",
+      "**Build neither**, on the ground that the brief's noise figure was approximately right and the gate's behaviour at the threshold is unchanged in practice."
+    ]
+  },
+  "task:B41": {
+    "no_ruling_needed": true,
+    "title": "B41 — the work queue of 2026-10-19, mechanised onto this list",
+    "what": "Your instruction that the task list be adapted so it holds the session to its work. The queue covers the first complete suite in 384 commits, the 50 failures that survive re-running, the ladder membership and order separation, and the 4 panel briefs.",
+    "why": "The 20-hour sprint stayed alive because every item was a ticket the Stop gate refused to let go. Today's work was carried in conversation instead and the session stopped repeatedly.",
+    "evidence_line": "61 failed and 12,610 passed in 4,198.29 seconds, against 8,878 passed 384 commits earlier. 50 of 61 survive re-running."
+  },
+  "task:C1": {
+    "title": "C1 — the claim channel's promotion was never implemented or measured",
+    "what": "The measurement your gate required now exists: the channel copied 58 verdicts of 58 exactly, which bounds its copying error below about 6.2%. What remains is not measurement but FORM.",
+    "why": "The channel is not wired into the scoring equations and no document specifies how it would enter them, whether as a weight, a multiplier, a gate or a term. Clearing the flag without that form would invent a term in the mathematical model to make the code describe itself truthfully.",
+    "evidence_line": "58 of 58 transcribed exactly. One-sided 95% bound on the error 5.0339%; two-sided exact 6.1621%. Producer: scripts/commission_the_claim_channel_2026-10-17.py.",
+    "ruled": "2026-10-02",
+    "his_words": "Also implement this and test it on the upcoming simulated runs.",
+    "what_the_ruling_means": "RULED and the TEST half is done. The IMPLEMENT half waits on which of 3 terms a claim-level verdict should enter, and whether as a multiplier or an additive channel. Either answer is buildable immediately; neither is derivable from the code.",
+    "no_ruling_needed": true
+  },
+  "task:C12": {
+    "title": "C12 — the false-quiet chance, and checking the fix with the free panel",
+    "what": "Your ruling of 2026-10-08 to fix the false-quiet chance and check the fix with the free panel. The entry's original premise was stale and was corrected: the required quiet run is 7, not 3, changed under C13 8 hours after C12 was written.",
+    "why": "23 configurations still set 3, and 0 of them are live and forward-looking: 20 are records of completed experiments and 3 are sandbox copies.",
+    "evidence_line": "23 stale configurations, 0 live. Required quiet run measured at 0 premature closes in 99 opportunities at a window of 7.",
+    "ruled": "2026-10-08",
+    "his_words": "Fix it all.",
+    "what_the_ruling_means": "RULED. The premise correction is done; the panel check is queued as the_required_quiet_run_2026-10-18.",
+    "no_ruling_needed": true
+  },
+  "task:C15": {
+    "title": "C15 — no distinction between models other than a ranking number",
+    "what": "Your ruling that nothing but demonstrated capability should rank a model. The order cannot be measured from the archive: the omnibus test rejects equality but 0 of 10 pairwise comparisons survive correction, and a ranking IS a set of pairwise orderings.",
+    "why": "The frozen vendor list persists because ONE list encodes both MEMBERSHIP and ORDER. Emptying it satisfies this ruling and destroys your 2026-10-07 ruling that a free seat be on the ladder.",
+    "evidence_line": "26 refutations across 3,020 archived entries. Omnibus chi-squared 14.5802 on 4 degrees of freedom, p = 0.005656; 0 of 10 pairs survive correction.",
+    "ruled": "2026-10-09",
+    "his_words": "Again I find it extremely difficult to understand why a model's name should matter so much?",
+    "what_the_ruling_means": "RULED. The separation of membership from order is the repair and needs no further ruling; it was held only while the whole-tree test run was reading those files.",
+    "no_ruling_needed": true
+  },
+  "task:C21": {
+    "title": "C21 — the routing-ladder cluster, consolidated",
+    "what": "What your 2026-10-09 reframing settled, what it rejected, and what is genuinely open. Promotion gates should be deterministic and exchangeable, at a measured price of 0 extra attempts.",
+    "why": "You rejected the panel's own figure of roughly 300 attempts per model per window as vastly too much, and proposed 2 or 3 instead. Your season design resolves it: a season is 1 round, so rankings are computed from the first round's evidence and then frozen.",
+    "evidence_line": "Verified 3 ways that capability drop and difficulty rise are indistinguishable: symbolic algebra returns exactly 0, a constraint solver returns unsatisfiable, and arbitrary-precision arithmetic returns 0 difference across 27 test points.",
+    "ruled": "2026-10-09",
+    "his_words": "clearly vastly much too much",
+    "what_the_ruling_means": "RULED. The season is built and wired. What remains is the membership-from-order separation described under C15.",
+    "no_ruling_needed": true
+  },
+  "task:C33": {
+    "no_ruling_needed": true,
+    "title": "C33 — a discussion, not a build: the questions register behind a discussion forum",
+    "what": "Your instruction that questions also appear in a discussions section of the coming interface build, through a facility such as Discourse, recorded at the foot of the list as a discussion.",
+    "why": "The qs kind built on 2026-10-19 is the BACKEND. What is undecided is the front: a threaded forum, which brings categories, replies, search and notification for free but adds a large external dependency, or a native view over the register, which has no dependency and reuses an index already measured at 5.8033 milliseconds a query against 480.4354 for a linear search.",
+    "evidence_line": "27 questions now carry hashed identities, and 0 of them yet carry a recorded reply, so the measurement that should decide the form cannot be taken."
+  },
+  "study:serialisation_cures_matched_failures": {
+    "title": "serialisation_cures_matched_failures — the 13th measurement, and it cannot settle its question at a sane cost",
+    "what": "Whether dispatching the shared-subscription seats one at a time cures the matched failures that motivated the change, or merely coincides with their absence. It is the last outstanding item of the programme of study.",
+    "why": "You authorised it and it was not run, because the arithmetic says the design cannot answer it. Your own note of 2026-10-18 says the premise predates the staggered dispatch and that the serialised design was mine rather than yours.",
+    "evidence_line": "The rate to reproduce is 1 of 68 rounds, 1.4706%, interval 0.2601% to 7.8710%; 47 rounds for 50% power and 109 for 80%, which is 18.8 to 105.4 hours. Staggering instead of serialising saves 0.4001 of wall clock, bootstrap 0.3851 to 0.4147, over 102 rounds, never slower.",
+    "options": [
+      "**Close it as superseded.** The condition it was designed to test, full serialisation, is no longer what either runner does: both now stagger at 20 seconds on your 2026-10-19 instruction. Measuring whether serialisation cures anything would measure a configuration the project has left behind.",
+      "**Build the progress signal instead**, so a timeout can tell a working seat from a stuck one. This addresses the shared-deadline mechanism that 2 of the 3 original co-failures are attributed to, and leaves only the establishment collision for scheduling to explain.",
+      "**Spend the hours** for a 50% to 80% chance of observing a single collision."
     ],
-    "ruled": "2026-10-16",
-    "his_words": "We normalise going forward, since recording vendor names is purely a recording statistic and has no impact on capability, or how our experiments work.",
-    "what_the_ruling_means": "FORWARD NORMALISATION APPROVED. No recorded artefact is rewritten."
+    "ruled": "2026-10-19"
+  },
+  "task:B42": {
+    "title": "B42 — 12 of your annotations no longer exist in your own file, and 3 are rulings still owed to you",
+    "what": "Responses/TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt is 108 lines long and holds 8 annotations, confirmed both by counting the lines beginning with a hash character in the raw Windows-1252 bytes and by scripts/read_founder_responses_2026-10-11.py, which returns the same 8. The verdicts recorded against it on 2026-10-17 name anchors at lines 108, 114, 116 and 120, which lie beyond the file's current end. The file is therefore shorter than the one the verdicts were taken from: it was replaced, not rearranged. Its modification time is 2026-10-19T07:19:02+01:00. No committed code can have done it, because 22 Python files under scripts/, bench/ and hooks/ reference that directory and 0 of them contain a write, delete or move call. An ad-hoc shell command cannot be excluded from the record and is not claimed. All 12 are recovered word for word into experimental_notes/recovered/Founder_Annotations_Recovered_2026-10-19.md.",
+    "why": "4 guards in bench/tests/test_every_annotation_verdict_names_its_evidence_2026-10-17.py refuse because those rows can no longer be checked against your record, and the commit hook refuses with them, so no state can be saved at all. The obvious repair is circular and was therefore not applied: resolving the rows against the recovered file would check them against a file derived from those same rows, turning a guard whose stated purpose is to stop the record becoming a list of things I believe you said into a tautology. 3 of the 12 are questions still owed to you.",
+    "evidence_line": "4 of 16 anchors resolve, 25.0000%, Wilson 10.1821% to 49.4983%, Clopper-Pearson 7.2662% to 52.3771%; 14 of 16 quote-matching failures are in the same file; 0 of 22 files that reference the directory contain a write call.",
+    "options": [
+      "**Restore the original file if you still hold it**, in a word processor, a backup, or elsewhere. This makes all 4 guards honest at once, demotes nothing, and returns the 3 owed rulings to their own context. This is the recommendation if the file exists.",
+      "**Mark those 12 rows as carrying a lost anchor**, with a second guard asserting that every lost-anchor row has its text preserved in the recovered file. This is an honest demotion rather than a repair, and it is the only non-circular option if the original is gone.",
+      "**Retire the 12 verdicts entirely**, on the reading that an annotation you removed is one you withdrew. This destroys the record that a verdict was given and is not recommended, but it is yours to choose."
+    ]
+  },
+  "task:B44": {
+    "title": "B44 — you propose `wr`, work remaining, as a 4th ticket kind, and your `wr` marker is currently invisible to the parser",
+    "what": "Your words of 2026-10-19: that a new category may be needed in the registry for tasks like the zero-plant control, so that they stop being repeated back to you, and that you propose wr for work remaining. You marked that annotation wr. The reader's marker pattern matches only fr, pf and qs, and KINDS in bench/ticket_store.py is the same 3, so your wr marker was read as no marker at all. This is exactly the state qs was in before 2026-10-19, and the 2 places that need changing are the same 2.",
+    "why": "R1, the zero-plant control, has been ruled twice, on 2026-08-07 and 2026-09-06, and has been carried 66 days. It is not a proposal awaiting a decision and it is not a repair against a defect: it is settled work whose execution is deliberately deferred behind other work. Recorded as fr or pf it reads to the Stop gate as something outstanding that needs resolving, which is why it keeps being put back to you. You wrote 'I propose', which is not an instruction, so this is recorded rather than built.",
+    "evidence_line": "0 of 1 wr markers were read; 3 kinds in KINDS against the 4 your markers now use; R1 ruled twice and carried 66 days.",
+    "options": [
+      "**Build it as qs was built**: add wr to KINDS, add it to the reader's marker pattern, and give it a guard. Small, and its shape is already known. Recommended if you confirm the name.",
+      "**Use a different name**, if wr collides with something you use elsewhere; the collision check that renamed pr to pf applies here too and found none.",
+      "**Leave it**, and keep deferring settled work inside the existing kinds, accepting that it will continue to surface as outstanding."
+    ]
   }
 }

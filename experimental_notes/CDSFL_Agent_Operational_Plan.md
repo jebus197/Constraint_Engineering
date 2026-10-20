@@ -467,10 +467,32 @@ terminal opens on the founder's own machine via `scripts/local/open_run_tail.sh`
    runner. The extended set under STILL OWED is what would settle the wiring
    question; until it runs, NOT ENABLED is the correct state, not a gap.
 
-**STILL OWED:** the repointing experiment (ruling 2), arm 5 (ruling 4, runs with
-the experiment), the extended Haiku set (its 15-document set is regenerable from
-`scripts/claim_classifier_labelled_set_2026-10-01.py --emit-model-set` but was
-never kept), and the full suite + commit before launch.
+**STILL OWED:** arm 5 (ruling 4), the extended Haiku set (its 15-document set is
+regenerable from `scripts/claim_classifier_labelled_set_2026-10-01.py
+--emit-model-set` but was never kept), and the full suite + commit before launch.
+
+**CORRECTED 2026-10-18: THE REPOINTING EXPERIMENT IS NO LONGER OWED -- IT RAN, AND
+THIS LINE WAS STALE.** It was listed here as owed alongside arm 5, which is still
+genuinely outstanding, so the 2 were easy to read as a single unstarted pair. They
+are not. `scripts/repointing_experiment_2026-10-03.py` (16,398 bytes) has run and
+its results are committed at
+`experimental_notes/evidence/repointing_experiment_2026-10-03.json` (518,180
+bytes): population 233, usable 143, scored pairs 56, precondition failures 90,
+`degraded` false. **Arm A confirmed 54 of 56, 96.4286%, Wilson [87.8812%,
+99.0151%]; arm B 49 of 56, 87.5%, Wilson [76.3745%, 93.8109%].** Re-derived
+independently on 2026-10-18, statsmodels reproduces both recorded intervals to 4
+decimal places and scipy's exact method gives [87.6868%, 99.5645%] and [75.9267%,
+94.8235%]. **THE RESULT IS NULL AT THE PREREGISTERED ALPHA**, which the file
+records as 0.01 with a Fisher exact two-sided test over fixed N and no interim
+looks: `scipy.stats.fisher_exact` returns **p = 0.161715**, matching the file's own
+`p_scipy` 0.16171491735240345 and `p_mpmath` 0.16171491735240343. So his
+instruction *"implement any findings if they are useful"* is discharged by there
+being no finding to implement, rather than by work left undone. Guard:
+`bench/tests/test_repointing_experiment_2026-10-03.py`, 7 passed. **The annotation
+ticket is CLOSED as `c6d1c77e14c7`.** A smaller provenance defect found with it:
+the 2026-10-17 annotation audit recorded the script's path as
+`bench/repointing_experiment_2026-10-03.py`, which does not exist -- it is under
+`scripts/`.
 
 ## ★ RESUME POINTER — 2026-10-03T04:48 BST. SUPERSEDES EVERY POINTER BELOW.
 
@@ -488,7 +510,7 @@ measurement 10 has no committed script.
 1. ADOPT the amendments register for figures invalidated by a rule change
    (both seats designed it independently; both rejected rule-set pinning).
    3 tests are red until it lands.
-2. RUN the repointing experiment, record the results, implement useful findings.
+2. ~~RUN the repointing experiment, record the results, implement useful findings.~~ **DONE, and the finding is NULL at the preregistered alpha of 0.01: Fisher exact two-sided p = 0.161715, so the arms are indistinguishable and nothing is implemented.** Evidence `experimental_notes/evidence/repointing_experiment_2026-10-03.json`; guard `bench/tests/test_repointing_experiment_2026-10-03.py`, 7 passed. See the correction above.
 3. `discrimination_control_blocks`: his 2026-08-30 option-A ruling (GATE the
    silent un-confirm) is already implemented and correct. ARMING it is refused
    on the project's own measurement: 126 of 246 fixes do not silence their own

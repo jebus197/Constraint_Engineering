@@ -98,6 +98,13 @@ def wilson(k: int, n: int) -> tuple:
 #: dropping FOREIGN DOCUMENTS into the folder -- a Gemini design brief, a
 #: YouTube auto-transcript, a pasted chat log -- whose own title lines open with
 #: a hash. The filter was correct; the set of files it reached was not.
+#: The extensions his annotated replies actually use. Measured 2026-10-20
+#: over the whole folder: .txt 425, .rtf 256, .md 1, and 0 real annotations
+#: in any other kind of file. A new extension is a deliberate addition here,
+#: which is the point -- the old exclusion list admitted everything by default.
+TEXT_SUFFIXES = {".txt", ".rtf", ".md"}
+
+
 NOT_HIS_ANNOTATIONS = {
     #: Gemini Web's register design brief, attached by him 2026-10-17. Its 3
     #: '#' lines are the document's own title block: "DESIGN BRIEF: CHRONOS
@@ -121,8 +128,24 @@ def is_one_of_his_annotated_responses(path: Path) -> bool:
     "can the reader read this file at all?" and the reader-gap check depends on
     it: narrowing it would make a file the reader cannot parse stop being
     reported as a gap, which is the opposite of what is wanted.
+
+    ★ AND IT NOW REQUIRES A TEXT-BEARING EXTENSION, 2026-10-20. The name-based
+    exclusion above admits every NEW kind of file by default. He added
+    `CDSFL_UX_Mockup_Pack_Light_2026-10-20.zip` and **65 lines of compressed
+    binary came back as his annotations**, with anchors like `...zip#10077`.
+    Binary noise in the record of his words corrupts every count taken over it,
+    and the verdict-coverage guard duly demanded rows for 65 annotations he
+    never wrote.
+
+    AN EXCLUSION LIST CANNOT HOLD: `.DS_Store` was excluded by name, then `~$`
+    by prefix, and `.zip` would have been the third patch of the same shape.
+    The ALLOW list is decidable. Measured over the folder on 2026-10-20, every
+    real annotation lives in 3 extensions -- 425 in .txt, 256 in .rtf, 1 in .md,
+    682 in all -- against 65 in the single .zip and 0 in any .docx.
     """
-    return is_a_response_file(path) and path.name not in NOT_HIS_ANNOTATIONS
+    return (is_a_response_file(path)
+            and path.suffix.lower() in TEXT_SUFFIXES
+            and path.name not in NOT_HIS_ANNOTATIONS)
 
 
 def is_a_response_file(path: Path) -> bool:
@@ -132,6 +155,15 @@ def is_a_response_file(path: Path) -> bool:
     `.DS_Store` contains a `#` byte, so it was reported as a reader gap on the first run --
     a false positive of exactly the `check the predicate before the result` shape. It also
     excludes Word's `~$` lock files, which carry no content.
+
+    ★ THE TEXT-SUFFIX RULE WAS PUT HERE ON 2026-10-20 AND MOVED OUT THE SAME
+    DAY, because this predicate's job is READABILITY and narrowing it hides a
+    reader gap instead of fixing one. `bench/tests/test_a_foreign_document_is_
+    not_his_annotation_2026-10-17.py` caught it: with the suffix rule here,
+    `DeepSeek Tool use.docx` stopped being considered readable, so a genuine
+    failure to parse it would no longer be reported. The rule belongs in
+    `is_one_of_his_annotated_responses`, which answers a different question,
+    and that is where it now lives.
     """
     return (path.is_file()
             and not path.name.startswith("~$")
@@ -252,6 +284,18 @@ def file_shape(path: Path) -> dict:
             "grep_would_treat_as_binary": (not utf8) or cr_only}
 
 
+#: A LINE THAT IS NOTHING BUT MARKER TOKENS. His command markers -- `fr` a
+#: feature request, `pf` a proposed fix, `qs` a question (his instruction of
+#: 2026-10-19) -- are written on their OWN LINE after the annotation they belong
+#: to, never inside it. Measured 2026-10-19 across every reply file: 30 markers,
+#: 30 of them own-line following an annotation, 0 inline. So the reader must
+#: associate that line with the annotation above it or the marker is lost, which
+#: is exactly what was happening: the harvester reported "explicitly marked: 0"
+#: while his files carried 30, because a marker line has no leading hash and was
+#: therefore never part of any annotation's text.
+_MARKER_LINE = re.compile(r"^\s*(fr|pf|qs|wr)(?:\s*,\s*(?:fr|pf|qs|wr))*\s*$", re.I)
+
+
 def annotations(since: _dt.date | None = None, until: _dt.date | None = None) -> list:
     """Every `#`-prefixed annotation the founder wrote, with its file and date."""
     out = []
@@ -315,6 +359,7 @@ def _annotations_in(p: Path, d: _dt.date | None = None) -> list:
             # would have swallowed 367 further lines, mostly the reports' own
             # sentences. Producer:
             # scripts/an_annotation_can_span_lines_2026-10-13.py.
+            _last = i
             if s.endswith("#"):
                 _report = _report_lines_for(p)
                 _parts = [body.rstrip("# ").rstrip()]
@@ -330,9 +375,23 @@ def _annotations_in(p: Path, d: _dt.date | None = None) -> list:
                     elif _REPORT_SHAPE.match(_nxt):
                         break
                     _parts.append(_nxt)
+                    _last = _j
                 body = " ".join(x for x in _parts if x).strip()
+            # HIS MARKER, if he wrote one. Skip blank lines only; the first
+            # non-blank line after the annotation either IS the marker or
+            # there is none. Stopping at the first non-blank is what keeps a
+            # marker belonging to a LATER annotation from being stolen here.
+            _marker = ""
+            for _k in range(_last + 1, len(_lines)):
+                _cand = _lines[_k].strip()
+                if not _cand:
+                    continue
+                if _MARKER_LINE.match(_cand):
+                    _marker = ",".join(
+                        x.strip().lower() for x in _cand.split(",") if x.strip())
+                break
             out.append({"file": p.name, "ext": p.suffix.lower(), "date": d.isoformat(),
-                        "line_index": i, "text": body})
+                        "line_index": i, "text": body, "marker": _marker})
     return out
 
 

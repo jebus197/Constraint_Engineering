@@ -48,8 +48,72 @@ A = _mod()
 
 @pytest.fixture(scope="module")
 def rows():
+    """Rows whose anchor still exists in his folder.
+
+    ★ `anchor_lost` EXCLUDES A ROW FROM THE RESOLUTION TESTS, 2026-10-20, and it
+    is an HONEST DEMOTION rather than a repair. 12 of his annotations on
+    `TASK_LIST_48_Hours_And_Rulings_2026-10-17.txt` ceased to exist: the file is
+    108 lines and the verdicts name anchors at 108, 114, 116 and 120, and the
+    text of all 12 is absent from the file body as well as from his other 682
+    live annotations. Microsoft Word is the agent -- a Word owner file existed
+    for that document at 2026-10-20T01:08:24 and every one of his .txt files is
+    CR-only cp1252, Word's Macintosh Text save, which no modern editor writes.
+
+    THE OBVIOUS REPAIR WOULD HAVE BEEN CIRCULAR AND WAS REFUSED. Resolving these
+    rows against `experimental_notes/recovered/Founder_Annotations_Recovered_
+    2026-10-19.md` would check them against a file derived from those same rows,
+    turning `test_no_row_is_invented` -- whose stated purpose is to stop the
+    record becoming a list of things I believe he said -- into a tautology. So
+    they are set aside and NOT verified, and the test below requires every one
+    of them to carry its cause and a surviving copy of his words."""
     rec = A.load_record()
-    return rec.get("rows", [])
+    return [r for r in rec.get("rows", []) if not r.get("anchor_lost")]
+
+
+@pytest.fixture(scope="module")
+def lost_rows():
+    rec = A.load_record()
+    return [r for r in rec.get("rows", []) if r.get("anchor_lost")]
+
+
+def test_every_lost_anchor_names_its_cause_and_preserves_his_words(lost_rows):
+    """A demotion must cost something. A row set aside from verification has to
+    say WHY and has to leave his words somewhere a reader can still find them,
+    or `anchor_lost` becomes a way of silencing any inconvenient row."""
+    import pathlib as _pl
+    repo = pathlib.Path(__file__).resolve().parents[2]
+    bad = []
+    for r in lost_rows:
+        if not r.get("lost_cause"):
+            bad.append(f"{r['anchor']}: no lost_cause recorded")
+            continue
+        dest = r.get("recovered_in")
+        if not dest:
+            bad.append(f"{r['anchor']}: no recovered_in recorded")
+            continue
+        f = repo / dest
+        if not f.is_file():
+            bad.append(f"{r['anchor']}: recovered_in names {dest}, which does not exist")
+            continue
+        probe = " ".join(str(r.get("text", "")).split())[:48]
+        if probe and probe not in " ".join(f.read_text(encoding="utf-8").split()):
+            bad.append(f"{r['anchor']}: his words are NOT in {dest}")
+    assert not bad, (
+        f"{len(bad)} lost-anchor row(s) are demoted without preserving his "
+        f"words or naming a cause:\n  " + "\n  ".join(bad))
+
+
+def test_the_lost_set_is_not_a_dumping_ground(lost_rows, rows):
+    """ANTI-ABUSE. If most of the record were set aside the tests above would
+    assert almost nothing, and this guard would pass loudest the day it mattered
+    least. 12 of 318 is 3.7736%, Clopper-Pearson [1.9648%, 6.4989%] by
+    statsmodels, scipy and Wolfram in agreement."""
+    total = len(lost_rows) + len(rows)
+    assert total, "no rows at all"
+    assert len(lost_rows) / total <= 0.10, (
+        f"{len(lost_rows)} of {total} rows are set aside as lost "
+        f"({100*len(lost_rows)/total:.4f}%). Above 10% the resolution tests no "
+        f"longer describe the record.")
 
 
 def test_the_producer_and_the_record_both_exist():
@@ -151,11 +215,47 @@ def test_a_tracked_row_whose_entry_is_open_has_not_settled_its_ticket(rows):
 
     unconfirmed = {key(t.anchor, t.verbatim or t.title)
                    for t in store.unconfirmed()}
+
+    # ★ THE ESCAPE NOW READS THE LIVE MARKER, NOT THE ROW'S PROSE (2026-10-20).
+    # It was `if "is DONE" in r["evidence"]`, a match against the sentence the
+    # row was written with. A row recorded on 2026-10-17 says "entry C4 is OPEN"
+    # because that was true then; C4 is now DONE | COMMITTED, and the string
+    # does not move when the entry does. Measured: all 27 rows this guard was
+    # refusing name entries that have since finished -- C4, C18, B28 and B27 are
+    # DONE and B26 is WITHDRAWN -- so 27 of 27 were FALSE POSITIVES, and the
+    # guard was reading a description of the state instead of the state. That is
+    # the shape `execute-do-not-grep` names, inside a guard whose whole job is to
+    # compare the record against the live register.
+    import re as _re
+    import sys as _sys
+    _sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "scripts"))
+    import task_list_markers as _tlm                             # noqa: PLC0415
+    _entries = {e.ident: e for e in _tlm.parse_entries(
+        pathlib.Path(__file__).resolve().parents[2]
+        / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md")}
+    _FINISHED = {"DONE", "WITHDRAWN", "DEFERRED"}
+
+    def _its_entry_is_finished(row) -> bool:
+        # PLURAL AND LISTS TOO. The first form of this read `entry X` only, and
+        # missed "entries A10, A26 and C14 are DONE" entirely -- 1 of the 2 rows
+        # still refused after the live-marker fix was a miss of exactly that
+        # shape. Identifiers are harvested from the whole clause instead.
+        ev = row.get("evidence") or ""
+        idents = []
+        for clause in _re.findall(
+                r"entr(?:y|ies)\s+((?:[A-Z]?\d+[A-Za-z0-9.]*[,\s]*(?:and\s+)?)+)", ev):
+            idents += _re.findall(r"[A-Z]?\d+[A-Za-z0-9.]*", clause)
+        for ident in idents:
+            e = _entries.get(ident)
+            if e is not None and e.state in _FINISHED:
+                return True
+        return False
+
     wrong = []
     for r in rows:
         if r.get("verdict") != "TRACKED":
             continue
-        if "is DONE" in (r.get("evidence") or ""):
+        if _its_entry_is_finished(r):
             continue
         if key(r["file"], r["text"]) not in unconfirmed:
             wrong.append(r["text"][:60])
@@ -255,3 +355,48 @@ def test_every_verdict_class_is_actually_used(rows):
         f"verdict class(es) {sorted(unused)} are declared and never used. GAP "
         f"is exempt because a gap becomes a task entry and the row is then "
         f"re-verdicted as TRACKED, so an empty GAP set is the healthy state.")
+
+
+def test_the_finished_entry_escape_is_not_a_blanket_pass():
+    """ANTI-VACUITY FOR THE ESCAPE ITSELF, added 2026-10-20 after a mutation.
+
+    Replacing `if _its_entry_is_finished(r)` with `if True` left the whole file
+    GREEN, because no live row currently sits in the state the escape exists to
+    refuse. So the guard above could not distinguish a working escape from one
+    that passes everything, and the escape is the half that was just rewritten.
+
+    This exercises the predicate directly against constructed rows, so it holds
+    whatever the live record happens to contain."""
+    import re
+    import sys as _sys
+    repo = pathlib.Path(__file__).resolve().parents[2]
+    _sys.path.insert(0, str(repo / "scripts"))
+    import task_list_markers as tlm                              # noqa: PLC0415
+    entries = {e.ident: e for e in tlm.parse_entries(
+        repo / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md")}
+    FINISHED = {"DONE", "WITHDRAWN", "DEFERRED"}
+
+    def finished(evidence: str) -> bool:
+        idents = []
+        for clause in re.findall(
+                r"entr(?:y|ies)\s+((?:[A-Z]?\d+[A-Za-z0-9.]*[,\s]*(?:and\s+)?)+)",
+                evidence):
+            idents += re.findall(r"[A-Z]?\d+[A-Za-z0-9.]*", clause)
+        return any(entries.get(i) and entries[i].state in FINISHED for i in idents)
+
+    open_ids = [i for i, e in entries.items() if e.state == "OPEN"]
+    done_ids = [i for i, e in entries.items() if e.state == "DONE"]
+    assert open_ids and done_ids, "need both an open and a done entry to test this"
+
+    assert not finished(f"entry {open_ids[0]} is OPEN; the work is outstanding"), (
+        "the escape fired for an entry that is OPEN, so it is a blanket pass and "
+        "the settlement guard asserts nothing")
+    assert finished(f"entry {done_ids[0]} is DONE"), (
+        "the escape did not fire for a finished entry, so every finished row "
+        "would be reported as a wrongly-settled ticket")
+    assert finished(
+        f"entries {done_ids[0]}, {done_ids[1]} and {done_ids[2]} are DONE"), (
+        "the plural, comma-separated form is not matched; this is the exact "
+        "miss that left 1 row refused on 2026-10-20")
+    assert not finished("bench/some_file.py and a note, with no entry named"), (
+        "evidence naming no entry at all was treated as finished")

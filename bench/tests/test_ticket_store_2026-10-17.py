@@ -109,11 +109,27 @@ def test_a_proposal_records_its_search_before_deciding(store):
     )
 
 
-def test_both_of_his_sections_exist_and_separate(store):
+def test_every_one_of_his_sections_exists_and_separates(store):
+    """EXTENDED 2026-10-19 for `qs` and 2026-10-20 for `wr`, on his instruction.
+
+    It was named `test_both_of_his_sections_...` and proposed 2 kinds while
+    asserting against `KINDS`, so each new kind turns it red until covered. The
+    assertion was RIGHT and the coverage was short: the property is that every
+    declared kind is separately storable and separately retrievable, and that
+    property should grow with the vocabulary rather than be relaxed to fit it.
+    """
     store.propose("fr", "a feature", "please add X", "chat", subjects=["m.x"])
     store.propose("pf", "a fix", "Y is broken", "chat", subjects=["m.y"])
+    store.propose("qs", "a question", "why is Z so?", "chat", subjects=["m.z"])
+    # EXTENDED AGAIN 2026-10-20 when `wr` became the 4th kind, on his instruction:
+    # "wr is a valid section in the Bugzilla registry". Grown, not relaxed, exactly
+    # as the paragraph above prescribes.
+    store.propose("wr", "deferred work", "run Exp 53 after the list clears", "chat",
+                  subjects=["m.w"], ruled="2026-08-07")
     assert {t.kind for t in store.all()} == set(KINDS)
-    assert len(store.by_kind("fr")) == 1 and len(store.by_kind("pf")) == 1
+    for k in KINDS:
+        assert len(store.by_kind(k)) == 1, (
+            f"kind {k!r} is declared in KINDS but does not retrieve separately")
 
 
 def test_the_exact_digest_path_is_exercised_without_a_subject(store):

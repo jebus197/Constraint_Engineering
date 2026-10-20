@@ -98,7 +98,7 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="narrow to one derived area of functionality")
     p.add_argument("--status", metavar="STATUS", action="append", default=[],
                    help="keep only these statuses (repeatable)")
-    p.add_argument("--kind", choices=("fr", "pf"),
+    p.add_argument("--kind", choices=("fr", "pf", "qs", "wr"),
                    help="feature request or problem found")
     p.add_argument("--areas", action="store_true",
                    help="print the area distribution and exit")

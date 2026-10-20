@@ -145,7 +145,36 @@ LIVE = frozenset({"OPEN", "REOPENED", "UNCONFIRMED", "CONTESTED",
 REJECTED = "REJECTED"
 STATUSES = TERMINAL | LIVE | {REJECTED}
 
-KINDS = ("fr", "pf")
+#: THE 4 KINDS. `wr` WAS ADDED 2026-10-20 ON HIS INSTRUCTION: "wr is a valid
+#: section in the Bugzilla registry, and you should use it to track all remaining
+#: outstanding work, and refer back to this before risking constantly referring
+#: back to me and requesting my verdict". It is NOT a proposal and NOT a repair:
+#: it is settled work whose execution is deferred, so it must never surface as
+#: something awaiting his decision. R1, the zero-plant control, is the type case:
+#: ruled 2026-08-07 and again 2026-09-06, and carried 66 days as an open question
+#: because no kind fitted it.
+#: `fr` a feature request, `pf` a proposed fix against an observed
+#: defect, and `qs` A QUESTION -- his instruction of 2026-10-19: *"From now on qs
+#: = Question. Questions should be given their own unique hashed ID in the
+#: registry, like the other categories, like 'fr' feature request, and 'pf',
+#: proposed fix, so they can be tied directly to the problems they address and so
+#: that in future you can't lose them, or forget which issues they address."*
+#:
+#: WHY A QUESTION NEEDS ITS OWN KIND RATHER THAN A STATUS. A question is not a
+#: smaller proposal: its resolution is an ANSWER, not a build, and the 2 travel in
+#: opposite directions. 72 of his 318 annotations are questions owed back to him,
+#: and until now they sat as `pf` rows the gate reported as work, which is how a
+#: question gets read as a task and then dropped when the task turns out not to
+#: exist. `tid_of` already digests the kind, so the same sentence recorded as a
+#: question and as a proposed fix takes 2 distinct identities, which is correct:
+#: answering the question does not build the fix.
+#:
+#: HOW IT IS TIED TO WHAT IT ASKS ABOUT, using the fields that already exist
+#: rather than a new one. `task_ref` names the master-task-list entry, `subjects`
+#: the exact code identifiers, and `anchor` the file and ordinal of his
+#: annotation. Those 3 are the same ties every other kind uses and they already
+#: survive rewording, so no schema change is needed to satisfy his requirement.
+KINDS = ("fr", "pf", "qs", "wr")
 
 _STOP = frozenset("""a an and are as at be been being but by can could did do does
 for from had has have he her him his how i if in into is it its me my no nor not
@@ -300,7 +329,7 @@ def rid_of(tid: str, resolution: str) -> str:
 class Ticket:
     tid: str
     nid: str
-    kind: str                      # fr | pr
+    kind: str                      # fr | pf | qs
     status: str
     title: str
     verbatim: str                  # the source text, never paraphrased

@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 18 October 2026 00:37 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 20 October 2026 02:44 BST — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,32 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-19 20:49 BST (READ THIS FIRST)
+
+**Branch `sim/shakedown-2026-09-29`, HEAD `f0794ad3` before this save, 0 ahead and 0 behind `origin` at the point the block was written.** 32 dirty paths were outstanding when the session resumed and are what this save carries.
+
+**`qs` IS BUILT AND HIS QUESTIONS NOW CARRY HASHED IDENTITIES.** His instruction of 2026-10-19 was that a question should be registered exactly as `fr` and `pf` already are, *"tied directly to the problems they address and so that in future you can't lose them"*. `KINDS` in `bench/ticket_store.py` is now `("fr", "pf", "qs")`; identity already digests the kind, so one sentence recorded as a question and as a fix takes 2 distinct ids rather than colliding. 27 of his questions were harvested and 12 were closed against a recorded verification. `pf` rather than `pr` is the proposed-fix marker because `pr` was already the panel-review command, and 4 of 4 real panel-review usages had been mis-harvested as fixes before the marker was changed. The marker table in `docs/REPRODUCING.md` carried none of the 3 markers and now carries all 3.
+
+**THE RESPONSE PARSER LOST HIS MARKERS, AND NOW DOES NOT.** His complaint was that parsing his annotated replies had failed repeatedly and had twice been declared fixed. The cause was located: a marker written on its own line below an annotation was never attached to it, because `parse_entries` reads a marker from `lines[i + 1]` only. `scripts/read_founder_responses_2026-10-11.py` now matches a bare marker line and attaches it by lookahead, and every row carries a `marker` field, so `scripts/harvest_tickets_2026-10-17.py` reads the field instead of re-scanning prose. Parse completeness was then measured rather than asserted: **644 of 644** annotations and **30 of 30** files, with **0 of 2,694 rows lost**, by `scripts/can_i_parse_his_responses_in_full_2026-10-19.py`.
+
+**2 MEMORY ALARMS WERE RAISED IN 1 DAY AND BOTH WERE FALSE.** His ruling: *"no more false alarms about memory! We have come this far (almost a year) on this little 8GB machine."* A 1,024 MiB allocation succeeded immediately with 0M of swap growth, which refutes the figure the alarm rested on. The reading was wrong in 3 ways: macOS counts the unified buffer cache as used, `inactive` pages are reclaimable, and summing per-process RSS double-counts shared libraries. `scripts/is_a_resource_hog_blocking_the_work_2026-10-19.py` now measures the question, and its verdict path was rewritten so that no memory figure at any threshold can make it refuse; a reading may only scale how many things run at once.
+
+**A CLAIM OF MINE WAS REFUTED BY MEASUREMENT AND WITHDRAWN.** I had attributed a suite timeout to widening the precommit `GUARDS` list. Timed head to head, the committed list took **334.83 s** and the widened list **333.84 s**, so the widening cannot be the cause. Recorded as withdrawn in entry B36 rather than quietly dropped.
+
+**A `DONE | TESTED` MARKER WAS INVALID AND THE HARVESTER CLOSED A TICKET ON IT ANYWAY.** B38 carried a state and status pair that `task_list_markers` lists as `CONTRADICTORY`, and 4 guards went red. Both halves were repaired: the marker, and `_done_ok` in the harvester, which had re-encoded the valid pairs instead of importing them. My first repair of the harvester was itself wrong — it hard-coded `COMMITTED` and would have broken 23 live `DONE | ENABLED` entries.
+
+**SUITE FIGURES OBSERVED TONIGHT, each beside the command that produced it.**
+
+- Today's 5 new guards: **51 passed in 30.63 s** — `python3 -m pytest bench/tests/test_a_question_is_its_own_kind_2026-10-19.py bench/tests/test_his_marker_is_read_from_its_own_line_2026-10-19.py bench/tests/test_i_can_parse_his_responses_in_full_2026-10-19.py bench/tests/test_the_merged_severity_is_not_its_inputs_2026-10-19.py bench/tests/test_the_resource_check_never_refuses_on_memory_2026-10-19.py -q`
+- The A23 staleness guard, run BEFORE this save as the record requires: **7 passed in 0.43 s** — `python3 -m pytest bench/tests/test_recovery_session_state_is_current_2026-09-11.py -q`
+- The gate-cost treadmill, which pins how many tests the commit hook's `GUARDS` list collects, went red at 1,431 against a declared 1,423; that is the designed behaviour when entries close, because 1 test is parametrised per DONE entry. The declaration in entry 1.1 was advanced and the guard re-run green: **8 passed in 319.19 s** — `python3 -m pytest bench/tests/test_precommit_gate_cost_2026-09-10.py -q`
+- Task list coherence: **171 entries, 0 problems** — `python3 scripts/task_list_markers.py --check`
+
+**THE BOARD, AND WHETHER IT TERMINATES.** 171 entries: **18 OPEN, 143 DONE, 2 DEFERRED, 8 WITHDRAWN**. He asked directly whether the list grows without bound. Measured over the file's own committed history by `scripts/task_list_burndown_2026-09-11.py`: **0.7737 new entries per entry closed**, 95% interval **[0.6009, 0.9963]**, exact test against 1 giving **p = 0.0270**. The branching process is subcritical, so it terminates — but the interval's upper bound sits just below 1, so the conclusion is not comfortable, and the implied work multiplier of **2.7966** means any completion date read off the closure rate alone would be wrong by that factor.
+
+**WHAT IS NOT DONE.** 5 repair groups remain from the 50 failures that survived re-running: immune memory, the key-access advisory, tool-log retries, the guard that detects a dead transport to a seat, and the pre-verdict sweep. 3 panel briefs are unrun — `three_mechanism_repairs`, `general_purpose_stem_calculator`, `the_required_quiet_run`. The finished `what_breaks_the_capability_tie_2026-10-18` replies, 2 of 2 answered, are on disk and unread. Separating ladder MEMBERSHIP from ORDER breaks neither of his rulings and was held only while the suite was reading `routing.py`. The full suite has not been re-run on a still tree.
+
 
 ## SESSION STATE — 2026-10-18 12:37 BST (READ THIS FIRST)
 

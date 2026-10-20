@@ -28,6 +28,8 @@ The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_red
 
 *Parked 2026-09-10T20:08:05+01:00.*
 
+**★ SETTLED BY HIS RULING OF 2026-10-14, AND THIS ITEM SHOULD NOT HAVE BEEN SHOWING AS LIVE. Verified by execution 2026-10-19T08:49:15+01:00.** He ruled that a cap bounds WORK and never the specification, in his own words: *"as far as any caps have ever existed, their intention was to never feed any model more work than they were demonstrably able to handle, especially for weaker models like Deepseek, and we built considerable machinery around this principle. There was never an intent as far as I recall to applying this same reasoning to the core operational directives themselves."* And: *"7000 or so words for a system prompt is hardly excessive for any modern model? Why should we need to cut it at all?"* The 2 bounds were split into separate fields: `max_directive_chars` keeps the WORK bound unchanged, and `spec_chars` carries the specification bound with `None` meaning deliver it whole. **EXECUTED, not read:** `spec_chars` is `None` for 5 of 5 models and on the dataclass default, and calling `_load_universal_directive` for each of the 5 returns **28,617 characters, identical across all 5** -- the whole specification, not the 2,503-character flag dump this item describes. The item's figure of 9.0026%, and the 82.6735% quoted in the report of 2026-10-17, are both STALE: they describe the state before 2026-10-14 and the later report repeated them 3 days after the fix had landed.
+
 ## C0037: the directive dedup deleted a formula and kept its special case
 **Raised by DeepSeek on 2026-06-06 at severity 0.70, recorded UNCONFIRMED and UNTOOLABLE, never checked. Confirmed 2026-09-10 with a quantified harm.**
 
@@ -72,6 +74,8 @@ The redesigned configs are ready at bench/exp50_configs/50_physics_exam_live_red
 **NOT APPLIED, same reason as C0040, C0037 and C0036:** the repair changes which packets survive composition, so it changes the prompt every model receives and invalidates replay of archived runs. `bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py`, 6 tests.
 
 *Parked 2026-09-10T20:31:06+01:00.*
+
+**★ SETTLED BY HIS RULING OF 2026-10-16, which retired the density ceiling outright as the fourth and better option, recorded as task C19 and DONE. Verified by execution 2026-10-19T08:49:15+01:00.** The pruner still EXISTS, deliberately, because the next simulated run carries an arm that switches it on for the lean-against-full comparison. But it is no longer reached on any default path: `coherence_pruning: bool = False` in `bench/cdsfl_registry/composer.py` and `composer_coherence_pruning: bool = False` in `bench/reference_runner_v3.py`, both executed and read back. Guard: `bench/tests/test_the_density_ceiling_is_retired_2026-10-17.py`, 6 passed.
 
 ## A superseded copy from August is sitting visible on your Desktop
 `~/Desktop/CDSFL_Agent_Operational_Plan.md.superseded-20260815T152747`, 166,340 bytes, dated 2026-08-15. It predates today's work and nothing here created it.
@@ -234,3 +238,5 @@ So A8 — whose own committed text ends *"**NEEDS A POLICY RULING**: track them,
 `scripts/cdsfl_sv.py` warns that `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` and `handoff_2026-03-23.md` *"appear in the index text, but not as an entry"*. Both ARE linked in `MEMORY.md`, correctly. What the checker counts as an entry is a line whose own first token is the link, and both names sit on **date-grouped lines** that open with prose — `- **1 Oct 2026** — [...]` and `- March 2026 handoffs — [...]`. The grouping was my doing: it is how the index was brought back under its 200-line ceiling, and it currently stands at 190 lines with 10 left.
 
 **The 3 options, and the choice is his.** Teach the checker that a grouped line carries several entries, which is editing a guard to accept the style that tripped it. Split the grouped lines back out, which costs 6 lines of the remaining 10. Or leave the warning standing as an accurate description of a deliberate trade-off, which is what it is doing now.
+
+Written under CDSFL note standard v1.8.

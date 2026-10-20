@@ -104,15 +104,62 @@ def test_every_exclusion_still_corresponds_to_a_file_that_exists():
 
 @pytest.mark.skipif(not R.RESPONSES.is_dir(), reason="folder absent")
 def test_the_exclusion_does_not_reach_any_other_file():
-    """The over-reach check stated as a set, not as a count."""
+    """The over-reach check stated as a set, not as a count.
+
+    EXTENDED 2026-10-20 when a SECOND declared reason was added. There are now
+    exactly 2 ways a readable file is not treated as his annotation: it is named
+    in NOT_HIS_ANNOTATIONS, or its extension is not in TEXT_SUFFIXES. The suffix
+    rule was added because `CDSFL_UX_Mockup_Pack_Light_2026-10-20.zip` returned
+    65 lines of compressed binary as his annotations.
+
+    THE PROPERTY IS UNCHANGED and is what matters: nothing is dropped except for
+    a reason that is written down. The assertion grew to cover the second reason
+    rather than being relaxed to tolerate it, and it still names the offending
+    file if anything is dropped for no declared reason at all."""
     excluded = {p.name for p in R.RESPONSES.glob("*")
                 if R.is_a_response_file(p)
                 and not R.is_one_of_his_annotated_responses(p)}
-    assert excluded == set(R.NOT_HIS_ANNOTATIONS), (
-        f"the set of files actually excluded is {sorted(excluded)}, which is "
-        f"not the set named in NOT_HIS_ANNOTATIONS "
-        f"({sorted(R.NOT_HIS_ANNOTATIONS)}). A file is being dropped by "
-        f"something other than the explicit list.")
+    by_name = set(R.NOT_HIS_ANNOTATIONS)
+    by_suffix = {p.name for p in R.RESPONSES.glob("*")
+                 if R.is_a_response_file(p)
+                 and p.suffix.lower() not in R.TEXT_SUFFIXES}
+    undeclared = excluded - by_name - by_suffix
+    assert not undeclared, (
+        f"{len(undeclared)} file(s) are dropped for no declared reason: "
+        f"{sorted(undeclared)}. Every exclusion must be either a name in "
+        f"NOT_HIS_ANNOTATIONS or an extension outside TEXT_SUFFIXES.")
+    assert excluded == by_name | by_suffix, (
+        f"the excluded set {sorted(excluded)} does not equal the union of the "
+        f"2 declared reasons, so one of them is not doing what it says.")
+
+
+def test_both_exclusion_reasons_are_actually_in_use():
+    """ANTI-VACUITY. If either reason excluded nothing, the union above would
+    pass while that half of the rule was dead, and a dead rule is the shape the
+    additive standard forbids."""
+    by_name = {p.name for p in R.RESPONSES.glob("*")
+               if R.is_a_response_file(p) and p.name in R.NOT_HIS_ANNOTATIONS}
+    by_suffix = {p.name for p in R.RESPONSES.glob("*")
+                 if R.is_a_response_file(p)
+                 and p.suffix.lower() not in R.TEXT_SUFFIXES}
+    assert by_name, "NOT_HIS_ANNOTATIONS excludes nothing; the rule is dead"
+    assert by_suffix, (
+        "the TEXT_SUFFIXES rule excludes nothing. It was added because a .zip "
+        "returned 65 lines of binary as his annotations; if it now matches "
+        "everything present, confirm the .zip is gone rather than deleting it.")
+
+
+def test_the_suffix_rule_keeps_every_real_annotation():
+    """The rule must not cost a single one of his words. Measured 2026-10-20:
+    425 in .txt, 256 in .rtf, 1 in .md, 682 in all."""
+    import pathlib as _p
+    kept = {_p.Path(str(a["file"])).suffix.lower() for a in R.annotations()}
+    assert kept <= R.TEXT_SUFFIXES, (
+        f"annotations are being returned from {sorted(kept - R.TEXT_SUFFIXES)}, "
+        f"which the suffix rule is supposed to exclude")
+    assert len(R.annotations()) >= 600, (
+        f"only {len(R.annotations())} annotations returned; the suffix rule has "
+        f"cost real words rather than binary noise")
 
 
 @pytest.mark.skipif(not R.RESPONSES.is_dir(), reason="folder absent")

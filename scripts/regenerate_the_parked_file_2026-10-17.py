@@ -70,13 +70,26 @@ _OWN_TAIL = _re.compile(
     + _re.escape(SETTLED_BLURB) + r"\s*$\n*", _re.M)
 
 
+#: The note-standard foot-line this script now emits. THIRD FORM OF THE SAME
+#: DEFECT, introduced and caught on 2026-10-19. Adding the stamp without
+#: teaching the reader to strip it reproduced exactly the non-idempotence this
+#: file's own history records: the parser gives the LAST item's body everything
+#: up to the next heading, so a second run re-emitted the stamp and a third
+#: would have added another. The idempotence guard went red immediately, which
+#: is the whole reason it exists. The version is matched loosely so a later
+#: standard bump still strips an older stamp.
+_OWN_STAMP = _re.compile(
+    r"\n*(?:^---\s*$\n+)?^Written under CDSFL note standard v[\d.]+\.\s*$\n*", _re.M)
+
+
 def strip_own_output(body: str) -> str:
     """Remove what a PREVIOUS run of this script added to a body.
 
-    Without this the file grows on every regeneration. Both forms are removed:
-    the reason line written above an item's text, and the separator-plus-header
-    block the last live item's body absorbs.
+    Without this the file grows on every regeneration. Three forms are removed:
+    the reason line written above an item's text, the separator-plus-header
+    block the last live item's body absorbs, and the note-standard foot-line.
     """
+    body = _OWN_STAMP.sub("\n", body)
     body = _OWN_TAIL.sub("\n", body)
     body = _OWN_LINE.sub("", body)
     return body.strip("\n")
@@ -210,6 +223,32 @@ def render(live, settled, now: str, share: str) -> str:
         out.append(f"*SETTLED: {why}.*")
         out.append(body.rstrip())
         out.append("")
+    # THE NOTE-STANDARD STAMP, emitted MECHANICALLY rather than remembered.
+    # His instruction of 2026-10-11: *"You have returned again to not printing
+    # the CDSFL notes standard used to produce these files. This is a small
+    # glitch, but meaningful and should be fixed (prerably mechanically so you
+    # don't forget again), as it helps me to track which notes standards you are
+    # using across files."* This file is a DELIVERED note under
+    # `experimental_notes/`, so `missing_standard_stamp` in the linter requires
+    # one -- and the generator emitted none, so the file has never carried a
+    # stamp since it was first regenerated. Found 2026-10-19 while annotating 2
+    # stale items. The standard is read from the linter rather than typed, so a
+    # later version bump cannot leave a wrong number behind here.
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+        from note_vagueness_lint import CURRENT_NOTE_STANDARD as _std
+    except Exception:  # noqa: BLE001
+        _std = ""
+    # NO `---` BEFORE IT. The guard
+    # `test_regenerating_twice_changes_nothing_but_the_timestamp` pins this
+    # file at exactly 2 horizontal rules, which is how it detects the
+    # structural duplication this script used to produce. A third rule for a
+    # foot-line would have meant editing that guard to accommodate a
+    # cosmetic choice of mine, and the linter requires the TEXT rather than
+    # the rule. So the stamp goes in on its own.
+    if _std:
+        out += [f"Written under CDSFL note standard {_std}.", ""]
     return "\n".join(out).rstrip() + "\n"
 
 

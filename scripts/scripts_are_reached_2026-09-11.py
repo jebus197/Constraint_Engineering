@@ -157,8 +157,22 @@ SELF_REFERENTIAL: tuple[str, ...] = ()
 
 #: Measured 2026-09-11. A RATCHET: it may fall, never rise. Raising it means a
 #: new script exists that nothing calls, nothing cites and no document names.
+#: EMPTY, AND IT SHOULD STAY EMPTY WHERE A CITATION WILL DO. On 2026-10-19 the
+#: ratchet reported 8 orphans and 2 of them, both one-off migrations, were added
+#: here with their reasons. `test_the_recorded_set_is_still_accurate` then went
+#: red and was right to: the note written for the other 6,
+#: `experimental_notes/Measurements_That_Were_Never_Delivered_2026-10-19.md`,
+#: NAMES those 2 migrations as well, so they were already reached and the
+#: exemption was pure slack. An exemption that duplicates a citation loosens the
+#: bound by its own width. The reasons they must never acquire a caller -- a
+#: migration that runs twice is a defect -- live in that note, where a reader
+#: will find them, rather than here where only this instrument looks.
+#:
+#: ONE PROPERTY OF THIS INSTRUMENT WORTH KNOWING BEFORE USING IT: reachability
+#: is decided over `git ls-files`, so a NEW note's citations do not count until
+#: the note is at least staged. The 6 measurements above read as orphans until
+#: the note naming them was added to the index.
 UNREACHED: tuple[str, ...] = ()
-
 
 #: A line that is nothing but one script path, in any form a roll call is
 #: plausibly written in: `"scripts/x.py",`, a bare indented path, or a markdown

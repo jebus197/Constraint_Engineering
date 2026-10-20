@@ -53,6 +53,14 @@ import subprocess
 import sys
 from collections import Counter
 
+#: Owned by `scripts/task_list_markers.py`; imported so there is 1 spelling.
+try:
+    import sys as _sys, pathlib as _pl
+    _sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+    from task_list_markers import CONTRADICTORY as _CONTRADICTORY
+except Exception:  # noqa: BLE001
+    _CONTRADICTORY = {("DONE", "PROPOSED"), ("DONE", "BUILT"), ("DONE", "TESTED")}
+
 REPO = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 from bench.ticket_store import TicketStore, norm_title, LIVE, KINDS  # noqa: E402
@@ -66,7 +74,7 @@ TRANSCRIPTS = (pathlib.Path.home() /
 #: ordinary words and inside "panel review", so a bare substring match would
 #: harvest noise. Requires a boundary and one of the marker punctuations, or the
 #: token alone on its own line.
-MARKER = re.compile(r"(?:(?<=^)|(?<=[\s(\[]))(fr|pf)(?:[:\]\)]|\s*[-—]\s|$)",
+MARKER = re.compile(r"(?:(?<=^)|(?<=[\s(\[]))(fr|pf|qs|wr)(?:[:\]\)]|\s*[-—]\s|$)",
                     re.IGNORECASE | re.MULTILINE)
 
 #: WHAT MAY BE A BLOCKING SUBJECT, and the measurement that narrowed it.
@@ -182,9 +190,19 @@ def from_responses(since: str) -> list[dict]:
         _seen_in_file[_k] = _n + 1
         _digest = _hashlib.sha256(txt.encode()).hexdigest()[:8]
         _anchor = f"{_k[0]}#{_digest}#{_n}"
+        # HIS MARKER COMES FROM THE READER, NOT FROM THE TEXT, and that is the
+        # repair of 2026-10-19. He writes `fr`, `pf` and `qs` on their OWN
+        # LINE after an annotation, never inside it -- measured 30 of 30
+        # own-line, 0 inline -- so a marker line carries no leading hash and
+        # was never part of any annotation's text. Scanning `txt` for a
+        # marker therefore found NONE, and the harvester reported
+        # "explicitly marked: 0" while his files carried 30. The default
+        # stays `pf` for an unmarked annotation, which is what it was.
+        _mk = str(v.get("marker", "") or "").split(",")[0].strip().lower()
+        _mk = _mk if _mk in ("fr", "pf", "qs") else (marked_kind(txt) or "")
         out.append({"verbatim": txt,
-                    "kind": marked_kind(txt) or "pf",
-                    "marked": marked_kind(txt) is not None,
+                    "kind": _mk or "pf",
+                    "marked": bool(_mk),
                     "source": "responses",
                     "source_ref": f"{pathlib.Path(v['file']).name}:{v['line_index']}",
                     # THE ANCHOR IS THE IDENTITY for an annotation, because his
@@ -422,7 +440,7 @@ def main() -> int:
     print("=" * 74)
     print(f"\ncandidates by source: "
           f"{dict(Counter(r['source'].split(':')[0] for r in rows))}")
-    print(f"explicitly marked with fr or pr: {sum(1 for r in rows if r['marked'])}")
+    print(f"explicitly marked with fr, pf or qs: {sum(1 for r in rows if r['marked'])}")
     print(f"carrying at least 1 exact subject: {sum(1 for r in rows if r['subjects'])}")
 
     if a.dry_run:
@@ -498,7 +516,9 @@ def main() -> int:
         # own would defeat the whole point of a terminal status. A marker that
         # moves backwards is therefore reported rather than acted on.
         if (o in ("exists", "settled-already") and t.status in LIVE
-                and r.get("state") in ("DONE", "WITHDRAWN")):
+                and (r.get("state") == "WITHDRAWN"
+                     or (r.get("state") == "DONE"
+                         and str(r.get("status", "")).upper() == "COMMITTED"))):
             store.close(
                 t.tid,
                 f"recorded {r['state']} in the master task list as {r['task_ref']}",
@@ -510,8 +530,34 @@ def main() -> int:
             print(f"  NOTE: {r['task_ref']} is settled in the register "
                   f"({t.status}) but OPEN in the task list. REOPEN is "
                   f"founder-only, so this is reported, not acted on.")
-        # carry a recorded DONE state across as a verified close
-        if o == "created" and r.get("state") == "DONE":
+        # CARRY A RECORDED DONE STATE ACROSS AS A VERIFIED CLOSE -- BUT ONLY FROM A
+        # MARKER THE CHECKER WOULD ACCEPT. Found 2026-10-19: this closed a ticket
+        # on `state=DONE status=TESTED`, which is exactly the combination
+        # `scripts/task_list_markers.py --check` REFUSES, saying "A task cannot be
+        # done before its work was committed". So a ticket was given a TERMINAL
+        # status on the strength of a marker state the project's own checker
+        # rejects, and because REOPEN is founder-only the register then disagreed
+        # with the list with no tool able to correct it. The closure now requires
+        # the status the checker requires, so an in-progress entry cannot settle a
+        # ticket by accident.
+        # THE RULE IS IMPORTED, NOT RESTATED. A first version of this fix
+        # required status == "COMMITTED", which is a SECOND spelling of a rule
+        # that already exists, and it was wrong: `task_list_markers.CONTRADICTORY`
+        # forbids DONE with PROPOSED, BUILT or TESTED, and permits DONE with
+        # COMMITTED or ENABLED. 23 live entries read DONE with ENABLED, so the
+        # hard-coded version would have refused to close every one of them. 2
+        # spellings of 1 rule drift apart, which is the defect class this project
+        # has measured repeatedly, so the set is read from its owner.
+        _done_ok = (r.get("state") == "DONE"
+                    and (r.get("state"), str(r.get("status", "")).upper())
+                    not in _CONTRADICTORY)
+        if o == "created" and r.get("state") == "DONE" and not _done_ok:
+            outcomes["refused-close-on-invalid-marker"] += 1
+            print(f"  NOTE: {r.get('task_ref')} reads state=DONE but "
+                  f"status={r.get('status','')!r}, which the marker checker "
+                  f"refuses. NOT closing its ticket: a terminal status may not "
+                  f"rest on a marker state the checker rejects.")
+        if o == "created" and _done_ok:
             store.close(t.tid, f"recorded DONE in the master task list as {r['task_ref']}",
                         f"task-list marker state=DONE status={r.get('status','')}")
             outcomes["closed-from-task-list"] += 1

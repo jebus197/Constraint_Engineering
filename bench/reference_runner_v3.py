@@ -12675,7 +12675,64 @@ def _apply_back_promote(registry, round_idx: int) -> Optional[str]:
 #: version: contention explains the matched failure times and has NOT been tested by
 #: running a panel both ways. This is a scheduling change with a stated reason.
 _SHARED_CREDENTIAL_ROUTES = frozenset({"claude_cli"})
+#: HELD ONLY LONG ENOUGH TO CLAIM A START SLOT, never across a dispatch.
 _SHARED_CREDENTIAL_LOCK = threading.Lock()
+
+#: ★ STAGGERED, NOT SERIALISED -- HIS INSTRUCTION OF 2026-10-19, and the panel
+#: already works this way while the runners did not.
+#:
+#: HIS WORDS: *"Was this ever implemented? Was t implemented just in panel
+#: reviews, or was it implemented in our runners also? If not, it should be
+#: implemented in both, including our simulated and real runner."* And the
+#: reasoning he gave for rejecting the full lock: *"if you dispatched seats
+#: individually it would quickly become a nonsense anyway. With 5 or 6 models it
+#: might take many dozens of hours to complete. But with 70, 0r 700, or 7000
+#: models participating, as CDSFL is eventually envisaged to be able to handle,
+#: probably experiments would be unlikely to ever complete."*
+#:
+#: WHAT CHANGED. The lock used to be held across the WHOLE dispatch, tool loop
+#: included, so 2 shared-credential seats could never overlap and a round cost
+#: the SUM of their durations rather than the MAX. The lock is now held only
+#: while a seat claims its start slot, so starts are held `_SHARED_STAGGER_S`
+#: apart and the dispatches themselves overlap. That is the panel's property,
+#: guarded since 2026-10-08 in
+#: `bench/tests/test_shared_subscription_seats_are_serialised_2026-10-05.py`.
+#:
+#: THE COMMITTED MEASUREMENT THAT LICENSES REPLACING A GUARDED PROPERTY,
+#: `scripts/serialising_the_free_seats_costs_40_percent_2026-10-08.py` over 102
+#: archived rounds where both free seats answered: median wall clock 1779.6 s
+#: serialised against 984.4 s staggered, a mean saving of 0.4001 with a
+#: bootstrap interval of (0.3851, 0.4147), and `never_slower_over_the_record`
+#: true. So the stagger dominates the lock on wall clock and loses nothing.
+#:
+#: WHY 20 AND NOT THE 3 HE SUGGESTED. 2 committed bounds, with SymPy reducing
+#: `max(d1, s+d2) <= d1+d2` to exactly `s <= d1` and z3 returning unsat on any
+#: counterexample: ABOVE 18.7 s, the one genuinely simultaneous co-failure in
+#: the record, at session-establishment time; and BELOW 26.7 s, the shortest
+#: first-seat duration over the archived rounds, past which a stagger could be
+#: slower than serialising. 3 s sits under the floor and would not clear the
+#: collision the stagger exists to avoid. He may of course overrule the value;
+#: the bounds are the reason, not a preference.
+_SHARED_STAGGER_S = 20.0
+#: The monotonic instant the NEXT shared-credential seat may start.
+_SHARED_NEXT_START = [0.0]
+
+
+def _claim_shared_start_slot(stagger_s: float | None = None) -> float:
+    """Hold the gate just long enough to claim a start slot; return the wait.
+
+    Separated from the dispatch so a guard can EXECUTE it: the property under
+    test is a TIMING one -- do 2 seats overlap, and do their starts sit a gap
+    apart -- and no assertion over source text can observe either.
+    """
+    s = _SHARED_STAGGER_S if stagger_s is None else float(stagger_s)
+    if s <= 0:
+        return 0.0
+    with _SHARED_CREDENTIAL_LOCK:
+        now = time.monotonic()
+        start_at = max(now, _SHARED_NEXT_START[0])
+        _SHARED_NEXT_START[0] = start_at + s
+    return max(0.0, start_at - now)
 
 
 @_records_seat_completion
@@ -12685,17 +12742,19 @@ def _dispatch_single_model(
     pattern_name: str, domain: str, logs_dir: Path,
     enable_tools: bool = True,
 ) -> Tuple[List[Finding], Optional[str]]:
-    """Dispatch one seat, serialising the routes that share one credential.
+    """Dispatch one seat, STAGGERING the routes that share one credential.
 
-    The lock is held across the WHOLE dispatch rather than only the first call,
-    because the tool loop keeps using the same credential for as long as the seat
-    is working.
+    The gate is held only while a seat claims its start slot, so 2 seats on one
+    credential begin `_SHARED_STAGGER_S` apart and then run concurrently. It
+    used to be held across the whole dispatch, tool loop included, which made a
+    round cost the SUM of the shared seats' durations instead of the MAX -- a
+    measured 40.01% of wall clock, and the behaviour he ruled against.
     """
     if getattr(mc, "api", None) in _SHARED_CREDENTIAL_ROUTES:
-        with _SHARED_CREDENTIAL_LOCK:
-            return _dispatch_single_model_inner(
-                mc, mgr, prompt, cdsfl_text, full_code, round_idx,
-                pattern_name, domain, logs_dir, enable_tools)
+        wait = _claim_shared_start_slot()
+        if wait > 0:
+            _log(f"    {getattr(mc, 'label', '?')}: staggered start in {wait:.0f}s")
+            time.sleep(wait)
     return _dispatch_single_model_inner(
         mc, mgr, prompt, cdsfl_text, full_code, round_idx,
         pattern_name, domain, logs_dir, enable_tools)

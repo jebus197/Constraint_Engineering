@@ -143,6 +143,18 @@ class TestTheCountIsExactAndCurrent:
 
 
 class TestItRuns:
+    # TIMEOUT OVERRIDE, 2026-10-19. The SECOND confirmed runtime offender
+    # against `pytest.ini`'s 300s global per-test limit, and the one that
+    # killed the full suite at 62% on 2026-10-18 after the first was fixed.
+    # This runs `scripts/precommit_gate_cost_2026-09-10.py`, which executes
+    # the pre-commit hook end to end; the hook itself is measured at 334.83s,
+    # so even `--repeats 1` cannot finish inside 300s. The marker exceeds this
+    # test's OWN subprocess budget of 1800s below, so a genuine hang surfaces
+    # as that call's clean TimeoutExpired rather than as a suite-wide kill.
+    # Entry B36 records the first case and rejects blanket-fixing all 67
+    # unreachable ceilings, because 66 have no measured defect behind them.
+    # This one does. Widens a timeout; weakens no assertion.
+    @pytest.mark.timeout(1860)
     def test_the_script_exits_zero(self):
         r = subprocess.run([sys.executable, str(SCRIPT), "--repeats", "1"],
                            cwd=ROOT, capture_output=True, text=True, timeout=1800)

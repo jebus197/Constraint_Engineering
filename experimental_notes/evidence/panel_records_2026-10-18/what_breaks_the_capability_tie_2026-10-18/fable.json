@@ -1,0 +1,205 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 12645,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level files\"}",
+      "t_offset_s": 10.103
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/routing.py\"}",
+      "t_offset_s": 10.132
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/cdsfl_registry/**\"}",
+      "t_offset_s": 10.142
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c_dbhgql/repo/bench/routing.py\"}",
+      "t_offset_s": 14.344
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c_dbhgql/repo/bench/cdsfl_registry/registry.py\"}",
+      "t_offset_s": 18.785
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | head -50; echo ---; ls bench/ | head -60\", \"description\": \"List scripts and bench directories\"}",
+      "t_offset_s": 23.211
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"gamma\", \"-i\": true, \"head_limit\": 30}",
+      "t_offset_s": 23.905
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep -iE 'ladder|estimab|gamma|escalat'; echo ---; ls docs/ | head; echo ---; grep -n \\\"gamma\\\" docs/GLOSSARY.md | head -20\", \"description\": \"Find ladder estimability script and gamma glossary entry\"}",
+      "t_offset_s": 30.343
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"routing|escalat\", \"path\": \"docs/GLOSSARY.md\", \"output_mode\": \"content\", \"-i\": true, \"head_limit\": 20}",
+      "t_offset_s": 31.389
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c_dbhgql/repo/scripts/is_the_ladder_order_estimable_2026-10-17.py\"}",
+      "t_offset_s": 37.084
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c_dbhgql/repo/scripts/gamma_and_when_the_ladder_resolves_2026-10-07.py\"}",
+      "t_offset_s": 38.04
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | head -30; echo ---; ls bench/logs | wc -l\", \"description\": \"List archived run logs\"}",
+      "t_offset_s": 47.861
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"load_effective_policy\\\\(\", \"output_mode\": \"content\", \"head_limit\": 25}",
+      "t_offset_s": 48.654
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, collections, pathlib\\nfields = collections.Counter()\\nrouted = 0; total = 0; examples = []\\nfor f in glob.glob(\\\"bench/logs/*/runner_state.json\\\"):\\n    try:\\n        d = json.loads(pathlib.Path(f).read_text(errors=\\\"replace\\\"))\\n    except Exception:\\n        continue\\n    ents = ((d.get(\\\"registry\\\") or {}).get(\\\"entries\\\") or {})\\n    for e in ",
+      "t_offset_s": 66.398
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, pathlib, collections\\nhist_ex = None\\nattempts = collections.Counter(); resolutions = collections.Counter()\\ndeferred = 0; resolved = 0; routed_findings = 0\\nfor f in glob.glob(\\\"bench/logs/*/runner_state.json\\\"):\\n    try: d = json.loads(pathlib.Path(f).read_text(errors=\\\"replace\\\"))\\n    except Exception: continue\\n    for e in ((d.get(\\\"registr",
+      "t_offset_s": 213.858
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -nE \\\"free|cost|price|\\\\\\\\$\\\" bench/FINANCIAL_LEDGER.md | head -20; echo ---; grep -rn \\\"models\\\" configs/*.json 2>/dev/null | head -5; ls configs | head\", \"description\": \"Check committed cost records and config rosters\"}",
+      "t_offset_s": 215.212
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, pathlib, collections, itertools, sys\\nsys.path.insert(0, \\\".\\\")\\nfrom bench.routing import season_strength_order, strength_order_from_evidence, capability_identity\\n\\n# ---- A: archive evidence, both polarities ----\\nper = collections.defaultdict(lambda: [0,0,0,0])  # refuted, confirmed, verdict-bearing, total\\nmerged_entries = {}\\ni = 0\\nfor f in",
+      "t_offset_s": 298.845
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, pathlib, collections, itertools\\nfrom scipy.stats import fisher_exact, chi2_contingency\\nfrom statsmodels.stats.multitest import multipletests\\nfrom statsmodels.stats.proportion import proportion_confint\\n\\nattempted = 0; changed = 0\\nrung_dist = collections.Counter(); resolver = collections.Counter()\\ndeferred_reasons = collections.Counter()\\nper",
+      "t_offset_s": 331.785
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"routing_history|rungs_tried|resolved_by_routing\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 40}",
+      "t_offset_s": 413.581
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c_dbhgql/repo/bench/reference_runner_v3.py\", \"offset\": 8600, \"limit\": 70}",
+      "t_offset_s": 418.593
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"FileNotFoundError\\\" bench/tests/ scripts/ --include=*.py | xargs grep -ln \\\"load_effective_policy\\\\|Model config not found\\\" 2>/dev/null; echo ---; grep -rn \\\"Model config not found\\\\|load_effective_policy\\\" bench/tests/*.py 2>/dev/null | head; echo ---; ls bench/tests | tail -15; echo ---; grep -rn \\\"model=\\\" bench/*.py --include=*.py -l | head; grep -rn \\\"load_effective_",
+      "t_offset_s": 444.59
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 3625,3665p bench/run_round_robin.py; echo ======; sed -n 1860,1900p bench/cdsfl_registry/composer.py\", \"description\": \"Inspect the two live call sites that pass model=\"}",
+      "t_offset_s": 450.592
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1860,1905p bench/cdsfl_registry/composer.py; sed -n 295,360p bench/cdsfl_registry/engine.py\", \"description\": \"Inspect composer and engine call sites\"}",
+      "t_offset_s": 454.685
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_cap_identity\\\" bench/cdsfl_registry/composer.py | head -3; ls bench/__init__.py bench/tests/__init__.py 2>&1; grep -rn \\\"REGISTRY_MODEL_MAP\\\" bench/run_round_robin.py | head -3\", \"description\": \"Check import style for routing inside the registry package\"}",
+      "t_offset_s": 476.57
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, pathlib\\nsys.path.insert(0, \\\".\\\")\\nfrom bench.cdsfl_registry.registry import load_effective_policy, PolicyViolationError, REGISTRY_DIR\\n\\n# 1. clean load\\np = load_effective_policy(\\\"mathematics\\\")\\nprint(\\\"1. clean load: OK, falsification_required =\\\", p[\\\"constraints\\\"][\\\"falsification_required\\\"])\\n\\n# 2. a lower layer weakening a universal HARD cons",
+      "t_offset_s": 493.217
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"command -v wolframscript || echo \\\"wolframscript ABSENT\\\"; python3 - <<'EOF'\\nimport itertools, math\\nimport sympy as sp\\n\\n# Claim 1: under exhaustion (max_rungs=0), P(ladder resolves) is permutation-invariant.\\np = sp.symbols('p1 p2 p3 p4', positive=True)\\ndef P_resolve(perm): return sp.expand(1 - sp.prod([1 - q for q in perm]))\\nvals = {P_resolve(perm) for perm in itertools.permuta",
+      "t_offset_s": 513.077
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_compute_provenance\\\" bench/cdsfl_registry/engine.py | head -3; sed -n \\\"$(grep -n 'def _compute_provenance' bench/cdsfl_registry/engine.py | cut -d: -f1),+40p\\\" bench/cdsfl_registry/engine.py\", \"description\": \"Check whether provenance computation raises on missing model file\"}",
+      "t_offset_s": 556.053
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c_dbhgql/repo/bench/cdsfl_registry/registry.py\", \"old_string\": \"    Returns:\\n        The fully merged policy dict.\\n\\n    Raises:\\n        PolicyViolationError: if any layer weakens a HARD constraint.\\n        FileNotFoundError: if universal.toml is missing.\\n    \\\"\\\"\\\"\", \"new_string\": \"    R",
+      "t_offset_s": 566.645
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/cdsfl_registry/registry.py\\\")\\nsrc = p.read_text()\\n\\nold_doc = \\\"\\\"\\\"    Raises:\\n        PolicyViolationError: if any layer weakens a HARD constraint.\\n        FileNotFoundError: if universal.toml is missing.\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\"\\\"\\\"\\nnew_doc = \\\"\\\"\\\"    Raises:\\n        PolicyViolationError: if any layer weakens a HARD co",
+      "t_offset_s": 592.172
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/routing.py\\\")\\nsrc = p.read_text()\\n\\nsrc = src.replace(\\\"from dataclasses import dataclass\\\\n\\\",\\n                  \\\"from dataclasses import dataclass, field\\\\n\\\")\\nassert \\\"dataclass, field\\\" in src\\n\\nold = \\\"\\\"\\\"    strength_order_matched: int = 0\\n\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"    strength_order_matched: int = 0\\n    #: PER-RUN",
+      "t_offset_s": 631.27
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_tie_break_and_unregistered_model_2026-10-19.py <<'PYEOF'\\n\\\"\\\"\\\"Panel C (2026-10-19): the routing tie and the unregistered model.\\n\\nExecutes the two fixes delivered against C21/C15/B13:\\n\\n1. B13 -- `load_effective_policy` with an UNREGISTERED model is LOUD AND\\n   NON-FATAL: it returns a policy byte-identical to the model=None result\\n   (which passed `_check_",
+      "t_offset_s": 658.849
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests | grep -iE \\\"routing|ladder|policy|registry|rung|free_seat\\\" | head; python3 -m pytest $(ls bench/tests/*.py | grep -iE \\\"routing|ladder|policy|registry|rung|free_seat\\\" | tr '\\\\n' ' ') bench/tests/test_falsifier_C0001_prune_inversion_2026-09-10.py -q 2>&1 | tail -4\", \"description\": \"Run targeted regression tests on routing, ladder, and policy surfaces\"}",
+      "t_offset_s": 666.818
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n \\\"$(grep -n 'test_query_with_nonexistent_model_raises' bench/tests/test_policy_engine.py | head -1 | cut -d: -f1),+14p\\\" bench/tests/test_policy_engine.py\", \"description\": \"Show the old-contract test\"}",
+      "t_offset_s": 690.188
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_policy_engine.py\\\")\\nsrc = p.read_text()\\nold = '''    def test_query_with_nonexistent_model_raises(self, engine):\\n        \\\"\\\"\\\"Missing model config should raise FileNotFoundError.\\\"\\\"\\\"\\n        with pytest.raises(FileNotFoundError):\\n            engine.query(\\\"mathematics\\\", model=\\\"nonexistent_model\\\")'''\\nn",
+      "t_offset_s": 699.778
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'p = 2*PDF[HypergeometricDistribution[4, 4, 8], 4]; inv = Length[DeleteDuplicates[Table[Expand[1 - Times @@ (1 - perm)], {perm, Permutations[{a, b, c, d}]}]]]; {N[p], inv}' 2>&1; echo \\\"exit=$?\\\"\", \"description\": \"Wolfram second check: Fisher p at n=4 and order-invariance of P(resolve)\"}",
+      "t_offset_s": 712.417
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"Model config not found\\\" bench/ scripts/ --include=\\\"*.py\\\" | grep -v logs | head; python3 -m pytest bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py bench/tests/test_empty_ladder_is_not_a_dead_transport_2026-09-09.py bench/tests/test_routing_max_rungs_is_reachable_2026-09-24.py -q 2>&1 | tail -1; python3 scripts/competence_provenance.py --help >/dev/null 2>&1; e",
+      "t_offset_s": 735.607
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport tomllib, pathlib\\nfrom bench.cdsfl_registry.registry import HARD_CONSTRAINTS, HARD_THRESHOLDS, HARD_STRINGS\\nhard_roots = {k.split(\\\".\\\")[0] for k in list(HARD_CONSTRAINTS)+list(HARD_THRESHOLDS)+list(HARD_STRINGS)}\\nfor f in sorted(pathlib.Path(\\\"bench/cdsfl_registry/models\\\").glob(\\\"*.toml\\\")):\\n    d = tomllib.loads(f.read_text())\\n    touched = {f\\\"{s}.{k}",
+      "t_offset_s": 782.389
+    }
+  ],
+  "n_tool_calls": 37,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 850.2,
+  "response": "## Verdict\n\n**The tie:** when no pair separates, the routing order is not a capability decision at all \u2014 under the founder's own exhaustion ruling (`max_rungs=0`), P(the ladder resolves) is provably invariant to rung order, so the tie needs determinism, not a capability claim; the measured route *out* of the tie is to record the ladder-task variable (confirm-on-dispatch per rung), which the archive has never held a denominator for and which I have now made recordable \u2014 it establishes an order from **4\u20136 outcomes per seat**, against **~479\u2013808** for the refutation polarity the season machinery currently consumes.\n\n**The unregistered model:** loud and non-fatal \u2014 `load_effective_policy` now records the Layer-4 miss against the model's stable `capability_identity` via `resolve_or_alarm`, announces once, and returns the layers-1..3 policy, which monotonicity guarantees is byte-identical on every HARD constraint; implemented and executed.\n\n## Reasoning\n\n**Premise 1 \u2014 order is outcome-inert under exhaustion (derived, then tool-checked).** `resolve_via_routing` stops only on a runner-decided CONFIRMED and, at `max_rungs=0`, exhausts. So P(resolve) = 1 \u2212 \u03a0(1\u2212p\u1d62): a product commutes, so every permutation gives the same value. SymPy: all 24 permutations of 4 symbolic rungs collapse to **1 distinct expression**. Wolfram Language (local Wolfram Engine) independently returned the same count, 1. Under the exchangeability that \"no pair separates\" licenses, E[#dispatches] is also permutation-invariant (verified: 1 distinct value over 24 permutations), and expected *spend* is minimised by cheapest-first (rearrangement inequality; argmin over all 24 permutations = ascending cost, verified). Consequence: the frozen vendor tuple **cannot change whether a finding resolves** \u2014 only who is asked first. The founder's four-times-stated objection is to a capability claim; under exhaustion the fallback makes none that reaches an outcome, and `season_strength_order` already logs it as unestablished. The tuple is an admissible arbitrary sequence, not a ranking \u2014 and it should stay only until the right variable is measured.\n\n**Premise 2 \u2014 the ladder has measured value, so ordering it is worth solving.** Escalation is not a random re-ask: of **272** archived escalations that actually dispatched a rung, **230 changed the finding's status** = **84.56%, Wilson 95% [79.79%, 88.37%]**. Of resolutions with a per-round record, 81 resolved at rung 1 and 23 at rung 2.\n\n**Premise 3 \u2014 the tie exists because the instrument measures the wrong variable.** `falsification_evidence_from_registry` feeds the season **REFUTED rates of a seat's own findings**: 26 events across 3,237 entries; at archive rates (1.43% vs 0%) separation needs ~479 verdict-bearing outcomes per seat for one pair, ~808 under Holm across 15 pairs. The variable the ladder actually optimises \u2014 confirm-on-dispatch when handed another seat's finding (the Exp-42 validation was exactly this: 6/7 at rung 1) \u2014 has **successes recorded (`resolved_by_routing`, 230) but no denominator**: the archive never records which rungs were tried and failed. The distance to a measured ladder is therefore not statistical volume; it is **one missing field**. With it, the existing Fisher+Holm machinery establishes from 4 outcomes/seat (2 seats) or 6 (6 seats) at perfect discrimination.\n\n**Premise 4 \u2014 the higher-powered polarity is contaminated exactly as documented.** Seat-authored CONFIRM rates (343 confirms, paid seats) separate **1 of 10 pairs** after Holm: **Gemini > DeepSeek (Holm p = 0.0355)** \u2014 precisely the Exp-55 detached-falsifier inversion `routing.py`'s standing warning predicts. A detached falsifier can fake CONFIRMED but not REFUTED. So ladder evidence must pass `scripts/competence_provenance.py` before it ever feeds `strength_order_from_evidence`; my reader says so and decides nothing.\n\n**Premise 5 \u2014 B13.** Monotonicity is the property that makes non-fatal admission safe: layers 1\u20133 pass `_check_monotonicity` at every merge, so skipping Layer 4 cannot weaken a HARD constraint \u2014 executed, and all 6 registered model files carry only `[model]`/`[protocol]` tuning, touching **zero** HARD keys. The raise was loud but not fail-closed in practice: `composer.py:1878` calls it unguarded (the 2026-08-30 0-character incident shape), and `run_round_robin.py` catches it into a free-text warning keyed to nothing.\n\n## Falsifier and its executed result\n\n- `season_strength_order(real archive, 5 paid labels)` \u2192 `established=False`, order = vendor tuple, `why` verbatim: *\"0 of 15 seat pairs separate after Holm correction at alpha=0.05; a ranking is a set of pairwise orderings, so the order is NOT ESTABLISHED and no capability claim is made; falling back to the vendor order, which rests on no measurement (FALSIFIER_STRENGTH_IS_ESTABLISHED is False)\"* (15 pairs, not 10, because `-SIM` seats pool onto the 6 identities by construction). Constructed 2/2 vs 0/4: `established=False`, *\"0 of 1 seat pairs separate\u2026\"* \u2014 note this does **not** reproduce the brief's \"0 of 3 pairs\" for that construction. Minimal establishing evidence: **4/4 vs 0/4** (Fisher p = 0.028571; Wolfram second check 2\u00b7PDF[HypergeometricDistribution[4,4,8],4] = 0.0285714), and **n=6 per seat** for one perfect discriminator on a 6-seat roster.\n- Escalation value: `230/272 = 84.56% [79.79%, 88.37%]` (above).\n- Policy engine, executed pre-fix: clean load OK; a task layer setting `falsification_required=false` \u2192 `PolicyViolationError: HARD constraint violation after merging layer 'task/panel-c-demo'`; `model=\"kimi_k2\"` \u2192 `FileNotFoundError`.\n- Post-fix: `python3 -m pytest bench/tests/test_tie_break_and_unregistered_model_2026-10-19.py -q` \u2192 **7 passed**; touched-surface regression (routing/ladder/policy/registry suites + the committed prune-inversion falsifier) \u2192 **218 run, 1 failed** \u2014 the failure being `test_query_with_nonexistent_model_raises`, the old contract itself; updated to the new contract (openly, below) \u2192 **57 passed** on re-run of the three touched suites, and the ladder-transport tests \u2192 **28 passed**.\n\n## The fix\n\n1. **`bench/cdsfl_registry/registry.py`** \u2014 the missing-Layer-4 branch no longer raises: it calls new `_announce_missing_registration`, which routes through `bench.routing.resolve_or_alarm` (the same recorder, same `capability_identity`, announced once per identity; `warnings.warn` fallback if `bench.routing` is unimportable \u2014 degraded detection, never silence) and continues on the monotonicity-checked layers-1..3 policy.\n2. **`bench/routing.py`** \u2014 `RoutingResult.rung_attempts` (one `{\"model\", \"verdict\"}` record per rung dispatched, self-rung included), populated at every exit of `resolve_via_routing`; new reader `ladder_evidence_from_registry` pools them per capability identity into the `(confirmed, attempts)` shape the season machinery already consumes, returns `{}` on pre-field archives, and carries the provenance caveat. Recording only \u2014 no routing decision reads it.\n3. **`bench/reference_runner_v3.py`** \u2014 one key added at the single `routing_history` write site, inside its existing telemetry guard, persisting `rung_attempts`.\n4. **`bench/tests/test_tie_break_and_unregistered_model_2026-10-19.py`** \u2014 7 executing tests covering both fixes and the unchanged monotonicity refusal; **`bench/tests/test_policy_engine.py`** \u2014 the one old-contract test updated (not deleted) to assert the new contract. I state this test modification explicitly: the contract it pinned is the behaviour this panel was convened to change, and the change is reported with its own executed falsifier, which is the prescribed route.\n\n## Standards\n\n**Additive.** Nothing capability-bearing removed: `DEFAULT_FALSIFIER_STRENGTH`, `VENDOR_ORDER_SUPERSEDED`, `FALSIFIER_STRENGTH_IS_ESTABLISHED`, the season precedence, and the `ast.literal_eval` probe's source shape are untouched (`competence_provenance` still parses, exit 0). The one narrowing is the Layer-4 raise \u2192 announcement. Named properties and committed measurements: (a) *HARD enforcement* \u2014 fallback policy byte-identical to `model=None`, every HARD boolean/threshold/string holds, executed in the test; all 6 model files measured to touch zero HARD keys, so what is skipped is tuning only; (b) *detection* \u2014 the miss now lands in `lookup_misses()` keyed to a stable identity at both live call-site families, where before one family warned free-text and one propagated into the broad handlers that produced the recorded 0-character silence. Every addition is wired and executed: `rung_attempts` is populated on every routing pass, persisted at the runner's single write site, and read by executing tests.\n\n**Simplest sufficient.** No new subsystem: one dataclass field, one reader, one persistence line, one branch replaced. The alternative \u2014 a cost-ordered or digest-ordered replacement tuple \u2014 was considered and rejected: no committed per-identity price table exists to key it on, and Premise 1 shows any claim-free permutation is outcome-equivalent, so swapping one arbitrary order for another buys nothing measurable while risking the Exp-42-validated rung-1 latency.\n\n**Composability.** Both fixes compose with the identity work and replace none of it: B13 reuses `resolve_or_alarm`/`capability_identity` verbatim (the fourth table on the same recorder); the ladder evidence pools through `seat_identities` and emerges in the exact shape `strength_order_from_evidence` consumes, so when the founder rules and a provenance gate exists, wiring it into `season_strength_order` is a one-argument change. The composition's demonstrated advantage over either half alone: the identity hash gave capability a stable key, but keyed tables still defaulted silently and the season still starved \u2014 recorder + key together are what make a measured ladder reachable at all.\n\n## What would refute this\n\n- **Order-invariance (the core of my tie verdict)** assumes rung attempts are independent of position. Once `rung_attempts` accrue, compute rung-2 confirm rate *conditional on rung-1 failure* against unconditional rung-1 rate: if they differ beyond a Holm-corrected Fisher test, P(resolve) is order-sensitive, the tie genuinely needs a capability-flavoured break, and my \"the tie needs no breaking\" collapses.\n- **The tie-break becomes unnecessary** the moment any experiment's round 0 yields \u22654 provenance-clean ladder outcomes per seat at perfect discrimination (\u22656 on a 6-seat roster) \u2014 measured above as the establishment threshold.\n- **B13** is refuted by a single model TOML that tightens enforcement (touches a HARD key) such that skipping it weakens a real run \u2014 measured today as zero of six, but one committed counterexample overturns the \"tuning only\" premise and the raise should return for that class.\n\n## Disagreement\n\n**With the brief's framing, twice.** First, \"what should decide the routing order\" presupposes the order decides something; the derivation says that under the founder's own exhaustion ruling it decides no resolution outcome \u2014 the urgent object is not a tie-break rule but the missing denominator, and a panel that ships a cleverer arbitrary order has answered the wrong question. Second, the brief's constructed-case quote (\"0 of 3 seat pairs\" from a 2-identity registry) did not reproduce: my execution returns \"0 of 1 seat pairs\" for exactly that evidence \u2014 a 2-identity registry cannot yield 3 pairs, so either the brief's construction had more seats than stated or the quote is inexact; it changes no conclusion but should not enter the record uncorrected.\n\n**With the other seat, anticipated.** A seat is likely to propose breaking the tie by measured cost, by identity digest, or by uniform ranking. Against all three: cost has no committed per-identity table to key on (the ledger is prose), a digest order is a lottery seeded by the very name it claims to ignore, and all three are permutations of an outcome-inert sequence \u2014 a behaviour change with measurable latency risk (Exp 42: rung 1 resolved 6/7 under the current first rung) and no measurable gain. And against a seat tempted to promote the confirm-rate evidence because it separates a pair today: the one pair it separates is the documented contamination signature, which is the strongest argument this review found for keeping *tools decide* ahead of statistical power.\n\n---\n\n**Termination.** Three passes: (1) artefact read + full harness execution; (2) fixes, falsifiers, regression; (3) dependant sweep (old-raise references, ladder transport tests, provenance probe, HARD-key audit of all model files) \u2014 pass 3 produced no new finding above the real-world-consequence threshold. Converged at 3.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c_dbhgql/repo",
+      "built": false
+    }
+  ]
+}
