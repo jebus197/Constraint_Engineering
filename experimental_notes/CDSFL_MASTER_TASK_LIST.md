@@ -1,5 +1,77 @@
 # CDSFL master task list
 
+<!-- work-remaining-begin -->
+
+## ★ WORK REMAINING — generated from the register, never typed
+
+There are **34 live `wr` tickets**. This section is rendered by `scripts/work_remaining_section_2026-10-20.py` from `bench/ticket_store.py`, so it cannot drift from the register it reports. Closing a ticket removes its line on the next render. **His instruction, 2026-10-20:** *"wr is a valid section in the Bugzilla registry, and you should use it to track all remaining outstanding work, and refer back to this before risking constantly referring back to me and requesting my verdict"*.
+
+### Ruled by him, 20 items — newest ruling first
+
+- `entry-B44` `B44` — ruled 2026-10-20  B44. HE PROPOSES `wr`, WORK REMAINING, AS A 4TH TICKET KIND — AND HIS `wr` MARKER IS CURRENTLY INVISIBLE TO THE PARSER.
+- `entry-B42` `B42` — ruled 2026-10-20  B42. RESOLVED 2026-10-20T01:27:07+01:00. WORD REWROTE HIS FILE; 15 ROWS ARE DEMOTED WITH HIS WORDS PRESERVED.
+- `ca57b87f2aa8` — ruled 2026-10-20  The full UX build waits until the current outstanding work is complete
+- `beda00e77364` — ruled 2026-10-20  27 annotations are TRACKED by an entry that is not done while their tickets are settled
+- `bb822e60359a` — ruled 2026-10-20  tid_of collapses several of his distinct verdicts against one task entry into a single ticket
+- `9f7c6bf8661d` — ruled 2026-10-20  104 of his annotations since 2026-10-01 have no verdict row, so sv stays blocked on MY work
+- `entry-B39` `B39` — ruled 2026-10-19  B39. The severity the convergence gate reads is not traceable to the assessments beneath it, and 23.8095% of the time it lies outside their range enti
+- `entry-B34` `B34` — ruled 2026-10-19  B34. The last outstanding programme measurement cannot settle its question at any sane cost, and the choice is his.
+- `entry-B33` `B33` — ruled 2026-10-19  B33. A declared convergence mode has NO CONSUMER: the flag is read once, to publish a copy of itself.
+- `entry-B31` `B31` — ruled 2026-10-19  B31. The credential redactor withholds an ordinary run setting, because its name contains "key".
+- `entry-B29` `B29` — ruled 2026-10-19  B29. `sv` measures memory against the previous save, so it refuses the follow-up that fixes the previous save's own postcondition.
+- `entry-B24` `B24` — ruled 2026-10-19  B24. Rule 27 forbids a spelled number and the linter only catches a compound one.
+- `entry-B22` `B22` — ruled 2026-10-17  B22. What "a fix" means outside code, and whether this is yet a general-purpose STEM calculator: his panel question, with the evidence that bears on i
+- `entry-B21` `B21` — ruled 2026-10-17  B21. Making model and role selection trivial is NOT a large rewrite, because the 4-layer policy engine that does it already exists and the canonical r
+- `entry-B13` `B13` — ruled 2026-10-17  B13. Admitting a model is not trivial, and the cost is silent defaulting rather than edit count.
+- `entry-C21` `C21` — ruled 2026-10-09  C21. The routing-ladder cluster, consolidated: what his 2026-10-09 reframing settled, what it rejected, and what is genuinely open.
+- `entry-C15` `C15` — ruled 2026-10-09  C15. A RULING HE GAVE, NOT CARRIED OUT, dated 2026-10-09: no distinction between models other than a ranking number.
+- `entry-C12` `C12` — ruled 2026-10-08  C12. A RULING HE GAVE, NOT CARRIED OUT, dated 2026-10-08: fix the false-quiet chance and check the fix with the free panel.
+- `entry-C1` `C1` — ruled 2026-10-02  C1. AN INSTRUCTION NOTHING TRACKS, dated 2026-10-02: the claim channel's promotion was never implemented or measured.
+- `entry-R1` `R1` — ruled 2026-08-07  R1. Restart Exp 53, the zero-plant control.
+
+### Panel reviews he asked for, 30 items — oldest first
+
+Measured 2026-10-20: 30 of his 60 panel requests, 50.0000%, Wilson [37.7350%, 62.2650%], were reached by nothing at all before this section existed.
+
+<!-- verbatim-begin: the founder's own words, quoted from his replies -->
+
+- `d8d422019e48` — asked 2026-08-28  Then for sure they should be fixed. If you are unsure how to do this for the best, build a 3 model panel revie
+- `8911f9a7005a` — asked 2026-08-30  Fix it if not already done and ask the panel models to check your work. Then same answer as before. Check all
+- `bb815036018b` — asked 2026-08-30  Accepted, but monitor its behaviour closely during runs for any anomalies. Also we agreed today that all model
+- `611f50481c21` — asked 2026-08-31  At this late stage the macrophage cell should have been fully functional in our runners for some time. We have
+- `df92a0c2db5d` — asked 2026-08-31  We should do that next, before the panel review and one additional simulated run, to test out any fixes emergi
+- `112cb92786a6` — asked 2026-09-15  2 – 4 hours for a panel review to consider the above items that require it seems unlikely. But fair enough. Yo
+- `5b46f40b7ddb` — asked 2026-09-15  Verdict: Fix as necessary. Discuss your fix with Fable and CC2 in panel review, and ask then to either conform
+- `4c338dd2b654` — asked 2026-09-17  Approved fully, but in light of the above Wolfram fixes also. Any application of Wolfram in any test, panel re
+- `b9a57022e6b6` — asked 2026-09-17  Verdict. Do it. And make sure this is how all future panel reviews and experiments (both paid and simulated) w
+- `fd6bd113d263` — asked 2026-09-17  There has never been a paid Codex seat in any *simulated run*. This is a clear conflation. Paid Codex seats ar
+- `122350ce7554` — asked 2026-09-20  There is no reason why you shouldn’t include Gemini! Gemini has traditionally been present for most of the pro
+- `4f932eaf2f12` — asked 2026-09-20  I remember this issue now. I don’t think it had a clean resolution. The point of grabbing two bare metal imple
+- `58e902833309` — asked 2026-09-20  You previously called one of these changes ‘the most invasive’ but invasive in a good way, or a bad way? That
+- `9467aa8c2525` — asked 2026-09-20  As for the mathematical model panel review itself, the purpose of the review is not to tell the models to inve
+- `97d8c958bdcf` — asked 2026-09-20  Again why not free? And the panel review and paid experiments have been 6 models for some time now. CC2, DeepS
+- `b69013da14b7` — asked 2026-09-20  Do it to check it all works as expected, including tool calling and its ability to use and interpret the revis
+- `c176bf612f76` — asked 2026-09-20  This will be a separate 3 model panel review after the above two items on the runway. It will entail you CC2 a
+- `1dd0a2657647` — asked 2026-09-28  Be careful here, as this is the work we have just been looking at, and have since ran another panel review aga
+- `811c4a16f447` — asked 2026-09-28  High severity I assume would allow the gate to remain reasonably permissible? What I don’t want is a condition
+- `89c2079990e1` — asked 2026-09-28  There is significantly more on our runway than this. But as stated study the prose flag in shadow for the next
+- `c283380e486a` — asked 2026-09-28  Then do the work. It is clearly useful to be able to discern between a purely prose target in which there is n
+- `f6f19fd0a77c` — asked 2026-09-28  Why should the pad dispatch guard need a panel review? But in any case you can add it to (what I hope will be)
+- `6426425f9a5c` — asked 2026-09-30  So I’m still not clear? The proposed fix, with the later additions is good or not? The models in the last pane
+- `8395687409da` — asked 2026-09-30  The prose arm is what exactly? What is the specific problem with running a falsifier against it? Previously th
+- `9ccd12fd1385` — asked 2026-09-30  Have all these issues been addressed? If not ask the panel how we should address them and apply those lessons
+- `2486f4e350c6` — asked 2026-10-19  Then do the work please, and check your work with the free panel.
+- `51a214cf572f` — asked 2026-10-19  So what is the proposed fix for this? Ultimately Haiku should remain useful in all its assigned roles, regardl
+- `6a21280f7304` — asked 2026-10-19  So there is no work to do here? If there is, or it has already been done, check it with the free panel.
+- `abaca47d6211` — asked 2026-10-19  Ask the panel what the best approach of all the available options is, given the full specification of the proj
+- `f3a80984ce2e` — asked 2026-10-19  My ruling was that we should not try to go back and rewrite history. The model hashed ID feature is relatively
+
+<!-- verbatim-end -->
+
+
+<!-- work-remaining-end -->
+
+
 **Opened 2026-09-09 13:45 BST (Europe/London). This is the standing work list. Update it as each task closes; do not rewrite it from scratch.**
 
 **Outcomes companion: `experimental_notes/CDSFL_OUTCOMES_LOG.md`, mirrored at `~/Desktop/CDSFL_OUTCOMES_LOG.md`.** This file says what is to be done; that one says what was done, what it cost, and whether it can be undone. Founder instruction 2026-09-09.
