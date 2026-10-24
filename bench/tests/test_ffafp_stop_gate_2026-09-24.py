@@ -277,18 +277,97 @@ def test_e2e_a_scratchpad_only_turn_is_not_refused(tmp_path):
 
 
 def test_e2e_a_code_edit_with_the_trace_present_is_released(tmp_path):
-    """The gate must stand down when the owed check actually ran."""
+    """The gate must stand down when the owed check actually ran.
+
+    ★ THE FIXTURE GAINED FIND AND FOLLOW ON 2026-10-24, when his ruling widened
+    GATED from ("ANALYSE", "P-PASS") to all 5 steps: *"Fix the missing 'f' steps
+    also, so that the full 5 step process always triggers, rather than
+    randomly/selectively."* With only an Edit and a pytest the turn now has no
+    FIND and no FOLLOW, so it is refused -- correctly. The test is updated rather
+    than the contract, and the addition is stated here rather than made quietly:
+    a Read is the FIND and a tree search is the FOLLOW."""
     fa = _fa()
+    f = _write_transcript(tmp_path, [
+        _human(),
+        _assistant(("Read", {"file_path": "bench/widget.py"})),
+        # The pattern must NAME the edited file's stem, and the stem must clear
+        # the audit's deliberate 4-CHARACTER FLOOR -- `foo` is 3 and is excluded
+        # on purpose, so that stems like `run`, `cli` and `x` cannot match
+        # anything. A first version of this fixture used `bench/foo.py` and the
+        # gate was right to refuse it.
+        _assistant(("Grep", {"pattern": "widget", "path": "bench"})),
+        _assistant(("Edit", {"file_path": "bench/widget.py",
+                             "old_string": "a", "new_string": "b"})),
+        _assistant(("Bash", {"command": "python3 -m pytest bench/tests/test_widget.py -q"})),
+    ])
+    v = _prove_seen(fa, f, ["bench/widget.py"])
+    assert v["analysed"] and v["verified_after"]
+    r = run_gate({"session_id": "s", "transcript_path": str(f)}, tmp_path)
+    assert r.returncode == 0, f"gate refused a turn that ran its check: {r.stderr}"
+
+
+def test_all_five_steps_are_gated_not_two(tmp_path):
+    """HIS RULING, 2026-10-24. It was ("ANALYSE", "P-PASS"); a turn that edited
+    code and ran a test but never searched the tree passed. That is the
+    selectivity he objected to."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_g", GATE)
+    g = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(g)
+    assert set(g.GATED) == {"FIND", "FOLLOW", "ANALYSE", "FIX", "P-PASS"}, g.GATED
+
+
+def test_an_edit_with_no_follow_is_now_refused(tmp_path):
+    """The new behaviour, stated as its own case: edit plus test, no tree search."""
     f = _write_transcript(tmp_path, [
         _human(),
         _assistant(("Edit", {"file_path": "bench/foo.py",
                              "old_string": "a", "new_string": "b"})),
         _assistant(("Bash", {"command": "python3 -m pytest bench/tests/test_foo.py -q"})),
     ])
-    v = _prove_seen(fa, f, ["bench/foo.py"])
-    assert v["analysed"] and v["verified_after"]
     r = run_gate({"session_id": "s", "transcript_path": str(f)}, tmp_path)
-    assert r.returncode == 0, f"gate refused a turn that ran its check: {r.stderr}"
+    assert r.returncode == 2, (
+        "a turn that changed code without ever searching the tree was released; "
+        "FOLLOW is gated as of 2026-10-24")
+    assert "FOLLOW" in r.stderr
+
+
+def test_the_refusal_ceiling_is_reachable(tmp_path):
+    """★ THE BUG THIS CATCHES ALMOST TRAPPED THE SESSION. The bounded-refusal
+    change read the counter and never wrote it, so `refusals` stayed 0, the
+    ceiling was never reached, and the gate would have refused EVERY stop
+    forever. It survived because the replacement that added the write silently
+    no-opped on a mismatched anchor and nothing asserted on it.
+
+    This drives the gate MAX+1 times against a transcript it genuinely objects to
+    and requires it to yield, so the ceiling can never become unreachable again
+    without a red test."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_g2", GATE)
+    g = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(g)
+
+    f = _write_transcript(tmp_path, [
+        _human(),
+        _assistant(("Edit", {"file_path": "bench/foo.py",
+                             "old_string": "a", "new_string": "b"})),
+    ])
+    state = pathlib.Path.home() / ".claude" / ".ffafp_gate"
+    key = "ceiling_probe_2026_10_24"
+    counter = state / f"{key}.refusals"
+    if counter.exists():
+        counter.unlink()
+    codes = []
+    for _ in range(g.MAX_REFUSALS_PER_TURN + 1):
+        r = run_gate({"session_id": key, "stop_hook_active": True,
+                      "transcript_path": str(f)}, tmp_path)
+        codes.append(r.returncode)
+    if counter.exists():
+        counter.unlink()
+    assert codes[-1] == 0, (
+        f"the gate never yielded in {len(codes)} attempts ({codes}); the ceiling "
+        f"is unreachable and a session can be trapped")
+    assert 2 in codes, f"the gate never refused at all ({codes}); it is inert"
 
 
 def test_e2e_an_evasion_shaped_write_is_now_refused(tmp_path):

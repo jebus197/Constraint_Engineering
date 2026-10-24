@@ -1,0 +1,1421 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-20 03:45:01
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_k6o70q8m/repo/.cdsfl_deny_canonical_writes.sb	2026-10-20 03:21:41
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-19 09:09:53
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_k6o70q8m/repo/bench/reference_runner_v3.py	2026-10-20 03:33:40
+@@ -8618,6 +8618,20 @@
+                 "model_used": result.model_used,
+                 "rungs_tried": getattr(result, "rungs_tried", None),
+                 "rungs_available": len(models),
++                #: EVERY RUNG DISPATCHED, WITH THE VERDICT IT EARNED, not just
++                #: the last one. `verdict` above is terminal-only: measured over
++                #: the archive's 77 unresolved dispatched passes, 42 (54.5455%)
++                #: terminated in ERROR -- a rung that produced no falsifier at
++                #: all -- and every earlier rung's verdict on a multi-rung pass
++                #: was discarded. An ERROR is a tooling failure and a REFUTED is
++                #: a capability signal, so a per-rung capability estimate built
++                #: from the terminal verdict pools two different things.
++                "rung_attempts": [dict(a) for a in
++                                  (getattr(result, "rung_attempts", None) or [])],
++                #: HOW FAR THE RUNG SEQUENCE WAS CYCLICALLY ROTATED. Recorded so
++                #: the ladder in force is readable from the artefact rather than
++                #: re-derived offline from the experiment name.
++                "ladder_rotation": int(getattr(result, "ladder_rotation", 0) or 0),
+                 "duplicate_of": result.duplicate_of,
+                 #: WHETHER THE LADDER THAT PRODUCED THIS WAS MEASURED, carried
+                 #: into the artefact rather than left on the object. His ruling
+@@ -17913,6 +17927,28 @@
+     )
+     _log("=" * 60)
+     _log(f"EXPERIMENT: {cfg.experiment_name}")
++    # ROTATE AN UNESTABLISHED LADDER PER EXPERIMENT. Set here, once, because the
++    # experiment name is the only stable identifier that differs between runs
++    # and is recoverable from the log directory, so a replay can reproduce the
++    # ladder that was in force. `bench.routing.route` applies it ONLY when
++    # `strength_order_was_unestablished` holds, so a measured or frozen season
++    # order is never rotated; an empty seed disables rotation entirely.
++    #
++    # WHY IT IS NEEDED, measured 2026-10-20 over the 61 archived runs: replaying
++    # `rank_falsifier_writers` against each run's own roster across all 160
++    # dispatched passes, 3 of the 6 ladder members appeared a combined 321 times
++    # and were dispatched 0 times, and position 1 was Codex-SIM on 140 of 160.
++    # Without rotation the frozen order picks the sample used to test it.
++    try:
++        import bench.routing as _rt
++        _rt.LADDER_ROTATION_SEED = str(cfg.experiment_name or "")
++        _log(f"  ladder rotation seed: {_rt.LADDER_ROTATION_SEED!r} "
++             f"(applies only where no order is established)")
++    except Exception as _lr:                                    # noqa: BLE001
++        # A telemetry/exposure helper must never kill a run; the unrotated
++        # ladder applies and the failure is said out loud rather than swallowed.
++        _log(f"  ladder rotation seed: NOT SET ({type(_lr).__name__}: {_lr}); "
++             f"the unrotated ladder applies")
+     _log(f"  Topology: {topo_desc}")
+     _log(f"  Pattern: {cfg.pattern}")
+ 
+
+### cc2:attempt-1:bench/routing.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/routing.py	2026-10-18 02:25:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_k6o70q8m/repo/bench/routing.py	2026-10-20 03:33:40
+@@ -27,7 +27,7 @@
+ """
+ from __future__ import annotations
+ 
+-from dataclasses import dataclass
++from dataclasses import dataclass, field
+ from typing import Callable, Optional, Sequence
+ import hashlib as _hashlib
+ 
+@@ -481,8 +481,95 @@
+     #: measurement, not something to slip into a visibility fix. What changes
+     #: here is only that a ladder which ranked nothing says so.
+     strength_order_matched: int = 0
++    #: ONE RECORD PER RUNG ACTUALLY DISPATCHED, in dispatch order:
++    #: ``{"position": 1-based rung index, "model": label, "verdict": str}``.
++    #:
++    #: WHAT IS ALREADY RECOVERABLE WITHOUT THIS, measured 2026-10-20 so that the
++    #: field is not justified by something false. Replaying
++    #: `rank_falsifier_writers` over each archived run's own roster and taking
++    #: `ladder[rungs_tried - 1]` reproduces the recorded `model_used` on 104 of
++    #: 104 resolved archived passes, 0 mismatches. So WHICH SEAT SAT AT WHICH
++    #: RUNG is already reconstructible from `rungs_tried` plus the roster, and a
++    #: recorder defended as "the denominator is otherwise unrecoverable after the
++    #: fact" would be defended by a false premise.
++    #:
++    #: WHAT IS NOT RECOVERABLE, which is why this field exists. `routing_history`
++    #: keeps ONE verdict per pass -- the LAST one. Across the archive's 77
++    #: unresolved dispatched passes the terminal verdict was ERROR on 42
++    #: (54.5455%), meaning that rung produced no falsifier at all; and on a
++    #: multi-rung pass every verdict before the last is discarded. An ERROR is a
++    #: tooling failure and a REFUTED is a capability signal, so pooling them
++    #: biases any per-rung capability estimate, and the archive cannot separate
++    #: them per rung. This field separates them.
++    #:
++    #: DETECTIVE ONLY: no routing behaviour reads it.
++    rung_attempts: list = field(default_factory=list)
++    #: HOW FAR THE RUNG SEQUENCE WAS CYCLICALLY ROTATED before dispatch, so the
++    #: ladder in force is reconstructible from the artefact alone rather than by
++    #: re-deriving a seed offline. 0 means no rotation was applied.
++    ladder_rotation: int = 0
++
++
++#: SEED FOR THE CYCLIC ROTATION OF AN UNESTABLISHED RUNG SEQUENCE. Empty
++#: disables rotation entirely, which is the default and what every archived
++#: replay gets.
++#:
++#: WHY THE ROTATION IS APPLIED TO THE RUNG SEQUENCE AND NOT TO
++#: `DEFAULT_FALSIFIER_STRENGTH`. Measured 2026-10-20 on the live panel roster
++#: this module already records, ['cx', 'cgpt', 'ge', 'ds', 'cc2', 'fable',
++#: 'kimi']: rotating the vendor tuple through all 6 of its shifts yields
++#: 1 DISTINCT LADDER, because `strength_order_matched` is 0 of 7 for that roster
++#: and `rank_falsifier_writers` returns it unchanged. Rotating the RUNG SEQUENCE
++#: yields 7 distinct ladders and 7 distinct first rungs on the same roster, and
++#: 6 of each on the 6-member `-SIM` roster. A rotation applied to the tuple
++#: therefore reaches only rosters whose labels match vendor names -- it would be
++#: an addition the live roster never reaches, which is the shape this project
++#: has confirmed 11 times since 2026-08-01.
++#:
++#: WHY A MODULE VARIABLE AND NOT A `route` KEYWORD. This module's own rule,
++#: recorded beside `DEFAULT_MAX_RUNGS` and again at the runner's `_route_kw`
++#: block: a test may monkeypatch `route` with a narrow stub, and passing a
++#: keyword it does not accept raises TypeError -- measured 2026-10-17 as 8
++#: routing-admission tests failing with "fake_route() got an unexpected keyword
++#: argument 'strength_order'". A module variable is immune to that by
++#: construction, and the rotation it produces is recorded on
++#: `RoutingResult.ladder_rotation` and in `rung_attempts`, so the state is
++#: hidden from the signature and NOT from the artefact.
++LADDER_ROTATION_SEED: str = ""
++
++
++def cyclically_rotate(seq: Sequence[str], seed: str) -> tuple:
++    """`seq` cyclically rotated by a deterministic function of `seed`.
++
++    A pure function of (seq, seed): same inputs, same output, in this process and
++    in any later replay. An empty seed, or a sequence shorter than 2, returns the
++    sequence unchanged.
++
++    ROTATION AND NOT A SHUFFLE, and the difference is exact rather than
++    stylistic. k = len(seq) distinct shifts place each member at position 1
++    exactly once. An independent uniform shuffle does so only in expectation:
++    the probability that k draws from k positions are all distinct is k!/k**k, so
++    for k = 6 the probability that at least one member STILL has no position-1
++    observation after 6 experiments is 1 - 6!/6**6 = 0.98456790123457. Exact
++    coverage dominates coverage-in-expectation on the named property, and is the
++    simpler mechanism.
+ 
++    THIS IS NOT A RANKING AND MAKES NO CAPABILITY CLAIM. A rotation preserves a
++    sequence's membership and its cyclic successor relation and asserts nothing
++    about which member is stronger. It is applied ONLY where
++    `strength_order_from_evidence` has already declined to establish an order.
++    """
++    items = list(seq)
++    if len(items) < 2 or not str(seed or "").strip():
++        return tuple(items)
++    # `hash()` on str is salted per process since Python 3.3, which would make
++    # the rotation irreproducible across runs; a replay needs a stable digest to
++    # recover the ladder that was in force.
++    shift = int(_hashlib.sha256(str(seed).encode("utf-8")).hexdigest()[:8], 16)
++    shift %= len(items)
++    return tuple(items[shift:] + items[:shift])
+ 
++
+ def seat_identities(registry, labels) -> dict:
+     """seat label -> capability identity, using the registry's own resolution.
+ 
+@@ -733,6 +820,10 @@
+     # routine saving, which is why exhaustion is now expressible.
+     _ladder_empty = not list(rungs)
+     _budget = len(list(rungs)) if not max_rungs else max_rungs
++    #: ONE RECORD PER RUNG DISPATCHED. Appended before each rung's verdict is
++    #: known and completed after, so an exception on a rung still leaves the
++    #: dispatch visible rather than erasing it.
++    attempts: list = []
+     for model in list(rungs)[:_budget]:
+         tried += 1
+         last_model = model
+@@ -740,12 +831,16 @@
+         last_code = code
+         if not code:
+             last_verdict = "ERROR"
++            attempts.append({"position": tried, "model": model,
++                             "verdict": "ERROR"})
+             continue
+         verdict = reverify_fn(code)
+         last_verdict = verdict
++        attempts.append({"position": tried, "model": model, "verdict": verdict})
+         if verdict == "CONFIRMED":
+             return RoutingResult(fid, "CONFIRMED", True, model, code, rungs_tried=tried,
+-                                 ladder_was_empty=_ladder_empty)
++                                 ladder_was_empty=_ladder_empty,
++                                 rung_attempts=attempts)
+     # ───────────── THE LAST RUNG POINTS BACK AT THE SOURCE ─────────────
+     # FOUNDER'S RULING, 2026-10-06: *"even with all our models being the same ... at
+     # least one rung on the ladder should point back to the original model and say,
+@@ -775,16 +870,24 @@
+             last_code = code
+             verdict = reverify_fn(code)
+             last_verdict = verdict
++            # The self-rung IS a dispatch and is recorded as one, flagged so a
++            # reader never counts it as evidence that another seat was asked.
++            attempts.append({"position": tried, "model": self_rung,
++                             "verdict": verdict, "self_rung": True})
+             if verdict == "CONFIRMED":
+                 return RoutingResult(fid, "CONFIRMED", True, self_rung, code,
+                                      rungs_tried=tried,
+-                                     ladder_was_empty=_ladder_empty)
++                                     ladder_was_empty=_ladder_empty,
++                                     rung_attempts=attempts)
+         else:
+             last_verdict = "ERROR"
++            attempts.append({"position": tried, "model": self_rung,
++                             "verdict": "ERROR", "self_rung": True})
+ 
+     # No rung confirmed -> caller escalates to HIL (genuinely-hard until proven otherwise)
+     return RoutingResult(fid, last_verdict, False, last_model, last_code,
+-                         rungs_tried=tried, ladder_was_empty=_ladder_empty)
++                         rungs_tried=tried, ladder_was_empty=_ladder_empty,
++                         rung_attempts=attempts)
+ 
+ 
+ def _with_routing_feedback(finding: dict, verdict: str, code: str) -> dict:
+@@ -865,10 +968,43 @@
+     )
+     #: ONE RULE, CALLED, not a second copy of the matching logic.
+     _matched = len(labels_the_order_ranks(available_models, strength_order))
++    #: ROTATE THE RUNG SEQUENCE ONLY WHERE NO ORDER WAS ESTABLISHED.
++    #:
++    #: MEASURED 2026-10-20 over the 61 archived runs this project keeps, by
++    #: replaying `rank_falsifier_writers` against each run's own roster across
++    #: every dispatched pass: 3 of the 6 ladder members appeared on the ladder a
++    #: combined 321 times and were dispatched 0 times (DeepSeek-SIM 121/0,
++    #: Gemini-SIM 126/0, Fable-SIM 74/0), while position 1 was occupied by
++    #: Codex-SIM on 140 of 160 passes. A seat that is never asked cannot earn a
++    #: position, so the frozen order selects the sample that would be used to
++    #: test it. Rotation breaks that loop and asserts nothing.
++    #:
++    #: IT IS GATED ON `_unestablished`, so a MEASURED order is never rotated:
++    #: `season_strength_order` takes precedence whenever a round discriminates,
++    #: and a frozen season order reaches here as a non-default `strength_order`.
++    #: Rotation is also a no-op while `LADDER_ROTATION_SEED` is empty, which is
++    #: the default and what every archived replay gets.
++    #:
++    #: ORDER-INERT ON RESOLUTION, derived and tool-checked. Under the founder's
++    #: exhaustion ruling (`max_rungs=0`) `resolve_via_routing` stops only on a
++    #: CONFIRMED, so P(resolve) = 1 - prod_i (1 - p_i), and a product commutes:
++    #: SymPy collapses all 24 permutations of 4 symbolic rungs to 1 distinct
++    #: expression. Expected DISPATCH COUNT is NOT order-inert in general (24
++    #: distinct expressions), and IS inert under the exchangeability that "no
++    #: pair separates" licenses (1 distinct expression at p_i = q). So rotation
++    #: cannot change whether a finding resolves, and cannot change expected
++    #: spend under exactly the hypothesis that makes the order unestablished.
++    _rotation = 0
++    if _unestablished and LADDER_ROTATION_SEED and len(rungs) > 1:
++        _rotated = list(cyclically_rotate(rungs, LADDER_ROTATION_SEED))
++        if _rotated != list(rungs):
++            _rotation = rungs.index(_rotated[0])
++            rungs = _rotated
+     out = resolve_via_routing(
+         finding, rungs, resolve_fn, reverify_fn, max_rungs=max_rungs,
+         self_rung=source if (self_rung_enabled and source) else None)
+     out.strength_order_matched = _matched
++    out.ladder_rotation = _rotation
+     #: `resolve_via_routing` is also called DIRECTLY by other code, so the stamp
+     #: is applied here rather than inside it: only `route` knows which order was
+     #: used. A direct caller gets the field's default of False, which is honest
+
+### cc2:attempt-1:bench/tests/test_ladder_exposure_and_rung_attempts_2026-10-20.py
+--- /dev/null	2026-10-20 03:45:01
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_k6o70q8m/repo/bench/tests/test_ladder_exposure_and_rung_attempts_2026-10-20.py	2026-10-20 03:31:48
+@@ -0,0 +1,365 @@
++"""The rung sequence is rotated where no order is established, AND every rung
++dispatched is recorded with the verdict it earned.
++
++JOINT ROUND, what_breaks_the_capability_tie_2026-10-18. Two seats proved
++different halves of one defect. fable proved the rung ORDER is outcome-inert:
++under the exhaustion ruling P(resolve) = 1 - prod(1 - p_i) and a product
++commutes. cc2 proved it is evidence-determining: seats that are never dispatched
++can never earn a position. Both hold, and the fix is the conjunction -- rotate so
++the stratum exists, record so it is readable without an offline replay.
++
++WHAT THIS ROUND MEASURED AND CHANGED, and the reason the fix is not either
++seat's as-proposed:
++
++  1. THE DENOMINATOR WAS ALREADY RECOVERABLE. Replaying `rank_falsifier_writers`
++     over each archived run's own roster, `ladder[rungs_tried - 1]` reproduces
++     the recorded `model_used` on 104 of 104 resolved archived passes, 0
++     mismatches. So "a stratum with no denominator is unrecoverable after the
++     fact" is false. `rung_attempts` is justified instead by the PER-RUNG
++     VERDICT, which is genuinely lost: 42 of 77 unresolved passes (54.5455%)
++     terminated in ERROR, and ERROR is a tooling failure while REFUTED is a
++     capability signal.
++  2. ROTATING THE VENDOR TUPLE DOES NOT REACH THE LIVE ROSTER. On
++     ['cx', 'cgpt', 'ge', 'ds', 'cc2', 'fable', 'kimi'] -- the roster
++     `bench/routing.py` itself records, for which `strength_order_matched` is
++     0 of 7 -- all 6 shifts of the tuple yield 1 distinct ladder. Rotating the
++     RUNG SEQUENCE yields 7. The rotation is therefore applied after ranking.
++
++Every test here executes the real `bench.routing` functions.
++"""
++from __future__ import annotations
++
++import itertools
++
++import pytest
++
++import bench.routing as RT
++
++LIVE_ROSTER = ["cx", "cgpt", "ge", "ds", "cc2", "fable", "kimi"]
++SIM_ROSTER = ["Codex-SIM", "CC2-SIM", "ChatGPT-SIM", "Gemini-SIM",
++              "DeepSeek-SIM", "Fable-SIM"]
++
++
++@pytest.fixture(autouse=True)
++def _no_seed_leaks():
++    """The seed is module state; no test may leave it set for another."""
++    before = RT.LADDER_ROTATION_SEED
++    RT.LADDER_ROTATION_SEED = ""
++    yield
++    RT.LADDER_ROTATION_SEED = before
++
++
++def _route(roster, source="CC2-SIM", verdict="REFUTED", seen=None):
++    """Run the real `route` with a recording resolve_fn."""
++    order = seen if seen is not None else []
++
++    def resolve_fn(model, finding):
++        order.append(model)
++        return f"# falsifier from {model}"
++
++    out = RT.route({"finding_id": "C0001", "source_model": source,
++                    "description": "x", "title": "x"},
++                   roster, [], resolve_fn, lambda code: verdict,
++                   lambda a, b: 0.0, self_rung_enabled=False)
++    return out, order
++
++
++# ───────────────────────── the rotation half ─────────────────────────
++
++def test_rotating_the_vendor_tuple_does_not_reach_the_live_roster():
++    """The measurement that moved the rotation from the tuple to the ladder."""
++    tuple_ladders = {tuple(RT.rank_falsifier_writers(
++        LIVE_ROSTER, tuple(RT.DEFAULT_FALSIFIER_STRENGTH[s:]
++                           + RT.DEFAULT_FALSIFIER_STRENGTH[:s])))
++        for s in range(len(RT.DEFAULT_FALSIFIER_STRENGTH))}
++    assert len(tuple_ladders) == 1, (
++        "rotating the vendor tuple is expected to be a NO-OP on the live "
++        f"roster; got {len(tuple_ladders)} distinct ladders")
++    assert RT.labels_the_order_ranks(
++        LIVE_ROSTER, RT.DEFAULT_FALSIFIER_STRENGTH) == [], (
++        "the live roster is expected to match 0 of 7 names in the tuple")
++    ladder = RT.rank_falsifier_writers(LIVE_ROSTER, RT.DEFAULT_FALSIFIER_STRENGTH)
++    rung_ladders = {RT.cyclically_rotate(ladder, f"exp{s}") for s in range(400)}
++    firsts = {l[0] for l in rung_ladders}
++    assert firsts == set(LIVE_ROSTER), (
++        "rotating the RUNG SEQUENCE must be able to place every live roster "
++        f"member at position 1; reachable firsts were {sorted(firsts)}")
++
++
++def test_rotation_is_deterministic_and_stable_across_processes():
++    import subprocess
++    import sys
++    a = RT.cyclically_rotate(SIM_ROSTER, "exp_alpha")
++    b = RT.cyclically_rotate(SIM_ROSTER, "exp_alpha")
++    assert a == b
++    out = subprocess.run(
++        [sys.executable, "-c",
++         "import sys; sys.path.insert(0,'.');"
++         "import bench.routing as R;"
++         f"print(R.cyclically_rotate({SIM_ROSTER!r}, 'exp_alpha'))"],
++        capture_output=True, text=True, check=True)
++    assert out.stdout.strip() == str(a), (
++        "the rotation must be reproducible in a FRESH process -- `hash()` on "
++        "str is salted per process and would make a replay unrecoverable; got "
++        f"{out.stdout.strip()!r} vs {a!r}")
++
++
++def test_a_rotation_preserves_membership_and_the_cyclic_successor_relation():
++    """It is a rotation of a set, not a ranking of it -- no capability claim."""
++    for seed in ("e1", "e2", "experiment-42", ""):
++        rot = RT.cyclically_rotate(SIM_ROSTER, seed)
++        assert sorted(rot) == sorted(SIM_ROSTER), "membership must be preserved"
++        assert len(rot) == len(SIM_ROSTER)
++        n = len(SIM_ROSTER)
++        succ_base = {SIM_ROSTER[i]: SIM_ROSTER[(i + 1) % n] for i in range(n)}
++        succ_rot = {rot[i]: rot[(i + 1) % n] for i in range(n)}
++        assert succ_rot == succ_base, (
++            "a cyclic rotation must preserve the successor relation")
++
++
++def test_an_empty_seed_leaves_every_archived_replay_byte_identical():
++    assert RT.LADDER_ROTATION_SEED == "", "the default must disable rotation"
++    assert RT.cyclically_rotate(SIM_ROSTER, "") == tuple(SIM_ROSTER)
++    out, order = _route(SIM_ROSTER)
++    expected = RT.rank_falsifier_writers(
++        SIM_ROSTER, RT.DEFAULT_FALSIFIER_STRENGTH, exclude=["CC2-SIM"])
++    assert order == expected, (
++        "with no seed the dispatch order must be exactly the unrotated ladder")
++    assert out.ladder_rotation == 0
++
++
++def test_the_vendor_tuple_is_not_removed_narrowed_or_reordered():
++    assert RT.DEFAULT_FALSIFIER_STRENGTH == (
++        "Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek", "Fable")
++    assert RT.VENDOR_ORDER_SUPERSEDED is RT.DEFAULT_FALSIFIER_STRENGTH
++    assert RT.FALSIFIER_STRENGTH_IS_ESTABLISHED is False
++    # His 2026-10-07 membership ruling, implemented AS membership of this tuple.
++    assert len(RT.DEFAULT_FALSIFIER_STRENGTH) == 6
++    assert {"CC2", "Fable"} <= set(RT.DEFAULT_FALSIFIER_STRENGTH)
++
++
++def test_a_seeded_route_rotates_the_dispatch_order_and_records_the_shift():
++    RT.LADDER_ROTATION_SEED = "joint_round_2026-10-20"
++    unrotated = RT.rank_falsifier_writers(
++        SIM_ROSTER, RT.DEFAULT_FALSIFIER_STRENGTH, exclude=["CC2-SIM"])
++    out, order = _route(SIM_ROSTER)
++    assert order == list(RT.cyclically_rotate(unrotated,
++                                              "joint_round_2026-10-20"))
++    assert out.ladder_rotation == unrotated.index(order[0])
++    assert sorted(order) == sorted(unrotated), "membership unchanged"
++
++
++def test_a_measured_or_frozen_order_is_never_rotated():
++    """`_unestablished` gates the rotation; a non-default order is measured."""
++    RT.LADDER_ROTATION_SEED = "joint_round_2026-10-20"
++    measured = ("Fable", "DeepSeek", "Gemini", "ChatGPT", "CC2", "Codex")
++    assert tuple(measured) != tuple(RT.DEFAULT_FALSIFIER_STRENGTH)
++    seen: list = []
++
++    def resolve_fn(model, finding):
++        seen.append(model)
++        return "# f"
++
++    out = RT.route({"finding_id": "C1", "source_model": "CC2-SIM",
++                    "title": "x", "description": "x"},
++                   SIM_ROSTER, [], resolve_fn, lambda c: "REFUTED",
++                   lambda a, b: 0.0, strength_order=measured,
++                   self_rung_enabled=False)
++    assert out.strength_order_was_unestablished is False
++    assert out.ladder_rotation == 0, "a MEASURED order must never be rotated"
++    assert seen == RT.rank_falsifier_writers(
++        SIM_ROSTER, measured, exclude=["CC2-SIM"])
++
++
++def test_rotation_covers_every_position_exactly_once_where_a_shuffle_does_not():
++    """The named property on which rotation dominates an independent shuffle."""
++    import math
++    k = 6
++    shuffle_gap = 1 - math.factorial(k) / k ** k
++    assert abs(shuffle_gap - 0.9845679012345679) < 1e-15, (
++        "1 - k!/k**k at k=6 is the probability a shuffle leaves at least one "
++        "member with no position-1 observation after k experiments")
++    shifts = {RT.cyclically_rotate(SIM_ROSTER, f"e{i}")[0] for i in range(500)}
++    assert shifts == set(SIM_ROSTER), (
++        "every member must be reachable at position 1 by some seed")
++    # And a rotation by each of the k shifts covers each position exactly once.
++    firsts = [tuple(SIM_ROSTER[s:] + SIM_ROSTER[:s])[0] for s in range(k)]
++    assert sorted(firsts) == sorted(SIM_ROSTER)
++
++
++# ───────────────────────── the recorder half ─────────────────────────
++
++def test_every_dispatched_rung_is_recorded_with_the_verdict_it_earned():
++    out = RT.resolve_via_routing(
++        {"finding_id": "C1"}, ["A", "B", "C"],
++        lambda m, f: "" if m == "B" else "# f",
++        lambda code: "REFUTED")
++    assert [a["model"] for a in out.rung_attempts] == ["A", "B", "C"]
++    assert [a["position"] for a in out.rung_attempts] == [1, 2, 3]
++    assert [a["verdict"] for a in out.rung_attempts] == [
++        "REFUTED", "ERROR", "REFUTED"], (
++        "a rung that produced NO falsifier must be recorded as ERROR and "
++        "distinguishable from a rung whose falsifier was REFUTED")
++    assert out.rungs_tried == 3
++
++
++def test_the_recorder_separates_what_the_terminal_verdict_pools():
++    """The justification for the field: terminal verdict loses earlier rungs."""
++    out = RT.resolve_via_routing(
++        {"finding_id": "C1"}, ["A", "B"],
++        lambda m, f: "" if m == "A" else "# f",
++        lambda code: "REFUTED")
++    assert out.verdict == "REFUTED", "the TERMINAL verdict is rung B's"
++    assert out.resolved is False
++    verdicts = {a["model"]: a["verdict"] for a in out.rung_attempts}
++    assert verdicts == {"A": "ERROR", "B": "REFUTED"}, (
++        "rung A's ERROR is recoverable ONLY from rung_attempts -- the pass's "
++        f"single terminal verdict is {out.verdict!r}")
++
++
++def test_a_resolved_pass_records_only_the_rungs_actually_asked():
++    out = RT.resolve_via_routing(
++        {"finding_id": "C1"}, ["A", "B", "C"],
++        lambda m, f: "# f",
++        lambda code: "CONFIRMED" if True else "REFUTED")
++    assert out.resolved is True and out.model_used == "A"
++    assert [a["model"] for a in out.rung_attempts] == ["A"], (
++        "resolve_via_routing returns at the first CONFIRMED, so B and C were "
++        "never asked and must not appear as attempts")
++    assert out.rungs_tried == 1
++
++
++def test_the_self_rung_is_recorded_and_flagged_as_the_self_rung():
++    out = RT.resolve_via_routing(
++        {"finding_id": "C1"}, ["A"], lambda m, f: "# f",
++        lambda code: "REFUTED", self_rung="SRC")
++    models = [a["model"] for a in out.rung_attempts]
++    assert models == ["A", "SRC"]
++    assert out.rung_attempts[0].get("self_rung") is None
++    assert out.rung_attempts[1].get("self_rung") is True, (
++        "the self-rung is a dispatch to the finding's OWN source and must not "
++        "be counted as evidence that another seat was asked")
++
++
++def test_an_empty_ladder_records_no_attempts_and_still_defers():
++    out = RT.resolve_via_routing(
++        {"finding_id": "C1"}, [], lambda m, f: "# f", lambda code: "REFUTED")
++    assert out.rung_attempts == []
++    assert out.rungs_tried == 0
++    assert out.ladder_was_empty is True
++    assert out.resolved is False
++
++
++def test_the_recorder_defaults_empty_and_is_not_shared_between_results():
++    a = RT.RoutingResult("C1", "ERROR", False, None, "")
++    b = RT.RoutingResult("C2", "ERROR", False, None, "")
++    assert a.rung_attempts == [] and b.rung_attempts == []
++    a.rung_attempts.append({"position": 1})
++    assert b.rung_attempts == [], (
++        "a mutable default shared between instances is the classic dataclass "
++        "defect; field(default_factory=list) must prevent it")
++
++
++# ──────────────────── the two halves, exercised TOGETHER ────────────────────
++
++def test_rotation_and_recorder_together_make_the_rung_one_stratum_readable():
++    """The composition's demonstrated advantage over either half alone.
++
++    Rotation alone generates the stratum but leaves its per-rung verdicts
++    pooled into one terminal verdict. The recorder alone records verdicts for a
++    stratum in which, measured over the archive, 3 of 6 members are never
++    dispatched at all. Together, every member reaches position 1 and its
++    verdict there is readable from the artefact without an offline replay.
++    """
++    seen_first: dict = {}
++    for n in range(24):
++        RT.LADDER_ROTATION_SEED = f"experiment_{n}"
++        out, order = _route(SIM_ROSTER, source="CC2-SIM", verdict="REFUTED")
++        assert out.rung_attempts, "the recorder must populate on a real route"
++        first = out.rung_attempts[0]
++        assert first["position"] == 1
++        assert first["model"] == order[0]
++        seen_first.setdefault(first["model"], 0)
++        seen_first[first["model"]] += 1
++    # CC2-SIM is this finding's source and is excluded from the ranked list, so
++    # the reachable position-1 set is the roster minus the source.
++    expected = set(SIM_ROSTER) - {"CC2-SIM"}
++    assert set(seen_first) == expected, (
++        "over 24 seeded experiments every non-source member must have held "
++        f"position 1 at least once; missing {sorted(expected - set(seen_first))}")
++    assert all(a["verdict"] == "REFUTED" for a in out.rung_attempts)
++
++
++def test_the_composed_fix_changes_no_resolution_outcome():
++    """fable's order-inertness, executed against the real `route`.
++
++    Resolution is decided by whether ANY rung confirms. A permutation of the
++    rungs cannot change that, so rotation is resolution-neutral by construction
++    and this asserts it on the real code path rather than on a model of it.
++    """
++    for confirming in SIM_ROSTER:
++        results = []
++        for seed in ("", "e0", "e1", "e2", "e3", "e4", "e5"):
++            RT.LADDER_ROTATION_SEED = seed
++            out, order = _route(
++                SIM_ROSTER, source="CC2-SIM",
++                verdict="REFUTED")
++            # re-run with a verdict function keyed to the confirming seat
++            def resolve_fn(model, finding, _o=[]):
++                _o.append(model)
++                return f"# {model}"
++            out2 = RT.route(
++                {"finding_id": "C1", "source_model": "CC2-SIM",
++                 "title": "x", "description": "x"},
++                SIM_ROSTER, [], lambda m, f: f"# {m}",
++                lambda code: ("CONFIRMED" if code == f"# {confirming}"
++                              else "REFUTED"),
++                lambda a, b: 0.0, self_rung_enabled=False)
++            results.append(out2.resolved)
++        assert len(set(results)) == 1, (
++            f"rotation changed whether the finding resolved when {confirming} "
++            f"was the only confirming rung: {results}")
++
++
++def test_p_resolve_is_permutation_invariant_under_exhaustion():
++    """The derivation itself, in SymPy -- 24 permutations, 1 expression."""
++    sp = pytest.importorskip("sympy")
++    p = sp.symbols("p1:5", positive=True)
++    exprs = {sp.simplify(1 - sp.prod([1 - x for x in perm]))
++             for perm in itertools.permutations(p)}
++    assert len(exprs) == 1, (
++        f"P(resolve) must be order-inert under exhaustion; got {len(exprs)} "
++        "distinct expressions")
++    # Expected DISPATCH COUNT is NOT inert in general, and IS inert under the
++    # exchangeability that "no pair separates" licenses. Both are asserted,
++    # because reporting only the second would overstate the result.
++    def e_disp(perm):
++        total = 0
++        for k in range(len(perm)):
++            term = 1
++            for j in range(k):
++                term *= (1 - perm[j])
++            total += term
++        return sp.expand(total)
++    general = {sp.simplify(e_disp(perm)) for perm in itertools.permutations(p)}
++    assert len(general) == 24, (
++        f"expected dispatch count is order-SENSITIVE in general; got {len(general)}")
++    q = sp.symbols("q", positive=True)
++    exch = {sp.simplify(e_disp(perm).subs({x: q for x in p}))
++            for perm in itertools.permutations(p)}
++    assert len(exch) == 1, (
++        f"under exchangeability it must be inert; got {len(exch)}")
++
++
++def test_the_runner_persists_both_halves_at_its_single_write_site():
++    """The additive standard: an addition nothing reaches is not additive."""
++    import pathlib
++    src = pathlib.Path("bench/reference_runner_v3.py").read_text(
++        errors="replace")
++    assert '"rung_attempts": [dict(a) for a in' in src, (
++        "rung_attempts must be persisted at the routing_history write site or "
++        "the recorder never reaches an artefact")
++    assert '"ladder_rotation": int(getattr(result, "ladder_rotation", 0) or 0),' in src
++    assert "_rt.LADDER_ROTATION_SEED = str(cfg.experiment_name or \"\")" in src, (
++        "the rotation seed must be set by the runner or the rotation is an "
++        "addition nothing reaches")
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-20 03:45:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z6gg9rrw/repo/.cdsfl_deny_canonical_writes.sb	2026-10-20 03:22:01
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/cdsfl_registry/registry.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/registry.py	2026-07-28 13:27:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z6gg9rrw/repo/bench/cdsfl_registry/registry.py	2026-10-20 03:31:48
+@@ -233,7 +233,11 @@
+ 
+     Raises:
+         PolicyViolationError: if any layer weakens a HARD constraint.
+-        FileNotFoundError: if universal.toml is missing.
++        FileNotFoundError: if universal.toml is missing. A missing MODEL config
++            no longer raises (2026-10-20): the miss is recorded via
++            `bench.routing.resolve_or_alarm`, announced once per capability
++            identity, and the merged layers 1..3 policy -- the strictest
++            layer-4 choice -- is returned.
+     """
+     # Layer 1: Universal (mandatory)
+     universal_path = REGISTRY_DIR / "universal.toml"
+@@ -274,11 +278,43 @@
+             policy = _deep_merge(policy, model_config)
+             _check_monotonicity(policy, f"model/{model}")
+         else:
++            # LOUD AND NON-FATAL (joint panel round 2026-10-20, both seats
++            # convergent and both derivations executed). Absence of Layer 4 is
++            # the EMPTY OVERLAY: `_deep_merge(policy, {}) == policy`, and the
++            # merged layers 1..3 have already passed `_check_monotonicity` at
++            # every merge above, so the policy returned here is provably no
++            # weaker on any HARD key than one a registered file could produce --
++            # the empty overlay is the STRICTEST layer-4 choice. Measured over
++            # every registered models/*.toml: none changes any entry of
++            # HARD_CONSTRAINTS, HARD_THRESHOLDS or HARD_STRINGS (model files
++            # carry tuning only), and the raise refused 24 roster identities
++            # against 6 registered files -- refusal was the common case. The
++            # unguarded call site (composer.py:1878) is the 2026-08-30
++            # 0-character incident shape: the raise was loud but not fail-closed
++            # in practice.
++            #
++            # THE MISS IS RECORDED AND ANNOUNCED through the SAME recorder every
++            # capability lookup uses (`bench.routing.resolve_or_alarm`, keyed on
++            # `capability_identity`, announced once per identity) rather than a
++            # second registry-local table -- one recorder, one identity function.
+             available = [p.stem for p in (REGISTRY_DIR / "models").glob("*.toml")]
+-            raise FileNotFoundError(
+-                f"Model config not found: {model_path}\n"
+-                f"Available models: {available}"
+-            )
++            import warnings
++            _detail = (
++                f"Model config not found: {model_path}; proceeding on the merged "
++                f"layers 1..3 policy, which is the strictest layer-4 choice "
++                f"(the empty overlay cannot weaken a HARD constraint). "
++                f"Available models: {sorted(available)}")
++            try:
++                from bench.routing import resolve_or_alarm
++                resolve_or_alarm(
++                    {}, model, "layer-4 model policy (models/<model>.toml)",
++                    default=None,
++                    log=lambda msg: warnings.warn(f"{msg}\n{_detail}",
++                                                  stacklevel=4))
++            except ImportError:
++                # Degraded detection, never silence: the miss is still said
++                # aloud even if bench.routing is unimportable here.
++                warnings.warn(_detail, stacklevel=2)
+ 
+     return policy
+ 
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-19 09:09:53
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z6gg9rrw/repo/bench/reference_runner_v3.py	2026-10-20 03:31:31
+@@ -8571,7 +8571,15 @@
+         try:
+             from bench.routing import season_strength_order as _season
+             _frozen = getattr(registry, "_season_strength_order", None)
+-            _order, _est, _why = _season(registry, models, frozen=_frozen)
++            # THE EXPOSURE SEED: the experiment name, so the un-established
++            # fallback's starting point rotates per experiment and every ladder
++            # member accrues rung-1 exposure (measured 2026-10-20: 3 of 6
++            # members held 501 ladder appearances and 0 dispatches under the
++            # fixed starting point). A measured or frozen order is never
++            # rotated; `seed` only reaches the fallback branch.
++            _order, _est, _why = _season(
++                registry, models, frozen=_frozen,
++                seed=getattr(cfg, "experiment_name", "") or None)
+             if _frozen is None:
+                 registry._season_strength_order = _order
+                 _log(f"  ladder order [{'MEASURED' if _est else 'DEFAULTED'}]: "
+@@ -8637,6 +8645,15 @@
+                 #: of its keys matches a vendor name in the order.
+                 "strength_order_matched":
+                     int(getattr(result, "strength_order_matched", 0)),
++                #: THE LADDER-TASK DENOMINATOR, one {"model", "verdict"} per rung
++                #: dispatched (self-rung included). Before this the archive held
++                #: only `rungs_tried` (a count) and `model_used` (the last rung),
++                #: so per-rung attempts were reconstructable only by replaying
++                #: `rank_falsifier_writers` -- a replay the exposure rotation
++                #: above invalidates, and one that cannot tell an ERROR rung (no
++                #: falsifier produced) from a genuine failed attempt. Read by
++                #: `bench.routing.ladder_evidence_from_registry`; decides nothing.
++                "rung_attempts": list(getattr(result, "rung_attempts", []) or []),
+                 # The falsifier the last rung actually ran. Truncated because a
+                 # bundle a human has to read is worth more than a complete one
+                 # nobody opens; the full body lands on the entry when resolved.
+
+### fable:attempt-1:bench/routing.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/routing.py	2026-10-18 02:25:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z6gg9rrw/repo/bench/routing.py	2026-10-20 03:31:21
+@@ -27,7 +27,7 @@
+ """
+ from __future__ import annotations
+ 
+-from dataclasses import dataclass
++from dataclasses import dataclass, field
+ from typing import Callable, Optional, Sequence
+ import hashlib as _hashlib
+ 
+@@ -481,6 +481,18 @@
+     #: measurement, not something to slip into a visibility fix. What changes
+     #: here is only that a ladder which ranked nothing says so.
+     strength_order_matched: int = 0
++    #: ONE RECORD PER RUNG DISPATCHED: ``{"model": <label>, "verdict": <verdict>}``,
++    #: the self-rung included. This is the LADDER-TASK DENOMINATOR the archive has
++    #: never held: `routing_history` records `rungs_tried` (a count) and
++    #: `model_used` (the last rung), so which rungs were tried and what verdict
++    #: each earned was reconstructable only by replaying `rank_falsifier_writers`
++    #: against the run's roster -- a replay that breaks the moment the rung order
++    #: stops being a fixed function of the roster (which `season_strength_order`'s
++    #: exposure rotation makes true). Measured over the archive, 89 of 285
++    #: dispatched passes carry verdict ERROR (the rung was consumed but the seat
++    #: produced no falsifier -- e.g. a roster gap), and a replay cannot tell those
++    #: from genuine failed attempts. RECORDING ONLY: no routing decision reads it.
++    rung_attempts: list = field(default_factory=list)
+ 
+ 
+ def seat_identities(registry, labels) -> dict:
+@@ -540,7 +552,114 @@
+     return pooled, ident
+ 
+ 
+-def season_strength_order(registry, labels, frozen=None, alpha: float = 0.05):
++def ladder_evidence_from_registry(registry, labels=None) -> dict:
++    """identity -> ``(confirmed, attempts)`` pooled from recorded `rung_attempts`.
++
++    THE LADDER-TASK VARIABLE: confirm-on-dispatch when handed a finding, which is
++    what the ladder actually optimises (the Exp-42 validation was exactly this:
++    6/7 at rung 1). It is distinct from `falsification_evidence_from_registry`,
++    which reads the REFUTED rate of a seat's OWN findings -- 26 events in the
++    whole archive, not estimable. This reader returns the exact shape
++    `strength_order_from_evidence` consumes, pooled per capability identity.
++
++    ATTEMPTS WITH VERDICT ``ERROR`` ARE EXCLUDED from the denominator: ERROR
++    means the rung was consumed but the seat produced NO falsifier -- on the
++    archive's mechanics that is what `resolve_fn` returns for a seat absent from
++    the config's own `models` roster, so counting it as a failed attempt would
++    penalise a roster gap as if it were capability. The exclusion is why the
++    recorder keeps the verdict per rung rather than a count.
++
++    Returns ``{}`` on a registry whose entries pre-date the `rung_attempts`
++    field, so a pre-field archive reads as "no ladder evidence" rather than as
++    evidence of anything. RECORDING/READING ONLY -- wiring this into
++    `season_strength_order` is a one-argument change that waits on his ruling
++    and on a provenance gate (`scripts/competence_provenance.py`): a detached
++    falsifier can fake CONFIRMED but not REFUTED, so this polarity is the one
++    the Exp-55 inversion can contaminate.
++    """
++    entries = getattr(registry, "entries", None) or {}
++    raw: dict = {}
++    for e in entries.values():
++        if not isinstance(e, dict):
++            continue
++        for rec in (e.get("routing_history") or []):
++            if not isinstance(rec, dict):
++                continue
++            for att in (rec.get("rung_attempts") or []):
++                if not isinstance(att, dict):
++                    continue
++                seat = str(att.get("model") or "").strip()
++                verdict = str(att.get("verdict") or "").strip().upper()
++                if not seat or verdict == "ERROR":
++                    continue
++                c, n = raw.get(seat, (0, 0))
++                raw[seat] = (c + (verdict == "CONFIRMED"), n + 1)
++    if not raw:
++        return {}
++    ident = seat_identities(registry, sorted(set(raw) | set(labels or ())))
++    pooled: dict = {}
++    for seat, (c, n) in raw.items():
++        key = ident.get(seat)
++        if key is None:
++            try:
++                key = capability_identity("", seat)
++            except ValueError:
++                continue
++        pc, pn = pooled.get(key, (0, 0))
++        pooled[key] = (pc + c, pn + n)
++    return pooled
++
++
++def exposure_rotated_order(order, seed) -> tuple:
++    """A CYCLIC ROTATION of `order` keyed on `seed`. A rotation of a set is not a
++    ranking of it: the membership and the cycle are preserved exactly, only the
++    STARTING POINT moves, so no capability claim is made or implied.
++
++    WHY IT EXISTS, measured 2026-10-20 over every archived `routing_history`
++    (285 dispatched passes): with a fixed fallback starting point, 3 of the 6
++    ladder members (DeepSeek-SIM, Gemini-SIM, Fable-SIM) appeared on the ladder
++    a combined 501 times and were dispatched 0 times, and the only de-confounded
++    stratum (rung 1) was 256/24/5/0/0/0 -- the fallback order allocates the very
++    observations that would be needed to test the fallback order. Rotating the
++    starting point per experiment gives each member rung-1 exposure exactly once
++    per cycle of experiments; an independent shuffle does so only in expectation
++    (P(at least one member still unexposed after 6 shuffles) = 1 - 6!/6^6 =
++    0.9845679, SciPy and Wolfram Language agreeing), so the rotation dominates
++    on the named property (exact coverage) and is also the simpler mechanism.
++
++    `seed` is falsy -> the order is returned unchanged, so every archived replay
++    and every existing call is byte-identical. It is applied ONLY to the
++    un-established fallback: a measured order and a frozen season order are
++    never rotated (`season_strength_order` enforces that by construction).
++    """
++    seq = tuple(order)
++    if not seed or not seq:
++        return seq
++    k = int(_hashlib.sha256(str(seed).encode("utf-8")).hexdigest(), 16) % len(seq)
++    return seq[k:] + seq[:k]
++
++
++def is_unmeasured_fallback_order(order) -> bool:
++    """True iff `order` is the vendor fallback OR any exposure rotation of it.
++
++    THE STAMP MUST SURVIVE THE ROTATION. `route` stamps
++    `strength_order_was_unestablished` by comparing the order it was handed with
++    `DEFAULT_FALSIFIER_STRENGTH`; a rotated fallback is a different tuple, so an
++    equality test would record a DEFAULTED order as measured -- corrupting the
++    very field built on 2026-10-17 for his ruling that a convention must not be
++    mistaken for a finding. The possible fallback outputs are exactly the
++    len(order) cyclic rotations of the vendor tuple, so membership of that set is
++    the precise test. Any other order (e.g. a measured one) returns False.
++    """
++    if FALSIFIER_STRENGTH_IS_ESTABLISHED:
++        return False
++    base = tuple(DEFAULT_FALSIFIER_STRENGTH)
++    cand = tuple(order)
++    return any(cand == base[k:] + base[:k] for k in range(len(base) or 1))
++
++
++def season_strength_order(registry, labels, frozen=None, alpha: float = 0.05,
++                          seed=None):
+     """``(order, established, why)`` for THIS experiment, measured once then kept.
+ 
+     HIS SEASON DESIGN, 2026-10-09, verbatim: *"one round of an experimental run
+@@ -601,9 +720,15 @@
+         if ident not in pooled or pooled.get(ident, (0, 0))[1] == 0)
+     _loud = (f"; {len(_unmeasured)} seat(s) carry NO falsification evidence at "
+              f"all: {', '.join(_unmeasured)}" if _unmeasured else "")
+-    return tuple(DEFAULT_FALSIFIER_STRENGTH), False, (
++    _fallback = exposure_rotated_order(DEFAULT_FALSIFIER_STRENGTH, seed)
++    _rot = ("" if _fallback == tuple(DEFAULT_FALSIFIER_STRENGTH) else
++            "; the fallback's starting point is ROTATED by the experiment seed "
++            "so every identity accrues rung-1 exposure across experiments -- a "
++            "rotation of a set is not a ranking of it, and the order remains "
++            "unestablished")
++    return _fallback, False, (
+         f"{why}; falling back to the vendor order, which rests on no "
+-        f"measurement (FALSIFIER_STRENGTH_IS_ESTABLISHED is False){_loud}")
++        f"measurement (FALSIFIER_STRENGTH_IS_ESTABLISHED is False){_loud}{_rot}")
+ 
+ 
+ def labels_the_order_ranks(labels, strength_order) -> list:
+@@ -719,6 +844,7 @@
+     """
+     fid = finding.get("finding_id") or finding.get("id") or "?"
+     last_verdict, last_code, last_model, tried = "UNTOOLABLE", "", None, 0
++    _attempts: list = []
+     # `max_rungs=0` MEANS EXHAUST THE LADDER. Founder ruling 2026-10-06: *"I don't
+     # think there should be a cap at all. If it's a measured statistic, along with
+     # capability fingerprinting then the problem should run until it is either
+@@ -740,12 +866,15 @@
+         last_code = code
+         if not code:
+             last_verdict = "ERROR"
++            _attempts.append({"model": model, "verdict": "ERROR"})
+             continue
+         verdict = reverify_fn(code)
+         last_verdict = verdict
++        _attempts.append({"model": model, "verdict": verdict})
+         if verdict == "CONFIRMED":
+             return RoutingResult(fid, "CONFIRMED", True, model, code, rungs_tried=tried,
+-                                 ladder_was_empty=_ladder_empty)
++                                 ladder_was_empty=_ladder_empty,
++                                 rung_attempts=_attempts)
+     # ───────────── THE LAST RUNG POINTS BACK AT THE SOURCE ─────────────
+     # FOUNDER'S RULING, 2026-10-06: *"even with all our models being the same ... at
+     # least one rung on the ladder should point back to the original model and say,
+@@ -775,16 +904,20 @@
+             last_code = code
+             verdict = reverify_fn(code)
+             last_verdict = verdict
++            _attempts.append({"model": self_rung, "verdict": verdict})
+             if verdict == "CONFIRMED":
+                 return RoutingResult(fid, "CONFIRMED", True, self_rung, code,
+                                      rungs_tried=tried,
+-                                     ladder_was_empty=_ladder_empty)
++                                     ladder_was_empty=_ladder_empty,
++                                     rung_attempts=_attempts)
+         else:
+             last_verdict = "ERROR"
++            _attempts.append({"model": self_rung, "verdict": "ERROR"})
+ 
+     # No rung confirmed -> caller escalates to HIL (genuinely-hard until proven otherwise)
+     return RoutingResult(fid, last_verdict, False, last_model, last_code,
+-                         rungs_tried=tried, ladder_was_empty=_ladder_empty)
++                         rungs_tried=tried, ladder_was_empty=_ladder_empty,
++                         rung_attempts=_attempts)
+ 
+ 
+ def _with_routing_feedback(finding: dict, verdict: str, code: str) -> dict:
+@@ -846,8 +979,9 @@
+     #: verdict carries it too: a duplicate was still reached by a ladder, and a
+     #: reader asking "was this order measured?" needs the same answer whichever
+     #: verdict came back.
+-    _unestablished = (tuple(strength_order) == tuple(DEFAULT_FALSIFIER_STRENGTH)
+-                      and not FALSIFIER_STRENGTH_IS_ESTABLISHED)
++    #: A rotated fallback is still a DEFAULTED order: the stamp tests membership
++    #: of the vendor tuple's rotation class, not equality with one rotation.
++    _unestablished = is_unmeasured_fallback_order(strength_order)
+ 
+     dup = confirmed_duplicate(finding, confirmed_findings, similarity_fn, dup_threshold)
+     if dup is not None:
+
+### fable:attempt-1:bench/tests/test_disc_failure_routing.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_disc_failure_routing.py	2026-09-01 13:24:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z6gg9rrw/repo/bench/tests/test_disc_failure_routing.py	2026-10-20 03:40:53
+@@ -152,10 +152,26 @@
+         assert dispatched, (
+             "a NO_DISCRIMINATION falsifier was never routed to a stronger "
+             "writer — the mechanical fault sat in limbo, shown to nobody")
+-        assert dispatched[0] == "Codex", (
+-            "the ladder must start at the strongest rung, excluding the "
+-            "failed source model")
+-        assert e["resolved_by_routing"] == "Codex"
++        # THE PINNED STARTING POINT MOVED WITH THE FACT (joint round
++        # 2026-10-20, declared openly): the un-established fallback's starting
++        # point now ROTATES per experiment (`exposure_rotated_order`), because
++        # the fixed start allocated 256 of 256 archived rung-1 dispatches to
++        # one seat and 0 to three others -- the order decided the evidence
++        # that would be needed to test the order. The assertion is STRONGER,
++        # not looser: the first rung is the DETERMINISTIC first available
++        # non-source rung of the rotated fallback, not merely "Codex".
++        from bench.routing import (DEFAULT_FALSIFIER_STRENGTH,
++                                   exposure_rotated_order,
++                                   rank_falsifier_writers)
++        _expected = rank_falsifier_writers(
++            [m.label for m in _exp_config().models],
++            strength_order=exposure_rotated_order(
++                DEFAULT_FALSIFIER_STRENGTH, cfg.experiment_name),
++            exclude=("SIM",))[0]
++        assert dispatched[0] == _expected, (
++            "the ladder must start at the rotated fallback's first available "
++            "rung, excluding the failed source model")
++        assert e["resolved_by_routing"] == _expected
+         assert e["falsifier_verdict"] == "CONFIRMED"
+         assert e["status"] == "CONFIRMED"
+         assert e["verified"] is True
+
+### fable:attempt-1:bench/tests/test_policy_engine.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_policy_engine.py	2026-04-05 18:59:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z6gg9rrw/repo/bench/tests/test_policy_engine.py	2026-10-20 03:32:14
+@@ -307,7 +307,37 @@
+         assert isinstance(result.effective, dict)
+         assert result.effective["constraints"]["anti_deference"] is True
+ 
+-    def test_query_with_nonexistent_model_raises(self, engine):
+-        """Missing model config should raise FileNotFoundError."""
+-        with pytest.raises(FileNotFoundError):
+-            engine.query("mathematics", model="nonexistent_model")
++    def test_query_with_nonexistent_model_is_loud_and_non_fatal(self, engine):
++        """A missing model config returns the layers-1..3 policy, announces the
++        miss, and records it -- it no longer raises.
++
++        THIS TEST PINNED THE OLD CONTRACT (`..._raises`, FileNotFoundError) and
++        is MOVED WITH THE FACT, openly, in the joint panel round of 2026-10-20
++        -- the same treatment `test_every_free_seat_is_now_on_the_ladder`
++        received on 2026-10-07. The assertion is STRICTLY STRONGER than the one
++        it replaces: the old test asserted only that something was refused; this
++        asserts (a) a policy comes back, (b) it equals the no-model policy
++        EXACTLY (the empty overlay -- the strictest layer-4 choice, since
++        layers 1..3 already passed monotonicity and `_deep_merge(p, {}) == p`),
++        (c) the miss is announced, and (d) the miss is recorded against a
++        capability identity in the same `lookup_misses()` channel every other
++        capability default uses.
++        """
++        import warnings
++        from bench.routing import lookup_misses, reset_lookup_misses
++
++        reset_lookup_misses()
++        with warnings.catch_warnings(record=True) as caught:
++            warnings.simplefilter("always")
++            result = engine.query("mathematics", model="nonexistent_model")
++        baseline = engine.query("mathematics")
++        # (a) + (b): a policy, and byte-identical to the layers-1..3 policy.
++        assert result.effective == baseline.effective
++        # HARD constraints hold on the returned policy.
++        assert result.effective["constraints"]["anti_deference"] is True
++        # (c): announced.
++        assert any("CAPABILITY LOOKUP MISS" in str(w.message) for w in caught)
++        # (d): recorded, keyed on an identity, in the shared channel.
++        misses = lookup_misses()
++        assert any(m["key"] == "nonexistent_model" and m["identity"]
++                   for m in misses)
+
+### fable:attempt-1:bench/tests/test_the_capability_tie_joint_2026-10-20.py
+--- /dev/null	2026-10-20 03:45:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z6gg9rrw/repo/bench/tests/test_the_capability_tie_joint_2026-10-20.py	2026-10-20 03:34:09
+@@ -0,0 +1,327 @@
++"""Joint round what_breaks_the_capability_tie_2026-10-18 — the COMPOSED fix.
++
++The two blind halves proved different halves of one defect:
++
++* the fallback rung ORDER is outcome-inert under exhaustion (P(resolve) =
++  1 - prod(1 - p_i), a product commutes; 24 permutations of 4 symbolic rungs
++  collapse to 1 distinct SymPy expression, Wolfram Language agreeing), so
++  rotating it costs no resolution;
++* the fallback rung ORDER is evidence-determining (replayed over all 285
++  archived dispatched passes: DeepSeek-SIM, Gemini-SIM and Fable-SIM held a
++  combined 501 ladder appearances and 0 dispatches), so a fixed starting point
++  makes the fallback unmeasurable while in force.
++
++The composed fix: `exposure_rotated_order` rotates the un-established
++fallback's STARTING POINT per experiment (cc2's half), and
++`RoutingResult.rung_attempts` records one {"model", "verdict"} per rung
++dispatched so the stratum the rotation generates carries its own denominator
++(fable's half). `ladder_evidence_from_registry` pools the records per
++capability identity into the exact shape `strength_order_from_evidence`
++consumes. The composition's demonstrated advantage over either half alone is
++exercised here: rotation alone leaves per-rung verdicts reconstructable only
++by a replay the rotation itself invalidates (and a replay cannot tell an
++ERROR rung from a failed attempt — 89 of 285 archived pass verdicts are
++ERROR); the recorder alone records nothing for a seat that is never
++dispatched (the archive's rung-1 stratum is 256/24/5/0/0/0 and the zeros
++cannot grow).
++"""
++import json
++
++import pytest
++
++import bench.routing as RT
++from bench.routing import (
++    DEFAULT_FALSIFIER_STRENGTH,
++    RoutingResult,
++    exposure_rotated_order,
++    is_unmeasured_fallback_order,
++    ladder_evidence_from_registry,
++    resolve_via_routing,
++    route,
++    season_strength_order,
++)
++
++
++# ────────────────────────── helpers ──────────────────────────
++
++class _Reg:
++    """A minimal registry: entries dict + resolve_model."""
++
++    def __init__(self, entries=None, resolve=None):
++        self.entries = entries or {}
++        self._resolve = resolve or {}
++
++    def resolve_model(self, label):
++        return self._resolve.get(label, label)
++
++
++def _registry_with_verdicts(spec):
++    """spec: {seat: (refuted, total)} -> registry entries."""
++    entries, i = {}, 0
++    for seat, (ref, tot) in spec.items():
++        for k in range(tot):
++            entries[f"C{i:04d}"] = {
++                "source_model": seat,
++                "falsifier_verdict": "REFUTED" if k < ref else "CONFIRMED",
++            }
++            i += 1
++    return _Reg(entries)
++
++
++# ───────────────── rotation: cc2's half ─────────────────
++
++def test_no_seed_is_byte_identical():
++    assert exposure_rotated_order(DEFAULT_FALSIFIER_STRENGTH, None) == \
++        tuple(DEFAULT_FALSIFIER_STRENGTH)
++    assert exposure_rotated_order(DEFAULT_FALSIFIER_STRENGTH, "") == \
++        tuple(DEFAULT_FALSIFIER_STRENGTH)
++
++
++def test_rotation_preserves_the_set_and_the_cycle():
++    base = tuple(DEFAULT_FALSIFIER_STRENGTH)
++    rot = exposure_rotated_order(base, "exp_whatever")
++    assert sorted(rot) == sorted(base)
++    assert rot in {base[k:] + base[:k] for k in range(len(base))}
++
++
++def test_rotation_is_deterministic_per_seed_and_covers_starts():
++    base = tuple(DEFAULT_FALSIFIER_STRENGTH)
++    a = exposure_rotated_order(base, "exp_a")
++    assert a == exposure_rotated_order(base, "exp_a")
++    # Over many seeds every member leads at least once (exposure, the point).
++    firsts = {exposure_rotated_order(base, f"exp_{i}")[0] for i in range(64)}
++    assert firsts == set(base)
++
++
++def test_the_vendor_tuple_is_not_removed_narrowed_or_reordered():
++    # ADDITIVE: the 2026-10-07 membership ruling is implemented AS this tuple.
++    assert DEFAULT_FALSIFIER_STRENGTH == (
++        "Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek", "Fable")
++
++
++def test_unestablished_fallback_rotates_and_says_so():
++    reg = _registry_with_verdicts({"A": (0, 3), "B": (0, 3)})
++    order, est, why = season_strength_order(reg, ["A", "B"], seed="exp_joint")
++    assert est is False
++    assert sorted(order) == sorted(DEFAULT_FALSIFIER_STRENGTH)
++    if order != tuple(DEFAULT_FALSIFIER_STRENGTH):
++        assert "ROTATED" in why or "rotation" in why.lower()
++    # And the no-seed call is unchanged for every archived replay.
++    order0, est0, why0 = season_strength_order(reg, ["A", "B"])
++    assert order0 == tuple(DEFAULT_FALSIFIER_STRENGTH)
++    assert "ROTATED" not in why0
++
++
++def test_a_measured_order_is_never_rotated():
++    # 4/4 vs 0/4 separates (Fisher p = 0.028571 single pair).
++    reg = _registry_with_verdicts({"A": (4, 4), "B": (0, 4)})
++    order, est, why = season_strength_order(reg, ["A", "B"], seed="exp_joint")
++    assert est is True
++    assert tuple(order) == ("A", "B")
++    assert "ROTATED" not in why
++
++
++def test_a_frozen_season_order_is_never_rotated():
++    reg = _registry_with_verdicts({"A": (0, 2)})
++    frozen = ("B", "A")
++    order, est, why = season_strength_order(reg, ["A", "B"], frozen=frozen,
++                                            seed="exp_joint")
++    assert order == frozen and est is True
++    assert "frozen" in why
++
++
++def test_the_unestablished_stamp_survives_the_rotation():
++    """THE COMPOSITION DEFECT NEITHER BLIND HALF CAUGHT: `route` stamped
++    `strength_order_was_unestablished` by EQUALITY with the vendor tuple, so a
++    rotated (still defaulted) fallback would have been recorded as measured —
++    corrupting the 2026-10-17 field. The stamp now tests the rotation class."""
++    base = tuple(DEFAULT_FALSIFIER_STRENGTH)
++    rotated = exposure_rotated_order(base, "exp_joint")
++    assert is_unmeasured_fallback_order(base) is True
++    assert is_unmeasured_fallback_order(rotated) is True
++    # A genuinely different (e.g. measured) order is NOT in the class.
++    assert is_unmeasured_fallback_order(("CC2", "Codex")) is False
++
++    finding = {"id": "F1", "source_model": None}
++    out = route(finding, ["Codex-SIM"], [],
++                resolve_fn=lambda m, f: "",
++                reverify_fn=lambda c: "ERROR",
++                similarity_fn=lambda a, b: 0.0,
++                strength_order=rotated)
++    assert out.strength_order_was_unestablished is True, (
++        "a rotated fallback is still a DEFAULTED order and must be stamped so")
++
++
++# ───────────────── recorder: fable's half ─────────────────
++
++def test_rung_attempts_record_every_dispatched_rung():
++    verdicts = {"M1": "REFUTED", "M2": "CONFIRMED"}
++    out = resolve_via_routing(
++        {"id": "F1"}, ["M1", "M2", "M3"],
++        resolve_fn=lambda m, f: f"code-{m}",
++        reverify_fn=lambda c: verdicts.get(c.split("-")[1], "ERROR"),
++    )
++    assert out.resolved is True and out.model_used == "M2"
++    assert out.rung_attempts == [
++        {"model": "M1", "verdict": "REFUTED"},
++        {"model": "M2", "verdict": "CONFIRMED"},
++    ]
++
++
++def test_rung_attempts_record_error_rungs_and_the_self_rung():
++    # M1 produces nothing (ERROR, the roster-gap shape); M2 fails; the
++    # self-rung is then dispatched and recorded too.
++    out = resolve_via_routing(
++        {"id": "F1", "source_model": "SRC"}, ["M1", "M2"],
++        resolve_fn=lambda m, f: "" if m == "M1" else f"code-{m}",
++        reverify_fn=lambda c: "REFUTED",
++        self_rung="SRC",
++    )
++    assert out.resolved is False
++    assert out.rung_attempts == [
++        {"model": "M1", "verdict": "ERROR"},
++        {"model": "M2", "verdict": "REFUTED"},
++        {"model": "SRC", "verdict": "REFUTED"},
++    ]
++
++
++def test_ladder_evidence_pools_per_identity_and_skips_error():
++    entries = {
++        "C0001": {"routing_history": [
++            {"rung_attempts": [{"model": "A", "verdict": "CONFIRMED"},
++                               {"model": "B", "verdict": "ERROR"}]},
++            {"rung_attempts": [{"model": "A", "verdict": "REFUTED"}]},
++        ]},
++        "C0002": {"routing_history": [
++            {"rung_attempts": [{"model": "A2", "verdict": "CONFIRMED"}]},
++        ]},
++    }
++    # A and A2 are two seats of ONE model -> one identity; B's only attempt is
++    # ERROR (no falsifier produced) and must not enter the denominator.
++    reg = _Reg(entries, resolve={"A": "modelA@api", "A2": "modelA@api",
++                                 "B": "modelB@api"})
++    pooled = ladder_evidence_from_registry(reg)
++    ids = RT.seat_identities(reg, ["A", "A2", "B"])
++    assert pooled[ids["A"]] == (2, 3)          # pooled across both seats
++    assert ids["A"] == ids["A2"]
++    assert ids["B"] not in pooled              # ERROR-only -> no denominator
++
++
++def test_ladder_evidence_is_empty_on_a_pre_field_archive():
++    reg = _Reg({"C0001": {"routing_history": [
++        {"round": 0, "verdict": "ERROR", "rungs_tried": 2,
++         "model_used": "CC2-SIM"}]}})
++    assert ladder_evidence_from_registry(reg) == {}
++
++
++def test_the_evidence_shape_feeds_the_existing_estimator():
++    # 4/4 vs 0/4 at perfect discrimination establishes from the pooled shape —
++    # the 4-outcomes-per-seat distance measured in the blind round.
++    ev = {"id_a": (4, 4), "id_b": (0, 4)}
++    order, est, why = RT.strength_order_from_evidence(ev)
++    assert est is True and order[0] == "id_a"
++
++
++# ───────────── the composition, exercised together ─────────────
++
++def test_rotated_ladder_passes_carry_their_own_denominator():
++    """Both halves in one pass: a rotated rung order dispatches a seat the
++    fixed order never reached, and the recorder keeps that seat's per-rung
++    verdict — stratum and denominator together, which is the measured
++    advantage of the composition over either half alone."""
++    base = tuple(DEFAULT_FALSIFIER_STRENGTH)
++    rotated = exposure_rotated_order(base, "exp_joint_2026-10-20")
++    newly_first = rotated[0]
++    roster = [f"{m}-SIM" for m in base]
++    out = route({"id": "F1", "source_model": None}, roster, [],
++                resolve_fn=lambda m, f: f"code::{m}",
++                reverify_fn=lambda c: "CONFIRMED",
++                similarity_fn=lambda a, b: 0.0,
++                strength_order=rotated)
++    assert out.resolved is True
++    assert out.model_used == f"{newly_first}-SIM"
++    assert out.rung_attempts == [
++        {"model": f"{newly_first}-SIM", "verdict": "CONFIRMED"}]
++    assert out.strength_order_was_unestablished is True
++
++
++def test_the_runner_wires_both_halves():
++    """Every addition is reached: the runner passes the experiment seed to the
++    season call and persists rung_attempts at the single routing_history write
++    site. Source-level, because executing the 22k-line runner end to end is a
++    suite-scale job; the behaviour halves are executed above."""
++    src = open("bench/reference_runner_v3.py", encoding="utf-8").read()
++    assert 'seed=getattr(cfg, "experiment_name", "") or None' in src
++    assert '"rung_attempts": list(getattr(result, "rung_attempts", []) or [])' \
++        in src
++
++
++def test_routing_result_defaults_keep_archived_replays_intact():
++    r = RoutingResult("F1", "ERROR", False, None, "")
++    assert r.rung_attempts == []
++    # And the JSON shape the runner persists is serialisable.
++    json.dumps({"rung_attempts": r.rung_attempts})
++
++
++# ───────────── B13: the layer-4 miss, loud and non-fatal ─────────────
++
++def test_unregistered_model_gets_the_strictest_layer_four_choice():
++    import warnings
++    from bench.cdsfl_registry.registry import load_effective_policy, _deep_merge
++    from bench.routing import lookup_misses, reset_lookup_misses
++
++    reset_lookup_misses()
++    base = load_effective_policy("mathematics")
++    assert _deep_merge(base, {}) == base       # the empty-overlay lemma
++    with warnings.catch_warnings(record=True) as caught:
++        warnings.simplefilter("always")
++        pol = load_effective_policy("mathematics", model="kimi_k2")
++    assert pol == base                          # exactly the layers-1..3 policy
++    assert any("CAPABILITY LOOKUP MISS" in str(w.message) for w in caught)
++    assert any(m["key"] == "kimi_k2" for m in lookup_misses())
++    # Announced once per identity; recorded every time.
++    with warnings.catch_warnings(record=True) as again:
++        warnings.simplefilter("always")
++        load_effective_policy("mathematics", model="kimi_k2")
++    assert not any("CAPABILITY LOOKUP MISS" in str(w.message) for w in again)
++    assert sum(m["key"] == "kimi_k2" for m in lookup_misses()) == 2
++
++
++def test_the_admitted_policy_is_the_strictest_layer_four_choice():
++    """Fails loudly the day a models/*.toml tightens a HARD key — at which
++    point omitting layer 4 stops being the strictest choice and the non-fatal
++    admission must be re-justified (the named refuter of the B13 fix)."""
++    import glob
++    import tomllib
++    from bench.cdsfl_registry.registry import (
++        HARD_CONSTRAINTS, HARD_THRESHOLDS, HARD_STRINGS)
++
++    hard = set(HARD_CONSTRAINTS) | set(HARD_THRESHOLDS) | set(HARD_STRINGS)
++
++    def _flat(d, pre=""):
++        for k, v in d.items():
++            kk = f"{pre}.{k}" if pre else k
++            if isinstance(v, dict):
++                yield from _flat(v, kk)
++            else:
++                yield kk
++
++    for f in glob.glob("bench/cdsfl_registry/models/*.toml"):
++        with open(f, "rb") as fh:
++            touched = [k for k in _flat(tomllib.load(fh)) if k in hard]
++        assert not touched, (
++            f"{f} touches HARD key(s) {touched}: the empty overlay is no "
++            f"longer provably the strictest layer-4 choice; re-open B13")
++
++
++def test_a_hard_violation_still_raises():
++    """The one thing the old raise actually protected is UNCHANGED: a layer
++    that weakens a HARD constraint is refused, loudly and fatally."""
++    from bench.cdsfl_registry.registry import (
++        PolicyViolationError, _check_monotonicity, load_effective_policy)
++
++    hostile = load_effective_policy("mathematics")
++    hostile = json.loads(json.dumps(hostile))   # deep copy
++    hostile["constraints"]["anti_deference"] = False
++    with pytest.raises(PolicyViolationError):
++        _check_monotonicity(hostile, "model/_panel_hostile_probe")

@@ -1,0 +1,300 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 21849,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd; ls; echo ---; ls bench | head -50\", \"description\": \"Orient in sandbox repo\"}",
+      "t_offset_s": 5.048
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /dev/null 2>/dev/null; git -C . rev-parse --is-inside-work-tree 2>&1 | head -2; ls -d bench/logs 2>/dev/null && ls bench/logs | head -20\", \"description\": \"Check git and logs dir\"}",
+      "t_offset_s": 6.349
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/routing.py bench/cdsfl_registry/registry.py bench/reference_runner_v3.py 2>&1; echo ---; grep -n \\\"rung_attempts\\\\|exposure_rotated_order\\\\|MODEL_POLICY_MISSES\\\\|_announce_missing_registration\\\\|ladder_evidence_from_registry\\\" -r bench/ scripts/ 2>/dev/null | head -20\", \"description\": \"Check for prior seat fixes in tree\"}",
+      "t_offset_s": 11.454
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def season_strength_order\\\\|def strength_order_from_evidence\\\\|def rank_falsifier_writers\\\\|def capability_identity\\\\|DEFAULT_FALSIFIER_STRENGTH\\\\|def resolve_via_routing\\\\|def falsification_evidence_from_registry\\\\|def resolve_or_alarm\\\\|FALSIFIER_STRENGTH_IS_ESTABLISHED\\\\|VENDOR_ORDER_SUPERSEDED\\\" bench/routing.py\", \"description\": \"Map routing.py symbols\"}",
+      "t_offset_s": 13.851
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la bench/logs/what_breaks_the_capability_tie_2026-10-18/; echo ---; wc -l bench/logs/what_breaks_the_capability_tie_2026-10-18/*\", \"description\": \"List experiment dir\"}",
+      "t_offset_s": 32.174
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 90,200p bench/routing.py\", \"description\": \"Read routing.py header region\"}",
+      "t_offset_s": 32.714
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 320,420p bench/routing.py\", \"description\": \"Read evidence/order functions\"}",
+      "t_offset_s": 35.757
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 540,700p bench/routing.py\", \"description\": \"Read season_strength_order and rank_falsifier_writers\"}",
+      "t_offset_s": 36.406
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 697,820p bench/routing.py\", \"description\": \"Read resolve_via_routing\"}",
+      "t_offset_s": 41.48
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"FileNotFoundError\\\" -B20 -A8 bench/cdsfl_registry/registry.py | sed -n 1,80p\", \"description\": \"Read registry layer-4 raise\"}",
+      "t_offset_s": 42.547
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, collections\\nfiles = sorted(glob.glob(\\\"bench/logs/*/runner_state.json\\\"))\\nprint(\\\"runner_state files:\\\", len(files))\\ntot=0; keys=collections.Counter()\\nfor f in files:\\n    try: st=json.load(open(f))\\n    except Exception: continue\\n    rh = st.get(\\\"routing_history\\\")\\n    if not rh: continue\\n    if isinstance(rh, dict): rh=list(rh.values())\\",
+      "t_offset_s": 53.86
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rl \\\"routing_history\\\" bench/logs/ 2>/dev/null | head -20; echo \\\"=== count:\\\"; grep -rl \\\"routing_history\\\" bench/logs/ 2>/dev/null | wc -l\", \"description\": \"Find routing_history files\"}",
+      "t_offset_s": 57.386
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"routing_history\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Find routing_history write site\"}",
+      "t_offset_s": 58.01
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n '\\\"routing_history\\\"\\\\]\\\\.append\\\\|routing_history.*append\\\\|setdefault(\\\"routing_history\\\"' bench/reference_runner_v3.py | head\", \"description\": \"Find append site\"}",
+      "t_offset_s": 76.909
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, collections, os\\npat = \\\"bench/logs/*/*registry*.json\\\"\\nfs = sorted(glob.glob(pat))\\nprint(len(fs), \\\"registry files at depth 2\\\")\\n# look for entries with routing_history\\ntot=0; rhrec=0; keys=collections.Counter()\\nfor f in fs:\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    ents = d.get(\\\"entries\\\") if isinstance(d,dict) el",
+      "t_offset_s": 80.556
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 8590,8640p bench/reference_runner_v3.py\", \"description\": \"Read routing_history write site\"}",
+      "t_offset_s": 83.109
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport os, json, collections\\nhits=collections.Counter()\\nnf=0\\nfor root,dirs,files in os.walk(\\\"bench/logs\\\"):\\n    if \\\"sandbox_harvest\\\" in root: continue\\n    for fn in files:\\n        if not fn.endswith(\\\".json\\\"): continue\\n        p=os.path.join(root,fn)\\n        try: d=json.load(open(p))\\n        except Exception: continue\\n        def scan(o,depth=0):\\n    ",
+      "t_offset_s": 88.482
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/cc1 && cat > /tmp/cc1/archive.py <<'EOF'\\n\\\"\\\"\\\"Canonical archive reader: one registry per log directory, no sandbox_harvest.\\\"\\\"\\\"\\nimport os, json, collections\\n\\ndef iter_registry_files():\\n    for root, dirs, files in os.walk(\\\"bench/logs\\\"):\\n        dirs[:] = [d for d in dirs if d != \\\"sandbox_harvest\\\"]\\n        cands = [f for f in files if f == \\\"runner_state.jso",
+      "t_offset_s": 104.262
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport os, json, glob, collections\\n\\ndef ents_of(path):\\n    try: d=json.load(open(path))\\n    except Exception: return {}\\n    out={}\\n    def scan(o,depth=0):\\n        if depth>5: return\\n        if isinstance(o,dict):\\n            e=o.get(\\\"entries\\\")\\n            if isinstance(e,dict) and e and isinstance(next(iter(e.values())),dict):\\n                out.updat",
+      "t_offset_s": 116.634
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep -i \\\"ladder\\\\|estimable\\\\|strength\\\\|exposure\\\\|rung\\\" \", \"description\": \"Find committed ladder scripts\"}",
+      "t_offset_s": 123.208
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,80p scripts/is_the_ladder_order_estimable_2026-10-17.py 2>/dev/null || echo MISSING\", \"description\": \"Read committed estimability script\"}",
+      "t_offset_s": 124.011
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 scripts/is_the_ladder_order_estimable_2026-10-17.py 2>&1 | tail -40\", \"description\": \"Run committed estimability script\"}",
+      "t_offset_s": 129.683
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/is_the_ladder_order_estimable_2026-10-17.py 2>&1 | tail -45\", \"description\": \"Run committed estimability script\"}",
+      "t_offset_s": 131.709
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/cc1/replay.py <<'PY'\\n\\\"\\\"\\\"Replay the ladder over the archive, using the COMMITTED reader's file scope.\\n\\nReader is identical to scripts/is_the_ladder_order_estimable_2026-10-17.py:\\n  LOGS.rglob(\\\"runner_state.json\\\"), top-level only (relative parts == 2),\\n  entries at d[\\\"registry\\\"][\\\"entries\\\"].\\n\\\"\\\"\\\"\\nimport json, pathlib, collections, sys\\nREPO = pathlib.Path(\\\".",
+      "t_offset_s": 143.279
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, collections\\nLOGS = pathlib.Path(\\\"bench/logs\\\")\\nkeys = collections.Counter(); samples={}\\nfor rs in sorted(LOGS.rglob(\\\"runner_state.json\\\")):\\n    if len(rs.relative_to(LOGS).parts)!=2: continue\\n    try: d=json.loads(rs.read_text(errors=\\\"replace\\\"))\\n    except Exception: continue\\n    ents=(d.get(\\\"registry\\\") or {}).get(\\\"entries\\\") or {}",
+      "t_offset_s": 168.354
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/cc1/exposure.py <<'PY'\\n\\\"\\\"\\\"Replay rank_falsifier_writers over the archive and count appearances vs dispatches.\\n\\nCanonical reader scope: bench/logs/*/runner_state.json, d[\\\"registry\\\"][\\\"entries\\\"].\\nA pass with rungs_tried=k asked ladder positions 1..k (resolve_via_routing tries\\nthem in order and returns at the first CONFIRMED).\\n\\\"\\\"\\\"\\nimport json, pathlib, collecti",
+      "t_offset_s": 187.32
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys; sys.path.insert(0,\\\".\\\")\\nfrom bench.routing import rank_falsifier_writers as R, DEFAULT_FALSIFIER_STRENGTH as D, labels_the_order_ranks as L\\nlive = ['cx','cgpt','ge','ds','cc2','fable','kimi']\\nsim  = ['Codex-SIM','CC2-SIM','ChatGPT-SIM','Gemini-SIM','DeepSeek-SIM','Fable-SIM']\\nprint(\\\"D =\\\", D)\\nprint(\\\"LIVE ranked :\\\", R(live, D))\\nprint(\\\"LIVE match",
+      "t_offset_s": 234.2
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"panel_members\\\\|'cx'\\\\|\\\\\\\"cx\\\\\\\"\\\" configs/*.json bench/*.py 2>/dev/null | grep -i \\\"cx\\\" | head -10\", \"description\": \"Find live panel roster definition\"}",
+      "t_offset_s": 235.631
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 812,877p bench/routing.py\", \"description\": \"Read route()\"}",
+      "t_offset_s": 247.716
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys; sys.path.insert(0,\\\".\\\")\\nimport bench.routing as RT\\nlive = ['cx','cgpt','ge','ds','cc2','fable','kimi']\\nsim  = ['Codex-SIM','CC2-SIM','ChatGPT-SIM','Gemini-SIM','DeepSeek-SIM','Fable-SIM']\\ndef rot(seq, s):\\n    seq=list(seq)\\n    return tuple(seq[s%len(seq):]+seq[:s%len(seq)]) if seq else ()\\nfor name,r in ((\\\"LIVE\\\",live),(\\\"SIM\\\",sim)):\\n    lad = R",
+      "t_offset_s": 251.445
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys; sys.path.insert(0,\\\".\\\")\\nimport bench.routing as RT\\nclass Reg:\\n    def __init__(self, ents): self.entries = ents\\ndef mk(seat, prov, mid, ref, tot):\\n    out={}\\n    for i in range(tot):\\n        out[f\\\"{seat}{i}\\\"] = {\\\"source_model\\\": seat,\\n            \\\"falsifier_verdict\\\": \\\"REFUTED\\\" if i < ref else \\\"CONFIRMED\\\",\\n            \\\"capability_proven",
+      "t_offset_s": 268.709
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys; sys.path.insert(0,\\\".\\\")\\nfrom scipy.stats import fisher_exact\\nfrom statsmodels.stats.multitest import multipletests\\nimport itertools\\ndef seps(ev, alpha=0.05):\\n    ps=[];\\n    for x,y in itertools.combinations(sorted(ev),2):\\n        rx,nx=ev[x]; ry,ny=ev[y]\\n        ps.append(fisher_exact([[rx,nx-rx],[ry,ny-ry]])[1])\\n    rej,_,_,_=multipletests(ps,a",
+      "t_offset_s": 276.443
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, collections\\nLOGS=pathlib.Path(\\\"bench/logs\\\")\\nf=collections.Counter(); vc=collections.Counter(); resf=collections.Counter()\\nn=0\\nfor rs in sorted(LOGS.rglob(\\\"runner_state.json\\\")):\\n    if len(rs.relative_to(LOGS).parts)!=2: continue\\n    try: d=json.loads(rs.read_text(errors=\\\"replace\\\"))\\n    except Exception: continue\\n    for e in ((d.ge",
+      "t_offset_s": 288.516
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, collections\\nLOGS=pathlib.Path(\\\"bench/logs\\\")\\nrbr=collections.Counter(); er=collections.Counter(); esc=collections.Counter()\\nboth=0; rbr_no_rh=0; rh_no_rbr=0\\ndispatched_union=0; resolved_union=0\\nfor rs in sorted(LOGS.rglob(\\\"runner_state.json\\\")):\\n    if len(rs.relative_to(LOGS).parts)!=2: continue\\n    try: d=json.loads(rs.read_text(error",
+      "t_offset_s": 303.379
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n 'resolved_by_routing\\\"\\\\]\\\\s*=\\\\|\\\\[\\\"resolved_by_routing\\\"\\\\] =\\\\|resolved_by_routing.*=' bench/reference_runner_v3.py | head -8; echo \\\"=== rosters in archive:\\\"; python3 - <<'PY'\\nimport json, pathlib, collections\\nLOGS=pathlib.Path(\\\"bench/logs\\\"); rosters=collections.Counter()\\nfor rs in sorted(LOGS.rglob(\\\"runner_state.json\\\")):\\n    if len(rs.relative_to(LOGS).parts)!=2",
+      "t_offset_s": 320.996
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"'cx'\\\\|\\\\\\\"cx\\\\\\\"\\\" bench/*.py bench/*.json configs 2>/dev/null | head -8; echo \\\"=== panel keys:\\\"; grep -rn \\\"cgpt\\\" bench/reference_runner_v3.py | head -5\", \"description\": \"Locate live panel roster keys\"}",
+      "t_offset_s": 329.71
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 8600,8620p bench/reference_runner_v3.py; echo \\\"..... 8680-8700 .....\\\"; sed -n 8676,8700p bench/reference_runner_v3.py; echo \\\"..... 8800-8820 .....\\\"; sed -n 8800,8820p bench/reference_runner_v3.py\", \"description\": \"Inspect write sites and try/except\"}",
+      "t_offset_s": 331.286
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, re\\nLOGS=pathlib.Path(\\\"bench/logs\\\")\\nlate_rbr=late_rh=early_rbr=early_rh=0\\nfor rs in sorted(LOGS.rglob(\\\"runner_state.json\\\")):\\n    if len(rs.relative_to(LOGS).parts)!=2: continue\\n    m=re.search(r\\\"(20\\\\d{6})\\\", rs.parent.name) or re.search(r\\\"(20\\\\d\\\\d-\\\\d\\\\d-\\\\d\\\\d)\\\", rs.parent.name)\\n    tag=m.group(1).replace(\\\"-\\\",\\\"\\\") if m else Non",
+      "t_offset_s": 345.677
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sympy as sp, itertools\\np=sp.symbols('p1:5', positive=True)\\nexprs={sp.simplify(1-sp.prod([1-x for x in perm])) for perm in itertools.permutations(p)}\\nprint(\\\"P(resolve) distinct expressions over 24 permutations of 4 rungs:\\\", len(exprs))\\n# E[#dispatches] under exhaustion: sum_{k=1}^{n} prod_{j<k}(1-p_j)\\ndef Edisp(perm):\\n    n=len(perm); tot=0\\n    for k i",
+      "t_offset_s": 349.914
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 8560,8600p bench/reference_runner_v3.py; echo \\\"=== exp name vars in scope:\\\"; grep -n \\\"experiment_name\\\" bench/reference_runner_v3.py | head -12\", \"description\": \"Find route call site and experiment name\"}",
+      "t_offset_s": 387.883
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 626,640p bench/routing.py; echo \\\"=== RoutingResult tail:\\\"; sed -n 628,700p bench/routing.py | grep -n \\\"ladder_was_empty\\\\|strength_order_matched\\\\|strength_order_was_unestablished\\\\|^$\\\" | head\", \"description\": \"Read RoutingResult fields\"}",
+      "t_offset_s": 416.647
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 420,470p bench/routing.py\", \"description\": \"Read RoutingResult dataclass fully\"}",
+      "t_offset_s": 417.291
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 470,495p bench/routing.py\", \"description\": \"Find end of RoutingResult\"}",
+      "t_offset_s": 421.434
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_k6o70q8m/repo/bench/routing.py\", \"old_string\": \"    strength_order_matched: int = 0\\n\\n\\ndef seat_identities(registry, labels) -> dict:\", \"new_string\": \"    strength_order_matched: int = 0\\n    #: ONE RECORD PER RUNG ACTUALLY DISPATCHED, in dispatch order:\\n    #: ``{\\\"position\\\": 1-based rung",
+      "t_offset_s": 448.378
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -40 bench/routing.py | grep -n \\\"import\\\\|from\\\"\", \"description\": \"Check routing.py imports\"}",
+      "t_offset_s": 453.006
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/cc1/patch1.py <<'PYEOF'\\nimport io, sys\\np = \\\"bench/routing.py\\\"\\ns = io.open(p, encoding=\\\"utf-8\\\").read()\\n\\n# 1. import `field`\\nold = \\\"from dataclasses import dataclass\\\\n\\\"\\nassert s.count(old) == 1\\ns = s.replace(old, \\\"from dataclasses import dataclass, field\\\\n\\\")\\n\\n# 2. new RoutingResult fields + rotation helper\\nanchor = \\\"    strength_order_matched: int = 0\\\\n",
+      "t_offset_s": 478.711
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/cc1/patch2.py <<'PYEOF'\\nimport io\\np = \\\"bench/routing.py\\\"\\ns = io.open(p, encoding=\\\"utf-8\\\").read()\\n\\n# --- A. resolve_via_routing: record one attempt per dispatched rung ---------\\nold = '''    _ladder_empty = not list(rungs)\\n    _budget = len(list(rungs)) if not max_rungs else max_rungs\\n    for model in list(rungs)[:_budget]:\\n        tried += 1\\n        last_model",
+      "t_offset_s": 509.896
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/cc1/patch3.py <<'PYEOF'\\nimport io\\np = \\\"bench/reference_runner_v3.py\\\"\\ns = io.open(p, encoding=\\\"utf-8\\\").read()\\n\\n# --- A. persist the recorder at the single routing_history write site -------\\nold = '''                \\\"rungs_tried\\\": getattr(result, \\\"rungs_tried\\\", None),\\n                \\\"rungs_available\\\": len(models),'''\\nassert s.count(old) == 1\\nnew = '''     ",
+      "t_offset_s": 527.824
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_ladder_exposure_and_rung_attempts_2026-10-20.py <<'PYEOF'\\n\\\"\\\"\\\"The rung sequence is rotated where no order is established, AND every rung\\ndispatched is recorded with the verdict it earned.\\n\\nJOINT ROUND, what_breaks_the_capability_tie_2026-10-18. Two seats proved\\ndifferent halves of one defect. fable proved the rung ORDER is outcome-inert:\\nunder the exhaus",
+      "t_offset_s": 606.275
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests -q -k \\\"routing or ladder or rung or strength or registry or policy or capability or identity or empty_ladder or transport\\\" -p no:randomly 2>&1 | tail -20\", \"description\": \"Targeted regression on touched surface\"}",
+      "t_offset_s": 617.19
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/routing.py /tmp/cc1/routing.patched.py; cp bench/reference_runner_v3.py /tmp/cc1/runner.patched.py\\npython3 - <<'PY'\\nimport io\\n# invert patch 3 (runner) and patches 1-2 (routing) by removing exactly what was added\\nfor p, marks in ((\\\"bench/reference_runner_v3.py\\\", None), (\\\"bench/routing.py\\\", None)):\\n    pass\\nPY\\ncat > /tmp/cc1/revert.py <<'PYEOF'\\nimport io, re\\n# ---",
+      "t_offset_s": 707.914
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /tmp/cc1/routing.patched.py bench/routing.py; cp /tmp/cc1/runner.patched.py bench/reference_runner_v3.py\\npython3 -m pytest \\\"bench/tests/test_ladder_exposure_and_rung_attempts_2026-10-20.py\\\" -q -p no:randomly 2>&1 | tail -3\\necho \\\"=== pre-existing failure #2 reason:\\\"\\npython3 -m pytest bench/tests/test_guard_false_positive_figures_2026-10-02.py::TestTheStaleLabelIsNotRead::test",
+      "t_offset_s": 718.949
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript 2>&1; wolframscript -code 'ps = {p1,p2,p3,p4}; Length[DeleteDuplicates[Simplify[1 - Times@@(1-#)]& /@ Permutations[ps]]]' 2>&1 | head -5; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram second falsifier: permutation count\"}",
+      "t_offset_s": 729.199
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'Print[N[1 - 6!/6^6, 20]]; Print[N[2*PDF[HypergeometricDistribution[4,4,8],4], 12]]; Print[Length[DeleteDuplicates[Simplify[Sum[Product[1-#[[j]],{j,1,k-1}],{k,1,4}]]& /@ Permutations[{p1,p2,p3,p4}]]]]' 2>&1 | head -8; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram: shuffle constant, Fisher p, dispatch-count permutations\"}",
+      "t_offset_s": 740.03
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/competence_provenance.py >/dev/null 2>&1; echo \\\"competence_provenance exit=$?\\\"; python3 -m pytest bench/tests -q -k \\\"routing or ladder or rung or strength or policy_engine or capability\\\" -p no:randomly 2>&1 | tail -4; echo \\\"=== files written:\\\"; ls -la bench/tests/test_ladder_exposure_and_rung_attempts_2026-10-20.py; python3 -c \\\"\\nimport sys;sys.path.insert(0,'.'",
+      "t_offset_s": 753.422
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/competence_provenance.py 2>&1 | tail -15\", \"description\": \"Diagnose competence_provenance exit 2\"}",
+      "t_offset_s": 808.514
+    }
+  ],
+  "n_tool_calls": 56,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 943.4,
+  "response": "All measurements executed, fix delivered and tested. Writing up.\n\n---\n\n## 1. VERDICT\n\n```\nBOTH_TOGETHER\n```\n\n## 2. WHAT I REVISE\n\n**I withdraw CC1's sequencing claim in full \u2014 it was mine, and its reason is false.**\n\nCC1 claimed recorder-first \"because rotation starts generating a stratum on the next experiment and a stratum with no denominator is unrecoverable after the fact.\" I tested the premise by replaying `rank_falsifier_writers` against each archived run's own roster and checking whether `ladder[rungs_tried - 1]` reproduces the recorded `model_used`:\n\n```\nRECONSTRUCTION CHECK (model_used == replayed ladder[rungs_tried-1]):\n  match=104  mismatch=0  rate=100.0000%\n```\n\n**Which seat sat at which rung is already fully reconstructible from fields the archive carries today.** The denominator is not lost by rotating first. CC1's reason for an ordering does not exist.\n\nI also withdraw an intermediate finding of my own: I briefly held that the recorder's write site covers only 104 of 230 archived resolutions (45%). It is a vintage artefact, not a coverage gap \u2014 runs dated \u2265 2026-09-02 are 104 of 104 (100%); earlier runs 0 of 126. The recorder site is reliable going forward. I report the withdrawal because I nearly shipped it.\n\n## 3. THE 4 DISAGREEMENTS\n\n### 1 \u2014 Escalation: the two numbers answer different questions, and one of them has no denominator in the archive\n\nThey answer different questions, and the reconciliation is worse than that: **neither figure reproduces.**\n\nUsing the reader of the committed `scripts/is_the_ladder_order_estimable_2026-10-17.py` \u2014 `bench/logs/*/runner_state.json`, entries at `d[\"registry\"][\"entries\"]` \u2014 which reproduces its documented 3,020-entry/26-REFUTED/0-of-10 result exactly:\n\n```\nruns=61 entries=3020\nrouting_history records=181  DISPATCHED(rungs_tried>=1)=160  resolved=104\nrungs_tried histogram: {0: 21, 1: 84, 2: 76}\nrouting_history verdicts: {'CONFIRMED': 104, 'ERROR': 42, 'REFUTED': 8,\n                           'UNTOOLABLE': 21, 'INTEGRITY_VIOLATION': 6}\n```\n\n- **cc2's 285 dispatched / 172 resolved DOES NOT REPRODUCE.** I measure 160 / 104. And `rungs_tried` never exceeds 2 anywhere in the archive, so cc2's rung-2 denominator of 144 exceeds the 76 passes that ever reached rung 2 in this telemetry.\n- **fable's 230 reproduces exactly \u2014 but not as a numerator over 272.** `resolved_by_routing` is present on 230 entries and **it is not a boolean; it holds the resolving model's label**: `Codex-SIM 94, CC2-SIM 33, ChatGPT-SIM 20, Codex 48, CC2 30, ChatGPT 5`. The field has no \"escalated and did not resolve\" value, so it cannot supply a 272 denominator. 230 is a count of resolutions, not 230 of 272 status changes.\n\n**Which belongs in a report about \"the value of escalation\": RESOLUTION, 104 of 160 = 65.00%, Wilson 95% [57.25%, 72.00%].** Status change is the weaker question because a status change includes a REFUTED that the project explicitly refuses to trust (`resolve_via_routing`: \"A REFUTED here is NOT trusted to drop the critical\"). Both seats' rates are in the same neighbourhood as mine and both overstate the denominator.\n\n### 2 \u2014 The number a reader should use is **200\u2013300 rung-1 observations per seat**, and neither seat reported it\n\nBoth seats' own numbers reproduce, and both answer a 2-seat question while the roster has 6:\n\n```\nPERFECT discrimination, 2 seats:   n=3: 0 of 1     n=4: 1 of 1 ESTABLISHED\nPERFECT discrimination, 6 seats:   n=5: 0 of 15    n=6: 5 of 15 ESTABLISHED\n13.4pp effect, 2 seats:            n=100: 0 of 1   n=150: 1 of 1 ESTABLISHED\n13.4pp effect, 6 seats (15 pairs): n=200: 0 of 15  n=300: 9 of 15 ESTABLISHED\n```\n\nfable's 4 and 6 at perfect discrimination: **both reproduce.** cc2's \"between 100 and 200 at the realistic effect size\": **reproduces, and tightens to between 100 and 150** \u2014 but only for 2 seats.\n\n**A reader should use 200\u2013300 per seat.** The assumption it carries: a 13.4 pp difference in confirm-on-dispatch, 6 identities, 15 pairs, Holm at \u03b1 = 0.05, Fisher exact. The 30-fold gap between the seats is entirely the gap between *perfect* discrimination and the archive's actual effect size; it is not a disagreement about method. Both seats named their assumption and both were honest; neither crossed to the roster size the ladder has.\n\n### 3 \u2014 fable's correction is CONFIRMED by execution; the brief's quote is attached to the wrong construction\n\n```\n2-identity registry, 2/2 vs 0/4 -> established=False\n  why: 0 of 1 seat pairs separate after Holm correction at alpha=0.05; ...\n3-identity registry            -> established=False\n  why: 0 of 3 seat pairs separate after Holm correction at alpha=0.05; ...\n2-identity registry, 4/4 vs 0/4 -> established=True  order=('A','B')\n  why: 1 of 1 seat pairs separate ...\n```\n\nA 2-identity registry yields exactly 1 pair. fable's `0 of 1` is what the code emits; the brief's `0 of 3` is what a **3**-identity registry emits \u2014 I reproduced both. **fable was right, cc2 reproduced the verdict and not the pair count, and the brief's quote should be corrected in the record.** fable's minimal establishing case also reproduces: 4/4 vs 0/4 is the smallest 2-identity evidence that establishes.\n\n### 4 \u2014 A seat may move the test, under two conditions; and the stronger answer is to not need to\n\n**Yes, but only when both hold: (a) the new assertion is strictly stronger than the one it replaces, and (b) the move is reported with its own executed falsifier, in a diff containing nothing else.** Both seats satisfied (a) and declared openly, so neither did anything this project should penalise. A test is a record of a contract; when the contract is what the panel was convened to change, freezing the test freezes the defect, and the harness's own precedent is `test_every_free_seat_is_now_on_the_ladder` (2026-10-07).\n\nWhat is *not* permitted is weakening, `xfail`, `skip`, or deletion \u2014 the falsifier-integrity section's clause 2 \u2014 and neither seat did that.\n\n**The stronger answer, and it is why I moved no test:** gate the change so no existing contract is touched. My fix is a no-op at its default (`LADDER_ROTATION_SEED = \"\"`), so every archived replay is byte-identical and every pinned contract still holds. Verified by reverting both patches and re-running: the 3 failures in this sandbox are identical with and without my change \u2014 **0 tests moved.** When a change genuinely cannot be gated, add the new test beside the old one first, then move the old one in a separate, separately-reported edit.\n\n## 4. REASONING\n\n**P1 \u2014 The rung-position denominator is already recoverable.** Replay of `rank_falsifier_writers` over 61 archived runs reproduces `model_used` from `rungs_tried` + roster on **104 of 104** resolved passes, 0 mismatches. CC1's sequencing reason is refuted. *(Execution: `/tmp/cc1/exposure.py`, output in \u00a75.)*\n\n**P2 \u2014 But the per-rung VERDICT is genuinely lost, and that is what the recorder earns its place on.** `routing_history` keeps one verdict per pass \u2014 the last. Of the archive's 77 unresolved dispatched passes, **42 (54.5455%) terminated in ERROR** \u2014 a rung that produced no falsifier at all \u2014 and on a multi-rung pass every earlier verdict is discarded. An ERROR is a tooling failure; a REFUTED is a capability signal. Pooling them biases any per-rung capability estimate. So fable's recorder is justified \u2014 on a different premise than fable gave (\"the archive never records which rungs were tried and failed\": *which* is recoverable, *with what verdict* is not).\n\n**P3 \u2014 Exposure is the binding constraint and cc2's structural finding stands.** Three of six members are on the ladder and never dispatched:\n\n```\nseat                on ladder   actually asked\n  Codex-SIM             140            140\n  Gemini-SIM            126              0\n  DeepSeek-SIM          121              0\n  ChatGPT-SIM           121             35\n  CC2-SIM               107             61\n  Fable-SIM              74              0\nnever asked: ['DeepSeek-SIM','Fable-SIM','Gemini-SIM']  combined appearances: 321\nrung-1 occupancy: {'Codex-SIM': 140, 'CC2-SIM': 17, 'ChatGPT-SIM': 3}\n```\n\ncc2's **501 against 0 does not reproduce \u2014 I measure 321 against 0**, over 160 dispatched passes rather than 285. The three seats are the same three. The structure is confirmed; the magnitude is not.\n\n**P4 \u2014 cc2's rotation, applied to the vendor tuple, does not reach the live roster.** On `['cx','cgpt','ge','ds','cc2','fable','kimi']` \u2014 the roster `bench/routing.py` itself records, for which `strength_order_matched` is 0 of 7 \u2014 **all 6 shifts of the tuple yield 1 distinct ladder.** Rotating the *rung sequence* yields **7 distinct ladders and 7 distinct first rungs.** A rotation of the tuple is an addition the live roster never reaches: the shape this project has confirmed 11 times. **This is the single substantive correction I make to cc2, and it is why my fix rotates after ranking, not before.**\n\n**P5 \u2014 fable's order-inertness derivation reproduces, with one qualification fable stated and cc2 did not engage.** SymPy: P(resolve) over 24 permutations of 4 symbolic rungs \u2192 **1 distinct expression**. E[#dispatches] \u2192 **24 distinct in general, 1 under exchangeability** (`-q\u00b3 + 4q\u00b2 - 6q + 4`). So rotation cannot change whether a finding resolves, and cannot change expected spend under exactly the hypothesis that makes the order unestablished. Both seats are right and they are not in conflict.\n\n**P6 \u2014 Therefore neither fix precedes the other, and the composition beats each alone on a measurement.** The two touch disjoint code and neither reads the other. Rotation alone generates the stratum with 42-of-77 of its non-resolution mass unattributable past the terminal rung. The recorder alone records verdicts for a stratum in which 3 of 6 members have 0 dispatches. Together every member reaches position 1 and its verdict there is readable from the artefact without an offline replay. \u2192 `BOTH_TOGETHER`.\n\n## 5. FALSIFIER AND ITS EXECUTED RESULT\n\n```\n$ python3 -m pytest bench/tests/test_ladder_exposure_and_rung_attempts_2026-10-20.py -q\n..................                                                       [100%]\n18 passed in 1.09s\n```\n\n```\n$ python3 /tmp/cc1/exposure.py\nruns replayed=61  DISPATCHED=160  resolved=104\nRECONSTRUCTION CHECK (model_used == replayed ladder[rungs_tried-1]):\n  match=104  mismatch=0  rate=100.0000%\n```\n\n```\n$ python3 -c \"...rotate the TUPLE vs rotate the LADDER...\"\ndistinct LIVE ladders over all 6 rotations: 1\nLIVE: ladder len 7 -> distinct rotations 7, distinct firsts 7\nSIM:  ladder len 6 -> distinct rotations 6, distinct firsts 6\n```\n\nTargeted regression, and the pre-existence proof:\n\n```\n$ python3 -m pytest bench/tests -q -k \"routing or ladder or rung or strength or\n      registry or policy or capability or identity or empty_ladder or transport\"\n3 failed, 681 passed, 2 skipped, 12178 deselected in 65.70s\n\n$ # same 3, with BOTH patches mechanically reverted:\n3 failed in 3.59s   (identical failures -> all pre-existing, none mine)\n```\n\nThe 3 are: `test_guard_false_positive_figures_2026-10-02` (`git ls-files` exited 128, sandbox is not a work tree \u2014 cc2's diagnosis of this one is correct), `test_a_blind_round_has_a_joint_round_2026-10-08` (the joint-round debt this round discharges), `test_transport_dead_guard_covers_criticals_2026-08-30` (a refactor moved `irreducible_escalation` out of `unverified_critical_count`'s body). **cc2 and fable each reported 1 pre-existing failure; this sandbox has 3.** `scripts/competence_provenance.py` still parses `DEFAULT_FALSIFIER_STRENGTH` from source and completes its report.\n\n**Wolfram as second falsifier** (*computed with Wolfram Language, local Wolfram Engine, via wolframscript*; exit 0, no `Name::tag`, no `$Failed`):\n\n```\nLength[DeleteDuplicates[Simplify[1 - Times@@(1-#)]& /@ Permutations[{p1,p2,p3,p4}]]]\n  -> 1\nN[1 - 6!/6^6, 20]                        -> 0.98456790123456790123\nN[2*PDF[HypergeometricDistribution[4,4,8],4], 12] -> 0.0285714285714\nLength[DeleteDuplicates[... E[#dispatches] ...]] -> 24\n```\n\nAll four agree with SymPy/SciPy, and the second and third independently confirm cc2's rotation-vs-shuffle constant and fable's minimal-establishing Fisher p.\n\n## 6. THE FIX\n\nDelivered into the sandbox repository tree at real paths, as files:\n\n- **`bench/routing.py`** \u2014 `cyclically_rotate(seq, seed)` (pure, SHA-256 keyed because `hash()` on `str` is per-process salted and would make a replay irrecoverable); module variable `LADDER_ROTATION_SEED = \"\"`; `RoutingResult.rung_attempts` (`field(default_factory=list)`) and `RoutingResult.ladder_rotation`; `resolve_via_routing` appends one `{position, model, verdict}` record per rung dispatched at every exit, self-rung flagged `self_rung: True`; `route` rotates the **rung sequence** only when `_unestablished` holds and the seed is non-empty, and stamps the shift.\n- **`bench/reference_runner_v3.py`** \u2014 sets `bench.routing.LADDER_ROTATION_SEED = cfg.experiment_name` once where the experiment is announced (so a replay recovers the ladder from the log directory name), and persists `rung_attempts` + `ladder_rotation` at the single `routing_history` write site.\n- **`bench/tests/test_ladder_exposure_and_rung_attempts_2026-10-20.py`** \u2014 18 executing tests, new: 8 on the rotation half, 6 on the recorder half, 4 exercising both halves together (including the fresh-subprocess determinism check and the SymPy derivation).\n\n**Why mine differs from cc2's.** cc2 rotated `DEFAULT_FALSIFIER_STRENGTH` via a `seed=` keyword on `season_strength_order` plus a second runner call site. Measured, that reaches 1 distinct live ladder. Mine rotates the rung sequence \u2014 7 \u2014 and needs no keyword on `route` at all, which is also what keeps the 8 narrow-stub routing-admission tests green.\n\n## 7. STANDARDS\n\n**ADDITIVE.** Nothing removed or narrowed. `DEFAULT_FALSIFIER_STRENGTH` is byte-identical \u2014 same 6 members, same order, same `VENDOR_ORDER_SUPERSEDED` alias, `FALSIFIER_STRENGTH_IS_ESTABLISHED` still `False`; asserted by `test_the_vendor_tuple_is_not_removed_narrowed_or_reordered`, and the 2026-10-07 membership ruling (`ladder_length == 6`, `free_rungs == [\"CC2\",\"Fable\"]`) still passes. No test moved: the 3 sandbox failures are identical with the patch reverted. Both additions are wired to a caller and executed by a test \u2014 the seed by the runner at `EXPERIMENT:`, `rung_attempts` at the `routing_history` write site, and `test_the_runner_persists_both_halves_at_its_single_write_site` asserts both strings are present in the runner source, so neither can become an addition nothing reaches.\n\n**SIMPLEST SUFFICIENT.** One pure function, one module variable, one gated 4-line branch in `route`, four `append` lines in `resolve_via_routing`, two persisted keys, one seed assignment. **No keyword added to any public signature** \u2014 which is strictly simpler than cc2's `seed=` keyword and avoids the measured 8-test stub breakage the codebase records at that call site. Considered and rejected: (a) rotating the vendor tuple \u2014 measured as 1 distinct live ladder, so insufficient; (b) rotating `models` at the runner call site \u2014 a no-op wherever the tuple *does* match, i.e. on 60 of 61 archived rosters, so insufficient in the mirror-image way; (c) a rung-stratified estimator now \u2014 with 0 rung-1 observations for 3 of 6 seats there is nothing to stratify, so it is more surface than the problem requires; (d) recording the seed instead of the shift \u2014 the shift is what a reader needs and `rung_attempts` already names the models.\n\n**COMPOSABILITY.** Composed on a demonstrated advantage over each half alone, not on coexistence. *Rotation alone:* generates the stratum, but 42 of 77 unresolved passes (54.5455%) terminate in ERROR with every earlier rung's verdict discarded, so the stratum's non-resolution mass stays unattributable \u2014 measured. *Recorder alone:* records verdicts for a stratum in which 3 of 6 members have **321 appearances and 0 dispatches** \u2014 measured. *Together:* every non-source member reaches position 1 over 24 seeded experiments and its verdict there is readable from the artefact without an offline replay \u2014 executed in `test_rotation_and_recorder_together_make_the_rung_one_stratum_readable`. And because the recorder makes the ladder self-describing, the rotation no longer *depends* on a correct offline replay \u2014 which is the advantage neither half has alone. Both halves still satisfy ADDITIVE and SIMPLEST SUFFICIENT separately; the synthesis claims no exemption.\n\n## 8. WHAT WOULD REFUTE THIS\n\n1. **The reconstruction result, which is what killed CC1's sequencing claim.** A single archived pass where `model_used \u2260 ladder[rungs_tried - 1]` would reopen it. Measured: **0 of 104**. Threshold: **any mismatch > 0** makes the denominator partially unrecoverable and restores a reason for recorder-first.\n2. **The rotation's live reach, which is what moved it off the tuple.** If `rank_falsifier_writers` ever matches the live roster \u2014 `strength_order_matched > 0` of 7 \u2014 then rotating the tuple would reach it and my correction to cc2 loses its force. Measured: **0 of 7**. Threshold: **any match \u2265 1**.\n3. **Rotation's resolution cost.** The 3 position-1 passes ChatGPT-SIM held resolved 3/3; Codex-SIM's 140 resolved 68 (48.57%). If a rotated experiment showed the three previously-undispatched seats confirming at position 1 **below 26%** \u2014 the archive's rung-2 marginal, which is what the exhaustion budget currently recovers \u2014 rotation would cost resolutions it does not repay, and this is the half to revert. That measurement is **not takeable today**, which is the defect; it becomes takeable on the first seeded experiment.\n4. **The recorder's value.** If the ERROR share of unresolved passes fell below roughly 10% (measured: **54.5455%**), terminal-verdict-only recording would be nearly lossless and `rung_attempts` would become surface without a question to answer.\n\n## 9. DISAGREEMENT\n\n**With this brief.** Three places. (a) It presents \"both can be true at once, and if they are, rotation costs nothing in resolution and buys the whole rung-1 stratum\" as the live hypothesis \u2014 but rotation as cc2 built it buys the stratum **only on the `-SIM` panel**; on the live roster it buys nothing, and the brief's framing would have let that through as a settled premise. (b) It asks \"which of the 2 repairs must come FIRST\" \u2014 a question that presupposes an ordering constraint. There is none: I measured the stated one and it is false, and the two touch disjoint code. (c) The brief's `0 of 3 seat pairs` quote for a 2-identity registry is wrong, as fable said; I reproduced both the correct `0 of 1` and the `0 of 3` that a 3-identity registry actually emits.\n\n**With CC1's sequencing claim.** Withdrawn in full, by me, on my own execution. `RECORDER_FIRST` rested on \"a stratum with no denominator is unrecoverable after the fact\"; the denominator reconstructs at 104/104, 0 mismatches. The claim was not merely unsupported \u2014 its stated reason is refuted.\n\n**With cc2.** The **501 appearances against 0 dispatches across 285 passes does not reproduce**; I measure **321 against 0 across 160**, using the reader whose 3,020-entry figure cc2 themself reproduced. The three never-asked seats are the same three, so the finding stands and its magnitude does not. Separately, cc2's `60.3509%` resolution rate rests on that same 285 denominator; mine is `65.00%` of 160. And cc2's rotation of the vendor tuple is a no-op on the live roster \u2014 cc2 declared the scope limit honestly and called it \"a property, not an evasion\", but under the additive standard a fix confined to the simulated panel is the 11-times-confirmed shape, and it was repairable by moving the rotation 4 lines later.\n\n**With fable.** `230` reproduces exactly, but **not as 230 of 272**: `resolved_by_routing` holds a model label and has no not-resolved value, so no 272 denominator exists in that field. fable's premise 3 \u2014 \"the archive never records which rungs were tried and failed\" \u2014 is half wrong: *which* were tried is recoverable at 100%, only the *verdicts* are lost; fable's recorder is right and its justification needed replacing. And fable's `4\u20136 outcomes per seat` is correct at perfect discrimination but is the wrong number for a reader, because the archive's effect size is 13.4 pp and the roster is 6, which is 200\u2013300.\n\n**Where I agree with fable against the brief's framing:** the order of the *rungs* decides no resolution outcome, derived and confirmed in two independent CAS. That is sound and I reproduce it exactly.\n\n## 10. TERMINATION\n\n**8 passes.** (1) Located the canonical reader in `scripts/is_the_ladder_order_estimable_2026-10-17.py` and reproduced its 3,020 / 26 / 0-of-10 result. (2) Replayed `routing_history` under four reader definitions \u2014 **160/104, neither seat's denominator reproduced**. (3) Replayed `rank_falsifier_writers` for exposure \u2014 321/0, and the reconstruction check at 104/104 that **killed CC1's claim**; this pass produced the round's decisive finding. (4) Tested rotation reach \u2014 tuple 1 ladder live vs rung sequence 7; the correction to cc2. (5) Reproduced fable's pair-count correction and ran the power curves to 6 seats. (6) SymPy order-inertness, both branches. (7) Built the composed fix, 18 tests, 684-test targeted regression, and the revert-and-rerun that proves the 3 failures pre-existing. (8) Wolfram second falsifier on four already-obtained results.\n\n**Pass 8 produced no new finding above the real-world-consequence threshold** \u2014 it reproduced passes 5 and 6 to 20 significant figures and nothing else. Stopping there. I have not converged with either seat and have not tried to: fable's inertness derivation is sound, cc2's exposure structure is sound, and **two of the three headline figures in this round's blind replies do not reproduce under the reader both seats used.** That is the most useful thing I have.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_k6o70q8m/repo",
+      "built": false
+    }
+  ]
+}

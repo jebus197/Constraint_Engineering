@@ -1,0 +1,297 @@
+{
+  "model": "opus",
+  "elapsed_s": 943.3,
+  "tool_calls": 56,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd; ls; echo ---; ls bench | head -50\", \"description\": \"Orient in sandbox repo\"}",
+      "t_offset_s": 5.048
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /dev/null 2>/dev/null; git -C . rev-parse --is-inside-work-tree 2>&1 | head -2; ls -d bench/logs 2>/dev/null && ls bench/logs | head -20\", \"description\": \"Check git and logs dir\"}",
+      "t_offset_s": 6.349
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/routing.py bench/cdsfl_registry/registry.py bench/reference_runner_v3.py 2>&1; echo ---; grep -n \\\"rung_attempts\\\\|exposure_rotated_order\\\\|MODEL_POLICY_MISSES\\\\|_announce_missing_registration\\\\|ladder_evidence_from_registry\\\" -r bench/ scripts/ 2>/dev/null | head -20\", \"description\": \"Check for prior seat fixes in tree\"}",
+      "t_offset_s": 11.454
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def season_strength_order\\\\|def strength_order_from_evidence\\\\|def rank_falsifier_writers\\\\|def capability_identity\\\\|DEFAULT_FALSIFIER_STRENGTH\\\\|def resolve_via_routing\\\\|def falsification_evidence_from_registry\\\\|def resolve_or_alarm\\\\|FALSIFIER_STRENGTH_IS_ESTABLISHED\\\\|VENDOR_ORDER_SUPERSEDED\\\" bench/routing.py\", \"description\": \"Map routing.py symbols\"}",
+      "t_offset_s": 13.851
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la bench/logs/what_breaks_the_capability_tie_2026-10-18/; echo ---; wc -l bench/logs/what_breaks_the_capability_tie_2026-10-18/*\", \"description\": \"List experiment dir\"}",
+      "t_offset_s": 32.174
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 90,200p bench/routing.py\", \"description\": \"Read routing.py header region\"}",
+      "t_offset_s": 32.714
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 320,420p bench/routing.py\", \"description\": \"Read evidence/order functions\"}",
+      "t_offset_s": 35.757
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 540,700p bench/routing.py\", \"description\": \"Read season_strength_order and rank_falsifier_writers\"}",
+      "t_offset_s": 36.406
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 697,820p bench/routing.py\", \"description\": \"Read resolve_via_routing\"}",
+      "t_offset_s": 41.48
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"FileNotFoundError\\\" -B20 -A8 bench/cdsfl_registry/registry.py | sed -n 1,80p\", \"description\": \"Read registry layer-4 raise\"}",
+      "t_offset_s": 42.547
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, collections\\nfiles = sorted(glob.glob(\\\"bench/logs/*/runner_state.json\\\"))\\nprint(\\\"runner_state files:\\\", len(files))\\ntot=0; keys=collections.Counter()\\nfor f in files:\\n    try: st=json.load(open(f))\\n    except Exception: continue\\n    rh = st.get(\\\"routing_history\\\")\\n    if not rh: continue\\n    if isinstance(rh, dict): rh=list(rh.values())\\",
+      "t_offset_s": 53.86
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rl \\\"routing_history\\\" bench/logs/ 2>/dev/null | head -20; echo \\\"=== count:\\\"; grep -rl \\\"routing_history\\\" bench/logs/ 2>/dev/null | wc -l\", \"description\": \"Find routing_history files\"}",
+      "t_offset_s": 57.386
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"routing_history\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Find routing_history write site\"}",
+      "t_offset_s": 58.01
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n '\\\"routing_history\\\"\\\\]\\\\.append\\\\|routing_history.*append\\\\|setdefault(\\\"routing_history\\\"' bench/reference_runner_v3.py | head\", \"description\": \"Find append site\"}",
+      "t_offset_s": 76.909
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, collections, os\\npat = \\\"bench/logs/*/*registry*.json\\\"\\nfs = sorted(glob.glob(pat))\\nprint(len(fs), \\\"registry files at depth 2\\\")\\n# look for entries with routing_history\\ntot=0; rhrec=0; keys=collections.Counter()\\nfor f in fs:\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    ents = d.get(\\\"entries\\\") if isinstance(d,dict) el",
+      "t_offset_s": 80.556
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 8590,8640p bench/reference_runner_v3.py\", \"description\": \"Read routing_history write site\"}",
+      "t_offset_s": 83.109
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport os, json, collections\\nhits=collections.Counter()\\nnf=0\\nfor root,dirs,files in os.walk(\\\"bench/logs\\\"):\\n    if \\\"sandbox_harvest\\\" in root: continue\\n    for fn in files:\\n        if not fn.endswith(\\\".json\\\"): continue\\n        p=os.path.join(root,fn)\\n        try: d=json.load(open(p))\\n        except Exception: continue\\n        def scan(o,depth=0):\\n    ",
+      "t_offset_s": 88.482
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/cc1 && cat > /tmp/cc1/archive.py <<'EOF'\\n\\\"\\\"\\\"Canonical archive reader: one registry per log directory, no sandbox_harvest.\\\"\\\"\\\"\\nimport os, json, collections\\n\\ndef iter_registry_files():\\n    for root, dirs, files in os.walk(\\\"bench/logs\\\"):\\n        dirs[:] = [d for d in dirs if d != \\\"sandbox_harvest\\\"]\\n        cands = [f for f in files if f == \\\"runner_state.jso",
+      "t_offset_s": 104.262
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport os, json, glob, collections\\n\\ndef ents_of(path):\\n    try: d=json.load(open(path))\\n    except Exception: return {}\\n    out={}\\n    def scan(o,depth=0):\\n        if depth>5: return\\n        if isinstance(o,dict):\\n            e=o.get(\\\"entries\\\")\\n            if isinstance(e,dict) and e and isinstance(next(iter(e.values())),dict):\\n                out.updat",
+      "t_offset_s": 116.634
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep -i \\\"ladder\\\\|estimable\\\\|strength\\\\|exposure\\\\|rung\\\" \", \"description\": \"Find committed ladder scripts\"}",
+      "t_offset_s": 123.208
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,80p scripts/is_the_ladder_order_estimable_2026-10-17.py 2>/dev/null || echo MISSING\", \"description\": \"Read committed estimability script\"}",
+      "t_offset_s": 124.011
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 scripts/is_the_ladder_order_estimable_2026-10-17.py 2>&1 | tail -40\", \"description\": \"Run committed estimability script\"}",
+      "t_offset_s": 129.683
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/is_the_ladder_order_estimable_2026-10-17.py 2>&1 | tail -45\", \"description\": \"Run committed estimability script\"}",
+      "t_offset_s": 131.709
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/cc1/replay.py <<'PY'\\n\\\"\\\"\\\"Replay the ladder over the archive, using the COMMITTED reader's file scope.\\n\\nReader is identical to scripts/is_the_ladder_order_estimable_2026-10-17.py:\\n  LOGS.rglob(\\\"runner_state.json\\\"), top-level only (relative parts == 2),\\n  entries at d[\\\"registry\\\"][\\\"entries\\\"].\\n\\\"\\\"\\\"\\nimport json, pathlib, collections, sys\\nREPO = pathlib.Path(\\\".",
+      "t_offset_s": 143.279
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, collections\\nLOGS = pathlib.Path(\\\"bench/logs\\\")\\nkeys = collections.Counter(); samples={}\\nfor rs in sorted(LOGS.rglob(\\\"runner_state.json\\\")):\\n    if len(rs.relative_to(LOGS).parts)!=2: continue\\n    try: d=json.loads(rs.read_text(errors=\\\"replace\\\"))\\n    except Exception: continue\\n    ents=(d.get(\\\"registry\\\") or {}).get(\\\"entries\\\") or {}",
+      "t_offset_s": 168.354
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/cc1/exposure.py <<'PY'\\n\\\"\\\"\\\"Replay rank_falsifier_writers over the archive and count appearances vs dispatches.\\n\\nCanonical reader scope: bench/logs/*/runner_state.json, d[\\\"registry\\\"][\\\"entries\\\"].\\nA pass with rungs_tried=k asked ladder positions 1..k (resolve_via_routing tries\\nthem in order and returns at the first CONFIRMED).\\n\\\"\\\"\\\"\\nimport json, pathlib, collecti",
+      "t_offset_s": 187.32
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys; sys.path.insert(0,\\\".\\\")\\nfrom bench.routing import rank_falsifier_writers as R, DEFAULT_FALSIFIER_STRENGTH as D, labels_the_order_ranks as L\\nlive = ['cx','cgpt','ge','ds','cc2','fable','kimi']\\nsim  = ['Codex-SIM','CC2-SIM','ChatGPT-SIM','Gemini-SIM','DeepSeek-SIM','Fable-SIM']\\nprint(\\\"D =\\\", D)\\nprint(\\\"LIVE ranked :\\\", R(live, D))\\nprint(\\\"LIVE match",
+      "t_offset_s": 234.2
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"panel_members\\\\|'cx'\\\\|\\\\\\\"cx\\\\\\\"\\\" configs/*.json bench/*.py 2>/dev/null | grep -i \\\"cx\\\" | head -10\", \"description\": \"Find live panel roster definition\"}",
+      "t_offset_s": 235.631
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 812,877p bench/routing.py\", \"description\": \"Read route()\"}",
+      "t_offset_s": 247.716
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys; sys.path.insert(0,\\\".\\\")\\nimport bench.routing as RT\\nlive = ['cx','cgpt','ge','ds','cc2','fable','kimi']\\nsim  = ['Codex-SIM','CC2-SIM','ChatGPT-SIM','Gemini-SIM','DeepSeek-SIM','Fable-SIM']\\ndef rot(seq, s):\\n    seq=list(seq)\\n    return tuple(seq[s%len(seq):]+seq[:s%len(seq)]) if seq else ()\\nfor name,r in ((\\\"LIVE\\\",live),(\\\"SIM\\\",sim)):\\n    lad = R",
+      "t_offset_s": 251.445
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys; sys.path.insert(0,\\\".\\\")\\nimport bench.routing as RT\\nclass Reg:\\n    def __init__(self, ents): self.entries = ents\\ndef mk(seat, prov, mid, ref, tot):\\n    out={}\\n    for i in range(tot):\\n        out[f\\\"{seat}{i}\\\"] = {\\\"source_model\\\": seat,\\n            \\\"falsifier_verdict\\\": \\\"REFUTED\\\" if i < ref else \\\"CONFIRMED\\\",\\n            \\\"capability_proven",
+      "t_offset_s": 268.709
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys; sys.path.insert(0,\\\".\\\")\\nfrom scipy.stats import fisher_exact\\nfrom statsmodels.stats.multitest import multipletests\\nimport itertools\\ndef seps(ev, alpha=0.05):\\n    ps=[];\\n    for x,y in itertools.combinations(sorted(ev),2):\\n        rx,nx=ev[x]; ry,ny=ev[y]\\n        ps.append(fisher_exact([[rx,nx-rx],[ry,ny-ry]])[1])\\n    rej,_,_,_=multipletests(ps,a",
+      "t_offset_s": 276.443
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, collections\\nLOGS=pathlib.Path(\\\"bench/logs\\\")\\nf=collections.Counter(); vc=collections.Counter(); resf=collections.Counter()\\nn=0\\nfor rs in sorted(LOGS.rglob(\\\"runner_state.json\\\")):\\n    if len(rs.relative_to(LOGS).parts)!=2: continue\\n    try: d=json.loads(rs.read_text(errors=\\\"replace\\\"))\\n    except Exception: continue\\n    for e in ((d.ge",
+      "t_offset_s": 288.516
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, collections\\nLOGS=pathlib.Path(\\\"bench/logs\\\")\\nrbr=collections.Counter(); er=collections.Counter(); esc=collections.Counter()\\nboth=0; rbr_no_rh=0; rh_no_rbr=0\\ndispatched_union=0; resolved_union=0\\nfor rs in sorted(LOGS.rglob(\\\"runner_state.json\\\")):\\n    if len(rs.relative_to(LOGS).parts)!=2: continue\\n    try: d=json.loads(rs.read_text(error",
+      "t_offset_s": 303.379
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n 'resolved_by_routing\\\"\\\\]\\\\s*=\\\\|\\\\[\\\"resolved_by_routing\\\"\\\\] =\\\\|resolved_by_routing.*=' bench/reference_runner_v3.py | head -8; echo \\\"=== rosters in archive:\\\"; python3 - <<'PY'\\nimport json, pathlib, collections\\nLOGS=pathlib.Path(\\\"bench/logs\\\"); rosters=collections.Counter()\\nfor rs in sorted(LOGS.rglob(\\\"runner_state.json\\\")):\\n    if len(rs.relative_to(LOGS).parts)!=2",
+      "t_offset_s": 320.996
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"'cx'\\\\|\\\\\\\"cx\\\\\\\"\\\" bench/*.py bench/*.json configs 2>/dev/null | head -8; echo \\\"=== panel keys:\\\"; grep -rn \\\"cgpt\\\" bench/reference_runner_v3.py | head -5\", \"description\": \"Locate live panel roster keys\"}",
+      "t_offset_s": 329.71
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 8600,8620p bench/reference_runner_v3.py; echo \\\"..... 8680-8700 .....\\\"; sed -n 8676,8700p bench/reference_runner_v3.py; echo \\\"..... 8800-8820 .....\\\"; sed -n 8800,8820p bench/reference_runner_v3.py\", \"description\": \"Inspect write sites and try/except\"}",
+      "t_offset_s": 331.286
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json, pathlib, re\\nLOGS=pathlib.Path(\\\"bench/logs\\\")\\nlate_rbr=late_rh=early_rbr=early_rh=0\\nfor rs in sorted(LOGS.rglob(\\\"runner_state.json\\\")):\\n    if len(rs.relative_to(LOGS).parts)!=2: continue\\n    m=re.search(r\\\"(20\\\\d{6})\\\", rs.parent.name) or re.search(r\\\"(20\\\\d\\\\d-\\\\d\\\\d-\\\\d\\\\d)\\\", rs.parent.name)\\n    tag=m.group(1).replace(\\\"-\\\",\\\"\\\") if m else Non",
+      "t_offset_s": 345.677
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sympy as sp, itertools\\np=sp.symbols('p1:5', positive=True)\\nexprs={sp.simplify(1-sp.prod([1-x for x in perm])) for perm in itertools.permutations(p)}\\nprint(\\\"P(resolve) distinct expressions over 24 permutations of 4 rungs:\\\", len(exprs))\\n# E[#dispatches] under exhaustion: sum_{k=1}^{n} prod_{j<k}(1-p_j)\\ndef Edisp(perm):\\n    n=len(perm); tot=0\\n    for k i",
+      "t_offset_s": 349.914
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 8560,8600p bench/reference_runner_v3.py; echo \\\"=== exp name vars in scope:\\\"; grep -n \\\"experiment_name\\\" bench/reference_runner_v3.py | head -12\", \"description\": \"Find route call site and experiment name\"}",
+      "t_offset_s": 387.883
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 626,640p bench/routing.py; echo \\\"=== RoutingResult tail:\\\"; sed -n 628,700p bench/routing.py | grep -n \\\"ladder_was_empty\\\\|strength_order_matched\\\\|strength_order_was_unestablished\\\\|^$\\\" | head\", \"description\": \"Read RoutingResult fields\"}",
+      "t_offset_s": 416.647
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 420,470p bench/routing.py\", \"description\": \"Read RoutingResult dataclass fully\"}",
+      "t_offset_s": 417.291
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 470,495p bench/routing.py\", \"description\": \"Find end of RoutingResult\"}",
+      "t_offset_s": 421.434
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_k6o70q8m/repo/bench/routing.py\", \"old_string\": \"    strength_order_matched: int = 0\\n\\n\\ndef seat_identities(registry, labels) -> dict:\", \"new_string\": \"    strength_order_matched: int = 0\\n    #: ONE RECORD PER RUNG ACTUALLY DISPATCHED, in dispatch order:\\n    #: ``{\\\"position\\\": 1-based rung",
+      "t_offset_s": 448.378
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -40 bench/routing.py | grep -n \\\"import\\\\|from\\\"\", \"description\": \"Check routing.py imports\"}",
+      "t_offset_s": 453.006
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/cc1/patch1.py <<'PYEOF'\\nimport io, sys\\np = \\\"bench/routing.py\\\"\\ns = io.open(p, encoding=\\\"utf-8\\\").read()\\n\\n# 1. import `field`\\nold = \\\"from dataclasses import dataclass\\\\n\\\"\\nassert s.count(old) == 1\\ns = s.replace(old, \\\"from dataclasses import dataclass, field\\\\n\\\")\\n\\n# 2. new RoutingResult fields + rotation helper\\nanchor = \\\"    strength_order_matched: int = 0\\\\n",
+      "t_offset_s": 478.711
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/cc1/patch2.py <<'PYEOF'\\nimport io\\np = \\\"bench/routing.py\\\"\\ns = io.open(p, encoding=\\\"utf-8\\\").read()\\n\\n# --- A. resolve_via_routing: record one attempt per dispatched rung ---------\\nold = '''    _ladder_empty = not list(rungs)\\n    _budget = len(list(rungs)) if not max_rungs else max_rungs\\n    for model in list(rungs)[:_budget]:\\n        tried += 1\\n        last_model",
+      "t_offset_s": 509.896
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/cc1/patch3.py <<'PYEOF'\\nimport io\\np = \\\"bench/reference_runner_v3.py\\\"\\ns = io.open(p, encoding=\\\"utf-8\\\").read()\\n\\n# --- A. persist the recorder at the single routing_history write site -------\\nold = '''                \\\"rungs_tried\\\": getattr(result, \\\"rungs_tried\\\", None),\\n                \\\"rungs_available\\\": len(models),'''\\nassert s.count(old) == 1\\nnew = '''     ",
+      "t_offset_s": 527.824
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_ladder_exposure_and_rung_attempts_2026-10-20.py <<'PYEOF'\\n\\\"\\\"\\\"The rung sequence is rotated where no order is established, AND every rung\\ndispatched is recorded with the verdict it earned.\\n\\nJOINT ROUND, what_breaks_the_capability_tie_2026-10-18. Two seats proved\\ndifferent halves of one defect. fable proved the rung ORDER is outcome-inert:\\nunder the exhaus",
+      "t_offset_s": 606.275
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests -q -k \\\"routing or ladder or rung or strength or registry or policy or capability or identity or empty_ladder or transport\\\" -p no:randomly 2>&1 | tail -20\", \"description\": \"Targeted regression on touched surface\"}",
+      "t_offset_s": 617.19
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/routing.py /tmp/cc1/routing.patched.py; cp bench/reference_runner_v3.py /tmp/cc1/runner.patched.py\\npython3 - <<'PY'\\nimport io\\n# invert patch 3 (runner) and patches 1-2 (routing) by removing exactly what was added\\nfor p, marks in ((\\\"bench/reference_runner_v3.py\\\", None), (\\\"bench/routing.py\\\", None)):\\n    pass\\nPY\\ncat > /tmp/cc1/revert.py <<'PYEOF'\\nimport io, re\\n# ---",
+      "t_offset_s": 707.914
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /tmp/cc1/routing.patched.py bench/routing.py; cp /tmp/cc1/runner.patched.py bench/reference_runner_v3.py\\npython3 -m pytest \\\"bench/tests/test_ladder_exposure_and_rung_attempts_2026-10-20.py\\\" -q -p no:randomly 2>&1 | tail -3\\necho \\\"=== pre-existing failure #2 reason:\\\"\\npython3 -m pytest bench/tests/test_guard_false_positive_figures_2026-10-02.py::TestTheStaleLabelIsNotRead::test",
+      "t_offset_s": 718.949
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript 2>&1; wolframscript -code 'ps = {p1,p2,p3,p4}; Length[DeleteDuplicates[Simplify[1 - Times@@(1-#)]& /@ Permutations[ps]]]' 2>&1 | head -5; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram second falsifier: permutation count\"}",
+      "t_offset_s": 729.199
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'Print[N[1 - 6!/6^6, 20]]; Print[N[2*PDF[HypergeometricDistribution[4,4,8],4], 12]]; Print[Length[DeleteDuplicates[Simplify[Sum[Product[1-#[[j]],{j,1,k-1}],{k,1,4}]]& /@ Permutations[{p1,p2,p3,p4}]]]]' 2>&1 | head -8; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram: shuffle constant, Fisher p, dispatch-count permutations\"}",
+      "t_offset_s": 740.03
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/competence_provenance.py >/dev/null 2>&1; echo \\\"competence_provenance exit=$?\\\"; python3 -m pytest bench/tests -q -k \\\"routing or ladder or rung or strength or policy_engine or capability\\\" -p no:randomly 2>&1 | tail -4; echo \\\"=== files written:\\\"; ls -la bench/tests/test_ladder_exposure_and_rung_attempts_2026-10-20.py; python3 -c \\\"\\nimport sys;sys.path.insert(0,'.'",
+      "t_offset_s": 753.422
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/competence_provenance.py 2>&1 | tail -15\", \"description\": \"Diagnose competence_provenance exit 2\"}",
+      "t_offset_s": 808.514
+    }
+  ],
+  "attempts": 1,
+  "per_attempt": [
+    {
+      "attempt": 1,
+      "elapsed_s": 943.3,
+      "tool_calls": 56,
+      "cwd": "/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_k6o70q8m/repo",
+      "write_confinement": "sandbox-exec: writes to the canonical tree denied"
+    }
+  ]
+}

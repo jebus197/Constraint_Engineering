@@ -2609,7 +2609,19 @@ FINDING_STATUS_VOCABULARY: Dict[str, Dict[str, Any]] = {
         "live": False,
     },
     "MERGED": {
-        "meaning": "Counterfactual repair says two findings are one defect.",
+        #: ★ CORRECTED 2026-10-24. The meaning was right and the USE was wrong:
+        #: DUPLICATE had been folded into this status, so MERGED silently became
+        #: the harness's word for a duplicate as well as for its own case. It is
+        #: not a duplicate claim. One repair curing both defects establishes that
+        #: the FAULT is one; it establishes nothing about whether the 2 REPAIRS
+        #: are the same, which is his condition (b). Where the repairs differ this
+        #: status is honest and DUPLICATE would be false.
+        "meaning": ("Counterfactual repair says two findings are one defect. "
+                    "This is his condition (a) ALONE and is NOT a duplicate "
+                    "claim: the repairs may differ, and where they do, which "
+                    "repair to keep is decided by "
+                    "scripts/which_fix_is_better_2026-10-24.py and the loser is "
+                    "DEPRECATED rather than merged away."),
         "who_may_assert": ("tool",),
         "in_from": ("OPEN", "CORROBORATED", "CONFIRMED"),
         "out_to": (),
@@ -2672,16 +2684,40 @@ FINDING_STATUS_VOCABULARY: Dict[str, Dict[str, Any]] = {
         "live": True,
     },
     "DUPLICATE": {
-        "meaning": ("DEPRECATED — collapse into MERGED + merged_into. Written "
-                    "zero times across the archive; retained only because "
-                    "eleven terminal-status filters still name it."),
+        #: ★ UN-DEPRECATED 2026-10-24 ON HIS RULING. It read "DEPRECATED —
+        #: collapse into MERGED + merged_into", and he refused that: *"Duplicates
+        #: should not be marked as Depreciated! ... given that definition, a
+        #: duplicate is a duplicate, not something else."*
+        #:
+        #: HIS DEFINITION, 2026-10-16, which the collapse had discarded: *"a
+        #: duplicate can only be called a duplicate, if a) it finds the same fault
+        #: and b) if the proposed repair is in fact identical."* MERGED tests only
+        #: (a) -- `adjudicate_by_repair` applies A's fix and asks whether B's
+        #: falsifier now passes, which is defect-sameness-by-cure and says nothing
+        #: about whether the 2 repairs are the same repair.
+        #:
+        #: MEASURED, which is why the collapse was wrong rather than merely
+        #: imprecise: of 84 merged pairs whose repairs are both comparable, 63 --
+        #: 75.0000%, Wilson [64.7857%, 83.0277%], Clopper-Pearson [64.3584%,
+        #: 83.8105%] -- have DIFFERENT repairs. Three quarters of what the archive
+        #: recorded as one item fail his condition (b).
+        #:
+        #: "Written zero times across the archive" was true and was the CONSEQUENCE
+        #: of the deprecation, not a reason for it: nothing could write a status
+        #: whose own meaning said not to.
+        "meaning": ("Both of his conditions hold: the same fault AND a repair "
+                    "measured identical to the other's. A genuine duplicate is "
+                    "one item. Same fault with DIFFERENT repairs is MERGED, and "
+                    "choosing between those repairs is a supersession question."),
         "who_may_assert": ("tool",),
-        "in_from": (),
-        "out_to": (),
-        "evidence_required": "n/a — deprecated",
+        "in_from": ("OPEN", "CORROBORATED", "CONFIRMED"),
+        "out_to": ("REOPENED",),
+        "evidence_required": ("adjudicate_by_repair verdict SAME in BOTH "
+                              "directions, AND repair identity at or above "
+                              "DUPLICATE_REPAIR_FLOOR, measured by "
+                              "scripts/which_fix_is_better_2026-10-24.py"),
         "terminal": True,
         "live": False,
-        "deprecated": True,
     },
 }
 

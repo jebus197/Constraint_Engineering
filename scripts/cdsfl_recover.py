@@ -839,10 +839,20 @@ def _record_recovery_ran() -> None:
         # version wrote exactly that; a second "fixed" it to `timezone.utc`
         # without importing `timezone`. Both raised, and a blanket
         # `except Exception: pass` reported success either way.
-        (d / "last_recovery").write_text(
-            datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            encoding="utf-8",
-        )
+        stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        (d / "last_recovery").write_text(stamp, encoding="utf-8")
+        # ★ AND AN APPEND-ONLY HISTORY, added 2026-10-24 on his ruling. He asked
+        # "Has that ever happened? Does it work as it should?" and `last_recovery`
+        # could not answer him: it is ONE overwritten value, so it records WHEN
+        # LAST and never HOW OFTEN. On 2026-10-23 the honest answer was "it ran on
+        # the 19th, and I cannot tell you it has run every time" -- a gap in the
+        # record, not in the mechanism. The log makes the question answerable.
+        #
+        # APPEND-ONLY AND NEVER ROTATED HERE. One line is about 30 bytes, so a
+        # restore every hour for a year is under 0.3 MB; pruning it would recreate
+        # the defect it exists to fix, and his standing rule is point, never prune.
+        with (d / "recovery_log").open("a", encoding="utf-8") as fh:
+            fh.write(f"{stamp}\t{pathlib.Path.cwd()}\n")
     except OSError as exc:
         # An unwritable HOME is environmental and must not break a recovery run,
         # but it must not read as success either. Programming errors are NOT

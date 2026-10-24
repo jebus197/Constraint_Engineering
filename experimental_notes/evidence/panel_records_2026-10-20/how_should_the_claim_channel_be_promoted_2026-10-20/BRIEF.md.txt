@@ -1,0 +1,83 @@
+# PANEL BRIEF — where should the claim channel enter the scoring equations, if anywhere?
+
+## REQUIRED SECTION 1 — The question
+
+**The claim ledger has been `informative_only` since v1. Its commissioning measurement is now done. Should its verdict be promoted into the scoring equations — and if so, into `sigma`, `S_k` or `R_k` — or should it stay informative?**
+
+**This is the founder's own instruction, dated 2026-10-02 and unexecuted since.** His words: *"Also implement this and test it on the upcoming simulated runs."* And his ruling of 2026-10-19 on how to settle it: *"Ask the panel what the best approach of all the available options is, given the full specification of the project and what we aim to achieve (clean honest convergence). But thee is to be no 'cooking the books' simply in order to make a rest pass. Either it is useful, or it isn't."* (*thee* is *there*; *rest* is *test*.)
+
+**The last clause is the binding one.** A promotion that makes convergence easier without making it more honest is the failure this project exists to prevent. If the answer is that the channel should stay informative, say so; that is a complete answer and not a failure to deliver one.
+
+**THE TEST HALF IS DONE AND THE FIGURES ARE COMMITTED.** `scripts/commission_the_claim_channel_2026-10-17.py`, guarded by `bench/tests/test_the_claim_channel_is_commissioned_2026-10-17.py` at 14 passing tests, reports 3 figures rather than 1:
+
+- transcription fidelity **58 of 58**, Wilson [93.7882%, 100.0000%], exact [93.8379%, 100.0000%]
+- falsifier-path discrimination in BOTH directions **5 of 5**, Wilson [56.5518%, 100.0000%]
+- routing properties **4 of 4**, Wilson [51.0109%, 100.0000%]
+
+**AN ERROR BOUND IS DERIVABLE FROM THE TRANSCRIPTION INTERVAL ABOVE, AND THIS BRIEF DELIBERATELY DOES NOT STATE IT.** The producer does not print it, so any value typed here would be a number no one re-executes, and a typed gamma that disagreed with the real one has reached seats in this project before. Derive it yourself from the declared interval, say which statistic you used, and note that for an observation with 0 failures the one-sided 95% bound is the apter one and is tighter than the two-sided.
+
+<!-- figure: transcription fidelity Wilson lower | scripts/commission_the_claim_channel_2026-10-17.py | 93.7882 -->
+<!-- figure: transcription fidelity upper | scripts/commission_the_claim_channel_2026-10-17.py | 100.0000 -->
+<!-- figure: transcription Clopper-Pearson lower | scripts/commission_the_claim_channel_2026-10-17.py | 93.8379 -->
+<!-- figure: discrimination Wilson lower | scripts/commission_the_claim_channel_2026-10-17.py | 56.5518 -->
+<!-- figure: routing Wilson lower | scripts/commission_the_claim_channel_2026-10-17.py | 51.0109 -->
+
+**ONE OF THOSE FIGURES IS NOT THE CHANNEL'S AND THE PRODUCER SAYS SO.** The discrimination figure belongs to the falsifier PATH, not to the ledger: a channel that transcribes perfectly still inherits whatever the path upstream of it is. Do not treat 5 of 5 as evidence about the ledger.
+
+**WHAT IS NOT DONE.** `bench/claim_ledger.py:184` still reads `informative_only = True`, and the header at lines 37 to 40 says the ledger is *"`informative_only` like `target_complexity`, promoted only after a commissioning run measures its error"*.
+
+**THAT PRECEDENT DOES NOT EXIST, AND THIS WAS MEASURED.** `target_complexity` appears with `informative_only` NOWHERE in the code. **3 channels carry `informative_only = True`** — the claim ledger at `bench/claim_ledger.py:184` and 2 further sites in the runner at lines 10521 and 14499 — and **0 of the 3 have ever been promoted.** So there is no worked example to copy, and the header's comparison is to a sibling in the same unpromoted state.
+
+## REQUIRED SECTION 2 — Use the harness
+
+**Form your answer by RUNNING the machinery, not by reading it.**
+
+**Execute the claim ledger.** `bench/claim_ledger.py` has a `__main__` path that prints a report. Run it against a real archived run and report what it actually emits, including `informative_only`. The channel DID run in both free runs of 2026-10-15: the Free_Run_1 note records *"claim ledger | 22 claims, 19 decidable, 3 routed"*.
+
+**Locate where a promotion would have to land.** `S_k` and `R_k` are the mathematical appendix's own terms, defined in `docs/MATHEMATICAL_APPENDIX.md` and consumed in `bench/reference_runner_v3.py`. Name the exact function and line a promoted verdict would enter, and say what currently occupies that position.
+
+**Measure what changes.** Replay an archived run's claims through whatever promotion you propose and report the effect on the convergence decision. If the effect is zero, that is a finding and it argues for staying informative. If it is non-zero, say whether convergence got EASIER or HARDER, because easier without a corresponding gain in honesty is the thing the founder forbade.
+
+**Check the sibling channels.** 2 other sites carry `informative_only = True`. Say whether your answer generalises to them or is specific to the ledger, and why.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+**A finding without a fix is incomplete, and a fix whose falsifier has not been EXECUTED is a hypothesis.**
+
+**WHERE THE FIX MUST BE DELIVERED: written INTO the sandbox repository tree at its real path, as a file.** A fix described in prose, or left in scratch space, is destroyed at teardown and is not delivered. Write the changed module at the path it actually occupies, and write your test under `bench/tests/` at a real filename. Then RUN the test and report what it printed.
+
+Your fix must satisfy 3 standards explicitly, and say how it does:
+
+1. **ADDITIVE** — nothing removed or narrowed without a committed measurement showing the replacement dominates on a named property. Leaving the channel informative is permitted and needs no such measurement; promoting it does.
+2. **SIMPLEST SUFFICIENT** — if a 1-line change and a new subsystem both answer the question, the 1-line change is correct.
+3. **COMPOSABILITY** — say whether your answer composes with the commissioning measurement already built, or replaces part of it.
+
+**"STAY INFORMATIVE" IS A VALID FIX** and still requires the same rigour: if that is your answer, deliver the test that would make the project notice the day the evidence changes, and name the threshold at which promotion becomes warranted.
+
+## REQUIRED SECTION 4 — What would refute you
+
+State the measurement that would overturn your own answer, and the threshold at which it would. A number, not a sentiment. If your answer is promotion, name the observation that would make it wrong; if your answer is to stay informative, name the evidence that would make promotion right.
+
+## REQUIRED SECTION 7 — Disagreement
+
+Say where you disagree with this brief and where you expect to disagree with the other seat. Disagreement is preserved as information rather than smoothed to consensus; do not converge for its own sake.
+
+
+## REQUIRED SECTION 5 — Output shape
+
+Return these fields, in this order, so that 2 replies can be compared without a parser guessing at them.
+
+1. **VERDICT** — one of `PROMOTE_TO_SIGMA`, `PROMOTE_TO_S_K`, `PROMOTE_TO_R_K`, `STAY_INFORMATIVE`. One token, on its own line.
+2. **REASONING** — the premises, each with the execution that establishes it. A premise with no executed evidence beside it does not count.
+3. **FALSIFIER AND ITS EXECUTED RESULT** — the command you ran and the output it produced, quoted. Not a description of what it would produce.
+4. **THE FIX** — every file you wrote, by its real path, with what each one changes and why.
+5. **STANDARDS** — how your fix meets ADDITIVE, SIMPLEST SUFFICIENT and COMPOSABILITY, each answered separately.
+6. **WHAT WOULD REFUTE THIS** — the measurement and the numeric threshold.
+7. **DISAGREEMENT** — with this brief, and with the other seat as you anticipate it.
+8. **TERMINATION** — how many passes you ran and what the last one produced.
+
+## REQUIRED SECTION 6 — Termination
+
+**Stop at diminishing returns, which is this project's own criterion:** stop when a further pass produces no new finding above the real-world-consequence threshold, and say in your reply what that last pass produced so the claim can be checked. A finding is above threshold if missing it could cause a real failure, an invalid result or an unsafe condition.
+
+Do not pad passes to reach a number, and do not stop early with a HARD assumption untested. State the count you reached and why you stopped there.

@@ -1,0 +1,405 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 15991,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls && ls bench 2>/dev/null | head -50\", \"description\": \"Show working directory and repo layout\"}",
+      "t_offset_s": 5.713
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/tests/test_*2026-10-1*.py\"}",
+      "t_offset_s": 5.786
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | grep -E \\\"2026-10-(18|19|20)\\\" ; echo ---; ls bench/cdsfl_registry/ ; echo ---; ls bench/logs 2>/dev/null | head; echo ---; ls logs 2>/dev/null | head\", \"description\": \"Check for seat test files and logs layout\"}",
+      "t_offset_s": 12.125
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def (season_strength_order|rank_falsifier_writers|exposure_rotated_order|resolve_via_routing|capability_identity|strength_order_from_evidence|ladder_evidence_from_evidence|resolve_or_alarm)\", \"path\": \"bench/routing.py\", \"output_mode\": \"content\"}",
+      "t_offset_s": 13.629
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/routing.py bench/cdsfl_registry/registry.py bench/reference_runner_v3.py bench/tests/test_policy_engine.py 2>/dev/null\", \"description\": \"Line counts of target files\"}",
+      "t_offset_s": 19.754
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/routing.py\", \"offset\": 1, \"limit\": 120}",
+      "t_offset_s": 20.588
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/routing.py\", \"offset\": 120, \"limit\": 280}",
+      "t_offset_s": 23.471
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/routing.py\", \"offset\": 399, \"limit\": 480}",
+      "t_offset_s": 26.473
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"FileNotFoundError\\\\|layer\\\\|Layer\\\\|def load_effective_policy\\\\|def _deep_merge\\\\|_check_monotonicity\\\" bench/cdsfl_registry/registry.py | head -40\", \"description\": \"Locate layer-4 handling in registry.py\"}",
+      "t_offset_s": 92.978
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find bench/logs -name runner_state.json | wc -l; find bench/logs -maxdepth 1 -name runner_state.json | wc -l; find bench/logs -name runner_state.json | head -5\", \"description\": \"Count archived runner_state.json files\"}",
+      "t_offset_s": 94.105
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/cdsfl_registry/registry.py\", \"offset\": 216, \"limit\": 80}",
+      "t_offset_s": 98.532
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob\\nfiles = glob.glob('bench/logs/**/runner_state.json', recursive=True)\\nprint(\\\"runner_state files:\\\", len(files))\\n# inspect one with routing_history\\nfor f in files:\\n    d = json.load(open(f))\\n    if 'routing_history' in d:\\n        rh = d['routing_history']\\n        print(f, type(rh), len(rh))\\n        print(json.dumps(rh[0] if isinstance(rh, l",
+      "t_offset_s": 99.944
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"routing_history\\\" bench/logs 2>/dev/null | head; echo ---; grep -rn \\\"routing_history\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Find where routing_history lives\"}",
+      "t_offset_s": 105.106
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob\\nf='bench/logs/commissioning_arm2_single_20260930T031047Z/runner_state.json'\\nd=json.load(open(f))\\nprint(list(d.keys())[:30])\\nreg=d.get('registry') or d.get('entries')\\nif isinstance(reg, dict):\\n    print('reg keys sample:', list(reg.keys())[:5])\\n    k=list(reg.keys())[0]\\n    e=reg[k] if not isinstance(reg.get('entries'),dict) else None\\nEOF\",",
+      "t_offset_s": 118.875
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob\\nfiles = sorted(glob.glob('bench/logs/**/runner_state.json', recursive=True))\\n# exclude sandbox_harvest copies? check\\ntotal_entries=0; n_with_rh=0; rh_sample=None\\nref=0; tot=0\\nfor f in files:\\n    try: d=json.load(open(f))\\n    except Exception as e: print(\\\"BAD\\\",f,e); continue\\n    reg=d.get('registry') or {}\\n    ents=reg.get('entries') or {",
+      "t_offset_s": 125.181
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, collections\\nfiles = sorted(glob.glob('bench/logs/**/runner_state.json', recursive=True))\\n# classify paths\\nnested = [f for f in files if '/sandbox_harvest/' in f or '/run_dir/' in f]\\nprint(\\\"all:\\\", len(files), \\\"nested:\\\", len(nested))\\ncnt = {}\\nfor f in files:\\n    d=json.load(open(f)); n=len((d.get('registry') or {}).get('entries') or {})\\n",
+      "t_offset_s": 162.054
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, re, sys, collections, itertools\\nsys.path.insert(0,'.')\\nfrom bench.routing import (rank_falsifier_writers, season_strength_order,\\n                           DEFAULT_FALSIFIER_STRENGTH, strength_order_from_evidence,\\n                           falsification_evidence_from_registry)\\n\\nfiles = sorted(f for f in glob.glob('bench/logs/**/runner_state",
+      "t_offset_s": 192.043
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, re, sys, collections, itertools\\nsys.path.insert(0,'.')\\nfrom bench.routing import rank_falsifier_writers\\ndef count(files):\\n    disp=0; res=0\\n    passes=[]\\n    for f in files:\\n        try: d=json.load(open(f))\\n        except Exception: continue\\n        ents=(d.get('registry') or {}).get('entries') or {}\\n        roster=sorted((d.get('raw_co",
+      "t_offset_s": 208.096
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, collections\\nallf = sorted(glob.glob('bench/logs/**/runner_state.json', recursive=True))\\nP=[]\\nfor f in allf:\\n    try: d=json.load(open(f))\\n    except Exception: continue\\n    for e in ((d.get('registry') or {}).get('entries') or {}).values():\\n        if isinstance(e,dict):\\n            for p in (e.get('routing_history') or []): P.append((f,p)",
+      "t_offset_s": 231.69
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, sys, collections, itertools\\nsys.path.insert(0,'.')\\nfrom bench.routing import rank_falsifier_writers\\nallf = sorted(glob.glob('bench/logs/**/runner_state.json', recursive=True))\\non=collections.Counter(); asked=collections.Counter(); mism=0\\nrs=collections.Counter(); ra=collections.Counter(); short=0\\nfor f in allf:\\n    try: d=json.load(open(f))",
+      "t_offset_s": 271.199
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, re, collections, hashlib\\nd1dirs = set(re.match(r'(bench/logs/[^/]+)/', f).group(1) for f in glob.glob('bench/logs/*/runner_state.json'))\\ndef passes_in(obj, out, fname):\\n    if isinstance(obj,dict):\\n        rh=obj.get('routing_history')\\n        if isinstance(rh,list):\\n            for p in rh:\\n                if isinstance(p,dict) and (p.get(",
+      "t_offset_s": 298.689
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"season_strength_order\\\\|rung_attempts\\\\|routing_history.append\\\\|\\\\\\\"routing_history\\\\\\\"\\\\|'routing_history'\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Locate season order and routing_history write sites in runner\"}",
+      "t_offset_s": 357.068
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"load_effective_policy\\\\|FileNotFoundError\\\" bench/cdsfl_registry/composer.py bench/run_round_robin.py 2>/dev/null | head; echo ===; grep -rln \\\"load_effective_policy\\\" bench/tests | head; echo ===; grep -n \\\"nonexistent_model\\\" bench/tests/test_policy_engine.py\", \"description\": \"Locate load_effective_policy callers and pinning tests\"}",
+      "t_offset_s": 358.727
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 8550, \"limit\": 110}",
+      "t_offset_s": 362.157
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"experiment_name\\\\|run_name\\\" bench/reference_runner_v3.py | head -15; echo ---; sed -n '8520,8552p' bench/reference_runner_v3.py\", \"description\": \"Find experiment name attribute near the routing block\"}",
+      "t_offset_s": 368.396
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.')\\n# \\u2500\\u2500 Disagreement 3: constructed 2-identity registry \\u2500\\u2500\\nfrom bench.routing import season_strength_order\\nclass FakeReg:\\n    def __init__(self, entries): self.entries=entries\\n    def resolve_model(self, label): return {'A':'modelA@api1','B':'modelB@api2'}.get(label,label)\\nents={}\\ni=0\\ndef add(seat, refuted,",
+      "t_offset_s": 387.516
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && timeout 90 wolframscript -code 'Length[DeleteDuplicates[Table[Simplify[1-Product[1-p[i],{i,perm}]],{perm,Permutations[{1,2,3,4}]}]]]' 2>&1 | head -3 || echo \\\"WOLFRAM UNAVAILABLE\\\"\", \"description\": \"Wolfram second check of 24-permutation collapse\"}",
+      "t_offset_s": 408.47
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/tests/test_policy_engine.py\", \"offset\": 1, \"limit\": 80}",
+      "t_offset_s": 409.359
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"nonexistent\\\" bench/tests/test_policy_engine.py; grep -rn \\\"nonexistent_model\\\\|FileNotFoundError\\\" bench/tests/test_policy_engine.py bench/tests/test_the_policy_layers_are_checked_before_a_run_2026-10-17.py 2>/dev/null | head\", \"description\": \"Find the pinning test\"}",
+      "t_offset_s": 415.113
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'Length[DeleteDuplicates[Table[Simplify[1-Product[1-p[i],{i,perm}]],{perm,Permutations[{1,2,3,4}]}]]]' 2>&1 | head -3\", \"description\": \"Wolfram second check: permutation collapse count\"}",
+      "t_offset_s": 419.8
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '290,313p' bench/tests/test_policy_engine.py; echo ---; grep -n \\\"def query\\\" bench/cdsfl_registry/engine.py; sed -n \\\"$(grep -n 'def query' bench/cdsfl_registry/engine.py | head -1 | cut -d: -f1),+30p\\\" bench/cdsfl_registry/engine.py\", \"description\": \"Read query() in engine and the pinning test context\"}",
+      "t_offset_s": 421.29
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_compute_provenance\\\" bench/cdsfl_registry/engine.py | head -2; sed -n \\\"$(grep -n 'def _compute_provenance' bench/cdsfl_registry/engine.py | cut -d: -f1),+40p\\\" bench/cdsfl_registry/engine.py\", \"description\": \"Check _compute_provenance behavior on missing model file\"}",
+      "t_offset_s": 430.632
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"season_strength_order\\\" bench/tests scripts 2>/dev/null; echo ---; grep -rn \\\"strength_order_was_unestablished\\\" bench/tests/*.py | head -8\", \"description\": \"Find tests pinning season order and the unestablished stamp\"}",
+      "t_offset_s": 481.312
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"season_strength_order(\\\" bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py bench/tests/test_a_shared_mechanism_does_not_decide_2026-10-17.py bench/tests/test_the_ladder_order_is_measured_not_a_vendor_tuple_2026-10-17.py bench/tests/test_capability_is_keyed_on_an_identity_not_a_name_2026-10-17.py bench/tests/test_the_ranking_mechanism_carries_no_football_2026-10-17.",
+      "t_offset_s": 490.106
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"bench/routing.py\", \"old_string\": \"from dataclasses import dataclass\\nfrom typing import Callable, Optional, Sequence\\nimport hashlib as _hashlib\", \"new_string\": \"from dataclasses import dataclass, field\\nfrom typing import Callable, Optional, Sequence\\nimport hashlib as _hashlib\"}",
+      "t_offset_s": 497.87
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport re\\np='bench/routing.py'\\ns=open(p).read()\\ns=s.replace(\\\"from dataclasses import dataclass\\\\n\\\",\\\"from dataclasses import dataclass, field\\\\n\\\",1)\\nopen(p,'w').write(s)\\nprint(\\\"ok\\\")\\nEOF\", \"description\": \"Apply dataclass field import edit via python\", \"dangerouslyDisableSandbox\": false}",
+      "t_offset_s": 502.171
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\np='bench/routing.py'\\ns=open(p).read()\\n\\n# 1. rung_attempts field on RoutingResult (after strength_order_matched)\\nold = \\\"    strength_order_matched: int = 0\\\\n\\\"\\nassert s.count(old)==1\\nnew = old + '''    #: ONE RECORD PER RUNG DISPATCHED: ``{\\\"model\\\": <label>, \\\"verdict\\\": <verdict>}``,\\n    #: the self-rung included. This is the LADDER-TASK DENOMINATOR the ar",
+      "t_offset_s": 520.394
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\np='bench/routing.py'\\ns=open(p).read()\\n\\n# 3. exposure_rotated_order + unmeasured-fallback predicate, before season_strength_order\\nold = \\\"def season_strength_order(registry, labels, frozen=None, alpha: float = 0.05):\\\"\\nassert s.count(old)==1\\nhelpers = '''def exposure_rotated_order(order, seed) -> tuple:\\n    \\\"\\\"\\\"A CYCLIC ROTATION of `order` keyed on `seed`. A",
+      "t_offset_s": 544.121
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\np='bench/routing.py'\\ns=open(p).read()\\n\\n# 6. ladder evidence reader, after falsification_evidence_by_identity (before season_strength_order's helpers)\\nanchor = \\\"def exposure_rotated_order(order, seed) -> tuple:\\\"\\nassert s.count(anchor)==1\\nreader = '''def ladder_evidence_from_registry(registry, labels=None) -> dict:\\n    \\\"\\\"\\\"identity -> ``(confirmed, attempts",
+      "t_offset_s": 559.585
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# runner wiring: seed + rung_attempts persistence\\np='bench/reference_runner_v3.py'\\ns=open(p).read()\\nold = '''            _order, _est, _why = _season(registry, models, frozen=_frozen)'''\\nassert s.count(old)==1\\ns=s.replace(old, '''            # THE EXPOSURE SEED: the experiment name, so the un-established\\n            # fallback's starting point rotates per expe",
+      "t_offset_s": 569.965
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# registry.py: layer-4 miss becomes loud and non-fatal\\np='bench/cdsfl_registry/registry.py'\\ns=open(p).read()\\nold = '''        else:\\n            available = [p.stem for p in (REGISTRY_DIR / \\\"models\\\").glob(\\\"*.toml\\\")]\\n            raise FileNotFoundError(\\n                f\\\"Model config not found: {model_path}\\\\\\\\n\\\"\\n                f\\\"Available models: {avai",
+      "t_offset_s": 586.459
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Committed measurement backing the registry comment: model TOMLs touch zero HARD keys\\nimport sys, glob, tomllib; sys.path.insert(0,'.')\\nfrom bench.cdsfl_registry.registry import HARD_CONSTRAINTS, HARD_THRESHOLDS, HARD_STRINGS, _deep_merge, load_effective_policy\\ndef flat(d, pre=\\\"\\\"):\\n    for k,v in d.items():\\n        kk=f\\\"{pre}.{k}\\\" if pre else k\\n        if",
+      "t_offset_s": 598.002
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\np='bench/tests/test_policy_engine.py'\\ns=open(p).read()\\nold='''    def test_query_with_nonexistent_model_raises(self, engine):\\n        \\\"\\\"\\\"Missing model config should raise FileNotFoundError.\\\"\\\"\\\"\\n        with pytest.raises(FileNotFoundError):\\n            engine.query(\\\"mathematics\\\", model=\\\"nonexistent_model\\\")'''\\nassert s.count(old)==1\\nnew='''    def tes",
+      "t_offset_s": 612.535
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"bench/tests/test_the_capability_tie_joint_2026-10-20.py\", \"content\": \"\\\"\\\"\\\"Joint round what_breaks_the_capability_tie_2026-10-18 \\u2014 the COMPOSED fix.\\n\\nThe two blind halves proved different halves of one defect:\\n\\n* the fallback rung ORDER is outcome-inert under exhaustion (P(resolve) =\\n  1 - prod(1 - p_i), a product commutes; 24 permutations of 4 symbolic rungs\\n  collapse ",
+      "t_offset_s": 674.562
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_capability_tie_joint_2026-10-20.py <<'PYEOF'\\n\\\"\\\"\\\"Joint round what_breaks_the_capability_tie_2026-10-18 \\u2014 the COMPOSED fix.\\n\\nThe two blind halves proved different halves of one defect:\\n\\n* the fallback rung ORDER is outcome-inert under exhaustion (P(resolve) =\\n  1 - prod(1 - p_i), a product commutes; 24 permutations of 4 symbolic rungs\\n  collapse",
+      "t_offset_s": 728.011
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests -q -k \\\"routing or ladder or strength or registry or policy or capability or identity or unmeasured or unregistered or football or composer or vendor\\\" 2>&1 | tail -6\", \"description\": \"Run targeted regression over touched suites\", \"timeout\": 480000}",
+      "t_offset_s": 735.002
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git stash list >/dev/null 2>&1; git status --porcelain 2>&1 | head -3; python3 -m pytest bench/tests/test_disc_failure_routing.py::TestDiscriminationFailureIsRouted::test_subcritical_no_discrimination_reaches_a_stronger_writer -q 2>&1 | grep -E \\\"assert|Error|FAILED|passed|failed\\\" | head -15\", \"description\": \"Diagnose disc_failure_routing failure\"}",
+      "t_offset_s": 825.113
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_a_blind_round_has_a_joint_round_2026-10-08.py::TestTheDebtCheckRefusesANewBlindRound::test_the_live_registry_blocks_nothing_right_now\\\" -q 2>&1 | grep -B2 -A8 \\\"Error\\\\|assert\\\" | head -25\", \"description\": \"Diagnose blind-round debt test failure\"}",
+      "t_offset_s": 843.941
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '95,165p' bench/tests/test_disc_failure_routing.py; grep -n \\\"experiment_name\\\\|RunnerConfig\\\\|cfg\\\" bench/tests/test_disc_failure_routing.py | head\", \"description\": \"Read the disc-failure routing test\"}",
+      "t_offset_s": 851.978
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n '\\\"Codex\\\"\\\\|Codex' bench/tests/test_disc_failure_routing.py | head; sed -n '163,200p' bench/tests/test_disc_failure_routing.py\", \"description\": \"Find all Codex pins in disc-failure test\"}",
+      "t_offset_s": 868.725
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"F=$(find bench -name \\\"test_disc_failure_routing.py\\\"); echo $F; grep -n 'Codex' $F | head; sed -n '160,200p' $F\", \"description\": \"Locate and inspect the disc-failure test file\"}",
+      "t_offset_s": 871.993
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest --collect-only -q 2>/dev/null -k disc_failure | head -3; find . -name \\\"test_disc_failure*\\\" 2>/dev/null | head\", \"description\": \"Find disc failure test path\"}",
+      "t_offset_s": 875.314
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests | grep -i disc; echo ---; grep -rn \\\"test_subcritical_no_discrimination_reaches_a_stronger_writer\\\" bench/tests/*.py | head -2\", \"description\": \"Locate the disc failure test under bench/tests\"}",
+      "t_offset_s": 883.462
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"test_subcritical_no_discrimination_reaches_a_stronger_writer\\\" bench scripts 2>/dev/null | grep -v sandbox_harvest | head\", \"description\": \"Search whole tree for the test\"}",
+      "t_offset_s": 887.258
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | wc -l; ls bench/tests/test_d* 2>/dev/null; python3 -m pytest bench/tests/test_disc_failure_routing.py -q 2>&1 | tail -3\", \"description\": \"Check test dir state\"}",
+      "t_offset_s": 895.95
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/*2026-10-1*.py 2>/dev/null | wc -l; ls bench/tests/test_the_capability_tie_joint_2026-10-20.py 2>/dev/null; ls bench/tests/test_policy_engine.py 2>/dev/null; find . -maxdepth 3 -name \\\"*.trash\\\" -o -maxdepth 3 -name \\\"_parked*\\\" 2>/dev/null | head; ls -lt bench/tests | head -8\", \"description\": \"Assess what remains in bench/tests\"}",
+      "t_offset_s": 905.736
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py bench/tests/test_the_ladder_order_is_measured_not_a_vendor_tuple_2026-10-17.py bench/tests/test_capability_is_keyed_on_an_identity_not_a_name_2026-10-17.py 2>&1; echo ---; ls -ld bench/tests/data bench/tests/fixtures; ls bench/tests/fixtures\", \"description\": \"Check which key tests vanished and what fixtures remain\"}",
+      "t_offset_s": 920.779
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in test_the_lean_anchor_refuses_the_loopholes_2026-10-11.py test_the_restore_fires_at_a_task_boundary_2026-10-12.py test_sev_f_and_queue_membership_2026-10-13.py test_the_spec_is_not_work_2026-10-15.py test_the_coherence_budget_is_not_keyed_on_a_name_2026-10-16.py test_the_verdict_audit_entries_survive_2026-10-17.py test_rule_30_honours_the_verbatim_region_2026-10-18.py; do [ -f",
+      "t_offset_s": 930.575
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/__pycache__ | wc -l; ls bench/tests/__pycache__ | grep -c \\\"2026-10-1\\\" ; ls bench/tests/__pycache__ | grep \\\"2026-10-1\\\" | head -5; stat -f \\\"%Sm %N\\\" bench/tests bench/tests/__pycache__ 2>/dev/null\", \"description\": \"Check pycache for evidence of when files vanished\"}",
+      "t_offset_s": 942.85
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"M=/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests; ls $M/*.py 2>/dev/null | wc -l; ls bench/tests/*.py | wc -l; comm -23 <(cd $M && ls *.py | sort) <(cd bench/tests && ls *.py | sort) | wc -l; comm -23 <(cd $M && ls *.py | sort) <(cd bench/tests && ls *.py | sort) | head -10; comm -13 <(cd $M && ls *.py | sort) <(cd bench/tests && ls *.py | sort)\", \"descript",
+      "t_offset_s": 969.186
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"M=/Users/georgejackson/Developer_Projects/Constraint_Engineering; for d in bench scripts bench/cdsfl_registry bench/dm docs; do a=$(ls $M/$d 2>/dev/null | wc -l); b=$(ls $d 2>/dev/null | wc -l); echo \\\"$d: main=$a sandbox=$b\\\"; done; cat pytest.ini\", \"description\": \"Measure deletion blast radius across directories\"}",
+      "t_offset_s": 994.614
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/routing.py bench/reference_runner_v3.py bench/cdsfl_registry/registry.py 2>&1; n1=$(find . -type f | wc -l); sleep 5; n2=$(find . -type f | wc -l); echo \\\"files now: $n1 then: $n2\\\"; ls bench | head -50\", \"description\": \"Check if deletion is ongoing and core files survive\"}",
+      "t_offset_s": 1002.391
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find bench/logs -name runner_state.json | wc -l; M=/Users/georgejackson/Developer_Projects/Constraint_Engineering; comm -23 <(cd $M && ls | sort) <(ls | sort); echo \\\"--- cdsfl_registry missing:\\\"; comm -23 <(cd $M/bench/cdsfl_registry && ls | sort) <(cd bench/cdsfl_registry && ls | sort)\", \"description\": \"Check logs intact and root/registry missing items\"}",
+      "t_offset_s": 1023.278
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ps aux | grep -i \\\"pytest\\\\|python\\\" | grep -v grep | head -8; echo ---; du -sh /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs 2>/dev/null; du -sh /Users/georgejackson/Developer_Projects/Constraint_Engineering 2>/dev/null\", \"description\": \"Look for stray deleting processes and measure restore size\"}",
+      "t_offset_s": 1038.204
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"M=/Users/georgejackson/Developer_Projects/Constraint_Engineering; rsync -a --ignore-existing --exclude='.git' \\\"$M/\\\" ./ 2>&1 | tail -2; echo \\\"rsync done\\\"; find bench/logs -name runner_state.json | wc -l; ls bench/tests/*.py | wc -l; ls pytest.ini bench/cdsfl_registry/universal.toml bench/dm/_convergence.py 2>&1 | head -4\", \"description\": \"Restore all missing files from staging sour",
+      "t_offset_s": 1043.601
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -c \\\"exposure_rotated_order\\\" bench/routing.py; grep -c \\\"rung_attempts\\\" bench/routing.py bench/reference_runner_v3.py; grep -c \\\"resolve_or_alarm\\\" bench/cdsfl_registry/registry.py; grep -c \\\"is_loud_and_non_fatal\\\" bench/tests/test_policy_engine.py; python3 - <<'EOF'\\nimport json,glob,re\\nfiles=[f for f in glob.glob('bench/logs/**/runner_state.json',recursive=True)]\\nn=0\\nfor ",
+      "t_offset_s": 1068.919
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"rmtree|os\\\\.remove|\\\\.unlink\\\\(\", \"path\": \"bench/tests\", \"output_mode\": \"count\", \"head_limit\": 40}",
+      "t_offset_s": 1070.076
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in $(grep -rl \\\"rmtree\\\" bench/tests/*.py); do if grep -qE \\\"registry|policy|routing|ladder|capability|identity|composer|vendor|strength|unmeasured|unregistered|football\\\" $f; then echo \\\"== $f\\\"; grep -n \\\"rmtree\\\" $f | head -3; fi; done 2>/dev/null | head -40\", \"description\": \"Narrow destructive tests to those matching the -k selection\"}",
+      "t_offset_s": 1087.021
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '790,812p' bench/tests/test_corrected_copy_wiring.py; echo =====; sed -n '262,282p' bench/tests/test_three_gaps_2026-08-23.py\", \"description\": \"Inspect the two candidate destructive cleanups\"}",
+      "t_offset_s": 1090.803
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n \\\"$(grep -n 'def _build_discrimination_overlay' bench/reference_runner_v3.py | cut -d: -f1),+34p\\\" bench/reference_runner_v3.py\", \"description\": \"Check overlay builder failure mode\"}",
+      "t_offset_s": 1101.022
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\np='bench/tests/test_disc_failure_routing.py'\\ns=open(p).read()\\nold='''        assert dispatched[0] == \\\"Codex\\\", (\\n            \\\"the ladder must start at the strongest rung, excluding the \\\"\\n            \\\"failed source model\\\")\\n        assert e[\\\"resolved_by_routing\\\"] == \\\"Codex\\\"'''\\nassert s.count(old)==1\\nnew='''        # THE PINNED STARTING POINT MOVED WITH",
+      "t_offset_s": 1131.317
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"test_every_free_seat_is_now_on_the_ladder\\\" bench/tests | head -2; python3 -m pytest bench/tests/test_disc_failure_routing.py bench/tests/test_the_capability_tie_joint_2026-10-20.py bench/tests/test_policy_engine.py bench/tests/test_an_unmeasured_ladder_says_so_2026-10-17.py bench/tests/test_the_ladder_order_is_measured_not_a_vendor_tuple_2026-10-17.py bench/tests/test_cap",
+      "t_offset_s": 1137.68
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"FILES=$(ls bench/tests/*.py | grep -E \\\"routing|ladder|policy|registry|capabilit|strength|unmeasured|unregistered|vendor|identity|football\\\" | tr '\\\\n' ' '); echo $FILES | wc -w; python3 -m pytest $FILES -q 2>&1 | tail -3\", \"description\": \"Run all routing/ladder/policy/registry-named test files\", \"timeout\": 480000}",
+      "t_offset_s": 1156.589
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"FILES=$(ls bench/tests/*.py | grep -E \\\"routing|ladder|policy|registry|capabilit|strength|unmeasured|unregistered|vendor|identity|football\\\"); python3 -m pytest $FILES -q 2>&1 | tail -4\", \"description\": \"Run the 27 named suites (unquoted file list)\", \"timeout\": 480000}",
+      "t_offset_s": 1160.635
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/*.py | grep -E \\\"routing|ladder|policy|registry|capabilit|strength|unmeasured|unregistered|vendor|identity|football\\\" > /tmp/joint_suites.txt && wc -l /tmp/joint_suites.txt && python3 -m pytest @/tmp/joint_suites.txt -q 2>&1 | tail -3\", \"description\": \"Run the named suites via pytest args file\", \"timeout\": 480000}",
+      "t_offset_s": 1166.402
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/*.py | wc -l; find bench/logs -name runner_state.json | wc -l; ls pytest.ini bench/cdsfl_registry/universal.toml >/dev/null && echo \\\"tree intact\\\"\", \"description\": \"Confirm tree intact after suite run\"}",
+      "t_offset_s": 1254.413
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nfrom statsmodels.stats.proportion import proportion_confint\\nfor k,n in ((104,160),(172,285),(118,160)):\\n    lo,hi=proportion_confint(k,n,method='wilson')\\n    print(f'{k}/{n} = {k/n:.4%}  Wilson95 [{lo:.4%}, {hi:.4%}]')\\\"\", \"description\": \"Wilson intervals for the reconciled escalation figures\"}",
+      "t_offset_s": 1293.711
+    }
+  ],
+  "n_tool_calls": 77,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1379.4,
+  "response": "**VERDICT**\n\nBOTH_TOGETHER\n\n---\n\n**WHAT I REVISE**\n\nI am the joint seat; I carry no blind answer. What I withdraw is from the brief's own frame: **CC1's justification for RECORDER_FIRST is refuted by execution** (below), though the recorder's necessity survives on different, measured grounds. I also report one thing neither blind half caught and one incident neither could have foreseen.\n\n---\n\n**THE 4 DISAGREEMENTS**\n\n**1. They answer different questions, and one of them does not reproduce.**\n- cc2's **172/285 resolved (60.3509%, Wilson [54.5703%, 65.8562%])** reproduces **exactly** \u2014 but only over `bench/logs/**/runner_state.json` *recursive*, which includes `sandbox_harvest/` copies of seats' own sandbox runs (92 of the 285 passes). On the primary archive (depth-1 run directories \u2014 the same filter that yields fable's own 3,237-entry count), it is **104/160 = 65.0000% [57.3364%, 71.9602%]**.\n- fable's **230/272 \"changed the finding's status\" (84.56%) did NOT reproduce** under any of seven denominators I constructed (285/172 all-files; 344 total passes; 196/285 non-ERROR; 160/104 depth-1; 193/128 no-harvest; 183 content-deduped; 132 deduped non-ERROR). The archive has not changed since 2026-10-18 (0 files modified after). fable's *other* figures \u2014 3,237 entries, 81 rung-1 and 23 rung-2 resolutions \u2014 reproduce exactly on depth-1, so the extraction behind 272/230 is the anomaly. **Reported plainly: fable's premise-2 headline is unreproduced.**\n- Which belongs in a report about \"the value of escalation\": **resolution**. `resolve_via_routing`'s own contract says a routed REFUTED \"is NOT trusted to drop the critical\" \u2014 so REFUTED/INTEGRITY_VIOLATION passes change a status without being the ladder's success. The reportable figure is **104/160 = 65.0% of primary-archive dispatched passes resolved**; the broader \"any verdict landed\" analogue is 118/160 = 73.75%.\n\n**2. The reader should use ~200 per seat, assumption named; fable's 4\u20136 is a floor the archive contradicts.** Executed: perfect discrimination establishes at **n=4** (2 seats) and **n=6** (6 seats) \u2014 fable's arithmetic reproduces. At the realistic rung-1 effect (44.9% vs 58.3%): n=100 \u2192 p=0.0893, n=200 \u2192 p=0.0092 \u2014 cc2's 100\u2013200 reproduces **for a single pre-specified pair at \u03b1=0.05**. Caveat both seats under-stated: under the 15-pair Holm regime `strength_order_from_evidence` actually runs, even n=200 fails (needs p<0.00333), so the honest range is \"\u2248200 for one named pair; several hundred under the full Holm sweep.\" fable's refutation-polarity distances (~479 single-pair, ~808 Holm-15) also reproduce (p=0.0153, p=0.0005). The binding constraint is exposure either way: three seats sit at 0 observations, and 0 cannot grow without the rotation.\n\n**3. fable's correction is CONFIRMED by execution.** A constructed 2-identity registry (2/2 vs 0/4) returns verbatim: `\"0 of 1 seat pairs separate after Holm correction at alpha=0.05; \u2026\"`. The brief's \"0 of 3 seat pairs\" is wrong; 2 identities yield 1 pair.\n\n**4. Yes \u2014 a seat may move the test that pins the behaviour it changes, under three conditions, all met by both seats and twice by me this round:** (a) declared openly in the same delivery; (b) the new assertion strictly stronger than the old; (c) an executed falsifier for the behaviour change accompanies it. Precedent: `test_every_free_seat_is_now_on_the_ladder`, 2026-10-07 (still passing, re-run this round). Where the conditions cannot be met, the alternative is to leave the old test red and route the collision to the founder \u2014 a red test naming a ruling conflict is information; a silently loosened one is evidence loss. I applied the doctrine to `test_policy_engine.py` (reconciling both seats' divergent renames into one strengthened test) and to `test_disc_failure_routing.py::test_subcritical_no_discrimination_reaches_a_stronger_writer`, which pinned `dispatched[0] == \"Codex\"` \u2014 the fixed starting point the rotation exists to move.\n\n---\n\n**REASONING**\n\n**P1 \u2014 Order is outcome-inert (fable's half): reproduced.** SymPy: 24 permutations of 1\u2212\u220f(1\u2212p\u1d62) over 4 symbolic rungs collapse to **1 distinct expression**. Wolfram second falsifier: `Length[DeleteDuplicates[Table[Simplify[1-Product[1-p[i],{i,perm}]],{perm,Permutations[{1,2,3,4}]}]]]` \u2192 **1** *(computed with Wolfram Language, local Wolfram Engine)*. Rotation costs no resolution under exhaustion.\n\n**P2 \u2014 Order is evidence-determining (cc2's half): reproduced exactly.** Replaying `rank_falsifier_writers` over all 285 dispatched passes: Codex-SIM 256/256, ChatGPT-SIM 216/54, **DeepSeek-SIM 214/0, Gemini-SIM 203/0**, CC2-SIM 193/119, **Fable-SIM 84/0** \u2014 501 appearances, 0 dispatches, 3 of 6 members; 106 unresolved passes stopped short; 0 reconstruction mismatches. Rung strata reproduce digit-for-digit (115/256, 14/24, 5/5, 18/95, 20/49); marginal flips to established (2 of 3 Holm, p=0.000954, p=0.0148); rung-1 de-confounded is 0 of 3. All five p-values match cc2's Wolfram list to the printed precision.\n\n**P3 \u2014 CC1's sequencing justification is REFUTED by its own evidence.** CC1 claims \"a stratum with no denominator is unrecoverable after the fact.\" But P2 *is* that recovery: the full per-rung stratum, denominator included, reconstructed from `rungs_tried` + `model_used` + the deterministic order \u2014 with **0 mismatches**. And the rotation is seeded by a hash of the experiment name, so it stays deterministic and replayable. What the replay genuinely cannot do is distinguish an ERROR rung (seat produced no falsifier \u2014 the roster-gap shape) from a real failed attempt: **89 of 285 dispatched-pass verdicts are ERROR (31.2%)**, a contamination the recorder removes by keeping the verdict per rung. So the recorder is justified by ERROR-discrimination and replay-fragility, not by unrecoverability \u2014 and since both halves are single-commit edits to the same two files, no deployment interval exists in which one lands without the other. **BOTH_TOGETHER.**\n\n**P4 \u2014 The composition has a defect neither blind half caught, now fixed.** cc2's rotation, as specified, defeats `route()`'s `strength_order_was_unestablished` stamp, which tested *equality* with the vendor tuple: a rotated (still defaulted) fallback would be archived as **measured**, corrupting the 2026-10-17 field built for the founder's convention-vs-finding ruling. Fixed with `is_unmeasured_fallback_order` (membership of the tuple's rotation class); executed test.\n\n**P5 \u2014 B13 (both seats convergent): re-derived and delivered.** `_deep_merge(policy, {}) == policy` \u2192 True; all **6** registered `models/*.toml` touch **0** HARD keys; `load_effective_policy(\"mathematics\", model=\"kimi_k2\")` now returns the layers-1..3 policy **exactly**, warns once per capability identity (identity `a9c9eeba6cde`), records every miss in `lookup_misses()`; a HARD violation still raises. I took fable's routing (reuse `resolve_or_alarm`) over cc2's new registry-local table \u2014 one recorder, one identity function, no new global.\n\n**P6 \u2014 INCIDENT, material, routed to human review.** During my first targeted regression (`pytest -k \"routing or ladder or \u2026\"`, 801 tests), something in the selected set **deleted most of the sandbox tree**: 595 of 686 test files (including `netguard_plugin.py`, provably loaded at run start), `bench/*.py` (261\u219244 entries), the **entire `bench/logs` archive** (74 runner_states), the registry TOMLs, `pytest.ini`, and repo-root files \u2014 in waves, `bench/tests` mtime 03:36:14, mid-run. I restored everything missing via `rsync -a --ignore-existing` from the staging source (my 4 edited files untouched by construction), re-verified the archive figures byte-identical post-restore (285 dispatched passes), and confirmed the tree stable across the subsequent 488-test run of 27 explicitly-named suites \u2014 so the deleter is in the broader `-k` selection, not in the suites touching this fix. I could not identify the culprit within budget: that is an honest UNRESOLVED, category silent-evidence-loss/unreproducibility, and it needs a human with the dispatcher's logs. Until it is found, **no panel should run a broad `-k` sweep in a sandbox without a post-run tree count**.\n\n---\n\n**FALSIFIER AND ITS EXECUTED RESULT**\n\nExposure replay (the round's central falsifier), executed over every archived `runner_state.json`:\n```\nEXPOSURE (replay):  ladder-appearances / dispatches\n  Codex-SIM       256 / 256    ChatGPT-SIM  216 / 54    DeepSeek-SIM 214 / 0\n  Gemini-SIM      203 / 0      CC2-SIM      193 / 119   Fable-SIM     84 / 0\nmismatches: 0   stopped-short unresolved: 106\nrung-1: 0 of 3 pairs separate after Holm   marginal: 2 of 3 separate\ndispatched: 285  resolved: 172   | primary archive (depth-1): 160 / 104\n```\nThe fix's own tests: `python3 -m pytest bench/tests/test_the_capability_tie_joint_2026-10-20.py -q` \u2192 **19 passed in 1.45s**. Touched-surface regression, 27 explicitly-named suites: **488 passed in 82.74s**. Neighbour core run (10 files incl. both moved tests): **141 passed**. Pre-restore `-k` sweep: 798 passed, 3 failed \u2014 one environmental (`git ls-files`, no work tree; cc2 reported the same), one is this round's own joint-debt registry entry, one was the pinned starting-point test, updated above.\n\n---\n\n**THE FIX** (all written into the tree)\n\n- `bench/routing.py` \u2014 `exposure_rotated_order(order, seed)`; `is_unmeasured_fallback_order(order)`; `season_strength_order(..., seed=None)` rotating **only** the un-established fallback (`seed=None` byte-identical; measured and frozen orders never rotated); `RoutingResult.rung_attempts` populated at every exit of `resolve_via_routing`, self-rung included; `ladder_evidence_from_registry` pooling per capability identity into the shape `strength_order_from_evidence` consumes, `{}` on pre-field archives, ERROR rungs excluded from the denominator; `route()`'s stamp now rotation-class-aware.\n- `bench/reference_runner_v3.py` \u2014 season call passes `seed=cfg.experiment_name`; the single `routing_history` write site persists `rung_attempts`.\n- `bench/cdsfl_registry/registry.py` \u2014 layer-4 miss is loud and non-fatal via `resolve_or_alarm`, returns the layers-1..3 policy; HARD violations still raise.\n- `bench/tests/test_the_capability_tie_joint_2026-10-20.py` \u2014 19 executing tests, both halves and the composition together.\n- `bench/tests/test_policy_engine.py` \u2014 pinning test moved with the fact, strictly strengthened, declared.\n- `bench/tests/test_disc_failure_routing.py` \u2014 pinned starting point moved with the fact, strengthened to the deterministic rotated expectation, declared.\n- Plus the **restoration** of every deleted file from the staging source (no overwrites).\n\n**STANDARDS**\n\n- **ADDITIVE**: nothing removed or narrowed. `DEFAULT_FALSIFIER_STRENGTH` unchanged (asserted by test; membership ruling intact \u2014 `free_rungs == [\"CC2\",\"Fable\"]`, `ladder_length == 6` re-run green). The one replaced behaviour (the layer-4 raise) carries its committed measurement: empty-overlay lemma + 6-files/0-HARD-keys audit, both executed in a test that fails the day a model TOML tightens a HARD key. Every addition is wired and executed: seed \u2192 runner \u2192 fallback branch; `rung_attempts` \u2192 write site \u2192 reader \u2192 estimator shape.\n- **SIMPLEST SUFFICIENT**: two pure functions, one dataclass field, one keyword with a backward-compatible default, one call-site change, one write-site key, one branch replaced. Rejected: ranking on unstratified resolution (executes to `established=True` and is an artefact \u2014 the separation vanishes conditional on rung); a stratified estimator now (3 seats have 0 observations \u2014 nothing to stratify); a shuffle (coverage-in-expectation loses to exact coverage: P(a member still unexposed after 6 shuffles) = 1\u22126!/6\u2076 = 0.9845679, SciPy and Wolfram agreeing).\n- **COMPOSABILITY**: composed on measurements, not coexistence. Rotation alone: per-rung evidence only by replay, which cannot separate the **89/285 ERROR rungs** from failed attempts and breaks on the next mechanic change. Recorder alone: the rung-1 stratum stays **256/24/5/0/0/0** \u2014 three zeros that cannot grow. Together, and only together, the rotated stratum arrives carrying its own clean denominator \u2014 exercised by one test running both halves in a single pass. The composition also *required* a repair neither half needed alone (the stamp, P4), which is itself evidence the composition was examined rather than stapled.\n\n---\n\n**WHAT WOULD REFUTE THIS**\n\n1. **BOTH_TOGETHER** falls to a measurement showing one half degrades the other: if, after the first rotated experiments, rung-conditional confirm rates differ beyond a Holm-corrected Fisher test (order-sensitivity), the rotation costs resolutions and should be reverted \u2014 the threshold is the Holm-corrected \u03b1=0.05 on rung-2-given-rung-1-failure vs unconditional rung-1.\n2. **The recorder's ERROR-exclusion** falls if ERROR rungs are shown to be predominantly genuine capability failures rather than roster gaps: measured today, the no-code path is what `resolve_fn` returns for unrostered seats; a committed audit showing >50% of ERROR rungs came from rostered, dispatchable seats flips the exclusion into bias.\n3. **The whole apparatus becomes dead code** at \u2248200 clean rung-1 observations per identity for a named pair (several hundred under Holm-15) or 6 per identity at perfect discrimination \u2014 at which point `season_strength_order` never reaches the fallback and the rotation should be removed under point-never-prune's own exception.\n4. **The incident claim** falls if the dispatcher's logs show the deletion originated outside the pytest run \u2014 the timestamps (03:36:14 mid-run) and the provably-present-then-absent `netguard_plugin.py` are the evidence to check.\n\n---\n\n**Disagreement**\n\n- **With this brief**: it carries fable's 272/230 as \"measured.\" It did not reproduce under seven constructed denominators while every other fable figure did; the brief should not have presented the two escalation numbers as a reconcilable pair without flagging that one lacks a reproducible extraction.\n- **With CC1's sequencing claim**: REFUTED as justified. \"A stratum with no denominator is unrecoverable after the fact\" is contradicted by execution \u2014 the stratum CC1 is defending was itself recovered by replay, with 0 mismatches, and the rotation's deterministic seed preserves replayability. The recorder is still required, but for the measured reasons (31.2% ERROR contamination, replay fragility), and the right sequencing is no sequencing: one commit.\n- **With cc2**: the 285/172 headline rests partly on sandbox-harvest duplicates (92 passes); the primary-archive figure is 104/160 = 65.0%. And cc2's rotation, as blindly specified, would have corrupted the `strength_order_was_unestablished` stamp \u2014 a material defect in an otherwise exactly-reproducible analysis.\n- **With fable**: the 272/230 figure is unreproduced and should be withdrawn or re-derived with its extraction script; the 84.56% number should not enter any report. fable's derivations, correction (disagreement 3), and recorder design all reproduce and stand.\n\n---\n\n**TERMINATION**\n\n**6 passes.** (1) Re-execute cc2's replay \u2014 reproduced exactly, with the harvest-denominator caveat; fable's 272/230 found unreproduced after seven candidate extractions. (2) Execute disagreements 2\u20133 and both inertness checks (SymPy + Wolfram, both \u2192 1). (3) Build the composed fix; found and fixed the stamp defect in passing. (4) Execute B13 end-to-end and deliver it with the strengthened pinning test. (5) **Discover, measure, and repair the sandbox deletion incident** \u2014 restored 595 test files, the 74-run archive, registry TOMLs; re-verified every figure post-restore. (6) Final regression: 19 + 141 + 488 passed; tree confirmed stable. Pass 6 produced no new finding above the real-world-consequence threshold \u2014 its last product was the confirmation that the deleter lies outside the 27 suites this fix touches. Stopping there; the one open item (the deleter's identity) is named, bounded, and routed to human review rather than guessed at.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z6gg9rrw/repo",
+      "built": false
+    }
+  ]
+}

@@ -75,13 +75,70 @@ def main() -> int:
     if not open_t:
         return 0
 
-    h = head()
-    STATE.mkdir(parents=True, exist_ok=True)
-    marker = STATE / "last_refusal"
-    if h and marker.is_file() and marker.read_text(encoding="utf-8").strip() == h:
-        return 0                      # already prodded at this commit
-    if h:
-        marker.write_text(h, encoding="utf-8")
+    # ★ THE ONE-SHOT ESCAPE IS GONE, 2026-10-24, ON HIS RULING. It read
+    # `if marker == HEAD: return 0  # already prodded at this commit`, so the gate
+    # refused once and then PERMITTED every later stop. He asked how it was
+    # possible to quit the list; that line is the whole answer. Over a session of
+    # n stop attempts it blocked 1 and permitted n-1, which at 10 attempts is 90%
+    # permitted, and on 2026-10-20 at 03:26 it is exactly what let the session end
+    # with 60 open items and a finished panel round unread.
+    #
+    # HIS RULING, and it is also his DEFINITION of a blocker: *"If a blocker is a
+    # true blocker, that would mean that no other work could proceed until that
+    # blocker was cleared. Is that not what a 'blocker' is? If it doesn't block
+    # work from continuing and can be addressed without detriment at the end of a
+    # task list, then record it and present it clearly once all other tasks that
+    # can be completed are completed. The master task list should continue to
+    # execute until completion, as we originally agreed, but not blindly."*
+    #
+    # SO THE GATE NOW TURNS ON WHETHER WORK CAN PROCEED, not on how often it has
+    # spoken. It refuses while anything is WORKABLE; it permits and PRESENTS when
+    # only deferred items remain; and it permits and ESCALATES when a true blocker
+    # is recorded -- which `declare_blocker` will not let you record while any
+    # other ticket can still be worked.
+    #
+    # IT STILL CANNOT TRAP A SESSION. `sys.exit(0)` on any exception is unchanged,
+    # and a stop is always available by deferring the item with a written reason
+    # or by clearing it -- both of which leave a record, which is the point. What
+    # is no longer available is a SILENT stop with workable items on the list.
+    workable = store.workable()
+    deferred = store.deferred_tickets()
+    blocked = store.blockers()
+
+    # ★ A PAUSE HE HAS ORDERED IS NOT A STOP THIS GATE MAY REFUSE, added
+    # 2026-10-24 within an hour of the refusal rule itself, because the gate
+    # caught the gap the moment it was armed: he had just written *"do not resume
+    # the master task list until I tell you to do so"* and the gate refused the
+    # stop anyway. Its 3 states -- workable, deferred, blocked -- had no room for
+    # "the founder has paused this", so the mechanism was overruling the person it
+    # exists to serve.
+    #
+    # THIS IS NOT AN ESCAPE HATCH, and it is shaped so it cannot become one. The
+    # file must carry HIS VERBATIM WORDS and the date, the gate PRINTS them on
+    # every pass so no use of it is silent, and nothing but his explicit
+    # instruction removes it -- no timeout, no commit, no turn boundary. A pause
+    # with no quoted instruction in it is ignored.
+    pause = STATE / "paused_by_founder.json"
+    if pause.is_file():
+        try:
+            info = json.loads(pause.read_text(encoding="utf-8"))
+        except Exception:                              # noqa: BLE001
+            info = {}
+        words = str(info.get("verbatim") or "").strip()
+        if len(words) >= 40:
+            print(f"[ticket-gate] THE LIST IS PAUSED ON HIS INSTRUCTION, so this "
+                  f"gate stands down.\n"
+                  f"  Paused {info.get('paused_at', 'at an unrecorded time')}: "
+                  f"\"{words[:300]}\"\n"
+                  f"  {len(workable)} workable, {len(deferred)} deferred, "
+                  f"{len(blocked)} blocker(s) are waiting and NONE is lost.\n"
+                  f"  Resuming takes his explicit word; delete\n"
+                  f"    {pause}\n"
+                  f"  only when he gives it.", file=sys.stderr)
+            return 0
+        print(f"[ticket-gate] a pause file exists at {pause} but carries no quoted "
+              f"instruction of his, so it is IGNORED. A pause is his word or it is "
+              f"nothing.", file=sys.stderr)
 
     # ★ `wr` IS DEFERRED WORK, NOT A QUESTION, SO IT NEVER BECOMES 'NEXT OPEN'
     # (2026-10-20). His instruction: "wr is a valid section in the Bugzilla
@@ -91,7 +148,39 @@ def main() -> int:
     # deferred behind other work; surfacing it as the next thing needing
     # resolution is exactly how R1 was put back to him for 66 days. It is still
     # COUNTED and still listed, so it cannot be lost -- it simply does not prod.
-    prodding = [t for t in open_t if t.kind != "wr"] or open_t
+    # ── A TRUE BLOCKER: permit the stop and escalate, because by his definition
+    # nothing else can proceed and it is his attention that is needed.
+    if blocked and not workable:
+        print("[ticket-gate] A TRUE BLOCKER IS RECORDED AND NOTHING ELSE CAN "
+              "PROCEED.\n"
+              "  This is the one case his ruling of 2026-10-24 says should reach "
+              "him:\n" +
+              "".join(f"    {b.tid} [{b.kind}] {b.title[:110]}\n"
+                      f"      BLOCKS: {b.blocker[:200]}\n" for b in blocked) +
+              f"  {len(deferred)} item(s) are deferred to the end of the list and "
+              f"are listed below.\n" +
+              "".join(f"    {d.tid} [{d.kind}] {d.title[:100]}\n" for d in deferred),
+              file=sys.stderr)
+        return 0
+
+    # ── NOTHING WORKABLE, ONLY DEFERRED WORK: permit the stop and PRESENT it,
+    # which is exactly what he asked for -- "record it and present it clearly once
+    # all other tasks that can be completed are completed".
+    if not workable:
+        if deferred:
+            print(f"[ticket-gate] ALL WORKABLE ITEMS ARE DONE. "
+                  f"{len(deferred)} deferred item(s) remain, presented here as "
+                  f"his ruling of 2026-10-24 requires:\n" +
+                  "".join(f"    {d.tid} [{d.kind}] {d.title[:110]}\n"
+                          f"      DEFERRED {d.deferred}: {d.deferred_reason[:180]}\n"
+                          for d in deferred),
+                  file=sys.stderr)
+        return 0
+
+    # ── WORK REMAINS: refuse, and keep refusing. `wr` still does not PROD, but a
+    # wr ticket is workable, so it keeps the gate closed; it simply is not named
+    # as NEXT OPEN, which is how R1 was put back to him for 66 days.
+    prodding = [t for t in workable if t.kind != "wr"] or workable
     nxt = sorted(prodding, key=lambda t: (t.ruled or "9999", t.task_ref or "zz", t.tid))[0]
     by_kind = {}
     for t in open_t:
@@ -107,7 +196,12 @@ def main() -> int:
         # which is the defect class this project keeps finding. Corrected
         # 2026-10-19, and `qs` added on his instruction of the same day.
         f"(fr {by_kind.get('fr', 0)}, pf {by_kind.get('pf', 0)}, "
-        f"qs {by_kind.get('qs', 0)}, wr {by_kind.get('wr', 0)} deferred); "
+        # `wr` IS NO LONGER CALLED "deferred" HERE. Until 2026-10-24 deferral was
+        # inferred from the KIND, so this line said "wr 34 deferred" while the
+        # count below said "0 deferred" -- 2 words for 2 different things in one
+        # message. Deferral is now the `deferred` FIELD, and `wr` means only that
+        # the item does not PROD.
+        f"qs {by_kind.get('qs', 0)}, wr {by_kind.get('wr', 0)} non-prodding); "
         f"{len(unconf)} UNCONFIRMED awaiting triage; {len(settled)} settled.\n"
         f"  HIS INSTRUCTION, 2026-10-17: do not stop until every task is marked "
         f"complete or resolved in the ticket store.\n"
@@ -122,8 +216,17 @@ def main() -> int:
         f"  CLOSED is tool-only: an assertion is refused, a verification is required.\n"
         f"  UNCONFIRMED items need TRIAGE, not work -- establish the state, then "
         f"close or open them. They never drive this refusal.\n"
-        f"  This gate refuses at most once per commit, so it cannot loop. If the "
-        f"remaining work is genuinely blocked, say so in one line and continue.\n",
+        f"  {len(workable)} workable, {len(deferred)} deferred, {len(blocked)} "
+        f"declared blocker(s).\n"
+        f"  ★ THIS GATE NO LONGER YIELDS AFTER ONE REFUSAL (his ruling "
+        f"2026-10-24). There are 2 ways to a stop, and both leave a record:\n"
+        f"    1. CLOSE the item with its verification, as above.\n"
+        f"    2. DEFER it with a written reason, if it can wait without detriment:\n"
+        f"       s.defer('{nxt.tid}','<why it can wait>','<date -Iseconds>')\n"
+        f"    A TRUE BLOCKER -- one that stops ALL other work -- is declared with\n"
+        f"    s.declare_blocker(tid, reason), and that call REFUSES while any\n"
+        f"    other ticket is workable, because by his definition it would not\n"
+        f"    then be a blocker.\n",
         file=sys.stderr)
     return 2
 
