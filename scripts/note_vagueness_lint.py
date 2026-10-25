@@ -412,8 +412,55 @@ def missing_standard_stamp(path) -> list:
                  f"name the standard in the file, e.g. 'Written under CDSFL note standard "
                  f"{CURRENT_NOTE_STANDARD}.' He tracks which standard produced which file.")]
     found = "v" + m.group(1)
+
+    #: THE STAMP BELONGS AT THE FOOT, NOT THE HEAD -- HIS OBJECTION, 2026-10-24.
+    #:
+    #: His words (annotation 4 of `Why_sv_Was_Blocked_And_Twelve_Lost_Annotations_2026-10-19.txt`):
+    #: *"You also break with convention by listing the note standard at the head
+    #: of this tts file, rather than at the end? If there is a valid reason for
+    #: either of these, please discuss them with me."* There is no valid reason.
+    #: It was an error, and the project's own vocabulary already called the
+    #: convention the FOOT-LINE convention in
+    #: `scripts/the_note_lint_ratchet_is_blind_to_the_stamp_2026-10-15.py`.
+    #:
+    #: MEASURED BEFORE THE THRESHOLD WAS CHOSEN, 2026-10-25, over every stamped
+    #: note under `experimental_notes/` and every `*_tts/` folder: 582 carry a
+    #: stamp, of which **559 (0.9605) place it in the final 10% of non-blank
+    #: lines**, 13 in the middle, 1 in the first 10%, and 9 in the first 3 lines.
+    #: So the foot is the overwhelming convention and this rule costs 23 findings
+    #: across 582 files rather than the 357 of 536 that an earlier unmeasured rule
+    #: produced -- the noise this module's own docstring warns gets a rule
+    #: switched off. 2 of the 9 head-stamped files are the 2 he complained about.
+    #:
+    #: GOING FORWARD ONLY, per his ruling of 2026-10-17: *"We fix going forward
+    #: and leave the archive alone"*. This reports; it does not rewrite anything.
+    lines = text.splitlines()
+    nonblank = [i for i, ln in enumerate(lines) if ln.strip()]
+    #: THE LAST MENTION, NOT THE FIRST. A note may legitimately DISCUSS the
+    #: standard in its prose -- the 2026-10-25 RECOVERY block does exactly that,
+    #: and taking the first match reported its own stamp as misplaced at 52.94%
+    #: when the real stamp sat correctly at the foot. By convention the stamp IS
+    #: the last such mention, so that is what the placement check reads.
+    stamp_ranks = [r for r, i in enumerate(nonblank)
+                   if NOTE_STANDARD_STAMP.search(lines[i])]
+    stamp_rank = stamp_ranks[-1] if stamp_ranks else None
+    out = []
+    if stamp_rank is not None and len(nonblank) >= 10:
+        frac = stamp_rank / max(1, len(nonblank) - 1)
+        if frac < 0.90:
+            where = ("at the HEAD" if stamp_rank < 3 else
+                     f"{frac:.2%} of the way through")
+            out.append((lines[nonblank[stamp_rank]] and nonblank[stamp_rank] + 1,
+                        f"NOTE STANDARD STAMP IS {where}, NOT AT THE FOOT",
+                        "note standard placement",
+                        "his objection of 2026-10-24: \"You also break with "
+                        "convention by listing the note standard at the head of "
+                        "this tts file, rather than at the end?\" Measured "
+                        "2026-10-25: 559 of 582 stamped notes (0.9605) place it "
+                        "in the final 10% of non-blank lines. Move it to the end."))
+
     if found == CURRENT_NOTE_STANDARD:
-        return []
+        return out
     #: A STAMP NAMING A REAL EARLIER STANDARD IS COMPLIANT, NOT A DEFECT.
     #:
     #: His instruction of 2026-10-11 asks for TRACEABILITY, not uniformity: the
@@ -431,8 +478,8 @@ def missing_standard_stamp(path) -> list:
     #: gets a rule switched off, and it would have buried the 196 that are a
     #: real absence.
     if found in ARCHIVAL_NOTE_STANDARDS:
-        return []
-    return [(0, f"NOTE STANDARD STAMP IS {found}, WHICH IS NOT A STANDARD THIS "
+        return out
+    return out + [(0, f"NOTE STANDARD STAMP IS {found}, WHICH IS NOT A STANDARD THIS "
                 f"PROJECT HAS USED (current {CURRENT_NOTE_STANDARD})",
              "note standard",
              "a stamp must name a real standard. An earlier one is fine and is "

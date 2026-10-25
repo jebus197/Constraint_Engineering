@@ -88,13 +88,38 @@ def test_the_predicate_reads_polarity(mod, text, want, why):
     assert got is want, f"{why}: {text!r} -> {got}, wanted {want}"
 
 
+#: THE DEPTH-BEFORE-BREADTH PRECONDITION, ADDED 2026-10-25, APPLIES TO THESE
+#: REPLAYS TOO, AND THAT IS WHY THEY CARRY IT.
+#:
+#: The hook now refuses any fan-out brief that does not state its hypothesis, its
+#: falsifier and why 1 context will not do -- his instruction of 2026-10-25. The 2
+#: briefs below are REPLAYS of real briefs refused on 2026-10-17, and they were
+#: written before that precondition existed, so adding it broke both tests.
+#:
+#: THE PRECONDITION IS RIGHT AND THE FIXTURES WERE INCOMPLETE, not the reverse.
+#: Whether a brief forbids pytest is ORTHOGONAL to whether it states its own
+#: reasoning; a real brief in this situation would carry both. The negation path
+#: these tests exist to exercise lives in `_instructs_heavy_verification` and is
+#: untouched by the markers, so their purpose is preserved exactly. The marker
+#: logic has its own 16 tests in
+#: `test_depth_before_breadth_is_gated_2026-10-25.py`, so prefixing it here hides
+#: nothing.
+#:
+#: BLAST RADIUS, MEASURED rather than assumed: the commit gate ran 1,436 tests
+#: and exactly these 2 failed.
+_DEPTH = ("HYPOTHESIS: the delegated buckets disagree on the same input. "
+          "FALSIFIED BY: all 5 buckets returning identical findings. "
+          "WHY NOT ONE CONTEXT: each bucket must be read by an author blind "
+          "to the others. ")
+
+
 def test_a_prohibiting_brief_is_not_refused_end_to_end():
     """The 2 briefs that were actually refused on 2026-10-17, replayed."""
-    v1 = ("OPERATING LIMITS. Work read-only. Do NOT run pytest or any test runner "
-          "under any circumstances. Use parallel() over 5 buckets.")
-    v2 = ("Never launch any automated verification tooling; delegated verification "
-          "runs were measured as costing more than a full board run on 2026-10-11. "
-          "pipeline() over the buckets.")
+    v1 = (_DEPTH + "OPERATING LIMITS. Work read-only. Do NOT run pytest or any "
+          "test runner under any circumstances. Use parallel() over 5 buckets.")
+    v2 = (_DEPTH + "Never launch any automated verification tooling; delegated "
+          "verification runs were measured as costing more than a full board run "
+          "on 2026-10-11. pipeline() over the buckets.")
     for name, brief in (("v1", v1), ("v2", v2)):
         r = _run(brief)
         assert r.returncode == 0, (
@@ -104,8 +129,8 @@ def test_a_prohibiting_brief_is_not_refused_end_to_end():
 
 def test_a_genuine_instruction_is_still_refused_end_to_end():
     """Anti-vacuity: teaching the guard about negation must not disarm it."""
-    r = _run("Each agent should run pytest bench/tests -q and report failures. "
-             "parallel() over 5 agents.")
+    r = _run(_DEPTH + "Each agent should run pytest bench/tests -q and report "
+             "failures. parallel() over 5 agents.")
     assert r.returncode == 2, (
         f"a genuine delegated pytest instruction must still be refused; "
         f"exit {r.returncode}")
@@ -127,3 +152,22 @@ def test_a_broken_payload_still_never_jams_the_session():
                        capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, (
         "a guard that fells the session on malformed input is worse than no guard")
+
+
+def test_the_depth_precondition_is_what_lets_these_briefs_through():
+    """Anti-vacuity for the fixture change of 2026-10-25.
+
+    Strip the 3 markers from the prohibiting brief and it must be REFUSED -- on
+    the depth ground, not the pytest one. Without this, a reader could not tell
+    whether `_DEPTH` was load-bearing or ornamental, and the 2 tests above would
+    look like they had been loosened to accommodate a change.
+    """
+    bare = ("OPERATING LIMITS. Work read-only. Do NOT run pytest or any test "
+            "runner under any circumstances. Use parallel() over 5 buckets.")
+    r = _run(bare)
+    assert r.returncode == 2, "the depth precondition is not firing at all"
+    assert "DEPTH BEFORE BREADTH" in r.stderr, (
+        f"refused for the wrong reason: {r.stderr[:200]}")
+    assert _run(_DEPTH + bare).returncode == 0, (
+        "adding the markers does not clear the refusal, so the fixtures above "
+        "are passing for some other reason")

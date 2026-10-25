@@ -152,6 +152,36 @@ def budget(per_mib):
     return chosen, core_c, mem_c, round(head, 1), cores, round(la1, 2)
 
 
+#: DEPTH BEFORE BREADTH -- the 3 statements a fan-out brief must carry.
+#:
+#: HIS QUESTION, 2026-10-25: *"But can't we somehow direct you to use some of that
+#: reasoning depth prior to using these facilities also? What do you suggest?"*
+#:
+#: This is the suggestion, and it is deliberately EXACT LITERAL MARKERS rather than
+#: any judgement about whether a prompt "looks thought through". A similarity-based
+#: version of exactly this check was written on 2026-10-24 for note asks and failed
+#: in BOTH directions -- 5 of 5 false positives, then it cleared the one true case
+#: -- and was replaced with an exact id rule. The same discipline applies here.
+#:
+#: The markers cost 3 lines in a brief that should carry them anyway: the Agent tool's
+#: own description says the brief is the only context the subagent will ever have.
+DEPTH_MARKERS = (
+    ("HYPOTHESIS:", "what the fan-out is meant to test"),
+    ("FALSIFIED BY:", "the result that would prove the hypothesis wrong"),
+    ("WHY NOT ONE CONTEXT:", "why depth in this context cannot answer it"),
+)
+
+
+def _missing_depth_markers(blob: str) -> list[tuple[str, str]]:
+    """Which of the 3 required statements the brief does not carry.
+
+    Case-insensitive literal substring, nothing cleverer. A brief that cannot name
+    its own falsifier is not breadth; it is delegation of the thinking.
+    """
+    up = blob.upper()
+    return [(m, why) for m, why in DEPTH_MARKERS if m not in up]
+
+
 def main():
     try:
         payload = json.load(sys.stdin)
@@ -169,6 +199,25 @@ def main():
 
     wants_pytest = _instructs_heavy_verification(low)
     fans_out = bool(re.search(r"\bparallel\s*\(|\bpipeline\s*\(|batch|fan.?out", low))
+
+    missing = _missing_depth_markers(blob)
+    if missing:
+        sys.stderr.write(
+            "REFUSED by local_resource_budget: DEPTH BEFORE BREADTH.\n"
+            f"  This {tool} brief is missing {len(missing)} of "
+            f"{len(DEPTH_MARKERS)} required statement(s):\n"
+            + "".join(f"      {m:24s} {why}\n" for m, why in missing)
+            + "  HIS QUESTION, 2026-10-25: \"But can't we somehow direct you to use "
+              "some of that reasoning depth prior to using these facilities also?\"\n"
+              "  This is that direction. Add the 3 lines to the prompt and retry. They\n"
+              "  cost nothing you should not already be writing -- the brief is the ONLY\n"
+              "  context the delegated work will ever have.\n"
+              "  A fan-out that cannot name its own falsifier is not breadth; it is\n"
+              "  delegation of the thinking.\n"
+              "  Measured: 10 of 12 errors on 2026-10-11 were catchable by reasoning\n"
+              "  BEFORE running anything. Only 2 required execution.\n"
+              "  See `reasoning-depth-before-breadth` in CLAUDE.md (local and global).\n")
+        return 2
 
     if wants_pytest and (tool in ("Agent", "Task") or fans_out):
         sys.stderr.write(

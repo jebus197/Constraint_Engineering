@@ -95,9 +95,28 @@ class TestTheMeasurementIsNotVacuous:
     be guaranteed to report 'no difference' and would measure nothing."""
 
     def _gate(self, unresolved):
+        """Supply exactly as many quiet rounds as the gate currently requires.
+
+        DERIVED, NOT HARD-CODED. This fixture passed a literal `[0, 0, 0]` and
+        went RED when `REQUIRED_QUIET_RUN` was raised from 3 to 7 on his ruling
+        of 2026-10-08 (carried out 2026-10-17, after he was shown a 0.1159
+        absolute false-quiet chance and said "Fix it."). The gate was sound
+        throughout; only the fixture was stale, which is why it is now read off
+        the runner. The quiet-run length is under review again as of 2026-10-25
+        on his cost objection, and this fixture will follow whatever he rules
+        without needing another edit.
+        """
+        quiet = [0] * R.REQUIRED_QUIET_RUN
+        cfg = R.RunnerConfig(experiment_name="t", models=["A", "B"])
+        # BIND THE FIELD THE GATE ACTUALLY READS. `gamma_alt_consecutive_zero_crit`
+        # defaults to `REQUIRED_QUIET_RUN`, but a dataclass default is evaluated
+        # ONCE at class creation, so the 2 values can desynchronise. Deriving the
+        # list length from the module constant while the gate compares against a
+        # frozen field default is a half-derivation, and a mutation check on
+        # 2026-10-25 proved it: forcing the constant to 1 left the guard GREEN.
+        cfg.gamma_alt_consecutive_zero_crit = R.REQUIRED_QUIET_RUN
         return R._check_gamma_alt_convergence(
-            8, 0.9, [0, 0, 0], R.RunnerConfig(
-                experiment_name="t", models=["A", "B"]),
+            8, 0.9, quiet, cfg,
             unresolved_critical=unresolved, contested=0, rho_churn=False,
             irreducible_queue=0, gamma_critical=0.9, total_findings=12)
 
