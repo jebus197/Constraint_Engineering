@@ -38,6 +38,7 @@ debt are discharged here:
 from __future__ import annotations
 
 import json
+import tempfile
 import os
 import pathlib
 import subprocess
@@ -73,11 +74,28 @@ def write_jsonl(path, entries):
     return path
 
 
-def run_gate(transcript, stop_hook_active=False):
+def run_gate(transcript, stop_hook_active=False, state_dir=None):
+    """Drive the gate with its refusal counter ISOLATED.
+
+    WHY THE ISOLATION IS NOT OPTIONAL (found 2026-10-25). The bounded-refusal
+    counter added on his ruling of 2026-10-24 persists per session id under
+    `~/.claude/.ffafp_gate`. These tests send no session id, so every one of them
+    shared the single file `session.refusals` -- in his LIVE state directory.
+    MEASURED: this same test file's `test_gate_never_refuses_twice_per_turn`, run
+    3 times with no code change between runs, returned fail, pass, fail. The
+    tests were not red; they were FLAKY, which is worse, because a guard that
+    passes on some runs hides the regression on the others.
+
+    Each call now gets a fresh counter directory unless one is named, so the
+    result depends only on the transcript.
+    """
     payload = json.dumps({"transcript_path": str(transcript),
                           "stop_hook_active": stop_hook_active})
+    env = dict(os.environ)
+    env["CDSFL_FFAFP_GATE_STATE"] = str(
+        state_dir or tempfile.mkdtemp(prefix="ffafp_gate_state_"))
     return subprocess.run([sys.executable, str(GATE)], input=payload,
-                          capture_output=True, text=True, timeout=60)
+                          capture_output=True, text=True, timeout=60, env=env)
 
 
 def verdict_of(transcript):
@@ -215,4 +233,11 @@ def test_gate_never_traps_a_session(tmp_path):
     assert run_gate(tmp_path / "missing.jsonl").returncode == 0
     t = write_jsonl(tmp_path / "t.jsonl",
                     [entry_human(), entry_tool("Edit", {"file_path": "bench/dm/_convergence.py"})])
-    assert run_gate(t, stop_hook_active=True).returncode == 0
+    # HIS RULING, 2026-10-24: up to 3 refusals per turn, not 1. Fail-open is still
+    # what this test protects, so it is asserted at the CEILING rather than on the
+    # first repeat -- the session must become stoppable, and it does.
+    state = tmp_path / "gate_state"
+    codes = [run_gate(t, stop_hook_active=True, state_dir=state).returncode
+             for _ in range(5)]
+    assert 0 in codes, (
+        f"the gate never yields, so a session could be trapped: {codes}")

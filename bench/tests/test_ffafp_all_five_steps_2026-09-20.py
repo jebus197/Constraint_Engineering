@@ -191,7 +191,57 @@ def test_a_heredoc_write_is_detected_as_work(fa):
 
 
 def test_a_heredoc_open_for_writing_is_detected(fa):
-    assert fa.bash_mutations(HEREDOC_OPEN_W) == ["scripts/generated.py"]
+    """Still DETECTED, now reported by sentinel when the path cannot exist.
+
+    CHANGED BY pf:bc80040e3b48 ON 2026-10-25, and the change is why this reads
+    differently. `bash_mutations` used to return every quoted path-shaped literal
+    in a body containing a write, so it named files that had never existed -- the
+    gate reported `/x/Report_2026-10-19.txt` as changed when that string is a
+    fixture in another test file. A path is now kept only if it is on disk, since
+    the hook runs AFTER the command and a path that was never a file cannot have
+    been written to.
+
+    `scripts/generated.py` does not exist, because this fixture is a STRING and
+    the heredoc is never executed, so the detector falls back to the sentinel
+    exactly as `sed -i` does. THE DETECTION ITSELF IS UNCHANGED, which is what
+    this test exists to protect: 1 mutation, not 0. The naming branch is tested
+    immediately below against a path that really is on disk.
+    """
+    assert fa.bash_mutations(HEREDOC_OPEN_W) == ["<heredoc-write>"]
+
+
+def test_a_heredoc_write_to_a_REAL_path_is_named(fa, tmp_path):
+    """The other branch of pf:bc80040e3b48: an existing target keeps its name.
+
+    Load-bearing rather than decorative. FOLLOW is credited only when a later
+    search names the edited file, so a mutation reported as `<heredoc-write>`
+    can never be followed. If existence-filtering downgraded every heredoc
+    write, FOLLOW would become unsatisfiable for the commonest write shape in
+    this project -- a regression in the opposite direction to the one being
+    fixed.
+    """
+    target = tmp_path / "really_here.py"
+    target.write_text("x = 1\n", encoding="utf-8")
+    cmd = ("python3 - <<'PY'\n"
+           f'open("{target}", "w").write("x")\n'
+           "PY")
+    assert fa.bash_mutations(cmd) == [str(target)], (
+        "an EXISTING write target lost its name, so FOLLOW can no longer be "
+        "credited for a heredoc write")
+
+
+def test_a_phantom_path_sharing_a_body_with_a_write_is_not_reported(fa, tmp_path):
+    """The exact defect pf:bc80040e3b48 names, pinned so it cannot return."""
+    real = tmp_path / "written.py"
+    real.write_text("x\n", encoding="utf-8")
+    cmd = ("python3 - <<'PY'\n"
+           'FIXTURE = [{"file": "/x/Report_2026-10-19.txt"}]\n'
+           f'open("{real}", "w").write("y")\n'
+           "PY")
+    muts = fa.bash_mutations(cmd)
+    assert "/x/Report_2026-10-19.txt" not in muts, (
+        f"a path that has never existed is still reported as written: {muts}")
+    assert str(real) in muts, f"the real write was lost: {muts}"
 
 
 @pytest.mark.parametrize("cmd,label", [

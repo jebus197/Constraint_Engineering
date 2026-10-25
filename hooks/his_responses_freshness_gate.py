@@ -29,11 +29,17 @@ fells the session is worse than the gap it guards.
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import sys
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
-STATE = pathlib.Path.home() / ".claude" / ".responses_freshness"
+#: Overridable for the same reason as the FFAFP gate's counter: a test must not
+#: write into his live ~/.claude, and a counter shared between runs makes a test
+#: flaky. Found by FOLLOW on 2026-10-25 rather than by waiting for it to bite.
+STATE = pathlib.Path(
+    os.environ.get("CDSFL_RESPONSES_GATE_STATE")
+    or pathlib.Path.home() / ".claude" / ".responses_freshness")
 RECORD = REPO / "experimental_notes" / "data" / "annotation_verdicts_2026-10-17.json"
 READER = REPO / "scripts" / "read_founder_responses_2026-10-11.py"
 

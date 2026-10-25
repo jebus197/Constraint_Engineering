@@ -317,6 +317,13 @@ _PY_WRITE = re.compile(
 #: be named rather than recording it as unknown.
 _PY_WRITE_PATH = re.compile(r"[\"']([\w./-]+\.[A-Za-z0-9]{1,6})[\"']")
 
+#: Repo root, for resolving a repo-relative path out of a heredoc body. The hook's
+#: cwd is not fixed, so a path is tested against both this and the cwd before being
+#: called a write target (pf:bc80040e3b48).
+_REPO_ROOT = pathlib.Path(
+    os.environ.get("CDSFL_REPO")
+    or pathlib.Path.home() / "Developer_Projects" / "Constraint_Engineering")
+
 _TREE_SCAN = re.compile(
     r"(?<![\w-])(?:grep\s+(?:-\w*[rR]\w*\s|--recursive)|rg\b|find\s+\S|"
     r"git\s+grep|Glob|glob\.)"
@@ -653,7 +660,38 @@ def bash_mutations(cmd: str):
         if not _PY_WRITE.search(body):
             continue
         named = [p for p in _PY_WRITE_PATH.findall(body) if "/" in p or p.endswith(".py")]
-        out.extend(named or ["<heredoc-write>"])
+        # A PATH-SHAPED STRING IS NOT A WRITE TARGET JUST BECAUSE IT SHARES A BODY
+        # WITH A WRITE CALL (pf:bc80040e3b48, found 2026-10-25).
+        #
+        # `_PY_WRITE_PATH.findall(body)` scans the WHOLE body, so every quoted
+        # path-shaped literal anywhere in a body containing a write was reported as
+        # written. MEASURED: the gate named `/x/Old_2026-09-02.txt` and
+        # `/x/Report_2026-10-19.txt` as changed by a turn; neither has ever existed,
+        # and both are fixture strings in the ANNOTATIONS list of
+        # `bench/tests/test_his_words_may_not_sit_unread_2026-10-25.py`.
+        #
+        # WHY NOT PARSE THE WRITE CALL'S OWN ARGUMENT INSTEAD: because `p.write_text(s)`
+        # with `p` bound earlier carries no path at the call site, which is why the
+        # broad scan exists. Narrowing to the call site would reintroduce the blindness
+        # closed on 2026-09-20 for the commonest real shape.
+        #
+        # SO THE TEST IS EXISTENCE: this hook runs AFTER the command, so a path the
+        # command wrote is on disk by now, and a path that was never a file cannot
+        # have been written to. Resolved against the cwd AND the repo root, because a
+        # body's paths are usually repo-relative while the hook's cwd is not fixed.
+        #
+        # THE FALLBACK IS LOAD-BEARING, NOT TIDINESS. Filtering can empty the list --
+        # a write that failed, or a file written then moved -- and an empty mutation
+        # list makes `is_work` False, which silences FIND, FOLLOW, ANALYSE and P-PASS
+        # together. That is strictly worse than a phantom name, so an emptied list
+        # falls back to the sentinel exactly as `sed -i` does.
+        #
+        # RESIDUAL LIMIT, STATED RATHER THAN HIDDEN: a path that EXISTS but was only
+        # READ inside a write-containing body is still reported. This removes the
+        # impossible names, not every wrong one.
+        present = [q for q in named
+                   if (_REPO_ROOT / q).exists() or pathlib.Path(q).exists()]
+        out.extend(present or ["<heredoc-write>"])
     return out
 
 

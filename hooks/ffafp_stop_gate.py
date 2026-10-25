@@ -145,7 +145,22 @@ def main() -> int:
     # ★ NOT A ONE-SHOT YIELD ANY MORE (his ruling 2026-10-24). It read
     # `if stop_hook_active: return 0`, which is how a turn that changed code could
     # stop with the owed check never run.
-    STATE_DIR = pathlib.Path.home() / ".claude" / ".ffafp_gate"
+    # OVERRIDABLE SO A TEST CANNOT WRITE INTO HIS LIVE ~/.claude, AND SO THESE
+    # TESTS STOP BEING FLAKY (found 2026-10-25, cause mine).
+    #
+    # The bounded-refusal counter added on his ruling of 2026-10-24 persists per
+    # session id. The dead-detector tests use a CONSTANT id, so consecutive runs
+    # read whatever the previous run left behind. MEASURED: the same single test,
+    # run 3 times with no code change between runs, returned fail, pass, fail.
+    # A flaky guard is worse than a red one, because it hides a regression on the
+    # runs where it happens to pass.
+    #
+    # It also wrote `s.refusals` and `session.refusals` into his real state
+    # directory -- the same class as the mutation test that wrote 3 live ticket
+    # rows earlier the same night.
+    STATE_DIR = pathlib.Path(
+        os.environ.get("CDSFL_FFAFP_GATE_STATE")
+        or pathlib.Path.home() / ".claude" / ".ffafp_gate")
     counter = None
     refusals = 0
     try:

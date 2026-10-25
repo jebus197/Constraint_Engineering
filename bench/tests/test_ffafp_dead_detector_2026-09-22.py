@@ -52,6 +52,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import tempfile
 import os
 import pathlib
 import subprocess
@@ -228,11 +229,28 @@ def test_wolfram_window_line_is_not_vacuous(fa):
 
 # ── 4. the Stop gate: blocks the sy/P-PASS skip once, never traps ───────────
 
-def run_gate(transcript, stop_hook_active=False):
+def run_gate(transcript, stop_hook_active=False, state_dir=None):
+    """Drive the gate with its refusal counter ISOLATED.
+
+    WHY THE ISOLATION IS NOT OPTIONAL (found 2026-10-25). The bounded-refusal
+    counter added on his ruling of 2026-10-24 persists per session id under
+    `~/.claude/.ffafp_gate`. These tests send no session id, so every one of them
+    shared the single file `session.refusals` -- in his LIVE state directory.
+    MEASURED: this same test file's `test_gate_never_refuses_twice_per_turn`, run
+    3 times with no code change between runs, returned fail, pass, fail. The
+    tests were not red; they were FLAKY, which is worse, because a guard that
+    passes on some runs hides the regression on the others.
+
+    Each call now gets a fresh counter directory unless one is named, so the
+    result depends only on the transcript.
+    """
     payload = json.dumps({"transcript_path": str(transcript),
                           "stop_hook_active": stop_hook_active})
+    env = dict(os.environ)
+    env["CDSFL_FFAFP_GATE_STATE"] = str(
+        state_dir or tempfile.mkdtemp(prefix="ffafp_gate_state_"))
     return subprocess.run([sys.executable, str(GATE)], input=payload,
-                          capture_output=True, text=True, timeout=60)
+                          capture_output=True, text=True, timeout=60, env=env)
 
 
 def test_gate_refuses_a_stop_after_untested_code_change(tmp_path):
@@ -245,18 +263,73 @@ def test_gate_refuses_a_stop_after_untested_code_change(tmp_path):
     assert "ANALYSE" in r.stderr and "P-PASS" in r.stderr
 
 
-def test_gate_never_refuses_twice_per_turn(tmp_path):
+def test_gate_refuses_up_to_its_ceiling_then_yields(tmp_path):
+    """HIS RULING, 2026-10-24: the gate refuses up to 3 times per turn, not once.
+
+    RENAMED FROM `test_gate_never_refuses_twice_per_turn`, which asserted the
+    SUPERSEDED contract. His instruction was that a single refusal was too easy
+    to walk past, so `MAX_REFUSALS_PER_TURN` is 3 and what stops the gate is
+    PRODUCING the owed check. Updating this test carries out his ruling; it does
+    not loosen a guard.
+
+    THE CEILING IS STILL TESTED, because an unreachable ceiling is exactly the
+    defect that shipped earlier on 2026-10-25, when the counter was read but
+    never written.
+    """
     t = tmp_path / "t.jsonl"
     write_jsonl(t, [entry_human(), entry_tool("Edit", {"file_path": "bench/foo.py"})])
-    assert run_gate(t, stop_hook_active=True).returncode == 0
+    state = tmp_path / "gate_state"
+    codes = [run_gate(t, stop_hook_active=True, state_dir=state).returncode
+             for _ in range(5)]
+    assert codes[0] == 2, f"the gate did not refuse at all: {codes}"
+    assert 0 in codes, f"the ceiling is unreachable, so a session could be trapped: {codes}"
+    assert codes.count(2) <= 4, f"refused more often than the ceiling allows: {codes}"
 
 
-def test_gate_allows_a_stop_when_the_check_ran(tmp_path):
+def test_gate_allows_a_stop_when_ALL_FIVE_traces_are_present(tmp_path):
+    """HIS INSTRUCTION: the full 5-step process must always trigger.
+
+    His words: *"Fix the missing 'f' steps also, that that the full 5 step
+    process always triggers, rather than randomly/selectively... They should
+    preferably be mechanical so you can't skip them."* ("that that" is "so that".)
+
+    THE OLD CONTRACT THIS REPLACES. The test supplied an Edit and a pytest run
+    and asserted the stop was allowed, which was right when only ANALYSE and
+    P-PASS were gated. `GATED` is now all 5 steps, so a pytest alone leaves FIND
+    and FOLLOW untraced and the gate correctly refuses. Driven directly, it says:
+    "left NO OBSERVABLE TRACE of: FIND, FOLLOW".
+
+    THE FILENAME MATTERS AND IS NOT ARBITRARY. FOLLOW is credited only when a
+    search names the edited file's basename or stem, with a deliberate
+    4-character floor so that a stem like `foo` cannot match everything. So this
+    test cannot use `bench/foo.py` for the FOLLOW leg; it uses a stem long enough
+    to be matchable, which is the floor working rather than an obstacle.
+    """
+    t = tmp_path / "t.jsonl"
+    target = "bench/dm/_convergence.py"
+    write_jsonl(t, [entry_human(),
+                    entry_tool("Read", {"file_path": target}),
+                    entry_tool("Grep", {"pattern": "_convergence", "path": "bench"}),
+                    entry_tool("Edit", {"file_path": target}),
+                    entry_tool("Bash", {"command": "python3 -m pytest bench/tests -q"})])
+    r = run_gate(t, state_dir=tmp_path / "s1")
+    assert r.returncode == 0, (
+        "all 5 traces are present and the stop was still refused: " + r.stderr[:400])
+
+
+def test_a_pytest_alone_does_NOT_satisfy_find_and_follow(tmp_path):
+    """Anti-vacuity for the test above: the 5 steps must be individually owed.
+
+    Without this, the test above could pass because the gate had been loosened
+    rather than because the traces were supplied.
+    """
     t = tmp_path / "t.jsonl"
     write_jsonl(t, [entry_human(),
-                    entry_tool("Edit", {"file_path": "bench/foo.py"}),
+                    entry_tool("Edit", {"file_path": "bench/dm/_convergence.py"}),
                     entry_tool("Bash", {"command": "python3 -m pytest bench/tests -q"})])
-    assert run_gate(t).returncode == 0
+    r = run_gate(t, state_dir=tmp_path / "s2")
+    assert r.returncode == 2, "FIND and FOLLOW are not being gated at all"
+    assert "FIND" in r.stderr and "FOLLOW" in r.stderr, r.stderr[:300]
 
 
 def test_gate_ignores_doc_only_turns(tmp_path):
