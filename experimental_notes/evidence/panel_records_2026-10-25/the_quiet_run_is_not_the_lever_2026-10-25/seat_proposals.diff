@@ -1,0 +1,827 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-25 03:42:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ywb8qinx/repo/.cdsfl_deny_canonical_writes.sb	2026-10-25 03:31:29
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-24 03:06:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ywb8qinx/repo/bench/reference_runner_v3.py	2026-10-25 03:39:21
+@@ -1537,7 +1537,68 @@
+ #: BOTH GATES READ IT, verified rather than assumed: the legacy quiet arm at
+ #: `_check_gamma_alt_convergence` and condition (C) of the hardened conjunction
+ #: gate, which is now the default. So raising it is not inert under either path.
+-REQUIRED_QUIET_RUN = 7
++#:
++#: REVERTED TO 3 ON 2026-10-25. The record above is kept verbatim because it is
++#: what was believed and acted on; what follows is why it does not hold. The
++#: measurement is `bench/the_gate_fires_once_per_run_2026-10-25.py`, over the
++#: same 63 archived reports and the same severity cut of 0.7.
++#:
++#: 1. THE K=7 ROW IS NON-OCCURRENCE, NOT SAFETY. Its "0 of 99" is a numerator
++#:    going to zero because the condition never fires. The longest run of
++#:    consecutive zero-novel-critical rounds observed ANYWHERE in the archive is
++#:    6. Reports containing a quiet run of 7 or more: 0. Not a run-length
++#:    artefact: of the 22 reports long enough to HOLD a 7-round window, 0 reached
++#:    one. Clopper-Pearson on 0 of 22 bounds P(reach 7 | long enough) at
++#:    0.154373, and 22 of 63 reports are long enough, so P(the quiet arm can
++#:    ever fire at K=7) <= 0.053908 against 30 of 63 = 0.476190 measured at K=3
++#:    -- a factor of 8.8. At K=7 the quiet arm had ZERO firing opportunities.
++#:
++#: 2. SO K=7 IS NOT A STRICTER K=3; IT REMOVES THE CONVERGENCE PATH. The
++#:    hardened gate is a CONJUNCTION whose condition (C) is this quiet run, and
++#:    the documented small-pool fallback is the count-based zero-novel-critical
++#:    criterion ALONE, which reads the same constant. There is no second arm to
++#:    carry it: the gamma arm blocked 0 of 23 premature windows. Removing a
++#:    feature requires a committed measurement showing a replacement dominates;
++#:    none exists.
++#:
++#: 3. THE TABLE ABOVE ANSWERS THE WRONG CONDITIONAL, which is why it pointed the
++#:    wrong way. It reports P(K quiet rounds | criticals demonstrably remained),
++#:    the quiet detector's false-negative rate. A stopping decision needs
++#:    P(criticals remained | the gate fired), and the live gate gets exactly ONE
++#:    firing opportunity per run because the run closes when it fires. Measured
++#:    that way -- one Bernoulli trial per run, first firing position, gate
++#:    forbidden before `gamma_alt_earliest_round`:
++#:
++#:        K=3   8 of 30   0.266667   Wilson [0.141827, 0.444480]
++#:        K=4   5 of 17   0.294118   Wilson [0.132800, 0.531331]
++#:        K=5   3 of  5   0.600000   Wilson [0.230724, 0.882379]
++#:        K=6   3 of  5   0.600000   Wilson [0.230724, 0.882379]
++#:        K=7   0 of  0   UNESTIMABLE -- the arm never fires
++#:
++#:    The decision-relevant rate RISES with K rather than falling, because a
++#:    longer window only ever fires inside a run that is already long and still
++#:    producing findings late, so conditioning on it selects for runs with
++#:    findings left. The rise is not itself significant (Fisher exact two-sided
++#:    p = 0.297032 for K=3 against K=5, on 5 trials) and the collapsing
++#:    denominator is the point rather than a caveat. Raising K is not a lever on
++#:    this quantity in either direction.
++#:
++#: WHY 3 AND NOT 4, 5 OR 6. 3 is the value every convergence this project has
++#: recorded was obtained under, so reverting restores a measured configuration
++#: rather than selecting a new untested one. 4, 5 and 6 are all reachable and
++#: all admissible under the guard in
++#: `bench/tests/test_the_quiet_run_must_be_reachable_2026-10-25.py`, which pins
++#: the reachability ceiling of 6 rather than pinning 3; none has a measurement
++#: behind it, and the first-firing table gives no reason to prefer one.
++#:
++#: WHAT IS STILL OPEN, named rather than closed by this revert: the gamma arm
++#: fired on 23 of 23 premature windows and blocked none, and gamma is
++#: systematically HIGHER inside a quiet run (median 0.497 against 0.3939,
++#: Mann-Whitney one-sided p = 0.0022484787590069865), so the conjunction's 2
++#: arms are positively dependent and the conjunction is carried by one arm. That
++#: is the defect lengthening the other arm was compensating for. It is NOT fixed
++#: here.
++REQUIRED_QUIET_RUN = 3
+ 
+ 
+ HARDENED_GATE_DEFAULT = True
+
+### cc2:attempt-1:bench/tests/test_the_quiet_run_must_be_reachable_2026-10-25.py
+--- /dev/null	2026-10-25 03:42:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ywb8qinx/repo/bench/tests/test_the_quiet_run_must_be_reachable_2026-10-25.py	2026-10-25 03:38:36
+@@ -0,0 +1,189 @@
++"""The required quiet run must be a value the harness can actually reach.
++
++WHY THIS TEST EXISTS. `REQUIRED_QUIET_RUN` was raised from 3 to 7 on 2026-10-17
++on the strength of the K=7 row of the table in
++`bench/the_false_quiet_rate_is_not_the_gates_rate_2026-10-08.py`, which reads
++"0 of 99 -> 0.000000". That row's 0 is a NUMERATOR going to zero because its
++CONDITION never fires, not a measured absence of premature closes. Measured
++2026-10-25 over the same 63 archived reports by
++`bench/the_gate_fires_once_per_run_2026-10-25.py`:
++
++    longest run of consecutive zero-novel-critical rounds observed
++    ANYWHERE in the archive                                            6
++    reports containing a quiet run of 7 or more                        0
++    reports long enough to HOLD a 7-round window                      22
++    of those 22, reports that reached a 7-round quiet run              0
++    reports shorter than 7 usable rounds                        41 of 63
++
++So at K=7 the quiet arm of the convergence gate did not have a single firing
++opportunity in the archive. Clopper-Pearson on 0 of 22 bounds
++P(reach a 7-quiet run | run is long enough) at 0.154373, and 22/63 of runs are
++long enough, so P(the quiet arm can ever fire at K=7) <= 0.053908 against 30/63
++= 0.476190 observed at K=3 -- a factor of 8.8.
++
++That matters because the hardened gate is a CONJUNCTION whose condition (C) is
++this quiet run, and the documented small-pool fallback is the count-based
++zero-novel-critical criterion ALONE, which reads the same constant. An
++unreachable condition (C) therefore removes the convergence path rather than
++tightening it, and the founder's standing additive standard permits removing a
++feature only on a committed measurement showing a replacement dominates. No
++such measurement exists; the gamma arm blocked 0 of 23 premature windows, so
++there is no second arm to carry the gate.
++
++WHAT THIS TEST PINS, and what it does NOT. It pins the REACHABILITY CEILING
++only: the constant may not exceed the longest quiet run this project has ever
++observed. It does not pin 3, so lowering to 2 or raising to 4, 5 or 6 all pass.
++Anyone raising it above 6 must first commit an archive measurement showing a
++quiet run of that length occurring, which is exactly the evidence that was
++missing in October 2026.
++
++HERMETIC BY CONSTRUCTION. `bench/logs` was pruned mid-session on 2026-10-25 and
++the recursive glob for `*report*.json` that both producers depend on returned 0
++files afterwards, so no test may depend on the archive being present. The
++sequence fixtures below are literals and the gate logic under test is pure.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import re
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++RUNNER = REPO / "bench" / "reference_runner_v3.py"
++PRODUCER = REPO / "bench" / "the_gate_fires_once_per_run_2026-10-25.py"
++
++#: The longest run of consecutive zero-novel-critical rounds observed anywhere
++#: in the 63-report archive, measured 2026-10-25. A required quiet run above
++#: this has no firing opportunity on any evidence the project holds.
++LONGEST_QUIET_RUN_EVER_OBSERVED = 6
++
++
++def _declared_quiet_run() -> int:
++    """Read the constant from source rather than importing the runner.
++
++    `bench/reference_runner_v3.py` is 1.2 MB and importing it for one integer
++    would pull in its module-level work. The assignment is a bare literal, so a
++    regex is sufficient and cannot be confused by a later reassignment: the
++    test asserts exactly one top-level assignment exists.
++    """
++    src = RUNNER.read_text()
++    hits = re.findall(r"^REQUIRED_QUIET_RUN\s*=\s*(\d+)\s*$", src, re.M)
++    assert len(hits) == 1, (
++        f"expected exactly 1 top-level REQUIRED_QUIET_RUN assignment, "
++        f"found {len(hits)}: {hits}")
++    return int(hits[0])
++
++
++def test_required_quiet_run_is_within_the_reachable_range():
++    """RED at 7, GREEN at 3 -- and at any value the archive has ever reached."""
++    k = _declared_quiet_run()
++    assert k >= 2, f"a quiet run of {k} is not a run"
++    assert k <= LONGEST_QUIET_RUN_EVER_OBSERVED, (
++        f"REQUIRED_QUIET_RUN = {k} exceeds {LONGEST_QUIET_RUN_EVER_OBSERVED}, "
++        f"the longest consecutive zero-novel-critical run ever observed in the "
++        f"63-report archive. The quiet arm of the convergence gate would have "
++        f"had 0 firing opportunities on that evidence, so the value removes the "
++        f"convergence path rather than tightening it. Raising it above "
++        f"{LONGEST_QUIET_RUN_EVER_OBSERVED} requires a committed measurement "
++        f"showing a quiet run of that length actually occurring.")
++
++
++def test_the_gamma_alt_default_tracks_the_same_constant():
++    """The dataclass default must not drift away from the module constant.
++
++    Both arms read `REQUIRED_QUIET_RUN`: the legacy arm via
++    `gamma_alt_consecutive_zero_crit` and condition (C) of the hardened
++    conjunction. If someone lowers the constant but hard-codes the field, the
++    revert is inert -- which is this project's commonest defect class, 11
++    confirmed additions that nothing reached since 2026-08-01.
++    """
++    src = RUNNER.read_text()
++    assert re.search(
++        r"gamma_alt_consecutive_zero_crit\s*:\s*int\s*=\s*REQUIRED_QUIET_RUN",
++        src), ("gamma_alt_consecutive_zero_crit no longer defaults to "
++               "REQUIRED_QUIET_RUN, so changing the constant would not reach "
++               "the legacy quiet arm")
++
++
++# --------------------------------------------------------------------------- #
++# The mechanism, not just the number: a quiet run of K cannot fire on a
++# sequence whose longest quiet stretch is under K. Shown on literal fixtures so
++# the claim is executed rather than asserted.
++# --------------------------------------------------------------------------- #
++def _load_producer():
++    spec = importlib.util.spec_from_file_location("gate_fires_once", PRODUCER)
++    mod = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(mod)
++    return mod
++
++
++def _recs(novel_per_round):
++    """Collector-shaped records: (round, n_responded, n_raising, gamma)."""
++    return [(i, 6, h, 0.4) for i, h in enumerate(novel_per_round)]
++
++
++# (sequence of novel-critical seat counts per round, longest quiet stretch)
++SEQUENCES = [
++    ([2, 1, 0, 0, 0, 0, 0, 0], 6),      # the archive's own maximum
++    ([3, 0, 0, 0, 1, 0, 0, 0], 3),      # a burst after a 3-round lull
++    ([1, 0, 0, 0, 0, 0], 5),
++    ([0, 0, 0, 2, 0, 0, 0], 3),
++]
++
++
++@pytest.mark.parametrize("seq,longest", SEQUENCES)
++def test_a_quiet_run_longer_than_the_data_cannot_fire(seq, longest):
++    mod = _load_producer()
++    assert mod.max_quiet_run(_recs(seq)) == longest
++    for k in range(longest + 1, longest + 4):
++        i, _ = mod.first_fire(_recs(seq), k, earliest=0)
++        assert i is None, (
++            f"a required quiet run of {k} fired on a sequence whose longest "
++            f"quiet stretch is {longest}; the gate cannot be satisfied here")
++
++
++def test_the_quiet_arm_still_fires_at_the_reverted_value():
++    """A revert must RESTORE a capability, not merely lower a number.
++
++    Each fixture above contains a quiet stretch of at least 3, so the arm fires
++    on every one at K=3. This is the capability K=7 removes.
++    """
++    mod = _load_producer()
++    for seq, _ in SEQUENCES:
++        i, _ = mod.first_fire(_recs(seq), 3, earliest=0)
++        assert i is not None, f"K=3 failed to fire on {seq}"
++
++
++def test_a_lull_before_a_burst_is_what_any_count_based_rule_gets_wrong():
++    """The premature close a longer K is meant to prevent, and does not.
++
++    `[3, 0, 0, 0, 1, 0, 0, 0, 0]` has a 3-round lull at rounds 1-3 followed by a
++    further critical at round 4. K=3 fires at round 3 and IS premature. K=4
++    cannot fire until round 8 and is not premature on this sequence -- which is
++    the whole intuition behind raising the constant, and it is correct here.
++
++    THE SAME FIXTURE SHOWS THE COST, which is why the shorter form of it is kept
++    too. `[3, 0, 0, 0, 1, 0, 0, 0]` -- one round shorter -- has no quiet stretch
++    of 4 anywhere, so K=4 NEVER FIRES on it and the run cannot close at all.
++    Avoiding one premature close and removing every close are the same operation
++    at different run lengths, which is the mechanism by which K=7 reached 0
++    firing opportunities in 63 reports.
++
++    AND THE INTUITION DOES NOT SURVIVE AGGREGATION. Measured first-firing
++    premature rates RISE with K: 8/30 = 0.266667 at K=3 against 3/5 = 0.600000
++    at K=5, because a longer window only ever fires inside a run that is already
++    long and still producing findings late, which selects for runs with findings
++    left. This test pins the per-sequence mechanism; the aggregate direction is
++    in `bench/the_gate_fires_once_per_run_2026-10-25.py`.
++    """
++    mod = _load_producer()
++    short = _recs([3, 0, 0, 0, 1, 0, 0, 0])
++    assert mod.first_fire(short, 3, earliest=0) == (3, True)
++    assert mod.first_fire(short, 4, earliest=0) == (None, None), (
++        "K=4 fired on a sequence with no 4-round quiet stretch")
++
++    long_ = _recs([3, 0, 0, 0, 1, 0, 0, 0, 0])
++    assert mod.first_fire(long_, 3, earliest=0) == (3, True)
++    assert mod.first_fire(long_, 4, earliest=0) == (8, False)
+
+### cc2:attempt-1:bench/the_gate_fires_once_per_run_2026-10-25.py
+--- /dev/null	2026-10-25 03:42:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ywb8qinx/repo/bench/the_gate_fires_once_per_run_2026-10-25.py	2026-10-25 03:40:27
+@@ -0,0 +1,318 @@
++#!/usr/bin/env python3
++"""The quiet arm fires ONCE per run, so a per-window rate cannot price it.
++
++WHAT THIS CORRECTS, and it is a correction to BOTH prior producers.
++
++`bench/the_false_quiet_rate_is_not_the_gates_rate_2026-10-08.py` computes
++P(K quiet rounds | criticals demonstrably remained) over WINDOW POSITIONS.
++`bench/what_should_the_quiet_run_be_2026-10-25.py` corrects the conditioning
++direction and computes P(criticals remained | K quiet rounds) -- also over
++WINDOW POSITIONS. Both denominators count every position in a report at which
++the condition held.
++
++THE LIVE GATE DOES NOT WORK THAT WAY. `reference_runner_v3.py` evaluates the
++conjunction at the end of each round and, when it fires, the run CLOSES. So at
++most ONE window position per run is ever reached. Every position after a run's
++FIRST firing position is counterfactual: in a live run it does not exist,
++because the run already ended. Counting those positions is not a stricter
++measurement of the same thing -- it changes the estimand, and it changes it in
++a K-dependent direction, because a long quiet tail contributes many positions
++at small K and the run that generated it closed at the first one.
++
++THE ESTIMAND THAT PRICES THE GATE is therefore one Bernoulli trial per run:
++
++    fire(run, K)      = the first round index i with round number >=
++                        gamma_alt_earliest_round at which rounds i-K+1 .. i all
++                        had zero novel criticals
++    premature(run, K) = fire(run, K) exists AND some round after i raised a
++                        novel critical
++
++    first_fire_rate(K) = |{runs : premature}| / |{runs : fire exists}|
++
++One run, one trial, which also makes the Wilson interval admissible: the
++per-window denominators are strongly dependent within a report (a run with a
++10-round quiet tail contributes 8 overlapping positions at K=3), so a binomial
++interval on 182 or on 63 positions is narrower than the evidence supports.
++
++AND IT PRICES THE PROPOSED REPLACEMENT ON THE SAME RULER. The brief of
++2026-10-25 recommends replacing the constant with the arrival-curve rule. That
++rule is scored here by the identical first-firing construction, so the 2 are
++comparable. The result decides that recommendation; it is not asserted.
++
++NOTHING HERE CHANGES A DEFAULT. This file is a measurement.
++
++USAGE
++    python3 bench/the_gate_fires_once_per_run_2026-10-25.py
++    python3 bench/the_gate_fires_once_per_run_2026-10-25.py --figures
++    python3 bench/the_gate_fires_once_per_run_2026-10-25.py --json
++"""
++from __future__ import annotations
++
++import argparse
++import importlib.util
++import json
++import math
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++
++#: The collector is LOADED FROM THE OTHER PRODUCER, not retyped, so this file
++#: reads exactly the same 63 reports with the same field names and the same
++#: severity cut. Retyping it would make any disagreement unattributable. The
++#: module name contains hyphens, so an `import` statement cannot bind it and the
++#: load has to go through importlib by path.
++_SRC = REPO / "bench" / "what_should_the_quiet_run_be_2026-10-25.py"
++
++
++def _load_collector():
++    spec = importlib.util.spec_from_file_location("wsqrb_2026_10_25", _SRC)
++    mod = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(mod)
++    return mod
++
++
++#: `RunnerConfig.gamma_alt_earliest_round` in `bench/reference_runner_v3.py`.
++#: The gate may not fire before this round whatever the quiet run is, so a
++#: first-firing measurement that ignored it would credit the gate with closes it
++#: is forbidden to make.
++EARLIEST_ROUND = 3
++
++K_GRID = tuple(range(3, 10))
++
++
++def wilson(k: int, n: int):
++    if n == 0:
++        return None
++    z = 1.959963984540054
++    p = k / n
++    d = 1 + z * z / n
++    c = (p + z * z / (2 * n)) / d
++    h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
++    return [round(max(0.0, c - h), 6), round(min(1.0, c + h), 6)]
++
++
++def first_fire(recs, k: int, earliest: int = EARLIEST_ROUND):
++    """(fire_index, premature) for one run, or (None, None) if it never fires.
++
++    `recs` is the collector's list of (round_number, n_responded, n_raising,
++    gamma) sorted by round. `n_raising` is the number of responding seats that
++    raised a critical first opened in that round, so a round is quiet exactly
++    when it is 0.
++    """
++    for i in range(k - 1, len(recs)):
++        if recs[i][0] < earliest:
++            continue
++        if any(recs[j][2] != 0 for j in range(i - k + 1, i + 1)):
++            continue
++        return i, any(h > 0 for _, _, h, _ in recs[i + 1:])
++    return None, None
++
++
++def arrival_first_fire(recs, floor: float = 0.25, min_rounds: int = 3,
++                       earliest: int = EARLIEST_ROUND):
++    """The arrival-curve rule, scored by the SAME first-firing construction.
++
++    The fit is the brief's own: a least-squares line through log1p(n_raising)
++    over rounds 0..i, stopping at the first i whose predicted next-round value
++    falls under `floor`. Reproduced here rather than called because the original
++    returns a round NUMBER and this needs the INDEX, to see what came after.
++    """
++    if len(recs) < min_rounds:
++        return None, None
++    ys = [math.log1p(h) for _, _, h, _ in recs]
++    for i in range(min_rounds - 1, len(recs)):
++        if recs[i][0] < earliest:
++            continue
++        xs = list(range(i + 1))
++        yy = ys[:i + 1]
++        n = len(xs)
++        mx = sum(xs) / n
++        my = sum(yy) / n
++        var = sum((x - mx) ** 2 for x in xs)
++        if var == 0:
++            continue
++        slope = sum((x - mx) * (y - my) for x, y in zip(xs, yy)) / var
++        if math.expm1(my + slope * (n - mx)) < floor:
++            return i, any(h > 0 for _, _, h, _ in recs[i + 1:])
++    return None, None
++
++
++def max_quiet_run(recs) -> int:
++    """Longest run of consecutive zero-novel-critical rounds in one report.
++
++    This decides whether K=7's zero is safety or non-occurrence: if no report
++    anywhere reaches 7, the K=7 row of either per-window table has an empty
++    condition, and its 0 is the numerator of a conditional that never fires
++    rather than a measured absence of premature closes.
++    """
++    best = cur = 0
++    for _, _, h, _ in recs:
++        cur = cur + 1 if h == 0 else 0
++        best = max(best, cur)
++    return best
++
++
++def main() -> int:
++    ap = argparse.ArgumentParser(description=__doc__)
++    ap.add_argument("--json", action="store_true")
++    ap.add_argument("--figures", action="store_true")
++    a = ap.parse_args()
++
++    wsqrb = _load_collector()
++    base = wsqrb.collect(wsqrb.LIVE_CRITICAL)
++    res = {"reports": len(base), "earliest_round": EARLIEST_ROUND,
++           "severity_cut": wsqrb.LIVE_CRITICAL}
++
++    # THE ARCHIVE CAN BE ABSENT, and was: `bench/logs` was pruned mid-session on
++    # 2026-10-25 and the recursive glob both producers depend on returned 0
++    # files afterwards, after this file's figures had already been taken. A
++    # measurement tool that tracebacks on an empty corpus is worse than one that
++    # says the corpus is empty, because a traceback reads as a broken tool
++    # rather than as missing data. The exit code is non-zero so a caller cannot
++    # mistake it for a measurement of zero.
++    if not base:
++        print("ARCHIVE ABSENT: the recursive glob for bench/logs/**/*report*.json "
++              "matched 0 readable reports, so nothing here is measurable. This is "
++              "missing data, NOT a measured zero. The figures in this file's "
++              "docstring and in bench/reference_runner_v3.py were taken on "
++              "2026-10-25 against 63 reports; re-executing them needs that "
++              "archive restored.", file=sys.stderr)
++        return 2
++
++    mq = [max_quiet_run(r["rounds"]) for r in base]
++    lens = [len(r["rounds"]) for r in base]
++    res["reachability"] = {
++        "max_quiet_run_observed_anywhere": max(mq),
++        "reports_with_a_quiet_run_of_at_least": {
++            k: sum(1 for x in mq if x >= k) for k in K_GRID},
++        "reports_with_fewer_than_k_usable_rounds": {
++            k: sum(1 for n in lens if n < k) for k in K_GRID},
++        "reports_long_enough_for_7_rounds": sum(1 for n in lens if n >= 7),
++        "of_those_reaching_a_7_quiet_run": sum(
++            1 for n, x in zip(lens, mq) if n >= 7 and x >= 7),
++    }
++
++    rows = {}
++    for k in K_GRID:
++        fired = prem = 0
++        stops = []
++        for rep in base:
++            i, later = first_fire(rep["rounds"], k)
++            if i is None:
++                continue
++            fired += 1
++            prem += bool(later)
++            stops.append(rep["rounds"][i][0])
++        rows[k] = {"runs_where_it_fires": fired, "premature": prem,
++                   "rate": round(prem / fired, 6) if fired else None,
++                   "wilson": wilson(prem, fired),
++                   "runs_where_it_never_fires": len(base) - fired,
++                   "mean_stop_round": round(sum(stops) / len(stops), 4) if stops else None}
++    res["first_fire_by_k"] = rows
++
++    fired = prem = 0
++    stops = []
++    for rep in base:
++        i, later = arrival_first_fire(rep["rounds"])
++        if i is None:
++            continue
++        fired += 1
++        prem += bool(later)
++        stops.append(rep["rounds"][i][0])
++    res["arrival_rule"] = {
++        "runs_where_it_fires": fired, "premature": prem,
++        "rate": round(prem / fired, 6) if fired else None,
++        "wilson": wilson(prem, fired),
++        "runs_where_it_never_fires": len(base) - fired,
++        "mean_stop_round": round(sum(stops) / len(stops), 4) if stops else None,
++        "median_stop_round": sorted(stops)[len(stops) // 2] if stops else None,
++    }
++
++    tot_findings = sum(len(r["finding_freqs"]) for r in base)
++    tot_raising = sum(h for r in base for _, _, h, _ in r["rounds"])
++    f1 = sum(1 for r in base for x in r["finding_freqs"] if x == 1)
++    res["what_the_churn_figure_counts"] = {
++        "critical_findings_in_the_registries": tot_findings,
++        "sum_of_n_raising_over_all_rounds": tot_raising,
++        "note": "n_raising counts SEATS raising a novel critical in a round, "
++                "capped at the roster size -- not the number of criticals. The "
++                "churn figures are seat-rounds per round, and 2 seats raising "
++                "the same finding counts 2.",
++        "findings_raised_by_exactly_one_seat": f1,
++        "good_turing_f1_over_n": round(f1 / tot_findings, 6) if tot_findings else None,
++    }
++
++    if a.figures:
++        rr = res["reachability"]
++        print(f"reports = {res['reports']}")
++        print(f"max_quiet_run_observed_anywhere = "
++              f"{rr['max_quiet_run_observed_anywhere']}")
++        print(f"reports_reaching_a_quiet_run_of_7 = "
++              f"{rr['reports_with_a_quiet_run_of_at_least'][7]}")
++        print(f"reports_shorter_than_7_rounds = "
++              f"{rr['reports_with_fewer_than_k_usable_rounds'][7]} of {res['reports']}")
++        for k in (3, 5, 7):
++            r = rows[k]
++            print(f"first_fire_k{k} = {r['premature']} of "
++                  f"{r['runs_where_it_fires']} = {r['rate']} wilson {r['wilson']}")
++        ar = res["arrival_rule"]
++        print(f"arrival_rule_first_fire = {ar['premature']} of "
++              f"{ar['runs_where_it_fires']} = {ar['rate']} wilson {ar['wilson']}")
++        print(f"arrival_rule_mean_stop_round = {ar['mean_stop_round']}")
++        w = res["what_the_churn_figure_counts"]
++        print(f"critical_findings = {w['critical_findings_in_the_registries']}")
++        print(f"good_turing_f1 = {w['findings_raised_by_exactly_one_seat']}")
++        print(f"good_turing_f1_over_n = {w['good_turing_f1_over_n']}")
++        return 0
++    if a.json:
++        print(json.dumps(res, indent=2, default=str))
++        return 0
++
++    rr = res["reachability"]
++    print(f"\n  {res['reports']} reports, severity cut {res['severity_cut']}, "
++          f"gate forbidden before round {EARLIEST_ROUND}\n")
++    print("  1. IS A QUIET RUN OF K REACHABLE IN THIS ARCHIVE AT ALL?")
++    print(f"     longest quiet run observed anywhere: "
++          f"{rr['max_quiet_run_observed_anywhere']}")
++    print(f"     {'K':>3}  {'reports reaching it':>20}  {'reports too short':>18}")
++    for k in K_GRID:
++        print(f"     {k:>3}  {rr['reports_with_a_quiet_run_of_at_least'][k]:>20}  "
++              f"{rr['reports_with_fewer_than_k_usable_rounds'][k]:>18}")
++    print(f"     reports long enough to HOLD a 7-window: "
++          f"{rr['reports_long_enough_for_7_rounds']}; of those, reaching one: "
++          f"{rr['of_those_reaching_a_7_quiet_run']}")
++
++    print("\n  2. FIRST-FIRING PREMATURE RATE -- one trial per run, which is all")
++    print("     the trials the live gate ever gets")
++    print(f"     {'K':>3}  {'premature/fires':>16}  {'rate':>9}  "
++          f"{'Wilson':>22}  {'never fires':>11}  {'mean stop':>9}")
++    for k in K_GRID:
++        r = rows[k]
++        frac = f"{r['premature']}/{r['runs_where_it_fires']}"
++        print(f"     {k:>3}  {frac:>16}  {str(r['rate']):>9}  "
++              f"{str(r['wilson']):>22}  {r['runs_where_it_never_fires']:>11}  "
++              f"{str(r['mean_stop_round']):>9}")
++
++    ar = res["arrival_rule"]
++    print("\n  3. THE PROPOSED REPLACEMENT ON THE SAME RULER")
++    print(f"     arrival-curve rule: {ar['premature']}/{ar['runs_where_it_fires']} "
++          f"= {ar['rate']}  Wilson {ar['wilson']}  "
++          f"mean stop round {ar['mean_stop_round']}  "
++          f"never fires on {ar['runs_where_it_never_fires']}")
++
++    w = res["what_the_churn_figure_counts"]
++    print("\n  4. WHAT THE CHURN FIGURE COUNTS")
++    print(f"     critical findings in the registries: "
++          f"{w['critical_findings_in_the_registries']}")
++    print(f"     sum of n_raising over all rounds:    "
++          f"{w['sum_of_n_raising_over_all_rounds']}")
++    print(f"     {w['note']}")
++    print(f"     f1 = {w['findings_raised_by_exactly_one_seat']}, "
++          f"f1/n = {w['good_turing_f1_over_n']}")
++    print()
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:bench/tickets/tickets.jsonl
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tickets/tickets.jsonl	2026-10-25 03:32:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ywb8qinx/repo/bench/tickets/tickets.jsonl	2026-10-25 01:31:11
+@@ -5866,5 +5866,3 @@
+ {"anchor": "", "blocker": "", "created": "2026-10-25T01:13:00+00:00", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "qs", "nid": "57fdbed8828a", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "", "source": "chat", "source_ref": "CC1 question to the founder, 2026-10-25, held for the discussion he deferred to the end of the work", "status": "OPEN", "subjects": ["REQUIRED_QUIET_RUN", "the_false_quiet_rate_is_not_the_gates_rate_2026-10-08"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "524186098488", "title": "Does the 2026-10-08 ruling raising the quiet run to 7 still stand", "verbatim": "Does his ruling of 2026-10-08 raising REQUIRED_QUIET_RUN from 3 to 7 stand, now that its cost is before him again? 23 of 182 premature closes at K=3 against 0 of 99 at K=7, for about 1 extra hour per converging run.", "verification": ""}
+ {"anchor": "", "blocker": "", "created": "2026-10-25T01:13:00+00:00", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "qs", "nid": "518a195c961b", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "", "source": "chat", "source_ref": "CC1 question to the founder, 2026-10-25, held for the discussion he deferred to the end of the work", "status": "OPEN", "subjects": ["the_required_quiet_run"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "08cf82f5081c", "title": "Dispatch the unrun the_required_quiet_run panel brief", "verbatim": "Should the panel brief named the_required_quiet_run be dispatched? It exists and has never been run.", "verification": ""}
+ {"anchor": "", "blocker": "", "created": "2026-10-25T01:31:10+00:00", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "9044cb29554b", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "", "source": "chat", "source_ref": "found 2026-10-25 by testing whether the gate's own named paths exist", "status": "OPEN", "subjects": ["ffafp_audit._add_read_paths", "ffafp_stop_gate", "heredoc_spans"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "bc80040e3b48", "title": "The FFAFP gate names phantom files as changed, from heredoc-body strings", "verbatim": "The FFAFP gate reports files as CHANGED that have never existed, because the change extractor applies a path-shaped heuristic to command text including heredoc BODIES. Measured 2026-10-25: it named /x/Old_2026-09-02.txt and /x/Report_2026-10-19.txt as changed by the turn; neither exists or ever did, and both are string literals in the ANNOTATIONS fixture of bench/tests/test_his_words_may_not_sit_unread_2026-10-25.py. It also lists <heredoc-write> as a file. PROPOSED FIX, simplest sufficient: a path reported as CHANGED must exist on disk, or be recorded as deleted. A changed file is by definition one that is there, so the check is cheap and mechanical. The existing transient-path exclusion at ffafp_audit.py:137 covers /tmp, *.log and *.pid but not an arbitrary absent root. WHY IT MATTERS RATHER THAN BEING COSMETIC: an inflated change list demands P-PASS traces for edits that never happened, and noise is what this project has repeatedly measured as the thing that gets a guard switched off.", "verification": ""}
+-{"anchor": "", "blocker": "", "created": "2026-10-25T03:32:22+00:00", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "qs", "nid": "4f94e5aaad15", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "", "source": "chat", "source_ref": "his challenge 2026-10-25: \"Your statement of this question is too vague for me to offer any view one way or another.\"", "status": "OPEN", "subjects": ["depth_and_breadth_are_measurable_2026-10-25", "local_resource_budget.DEPTH_MARKERS", "reasoning-depth-before-breadth"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "f9a93f52b7d8", "title": "Keep the unenforceable 70:30 ratio as stated intent, or drop it for the sequence rule alone", "verbatim": "THE DEPTH/BREADTH RATIO IS NOT MEASURABLE, SO THE ONLY QUESTION IS WHETHER IT STAYS IN THE DIRECTIVE AS A STATEMENT OF INTENT. He confirmed the subject: he asked whether reasoning depth and breadth could be reliably split 70:30 and was told it could not. That remains the answer -- nothing in the harness or the hooks labels a thought as depth or as breadth, so no mechanism can check a split at the moment of a decision, and measured fan-out is under 0.5% of all calls by count while its token cost cannot be attributed per call. HIS CHOICE, stated as 3 concrete options: (a) KEEP 70:30 in the directive as a reported direction of travel, explicitly unenforceable, which is what is currently built; (b) REMOVE the numbers entirely and keep only the enforced sequence rule, which refuses any fan-out whose brief lacks HYPOTHESIS, FALSIFIED BY and WHY NOT ONE CONTEXT; or (c) something else he names. The sequence rule is built and working either way and does not depend on this answer.", "verification": ""}
+-{"anchor": "", "blocker": "", "created": "2026-10-25T01:13:00+00:00", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "qs", "nid": "3025986d8cdc", "notes": [], "repair_identity": "", "resolution": "superseded by f9a93f52b7d8", "rid": "38dc6b62abe7", "ruled": "", "source": "chat", "source_ref": "CC1 question to the founder, 2026-10-25, held for the discussion he deferred to the end of the work", "status": "DEPRECATED", "subjects": ["depth_and_breadth_are_measurable_2026-10-25", "reasoning-depth-before-breadth"], "superseded_by": "f9a93f52b7d8", "supersession_evidence": "He said directly: \"Your statement of this question is too vague for me to offer any view one way or another.\" The replacement names the 3 concrete options and states the measurement limit that makes the ratio unenforceable, so it can actually be ruled on. Superseding rather than restating because this store refuses a restatement that would move a hashed identity, and the vague question must stay findable.", "task_ref": "", "tid": "0dff2c161fdd", "title": "Does 70:30 reported-not-gated satisfy his depth-over-breadth intent", "verbatim": "Is 70:30 between reasoning depth and breadth, REPORTED and never gated, the form he wants? The ratio cannot be enforced because no counter labels a thought.", "verification": "He said directly: \"Your statement of this question is too vague for me to offer any view one way or another.\" The replacement names the 3 concrete options and states the measurement limit that makes the ratio unenforceable, so it can actually be ruled on. Superseding rather than restating because this store refuses a restatement that would move a hashed identity, and the vague question must stay findable."}
+
+### cc2:attempt-1:bench/tickets/tickets_searches.jsonl
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tickets/tickets_searches.jsonl	2026-10-25 03:32:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ywb8qinx/repo/bench/tickets/tickets_searches.jsonl	2026-10-25 01:31:11
+@@ -18353,4 +18353,3 @@
+ {"query": "Does his ruling of 2026-10-08 raising REQUIRED_QUIET_RUN from 3 to 7 stand, now that its cost is before him again? 23 of 182 premature closes at K=3 against 0 of 99 at K=7, for about 1 extra hour per converging run.", "nid": "57fdbed8828a", "found": []}
+ {"query": "Should the panel brief named the_required_quiet_run be dispatched? It exists and has never been run.", "nid": "518a195c961b", "found": []}
+ {"query": "The FFAFP gate reports files as CHANGED that have never existed, because the change extractor applies a path-shaped heuristic to command text including heredoc BODIES. Measured 2026-10-25: it named /x/Old_2026-09-02.txt and /x/Report_2026-10-19.txt as changed by the turn; neither exists or ever did, and both are string literals in the ANNOTATIONS fixture of bench/tests/test_his_words_may_not_sit_u", "nid": "9044cb29554b", "found": []}
+-{"query": "THE DEPTH/BREADTH RATIO IS NOT MEASURABLE, SO THE ONLY QUESTION IS WHETHER IT STAYS IN THE DIRECTIVE AS A STATEMENT OF INTENT. He confirmed the subject: he asked whether reasoning depth and breadth could be reliably split 70:30 and was told it could not. That remains the answer -- nothing in the harness or the hooks labels a thought as depth or as breadth, so no mechanism can check a split at the ", "nid": "4f94e5aaad15", "found": []}
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-25 03:42:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_vtyu_0dw/repo/.cdsfl_deny_canonical_writes.sb	2026-10-25 03:31:49
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-24 03:06:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_vtyu_0dw/repo/bench/reference_runner_v3.py	2026-10-25 03:39:12
+@@ -1537,7 +1537,25 @@
+ #: BOTH GATES READ IT, verified rather than assumed: the legacy quiet arm at
+ #: `_check_gamma_alt_convergence` and condition (C) of the hardened conjunction
+ #: gate, which is now the default. So raising it is not inert under either path.
+-REQUIRED_QUIET_RUN = 7
++#:
++#: REVERTED FROM 7 TO 3, C12 panel check of 2026-10-25, discharging the second
++#: half of the same ruling: "Fix it and check your fix with the free panel."
++#: The check found the justifying curve above answers the wrong question: it is
++#: P(K quiet rounds | criticals demonstrably remained) -- the detector's
++#: false-negative rate -- not P(criticals remained | the gate fired), which is
++#: what a stopping decision needs. Re-measured with the gate's actual event
++#: semantics (the gate fires ONCE, at the FIRST K-quiet position), the archive
++#: gives a K=3 first-fire premature rate of 8 of 30 = 0.266667, Wilson
++#: (0.141827, 0.444480), and at K=7 the rate is 0 of 0: UNESTIMABLE, because 7
++#: consecutive quiet rounds occur 0 times in 409 archived rounds, including 0
++#: times in the 22 runs long enough to hold such a window. The "0.000000 at
++#: K=7" in the table above is a numerator over a condition that never fires.
++#: Under the smallest recorded round cap (`max_rounds` 8), K=7 leaves a run
++#: that raises any critical after round 1 unable to close on the quiet arm at
++#: all -- an off switch, not a stricter gate. Pinned, with the measurement
++#: cited, by `bench/tests/test_the_quiet_run_is_three_2026-10-25.py`; a future
++#: raise must carry a first-fire premature-rate measurement at the proposed K.
++REQUIRED_QUIET_RUN = 3
+ 
+ 
+ HARDENED_GATE_DEFAULT = True
+
+### fable:attempt-1:bench/tests/test_the_quiet_run_is_three_2026-10-25.py
+--- /dev/null	2026-10-25 03:42:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_vtyu_0dw/repo/bench/tests/test_the_quiet_run_is_three_2026-10-25.py	2026-10-25 03:38:46
+@@ -0,0 +1,115 @@
++#!/usr/bin/env python3
++"""The required quiet run is 3, and a future raise must re-argue its case here.
++
++PANEL SEAT DELIVERABLE, C12, 2026-10-25. The raise from 3 to 7 (carried out
++2026-10-17 under the founder's 2026-10-08 ruling) was justified by the figure
++0.126374 from `bench/the_false_quiet_rate_is_not_the_gates_rate_2026-10-08.py`,
++which is P(K quiet rounds | criticals demonstrably remained) -- the detector's
++false-negative rate -- not P(criticals remained | the gate fired), which is the
++quantity a stopping decision needs. Re-measured over the same 63 archived
++reports with the gate's actual event semantics (the gate fires ONCE, at the
++FIRST K-quiet position, so overlapping windows after it never occur):
++
++    K=3 first-fire premature rate:  8 of 30 = 0.266667
++                                    Wilson (0.141827, 0.444480)
++                                    [statsmodels + Wolfram Language agree]
++    K=5 first-fire:                 3 of 5           (unusably thin)
++    K=7 first-fire:                 0 of 0           (UNESTIMABLE: the event
++                                                      never occurs in the archive)
++
++and 7 consecutive quiet rounds occur 0 times in 409 usable rounds, including
++0 times in the 22 runs long enough to hold such a window. Under the smallest
++round cap C13 records (`max_rounds` = 8), K=7 leaves a run that raises any
++critical after its first round UNABLE to close on the quiet arm at all, which
++is not a stricter gate but a disabled one -- and replacing a working value
++without a committed measurement showing the replacement dominates violates the
++additive standard. No measurement in the record estimates the premature rate
++AT K=7; the "0.000000 at K=7" that justified the raise is a numerator over a
++condition that never fires.
++
++THIS FILE IS THE RE-ARGUING POINT. If the quiet run is to move off 3 again,
++the committed measurement the additive standard requires is a FIRST-FIRE
++premature rate at the proposed K, estimated on data where a K-quiet window can
++actually occur, plus a feasibility count under the live round caps. Edit the
++pins below only together with that measurement.
++
++PINNED AT SOURCE LEVEL VIA `ast`, NOT BY IMPORT, deliberately: importing
++`bench.reference_runner_v3` requires its sibling modules (`hil_review_trigger`,
++`runner_mode_detection`), which a staged review tree may not carry, and a pin
++that cannot run where it is reviewed protects nothing. The ast pin also checks
++something an import cannot: that the config field's DEFAULT is the NAME
++`REQUIRED_QUIET_RUN`, not a frozen literal -- the half-derivation that a
++mutation check caught on 2026-10-25.
++"""
++import ast
++import pathlib
++
++RUNNER = pathlib.Path(__file__).resolve().parents[1] / "reference_runner_v3.py"
++
++#: The smallest live round cap recorded by C13 on 2026-10-18 (`max_rounds` of
++#: 8 or 16 across the configs it enumerated). The feasibility pin below uses
++#: the smaller, which is the binding one.
++SMALLEST_RECORDED_ROUND_CAP = 8
++
++
++def _tree():
++    return ast.parse(RUNNER.read_text())
++
++
++def _required_quiet_run(tree):
++    for node in ast.walk(tree):
++        if isinstance(node, ast.Assign):
++            for tgt in node.targets:
++                if getattr(tgt, "id", None) == "REQUIRED_QUIET_RUN":
++                    assert isinstance(node.value, ast.Constant), (
++                        "REQUIRED_QUIET_RUN is no longer a literal constant; "
++                        "this pin must be rewritten against the new shape")
++                    return node.value.value
++    raise AssertionError("REQUIRED_QUIET_RUN not found in reference_runner_v3.py")
++
++
++class TestTheRequiredQuietRunIsThree:
++    def test_the_constant_is_three(self):
++        k = _required_quiet_run(_tree())
++        assert k == 3, (
++            f"REQUIRED_QUIET_RUN is {k}, not 3. The raise to 7 rested on a "
++            f"conditional rate that answers the wrong question (see this "
++            f"file's docstring); raising it again requires a committed "
++            f"FIRST-FIRE premature-rate measurement at the proposed value, "
++            f"cited beside this pin when it is edited.")
++
++    def test_the_gate_field_reads_the_constant_not_a_frozen_literal(self):
++        # `gamma_alt_consecutive_zero_crit` must default to the NAME
++        # REQUIRED_QUIET_RUN. A literal here is the half-derivation that lets
++        # the constant and the field the gate reads desynchronise silently.
++        tree = _tree()
++        for node in ast.walk(tree):
++            if isinstance(node, ast.ClassDef) and node.name == "RunnerConfig":
++                for stmt in node.body:
++                    if (isinstance(stmt, ast.AnnAssign)
++                            and getattr(stmt.target, "id", None)
++                            == "gamma_alt_consecutive_zero_crit"):
++                        assert (isinstance(stmt.value, ast.Name)
++                                and stmt.value.id == "REQUIRED_QUIET_RUN"), (
++                            "gamma_alt_consecutive_zero_crit no longer "
++                            "defaults to REQUIRED_QUIET_RUN; the 2 gate paths "
++                            "can now disagree on the quiet run")
++                        return
++        raise AssertionError(
++            "gamma_alt_consecutive_zero_crit not found on RunnerConfig")
++
++    def test_the_quiet_arm_stays_reachable_under_the_smallest_round_cap(self):
++        # A critical in round 1 is the EARLIEST a finding can arrive. If even
++        # that run cannot fit REQUIRED_QUIET_RUN later quiet rounds under the
++        # smallest recorded cap with working rounds to spare, the quiet arm is
++        # an off switch for every capped run, not a gate. At 3 this leaves 4
++        # working rounds (8 - 1 - 3); at 7 it left 0, which is how the archive
++        # came to hold 0 occurrences of a 7-quiet window in 409 rounds.
++        k = _required_quiet_run(_tree())
++        spare = SMALLEST_RECORDED_ROUND_CAP - 1 - k
++        assert spare >= 4, (
++            f"REQUIRED_QUIET_RUN={k} leaves only {spare} working rounds under "
++            f"the smallest recorded cap of {SMALLEST_RECORDED_ROUND_CAP}; the "
++            f"quiet arm is unreachable for most real runs (measured "
++            f"2026-10-25: K=7 feasible in 16-21 of 53 archived runs that "
++            f"raised a critical, against 32-34 at K=3)")
+
+### fable:attempt-1:bench/tickets/tickets.jsonl
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tickets/tickets.jsonl	2026-10-25 03:32:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_vtyu_0dw/repo/bench/tickets/tickets.jsonl	2026-10-25 01:31:11
+@@ -5866,5 +5866,3 @@
+ {"anchor": "", "blocker": "", "created": "2026-10-25T01:13:00+00:00", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "qs", "nid": "57fdbed8828a", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "", "source": "chat", "source_ref": "CC1 question to the founder, 2026-10-25, held for the discussion he deferred to the end of the work", "status": "OPEN", "subjects": ["REQUIRED_QUIET_RUN", "the_false_quiet_rate_is_not_the_gates_rate_2026-10-08"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "524186098488", "title": "Does the 2026-10-08 ruling raising the quiet run to 7 still stand", "verbatim": "Does his ruling of 2026-10-08 raising REQUIRED_QUIET_RUN from 3 to 7 stand, now that its cost is before him again? 23 of 182 premature closes at K=3 against 0 of 99 at K=7, for about 1 extra hour per converging run.", "verification": ""}
+ {"anchor": "", "blocker": "", "created": "2026-10-25T01:13:00+00:00", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "qs", "nid": "518a195c961b", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "", "source": "chat", "source_ref": "CC1 question to the founder, 2026-10-25, held for the discussion he deferred to the end of the work", "status": "OPEN", "subjects": ["the_required_quiet_run"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "08cf82f5081c", "title": "Dispatch the unrun the_required_quiet_run panel brief", "verbatim": "Should the panel brief named the_required_quiet_run be dispatched? It exists and has never been run.", "verification": ""}
+ {"anchor": "", "blocker": "", "created": "2026-10-25T01:31:10+00:00", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "9044cb29554b", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "", "source": "chat", "source_ref": "found 2026-10-25 by testing whether the gate's own named paths exist", "status": "OPEN", "subjects": ["ffafp_audit._add_read_paths", "ffafp_stop_gate", "heredoc_spans"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "bc80040e3b48", "title": "The FFAFP gate names phantom files as changed, from heredoc-body strings", "verbatim": "The FFAFP gate reports files as CHANGED that have never existed, because the change extractor applies a path-shaped heuristic to command text including heredoc BODIES. Measured 2026-10-25: it named /x/Old_2026-09-02.txt and /x/Report_2026-10-19.txt as changed by the turn; neither exists or ever did, and both are string literals in the ANNOTATIONS fixture of bench/tests/test_his_words_may_not_sit_unread_2026-10-25.py. It also lists <heredoc-write> as a file. PROPOSED FIX, simplest sufficient: a path reported as CHANGED must exist on disk, or be recorded as deleted. A changed file is by definition one that is there, so the check is cheap and mechanical. The existing transient-path exclusion at ffafp_audit.py:137 covers /tmp, *.log and *.pid but not an arbitrary absent root. WHY IT MATTERS RATHER THAN BEING COSMETIC: an inflated change list demands P-PASS traces for edits that never happened, and noise is what this project has repeatedly measured as the thing that gets a guard switched off.", "verification": ""}
+-{"anchor": "", "blocker": "", "created": "2026-10-25T03:32:22+00:00", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "qs", "nid": "4f94e5aaad15", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "", "source": "chat", "source_ref": "his challenge 2026-10-25: \"Your statement of this question is too vague for me to offer any view one way or another.\"", "status": "OPEN", "subjects": ["depth_and_breadth_are_measurable_2026-10-25", "local_resource_budget.DEPTH_MARKERS", "reasoning-depth-before-breadth"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "f9a93f52b7d8", "title": "Keep the unenforceable 70:30 ratio as stated intent, or drop it for the sequence rule alone", "verbatim": "THE DEPTH/BREADTH RATIO IS NOT MEASURABLE, SO THE ONLY QUESTION IS WHETHER IT STAYS IN THE DIRECTIVE AS A STATEMENT OF INTENT. He confirmed the subject: he asked whether reasoning depth and breadth could be reliably split 70:30 and was told it could not. That remains the answer -- nothing in the harness or the hooks labels a thought as depth or as breadth, so no mechanism can check a split at the moment of a decision, and measured fan-out is under 0.5% of all calls by count while its token cost cannot be attributed per call. HIS CHOICE, stated as 3 concrete options: (a) KEEP 70:30 in the directive as a reported direction of travel, explicitly unenforceable, which is what is currently built; (b) REMOVE the numbers entirely and keep only the enforced sequence rule, which refuses any fan-out whose brief lacks HYPOTHESIS, FALSIFIED BY and WHY NOT ONE CONTEXT; or (c) something else he names. The sequence rule is built and working either way and does not depend on this answer.", "verification": ""}
+-{"anchor": "", "blocker": "", "created": "2026-10-25T01:13:00+00:00", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "qs", "nid": "3025986d8cdc", "notes": [], "repair_identity": "", "resolution": "superseded by f9a93f52b7d8", "rid": "38dc6b62abe7", "ruled": "", "source": "chat", "source_ref": "CC1 question to the founder, 2026-10-25, held for the discussion he deferred to the end of the work", "status": "DEPRECATED", "subjects": ["depth_and_breadth_are_measurable_2026-10-25", "reasoning-depth-before-breadth"], "superseded_by": "f9a93f52b7d8", "supersession_evidence": "He said directly: \"Your statement of this question is too vague for me to offer any view one way or another.\" The replacement names the 3 concrete options and states the measurement limit that makes the ratio unenforceable, so it can actually be ruled on. Superseding rather than restating because this store refuses a restatement that would move a hashed identity, and the vague question must stay findable.", "task_ref": "", "tid": "0dff2c161fdd", "title": "Does 70:30 reported-not-gated satisfy his depth-over-breadth intent", "verbatim": "Is 70:30 between reasoning depth and breadth, REPORTED and never gated, the form he wants? The ratio cannot be enforced because no counter labels a thought.", "verification": "He said directly: \"Your statement of this question is too vague for me to offer any view one way or another.\" The replacement names the 3 concrete options and states the measurement limit that makes the ratio unenforceable, so it can actually be ruled on. Superseding rather than restating because this store refuses a restatement that would move a hashed identity, and the vague question must stay findable."}
+
+### fable:attempt-1:bench/tickets/tickets_searches.jsonl
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tickets/tickets_searches.jsonl	2026-10-25 03:32:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_vtyu_0dw/repo/bench/tickets/tickets_searches.jsonl	2026-10-25 01:31:11
+@@ -18353,4 +18353,3 @@
+ {"query": "Does his ruling of 2026-10-08 raising REQUIRED_QUIET_RUN from 3 to 7 stand, now that its cost is before him again? 23 of 182 premature closes at K=3 against 0 of 99 at K=7, for about 1 extra hour per converging run.", "nid": "57fdbed8828a", "found": []}
+ {"query": "Should the panel brief named the_required_quiet_run be dispatched? It exists and has never been run.", "nid": "518a195c961b", "found": []}
+ {"query": "The FFAFP gate reports files as CHANGED that have never existed, because the change extractor applies a path-shaped heuristic to command text including heredoc BODIES. Measured 2026-10-25: it named /x/Old_2026-09-02.txt and /x/Report_2026-10-19.txt as changed by the turn; neither exists or ever did, and both are string literals in the ANNOTATIONS fixture of bench/tests/test_his_words_may_not_sit_u", "nid": "9044cb29554b", "found": []}
+-{"query": "THE DEPTH/BREADTH RATIO IS NOT MEASURABLE, SO THE ONLY QUESTION IS WHETHER IT STAYS IN THE DIRECTIVE AS A STATEMENT OF INTENT. He confirmed the subject: he asked whether reasoning depth and breadth could be reliably split 70:30 and was told it could not. That remains the answer -- nothing in the harness or the hooks labels a thought as depth or as breadth, so no mechanism can check a split at the ", "nid": "4f94e5aaad15", "found": []}

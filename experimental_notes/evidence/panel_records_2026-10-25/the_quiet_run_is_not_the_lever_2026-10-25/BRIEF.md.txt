@@ -1,0 +1,157 @@
+# PANEL BRIEF — the founder asked why the quiet run must grow at all, and the evidence says it should not
+
+## REQUIRED SECTION 1 — The question
+
+**Is a longer required quiet run the right lever against premature convergence, and if not, what should the stopping rule be instead?**
+
+This brief supersedes `bench/logs/the_required_quiet_run_2026-10-18/BRIEF.md`, which was written, validated and never dispatched. It discharges the second half of the founder's ruling of 2026-10-08, verbatim: *"Verdict. Fix it and check your fix with the free panel."* It is task C12 on the master task list. The value was raised under task C13 and C13 is closed; C12, the check, is what remains.
+
+### THE FOUNDER ASKED, 2026-10-25, in his own words
+
+On the need for the change at all: *"I confess I am still at a loss as to why need to add additional quiet rounds at all?"* ("why need" is "why we need".) And: *"But you have yet to offer any clear explanation why this might be necessary, not least as I said until now it has always been 3 and 3 has again until now appeared both sufficient, and fairly stringent in its own right."*
+
+On whether the count must be a constant: *"Moreover I asked specifically if quiescent round count always needed to be a fixed quantity, or if it could somehow be calculated dynamically at the beginning of an experiment, rather than be set to an arbitrary figure? Not least given that not all experiments are likely to be of equal complexity."*
+
+With a worked pair of cases: *"if I were to ask the models on the harness to calculate the product of 4 + 4 and call this an 'experiment', why might the harness need a total of 7 full rounds to decide this? It would clearly be perversely inefficient."* And: *"Conversely, if I were to ask the models on the harness to solve the Riemann Hypothesis, the standard of proof for such an experiment is likely to potentially be even higher."*
+
+On what the number means: *"where does this quiet round number even come from (I mean I know where is comes from originally, because that is what it was set at arbitrarily early on in the project), but if it now somehow must be mysteriously raised to 5, or even to 7, it seems that this previously set arbitrary number may have taken on some new meaning, and new significance of its own somehow"*
+
+On cost, including a mechanism not previously measured: *"the strong likelihood that doing so would be likely (or would it?) to result in significantly increased levels of churn, which even if we can detect it and categorise it as such (which by now we should be able to), still requires significant compute and other resources (cpu/gpu/energy etc.) to categorise as such and mark appropriately."*
+
+On the standard of proof required before changing it: *"But arbitrarily raising the quiescent round count, given the significant penalties this might entail should not be done without sound, solid justification, and a clear explanation for why this should be necessary."* And his summary of the objection: *"We spend 7 rounds trying to essentially (or at least hoping to) find nothing?"*
+
+His sharpest challenge, which the panel should treat as the question to answer: *"if your implying convergence can't trigger reliably without increasing the quiescent round count, then what on Earth have we been doing for this last best part of a year in this project, when this (again arbitrary) number has been set at 3 and convergence has triggered multiple times over regardless? And if it isn't convergence that worries you, then what exactly is it?"* ("if your implying" is "if you are implying".)
+
+And a possible conflation he raised himself: *"Wasn't there a suggestion of changing the severity (or what constitutes a a severe finding) score from 0.7, to 0.5? Or am I conflating two different topics perhaps? Would changing how the harness measures this, or anything else solve this problem?"*
+
+## REQUIRED SECTION 2 — AND THIS IS WHAT I FOUND
+
+<!-- figure: reports | scripts/quiet_run_brief_figures_2026-10-25.py | reports = 63 -->
+<!-- figure: posterior_k3 | scripts/quiet_run_brief_figures_2026-10-25.py | posterior_k3 = 23 of 63 = 0.365079 -->
+<!-- figure: posterior_k3_wilson | scripts/quiet_run_brief_figures_2026-10-25.py | posterior_k3_wilson = [0.257154, 0.488513] -->
+<!-- figure: conditional_k3 | scripts/quiet_run_brief_figures_2026-10-25.py | conditional_k3 = 23 of 182 = 0.126374 -->
+<!-- figure: posterior_k5 | scripts/quiet_run_brief_figures_2026-10-25.py | posterior_k5 = 6 of 10 = 0.6 -->
+<!-- figure: posterior_k7_denominator | scripts/quiet_run_brief_figures_2026-10-25.py | posterior_k7_denominator = 0 -->
+<!-- figure: churn_early_rate | scripts/quiet_run_brief_figures_2026-10-25.py | churn_early_rate = 1.524064 -->
+<!-- figure: churn_late_rate | scripts/quiet_run_brief_figures_2026-10-25.py | churn_late_rate = 0.627451 -->
+<!-- figure: churn_ratio | scripts/quiet_run_brief_figures_2026-10-25.py | churn_ratio = 2.428977 -->
+<!-- figure: severity_sweep_k3 | scripts/quiet_run_brief_figures_2026-10-25.py | severity_sweep_k3 = 0.5:0.916667, 0.6:0.7, 0.7:0.365079, 0.8:0.310924 -->
+<!-- figure: arrival_rule_fired | scripts/quiet_run_brief_figures_2026-10-25.py | arrival_rule_fired = 47 of 63 -->
+<!-- figure: arrival_mean_round | scripts/quiet_run_brief_figures_2026-10-25.py | arrival_mean_round = 4.7234 -->
+<!-- figure: rounds_available_mean | scripts/quiet_run_brief_figures_2026-10-25.py | rounds_available_mean = 6.4921 -->
+
+
+Producer: `bench/what_should_the_quiet_run_be_2026-10-25.py`. It reads the same 63 archived reports as the original measurement and uses the original's own collector shape deliberately, so the 2 sets of figures are comparable. Every interval below is cross-verified: closed-form Wilson against statsmodels (agreeing to 5.55e-17 or better) and against scipy's Clopper-Pearson independently.
+
+### FINDING 1 — THE NUMBER THAT JUSTIFIED THE CHANGE ANSWERS A DIFFERENT QUESTION FROM THE ONE A DECISION NEEDS
+
+`bench/the_false_quiet_rate_is_not_the_gates_rate_2026-10-08.py` measures, in its own words, a denominator of *"round positions where findings DEMONSTRABLY remained"*. So its 0.126374 is
+
+    P(K quiet rounds are observed | more criticals demonstrably remained)
+
+which is the quiet detector's FALSE-NEGATIVE rate, conditioned on there being something left to find. The quantity a stopping decision needs is the other conditional:
+
+    P(criticals remained | K quiet rounds were observed)
+
+These differ by the base rate of "findings remained" at the moment the gate could fire, and the second had never been computed. Both are now reported side by side:
+
+| K | P(quiet given remained) — the figure used to justify 7 | P(remained given quiet) — the decision-relevant figure |
+|---|---|---|
+| 3 | 23 of 182 = 0.126374, Wilson [0.085705, 0.182488] | **23 of 63 = 0.365079**, Wilson [0.257154, 0.488513] |
+| 4 | 12 of 153 = 0.078431 | 12 of 29 = 0.413793 |
+| 5 | 6 of 131 = 0.045802 | **6 of 10 = 0.600000**, Wilson [0.312674, 0.831820] |
+| 6 | 3 of 114 = 0.026316 | 3 of 5 = 0.600000 |
+| 7 | 0 of 99 = 0.000000 | **0 of 0 — UNESTIMABLE** |
+
+**The decision-relevant rate RISES with K rather than falling.** A longer quiet run only ever occurs inside a run that is already long and still producing findings late, so conditioning on it selects for runs where findings remain. The conditional measure hides that selection entirely. The rise from 0.365079 to 0.600000 is not itself significant (Fisher exact two-sided p = 0.181413) because K=5 rests on 10 positions, and the collapsing denominator is the point rather than a caveat.
+
+### FINDING 2 — K=7'S ZERO IS NON-OCCURRENCE, NOT SAFETY, AND THIS IS THE DECISIVE FACT
+
+**7 consecutive quiet rounds occur 0 times in the archive.** 63 reports, 409 usable rounds. `0 of 0` is unestimable with an upper bound of 1.0, not 0. The "0.0000 at 7" that justified the change is the numerator of the conditional measure going to zero because **its condition never fires at all**.
+
+Falsified 3 ways rather than asserted:
+
+1. **Run length.** 41 of 63 runs have fewer than 7 usable rounds, so a 7-round window is unsatisfiable by construction in 65% of the archive whatever the findings do.
+2. **Not merely short runs.** Among the 22 runs long enough to hold a 7-window, the number of positions where 7 consecutive quiet rounds occurred is **0**.
+3. **Feasibility under the live round cap**, which C13 records at `max_rounds` of 8 or 16. Of the 53 runs that raised at least 1 critical, the rounds needed to close on a quiet run after the last critical have median 10 and maximum 51. Within `max_rounds=8`: **34 of 53 (0.641509, Wilson [0.506911, 0.756980]) feasible at K=3 against 21 of 53 (0.396226, Wilson [0.275894, 0.530585]) at K=7**. Fisher exact two-sided **p = 0.019234**, odds ratio 2.726817; statsmodels two-proportion z = 2.527143, p = 0.011499. The absolute loss is **13 of 53 runs, 0.245283, Wilson [0.149329, 0.375666]**.
+
+**So K=7 is not a stricter K=3. On the archived evidence it is an off switch for the quiet arm of the gate.**
+
+### FINDING 3 — THE FOUNDER'S CHURN HYPOTHESIS IS CONFIRMED
+
+Late rounds are markedly less productive than early ones: **285 criticals across 187 early rounds (1.524064 per round) against 128 across 204 late rounds (0.627451 per round), a ratio of 2.428977**. Exact conditional binomial **p = 2.671829e-18**; a log-rate-ratio normal approximation agrees, z = 8.340771, p = 7.380751e-17. Extra rounds buy progressively less, which is the cost side of his objection measured rather than assumed.
+
+### FINDING 4 — THE SEVERITY THRESHOLD IS THE SAME TOPIC, AND MOVING IT DOWN MAKES THINGS WORSE
+
+He asked whether a 0.7 against 0.5 severity cut is a separate matter. It is not separate: `CRITICAL = 0.7` is what decides whether a finding counts as critical at all, so it determines whether a round is quiet. Sweeping it against the decision-relevant rate:
+
+| severity cut | K=3 | K=5 | K=7 |
+|---|---|---|---|
+| 0.5 | 0.916667 | 1.000000 | unestimable |
+| 0.6 | 0.700000 | 1.000000 | unestimable |
+| **0.7 (live)** | **0.365079** | 0.600000 | unestimable |
+| 0.8 | 0.310924 | 0.441860 | 0.529412 |
+
+**Lowering the cut to 0.5 makes the premature rate far worse, not better**, because more findings count as critical so more arrive late. Raising it to 0.8 improves the number only by reclassifying findings, not by finding them sooner. So changing the severity measurement does not solve this, and he was right to suspect the 2 questions are connected while being wrong about the direction the lever moves.
+
+### FINDING 5 — A DYNAMIC RULE IS AVAILABLE, COMPUTABLE, AND CHEAPER THAN WHAT RUNS ALREADY DO
+
+His question was whether the count can come from the experiment instead of being chosen for it. 2 candidate rules were implemented and run over the archive.
+
+**(a) The arrival-curve rule.** New criticals per round decay roughly geometrically, which Finding 3 supports directly. Fit a least-squares line through log(1 + new criticals) and stop at the first round whose predicted next-round yield falls under a floor of 0.25. Over the 63 runs it **fired on 47, with median stop round 2 and mean 4.723400, against a mean 6.492100 rounds actually available**. It never fired on 16. So it is cheaper on average than what the runs actually did, and it adapts: a trivial problem exhausts itself in the first rounds and the prediction collapses immediately, while a deep problem keeps producing arrivals and the rule keeps going. That is the behaviour his 4 + 4 and Riemann Hypothesis pair asks for.
+
+**(b) A Good-Turing coverage rule, reported WITH its confound rather than without.** "Have we found everything?" is the unseen-species problem, and Good-Turing gives the probability that the next finding is one never seen before as f1 divided by n, where f1 counts findings raised by exactly 1 seat. Measured over 1,345 critical findings: **f1 = 1,274, so f1/n = 0.947212 and coverage is 0.052788**. Taken at face value that says the finding space is almost untouched in nearly every run. **It should NOT be taken at face value**, and the reason is a design feature: Good-Turing assumes the seats sample exchangeably from one pool, and a deliberately diverse panel violates that by construction, so low co-discovery is what the panel is FOR rather than evidence of incompleteness. Reported here because the panel should rule on whether it can be rescued, not because it is being proposed. It fired on 46 of 63 runs.
+
+## REQUIRED SECTION 3 — AND THIS IS WHAT I SUGGEST
+
+1. **Do not raise the quiet run. On this evidence the raise to 7 should be reverted**, because its justification rests on a conditional that answers a different question and on a zero that is non-occurrence. This is the founder's decision and no change has been applied.
+2. **Replace the constant with the arrival-curve rule**, with the floor as the single tunable, measured rather than chosen. It answers the complexity objection directly and costs less than the status quo on the archived evidence.
+3. **Repair the gamma arm before touching the quiet arm at all.** The original producer reports that the gamma arm blocked **0** premature windows, and that the 2 arms are positively dependent: median gamma 0.497 across the 63 rounds ending a quiet run against 0.3939 across the other 346, Mann-Whitney one-sided p = 0.0022484787590069865, with a manually computed U agreeing. A conjunction gate whose second arm never fires is a 1-armed gate wearing a conjunction's name, and lengthening the first arm is compensation rather than repair.
+4. **Leave the severity cut at 0.7.** Moving it down worsens the measured rate; moving it up improves the number only by renaming findings.
+
+## REQUIRED SECTION 2b — Use the harness
+
+**Form your answer by RUNNING the machinery, not by describing it.** Execute both producers and report what they printed:
+
+    python3 bench/the_false_quiet_rate_is_not_the_gates_rate_2026-10-08.py
+    python3 bench/what_should_the_quiet_run_be_2026-10-25.py
+
+**If any figure above does not reproduce, say so with the number you got.** A figure that does not reproduce is the most important thing this brief could receive back.
+
+**Then attack the analysis rather than confirming it.** Specifically:
+
+- **Is the posterior rate the right quantity, or is it also mis-specified?** The denominator counts positions where a quiet window had occurred, not positions where the FULL conjunction gate would have fired. Does that difference matter, and does correcting it change the direction of the conclusion?
+- **Is Finding 2 an artefact of the archive rather than a property of the gate?** The archive is largely short runs under earlier configurations. State what evidence would distinguish "K=7 can never fire" from "K=7 has not yet had the chance to fire".
+- **Does the arrival-curve rule have a failure mode that a fixed K does not?** A geometric decay fit on 3 points is a weak instrument, and a run whose findings arrive in bursts could satisfy it during a lull. Construct the adversarial case.
+- **Is there a third lever neither of us has named?** The original panel finding said *"The only levors identified are a longer required quiet run, or more seats"* — quoted here as written, with its typo. More seats changes the probability of a false quiet directly. Cost it against both other options.
+- **If the raise to 7 is wrong, what should happen to the 12 configs it was written into?** The founder's standing ruling is that archived records are never rewritten.
+
+**NO COMPELLED CONVERGENCE.** Return your own independent verdict and your strongest falsification of the analysis above. Disagreement is information and will be preserved, not smoothed. If you think the founder is wrong and a longer quiet run is justified, say so and show the measurement that makes the case.
+
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+**A finding without a fix is incomplete, and a fix without a runnable falsifier that you have EXECUTED is a hypothesis, not a fix.** Report the exact command you ran and the output you saw, pasted rather than summarised.
+
+**Deliver the fix as a FILE, written INTO the sandbox repository tree at its real path.** A fix described in prose is not delivered. A fix written to scratch space is destroyed when the sandbox is torn down: rounds 5 and 6 on 2026-09-10 returned 0 source files for exactly that reason while both seats reported writing and running working code. If your answer is that the stopping rule should change, the deliverable is the changed code at its real path plus a test at `bench/tests/` that goes RED against the current behaviour and GREEN against yours. If your answer is that nothing should change, the deliverable is a test that pins the current behaviour and would fail if someone later raised the quiet run again.
+
+## REQUIRED SECTION 4 — What would refute you
+
+**Before you conclude, state what evidence would overturn your own answer.** A verdict with no stated refutation condition is an opinion. Be specific: name the measurement, the direction, and the threshold at which you would change your mind. If you conclude that K=7 should stand, say what archive result would make you abandon that; if you conclude it should be reverted, say the same.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return these fields, each under its own heading, so replies can be compared without a parser guessing:
+
+- `## Verdict` — one of REVERT_TO_3, KEEP_7, SET_TO_5, REPLACE_WITH_DYNAMIC_RULE, FIX_THE_GAMMA_ARM_FIRST, or NOT_DECIDABLE_ON_THIS_EVIDENCE, with 1 sentence.
+- `## Reasoning` — the derivation, premises first.
+- `## Falsifier` — the command you ran, and its output pasted verbatim.
+- `## Fix` — the path you wrote in the sandbox tree, and the test path.
+- `## Refutation condition` — what would overturn your own answer.
+- `## Disagreement` — your strongest disagreement with this brief's own framing. This heading must OPEN with the word "Disagreement" and carry no qualifier in front of it, because a qualified heading satisfies a loose word search while being invisible to the reply detector, and every seat's disagreement would then be recorded as lost. If you agree with the framing entirely, say so under this heading and explain what would have had to be different for you to disagree.
+
+## REQUIRED SECTION 6 — Termination
+
+**Stop on diminishing returns, which is this project's own criterion**: stop when a further pass produces no new above-threshold findings, and state how many passes you ran. A finding is above threshold if missing it could cause a real-world failure in this harness — a run that closes early, a run that cannot close at all, or a cost the founder pays for nothing. Do not generate findings to fill space, and do not nitpick style; the brief's own prose is not under review.
+
+Written under CDSFL note standard v1.8.
