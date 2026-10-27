@@ -1537,7 +1537,27 @@ FINGERPRINT_DIR = REPO_ROOT / "bench" / "fingerprints"
 #: BOTH GATES READ IT, verified rather than assumed: the legacy quiet arm at
 #: `_check_gamma_alt_convergence` and condition (C) of the hardened conjunction
 #: gate, which is now the default. So raising it is not inert under either path.
-REQUIRED_QUIET_RUN = 7
+#: REVERTED TO 3 ON HIS RULING OF 2026-10-27. The raise to 7 is withdrawn.
+#:
+#: WHY, measured by `bench/what_should_the_quiet_run_be_2026-10-25.py` and checked
+#: by the free panel on 2026-10-25, both seats returning REVERT_TO_3 independently:
+#:
+#:   * The curve that justified 7 measures P(K quiet rounds | findings remained),
+#:     its own denominator being "round positions where findings DEMONSTRABLY
+#:     remained". A stopping decision needs P(findings remained | the gate fires),
+#:     which is 8 of 30 = 0.266667 at K=3, Wilson [0.141827, 0.444480].
+#:   * **7 CONSECUTIVE QUIET ROUNDS OCCUR 0 TIMES** in 63 reports and 409 usable
+#:     rounds. The "0 of 99" that justified the raise is NON-OCCURRENCE, not
+#:     safety: 41 of 63 runs are shorter than 7 rounds, and among the 22 long
+#:     enough the count is still 0.
+#:   * Under max_rounds=8 the quiet condition was reachable for 21 of 53 runs at
+#:     K=7 against 34 of 53 at K=3 (Fisher p = 0.019234, statsmodels z p =
+#:     0.011499).
+#:
+#: 36 archived configs still pin a value and NONE is live -- every one belongs to
+#: an experiment with a run directory, which his no-rewrite ruling protects.
+#: Verified 2026-10-27 rather than assumed.
+REQUIRED_QUIET_RUN = 3
 
 
 HARDENED_GATE_DEFAULT = True
@@ -1611,7 +1631,36 @@ class RunnerConfig:
     # Fires when EITHER gamma >= gamma_alt_threshold OR
     # gamma_alt_consecutive_zero_crit consecutive rounds with zero novel CRITICAL.
     # Documented in Exp 39 sub-experiment configs as pass_condition.
-    gamma_alt_threshold: float = 0.30
+    # THE SECOND ARM BLOCKED NOTHING, AND AT 0.30 IT WAS STRICTLY HARMFUL.
+    # His ruling 2026-10-27: "Then yes, fix it so it becomes the 2 part test, as
+    # envidaged." ("envidaged" is "envisaged".)
+    #
+    # MEASURED at the 30 real gate-fire points in the archive
+    # (`bench/can_any_signal_see_a_premature_close_2026-10-27.py`): the MINIMUM
+    # gamma across all 8 premature closes is 0.3173, so a threshold of 0.30 sits
+    # just below the entire premature distribution and blocked **0 of 8** of them
+    # -- while still blocking **2 of 22** sound closes. Fisher exact that it
+    # blocks premature more often than sound: p = 1.000000. An arm whose only
+    # effect is to block correct closes is worse than no arm.
+    #
+    # 0.41 DOMINATES 0.30 rather than trading against it, which is what
+    # `additive-standard` requires of a replacement: premature blocked rises
+    # 0 -> 4 of 8 (0.5000, Wilson [0.2152, 0.7848], Clopper-Pearson [0.1570,
+    # 0.8430]) while sound blocked is UNCHANGED at 2 of 22 (0.0909, Wilson
+    # [0.0253, 0.2781]). Fisher exact p = 0.029355. Leave-one-out over the 8
+    # premature closes returns 0.4140 or 0.4585 in 8 of 8 folds, so the optimum
+    # is stable in-sample.
+    #
+    # NOT SET TO THE YOUDEN OPTIMUM 0.4585, deliberately: that catches 6 of 8 but
+    # costs 7 false blocks against 2, which is a TRADE between safety and his
+    # round budget and therefore his ruling, not mine. It is reported to him.
+    #
+    # THE SAMPLE IS 8 POSITIVE CASES. The independent calibration audit of
+    # arXiv:2609.24052 used 2,416 blinded labels for a comparable task and found
+    # that calibration "varies by model rather than by paradigm, so each model
+    # must be audited". 8 is enough to show 0.30 is harmful; it is NOT enough to
+    # fit a threshold with confidence, and the interval above says so.
+    gamma_alt_threshold: float = 0.41
     gamma_alt_consecutive_zero_crit: int = REQUIRED_QUIET_RUN
     gamma_alt_earliest_round: int = 3
     # Hardened convergence gate (F4/F6/conjunction, 2026-05-18,

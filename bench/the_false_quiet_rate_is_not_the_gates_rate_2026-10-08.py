@@ -248,13 +248,36 @@ def claim_gamma_does_not_cut_the_joint_rate(window: int = 3) -> dict:
             if rn >= last:
                 continue
             if all(recs[j][2] == 0 for j in range(i - window + 1, i + 1)):
-                windows.append((src, rn, g))
-    with_gamma = [(s, r, g) for s, r, g in windows if isinstance(g, (int, float))]
+                # THE REAL HISTORY UP TO THIS ROUND, not a synthetic all-zero
+                # window. THE DEFECT THIS REPLACES, found 2026-10-27 and it
+                # invalidates this claim's headline as previously reported.
+                #
+                # The call passed `[0] * window`, so `cumulative_critical` was
+                # ALWAYS 0 and the gate took its VACUOUS-CURVE branch -- the
+                # branch that exists so a panel which reviewed a genuinely clean
+                # document can converge instead of burning its whole round
+                # budget. That branch returns True WITHOUT consulting gamma at
+                # all. So "the gamma arm blocked 0 of 23 premature windows" was
+                # never a measurement of the gamma arm; it was a measurement of
+                # a branch that cannot block anything by design.
+                #
+                # A premature window is BY CONSTRUCTION one where criticals came
+                # later, and in the archive they almost always came earlier too,
+                # which is what gives the decay curve something to fit. Passing
+                # the real prefix is the only way the gamma comparison is
+                # reached.
+                hist = [recs[j][2] for j in range(0, i + 1)]
+                windows.append((src, rn, g, hist))
+    with_gamma = [(s, r, g, h) for s, r, g, h in windows
+                  if isinstance(g, (int, float))]
     fired, above = 0, 0
+    vacuous = 0
     detail = []
-    for src, rn, g in with_gamma:
+    for src, rn, g, hist in with_gamma:
+        if sum(hist) == 0:
+            vacuous += 1
         conv, reason = _check_gamma_alt_convergence(
-            rn, float(g), [0] * window, cfg, unresolved_critical=0, contested=0,
+            rn, float(g), list(hist), cfg, unresolved_critical=0, contested=0,
             gamma_critical=float(g), total_findings=10)
         fired += bool(conv)
         above += float(g) >= float(getattr(cfg, "gamma_alt_threshold", 0.30))
@@ -266,6 +289,7 @@ def claim_gamma_does_not_cut_the_joint_rate(window: int = 3) -> dict:
         "window": window,
         "configured_quiet_run": int(RunnerConfig().gamma_alt_consecutive_zero_crit),
         "premature_windows": len(windows),
+        "vacuous_curve_windows": vacuous,
         "with_a_recorded_gamma": len(with_gamma),
         "gate_fired_on": fired,
         "gamma_above_threshold_on": above,

@@ -98,9 +98,24 @@ def test_the_default_derives_from_the_measurement(runner):
     import dataclasses
     declared = {f.name: f.default
                 for f in dataclasses.fields(runner.RunnerConfig)}
-    assert runner.REQUIRED_QUIET_RUN == 7, (
-        "7 is where the measured premature-window rate reaches 0.0000; a "
-        "different value needs its own measurement")
+    # REVERTED TO 3 ON HIS RULING OF 2026-10-27. This assertion read `== 7`
+    # from 2026-10-17 until then, on the premise that 7 is where the measured
+    # premature-window rate reaches 0.0000.
+    #
+    # THE PREMISE DID NOT SURVIVE. That 0.0000 is NON-OCCURRENCE: 7 consecutive
+    # quiet rounds occur 0 times across 63 reports and 409 usable rounds, so the
+    # rate went to zero because its condition never fires, not because the
+    # setting is safe. Both free-panel seats returned REVERT_TO_3 independently
+    # on 2026-10-25. Producers:
+    # `bench/what_should_the_quiet_run_be_2026-10-25.py` and
+    # `bench/can_any_signal_see_a_premature_close_2026-10-27.py`.
+    #
+    # THE FILENAME IS NOW HISTORICAL and is deliberately not changed: it records
+    # when the value WAS seven, and renaming it would erase that from the tree.
+    assert runner.REQUIRED_QUIET_RUN == 3, (
+        "3 is the value his ruling of 2026-10-27 restored, after the measurement "
+        "behind 7 was shown to rest on a condition that never fires; a different "
+        "value needs its own measurement AND his ruling")
     assert declared[KNOB] == runner.REQUIRED_QUIET_RUN
 
 

@@ -92,8 +92,28 @@ class TestGammaBlockedNoneOfThem:
         assert d["with_a_recorded_gamma"] >= 20, (
             f"only {d['with_a_recorded_gamma']} windows carry a gamma; a smaller "
             "set cannot support the claim")
-        assert d["gamma_blocked_none"], d
-        assert d["gate_fire_rate"] == 1.0, d
+        # THE CLAIM THIS TEST WAS WRITTEN TO PIN IS NOW REFUTED BY THE REPAIR,
+        # WHICH IS THE REPAIR WORKING. Until 2026-10-27 `gamma_blocked_none` was
+        # True and `gate_fire_rate` was 1.0: the second arm fired on every
+        # premature window and blocked none of them.
+        #
+        # THE CAUSE WAS THE THRESHOLD, NOT THE SIGNAL. The minimum gamma across
+        # the 8 premature gate-fire points is 0.3173, and the threshold was
+        # 0.30 -- sitting just below the entire premature distribution, so it
+        # could block nothing while still blocking 2 of 22 SOUND closes. Fisher
+        # exact that it blocked premature more often than sound: p = 1.000000.
+        # On his ruling of 2026-10-27 the threshold is 0.41, which DOMINATES
+        # 0.30: premature blocked rises 0 -> 4 of 8 while sound blocked is
+        # unchanged at 2 of 22.
+        #
+        # The assertion is inverted rather than deleted, so this file still
+        # fails if the arm goes blind again.
+        assert not d["gamma_blocked_none"], (
+            "the gamma arm is blocking NONE of the premature windows again, "
+            "which is the defect repaired on 2026-10-27: " + str(d))
+        assert d["gate_fire_rate"] < 1.0, (
+            f"the gate still fires on every premature window "
+            f"(rate {d['gate_fire_rate']}), so the second arm is inert: {d}")
 
     def test_the_raised_quiet_run_removes_the_windows_rather_than_blocking_them(self, M):
         """WHAT HIS RULING ACTUALLY BOUGHT, measured rather than asserted.
@@ -112,18 +132,51 @@ class TestGammaBlockedNoneOfThem:
         K = rr.RunnerConfig().gamma_alt_consecutive_zero_crit
         d = M.claim_gamma_does_not_cut_the_joint_rate(window=K)
         assert d["window"] == K
-        assert d["premature_windows"] == 0, (
-            f"at the configured quiet run of {K} the archive still holds "
-            f"{d['premature_windows']} premature window(s); his ruling of "
-            f"2026-10-08 was carried out on the premise that 7 leaves none")
-        assert d["gate_fire_rate"] is None, (
-            "with no windows there is no rate; a number here would mean the "
-            "window detector and the gate disagree about the length")
+        # HIS RULING OF 2026-10-27 REVERTED THE QUIET RUN TO 3, so the premise
+        # this test asserted -- that the raised window leaves 0 premature
+        # windows -- is withdrawn. It was true only because a 7-round quiet
+        # window NEVER OCCURS: 0 times in 63 reports and 409 usable rounds. The
+        # windows were not being blocked; they were being made unreachable, and
+        # with them the whole quiet arm.
+        #
+        # SO THE ANTI-VACUITY CONCERN IS INVERTED TOO. The danger is no longer a
+        # `gamma_blocked_none` that is True for want of anything to block; it is
+        # a configuration that silently returns to having nothing to measure.
+        assert d["premature_windows"] > 0, (
+            f"at the configured quiet run of {K} the archive holds 0 premature "
+            f"windows, which is how a setting of 7 passed review on 2026-10-17: "
+            f"with no windows the gamma arm cannot be shown to do anything at "
+            f"all, and a vacuous pass reads like a safe one")
+        assert d["gate_fire_rate"] is not None, (
+            "no rate with windows present means the window detector and the "
+            "gate disagree about the length")
 
     def test_gamma_was_above_its_threshold_in_all_of_them(self, M):
         d = M.claim_gamma_does_not_cut_the_joint_rate()
-        assert d["gamma_above_threshold_on"] == d["with_a_recorded_gamma"], d
-        assert d["gamma_alt_threshold"] == 0.3, (
+        # INVERTED ON HIS RULING OF 2026-10-27, not deleted. Until then every
+        # premature window carried a gamma at or above the threshold, which is
+        # WHY the arm blocked nothing: at theta=0.30 the minimum premature gamma
+        # of 0.3173 sat above the cut. At theta=0.41 that is no longer true for
+        # all of them, and the arm blocks 2 of 23 (0.086957, Wilson [0.024180,
+        # 0.267960]) against 0 of 23 (Wilson [0.000000, 0.143117]) before.
+        #
+        # MEASURED WITH THE PRODUCER'S OWN DEFECT REPAIRED. It had passed
+        # `[0] * window` as the critical history, so every call took the gate's
+        # VACUOUS-CURVE branch and never reached the gamma comparison at all.
+        # Only 2 of the 23 windows are genuinely vacuous. The original claim
+        # survives its own correction -- 0.30 really does block 0 -- but it had
+        # never been tested until the history was passed for real.
+        assert d["gamma_above_threshold_on"] < d["with_a_recorded_gamma"], (
+            f"every premature window still carries a gamma at or above the "
+            f"threshold ({d['gamma_above_threshold_on']} of "
+            f"{d['with_a_recorded_gamma']}), so the cut sits below the whole "
+            f"premature distribution and the second arm cannot bite: {d}")
+        # RATCHETED TO 0.41 ON HIS RULING OF 2026-10-27 (was 0.3). The ratchet is
+        # kept, not removed: the whole measurement is relative to the threshold,
+        # so a silent move would invalidate every figure in this file. Moving it
+        # deliberately means updating this line and the numbers that depend on it,
+        # which is the point.
+        assert d["gamma_alt_threshold"] == 0.41, (
             "the threshold moved; the whole measurement is relative to it")
 
     def test_every_window_names_the_report_it_came_from(self, M):
