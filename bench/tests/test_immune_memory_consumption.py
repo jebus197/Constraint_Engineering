@@ -22,6 +22,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import pathlib
 import sys
 from types import SimpleNamespace
 
@@ -144,11 +145,52 @@ def _run_pipeline(flaw_classes, rk0_prior=None):
 
 
 def _memory_from_real_state():
-    """The immune memory as it actually stands on disk after Exp 47-49."""
-    path = os.path.join(_project_root, "bench", "state", "immune_memory.json")
-    if not os.path.exists(path):
-        pytest.skip("no recorded immune memory on disk")
-    return ImmuneMemory.load(path)
+    """The immune memory as recorded, falling back to the ARCHIVE after the reset.
+
+    ★ REPAIRED 2026-10-28. This read `bench/state/immune_memory.json` and
+    skipped only when the file was ABSENT. On 2026-10-17 the founder ruled the
+    memory be reset for the live experiments -- "We reset immune memory for the
+    upcoming live experiments, since simulation can probably only tell us so
+    much about how this facility will function in real live/paid experiments" --
+    and commit a72c2fb4 did exactly that, leaving the file PRESENT with
+    `records: {}`. So the file existed, the skip did not fire, and 2 tests in
+    this module failed with "recorded memory is empty" and "the prior reached no
+    archived finding -- inert wiring". Neither was true of the wiring; both were
+    true of the data.
+
+    THE DATA WAS NOT DESTROYED, because that same ruling archived it first:
+    `bench/state/immune_memory_archive/` holds 7 records across 6 flaw classes
+    from 3 experiments. These tests are about whether a recorded prior reaches
+    an archived finding, so they are pointed at the archive rather than skipped.
+    Skipping would have been the easy repair and would have retired 2 proofs on
+    the day the data moved.
+    """
+    return ImmuneMemory.load(_real_state_path())
+
+
+def _real_state_path() -> str:
+    """The path `_memory_from_real_state` reads, so a caller can point the
+    runner's own builder at the SAME source.
+
+    Added 2026-10-28 with the archive fallback. Without it the builder test
+    compared a prior built from the LIVE file against a memory loaded from the
+    ARCHIVE and failed at 0.5 against 0.5660122254944753 -- 2 sources for one
+    comparison, which is the drift this project names most often.
+    """
+    live = os.path.join(_project_root, "bench", "state", "immune_memory.json")
+    if os.path.exists(live):
+        mem = ImmuneMemory.load(live)
+        if getattr(mem, "_records", None):
+            return live
+    # The reset archives before clearing; take the newest real snapshot. The
+    # `.why.json` siblings record WHY a reset happened and carry no records.
+    arch = pathlib.Path(_project_root) / "bench" / "state" / "immune_memory_archive"
+    snaps = sorted(p for p in arch.glob("immune_memory_*.json")
+                   if not p.name.endswith(".why.json")) if arch.is_dir() else []
+    for snap in reversed(snaps):
+        if getattr(ImmuneMemory.load(str(snap)), "_records", None):
+            return str(snap)
+    pytest.skip("no recorded immune memory on disk and none in the archive")
 
 
 def _prior_fn(mem, rho=RHO):
@@ -601,9 +643,13 @@ class TestConfigPlumbing:
         from bench.reference_runner_v3 import _build_rk0_prior
         mem = _memory_from_real_state()
         classes = sorted(mem._records)
+        # THE SAME SOURCE ON BOTH SIDES -- 2026-10-28. This pinned the LIVE path
+        # while the comparison loads whatever `_memory_from_real_state` found,
+        # which is the archive since the 2026-10-17 reset. 2 sources for 1
+        # comparison gave 0.5 against 0.5660122254944753.
         prior, receipt = _build_rk0_prior(RunnerConfig(
             immune_memory_consume_rk0=True,
-            immune_memory_path="bench/state/immune_memory.json"))
+            immune_memory_path=_real_state_path()))
         assert prior is not None
         for fc in classes:
             assert prior(fc) == pytest.approx(

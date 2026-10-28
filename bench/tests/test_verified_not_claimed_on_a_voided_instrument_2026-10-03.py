@@ -102,16 +102,47 @@ def test_the_halt_bound_still_cannot_see_the_flag():
     falsified. The assertion is kept so the record shows what was verified and
     what it did not cover.
     """
-    src = RUNNER.read_text(encoding="utf-8")
-    i = src.index("def unverified_critical_count")
-    body = src[i:src.index("\n    def ", i + 10)]
-    assert 'get("verified")' not in body and '["verified"]' not in body, (
-        "the halt bound now reads `verified`, so withholding it on a voided "
-        "instrument changes convergence -- which is the founder's open "
-        "decision, not a wiring choice")
-    assert 'e.get("status") != "UNCONFIRMED"' in body, (
-        "the halt bound no longer keys on UNCONFIRMED, so the reasoning that "
-        "this fix cannot move it no longer holds")
+    # ★ CONVERTED FROM 2 SOURCE-TEXT ASSERTIONS, 2026-10-28. They read the body
+    # of `unverified_critical_count` and asked whether the literals
+    # `get("verified")` and `e.get("status") != "UNCONFIRMED"` appeared in it.
+    # That method was refactored on 2026-10-17 into a thin wrapper over
+    # `blocking_entry_ids`, which now holds the doors ONCE -- so both literals
+    # moved and this went red on a refactor that made the code better, which is
+    # exactly what `execute-do-not-grep` warns a text assertion does.
+    #
+    # The 2 claims are now MEASURED on the halt bound's own output, which no
+    # refactor can fool: setting or withholding `verified` must not move it, and
+    # the status it keys on must be UNCONFIRMED.
+    import reference_runner_v3 as _R
+
+    def _reg_with(status: str, verified=None):
+        reg = _R.FindingRegistry()
+        f = _R.Finding(finding_id="V_F1", model_id="V", round_idx=0,
+                       flaw_class="code_behavioral", severity=0.9,
+                       abstraction_index=0.5, description="critical thing")
+        cid = reg.register(f, "V")
+        reg.entries[cid]["status"] = status
+        reg.entries[cid]["severity"] = 0.9
+        if verified is not None:
+            reg.entries[cid]["verified"] = verified
+        return reg
+
+    base = _reg_with("UNCONFIRMED").unverified_critical_count()
+    assert base == 1, (
+        f"an UNCONFIRMED critical is not counted at all ({base}); this test "
+        f"cannot show what `verified` does or does not do")
+    for flag in (True, False):
+        got = _reg_with("UNCONFIRMED", verified=flag).unverified_critical_count()
+        assert got == base, (
+            f"the halt bound MOVED with verified={flag} ({got} against {base}), "
+            f"so withholding it on a voided instrument changes convergence -- "
+            f"which is the founder's open decision, not a wiring choice")
+
+    other = _reg_with("CONFIRMED").unverified_critical_count()
+    assert other == 0, (
+        f"a CONFIRMED critical still counts toward the halt bound ({other}), so "
+        f"the bound no longer keys on UNCONFIRMED and the reasoning that this "
+        f"fix cannot move it no longer holds")
 
 
 def test_both_readers_of_the_flag_still_exist():

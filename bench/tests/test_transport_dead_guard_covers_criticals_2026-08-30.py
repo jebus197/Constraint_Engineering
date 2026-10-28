@@ -62,12 +62,57 @@ class TestTheGuardIsNotSeverityGated:
 
 
 class TestTheConsequenceIsStillReal:
-    def test_irreducible_escalation_still_excuses_a_critical_from_the_count(self):
-        """Pins WHY the guard matters. If this ever stops being true the guard is
-        less critical — but while it holds, a false exhaustion is a false
-        convergence."""
-        body = ast.unparse(_fn("unverified_critical_count"))
-        assert "irreducible_escalation" in body
+    def test_the_two_blocker_readers_cannot_disagree(self):
+        """Pins WHY the guard matters, and does it where the sibling below cannot.
+
+        ★ REPLACED A SOURCE-TEXT ASSERTION, 2026-10-28. It read
+        `assert "irreducible_escalation" in ast.unparse(_fn(
+        "unverified_critical_count"))`. That method was refactored on 2026-10-17
+        into a thin wrapper over `blocking_entry_ids`, so the literal moved and
+        this went red ON A REFACTOR THAT MADE THE CODE BETTER -- the failure mode
+        `execute-do-not-grep` names: a text assertion cannot follow a door that
+        moves, and it punishes the fix.
+
+        A STRAIGHT CONVERSION WOULD HAVE DUPLICATED THE SIBLING. The test below
+        already measures the discrimination (1 -> 0 when the flag is set), so
+        re-asserting it here would add a second copy of one check rather than
+        cover what was lost. What the text assertion uniquely pinned was WHERE
+        the door lives, and the refactor's own claim is that it now lives in ONE
+        place that BOTH callers read: "blocking_entry_ids now holds the doors
+        ONCE and both callers read it, so the claim in the reader's docstring
+        that the 2 cannot drift is finally true of the blocker half as well."
+
+        THAT CLAIM IS WHAT THIS MEASURES, and it is the one with a measured
+        failure behind it: before the refactor the 2 readers disagreed, with
+        `commissioning_arm3_contrast_20260922T025824Z` returning 4 blockers from
+        the counter and 11 from the reader -- a numerator larger than its own
+        denominator. So both are asked about the same registry, with and without
+        the marking, and required to agree.
+        """
+        reg = R.FindingRegistry()
+        f = R.Finding(finding_id="Z_F1", model_id="Z", round_idx=0,
+                      flaw_class="code_behavioral", severity=0.9,
+                      abstraction_index=0.5, description="critical thing")
+        cid = reg.register(f, "Z")
+        reg.entries[cid]["status"] = "UNCONFIRMED"
+        reg.entries[cid]["severity"] = 0.9
+
+        def _both():
+            count = reg.unverified_critical_count()
+            ids = set(reg.blocking_entry_ids())
+            return count, ids
+
+        count_before, ids_before = _both()
+        assert count_before == len(ids_before) == 1, (
+            f"the 2 readers disagree before the marking: counter "
+            f"{count_before}, id set {sorted(ids_before)}. A numerator larger "
+            f"than its own denominator is what motivated the 2026-10-17 repair")
+
+        reg.entries[cid]["irreducible_escalation"] = True
+        count_after, ids_after = _both()
+        assert count_after == len(ids_after) == 0, (
+            f"the 2 readers disagree after the marking: counter {count_after}, "
+            f"id set {sorted(ids_after)}. The door must be held in one place")
 
     def test_a_critical_marked_irreducible_is_not_counted(self):
         reg = R.FindingRegistry()

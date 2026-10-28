@@ -365,6 +365,39 @@ class TestTheDecompositionDecisionCountsWorkItCanSplit:
 
         return Mgr()
 
+    @pytest.fixture(autouse=True)
+    def _pinned_fingerprint_state(self):
+        """★ ORDER-INDEPENDENCE, ADDED 2026-10-28, AND IT IS WHY THESE 2 TESTS
+        WERE FLAKY RATHER THAN WRONG.
+
+        The full-suite baseline of 2026-10-28 failed
+        `test_the_floor_now_judges_the_decomposable_payload` and
+        `test_decomposition_is_refused_when_it_cannot_help`, and BOTH PASS IN
+        ISOLATION -- 34 of the 36 failures reproduced alone and these 2 did not.
+        This project's own position is that a flaky guard is worse than a red
+        one, because it hides a regression on the runs where it happens to pass.
+
+        THE CAUSE. `_decomposition_is_futile` reads `_load_fingerprint_cache()`,
+        which is backed by the module-level `_fp_cache` and gated by the
+        module-level `_fp_scope`: with the scope set to "experiment" the loader
+        returns {} by design, so every seat falls through to the static
+        threshold and these verdicts change. 4 other test files set that scope,
+        and whichever ran first decided what these 2 measured.
+
+        So the state they depend on is PINNED here and RESTORED afterwards,
+        rather than inherited from whatever ran before. The default is
+        "persist", which is what they were written against.
+        """
+        import run_exp17_immune as _im
+        scope, cache = _im._fp_scope, _im._fp_cache
+        _im.set_fingerprint_scope("persist")
+        _im._invalidate_fingerprint_cache()
+        try:
+            yield
+        finally:
+            _im.set_fingerprint_scope(scope)
+            _im._fp_cache = cache
+
     def test_legacy_callers_are_unchanged(self, rr, mgr):
         from run_exp17_immune import _should_decompose
         for total in range(0, 200_001, 7_919):
