@@ -82,7 +82,39 @@ MARKER = re.compile(r"(?:(?<=^)|(?<=[\s(\[]))(fr|pf|qs|wr)(?:[:\]\)]|\s*[-—]\s
 #: "write", "from" and "frame" by design, because a prefilter that is wrong in
 #: the permissive direction costs time and a prefilter that is wrong in the
 #: restrictive direction loses content.
-CANDIDATE_LINE = re.compile(r"\b(?:fr|pf|qs|wr)\b", re.IGNORECASE)
+#: ★ THE LEFT `\b` WAS NOT A SUPERSET AND BOTH PANEL SEATS PROVED IT
+#: INDEPENDENTLY, 2026-10-28, each with an executed randomised counterexample:
+#: 185 of 500 generated cases were rejected by the prefilter while `MARKER`
+#: fired on them. The cause is that `MARKER` carries `re.MULTILINE` and accepts
+#: a token preceded by ANY whitespace, newline included -- but this filter runs
+#: on the RAW JSON line, where that newline is the 2 characters backslash and
+#: `n`. The character immediately left of the token is then the WORD character
+#: `n`, and `\b` does not match. A marker written on its own line, which is how
+#: a marker is normally written, was therefore dropped before anything decoded
+#: it. Falsifiers, both kept and both run:
+#:   bench/tests/test_the_chat_prefilter_is_not_a_superset_2026-10-28.py (cc2)
+#:   bench/tests/test_candidate_line_is_a_superset_2026-10-28.py        (fable)
+#:
+#: THE 2 SEATS PROPOSED DIFFERENT REPAIRS AND BOTH PASS BOTH FALSIFIERS, so the
+#: falsifiers do not choose between them. cc2 dropped BOTH boundaries, which is
+#: a superset under no assumption at all. fable dropped only the LEFT one,
+#: arguing the right `\b` is safe because every right context `MARKER` accepts
+#: maps to a non-word character in the raw line -- on one stated assumption,
+#: that the transcript writer never `\u`-escapes an ASCII letter.
+#:
+#: MEASURED, WHICH IS WHAT DECIDES IT. Over the live transcripts, cc2's bare
+#: form admits 74,065 of 234,414 lines, 0.315958, against fable's 7,836,
+#: 0.033428, Wilson [0.032708, 0.034163] -- 8.451889 times the decoding work,
+#: a `json.loads` on 28.2530% of a 491 MB file. And fable's one assumption is
+#: TESTABLE: across 6 transcripts and 259,028 lines, the number escaping an
+#: ASCII letter is 0, Clopper-Pearson exact [0.000000000, 0.000014241].
+#:
+#: SO fable's FORM IS TAKEN AND ITS CAVEAT IS MECHANISED rather than trusted:
+#: `bench/tests/test_the_prefilter_assumption_is_checked_2026-10-28.py` fails
+#: the moment an ASCII-letter escape appears in a transcript, and names cc2's
+#: bare form as the fallback. That is neither seat's answer and it is better
+#: than both: fable's cost with cc2's safety property turned into a check.
+CANDIDATE_LINE = re.compile(r"(?:fr|pf|qs|wr)\b", re.IGNORECASE)
 
 #: WHAT MAY BE A BLOCKING SUBJECT, and the measurement that narrowed it.
 #:

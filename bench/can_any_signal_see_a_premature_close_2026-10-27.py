@@ -134,9 +134,27 @@ def fire_points(reports, k: int):
         for i in range(k - 1, len(recs)):
             if not all(recs[j][2] == 0 for j in range(i - k + 1, i + 1)):
                 continue
-            premature = any(h > 0 for _, _, h, _ in recs[i + 1:])
+            # ★ THE LABEL IS EVALUATED OVER A TAIL, AND THE TAIL CAN BE EMPTY.
+            # `any([])` is False, so a fire point with no recorded round after
+            # it is labelled SOUND with zero evidence -- it is UNOBSERVED, not
+            # sound. Found by the cc2 seat in the joint round of 2026-10-28,
+            # which neither blind seat saw. Measured: 10 of 30 fire points have
+            # an EMPTY tail and 10 more a tail of 1; all 20 are labelled sound,
+            # and NOT ONE of the 8 premature labels comes from a tail shorter
+            # than 2. Tail length ALONE predicts the label at AUC 0.971591,
+            # CI [0.888203, 1.0], Spearman rho 0.751455 p = 1.70325e-06 --
+            # higher than any signal this script scores, `findings_count`
+            # included. It is length scored against length.
+            #
+            # `tail_rounds` is therefore carried on every row and reported, and
+            # `--min-tail` lets a caller drop labels that could not have been
+            # refuted by observation. THE DEFAULT IS 0, which reproduces every
+            # published figure byte for byte: nothing here moves a cited number.
+            tail = recs[i + 1:]
+            premature = any(h > 0 for _, _, h, _ in tail)
             rows.append({"file": pathlib.Path(rep["file"]).parent.name,
                          "round": recs[i][0], "premature": premature,
+                         "tail_rounds": len(tail),
                          "signals": recs[i][3]})
             break
     return rows
@@ -170,15 +188,32 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--k", type=int, default=DEFAULT_K)
+    ap.add_argument("--min-tail", type=int, default=0,
+                    help="drop fire points with fewer than this many recorded "
+                         "rounds after them. A label computed over a shorter "
+                         "tail could not have been refuted by observation. "
+                         "Default 0 reproduces every published figure.")
     a = ap.parse_args()
 
     reps = collect()
-    rows = fire_points(reps, a.k)
+    all_rows = fire_points(reps, a.k)
+    rows = [r for r in all_rows if r["tail_rounds"] >= a.min_tail]
+    censored = len(all_rows) - len(rows)
+    unobserved = sum(1 for r in all_rows if r["tail_rounds"] == 0)
     prem = [r for r in rows if r["premature"]]
     sound = [r for r in rows if not r["premature"]]
 
+    # ★ THE 2 NEW COUNTS ARE REPORTED, NOT MERELY COMPUTED. The first pass of
+    # this repair carried `tail_rounds` and then dropped the numbers that say
+    # what it found -- the unwired-addition half of the additive standard,
+    # inside the fix for a measurement defect. `labelled_over_an_empty_tail` is
+    # printed UNCONDITIONALLY, because the reader of the DEFAULT invocation is
+    # exactly the one who needs to know some labels rest on no observation.
     res = {"reports": len(reps), "k": a.k, "fire_points": len(rows),
-           "premature": len(prem), "sound": len(sound), "by_signal": {}}
+           "premature": len(prem), "sound": len(sound),
+           "min_tail": a.min_tail, "dropped_by_min_tail": censored,
+           "labelled_sound_on_an_EMPTY_tail": unobserved,
+           "fire_points_before_min_tail": len(all_rows), "by_signal": {}}
 
     for s in SIGNALS:
         p = [r["signals"][s] for r in prem if r["signals"].get(s) is not None]
@@ -210,6 +245,12 @@ def main() -> int:
         return 0
     print(f"  reports {res['reports']}, gate fire points at K={a.k}: {len(rows)}"
           f"  ({len(prem)} premature, {len(sound)} sound)\n")
+    print(f"    of those, {unobserved} were labelled SOUND over an EMPTY tail"
+          f" -- unobserved, not sound. `any([])` is False.")
+    if a.min_tail:
+        print(f"    --min-tail {a.min_tail} dropped {censored} of "
+              f"{len(all_rows)} fire point(s) whose label could not "
+              f"have been refuted by observation")
     print(f"    {'signal':24s} {'n':>5s}  {'AUC':>8s}  {'95% CI':>20s}   verdict")
     for s, v in res["by_signal"].items():
         if "auc" not in v:

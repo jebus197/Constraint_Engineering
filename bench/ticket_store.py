@@ -837,10 +837,40 @@ class TicketStore:
             # filtered on `t.kind == kind`; this loop was the only one that did
             # not, and the asymmetry was unintended rather than designed.
             #
-            # MEASURED on the live store of 2,857 tickets, 2026-10-28: of 1,224
-            # blocked (kind, subject) pairs, 909 are blocked ONLY by a ticket of
-            # another kind -- 0.742647, Wilson [0.717423, 0.766353]. Producer:
-            # scripts/the_subject_blocklist_grows_with_every_close_2026-10-28.py.
+            # ★ THE FIGURE THAT ORIGINALLY JUSTIFIED THIS IS WITHDRAWN, and the
+            # justification is REPLACED rather than merely removed. The free
+            # panel of 2026-10-28 showed the cross-kind blocked SHARE -- around
+            # 0.74 on the live store, whatever its exact value on the day -- to
+            # be 0.740299 HYPOTHETICAL: of the 1,340 (kind, subject) pairs it
+            # counts, only 348 are pairs for which a ticket of that kind
+            # actually EXISTS. A share computed over pairs that do not exist
+            # cannot measure a defect that does. It was a judgement dressed as a
+            # measurement and it is not cited here any longer.
+            #
+            # WHAT JUSTIFIES THE FILTER INSTEAD is an executed 3-variant table
+            # over the DOCUMENTED case families, delivered by the fable seat as
+            # bench/tests/test_the_kind_filter_three_variants_measured_2026-10-28.py:
+            #   A  settled pf vs a NEW qs          LIVE   kind-ignorant FAILS,
+            #                                             this form PASSES
+            #   B  settled pf vs a GENUINELY NEW
+            #      fr                              LIVE   kind-ignorant FAILS,
+            #                                             this form PASSES,
+            #                                             a qs-only narrowing
+            #                                             FAILS
+            #   C  settled pf vs the SAME item
+            #      reworded as fr                  0 live occurrences
+            # This form is the UNIQUE variant correct on both LIVE cases. The
+            # only realised cross-kind suppression in 2,879 tickets is `qs`
+            # blocked by `pf` -- his exact pair -- measured by the cc2 seat,
+            # which also showed a qs-only narrowing recovers an IDENTICAL set on
+            # an anchorless replay (4 of 31 each, set difference EMPTY). Parity
+            # on recovery is not dominance, and the narrowing LOSES case B, so
+            # reverting to it is a removal `additive-standard` refuses.
+            #
+            # B AND C ARE INSEPARABLE BY KIND ALONE and text-similarity repairs
+            # were already tried against this exact problem and refused twice as
+            # circular, so the choice is which error to prefer. The live record
+            # decides it: B occurred, C has not.
             #
             # IT DOES NOT WEAKEN DEDUPLICATION, and the suite is the evidence:
             # both anti-vacuity guards -- `test_a_settled_subject_blocks_

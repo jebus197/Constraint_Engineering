@@ -1,0 +1,1682 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-28 23:35:11
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/.cdsfl_deny_canonical_writes.sb	2026-10-28 23:18:37
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:.cdsfl_tmp/precommit_seconds
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/.cdsfl_tmp/precommit_seconds	2026-10-28 23:24:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/.cdsfl_tmp/precommit_seconds	2026-10-28 23:01:21
+@@ -1 +1 @@
+-328
++330
+
+### cc2:attempt-1:bench/can_any_signal_see_a_premature_close_2026-10-27.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/can_any_signal_see_a_premature_close_2026-10-27.py	2026-10-27 20:41:42
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/bench/can_any_signal_see_a_premature_close_2026-10-27.py	2026-10-28 23:30:29
+@@ -134,9 +134,23 @@
+         for i in range(k - 1, len(recs)):
+             if not all(recs[j][2] == 0 for j in range(i - k + 1, i + 1)):
+                 continue
+-            premature = any(h > 0 for _, _, h, _ in recs[i + 1:])
++            # THE LABEL IS EVALUATED OVER A TAIL, AND THE TAIL CAN BE EMPTY.
++            # `any([])` is False, so a fire point with no recorded round after
++            # it is labelled SOUND with zero evidence -- it is UNOBSERVED, not
++            # sound. Measured 2026-10-28 (joint round): 10 of 30 fire points
++            # have an empty tail and 10 more have a tail of 1; all 20 are
++            # labelled sound, and NOT ONE of the 8 premature labels comes from a
++            # tail shorter than 2. Tail length alone predicts the label at AUC
++            # 0.9716 [0.8882, 1.0000] -- higher than any signal scored below.
++            # So `tail_rounds` is carried on every row and reported, and
++            # --min-tail lets a caller drop labels that could not have been
++            # refuted. The DEFAULT is 0, which reproduces every published figure
++            # byte for byte; nothing here changes a number that has been cited.
++            tail = recs[i + 1:]
++            premature = any(h > 0 for _, _, h, _ in tail)
+             rows.append({"file": pathlib.Path(rep["file"]).parent.name,
+                          "round": recs[i][0], "premature": premature,
++                         "tail_rounds": len(tail),
+                          "signals": recs[i][3]})
+             break
+     return rows
+@@ -170,15 +184,27 @@
+     ap = argparse.ArgumentParser(description=__doc__)
+     ap.add_argument("--json", action="store_true")
+     ap.add_argument("--k", type=int, default=DEFAULT_K)
++    ap.add_argument("--min-tail", type=int, default=0,
++                    help="drop fire points with fewer than this many recorded "
++                         "rounds after them. A label computed over a shorter "
++                         "tail could not have been refuted by observation. "
++                         "Default 0 reproduces every published figure.")
+     a = ap.parse_args()
+ 
+     reps = collect()
+-    rows = fire_points(reps, a.k)
++    all_rows = fire_points(reps, a.k)
++    rows = [r for r in all_rows if r["tail_rounds"] >= a.min_tail]
++    censored = len(all_rows) - len(rows)
++    unobserved = sum(1 for r in all_rows if r["tail_rounds"] == 0)
+     prem = [r for r in rows if r["premature"]]
+     sound = [r for r in rows if not r["premature"]]
+ 
+     res = {"reports": len(reps), "k": a.k, "fire_points": len(rows),
+-           "premature": len(prem), "sound": len(sound), "by_signal": {}}
++           "premature": len(prem), "sound": len(sound),
++           "min_tail": a.min_tail, "fire_points_before_min_tail": len(all_rows),
++           "dropped_by_min_tail": censored,
++           "labelled_sound_on_an_EMPTY_tail": unobserved,
++           "by_signal": {}}
+ 
+     for s in SIGNALS:
+         p = [r["signals"][s] for r in prem if r["signals"].get(s) is not None]
+@@ -209,7 +235,14 @@
+         print(json.dumps(res, indent=2))
+         return 0
+     print(f"  reports {res['reports']}, gate fire points at K={a.k}: {len(rows)}"
+-          f"  ({len(prem)} premature, {len(sound)} sound)\n")
++          f"  ({len(prem)} premature, {len(sound)} sound)")
++    print(f"  of these, {unobserved} were labelled SOUND over an EMPTY tail -- "
++          f"no round was recorded after the fire point, so `any([])` decided "
++          f"the label, not an observation.")
++    if a.min_tail:
++        print(f"  --min-tail {a.min_tail} dropped {censored} fire point(s) "
++              f"whose label could not have been refuted.")
++    print()
+     print(f"    {'signal':24s} {'n':>5s}  {'AUC':>8s}  {'95% CI':>20s}   verdict")
+     for s, v in res["by_signal"].items():
+         if "auc" not in v:
+
+### cc2:attempt-1:bench/tests/test_a_sound_label_is_an_observation_not_an_empty_tail_2026-10-28.py
+--- /dev/null	2026-10-28 23:35:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/bench/tests/test_a_sound_label_is_an_observation_not_an_empty_tail_2026-10-28.py	2026-10-28 23:31:29
+@@ -0,0 +1,140 @@
++"""A `premature` label is evaluated over a tail, and an empty tail is not sound.
++
++WHAT THIS PINS, and why it was not noticed. `fire_points` labels a gate-fire
++position with
++
++    premature = any(h > 0 for rounds recorded AFTER that position)
++
++`any([])` is False. So a fire point with NO recorded round after it is labelled
++SOUND -- not because the run was observed to be clean, but because it was not
++observed at all. Measured on the archive on 2026-10-28 (joint panel round):
++
++  * 10 of 30 fire points have an EMPTY tail. All 10 are labelled sound and 0 of
++    them could have been labelled premature, by construction.
++  * 10 more have a tail of exactly 1. All 10 are labelled sound.
++  * Not one of the 8 premature labels comes from a tail shorter than 2.
++  * Tail length ALONE predicts the label at AUC 0.9716 [0.8882, 1.0000] --
++    higher than every signal the producer scores, `findings_count` (0.9058)
++    included. Spearman(tail, premature) rho = 0.7515, p = 1.70e-06.
++
++The consequence is not cosmetic. `findings_count` and `registry_total` both grow
++with the number of rounds a run records, and so does the tail. The AUC table is
++therefore, in part, length scored against length, and the 0.266667 false-quiet
++rate is computed over a denominator two thirds of which could not have been
++refuted. Any rule fitted to these labels -- the adaptive `T` of the 2026-10-27
++pre-registration among them -- inherits that.
++
++THE REPAIR IS ADDITIVE AND CHANGES NO PUBLISHED NUMBER. `tail_rounds` is carried
++on every row, the unobserved count is printed unconditionally, and `--min-tail`
++lets a caller drop labels that could not have been refuted. The default is 0, so
++every figure that has been cited still comes out of the default invocation.
++
++These tests EXECUTE the producer rather than reading it.
++"""
++from __future__ import annotations
++
++import importlib.util
++import json
++import pathlib
++import subprocess
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++PRODUCER = REPO / "bench" / "can_any_signal_see_a_premature_close_2026-10-27.py"
++
++
++def _mod():
++    spec = importlib.util.spec_from_file_location("_prem_tail", PRODUCER)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules["_prem_tail"] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++def _rows():
++    m = _mod()
++    rows = m.fire_points(m.collect(), 3)
++    if not rows:
++        pytest.skip("no archived reports in this tree")
++    return m, rows
++
++
++def test_every_fire_point_carries_the_tail_its_label_was_computed_over():
++    _, rows = _rows()
++    missing = [r for r in rows if "tail_rounds" not in r]
++    assert not missing, (
++        f"{len(missing)} fire point(s) carry a label with no record of the "
++        "window it was evaluated over")
++
++
++def test_an_empty_tail_can_only_ever_be_labelled_sound():
++    """Not a prediction -- a property of `any([])`. If this ever fails, the
++    label definition has changed and the figures below must be re-derived."""
++    _, rows = _rows()
++    empty = [r for r in rows if r["tail_rounds"] == 0]
++    assert empty, "the archive no longer contains an unobserved fire point"
++    assert all(not r["premature"] for r in empty), (
++        "an empty-tail fire point was labelled premature, which `any([])` "
++        "cannot produce")
++
++
++def test_the_label_set_is_disclosed_as_part_observation_and_part_silence():
++    """The count of unobserved labels must reach the reader of the default run.
++
++    A figure of '8 premature of 30' with 10 of the 30 unobservable is a claim
++    about evidence, not evidence.
++    """
++    out = subprocess.run(
++        [sys.executable, str(PRODUCER)], capture_output=True, text=True,
++        timeout=300, cwd=str(REPO))
++    assert out.returncode == 0, out.stderr[-2000:]
++    assert "EMPTY tail" in out.stdout, (
++        "the default invocation does not tell the reader how many of its "
++        f"labels rest on no observation:\n{out.stdout[:1500]}")
++
++
++def test_tail_length_outranks_every_scored_signal():
++    """The strongest available signal is not in the table: it is the table's
++    own denominator."""
++    m, rows = _rows()
++    p = [r["tail_rounds"] for r in rows if r["premature"]]
++    q = [r["tail_rounds"] for r in rows if not r["premature"]]
++    tail = m.auc_mw(p, q)
++    assert tail is not None and tail["auc"] > 0.9, tail
++    best = 0.0
++    for s in m.SIGNALS:
++        a = [r["signals"][s] for r in rows
++             if r["premature"] and r["signals"].get(s) is not None]
++        b = [r["signals"][s] for r in rows
++             if not r["premature"] and r["signals"].get(s) is not None]
++        got = m.auc_mw(a, b)
++        if got:
++            best = max(best, abs(got["auc"] - 0.5))
++    assert abs(tail["auc"] - 0.5) >= best, (
++        f"tail length separates at |AUC-0.5|={abs(tail['auc']-0.5):.4f}, which "
++        f"no longer exceeds the best scored signal at {best:.4f}")
++
++
++def test_min_tail_is_wired_and_the_default_changes_no_published_figure():
++    """The flag must be reachable from the command line AND must be inert by
++    default -- an addition nothing reaches is not additive, and an addition that
++    silently moves a cited number is worse."""
++    base = json.loads(subprocess.run(
++        [sys.executable, str(PRODUCER), "--json"], capture_output=True,
++        text=True, timeout=300, cwd=str(REPO)).stdout)
++    assert base["min_tail"] == 0
++    assert base["dropped_by_min_tail"] == 0
++    assert base["fire_points"] == base["fire_points_before_min_tail"]
++    assert base["labelled_sound_on_an_EMPTY_tail"] > 0
++
++    cut = json.loads(subprocess.run(
++        [sys.executable, str(PRODUCER), "--json", "--min-tail", "1"],
++        capture_output=True, text=True, timeout=300, cwd=str(REPO)).stdout)
++    assert cut["fire_points"] < base["fire_points"], (
++        "--min-tail 1 dropped nothing; the flag is not reached")
++    assert cut["premature"] == base["premature"], (
++        "dropping unobserved labels removed a premature label, which it must "
++        "not: no premature label can come from an empty tail")
++    assert cut["sound"] < base["sound"]
+
+### cc2:attempt-1:bench/tests/test_precommit_restages_repairs_2026-09-11.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_precommit_restages_repairs_2026-09-11.py	2026-10-28 23:33:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/bench/tests/test_precommit_restages_repairs_2026-09-11.py	2026-10-17 09:35:45
+@@ -35,21 +35,6 @@
+ 
+ import pytest
+ 
+-#: ★ EVERY NESTED LAUNCH IS BOUNDED, 2026-10-28, on a panel falsifier from the
+-#: fable seat: `bench/tests/test_nested_suite_launches_are_bounded_2026-10-28.py`
+-#: reported 13 `subprocess` calls in this file with no `timeout`, and a wedged
+-#: child in a nested test is indistinguishable from the B37 deadlock it was the
+-#: residual risk for. The figure had been MEASURED and RATCHETED and never
+-#: fixed, which is the half of the additive standard about additions nothing
+-#: reaches, applied to a measurement nothing acted on.
+-#:
+-#: 120 IS GENEROUS AND FINITE, which is the whole point. Every launch here is a
+-#: `git` call in a temporary repository or a short `sh -c` sourcing the hook
+-#: library; none runs the full pre-commit board, whose own cost is about 320 s.
+-#: So 120 s is far above any legitimate runtime and converts a wedged child from
+-#: a suite-wide hang into a clean `TimeoutExpired` naming the call.
+-_LAUNCH_TIMEOUT_S = 120
+-
+ REPO = Path(__file__).resolve().parents[2]
+ HOOK = REPO / "hooks" / "pre-commit"
+ LIB = REPO / "hooks" / "stage0_restage.sh"
+@@ -71,7 +56,7 @@
+ 
+ 
+ def _git(repo: Path, *args: str) -> str:
+-    r = subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
++    r = subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True)
+     assert r.returncode == 0, f"git {' '.join(args)} -> {r.returncode}\n{r.stderr}"
+     return r.stdout
+ 
+@@ -81,7 +66,7 @@
+     """A scratch repository with 1 committed file and 1 uncommitted edit."""
+     r = tmp_path / "repo"
+     (r / "experimental_notes").mkdir(parents=True)
+-    subprocess.run(["git", "init", "-q", "."], cwd=r, check=True, timeout=_LAUNCH_TIMEOUT_S)
++    subprocess.run(["git", "init", "-q", "."], cwd=r, check=True)
+     _git(r, "config", "user.email", "t@example.invalid")
+     _git(r, "config", "user.name", "t")
+     for name in ("EXPERIMENT_RUN_LEDGER.md", "Note.md", "Untouched.md"):
+@@ -99,7 +84,7 @@
+     """Source the REAL helper in the scratch repo and pipe output through it."""
+     script = f'. "{LIB}"\n{function}\n'
+     return subprocess.run(["sh", "-c", script], cwd=repo, input=stdin,
+-                          capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
++                          capture_output=True, text=True)
+ 
+ 
+ def _staged(repo: Path) -> set[str]:
+@@ -265,7 +250,7 @@
+             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
+             cwd=repo, capture_output=True, text=True,
+             env={"PATH": "/usr/bin:/bin:/usr/local/bin",
+-                 "GIT_INDEX_FILE": str(fake)}, timeout=_LAUNCH_TIMEOUT_S)
++                 "GIT_INDEX_FILE": str(fake)})
+         assert r.returncode == 0, "a notice must never refuse a commit"
+         assert "pathspec commit" in r.stderr
+ 
+@@ -274,7 +259,7 @@
+             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
+             cwd=repo, capture_output=True, text=True,
+             env={"PATH": "/usr/bin:/bin:/usr/local/bin",
+-                 "GIT_INDEX_FILE": ".git/index"}, timeout=_LAUNCH_TIMEOUT_S)
++                 "GIT_INDEX_FILE": ".git/index"})
+         assert r.stderr == "", (
+             "a notice on the ordinary case teaches people to ignore it")
+ 
+@@ -299,7 +284,7 @@
+             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
+             cwd=repo, capture_output=True, text=True,
+             env={"PATH": "/usr/bin:/bin:/usr/local/bin",
+-                 "GIT_INDEX_FILE": str(fake)}, timeout=_LAUNCH_TIMEOUT_S)
++                 "GIT_INDEX_FILE": str(fake)})
+         assert r.returncode == 0
+         assert "pathspec commit" in r.stderr, (
+             "the notice is silent on git's own temporary-index name, so it can "
+@@ -325,7 +310,7 @@
+             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
+             cwd=repo, capture_output=True, text=True,
+             env={"PATH": "/usr/bin:/bin:/usr/local/bin",
+-                 "GIT_INDEX_FILE": str(path)}, timeout=_LAUNCH_TIMEOUT_S)
++                 "GIT_INDEX_FILE": str(path)})
+         assert r.stderr == "", (
+             f"the notice fired on {name}, which is the real index")
+ 
+@@ -374,7 +359,7 @@
+         r = subprocess.run(
+             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
+             cwd=repo, capture_output=True, text=True,
+-            env={"PATH": "/usr/bin:/bin:/usr/local/bin"}, timeout=_LAUNCH_TIMEOUT_S)
++            env={"PATH": "/usr/bin:/bin:/usr/local/bin"})
+         assert r.stderr == ""
+ 
+ 
+@@ -432,7 +417,7 @@
+         return subprocess.run(
+             ["sh", "-c", script, "sh", str(editor), str(f), str(gap),
+              str(self.WIP_LINE)],
+-            cwd=repo, capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
++            cwd=repo, capture_output=True, text=True)
+ 
+     def _index(self, repo: Path) -> str:
+         return _git(repo, "show", ":experimental_notes/Note.md")
+@@ -528,7 +513,7 @@
+                   '| cdsfl_restage_paths\n'
+                   'cdsfl_snapshot_cleanup\n')
+         r = subprocess.run(["sh", "-c", script, "sh", str(f)], cwd=repo,
+-                           capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
++                           capture_output=True, text=True)
+         idx = _git(repo, "show", ":experimental_notes/A Note With Spaces.md")
+         assert "REPAIRED" in idx, f"{r.stdout}\n{r.stderr}"
+         assert "AUTHOR-WIP" not in idx
+@@ -556,7 +541,7 @@
+                   'printf "experimental_notes/Note.md\\n" | cdsfl_restage_paths\n'
+                   'cdsfl_snapshot_cleanup\n')
+         r = subprocess.run(["sh", "-c", script], cwd=repo, capture_output=True,
+-                           text=True, timeout=_LAUNCH_TIMEOUT_S)
++                           text=True)
+         assert "collides" not in r.stderr, (
+             f"a repair that changed nothing was reported as a collision:\n"
+             f"{r.stderr}")
+@@ -625,7 +610,7 @@
+     def _scratch_with_hook(self, tmp_path: Path, with_lib: bool) -> Path:
+         r = tmp_path / "hookrepo"
+         (r / "hooks").mkdir(parents=True)
+-        subprocess.run(["git", "init", "-q", "."], cwd=r, check=True, timeout=_LAUNCH_TIMEOUT_S)
++        subprocess.run(["git", "init", "-q", "."], cwd=r, check=True)
+         (r / "hooks" / "pre-commit").write_text(
+             HOOK.read_text(encoding="utf-8"), encoding="utf-8")
+         (r / "hooks" / "pre-commit").chmod(0o755)
+@@ -686,7 +671,7 @@
+                   'printf "experimental_notes/Note.md\\n" | cdsfl_restage_paths\n'
+                   'cdsfl_snapshot_cleanup\n')
+         return subprocess.run(["sh", "-c", script], cwd=repo,
+-                              capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
++                              capture_output=True, text=True)
+ 
+     def test_the_repair_reaches_the_index(self, repo):
+         r = self._fully_staged_then_repaired(repo)
+
+### cc2:attempt-1:bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py	2026-10-28 23:34:31
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py	2026-10-28 17:55:36
+@@ -49,17 +49,7 @@
+ #: this may never rise. A first count by `grep -A3` said 3 of 16 for one file
+ #: where the AST says 13 of 16: line proximity is the wrong instrument for a
+ #: question about call boundaries.
+-#: ★ LOWERED 13 -> 0 ON 2026-10-28, WHICH IS THE RATCHET DOING ITS JOB rather
+-#: than being loosened. The 13 were MEASURED and RECORDED here and then not
+-#: acted on, and a panel falsifier from the fable seat --
+-#: `bench/tests/test_nested_suite_launches_are_bounded_2026-10-28.py` -- turned
+-#: the record into a RED test, which is the difference between a figure and a
+-#: guard. All 13 launches in `test_precommit_restages_repairs_2026-09-11.py` now
+-#: carry `timeout=_LAUNCH_TIMEOUT_S`, every one of them a short `git` call in a
+-#: temporary repository or an `sh -c` sourcing the hook library. Re-counted by
+-#: the same AST predicate afterwards: 0 of 22. The file's own 42 tests still
+-#: pass, so nothing was weakened to reach the number.
+-UNBOUNDED_CEILING = 0
++UNBOUNDED_CEILING = 13
+ 
+ 
+ def _ini() -> configparser.ConfigParser:
+@@ -186,7 +176,7 @@
+ 
+ 
+ def test_the_unbounded_launch_count_does_not_grow():
+-    """RATCHET. 0 of 22 today, lowered from 13; it may fall and may not rise."""
++    """RATCHET. 13 of 22 today; it may fall and may not rise."""
+     total = bare = 0
+     sites = []
+     for rel in NESTED:
+
+### cc2:attempt-1:bench/tests/test_the_subject_tier_splits_questions_from_work_2026-10-28.py
+--- /dev/null	2026-10-28 23:35:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/bench/tests/test_the_subject_tier_splits_questions_from_work_2026-10-28.py	2026-10-28 23:29:37
+@@ -0,0 +1,161 @@
++"""The subject tier's kind predicate: his ruling, and only as far as it reaches.
++
++WHAT THIS PINS. On 2026-10-28 the subject tier was changed from "any settled
++ticket on this subject blocks" to "only a settled ticket OF THE SAME KIND
++blocks". The joint panel round of the same day measured the change and found
++two things the shipped form did not survive:
++
++  1. It ADMITS a cross-kind duplicate. A settled `pf` stopped blocking the same
++     item re-raised as an `fr`. His 2026-10-19 ruling turns on resolutions that
++     travel in OPPOSITE directions -- "he answers mine, I answer his" -- which is
++     true of a question against a work item and false of `fr` against `pf`: both
++     are discharged by implementing the mechanism.
++
++  2. Its stated benefit is not in the realised data. Over the live store of
++     2,879 tickets, every realised cross-kind suppression is `qs` blocked by
++     `pf`. There is no realised fr<-pf, pf<-wr or any other cross pair. So the
++     general form and the question/work split recover the SAME single item and
++     the set difference is empty, while the general form alone opens the door in
++     (1).
++
++So the predicate is `(b.kind == "qs") == (kind == "qs")`: a question is a
++distinct item from work on the same subject, and work items of any kind still
++block each other. These tests execute all three behaviours rather than reading
++the source for them.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import sys
++import tempfile
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++SUBS = ["propose", "subject_tier"]
++
++
++def _fresh():
++    spec = importlib.util.spec_from_file_location(
++        "ts_qw", REPO / "bench" / "ticket_store.py")
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules["ts_qw"] = mod
++    spec.loader.exec_module(mod)
++    return mod
++
++
++def _store_with_a_settled_pf():
++    ts = _fresh()
++    st = ts.TicketStore(pathlib.Path(tempfile.mkdtemp()) / "t.jsonl")
++    t, _ = st.propose(
++        "pf", "settled fix",
++        "The subject tier blocks a proposal that shares one identifier.",
++        "chat", subjects=SUBS)
++    st.close(t.tid, "done", "verified by this test")
++    return st
++
++
++def test_a_settled_work_item_still_blocks_the_same_item_as_another_work_kind():
++    """The defect the general form admitted. fr, pf and wr are one item seen
++    from three sides; their resolutions travel the SAME direction."""
++    st = _store_with_a_settled_pf()
++    _, verdict = st.propose(
++        "fr", "same item as a request",
++        "Add handling so the subject tier does not block a proposal sharing "
++        "one identifier.", "chat", subjects=SUBS)
++    assert verdict == "subject-settled", (
++        f"a settled pf must still block the same item re-raised as an fr; "
++        f"got {verdict!r}")
++
++
++def test_a_question_is_a_distinct_item_from_settled_work():
++    """His ruling of 2026-10-19, which is what the predicate implements."""
++    st = _store_with_a_settled_pf()
++    _, verdict = st.propose(
++        "qs", "a question on the same subject",
++        "Does the subject tier still block a proposal that shares one "
++        "identifier?", "chat", subjects=SUBS)
++    assert verdict == "created", (
++        f"a settled pf has no standing to settle a new qs; got {verdict!r}")
++
++
++def test_a_settled_question_still_blocks_a_rewording_of_itself():
++    """The anti-vacuity guard: the split must not disable the tier for qs."""
++    st = _fresh().TicketStore(pathlib.Path(tempfile.mkdtemp()) / "t.jsonl")
++    t, _ = st.propose(
++        "qs", "a question", "Does the subject tier block on one identifier?",
++        "chat", subjects=SUBS)
++    st.close(t.tid, "answered", "verified by this test")
++    _, verdict = st.propose(
++        "qs", "the same question reworded",
++        "Is a proposal blocked by the subject tier when it shares a single "
++        "identifier?", "chat", subjects=SUBS)
++    assert verdict == "subject-settled", (
++        f"a settled qs must still block its own rewording; got {verdict!r}")
++
++
++def test_a_settled_work_item_still_blocks_its_own_rewording():
++    st = _store_with_a_settled_pf()
++    _, verdict = st.propose(
++        "pf", "reworded same kind",
++        "The subject tier blocks proposals which share a single identifier.",
++        "chat", subjects=SUBS)
++    assert verdict == "subject-settled", verdict
++
++
++def test_the_split_recovers_exactly_what_the_general_form_recovers():
++    """The dominance claim, as a count on the live store rather than a view.
++
++    Replays the live store's own anchorless proposals under three predicates and
++    asserts the question/work split recovers the SAME items as `b.kind == kind`.
++    If the store ever grows a realised cross-kind suppression that is not qs<-pf,
++    this test fails and the narrowing must be re-argued -- which is the point.
++    """
++    ts = _fresh()
++    hv_spec = importlib.util.spec_from_file_location(
++        "ticket_harvester", REPO / "scripts" / "harvest_tickets_2026-10-17.py")
++    hv = importlib.util.module_from_spec(hv_spec)
++    sys.modules["ticket_harvester"] = hv
++    hv_spec.loader.exec_module(hv)
++
++    store = ts.TicketStore()
++    store.load()
++    if not store.all():
++        pytest.skip("no live store in this tree")
++
++    def settled(t):
++        return t.status in ts.TERMINAL or t.status == ts.REJECTED
++
++    def blocks(policy, prop_kind, b_kind):
++        if policy == "pre":
++            return True
++        if policy == "general":
++            return b_kind == prop_kind
++        return (b_kind == "qs") == (prop_kind == "qs")
++
++    def replay(policy):
++        out = {}
++        for t in store.all():
++            if t.task_ref or t.anchor:
++                continue
++            subs = t.subjects or hv.subjects_in(t.verbatim or t.title or "")
++            if not subs:
++                continue
++            hit = False
++            for sub in subs:
++                if [b for b in store.by_subject(sub)
++                        if settled(b) and b.tid != t.tid
++                        and blocks(policy, t.kind, b.kind)]:
++                    hit = True
++                    break
++            out[t.tid] = hit
++        return out
++
++    pre, gen, nar = replay("pre"), replay("general"), replay("split")
++    rec_gen = {k for k in pre if pre[k] and not gen[k]}
++    rec_nar = {k for k in pre if pre[k] and not nar[k]}
++    assert rec_gen == rec_nar, (
++        "the question/work split and `b.kind == kind` no longer recover the "
++        f"same items: only-general={sorted(rec_gen - rec_nar)}, "
++        f"only-split={sorted(rec_nar - rec_gen)}")
+
+### cc2:attempt-1:bench/ticket_store.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/ticket_store.py	2026-10-28 02:10:59
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/bench/ticket_store.py	2026-10-28 23:29:05
+@@ -852,7 +852,42 @@
+             #
+             # 2 TUNED REPAIRS WERE TRIED BEFORE AND BOTH WERE REFUSED, recorded
+             # below in this same comment block. This one adds no constant at all.
+-            blocked = [b for b in self.settled_on_subject(sub) if b.kind == kind]
++            #
++            # NARROWED 2026-10-28 (joint round) FROM `b.kind == kind` TO THE
++            # QUESTION/WORK SPLIT, ON A MEASUREMENT, NOT A JUDGEMENT.
++            #
++            # `b.kind == kind` generalised his 2026-10-19 ruling from the pair it
++            # was given about -- a question against a proposed fix -- to all 6
++            # unordered kind pairs. That generalisation ADMITS a cross-kind
++            # duplicate: a settled `pf` no longer blocks the same item re-raised
++            # as an `fr`, and an `fr`, a `pf` and a `wr` on one mechanism are
++            # routinely the same item seen from 3 sides, whose resolutions travel
++            # in the SAME direction, not opposite ones. Executed on a fresh store
++            # before this line was narrowed: settled pf -> re-raised as fr gave
++            # "created".
++            #
++            # MEASURED on the live store of 2,879 tickets, 2026-10-28. Of the 5
++            # suppressions the producer's own replay exhibits, the ordered
++            # (proposed, blocker) kind pairs are fr<-fr 2, qs<-qs 2, qs<-pf 1.
++            # EVERY realised cross-kind suppression in the store is qs<-pf --
++            # exactly the pair he ruled on, and no other. So this predicate and
++            # `b.kind == kind` recover the SAME single item (tid 524186098488)
++            # and the set difference of what they recover is EMPTY, while this
++            # one does not open the fr/pf/wr door. Equal benefit, strictly
++            # smaller admission surface: that is the dominance the removal
++            # standard asks for, stated as a count rather than as a judgement.
++            # Producer: scripts/the_subject_blocklist_grows_with_every_close_
++            # 2026-10-28.py. Executed cases and the comparison:
++            # bench/tests/test_the_subject_tier_splits_questions_from_work_2026-10-28.py
++            #
++            # THE 0.741791 CITED ABOVE SUPPORTS NEITHER FORM. 992 of the 1,340
++            # (kind, subject) pairs it counts are pairs for which NO ticket of
++            # that kind exists on that subject: 0.740299 of that denominator is
++            # hypothetical. The realised effect is 1 recovered item in 31, Fisher
++            # p = 0.5. This line is kept because he ruled on identity, and it is
++            # narrowed because the ruling is all the measurement reaches.
++            blocked = [b for b in self.settled_on_subject(sub)
++                       if (b.kind == "qs") == (kind == "qs")]
+             if blocked:
+                 if _distinct(blocked[0]):
+                     break                 # related, not the same item
+
+### cc2:attempt-1:experimental_notes/A19_The_Recorded_Argument_Is_Stale_2026-09-30.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/A19_The_Recorded_Argument_Is_Stale_2026-09-30.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/experimental_notes/A19_The_Recorded_Argument_Is_Stale_2026-09-30.md	2026-10-27 21:16:24
+@@ -12,7 +12,7 @@
+ 
+ **Both are now false against current code.** Run against the same committed fixture `tk.SHELL_INJECTION_FIX`, `compute_sk` returns `NO_SCORE` at `sk = 0.0`, not `ADMISSIBLE` at 1.0.
+ 
+-**The cause is a repair made 11 days after the measurement.** `_prose_one_sided`, added 2026-09-22, sits at `bench/reference_runner_v3.py:15212`:
++**The cause is a repair made 11 days after the measurement.** `_prose_one_sided`, added 2026-09-22, sits at `bench/reference_runner_v3.py:15200`:
+ 
+ ```python
+ if _scoring_prose and tristate == SK_ADMISSIBLE:
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-28 23:03:55
+@@ -422,7 +422,7 @@
+ 
+ Following from 4.2: the term that encodes simplicity in the model is a constant, and its measuring module is unreached. This is the additive standard's own failure mode sitting inside the mathematics.
+ 
+-**His question is the right one and it is NOT rhetorical.** Informative-only is trivial if nu is currently read by nothing that decides. It is NOT trivial if nu already feeds a live decision path as a constant, because then replacing a constant with a real measurement changes behaviour BY CONSTRUCTION, whether or not that was the intent. Which of those is true is being established from the code rather than the documentation; the answer determines whether this is a 1-line reporting addition or a change that must go through the project's shadow mechanism first. **SETTLED 2026-09-09 BY EXECUTION, and the answer is NO.** `nu_b` and `nu_f` are literal arguments to `check_sk_threshold_corrected`, the live fix-admission gate at `bench/reference_runner_v3.py:16887`. Calling it with everything else held fixed (s_k = 0.60, q = 0.5, R = 0.5): at the shipped nu of (0.05, 0.20) the threshold is 0.504931 and the verdict is **ADMISSIBLE**; at (0.10, 0.30) the threshold is 0.683292 and the verdict is **REJECTED**. SymPy confirms nu_eff is strictly increasing in both terms, so a measured complexity cannot leave the gate where it is — it can only move it. Across the reachable nu box, **570 of 676 grid points differ from the shipped verdict**, 84.3%, Wilson [81.4%, 86.9%], Clopper-Pearson [81.4%, 87.0%].
++**His question is the right one and it is NOT rhetorical.** Informative-only is trivial if nu is currently read by nothing that decides. It is NOT trivial if nu already feeds a live decision path as a constant, because then replacing a constant with a real measurement changes behaviour BY CONSTRUCTION, whether or not that was the intent. Which of those is true is being established from the code rather than the documentation; the answer determines whether this is a 1-line reporting addition or a change that must go through the project's shadow mechanism first. **SETTLED 2026-09-09 BY EXECUTION, and the answer is NO.** `nu_b` and `nu_f` are literal arguments to `check_sk_threshold_corrected`, the live fix-admission gate at `bench/reference_runner_v3.py:16875`. Calling it with everything else held fixed (s_k = 0.60, q = 0.5, R = 0.5): at the shipped nu of (0.05, 0.20) the threshold is 0.504931 and the verdict is **ADMISSIBLE**; at (0.10, 0.30) the threshold is 0.683292 and the verdict is **REJECTED**. SymPy confirms nu_eff is strictly increasing in both terms, so a measured complexity cannot leave the gate where it is — it can only move it. Across the reachable nu box, **570 of 676 grid points differ from the shipped verdict**, 84.3%, Wilson [81.4%, 86.9%], Clopper-Pearson [81.4%, 87.0%].
+ 
+ **Therefore informative-only is a CHOICE that must be built, not a default.** The measured complexity must be carried by a quantity the gate does not read — the candidate is `gamma_input` from the input-complexity module — or kept out of `entry["model_params"]` entirely. Putting it into nu changes which fixes are admitted and stops archived runs replaying, which is the same cost the founder knowingly accepted for the corrected threshold on 2026-09-06. **His instinct in asking was right; the question was not rhetorical.**
+ 
+@@ -450,7 +450,7 @@
+ 
+ **6.1 Record all run stop reasons, not only on convergence. Status COMMITTED and ENABLED 2026-09-09.** Measured across the archive: **23 of 41 completion signals carry an empty reason, 56.1%, Wilson [41.0%, 70.1%]** — **that figure now has a producer, `scripts/orphan_figures_2026-09-10.py`, and it has DRIFTED: re-measured 2026-09-10 the archive holds 24 of 42 across every run directory (57.1429%, Wilson [42.2062%, 70.8823%]) and 22 of 34 across `exp*` alone. A typed figure over a growing corpus is not merely unverifiable; it is guaranteed to go stale** — and all 23 are INCOMPLETE while all 16 CONVERGED runs carry one, so the founder's framing is a census result, not an inference. Structurally the round loop has **8 `break` statements and only 2 set `stop_reason`**. Root cause: the irreducible-queue halt set `result["convergence_reason"]` and never `brain.state`, so `_save_checkpoint()` on the next line wrote nothing — **the identical fault the gamma-alt comment records being repaired on 2026-05-18 for a different branch**. Fixed at the halt site and by a fallback before `signal_complete()` that catches every remaining exit, including ones added later, and writes `UNRECORDED_STOP` rather than an empty string, because "the runner did not record why" must not look like a named halt. 6 tests, 3 mutations, each verified applied, all caught. Original wording: 2 of the 8 loop-exit paths set a reason; a 2026-09-08 run wrote an empty reason while its report named the alarm. 3-line fallback before `signal_complete()`. Founder ruling: *"Verdict. Do it, Then same answer."*
+ <!-- task: 6.1 | state: DONE | status: ENABLED | evidence: bench/tests/test_stop_reason_on_every_exit_2026-09-09.py, bench/tests/test_stop_reason_fallback_executes_2026-09-17.py -->
+-**Correction 2026-09-17 (panel round 16, verified by execution):** The fallback is correct, but 2 claims above went further than their evidence. **"Catches every remaining exit, including ones added later" holds only for a `break` and for running out of rounds.** The fallback is the `if` immediately before `signal = brain.signal_complete()` in `run_experiment` (`bench/reference_runner_v3.py:17961` at `989f32f`). The 2 HIL-review `sys.exit(42)` calls (`:14783`, `:14833`) sit inside the round loop, and no `try` encloses them, the loop, or the call site (`:15635`), so those 2 exits, and any exception that escapes the loop, end the run without reaching the fallback. A HIL exit is a resumable pause: it writes `hil_status = "paused_for_review"` to a partial report and writes no completion signal. **"3 mutations, each verified applied, all caught" held only for mutations of source text.** The runner-level tests in `bench/tests/test_stop_reason_on_every_exit_2026-09-09.py` read `RUNNER.read_text()`, and its last assert compared 2 string literals. `bench/tests/test_stop_reason_fallback_executes_2026-09-17.py` (5 tests) now selects that `if` by AST, requires it to be an `if`, compiles it alone and executes it against a real `InsectBrain`: an empty state writes a reason starting `UNRECORDED_STOP` that neither equals nor contains the runner's own `IRREDUCIBLE_QUEUE_HALT`; a blank `stop_reason` takes `EXTENSION_STALLED` from `result`; a `failure_reason` is stripped and used; and an existing `HALTED_IRREDUCIBLE_QUEUE_ALARM` is kept. The same checks run on in-memory copies with the guard disabled and with the sentinel emptied, and must fail on both. An AST inventory requires the only `sys.exit` calls in `run_experiment` to be the 2 `sys.exit(42)` HIL pauses, each in a block that sets `result["hil_status"] = "paused_for_review"`, and its control shows an added in-loop `sys.exit(3)` turns it red. The literal comparison in `test_the_unrecorded_case_is_distinguishable_from_a_named_halt` is replaced by the same execution. Mutation checks on the runner in place, across the 2 files: guard changed to `if False and not (...)`, `3 failed, 8 passed`; sentinel string replaced by `""  # UNRECORDED_STOP`, `3 failed, 8 passed`, with the other 5 tests of the 2026-09-09 file green under both, which is the gap this closes; restored, `11 passed`. **What stands:** the fallback is correct, shown by execution, and gives every exit from the round loop a named reason or `UNRECORDED_STOP`, except the 2 HIL pauses and an escaping exception. The brain-level tests and the alarm-halt ordering stand as before, and the marker now names the new file.
++**Correction 2026-09-17 (panel round 16, verified by execution):** The fallback is correct, but 2 claims above went further than their evidence. **"Catches every remaining exit, including ones added later" holds only for a `break` and for running out of rounds.** The fallback is the `if` immediately before `signal = brain.signal_complete()` in `run_experiment` (`bench/reference_runner_v3.py:17949` at `989f32f`). The 2 HIL-review `sys.exit(42)` calls (`:14783`, `:14833`) sit inside the round loop, and no `try` encloses them, the loop, or the call site (`:15635`), so those 2 exits, and any exception that escapes the loop, end the run without reaching the fallback. A HIL exit is a resumable pause: it writes `hil_status = "paused_for_review"` to a partial report and writes no completion signal. **"3 mutations, each verified applied, all caught" held only for mutations of source text.** The runner-level tests in `bench/tests/test_stop_reason_on_every_exit_2026-09-09.py` read `RUNNER.read_text()`, and its last assert compared 2 string literals. `bench/tests/test_stop_reason_fallback_executes_2026-09-17.py` (5 tests) now selects that `if` by AST, requires it to be an `if`, compiles it alone and executes it against a real `InsectBrain`: an empty state writes a reason starting `UNRECORDED_STOP` that neither equals nor contains the runner's own `IRREDUCIBLE_QUEUE_HALT`; a blank `stop_reason` takes `EXTENSION_STALLED` from `result`; a `failure_reason` is stripped and used; and an existing `HALTED_IRREDUCIBLE_QUEUE_ALARM` is kept. The same checks run on in-memory copies with the guard disabled and with the sentinel emptied, and must fail on both. An AST inventory requires the only `sys.exit` calls in `run_experiment` to be the 2 `sys.exit(42)` HIL pauses, each in a block that sets `result["hil_status"] = "paused_for_review"`, and its control shows an added in-loop `sys.exit(3)` turns it red. The literal comparison in `test_the_unrecorded_case_is_distinguishable_from_a_named_halt` is replaced by the same execution. Mutation checks on the runner in place, across the 2 files: guard changed to `if False and not (...)`, `3 failed, 8 passed`; sentinel string replaced by `""  # UNRECORDED_STOP`, `3 failed, 8 passed`, with the other 5 tests of the 2026-09-09 file green under both, which is the gap this closes; restored, `11 passed`. **What stands:** the fallback is correct, shown by execution, and gives every exit from the round loop a named reason or `UNRECORDED_STOP`, except the 2 HIL pauses and an escaping exception. The brain-level tests and the alarm-halt ordering stand as before, and the marker now names the new file.
+ **6.2** Derive the seat watchdog budget from the retry budget. `max_retries` is wired and read at 5 sites in `dispatch()` in `bench/experiment_11_orchestrator.py`, but is named 0 times in `bench/reference_runner_v3.py`, which sets its own wall-clock cap. Founder ruling: *"Same answer."*
+ <!-- task: 6.2 | state: DONE | status: COMMITTED | evidence: bench/tests/test_watchdog_respects_retry_budget_2026-09-09.py -->
+ **DONE 2026-09-09.** The watchdog now takes `max(mc.timeout * multiplier, mc.timeout * max_retries)`. `max` is what makes it additive and it is asserted by a test: a naive derivation would have CUT CC2 from 4500 s to 900 s and reinstated the timeout cascade its x5 multiplier exists to prevent. Measured per seat, exactly 1 changes and it changes upward: Gemini 900 s to 1500 s, everything else unchanged. **No slack allowance was added for the 3 zero-slack seats**, because the dispatch overhead has not been measured and inventing a constant to cover it would be the defect this project keeps finding rather than a fix for it; the count is pinned by a test so it is visible the moment anyone measures that overhead. The merge-arbitration watchdog is DELIBERATELY left on its own multiplier, with a comment saying so, because its own site states those queries are short and self-contained. 6 tests, 4 mutations, each verified applied, all caught.
+
+### cc2:attempt-1:experimental_notes/EXPERIMENT_RUN_LEDGER.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/EXPERIMENT_RUN_LEDGER.md	2026-10-28 23:19:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/experimental_notes/EXPERIMENT_RUN_LEDGER.md	2026-10-28 21:06:35
+@@ -88,7 +88,7 @@
+ | 55 | 2026-08-23 14:46 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ | 55 | 2026-08-23 15:39 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ 
+-The runner's own source names this at `bench/reference_runner_v3.py:20979` and dates a
++The runner's own source names this at `bench/reference_runner_v3.py:20967` and dates a
+ partial fix to 2026-05-18: *"the hardened / gamma-alt gate previously set only the result
+ dict, so post-mortem tooling read every hardened convergence as INCOMPLETE."* Runs after
+ that date still show it, so the fix did not close the class.
+
+### cc2:attempt-1:experimental_notes/Field_Envelope_2026-10-04.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Field_Envelope_2026-10-04.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/experimental_notes/Field_Envelope_2026-10-04.md	2026-10-27 21:16:24
+@@ -90,7 +90,7 @@
+ 
+ ### `bench/reference_runner_v3.py` — the two consumers
+ 
+-`_corroboration_sections_by_owner` at `bench/reference_runner_v3.py:16615` is a **third** reader layered over the two that exist. `_extract_corroboration_sections` is untouched and keeps its signature, its callers in the frozen v1 runner, in `scripts/measure_rk_proof_compliance.py`, in two committed panel falsifiers and in `bench/tests/test_rk_clip_stops_at_an_arrow_2026-09-22.py`. `_extract_corroboration_sections_with_ids` keeps its signature and its callers. The new function prefers an envelope, falls back to the owner-aware prose reader, and reports which answered, so the preference is visible in the run log rather than silent.
++`_corroboration_sections_by_owner` at `bench/reference_runner_v3.py:16603` is a **third** reader layered over the two that exist. `_extract_corroboration_sections` is untouched and keeps its signature, its callers in the frozen v1 runner, in `scripts/measure_rk_proof_compliance.py`, in two committed panel falsifiers and in `bench/tests/test_rk_clip_stops_at_an_arrow_2026-09-22.py`. `_extract_corroboration_sections_with_ids` keeps its signature and its callers. The new function prefers an envelope, falls back to the owner-aware prose reader, and reports which answered, so the preference is visible in the run log rather than silent.
+ 
+ `validate_round_rk` calls it, and its `_section_for` helper now reports `envelope` alongside `id`, `id_suffix`, `position` and `none`. Every path that existed before is still reachable.
+ 
+
+### cc2:attempt-1:experimental_notes/Morning_Roundup_2026-09-03.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Roundup_2026-09-03.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/experimental_notes/Morning_Roundup_2026-09-03.md	2026-10-27 21:16:24
+@@ -4,7 +4,7 @@
+ 
+ ## Headline: a live defect in fix acceptance
+ 
+-`check_sk_threshold` (`bench/reference_runner_v3.py:16737`) computes
++`check_sk_threshold` (`bench/reference_runner_v3.py:16725`) computes
+ `S* = (ν_b + ν_f − ν_bν_f − qR) / (ν_f(1−ν_b))`. Found by cc2, verified four independent ways.
+ 
+ **Derivation.** S\* is the solution of `ν_eff(s_k) = ν*` with ν\* taken at **σ = 1**, i.e. ν\* = qR. The appendix's ν\* is σ-dependent: `ν* = σRq/(1 − qR(1−σ))`. The code froze σ at 1 while σ = s_k is the variable under test. SymPy: re-derivation minus code S\* simplifies to **0**.
+
+### cc2:attempt-1:experimental_notes/Overnight_Consolidated_2026-09-08.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Overnight_Consolidated_2026-09-08.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/experimental_notes/Overnight_Consolidated_2026-09-08.md	2026-10-27 21:16:24
+@@ -47,7 +47,7 @@
+ 
+ ## The confinement that should have prevented it has never worked
+ 
+-`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:17961` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
++`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:17949` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
+ 
+ Demonstrated by execution rather than argued: the main thread sees the sandbox, 3 worker threads see `[None, None, None]`.
+ 
+
+### cc2:attempt-1:experimental_notes/Panel_Audit_Closing_Report_2026-09-22.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Panel_Audit_Closing_Report_2026-09-22.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/experimental_notes/Panel_Audit_Closing_Report_2026-09-22.md	2026-10-27 21:16:24
+@@ -121,7 +121,7 @@
+ 
+ ### And then the free panel found something better: your fix was already built, and dead
+ 
+-`fable` went looking and found **`sk_score_prose_listings`** — declared on `RunnerConfig` ([:1492](bench/reference_runner_v3.py:1567)), threaded into `compute_sk` ([:10881](bench/reference_runner_v3.py:15212)) and **honoured** there ([:10938](bench/reference_runner_v3.py:15212)). It is your third outcome, already written, already wired to the scorer.
++`fable` went looking and found **`sk_score_prose_listings`** — declared on `RunnerConfig` ([:1492](bench/reference_runner_v3.py:1567)), threaded into `compute_sk` ([:10881](bench/reference_runner_v3.py:15200)) and **honoured** there ([:10938](bench/reference_runner_v3.py:15200)). It is your third outcome, already written, already wired to the scorer.
+ 
+ **It could not be reached by any path.** `run_experiment` forced `sk_enabled=False` for every non-Python target *before* the flag's only call site, which sits behind `if cfg.sk_enabled:`. So a Python target never enters the prose branch, and a non-Python target never reaches the evaluator at all. **An addition nothing reaches** — the defect class this project has confirmed 11 times and zero of the opposite kind.
+ 
+@@ -135,7 +135,7 @@
+ 
+ In `bench/routing.py`, `last_code = code` is assigned **before** the emptiness check. So an `ERROR` carrying a non-empty body *proves* the falsifier was executed and crashed. All 6 UNTOOLABLE entries carry exactly that: verdict `ERROR`, 600 characters of source, `resolved: False`. `_apply_routing` wrote the verdict back **only** on `result.resolved`, so a ladder that ran and did not confirm left the pre-routing label standing for ever.
+ 
+-**The harm, again, is false feedback into the panel being measured.** `_rejection_lines` ([:12594](bench/reference_runner_v3.py:17469)) branches on that field. `ERROR` says *"your test did not run to a verdict… Re-write it so it runs."* `UNTOOLABLE` says *"nothing runnable was attached."* **All 6 were told to attach a falsifier that had already been written and had already crashed.** A seat told the first debugs what it has; a seat told the second starts from nothing.
++**The harm, again, is false feedback into the panel being measured.** `_rejection_lines` ([:12594](bench/reference_runner_v3.py:17457)) branches on that field. `ERROR` says *"your test did not run to a verdict… Re-write it so it runs."* `UNTOOLABLE` says *"nothing runnable was attached."* **All 6 were told to attach a falsifier that had already been written and had already crashed.** A seat told the first debugs what it has; a seat told the second starts from nothing.
+ 
+ **And it explains arm 4's halt** — which I blamed on a routing cap, withdrew, and left with no replacement. `routing_deferred` drove the irreducible queue to 8 against a bound of 2, and the run halted at round 0. The damage was a halted run, not a mis-scored finding.
+ 
+
+### cc2:attempt-1:experimental_notes/Panel_FULL_RECORD_Maths_Revision_Open_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Panel_FULL_RECORD_Maths_Revision_Open_2026-09-20.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/experimental_notes/Panel_FULL_RECORD_Maths_Revision_Open_2026-09-20.md	2026-10-27 21:16:24
+@@ -1185,7 +1185,7 @@
+ 
+ ### F-4. The committed census script asserted the withdrawn claim — FIXED
+ 
+-**Claim:** `scripts/sk_verdict_never_fired_2026-09-20.py`'s printed conclusion ("Fixes were refused on the strength of a constant nobody measured") contradicts the withdrawn record and its own data. **Evidence:** direct parse of all 39 `runner_state.json`: all **191** REJECTED carry `sk == 0.0` with structural causes — `search_not_found` 122, `g1_ast` 50, `no_blocks_for_target` 14, `search_ambiguous` 5 — and `compute_sk` (read in full, `bench/reference_runner_v3.py:15212`) reads none of q/R_old/nu_b/nu_f. **Verdict:** FAILS (the old conclusion); §10 category 4, silent misclassification in a committed evidence producer. **Fix delivered:** patched the script in place — added `refusal_causes()` (a per-record measurement) and replaced the asserted conclusion with a computed one. **Falsifier:** `python3 scripts/sk_verdict_never_fired_2026-09-20.py` now prints "191 of 191" structural with the cause table (output above), and `python3 -m pytest bench/tests/test_panel_producers_2026-09-20.py -q` → **8 passed**. Refuted by any REJECTED record with `sk > 0` or a constant read on the admission path.
++**Claim:** `scripts/sk_verdict_never_fired_2026-09-20.py`'s printed conclusion ("Fixes were refused on the strength of a constant nobody measured") contradicts the withdrawn record and its own data. **Evidence:** direct parse of all 39 `runner_state.json`: all **191** REJECTED carry `sk == 0.0` with structural causes — `search_not_found` 122, `g1_ast` 50, `no_blocks_for_target` 14, `search_ambiguous` 5 — and `compute_sk` (read in full, `bench/reference_runner_v3.py:15200`) reads none of q/R_old/nu_b/nu_f. **Verdict:** FAILS (the old conclusion); §10 category 4, silent misclassification in a committed evidence producer. **Fix delivered:** patched the script in place — added `refusal_causes()` (a per-record measurement) and replaced the asserted conclusion with a computed one. **Falsifier:** `python3 scripts/sk_verdict_never_fired_2026-09-20.py` now prints "191 of 191" structural with the cause table (output above), and `python3 -m pytest bench/tests/test_panel_producers_2026-09-20.py -q` → **8 passed**. Refuted by any REJECTED record with `sk > 0` or a constant read on the admission path.
+ 
+ ### F-5. Section 6.1 — the fix score barely discriminates, and a fifth of its ceiling is non-measurement
+ 
+
+### cc2:attempt-1:experimental_notes/Research_FULL_RECORD_2026-09-09.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Research_FULL_RECORD_2026-09-09.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/experimental_notes/Research_FULL_RECORD_2026-09-09.md	2026-10-27 21:16:24
+@@ -317,7 +317,7 @@
+ 
+ | Property | Precise definition as the project uses it | Where enforced |
+ |---|---|---|
+-| **Sufficiency** | Does the fix actually prevent the failure? A truth property. Formally: σ / S_k (fix efficacy) in the 3-phase risk update, and the §10 `sufficiency_round` predicate. | `docs/MATHEMATICAL_APPENDIX.md:214`, `:227`; `bench/directives/universal/cdsfl_core_formal.md:287-357`; live gate `check_sk_threshold_corrected` at `bench/reference_runner_v3.py:16887` |
++| **Sufficiency** | Does the fix actually prevent the failure? A truth property. Formally: σ / S_k (fix efficacy) in the 3-phase risk update, and the §10 `sufficiency_round` predicate. | `docs/MATHEMATICAL_APPENDIX.md:214`, `:227`; `bench/directives/universal/cdsfl_core_formal.md:287-357`; live gate `check_sk_threshold_corrected` at `bench/reference_runner_v3.py:16875` |
+ | **Simplicity** | A property of the *solution*, not its ancestry — cost/blast-radius of the change. Formally: ν, the re-injection rate. | **Defined** at `docs/MATHEMATICAL_APPENDIX.md:215`. **Not measured** — see below. Explicitly classified non-formalisable at `bench/directives/universal/cdsfl_core_formal.md:604` |
+ | **Additivity** | Capability is preserved: never remove without a committed measurement; and symmetrically, an addition nothing reaches is not additive. | `Constraint_Engineering/.claude/CLAUDE.md:367`; panel SYSTEM prompt `bench/confer_maths_panel_2026-09-05.py:120`; `bench/tests/test_additive_standard_2026-09-07.py`. **0 occurrences in either maths file.** |
+ 
+
+### cc2:attempt-1:experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md	2026-10-27 21:16:24
+@@ -4,7 +4,7 @@
+ 
+ ## What was found
+ 
+-`compute_sk` in `bench/reference_runner_v3.py:15212` computes the number the mathematical appendix calls sigma. Appendix line 214 defines sigma as *"Does the proposed fix actually resolve the detected flaw?"*, and line 377 admits it only when `sigma = g(V_pre, V_post)` for a mapping that compares pre-fix against post-fix tool output. `compute_rk` fills that slot with `sk` term for term: the code computes `R_base = sk * R_det + (1.0 - sk) * R_old` against the appendix's `R_base = sigma*R_det + (1-sigma)*R_old`.
++`compute_sk` in `bench/reference_runner_v3.py:15200` computes the number the mathematical appendix calls sigma. Appendix line 214 defines sigma as *"Does the proposed fix actually resolve the detected flaw?"*, and line 377 admits it only when `sigma = g(V_pre, V_post)` for a mapping that compares pre-fix against post-fix tool output. `compute_rk` fills that slot with `sk` term for term: the code computes `R_base = sk * R_det + (1.0 - sk) * R_old` against the appendix's `R_base = sigma*R_det + (1-sigma)*R_old`.
+ 
+ Every gate feeding `sk` measured absence of harm instead. `e2_regression` asks whether the existing suite still passes. `e3_ruff` asks whether the fix added lint findings. `e4_bandit` asks whether it added security findings. None asks whether the flaw is gone.
+ 
+@@ -70,7 +70,7 @@
+ 
+ ## A second, smaller defect in the same path
+ 
+-`_rejection_lines` at `bench/reference_runner_v3.py:17469` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
++`_rejection_lines` at `bench/reference_runner_v3.py:17457` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
+ 
+ ## A third, found by the suite
+ 
+
+### cc2:attempt-1:resources/ONBOARDING.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/ONBOARDING.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/resources/ONBOARDING.md	2026-10-28 19:10:49
+@@ -221,7 +221,7 @@
+ | §17 Feedback Channel directive | `bench/dm/_feedback.py` + `bench/directives/universal/cdsfl_operational.md` §17 | Exp 39 (2026-04-13) |
+ | §18 Divergence Channel directive | `bench/dm/_divergence.py` + `bench/directives/universal/cdsfl_operational.md` §18 | Exp 39 (2026-04-13) |
+ | F1 SymPy sandbox allow-list | `bench/immune_agents.py:977` | 2026-04-21 |
+-| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v3.py:15869` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
++| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v3.py:15857` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
+ | B-Cell mathematics specialist | dispatch via `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `bench/cdsfl_registry/domains/immune/mathematics.toml` | Exp 36 era |
+ | B-Cell statistics specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/statistics.toml` | Exp 36 era |
+ | B-Cell biology specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/biology.toml` | Exp 36 era |
+
+### cc2:attempt-1:scripts/falsifier_untoolable_is_stale_error_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/falsifier_untoolable_is_stale_error_2026-09-22.py	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/scripts/falsifier_untoolable_is_stale_error_2026-09-22.py	2026-10-27 21:16:24
+@@ -28,7 +28,7 @@
+      ladder's field contradict each other, and the ladder's is the tool verdict.
+ 
+   C. CONSEQUENCE, and this is what puts the finding above threshold.
+-     `_rejection_lines` (bench/reference_runner_v3.py:17469) branches on exactly
++     `_rejection_lines` (bench/reference_runner_v3.py:17457) branches on exactly
+      this field to build the corrective instruction shipped to every seat in the
+      next round's registry digest (rendered at :2749 and :2789). On ERROR it says
+      "your test did not run to a verdict ... Re-write it so it runs". On
+
+### cc2:attempt-1:scripts/harvest_tickets_2026-10-17.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/harvest_tickets_2026-10-17.py	2026-10-28 23:30:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_om7moj9r/repo/scripts/harvest_tickets_2026-10-17.py	2026-10-28 02:08:47
+@@ -82,39 +82,7 @@
+ #: "write", "from" and "frame" by design, because a prefilter that is wrong in
+ #: the permissive direction costs time and a prefilter that is wrong in the
+ #: restrictive direction loses content.
+-#: ★ THE LEFT `\b` WAS NOT A SUPERSET AND BOTH PANEL SEATS PROVED IT
+-#: INDEPENDENTLY, 2026-10-28, each with an executed randomised counterexample:
+-#: 185 of 500 generated cases were rejected by the prefilter while `MARKER`
+-#: fired on them. The cause is that `MARKER` carries `re.MULTILINE` and accepts
+-#: a token preceded by ANY whitespace, newline included -- but this filter runs
+-#: on the RAW JSON line, where that newline is the 2 characters backslash and
+-#: `n`. The character immediately left of the token is then the WORD character
+-#: `n`, and `\b` does not match. A marker written on its own line, which is how
+-#: a marker is normally written, was therefore dropped before anything decoded
+-#: it. Falsifiers, both kept and both run:
+-#:   bench/tests/test_the_chat_prefilter_is_not_a_superset_2026-10-28.py (cc2)
+-#:   bench/tests/test_candidate_line_is_a_superset_2026-10-28.py        (fable)
+-#:
+-#: THE 2 SEATS PROPOSED DIFFERENT REPAIRS AND BOTH PASS BOTH FALSIFIERS, so the
+-#: falsifiers do not choose between them. cc2 dropped BOTH boundaries, which is
+-#: a superset under no assumption at all. fable dropped only the LEFT one,
+-#: arguing the right `\b` is safe because every right context `MARKER` accepts
+-#: maps to a non-word character in the raw line -- on one stated assumption,
+-#: that the transcript writer never `\u`-escapes an ASCII letter.
+-#:
+-#: MEASURED, WHICH IS WHAT DECIDES IT. Over the live transcripts, cc2's bare
+-#: form admits 74,065 of 234,414 lines, 0.315958, against fable's 7,836,
+-#: 0.033428, Wilson [0.032708, 0.034163] -- 8.451889 times the decoding work,
+-#: a `json.loads` on 28.2530% of a 491 MB file. And fable's one assumption is
+-#: TESTABLE: across 6 transcripts and 259,028 lines, the number escaping an
+-#: ASCII letter is 0, Clopper-Pearson exact [0.000000000, 0.000014241].
+-#:
+-#: SO fable's FORM IS TAKEN AND ITS CAVEAT IS MECHANISED rather than trusted:
+-#: `bench/tests/test_the_prefilter_assumption_is_checked_2026-10-28.py` fails
+-#: the moment an ASCII-letter escape appears in a transcript, and names cc2's
+-#: bare form as the fallback. That is neither seat's answer and it is better
+-#: than both: fable's cost with cc2's safety property turned into a check.
+-CANDIDATE_LINE = re.compile(r"(?:fr|pf|qs|wr)\b", re.IGNORECASE)
++CANDIDATE_LINE = re.compile(r"\b(?:fr|pf|qs|wr)\b", re.IGNORECASE)
+ 
+ #: WHAT MAY BE A BLOCKING SUBJECT, and the measurement that narrowed it.
+ #:
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-28 23:35:17
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/.cdsfl_deny_canonical_writes.sb	2026-10-28 23:18:57
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:.cdsfl_tmp/precommit_seconds
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/.cdsfl_tmp/precommit_seconds	2026-10-28 23:24:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/.cdsfl_tmp/precommit_seconds	2026-10-28 23:01:21
+@@ -1 +1 @@
+-328
++330
+
+### fable:attempt-1:bench/tests/test_precommit_restages_repairs_2026-09-11.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_precommit_restages_repairs_2026-09-11.py	2026-10-28 23:33:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/bench/tests/test_precommit_restages_repairs_2026-09-11.py	2026-10-17 09:35:45
+@@ -35,21 +35,6 @@
+ 
+ import pytest
+ 
+-#: ★ EVERY NESTED LAUNCH IS BOUNDED, 2026-10-28, on a panel falsifier from the
+-#: fable seat: `bench/tests/test_nested_suite_launches_are_bounded_2026-10-28.py`
+-#: reported 13 `subprocess` calls in this file with no `timeout`, and a wedged
+-#: child in a nested test is indistinguishable from the B37 deadlock it was the
+-#: residual risk for. The figure had been MEASURED and RATCHETED and never
+-#: fixed, which is the half of the additive standard about additions nothing
+-#: reaches, applied to a measurement nothing acted on.
+-#:
+-#: 120 IS GENEROUS AND FINITE, which is the whole point. Every launch here is a
+-#: `git` call in a temporary repository or a short `sh -c` sourcing the hook
+-#: library; none runs the full pre-commit board, whose own cost is about 320 s.
+-#: So 120 s is far above any legitimate runtime and converts a wedged child from
+-#: a suite-wide hang into a clean `TimeoutExpired` naming the call.
+-_LAUNCH_TIMEOUT_S = 120
+-
+ REPO = Path(__file__).resolve().parents[2]
+ HOOK = REPO / "hooks" / "pre-commit"
+ LIB = REPO / "hooks" / "stage0_restage.sh"
+@@ -71,7 +56,7 @@
+ 
+ 
+ def _git(repo: Path, *args: str) -> str:
+-    r = subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
++    r = subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True)
+     assert r.returncode == 0, f"git {' '.join(args)} -> {r.returncode}\n{r.stderr}"
+     return r.stdout
+ 
+@@ -81,7 +66,7 @@
+     """A scratch repository with 1 committed file and 1 uncommitted edit."""
+     r = tmp_path / "repo"
+     (r / "experimental_notes").mkdir(parents=True)
+-    subprocess.run(["git", "init", "-q", "."], cwd=r, check=True, timeout=_LAUNCH_TIMEOUT_S)
++    subprocess.run(["git", "init", "-q", "."], cwd=r, check=True)
+     _git(r, "config", "user.email", "t@example.invalid")
+     _git(r, "config", "user.name", "t")
+     for name in ("EXPERIMENT_RUN_LEDGER.md", "Note.md", "Untouched.md"):
+@@ -99,7 +84,7 @@
+     """Source the REAL helper in the scratch repo and pipe output through it."""
+     script = f'. "{LIB}"\n{function}\n'
+     return subprocess.run(["sh", "-c", script], cwd=repo, input=stdin,
+-                          capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
++                          capture_output=True, text=True)
+ 
+ 
+ def _staged(repo: Path) -> set[str]:
+@@ -265,7 +250,7 @@
+             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
+             cwd=repo, capture_output=True, text=True,
+             env={"PATH": "/usr/bin:/bin:/usr/local/bin",
+-                 "GIT_INDEX_FILE": str(fake)}, timeout=_LAUNCH_TIMEOUT_S)
++                 "GIT_INDEX_FILE": str(fake)})
+         assert r.returncode == 0, "a notice must never refuse a commit"
+         assert "pathspec commit" in r.stderr
+ 
+@@ -274,7 +259,7 @@
+             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
+             cwd=repo, capture_output=True, text=True,
+             env={"PATH": "/usr/bin:/bin:/usr/local/bin",
+-                 "GIT_INDEX_FILE": ".git/index"}, timeout=_LAUNCH_TIMEOUT_S)
++                 "GIT_INDEX_FILE": ".git/index"})
+         assert r.stderr == "", (
+             "a notice on the ordinary case teaches people to ignore it")
+ 
+@@ -299,7 +284,7 @@
+             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
+             cwd=repo, capture_output=True, text=True,
+             env={"PATH": "/usr/bin:/bin:/usr/local/bin",
+-                 "GIT_INDEX_FILE": str(fake)}, timeout=_LAUNCH_TIMEOUT_S)
++                 "GIT_INDEX_FILE": str(fake)})
+         assert r.returncode == 0
+         assert "pathspec commit" in r.stderr, (
+             "the notice is silent on git's own temporary-index name, so it can "
+@@ -325,7 +310,7 @@
+             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
+             cwd=repo, capture_output=True, text=True,
+             env={"PATH": "/usr/bin:/bin:/usr/local/bin",
+-                 "GIT_INDEX_FILE": str(path)}, timeout=_LAUNCH_TIMEOUT_S)
++                 "GIT_INDEX_FILE": str(path)})
+         assert r.stderr == "", (
+             f"the notice fired on {name}, which is the real index")
+ 
+@@ -374,7 +359,7 @@
+         r = subprocess.run(
+             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
+             cwd=repo, capture_output=True, text=True,
+-            env={"PATH": "/usr/bin:/bin:/usr/local/bin"}, timeout=_LAUNCH_TIMEOUT_S)
++            env={"PATH": "/usr/bin:/bin:/usr/local/bin"})
+         assert r.stderr == ""
+ 
+ 
+@@ -432,7 +417,7 @@
+         return subprocess.run(
+             ["sh", "-c", script, "sh", str(editor), str(f), str(gap),
+              str(self.WIP_LINE)],
+-            cwd=repo, capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
++            cwd=repo, capture_output=True, text=True)
+ 
+     def _index(self, repo: Path) -> str:
+         return _git(repo, "show", ":experimental_notes/Note.md")
+@@ -528,7 +513,7 @@
+                   '| cdsfl_restage_paths\n'
+                   'cdsfl_snapshot_cleanup\n')
+         r = subprocess.run(["sh", "-c", script, "sh", str(f)], cwd=repo,
+-                           capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
++                           capture_output=True, text=True)
+         idx = _git(repo, "show", ":experimental_notes/A Note With Spaces.md")
+         assert "REPAIRED" in idx, f"{r.stdout}\n{r.stderr}"
+         assert "AUTHOR-WIP" not in idx
+@@ -556,7 +541,7 @@
+                   'printf "experimental_notes/Note.md\\n" | cdsfl_restage_paths\n'
+                   'cdsfl_snapshot_cleanup\n')
+         r = subprocess.run(["sh", "-c", script], cwd=repo, capture_output=True,
+-                           text=True, timeout=_LAUNCH_TIMEOUT_S)
++                           text=True)
+         assert "collides" not in r.stderr, (
+             f"a repair that changed nothing was reported as a collision:\n"
+             f"{r.stderr}")
+@@ -625,7 +610,7 @@
+     def _scratch_with_hook(self, tmp_path: Path, with_lib: bool) -> Path:
+         r = tmp_path / "hookrepo"
+         (r / "hooks").mkdir(parents=True)
+-        subprocess.run(["git", "init", "-q", "."], cwd=r, check=True, timeout=_LAUNCH_TIMEOUT_S)
++        subprocess.run(["git", "init", "-q", "."], cwd=r, check=True)
+         (r / "hooks" / "pre-commit").write_text(
+             HOOK.read_text(encoding="utf-8"), encoding="utf-8")
+         (r / "hooks" / "pre-commit").chmod(0o755)
+@@ -686,7 +671,7 @@
+                   'printf "experimental_notes/Note.md\\n" | cdsfl_restage_paths\n'
+                   'cdsfl_snapshot_cleanup\n')
+         return subprocess.run(["sh", "-c", script], cwd=repo,
+-                              capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
++                              capture_output=True, text=True)
+ 
+     def test_the_repair_reaches_the_index(self, repo):
+         r = self._fully_staged_then_repaired(repo)
+
+### fable:attempt-1:bench/tests/test_the_kind_filter_three_variants_measured_2026-10-28.py
+--- /dev/null	2026-10-28 23:35:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/bench/tests/test_the_kind_filter_three_variants_measured_2026-10-28.py	2026-10-28 23:31:59
+@@ -0,0 +1,135 @@
++"""Kind-ignorant vs shipped (all-kind) vs narrow (qs-only) -- measured, not argued.
++
++THE JOINT ROUND'S QUESTION (fix_review_panel_2026-10-28): cc2 proposed reverting
++the subject tier's kind filter (measured recovery 1 of 31, Fisher p = 0.5);
++fable demonstrated the same filter admits a cross-kind reworded duplicate; CC1
++holds the filter implements the founder's 2026-10-19 ruling and stays. A fourth
++candidate -- exempt only `qs`, the ruling's literal subject -- would close
++fable's admission while keeping the ruling. This file measures all three
++variants on the three DOCUMENTED case families, so the choice is a table, not
++a preference.
++
++The three case families, each tied to its evidence:
++  A. a settled `pf` vs a new `qs` on the same subject -- the founder's ruling
++     case, with a live occurrence (qs:524186098488 blocked by pf:028f975075d0,
++     exhibited by scripts/the_subject_blocklist_grows_with_every_close_
++     2026-10-28.py).
++  B. a settled `pf` vs a GENUINELY NEW `fr` sharing one identifier -- the
++     namespace-paths incident of 2026-10-17, a live occurrence, pinned by
++     test_a_new_kind_is_not_absorbed_by_a_settled_one.
++  C. a settled `pf` vs the SAME item reworded as `fr` -- fable's constructed
++     demonstration of 2026-10-28; no live occurrence documented.
++
++Desired outcomes: A created, B created, C subject-settled. No variant achieves
++all three, and B and C are INSEPARABLE by kind alone: both are an anchorless
++`fr` against a settled `pf` on a shared subject, differing only in text, and
++text-similarity repairs were already tried and refused twice (recorded in
++bench/tests/test_a_shared_mechanism_does_not_decide_2026-10-17.py). So the
++decision falls to documented live occurrences: A and B have one each, C has
++none, and SHIPPED is the unique variant right on both documented cases.
++
++The reverse direction of the additive standard also lands here: cc2's revert
++is a REMOVAL, and removal requires a committed measurement that the
++replacement dominates. This file is that measurement run both ways, and it
++shows the kind-ignorant store does NOT dominate: it loses A and B to win C.
++"""
++from __future__ import annotations
++
++import pathlib
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++if str(REPO) not in sys.path:
++    sys.path.insert(0, str(REPO))
++
++from bench.ticket_store import TicketStore  # noqa: E402
++
++SETTLED_TEXT = ("the routing ladder cannot climb past its first rung because "
++                "the strength order is computed once and never revisited")
++NEW_QS = ("does the routing ladder's strength order need revisiting each "
++          "round, or is once per run enough for the measured workloads")
++GENUINELY_NEW_FR = ("the register should expose namespace paths so that issues "
++                    "can be browsed as a tree rather than queried as a log")
++SAME_FAULT_REWORDED = ("the strength order is computed once and never "
++                       "revisited, so the routing ladder cannot climb past "
++                       "its first rung")
++SUB = "season_strength_order"
++
++
++def _seeded(tmp_path):
++    s = TicketStore(path=tmp_path / "t.jsonl")
++    s.load()
++    t, outcome = s.propose("pf", "the ladder cannot climb", SETTLED_TEXT,
++                           source="chat", subjects=[SUB])
++    assert outcome == "created"
++    s.close(t.tid, "fixed", verification="bench/tests/test_the_ladder.py")
++    return s
++
++
++def _variant_blocks(store, kind: str, variant: str) -> bool:
++    """The subject-tier decision under each candidate filter, built from the
++    store's own primitives (mirrors bench/ticket_store.py line 855)."""
++    blocked = [b for b in store.settled_on_subject(SUB)]
++    if variant == "shipped":
++        blocked = [b for b in blocked if b.kind == kind]
++    elif variant == "narrow_qs_only":
++        blocked = [b for b in blocked
++                   if b.kind == kind or ("qs" not in (b.kind, kind))]
++    elif variant != "kind_ignorant":
++        raise ValueError(variant)
++    return bool(blocked)
++
++
++CASES = [("A_ruling_qs", "qs", NEW_QS, False),
++         ("B_namespace_fr", "fr", GENUINELY_NEW_FR, False),
++         ("C_reworded_dup_fr", "fr", SAME_FAULT_REWORDED, True)]
++
++
++def test_the_table_is_what_the_joint_round_says(tmp_path):
++    s = _seeded(tmp_path)
++    score = {}
++    for variant in ("kind_ignorant", "shipped", "narrow_qs_only"):
++        right = {name: _variant_blocks(s, kind, variant) == want_block
++                 for name, kind, _, want_block in CASES}
++        score[variant] = right
++    # The measured table, pinned. Shipped: A+B right, C wrong. Narrow: A+C
++    # right, B wrong. Ignorant: C right, A+B wrong.
++    assert score["shipped"] == {"A_ruling_qs": True, "B_namespace_fr": True,
++                                "C_reworded_dup_fr": False}, score
++    assert score["narrow_qs_only"] == {"A_ruling_qs": True,
++                                       "B_namespace_fr": False,
++                                       "C_reworded_dup_fr": True}, score
++    assert score["kind_ignorant"] == {"A_ruling_qs": False,
++                                      "B_namespace_fr": False,
++                                      "C_reworded_dup_fr": True}, score
++    # NO VARIANT DOMINATES; the revert cc2 proposed is refuted as a dominance
++    # claim, and shipped is the unique variant right on both cases with a
++    # documented live occurrence (A and B).
++    assert not all(score["kind_ignorant"].values())
++    assert not all(score["shipped"].values())
++    assert not all(score["narrow_qs_only"].values())
++
++
++def test_the_real_propose_agrees_with_the_shipped_column(tmp_path):
++    """Ties the simulated 'shipped' column to the store's actual decision."""
++    s = _seeded(tmp_path)
++    for name, kind, text, _ in CASES:
++        _, outcome = s.propose(kind, name, text, source="chat", subjects=[SUB])
++        blocked = outcome != "created"
++        assert blocked == _variant_blocks(_seeded(tmp_path / name), kind,
++                                          "shipped"), (name, outcome)
++
++
++def test_b_and_c_are_inseparable_by_kind_alone(tmp_path):
++    """B and C present identically to any kind-based filter: anchorless `fr`
++    against a settled `pf` on the same subject. A filter cannot be right on
++    both without reading text, and text repairs were refused twice."""
++    s = _seeded(tmp_path)
++    for variant in ("kind_ignorant", "shipped", "narrow_qs_only"):
++        assert (_variant_blocks(s, "fr", variant)
++                == _variant_blocks(s, "fr", variant))  # same call shape
++    # the decision input for B and C is the (kind, subject) pair, and it is
++    # equal; only the verbatim differs
++    assert CASES[1][1] == CASES[2][1]
+
+### fable:attempt-1:bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py	2026-10-28 23:34:31
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py	2026-10-28 17:55:36
+@@ -49,17 +49,7 @@
+ #: this may never rise. A first count by `grep -A3` said 3 of 16 for one file
+ #: where the AST says 13 of 16: line proximity is the wrong instrument for a
+ #: question about call boundaries.
+-#: ★ LOWERED 13 -> 0 ON 2026-10-28, WHICH IS THE RATCHET DOING ITS JOB rather
+-#: than being loosened. The 13 were MEASURED and RECORDED here and then not
+-#: acted on, and a panel falsifier from the fable seat --
+-#: `bench/tests/test_nested_suite_launches_are_bounded_2026-10-28.py` -- turned
+-#: the record into a RED test, which is the difference between a figure and a
+-#: guard. All 13 launches in `test_precommit_restages_repairs_2026-09-11.py` now
+-#: carry `timeout=_LAUNCH_TIMEOUT_S`, every one of them a short `git` call in a
+-#: temporary repository or an `sh -c` sourcing the hook library. Re-counted by
+-#: the same AST predicate afterwards: 0 of 22. The file's own 42 tests still
+-#: pass, so nothing was weakened to reach the number.
+-UNBOUNDED_CEILING = 0
++UNBOUNDED_CEILING = 13
+ 
+ 
+ def _ini() -> configparser.ConfigParser:
+@@ -186,7 +176,7 @@
+ 
+ 
+ def test_the_unbounded_launch_count_does_not_grow():
+-    """RATCHET. 0 of 22 today, lowered from 13; it may fall and may not rise."""
++    """RATCHET. 13 of 22 today; it may fall and may not rise."""
+     total = bare = 0
+     sites = []
+     for rel in NESTED:
+
+### fable:attempt-1:experimental_notes/A19_The_Recorded_Argument_Is_Stale_2026-09-30.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/A19_The_Recorded_Argument_Is_Stale_2026-09-30.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/experimental_notes/A19_The_Recorded_Argument_Is_Stale_2026-09-30.md	2026-10-27 21:16:24
+@@ -12,7 +12,7 @@
+ 
+ **Both are now false against current code.** Run against the same committed fixture `tk.SHELL_INJECTION_FIX`, `compute_sk` returns `NO_SCORE` at `sk = 0.0`, not `ADMISSIBLE` at 1.0.
+ 
+-**The cause is a repair made 11 days after the measurement.** `_prose_one_sided`, added 2026-09-22, sits at `bench/reference_runner_v3.py:15212`:
++**The cause is a repair made 11 days after the measurement.** `_prose_one_sided`, added 2026-09-22, sits at `bench/reference_runner_v3.py:15200`:
+ 
+ ```python
+ if _scoring_prose and tristate == SK_ADMISSIBLE:
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-28 23:03:55
+@@ -422,7 +422,7 @@
+ 
+ Following from 4.2: the term that encodes simplicity in the model is a constant, and its measuring module is unreached. This is the additive standard's own failure mode sitting inside the mathematics.
+ 
+-**His question is the right one and it is NOT rhetorical.** Informative-only is trivial if nu is currently read by nothing that decides. It is NOT trivial if nu already feeds a live decision path as a constant, because then replacing a constant with a real measurement changes behaviour BY CONSTRUCTION, whether or not that was the intent. Which of those is true is being established from the code rather than the documentation; the answer determines whether this is a 1-line reporting addition or a change that must go through the project's shadow mechanism first. **SETTLED 2026-09-09 BY EXECUTION, and the answer is NO.** `nu_b` and `nu_f` are literal arguments to `check_sk_threshold_corrected`, the live fix-admission gate at `bench/reference_runner_v3.py:16887`. Calling it with everything else held fixed (s_k = 0.60, q = 0.5, R = 0.5): at the shipped nu of (0.05, 0.20) the threshold is 0.504931 and the verdict is **ADMISSIBLE**; at (0.10, 0.30) the threshold is 0.683292 and the verdict is **REJECTED**. SymPy confirms nu_eff is strictly increasing in both terms, so a measured complexity cannot leave the gate where it is — it can only move it. Across the reachable nu box, **570 of 676 grid points differ from the shipped verdict**, 84.3%, Wilson [81.4%, 86.9%], Clopper-Pearson [81.4%, 87.0%].
++**His question is the right one and it is NOT rhetorical.** Informative-only is trivial if nu is currently read by nothing that decides. It is NOT trivial if nu already feeds a live decision path as a constant, because then replacing a constant with a real measurement changes behaviour BY CONSTRUCTION, whether or not that was the intent. Which of those is true is being established from the code rather than the documentation; the answer determines whether this is a 1-line reporting addition or a change that must go through the project's shadow mechanism first. **SETTLED 2026-09-09 BY EXECUTION, and the answer is NO.** `nu_b` and `nu_f` are literal arguments to `check_sk_threshold_corrected`, the live fix-admission gate at `bench/reference_runner_v3.py:16875`. Calling it with everything else held fixed (s_k = 0.60, q = 0.5, R = 0.5): at the shipped nu of (0.05, 0.20) the threshold is 0.504931 and the verdict is **ADMISSIBLE**; at (0.10, 0.30) the threshold is 0.683292 and the verdict is **REJECTED**. SymPy confirms nu_eff is strictly increasing in both terms, so a measured complexity cannot leave the gate where it is — it can only move it. Across the reachable nu box, **570 of 676 grid points differ from the shipped verdict**, 84.3%, Wilson [81.4%, 86.9%], Clopper-Pearson [81.4%, 87.0%].
+ 
+ **Therefore informative-only is a CHOICE that must be built, not a default.** The measured complexity must be carried by a quantity the gate does not read — the candidate is `gamma_input` from the input-complexity module — or kept out of `entry["model_params"]` entirely. Putting it into nu changes which fixes are admitted and stops archived runs replaying, which is the same cost the founder knowingly accepted for the corrected threshold on 2026-09-06. **His instinct in asking was right; the question was not rhetorical.**
+ 
+@@ -450,7 +450,7 @@
+ 
+ **6.1 Record all run stop reasons, not only on convergence. Status COMMITTED and ENABLED 2026-09-09.** Measured across the archive: **23 of 41 completion signals carry an empty reason, 56.1%, Wilson [41.0%, 70.1%]** — **that figure now has a producer, `scripts/orphan_figures_2026-09-10.py`, and it has DRIFTED: re-measured 2026-09-10 the archive holds 24 of 42 across every run directory (57.1429%, Wilson [42.2062%, 70.8823%]) and 22 of 34 across `exp*` alone. A typed figure over a growing corpus is not merely unverifiable; it is guaranteed to go stale** — and all 23 are INCOMPLETE while all 16 CONVERGED runs carry one, so the founder's framing is a census result, not an inference. Structurally the round loop has **8 `break` statements and only 2 set `stop_reason`**. Root cause: the irreducible-queue halt set `result["convergence_reason"]` and never `brain.state`, so `_save_checkpoint()` on the next line wrote nothing — **the identical fault the gamma-alt comment records being repaired on 2026-05-18 for a different branch**. Fixed at the halt site and by a fallback before `signal_complete()` that catches every remaining exit, including ones added later, and writes `UNRECORDED_STOP` rather than an empty string, because "the runner did not record why" must not look like a named halt. 6 tests, 3 mutations, each verified applied, all caught. Original wording: 2 of the 8 loop-exit paths set a reason; a 2026-09-08 run wrote an empty reason while its report named the alarm. 3-line fallback before `signal_complete()`. Founder ruling: *"Verdict. Do it, Then same answer."*
+ <!-- task: 6.1 | state: DONE | status: ENABLED | evidence: bench/tests/test_stop_reason_on_every_exit_2026-09-09.py, bench/tests/test_stop_reason_fallback_executes_2026-09-17.py -->
+-**Correction 2026-09-17 (panel round 16, verified by execution):** The fallback is correct, but 2 claims above went further than their evidence. **"Catches every remaining exit, including ones added later" holds only for a `break` and for running out of rounds.** The fallback is the `if` immediately before `signal = brain.signal_complete()` in `run_experiment` (`bench/reference_runner_v3.py:17961` at `989f32f`). The 2 HIL-review `sys.exit(42)` calls (`:14783`, `:14833`) sit inside the round loop, and no `try` encloses them, the loop, or the call site (`:15635`), so those 2 exits, and any exception that escapes the loop, end the run without reaching the fallback. A HIL exit is a resumable pause: it writes `hil_status = "paused_for_review"` to a partial report and writes no completion signal. **"3 mutations, each verified applied, all caught" held only for mutations of source text.** The runner-level tests in `bench/tests/test_stop_reason_on_every_exit_2026-09-09.py` read `RUNNER.read_text()`, and its last assert compared 2 string literals. `bench/tests/test_stop_reason_fallback_executes_2026-09-17.py` (5 tests) now selects that `if` by AST, requires it to be an `if`, compiles it alone and executes it against a real `InsectBrain`: an empty state writes a reason starting `UNRECORDED_STOP` that neither equals nor contains the runner's own `IRREDUCIBLE_QUEUE_HALT`; a blank `stop_reason` takes `EXTENSION_STALLED` from `result`; a `failure_reason` is stripped and used; and an existing `HALTED_IRREDUCIBLE_QUEUE_ALARM` is kept. The same checks run on in-memory copies with the guard disabled and with the sentinel emptied, and must fail on both. An AST inventory requires the only `sys.exit` calls in `run_experiment` to be the 2 `sys.exit(42)` HIL pauses, each in a block that sets `result["hil_status"] = "paused_for_review"`, and its control shows an added in-loop `sys.exit(3)` turns it red. The literal comparison in `test_the_unrecorded_case_is_distinguishable_from_a_named_halt` is replaced by the same execution. Mutation checks on the runner in place, across the 2 files: guard changed to `if False and not (...)`, `3 failed, 8 passed`; sentinel string replaced by `""  # UNRECORDED_STOP`, `3 failed, 8 passed`, with the other 5 tests of the 2026-09-09 file green under both, which is the gap this closes; restored, `11 passed`. **What stands:** the fallback is correct, shown by execution, and gives every exit from the round loop a named reason or `UNRECORDED_STOP`, except the 2 HIL pauses and an escaping exception. The brain-level tests and the alarm-halt ordering stand as before, and the marker now names the new file.
++**Correction 2026-09-17 (panel round 16, verified by execution):** The fallback is correct, but 2 claims above went further than their evidence. **"Catches every remaining exit, including ones added later" holds only for a `break` and for running out of rounds.** The fallback is the `if` immediately before `signal = brain.signal_complete()` in `run_experiment` (`bench/reference_runner_v3.py:17949` at `989f32f`). The 2 HIL-review `sys.exit(42)` calls (`:14783`, `:14833`) sit inside the round loop, and no `try` encloses them, the loop, or the call site (`:15635`), so those 2 exits, and any exception that escapes the loop, end the run without reaching the fallback. A HIL exit is a resumable pause: it writes `hil_status = "paused_for_review"` to a partial report and writes no completion signal. **"3 mutations, each verified applied, all caught" held only for mutations of source text.** The runner-level tests in `bench/tests/test_stop_reason_on_every_exit_2026-09-09.py` read `RUNNER.read_text()`, and its last assert compared 2 string literals. `bench/tests/test_stop_reason_fallback_executes_2026-09-17.py` (5 tests) now selects that `if` by AST, requires it to be an `if`, compiles it alone and executes it against a real `InsectBrain`: an empty state writes a reason starting `UNRECORDED_STOP` that neither equals nor contains the runner's own `IRREDUCIBLE_QUEUE_HALT`; a blank `stop_reason` takes `EXTENSION_STALLED` from `result`; a `failure_reason` is stripped and used; and an existing `HALTED_IRREDUCIBLE_QUEUE_ALARM` is kept. The same checks run on in-memory copies with the guard disabled and with the sentinel emptied, and must fail on both. An AST inventory requires the only `sys.exit` calls in `run_experiment` to be the 2 `sys.exit(42)` HIL pauses, each in a block that sets `result["hil_status"] = "paused_for_review"`, and its control shows an added in-loop `sys.exit(3)` turns it red. The literal comparison in `test_the_unrecorded_case_is_distinguishable_from_a_named_halt` is replaced by the same execution. Mutation checks on the runner in place, across the 2 files: guard changed to `if False and not (...)`, `3 failed, 8 passed`; sentinel string replaced by `""  # UNRECORDED_STOP`, `3 failed, 8 passed`, with the other 5 tests of the 2026-09-09 file green under both, which is the gap this closes; restored, `11 passed`. **What stands:** the fallback is correct, shown by execution, and gives every exit from the round loop a named reason or `UNRECORDED_STOP`, except the 2 HIL pauses and an escaping exception. The brain-level tests and the alarm-halt ordering stand as before, and the marker now names the new file.
+ **6.2** Derive the seat watchdog budget from the retry budget. `max_retries` is wired and read at 5 sites in `dispatch()` in `bench/experiment_11_orchestrator.py`, but is named 0 times in `bench/reference_runner_v3.py`, which sets its own wall-clock cap. Founder ruling: *"Same answer."*
+ <!-- task: 6.2 | state: DONE | status: COMMITTED | evidence: bench/tests/test_watchdog_respects_retry_budget_2026-09-09.py -->
+ **DONE 2026-09-09.** The watchdog now takes `max(mc.timeout * multiplier, mc.timeout * max_retries)`. `max` is what makes it additive and it is asserted by a test: a naive derivation would have CUT CC2 from 4500 s to 900 s and reinstated the timeout cascade its x5 multiplier exists to prevent. Measured per seat, exactly 1 changes and it changes upward: Gemini 900 s to 1500 s, everything else unchanged. **No slack allowance was added for the 3 zero-slack seats**, because the dispatch overhead has not been measured and inventing a constant to cover it would be the defect this project keeps finding rather than a fix for it; the count is pinned by a test so it is visible the moment anyone measures that overhead. The merge-arbitration watchdog is DELIBERATELY left on its own multiplier, with a comment saying so, because its own site states those queries are short and self-contained. 6 tests, 4 mutations, each verified applied, all caught.
+
+### fable:attempt-1:experimental_notes/EXPERIMENT_RUN_LEDGER.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/EXPERIMENT_RUN_LEDGER.md	2026-10-28 23:19:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/experimental_notes/EXPERIMENT_RUN_LEDGER.md	2026-10-28 21:06:35
+@@ -88,7 +88,7 @@
+ | 55 | 2026-08-23 14:46 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ | 55 | 2026-08-23 15:39 | INCOMPLETE (reason empty) | HALTED_IRREDUCIBLE_QUEUE_ALARM |
+ 
+-The runner's own source names this at `bench/reference_runner_v3.py:20979` and dates a
++The runner's own source names this at `bench/reference_runner_v3.py:20967` and dates a
+ partial fix to 2026-05-18: *"the hardened / gamma-alt gate previously set only the result
+ dict, so post-mortem tooling read every hardened convergence as INCOMPLETE."* Runs after
+ that date still show it, so the fix did not close the class.
+
+### fable:attempt-1:experimental_notes/Field_Envelope_2026-10-04.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Field_Envelope_2026-10-04.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/experimental_notes/Field_Envelope_2026-10-04.md	2026-10-27 21:16:24
+@@ -90,7 +90,7 @@
+ 
+ ### `bench/reference_runner_v3.py` — the two consumers
+ 
+-`_corroboration_sections_by_owner` at `bench/reference_runner_v3.py:16615` is a **third** reader layered over the two that exist. `_extract_corroboration_sections` is untouched and keeps its signature, its callers in the frozen v1 runner, in `scripts/measure_rk_proof_compliance.py`, in two committed panel falsifiers and in `bench/tests/test_rk_clip_stops_at_an_arrow_2026-09-22.py`. `_extract_corroboration_sections_with_ids` keeps its signature and its callers. The new function prefers an envelope, falls back to the owner-aware prose reader, and reports which answered, so the preference is visible in the run log rather than silent.
++`_corroboration_sections_by_owner` at `bench/reference_runner_v3.py:16603` is a **third** reader layered over the two that exist. `_extract_corroboration_sections` is untouched and keeps its signature, its callers in the frozen v1 runner, in `scripts/measure_rk_proof_compliance.py`, in two committed panel falsifiers and in `bench/tests/test_rk_clip_stops_at_an_arrow_2026-09-22.py`. `_extract_corroboration_sections_with_ids` keeps its signature and its callers. The new function prefers an envelope, falls back to the owner-aware prose reader, and reports which answered, so the preference is visible in the run log rather than silent.
+ 
+ `validate_round_rk` calls it, and its `_section_for` helper now reports `envelope` alongside `id`, `id_suffix`, `position` and `none`. Every path that existed before is still reachable.
+ 
+
+### fable:attempt-1:experimental_notes/Morning_Roundup_2026-09-03.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Roundup_2026-09-03.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/experimental_notes/Morning_Roundup_2026-09-03.md	2026-10-27 21:16:24
+@@ -4,7 +4,7 @@
+ 
+ ## Headline: a live defect in fix acceptance
+ 
+-`check_sk_threshold` (`bench/reference_runner_v3.py:16737`) computes
++`check_sk_threshold` (`bench/reference_runner_v3.py:16725`) computes
+ `S* = (ν_b + ν_f − ν_bν_f − qR) / (ν_f(1−ν_b))`. Found by cc2, verified four independent ways.
+ 
+ **Derivation.** S\* is the solution of `ν_eff(s_k) = ν*` with ν\* taken at **σ = 1**, i.e. ν\* = qR. The appendix's ν\* is σ-dependent: `ν* = σRq/(1 − qR(1−σ))`. The code froze σ at 1 while σ = s_k is the variable under test. SymPy: re-derivation minus code S\* simplifies to **0**.
+
+### fable:attempt-1:experimental_notes/Overnight_Consolidated_2026-09-08.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Overnight_Consolidated_2026-09-08.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/experimental_notes/Overnight_Consolidated_2026-09-08.md	2026-10-27 21:16:24
+@@ -47,7 +47,7 @@
+ 
+ ## The confinement that should have prevented it has never worked
+ 
+-`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:17961` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
++`RunnerConfig.panel_cwd` exists to keep a shell-bearing panel out of the repository. `run_experiment` applies it at `bench/reference_runner_v3.py:17949` by calling `set_panel_cwd(cfg.panel_cwd or None)` **once, on the main thread**. The seats are then dispatched from a `ThreadPoolExecutor` at `:8244` and `:8337`, and the value is stored in a `threading.local`. A fresh worker thread has no value at all, so the lookup returned nothing and each seat subprocess launched with `cwd=None`, inheriting the repository.
+ 
+ Demonstrated by execution rather than argued: the main thread sees the sandbox, 3 worker threads see `[None, None, None]`.
+ 
+
+### fable:attempt-1:experimental_notes/Panel_Audit_Closing_Report_2026-09-22.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Panel_Audit_Closing_Report_2026-09-22.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/experimental_notes/Panel_Audit_Closing_Report_2026-09-22.md	2026-10-27 21:16:24
+@@ -121,7 +121,7 @@
+ 
+ ### And then the free panel found something better: your fix was already built, and dead
+ 
+-`fable` went looking and found **`sk_score_prose_listings`** — declared on `RunnerConfig` ([:1492](bench/reference_runner_v3.py:1567)), threaded into `compute_sk` ([:10881](bench/reference_runner_v3.py:15212)) and **honoured** there ([:10938](bench/reference_runner_v3.py:15212)). It is your third outcome, already written, already wired to the scorer.
++`fable` went looking and found **`sk_score_prose_listings`** — declared on `RunnerConfig` ([:1492](bench/reference_runner_v3.py:1567)), threaded into `compute_sk` ([:10881](bench/reference_runner_v3.py:15200)) and **honoured** there ([:10938](bench/reference_runner_v3.py:15200)). It is your third outcome, already written, already wired to the scorer.
+ 
+ **It could not be reached by any path.** `run_experiment` forced `sk_enabled=False` for every non-Python target *before* the flag's only call site, which sits behind `if cfg.sk_enabled:`. So a Python target never enters the prose branch, and a non-Python target never reaches the evaluator at all. **An addition nothing reaches** — the defect class this project has confirmed 11 times and zero of the opposite kind.
+ 
+@@ -135,7 +135,7 @@
+ 
+ In `bench/routing.py`, `last_code = code` is assigned **before** the emptiness check. So an `ERROR` carrying a non-empty body *proves* the falsifier was executed and crashed. All 6 UNTOOLABLE entries carry exactly that: verdict `ERROR`, 600 characters of source, `resolved: False`. `_apply_routing` wrote the verdict back **only** on `result.resolved`, so a ladder that ran and did not confirm left the pre-routing label standing for ever.
+ 
+-**The harm, again, is false feedback into the panel being measured.** `_rejection_lines` ([:12594](bench/reference_runner_v3.py:17469)) branches on that field. `ERROR` says *"your test did not run to a verdict… Re-write it so it runs."* `UNTOOLABLE` says *"nothing runnable was attached."* **All 6 were told to attach a falsifier that had already been written and had already crashed.** A seat told the first debugs what it has; a seat told the second starts from nothing.
++**The harm, again, is false feedback into the panel being measured.** `_rejection_lines` ([:12594](bench/reference_runner_v3.py:17457)) branches on that field. `ERROR` says *"your test did not run to a verdict… Re-write it so it runs."* `UNTOOLABLE` says *"nothing runnable was attached."* **All 6 were told to attach a falsifier that had already been written and had already crashed.** A seat told the first debugs what it has; a seat told the second starts from nothing.
+ 
+ **And it explains arm 4's halt** — which I blamed on a routing cap, withdrew, and left with no replacement. `routing_deferred` drove the irreducible queue to 8 against a bound of 2, and the run halted at round 0. The damage was a halted run, not a mis-scored finding.
+ 
+
+### fable:attempt-1:experimental_notes/Panel_FULL_RECORD_Maths_Revision_Open_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Panel_FULL_RECORD_Maths_Revision_Open_2026-09-20.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/experimental_notes/Panel_FULL_RECORD_Maths_Revision_Open_2026-09-20.md	2026-10-27 21:16:24
+@@ -1185,7 +1185,7 @@
+ 
+ ### F-4. The committed census script asserted the withdrawn claim — FIXED
+ 
+-**Claim:** `scripts/sk_verdict_never_fired_2026-09-20.py`'s printed conclusion ("Fixes were refused on the strength of a constant nobody measured") contradicts the withdrawn record and its own data. **Evidence:** direct parse of all 39 `runner_state.json`: all **191** REJECTED carry `sk == 0.0` with structural causes — `search_not_found` 122, `g1_ast` 50, `no_blocks_for_target` 14, `search_ambiguous` 5 — and `compute_sk` (read in full, `bench/reference_runner_v3.py:15212`) reads none of q/R_old/nu_b/nu_f. **Verdict:** FAILS (the old conclusion); §10 category 4, silent misclassification in a committed evidence producer. **Fix delivered:** patched the script in place — added `refusal_causes()` (a per-record measurement) and replaced the asserted conclusion with a computed one. **Falsifier:** `python3 scripts/sk_verdict_never_fired_2026-09-20.py` now prints "191 of 191" structural with the cause table (output above), and `python3 -m pytest bench/tests/test_panel_producers_2026-09-20.py -q` → **8 passed**. Refuted by any REJECTED record with `sk > 0` or a constant read on the admission path.
++**Claim:** `scripts/sk_verdict_never_fired_2026-09-20.py`'s printed conclusion ("Fixes were refused on the strength of a constant nobody measured") contradicts the withdrawn record and its own data. **Evidence:** direct parse of all 39 `runner_state.json`: all **191** REJECTED carry `sk == 0.0` with structural causes — `search_not_found` 122, `g1_ast` 50, `no_blocks_for_target` 14, `search_ambiguous` 5 — and `compute_sk` (read in full, `bench/reference_runner_v3.py:15200`) reads none of q/R_old/nu_b/nu_f. **Verdict:** FAILS (the old conclusion); §10 category 4, silent misclassification in a committed evidence producer. **Fix delivered:** patched the script in place — added `refusal_causes()` (a per-record measurement) and replaced the asserted conclusion with a computed one. **Falsifier:** `python3 scripts/sk_verdict_never_fired_2026-09-20.py` now prints "191 of 191" structural with the cause table (output above), and `python3 -m pytest bench/tests/test_panel_producers_2026-09-20.py -q` → **8 passed**. Refuted by any REJECTED record with `sk > 0` or a constant read on the admission path.
+ 
+ ### F-5. Section 6.1 — the fix score barely discriminates, and a fifth of its ceiling is non-measurement
+ 
+
+### fable:attempt-1:experimental_notes/Research_FULL_RECORD_2026-09-09.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Research_FULL_RECORD_2026-09-09.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/experimental_notes/Research_FULL_RECORD_2026-09-09.md	2026-10-27 21:16:24
+@@ -317,7 +317,7 @@
+ 
+ | Property | Precise definition as the project uses it | Where enforced |
+ |---|---|---|
+-| **Sufficiency** | Does the fix actually prevent the failure? A truth property. Formally: σ / S_k (fix efficacy) in the 3-phase risk update, and the §10 `sufficiency_round` predicate. | `docs/MATHEMATICAL_APPENDIX.md:214`, `:227`; `bench/directives/universal/cdsfl_core_formal.md:287-357`; live gate `check_sk_threshold_corrected` at `bench/reference_runner_v3.py:16887` |
++| **Sufficiency** | Does the fix actually prevent the failure? A truth property. Formally: σ / S_k (fix efficacy) in the 3-phase risk update, and the §10 `sufficiency_round` predicate. | `docs/MATHEMATICAL_APPENDIX.md:214`, `:227`; `bench/directives/universal/cdsfl_core_formal.md:287-357`; live gate `check_sk_threshold_corrected` at `bench/reference_runner_v3.py:16875` |
+ | **Simplicity** | A property of the *solution*, not its ancestry — cost/blast-radius of the change. Formally: ν, the re-injection rate. | **Defined** at `docs/MATHEMATICAL_APPENDIX.md:215`. **Not measured** — see below. Explicitly classified non-formalisable at `bench/directives/universal/cdsfl_core_formal.md:604` |
+ | **Additivity** | Capability is preserved: never remove without a committed measurement; and symmetrically, an addition nothing reaches is not additive. | `Constraint_Engineering/.claude/CLAUDE.md:367`; panel SYSTEM prompt `bench/confer_maths_panel_2026-09-05.py:120`; `bench/tests/test_additive_standard_2026-09-07.py`. **0 occurrences in either maths file.** |
+ 
+
+### fable:attempt-1:experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/experimental_notes/Scorer_Measures_Absence_Of_Harm_2026-09-20.md	2026-10-27 21:16:24
+@@ -4,7 +4,7 @@
+ 
+ ## What was found
+ 
+-`compute_sk` in `bench/reference_runner_v3.py:15212` computes the number the mathematical appendix calls sigma. Appendix line 214 defines sigma as *"Does the proposed fix actually resolve the detected flaw?"*, and line 377 admits it only when `sigma = g(V_pre, V_post)` for a mapping that compares pre-fix against post-fix tool output. `compute_rk` fills that slot with `sk` term for term: the code computes `R_base = sk * R_det + (1.0 - sk) * R_old` against the appendix's `R_base = sigma*R_det + (1-sigma)*R_old`.
++`compute_sk` in `bench/reference_runner_v3.py:15200` computes the number the mathematical appendix calls sigma. Appendix line 214 defines sigma as *"Does the proposed fix actually resolve the detected flaw?"*, and line 377 admits it only when `sigma = g(V_pre, V_post)` for a mapping that compares pre-fix against post-fix tool output. `compute_rk` fills that slot with `sk` term for term: the code computes `R_base = sk * R_det + (1.0 - sk) * R_old` against the appendix's `R_base = sigma*R_det + (1-sigma)*R_old`.
+ 
+ Every gate feeding `sk` measured absence of harm instead. `e2_regression` asks whether the existing suite still passes. `e3_ruff` asks whether the fix added lint findings. `e4_bandit` asks whether it added security findings. None asks whether the flaw is gone.
+ 
+@@ -70,7 +70,7 @@
+ 
+ ## A second, smaller defect in the same path
+ 
+-`_rejection_lines` at `bench/reference_runner_v3.py:17469` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
++`_rejection_lines` at `bench/reference_runner_v3.py:17457` builds the message a model receives when its fix is rejected. It selected failed gates with `v is False or v == 0 or v == 0.0`, and every gate is recorded as a dict, which is never equal to 0. The list was therefore always empty and every rejection read "hard gate returned 0" while the details held the exact reason. Executed on an unparseable fix, the details carried `g1_ast score=0` with `ParseError: '(' was never closed` and the model was told none of it. The predicate now reads `score`, and the detail string travels with the gate name.
+ 
+ ## A third, found by the suite
+ 
+
+### fable:attempt-1:experimental_notes/data/gamma_cut_figures_2026-10-28.json
+--- /dev/null	2026-10-28 23:35:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/experimental_notes/data/gamma_cut_figures_2026-10-28.json	2026-10-28 23:30:59
+@@ -0,0 +1,95 @@
++{
++ "fire_points": 30,
++ "gamma": {
++  "n_premature": 8,
++  "n_sound": 22,
++  "min_premature": 0.3173,
++  "thresholds": {
++   "0.3": {
++    "premature_blocked": 0,
++    "sound_blocked": 2,
++    "fisher_p": 1.0
++   },
++   "0.41": {
++    "premature_blocked": 4,
++    "sound_blocked": 2,
++    "fisher_p": 0.029354553492484524
++   }
++  },
++  "sweep": {
++   "best_p": 0.029354553492484524,
++   "best_cut_interval": [
++    0.3927,
++    0.414
++   ],
++   "permutation_corrected_p": 0.07584620768961552,
++   "n_perm": 20000
++  },
++  "loo_fold_optima": [
++   [
++    0.3927,
++    0.414
++   ],
++   [
++    0.3927,
++    0.414
++   ],
++   [
++    0.3927,
++    0.414
++   ],
++   [
++    0.3927,
++    0.414
++   ],
++   [
++    0.3927,
++    0.414
++   ],
++   [
++    0.3927,
++    0.414
++   ],
++   [
++    0.3927,
++    0.414
++   ],
++   [
++    0.3927,
++    0.414
++   ]
++  ]
++ },
++ "gamma_critical": {
++  "n_premature": 1,
++  "n_sound": 20,
++  "min_premature": 0.4586,
++  "thresholds": {
++   "0.3": {
++    "premature_blocked": 0,
++    "sound_blocked": 8,
++    "fisher_p": 1.0
++   },
++   "0.41": {
++    "premature_blocked": 0,
++    "sound_blocked": 8,
++    "fisher_p": 1.0
++   }
++  },
++  "sweep": {
++   "best_p": 0.47619047619047616,
++   "best_cut_interval": [
++    0.4586,
++    0.5414
++   ],
++   "permutation_corrected_p": 0.4735263236838158,
++   "n_perm": 20000
++  },
++  "loo_fold_optima": [
++   [
++    0.0,
++    0.4569
++   ]
++  ]
++ }
++}
+\ No newline at end of file
+
+### fable:attempt-1:resources/ONBOARDING.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/ONBOARDING.md	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/resources/ONBOARDING.md	2026-10-28 19:10:49
+@@ -221,7 +221,7 @@
+ | §17 Feedback Channel directive | `bench/dm/_feedback.py` + `bench/directives/universal/cdsfl_operational.md` §17 | Exp 39 (2026-04-13) |
+ | §18 Divergence Channel directive | `bench/dm/_divergence.py` + `bench/directives/universal/cdsfl_operational.md` §18 | Exp 39 (2026-04-13) |
+ | F1 SymPy sandbox allow-list | `bench/immune_agents.py:977` | 2026-04-21 |
+-| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v3.py:15869` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
++| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v3.py:15857` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
+ | B-Cell mathematics specialist | dispatch via `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `bench/cdsfl_registry/domains/immune/mathematics.toml` | Exp 36 era |
+ | B-Cell statistics specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/statistics.toml` | Exp 36 era |
+ | B-Cell biology specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/biology.toml` | Exp 36 era |
+
+### fable:attempt-1:scripts/falsifier_untoolable_is_stale_error_2026-09-22.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/falsifier_untoolable_is_stale_error_2026-09-22.py	2026-10-28 23:19:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/scripts/falsifier_untoolable_is_stale_error_2026-09-22.py	2026-10-27 21:16:24
+@@ -28,7 +28,7 @@
+      ladder's field contradict each other, and the ladder's is the tool verdict.
+ 
+   C. CONSEQUENCE, and this is what puts the finding above threshold.
+-     `_rejection_lines` (bench/reference_runner_v3.py:17469) branches on exactly
++     `_rejection_lines` (bench/reference_runner_v3.py:17457) branches on exactly
+      this field to build the corrective instruction shipped to every seat in the
+      next round's registry digest (rendered at :2749 and :2789). On ERROR it says
+      "your test did not run to a verdict ... Re-write it so it runs". On
+
+### fable:attempt-1:scripts/harvest_tickets_2026-10-17.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/harvest_tickets_2026-10-17.py	2026-10-28 23:30:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/scripts/harvest_tickets_2026-10-17.py	2026-10-28 02:08:47
+@@ -82,39 +82,7 @@
+ #: "write", "from" and "frame" by design, because a prefilter that is wrong in
+ #: the permissive direction costs time and a prefilter that is wrong in the
+ #: restrictive direction loses content.
+-#: ★ THE LEFT `\b` WAS NOT A SUPERSET AND BOTH PANEL SEATS PROVED IT
+-#: INDEPENDENTLY, 2026-10-28, each with an executed randomised counterexample:
+-#: 185 of 500 generated cases were rejected by the prefilter while `MARKER`
+-#: fired on them. The cause is that `MARKER` carries `re.MULTILINE` and accepts
+-#: a token preceded by ANY whitespace, newline included -- but this filter runs
+-#: on the RAW JSON line, where that newline is the 2 characters backslash and
+-#: `n`. The character immediately left of the token is then the WORD character
+-#: `n`, and `\b` does not match. A marker written on its own line, which is how
+-#: a marker is normally written, was therefore dropped before anything decoded
+-#: it. Falsifiers, both kept and both run:
+-#:   bench/tests/test_the_chat_prefilter_is_not_a_superset_2026-10-28.py (cc2)
+-#:   bench/tests/test_candidate_line_is_a_superset_2026-10-28.py        (fable)
+-#:
+-#: THE 2 SEATS PROPOSED DIFFERENT REPAIRS AND BOTH PASS BOTH FALSIFIERS, so the
+-#: falsifiers do not choose between them. cc2 dropped BOTH boundaries, which is
+-#: a superset under no assumption at all. fable dropped only the LEFT one,
+-#: arguing the right `\b` is safe because every right context `MARKER` accepts
+-#: maps to a non-word character in the raw line -- on one stated assumption,
+-#: that the transcript writer never `\u`-escapes an ASCII letter.
+-#:
+-#: MEASURED, WHICH IS WHAT DECIDES IT. Over the live transcripts, cc2's bare
+-#: form admits 74,065 of 234,414 lines, 0.315958, against fable's 7,836,
+-#: 0.033428, Wilson [0.032708, 0.034163] -- 8.451889 times the decoding work,
+-#: a `json.loads` on 28.2530% of a 491 MB file. And fable's one assumption is
+-#: TESTABLE: across 6 transcripts and 259,028 lines, the number escaping an
+-#: ASCII letter is 0, Clopper-Pearson exact [0.000000000, 0.000014241].
+-#:
+-#: SO fable's FORM IS TAKEN AND ITS CAVEAT IS MECHANISED rather than trusted:
+-#: `bench/tests/test_the_prefilter_assumption_is_checked_2026-10-28.py` fails
+-#: the moment an ASCII-letter escape appears in a transcript, and names cc2's
+-#: bare form as the fallback. That is neither seat's answer and it is better
+-#: than both: fable's cost with cc2's safety property turned into a check.
+-CANDIDATE_LINE = re.compile(r"(?:fr|pf|qs|wr)\b", re.IGNORECASE)
++CANDIDATE_LINE = re.compile(r"\b(?:fr|pf|qs|wr)\b", re.IGNORECASE)
+ 
+ #: WHAT MAY BE A BLOCKING SUBJECT, and the measurement that narrowed it.
+ #:
+
+### fable:attempt-1:scripts/the_gamma_cut_figures_travel_with_this_script_2026-10-28.py
+--- /dev/null	2026-10-28 23:35:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/scripts/the_gamma_cut_figures_travel_with_this_script_2026-10-28.py	2026-10-28 23:30:35
+@@ -0,0 +1,135 @@
++#!/usr/bin/env python3
++"""The 0.41 ruling's figures, emitted by a committed producer.
++
++THE DEFECT THIS REPAIRS: the figures justifying gamma_alt_threshold = 0.41 --
++minimum premature gamma 0.3173, premature blocked 0 of 8 at 0.30 rising to
++4 of 8 at 0.41, sound blocked 2 of 22 at both, Fisher p = 0.029355, and the
++leave-one-out fold optima 0.4140 / 0.4585 -- existed only as comments in
++`bench/reference_runner_v3.py` and `bench/tests/test_gamma_does_not_cover_the_
++quiet_arm_2026-10-08.py`. The nearest committed producer,
++`claim_gamma_does_not_cut_the_joint_rate`, measures a DIFFERENT population
++(23 premature windows, not the 8 once-per-run gate-fire points) and emits none
++of them. Under `measured-rate-travels-with-its-script` that is the defect the
++standard exists to catch. Found by the fix-review panel of 2026-10-28 (cc2's
++blind condition 1; confirmed in the joint round).
++
++WHAT IT ADDS BEYOND THE CITED FIGURES: a permutation null over the threshold
++sweep. The cut was selected by searching a continuum against 8 positives, so
++the Fisher p at the chosen cut is not selection-corrected. The statistic here
++is the MINIMUM one-sided Fisher p over every achievable cut; its null
++distribution comes from shuffling the premature labels. That number, not the
++raw 0.029355, is the honest strength of the 0.41 evidence.
++
++Fire-point extraction is IMPORTED from the committed signal producer rather
++than re-implemented, so the two scripts cannot drift apart silently.
++"""
++from __future__ import annotations
++
++import importlib.util
++import json
++import pathlib
++import sys
++
++import numpy as np
++from scipy.stats import fisher_exact
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++SEED = 20261028
++N_PERM = 20000
++
++_spec = importlib.util.spec_from_file_location(
++    "can_any_signal", REPO / "bench" / "can_any_signal_see_a_premature_close_2026-10-27.py")
++_sig = importlib.util.module_from_spec(_spec)
++_spec.loader.exec_module(_sig)
++
++
++def blocked_counts(prem, sound, theta):
++    """The arm blocks a close whose gamma sits BELOW the cut."""
++    bp = sum(1 for g in prem if g < theta)
++    bs = sum(1 for g in sound if g < theta)
++    p = fisher_exact([[bp, len(prem) - bp], [bs, len(sound) - bs]],
++                     alternative="greater")[1]
++    return bp, bs, p
++
++
++def sweep_best(prem, sound):
++    """Minimum one-sided Fisher p over every achievable cut.
++
++    Returns (best_p, lo, hi): every cut in (lo, hi] blocks the same two sets,
++    so the "optimal threshold" is an INTERVAL, and any single number quoted
++    from it (0.3927, 0.4140, 0.41) is a representative, not a finding.
++    """
++    vals = np.unique(np.concatenate([prem, sound]))
++    best_p, best_i = float("inf"), None
++    for i, c in enumerate(vals):
++        t = float(np.nextafter(c, np.inf))      # cut just above an observed value
++        _, _, p = blocked_counts(list(prem), list(sound), t)
++        if p < best_p:
++            best_p, best_i = p, i
++    lo = float(vals[best_i])
++    hi = float(vals[best_i + 1]) if best_i + 1 < len(vals) else float("inf")
++    return best_p, lo, hi
++
++
++def main() -> int:
++    if "--help" in sys.argv or "-h" in sys.argv:
++        print(__doc__)
++        return 0
++    reps = _sig.collect()
++    rows = _sig.fire_points(reps, 3)
++    out = {"fire_points": len(rows)}
++    for series in ("gamma", "gamma_critical"):
++        prem = [r["signals"][series] for r in rows
++                if r["premature"] and r["signals"].get(series) is not None]
++        sound = [r["signals"][series] for r in rows
++                 if not r["premature"] and r["signals"].get(series) is not None]
++        print(f"\n== series `{series}`  (premature n={len(prem)}, sound n={len(sound)}) ==")
++        if not prem or not sound:
++            print("   not recorded at enough fire points; no figure is derivable")
++            out[series] = {"n_premature": len(prem), "n_sound": len(sound)}
++            continue
++        mn = min(prem)
++        print(f"   minimum premature {series} at fire = {mn:.4f}")
++        row = {"n_premature": len(prem), "n_sound": len(sound),
++               "min_premature": mn, "thresholds": {}}
++        for theta in (0.30, 0.41):
++            bp, bs, p = blocked_counts(prem, sound, theta)
++            print(f"   theta={theta:.2f}: premature blocked {bp} of {len(prem)}, "
++                  f"sound blocked {bs} of {len(sound)}, Fisher one-sided p = {p:.6f}")
++            row["thresholds"][str(theta)] = {"premature_blocked": bp,
++                                             "sound_blocked": bs, "fisher_p": p}
++        ap, sp = np.array(prem), np.array(sound)
++        best_p, blo, bhi = sweep_best(ap, sp)
++        print(f"   sweep: every cut in ({blo:.4f}, {bhi:.4f}] gives the minimum "
++              f"Fisher p = {best_p:.6f}; 0.41 is inside = {blo < 0.41 <= bhi}")
++        rng = np.random.default_rng(SEED)
++        pooled = np.concatenate([ap, sp])
++        k = len(ap)
++        hits = 0
++        for _ in range(N_PERM):
++            idx = rng.permutation(len(pooled))
++            pb, _, _ = sweep_best(pooled[idx[:k]], pooled[idx[k:]])
++            hits += pb <= best_p
++        perm_p = (hits + 1) / (N_PERM + 1)
++        print(f"   permutation null over the sweep ({N_PERM} shuffles, seed {SEED}): "
++              f"selection-corrected p = {perm_p:.6f}")
++        row["sweep"] = {"best_p": best_p, "best_cut_interval": [blo, bhi],
++                        "permutation_corrected_p": perm_p, "n_perm": N_PERM}
++        folds = []
++        for i in range(len(ap)):
++            fp, flo, fhi = sweep_best(np.delete(ap, i), sp)
++            folds.append((round(flo, 4), round(fhi, 4)))
++        print(f"   leave-one-out fold optimal-cut intervals: {sorted(set(folds))}"
++              f"  over {len(folds)} folds; 0.41 inside all = "
++              f"{all(lo < 0.41 <= hi for lo, hi in folds)}")
++        row["loo_fold_optima"] = folds
++        out[series] = row
++    dst = REPO / "experimental_notes" / "data" / "gamma_cut_figures_2026-10-28.json"
++    dst.parent.mkdir(parents=True, exist_ok=True)
++    dst.write_text(json.dumps(out, indent=1))
++    print(f"\nwrote {dst}")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())

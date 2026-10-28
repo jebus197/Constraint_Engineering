@@ -35,6 +35,21 @@ from pathlib import Path
 
 import pytest
 
+#: ★ EVERY NESTED LAUNCH IS BOUNDED, 2026-10-28, on a panel falsifier from the
+#: fable seat: `bench/tests/test_nested_suite_launches_are_bounded_2026-10-28.py`
+#: reported 13 `subprocess` calls in this file with no `timeout`, and a wedged
+#: child in a nested test is indistinguishable from the B37 deadlock it was the
+#: residual risk for. The figure had been MEASURED and RATCHETED and never
+#: fixed, which is the half of the additive standard about additions nothing
+#: reaches, applied to a measurement nothing acted on.
+#:
+#: 120 IS GENEROUS AND FINITE, which is the whole point. Every launch here is a
+#: `git` call in a temporary repository or a short `sh -c` sourcing the hook
+#: library; none runs the full pre-commit board, whose own cost is about 320 s.
+#: So 120 s is far above any legitimate runtime and converts a wedged child from
+#: a suite-wide hang into a clean `TimeoutExpired` naming the call.
+_LAUNCH_TIMEOUT_S = 120
+
 REPO = Path(__file__).resolve().parents[2]
 HOOK = REPO / "hooks" / "pre-commit"
 LIB = REPO / "hooks" / "stage0_restage.sh"
@@ -56,7 +71,7 @@ CITATION_REPORT_WILSON = "  23/127 = 18.1102%  Wilson [12.3818%, 25.7112%]  n=12
 
 
 def _git(repo: Path, *args: str) -> str:
-    r = subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True)
+    r = subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
     assert r.returncode == 0, f"git {' '.join(args)} -> {r.returncode}\n{r.stderr}"
     return r.stdout
 
@@ -66,7 +81,7 @@ def repo(tmp_path: Path) -> Path:
     """A scratch repository with 1 committed file and 1 uncommitted edit."""
     r = tmp_path / "repo"
     (r / "experimental_notes").mkdir(parents=True)
-    subprocess.run(["git", "init", "-q", "."], cwd=r, check=True)
+    subprocess.run(["git", "init", "-q", "."], cwd=r, check=True, timeout=_LAUNCH_TIMEOUT_S)
     _git(r, "config", "user.email", "t@example.invalid")
     _git(r, "config", "user.name", "t")
     for name in ("EXPERIMENT_RUN_LEDGER.md", "Note.md", "Untouched.md"):
@@ -84,7 +99,7 @@ def _feed(repo: Path, function: str, stdin: str) -> subprocess.CompletedProcess:
     """Source the REAL helper in the scratch repo and pipe output through it."""
     script = f'. "{LIB}"\n{function}\n'
     return subprocess.run(["sh", "-c", script], cwd=repo, input=stdin,
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
 
 
 def _staged(repo: Path) -> set[str]:
@@ -250,7 +265,7 @@ class TestThePartialCommitNotice:
             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
             cwd=repo, capture_output=True, text=True,
             env={"PATH": "/usr/bin:/bin:/usr/local/bin",
-                 "GIT_INDEX_FILE": str(fake)})
+                 "GIT_INDEX_FILE": str(fake)}, timeout=_LAUNCH_TIMEOUT_S)
         assert r.returncode == 0, "a notice must never refuse a commit"
         assert "pathspec commit" in r.stderr
 
@@ -259,7 +274,7 @@ class TestThePartialCommitNotice:
             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
             cwd=repo, capture_output=True, text=True,
             env={"PATH": "/usr/bin:/bin:/usr/local/bin",
-                 "GIT_INDEX_FILE": ".git/index"})
+                 "GIT_INDEX_FILE": ".git/index"}, timeout=_LAUNCH_TIMEOUT_S)
         assert r.stderr == "", (
             "a notice on the ordinary case teaches people to ignore it")
 
@@ -284,7 +299,7 @@ class TestThePartialCommitNotice:
             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
             cwd=repo, capture_output=True, text=True,
             env={"PATH": "/usr/bin:/bin:/usr/local/bin",
-                 "GIT_INDEX_FILE": str(fake)})
+                 "GIT_INDEX_FILE": str(fake)}, timeout=_LAUNCH_TIMEOUT_S)
         assert r.returncode == 0
         assert "pathspec commit" in r.stderr, (
             "the notice is silent on git's own temporary-index name, so it can "
@@ -310,7 +325,7 @@ class TestThePartialCommitNotice:
             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
             cwd=repo, capture_output=True, text=True,
             env={"PATH": "/usr/bin:/bin:/usr/local/bin",
-                 "GIT_INDEX_FILE": str(path)})
+                 "GIT_INDEX_FILE": str(path)}, timeout=_LAUNCH_TIMEOUT_S)
         assert r.stderr == "", (
             f"the notice fired on {name}, which is the real index")
 
@@ -359,7 +374,7 @@ class TestThePartialCommitNotice:
         r = subprocess.run(
             ["sh", "-c", f'. "{LIB}"\ncdsfl_warn_if_partial_commit\n'],
             cwd=repo, capture_output=True, text=True,
-            env={"PATH": "/usr/bin:/bin:/usr/local/bin"})
+            env={"PATH": "/usr/bin:/bin:/usr/local/bin"}, timeout=_LAUNCH_TIMEOUT_S)
         assert r.stderr == ""
 
 
@@ -417,7 +432,7 @@ class TestPartialStagingStagesOnlyTheDelta:
         return subprocess.run(
             ["sh", "-c", script, "sh", str(editor), str(f), str(gap),
              str(self.WIP_LINE)],
-            cwd=repo, capture_output=True, text=True)
+            cwd=repo, capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
 
     def _index(self, repo: Path) -> str:
         return _git(repo, "show", ":experimental_notes/Note.md")
@@ -513,7 +528,7 @@ class TestPartialStagingStagesOnlyTheDelta:
                   '| cdsfl_restage_paths\n'
                   'cdsfl_snapshot_cleanup\n')
         r = subprocess.run(["sh", "-c", script, "sh", str(f)], cwd=repo,
-                           capture_output=True, text=True)
+                           capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
         idx = _git(repo, "show", ":experimental_notes/A Note With Spaces.md")
         assert "REPAIRED" in idx, f"{r.stdout}\n{r.stderr}"
         assert "AUTHOR-WIP" not in idx
@@ -541,7 +556,7 @@ class TestPartialStagingStagesOnlyTheDelta:
                   'printf "experimental_notes/Note.md\\n" | cdsfl_restage_paths\n'
                   'cdsfl_snapshot_cleanup\n')
         r = subprocess.run(["sh", "-c", script], cwd=repo, capture_output=True,
-                           text=True)
+                           text=True, timeout=_LAUNCH_TIMEOUT_S)
         assert "collides" not in r.stderr, (
             f"a repair that changed nothing was reported as a collision:\n"
             f"{r.stderr}")
@@ -610,7 +625,7 @@ class TestAMissingHelperRefuses:
     def _scratch_with_hook(self, tmp_path: Path, with_lib: bool) -> Path:
         r = tmp_path / "hookrepo"
         (r / "hooks").mkdir(parents=True)
-        subprocess.run(["git", "init", "-q", "."], cwd=r, check=True)
+        subprocess.run(["git", "init", "-q", "."], cwd=r, check=True, timeout=_LAUNCH_TIMEOUT_S)
         (r / "hooks" / "pre-commit").write_text(
             HOOK.read_text(encoding="utf-8"), encoding="utf-8")
         (r / "hooks" / "pre-commit").chmod(0o755)
@@ -671,7 +686,7 @@ class TestAFullyStagedFileThatARepairTouches:
                   'printf "experimental_notes/Note.md\\n" | cdsfl_restage_paths\n'
                   'cdsfl_snapshot_cleanup\n')
         return subprocess.run(["sh", "-c", script], cwd=repo,
-                              capture_output=True, text=True)
+                              capture_output=True, text=True, timeout=_LAUNCH_TIMEOUT_S)
 
     def test_the_repair_reaches_the_index(self, repo):
         r = self._fully_staged_then_repaired(repo)

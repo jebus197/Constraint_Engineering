@@ -1,0 +1,197 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 10063,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level contents\"}",
+      "t_offset_s": 82.109
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"scripts/the_subject_blocklist_grows_with_every_close_2026-10-28.py\"}",
+      "t_offset_s": 82.747
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/can_any_signal_see_a_premature_close_2026-10-27.py\"}",
+      "t_offset_s": 83.301
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_subject_blocklist_grows_with_every_close_2026-10-28.py 2>&1 | tail -60\", \"description\": \"Run change-3 producer (subject blocklist replay)\", \"timeout\": 180000}",
+      "t_offset_s": 89.667
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 bench/can_any_signal_see_a_premature_close_2026-10-27.py 2>&1 | tail -30\", \"description\": \"Run premature-close signal AUC producer\", \"timeout\": 180000}",
+      "t_offset_s": 90.978
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | grep 2026-10-28; ls scripts/ | grep -E 'recalibrate|quiet_run_brief'\", \"description\": \"List 2026-10-28 test files and gamma recalibration scripts\"}",
+      "t_offset_s": 92.67
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"claim_gamma_does_not_cut_the_joint_rate|0\\\\.3173|029355|4 of 8|0\\\\.4140\", \"path\": \"bench\", \"output_mode\": \"files_with_matches\"}",
+      "t_offset_s": 162.705
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"kind\", \"path\": \"bench/ticket_store.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 60}",
+      "t_offset_s": 163.797
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/ticket_store.py\", \"offset\": 820, \"limit\": 95}",
+      "t_offset_s": 168.597
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"0\\\\.3173|029355|4_of_8|loo|LOO|leave[-_]one[-_]out\", \"path\": \"bench/tests/test_gamma_does_not_cover_the_quiet_arm_2026-10-08.py\", \"output_mode\": \"content\", \"-n\": true}",
+      "t_offset_s": 169.967
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def test\\\\|def claim\\\\|fisher\\\\|Fisher\\\\|hypergeom\\\\|0.41\\\\|THETA\\\\|theta\\\" bench/tests/test_gamma_does_not_cover_the_quiet_arm_2026-10-08.py | head -40\", \"description\": \"Show test functions and computed statistics in gamma test file\"}",
+      "t_offset_s": 179.293
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/tests/test_gamma_does_not_cover_the_quiet_arm_2026-10-08.py\", \"offset\": 81, \"limit\": 100}",
+      "t_offset_s": 183.814
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json, importlib.util, sys\\nspec = importlib.util.spec_from_file_location('m', 'bench/the_false_quiet_rate_is_not_the_gates_rate_2026-10-08.py')\\nm = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nd = m.claim_gamma_does_not_cut_the_joint_rate(window=3)\\nprint(json.dumps(d, indent=1, default=str))\\\" 2>&1 | tail -40\", \"description\": \"Run the gamm",
+      "t_offset_s": 196.422
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json, importlib.util\\nspec = importlib.util.spec_from_file_location('m', 'bench/the_false_quiet_rate_is_not_the_gates_rate_2026-10-08.py')\\nm = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nd = m.claim_gamma_does_not_cut_the_joint_rate(window=3)\\nfor k, v in d.items():\\n    if not isinstance(v, list):\\n        print(k, '=', v)\\n    else:\\n   ",
+      "t_offset_s": 202.722
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def |replay|KIND-AWARE|kind_aware\", \"path\": \"scripts/the_subject_blocklist_grows_with_every_close_2026-10-28.py\", \"output_mode\": \"content\", \"-n\": true}",
+      "t_offset_s": 226.97
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def |premature|fire\", \"path\": \"bench/can_any_signal_see_a_premature_close_2026-10-27.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 40}",
+      "t_offset_s": 228.14
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"scripts/the_subject_blocklist_grows_with_every_close_2026-10-28.py\", \"offset\": 182, \"limit\": 50}",
+      "t_offset_s": 231.562
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"THE DEFECT|area_of|absorbed\", \"path\": \"bench/tests/test_ticket_store_2026-10-17.py\", \"output_mode\": \"content\", \"-n\": true, \"-C\": 6, \"head_limit\": 80}",
+      "t_offset_s": 271.918
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"THE DEFECT|genuinely new|area_of\", \"path\": \"bench/tests\", \"output_mode\": \"files_with_matches\"}",
+      "t_offset_s": 360.22
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"a_settled_subject_blocks_regardless_of_wording\\\" bench/tests/ | head -3; grep -n \\\"fr.*absorbed\\\\|absorbed.*fr\\\\|namespace paths\\\" bench/tests/test_ticket_store*.py 2>/dev/null | head; ls bench/tests/ | grep ticket\", \"description\": \"Locate the ticket store test file and the changed guard\"}",
+      "t_offset_s": 365.79
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def test\\\\|DEFECT\\\\|fr\\\\b\\\" bench/tests/test_ticket_store_2026-10-17.py | grep -iv \\\"frequency\\\\|from\\\\|free\\\" | head -40\", \"description\": \"List test functions in ticket store suite\"}",
+      "t_offset_s": 370.108
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/tests/test_ticket_store_2026-10-17.py\", \"offset\": 205, \"limit\": 120}",
+      "t_offset_s": 374.233
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"area_of\\\" bench/tests/*.py scripts/*.py 2>/dev/null | grep -i \\\"defect\\\\|absorb\\\\|fr\\\" | head; grep -rln \\\"THE DEFECT\\\" bench/tests/test_a_shared_mechanism_does_not_decide_2026-10-17.py bench/tests/test_ticket_harvest_2026-10-17.py 2>/dev/null\", \"description\": \"Find the guard whose docstring calls the behaviour THE DEFECT\"}",
+      "t_offset_s": 380.331
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def test\\\\|THE DEFECT\\\\|fr\\\\\\\"\\\\|'fr'\\\" bench/tests/test_a_shared_mechanism_does_not_decide_2026-10-17.py | head -20 && python3 -m pytest bench/tests/test_a_shared_mechanism_does_not_decide_2026-10-17.py bench/tests/test_ticket_store_2026-10-17.py -q 2>&1 | tail -8\", \"description\": \"Inspect and run the shared-mechanism and ticket store suites\", \"timeout\": 300000}",
+      "t_offset_s": 385.384
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/tests/test_a_shared_mechanism_does_not_decide_2026-10-17.py\", \"offset\": 1, \"limit\": 70}",
+      "t_offset_s": 390.986
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/can_any_signal_see_a_premature_close_2026-10-27.py\", \"offset\": 59, \"limit\": 110}",
+      "t_offset_s": 466.514
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"scripts/the_gamma_cut_figures_travel_with_this_script_2026-10-28.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"The 0.41 ruling's figures, emitted by a committed producer.\\n\\nTHE DEFECT THIS REPAIRS: the figures justifying gamma_alt_threshold = 0.41 --\\nminimum premature gamma 0.3173, premature blocked 0 of 8 at 0.30 rising to\\n4 of 8 at 0.41, sound blocked 2 of 22 at both, Fisher p",
+      "t_offset_s": 503.746
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo/scripts/the_gamma_cut_figures_travel_with_this_script_2026-10-28.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"The 0.41 ruling's figures, emitted by a committed producer.\\n\\nTHE DEFECT THIS REPAIRS: the figures justifying gamma_alt_threshold = 0.41 --\\nminimum premature gamma 0.3173, premature blocke",
+      "t_offset_s": 528.32
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_gamma_cut_figures_travel_with_this_script_2026-10-28.py << 'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The 0.41 ruling's figures, emitted by a committed producer.\\n\\nTHE DEFECT THIS REPAIRS: the figures justifying gamma_alt_threshold = 0.41 --\\nminimum premature gamma 0.3173, premature blocked 0 of 8 at 0.30 rising to\\n4 of 8 at 0.41, sound blocked 2 of 22 at both, Fisher",
+      "t_offset_s": 554.492
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport re, pathlib\\np = pathlib.Path(\\\"scripts/the_gamma_cut_figures_travel_with_this_script_2026-10-28.py\\\")\\ns = p.read_text()\\ns = s.replace('''def sweep_best(prem, sound):\\n    \\\"\\\"\\\"Minimum one-sided Fisher p over every achievable cut, and its argmin.\\\"\\\"\\\"\\n    cuts = np.unique(np.concatenate([prem, sound]))\\n    best_p, best_t = 1.0, None\\n    for c in cut",
+      "t_offset_s": 697.363
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_kind_filter_three_variants_measured_2026-10-28.py << 'PYEOF'\\n\\\"\\\"\\\"Kind-ignorant vs shipped (all-kind) vs narrow (qs-only) -- measured, not argued.\\n\\nTHE JOINT ROUND'S QUESTION (fix_review_panel_2026-10-28): cc2 proposed reverting\\nthe subject tier's kind filter (measured recovery 1 of 31, Fisher p = 0.5);\\nfable demonstrated the same filter admits a cross",
+      "t_offset_s": 782.105
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/recalibrate_gamma_threshold_reachability.py 2>&1 | tail -20\", \"description\": \"Re-run gamma threshold reachability check\", \"timeout\": 300000}",
+      "t_offset_s": 783.142
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport importlib.util, pathlib\\nREPO = pathlib.Path(\\\".\\\").resolve()\\nspec = importlib.util.spec_from_file_location(\\n    \\\"sig\\\", REPO / \\\"bench\\\" / \\\"can_any_signal_see_a_premature_close_2026-10-27.py\\\")\\nsig = importlib.util.module_from_spec(spec); spec.loader.exec_module(sig)\\nrows = sig.fire_points(sig.collect(), 3)\\nprem = [r for r in rows if r[\\\"premature\\",
+      "t_offset_s": 805.572
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - << 'PYEOF'\\nimport importlib.util, pathlib\\nREPO = pathlib.Path(\\\".\\\").resolve()\\nspec = importlib.util.spec_from_file_location(\\n    \\\"sig\\\", REPO / \\\"bench\\\" / \\\"can_any_signal_see_a_premature_close_2026-10-27.py\\\")\\nsig = importlib.util.module_from_spec(spec); spec.loader.exec_module(sig)\\nrows = sig.fire_points(sig.collect(), 3)\\nprem = [r for r in rows if r[\\\"premature\\",
+      "t_offset_s": 814.238
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'N[1 - CDF[HypergeometricDistribution[6, 8, 30], 3], 10]' 2>&1\", \"description\": \"Wolfram second check of Fisher one-sided p for the 0.41 table\", \"timeout\": 120000}",
+      "t_offset_s": 887.216
+    }
+  ],
+  "n_tool_calls": 35,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 973.3,
+  "response": "Wolfram Language (local Wolfram Engine): 0.0293545535 \u2014 agrees with scipy to 10 digits. All evidence is in. Composing the joint verdict.\n\n---\n\n# JOINT VERDICT \u2014 fable seat, fix_review_panel_2026-10-28\n\n## SECTION 1 \u2014 Which split is real, which is a label\n\n**SPLIT 2 (change 2) was a LABEL.** Both blind verdicts were SOUND WITH CONDITIONS; the apparent split was two citation conditions and one word. Both are now discharged mechanically (below). **SPLIT 1 (change 3) was REAL** \u2014 UNSOUND-revert vs SOUND-retain is a genuine disposition conflict \u2014 and it is now **resolved by measurement, against the revert**.\n\n## Split 1 \u2014 change 3: RETAIN THE SHIPPED FILTER. cc2's revert is refuted.\n\nDelivered and executed: `bench/tests/test_the_kind_filter_three_variants_measured_2026-10-28.py` (**3 passed**), measuring kind-ignorant vs shipped vs a narrow qs-only exemption on the three documented case families, with the real `propose` tied to the simulated column:\n\n| case | evidence | ignorant | shipped | narrow-qs |\n|---|---|---|---|---|\n| A: settled pf vs new qs (founder's ruling) | live: qs:524186098488 blocked by pf:028f975075d0 | \u2717 | \u2713 | \u2713 |\n| B: settled pf vs genuinely-new fr | live: namespace-paths incident 2026-10-17, pinned by `test_a_new_kind_is_not_absorbed_by_a_settled_one` | \u2717 | \u2713 | \u2717 |\n| C: settled pf vs same item reworded as fr | constructed (my blind demo); 0 live occurrences | \u2713 | \u2717 | \u2713 |\n\n**No variant dominates. Shipped is the unique variant right on both documented-live cases.** B and C are inseparable by kind alone \u2014 identical `(kind, subject)` call shape, differing only in text \u2014 and text-similarity repairs were already tried and refused twice (recorded in the module cc2 cites). So cc2's UNSOUND fails twice on the project's own standards: (i) its 1-in-31 replay measures recovery only and is blind to case B, which the committed suite pins to a live incident the anchor hatch demonstrably did not prevent (the caller omitted the anchor; 291/907 = 32% of tickets carry neither task_ref nor anchor); (ii) the revert is a REMOVAL, and the additive standard demands a committed measurement that kind-ignorant dominates \u2014 the executed table shows it loses A and B to win C.\n\n**Answer to CC1's attack question:** implementing the ruling at 1-in-31 **is additive**. \"Reached\" is satisfied three ways: wired at `ticket_store.py:855`, executed by a committed test, and discharging two documented live incidents. 1-in-31 measures the wrong population (anchorless replay of existing items) and even there the filter is +1 recovery at zero added suppression. But CC1 under-defends its own position: the justification need not retreat to the ruling alone \u2014 the measured table above *is* a justification, and it is stronger than the withdrawn 0.741791. My remaining condition from the blind round (measure the fr\u2194pf share of the 994 for C-type admissions) stands as monitoring, not a blocker.\n\n## Split 2 \u2014 change 2: 0.41 STANDS; \"fitted\" is now a measurement, not an accusation; and the third option exists in kind, not in value\n\nDelivered and executed: `scripts/the_gamma_cut_figures_travel_with_this_script_2026-10-28.py`, importing fire-point extraction from the committed signal producer. Output:\n\n- **Every contested figure reproduces**: min premature gamma **0.3173**; \u03b8=0.30 blocks 0/8 premature, 2/22 sound, Fisher p = 1.000000; \u03b8=0.41 blocks **4/8** premature, **2/22** sound, Fisher one-sided **p = 0.029355** (scipy; Wolfram Language local kernel: 0.0293545535, 10-digit agreement). cc2's condition (1) is discharged \u2014 the figures were true but uncommitted, the exact defect `measured-rate-travels-with-its-script` exists to catch. My own blind claim that `claim_gamma_does_not_cut_the_joint_rate` was their producer was **wrong** \u2014 I verified tonight it measures 23 premature *windows*, not the 8 gate-fire closes, emits none of the four figures, and its emitted block count (4 of 23) contradicts its own in-file comment (2 of 23). I withdraw that sub-claim.\n- **The LOO comment is vindicated**: the optimal cut is the flat interval **(0.3927, 0.4140]**, containing 0.41, in **8 of 8** leave-one-out folds. \"0.4140\" was the interval's upper endpoint. It now has a producer.\n- **\"Fitted\" is confirmed mechanically**: permutation null over the full threshold sweep (20,000 shuffles, seeded) gives **selection-corrected p = 0.0758**. The in-sample 0.0294 does not survive correction at 0.05. CC1's concession was correct and is now a number.\n- **cc2's condition (2) re-derived on `gamma_critical`, the series the gate reads: NOTHING is derivable** \u2014 premature n = 1 at the fire points, and 8 of 20 recorded sound closes sit below 0.41.\n\n**The third option, named:** there is **no third value** tonight \u2014 on that CC1 is right, and 0.41 (inside the LOO-stable optimal interval, perm p 0.076, failure mode caution-only) beats both 0.30 and arm-removal on everything measured. But the choice is not binary either. The third option is in kind: **instrument `gamma_critical` recording at every fire point and re-derive the cut on the gate's own operand at the pre-registered label count** \u2014 the entire 0.41-vs-0.30 case was argued on the `gamma` proxy series, and on the operand series the evidence is indeterminate for prematures and adverse-leaning for sound closes. Plus one non-optional repair: the frozen 2026-05-17 reachability condition (b) was set at 0.30 and exp46's live peak is 0.3357 (re-confirmed tonight: reachability 10/13 \u2192 9/13) \u2014 the freeze must be amended explicitly, not moved silently.\n\n## Label censoring (2 \u00d7 7) \u2014 the remedy, decided by data\n\n**Name it AND fit T on the post-censoring labels, which is what accrues naturally. Do NOT run gamma-disabled rounds.** Measured tonight: the 0.41 arm censors exactly the **low-count** prematures (findings_count 4, 7, 7, 8); the survivors are 13, 13, 24 against sound closes at 1\u201310; on the residual population `findings_count` separates perfectly (AUC 1.0, n=3 \u2014 directional, not conclusive). The censoring is *complementary*, not adversarial: gamma catches the prematures findings_count would miss. Fitting T on an unfiltered labelled set would train it on prematures the deployed arm already removes \u2014 whose counts overlap the sound range \u2014 dragging T down into the sound distribution at a cost in sound closes. So unfiltered fitting is not merely expensive in runs; it targets the wrong population. Two obligations in the pre-registration text: (i) state that labels are post-0.41 and T is conditional on \u03b8 = 0.41, to be refitted if \u03b8 moves; (ii) re-verify `findings_count`'s discrimination on the residual population before fitting T, since tonight's n=3 preview cannot carry that weight alone.\n\n## SECTION 5 \u2014 What would refute me\n\n- **Change 3:** a replay over the full 994 cross-kind pairs showing C-type duplicate admissions occur live at a rate exceeding B-type false suppressions \u2014 then the table's tiebreak (documented occurrences) flips.\n- **Change 2:** evidence that the recorded `gamma_critical` telemetry is not the gate's operand at fire (my 8/20 sound-block concern then evaporates); or future labels pushing the permutation-corrected p below 0.05 (then \"fitted\" ceases to be a reservation).\n- **Censoring:** the next labelled prematures arriving with low findings_count despite surviving the gamma arm \u2014 breaking the complementarity measured on n=3.\n\n## SECTION 6 \u2014 Verdicts, changes, disagreement\n\n**Split 1: resolved \u2014 change 3 SOUND WITH CONDITIONS, filter retained; the revert is refuted by the executed three-variant table.** **Split 2: resolved \u2014 a label; change 2 SOUND WITH CONDITIONS, both citation conditions now discharged by a delivered producer.**\n\n**Blind-verdict changes (fable):** I keep both verdict labels but correct two sub-claims. (1) Change 2: my blind assertion that the 4/8\u20132/22\u20130.3173 figures had an executing producer was wrong \u2014 verified tonight, and repaired by delivering one. (2) Change 3: my blind framing of the fr\u2194pf arm as pure unmeasured risk was incomplete \u2014 the committed namespace-paths test pins a live false suppression that same arm discharges; my \"measure first\" condition demotes from blocker to monitoring.\n\n**Strongest disagreement with CC1's framing:** \"a choice between a fitted cut and a harmful one\" conducts the entire decision on the `gamma` proxy series. The gate compares against `gamma_critical`, where the archive supports **no cut at all** (premature n=1) and shows 8/20 recorded sound closes below 0.41. The fitted-vs-harmful binary is real but it is a binary *on the wrong series*; the operand-series instrumentation is the missing third option, and the silently-superseded 0.30 reachability freeze (exp46 peak 0.3357) must be amended in writing. Secondarily: on change 3 CC1 retreats further than the evidence requires \u2014 the ruling need not carry the retention alone; the measured case-family table carries it.\n\n**Pointer, not a 10th item:** `bench/the_false_quiet_rate_is_not_the_gates_rate_2026-10-08.py` emits `gamma_above_threshold_on = 19` of 23 (4 blocked) while its consuming test's comment states \"blocks 2 of 23\" \u2014 one of the two is stale; neither tonight's splits nor the run depend on it.\n\n**Files delivered into the tree, all executed:** `scripts/the_gamma_cut_figures_travel_with_this_script_2026-10-28.py` (runs clean, writes `experimental_notes/data/gamma_cut_figures_2026-10-28.json`); `bench/tests/test_the_kind_filter_three_variants_measured_2026-10-28.py` (3 passed). Wolfram used once as second falsifier; it computed; value attributed to Wolfram Language.\n\n## SECTION 6b \u2014 Stop\n\nBoth splits are **resolved on tonight's evidence**: change 3 by the executed dominance table (stop criterion met \u2014 the 1-in-31 question is answered: additive, reached, retained); change 2 by naming the third option (operand-series instrumentation + freeze amendment) while confirming no third *value* exists. The censoring remedy is decided: name it, fit on post-censoring labels, no disabled-arm runs. A further pass would restate positions already carried by executed artefacts. **Stopping here.**",
+  "t_start_epoch": 1793229537.718652,
+  "t_end_epoch": 1793230511.0094368,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qvmme2o1/repo",
+      "built": false
+    }
+  ]
+}

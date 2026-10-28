@@ -49,7 +49,17 @@ RUNNERS = {"run", "check_call", "check_output", "Popen", "call"}
 #: this may never rise. A first count by `grep -A3` said 3 of 16 for one file
 #: where the AST says 13 of 16: line proximity is the wrong instrument for a
 #: question about call boundaries.
-UNBOUNDED_CEILING = 13
+#: ★ LOWERED 13 -> 0 ON 2026-10-28, WHICH IS THE RATCHET DOING ITS JOB rather
+#: than being loosened. The 13 were MEASURED and RECORDED here and then not
+#: acted on, and a panel falsifier from the fable seat --
+#: `bench/tests/test_nested_suite_launches_are_bounded_2026-10-28.py` -- turned
+#: the record into a RED test, which is the difference between a figure and a
+#: guard. All 13 launches in `test_precommit_restages_repairs_2026-09-11.py` now
+#: carry `timeout=_LAUNCH_TIMEOUT_S`, every one of them a short `git` call in a
+#: temporary repository or an `sh -c` sourcing the hook library. Re-counted by
+#: the same AST predicate afterwards: 0 of 22. The file's own 42 tests still
+#: pass, so nothing was weakened to reach the number.
+UNBOUNDED_CEILING = 0
 
 
 def _ini() -> configparser.ConfigParser:
@@ -176,7 +186,7 @@ def test_every_nested_hook_test_is_bounded_somehow():
 
 
 def test_the_unbounded_launch_count_does_not_grow():
-    """RATCHET. 13 of 22 today; it may fall and may not rise."""
+    """RATCHET. 0 of 22 today, lowered from 13; it may fall and may not rise."""
     total = bare = 0
     sites = []
     for rel in NESTED:
