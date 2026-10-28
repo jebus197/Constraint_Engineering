@@ -98,9 +98,27 @@ class TestTheNoticeSpeaksLocalTime:
         when = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=5)
         ts = when.isoformat(timespec="seconds").replace("+00:00", "")
         old_age = time.time() - time.mktime(time.strptime(ts, "%Y-%m-%dT%H:%M:%S"))
-        offset = -time.timezone if time.daylight == 0 else -time.altzone
+        # ★ THE OFFSET IS THE ONE IN FORCE NOW, NOT THE ONE THE ZONE OWNS --
+        # fix 2026-10-28, the day after British Summer Time ended.
+        #
+        # This read `-time.timezone if time.daylight == 0 else -time.altzone`.
+        # `time.daylight` is 1 for any zone that observes DST AT SOME POINT in
+        # the year, which Europe/London does -- so this computed 3600 all winter
+        # while the offset actually in force was 0. The skip above therefore did
+        # not fire, the old and new forms genuinely agreed, and this control
+        # failed by reporting that it proves nothing. Measured on this machine:
+        # daylight=1, timezone=0, altzone=-3600, localtime().tm_isdst=0, zone
+        # names ('GMT', 'BST') -- so the true current offset is 0.
+        #
+        # `tm_isdst` answers the question actually being asked: is DST active
+        # right now. The bug was a predicate error of exactly the shape this
+        # project keeps finding -- a field that looks like the one you want.
+        offset = (-time.altzone if time.localtime().tm_isdst else -time.timezone)
         if offset == 0:
-            pytest.skip("machine is at UTC; the defect is unobservable here")
+            pytest.skip(
+                "the local offset in force is 0 (GMT, BST having ended), so the "
+                "naive-means-UTC defect is unobservable here. It returns with "
+                "BST in March; this control is correct and simply cannot run.")
         assert int(old_age) // 60 != 5, (
             "the old form agrees with the new one on this machine, so the "
             "guard above proves nothing")

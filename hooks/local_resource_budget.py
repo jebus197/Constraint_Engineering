@@ -200,9 +200,35 @@ def main():
     wants_pytest = _instructs_heavy_verification(low)
     fans_out = bool(re.search(r"\bparallel\s*\(|\bpipeline\s*\(|batch|fan.?out", low))
 
+    # ★ BOTH REASONS ARE REPORTED, NOT THE FIRST ONE -- repair 2026-10-28.
+    #
+    # The depth check was added on 2026-10-25 and placed BEFORE the pytest
+    # prohibition, with its own `return 2`. So a brief that both omitted the
+    # depth statements AND instructed pytest inside delegated work was refused
+    # for the depth statements alone, and the operator was never told the thing
+    # that actually protects the machine: run the board once and consult a
+    # cached result. Measured by the full-suite baseline of 2026-10-28, which
+    # caught it through `test_the_local_resource_budget_binds_2026-10-11.py`:
+    # the refusal arrived with returncode 2 and no mention of the remedy, and a
+    # read-only agent was refused with the wrong message too.
+    #
+    # Half a refusal is worse than either half alone, because the operator fixes
+    # what they were told about and the second refusal looks like a new problem.
+    reasons: list[str] = []
+
     missing = _missing_depth_markers(blob)
+    if wants_pytest and (tool in ("Agent", "Task") or fans_out):
+        reasons.append(
+            "REFUSED by local_resource_budget: this call instructs pytest inside delegated "
+            f"work.\n  The founder's machine has {cores} cores and {head} MiB live headroom; "
+            f"one pytest tree peaks at {HEAVY_MIB} MiB, so it holds {mem_c} concurrent heavy "
+            f"process(es) (budget {heavy_b}).\n  Measured 2026-10-11: 263 delegated pytest "
+            "invocations cost 4557.8 s at the cheapest observed rate against 3998.65 s for ONE "
+            "full board.\n  DO THIS INSTEAD: run the board ONCE yourself, save the result, and "
+            "have the delegated work consult that cached file.\n  His ruling of 2026-10-11: "
+            '"you will need to implement a permanent fix for this."\n')
     if missing:
-        sys.stderr.write(
+        reasons.append(
             "REFUSED by local_resource_budget: DEPTH BEFORE BREADTH.\n"
             f"  This {tool} brief is missing {len(missing)} of "
             f"{len(DEPTH_MARKERS)} required statement(s):\n"
@@ -217,18 +243,11 @@ def main():
               "  Measured: 10 of 12 errors on 2026-10-11 were catchable by reasoning\n"
               "  BEFORE running anything. Only 2 required execution.\n"
               "  See `reasoning-depth-before-breadth` in CLAUDE.md (local and global).\n")
-        return 2
 
-    if wants_pytest and (tool in ("Agent", "Task") or fans_out):
-        sys.stderr.write(
-            "REFUSED by local_resource_budget: this call instructs pytest inside delegated "
-            f"work.\n  The founder's machine has {cores} cores and {head} MiB live headroom; "
-            f"one pytest tree peaks at {HEAVY_MIB} MiB, so it holds {mem_c} concurrent heavy "
-            f"process(es) (budget {heavy_b}).\n  Measured 2026-10-11: 263 delegated pytest "
-            "invocations cost 4557.8 s at the cheapest observed rate against 3998.65 s for ONE "
-            "full board.\n  DO THIS INSTEAD: run the board ONCE yourself, save the result, and "
-            "have the delegated work consult that cached file.\n  His ruling of 2026-10-11: "
-            '"you will need to implement a permanent fix for this."\n')
+    if reasons:
+        # The PYTEST reason first when both apply: it is the one that protects
+        # the 8 GiB, and it carries the concrete remedy.
+        sys.stderr.write("\n".join(reasons))
         return 2
 
     print(f"[local-budget] founder's machine: {cores} cores, {head} MiB headroom, load {la1}. "

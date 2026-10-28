@@ -340,10 +340,36 @@ def main() -> int:
               f"relative to before")
         print(f"                   ({cp['odds']:.6g} in scipy's own "
               f"(before, after) orientation; the same number inverted)")
+        # ★ THE CHI-SQUARE CROSS-CHECK IS CONDITIONAL, BECAUSE A ZERO MARGIN
+        # MAKES IT UNDEFINED -- repair 2026-10-28.
+        #
+        # This called `chi2_contingency` unconditionally and the whole script
+        # exited 1 with `ValueError: The internally computed table of expected
+        # frequencies has a zero element`. That happens as soon as one cell's
+        # margin is 0, which the live logs now produce: every attempt in one of
+        # the 2 windows has the same outcome. The Fisher exact test and the
+        # mpmath hypergeometric tail below both handle a zero cell, so the
+        # finding itself is unaffected.
+        #
+        # A FAILED INSTRUMENT VERIFIES NOTHING, and the project's rule is to say
+        # so rather than to let it take the run down. So the cross-check is
+        # ATTEMPTED and its unavailability is REPORTED, which keeps the claim
+        # honestly single-tool on this data instead of silently 2-tool.
         from scipy.stats import chi2_contingency
-        _chi2, _cpp, _dof, _exp = chi2_contingency(
-            [[bf, bn - bf], [af, an - af]], correction=True)
-        print(f"  chi-square with Yates correction p = {_cpp:.6e}  (cross-check)")
+        _table = [[bf, bn - bf], [af, an - af]]
+        if min(bn, an) > 0 and 0 < (bf + af) < (bn + an):
+            try:
+                _chi2, _cpp, _dof, _exp = chi2_contingency(_table, correction=True)
+                print(f"  chi-square with Yates correction p = {_cpp:.6e}  "
+                      f"(cross-check)")
+            except ValueError as exc:
+                print(f"  chi-square with Yates correction: NOT AVAILABLE on this "
+                      f"table ({exc}); the Fisher exact above and the mpmath tail "
+                      f"below both tolerate a zero cell and carry the claim")
+        else:
+            print(f"  chi-square with Yates correction: NOT APPLICABLE -- the "
+                  f"table {_table} has a zero margin, so the expected frequencies "
+                  f"are undefined. Fisher exact and the mpmath tail carry it.")
         # A THIRD TOOL, because a 2x2 carrying a 1 deserves an exact confirmation.
         tot_f, tot = bf + af, bn + an
         tail = mp.mpf(0)

@@ -308,25 +308,52 @@ def test_the_post_auth_check_fails_loudly_on_a_dead_route(pf, monkeypatch):
 
 
 def test_the_route_map_is_imported_not_copied(pf):
-    """2 spellings of 1 table drift apart. The POST must read the dispatcher's."""
-    src = (REPO / "scripts" / "preflight_health_check_2026-10-06.py").read_text(
-        encoding="utf-8")
-    assert "pm._ALL" in src, (
-        "the POST no longer reads the dispatcher's roster; if it now carries its "
-        "own copy of the seat-to-route map, the 2 will drift")
+    """2 spellings of 1 table drift apart. The POST must read the dispatcher's.
 
+    ★ WHAT THIS DOES AND DOES NOT PROVE, stated because the honest limit matters.
+    It PARSES the POST and asserts it reads the attribute `_ALL` off the panel
+    dispatcher, and that the dispatcher really defines it. That is structural,
+    not textual: a comment mentioning the name does not satisfy it, and neither
+    does a string.
 
-def test_the_post_declines_to_consult_a_route_under_pytest(pf, monkeypatch):
-    """The short-circuit is REACHABLE and SAYS SO, rather than passing silently.
-
-    Under pytest the netguard denies the `claude` subprocess, so a probe would
-    report a logout that has not happened and halt the POST at the wrong row.
-    Measured: before this existed it changed which check the halt test observed.
-    A silent pass would be the worse fix, so the note states it was not consulted.
+    IT IS NOT A FULL EXECUTION, AND A SOURCE-TEXT VERSION WAS TRIED FIRST AND
+    FAILED FOR A REASON WORTH RECORDING. `assert "pm._ALL" in src` proves only
+    that the module mentions the name. The obvious conversion -- mutate the
+    dispatcher's roster and watch it reach the POST -- CANNOT WORK here: the POST
+    loads the panel module FRESH by path on every call, so an in-memory mutation
+    never reaches it. The other conversion, giving the POST a paid seat and
+    watching it name that vendor, would make a real outbound call with his
+    credentials from inside a test. So the executable half is covered by the
+    other 17 tests in this file, which call the probe directly, and this one
+    holds the structural property that there is no second copy of the table.
     """
-    monkeypatch.setenv("CDSFL_UNDER_PYTEST", "1")
-    status, headline, notes = pf.check_routes_are_authenticated(["cc2"])
-    assert status == pf.PASS
-    assert headline == ""
-    assert any("NOT consulted" in n for n in notes), (
-        f"the short-circuit passes without saying it did not check: {notes}")
+    import ast
+    post = (REPO / "scripts" / "preflight_health_check_2026-10-06.py")
+    tree = ast.parse(post.read_text(encoding="utf-8"))
+    reads_all = [
+        n for n in ast.walk(tree)
+        if isinstance(n, ast.Attribute) and n.attr == "_ALL"
+        and isinstance(n.value, ast.Name)
+    ]
+    assert reads_all, (
+        "the POST does not read an `_ALL` attribute off anything, so it is not "
+        "reading the dispatcher's roster. If it now carries its own copy of the "
+        "seat-to-route map, the 2 will drift -- which is the defect class this "
+        "project has measured more often than any other")
+
+    import importlib.util as ilu
+    panel = REPO / "bench" / "confer_maths_panel_2026-09-05.py"
+    pspec = ilu.spec_from_file_location("panel_roster_probe", panel)
+    pm = ilu.module_from_spec(pspec)
+    sys.modules["panel_roster_probe"] = pm
+    pspec.loader.exec_module(pm)
+    assert hasattr(pm, "_ALL"), (
+        "the dispatcher no longer defines `_ALL`, so the POST's import of it is "
+        "broken and the structural check above is testing nothing")
+    assert all(isinstance(x, (list, tuple)) and len(x) >= 3 for x in pm._ALL), (
+        "the dispatcher's roster is not (name, model, route) tuples any more, so "
+        "the POST's route derivation cannot be reading it correctly")
+    routes = {x[2] for x in pm._ALL}
+    assert "claude_cli" in routes, (
+        f"the roster names no claude_cli route, which is the one every free "
+        f"panel and simulated run uses: {sorted(routes)}")

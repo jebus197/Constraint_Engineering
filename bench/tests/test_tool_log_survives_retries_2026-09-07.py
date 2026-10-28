@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import shutil
 import sys
 import types
 
@@ -40,14 +41,55 @@ def _stream(n_calls: int, final: str) -> str:
 
 
 def _install(monkeypatch, transcripts):
-    """subprocess.run returns each transcript in turn."""
+    """Return each transcript in turn, on the path the dispatcher ACTUALLY takes.
+
+    ★ REPAIRED 2026-10-28. This patched `subprocess.run` alone, and since
+    2026-10-17 the dispatcher does not call it when a tool-log sink is set --
+    which is precisely what these 2 tests set. `call_claude_cli` branches to
+    `_run_cli_incrementally`, whose own comment records the change: "INCREMENTAL
+    ONLY WHERE STREAM-JSON IS ALREADY ASKED FOR ... That is exactly where a sink
+    is set, so the text path keeps `subprocess.run`."
+
+    So the fake was never reached, the real CLI was invoked, and the tests died
+    first on `[Errno 2] No such file or directory: '/bin/true'` and then on
+    `CircuitBreakerTripped: HALT [empty_response]` from a binary that prints
+    nothing. The tool-log property they exist for had not been exercised since
+    the dispatch path moved. BOTH paths are stubbed now, so a future branch
+    change cannot silently un-test this again.
+    """
     seq = list(transcripts)
 
     def fake_run(cmd, **kw):
         return types.SimpleNamespace(returncode=0, stdout=seq.pop(0), stderr="")
 
+    def fake_incremental(cmd, user_prompt, timeout, cwd, env, on_call=None):
+        out = seq.pop(0)
+        # The real one reports each tool_use block as it arrives; the tool log is
+        # built from that callback, so a stub that skips it would leave the sink
+        # empty and the assertions would be measuring nothing.
+        if on_call is not None:
+            n = 0
+            for line in out.splitlines():
+                try:
+                    obj = json.loads(line)
+                except ValueError:
+                    continue
+                for block in (obj.get("message") or {}).get("content") or []:
+                    if isinstance(block, dict) and block.get("type") == "tool_use":
+                        n += 1
+                        on_call({"name": block.get("name"), "t_offset_s": 0.0}, n)
+        return types.SimpleNamespace(returncode=0, stdout=out, stderr="")
+
     monkeypatch.setattr(orch.subprocess, "run", fake_run)
-    monkeypatch.setattr(orch, "CLAUDE_CLI", "/bin/true", raising=False)
+    monkeypatch.setattr(orch, "_run_cli_incrementally", fake_incremental)
+    # RESOLVED, NOT HARD-CODED -- fix 2026-10-28. This was "/bin/true", which
+    # does not exist on this macOS: the binary is at /usr/bin/true, so both
+    # tests in this file died with
+    # `[Errno 2] No such file or directory: '/bin/true'` and the tool-log
+    # property they exist for was never exercised. A path to a system binary is
+    # a fact about the machine, not about the project, so it is looked up.
+    _true = shutil.which("true") or "/usr/bin/true"
+    monkeypatch.setattr(orch, "CLAUDE_CLI", _true, raising=False)
 
 
 def test_a_rejected_attempts_tool_calls_are_kept(tmp_path, monkeypatch):

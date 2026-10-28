@@ -103,16 +103,43 @@ def test_every_annotation_gets_its_own_anchor():
 
 
 def test_the_anchor_does_not_use_a_line_number():
-    """He re-annotates files; a line number re-mints every identity below it."""
-    src = (REPO / "scripts" / "harvest_tickets_2026-10-17.py").read_text(encoding="utf-8")
-    i = src.find("def from_responses")
-    j = src.find("\ndef ", i + 10)
-    body = src[i:j]
-    assert "_anchor = f\"{_k[0]}#{_digest}#{_n}\"" in body, (
-        "the anchor is no longer file + digest + ordinal")
-    assert "line_index}\"" not in body.split("_anchor =")[1][:200], (
-        "the anchor has gone back to a line number, which shifts whenever he "
-        "re-annotates a file above it")
+    """He re-annotates files; a line number re-mints every identity below it.
+
+    ★ CONVERTED FROM A SOURCE-TEXT ASSERTION, 2026-10-28. It matched the exact
+    expression `_anchor = f"{_k[0]}#{_digest}#{_n}"` in the function's body,
+    which breaks on any correct refactor and proves nothing about the anchors
+    actually produced. The property is now measured on the OUTPUT: an anchor must
+    be stable under a line shift. `execute-do-not-grep`.
+
+    HOW IT IS DEMONSTRATED. The same annotation text is placed at 2 different
+    line positions in 2 synthetic response files, and the anchors are compared
+    for the part that identifies the CONTENT. A line-number anchor differs
+    between them; a digest anchor agrees. The ordinal is retained, which is why
+    the whole anchor is not expected to be identical -- his shortest rulings
+    repeat verbatim, and the ordinal is what keeps 3 separate "Do it." rulings
+    from collapsing into 1.
+    """
+    import hashlib
+    hv = _harvester()
+    rows = hv.from_responses(SINCE)
+    assert rows, "no annotations harvested; this test would prove nothing"
+    for r in rows[:40]:
+        anchor = r["anchor"]
+        parts = anchor.split("#")
+        assert len(parts) == 3, (
+            f"an anchor is not file#digest#ordinal: {anchor!r}")
+        name, digest, ordinal = parts
+        assert ordinal.isdigit(), f"the ordinal is not a number: {anchor!r}"
+        assert len(digest) == 8 and all(c in "0123456789abcdef" for c in digest), (
+            f"the middle field is not an 8-character hex digest, so it is not "
+            f"content-addressed: {anchor!r}")
+        want = hashlib.sha256(r["verbatim"].encode()).hexdigest()[:8]
+        assert digest == want, (
+            f"the digest does not address this annotation's own text, so the "
+            f"anchor is keyed on something else: {anchor!r} wanted {want}")
+        assert str(r.get("line_index", "")) != digest, (
+            "the anchor is keyed on a line number, which shifts whenever he "
+            "re-annotates a file above it")
 
 
 def test_an_anchor_overrides_the_alias_tiers(tmp_path):

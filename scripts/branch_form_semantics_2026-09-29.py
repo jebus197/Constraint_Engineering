@@ -166,6 +166,17 @@ def main(argv=None) -> int:
     # --- the SHIPPED function agrees with A when re-injection is off -------
     # EXECUTE the repository's own code; do not retype it. nu_b=nu_f=0 strips
     # phase 3, exposing phases 1-2, which is the form under discussion.
+    # `bench/` MUST BE ON sys.path BEFORE THE RUNNER IS LOADED -- fix 2026-10-28.
+    # `reference_runner_v3` does `import hil_review_trigger` at module scope,
+    # which resolves only when its own directory is importable. Loading it by
+    # path alone raised ModuleNotFoundError and this script exited 1, which is
+    # how the full-suite baseline of 2026-10-28 caught it: the derivation this
+    # file stores was unreachable, and an addition nothing reaches is not
+    # additive -- which is the very rule the test asserting this script runs
+    # cites in its own docstring.
+    _bench = str(REPO / "bench")
+    if _bench not in sys.path:
+        sys.path.insert(0, _bench)
     spec = importlib.util.spec_from_file_location(
         "rr3_branchcheck", REPO / "bench" / "reference_runner_v3.py")
     rr3 = importlib.util.module_from_spec(spec)

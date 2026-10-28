@@ -150,6 +150,31 @@ class TestTheCensusIsCurrent:
         # shadow can detect a difference at all, and the shadow's placement in the
         # sweep's `else` branch is checked by walking the AST rather than by matching
         # text.
+        # 105, RAISED FROM 98 ON 2026-10-28, AND EVERY ROW OF THE OVERSHOOT WAS READ
+        # BEFORE THE PIN MOVED -- which is this ratchet's own standing condition and the
+        # precedent set when it went 82 -> 98.
+        #
+        # 4 OF THE OVERSHOOT WERE CONVERTED RATHER THAN COUNTED, which the message below
+        # asks for and which is the whole point of the ceiling. 3 were added by the
+        # 2026-10-28 session itself and are now gone from this census: the route probe's
+        # roster check is structural on the parsed module instead of a substring; the
+        # gate-cost timeout check reads the MARK'S VALUE off the parsed decorator and
+        # compares it with the global limit; and the hook's parallelism check TOKENISES
+        # the command with shlex instead of asking whether "-n " appears, which the
+        # form "-n4" defeated. The 4th was adjacent, in
+        # test_no_ruling_is_dropped_for_being_short_2026-10-17.py: a check that
+        # matched the exact expression building the harvester's anchor and now measures
+        # the anchors PRODUCED -- 3 fields, an 8-character hex digest that addresses the
+        # annotation's own text, and a numeric ordinal.
+        #
+        # THE REMAINDER, READ AND LEFT: 9 rows arrived in files added after 2026-10-12,
+        # all from the 16th and 17th -- the composer fallback flag, the measured-failure
+        # ceiling, 3 on the unmeasured ladder, capability keyed on identity, the ladder
+        # order, and the word layer's merge rule. Each asserts on a literal that sits
+        # INLINE in a long runner function rather than behind a callable, which is the
+        # same structural reason the 2 rows in
+        # test_pre_verdict_sweep_shadow_2026-10-06.py are
+        # are recorded below as unconvertible. They are counted, not excused.
         # 98, RAISED FROM 82 ON 2026-10-12, AND ALL 16 OF THE OVERSHOOT WERE READ
         # INDIVIDUALLY FIRST. His instruction, verbatim: *"skip the archeology, or we
         # just end up like a dog chasing its own tail and never making any meaningful
@@ -201,9 +226,10 @@ class TestTheCensusIsCurrent:
         # were CONVERTED to checks that execute rather than counted, and one of those
         # conversions immediately exposed a test-ordering fault, which is the argument
         # for converting where it is possible at all.
-        assert len(rows) <= 98, (
-            f"{len(rows)} source-text assertions, up from the 98 recorded on "
-            f"2026-10-12, the 82 on 2026-10-06 and the 70 measured on 2026-09-11. Re-read "
+        assert len(rows) <= 105, (
+            f"{len(rows)} source-text assertions, up from the 105 recorded on "
+            f"2026-10-28, the 98 on 2026-10-12, the 82 on 2026-10-06 and the 70 measured "
+            f"on 2026-09-11. Re-read "
             f"scripts/source_text_assertions_2026-09-11.py's docstring before "
             f"raising this number: 4 guards of this class broke on CORRECT changes "
             f"in a single day. Prefer CONVERTING an assertion to one that executes "

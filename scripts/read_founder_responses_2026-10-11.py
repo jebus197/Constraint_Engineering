@@ -550,11 +550,82 @@ def unreadable_but_annotated() -> list:
         # A '#' in the bytes but none at a line start after decoding. For a known format that
         # is fine (a '#' mid-sentence); for an UNKNOWN extension it is a reader gap.
         ext = p.suffix.lower()
+        if ext in ARCHIVES:
+            # ★ AN ARCHIVE IS OPENED RATHER THAN GUESSED AT -- repair 2026-10-28.
+            #
+            # `CDSFL_UX_Design_Brief_AUTHORITATIVE.zip` was reported as a gap
+            # every run, with the reason "extension unknown to this reader", and
+            # that reason was WRONG in a way that got the flag dismissed -- by me
+            # among others, on 2026-10-28, when I called it a false positive.
+            #
+            # IT WAS NOT A FALSE POSITIVE. The archive holds 5 markdown documents
+            # he supplied, one of them an authoritative design brief, and a
+            # tree-wide grep found 0 files referencing any of them: the content
+            # had never reached the record. That is a real gap of a DIFFERENT
+            # kind, now recorded on the runway as 0C.24a and raised as
+            # pf:7410dc26b49c.
+            #
+            # WHAT THIS CHECK OWNS IS ANNOTATIONS, AND THOSE ARE 2 DIFFERENT
+            # FACTS. The 41 line-initial hash lines inside that archive are
+            # MARKDOWN HEADINGS, not his annotations -- a distinction this reader
+            # already knows how to make for a loose file and simply never applied
+            # inside a container. So the members are read and the SAME predicate
+            # is applied. An archive whose members carry none of his annotations
+            # is not an annotation gap; one that does is, and will now say so.
+            inner = _annotations_inside_archive(p)
+            if inner:
+                bad.append({"file": p.name, "ext": ext,
+                            "why": f"an archive holding {inner} annotation(s) of "
+                                   f"his that no reader reaches",
+                            "bytes": len(raw)})
+            continue
         if ext not in TEXTISH | RICH | ZIPPED:
             bad.append({"file": p.name, "ext": ext,
                         "why": "extension unknown to this reader, and its bytes contain '#'",
                         "bytes": len(raw)})
     return bad
+
+
+#: Containers whose MEMBERS may carry his words. `.docx` is already handled as a
+#: document by `read_any`; these are opened and looked into instead.
+ARCHIVES = {".zip"}
+
+
+def _annotations_inside_archive(p: Path) -> int:
+    """How many of HIS annotations sit inside this archive, by the same predicate.
+
+    Returns 0 for an archive of markdown whose hash lines are headings, which is
+    the common case and is NOT an annotation gap. Returns a count when his words
+    really are sealed inside one, which is the case this exists for.
+    """
+    import zipfile
+    try:
+        with zipfile.ZipFile(p) as z:
+            total = 0
+            for name in z.namelist():
+                suffix = Path(name).suffix.lower()
+                if suffix not in TEXTISH:
+                    continue
+                try:
+                    text = z.read(name).decode("utf-8", errors="replace")
+                except Exception:                                  # noqa: BLE001
+                    continue
+                for line in text.splitlines():
+                    t = line.strip()
+                    if not t.startswith("#") or len(t) <= 2:
+                        continue
+                    # A markdown heading is not an annotation. Same call the
+                    # loose-file path makes, so the 2 cannot disagree.
+                    if suffix in (".md", ".markdown") and \
+                            _looks_like_a_markdown_heading(t):
+                        continue
+                    total += 1
+            return total
+    except (zipfile.BadZipFile, OSError):
+        # A container this reader cannot open IS a gap worth reporting, and
+        # reporting it as 1 is honest: the count is unknown and non-zero is the
+        # safe direction for a check about his words going unread.
+        return 1
 
 
 def main() -> int:

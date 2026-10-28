@@ -129,11 +129,46 @@ class TestTheHookRefusesDelegatedPytest:
                        "tool_input": {"script": "await parallel(xs.map(x=>()=>agent('pytest')))"}})
         assert r.returncode == 2, (r.returncode, r.stderr[-300:])
 
+    #: THE DEPTH STATEMENTS HIS 2026-10-25 RULING REQUIRES OF EVERY FAN-OUT.
+    #: A brief without them is refused, by design, whatever else it asks for --
+    #: so a test of the ALLOW path has to carry them or it is testing the depth
+    #: gate instead. Added 2026-10-28, after the full-suite baseline showed this
+    #: test refused with the depth message rather than allowed.
+    _DEPTH = ("HYPOTHESIS: the rung default is declared in exactly one place.\n"
+              "FALSIFIED BY: finding the constant declared in 2 or more modules.\n"
+              "WHY NOT ONE CONTEXT: the tree is large and the grep is mechanical.\n")
+
     def test_it_allows_a_read_only_agent_and_states_the_budget(self):
         r = self._run({"tool_name": "Agent",
-                       "tool_input": {"prompt": "grep the tree for DEFAULT_MAX_RUNGS"}})
+                       "tool_input": {"prompt": self._DEPTH +
+                                      "grep the tree for DEFAULT_MAX_RUNGS"}})
         assert r.returncode == 0, (r.returncode, r.stderr[-300:])
         assert "budget" in r.stdout.lower(), "an allowed call must still carry the budget"
+
+    def test_a_read_only_agent_without_the_depth_statements_is_refused(self):
+        """ANTI-VACUITY for the brief above: if the depth gate did not bite, the
+        3 added lines would be decoration and the test above would pass without
+        them. His ruling of 2026-10-25 is that a fan-out which cannot name its
+        own falsifier is not breadth but delegation of the thinking."""
+        r = self._run({"tool_name": "Agent",
+                       "tool_input": {"prompt": "grep the tree for DEFAULT_MAX_RUNGS"}})
+        assert r.returncode == 2, (r.returncode, r.stdout[-200:])
+        assert "depth before breadth" in r.stderr.lower()
+
+    def test_a_brief_breaking_both_rules_is_told_both(self):
+        """THE 2026-10-28 REPAIR. The depth check was placed before the pytest
+        prohibition with its own early return, so a brief that broke both was
+        refused for the depth statements alone and the operator was never told
+        the remedy that protects the machine. Half a refusal is worse than
+        either half, because the operator fixes what they were told about and
+        the second refusal looks like a new problem."""
+        r = self._run({"tool_name": "Agent",
+                       "tool_input": {"prompt": "run python3 -m pytest bench/tests/ -q"}})
+        assert r.returncode == 2
+        low = r.stderr.lower()
+        assert "cached" in low, f"the pytest remedy is missing: {r.stderr[-300:]}"
+        assert "depth before breadth" in low, (
+            f"the depth requirement is missing: {r.stderr[-300:]}")
 
     def test_it_never_blocks_cc1s_own_pytest(self):
         """The gate is on DELEGATED work. Blocking the orchestrator's own suite would be a

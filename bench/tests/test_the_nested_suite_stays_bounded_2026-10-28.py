@@ -103,14 +103,44 @@ def test_the_timeout_method_is_one_this_project_has_measured():
 
 
 def test_the_long_nested_test_raises_its_own_limit_rather_than_the_global_one():
-    """B36's repair, held in place. The expensive one is marked, not exempted."""
-    txt = (REPO / "bench/tests/test_precommit_gate_cost_2026-09-10.py").read_text(
-        encoding="utf-8")
-    assert "mark.timeout" in txt, (
-        "the gate-cost test no longer carries its own timeout mark, so either it "
-        "will be killed at the global limit or the global limit has been raised "
-        "for the whole suite to accommodate it. The second is the deadlock "
-        "configuration.")
+    """B36's repair, held in place. The expensive one is marked, not exempted.
+
+    ★ CONVERTED FROM A SOURCE-TEXT ASSERTION, 2026-10-28. It read
+    `assert "mark.timeout" in txt`, which a COMMENT mentioning the decorator
+    satisfies and which says nothing about the VALUE. The mark is now read off
+    the collected function and compared with the global limit, so the property
+    checked is the one that matters: the expensive test raises its OWN ceiling
+    rather than the suite's. `execute-do-not-grep`.
+    """
+    import ast
+    import configparser
+    mod = REPO / "bench/tests/test_precommit_gate_cost_2026-09-10.py"
+    tree = ast.parse(mod.read_text(encoding="utf-8"))
+    marks: list[int] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        for dec in node.decorator_list:
+            if not isinstance(dec, ast.Call):
+                continue
+            f = dec.func
+            if getattr(f, "attr", None) != "timeout":
+                continue
+            for a in dec.args:
+                if isinstance(a, ast.Constant) and isinstance(a.value, (int, float)):
+                    marks.append(int(a.value))
+    assert marks, (
+        "no test in the gate-cost module carries a timeout mark with a value, so "
+        "either it will be killed at the global limit or the global limit has "
+        "been raised for the whole suite to accommodate it. The second is the "
+        "deadlock configuration.")
+    cp = configparser.ConfigParser()
+    cp.read(INI, encoding="utf-8")
+    global_limit = int(cp.get("pytest", "timeout"))
+    assert max(marks) > global_limit, (
+        f"the gate-cost test's own ceiling is {max(marks)} s against a global "
+        f"{global_limit} s, so marking it buys nothing and it will still be "
+        f"killed mid-run")
 
 
 def test_every_nested_hook_test_is_bounded_somehow():
@@ -169,11 +199,24 @@ def test_the_unbounded_launch_count_does_not_grow():
 def test_the_hook_does_not_parallelise_its_nested_run():
     """Hypothesis 1, held. If somebody adds xdist to the hook, the measurement
     above stops applying and must be redone."""
+    import shlex
     hook = (REPO / "hooks" / "pre-commit").read_text(encoding="utf-8")
     line = next((l for l in hook.splitlines() if "-m pytest" in l), "")
     assert line, "the hook no longer invokes pytest; this guard is stale"
-    assert "-n " not in line and "xdist" not in line, (
-        f"the hook's nested pytest run is now parallel: {line.strip()!r}. Every "
+    # ★ TOKENISED, NOT SUBSTRING-MATCHED -- 2026-10-28. `"-n " not in line` is
+    # defeated by `-n4` and by a line break, and it fires on the harmless `-n `
+    # inside an unrelated word. shlex splits the command the way a shell does,
+    # so the check is on the ARGUMENT LIST the hook actually passes.
+    try:
+        tokens = shlex.split(line, comments=False, posix=True)
+    except ValueError:
+        tokens = line.split()
+    parallel = [t for t in tokens
+                if t == "-n" or t.startswith("-n") and t[2:].strip().isdigit()
+                or "xdist" in t or t.startswith("--numprocesses")]
+    assert not parallel, (
+        f"the hook's nested pytest run is now parallel ({parallel}): "
+        f"{line.strip()!r}. Every "
         f"measurement in scripts/the_nested_suite_is_bounded_not_serial_"
         f"2026-10-28.py assumes it is serial, and the fork-deadlock exclusion "
         f"assumed a single process. Re-measure before keeping this.")
