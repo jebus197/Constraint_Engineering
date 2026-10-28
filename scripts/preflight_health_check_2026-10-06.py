@@ -49,6 +49,7 @@ Exit: 0 every check passed, 1 a check FAILED (boot halted).
 from __future__ import annotations
 
 import argparse
+import os
 import pathlib
 import sys
 import traceback
@@ -450,7 +451,97 @@ def check_policy_layers_merge():
     return PASS, f"all {len(results)} policy layers merge against universal", []
 
 
+def check_routes_are_authenticated(seats, expect_uniform=False, seat_models=None):
+    """Every route this roster will dispatch through answers. HIS POLICY, 2026-10-28.
+
+    HIS INSTRUCTION, verbatim: *"We should make a policy that Claude CLI and all
+    other model logins (when running in multi-vendor paid mode), should be checked
+    first before beginning any substantial body of work. If not a loud alert
+    should be issued to do so. Then I won't come back and find a large body of
+    work I thought I had authorised hadn't been done because of a simple failed
+    re-auth."*
+
+    WHAT IT COST TO LEARN. On 2026-10-28 his CLI's OAuth session had expired
+    before he authorised a night's work. Nothing ran. The panel's aliveness probe
+    caught it, but only at DISPATCH, after a 19,888-character brief was written.
+    This POST already ran before every experiment and carried 7 checks, NONE of
+    which looked at authentication.
+
+    HIS FOLLOW-UP QUESTION IS WHAT FIXES THE DESIGN: *"But how does this solve
+    needing to run a similar probe during free reviews and simulated runs? The
+    probe would need to still function and to discern between the two conditions
+    I think."* There are not 2 conditions. A free panel and a simulated run both
+    dispatch through `claude -p`; a paid dispatch additionally names a seat whose
+    route is not `claude_cli`. So the ROUTE SET is read from the roster and
+    exactly those routes are probed. No mode flag exists, so none can be wrong.
+
+    HIS RULING on the outbound half: *"Run the probe when a paid dispatch has been
+    authorised, as you suggest."* A vendor endpoint is contacted only for a route
+    the roster names, and every probe used is free of inference cost.
+
+    FIRST IN THE ORDER, DELIBERATELY. Under halt-at-first-failure a check placed
+    first hides the rest, and for this one that is correct: if the route is dead,
+    every other verdict is moot because nothing will dispatch at all.
+    """
+    # NOT CONSULTED FROM INSIDE THE TEST SUITE, and this is a statement rather
+    # than a silence. `conftest.py` sets CDSFL_UNDER_PYTEST and installs a
+    # netguard that DENIES the `claude` subprocess, so a probe here would report
+    # a logout that has not happened and would halt the POST at the wrong row --
+    # measured: it changed which check the halt test observed. Under pytest no
+    # real dispatch occurs either, so there is nothing to protect. The check's
+    # own behaviour is verified directly, with the subprocess stubbed, in
+    # bench/tests/test_the_route_probe_discerns_by_roster_2026-10-28.py.
+    if os.environ.get("CDSFL_UNDER_PYTEST"):
+        return PASS, "", ["routes NOT consulted: running under pytest, where the "
+                          "netguard denies the CLI and no dispatch occurs"]
+    import importlib.util as _ilu
+    probe_path = REPO / "scripts" / "route_auth_probe_2026-10-28.py"
+    spec = _ilu.spec_from_file_location("route_probe_post", probe_path)
+    rp = _ilu.module_from_spec(spec)
+    sys.modules["route_probe_post"] = rp
+    spec.loader.exec_module(rp)
+
+    # THE ROUTE MAP IS IMPORTED, NOT COPIED. 2 spellings of 1 table drift apart,
+    # which is the defect class this project has measured more than any other.
+    panel = REPO / "bench" / "confer_maths_panel_2026-09-05.py"
+    pspec = _ilu.spec_from_file_location("panel_for_routes", panel)
+    pm = _ilu.module_from_spec(pspec)
+    sys.modules["panel_for_routes"] = pm
+    pspec.loader.exec_module(pm)
+    roster = {name: (name, model, route) for name, model, route in pm._ALL}
+
+    wanted, unknown = [], []
+    for s in seats:
+        key = str(s).strip()
+        if key in roster:
+            wanted.append(roster[key])
+        else:
+            unknown.append(key)
+    if not wanted:
+        # A simulated run names SIM seats, which dispatch through the CLI.
+        wanted = [("sim", "sim", "claude_cli")]
+
+    res = rp.probe_routes(wanted)
+    notes = [f"{'OK  ' if r.get('ok') else 'FAIL'} {r['route']}: {r['why']}"
+             for r in res["probed"]]
+    for r in res["failures"]:
+        if r.get("remedy"):
+            notes.append(f"     remedy: {r['remedy']}")
+    if unknown:
+        notes.append(f"     seats not in the roster, probed as CLI: {unknown}")
+    if res["all_ok"]:
+        return PASS, "", notes
+    routes = ", ".join(r["route"] for r in res["failures"])
+    return (FAIL,
+            f"{len(res['failures'])} route(s) this roster dispatches through are "
+            f"NOT authenticated ({routes}). Work sent through them will not run.",
+            notes)
+
+
 CHECKS = [
+    # FIRST, on his policy of 2026-10-28. A dead route makes every verdict
+    # below it moot, because nothing will dispatch at all.
+    ("model routes are authenticated", check_routes_are_authenticated, True),
     ("facilities armed explicitly", check_facilities_armed, False),
     ("severity test present", check_severity_test_is_present, False),
     ("clearance is monotone", check_in_round_clearance_is_monotone, False),

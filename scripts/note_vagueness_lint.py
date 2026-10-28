@@ -1012,8 +1012,55 @@ def _strip_fenced(para: str) -> str:
     return "\n".join(out)
 
 
+#: PHONETIC PUNCTUATION -- Rule 14a (v1.3), reached for the first time 2026-10-28.
+#:
+#: HIS FINDING, 2026-10-28, on a TTS file of mine that carried "python3 scripts
+#: slash register.py minus minus kind wr minus minus status OPEN minus minus
+#: limit 0": *"This is a weird new kind of 'word numbering'? Is it justified here
+#: for some reason? If not you should probably look at it and fix it, as per our
+#: 'no word numbers' rule."*
+#:
+#: HIS DIAGNOSIS NAMES THE WRONG RULE AND THE FINDING IS STILL CORRECT, which is
+#: worth recording because the 2 rules want different fixes. Nothing there spells
+#: a NUMBER, so `no-word-numbers` does not apply. What is spelled is PUNCTUATION,
+#: which Rule 14a of v1.3 governs: *"identifiers keep their name, lose the
+#: punctuation"*, alongside the standing TTS no-underscores rule. The file passed
+#: at 0 findings precisely because no check here could see phonetic punctuation.
+#:
+#: MEASURED BEFORE BEING ADDED, because a rule that reddens the corpus on the day
+#: it lands gets switched off: 802 occurrences across 86 of 1,392 scanned files,
+#: 0.061782 Wilson [0.050300, 0.075675]. So this is a long habit, not a one-off.
+#: `minus minus` is the exception and is genuinely new -- 3 occurrences in 1 file,
+#: the one he was reading. The commit ratchet is PER FILE, so the 86 are
+#: grandfathered until something edits them, exactly as the 23 findings in the
+#: master task list are.
+#:
+#: TTS ONLY. A markdown companion writes a path literally and must keep doing so,
+#: so firing there would be a false positive on correct work. Scoped by the same
+#: logical-path test `missing_standard_stamp` uses, so `--as` keeps working and
+#: both sides of the ratchet are judged alike.
+PHONETIC_PUNCT = {
+    "a spoken path separator": re.compile(r"\b[\w.]+ slash [\w.]+"),
+    "a spoken double dash": re.compile(r"\bminus minus\b"),
+    "a spoken file extension": re.compile(
+        r"\b\w+ dot (?:py|md|json|txt|sh|toml|ini|yml|yaml)\b"),
+    "a spoken underscore": re.compile(r"\b\w+ underscore \w+"),
+}
+
+
+def _is_tts(path) -> bool:
+    """True for a delivered TTS file, by the same test the stamp rule applies."""
+    logical = pathlib.Path(_LOGICAL_PATH or path)
+    parts = {q.lower() for q in logical.parts}
+    if logical.suffix.lower() != ".txt":
+        return False
+    return ("experimental_notes" in parts
+            or any(q.endswith("_tts") for q in parts))
+
+
 def lint(path: pathlib.Path) -> list:
     out = []
+    _tts = _is_tts(path)
     for para_no, s in sentences(path.read_text()):
         # Quote-stripping applies to EVERY rule, not only 27 and 28. A note that
         # quotes someone else's vagueness in order to name it is not being vague.
@@ -1056,6 +1103,16 @@ def lint(path: pathlib.Path) -> list:
             if CATEGORY_NOUN_RE[phrase].search(low):
                 out.append((para_no, f"CATEGORY NOUN (Rule 28: say {name!r})",
                             phrase, s)); break
+        if _tts:
+            for what, rx in PHONETIC_PUNCT.items():
+                m = rx.search(unquoted)
+                if m:
+                    out.append((
+                        para_no,
+                        "PHONETIC PUNCTUATION (Rule 14a: identifiers keep "
+                        f"their name, lose the punctuation -- {what})",
+                        m.group(0), s))
+                    break
     return out
 
 

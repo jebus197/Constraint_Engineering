@@ -99,10 +99,19 @@ DEPENDENCIES = {
     "every seat is fully registered": [],
     #: Depends on nothing: it reads the TOML layers and no seat state.
     "policy layers merge": [],
+    # DEPENDS ON NOTHING AND RUNS FIRST, which is the opposite placement from
+    # "every seat is fully registered" and for the opposite reason. That one is
+    # last because it cannot FAIL and so must not delay a refusal. This one is
+    # FIRST because when it fails nothing will dispatch at all, so every verdict
+    # below it would be measured against a system that cannot run. Added
+    # 2026-10-28 on his policy after an expired CLI session silently cost a
+    # night's authorised work.
+    "model routes are authenticated": [],
 }
 
 #: The order the POST screen runs them in. Most fundamental first, BIOS fashion.
 POST_ORDER = [
+    "model routes are authenticated",
     "facilities armed explicitly",
     "severity test present",
     "clearance is monotone",
