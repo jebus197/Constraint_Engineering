@@ -77,6 +77,13 @@ TRANSCRIPTS = (pathlib.Path.home() /
 MARKER = re.compile(r"(?:(?<=^)|(?<=[\s(\[]))(fr|pf|qs|wr)(?:[:\]\)]|\s*[-—]\s|$)",
                     re.IGNORECASE | re.MULTILINE)
 
+#: A SUPERSET OF `MARKER`, for cheap rejection on RAW JSON lines only -- see the
+#: long note in `from_chat`. Never use it to DECIDE anything; it admits
+#: "write", "from" and "frame" by design, because a prefilter that is wrong in
+#: the permissive direction costs time and a prefilter that is wrong in the
+#: restrictive direction loses content.
+CANDIDATE_LINE = re.compile(r"\b(?:fr|pf|qs|wr)\b", re.IGNORECASE)
+
 #: WHAT MAY BE A BLOCKING SUBJECT, and the measurement that narrowed it.
 #:
 #: A first version harvested every identifier in an entry, including file paths.
@@ -139,6 +146,47 @@ def marked_kind(text: str) -> str | None:
 
 
 # --------------------------------------------------------------------- sources
+
+#: A MARKER THAT CITES IS NOT A MARKER THAT RAISES -- 2026-10-28.
+#:
+#: `MARKER` accepts `pf:`, which is also the form of every REFERENCE to an
+#: existing ticket (`pf:bc80040e3b48`). Raising and citing are opposite intents:
+#: one asks for a new identity, the other names an identity that exists. His own
+#: usage is unambiguous and was already measured -- 30 of 30 of his markers sit
+#: on their OWN LINE as a bare token, 0 inline -- so a marker followed by a hex
+#: id is a citation by construction, not by preference.
+CITATION = re.compile(r"\b(?:fr|pf|qs|wr):[0-9a-f]{6,}\b", re.IGNORECASE)
+
+#: HARNESS TEXT IS NOT A PROPOSAL, and it is the bulk of what chat contains.
+#: Measured 2026-10-28: of 31 marker-bearing chat messages since 2026-10-01, 24
+#: were this session's own Stop-gate output quoted back into the transcript and 3
+#: were compaction summaries. Harvesting them would file the register's own
+#: prodding as new work, which is the exact circularity `additive-standard`
+#: forbids: an entry whose only source is the mechanism that reads entries.
+HARNESS_ECHO = re.compile(
+    r"^\s*(?:stop hook feedback|this session is being continued|"
+    r"<system-reminder>|\[mc\]|\[clock\]|\[tasks\]|\[study\]|"
+    r"userpromptsubmit hook)", re.IGNORECASE)
+
+
+#: A MARKER INSIDE A CODE SPAN IS BEING QUOTED, NOT ISSUED -- 2026-10-28.
+#: Found by this very repair: after the citation and echo filters, the 1
+#: surviving chat row was my own message containing the literal template
+#: `[qs:...]`, which CITATION cannot catch because `...` is not a hex id. His
+#: markers are bare own-line tokens, never backticked, so stripping code spans
+#: costs nothing real and removes a whole class of quotation.
+CODE_SPAN = re.compile(r"`[^`]*`")
+
+
+def raises_a_marker(text: str) -> str | None:
+    """The kind this text RAISES, or None. A citation or a quotation is None."""
+    t = str(text)
+    if HARNESS_ECHO.search(t):
+        return None
+    stripped = CODE_SPAN.sub(" ", t)
+    stripped = CITATION.sub(" ", stripped)
+    return marked_kind(stripped)
+
 
 def from_responses(since: str) -> list[dict]:
     r = subprocess.run([sys.executable, str(READER), "--json"],
@@ -230,7 +278,42 @@ def from_chat(since: str, limit_per_file: int = 400) -> list[dict]:
         for line in f.open(errors="ignore"):
             if taken >= limit_per_file:
                 break
-            if not re.search(r'"(fr|pf)[:\]]', line, re.IGNORECASE):
+            # THE PREFILTER MUST BE PROVABLY WEAKER THAN THE DECISION -- 2026-10-28.
+            #
+            # IT USED TO READ `r'"(fr|pf)[:\]]'`. 3 faults in 1 expression:
+            #   1. The leading `"` requires the marker at the very START of a
+            #      JSON string value, so a marker inside a message is invisible.
+            #   2. `qs` and `wr` are absent -- 2 of the 4 KINDS -- so a question
+            #      or a work-remaining marker in chat could NEVER be harvested.
+            #      `qs` is the kind he instructed on 2026-10-19.
+            #   3. It is a 2nd predicate for a question `MARKER` already answers.
+            #
+            # `MARKER` ITSELF IS ALSO WRONG HERE, AND THAT IS THE SUBTLE PART.
+            # The decision runs on DECODED text; a prefilter runs on the RAW JSON
+            # line, where the token is followed by JSON's closing quote. MARKER
+            # requires the token to be followed by `:`, `]`, `)`, ` - ` or
+            # end-of-string, so a message ending "... here pf" matches on the
+            # decoded text and NOT on the raw line. Measured: MARKER admits 285
+            # raw lines where this test admits 1,185.
+            #
+            # SO THE RULE IS A SUPERSET, NOT A COPY. A prefilter's only job is
+            # cheap rejection and it must never reject what the decision would
+            # accept. `\b(fr|pf|qs|wr)\b` is provably weaker than MARKER:
+            # MARKER can only fire if a kind token appears literally in the
+            # decoded text, JSON never escapes ASCII letters, and MARKER's own
+            # left context (`^` or whitespace/`(`/`[`) and right context (all
+            # non-word or end) each imply a word boundary. Cost on the live
+            # archive: 249,664 lines scanned in 29.4 s.
+            #
+            # AND THE LOSS THIS REPAIRED WAS LATENT, NOT REALISED. Decoding all
+            # 1,185 admitted lines, the number whose text actually RAISES a
+            # marker is 0. Nobody has ever issued a bare marker in chat, so 0 of
+            # 0 genuine proposals were lost. An earlier version of this comment
+            # quoted a 0.92 discard rate as though proposals had gone missing;
+            # that figure compared 2 raw-line predicates with each other and said
+            # nothing about proposals. Withdrawn. Producer:
+            # scripts/the_chat_half_was_blind_2026-10-28.py.
+            if not CANDIDATE_LINE.search(line):
                 continue
             try:
                 d = json.loads(line)
@@ -246,11 +329,37 @@ def from_chat(since: str, limit_per_file: int = 400) -> list[dict]:
                 x.get("text", "") for x in (c or [])
                 if isinstance(x, dict) and x.get("type") == "text")
             text = " ".join(str(text).split())
-            k = marked_kind(text)
+            # RAISES, not merely MENTIONS. See `raises_a_marker` above: without
+            # this, 31 of 31 harvested chat rows were noise -- 24 hook echoes,
+            # 3 compaction summaries and 4 messages that only CITED an existing
+            # ticket id. Fixing the prefilter alone made the function reachable
+            # and useless at the same time.
+            k = raises_a_marker(text)
             if not k or len(text) < 25:
                 continue
+            # AN ANCHOR, THE SAME SHAPE `from_responses` HAS ALWAYS BUILT --
+            # added 2026-10-28, and this asymmetry was the ROOT CAUSE of the
+            # over-matching he instructed be fixed (pf:b705bdbab3a9).
+            #
+            # `_distinct` in `propose` escapes the subject tier whenever the
+            # caller names a `task_ref` or an `anchor` the matched ticket does
+            # not own. `from_responses` names one for every annotation; this
+            # function named NEITHER, so every chat-sourced item arrived with no
+            # identity at all and the subject tier decided it on a single shared
+            # code identifier. Measured 2026-10-17: 291 of 907 tickets, 32.0838%
+            # Wilson [29.1269%, 35.1918%], carry neither -- that share is this
+            # hole, not a design choice.
+            #
+            # NO ORDINAL IS NEEDED HERE, and the difference from `from_responses`
+            # is granularity rather than oversight. There the key is a whole
+            # FILE, where his shortest rulings genuinely repeat -- "Do it."
+            # 3 times on 3 subjects -- so an ordinal is load-bearing. Here the
+            # key is ONE MESSAGE at one timestamp, and identical text inside a
+            # single message is the same item, not 2 items.
+            _anchor = f"chat#{ts}#{_hashlib.sha256(text.encode()).hexdigest()[:8]}"
             out.append({"verbatim": text[:1200], "kind": k, "marked": True,
                         "source": f"chat:{role}", "source_ref": ts,
+                        "anchor": _anchor,
                         "ruled": ts[:10] if role == "user" else "",
                         "subjects": subjects_in(text)})
             taken += 1

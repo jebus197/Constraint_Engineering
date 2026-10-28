@@ -68,7 +68,11 @@ def store(tmp_path):
 def test_an_absorbed_proposal_keeps_its_own_words(store):
     """THE DEFECT. The text was discarded entirely before this fix."""
     s, settled = store
-    hit, outcome = s.propose("fr", "namespace paths", DIFFERENT_TEXT,
+    # SAME KIND, DELIBERATELY, since 2026-10-28. A settled `pf` no longer
+    # absorbs an `fr` at all -- see test_a_new_kind_is_not_absorbed_by_a_
+    # settled_one below -- so the absorption properties this test owns are
+    # exercised where absorption still legitimately happens: within one kind.
+    hit, outcome = s.propose("pf", "namespace paths", DIFFERENT_TEXT,
                              source="responses", subjects=["area_of"])
     assert outcome == "subject-settled"
     again = TicketStore(path=s.path)
@@ -90,7 +94,7 @@ def test_an_absorbed_proposal_keeps_its_own_words(store):
 def test_the_absorbed_text_is_findable_by_word_search(store):
     """A note nobody can search for is barely better than a discarded one."""
     s, _ = store
-    s.propose("fr", "namespace paths", DIFFERENT_TEXT, source="responses",
+    s.propose("pf", "namespace paths", DIFFERENT_TEXT, source="responses",
               subjects=["area_of"])
     again = TicketStore(path=s.path)
     again.load()
@@ -112,7 +116,7 @@ def test_recording_the_text_twice_does_not_duplicate_the_note(store):
     this same day by failing exactly this property."""
     s, settled = store
     for _ in range(3):
-        s.propose("fr", "namespace paths", DIFFERENT_TEXT, source="responses",
+        s.propose("pf", "namespace paths", DIFFERENT_TEXT, source="responses",
                   subjects=["area_of"])
     again = TicketStore(path=s.path)
     again.load()
@@ -159,3 +163,56 @@ def test_an_explicit_task_reference_also_gets_its_own_ticket(store):
                              subjects=["season_strength_order"])
     assert outcome == "created"
     assert new.task_ref == "Z9"
+
+
+# --------------------------------------------------------------- 2026-10-28
+
+def test_a_new_kind_is_not_absorbed_by_a_settled_one(store):
+    """THE REPAIR OF 2026-10-28, on his instruction, raised as pf:b705bdbab3a9.
+
+    This is the case the module docstring above calls THE DEFECT: a genuinely
+    new feature request absorbed by a settled proposed fix over the single
+    shared identifier `area_of`. His ruling of 2026-10-19 is what makes it a
+    correction rather than a preference -- a question and a proposed fix are
+    different items whose resolutions travel in opposite directions, which is
+    why `tid_of` digests the kind.
+    """
+    s, settled = store
+    hit, outcome = s.propose("fr", "namespace paths", DIFFERENT_TEXT,
+                             source="responses", subjects=["area_of"])
+    assert outcome == "created", (
+        f"a settled pf absorbed a new fr over 1 shared identifier; got "
+        f"{outcome!r}, which is the loss this repair exists to stop")
+    assert hit.tid != settled.tid
+    assert hit.kind == "fr"
+
+
+def test_a_question_survives_a_settled_fix_on_the_same_mechanism(store):
+    """His own `qs` case, which is the one that actually bit on 2026-10-27.
+
+    `qs:524186098488` -- whether the 2026-10-08 ruling raising the quiet run to
+    7 still stands -- was suppressed by a settled `pf` sharing the identifier
+    `REQUIRED_QUIET_RUN`. A question's resolution is an ANSWER; closing a fix
+    does not answer it.
+    """
+    s, _ = store
+    _, outcome = s.propose("qs", "does the earlier ruling still stand",
+                           "whether the earlier ruling on this value still "
+                           "stands, given what has since been measured",
+                           source="chat", subjects=["area_of"])
+    assert outcome == "created", (
+        f"a settled pf answered a question nobody asked it; got {outcome!r}")
+
+
+def test_the_same_kind_still_blocks_after_the_repair(store):
+    """ANTI-VACUITY FOR THE REPAIR ITSELF. If kind-awareness were read as
+    'never block', the tier would be decoration. Within one kind it must still
+    decide, which is the property the 4-of-4 rediscovery measurement rests on.
+    """
+    s, settled = store
+    hit, outcome = s.propose("pf", "ladder stuck", SAME_FAULT_REWORDED,
+                             source="chat",
+                             subjects=["season_strength_order"])
+    assert outcome in ("subject-settled", "reworded-match"), (
+        f"the repair disabled same-kind deduplication; got {outcome!r}")
+    assert hit.tid == settled.tid

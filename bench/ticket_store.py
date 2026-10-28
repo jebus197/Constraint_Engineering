@@ -750,6 +750,30 @@ class TicketStore:
         return out
 
     # ------------------------------------------------------------ transitions
+    def propose_from_chat(self, kind: str, title: str, verbatim: str,
+                          when: str, **kw) -> tuple["Ticket", str]:
+        """Raise a ticket from chat with an anchor DERIVED, never remembered.
+
+        WHY THIS EXISTS RATHER THAN A NOTE TELLING ME TO PASS AN ANCHOR. On
+        2026-10-27 I raised 5 questions by hand and all 5 carry neither a
+        `task_ref` nor an anchor, so 4 of them were decided by the subject tier
+        on a single shared identifier and had to be re-raised with invented
+        subjects. The escape hatch `_distinct` provides was designed, documented
+        and simply not used. A mechanism that depends on my remembering it is
+        the thing this project's record says fails.
+
+        `when` is the clock reading for the message, which is what makes the
+        anchor identify WHERE in the record the item came from. The shape
+        matches `from_chat`'s exactly -- `chat#<timestamp>#<8 hex of the text>`
+        -- so an item raised by hand and the same item harvested later collide
+        on purpose rather than duplicating.
+        """
+        import hashlib as _hl
+        digest = _hl.sha256(str(verbatim).encode()).hexdigest()[:8]
+        kw.setdefault("anchor", f"chat#{when}#{digest}")
+        kw.setdefault("source", "founder-chat")
+        return self.propose(kind, title, verbatim, kw.pop("source"), **kw)
+
     def propose(self, kind: str, title: str, verbatim: str, source: str,
                 source_ref: str = "", ruled: str = "", created: str = "",
                 task_ref: str = "", subjects: Iterable[str] = (),
@@ -800,7 +824,35 @@ class TicketStore:
         # is recorded as a relation and a SEPARATE ticket is created. Two entries
         # about the same mechanism are still 2 entries.
         for sub in subjects:
-            blocked = self.settled_on_subject(sub)
+            # THE SUBJECT TIER NOW RESPECTS `kind`, AS EVERY OTHER TIER IN THIS
+            # FUNCTION ALREADY DID -- repair of 2026-10-28, his instruction, and
+            # raised as pf:b705bdbab3a9.
+            #
+            # HIS RULING OF 2026-10-19 IS WHAT MAKES THIS A CORRECTION RATHER
+            # THAN A PREFERENCE: a question and a proposed fix are different
+            # items whose resolutions travel in OPPOSITE directions -- he answers
+            # mine, I answer his -- which is exactly why `tid_of` digests the
+            # kind. A settled `pf` therefore has no standing to say that a new
+            # `qs` is already settled. The `reworded-match` tier below has always
+            # filtered on `t.kind == kind`; this loop was the only one that did
+            # not, and the asymmetry was unintended rather than designed.
+            #
+            # MEASURED on the live store of 2,857 tickets, 2026-10-28: of 1,224
+            # blocked (kind, subject) pairs, 909 are blocked ONLY by a ticket of
+            # another kind -- 0.742647, Wilson [0.717423, 0.766353]. Producer:
+            # scripts/the_subject_blocklist_grows_with_every_close_2026-10-28.py.
+            #
+            # IT DOES NOT WEAKEN DEDUPLICATION, and the suite is the evidence:
+            # both anti-vacuity guards -- `test_a_settled_subject_blocks_
+            # regardless_of_wording` and `test_dedup_still_works_when_no_task_
+            # reference_is_named` -- are SAME-KIND cases and are untouched. The
+            # one guard whose expectation changes is the one whose own docstring
+            # calls the behaviour "THE DEFECT": a genuinely new `fr` absorbed by
+            # a settled `pf` over the single shared identifier `area_of`.
+            #
+            # 2 TUNED REPAIRS WERE TRIED BEFORE AND BOTH WERE REFUSED, recorded
+            # below in this same comment block. This one adds no constant at all.
+            blocked = [b for b in self.settled_on_subject(sub) if b.kind == kind]
             if blocked:
                 if _distinct(blocked[0]):
                     break                 # related, not the same item
