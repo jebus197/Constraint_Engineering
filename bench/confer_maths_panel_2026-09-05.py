@@ -994,6 +994,11 @@ def dispatch(name, model_id, route):
                "stopped_reason": locals().get("stopped_reason"),
                "tool_iterations": locals().get("tool_iterations"),
                "elapsed_s": round(time.time() - t0, 1), "response": resp or "",
+               # ABSOLUTE, not just a duration. `elapsed_s` cannot
+               # answer his completion-barrier question: 2 seats with
+               # equal durations may finish 20 s apart under the
+               # stagger, and it is the GAP that the round waits out.
+               "t_start_epoch": t0, "t_end_epoch": time.time(),
                # RULING (j): "recording the attempt number in the reply". A
                # reader can now tell which tree a verdict was measured in.
                "attempts": list(_SEAT_ATTEMPTS.get(name, []))}
@@ -1021,6 +1026,12 @@ def dispatch(name, model_id, route):
                "error": f"{type(e).__name__}: {e}",
                "tool_calls": tool_log, "n_tool_calls": len(tool_log),
                "elapsed_s": round(time.time() - t0, 1), "response": "",
+               # ON THE FAILURE PATH TOO. A seat that times out is
+               # precisely the one that sets the barrier, so omitting
+               # it here would blind the measurement to its own worst
+               # case -- the same defect shape as the tool counter
+               # that read 0 exactly when a seat failed.
+               "t_start_epoch": t0, "t_end_epoch": time.time(),
                "attempts": list(_SEAT_ATTEMPTS.get(name, []))}
     _reply_path = _logs_dir() / f"{name}.json"
     # EVERY ATTEMPT IS KEPT, not just the one that happened to succeed.
@@ -1880,6 +1891,35 @@ def main() -> int:
 
     ok = sum(1 for r in results if r["ok"])
     print(f"\n  {ok}/{len(MODELS)} responded. Logs: {LOGS}")
+
+    # THE COMPLETION BARRIER, on his ruling of 2026-10-28. Derived from the seat
+    # records rather than timed separately, so there is one source of truth and
+    # no second clock to drift. Written whatever the outcome: a round where a
+    # seat failed is the round whose barrier cost is highest.
+    try:
+        # `ST` is bound locally inside `_refuse_if_topology_is_skipped`, so
+        # the module is loaded again here rather than reaching for a name
+        # that does not exist in this scope. The loader is idempotent.
+        _barrier = _load_star().completion_barrier(results, _stagger_seconds())
+        _bpath = _logs_dir() / "completion_barrier.json"
+        _bpath.write_text(json.dumps(_barrier, indent=2, sort_keys=True) + "\n",
+                          encoding="utf-8")
+        if _barrier["n_timed"] >= 2:
+            print(f"  completion barrier: round wall {_barrier['round_wall_s']:.1f}s, "
+                  f"slowest {_barrier['slowest_seat']}, "
+                  f"total idle {_barrier['total_idle_s']:.1f}s "
+                  f"({_barrier['idle_share']:.4f} of available seat-time), "
+                  f"saving against serial {_barrier['saving_vs_serial']:.4f}")
+            for _s in _barrier["per_seat"]:
+                print(f"    {_s['seat']}: start +{_s['start_offset_s']:.1f}s, "
+                      f"ran {_s['duration_s']:.1f}s, then idle "
+                      f"{_s['idle_s']:.1f}s waiting on the round")
+        else:
+            print(f"  completion barrier: {_barrier['n_timed']} timed seat(s); "
+                  f"a barrier needs 2 -> {_bpath.name}")
+    except Exception as _b_exc:                              # noqa: BLE001
+        # A measurement must never cost the round its results.
+        print(f"  completion barrier FAILED: {type(_b_exc).__name__}: {_b_exc}")
     return 0
 
 

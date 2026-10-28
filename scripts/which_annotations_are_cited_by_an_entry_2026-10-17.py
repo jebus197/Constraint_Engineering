@@ -213,8 +213,15 @@ def main(argv=None) -> int:
     # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
     _withheld = max(0, len(res["absent"]) - 6)
     if _withheld:
+        # SINGLE QUOTES INSIDE, deliberately. Nesting the same quote character
+        # inside an f-string is legal only from Python 3.12 (PEP 701); on the
+        # 3.11 floor this file is held to it is a SyntaxError, and a module that
+        # cannot PARSE stops the whole suite COLLECTING there. Introduced by my
+        # own capped-listing fix earlier on 2026-10-28 and caught by
+        # `test_python_floor_2026-09-07.py`, which is the guard for exactly this.
+        _total = len(res["absent"])
         print(f"      ... and {_withheld} more not shown "
-              f"(of {len(res["absent"])} total)")
+              f"(of {_total} total)")
 
     print("\nTHIS IS NOT A COVERAGE MEASURE, AND THE FIGURE MUST NOT BE READ")
     print("AS ONE. An instruction of his acted on at the time leaves NO ENTRY")

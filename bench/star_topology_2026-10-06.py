@@ -244,3 +244,83 @@ def check_joint_round(logs: pathlib.Path, round_name: str, joint_of,
         "  A seat joining the joint round without having answered blind has seen\n"
         "  the others' positions before forming its own, which is the whole thing\n"
         "  the blind round exists to prevent.")
+
+
+# ---------------------------------------------------------------------------
+# THE COMPLETION BARRIER. His question, raised 3 times and ruled on 2026-10-28:
+# does a collaborative star round need a completion barrier, not just a
+# staggered start?
+#
+# WHY IT BELONGS HERE RATHER THAN IN THE DISPATCHER. It is a property of the
+# TOPOLOGY -- what it costs to make every spoke land before the hub proceeds --
+# and the dispatcher is only where the timestamps happen to be collected. Keeping
+# it here means a guard can execute it on constructed records without starting a
+# panel, which is the only way a timing property gets tested cheaply.
+#
+# WHAT THE STAGGER EVIDENCE CANNOT SAY. `DEFAULT_STAGGER_S = 20.0` was derived
+# from `s <= d1`, a condition wholly about STARTS. 2 seats of equal duration
+# started 20 s apart finish 20 s apart, and the round waits out that gap. No
+# archived figure measures it, because no seat record carried an absolute
+# completion time before 2026-10-28.
+# ---------------------------------------------------------------------------
+
+def completion_barrier(seats, stagger_s: float = 0.0) -> dict:
+    """What a round spends waiting on its slowest seat.
+
+    `seats` are the records `dispatch` returns. Only those carrying both
+    `t_start_epoch` and `t_end_epoch` can contribute; the count of each is
+    reported so a partially-instrumented round is visible as such rather than
+    quietly measured on a subset.
+
+    `idle_s` per seat is the interval between that seat landing and the LAST
+    seat landing: the time the round could not use because the barrier had not
+    cleared. `idle_share` divides the total by the seat-time the round had
+    available, so 0.0 is a perfectly matched round and a value approaching 1.0
+    is a round carried by a single slow seat.
+    """
+    timed = [s for s in seats
+             if isinstance(s, dict)
+             and isinstance(s.get("t_start_epoch"), (int, float))
+             and isinstance(s.get("t_end_epoch"), (int, float))]
+    rec = {"n_seats": len(list(seats)), "n_timed": len(timed),
+           "stagger_s": float(stagger_s), "per_seat": []}
+    if not timed:
+        rec["why"] = ("no seat record carried both t_start_epoch and "
+                      "t_end_epoch; the round predates the instrumentation")
+        return rec
+
+    round_start = min(float(s["t_start_epoch"]) for s in timed)
+    round_end = max(float(s["t_end_epoch"]) for s in timed)
+    rec["round_wall_s"] = round_end - round_start
+    rec["serial_wall_s"] = sum(float(s["t_end_epoch"]) - float(s["t_start_epoch"])
+                               for s in timed)
+
+    for s in sorted(timed, key=lambda r: float(r["t_end_epoch"])):
+        start, end = float(s["t_start_epoch"]), float(s["t_end_epoch"])
+        rec["per_seat"].append({
+            "seat": s.get("model"),
+            "ok": bool(s.get("ok")),
+            "start_offset_s": start - round_start,
+            "end_offset_s": end - round_start,
+            "duration_s": end - start,
+            "idle_s": round_end - end,
+        })
+
+    rec["total_idle_s"] = sum(p["idle_s"] for p in rec["per_seat"])
+    available = len(timed) * rec["round_wall_s"]
+    # A round whose seats all started and ended at the same instant has 0 wall
+    # clock and 0 idle. Reporting 0.0 is right; dividing is not.
+    rec["idle_share"] = (rec["total_idle_s"] / available) if available > 0 else 0.0
+    rec["slowest_seat"] = rec["per_seat"][-1]["seat"]
+    rec["fastest_seat"] = rec["per_seat"][0]["seat"]
+    rec["saving_vs_serial"] = (
+        1.0 - rec["round_wall_s"] / rec["serial_wall_s"]
+        if rec["serial_wall_s"] > 0 else 0.0)
+    # THE QUESTION HIS RULING ACTUALLY ASKS. A stagger that exceeds the spread
+    # of seat durations creates idle time it did not have to create, because the
+    # later-started seat finishes later for no reason but its own start offset.
+    spread = max(p["duration_s"] for p in rec["per_seat"]) - \
+        min(p["duration_s"] for p in rec["per_seat"])
+    rec["duration_spread_s"] = spread
+    rec["stagger_exceeds_duration_spread"] = bool(stagger_s > spread)
+    return rec

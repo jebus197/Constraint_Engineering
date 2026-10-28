@@ -25,6 +25,94 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
+## SESSION STATE — 2026-10-28 22:16 GMT (READ THIS FIRST)
+
+**Branch `sim/shakedown-2026-09-29`, HEAD `e8454b0e` before this save.** Recorded at 2026-10-28T22:16:55+00:00.
+
+**THE SUITE IS 4 FAILED, 13,001 PASSED, 25 SKIPPED in 5319.78 s (1:28:39)**, down from the
+36 failed / 12,954 passed baseline taken earlier the same day. Recorded by
+`python3 scripts/suite_record.py record --log ...` from the log itself rather than typed,
+and both logs are now READABLE: `bench/logs/**` is gitignored, so they are mirrored at
+`experimental_notes/evidence/suite_logs_2026-10-28/` with a README saying what each is.
+
+**HIS B37 QUESTION IS ANSWERED BY MEASUREMENT: the suite does not consume his machine.**
+Resident memory was sampled every 15 s across the WHOLE python process tree during the
+re-run, 247 samples covering 61.8 of the 88.7 minutes (the sampler was started after the
+run, so the first 27 minutes are unsampled; spot readings there were 88 to 243 MB, lower
+than the sampled peak). **Peak total 1082.5 MB against the 8.00 GiB machine, a share of
+0.132141, leaving 7109.5 MB of headroom**; median 153.1 MB; largest single process
+747.3 MB; peak 9 concurrent python processes, median 5. z3 returns `unsat` for "2
+concurrent trees at this peak exceed 8 GiB" and `sat` for "they fit", cross-checked in
+NumPy and mpmath to 6 decimal places. Samples:
+`experimental_notes/evidence/suite_logs_2026-10-28/rss_during_suite_2026-10-28.csv`.
+
+**THE 4 REMAINING FAILURES, and 3 were fixed after this run rather than left.**
+`test_python_floor` caught an f-string nesting the same quote character, legal from
+Python 3.12 but a SyntaxError on the 3.11 floor, which stops the suite COLLECTING there --
+introduced by my own capped-listing fix earlier the same day and now repaired and verified
+on both interpreters. `test_cited_evidence_is_recoverable` refused a citation whose log no
+reader could reach, which led to the mirrors above AND to a resolver blind spot: the mirror
+search was `evidence/*/<parts[2]>/<name>`, which needs `parts[2]` to be a round DIRECTORY, so a
+file sitting DIRECTLY in `bench/logs/` could never resolve. **Measured before the change: 0 of
+45 cited 3-part paths resolved to a mirror against 74 of 335 deeper ones, and 5 of the 21
+paths in the test's own unrecoverable pin are 3-part, 0.238095, Wilson [0.106280,
+0.450912].** The fix is strictly additive -- the new branch applies only where the old glob
+is measured to match nothing -- and re-running over all 380 cited paths leaves the
+deeper-path count unchanged at 74 of 335. **The 4th, `test_task_list_burndown`, is a
+MEASUREMENT and not a code defect**: it reports the list's own add-against-close ratio and
+its upper confidence bound still touches 1. Inserting tonight's queue adds 4 open entries,
+which moves it the wrong way until they close.
+
+**`hooks/work_not_narrate.py`, THE STOP HOOK THAT REFUSES TO END A TURN WHILE OPEN WORK REMAINS, WAS CORRECT AND FIRED ON NOTHING. IT WAS DISABLED 3 WAYS.**
+`hooks/work_not_narrate.py` decides correctly -- called on this session's own 488.4 MB
+transcript it refuses 8 of the newest 12 genuine founder turns, 0.666667, Wilson [0.390622,
+0.861880], and the 4 it allows are the 4 where he issued `d`; its own self-test is 7 of 7.
+It never ran because (1) a 0-byte sentinel `~/.claude/hooks/.work_not_narrate_PARKED` dated
+2026-09-11 makes `main()` return 0 before reading the payload, (2) its `Stop` registration had
+been renamed `_PARKED_Stop_2026-09-11` so the harness never called it, and its own guard
+PASSES a parked entry by design, and (3) `hooks/ticket_queue_gate.py`, which IS wired and
+does not yield after one refusal, stood down on a pause file carrying his 2026-10-24
+instruction "do not resume the master task list until I tell you to do so". All 3 cleared on
+his 2026-10-28 instruction; the pause is ARCHIVED under `~/.claude/.ticket_queue/lifted/`,
+not deleted. **NO PREDICATE WAS CHANGED, and an earlier reading of mine that said one was
+needed is withdrawn**: it reconstructed the rule from the `MIN_TOOL_CALLS` and `MIN_PROSE`
+constants, which `verdict` consults only to WORD its message, giving 0 of 12 against 8 when
+called, exact McNemar p = 0.0078125. Producer:
+`scripts/the_gate_was_disabled_three_ways_2026-10-28.py`.
+
+**THE 0.7 SEVERITY PROXY HAS NEVER BEEN TESTED WHERE SEVERITY VARIES, and a directive is
+corrected.** kappa = -0.022688 and Fisher p = 0.778818 reproduce exactly over the 259
+judgeable items of the 2026-09-02 blind audit, but that corpus holds severities in
+[0.65, 0.74] only, SD 0.026915 against the archive's 0.224319 over 3,237 entries spanning
+[0.0, 1.0]. Power against a strong full-range effect is 0.1460; that hypothesis predicts an
+exact in-band odds ratio of 1.256464 which the measured interval [0.516836, 1.569980]
+contains, and 0.792050 of 20,000 draws under it land inside the same interval. **"Only the
+band matters" is false**: 2,807 of 3,237 entries (0.867161, Clopper-Pearson [0.854982,
+0.878672]) were classified at a severity the audit never examined, and 1,119 of the 1,408
+CRITICAL calls the gate has ever made -- 0.794744 -- sit ABOVE the band. Both copies of
+`additive-standard` now carry the band qualifier. **STILL OWED HIM: 63 full-range
+adjudications**, simulated power 0.9207; no model can supply the labels. Producer:
+`scripts/the_severity_proxy_was_never_tested_2026-10-28.py`.
+
+**THE COMPLETION BARRIER IS BUILT AND ALREADY MEASURED, on his ruling to study it in the
+next run.** `dispatch` stamps `t_start_epoch` and `t_end_epoch` on both the success and the
+failure record, and `completion_barrier` in `bench/star_topology_2026-10-06.py` derives the
+idle time a round spends waiting on its slowest seat. From the archive, reconstructing
+completions from reply-file mtimes: a round wastes a median 0.144892 of its available
+seat-time, bootstrap 95% CI [0.105753, 0.181047] over 88 rounds; 13 of 88 wasted over 0.30.
+Whether it worsens with seat count is SUGGESTIVE AND NOT ESTABLISHED -- 0.384744 at 4+ seats
+(n = 6) against 0.131478 at 2 seats (n = 74), Mann-Whitney p = 0.005483 and permutation
+p = 0.000100 but Brunner-Munzel p = 0.104133. Producer:
+`scripts/what_a_round_waits_on_its_slowest_seat_2026-10-28.py`.
+
+**RESUME POINTER: the master task list now opens with TONIGHT'S QUEUE, T1 to T4**, and both
+Stop gates name T1 because they read DOCUMENT order. T1 (land the staged work) is being
+committed as this block is written; T2 is the free panel in both halves on the 9 changes,
+brief at `bench/logs/fix_review_panel_2026-10-28/BRIEF.md` validated against all 8 required
+sections and now carrying CHANGE 8 and CHANGE 9; T3 is the simulated run with
+`--severity-spec` and the barrier under `cy`; T4 resumes the list from R1 and scraps the
+harvester's chat half on his ruling.
+
 ## SESSION STATE — 2026-10-28 19:10 GMT (READ THIS FIRST)
 
 **Branch `sim/shakedown-2026-09-29`, HEAD `ec7cd73b` before this save.** Recorded at 2026-10-28T19:10:27+00:00. The master task list REMAINS PAUSED on his instruction; the pause file carries his own words and the gate honours it. He ruled on 2026-10-28 that the list resumes after the proposed simulated run and the other open items.

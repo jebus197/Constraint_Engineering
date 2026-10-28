@@ -117,22 +117,44 @@ def brief(cap: int = DEFAULT_CAP, budget: int = DEFAULT_BUDGET) -> str:
     if len(out) > budget:
         #: TRUNCATION IS ANNOUNCED, never silent. A brief that quietly drops
         #: half the open work is worse than no brief, because it reads as
-        #: complete. The identifiers alone cost 97 characters, so the fallback
-        #: always fits.
-        kept, total = [], 0
+        #: complete.
+        #:
+        #: THE RESERVE IS DERIVED, NOT A CONSTANT -- fixed 2026-10-28. It was
+        #: `budget - 200`, under a comment asserting "the identifiers alone cost
+        #: 97 characters, so the fallback always fits". That was true when it was
+        #: written and stopped being true as the list grew: the notice lists one
+        #: identifier per DROPPED entry, so its length is a function of the open
+        #: count, and a fixed 200 cannot bound a growing string. Adding 4 entries
+        #: on 2026-10-28 took the output to 960 against a 900 budget and
+        #: `test_overflow_is_announced_and_the_identifiers_always_survive` caught
+        #: it. The tail is now MEASURED for each candidate count, and because the
+        #: notice SHRINKS as more entries are kept the fill loop stays monotone.
         head = lines[:3]
-        total = sum(len(l) + 1 for l in head)
-        for line in lines[3:-1]:
-            if total + len(line) + 1 > budget - 200:
+        base = sum(len(l) + 1 for l in head)
+        body = lines[3:-1]
+
+        def _tail(n_kept: int) -> list[str]:
+            dropped = len(live) - n_kept
+            return [
+                f"  ... {dropped} further open entries OMITTED to stay inside "
+                f"the {budget}-character budget; their identifiers are: "
+                f"{', '.join(e.ident for e in live[n_kept:])}",
+                "  Read experimental_notes/CDSFL_MASTER_TASK_LIST.md for those."]
+
+        def _size(n_kept: int) -> int:
+            return base + sum(len(l) + 1 for l in body[:n_kept]) \
+                + sum(len(l) + 1 for l in _tail(n_kept))
+
+        kept_n = 0
+        for n in range(1, len(body) + 1):
+            if _size(n) > budget:
                 break
-            kept.append(line)
-            total += len(line) + 1
-        dropped = len(live) - len(kept)
-        out = "\n".join(head + kept + [
-            f"  ... {dropped} further open entries OMITTED to stay inside the "
-            f"{budget}-character budget; their identifiers are: "
-            f"{', '.join(e.ident for e in live[len(kept):])}",
-            "  Read experimental_notes/CDSFL_MASTER_TASK_LIST.md for those."])
+            kept_n = n
+        # THE IDENTIFIERS ALWAYS SURVIVE, which is the property the guard names.
+        # If even the 0-kept form overflows, emitting it anyway is correct: a
+        # brief that cannot name an open item is worse than one that is long,
+        # and the overflow is then visible rather than silently dropping work.
+        out = "\n".join(head + body[:kept_n] + _tail(kept_n))
     return out
 
 

@@ -97,14 +97,14 @@ question and a proposed fix are different items whose resolutions travel in
 opposite directions, which is why the ticket id hash digests the kind.
 
 Measured on the live store: of 1,236 blocked (kind, subject) pairs, 918 are
-blocked ONLY by a ticket of another kind, 0.742718 Wilson [0.717623, 0.766310].
+blocked ONLY by a ticket of another kind, 0.743034 Wilson [0.718512, 0.766116].
 
-<!-- figure: cross-kind blocked share | scripts/the_subject_blocklist_grows_with_every_close_2026-10-28.py | 0.742718 -->
+<!-- figure: cross-kind blocked share | scripts/the_subject_blocklist_grows_with_every_close_2026-10-28.py | 0.743034 -->
 
 THE ABSOLUTE COUNTS IN THAT FIGURE MOVE AND THE RATE DOES NOT. The store grew by
 2 tickets between the first measurement and this brief, taking the pairs from
 1,224 to 1,236 and the cross-kind count from 909 to 918 while the share moved
-from 0.742647 to 0.742718. Quote the rate, not the counts. This was caught by the
+from 0.742647 to 0.743034. Quote the rate, not the counts. This was caught by the
 dispatcher's own figure check before you saw it, which is the instrument working.
 
 Two earlier repairs of this same defect were tried and REFUSED, and you should
@@ -365,3 +365,222 @@ Then, once, across all 7:
   find others.
 - UNREPRODUCIBLE: anything cited above as measured that you believe cannot be
   reproduced from the committed producers.
+## CHANGE 8 — the 0.7 severity proxy, re-measured, and a DIRECTIVE CORRECTED
+
+ADDED AFTER THIS BRIEF'S FIRST VALIDATION, on the founder's instruction of
+2026-10-28: "Then do the measurement first." It is the newest item here and the
+only one that corrects a standing project directive, so attack it hardest.
+
+THE CLAIM BEING WITHDRAWN. `.claude/CLAUDE.md` and the global copy both say the
+founder's catch of a rubric-replacement proposal rested on "a rubric it had
+already measured as agreeing no better than chance (kappa = -0.0227, Fisher
+p = 0.78)". Both figures reproduce EXACTLY: kappa = -0.022688, Fisher
+p = 0.778818, odds ratio 0.900790, over the 259 judgeable items of
+`experimental_notes/adversarial_records/rubric_adherence_audit_0C8_2026-09-02.json`.
+The 2x2 is [[114, 67], [51, 27]].
+
+WHY THE FIGURES CANNOT CARRY THAT SENTENCE. The audited corpus holds severities
+in [0.65, 0.74] ONLY, standard deviation 0.026915, against the archive's full
+[0.0, 1.0] and 0.224319 over 3,237 registry entries in 62 runs. The band is
+0.132839 of all archive severities. Consequences, measured rather than asserted:
+
+  - the analytic standard error 4.801159 matches the real fit's 4.862883 to
+    1.3%, so the power model is validated on the data and not on an idealisation;
+  - power against a strong relationship -- P(CRITICAL) running 0.10 at severity 0
+    to 0.90 at severity 1, slope 2 ln 9 = 4.394449 -- is 0.1460;
+  - that strong hypothesis PREDICTS an in-band odds ratio of 1.256464 -- the
+    EXACT expected marginal figure, from the 0.051992 of severity separation the
+    0.7 cut achieves inside the band; the first-order exp(beta . delta-mean) step
+    gives 1.256682, a relative error of 0.0174%, so nothing rests on the
+    approximation. The measured interval [0.516836, 1.569980] contains it,
+    alongside 1.0;
+  - and 0.792050 of 20,000 simulated draws under that same hypothesis produce a
+    point estimate INSIDE the measured interval, median 1.260417. The observation
+    is not merely compatible with the strong hypothesis, it is the MODAL outcome
+    under it.
+
+So the corpus cannot separate "no relationship" from "a strong relationship".
+The pair is UNINFORMATIVE about the rubric, not negative about it.
+
+WHAT WAS RULED OUT FIRST. Dichotomisation is not the cause: continuous severity
+predicts the rubric verdict no better inside the band (logistic slope -4.199407,
+p = 0.387828; Mann-Whitney p = 0.308546), and the mean severity of NON_CRITICAL
+items, 0.695426, is marginally HIGHER than CRITICAL's 0.692424.
+
+THE FALSIFICATION IT SURVIVED. If range restriction were a blanket excuse it
+would also make the rubric's readers look unreliable in the band, collapsing this
+into "the labels are noise". It does not: the 2 blind readers agree with EACH
+OTHER at kappa 0.836883 on the 93 items both judged (raw 0.924731, Fisher
+p = 6.230872e-17) while agreeing with the proxy at +0.016913 and +0.157562,
+neither significant. Restriction bites the continuous predictor, not the binary
+construct both readers judge.
+
+SAMPLE SIZE IS NOT THE PROBLEM. Drawing the same 259 severities from the full
+archive instead raises power against the strong relationship from 0.1460 to
+1.0000 and drops the minimum detectable slope from 13.450854 to 1.7380.
+
+A TENSION I AM RAISING MYSELF RATHER THAN WAITING FOR YOU TO FIND IT. The audit's
+method line records severity "withheld and redacted from 80 of 286 texts", and NO
+per-item redaction flag is stored, so up to 206 of 259 verdicts may have been
+formed with the number in view. Contamination inflates agreement TOWARD positive.
+Observed agreement is already at or below zero, so the uncontaminated in-band
+agreement can only be worse. That STRENGTHENS the in-band null and leaves the
+out-of-band question untouched -- but say so if you think it cuts differently.
+
+AND THE STRONGEST OBJECTION DOES NOT SURVIVE THE ARCHIVE, which is why it is
+answered here rather than only asked of you. Of 3,237 registry entries, 2,807 --
+0.867161, Clopper-Pearson [0.854982, 0.878672] -- were classified at a severity
+the audit never examined: 1,119 above 0.74 and 1,688 below 0.65. And 1,119 of
+the 1,408 CRITICAL calls the gate has ever made, 0.794744, sit ABOVE the band.
+Those are its CONFIDENT calls, where a disagreement is more consequential than
+one at the cut, because nothing about a severity of 0.9 invites a second look.
+Attack that if you can; it is the load-bearing step now, not the power argument.
+
+WHAT IS OWED THE FOUNDER AS A RESULT: 63 full-range adjudications against the 5
+clauses of `bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md`.
+Simulated power 0.9207; about 48 reaches 0.80. The closed form says 35 and is
+OPTIMISTIC, simulating 0.6472, so it must not be quoted. No model can supply the
+labels: peer-model CONFIRM votes are forbidden as evidence here.
+
+RUN THIS, do not reason about it:
+  python3 scripts/the_severity_proxy_was_never_tested_2026-10-28.py
+  python3 -m pytest bench/tests/test_the_severity_proxy_was_never_tested_2026-10-28.py -q
+
+QUESTIONS FOR YOU:
+  - Is the "strong relationship" a straw man? The slope 2 ln 9 was chosen as a
+    round, legible effect, not derived from anything. Name the effect size that
+    is actually at stake for the convergence gate, and say whether the band could
+    detect THAT one.
+  - THE STRONGEST OBJECTION, and I want it pressed: the gate only ever acts AT
+    the cut, so in-band agreement may be the only agreement that matters
+    operationally. If that is right, the original sentence was adequate for every
+    decision it was used in and this correction is pedantry. Decide which, and
+    say what measurement would settle it.
+  - Does the power argument survive a non-monotone relationship? Everything above
+    assumes P(CRITICAL) is monotone in severity. If the rubric's 5 clauses are
+    orthogonal to magnitude, no sample size helps and the costed ask is wasted.
+  - Archive severities mass at 0.5 (633 of 3,237), 0.8 (192) and 0.7 (174). Does
+    simulating a continuous predictor on that lumpy a distribution overstate what
+    a full-range sample would really achieve?
+  - Is correcting a directive on the strength of a POWER argument legitimate at
+    all, given no new labels were gathered? State the standard a withdrawal
+    should meet, and whether this meets it.
+
+HOW THIS BEARS ON CHANGE 5, WHICH IS THE INTERACTION TO CHECK. Change 5 promotes
+the section-7.7 severity specification to DECIDING while leaving the cut at 0.7.
+`scripts/the_severity_cut_collapses_the_formula_2026-10-13.py` already derived
+that at a 0.7 cut the specification is the identity
+
+    Sev(f) >= 0.7   IS   HARD  AND  CONFIRMED  AND  confidence >= 0.7
+
+with z3 returning unsat on the negation. So the run is about to let a threshold
+decide whose agreement with the project's own consequence definition has never
+been measured where severity varies. That is not a reason to hold the run: the
+specification's key property, a disproved finding scoring 0, is worth having on
+its own and is violated on 35 of 40 disproved findings today, 87.5000% Wilson
+[73.8879%, 94.5405%]. It is a reason the 2 items must be read together.
+
+AND IT MAKES THE EXISTING AUDIT LESS REPRESENTATIVE, NOT MORE. Change 5's own
+figures move 835 of 3,298 entries from above the cut to below it, 25.3184% Wilson
+[23.8636%, 26.8306%]. The population sitting near 0.7 after the promotion is
+therefore not the population the 2026-09-02 audit sampled, so the 259 band
+verdicts speak even less to the convergence gate as it will behave once the
+specification decides than they do to the gate as it behaves today. Say
+whether that strengthens the case for the 63 full-range adjudications or whether
+it argues for re-auditing the band after the promotion instead.
+## CHANGE 9 — what a round pays to make every seat land, instrumented and measured
+
+A COMPLETION BARRIER, as the term is used here, is the point at which a round
+cannot proceed until every seat has landed. The staggered start is its opposite
+number: one controls when seats begin, the other what the round pays for them
+to all finish.
+
+ADDED AFTER THIS BRIEF'S FIRST VALIDATION. HIS RULING, 2026-10-28, verbatim:
+*"Verdict. Do it and study it in the upcoming simulated run."*
+
+HIS QUESTION, `qs:157b6ddc201f`, asked 3 times before it was registered: does a
+collaborative star round need a COMPLETION barrier, not just a staggered start?
+The stagger's own derivation reduces to `s <= d1` under SymPy with z3 returning
+unsat on the negation -- a condition entirely about STARTS. Nothing in the record
+measured what a round spends waiting for its last seat to land.
+
+WHAT WAS BUILT. `dispatch` now stamps `t_start_epoch` and `t_end_epoch` on every
+seat record, on the failure path as well as the success path, because a seat that
+times out is precisely the one that sets the barrier. `completion_barrier` in
+`bench/star_topology_2026-10-06.py` derives the figures from those stamps, and
+the round writes `completion_barrier.json` and prints a per-seat line. No
+signature changed and `run_seat_group` is untouched: once the stamps exist the
+barrier is derivable from the records the round already returns.
+
+AND IT DID NOT HAVE TO WAIT FOR THE RUN. A seat's reply file is written at the
+END of `dispatch`, so its mtime approximates that seat's completion and
+`elapsed_s` recovers the start. 88 archived panel rounds answer his question
+today:
+
+  - a round wastes a median 0.144892 of its available seat-time at the barrier,
+    bootstrap 95% CI [0.105753, 0.181047] over 20,000 resamples;
+  - the median round loses 255.9 s; the archive loses 14.11 hours in all;
+  - 13 of 88 rounds wasted more than 0.30, a share of 0.147727; the worst is
+    0.729400.
+
+So the answer to his question is YES, the cost is real and the stagger cannot
+touch it.
+
+WHETHER IT WORSENS WITH SEAT COUNT IS SUGGESTIVE AND NOT ESTABLISHED, and we
+want that pressed. On rounds where every seat succeeded: 0.384744 at 4 or more
+seats (n = 6, CI [0.186245, 0.535009]) against 0.131478 at 2 seats (n = 74,
+CI [0.093287, 0.170485]). The intervals are disjoint; Mann-Whitney gives
+p = 0.005483 and a permutation test on the median difference p = 0.000100; but
+Brunner-Munzel, which does not assume equal spread, gives p = 0.104133. The
+spreads differ markedly and the larger group is 6 rounds.
+
+2 CORRECTIONS THIS MEASUREMENT MADE AGAINST ITS OWN FIRST READING, reported
+because both came out of this instrument before being caught by it:
+
+  1. THE FIRST PASS FOUND THE OPPOSITE. 4-or-more-seat rounds appeared to waste
+     almost nothing, median 0.000014 against 0.128978, at p = 2.814701e-04. It
+     was an artefact of treating any JSON carrying `model` and `elapsed_s` as a
+     panel seat: experiment directories hold per-round finding files, one
+     "round" was credited with 144 seats, and 34 of 60 supposed 4-seat rounds had
+     ZERO seats succeed. A seat is now identified by the `route` field, which only
+     `dispatch` writes, plus rejection of `r<digit>_` prefixed files. The seat
+     counts then read 78 rounds of 2, 4 of 5 and 6 of 7.
+  2. THE MTIME RECONSTRUCTION IS NOT VALID EVERYWHERE and the first pass did not
+     bound it, giving a mean idle of 80,028.9 s and a start spread of 129,292.6 s,
+     both impossible. The bound now applied is a necessary condition, not a tuned
+     tolerance: a round's wall clock cannot exceed the sum of its seat durations
+     plus at most 20 s of stagger per seat. 4 of 92 rounds are excluded, 0.043478,
+     and they are counted rather than dropped in silence.
+
+AN INDEPENDENT CORROBORATION FELL OUT AND WAS NOT SOUGHT. The median saving
+against strict serialisation reads 0.436250 by this method against the 0.396900
+committed by `scripts/the_contention_evidence_is_cap_confounded_2026-10-07.py`,
+which derived it from seat durations alone. 2 instruments, different inputs,
+differing by 0.039350.
+
+RUN THESE, do not reason about them:
+  python3 scripts/what_a_round_waits_on_its_slowest_seat_2026-10-28.py
+  python3 -m pytest bench/tests/test_the_completion_barrier_is_measured_2026-10-28.py -q
+
+QUESTIONS FOR YOU:
+  - Is the mtime reconstruction sound at all? It assumes a reply file is never
+    rewritten after its round. `_preserve_prior_attempt` renames prior attempts
+    rather than overwriting, which is the behaviour the assumption needs, but say
+    whether any other path touches those files, and whether the
+    wall-cannot-exceed-serial bound excludes the rounds it should or merely the
+    rounds that were easy to spot.
+  - A barrier is not obviously a FAULT. In a collaborative round every seat is
+    supposed to see every other seat's reply, so waiting for the slowest seat is star-topology collaboration working as
+designed rather than failing.
+    State the condition under which barrier idle time is a cost worth paying and
+    the condition under which it is waste, and say which the 0.144892 is.
+  - If it IS waste, what is the fix that does not break collaboration? Partial
+    barriers, a deadline that truncates the slowest seat, and starting the next
+    round from whoever has landed all change what the round means. Name the one
+    you would defend and what it would cost.
+  - The 4-or-more-seat group is 6 rounds and 3 tests disagree. Say whether the
+    direction should be acted on now or held until the instrumented runs supply
+    more, and name the n at which you would act.
+  - Does recording absolute epoch timestamps on every seat record leak anything
+    or change any existing figure? `elapsed_s` is retained unchanged, but say if
+    any consumer computes durations differently now that both ends exist.

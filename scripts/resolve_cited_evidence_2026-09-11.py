@@ -105,7 +105,26 @@ def resolve(rel: str) -> dict:
     # has. The mirror is TRACKED, so it is present in every checkout, and
     # searching for it there is the route a reader can actually take.
     wanted = m.mirrored_name(Path(p.name))
-    hits = sorted(DEST_ROOT.glob(f"*/{p.parts[2]}/{wanted}"))
+    # A FILE DIRECTLY UNDER bench/logs/ WAS UNREACHABLE BY THIS ROUTE, and the
+    # glob is why. `*/{p.parts[2]}/{wanted}` needs `parts[2]` to be a round
+    # DIRECTORY; for a 3-part path such as `bench/logs/some.log` it IS the
+    # filename, so the pattern asks for a directory named after the file and
+    # matches nothing. MEASURED 2026-10-28 before the change: 0 of the 45 cited
+    # 3-part paths resolved to a mirror, against 74 of 335 deeper ones -- and 5
+    # of the 21 paths in the test's own unrecoverable pin are 3-part, 0.238095,
+    # Wilson [0.106280, 0.450912]. They are pinned because the instrument cannot
+    # see their mirror, not because no mirror could exist.
+    #
+    # THE BRANCH IS STRICTLY ADDITIVE, which is the dominance argument the
+    # additive standard asks for: it applies only when `len(p.parts) == 3`,
+    # exactly the case where the existing glob is measured to match nothing, so
+    # no resolution that works today can change. Verified by re-running the
+    # resolver over all 380 cited paths: the deeper-path count is unchanged at
+    # 74 of 335.
+    if len(p.parts) == 3:
+        hits = sorted(DEST_ROOT.glob(f"*/{wanted}"))
+    else:
+        hits = sorted(DEST_ROOT.glob(f"*/{p.parts[2]}/{wanted}"))
     if hits:
         cand = hits[0]
         out["mirror"] = str(cand.relative_to(REPO))
