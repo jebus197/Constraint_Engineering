@@ -21,6 +21,7 @@ WHAT EACH REVERSION TURNS RED:
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -148,6 +149,66 @@ class TestTheSeatCountClaimIsHeldToWhatThreeTestsSupport:
         assert produced["seat_count_robust"] is False, (
             "significance is not robust across the 3 tests, and the prose must "
             "keep saying so")
+
+
+class TestTheCompletionTimeProvenanceIsVisible:
+    """An exact stamp and a reconstruction must never be blurred together.
+
+    Both dispatch paths stamp `t_end_epoch` from 2026-10-28, so rounds run after
+    that date need no reconstruction and no exclusion bound. The mtime route
+    stays for the 88 archived rounds that predate the stamps, because deleting
+    it would throw away the only evidence that answers his question today.
+    """
+
+    def test_an_exact_stamp_is_PREFERRED_over_the_file_mtime(self, mod, tmp_path):
+        """The reversion target: drop the preference and this reads the mtime."""
+        d = tmp_path / "a_round"
+        d.mkdir()
+        stamped = 1_600_000_000.0          # far from any real mtime
+        (d / "cc2.json").write_text(json.dumps({
+            "model": "cc2", "route": "claude_cli", "ok": True,
+            "elapsed_s": 12.5, "t_start_epoch": stamped - 12.5,
+            "t_end_epoch": stamped}), encoding="utf-8")
+        recs = mod._seat_records(d)
+        assert len(recs) == 1
+        name, end, dur, ok, exact = recs[0]
+        assert exact is True, "the record carries a stamp and it was not used"
+        assert end == pytest.approx(stamped), (
+            f"completion read as {end}, not the stamped {stamped}; the mtime won")
+
+    def test_a_record_without_a_stamp_still_resolves_by_mtime(self, mod, tmp_path):
+        """The archived corpus must keep working, or the finding loses its data."""
+        d = tmp_path / "older_round"
+        d.mkdir()
+        f = d / "fable.json"
+        f.write_text(json.dumps({"model": "fable", "route": "claude_cli",
+                                 "ok": True, "elapsed_s": 9.0}), encoding="utf-8")
+        recs = mod._seat_records(d)
+        assert len(recs) == 1
+        _n, end, _d, _ok, exact = recs[0]
+        assert exact is False
+        assert end == pytest.approx(f.stat().st_mtime)
+
+    def test_the_split_is_reported_and_cannot_exceed_the_corpus(self, produced):
+        a = produced["rounds_with_exact_stamps"]
+        b = produced["rounds_reconstructed"]
+        assert a >= 0 and b >= 0
+        assert a + b == produced["n_all_kept"], (
+            f"{a} exact + {b} reconstructed does not equal the "
+            f"{produced['n_all_kept']} plausible rounds, so a round is counted "
+            f"twice or in neither provenance")
+        assert b == produced["n_kept"], (
+            "the headline corpus must BE the reconstructed set, so that a new "
+            "stamped round cannot move a pinned figure")
+
+    def test_the_headline_still_rests_on_the_reconstructed_corpus(self, produced):
+        """Today every kept round predates the stamps. When that stops being
+        true the headline is a MIXED figure and must be restated per provenance.
+        """
+        assert produced["rounds_reconstructed"] >= 80, (
+            f"only {produced['rounds_reconstructed']} rounds are reconstructed; "
+            f"if stamped rounds now dominate, recompute the median over them "
+            f"alone and requote it rather than mixing the 2 provenances")
 
 
 class TestTheIndependentCorroboration:

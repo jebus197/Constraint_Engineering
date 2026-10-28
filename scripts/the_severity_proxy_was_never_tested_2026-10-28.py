@@ -31,7 +31,7 @@ standard error of any slope fitted across it by the ratio of the deviations,
 
   * power against a STRONG full-range effect -- one moving P(CRITICAL) from
     0.10 at severity 0 to 0.90 at severity 1, a slope of 2*ln(9) = 4.394449 --
-    is 0.1460. The design would MISS such an effect in about 85 runs in 100.
+    is 0.144250. The design would MISS such an effect in about 85 runs in 100.
   * that strong effect PREDICTS an in-band odds ratio of 1.256464 -- the EXACT
     expected marginal figure; the first-order exp(beta . delta-mean) step gives
     1.256682, a relative error of 0.0174%, so nothing here rests on the
@@ -68,7 +68,7 @@ distinct severity values by cutting at 0.7 is not what produced the null.
 
 THE COSTED ASK, BY SIMULATION RATHER THAN BY CLOSED FORM. A full-range
 adjudication sample reaches 80% power against the strong effect at about 48
-items; 50 gives 0.8397 and 63 gives 0.9207. The 63 the project already costed
+items; 50 gives 0.8397 and 63 gives 0.916500. The 63 the project already costed
 from an exact power calculation on the measured discordance is therefore
 sufficient, and conservative. THE CLOSED FORM MUST NOT BE QUOTED: it says 35,
 and simulation at 35 gives 0.6472, so the analytic figure is optimistic by a
@@ -226,10 +226,18 @@ def measure(trials: int = 4000) -> dict:
     r["se_observed"] = r["logit_se"]
     z_a, z_b = stats.norm.ppf(0.975), stats.norm.ppf(0.80)
     r["min_detectable_slope"] = float((z_a + z_b) * se_analytic)
-    rng = np.random.default_rng(SEED)
-    r["power_at_min_detectable"] = _power(sev, len(sev), r["min_detectable_slope"],
-                                          trials, base_p, rng)
-    r["power_vs_strong_in_band"] = _power(sev, len(sev), strong, trials, base_p, rng)
+    # ★ ONE GENERATOR PER FIGURE, SEEDED FROM A FIXED OFFSET. Found by the fable
+    # seat, 2026-10-28, and it is `measured-rate-travels-with-its-script` turned
+    # on this producer. A single `rng` threaded through several `_power` calls
+    # makes every figure depend on the ORDER the others were computed in and on
+    # `trials`, so the live run printed 0.144250 where the prose said 0.144250, and
+    # 0.916500 where it said 0.916500. A figure that moves on re-run cannot travel
+    # with its script.
+    r["power_at_min_detectable"] = _power(
+        sev, len(sev), r["min_detectable_slope"], trials, base_p,
+        np.random.default_rng(SEED + 10))
+    r["power_vs_strong_in_band"] = _power(
+        sev, len(sev), strong, trials, base_p, np.random.default_rng(SEED + 11))
 
     # --- 5. the decisive prediction ---------------------------------------
     # 3 FIGURES, NOT 1, BECAUSE THE FIRST IS AN APPROXIMATION. Translating a
@@ -294,9 +302,10 @@ def measure(trials: int = 4000) -> dict:
     r["reader2_vs_proxy_p"] = float(stats.fisher_exact(_table(px, r2))[1])
 
     # --- 7. what a full-range design would cost ---------------------------
-    rng = np.random.default_rng(SEED)
-    r["full_range_power"] = {n: _power(frame, n, strong, trials, base_p, rng)
-                             for n in (35, 50, 63)}
+    r["full_range_power"] = {
+        n: _power(frame, n, strong, trials, base_p,
+                  np.random.default_rng(SEED + 20 + n))
+        for n in (35, 50, 63)}
     r["n_analytic_closed_form"] = float(
         ((z_a + z_b) / (strong * r["archive_sd"])) ** 2 / (base_p * (1 - base_p)))
 
@@ -333,7 +342,13 @@ def measure(trials: int = 4000) -> dict:
 
 
 def main() -> int:
-    answer_help(__doc__, __file__)
+    # `takes_no_arguments=False` IS REQUIRED HERE, and its absence made every
+    # flag below unreachable. `answer_help` defaults to refusing ANY argument
+    # before the caller's own parser runs, so `--json` and `--trials` exited 2
+    # with "this script takes no arguments" -- an unwired addition of exactly
+    # the kind the additive standard forbids, and invisible to the guards
+    # because they call `measure()` directly rather than the command line.
+    answer_help(__doc__, __file__, takes_no_arguments=False)
     ap = argparse.ArgumentParser(description="Re-measure the 0.7 severity proxy "
                                              "against its pre-registered rubric.")
     ap.add_argument("--trials", type=int, default=4000,
@@ -440,25 +455,34 @@ def main() -> int:
     print("=" * w)
     print("""
   1. The 0.7 proxy has NEVER been tested against the rubric where severity
-     varies. The one measurement that exists covers a 0.09-wide band at the cut.
-  2. kappa = -0.022688 is UNINFORMATIVE about the proxy, not negative about it:
-     the strong hypothesis predicts an in-band odds ratio of 1.256464 which the
-     measured interval contains, 0.792050 of draws under that hypothesis land
-     inside the same interval, and power against it is 0.1460. The observation
-     is the MODAL outcome under the hypothesis the directive treats as excluded.
-  3. The rubric's labels are sound -- 2 blind readers at kappa 0.836883 on the
+     varies. The one measurement that exists covers a {width:.2f}-wide band at the cut.
+  2. kappa = {kappa:+.6f} is UNINFORMATIVE about the proxy, not negative about it:
+     the strong hypothesis predicts an in-band odds ratio of {or_pred:.6f} which
+     the measured interval contains, {share:.6f} of draws under that hypothesis
+     land inside the same interval, and power against it is {pw:.4f}. The
+     observation is the MODAL outcome under the hypothesis the directive excludes.
+  3. The rubric's labels are sound -- 2 blind readers at kappa {rk:.6f} on the
      same items -- so the fault is the corpus, not the instrument.
   4. His catch of the replacement proposal STANDS, because the replacement acts
      at the cut and the band measured chance there. The GENERAL claim in
      `.claude/CLAUDE.md`, that the rubric agrees with the number no better than
-     chance, needs the band qualifier it currently lacks.
-  5. "ONLY THE BAND MATTERS" IS FALSE. 0.794744 of every CRITICAL call the gate
-     has ever made sits ABOVE the audited band, and 0.867161 of all entries were
-     classified at a severity the audit never examined. The gate's confident
+     chance, needed the band qualifier it lacked.
+  5. "ONLY THE BAND MATTERS" IS FALSE. {unex:.6f} of every CRITICAL call the gate
+     has ever made sits ABOVE the audited band, and {outside:.6f} of all entries
+     were classified at a severity the audit never examined. The gate's confident
      calls are exactly the ones nothing is known about.
-  6. The 63-item adjudication already costed reaches power 0.9207 full-range.
+  6. The 63-item adjudication already costed reaches power {p63:.4f} full-range.
      It is a founder task; no model can supply the labels.
-""")
+  7. EVERY FIGURE ABOVE IS READ FROM THIS RUN, not restated. The fable seat
+     found this block hardcoding 0.144250 while the live simulation printed
+     0.144250, because one generator was shared across the power figures.
+""".format(width=r["band_bounds"][1] - r["band_bounds"][0],
+           kappa=r["kappa"], or_pred=r["or_predicted_by_strong"],
+           share=r["strong_share_inside_measured_ci"],
+           pw=r["power_vs_strong_in_band"], rk=r["reader_kappa"],
+           unex=r["critical_calls_unexamined_share"],
+           outside=r["archive_outside_share"],
+           p63=r["full_range_power"][63]))
     return 0
 
 

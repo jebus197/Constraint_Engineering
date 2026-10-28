@@ -95,11 +95,13 @@ SEED = 20261028
 RESAMPLES = 20000
 
 
-def _seat_records(round_dir: pathlib.Path) -> list[tuple[str, float, float, bool]]:
+def _seat_records(round_dir: pathlib.Path) -> list[tuple[str, float, float, bool, bool]]:
     """Panel seat replies in one round directory, as (model, mtime, dur, ok).
 
     `route` is the discriminator: `dispatch` writes it on every seat record and
-    nothing else in the tree does.
+    nothing else in the tree does. The 5th element says whether the completion
+    time is an EXACT stamp or a reconstruction from the file's mtime, so a
+    mixed corpus reports which it used rather than blurring the two.
     """
     out = []
     for p in sorted(round_dir.glob("*.json")):
@@ -112,8 +114,19 @@ def _seat_records(round_dir: pathlib.Path) -> list[tuple[str, float, float, bool
             continue
         if (isinstance(o, dict) and "route" in o and "model" in o
                 and isinstance(o.get("elapsed_s"), (int, float))):
-            out.append((str(o["model"]), p.stat().st_mtime,
-                        float(o["elapsed_s"]), bool(o.get("ok"))))
+            # ★ PREFER THE EXACT STAMP OVER THE FILE'S MTIME, 2026-10-28. Both
+            # dispatch paths now record `t_end_epoch` at the moment the seat
+            # finishes, so a round written after this date needs no
+            # reconstruction at all and no exclusion bound applies to it. The
+            # mtime route stays for the 88 archived rounds that predate the
+            # stamps -- deleting it would throw away the only evidence that
+            # answers his question today.
+            end = o.get("t_end_epoch")
+            out.append((str(o["model"]),
+                        float(end) if isinstance(end, (int, float))
+                        else p.stat().st_mtime,
+                        float(o["elapsed_s"]), bool(o.get("ok")),
+                        isinstance(end, (int, float))))
     return out
 
 
@@ -124,9 +137,9 @@ def reconstruct() -> tuple[list[dict], list[dict]]:
         recs = _seat_records(d)
         if len(recs) < 2:
             continue
-        starts = [m - dur for _n, m, dur, _ok in recs]
-        ends = [m for _n, m, _d, _ok in recs]
-        durs = [dur for _n, _m, dur, _ok in recs]
+        starts = [m - dur for _n, m, dur, _ok, _x in recs]
+        ends = [m for _n, m, _d, _ok, _x in recs]
+        durs = [dur for _n, _m, dur, _ok, _x in recs]
         r0, r1 = min(starts), max(ends)
         wall, serial = r1 - r0, sum(durs)
         if wall <= 0:
@@ -140,9 +153,10 @@ def reconstruct() -> tuple[list[dict], list[dict]]:
             continue
         idle = sum(r1 - e for e in ends)
         kept.append({"round": d.name, "n": len(recs), "wall_s": wall,
+                     "exact_stamps": sum(1 for *_x, ex in recs if ex),
                      "idle_s": idle, "idle_share": idle / (len(recs) * wall),
                      "serial_s": serial, "saving_vs_serial": 1 - wall / serial,
-                     "n_ok": sum(1 for *_x, ok in recs if ok),
+                     "n_ok": sum(1 for _n, _m, _d, ok, _s in recs if ok),
                      "duration_spread_s": max(durs) - min(durs)})
     return kept, dropped
 
@@ -155,7 +169,18 @@ def _median_ci(a: np.ndarray, rng) -> tuple[float, float]:
 def measure() -> dict:
     from scipy import stats
 
-    kept, dropped = reconstruct()
+    all_kept, dropped = reconstruct()
+    # ★ THE HEADLINE IS THE ARCHIVAL CORPUS, AND IT IS FIXED. 2026-10-28.
+    # Both dispatch paths now stamp `t_end_epoch`, so every round run from here
+    # adds a STAMPED row -- and the first such round moved the median from
+    # 0.144892 to 0.136904 within minutes of the stamps landing. Pinning a
+    # figure that every future round moves is a FLAKY guard, which this project
+    # has measured as worse than a red one. So the headline is computed over the
+    # RECONSTRUCTED rounds, a closed set that cannot grow, and the stamped
+    # rounds are reported beside it as their own figure. Nothing is discarded;
+    # the 2 provenances are simply not averaged together.
+    kept = [r for r in all_kept if r["exact_stamps"] == 0]
+    stamped = [r for r in all_kept if r["exact_stamps"] == r["n"]]
     rng = np.random.default_rng(SEED)
     sh = np.array([r["idle_share"] for r in kept])
     idl = np.array([r["idle_s"] for r in kept])
@@ -167,6 +192,13 @@ def measure() -> dict:
         "n_dropped": len(dropped),
         "dropped_share": len(dropped) / max(len(kept) + len(dropped), 1),
         "dropped_examples": sorted(dropped, key=lambda x: -x["wall"])[:3],
+        "n_all_kept": len(all_kept),
+        "rounds_with_exact_stamps": len(stamped),
+        "rounds_reconstructed": len(kept),
+        # Reported, never pinned: this set grows with every round that runs.
+        "stamped_idle_share_median": (float(np.median([x["idle_share"] for x in stamped]))
+                                      if stamped else float("nan")),
+        "stamped_rounds": [x["round"] for x in stamped][:6],
         "seat_counts": {int(k): int(v) for k, v in
                         zip(*np.unique([r_["n"] for r_ in kept], return_counts=True))},
         "idle_share_mean": float(sh.mean()),
@@ -213,7 +245,13 @@ def measure() -> dict:
 
 
 def main() -> int:
-    answer_help(__doc__, __file__)
+    # `takes_no_arguments=False` IS REQUIRED HERE, and its absence made every
+    # flag below unreachable. `answer_help` defaults to refusing ANY argument
+    # before the caller's own parser runs, so `--json` and `--trials` exited 2
+    # with "this script takes no arguments" -- an unwired addition of exactly
+    # the kind the additive standard forbids, and invisible to the guards
+    # because they call `measure()` directly rather than the command line.
+    answer_help(__doc__, __file__, takes_no_arguments=False)
     ap = argparse.ArgumentParser(
         description="Measure the completion-barrier cost over archived rounds.")
     ap.add_argument("--json", action="store_true", help="emit figures as JSON")
@@ -227,8 +265,10 @@ def main() -> int:
     print("WHAT A ROUND SPENDS WAITING ON ITS SLOWEST SEAT")
     print("=" * 78)
     print(f"\n1. THE CORPUS, with its exclusions counted")
-    print(f"   candidate rounds {r['n_candidate']}; kept {r['n_kept']}; "
+    print(f"   candidate rounds {r['n_candidate']}; plausible {r['n_all_kept']}; "
           f"excluded {r['n_dropped']} ({r['dropped_share']:.6f})")
+    print(f"   HEADLINE CORPUS: the {r['n_kept']} RECONSTRUCTED rounds, a closed "
+          f"set that cannot grow")
     shown = len(r["dropped_examples"])
     print(f"   the {shown} largest exclusions"
           + (f", of {r['n_dropped']} in all" if r["n_dropped"] > shown else "")
@@ -240,6 +280,12 @@ def main() -> int:
         print(f"     ... and {r['n_dropped'] - shown} more not shown; every one "
               f"is counted in the figure above")
     print(f"   seat counts: {r['seat_counts']}")
+    print(f"   completion times: {r['rounds_with_exact_stamps']} round(s) from EXACT "
+          f"stamps, {r['rounds_reconstructed']} reconstructed from mtimes")
+    if r["rounds_with_exact_stamps"]:
+        print(f"   STAMPED rounds, reported and NOT pinned because the set grows: "
+              f"median idle share {r['stamped_idle_share_median']:.6f} over "
+              f"{r['rounds_with_exact_stamps']}  {r['stamped_rounds']}")
 
     print(f"\n2. THE BARRIER COST")
     print(f"   idle share of available seat-time: median "

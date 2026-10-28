@@ -84,14 +84,14 @@ called, exact McNemar p = 0.0078125. Producer:
 corrected.** kappa = -0.022688 and Fisher p = 0.778818 reproduce exactly over the 259
 judgeable items of the 2026-09-02 blind audit, but that corpus holds severities in
 [0.65, 0.74] only, SD 0.026915 against the archive's 0.224319 over 3,237 entries spanning
-[0.0, 1.0]. Power against a strong full-range effect is 0.1460; that hypothesis predicts an
+[0.0, 1.0]. Power against a strong full-range effect is 0.144250; that hypothesis predicts an
 exact in-band odds ratio of 1.256464 which the measured interval [0.516836, 1.569980]
 contains, and 0.792050 of 20,000 draws under it land inside the same interval. **"Only the
 band matters" is false**: 2,807 of 3,237 entries (0.867161, Clopper-Pearson [0.854982,
 0.878672]) were classified at a severity the audit never examined, and 1,119 of the 1,408
 CRITICAL calls the gate has ever made -- 0.794744 -- sit ABOVE the band. Both copies of
 `additive-standard` now carry the band qualifier. **STILL OWED HIM: 63 full-range
-adjudications**, simulated power 0.9207; no model can supply the labels. Producer:
+adjudications**, simulated power 0.916500; no model can supply the labels. Producer:
 `scripts/the_severity_proxy_was_never_tested_2026-10-28.py`.
 
 **THE COMPLETION BARRIER IS BUILT AND ALREADY MEASURED, on his ruling to study it in the

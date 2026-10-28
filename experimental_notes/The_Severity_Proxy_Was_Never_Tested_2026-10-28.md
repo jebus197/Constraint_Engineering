@@ -4,7 +4,7 @@
 
 ## The answer
 
-The measurement was run, and the result is not what the project's own record says it is. The agreement figure cited for 8 weeks — a Cohen kappa of **-0.022688** with a Fisher exact **p = 0.778818** — reproduces exactly. But it was computed on a corpus whose severities all lie in **[0.65, 0.74]**, a window **0.09** wide. Power against a strong relationship is **0.1460**: the design would miss a real and strong association about 85 times in 100. The figure is **uninformative** about the proxy, not negative about it. Those are different claims, and the project has been making the stronger one.
+The measurement was run, and the result is not what the project's own record says it is. The agreement figure cited for 8 weeks — a Cohen kappa of **-0.022688** with a Fisher exact **p = 0.778818** — reproduces exactly. But it was computed on a corpus whose severities all lie in **[0.65, 0.74]**, a window **0.09** wide. Power against a strong relationship is **0.144250**: the design would miss a real and strong association about 85 times in 100. The figure is **uninformative** about the proxy, not negative about it. Those are different claims, and the project has been making the stronger one.
 
 ## What the two instruments are
 
@@ -37,9 +37,9 @@ The band holds **0.132839** of all archive severities. A fitted slope's standard
 
 ## What the design could and could not detect
 
-- Minimum detectable slope at 80% power: **13.450855**, confirmed by simulation at **0.8043** against a 0.80 target.
+- Minimum detectable slope at 80% power: **13.450855**, confirmed by simulation at **0.798250** against a 0.80 target.
 - A strong relationship — P(CRITICAL) running 0.10 at severity 0 to 0.90 at severity 1 — is a slope of **2 ln 9 = 4.394449**, over 3 times smaller.
-- **Power against that strong relationship: 0.1460.**
+- **Power against that strong relationship: 0.144250.**
 
 ## The decisive test
 
@@ -53,7 +53,7 @@ If range restriction were a blanket excuse it would make the rubric's own reader
 
 ## Sample size is not the problem
 
-Replacing the band severities with **the same 259** drawn from the full archive raises power against the strong relationship from **0.1460 to 1.0000**, and drops the minimum detectable slope from **13.450855 to 1.7380** — well below the strong relationship's 4.394449. The entire deficit is the window's narrowness.
+Replacing the band severities with **the same 259** drawn from the full archive raises power against the strong relationship from **0.144250 to 1.0000**, and drops the minimum detectable slope from **13.450855 to 1.7380** — well below the strong relationship's 4.394449. The entire deficit is the window's narrowness.
 
 ## A second limit analysis cannot repair
 
@@ -75,7 +75,7 @@ Worse for the objection: **1,119 of the 1,408 critical calls** the gate has ever
 |---|---|
 | 35 (the closed form's answer) | 0.6472 |
 | 50 | 0.8397 |
-| 63 (already costed) | 0.9207 |
+| 63 (already costed) | 0.916500 |
 
 About **48** items reach 80%. The **63**-item adjudication already costed from an exact power calculation on the measured discordance is sufficient and conservative. **The closed form must not be quoted**: it says 35, where simulation gives 0.6472. Supplying the labels is a founder task — peer-model CONFIRM votes are forbidden as evidence in this project, and no other ground truth exists.
 

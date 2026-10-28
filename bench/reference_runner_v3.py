@@ -12858,6 +12858,16 @@ def _dispatch_single_model_inner(
     # than passing as current, and is not deleted before the integrity check
     # (which runs after the pool joins) can read it.
     seat_in_flight(mc.label)
+    # ★ ABSOLUTE SEAT TIMESTAMPS, for the completion barrier his ruling of
+    # 2026-10-28 ordered studied in the next simulated run. `elapsed` alone
+    # cannot answer it: 2 seats of equal duration started 20 s apart under
+    # `_SHARED_STAGGER_S` finish 20 s apart, and it is the GAP the round waits
+    # out. THE PANEL DISPATCHER WAS INSTRUMENTED FIRST AND THAT DOES NOT REACH
+    # HERE -- `confer_maths_panel` and this runner have separate dispatch paths,
+    # so wiring one and launching the other would have measured nothing, which
+    # is the "verify the mechanism, not the launch" failure this project has
+    # already paid for once.
+    _seat_t0 = time.time()
     # CONFINE THIS SEAT ON ITS OWN THREAD. See _PANEL_CWD_FOR_WORKERS. A no-op
     # when unset, so a code run's default behaviour is byte-identical.
     _seat_cwd = _PANEL_CWD_FOR_WORKERS.get("path")
@@ -12974,6 +12984,7 @@ def _dispatch_single_model_inner(
                 metadata={"round": round_idx, "elapsed": round(elapsed, 1),
                           "chars": len(text), "findings_count": len(model_findings),
                           "decomposed": True, "multiturn": True,
+                          "t_start_epoch": _seat_t0, "t_end_epoch": time.time(),
                           **_composer_record_fields(composed, prompt, model_cdsfl)})
             return model_findings, text
 
@@ -13039,6 +13050,7 @@ def _dispatch_single_model_inner(
             metadata={"round": round_idx, "elapsed": round(elapsed, 1),
                       "chars": len(text), "findings_count": len(model_findings),
                       "decomposed": False, "inround_reask": _reasked,
+                      "t_start_epoch": _seat_t0, "t_end_epoch": time.time(),
                       **_composer_record_fields(composed, prompt, model_cdsfl)})
         return model_findings, text
     except (CircuitBreakerTripped, TimeoutError, Exception) as e:

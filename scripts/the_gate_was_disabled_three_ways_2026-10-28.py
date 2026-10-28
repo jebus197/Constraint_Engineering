@@ -228,7 +228,13 @@ def measure(last_n: int = 12) -> dict:
 
 
 def main() -> int:
-    answer_help(__doc__, __file__)
+    # `takes_no_arguments=False` IS REQUIRED HERE, and its absence made every
+    # flag below unreachable. `answer_help` defaults to refusing ANY argument
+    # before the caller's own parser runs, so `--json` and `--trials` exited 2
+    # with "this script takes no arguments" -- an unwired addition of exactly
+    # the kind the additive standard forbids, and invisible to the guards
+    # because they call `measure()` directly rather than the command line.
+    answer_help(__doc__, __file__, takes_no_arguments=False)
     ap = argparse.ArgumentParser(
         description="Measure why the continuation gate never fired.")
     ap.add_argument("--window", type=int, default=12,

@@ -1,27 +1,59 @@
-    suite: GREEN at 1cfc30e — 8,878 passed, 0 failed  [recorded at 1cfc30e, HEAD is 2f3388f6, 396 commit(s) later]
+panel (0 of 2 seats paid): the suite record is NOT green (exit code 1, 4 failed), but this round has 0 paid seats, so there is no spend to protect. Proceeding.
 === maths panel — 2 dispatched seats + CC1 ===
-    PAID seats:   (brief 19,888 chars, about 4,972 tokens each)
+    PAID seats:   (brief 33,515 chars, about 8,378 tokens each)
     free seats: cc2, fable (Max subscription)
     star topology: BLIND round; 0 answered sibling(s) on the same brief, all declared
     joint-round debt: 0 owed across 5 recorded round(s)
     topology recorded: blind round, blind_of=none, joint_of=none, stagger=20s -> topology.json
     aliveness probe: asking 2 seat(s) to print Ready!, up to 3 attempts each, serialised
-[02:32:54]   [claude-cli:opus] attempt 1 failed (3.9s): claude CLI returned 1: 
-[02:32:55]   [claude-cli:opus] attempt 1 failed (1.0s): claude CLI returned 1: 
-[02:32:56]   [claude-cli:opus] attempt 1 failed (1.0s): claude CLI returned 1: 
-[02:32:57]   [claude-cli:fable] attempt 1 failed (1.0s): claude CLI returned 1: 
-[02:32:58]   [claude-cli:fable] attempt 1 failed (1.0s): claude CLI returned 1: 
-[02:32:59]   [claude-cli:fable] attempt 1 failed (1.0s): claude CLI returned 1: 
-      cc2: NO ANSWER  (5.95s, no reply containing 'ready' in 3 attempt(s))
-      fable: NO ANSWER  (3.08s, no reply containing 'ready' in 3 attempt(s))
-REFUSED: 2 of 2 seat(s) did not answer the aliveness probe.
-  cc2: no reply containing 'ready' in 3 attempt(s) (5.95s)
-      attempt 1: RuntimeError: Claude CLI call failed after 1 attempts for opus. Last error: claude CLI returned 1: 
-      attempt 2: RuntimeError: Claude CLI call failed after 1 attempts for opus. Last error: claude CLI returned 1: 
-      attempt 3: RuntimeError: Claude CLI call failed after 1 attempts for opus. Last error: claude CLI returned 1: 
-  fable: no reply containing 'ready' in 3 attempt(s) (3.08s)
-      attempt 1: RuntimeError: Claude CLI call failed after 1 attempts for fable. Last error: claude CLI returned 1: 
-      attempt 2: RuntimeError: Claude CLI call failed after 1 attempts for fable. Last error: claude CLI returned 1: 
-      attempt 3: RuntimeError: Claude CLI call failed after 1 attempts for fable. Last error: claude CLI returned 1: 
-  The roster is NOT reduced: a seat is never benched. Retry when the route is back, or re-run under the panel watchdog.
-    to dispatch anyway, deliberately: PANEL_SKIP_ALIVENESS=1
+[22:49:31]   [claude-cli:opus] done (4.3s, 6 chars)
+[22:49:35]   [claude-cli:fable] done (4.0s, 6 chars)
+      cc2: ALIVE  (4.28s, answered on attempt 1 of 3)
+      fable: ALIVE  (3.99s, answered on attempt 1 of 3)
+    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc2ppryq/repo
+    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_itn587_g/repo
+    fable: staggered start in 20s
+[22:50:03] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc2ppryq/repo
+[22:50:03] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc2ppryq/repo
+[22:50:03]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc2ppryq/repo
+[22:50:23] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_itn587_g/repo
+[22:50:23] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_itn587_g/repo
+[22:50:23]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_itn587_g/repo
+[22:50:27]   [claude-cli:opus] attempt 1: 10 tool call(s) at 24s
+[22:51:08]   [claude-cli:fable] attempt 1: 10 tool call(s) at 45s
+[22:51:08]   [claude-cli:opus] attempt 1: 20 tool call(s) at 65s
+[22:51:51]   [claude-cli:opus] attempt 1: 30 tool call(s) at 108s
+[22:54:01]   [claude-cli:fable] attempt 1: 20 tool call(s) at 218s
+[22:54:29]   [claude-cli:opus] attempt 1: 40 tool call(s) at 266s
+[22:56:03]   [claude-cli:fable] attempt 1: 30 tool call(s) at 340s
+[22:56:26]   [claude-cli:opus] attempt 1: 50 tool call(s) at 383s
+[22:57:06]   [claude-cli:fable] attempt 1: 40 tool call(s) at 403s
+[22:57:39]   [claude-cli:opus] attempt 1: 60 tool call(s) at 456s
+[22:59:02]   [claude-cli:fable] attempt 1: 50 tool call(s) at 519s
+[23:00:12]   [claude-cli:fable] attempt 1: 60 tool call(s) at 590s
+[23:00:36]   [claude-cli:opus] attempt 1: 70 tool call(s) at 633s
+[23:02:20]   [claude-cli:fable] attempt 1: 70 tool call(s) at 717s
+[23:06:20]   [claude-cli:opus] 78 tool call(s) this attempt, 78 in total
+[23:06:20]   [claude-cli:opus] done (977.0s, 35395 chars)
+    preserved the prior attempt as cc2.tools.attempt1.json.txt (a re-dispatch must not erase what it replaces)
+  [cc2] ok=True chars=35395 tools=78 977.1s
+[23:07:24]   [claude-cli:fable] 72 tool call(s) this attempt, 72 in total
+[23:07:24]   [claude-cli:fable] done (1021.3s, 29671 chars)
+    preserved the prior attempt as fable.tools.attempt1.json.txt (a re-dispatch must not erase what it replaces)
+  [fable] ok=True chars=29671 tools=72 1021.3s
+[23:07:24] [panel] working directory: (inherited — repo)
+    seats proposed edits to 22 file(s) IN THE COPY -> /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/fix_review_panel_2026-10-28/seat_proposals.diff (untested; not applied)
+    *** OPERATOR CONTROL PLANE MODIFIED DURING THE PANEL: {'.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md': 'modified', '.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_the_gate_was_disabled_three_ways_2026-10-28.md': 'CREATED', '.claude/projects/-Users-georgejackson-Developer-Projects/memory/feedback_a_hardcoded_reserve_cannot_bound_a_growing_string_2026-10-28.md': 'CREATED', '.claude/projects/-Users-georgejackson-Developer-Projects/memory/feedback_a_ticket_raised_by_hand_lands_off_identity_2026-10-28.md': 'CREATED', '.claude/projects/-Users-georgejackson-Developer-Projects/memory/feedback_verify_the_deciding_layer.md': 'modified'} ***
+    *** CANONICAL TREE MODIFIED DURING THE PANEL: {'bench/reference_runner_v3.py': 'modified', 'experimental_notes/CDSFL_MASTER_TASK_LIST.md': 'modified', 'experimental_notes/Overnight_Progress_2026-10-28.md': 'CREATED', 'resources/MEMORY_EXCLUSIONS.md': 'modified', 'scripts/what_a_round_waits_on_its_slowest_seat_2026-10-28.py': 'modified'} ***
+    NO SEAT IS SHOWN TO HAVE TOUCHED ANY OF THEM (operator's own edits are the ordinary cause).
+    NOTE: an input preview is truncated, so this is 'not shown', never 'did not'.
+    harvest preserved 3 seat-written file(s) to experimental_notes/seat_evidence/fix_review_panel_2026-10-28/cc2 -- they exist nowhere else a clone can reach
+    harvest preserved 2 seat-written file(s) to experimental_notes/seat_evidence/fix_review_panel_2026-10-28/fable -- they exist nowhere else a clone can reach
+    harvested 4288332 byte(s) of seat-written files into /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/fix_review_panel_2026-10-28/sandbox_harvest
+    2 sandbox copy/copies KEPT, not deleted. They are listed in /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/fix_review_panel_2026-10-28/sandbox_manifest.json.
+    To remove them when you are finished with them: re-run with PANEL_REAP_SANDBOXES=1, or rm -rf /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_gc2ppryq/repo /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_itn587_g/repo
+
+  2/2 responded. Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/fix_review_panel_2026-10-28
+  completion barrier: round wall 1041.3s, slowest fable, total idle 64.2s (0.0308 of available seat-time), saving against serial 0.4789
+    cc2: start +0.0s, ran 977.1s, then idle 64.2s waiting on the round
+    fable: start +20.0s, ran 1021.3s, then idle 0.0s waiting on the round
