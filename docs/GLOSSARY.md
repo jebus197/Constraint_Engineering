@@ -622,11 +622,22 @@ name the current standard would make the record worse and is the retroactive
 editing he refused on 2026-10-17. A stamp naming a standard the project never
 used is a defect, because it tells him nothing.
 
-### Confinement guard
+### Confinement guard  [coinage]
 
-The rule in `bench/falsifier_verify.py` that a falsifier may not read this
-project's own run evidence, so that it demonstrates a defect rather than reading
-a prior verdict. `EVIDENCE_SEGMENTS` names the directories it refuses.
+**THIS IS NOT THE MECHANISM'S NAME.** The heading carries the coinage marker so a
+reader searching for the phrase still finds this entry, while the note lint drops
+the line from the project vocabulary -- which is the only way a glossary can say
+"this is not what it is called" without thereby making it what it is called. The
+entry at the head of this file already records that the phrase appears nowhere
+else in the project. Marker added 2026-10-28, after
+`test_the_note_lint_catches_a_coined_term_2026-10-15.py` found that this UNMARKED
+heading was admitting the coinage as vocabulary, so the rule could no longer flag
+the very term its own glossary entry deprecates.
+
+The mechanism itself is the rule in `bench/falsifier_verify.py` that a falsifier
+may not read this project's own run evidence, so that it demonstrates a defect
+rather than reading a prior verdict. `EVIDENCE_SEGMENTS` names the directories it
+refuses.
 
 Its known regression: it also refused the run's own working copy of the document
 under review, 18 times per run, until the target was staged under the allowed

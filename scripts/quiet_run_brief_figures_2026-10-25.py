@@ -40,6 +40,20 @@ def main() -> int:
         print("bench/what_should_the_quiet_run_be_2026-10-25.py over the live archive;")
         print("nothing here is typed.")
         return 0
+    # AND AN UNRECOGNISED ARGUMENT EXITS 2 RATHER THAN BEING IGNORED -- added
+    # 2026-10-28. The help branch above was correct and incomplete: anything
+    # that is NOT -h or --help fell straight through and ran the whole sweep
+    # with exit 0, so `--this-flag-does-not-exist` read as success. The project
+    # already holds this rule in test_operational_scripts, in these words: "a
+    # script that accepts `--fix-timestamps` and does nothing with it is the
+    # 118-day no-op again".
+    if sys.argv[1:]:
+        print(f"usage: {pathlib.Path(__file__).name}", file=sys.stderr)
+        print(f"unrecognised argument(s): {' '.join(sys.argv[1:])}",
+              file=sys.stderr)
+        print("This script takes no arguments. Refusing rather than ignoring "
+              "them.", file=sys.stderr)
+        return 2
     spec = importlib.util.spec_from_file_location("_qr", PRODUCER)
     m = importlib.util.module_from_spec(spec)
     sys.modules["_qr"] = m

@@ -43,3 +43,5 @@ The list does not grow without bound. It grows more slowly than it shrinks, and 
 ## Next
 
 The panel full-record note, then the founder's ruling on B42, then the save. After that, 5 repair groups remain from the failures that survived re-running: immune memory, the key-access advisory, tool-log retries, the guard that detects a dead transport to a seat, and the pre-verdict sweep. 3 panel briefs are unrun. The full suite has not been measured on a still tree since 2026-09-29.
+
+Written under CDSFL note standard v1.8 (17 October 2026).

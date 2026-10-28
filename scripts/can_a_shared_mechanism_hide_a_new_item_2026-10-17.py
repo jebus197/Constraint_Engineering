@@ -138,6 +138,11 @@ def main() -> int:
     print("   comment names as worse than rediscovery.")
     for a, b, sub in blocked_by_different[:8]:
         print(f"     {a} would be hidden behind {b} over subject {sub!r}")
+    # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
+    _withheld = max(0, len(blocked_by_different) - 8)
+    if _withheld:
+        print(f"      ... and {_withheld} more not shown "
+              f"(of {len(blocked_by_different)} total)")
 
     print("\n4. WOULD REQUIRING CORROBORATION CHANGE A RECORDED DECISION?")
     print("   The proposed repair: a subject match may decide ONLY if the word")

@@ -51,13 +51,41 @@ class TestTheStampCheckIsWiredIntoTheCommandLine:
         f.write_text("# A note\n\nWritten under CDSFL note standard v1.7.\n", encoding="utf-8")
         assert "NOTE STANDARD" not in _lint(f)
 
-    def test_it_reports_a_stamp_pinned_to_an_older_standard(self, tmp_path):
+    def test_an_archival_stamp_is_accepted_and_an_invented_one_is_not(self, tmp_path):
+        """REWRITTEN 2026-10-28, because the assertion contradicted a ruled design.
+
+        This asserted that a note stamped v1.4 is REPORTED for being older than
+        the current standard. The lint deliberately does the opposite, and says
+        so where `ARCHIVAL_NOTE_STANDARDS` is defined: "A note stamped with one
+        of these is correctly stamped, whatever the current standard is." The
+        reason is recorded with its measurement -- 191 notes carry the v1.7 stamp
+        and every one of them is correctly stamped, so flagging an earlier
+        standard would make the archive retrospectively wrong and produce exactly
+        the noise that gets a rule switched off. His ruling of 2026-10-17 is the
+        same: "We fix going forward and leave the archive alone".
+
+        So the discriminating property is not OLD versus CURRENT. It is REAL
+        versus INVENTED, and that is what this now checks -- which keeps the test
+        failable: dropping the version check entirely makes the second half red.
+        """
         d = tmp_path / "experimental_notes"
         d.mkdir()
-        f = d / "Old_2026-10-11.md"
-        f.write_text("# A note\n\nWritten under CDSFL note standard v1.4.\n", encoding="utf-8")
-        out = _lint(f)
-        assert "NOTE STANDARD STAMP IS v1.4" in out
+        archival = d / "Archival_2026-10-11.md"
+        archival.write_text(
+            "# A note\n\nWritten under CDSFL note standard v1.4.\n",
+            encoding="utf-8")
+        assert "NOTE STANDARD" not in _lint(archival), (
+            "a genuine earlier standard was reported as a fault; that is how he "
+            "tracks which standard produced which file")
+
+        invented = d / "Invented_2026-10-11.md"
+        invented.write_text(
+            "# A note\n\nWritten under CDSFL note standard v2.3.\n",
+            encoding="utf-8")
+        out = _lint(invented)
+        assert "NOT A STANDARD THIS PROJECT HAS USED" in out, (
+            f"an invented stamp was accepted, so the check cannot tell a real "
+            f"standard from a made-up one: {out}")
 
     def test_it_does_not_police_files_that_are_not_delivered_notes(self, tmp_path):
         """A source file, a registry or a README is not a note. Policing them would make the

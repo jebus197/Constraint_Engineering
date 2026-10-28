@@ -174,6 +174,11 @@ def main() -> int:
         if not v["unservable"]:
             continue
         print(f"       {v['unservable']:>4} of {v['blocked']:>4}  {run}")
+    # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
+    _withheld = max(0, len(rows) - 8)
+    if _withheld:
+        print(f"      ... and {_withheld} more not shown "
+              f"(of {len(rows)} total)")
     print()
     if k:
         print("  VERDICT: the disagreement is live. These findings block release")

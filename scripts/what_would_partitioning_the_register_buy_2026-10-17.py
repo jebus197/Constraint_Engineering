@@ -43,13 +43,28 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "scripts"))
 
-try:
-    from answer_help_without_cost import answer_help  # noqa: F401
-except Exception:  # pragma: no cover - the helper is optional here
-    def answer_help(doc, path):
-        if "--help" in sys.argv or "-h" in sys.argv:
-            print(doc)
-            raise SystemExit(0)
+# THE `answer_help` IMPORT AND ITS FALLBACK WERE REMOVED 2026-10-28, and the
+# removal is licensed rather than tidy-minded. AST-verified before touching it:
+# 0 calls to `answer_help` anywhere in this file, 1 definition at the old line
+# 49, and an `ArgumentParser` built at the old line 136 which already answers
+# `-h`/`--help` and already refuses an unknown flag. So the helper was an
+# addition nothing reached -- the half of the additive standard that forbids a
+# mechanism no caller uses, measured at 11 confirmed defects of exactly that
+# shape in this project's record.
+#
+# `test_fresh_clone_is_actually_run_2026-09-11.py::test_no_script_uses_both` is
+# what surfaced it, in these words: "answer_help answers --help first, so
+# argparse's flag list never reaches the reader. Drop the answer_help call;
+# argparse already does the job."
+#
+# ONE HONEST NOTE ON THAT GUARD: it matches the helper's name followed by an
+# opening parenthesis, as a SUBSTRING, so it read this file's definition of the
+# helper as a call to it -- and then read THIS COMMENT the same way, which is why
+# the name is described here rather than written. The finding was still correct,
+# because the code was dead either way. But a substring test cannot tell a
+# definition from a call, nor code from prose about code, which is the weakness
+# its own sibling predicate fixed by parsing the module instead. Raised
+# separately rather than worked around.
 
 SAMPLE = 200
 WARMUP = 20
@@ -231,6 +246,11 @@ def main() -> int:
     print(f"  distinct areas found    : {len(areas)}")
     for mod, count in sorted(areas.items(), key=lambda kv: -kv[1])[:8]:
         print(f"    {count:>4}  {mod}")
+    # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
+    _withheld = max(0, len(areas) - 8)
+    if _withheld:
+        print(f"      ... and {_withheld} more not shown "
+              f"(of {len(areas)} total)")
 
     print("\n3. WHAT THE PARTITION SAVES")
     if not areas:
@@ -290,6 +310,11 @@ def main() -> int:
     print("  STORE. The largest figure above is the one that decides it.")
     for area, count in sorted(buckets.items(), key=lambda kv: -kv[1])[:8]:
         print(f"    {count:>4}  {area}")
+    # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
+    _withheld = max(0, len(buckets) - 8)
+    if _withheld:
+        print(f"      ... and {_withheld} more not shown "
+              f"(of {len(buckets)} total)")
 
     print("\n5. WHAT AN IN-MEMORY POSTINGS INDEX WOULD DO TO THE WORD LAYER")
     print("  The brief proposes SQLite FTS5 or a BM25 tokeniser. The store")

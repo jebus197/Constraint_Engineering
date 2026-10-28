@@ -95,8 +95,25 @@ sys.path.insert(0, str(REPO))
 from bench.reference_runner_v3 import _estimate_gamma  # noqa: E402
 
 SERIES = REPO / "experimental_notes" / "data" / "ffafp_cycle_series.json"
-GAMMA_THRESHOLD = 0.30      # the project's own gamma_alt_threshold default
-K_ZERO = 3                  # consecutive zero-finding passes required
+#: THE THRESHOLD IS IMPORTED, NOT COPIED -- repair 2026-10-28.
+#:
+#: This read `GAMMA_THRESHOLD = 0.30` with the comment "the project's own
+#: gamma_alt_threshold default". It WAS the default until the founder ruled on
+#: 2026-10-27 that the convergence gate's gamma arm move to 0.41, after the arm
+#: was measured blocking 0 of 8 premature closes at 0.30 and 2 of 22 sound ones.
+#: The runner changed and this copy did not, so for a day the cycle gate applied
+#: a cutoff the runner had abandoned -- caught by
+#: `test_ffafp_cycle_gate_2026-09-10.py::test_its_thresholds_match_the_runners`,
+#: whose whole purpose is that these 2 numbers are 1 number.
+#:
+#: A SECOND SPELLING OF A RULE DRIFTS FROM THE FIRST. That is the defect class
+#: this project has measured more often than any other, and the file's own
+#: sibling test already forbids re-implementing `_estimate_gamma` here for
+#: exactly the same reason. So the value is read from the dataclass that owns it.
+from bench.reference_runner_v3 import RunnerConfig as _RunnerConfig
+
+GAMMA_THRESHOLD = _RunnerConfig(test_article="x").gamma_alt_threshold
+K_ZERO = _RunnerConfig(test_article="x").gamma_alt_consecutive_zero_crit
 
 
 def load() -> dict:

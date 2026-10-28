@@ -106,6 +106,11 @@ def main() -> int:
         print("\n--dry-run (default). First 10 of the plan:")
         for ref, old, want in plan[:10]:
             print(f"  {ref:<6} {old.tid} [{old.status}] -> {want}")
+        # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
+        _withheld = max(0, len(plan) - 10)
+        if _withheld:
+            print(f"          ... and {_withheld} more not shown "
+                  f"(of {len(plan)} total)")
         print("\nRe-run with --apply to write it.")
         return 0
 

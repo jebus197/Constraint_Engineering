@@ -210,6 +210,11 @@ def main(argv=None) -> int:
     print("\n  SAMPLE OF THE NOT-CITED SET, which is the genuine remainder:")
     for r in res["absent"][:6]:
         print(f"    {r['file'][:44]:<44} {r['text'][:62]!r}")
+    # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
+    _withheld = max(0, len(res["absent"]) - 6)
+    if _withheld:
+        print(f"      ... and {_withheld} more not shown "
+              f"(of {len(res["absent"])} total)")
 
     print("\nTHIS IS NOT A COVERAGE MEASURE, AND THE FIGURE MUST NOT BE READ")
     print("AS ONE. An instruction of his acted on at the time leaves NO ENTRY")

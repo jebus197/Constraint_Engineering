@@ -95,6 +95,11 @@ def main() -> int:
     print("  newest 12 dates:")
     for dt, n in sorted(by_date.items(), reverse=True)[:12]:
         print(f"    {dt}  {n:>4d}")
+    # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
+    _withheld = max(0, len(by_date) - 12)
+    if _withheld:
+        print(f"      ... and {_withheld} more not shown "
+              f"(of {len(by_date)} total)")
 
     window = [x for x in V if x["date"] >= a.since]
     print(f"\nAUDIT WINDOW from {a.since}: {len(window)} verdicts across "

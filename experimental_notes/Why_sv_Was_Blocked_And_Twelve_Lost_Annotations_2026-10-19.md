@@ -65,3 +65,5 @@ His second instruction is the harder and more valuable one: that the specificati
 ## State
 
 174 task entries: 21 open, 143 done, 2 deferred, 8 withdrawn. 40 of the 44 guards over this work pass. The 4 that fail are in `bench/tests/test_every_annotation_verdict_names_its_evidence_2026-10-17.py`, and they are the only thing preventing the save.
+
+Written under CDSFL note standard v1.8 (17 October 2026).

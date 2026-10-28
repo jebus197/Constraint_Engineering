@@ -263,6 +263,26 @@ def test_a_key_access_refusal_cannot_halt_the_run():
         "the alarm HALTS the run; it must not fire on key-access refusals")
 
 
+#: GAMMA VALUES DERIVED FROM THE THRESHOLD IN FORCE -- 2026-10-28.
+#:
+#: 4 call sites passed `gamma_critical=_gamma_above()`, chosen to sit above the 0.30 cutoff
+#: of the day. The founder ruled on 2026-10-27 that the gamma arm move to 0.41,
+#: after it was measured blocking 0 of 8 premature closes at 0.30 while blocking
+#: 2 of 22 sound ones. 0.336 then stopped converging and 2 tests in this file went
+#: red -- on a threshold change, not on the behaviour they exist to check. The
+#: gamma value here is SCAFFOLDING to reach convergence; the subject is whether a
+#: key-access refusal can block the A4 gate. So it is derived, and these tests
+#: now hold at whatever cutoff he sets.
+def _gamma_above() -> float:
+    cut = rr.RunnerConfig().gamma_alt_threshold
+    return min(0.999, cut + 0.05)
+
+
+def _gamma_below() -> float:
+    cut = rr.RunnerConfig().gamma_alt_threshold
+    return max(0.001, cut - 0.25)
+
+
 def test_a_key_access_refusal_cannot_block_the_a4_gate():
     r = _reg(falsifier_verdict=INTEGRITY_VIOLATION, integrity_refused=True)
     assert r.unverified_critical_count() == 0
@@ -271,7 +291,7 @@ def test_a_key_access_refusal_cannot_block_the_a4_gate():
         round_idx=3, gamma=0.432, novel_critical_history=HISTORY, cfg=cfg,
         unresolved_critical=r.unverified_critical_count(), contested=0,
         irreducible_queue=r.irreducible_queue_count(),
-        gamma_critical=0.336, total_findings=40)
+        gamma_critical=_gamma_above(), total_findings=40)
     assert converged is True, reason
     assert "A4 BLOCK" not in reason
 
@@ -308,7 +328,7 @@ def test_without_the_flag_it_still_blocks_so_the_test_above_is_not_vacuous():
     converged, reason = rr._check_gamma_alt_convergence(
         round_idx=3, gamma=0.432, novel_critical_history=HISTORY, cfg=cfg,
         unresolved_critical=r.unverified_critical_count(), contested=0,
-        irreducible_queue=0, gamma_critical=0.336, total_findings=40)
+        irreducible_queue=0, gamma_critical=_gamma_above(), total_findings=40)
     assert converged is False and "A4 BLOCK" in reason
 
 
@@ -382,7 +402,7 @@ def test_no_gate_input_moves_with_the_queue_or_the_a4_count():
         conv, reason = rr._check_gamma_alt_convergence(
             round_idx=3, gamma=0.432, novel_critical_history=HISTORY, cfg=cfg,
             unresolved_critical=0, contested=0, irreducible_queue=queue,
-            gamma_critical=0.336, total_findings=40)
+            gamma_critical=_gamma_above(), total_findings=40)
         verdicts.add(conv)
         if queue > cfg.max_irreducible_queue:
             assert "NOTE: irreducible queue" in reason
@@ -392,7 +412,7 @@ def test_no_gate_input_moves_with_the_queue_or_the_a4_count():
     conv, reason = rr._check_gamma_alt_convergence(
         round_idx=3, gamma=0.432, novel_critical_history=HISTORY, cfg=cfg,
         unresolved_critical=0, contested=0, irreducible_queue=0,
-        gamma_critical=0.10, total_findings=40)
+        gamma_critical=_gamma_below(), total_findings=40)
     assert conv is False, "gamma below threshold must still refuse"
 
 

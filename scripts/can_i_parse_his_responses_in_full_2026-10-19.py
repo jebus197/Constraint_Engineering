@@ -35,6 +35,7 @@ import importlib.util
 import pathlib
 import re
 import sys
+import sys as _sys
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 READER = REPO / "scripts" / "read_founder_responses_2026-10-11.py"
@@ -84,11 +85,21 @@ def is_his_annotation(rd, line: str, suffix: str) -> bool:
     if not t.startswith("#"):
         return False
     if suffix == ".md":
+        # A FAILURE HERE LEAVES A TRACE -- 2026-10-28. This was
+        # `except Exception: pass`, which means a heading check that CANNOT RUN
+        # is indistinguishable from one that ran and said "not a heading". The
+        # consequence is not cosmetic: the fallthrough counts the line as one of
+        # HIS annotations, so a broken predicate would silently attribute this
+        # project's own markdown headings to him. Surfaced by
+        # test_operational_scripts.py's swallowed-handler check, in these words:
+        # "the failure leaves no trace anywhere".
         try:
             if rd._looks_like_a_markdown_heading(t):
                 return False
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as exc:  # noqa: BLE001
+            print(f"  [heading check unavailable] {type(exc).__name__}: {exc} "
+                  f"-- counting {t[:40]!r} as an annotation, which may be wrong",
+                  file=_sys.stderr)
     return True
 
 

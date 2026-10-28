@@ -81,3 +81,5 @@ The free-panel runs that B13, B21, B22, C1 and C4 want were not launched. The ma
 Every proportion in this note carries a 95 per cent interval computed twice, by Wilson and by Clopper-Pearson, and cross-checked between statsmodels and scipy. Every rate is produced by a script committed alongside it. The scripts are named in the commit messages for HEAD and its 5 predecessors.
 
 The guard set now holds 61 files and runs 1,288 tests at every commit.
+
+Written under CDSFL note standard v1.7 (26 August 2026).

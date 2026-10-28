@@ -101,6 +101,11 @@ def main() -> int:
     _interval(len(wrong), checked)
     for path, mode, disk in wrong[:25]:
         print(f"      {path}: git {mode}, disk {disk}")
+    # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
+    _withheld = max(0, len(wrong) - 25)
+    if _withheld:
+        print(f"      ... and {_withheld} more not shown "
+              f"(of {len(wrong)} total)")
 
     print("\nWHAT A TEST SYMLINKS INTO A PYTEST TEMP TREE")
     found = 0

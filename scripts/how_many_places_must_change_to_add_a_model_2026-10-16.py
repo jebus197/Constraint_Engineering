@@ -181,8 +181,16 @@ def method_b(models: list[str]) -> dict:
     def record(name: str, fn, *, silent_default_when=None, announces=False):
         try:
             _rt.reset_lookup_misses()
-        except Exception:                                          # noqa: BLE001
-            pass
+        except Exception as exc:                                   # noqa: BLE001
+            # A FAILURE HERE LEAVES A TRACE -- 2026-10-28. This was
+            # `except Exception: pass`. The reset is what makes the miss count
+            # that follows belong to THIS step; if it does not happen, misses
+            # from an earlier step are attributed to this one and the
+            # silent-default verdict below is measured against a dirty counter.
+            # A wrong verdict that looks like a verdict is worse than a gap.
+            steps.append({"step": f"{name} (counter reset failed)",
+                          "outcome": "RESET_FAILED",
+                          "detail": f"{type(exc).__name__}: {exc}"})
         try:
             got = fn(NEW_MODEL)
             ref = fn(known)

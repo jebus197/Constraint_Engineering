@@ -235,6 +235,11 @@ def main(argv=None) -> int:
           f"{len(byfile)} file(s)")
     for f, n in sorted(byfile.items(), key=lambda kv: -kv[1])[:10]:
         print(f"    {n:>4}  {f}")
+    # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
+    _withheld = max(0, len(byfile) - 10)
+    if _withheld:
+        print(f"      ... and {_withheld} more not shown "
+              f"(of {len(byfile)} total)")
     print("  Auditing proceeds FILE BY FILE, because one file is one report and")
     print("  the referent of a short verdict of his lives in the report it")
     print("  annotates. A partial record is useful; an unfinished sweep is not.")

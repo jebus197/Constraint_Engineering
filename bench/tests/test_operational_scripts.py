@@ -170,11 +170,45 @@ def _tuple_returning_function_names(sources: list[str]) -> set[str]:
     return names
 
 
+#: METHOD NAMES THE STANDARD LIBRARY ALREADY OWNS, derived from the types rather
+#: than listed by hand -- 2026-10-28.
+#:
+#: WHY THIS IS NEEDED. `_tuple_returning_function_names` collects names by
+#: scanning for functions that RETURN A TUPLE, and the match below is on the NAME
+#: ALONE. `scripts/depth_and_breadth_are_measurable_2026-10-25.py:93` defines
+#: `def split(counts, pivot)`, which returns a tuple -- so the bare name `split`
+#: entered the set and from then on EVERY `str.split()` in the repository that is
+#: tested for truth was reported as discarding a verdict.
+#:
+#: MEASURED 2026-10-28: 7 violations, and all 7 were correct code using the
+#: string method -- `nxt = b[...].split()` then `if nxt else ""`, and
+#: `(subject.split() or [""])[0]`. Testing a LIST for truth is right; the defect
+#: this guard exists for is testing a (bool, message) TUPLE, which is true even
+#: on failure.
+#:
+#: A BARE CALL IS STILL FLAGGED. A project function returning a verdict tuple is
+#: called as `verify_chain(...)` or through a module alias, never as a method on
+#: a string, so excluding builtin METHOD calls costs the guard nothing: none of
+#: `verify_chain`, `_verify_contents` or `_run_git_rc` is a method of a builtin,
+#: and its own anti-vacuity tests pin all 3.
+_BUILTIN_METHODS = frozenset(
+    name
+    for t in (str, bytes, bytearray, list, dict, set, frozenset, tuple, int,
+              float)
+    for name in dir(t)
+    if not name.startswith("__")
+)
+
+
 def _called_name(call: ast.Call) -> str | None:
     func = call.func
     if isinstance(func, ast.Name):
         return func.id
     if isinstance(func, ast.Attribute):
+        # `x.split()` is the string method, not a project function that happens
+        # to share the name. See `_BUILTIN_METHODS` above.
+        if func.attr in _BUILTIN_METHODS:
+            return None
         return func.attr
     return None
 

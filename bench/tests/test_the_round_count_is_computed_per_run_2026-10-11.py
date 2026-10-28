@@ -202,12 +202,28 @@ class TestItIsWiredAndAdvisory:
 
     def test_the_two_thetas_are_distinct_config_fields(self):
         """`theta` was already bound to the gate's cutoff in that module. One name
-        for two quantities is how the two gammas got conflated."""
+        for two quantities is how the two gammas got conflated.
+
+        ★ THE LITERAL PIN ON `gamma_alt_threshold` WAS REMOVED 2026-10-28, and
+        removing it is the point rather than a convenience. This asserted
+        `== 0.30`, which the founder's ruling of 2026-10-27 changed to 0.41 after
+        the gamma arm was measured blocking 0 of 8 premature closes at 0.30 while
+        blocking 2 of 22 sound ones. A THIRD copy of that number here would drift
+        from the runner exactly as the cycle gate's copy did, which is the defect
+        this test's own docstring is about. The value's pin lives in
+        `test_gamma_does_not_cover_the_quiet_arm_2026-10-08.py`, which owns it;
+        what THIS test owns is that the 2 thetas are DIFFERENT QUANTITIES, and
+        that property holds at any value either takes.
+        """
         import reference_runner_v3 as R
         cfg = R.RunnerConfig()
         assert cfg.round_budget_theta == DEFAULT_THETA == 1.0
-        assert cfg.gamma_alt_threshold == 0.30
-        assert cfg.round_budget_theta != cfg.gamma_alt_threshold
+        assert cfg.round_budget_theta != cfg.gamma_alt_threshold, (
+            f"both thetas are {cfg.round_budget_theta}; one name for 2 "
+            f"quantities is how the 2 gammas got conflated")
+        assert 0.0 < cfg.gamma_alt_threshold < 1.0, (
+            f"gamma_alt_threshold is {cfg.gamma_alt_threshold}, outside the unit "
+            f"interval a decay-curve cutoff must lie in")
 
 
 class TestGammaIsNotDemoted:

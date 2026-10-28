@@ -173,6 +173,11 @@ def main() -> int:
     print("  EXAMPLES:")
     for r, cid, v, k in outside[:8]:
         print(f"    {r[:38]:38} {cid}: {sorted(v.values())} -> kept {k}")
+    # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
+    _withheld = max(0, len(outside) - 8)
+    if _withheld:
+        print(f"      ... and {_withheld} more not shown "
+              f"(of {len(outside)} total)")
     print()
     print("=" * 76)
     print("WHAT THIS DOES AND DOES NOT SETTLE. It does NOT settle whether severity")

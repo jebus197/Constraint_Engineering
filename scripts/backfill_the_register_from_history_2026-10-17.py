@@ -155,6 +155,11 @@ def main(argv=None) -> int:
         for r in todo[:5]:
             print(f"    would raise [{kind_of(r['subject'])}] {r['date']} "
                   f"{r['sha'][:10]} {r['subject'][:60]}")
+        # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
+        _withheld = max(0, len(todo) - 5)
+        if _withheld:
+            print(f"          ... and {_withheld} more not shown "
+                  f"(of {len(todo)} total)")
         return 0
 
     print(f"\nAPPLYING")

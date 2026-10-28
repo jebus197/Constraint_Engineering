@@ -137,6 +137,11 @@ def main() -> int:
     print("LARGEST CONSUMERS (reported only; never touched):")
     for pid, rss, comm in sorted(rows, key=lambda r: -r[1])[:6]:
         print(f"  {rss:7.2f} GiB  pid {pid:<7} {pathlib.Path(comm).name}")
+    # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. A list cut to N under a heading that reads as complete is a silent falsehood.
+    _withheld = max(0, len(rows) - 6)
+    if _withheld:
+        print(f"      ... and {_withheld} more not shown "
+              f"(of {len(rows)} total)")
     print()
     print("FIREFOX, the one application he authorised closing:")
     if not ff:

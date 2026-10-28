@@ -154,3 +154,5 @@ Evidence recorded against it: his own question of 2026-10-17; it remains owed to
 > Make the guard aware of negation as you have suggested.
 
 <!-- verbatim-end -->
+
+Written under CDSFL note standard v1.8 (17 October 2026).

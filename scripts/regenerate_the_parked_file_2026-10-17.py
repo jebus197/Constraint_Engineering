@@ -139,10 +139,19 @@ def classify(m) -> tuple:
         items, states, ann_text)
     settled = [(h, bodies[h], why) for h, why in closed]
     live = [(h, bodies[h], None) for h, _ in undecided]
-    live += [(h, bodies[h],
-              "RULED BY HIM, WORK NOT DONE: "
-              + "; ".join(f"{d} names {i}" for d, i, _ in hits[:2]))
-             for h, hits in ruled]
+    # A CAPPED LISTING STATES ITS REMAINDER -- 2026-10-28. This joined the first
+    # 2 of `hits` into a reason string with no cue that more existed, so an item
+    # ruled on by him 5 times read as ruled on twice. The cap stays at 2, because
+    # the reason line is read in a parked-file table and must stay short; what
+    # changes is that the remainder is now stated rather than dropped.
+    def _reason(hits) -> str:
+        shown = "; ".join(f"{d} names {i}" for d, i, _ in hits[:2])
+        withheld = max(0, len(hits) - 2)
+        if withheld:
+            shown += f"; and {withheld} more not shown (of {len(hits)} total)"
+        return "RULED BY HIM, WORK NOT DONE: " + shown
+
+    live += [(h, bodies[h], _reason(hits)) for h, hits in ruled]
     return live, settled
 
 

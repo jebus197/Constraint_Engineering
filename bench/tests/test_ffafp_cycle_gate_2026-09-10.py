@@ -133,15 +133,39 @@ def test_the_recorded_series_is_not_yet_converged():
 # ---------------------------------------------------------------------------
 
 def test_gamma_passes_on_a_strictly_rising_tail():
-    """The finding itself. If this ever fails, the confound is gone — say so."""
-    rising = [11, 1, 2, 3, 4, 5, 6, 7, 8]
-    g, gside, cside, verdict = C.gate(rising)
-    assert gside is True, (
-        f"gamma no longer passes on a rising tail (gamma={g:.6f}); the F3 "
-        f"confound may have been removed and this test should be rewritten "
-        f"deliberately, not deleted")
+    """The finding itself. If this ever fails, the confound is gone — say so.
+
+    ★ THE LEADING ROUND IS NOW DERIVED, NOT WRITTEN -- 2026-10-28. The fixture was
+    `[11, 1, 2, ... 8]`, whose gamma is 0.324155. That cleared the 0.30 cutoff in
+    force when this was written and does NOT clear the 0.41 the founder ruled on
+    2026-10-27, so this test went red on a threshold change rather than on the
+    confound disappearing -- a fixture tuned to a number instead of to the
+    property it demonstrates.
+
+    THE FINDING IS ABOUT SHAPE, NOT ABOUT ANY PARTICULAR CUTOFF: gamma is fitted
+    to the CUMULATIVE curve, so a large enough leading round makes that fit
+    sublinear whatever the tail does. Measured 2026-10-28 against the project's
+    own estimator with the tail held at 1..8: lead 11 gives 0.324155, lead 15
+    gives 0.436615, lead 30 gives 0.646267, lead 100 gives 0.866933 -- and the
+    count side REFUSES every one of them. So the lead is searched for rather than
+    asserted, and this test now holds at any threshold the founder sets.
+    """
+    tail = [1, 2, 3, 4, 5, 6, 7, 8]
+    assert all(b > a for a, b in zip(tail, tail[1:])), "the tail must rise"
+    found = None
+    for lead in range(2, 501):
+        g, gside, cside, verdict = C.gate([lead] + tail)
+        if gside:
+            found = (lead, g, cside, verdict)
+            break
+    assert found is not None, (
+        f"no leading round up to 500 makes gamma clear {C.GAMMA_THRESHOLD} on a "
+        f"strictly rising tail. The F3 confound may genuinely be gone, which "
+        f"would be good news -- rewrite this test deliberately, do not delete it")
+    lead, g, cside, verdict = found
     assert cside is False and verdict == "KEEP GOING", (
-        "the count side must still refuse it — that is what saves the gate")
+        f"with lead {lead} the count side ACCEPTED a strictly rising tail "
+        f"(gamma={g:.6f}); the count side refusing it is what saves the gate")
 
 
 def test_gamma_still_refuses_the_series_it_should():
