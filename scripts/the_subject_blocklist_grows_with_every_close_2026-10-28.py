@@ -227,6 +227,19 @@ def replay_live_store(store, kind_aware: bool) -> dict:
 
 
 def main() -> int:
+    # A REAL PARSER, INSIDE main(), AND THE PLACEMENT IS THE POINT.
+    # A module-level `answer_help` call satisfies the writes-answer-help ratchet
+    # in test_help_never_acts and BREAKS the import probe in
+    # test_operational_scripts, which imports every parser-less script in a
+    # subprocess with a stray argv: `answer_help` refuses the unrecognised
+    # argument and the module exits 2 during import. Measured 2026-10-28, after
+    # my own first fix did exactly that to 3 scripts. `answers_help` accepts "an
+    # ArgumentParser constructed anywhere", so a parser HERE satisfies both:
+    # `--help` is answered without running the scan, and an import reaches no
+    # argv at all because main() is not called at import time.
+    import argparse
+    argparse.ArgumentParser(
+        description=(__doc__ or "").strip().splitlines()[0]).parse_args()
     store = ts.TicketStore(); store.load()
     tickets = store.all()
 

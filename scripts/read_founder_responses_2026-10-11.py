@@ -104,6 +104,9 @@ def wilson(k: int, n: int) -> tuple:
 #: which is the point -- the old exclusion list admitted everything by default.
 TEXT_SUFFIXES = {".txt", ".rtf", ".md"}
 
+#: `Name_2026-10-13.txt` -> 2026-10-13. See `_file_date`.
+_NAME_DATE = re.compile(r"(20\d\d)-(\d\d)-(\d\d)")
+
 
 NOT_HIS_ANNOTATIONS = {
     #: Gemini Web's register design brief, attached by him 2026-10-17. Its 3
@@ -296,26 +299,107 @@ def file_shape(path: Path) -> dict:
 _MARKER_LINE = re.compile(r"^\s*(fr|pf|qs|wr)(?:\s*,\s*(?:fr|pf|qs|wr))*\s*$", re.I)
 
 
-def annotations(since: _dt.date | None = None, until: _dt.date | None = None) -> list:
+#: 2 DATES, NAMED FOR WHAT THEY ARE -- repair 2026-10-28, and the first attempt
+#: at it was WRONG in an instructive way.
+#:
+#: A response file carries 2 different facts and they must not be conflated.
+#: The DATE IN THE NAME is the date of the report HE WAS ANNOTATING, written by
+#: this project. The MTIME is approximately when HE WROTE the annotation, which
+#: is necessarily later. Asking "which report is this against?" and "when did he
+#: write it?" are different questions.
+#:
+#: MY FIRST FIX REPLACED mtime WITH THE NAME EVERYWHERE, and that silently
+#: changed the meaning of every `--since` window in the project. It immediately
+#: orphaned 12 verdict rows: `Intelligence_First_Take_Home_2026-09-30.txt` moved
+#: from October into September and left the verdict record's window while its 12
+#: rows stayed behind. Widening the window to compensate would have surfaced 35
+#: annotations with no verdict row -- real work, created by a change of meaning
+#: nobody asked for.
+#:
+#: SO BOTH ARE RECORDED AND `date` IS UNCHANGED. `report_date` is new, `by=`
+#: selects which one a window filters on, and the default is `mtime`, so every
+#: existing caller behaves exactly as before.
+#:
+#: WHY ANY OF THIS WAS NEEDED. mtime is MUTABLE -- anything touching a file moves
+#: it, and task B42 established that Word rewrites his .txt files on save.
+#: Measured 2026-10-28: of 90 annotated files carrying a date in the name, 37 had
+#: an mtime that disagreed with it, 0.411111 Wilson [0.315132, 0.514368], drifting
+#: LATER by up to 5 days. A window built on mtime therefore cannot be closed, which
+#: is what `test_the_corpus_count_is_unchanged_by_the_fix` needs; it now asks for
+#: `by="report"` and gets a population that an mtime change cannot move.
+#:
+#: WHAT WAS WRONG. Every annotation was dated by `st_mtime`, which is MUTABLE:
+#: anything that touches a file moves it, and this project has already
+#: established that Word rewrites his .txt files on save (task B42, 35 of 106
+#: files carry the CR-only signature). So his words drifted to whatever day a
+#: tool last touched them.
+#:
+#: MEASURED 2026-10-28, which is why this is a repair and not a preference:
+#: of 90 annotated files carrying a date in the name, 37 had an mtime that
+#: DISAGREED with it -- 0.411111, Wilson [0.315132, 0.514368] -- and 299
+#: annotations were being read under the wrong date. The drift is always LATER,
+#: by up to 5 days.
+#:
+#: HOW IT SURFACED. `test_the_corpus_count_is_unchanged_by_the_fix` pins 522
+#: annotations dated on or before 2026-10-13 and read 517. Its docstring states
+#: the window is closed because "`until` filters on the date in each response
+#: file's name" -- which was NOT what the code did. The 5 missing were not lost:
+#: `The_Directive_Set_2026-10-13.txt` has mtime 2026-10-14 18:07, so its 11
+#: annotations left the window while other in-window files gained 6. The
+#: manifest confirms 0 files lost an annotation.
+#:
+#: CHECKED BEFORE CHANGING IT. Name-dating moves annotations EARLIER, which could
+#: push one out of the freshness gate's window and silently excuse an unread
+#: ruling of his. Measured: 12 annotations leave the window and ALL 12 already
+#: carry a verdict row, so nothing unread is excused.
+def _report_date(p: Path) -> _dt.date:
+    """The date of the REPORT he annotated, from the file's name.
+
+    Falls back to mtime when the name carries no date, so every file has one.
+    """
+    m = _NAME_DATE.search(p.name)
+    if m:
+        try:
+            return _dt.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            pass
+    return _dt.date.fromtimestamp(p.stat().st_mtime)
+
+
+def _written_date(p: Path) -> _dt.date:
+    """Approximately when HE WROTE the annotation. Mutable; see the note above."""
+    return _dt.date.fromtimestamp(p.stat().st_mtime)
+
+
+def annotations(since: _dt.date | None = None, until: _dt.date | None = None,
+                by: str = "mtime") -> list:
     """Every `#`-prefixed annotation the founder wrote, with its file and date."""
     out = []
     for p in sorted(RESPONSES.glob("*")):
         if not is_one_of_his_annotated_responses(p):
             continue
-        d = _dt.date.fromtimestamp(p.stat().st_mtime)
-        if since and d < since:
+        d = _written_date(p)
+        rd = _report_date(p)
+        # `by` SELECTS WHICH FACT THE WINDOW FILTERS ON. Default "mtime"
+        # keeps every existing caller unchanged; "report" gives a window an
+        # mtime change cannot move.
+        key = rd if by == "report" else d
+        if since and key < since:
             continue
-        if until and d > until:
+        if until and key > until:
             continue
-        out.extend(_annotations_in(p, d))
+        out.extend(_annotations_in(p, d, rd))
     return out
 
 
-def _annotations_in(p: Path, d: _dt.date | None = None) -> list:
+def _annotations_in(p: Path, d: _dt.date | None = None,
+                    rd: _dt.date | None = None) -> list:
     """Every annotation in ONE file. The single definition of what counts as one."""
     out = []
     if d is None:
-        d = _dt.date.fromtimestamp(p.stat().st_mtime)
+        d = _written_date(p)
+    if rd is None:
+        rd = _report_date(p)
     text = read_any(p)
     if text:
         _lines = text.splitlines()
@@ -391,6 +475,7 @@ def _annotations_in(p: Path, d: _dt.date | None = None) -> list:
                         x.strip().lower() for x in _cand.split(",") if x.strip())
                 break
             out.append({"file": p.name, "ext": p.suffix.lower(), "date": d.isoformat(),
+                        "report_date": rd.isoformat(),
                         "line_index": i, "text": body, "marker": _marker})
     return out
 

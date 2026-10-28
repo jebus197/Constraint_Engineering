@@ -73,7 +73,29 @@ RETIRED = {
 #: fields without joining the backlog, which is why the measured count did not
 #: move. Lowering the pin is what `test_the_baseline_is_honest` asks for in its
 #: own words: "if the backlog shrank, lower the pin so the ratchet keeps biting".
-UNREACHED_BASELINE = 20
+#: LOWERED 20 -> 19 on 2026-10-28, which is the ratchet tightening rather than
+#: loosening: a config field that no test reached now has one, so the pin must
+#: follow it down or it stops biting. The full-suite baseline of 2026-10-28 is
+#: what surfaced it, through this file's own `test_the_baseline_is_honest`.
+UNREACHED_BASELINE = 19
+
+#: AND THE SET, NOT ONLY THE COUNT -- his feedback of 2026-10-16, recorded as
+#: "pin a set, not a count: a count cannot say what moved; a set catches a swap".
+#:
+#: THE SET LIVES IN A JSON FILE, NOT HERE, AND THAT IS LOAD-BEARING. The
+#: predicate below is "the field name does not appear in the text of
+#: bench/tests/*.py". A first version of this pin wrote the 19 names into THIS
+#: file, which made every one of them appear in that text and drove the measured
+#: count from 19 to 0 -- the ratchet permanently satisfied, guarding nothing.
+#: Measured immediately after that edit, not reasoned about.
+UNREACHED_SET_FILE = (REPO / "experimental_notes" / "data"
+                      / "unreached_config_fields_2026-10-28.json")
+
+
+def _pinned_unreached_set() -> frozenset:
+    import json as _json
+    return frozenset(_json.loads(
+        UNREACHED_SET_FILE.read_text(encoding="utf-8"))["fields"])
 
 
 def _unreached_config_fields() -> list[str]:
@@ -244,3 +266,26 @@ def test_the_baseline_is_honest():
     assert UNREACHED_BASELINE == len(_unreached_config_fields()), (
         "the pinned baseline no longer equals the measured count — if the backlog "
         "shrank, lower the pin so the ratchet keeps biting")
+
+
+def test_the_pinned_set_catches_a_swap_the_count_cannot():
+    """HIS FEEDBACK, 2026-10-16: pin a set, not a count.
+
+    A count cannot say WHAT moved. One field becoming reached while another
+    becomes unreached leaves the total identical and the ratchet silent, which
+    is a swap passing as stability. The set is measured here so that case fails.
+    """
+    measured = frozenset(_unreached_config_fields())
+    pinned = _pinned_unreached_set()
+    assert measured == pinned, (
+        f"the SET of unreached config fields has changed, even if the count has "
+        f"not.\n  newly unreached: {sorted(measured - pinned)}"
+        f"\n  now reached (good -- remove from the pin): "
+        f"{sorted(pinned - measured)}")
+
+
+def test_the_pin_and_its_set_agree():
+    """ANTI-DRIFT. 2 declarations of 1 fact must not disagree."""
+    assert UNREACHED_BASELINE == len(_pinned_unreached_set()), (
+        f"the pinned count is {UNREACHED_BASELINE} but the pinned set holds "
+        f"{len(_pinned_unreached_set())}; 2 spellings of 1 fact have drifted")

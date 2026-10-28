@@ -143,7 +143,33 @@ def test_no_annotation_anywhere_absorbs_a_generated_REPORT_LINE(R):
 def test_the_corpus_count_is_unchanged_by_the_fix(R):
     """A reader fix must change what is READ, never how much there is.
 
-    ★ THE WINDOW IS BOUNDED, 2026-10-14, AND THE PIN ITSELF IS UNCHANGED AT 522.
+    ★ RE-PINNED 522 -> 528 ON 2026-10-28, BECAUSE THE PREDICATE THIS DOCSTRING
+    DESCRIBED WAS NOT THE ONE THE READER APPLIED. The paragraph below says the
+    window is closed because `until` filters on "the date in each response
+    file's name". It did not: the reader dated every annotation by `st_mtime`.
+    That is MUTABLE, anything touching a file moves it, and task B42 established
+    that Word rewrites his .txt files on save. So this test went red at 517 with
+    nothing lost: `The_Directive_Set_2026-10-13.txt` has mtime 2026-10-14 18:07,
+    so its 11 annotations left the window while other in-window files gained 6.
+    The manifest confirms 0 files lost an annotation.
+
+    MEASURED BEFORE THE REPAIR: of 90 annotated files carrying a date in the
+    name, 37 had an mtime that disagreed with it -- 0.411111, Wilson [0.315132,
+    0.514368] -- and 299 annotations were read under the wrong date, always
+    later, by up to 5 days. `report_date` now carries the name's date alongside the
+    unchanged mtime `date`, and `by="report"` selects it, so the window is closed
+    in fact and not merely in this docstring. The default is still mtime, so no
+    other caller's meaning changed -- a first attempt replaced mtime everywhere
+    and orphaned 12 verdict rows. PROVEN rather than asserted: pushing an
+    in-window file's mtime 30 days forward leaves the count at 528, where the old
+    code would have moved 11 annotations out.
+
+    CHECKED FOR THE DANGEROUS DIRECTION FIRST. Name-dating moves annotations
+    EARLIER, which could push one out of the freshness gate's window and silently
+    excuse an unread ruling of his. Measured: 12 leave the window and all 12
+    already carry a verdict row, so nothing unread is excused.
+
+    ★ THE WINDOW IS BOUNDED, 2026-10-14, AND THE ORIGINAL PIN WAS 522.
     This asserted `len(R.annotations()) == 522` over the LIVE corpus, which grows
     every time the founder writes. It went red at 533 on 2026-10-14 for the one
     reason that is not a defect: he had written 11 more annotations that day.
@@ -160,8 +186,11 @@ def test_the_corpus_count_is_unchanged_by_the_fix(R):
     population it was always meant to describe.
     """
     import datetime as _dt
-    bounded = R.annotations(until=_dt.date(2026, 10, 13))
-    assert len(bounded) == 522, (
+    # `by="report"` ASKS THE CLOSED QUESTION. The default filters on mtime,
+    # which anything touching a file moves, so the population is not closed
+    # and this pin drifted to 517 with nothing lost. See `_report_date`.
+    bounded = R.annotations(until=_dt.date(2026, 10, 13), by="report")
+    assert len(bounded) == 528, (
         f"the annotation count moved to {len(bounded)} over a CLOSED window "
         f"ending 2026-10-13; joining or splitting his annotations changes the "
         f"record rather than reading it, and new writing cannot move this figure")

@@ -1,0 +1,43 @@
+{
+  "_what_this_is": [
+    "The SET of RunnerConfig fields no test in bench/tests reaches, pinned on",
+    "2026-10-28 at a39d8da6. His feedback of 2026-10-16: pin a set, not a count,",
+    "because a count cannot say what moved and a set catches a swap.",
+    "",
+    "IT LIVES IN A JSON FILE RATHER THAN IN THE TEST, AND THAT IS THE WHOLE",
+    "POINT. The predicate is 'the field name does not appear in the text of",
+    "bench/tests/*.py'. A first version of this pin wrote the 19 names INTO",
+    "test_additive_standard_2026-09-07.py, which made every one of them appear",
+    "in that text and drove the measured count from 19 to 0. The ratchet would",
+    "have been permanently satisfied and would have guarded nothing. Measured,",
+    "not reasoned about: 0 unreached fields immediately after that edit.",
+    "",
+    "This is the same shape as a stash in this repository titled 'A test",
+    "asserted a phrase was absent from the repo, then committing it made the",
+    "phrase present'."
+  ],
+  "measured_at_commit": "a39d8da6",
+  "measured_when": "2026-10-28",
+  "count": 19,
+  "fields": [
+    "feedback_max_chars_per_model",
+    "feedback_top_k",
+    "gamma_soft_gate_until",
+    "inround_reask_min_markers",
+    "location_shadow_enabled",
+    "max_novel_findings",
+    "merge_arbitration_max_per_round",
+    "merge_arbitration_min_defer_count",
+    "merge_arbitration_tiebreaker_gamma",
+    "multiturn_chunk_target",
+    "prior_fix_summary_enabled",
+    "prior_fix_summary_max_chars",
+    "prior_fix_summary_max_entries",
+    "sk_s_floor",
+    "verification_batch_size",
+    "verification_confidence_threshold",
+    "windowed_context_enabled",
+    "windowed_context_full_rounds",
+    "windowed_context_max_chars"
+  ]
+}
