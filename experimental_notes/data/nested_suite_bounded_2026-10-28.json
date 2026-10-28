@@ -1,0 +1,97 @@
+{
+  "serial": {
+    "hook_pytest_invocation": "OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS 2>&1)",
+    "hook_uses_xdist": false,
+    "ini_has_addopts": false,
+    "verdict": "both runs are already serial"
+  },
+  "fork": {
+    "default_start_method": "spawn",
+    "files_forcing_a_start_method": [],
+    "verdict": "ruled out -- a spawned child inherits no lock state"
+  },
+  "reclaim": {
+    "limit_s": 3,
+    "child_sleep_s": 25,
+    "wall_clock_s": 3.3,
+    "reclaimed": true,
+    "overshoot_s": 0.3,
+    "timed_out_marker_present": true,
+    "verdict": "the thread method DOES reclaim a blocked child; my hypothesis that it could not is refuted"
+  },
+  "limit": {
+    "per_test_timeout": "300",
+    "timeout_method": "thread",
+    "explicit_marks": {
+      "bench/tests/test_precommit_guard_2026-09-09.py": [],
+      "bench/tests/test_precommit_restages_repairs_2026-09-11.py": [],
+      "bench/tests/test_precommit_gate_cost_2026-09-10.py": [
+        "@pytest.mark.timeout(1860)"
+      ]
+    },
+    "verdict": "present"
+  },
+  "unbounded": {
+    "launches": 22,
+    "unbounded": 13,
+    "rate": 0.5909090909090909,
+    "wilson95": [
+      0.38734818476315125,
+      0.7674418380352813
+    ],
+    "sites": [
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 59
+      },
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 69
+      },
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 86
+      },
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 249
+      },
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 258
+      },
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 283
+      },
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 309
+      },
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 359
+      },
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 417
+      },
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 515
+      },
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 543
+      },
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 613
+      },
+      {
+        "file": "bench/tests/test_precommit_restages_repairs_2026-09-11.py",
+        "line": 673
+      }
+    ]
+  }
+}

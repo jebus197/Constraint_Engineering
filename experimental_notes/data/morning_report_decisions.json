@@ -496,5 +496,32 @@
       "**Use a different name**, if wr collides with something you use elsewhere; the collision check that renamed pr to pf applies here too and found none.",
       "**Leave it**, and keep deferring settled work inside the existing kinds, accepting that it will continue to surface as outstanding."
     ]
+  },
+  "task:B45": {
+    "title": "B45 — the stagger value, and you have now accepted it",
+    "what": "The delay held between 2 seats that share one subscription, so they do not collide at session-establishment time. The value is 20 seconds, carried as DEFAULT_STAGGER_S in the panel dispatcher and as the shared-stagger constant in the runner. You accepted it on 2026-10-28.",
+    "why": "It is recorded here because your acceptance came with 3 observations that are NOT settled by accepting the number, and the third is a genuine open question. First, you noted the stagger is a mitigation paired with the model aliveness test: that pairing proved itself the same night, when the aliveness probe caught both free seats dead and refused the round rather than spending it. Second, you noted it applies only to seats of the same vendor, which is correct: it is claimed only on the shared-credential path. Third, and this is the open part, you asked how it plays out in a collaborative star or blackboard topology where some models finish ahead of others, and whether star rounds need a matching barrier. Nothing in the record measures that.",
+    "options": [
+      "**Treat the barrier question as answered by the stagger bounds**, on the ground that 20 seconds sits inside a measured window of 18.7 to 26.7 seconds and the shortest observed first-seat duration already exceeds it, so a seat cannot finish before the next has started. This is the cheap reading and it is incomplete: the bound is about STARTS, and your question is about COMPLETIONS.",
+      "**Instrument it in the next simulated run** by recording per-seat round start and completion times and measuring the idle time a round spends waiting on its slowest seat. That is the measurement your question actually asks for, it costs nothing beyond logging, and it is the recommendation.",
+      "**Add a round barrier now**, holding each collaborative round open for a fixed interval. Refused as a recommendation: it would be a second arbitrary constant of exactly the kind you are objecting to in the quiet-run count, chosen before any measurement exists to set it."
+    ],
+    "evidence_line": "20.0 seconds sits inside the measured window [18.7, 26.7] with 1.3 s of margin above the only genuinely simultaneous co-failure in the record and 6.7 s below the shortest first-seat duration over 91 archived 2-seat rounds. SymPy reduces the helping condition to s <= d1 and z3 returns unsat on any counterexample inside the window. The completion-side question is UNMEASURED.",
+    "ruled": "2026-10-28",
+    "his_words": "Verdict. I accept the 20 second stagger.",
+    "what_the_ruling_means": "The VALUE is settled and needs no further decision. What remains is your star-topology barrier question, which is a measurement nobody has made, not a number awaiting your choice."
+  },
+  "task:B46": {
+    "title": "B46 — the duplicate taxonomy, built on your ruling and already earning its keep",
+    "what": "Your instruction that a duplicate is not a deprecation: a finding that restates another is DUPLICATE, a finding folded into another is MERGED, and a finding superseded by better work is DEPRECATED. The harness had collapsed all 3 into 1 outcome.",
+    "why": "Recorded here because it is the mechanism that the ticket-store repair of 2026-10-28 leaned on, and because its MERGED-last ordering is what made that repair auditable. The taxonomy is built and guarded; no decision of yours is outstanding on it. It appears in this report only because its task marker is still live, and the honest reason for that is that its last open point was the merge-status fix, which is complete.",
+    "options": [
+      "**Close it**, which is the recommendation: the 3 outcomes are distinct in the store, CLOSED remains tool-only and refuses without a verification, and the kind-aware subject tier added on 2026-10-28 depends on the distinction holding.",
+      "**Keep it open** pending a run that exercises all 3 outcomes on real findings rather than on the archive, if you want the taxonomy demonstrated end to end before it is signed off."
+    ],
+    "evidence_line": "The 3 outcomes are separate statuses in the ticket store's TERMINAL set and the 2026-10-28 repair relies on that separation. 177 tests pass across the 13 ticket-related files.",
+    "ruled": "2026-10-24",
+    "his_words": "Wait, Duplicates should not be marked as Depreciated!",
+    "what_the_ruling_means": "Ruled and built. It is work completed, not a decision owed, and the only question is whether you want it closed now or after a run demonstrates all 3 outcomes."
   }
 }

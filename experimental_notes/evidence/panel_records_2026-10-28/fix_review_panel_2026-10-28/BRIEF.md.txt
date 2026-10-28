@@ -1,0 +1,367 @@
+# Review these fixes BEFORE they are tested in a simulated run
+
+You are a seat on an independent review panel. The founder's standing practice
+is to put proposed fixes past a free panel BEFORE spending a run on them, so
+that effort is not wasted on changes that will not work. Your job is to find
+what is WRONG, not to confirm what is right. There is no compelled convergence:
+give your own verdict and your strongest falsification. Disagreement is kept as
+information, not smoothed away.
+
+You have no session context. Everything needed is below. Where you need to check
+the code, read it in the repository at the paths named.
+
+## Why a panel rather than more reasoning in one context
+
+HYPOTHESIS UNDER TEST: that the 6 changes below are sound enough to spend a
+simulated run on, and that the run as configured will actually exercise them.
+
+WHAT WOULD FALSIFY IT: any one of the changes being unreachable by the run's
+configuration, contradicting a measured property the project already holds, or
+resting on a number with no producing script.
+
+WHY ONE CONTEXT CANNOT ANSWER IT: the changes were made by the same context that
+measured them, and 2 of its own hypotheses were already refuted by its own
+instruments tonight. An independent reading is the only check on a reviewer's
+blind spot about its own work.
+
+## The project's standards you should hold these to
+
+- `additive-standard`: never disable a feature. Removal only where a COMMITTED
+  MEASUREMENT shows the replacement dominates on a named property. Symmetrically,
+  an addition nothing reaches is not additive either: every new flag, gate or
+  entry point must be wired to a caller and executed by a test.
+- `execute-do-not-grep`: a test asserting on the SOURCE TEXT of a module proves
+  only that the module describes itself consistently. Where both forms are live
+  code, the test must CALL them and compare outputs.
+- `measured-rate-travels-with-its-script`: a rate, proportion or count may be
+  cited only if the script that produced it is committed alongside it.
+- Every proportion carries a confidence interval. Every computational claim is
+  cross-verified with at least 2 tools.
+- Gamma is load-bearing and may not be demoted. The convergence gate is
+  TWO-SIDED: `gamma_critical >= gamma_alt_threshold` AND K consecutive rounds
+  with no new critical finding. Both sides must hold.
+
+## CHANGE 1 — the required quiet run reverted from 7 to 3
+
+`bench/reference_runner_v3.py`, `REQUIRED_QUIET_RUN = 3`.
+
+Founder ruling, 2026-10-27: revert to 3.
+
+Evidence behind it: across 63 archived reports covering 409 rounds, a run of 7
+consecutive rounds with no new critical finding occurs 0 times; the longest
+observed is 6. So the 7 setting was unreachable. The decision-relevant quantity
+is P(findings remained | the gate fires), measured at 8 of 30 = 0.266667.
+
+36 configuration files pin the old value and every one belongs to an experiment
+with an archived run, so no live configuration changed.
+
+QUESTION FOR YOU: is 3 defensible, or does reverting re-open the false-quiet
+problem that motivated 7? What would you measure to tell?
+
+## CHANGE 2 — the gamma arm's threshold raised from 0.30 to 0.41
+
+`bench/reference_runner_v3.py`, `gamma_alt_threshold: float = 0.41`.
+
+The defect: the lowest gamma value across all 8 premature closes in the archive
+is 0.3173, which sits ABOVE the old 0.30 threshold. So the arm could never block
+a premature close. Measured: it blocked 0 of 8 premature closes and 2 of 22
+sound ones, Fisher exact p = 1.000000. Its only effect was to block correct
+closes.
+
+At 0.41: premature blocked rises to 4 of 8 (0.5, 95% CI [0.2152, 0.7848]) while
+sound blocked stays at 2 of 22 (0.0909). One-sided Fisher exact p =
+0.0293545535, cross-verified between scipy and Wolfram Language to 10 decimal
+places. 0.41 was chosen because it DOMINATES rather than trades. A second
+candidate, 0.4585 (Youden-optimal), catches 6 of 8 but costs 7 of 22 sound
+closes; the founder ruled to keep 0.41.
+
+QUESTION FOR YOU: is 0.41 fitted to 8 positive cases? The project has retired a
+tuned constant before. Is dominance on 8 cases enough, and what would change
+your mind?
+
+## CHANGE 3 — the ticket store's subject tier now respects `kind`
+
+`bench/ticket_store.py`, in `propose()`. It was:
+
+    blocked = self.settled_on_subject(sub)
+
+and is now:
+
+    blocked = [b for b in self.settled_on_subject(sub) if b.kind == kind]
+
+Context: `propose()` refuses to CREATE a ticket when any subject of the proposal
+appears on any SETTLED ticket and the caller named no `task_ref` or `anchor`.
+The 4 ticket kinds are `fr` (feature request), `pf` (proposed fix), `qs`
+(question) and `wr` (work remaining). The founder ruled on 2026-10-19 that a
+question and a proposed fix are different items whose resolutions travel in
+opposite directions, which is why the ticket id hash digests the kind.
+
+Measured on the live store: of 1,236 blocked (kind, subject) pairs, 918 are
+blocked ONLY by a ticket of another kind, 0.742718 Wilson [0.717623, 0.766310].
+
+<!-- figure: cross-kind blocked share | scripts/the_subject_blocklist_grows_with_every_close_2026-10-28.py | 0.742718 -->
+
+THE ABSOLUTE COUNTS IN THAT FIGURE MOVE AND THE RATE DOES NOT. The store grew by
+2 tickets between the first measurement and this brief, taking the pairs from
+1,224 to 1,236 and the cross-kind count from 909 to 918 while the share moved
+from 0.742647 to 0.742718. Quote the rate, not the counts. This was caught by the
+dispatcher's own figure check before you saw it, which is the instrument working.
+
+Two earlier repairs of this same defect were tried and REFUSED, and you should
+know both because they bound what is acceptable:
+  1. Requiring the word-overlap layer to corroborate a subject match. Refuted as
+     circular: the subject tier exists to catch rewordings the word layer
+     misses, so demanding its agreement destroys its value. The store fell from
+     4 of 4 to 1 of 4 on the known rediscovery cases.
+  2. A partial-vocabulary-overlap threshold. The 3 true rediscoveries score
+     0.1429 to 0.2500 and the 2 genuinely-new items 0.0000 to 0.1111, so any
+     threshold in that gap is a margin of 0.0318 fitted to 5 data points.
+     Refused as a tuned constant pretending to be a finding.
+
+The kind check adds no constant. Both anti-vacuity deduplication guards are
+same-kind cases and still pass. The one guard whose expectation changed has a
+docstring calling the old behaviour "THE DEFECT".
+
+QUESTION FOR YOU: does kind-awareness weaken deduplication in a case the suite
+does not cover? Name the case.
+
+## CHANGE 4 — the harvester's chat half, which had never worked
+
+`scripts/harvest_tickets_2026-10-17.py`, `from_chat()`.
+
+Three faults, found in sequence:
+
+(a) NO ANCHOR. `from_responses()` builds an anchor for every annotation;
+`from_chat()` built none. An anchor is the explicit identity that lets
+`propose()` escape the subject tier. So every chat-sourced item arrived with no
+identity. This was the ROOT CAUSE of the over-matching. All 5 questions raised
+by hand on 2026-10-27 carry neither a task reference nor an anchor, and 4 had to
+be re-raised with invented subjects.
+
+(b) A PREFILTER NARROWER THAN THE DECISION. The fast prefilter was
+`r'"(fr|pf)[:\]]'` against each raw transcript line. It requires a leading
+double quote, so a marker anywhere inside a message is invisible; and it omits
+`qs` and `wr`, 2 of the 4 kinds, so a question marker in chat could never be
+harvested at all. The function returned 0 rows for every window back to
+2026-08-01.
+
+Using the real marker regex as the prefilter was ALSO wrong: the decision runs
+on DECODED text, a prefilter on the RAW JSON line, and the marker regex requires
+the token to be followed by `:`, `]`, `)`, ` - ` or end-of-string, where the raw
+line has JSON's closing quote. A message ending "... here pf" matches decoded
+and fails raw. The prefilter is now `\b(fr|pf|qs|wr)\b`, argued to be a PROVABLE
+SUPERSET of the decision: the decision can only fire if a kind token appears
+literally in the decoded text, JSON never escapes ASCII letters, and the
+decision's own left and right contexts each imply a word boundary.
+
+(c) FIXING (b) ALONE MADE IT REACHABLE AND USELESS. Of the first 31 rows
+returned, 0 were proposals: 24 were this session's own Stop-gate output quoted
+back into the transcript, 3 were compaction summaries, and 4 only CITED an
+existing ticket id, because the marker regex accepts `pf:` which is also the
+form of every reference. Citation, harness-echo and code-span filters were
+added.
+
+AND THE HONEST RESULT: with all filters, decoding all 1,185 candidate lines
+across 249,664 transcript lines, the number of messages whose text actually
+RAISES a marker is 0. So the defect was real and cost 0 lost proposals. An
+earlier draft of this work quoted a 0.92 discard rate as though proposals had
+gone missing; that compared 2 raw-line predicates with each other and has been
+withdrawn.
+
+QUESTIONS FOR YOU:
+  - Is the superset argument for `\b(fr|pf|qs|wr)\b` actually sound? Try to find
+    a decoded text the decision accepts and the prefilter rejects.
+  - The chat half was justified on the grounds that some founder questions exist
+    ONLY in chat. Those questions carry no marker, so no marker-gated reader can
+    reach them. Is a marker-gated chat harvester worth keeping at all, and if
+    not, what predicate would work without flooding a 2,858-ticket store?
+
+## CHANGE 5 — the run configuration proposed for tonight
+
+`bench/tools/run_simulated_experiment.py`, with `--severity-spec`.
+
+`--severity-spec` promotes the appendix section 7.7 severity specification from
+SHADOW (recorded, gating nothing) to DECIDING. Section 7.7 states
+
+    Sev(f) = W(class) . confidence . V(verification)
+    W(HARD)=1.0, W(SOFT)=0.5; V(True)=1.0, V(None)=0.5, V(False)=0.0
+
+with the key property that a disproved finding scores ZERO regardless of
+confidence. Two of the three inputs were never collected: across 3,298 archived
+entries `confidence` appears on 0 of them and no field carries a HARD/SOFT
+class. The runner instead reads the model's own asserted `severity`.
+
+The shadow reader applies V — the harness's OWN falsifier verdict — which is the
+step the founder described on 2026-10-12 when he said a model must provide a
+proof and the rest of the machinery must then check it with tools, and that this
+is the opposite of a vote.
+
+Measured across the archive: the share at or above the 0.7 critical cut falls
+from 41.6313% (Wilson [39.9596%, 43.3225%]) to 16.3129% ([15.0912%, 17.6130%]),
+with 835 of 3,298 entries crossing downward, 25.3184% Wilson [23.8636%,
+26.8306%]. The appendix's key property is violated on 35 of 40 disproved
+findings, 87.5000% Wilson [73.8879%, 94.5405%].
+
+The founder ruled on 2026-10-28: implement it and measure it in the next
+simulated run.
+
+QUESTIONS FOR YOU:
+  - A 25-point reclassification is replay-invalidating. Is it safe to let the
+    spec DECIDE in the same run that first measures it, or must the run record
+    it in shadow and promote only afterwards? The shadow telemetry is recorded
+    unconditionally, so one run yields both readings — does that settle it?
+  - With the spec deciding, far fewer findings are critical. The convergence gate
+    requires K rounds with no new CRITICAL finding. Does `--severity-spec`
+    therefore make convergence EASIER and mask the very false-quiet problem
+    changes 1 and 2 address? This is the interaction we most need you to check.
+
+## CHANGE 6 — the founder's own proposal on the nested test suite
+
+Task entry B37: the suite contains 3 tests that run the suite inside themselves,
+and on his 8 GiB machine that DEADLOCKS rather than merely running slowly. A
+further 3 test files guarding the discipline checker are not collected by the
+commit check, which is why 4 of them sat broken without anyone seeing; the
+commit check reported 1,439 tests passing on 3 separate occasions while those 4
+were failing. Adding them was attempted and deliberately reverted, because
+enlarging the collected list enlarges the nested run.
+
+His proposal, 2026-10-28, verbatim: "Can this test not be run sequentially,
+similar to your sq MC command? Why risk choking up my 8GB machine and making it
+unusable, or risk the tests failing to complete, when the tests can be run
+sequentially, to the same effect?"
+
+His machine: 8 logical cores, 8 GiB RAM. A pytest process tree on this
+repository peaks at 364.7 MiB against roughly 1.9 GiB of live headroom. The
+derived safe budget is 2 heavy and 6 light processes.
+
+QUESTION FOR YOU: is serialising the nested run sufficient, or does a nested
+pytest deadlock for a reason serialisation does not address — for example a
+shared lock, a captured file descriptor, or a plugin that assumes one session
+per process? Name the mechanism you would check first.
+
+## CHANGE 7 — the adaptive quiet-run rule, PRE-REGISTERED BEFORE IT IS FITTED
+
+This item SUBSUMES the blind round `the_quiet_run_is_not_the_lever_2026-10-25`,
+which asked what the quiet-run count should be and whether an adaptive measure
+could replace it. That round's joint half was never run; this round carries it.
+
+THE QUESTION. The required quiet run is a fixed constant, K = 3. The founder's
+objection is that it is arbitrary: "I remain uncomfortable however that it is
+also an arbitrary number, and so far we have yet to decide if there is a
+genuinely better way?" The candidate replacement is a rule that reads something
+recorded at the moment of closing and decides whether to require more quiet
+rounds.
+
+WHAT WAS MEASURED, 2026-10-27. The question asked was: does ANY signal recorded
+at the firing point separate a premature close from a sound one? 12 signals were
+tested over the archive, with the first firing per run rather than overlapping
+windows, and discrimination reported as area under the ROC curve with a
+Hanley-McNeil interval.
+
+Three signals discriminate:
+  - `findings_count`, the count of findings so far: AUC 0.9345, 95% CI [0.7978,
+    1.0000], p = 0.002163.
+  - `registry_total`: AUC 0.8542, p = 0.009477.
+  - a residual average, strongly in the inverse direction but on only 3 cases.
+
+The direction is counter-intuitive and is the interesting part: a close is MORE
+likely to be premature when the run has already found a great deal. Richness
+predicts remainder. Local quiet predicts nothing, which is also why the gamma arm
+was weak.
+
+The signals proposed by an external speculative brief are BLIND: its
+finding-silence signal scores 0.3097 with an interval spanning 0.5, its
+residual-stability signal 0.2576 likewise, and its panel-disagreement signal is
+not recorded at the firing point at all.
+
+THE BINDING CONSTRAINT IS 8 LABELLED POSITIVES, NOT METHOD. Fitting a threshold
+on 8 premature closes is exactly how K = 3 and K = 7 came about. So the
+pre-registration below freezes the PROCEDURE and refuses to name a threshold now.
+
+THE PRE-REGISTRATION, which you are asked to attack before it is frozen:
+
+  1. SIGNAL: `findings_count` at the firing point. Primary and single. No
+     composite, no weighting, because a composite fitted on 8 cases is 2 tuned
+     constants instead of 1.
+  2. DIRECTION, fixed in advance: higher `findings_count` means MORE quiet rounds
+     required. A rule that fits the opposite direction is refused as overfitting
+     even if it scores better.
+  3. FORM: K_effective = 3 + 1 if findings_count >= T, else 3. One extra round,
+     one threshold. The floor stays at the founder's ruled 3 so the rule can only
+     ADD caution, never remove it.
+  4. T IS NOT NAMED NOW. It is fitted only when at least 30 labelled closes exist,
+     against the 8 available today. Every future run yields exactly 1 labelled
+     close, so this is a countdown rather than an argument.
+  5. DECISION MEASURE, and it is the same dominance standard the gamma arm was
+     held to: the adaptive rule is ADOPTED only if, on 30 or more labelled closes
+     under leave-one-out, it blocks strictly MORE premature closes than fixed
+     K = 3 while blocking NO MORE sound closes, with Fisher exact p < 0.05 on the
+     premature-blocking difference. If it blocks more premature closes at the cost
+     of even one additional sound close, it is REJECTED and K = 3 stands.
+  6. WHAT WOULD KILL IT: if `findings_count`'s AUC lower bound falls below 0.5
+     once 30 labels exist, the signal is noise and the whole line is abandoned.
+
+QUESTIONS FOR YOU:
+  - Is `findings_count` confounded? The obvious objection is that premature runs
+    simply have more rounds remaining and therefore more findings. Say how you
+    would separate richness from run length, and whether the archive can.
+  - Does the floor-at-3 form make the rule untestable in the direction that
+    matters? If the true fault is closing too LATE on some runs, a rule that can
+    only add rounds cannot ever detect it.
+  - Is 30 the right count, or is it another arbitrary number replacing the first
+     one? Name what should set it.
+  - Is a single-signal rule with one threshold genuinely simpler than K = 3, or
+     is it K = 3 plus 2 new constants wearing an adaptive label?
+
+## How to work, and where a fix must land
+
+RUN things; do not describe them. Execute the tests named above, execute the
+producers named above, and read the source at the paths given. The tool output is
+the evidence.
+
+Where you propose a repair, DELIVER YOUR FIX AS A FILE: write it INTO the sandbox
+repository tree at its real path, the same path the live file occupies. A fix left
+in prose, or written into scratch space, is destroyed at teardown and does not
+count as delivered. Alongside it, write a runnable falsifier and TEST YOUR FIX by
+executing that falsifier; quote its actual output, not your expectation of it.
+
+Use the project's own mathematical instruments where they bear on the question.
+Gamma is the decay curve and is load-bearing: changes 1 and 2 are both about the
+two-sided gate, so say what gamma_critical and the quiet-run count should tell
+you about whether 0.41 and 3 can hold together. Severity is the quantity change 5
+redefines. Every proportion you state carries a Wilson interval.
+
+TERMINATION: stop when further reading produces no new above-threshold finding —
+diminishing returns, which is this project's own criterion. Do not pad. One round
+is expected; a finding is above threshold only if missing it could cause a real
+failure.
+
+## Output
+
+Return these FIELDS, each named, for each change 1 to 7:
+
+- VERDICT: one of SOUND, SOUND WITH CONDITIONS, UNSOUND.
+- FALSIFICATION: your single strongest attempt to refute the change, naming the
+  exact thing you ran or read, with its output.
+- WHAT WOULD REFUTE ME: the evidence that would overturn your own verdict. State
+  it even when your verdict is SOUND.
+- COLLATERAL: anything the change breaks that this brief does not mention.
+- FIX: where you judge the change unsound, the repair, delivered as a file at its
+  real path in the sandbox repository tree, with the falsifier you executed.
+
+Then, once, across all 7:
+
+- DISAGREEMENT: name every point on which you expect the other seat, or the
+  orchestrating model that wrote these changes, to disagree with you, and say
+  which of you the evidence favours. This is a required field. Do not reconcile
+  and do not defer: a round that converges by deference is not evidence, and
+  preserved disagreement is the useful output.
+- WASTED EFFORT: which single change is most likely to make tonight's simulated
+  run wasted effort, and why.
+- INTERACTIONS: any interaction between changes that reviewing each alone would
+  miss. Change 5 against changes 1 and 2 is the one suspected here — whether
+  letting the section 7.7 severity specification decide makes convergence easier
+  and so masks the false-quiet problem changes 1 and 2 exist to fix. Say if you
+  find others.
+- UNREPRODUCIBLE: anything cited above as measured that you believe cannot be
+  reproduced from the committed producers.
