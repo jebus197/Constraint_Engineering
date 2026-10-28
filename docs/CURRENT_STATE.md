@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 25 October 2026 03:14 GMT (2026-10-25T03:14:00+00:00)
+Generated: 28 October 2026 19:10 GMT (2026-10-28T19:10:49+00:00)
 
 ---
 
@@ -18,24 +18,20 @@ Generated: 25 October 2026 03:14 GMT (2026-10-25T03:14:00+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `13622c3a` The FFAFP gate names phantom files as changed, raised as pf:bc80040e3b48
-- **Committed:** 2026-10-25 01:31:31 +0000
+- **Last commit (the PARENT of the commit containing this file):** `ec7cd73b` Baseline triage, batch 4: 34 of 36, and 4 more guards were accusing correct code
+- **Committed:** 2026-10-28 18:48:41 +0000
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M bench/tests/test_ffafp_all_five_steps_2026-09-20.py`
-- `M bench/tests/test_ffafp_dead_detector_2026-09-22.py`
-- `M bench/tests/test_ffafp_unresolved_evasion_2026-09-24.py`
-- `M hooks/ffafp_audit.py`
-- `M hooks/ffafp_stop_gate.py`
-- `M hooks/his_responses_freshness_gate.py`
+- `M bench/tests/test_precommit_guard_2026-09-09.py`
+- `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**12932 tests collected** at 25 October 2026 03:14 GMT, HEAD `13622c3a` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**13030 tests collected** at 28 October 2026 19:10 GMT, HEAD `ec7cd73b` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -65,13 +61,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `13622c3a The FFAFP gate names phantom files as changed, raised as pf:bc80040e3b48`
-- `7ef534ca The quiet-run answer was incomplete: C12 is open, and the gamma arm blocked 0 premature windows`
-- `e954c726 Note triple for the 2026-10-25 session, and the 3 open questions are registered`
-- `a026fb7a sv: his words may not sit unread, the depth directive lands in both files, and a producer corrected its own advocate`
-- `161f7ae5 His duplicate taxonomy built MERGED-last, and the joint round discharges its debt`
-- `4aeecf95 UX backend built as a read-only projection, and the pack's 2 rules are enforced rather than decorated`
-- `e42183a1 sv: Word rewrote his files, 30 panel requests reached nothing, and 2 guards read prose instead of state`
-- `f0794ad3 B35 and B36: the severity gate was never altered, and the 300s timeout is why no full suite ran for 382 commits`
-- `cfb7c970 C4 panel ran, C18 second clause built, C12 premise corrected, B34 raised, and Rule 30 now honours the verbatim region`
-- `c1249e8c B32: each declared mode now records what it DID, and the 5th turns out to have no consumer`
+- `ec7cd73b Baseline triage, batch 4: 34 of 36, and 4 more guards were accusing correct code`
+- `dc5e4280 Baseline triage, batch 3: 27 of 36, and 2 facilities had silently stopped being tested`
+- `b3ad797d Baseline triage, batch 2: 13 more of the 36, and 3 of them were guards accusing correct code`
+- `042d6e89 Baseline triage, batch 1: 4 of the 36 fixed, and 2 of them were mine`
+- `a39d8da6 His login policy built as a route probe that reads the roster, and Rule 14a reached for the first time`
+- `fd2eb1c5 B37 answered on evidence, and the overnight run is blocked on an expired CLI login`
+- `2f3388f6 The ticket store over-matched because chat items carried no identity, and the chat half was never reachable`
+- `90a6d4bd Outstanding rulings for 2026-10-27: 10 decisions, each with its evidence and its register id`
+- `2534c614 Quiet run reverted to 3 and the gamma arm repaired, on his rulings of 2026-10-27`
+- `931bcf2e The quiet run is not the lever: the panel refuted my own recommendation and corrected my headline by 37%`

@@ -87,9 +87,32 @@ def _scratch(tmp_path: Path, guard_body: str, omit: list[str] | None = None) -> 
     return root
 
 
-def _commit(root: Path, extra=()):
+#: A COMMIT THAT RUNS THE REAL HOOK MUST OUTLAST THE REAL BOARD -- 2026-10-28.
+#:
+#: This was 180 s. In a clone with `core.hooksPath` set, `git commit` runs the
+#: repository's own pre-commit hook, and that hook runs the GUARDS board --
+#: MEASURED at 334.54 s median on this machine by
+#: `scripts/precommit_gate_cost_2026-09-10.py`, over 70 files and 1,442 tests.
+#: So the bound was roughly half the work it triggers, and
+#: `test_a_commit_is_refused_in_a_clone_of_this_actual_repository` died with
+#: `subprocess.TimeoutExpired` after 180 s instead of observing the refusal it
+#: exists to observe. Caught by the full-suite baseline of 2026-10-28.
+#:
+#: IT IS NOT A DEADLOCK, which matters because B37 is about one. The refusal this
+#: test wants arrives AFTER the board in the hook's order, so any refusal in that
+#: stage costs the full board time by construction.
+#:
+#: THE BOUND IS DERIVED, NOT PICKED: 900 s is the measured 334.54 s with room
+#: for a loaded machine, and it stays a BOUND -- a hang still fails rather than
+#: hanging, which is the property B37's repair rests on.
+_REAL_BOARD_SECONDS = 334.54          # measured, see the producer named above
+_COMMIT_TIMEOUT = 900                 # ~2.7x the measured board
+
+
+def _commit(root: Path, extra=(), timeout: float = _COMMIT_TIMEOUT):
     return subprocess.run(["git", "commit", *extra, "-m", "attempt"],
-                          cwd=root, capture_output=True, text=True, timeout=180)
+                          cwd=root, capture_output=True, text=True,
+                          timeout=timeout)
 
 
 # --- The two directions that matter. -----------------------------------------
@@ -336,6 +359,7 @@ def test_the_versioned_hook_matches_the_one_that_actually_runs(name):
     )
 
 
+@pytest.mark.timeout(1200)   # the real board is ~334.54 s; see _COMMIT_TIMEOUT
 def test_a_commit_is_refused_in_a_clone_of_this_actual_repository(tmp_path):
     """FOUND ON THE THIRD FFAFP PASS, 2026-09-09.
 
