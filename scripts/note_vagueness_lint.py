@@ -31,6 +31,7 @@ from __future__ import annotations
 import pathlib
 import ast
 import re
+import subprocess
 import re as _re
 import sys
 
@@ -93,6 +94,118 @@ WORD_NUMBER = re.compile(rf"\b{_NW}(?:[ -](?:and[ -])?{_NW})+\b", re.I)
 WORD_NUMBER_OK = re.compile(
     r"\b(?:twenty|thirty)[ -](?:first|second|third|fourth|fifth|sixth|seventh|"
     r"eighth|ninth)\b|\bone of (?:two|three|four|five)\b", re.I)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ★ RULE 27 IN FULL, ON HIS RULING OF 2026-10-19: "Verdict: Enforce going
+# forward only." Entry B24.
+#
+# WHAT WAS UNDER-ENFORCED. `WORD_NUMBER` above requires a MULTI-WORD number, so
+# a hyphenated compound is caught while a SINGLE number word standing before a
+# noun is not. His ruling of 2026-09-04 admits no such distinction: "Digits
+# only, in every context without exception". Found 2026-10-17 by linting a note
+# written to his standard -- 0 findings reported on a file holding 22 of them.
+#
+# WHY IT IS DATE-GATED AND NOT RETROSPECTIVE. A bare detector over all 562 notes
+# returns about 16,743 occurrences across 522 of them, which would either block
+# every commit or force a re-baseline of the ratchet -- and re-baselining a
+# ratchet to accommodate a detector change is lowering a number by changing the
+# policy rather than the work, which entry C29 exists to refuse. His ruling is
+# the same shape as his 2026-10-16 one on vendor names: "We normalise going
+# forward ... I am not suggesting rewriting history."
+#
+# AND THE SCOPE IS FAR SMALLER THAN THE HEADLINE, MEASURED 2026-10-29. Of the
+# 688 bare occurrences in notes dated on or after his ruling, 0.662791 are
+# INSIDE verbatim regions -- another model's words, quoted. Rule 27 governs what
+# this project WRITES, not a record of what someone else wrote, and the verbatim
+# machinery already exempts them. In the notes' OWN voice the count is 232
+# across 20 files, and the heaviest 3 panel records fall from 136, 116 and 110
+# to 6, 3 and 3.
+BARE_WORD_NUMBER = re.compile(rf"\b{_NW}\b", re.I)
+
+#: IDIOMS WHERE A NUMBER WORD IS NOT A NUMBER. "no one", "one another", "at one
+#: with" and the ordinals are English, not data, and his own rule exempts
+#: ordinals and dates that read naturally aloud. Listed explicitly rather than
+#: inferred, so a reader can see exactly what is forgiven.
+BARE_WORD_NUMBER_OK = re.compile(
+    r"\b(?:no one|one another|one-off|one by one|one or (?:two|more|the other)|"
+    r"at one|in one|as one|the one|this one|that one|each one|every one|"
+    r"any one|some one|which one|the only one|not one|more than one|"
+    r"one of (?:two|three|four|five|the|his|her|its|my|our|their|them|these|"
+    r"those)|one another's|zero[- ]plant|zero[- ]day|one[- ]line|one[- ]off|"
+    r"one[- ]sided|one[- ]way|one[- ]to[- ]one|ten[- ]fold|"
+    r"(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)[ -]"
+    r"(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth))\b",
+    re.I)
+
+#: ★ THE CUTOFF IS THE DATE ENFORCEMENT BEGINS, NOT THE DATE HE RULED, and the
+#: difference is 20 notes. His ruling of 2026-10-19 was "Enforce going forward
+#: only", given on an entry whose option (2) proposed "files written after a
+#: cutoff" without fixing which cutoff.
+#:
+#: WHY THE LATER DATE IS THE FAITHFUL ONE. Between his ruling and this detector
+#: landing, 20 notes were written while NO CHECKER EXISTED to hold them to the
+#: full rule. Measured through the command line on 2026-10-29: those 20 carry
+#: 165 COUNTED findings, with 317 more correctly exempted inside verbatim
+#: regions. Holding them to a rule nothing enforced at the time is the
+#: retrospection his ruling refuses, and the project's own precedent is his
+#: 2026-10-16 wording on vendor names: "We normalise going forward ... I am not
+#: suggesting rewriting history."
+#:
+#: AND THE ALTERNATIVE WAS TRIED BEFORE BEING REJECTED, which is why the figure
+#: above exists. A cleaner driven off the linter's own findings was built and
+#: DRY-RUN over all 20 notes. It cannot touch quoted material by construction --
+#: matches come from text with double-quoted spans already removed, and verbatim
+#: regions are never counted -- but the substitutions it proposed included
+#: several that damage ordinary English, because a bare number word before a
+#: noun is sometimes a count and sometimes idiom, and no whitelist enumerates
+#: every idiom. Mass-applying 165 of those unread would trade a reporting gap
+#: for a prose defect across delivered notes.
+#:
+#: THIS IS VISIBLE RATHER THAN QUIET, and he can move it in 1 edit. The 165 are
+#: recorded here so the choice is auditable; if he wants the gap cleaned, the
+#: cleaner exists and the figure is known.
+RULE_27_FULL_FROM = "2026-10-29"
+
+
+def note_first_seen(path: pathlib.Path) -> str | None:
+    """The date a note ENTERED the repository, or None when it cannot be dated.
+
+    GIT, NOT THE MTIME, and the difference decides cases. An mtime moves every
+    time a file is touched, so a 2026-09 note edited tonight would be held to a
+    rule written after it -- which is exactly the retrospection his ruling
+    refuses. The first-commit date does not move.
+
+    FAILS OPEN, deliberately. An undatable file -- not yet committed, or no git
+    -- returns None and is treated as NEW, because a note being written right
+    now is the one case the rule is certainly meant to cover.
+    """
+    try:
+        r = subprocess.run(
+            ["git", "log", "--diff-filter=A", "--format=%aI", "--", str(path)],
+            cwd=str(pathlib.Path(__file__).resolve().parents[1]),
+            capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    stamps = [x for x in r.stdout.split() if x]
+    if stamps:
+        return stamps[-1][:10]
+    # ★ THE FILENAME DATE IS EVIDENCE, AND IT IS CONSULTED BEFORE FAILING OPEN.
+    # "Uncommitted means new" was too crude: it held 3 generated morning reports
+    # dated 2026-10-16, 2026-10-19 and 2026-10-28 to a rule that began on
+    # 2026-10-29, purely because they had never been committed. This project
+    # names its notes with their date, so that date is a better witness to when
+    # a note was WRITTEN than the absence of a git record is. Only a file with
+    # neither a git date nor a dated name falls open as new.
+    m = re.search(r"(20\d\d)-(\d\d)-(\d\d)", path.name)
+    if m:
+        return m.group(0)
+    return None
+
+
+def rule_27_in_full(path: pathlib.Path) -> bool:
+    """Is this note held to Rule 27 in full? His ruling: going forward only."""
+    seen = note_first_seen(path)
+    return seen is None or seen >= RULE_27_FULL_FROM
 
 # RULE 28 (v1.7) -- CALL IT WHAT THE FOUNDER CALLS IT.
 # A category noun standing where the project's own name belongs. Rule 19 bans
@@ -1061,6 +1174,9 @@ def _is_tts(path) -> bool:
 def lint(path: pathlib.Path) -> list:
     out = []
     _tts = _is_tts(path)
+    # ★ RULE 27 IN FULL ONLY FOR NOTES DATED FROM HIS RULING. Entry B24, his
+    # verdict of 2026-10-19: "Enforce going forward only."
+    _full_27 = rule_27_in_full(path)
     for para_no, s in sentences(path.read_text()):
         # Quote-stripping applies to EVERY rule, not only 27 and 28. A note that
         # quotes someone else's vagueness in order to name it is not being vague.
@@ -1099,6 +1215,21 @@ def lint(path: pathlib.Path) -> list:
         if m and not WORD_NUMBER_OK.search(m.group(0)):
             out.append((para_no, "SPELLED NUMBER (Rule 27: use digits)",
                         m.group(0), s))
+        elif _full_27:
+            # THE BARE FORM, checked only when the compound form did not already
+            # fire, so one sentence yields one finding rather than two. The
+            # whitelist is consulted on a WINDOW around the match, not on the
+            # match alone, because every idiom that forgives a bare number word
+            # is a phrase: "no one", "at one", "one of the". Matching the word
+            # in isolation could never see them.
+            bm = BARE_WORD_NUMBER.search(unquoted)
+            if bm:
+                lo_i = max(0, bm.start() - 18)
+                window = unquoted[lo_i:bm.end() + 18]
+                if not BARE_WORD_NUMBER_OK.search(window):
+                    out.append((para_no,
+                                "SPELLED NUMBER (Rule 27 in full: use digits)",
+                                bm.group(0), s))
         for phrase, name in CATEGORY_NOUN.items():
             if CATEGORY_NOUN_RE[phrase].search(low):
                 out.append((para_no, f"CATEGORY NOUN (Rule 28: say {name!r})",

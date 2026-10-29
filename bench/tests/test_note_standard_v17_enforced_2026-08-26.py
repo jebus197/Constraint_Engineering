@@ -136,6 +136,12 @@ class TestTheCheckerDiscriminates:
         "Correlation reached zero point five six four across the runs.",
         "Eighteen of the branch's fifty nine commits are cited by hash.",
         "The run began at fourteen forty six on the twenty third.",
+        # ★ THE BARE FORM, added 2026-10-29 with entry B24's detector. This
+        # sentence sat in the GOOD list until tonight, asserting that a single
+        # spelled number before a noun passes -- which is the under-enforcement
+        # B24 exists to close. His ruling of 2026-09-04 admits no such
+        # distinction: "Digits only, in every context without exception."
+        "One command fixes it, and three fixes landed today.",
     ])
     def test_known_bad_a_spelled_quantity_is_reported(self, bad, tmp_path):
         f = tmp_path / "n.md"; f.write_text(bad, encoding="utf-8")
@@ -146,7 +152,13 @@ class TestTheCheckerDiscriminates:
         "The suite returned 3878 passed, 1 failed, 34 skipped.",
         "The mirror is 178,971 bytes against the repository's 180,043.",
         "Correlation reached rho = 0.564 across 289 observations.",
-        "One command fixes it, and three fixes landed today.",
+        "1 command fixes it, and 3 fixes landed today."   # ★ WAS SPELLED, AND
+    # THAT IS THE POINT. This fixture read "One command ... three fixes"
+    # and asserted it PASSES, which encoded the UNDER-ENFORCEMENT entry B24
+    # exists to close: his ruling of 2026-09-04 is "Digits only, in every
+    # context without exception", so the old fixture was a violation being
+    # held up as good prose. It is now digits here and appears as a POSITIVE
+    # case below, which strengthens the check rather than relaxing it.,
         "The hold was recorded on the twenty sixth of August.",
         "It reclaimed 95 MB across 17,874 entries.",
     ])

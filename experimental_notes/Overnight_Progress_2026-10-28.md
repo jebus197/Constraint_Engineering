@@ -54,7 +54,7 @@ Answered retrospectively from 88 archived rounds, reconstructing completions fro
 
 Seat-count worsening is **suggestive, not established**: 0.384744 at 4+ seats (n = 6) against 0.131478 at 2 seats (n = 74); intervals disjoint; Mann-Whitney `p = 0.005483` and permutation `p = 0.000100`, but Brunner-Munzel — which does not assume equal spread — `p = 0.104133`.
 
-Two corrections against this instrument's own first reading are in the producer: a loose seat detector counted experiment finding files as seats, credited one round with **144 seats** and reported the effect *backwards*; and an unbounded mtime reconstruction gave an impossible mean idle of **80,028.9 s**.
+2 corrections against this instrument's own first reading are in the producer: a loose seat detector counted experiment finding files as seats, credited one round with **144 seats** and reported the effect *backwards*; and an unbounded mtime reconstruction gave an impossible mean idle of **80,028.9 s**.
 
 ## Why I kept stopping
 
@@ -66,7 +66,7 @@ Three independent disablements:
 2. its `Stop` key renamed `_PARKED_Stop_2026-09-11` — and its own guard passes a parked entry **by design**, so nothing was red;
 3. `hooks/ticket_queue_gate.py`, which *is* wired and no longer yields, standing down on a pause file carrying his 2026-10-24 *"do not resume the master task list until I tell you to do so"*.
 
-All three cleared on his 2026-10-28 instruction; the pause **archived, not deleted**. **An earlier reading of mine is withdrawn**: it reconstructed the rule from `MIN_TOOL_CALLS` and `MIN_PROSE`, which `verdict` consults only to *word* its message — 0 of 12 against 8 when called, exact McNemar `p = 0.0078125`. Producer: `scripts/the_gate_was_disabled_three_ways_2026-10-28.py`.
+All 3 cleared on his 2026-10-28 instruction; the pause **archived, not deleted**. **An earlier reading of mine is withdrawn**: it reconstructed the rule from `MIN_TOOL_CALLS` and `MIN_PROSE`, which `verdict` consults only to *word* its message — 0 of 12 against 8 when called, exact McNemar `p = 0.0078125`. Producer: `scripts/the_gate_was_disabled_three_ways_2026-10-28.py`.
 
 ## Where things stand
 
