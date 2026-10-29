@@ -141,10 +141,14 @@ class TestTheDisagreementIsReportedNotHidden:
         dis = tlm.deferral_disagreements(listing, store)
         assert dis["register_defers_an_unknown_entry"] == ["ZZ99"]
 
-    def test_the_checker_reports_the_drift(self, listing, store, monkeypatch):
-        monkeypatch.setattr(tlm, "register_deferrals",
-                            lambda s=None: {"Z1": (WHEN, REASON)})
-        code, problems = tlm.check(listing)
+    def test_the_checker_reports_the_drift(self, listing, store):
+        #: STATES the deferrals rather than monkeypatching a module global.
+        #: The first version patched `tlm.register_deferrals`, which made the
+        #: test depend on HOW `check` obtained its data rather than on WHAT it
+        #: does with it -- so a repair that changed the source silenced the test
+        #: instead of failing it, and the full board of 2026-10-29 caught that.
+        code, problems = tlm.check(listing,
+                                   deferrals={"Z1": (WHEN, REASON)})
         joined = "\n".join(problems)
         assert "Z1 is deferred in the register" in joined
         assert "Z2 has marker state DEFERRED" in joined

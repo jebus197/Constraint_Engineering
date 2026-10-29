@@ -117,6 +117,12 @@ Your options are to delete it, to rename it out of the `CDSFL_*` glob, or to lea
 
 **It clears itself.** When the board exits, the panel dispatches with `PANEL_ONLY=cc2,fable python3 bench/confer_maths_panel_2026-09-05.py stem_generality_b22_2026-10-29`. No action of yours is required.
 
+## B21 single registration point: design complete, awaits the founder yes/no and the SIM-label sub-question
+
+*Parked 2026-10-29T22:39:59+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (14)

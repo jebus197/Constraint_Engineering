@@ -309,9 +309,36 @@ def effective_state(entry: "Entry", deferrals: dict[str, tuple[str, str]]) -> st
     return entry.state
 
 
-def deferral_disagreements(path: Path = LIST, store=None) -> dict[str, list[str]]:
-    """Where the marker and the register disagree about deferral, in both directions."""
-    deferrals = register_deferrals(store)
+def deferral_disagreements(path: Path = LIST, store=None,
+                           deferrals: dict | None = None) -> dict[str, list[str]]:
+    """Where the marker and the register disagree about deferral, in both directions.
+
+    ★ `deferrals` MAKES THE SOURCE EXPLICIT, and the first version read it from a
+    global. Added 2026-10-29 after the full board found the cost. The register's
+    `task_ref` values name entries of the CANONICAL list and nothing else, so
+    deriving them while checking a temporary listing turned every real deferral
+    into "the register defers B13, which is not an entry this parser recognises".
+    The first repair for that disabled the comparison outright for any
+    non-canonical path -- a capability REMOVED to silence a false positive, which
+    the additive standard forbids without a measurement showing the replacement
+    dominates. It also broke the guard that exists to prove the drift IS reported,
+    which is how the removal was caught.
+
+    So the comparison now always runs and the DATA is what varies: pass
+    `deferrals` to state them, or leave it None to derive them from the register
+    when, and only when, the listing is the canonical one.
+    """
+    #: AN EXPLICITLY SUPPLIED SOURCE IS ALWAYS HONOURED. A caller that passes
+    #: `deferrals` or a `store` has stated where the deferrals come from, so the
+    #: canonical-path fallback must not override it -- `test_a_deferral_on_an
+    #: _unknown_entry_is_named` passes a store with a temporary listing and is
+    #: entitled to have it read. The fallback exists only for the caller that
+    #: states NOTHING, where reading the live register against a temporary
+    #: listing would compare 2 unrelated things.
+    if deferrals is None:
+        deferrals = (register_deferrals(store)
+                     if store is not None or Path(path).resolve() == LIST.resolve()
+                     else {})
     entries = parse_entries(path)
     marker_says = {e.ident for e in entries if e.state == "DEFERRED"}
     live = {e.ident for e in entries if e.state not in ("DONE", "WITHDRAWN")}
@@ -352,8 +379,12 @@ def derive_deferred_markers(path: Path = LIST, apply: bool = False,
     return len(dis["register_only"]), changes
 
 
-def check(path: Path = LIST) -> tuple[int, list[str]]:
-    """Return (exit code, problems). 0 problems means the list is coherent."""
+def check(path: Path = LIST, deferrals: dict | None = None) -> tuple[int, list[str]]:
+    """Return (exit code, problems). 0 problems means the list is coherent.
+
+    `deferrals` is forwarded to `deferral_disagreements`; see its docstring for
+    why the source is a parameter rather than a global read.
+    """
     entries = parse_entries(path)
     problems: list[str] = []
     if not entries:
@@ -364,19 +395,12 @@ def check(path: Path = LIST) -> tuple[int, list[str]]:
     # day the ruling was given: the register deferred 5 live entries the markers
     # called OPEN. Reported here rather than silently reconciled, because a
     # checker that repairs without reporting hides the drift it exists to find.
-    #: ★ ONLY FOR THE CANONICAL LIST, and the first version omitted this guard.
-    #: `deferral_disagreements` reads the LIVE register, whose `task_ref` values
-    #: name entries of the canonical list and nothing else. Run against a
-    #: temporary LIST.md -- which 20 tests do -- every real deferral became
-    #: "the register defers B13, which is not an entry this parser recognises",
-    #: so a path-parameterised check was mixing in a global data source. The
-    #: pre-commit board caught it and refused the commit, which is the gate
-    #: doing exactly its job.
-    _dis = (deferral_disagreements(path)
-            if Path(path).resolve() == LIST.resolve()
-            else {"marker_only": [], "register_only": [],
-                  "register_defers_a_closed_entry": [],
-                  "register_defers_an_unknown_entry": []})
+    #: THE COMPARISON ALWAYS RUNS; only its DATA is conditional, and that moved
+    #: into `deferral_disagreements` on 2026-10-29. An earlier version skipped
+    #: the comparison entirely for a non-canonical path, which removed drift
+    #: reporting for every caller that is not the canonical list and silenced
+    #: the guard written to prove the drift is reported at all.
+    _dis = deferral_disagreements(path, deferrals=deferrals)
     for _ident in _dis["register_only"]:
         problems.append(
             f"{path.name}: {_ident} is deferred in the register and its marker "
