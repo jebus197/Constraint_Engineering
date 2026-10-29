@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 28 October 2026 19:10 GMT (2026-10-28T19:10:49+00:00)
+Generated: 29 October 2026 01:33 GMT (2026-10-29T01:33:30+00:00)
 
 ---
 
@@ -18,20 +18,22 @@ Generated: 28 October 2026 19:10 GMT (2026-10-28T19:10:49+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `ec7cd73b` Baseline triage, batch 4: 34 of 36, and 4 more guards were accusing correct code
-- **Committed:** 2026-10-28 18:48:41 +0000
+- **Last commit (the PARENT of the commit containing this file):** `14e1a5c5` T3 closed and marked DONE; 2 questions left for his ruling rather than decided
+- **Committed:** 2026-10-29 01:25:25 +0000
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M bench/tests/test_precommit_guard_2026-09-09.py`
+- `M bench/tests/test_what_a_round_waits_on_its_slowest_seat_2026-10-28.py`
 - `M resources/RECOVERY.md`
+- `M scripts/note_vagueness_lint.py`
+- `M scripts/what_a_round_waits_on_its_slowest_seat_2026-10-28.py`
 
 ---
 
 ## Tests
 
-**13030 tests collected** at 28 October 2026 19:10 GMT, HEAD `ec7cd73b` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**13184 tests collected** at 29 October 2026 01:33 GMT, HEAD `14e1a5c5` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -61,13 +63,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `ec7cd73b Baseline triage, batch 4: 34 of 36, and 4 more guards were accusing correct code`
-- `dc5e4280 Baseline triage, batch 3: 27 of 36, and 2 facilities had silently stopped being tested`
-- `b3ad797d Baseline triage, batch 2: 13 more of the 36, and 3 of them were guards accusing correct code`
-- `042d6e89 Baseline triage, batch 1: 4 of the 36 fixed, and 2 of them were mine`
-- `a39d8da6 His login policy built as a route probe that reads the roster, and Rule 14a reached for the first time`
-- `fd2eb1c5 B37 answered on evidence, and the overnight run is blocked on an expired CLI login`
-- `2f3388f6 The ticket store over-matched because chat items carried no identity, and the chat half was never reachable`
-- `90a6d4bd Outstanding rulings for 2026-10-27: 10 decisions, each with its evidence and its register id`
-- `2534c614 Quiet run reverted to 3 and the gamma arm repaired, on his rulings of 2026-10-27`
-- `931bcf2e The quiet run is not the lever: the panel refuted my own recommendation and corrected my headline by 37%`
+- `14e1a5c5 T3 closed and marked DONE; 2 questions left for his ruling rather than decided`
+- `5be94c2f T3 converged, and the barrier his ruling asked for is measured: one seat is the critical path in 5 of 5 rounds`
+- `479fbfb9 B24 closed with its verification, and marked DONE`
+- `c5f681b0 B24 built: Rule 27 enforced in full going forward, on his ruling of 2026-10-19`
+- `31ba2157 The previous commit message was eaten by the shell: the corrected text, and the lesson generalised`
+- `c6930ab5 T4: the chat source is RETIRED on his ruling, with the condition tested rather than assumed`
+- `481aaa03 T3 entry corrected to record the panel's refusal of --severity-spec, and the task list gains its foot-line`
+- `52ab58a0 T2 DONE: the joint round found what neither blind seat saw, and 3 of my own claims are withdrawn`
+- `c8152668 T2 blind half: both seats refused tonight's --severity-spec, and found 2 real defects in my own producer`
+- `a6c50b9e T1 closed with its verification`

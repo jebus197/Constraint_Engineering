@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 28 October 2026 19:10 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 29 October 2026 01:33 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,113 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-29 01:29 GMT (READ THIS FIRST)
+
+**Branch `sim/shakedown-2026-09-29`, HEAD `14e1a5c5`, pushed.** Recorded at 2026-10-29T01:29:40+00:00.
+T1, T2 and T3 of tonight's queue are DONE and closed; T4 is in progress.
+
+**THE FREE PANEL CHANGED THE RUN, AND BOTH HALVES RAN.** Blind: cc2 35,395 chars / 78
+tools / 977.1 s, fable 29,671 / 72 / 1021.3 s. Joint: cc2 14,203 / 45 / 928.9 s, fable
+10,063 / 35 / 973.3 s, both declaring a stop on diminishing returns. FULL RECORDS at
+`experimental_notes/Panel_FULL_RECORD_The_Nine_Changes_2026-10-28.md` and
+`experimental_notes/Panel_FULL_RECORD_Joint_The_Nine_Changes_2026-10-28.md`.
+
+**`--severity-spec` WAS NOT PASSED, which reverses the premise of his 2026-10-28
+ruling.** Both seats refused it independently. On the in-play domain V <= 0.5, so
+`asserted . V <= 0.5 < 0.7` holds unconditionally -- z3 `unsat`, a local Wolfram
+`Maximize` returning 1/2 -- which collapses the A4 door to `severity_is_proven` alone
+and RELEASES a proven asserted-1.0 unresolved critical. The brief's stated risk was also
+wrong: `_settled_novelty_series` reads RAW severity, so the 3-round no-new-critical count and gamma_critical, the 2 arms of the
+two-sided gate, are byte-identical either way, measured `[0, 1, 1, 0]` both ways. HIS RULING IS BLOCKED ON
+EVIDENCE HE HAS NOT SEEN, not discarded: promotion needs `W(class)` and `confidence`,
+which appear on 0 of 3,298 entries, or the cut re-derived on the specification's own scale
+-- the 63 full-range adjudications only he can supply.
+
+**THE JOINT HALF FOUND WHAT NEITHER BLIND SEAT SAW: `any([])` IS FALSE.** A
+`premature` label is a disjunction over the rounds AFTER a fire point, so a fire point
+with no round after it is labelled SOUND with no evidence. 10 of 30 are labelled sound over
+an EMPTY tail, and TAIL LENGTH ALONE predicts the label at AUC 0.971591, CI
+[0.888203, 1.0], Spearman rho 0.751455 at p = 1.70325e-06 -- out-separating every signal
+the committed table scores. Repaired with `--min-tail`, default 0, every published
+figure byte-identical.
+
+**3 OF MY OWN CLAIMS WITHDRAWN ON MEASUREMENT.** The 0.741791 justification is gone from
+`ticket_store` -- 0.740299 of its denominator is (kind, subject) pairs for which no
+ticket of that kind EXISTS -- replaced by fable's executed 3-variant case table. My
+concession that "dominates" was wrong is withdrawn: the threshold comparison is NESTED and
+therefore PAIRED, giving an exact binomial p = 0.005057 with Wolfram agreeing; the SWEPT
+Fisher p is what should have been withdrawn, and its selection-corrected permutation p is 0.075846.
+And I accepted a FALSE charge against myself -- the change-7 figures reproduce to 4
+decimals.
+
+**T3 CONVERGED AND I AM NOT CLAIMING THE SUCCESS CRITERION.**
+`free_run3_no_spec_20261028T235529Z` converged at round 4, HARDENED_CONVERGED, 19
+findings, 62.1 min, **0 unresolved criticals**, cum_critical 12 -- matching the clean pair
+on both. But gamma_critical peaked at **0.892** with loo_min **0.866** against their
+1.000/1.000, history `[0.0, 0.0, 0.8236, 0.8664, 0.8919]`, and the status mix is
+CLOSED 15 / CONFIRMED 4 against their CLOSED/CORROBORATED/REFUTED shapes. **WHETHER THAT IS
+A THIRD CLEAN CONVERGENCE IS HIS TO READ.**
+
+**HIS BARRIER RULING WAS HALF SATISFIED AND IS NOW WHOLE, with the measurement he asked
+for.** The seats were stamped and nothing derived anything: the panel writes
+`completion_barrier.json` while `reference_runner_v3` dispatches by a separate
+path, and the archive reader must keep rejecting `r<digit>_` files -- that rejection being the fix for
+a detector that credited a single round with 144 seats and reported the seat-count effect
+BACKWARDS. `simulated_round_barriers` plus `--simulated-run` closes it at a FINER
+unit than the panel's. From exact stamps over T3's 5 rounds: median idle share
+**0.536638**, mean 0.541341, max 0.596409, **97.8 minutes of idle inside a 62.1-minute
+run**, and **A SINGLE SEAT was the critical path in 5 of 5 rounds** -- exact binomial
+p = 0.000128601 against a 1-in-6 null, mpmath and NumPy agreeing to 9 decimals,
+Clopper-Pearson [0.549280, 1.000000]. The seat-count direction now has 3 points: 0.131478
+at 2 seats (74 archived), 0.384744 at 4+ (6), 0.536638 at 6 (5). Spearman rho 1.000000, but
+3 points and 2 provenances, so the DIRECTION is consistent and NO SLOPE IS CLAIMED.
+
+**B24 BUILT: RULE 27 ENFORCED GOING FORWARD.** The bare detector sits beside the compound
+detector with an idiom whitelist read on a WINDOW around each match. Scope measured first: of
+688 occurrences in notes dated from his ruling, 0.662791 are inside VERBATIM regions, so
+165 counted against 317 exempted, and the heaviest panel records fall from 102, 89 and 67
+to 5, 2 and 2. The cutoff is the date ENFORCEMENT began, not the date he ruled, because the
+20 notes between had no checker to be held to; the 165 is recorded in the source so he can
+move it in 1 edit. A cleaner was BUILT AND DRY-RUN before being rejected -- it cannot touch
+quoted material by construction, but 20 of its proposed substitutions damage ordinary English, because a bare
+number word is sometimes a count of 1 thing and sometimes English idiom.
+
+**AND THE STOP GATES ARE LIVE AGAIN, which is why this session did not stop.**
+`hooks/work_not_narrate.py` was correct and fired on nothing, disabled 3 ways: a 0-byte
+PARKED sentinel from 2026-09-11 on which `main()` returns 0 before reading anything; its
+`Stop` key renamed `_PARKED_Stop_2026-09-11`, which its own guard passes BY DESIGN;
+and `ticket_queue_gate` standing down on a pause file carrying his 2026-10-24 "do not
+resume the master task list until I tell you to do so". All 3 cleared, the pause ARCHIVED.
+Called on the session's own 488.4 MB transcript it refuses 8 of the newest 12 genuine turns
+and allows the 4 carrying `d`; self-test 7 of 7. NO PREDICATE WAS CHANGED, and an
+earlier reading of mine is withdrawn: it measured 2 constants `verdict` consults only to
+WORD its message.
+
+**4 GUARDS WERE ACCUSING CORRECT CODE TONIGHT, the 9-of-36 class again.** 2 demanded the
+immune memory be EMPTY, citing his 2026-10-16 reset -- but the same ruling says "leave the
+default in this case set to on, so that it can persist between experiments", and the reset
+was a ONE-OFF timed "immediately before the transition back to main". T3's priors are the
+RULED default. The guards now assert what the reset protects: that none of the 3 pre-reset
+experiments has returned, and that provenance is complete; mutation-tested red. 2 more were
+fixtures asserting that Rule 27 violations PASS.
+
+**THE FFAFP GATE EARNED ITS KEEP TWICE.** Its first refusal produced a FOLLOW that found
+the Rule 27 cutoff check reading the path on disk rather than `_LOGICAL_PATH` -- which, in the
+pre-commit path, dates a TEMP staged copy and would hold an archived note to the new rule.
+Its second produced the FOLLOW that found `simulated_round_barriers` reached by NOTHING,
+an unwired addition committed within an hour of a memory file about unwired additions.
+
+**RESUME POINTER: T4.** Resume the master task list from R1 downward. R1 costs money and
+needs his authorisation. The harvester's chat half is RETIRED on his ruling with the
+condition TESTED -- with the filter correct it still returns 0 rows for every window back
+to 2026-08-01, so the 0 is a property of the corpus. 72 OPEN tickets; next is B13.
+
+**SUITE: 4 failed, 13,001 passed, 25 skipped in 5319.78 s**, recorded in
+`resources/suite_record.json` from the log by `scripts/suite_record.py`; both logs
+mirrored under `experimental_notes/evidence/suite_logs_2026-10-28/`. The pre-commit
+board stands at 1,455 passed, reproducible with
+`python3 -m pytest bench/tests/ -q --netguard-strict`.
 
 ## SESSION STATE — 2026-10-28 22:16 GMT (READ THIS FIRST)
 

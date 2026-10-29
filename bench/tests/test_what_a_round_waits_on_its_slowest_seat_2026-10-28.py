@@ -211,6 +211,95 @@ class TestTheCompletionTimeProvenanceIsVisible:
             f"alone and requote it rather than mixing the 2 provenances")
 
 
+class TestTheSimulatedPerRoundReaderIsReached:
+    """★ ADDED BECAUSE IT WAS AN UNWIRED ADDITION, found by the FFAFP gate.
+
+    `simulated_round_barriers` was written to satisfy his ruling that the
+    barrier be studied in the simulated run, and then reached by NOTHING -- no
+    test, not even the producer's own `main`. That is the additive standard's
+    other half, breached within an hour of a memory file being written about it.
+
+    WHY A SEPARATE READER EXISTS AT ALL, since it looks like duplication. The
+    panel dispatcher writes `completion_barrier.json` at the end of its round;
+    `reference_runner_v3` has its OWN dispatch path and calls nothing of the
+    kind. And the archive reader DELIBERATELY rejects `r<digit>_` files, that
+    rejection being the fix for a loose detector which credited one "round" with
+    144 seats and reported the seat-count effect BACKWARDS -- so the files that
+    carry the new stamps are exactly the files it must keep ignoring.
+    """
+
+    def test_it_groups_by_round_and_reads_the_exact_stamps(self, mod, tmp_path):
+        run = tmp_path / "a_sim_run"
+        run.mkdir()
+        # 2 rounds, 3 seats each, timings known by construction
+        plan = {
+            "r0": [("alpha", 100.0, 110.0), ("beta", 100.0, 130.0),
+                   ("gamma", 100.0, 105.0)],
+            "r1": [("alpha", 200.0, 210.0), ("beta", 200.0, 220.0),
+                   ("gamma", 200.0, 202.0)],
+        }
+        for rnd, seats in plan.items():
+            for name, t0, t1 in seats:
+                (run / f"{rnd}_{name}_x.json").write_text(json.dumps({
+                    "model": name,
+                    "metadata": {"t_start_epoch": t0, "t_end_epoch": t1,
+                                 "elapsed": t1 - t0}}), encoding="utf-8")
+        rows = mod.simulated_round_barriers(run)
+        assert [r["round"] for r in rows] == ["r0", "r1"], (
+            "rounds must come back in round order, not file order")
+        r0 = rows[0]
+        assert r0["n_timed"] == 3 and r0["slowest_seat"] == "beta"
+        assert r0["round_wall_s"] == pytest.approx(30.0)
+        # beta ends at 130; alpha idles 20, gamma idles 25, beta 0
+        assert r0["total_idle_s"] == pytest.approx(45.0)
+        assert r0["idle_share"] == pytest.approx(45.0 / (3 * 30.0))
+        assert rows[1]["slowest_seat"] == "beta"
+
+    def test_a_seat_file_without_stamps_is_skipped_not_guessed(self, mod, tmp_path):
+        """An unstamped run must yield nothing rather than an invented figure."""
+        run = tmp_path / "older_sim_run"
+        run.mkdir()
+        (run / "r0_alpha_x.json").write_text(json.dumps({
+            "model": "alpha", "metadata": {"elapsed": 12.0}}), encoding="utf-8")
+        assert mod.simulated_round_barriers(run) == [], (
+            "a run predating the stamps must measure nothing, because the "
+            "mtime route is the archive reader's job and not this one's")
+
+    def test_the_command_line_reaches_it(self, mod, tmp_path):
+        """The flag is what makes it reachable outside a test."""
+        run = tmp_path / "flag_run"
+        run.mkdir()
+        for name, t0, t1 in (("a", 0.0, 5.0), ("b", 0.0, 9.0)):
+            (run / f"r0_{name}_x.json").write_text(json.dumps({
+                "model": name,
+                "metadata": {"t_start_epoch": t0, "t_end_epoch": t1,
+                             "elapsed": t1 - t0}}), encoding="utf-8")
+        prev = mod.LOGS
+        try:
+            mod.LOGS = tmp_path
+            rows = mod._simulated_report("flag_run")
+        finally:
+            mod.LOGS = prev
+        assert len(rows) == 1 and rows[0]["slowest_seat"] == "b"
+
+    def test_an_absent_run_is_reported_and_not_invented(self, mod, tmp_path):
+        prev = mod.LOGS
+        try:
+            mod.LOGS = tmp_path
+            assert mod._simulated_report("there_is_no_such_run") == []
+        finally:
+            mod.LOGS = prev
+
+    def test_latest_stamped_run_finds_the_real_one(self, mod):
+        """On this machine the newest stamped run is T3, and it must be found."""
+        got = mod.latest_stamped_run()
+        if got is None:
+            pytest.skip("no stamped run in this checkout")
+        rows = mod.simulated_round_barriers(got)
+        assert rows, f"{got.name} was selected as stamped but measures nothing"
+        assert all(r["n_timed"] >= 2 for r in rows)
+
+
 class TestTheIndependentCorroboration:
 
     def test_it_agrees_with_the_committed_stagger_figure(self, produced):

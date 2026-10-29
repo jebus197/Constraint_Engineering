@@ -133,6 +133,14 @@ BARE_WORD_NUMBER_OK = re.compile(
     r"one of (?:two|three|four|five|the|his|her|its|my|our|their|them|these|"
     r"those)|one another's|zero[- ]plant|zero[- ]day|one[- ]line|one[- ]off|"
     r"one[- ]sided|one[- ]way|one[- ]to[- ]one|ten[- ]fold|"
+    #: ★ COMPOUND ADJECTIVES BUILT ON A NUMBER WORD ARE NOT COUNTS, added
+    #: 2026-10-29 when the detector fired on this project's own term
+    #: "two-sided gate". `one-off` and `one-sided` were already here; the gap
+    #: was that only `one-` compounds had been enumerated. A hyphenated
+    #: number word qualifying a noun is English, not data, which is the same
+    #: ground on which his ruling exempts ordinals.
+    r"two[- ]sided|two[- ]tier|two[- ]way|two[- ]fold|two[- ]part|"
+    r"three[- ]fold|three[- ]way|three[- ]part|four[- ]fold|five[- ]fold|"
     r"(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)[ -]"
     r"(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth))\b",
     re.I)

@@ -301,6 +301,70 @@ def measure() -> dict:
     return r
 
 
+def latest_stamped_run() -> pathlib.Path | None:
+    """The newest run directory whose per-round seat files carry both stamps."""
+    for d in sorted((q for q in LOGS.iterdir() if q.is_dir()),
+                    key=lambda q: q.stat().st_mtime, reverse=True):
+        for f in d.glob("r*_*.json"):
+            try:
+                o = json.loads(f.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            meta = o.get("metadata") if isinstance(o.get("metadata"), dict) else o
+            if isinstance(meta.get("t_end_epoch"), (int, float)):
+                return d
+    return None
+
+
+def _simulated_report(which: str) -> list[dict]:
+    """Print one simulated run's PER-ROUND barrier. Returns the rows.
+
+    ★ THIS IS WHAT MAKES `simulated_round_barriers` REACHABLE. That function was
+    added and then reached by NOTHING -- no test, not even this script's own
+    `main` -- which is the unwired-addition half of the additive standard,
+    committed within an hour of a memory file being written about exactly that
+    failure. The FFAFP stop gate asked for the FOLLOW that found it.
+    """
+    import numpy as np
+    run = latest_stamped_run() if which == "latest" else (LOGS / which)
+    if run is None or not run.is_dir():
+        print(f"  no such run directory: {which!r}")
+        return []
+    rows = simulated_round_barriers(run)
+    if not rows:
+        print(f"  {run.name}: no per-round seat file carries both stamps. A run "
+              f"from before 2026-10-28 cannot be measured this way, and the "
+              f"archive reconstruction is what covers those.")
+        return []
+    print("=" * 78)
+    print(f"PER-ROUND COMPLETION BARRIER -- {run.name}")
+    print("=" * 78)
+    print("\n  from EXACT stamps: no reconstruction, no exclusion bound\n")
+    print(f"  {'round':>6} {'seats':>5} {'wall s':>9} {'idle s':>9} "
+          f"{'idle share':>11}  slowest")
+    for r in rows:
+        print(f"  {r['round']:>6} {r['n_timed']:>5} {r['round_wall_s']:>9.1f} "
+              f"{r['total_idle_s']:>9.1f} {r['idle_share']:>11.6f}  "
+              f"{r['slowest_seat']}")
+    sh = np.array([r["idle_share"] for r in rows])
+    idle = sum(r["total_idle_s"] for r in rows)
+    print(f"\n  median idle share {np.median(sh):.6f}, mean {sh.mean():.6f}, "
+          f"max {sh.max():.6f}")
+    print(f"  total idle {idle / 60:.1f} minutes across {len(rows)} round(s)")
+    slow = [r["slowest_seat"] for r in rows]
+    top = max(set(slow), key=slow.count)
+    k = slow.count(top)
+    if len(rows) > 1 and k == len(rows):
+        from scipy import stats
+        seats = max(r["n_timed"] for r in rows)
+        pv = float(stats.binomtest(k, len(rows), 1.0 / seats,
+                                   alternative="greater").pvalue)
+        print(f"  ★ ONE SEAT IS THE CRITICAL PATH IN {k} OF {len(rows)} "
+              f"ROUNDS: {top}")
+        print(f"    exact binomial against a 1-in-{seats} null: p = {pv:.9f}")
+    return rows
+
+
 def main() -> int:
     # `takes_no_arguments=False` IS REQUIRED HERE, and its absence made every
     # flag below unreachable. `answer_help` defaults to refusing ANY argument
@@ -312,7 +376,17 @@ def main() -> int:
     ap = argparse.ArgumentParser(
         description="Measure the completion-barrier cost over archived rounds.")
     ap.add_argument("--json", action="store_true", help="emit figures as JSON")
+    ap.add_argument("--simulated-run", metavar="DIR", default=None,
+                    help="a simulated run directory under bench/logs/: report "
+                         "its PER-ROUND barrier from the exact stamps instead "
+                         "of the archive reconstruction. Pass 'latest' for the "
+                         "newest run carrying stamped seat files.")
     args = ap.parse_args()
+    if args.simulated_run:
+        rows = _simulated_report(args.simulated_run)
+        if args.json:
+            print(json.dumps(rows, indent=2, default=str))
+        return 0 if rows else 1
     r = measure()
     if args.json:
         print(json.dumps(r, indent=2, default=str))
