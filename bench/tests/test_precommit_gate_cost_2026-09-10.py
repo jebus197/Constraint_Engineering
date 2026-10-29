@@ -122,7 +122,7 @@ class TestTheCountIsExactAndCurrent:
         has kept the figure true since 14:20 on 2026-09-10; a figure nobody is
         forced to refresh is how the first 3 corrections became possible.
 
-        Refresh with: python3 scripts/precommit_gate_cost_2026-09-10.py
+        Refresh with: python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0
         """
         declared_files, declared_tests = _declared_gate_cost()
         files = mod.gate_files()
@@ -133,7 +133,7 @@ class TestTheCountIsExactAndCurrent:
             f"the collected count has moved to {mod.collected(files)}; the task "
             f"list declares {declared_tests}. This is EXPECTED whenever an entry "
             f"is closed -- refresh the declaration in entry 1.1 with:\n"
-            f"  python3 scripts/precommit_gate_cost_2026-09-10.py")
+            f"  python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0")
 
     def test_the_declaration_is_actually_present_and_parseable(self):
         """ANTI-VACUITY. If the marker vanished, the test above would have

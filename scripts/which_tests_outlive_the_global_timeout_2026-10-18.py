@@ -38,7 +38,7 @@ Every proportion carries a 95% interval, cross-verified across statsmodels,
 scipy and an independent NumPy/mpmath closed form, per the 21 April 2026 rule.
 """
 from __future__ import annotations
-import argparse, ast, configparser, pathlib, sys
+import argparse, ast, configparser, pathlib, re, sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 TESTS = ROOT / "bench" / "tests"
@@ -164,6 +164,108 @@ def intervals(k: int, n: int):
         out["mpmath_wilson"] = f"UNAVAILABLE: {e}"
     return out
 
+# ---- RUNTIME MODE, added 2026-10-29 -----------------------------------------
+
+#: A pytest `--durations` row: "  334.83s call     path::test".
+_DURATION_ROW = re.compile(r'^\s*([\d.]+)s\s+(setup|call|teardown)\s+(\S+)\s*$')
+
+
+def read_durations(path: pathlib.Path) -> dict[str, dict[str, float]]:
+    """Per-test phase durations from a pytest log containing a durations table.
+
+    THE SUM IS WHAT MATTERS, NOT THE CALL PHASE, AND THAT IS NOT A GUESS.
+    `pytest.ini` sets `timeout = 300` and does NOT set `timeout_func_only`;
+    pytest-timeout 2.4.0 declares that ini key with `default=False`, and with
+    `func_only` False it arms the timer in `pytest_runtest_protocol`, which
+    wraps setup, call AND teardown. Verified by execution on 2026-10-29: a test
+    with a 1.5 s setup and a 1.0 s call, under a 2 s limit, FAILED on timeout
+    although neither phase alone exceeded it. So a producer comparing the call
+    phase against 300 would under-report, and this one sums the phases.
+    """
+    out: dict[str, dict[str, float]] = {}
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        m = _DURATION_ROW.match(line)
+        if m:
+            secs, phase, test = float(m.group(1)), m.group(2), m.group(3)
+            out.setdefault(test, {})[phase] = secs
+    return out
+
+
+def report_durations(path: pathlib.Path, min_recorded: float) -> int:
+    """Name every test whose REAL runtime reaches the global limit.
+
+    `min_recorded` is the `--durations-min` the run used. Phases below it are
+    absent from the table, so each sum here is a LOWER BOUND: at most 2 phases
+    can be missing once `call` is shown, so the true total is under
+    `sum + 2 * min_recorded`. That is why a band below the limit is reported
+    too, rather than only what already exceeds it -- a test at 260 s of
+    recorded time may really be over 300.
+    """
+    limit = global_timeout()
+    rows = read_durations(path)
+    if not rows:
+        print(f"no durations table in {path} — was the run given --durations?")
+        return 1
+    trees: dict[str, ast.Module] = {}
+
+    def declared(test: str) -> float | None:
+        file, _, rest = test.partition("::")
+        fname = rest.split("::")[-1].split("[")[0]
+        p = ROOT / file
+        if not p.is_file():
+            return None
+        if file not in trees:
+            try:
+                trees[file] = ast.parse(p.read_text(encoding="utf-8"))
+            except SyntaxError:
+                return None
+        return marker_timeout(trees[file], fname)
+
+    over, band = [], []
+    for test, phases in rows.items():
+        total = sum(phases.values())
+        if total >= limit:
+            over.append((total, test, phases))
+        elif total + 2 * min_recorded >= limit:
+            band.append((total, test, phases))
+    over.sort(reverse=True)
+    band.sort(reverse=True)
+
+    print(f"global per-test limit: {limit:.0f} s, applied to setup+call+teardown")
+    print(f"tests in the durations table: {len(rows)} "
+          f"(phases below {min_recorded:.0f} s are not recorded)")
+
+    print(f"\nAT OR OVER THE LIMIT: {len(over)}")
+    if over:
+        print("  a NEEDS figure is a FLOOR from observed runtime alone (1.5x, "
+              "rounded up to the minute) and does NOT account for the test's own\n"
+              "  subprocess budget, which may be higher -- the mirrors test needs "
+              "960 against a 900 s subprocess ceiling while its runtime alone\n"
+              "  suggests 540. Run this script without --durations for those "
+              "ceilings before choosing a marker.")
+    for total, test, phases in over:
+        d = declared(test)
+        ph = " + ".join(f"{k} {v:.2f}" for k, v in sorted(phases.items()))
+        state = (f"declares timeout({d:.0f})" if d else "NO EXPLICIT MARKER")
+        print(f"  {total:8.2f}s  {test}")
+        print(f"            {ph}   [{state}]")
+        if d is None or d <= total:
+            print(f"            NEEDS: @pytest.mark.timeout({int(total * 1.5 // 60 + 1) * 60})")
+
+    print(f"\nWITHIN {2 * min_recorded:.0f} s OF THE LIMIT once unrecorded phases "
+          f"are allowed for: {len(band)}")
+    for total, test, _phases in band:
+        d = declared(test)
+        print(f"  {total:8.2f}s  {test}"
+              f"   [{f'timeout({d:.0f})' if d else 'NO EXPLICIT MARKER'}]")
+
+    if not over:
+        print("\nNo test's recorded runtime reaches the limit. The 67 declared "
+              "ceilings above it stay UNREACHABLE but no test is killed by it, "
+              "which is exactly the distinction the static mode could not draw.")
+    return 0
+
+
 def main() -> int:
     # `--help` MUST NOT COST ANYTHING, and the first version of this script
     # ignored the flag and ran the whole 668-file parse instead. The commit
@@ -173,7 +275,21 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--alpha", type=float, default=0.05,
                     help="two-sided significance level for the intervals")
-    ap.parse_args()
+    # THE RUNTIME MODE, added 2026-10-29. The static scan below answers which
+    # DECLARED ceilings are unreachable; it cannot say whether a test is
+    # actually killed, and this file's own docstring named `--durations` as the
+    # only instrument that can. This is that instrument, in the same producer,
+    # so 1 script answers the whole question rather than 2 disagreeing about it.
+    ap.add_argument("--durations", metavar="LOG",
+                    help="a pytest log containing a --durations table; reports "
+                         "the tests whose REAL runtime reaches the global limit")
+    ap.add_argument("--durations-min", type=float, default=30.0,
+                    help="the --durations-min the run used, so unrecorded "
+                         "phases can be allowed for (default 30)")
+    args = ap.parse_args()
+
+    if args.durations:
+        return report_durations(pathlib.Path(args.durations), args.durations_min)
 
     LIMIT, files, over, at_risk, unbounded, ok = scan()
     print("=" * 74)

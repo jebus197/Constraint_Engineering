@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Harvest tickets from his replies, from chat, and from the master task list.
+"""Harvest tickets from his replies and from the master task list.
+
+THE CHAT SOURCE IS RETIRED FROM THE DEFAULT, HIS RULING 2026-10-28: *"My
+verdict is to scrap it if it will add to inefficiency."* It does, so
+`--sources` defaults to `task_list,responses` and `from_chat` runs only when
+`chat` is named explicitly. It is NOT deleted, because it is the SUBJECT of
+the measurement that justifies retiring it and that evidence has to stay
+reproducible. Read the paragraphs below with that ruling in front of them:
+the instruction quoted next ASKED for the chat half, and the ruling above
+supersedes it. Task T4.
 
 HIS INSTRUCTION, 2026-10-17: "you will need to adapt it in such a way, that it
 can also extract/harvest, track and store any pending fixes and changes you or I
@@ -9,7 +18,8 @@ new proposals with either `fr` (feature request) or `pr` (proposed fix). Then
 perhaps your extractor can look for these signals in our exchanges and extract
 them and place them within the Bugzilla framework with two distinct sections?"
 
-THE MEASUREMENT THAT MAKES THE CHAT HALF NECESSARY RATHER THAN NICE. Of his 579
+THE MEASUREMENT THAT WAS ONCE READ AS MAKING THE CHAT HALF NECESSARY, AND
+WHICH HIS 2026-10-28 RULING OVERRODE. Of his 579
 recorded annotations, 0 mention the bounded-orchestrator question he has asked 3
 times. It exists only in chat. A harvester reading only his written replies is
 blind to it by construction, so the chat source is not an enhancement; without it

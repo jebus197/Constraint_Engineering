@@ -191,4 +191,51 @@ No code behaviour was changed. `bench/tests/test_the_kept_severity_is_not_an_agg
 
 ---
 
+
+## After 06:24 — the save was refused by the very defect the night had been about
+
+The subcriticality record would not commit. `sv` ran at 06:27 and stopped at exit 1 on its `memory-updated` check, reporting that the newest memory file was 2.7 hours OLDER than the previous sv commit. That is entry B29 exactly: the check measures against the last save, so a follow-up save in the same session is refused for lacking memory that already exists. Option 3, built earlier the same night, pre-checks a different condition and does not cover it; Option 1, which would, is raised as B47 and awaits a ruling.
+
+The honest route was taken rather than the override the script itself warns against: a memory entry was owed for the subcriticality result, so it was written, and the save then landed at `96aec301` with all 6 postconditions passing.
+
+## The memory index had 2 limits and only 1 was being reported
+
+Writing that entry exposed a defect in `sv`'s own reporting. The loader truncates `MEMORY.md` on EITHER characters (25,000) or lines (200), both read out of the installed binary rather than assumed. The figure `sv` prints for remaining runway divided the CHARACTER headroom by the median entry size and ignored lines entirely. On the live index that meant **34 entries of runway reported where the binding line budget allowed 11**, and against the refuse line, **22 by characters against 1 by lines**. The next memory entry — and every save writes a memory entry — would have refused the save.
+
+The diagnosis is a single character, and the code's own docstring already contained it: the `+ 1` in `headroom // (median_entry + 1)` charges each entry's newline against the character budget and against nothing else, while the line above it reads that an entry costs its own line plus the newline. The prose knew; the arithmetic did not.
+
+Neither bound can be dropped, because which of them binds is not fixed. The 2 cross at a median entry of 322.5455 characters; the live median is 103. Across the 5 index snapshots on disk the character budget bound in 3 and the line budget in 2, the switch arriving during October as entries were compressed to single-line pointers. So the character-only formula was right when written and wrong by the time it mattered.
+
+The existing trim could not clear it. Run dry, it reported nothing older than 30 days in Project State — 0 entries, 0 characters — because the month had been productive and every ageable entry was recent. And the pressure is not self-correcting: **116 of 149 entry-lines, 77.8523%, are permanently beyond that trim**, the largest block being the Feedback section at 78 lines, which is standing guidance and ages by design never.
+
+Two things were built. The reported figure now takes whichever budget binds, with z3 proving the bound cannot overrun either. And same-date Project State entries are merged onto 1 line — the key the index already groups on — which took it from 189 lines to 174, kept all 185 pointers, created no over-long entry or preamble, and took the refuse headroom from 1 line to 16. It also stops the growth at source, because a session's entries carry today's date and merge into today's line at no further cost in lines.
+
+The Feedback section is deliberately NOT merged. It has no semantic key — 0 of its 78 lines carry a date — so compacting it would mean merging by position, which is the mechanical-transformation failure the record already names. How that section should be relieved when it binds next is a decision, not a build, and it is recorded as such.
+
+## The register's limit on tickets without an identity cannot be walked back, and it was walked through
+
+A second guard is correctly red. The ticket register ratchets the number of tickets carrying neither a task reference nor an anchor at 317; it stands at **320 of 2,887**, 0.110842 with a 95% Wilson interval of [0.099903, 0.122814] agreed to 6 decimal places by 2 independent methods. The 3 additions were all raised by hand between 04:05 and 06:06 that morning, using the plain proposal call instead of the call that derives an anchor — the same mistake the register's own documentation records from 2026-10-27, where it notes that the escape hatch was designed, documented and simply not used.
+
+What makes this worth recording is that the 320 cannot be brought back down. Measured against a scratch copy: raising 1 identityless ticket takes 320 to 321; migrating it onto a properly derived identity takes it to 322, because history is preserved by keeping the old record as a tombstone and that tombstone is itself identityless; and raising the same item correctly leaves it at 322. **287 of the 320 are exactly such tombstones.** No method sets an identity on an existing ticket.
+
+The obvious repair is refuted by its own blast radius. Making the register refuse an identityless ticket would close the hole, and would also break **60 call sites across 11 test files** whose purpose is to exercise the fallback tiers that exist FOR items without identities. Narrowing the ratchet to ignore tombstones is refuted too: tombstone statuses are terminal, and the register treats a terminal ticket sharing a subject as grounds not to raise a new ticket, so a bare tombstone can still refuse genuinely new work.
+
+So the ceiling is a decision, not a build. Re-baselining a ratchet to admit a breach of its author's own making is not a change to make unilaterally.
+
+## Every failure in the full suite was root-caused before the suite reported them
+
+The run was given a durations table, which also settles the last open part of entry B36. Because no test-order randomisation is installed and the working tree was deliberately left untouched for the run's duration, the failure positions in the progress stream could be mapped to test identities directly, roughly 40 minutes before the summary would have named them.
+
+All 10 failures have causes:
+
+**6 in the immune-memory evaluation are stale pins accusing behaviour that was ordered.** The live memory holds 1 experiment where they expect 3 to 5. It was reset on 2026-10-17 and the archive records why, verbatim: a ruling of 2026-10-16 to reset the immune memory for the upcoming live experiments, since simulation can only tell us so much about how this facility will function in real live or paid experiments. The archive preserves the prior state, names its 6 experiments, and carries a restore command. The write path loads before recording, so the count of 1 is correct accumulation onto a deliberately emptied memory. The product is right and the guards contradict a ruling.
+
+**1 is the limit described above**, correct and awaiting a decision.
+
+**1 was a file mirrored into the repository the same night.** The external assessment of 10 April carried its standard stamp as a sentence beginning with a label, which the strict foot-line reader cannot cross while the older anywhere-search reader could, so the note silently lost enforcement — the precise shape that guard's own documentation predicted. Fixed by wrapping the external body in a verbatim region, which is what it is, and making the stamp the canonical foot-line. Both readers now agree, and blocking findings fell from 15 to 0.
+
+**1 was the generated morning report**, failing Rules 27 and 28 on 4 findings that all sat in quoted material: a word inside a commit subject, a phrase inside a task-list headline, a word inside a quotation of the founder, and a word lifted from the parked file. Those rules govern what this project writes, not what it quotes, and the verbatim-region markers for that already existed and were simply never used by the generator. The 5 quoting sections now open verbatim regions; the authored section deliberately does not.
+
+**1 is a declared figure gone stale** — the set of tests run before every commit now collects 1,508 against a declared 1,500, because tests were added. That guard is the model the others should follow: it names its own refresh command in its failure message, so the fix is 1 command rather than a judgement.
+
 *Written under CDSFL note standard v1.8. Spoken-word version: `~/Desktop/CDSFL_tts/Overnight_Progress_2026-10-29.txt`.*

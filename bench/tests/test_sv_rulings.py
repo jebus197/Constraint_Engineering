@@ -558,7 +558,15 @@ class TestMemoryIndexAudit:
         audit = sv._audit_memory_index(memory_dir)
         assert audit.headroom == sv._MEMORY_INDEX_LIMIT_CHARS - audit.chars
         assert audit.median_entry > 0
-        assert audit.entries_left == audit.headroom // (audit.median_entry + 1)
+        # THE PROPERTY, NOT THE FORMULA. This asserted the chars-only
+        # quotient until 2026-10-29, which PINNED the defect: the loader
+        # truncates on characters OR lines and the reported runway ignored
+        # lines. A formula assertion cannot tell a correct change from a
+        # regression, so it holds the 2 bounds instead.
+        assert audit.entries_left <= audit.headroom // (audit.median_entry + 1)
+        assert audit.entries_left <= audit.lines_headroom
+        assert audit.entries_left == min(
+            audit.headroom // (audit.median_entry + 1), audit.lines_headroom)
         sv._print_memory_index_report(audit)
         out = capsys.readouterr().out
         assert f"Headroom: {audit.headroom} characters" in out

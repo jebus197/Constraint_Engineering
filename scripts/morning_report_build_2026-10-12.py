@@ -69,6 +69,15 @@ def _load(path: pathlib.Path, name: str):
 
 # ───────────────────────── derive the list ─────────────────────────
 
+#: A marker status that means the work EXISTS, as Rule 20 of the note standard
+#: names them. COMMITTED and ENABLED are strictly beyond TESTED, so an item at
+#: either is certainly already built. NAMED so the guard can read this tuple
+#: instead of restating it: until 2026-10-29 the test asserted ("BUILT",
+#: "TESTED") against this set of 4, a disagreement that stayed invisible while
+#: no live entry carried COMMITTED or ENABLED.
+BUILT_STATUSES = ("BUILT", "TESTED", "COMMITTED", "ENABLED")
+
+
 def task_items() -> list[dict]:
     """Every task-list entry not DONE or WITHDRAWN, with its MARKER state."""
     tlm = _load(REPO / "scripts" / "task_list_markers.py", "tlm_report")
@@ -76,7 +85,7 @@ def task_items() -> list[dict]:
     for r in tlm.parse_entries(TASKLIST):
         if (r.state or "").upper() in ("DONE", "WITHDRAWN"):
             continue
-        built = (r.status or "").upper() in ("BUILT", "TESTED", "COMMITTED", "ENABLED")
+        built = (r.status or "").upper() in BUILT_STATUSES
         out.append({
             "key": f"task:{r.ident}",
             "ident": r.ident,
@@ -355,6 +364,29 @@ def decisions(items: list[dict]) -> tuple[list[dict], list[str], list[str]]:
 
 # ───────────────────────── render ─────────────────────────
 
+#: The note standard's verbatim-region markers, as `note_vagueness_lint.region_state`
+#: reads them. Quoted material goes inside; this generator's OWN prose never does.
+#:
+#: WHY, MEASURED 2026-10-29. `test_v17_notes_obey_rules_27_and_28` failed on
+#: `Morning_Report_2026-10-29_GENERATED.md` with 4 blocking findings, and all 4 sat
+#: in text this generator did not write: "one" inside a git commit subject, "the
+#: system" inside a task-list headline, "two" inside a quotation of the founder,
+#: and "ONE" inside a line lifted from the parked file. Rule 27 governs what this
+#: project WRITES, and the lint already says so -- its own comment reads "Rule 27
+#: governs what this project WRITES, not a record of what someone else wrote, and
+#: the verbatim [regions exist for that]". The guard calls `blocking()` rather than
+#: `lint()` for exactly this reason, after it once failed the suite on a sentence a
+#: panel seat wrote inside a region. The generator simply never opened one.
+#:
+#: SECTION 1 IS DELIBERATELY NOT WRAPPED. Its text comes from
+#: `data/morning_report_decisions.json`, which this project authors, so it is this
+#: project's own voice and Rule 27 binds it. A region opened around authored prose
+#: would be the amnesty-for-its-own-violations shape the lint's `partition`
+#: docstring records from panel round 15.
+_VB = "<!-- verbatim-begin: {} -->"
+_VE = "<!-- verbatim-end -->"
+
+
 def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> str:
     L = []
     A = L.append
@@ -403,10 +435,16 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
     A("")
     A(f"One line per commit since {since}. Detail is in the commit and the notes it names.")
     A("")
+    A(_VB.format("git commit subjects, as committed"))
+    A("")
     for h, when, subj in done:
         A(f"- `{h}` {when} — {subj}")
     A("")
+    A(_VE)
+    A("")
     A("## 3. Work outstanding, needing no decision")
+    A("")
+    A(_VB.format("task-list headlines, as the markers carry them"))
     A("")
     for o in outstanding:
         extra = f" — ruling on record: {o['founder_ruling']}" if o.get("founder_ruling") else ""
@@ -428,32 +466,46 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
         A(f"- **{o['ident']}** ({o['source']}){extra}")
         A(f"  {o['headline']}")
     A("")
+    A(_VE)
+    A("")
     A(f"## 4. Explanations owed — {len(owed)}")
     A("")
     A("You asked for each of these before you would rule; the explanation was never "
       "delivered. Answers owed, not work owed. Producer: "
       "`scripts/his_older_instructions_triage_2026-10-11.py`.")
     A("")
+    A(_VB.format("the founder's own words"))
+    A("")
     for q in owed:
         A(f"- **{q['date']}** — {_first_sentence(q['text'])}")
+    A("")
+    A(_VE)
     A("")
     if superseded:
         A(f"**And {len(superseded)} discounted as no longer relevant**, on his question "
           f"*\"Are these questions still relevant? If not you can discount those that are "
           f"not.\"* Each is discounted against the record, not by judgement:")
         A("")
+        A(_VB.format("the discounting record, quoted"))
+        A("")
         for r in superseded:
             A(f"- **{r['date']} — {r['subject']}**")
             A(f"  {r['why']}")
             A(f"  *What remains:* {r['what_remains']}")
+        A("")
+        A(_VE)
         A("")
     A(f"## 5. Parked — {len(parked)}")
     A("")
     A("Judged non-blocking and appended rather than raised at the time. Queued, not "
       "dropped. Full list: `experimental_notes/PARKED_FOR_THE_FOUNDER.md`.")
     A("")
+    A(_VB.format("PARKED_FOR_THE_FOUNDER.md, verbatim"))
+    A("")
     for p in parked:
         A(f"- {p}")
+    A("")
+    A(_VE)
     A("")
     A("---")
     A("")

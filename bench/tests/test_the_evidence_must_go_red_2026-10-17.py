@@ -76,10 +76,26 @@ def test_every_done_entry_is_checkable():
     assert len(entries) >= 100, (
         f"only {len(entries)} DONE entries name an existing test file; V9's "
         f"coverage has fallen and the reason needs stating")
-    missing = [i for i, _ in entries[:20] if m._closing_commit(i) is None]
+    # ★ "CANNOT BE FOUND" AND "CANNOT BE FOUND YET" ARE DIFFERENT STATES, and
+    # treating them alike refused the commit that would have resolved one of
+    # them (2026-10-29, on T4). A DONE marker still only in the working tree has
+    # no closing commit BY CONSTRUCTION, because the commit that introduces the
+    # marker is the one being made. That is a not-yet, not a blind spot, and
+    # this module's own sibling already refuses to count a test that failed to
+    # RUN as a test that passed. The real fault -- a marker committed long ago
+    # whose closing commit cannot be located -- still fails loudly below.
+    sample = [i for i, _ in entries[:20]]
+    not_yet = [i for i in sample if not m._marker_is_committed(i)]
+    missing = [i for i in sample
+               if i not in not_yet and m._closing_commit(i) is None]
     assert not missing, (
         f"the closing commit cannot be found for {missing}, so V9 cannot be "
         f"enforced on them")
+    # REPORTED rather than silently excluded, so an entry cannot sit exempt: on
+    # the next commit its marker IS in HEAD and it is enforced like any other.
+    if not_yet:
+        print(f"V9 coverage: {len(not_yet)} DONE marker(s) not yet committed, "
+              f"so no closing commit can exist for them yet: {not_yet}")
 
 
 def test_an_inconclusive_result_is_not_counted_as_discrimination():

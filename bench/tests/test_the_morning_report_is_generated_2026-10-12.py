@@ -95,12 +95,25 @@ class TestItAgreesWithTheMarkers:
         #: than 2 named examples ever was.
         assert items, "the generator returned no live items at all"
         for ident, it in items.items():
-            expected = str(it.get("status", "")).upper() in ("BUILT", "TESTED")
+            # ★ THE SET IS THE PRODUCER'S, AND IT WAS NARROWER HERE UNTIL
+            # 2026-10-29. `task_items` reads
+            # ("BUILT", "TESTED", "COMMITTED", "ENABLED") and this asserted
+            # ("BUILT", "TESTED"), so producer and test disagreed about 2 of the
+            # 4 statuses. It stayed LATENT because no live entry had ever
+            # carried COMMITTED or ENABLED -- every live item was PROPOSED or
+            # TESTED -- and B48 is the first to be marked COMMITTED while still
+            # open for a decision. The producer is right: COMMITTED and ENABLED
+            # are strictly BEYOND tested, so an item at either is certainly
+            # already built, and the report renders the flag as "already BUILT
+            # and TESTED". Taking the tuple from the module rather than
+            # restating it is the `execute-do-not-grep` form: 1 definition with
+            # 2 readers, never 2 definitions asserted to agree.
+            expected = str(it.get("status", "")).upper() in g.BUILT_STATUSES
             assert it["already_built"] is expected, (
                 f"{ident} has status {it.get('status')!r} but already_built="
                 f"{it['already_built']}; the flag must come from the marker")
         assert any(i["already_built"] for i in items.values()) or \
-            all(str(i.get("status", "")).upper() not in ("BUILT", "TESTED")
+            all(str(i.get("status", "")).upper() not in g.BUILT_STATUSES
                 for i in items.values()), (
             "no item is already-built and yet some carry a BUILT/TESTED marker")
 

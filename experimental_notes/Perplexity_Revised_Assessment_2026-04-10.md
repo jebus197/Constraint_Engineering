@@ -7,7 +7,7 @@
 > **IT EXISTED IN EXACTLY 1 PLACE UNTIL NOW.** Mirrored into the repository on 2026-10-29T04:01:47+00:00 from
 > `~/Desktop/CDSFL_tts/Perplexity_Revised_Assessment_2026-04-10.txt`. A search of the full git
 > history returns **0 commits** touching this filename, so for 202 days it survived only as an
-> unversioned file on one machine's Desktop — a single point of failure for a document the
+> unversioned file on a single machine's Desktop — a single point of failure for a document the
 > project cites.
 >
 > **THE MORNING REPORT OF 2026-10-09 NAMED THIS EXACT GAP AND IT WAS NOT ACTED ON.** Answering
@@ -17,14 +17,24 @@
 > stayed unfixed for 20 days. This is the fix, and it is recorded against task C21 item (6).
 >
 > **WHAT IT CONTAINS THAT THE REPOSITORY DID NOT.** The passage the report was pointing at is in
-> the section on the GlobalMind vision: going from a handful of models on one machine to a global
+> the section on the GlobalMind vision: going from a handful of models on a single machine to a global
 > peer-to-peer mesh is described as a very long road. That is the clearest surviving statement of
 > the peer-to-peer trajectory, and it is an OUTSIDE assessment of it rather than the project's own.
 >
 > **FORMAT.** The source is a text-to-speech file, so it carries no markdown by design and is
 > left that way. It is 59 lines and 1,016 words.
+>
+> **WHAT THE FOOT-LINE BELOW GOVERNS, AND WHAT IT DOES NOT.** The stamp at the
+> foot covers THIS PROVENANCE HEADER, which is the project's own prose. The
+> assessment itself is enclosed in a verbatim region, so the note standard's
+> Rules 27 and 28 do not reach it: the words are the assessor's and predate the
+> standard by 202 days, and editing them to satisfy a rule written later would
+> destroy the record this file exists to preserve. The stamp sits at the foot
+> rather than the head on his convention of 2026-10-24: "You also break with convention by listing the note standard at the head of this tts file, rather than at the end?"
 
 ---
+
+<!-- verbatim-begin: Perplexity, 2026-04-10, reproduced verbatim -->
 
 Perplexity Computer versus CDSFL. Revised Assessment.
 10 April 2026
@@ -86,6 +96,8 @@ Net assessment.
 
 The threat surface to the project from Perplexity Computer is negligible. They are in a fundamentally different category. The real threat is internal. Execution risk, documentation, and reaching usable form before the market decides consensus is good enough. The architecture is distinct. The methodology is distinct. The distribution model is distinct. Nobody else is building an open, distributed, falsification based verification protocol for STEM work. The risk is not that someone does it better. The risk is that it does not finish being built in time.
 
+<!-- verbatim-end -->
+
 ---
 
-*This provenance header is written under CDSFL note standard v1.8, stamped at the foot on his convention of 2026-10-24: "You also break with convention by listing the note standard at the head of this tts file, rather than at the end?" The BODY above is not written under the standard and could not be: it is an external document reproduced verbatim and predates the standard by 202 days.*
+Written under CDSFL note standard v1.8 (17 October 2026).

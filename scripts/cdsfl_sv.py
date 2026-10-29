@@ -1422,6 +1422,15 @@ _MEMORY_INDEX_LIMIT_CHARS = 25_000
 # agrees with the loader only while the index stays free of astral characters
 # (an emoji in a memory title would silently break the equivalence).
 _MEMORY_INDEX_LIMIT_LINES = 200
+#: The shape both index-writing mechanisms use for their timestamped backup.
+#: Declared once so the ORPHAN SCAN can recognise one. Until 2026-10-29 it could
+#: not: `on_disk` subtracted only `MEMORY.md`, so each backup was reported as a
+#: memory that "appears nowhere in the index" -- 3 of the 12 orphans on that date
+#: were backups, and `group_dated_index_entries` adds another on every run that
+#: merges, so the report would have degraded steadily as the mechanism worked.
+#: A backup is a copy of the index, not a memory, and cannot be pointed at.
+_MEMORY_BACKUP_PREFIX = "MEMORY.backup-"
+
 _MEMORY_INDEX_REFUSE_FRACTION = 0.95
 _MEMORY_ENTRY_ONE_LINE_CHARS = 150
 
@@ -1574,13 +1583,162 @@ class _MemoryIndexAudit:
 
     @property
     def entries_left(self) -> int:
-        """How many more entries fit, at the current median entry size.
+        """How many more entries fit, bounded by WHICHEVER budget binds first.
 
         Each entry costs its own line plus the newline that terminates it.
+
+        THE `+ 1` CHARGES THAT NEWLINE AGAINST THE CHARACTER BUDGET AND, UNTIL
+        2026-10-29, AGAINST NOTHING ELSE -- so this returned the chars-only
+        answer while the loader truncates on EITHER condition. Measured that
+        day on the live index: 34 reported against a true 11, and 1 entry
+        before `_check_memory_index_size` refuses a save. The docstring above
+        already said an entry costs a LINE; the arithmetic never did.
+
+        Which budget binds is not fixed, so neither bound may be dropped. The
+        2 cross where the median entry reaches headroom/lines_headroom - 1
+        chars (SymPy: 3548/11 = 322.5 on the 2026-10-29 index). The character
+        budget bound in 3 of 5 archived index snapshots and the LINE budget in
+        2, the crossover arriving during October as entries were compressed to
+        one-liners. z3 proves `min` cannot overrun either budget: asserting
+        either overrun is `unsat`.
+
+        Producer: scripts/the_line_budget_is_the_binding_one_2026-10-29.py
         """
         if self.median_entry <= 0:
             return -1  # unknown: nothing parsed to take a median of
-        return max(0, self.headroom) // (self.median_entry + 1)
+        by_chars = max(0, self.headroom) // (self.median_entry + 1)
+        by_lines = max(0, self.lines_headroom)
+        return min(by_chars, by_lines)
+
+
+#: Entry lines in `Project State` carry a bold date; the index ALREADY groups
+#: several pointers onto one such line (12 Oct and 11 Oct PM both do), using
+#: "; " between them. This pattern reads that shape.
+_MEMORY_DATED_ENTRY = re.compile(r'^- \*\*(\d{1,2} \w+(?: [AP]M)?)\*\* — (.*)$')
+
+#: Only this section is grouped. See the docstring for why the others are not.
+_MEMORY_GROUPABLE_SECTION = "Project State"
+
+
+def group_dated_index_entries(mem_dir: Path, dry_run: bool = False) -> dict:
+    """Merge same-date `Project State` lines onto 1 line. Loses no pointer.
+
+    WHY THIS EXISTS, AND WHY IT IS NOT THE TRIM AGAIN. The loader truncates the
+    index on characters OR lines, and on 2026-10-29 the LINE budget was the
+    binding one with **1 line** left before `_check_memory_index_size` refuses.
+    `archive_stale_memory_entries` could free nothing -- its dry run reported
+    "nothing older than 30 days in Project State" -- because the month had been
+    productive and every ageable entry was recent. So the save was about to be
+    refused for a condition the existing mechanism could not clear, which is the
+    shape this file's own comment names at commit f269453.
+
+    AND THE PRESSURE IS NOT SELF-CORRECTING, MEASURED. The trim reaches only
+    dated `Project State` entries: **116 of 149 entry-lines, 77.8523%, can never
+    be moved by it**, the largest block being `Feedback` at 78 lines, which is
+    standing guidance and ages by design never.
+
+    SO WHY ONLY `Project State`? Because grouping must follow a SEMANTIC key, not
+    proximity. A date is a key the index already groups on, and merging 2 lines
+    that share one preserves each pointer's own note verbatim. `Feedback` has no
+    such key -- 0 of its 78 lines carry a date -- so compacting it would mean
+    merging by position, which is the mechanical-transformation failure the
+    record names: a regex cannot produce a composition that needs judgement.
+    `Feedback`'s monotonic growth is therefore raised for a ruling, not quietly
+    regexed away.
+
+    WHAT IT BUYS, AND WHY IT KEEPS BUYING IT. On the 2026-10-29 index: lines
+    **189 -> 174**, chars **21,441 -> 21,231**, refuse headroom **1 -> 16 lines**,
+    pointers **185 -> 185** with 0 lost and 0 over-long entries or preambles
+    created. It also stops the growth at source: a session's new entries carry
+    today's date, so they merge into today's line and cost 0 further lines.
+
+    Section-aware on purpose. A global merge would move an entry across a section
+    boundary if 2 sections shared a date. 0 of 18 dates do so today, so the 2
+    forms agree on this file -- but that is a property of today's file, not of
+    the mechanism.
+
+    NOTHING IS DELETED and nothing is reworded. A timestamped backup is written
+    before any change, exactly as the trim does.
+
+    Returns a report dict; ``dry_run=True`` computes it and writes nothing.
+    """
+    index = mem_dir / _MEMORY_INDEX_NAME
+    report = {"ok": False, "merged": 0, "freed_lines": 0, "freed_chars": 0,
+              "backup": None, "reason": "", "dates": []}
+    if not index.is_file():
+        report["reason"] = f"no index at {index}"
+        return report
+    try:
+        text = index.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as err:
+        report["reason"] = f"index unreadable — {type(err).__name__}: {err}"
+        return report
+
+    out: list[str] = []
+    first_line_of: dict[str, int] = {}
+    section: str | None = None
+    merged = 0
+    for line in text.split("\n"):
+        if line.startswith("## "):
+            section = line[3:].strip()
+            # REDUNDANT TODAY AND KEPT DELIBERATELY, which is stated here so it
+            # is not read as doing work it is not. The section guard below skips
+            # every line outside `_MEMORY_GROUPABLE_SECTION`, so nothing can
+            # survive to merge across a boundary and deleting this reset turns
+            # no test red -- measured as mutation 6 of 6 on 2026-10-29. It is
+            # retained because it becomes load-bearing the moment more than 1
+            # section is groupable, and 1 line of defence is cheaper than the
+            # defect it would then prevent. An unreached line with an honest
+            # comment is not the same fault as one whose comment overstates it.
+            first_line_of = {}
+        match = _MEMORY_DATED_ENTRY.match(line)
+        if match is None or section != _MEMORY_GROUPABLE_SECTION:
+            out.append(line)
+            continue
+        date, rest = match.group(1), match.group(2)
+        if date in first_line_of:
+            out[first_line_of[date]] = out[first_line_of[date]].rstrip() + "; " + rest
+            merged += 1
+            report["dates"].append(date)
+        else:
+            first_line_of[date] = len(out)
+            out.append(line)
+
+    if merged == 0:
+        report["ok"] = True
+        report["reason"] = (f"no two {_MEMORY_GROUPABLE_SECTION} entries share a date")
+        return report
+
+    new_text = "\n".join(out)
+    report["merged"] = merged
+    report["freed_lines"] = text.strip().count("\n") - new_text.strip().count("\n")
+    report["freed_chars"] = len(text) - len(new_text)
+
+    # EVERY POINTER MUST SURVIVE. Checked with the audit's own parser, not a
+    # private regex, and checked BEFORE the write so a merge that would lose one
+    # is refused rather than reported.
+    def _pointers(t: str) -> list[str]:
+        return sorted(tgt for ln in t.splitlines()
+                      for _ti, tgt, _n in _memory_index_pointers(ln))
+    if _pointers(text) != _pointers(new_text):
+        report["reason"] = ("REFUSED: grouping would change the pointer set; "
+                            "the index is unchanged")
+        return report
+
+    if dry_run:
+        report["ok"] = True
+        return report
+    try:
+        stamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+        backup = mem_dir / f"{_MEMORY_BACKUP_PREFIX}{stamp}.md"
+        backup.write_text(text, encoding="utf-8")
+        index.write_text(new_text, encoding="utf-8")
+    except OSError as err:
+        report["reason"] = f"write failed — {type(err).__name__}: {err}"
+        return report
+    report["ok"] = True
+    report["backup"] = backup.name
+    return report
 
 
 def _audit_memory_index(mem_dir: Path) -> _MemoryIndexAudit:
@@ -1640,7 +1798,9 @@ def _audit_memory_index(mem_dir: Path) -> _MemoryIndexAudit:
     # would report every indexed file as missing. Enumerate explicitly.
     try:
         on_disk = {p.name for p in _memory_files(mem_dir)
-                   if p.name.endswith(".md")} - {_MEMORY_INDEX_NAME}
+                   if p.name.endswith(".md")
+                   and not p.name.startswith(_MEMORY_BACKUP_PREFIX)
+                   } - {_MEMORY_INDEX_NAME}
     except MemoryUnreadable as exc:
         audit.error = str(exc)
         return audit
@@ -2900,6 +3060,23 @@ def _preflight_completeness(
               f"{_MEMORY_WINDOW_DAYS} days, freeing {_arch['freed_chars']:,} chars"
               f" ({_arch['kept_undated']} undated entry/entries kept — an undated "
               f"pointer carries no evidence of age)")
+
+    # THE SECOND RELIEF, AND IT ATTACKS THE OTHER BUDGET. The trim above frees
+    # CHARACTERS by ageing entries out. On 2026-10-29 the binding budget was
+    # LINES, the trim could free none of them -- "nothing older than 30 days in
+    # Project State" -- and 1 line remained before the audit refuses the save.
+    # Grouping same-date Project State entries frees lines and moves no pointer.
+    # Ordered AFTER the trim so an entry about to be archived is not first merged
+    # onto a shared line; both key on the date, so a merged line ages as one.
+    _grp = group_dated_index_entries(_mem_dir, dry_run=not apply)
+    if _grp.get("merged"):
+        _gverb = "would merge" if not apply else "merged"
+        print(f"  memory index: {_gverb} {_grp['merged']} same-date "
+              f"{_MEMORY_GROUPABLE_SECTION} entry/entries onto shared lines, "
+              f"freeing {_grp['freed_lines']} line(s) and "
+              f"{_grp['freed_chars']:,} chars — 0 pointers moved")
+    elif not _grp.get("ok"):
+        print(f"  memory index: grouping did not run — {_grp['reason']}")
         if _arch.get("archive"):
             print(f"                -> {_arch['archive']}")
         if _arch.get("backup"):

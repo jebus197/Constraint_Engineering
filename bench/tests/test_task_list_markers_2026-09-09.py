@@ -292,3 +292,66 @@ def test_an_addendum_is_not_mistaken_for_an_entry(tmp_path):
     idents = [e.ident for e in tlm.parse_entries(p)]
     assert idents.count("C19") == 1, (
         f"the addendum was counted as a second C19 entry: {idents}")
+
+class TestAMarkerThatDoesNotParseIsReported:
+    """A marker whose fields are out of ORDER matches nothing, and the entry
+    then has no state at all.
+
+    FOUND 2026-10-29 BY TRIGGERING IT. Closing task T4 wrote
+    `| state | status | ruled | evidence`, and `MARKER` requires evidence
+    BEFORE ruled, so the whole marker failed to match. `parse_entries` yielded
+    `state=None, status=None`, and an entry with no state is invisible to every
+    state-based check at once: it is neither open nor done. The morning report
+    then listed T4 as a live item needing authored detail although its marker
+    read DONE, which is how the mistake surfaced -- indirectly, through a
+    different tool, rather than from anything watching the markers.
+
+    NOTHING DETECTED IT. The only problem-reporting function in
+    `task_list_markers` is `evidence_objections`, which judges an evidence
+    VALUE and never the marker's shape. So a mis-ordered marker was a silent
+    invisibility, which is the same class as the orphaned marker this module
+    already guards, reached by a second route.
+    """
+
+    LIST = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
+
+    def _marker_lines(self, text: str) -> list:
+        return [ln.strip() for ln in text.split("\n")
+                if ln.strip().startswith("<!-- task:")]
+
+    def test_every_marker_line_in_the_real_list_parses(self):
+        if not self.LIST.is_file():
+            pytest.skip("no master task list in this checkout")
+        bad = [ln for ln in self._marker_lines(
+            self.LIST.read_text(encoding="utf-8")) if not tlm.MARKER.match(ln)]
+        assert not bad, (
+            "these lines look like markers and match nothing, so their entries "
+            "carry no state and are invisible to every state check. `MARKER` "
+            "wants state, status, then optional evidence, then optional "
+            "ruled:\n  " + "\n  ".join(bad))
+
+    def test_the_check_catches_a_misordered_marker(self):
+        """DISCRIMINATING: the same fields in the wrong order must be caught."""
+        good = ("<!-- task: Z9 | state: DONE | status: COMMITTED | "
+                "evidence: bench/tests/test_task_list_markers_2026-09-09.py | "
+                "ruled: 2026-10-29 -->")
+        bad = ("<!-- task: Z9 | state: DONE | status: COMMITTED | "
+               "ruled: 2026-10-29 | "
+               "evidence: bench/tests/test_task_list_markers_2026-09-09.py -->")
+        assert tlm.MARKER.match(good), "the documented order must parse"
+        assert not tlm.MARKER.match(bad), (
+            "the reversed order now parses, so this guard no longer "
+            "discriminates and the silent-invisibility hole is open again")
+
+    def test_a_misordered_marker_loses_the_state_entirely(self, tmp_path):
+        """WHY IT MATTERS, shown rather than asserted in prose."""
+        p = tmp_path / "list.md"
+        p.write_text(
+            "**Z9. A probe entry whose marker has its fields reversed.**\n"
+            "<!-- task: Z9 | state: DONE | status: COMMITTED | "
+            "ruled: 2026-10-29 | evidence: x.py -->\n", encoding="utf-8")
+        got = [e for e in tlm.parse_entries(p) if e.ident == "Z9"]
+        assert got, "the entry itself should still be found"
+        assert got[0].state is None and got[0].status is None, (
+            "if a reversed marker now yields a state, this probe no longer "
+            "demonstrates the hole and should be retired deliberately")

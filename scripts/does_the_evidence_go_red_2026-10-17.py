@@ -66,6 +66,36 @@ def _entries():
     return out
 
 
+def _marker_is_committed(ident: str) -> bool:
+    """Is this entry's DONE marker already in HEAD, or only in the working tree?
+
+    THE DISTINCTION V9'S COVERAGE CHECK WAS MISSING, found 2026-10-29 by hitting
+    it. `_closing_commit` locates the commit that INTRODUCED a DONE marker, by
+    searching the task list's history for the marker text. For an entry marked
+    DONE for the FIRST time that commit cannot exist until the commit writing
+    the marker has landed -- so the check refused the very commit that would
+    satisfy it, and the only escape offered was to bypass the whole hook.
+
+    A marker that is not yet committed is NOT a blind spot in V9's coverage. It
+    is a not-yet, and this module already draws exactly that distinction for a
+    test that could not be collected: "has not noticed the fix missing -- it has
+    failed to run", which is counted as INCONCLUSIVE rather than as a pass. The
+    same honesty applies here, in the other direction: absence of a closing
+    commit for an UNCOMMITTED marker is uninformative, while absence for a
+    COMMITTED one is the real fault the check exists to catch.
+
+    Returns False when HEAD cannot be read at all, which keeps a fresh clone or
+    a detached state from being treated as "committed" and failing loudly for a
+    reason that has nothing to do with the markers.
+    """
+    r = subprocess.run(
+        ["git", "show", f"HEAD:{LIST.relative_to(REPO)}"],
+        cwd=REPO, capture_output=True, text=True)
+    if r.returncode != 0:
+        return False
+    return f"task: {ident} | state: DONE" in r.stdout
+
+
 def _closing_commit(ident: str) -> str | None:
     r = subprocess.run(
         ["git", "log", "--format=%H", "-S", f"task: {ident} | state: DONE",
