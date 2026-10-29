@@ -173,6 +173,44 @@ def truth_scan(hv) -> dict:
             "messages_raising_a_marker": raised}
 
 
+
+def retirement_check(hv) -> str:
+    """★ HIS RULING WAS CONDITIONAL, AND THIS IS THE CONDITION, TESTED.
+
+    Added 2026-10-29. His words, 2026-10-28: *"My verdict is to scrap it if it
+    will add to inefficiency."* When he gave that ruling the condition could not
+    be evaluated, because the chat half was BROKEN -- its prefilter was not a
+    superset of its own decision, so "captures nothing useful" and "captures
+    nothing at all" were indistinguishable.
+
+    The free panel fixed the prefilter and both seats' falsifiers pass on it.
+    WITH THE FILTER CORRECT, this function asks the only question his condition
+    turns on: does the facility now capture anything? If it returns 0 across
+    every window, the cost is real and the yield is 0, and his condition HOLDS.
+    If it ever returns more than 0, the condition has stopped holding and the
+    retirement should be put back to him rather than left standing.
+    """
+    import time
+    out = ["== HIS CONDITION, TESTED WITH THE FILTER CORRECT =="]
+    out.append(f"   prefilter: {hv.CANDIDATE_LINE.pattern!r}")
+    total = 0
+    for since in ("2026-10-28", "2026-10-01", "2026-08-01"):
+        t0 = time.time()
+        rows = hv.from_chat(since)
+        total += len(rows)
+        out.append(f"   since {since}: {len(rows)} row(s) in "
+                   f"{time.time() - t0:.1f}s")
+    out.append(f"   TOTAL captured across every window: {total}")
+    out.append("   his condition HOLDS -- cost with 0 yield -- so `chat` is out"
+               if total == 0 else
+               "   ★ HIS CONDITION NO LONGER HOLDS: the facility now captures "
+               "something. Put the retirement back to him.")
+    out.append("   of the default. It stays reachable as `--sources chat`, "
+               "because it is also the")
+    out.append("   SUBJECT of this measurement and the evidence must stay "
+               "reproducible.")
+    return "\n".join(out) + "\n"
+
 def main() -> int:
     # A REAL PARSER, INSIDE main(), AND THE PLACEMENT IS THE POINT.
     # A module-level `answer_help` call satisfies the writes-answer-help ratchet
@@ -188,6 +226,7 @@ def main() -> int:
     argparse.ArgumentParser(
         description=(__doc__ or "").strip().splitlines()[0]).parse_args()
     hv = _hv()
+    print(retirement_check(hv))
     print("== what each predicate admits, over the real transcripts ==")
     s = scan(hv)
     print(f"   transcripts: {s['files']} file(s), {s['mib']:.1f} MiB, "

@@ -564,7 +564,37 @@ def main() -> int:
     ap.add_argument("--since", default="2026-10-01")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--store", default=None)
-    ap.add_argument("--sources", default="task_list,responses,chat")
+    #: ★ `chat` IS OUT OF THE DEFAULT ON HIS RULING OF 2026-10-28, and it is
+    #: RETIRED rather than DELETED. His words: *"My verdict is to scrap it if it
+    #: will add to inefficiency. When I went to sleep last night I noted you
+    #: were very busy trying to make it work. This is not a good use of your
+    #: time, or mine. We will continue in the previously agreed way. If I have a
+    #: question, I will mark it as 'qs' in my tts responses."*
+    #:
+    #: HIS RULING IS CONDITIONAL AND THE CONDITION IS NOW TESTED, which it was
+    #: not when he gave it. At that point the chat half was BROKEN -- its
+    #: prefilter was not a superset of its own decision -- so "useless" and
+    #: "broken" could not be told apart. The free panel of 2026-10-28 fixed the
+    #: prefilter, both seats' falsifiers pass on it, and WITH IT CORRECT the
+    #: chat half still returns 0 rows for every window back to 2026-08-01, at
+    #: about 15 s per invocation. So the 0 is a property of the CORPUS, not of
+    #: the filter: of 249,664 transcript lines, the number whose text RAISES a
+    #: marker is 0, and every marker that does appear is a citation, a harness
+    #: echo or a quotation, which the filters correctly reject.
+    #:
+    #: WHY THE DEFAULT AND NOT A DELETION. A removal needs a committed
+    #: measurement that the replacement dominates. The replacement is his
+    #: annotation path, which the `responses` source already reads and which has
+    #: supplied 318 annotations against the chat half's 0 -- dominance on the
+    #: named property. But `from_chat` is ALSO the SUBJECT of the measurement
+    #: that justifies retiring it, and
+    #: `measured-rate-travels-with-its-script` means the evidence has to stay
+    #: reproducible. `--sources chat` still reaches it; nothing reaches it by
+    #: default. That removes the cost without destroying the evidence.
+    ap.add_argument("--sources", default="task_list,responses",
+                    help="comma-separated: task_list, responses, chat. `chat` "
+                         "is retired from the default (2026-10-28) and stays "
+                         "reachable for its own measurement.")
     a = ap.parse_args()
 
     want = {s.strip() for s in a.sources.split(",") if s.strip()}
