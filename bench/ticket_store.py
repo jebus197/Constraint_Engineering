@@ -1669,6 +1669,35 @@ class TicketStore:
         REFUTED or REJECTED while an aliased reference is open.
         """
         want = set(open_idents)
+        #: ★ A REFERENCE WITH A LIVE SIBLING IS NOT CONCEALED, added 2026-10-29,
+        #: and it is the same reasoning as the MERGED exclusion above: what
+        #: counts is a record that ENDS THE TRAIL. A settled ticket beside a LIVE
+        #: ticket on the same reference ends nothing -- a reader searching that
+        #: reference still finds open work.
+        #:
+        #: WHY IT APPEARED NOW. His ruling of 2026-10-19 made `qs` its own kind,
+        #: and `tid_of` digests the kind, so a QUESTION about an entry and a
+        #: PROPOSED FIX for it take 2 distinct identities by design. Answering
+        #: the question settles the question and not the entry. On 2026-10-29
+        #: `qs:cea0bd553f52` was closed because he had ruled which term the claim
+        #: channel enters, while entry C1's implement half is deliberately
+        #: unfinished -- the channel's weight is 0 pending a commissioning run --
+        #: and this check reported the answered question as concealing C1.
+        #: Measured at that moment: C1 carried 4 tickets, 1 of them OPEN, so
+        #: nothing was concealed.
+        #:
+        #: THIS IS THE SECOND CHECK TONIGHT WITH THE SAME 1-TICKET-PER-REFERENCE
+        #: ASSUMPTION. `test_the_closed_count_equals_the_task_lists_own` had it
+        #: too and was corrected to count ENTRIES rather than tickets.
+        live_refs = set()
+        for t in self.all():
+            if t.status in TERMINAL or t.status == REJECTED:
+                continue
+            if t.task_ref:
+                live_refs.add(t.task_ref)
+            for n in t.notes:
+                if n.startswith("also tracked as "):
+                    live_refs.add(n.split("also tracked as ", 1)[1])
         out = []
         for t in self.settled():
             if t.status in ("MERGED", "DUPLICATE"):
@@ -1676,7 +1705,8 @@ class TicketStore:
             refs = ([t.task_ref] if t.task_ref else []) + [
                 n.split("also tracked as ", 1)[1]
                 for n in t.notes if n.startswith("also tracked as ")]
-            still_open = sorted({r for r in refs if r in want})
+            still_open = sorted({r for r in refs
+                                 if r in want and r not in live_refs})
             if still_open:
                 out.append((t, still_open))
         return out

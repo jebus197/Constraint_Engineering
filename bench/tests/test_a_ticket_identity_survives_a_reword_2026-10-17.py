@@ -425,7 +425,53 @@ def test_the_closed_count_equals_the_task_lists_own():
     entries = T.parse_entries(REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md")
     expect = {e.ident for e in entries
               if getattr(e, "state", "") in ("DONE", "WITHDRAWN")}
-    closed = {t.task_ref for t in store.all() if t.status == "CLOSED" and t.task_ref}
+    #: ★ A REFERENCE IS CLOSED ONLY WHEN EVERY TICKET ON IT IS, corrected
+    #: 2026-10-29 for the second time in one day. The first correction moved
+    #: this from counting TICKETS to comparing SETS of references, which fixed
+    #: the arithmetic and kept a weaker form of the same assumption: that any
+    #: 1 closed ticket closes its reference. His 2026-10-19 `qs` ruling breaks
+    #: that too -- answering a question about an entry settles the question and
+    #: not the entry -- and it bit on C1, whose question he ruled on 2026-10-29
+    #: while the implement half stays deliberately unfinished.
+    from bench.ticket_store import TERMINAL, REJECTED
+    _settled = TERMINAL | {REJECTED}
+    _known = {e.ident for e in entries}
+    _by_ref = {}
+    for t in store.all():
+        if t.task_ref:
+            _by_ref.setdefault(t.task_ref, []).append(t)
+
+    #: ★ A QUESTION MAY OUTLIVE ITS ENTRY, and that is his design rather than a
+    #: concession. His 2026-10-19 ruling: *"A QUESTION IS NOT A SMALL PROPOSAL:
+    #: its resolution is an ANSWER, not a build."* So the WORK on an entry can
+    #: be complete while a question about it is still owed him. B39 is exactly
+    #: that on 2026-10-29: the entry is DONE, its `pf` is CLOSED and its `wr` is
+    #: MERGED, while `qs:fd5e6e379930` -- the semantic question he himself said
+    #: no archive can settle -- is open. Counting `qs` here would force me to
+    #: either reopen a finished entry or close a question he has not answered.
+    closed = {ref for ref, ts in _by_ref.items()
+              if ref in _known
+              and any(t.kind != "qs" for t in ts)
+              and all(t.status in _settled for t in ts if t.kind != "qs")}
+
+    #: A REFERENCE THE LIST DOES NOT HAVE IS ITS OWN DEFECT, not a counting
+    #: discrepancy, so it is asserted separately rather than folded into the
+    #: comparison -- which is how `B29-option1` sat inside this check as a
+    #: silent off-by-one. It is an invented identifier: no entry carries it.
+    #: A REDIRECT IS EXCLUDED, exactly as `settled_with_open_aliases` already
+    #: excludes one: MERGED and DUPLICATE mean "see that other ticket", so an
+    #: invented reference on a redirect misleads nobody -- a reader following it
+    #: arrives at the live record. What matters is a LIVE or CLOSED ticket
+    #: pointing at an entry that does not exist, because that one really is
+    #: invisible on the list. `B29-option1` on 2026-10-29 is the redirect case:
+    #: 1 MERGED ticket and no entry of that name.
+    unknown = sorted({r for r, ts in _by_ref.items()
+                      if r not in _known
+                      and any(t.status not in ("MERGED", "DUPLICATE") for t in ts)})
+    assert not unknown, (
+        f"{len(unknown)} ticket reference(s) name no entry the parser "
+        f"recognises and are not redirects, so they are invisible on the list: "
+        f"{unknown[:8]}")
     assert closed == expect, (
         f"the register reports {len(closed)} closed task entries, the list "
         f"records {len(expect)}. "

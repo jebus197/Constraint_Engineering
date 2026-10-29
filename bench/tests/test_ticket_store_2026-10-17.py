@@ -403,10 +403,51 @@ def test_a_redirect_is_not_reported_as_a_concealment(store):
     assert store.settled_with_open_aliases(["B10"]) == [], (
         "a MERGED redirect must not be reported as concealing open work")
 
-    # ...but a CLOSED record aliasing the same open reference still must be.
+    # ...but a CLOSED record aliasing an open reference that has NO LIVE TICKET
+    # still must be reported.
+    #
+    # ★ THE REFERENCE CHANGED FROM B10 TO B11, 2026-10-29. B10 already carries
+    # the OPEN ticket `b` created above, and a reference with a live ticket is
+    # no longer treated as concealed -- a reader searching it finds open work,
+    # which is the same reasoning that already excludes a MERGED redirect.
+    # Asserting concealment on B10 therefore encoded the 1-ticket-per-reference
+    # assumption that his 2026-10-19 `qs` ruling broke by design: a question and
+    # a proposed fix about one entry take 2 identities, so answering the
+    # question settles the question and not the entry. The anti-vacuity property
+    # this assertion exists for is PRESERVED, on a reference that really is
+    # concealed.
     c, _ = store.propose("pf", "z", "a different defect", "task_list",
                          task_ref="7.2")
     store.close(c.tid, "done", "test_q passed")
-    store._note_alias(store.get(c.tid), "B10")
-    assert store.settled_with_open_aliases(["B10"]), (
+    store._note_alias(store.get(c.tid), "B11")
+    assert store.settled_with_open_aliases(["B11"]), (
         "excluding redirects must not have made the check vacuous")
+
+
+def test_a_live_sibling_on_the_same_reference_is_not_a_concealment(store):
+    """A settled ticket beside a LIVE one on the same reference ends no trail.
+
+    ★ ADDED 2026-10-29, from a false positive on entry C1. His ruling of
+    2026-10-19 made `qs` its own kind, and `tid_of` digests the kind, so a
+    QUESTION about an entry and a PROPOSED FIX for it take 2 distinct identities
+    by design. `qs:cea0bd553f52` was closed because he had ruled which term the
+    claim channel enters, while C1's implement half is deliberately unfinished,
+    and the check reported the answered question as concealing C1. C1 carried 4
+    tickets at that moment, 1 of them OPEN, so a reader searching C1 found open
+    work and nothing was concealed.
+    """
+    settled, _ = store.propose("qs", "the question", "which term does it enter?",
+                               "task_list", task_ref="Z9")
+    store.close(settled.tid, "he ruled it", "built and guarded by a test")
+    live, _ = store.propose("pf", "the build", "promote the channel out of shadow",
+                            "task_list", task_ref="Z9")
+    assert live.status == "OPEN"
+    assert store.settled_with_open_aliases(["Z9"]) == [], (
+        "a settled question was reported as concealing an entry whose own "
+        "proposed-fix ticket is still open")
+
+    # and the exclusion must not be vacuous: settle the sibling and it IS hidden
+    store.close(live.tid, "done too", "a second test passed")
+    assert store.settled_with_open_aliases(["Z9"]), (
+        "with EVERY ticket on the reference settled while the entry is open, "
+        "the trail really does end and the check must say so")
