@@ -727,12 +727,31 @@ def base_model_label(label: str) -> str:
 
 
 def describe_model(label: str) -> str:
-    """Roster description for a panel label, honest about simulated stand-ins."""
+    """Roster description for a panel label, honest about simulated stand-ins.
+
+    ★ THE 2 LOOKUPS ANNOUNCE A MISS, 2026-10-29. Both were bare
+    `MODEL_ROSTER.get(x, x)` calls, so an unregistered label described itself --
+    `'Kimi' -> 'Kimi'` against `'CC2' -> 'Claude Opus 4.7 (Anthropic)'` -- and
+    nothing said the description was absent rather than terse. This was the last
+    SILENT DEFAULT of the 10 admission steps that is a table lookup; the 3 in
+    `runner_core` were routed the same day and the 4 in the composer and this
+    file earlier.
+
+    BEHAVIOUR IS UNCHANGED, which is C18's own deliberate trade: the default is
+    still returned and only the silence is removed. A roster description reaches
+    a report rather than a decision, so raising here would stop a run over a
+    cosmetic absence -- which is exactly the degradation-into-dead-run the clause
+    refuses.
+    """
     base = base_model_label(label)
     if base != label:
-        return (f"SIMULATED stand-in for {MODEL_ROSTER.get(base, base)} "
+        described = _cap_identity.resolve_or_alarm(
+            MODEL_ROSTER, base, "roster description (simulated base)",
+            default=base)
+        return (f"SIMULATED stand-in for {described} "
                 f"-- no paid dispatch occurred")
-    return MODEL_ROSTER.get(label, label)
+    return _cap_identity.resolve_or_alarm(
+        MODEL_ROSTER, label, "roster description", default=label)
 
 
 # Bugzilla CLOSED-loop verification cap per round (15 May 2026).

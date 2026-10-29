@@ -875,3 +875,75 @@ def route(
     #: -- it means "not recorded", and nothing reads it as "measured".
     out.strength_order_was_unestablished = _unestablished
     return out
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ★ ONE MODULE OBJECT UNDER BOTH NAMES. Added 2026-10-29 after the ledger split
+# in a single process.
+#
+# THE DEFECT, OBSERVED RATHER THAN PREDICTED. This file is importable as
+# `routing` (with `bench/` on the path) and as `bench.routing` (with the
+# repository root on it). Python treats those as 2 DIFFERENT modules and gives
+# each its own `_LOOKUP_MISSES` list. Every live caller uses the same dual-path
+# form -- `from bench import routing` first, falling back to `import routing` --
+# which looks safe and is not: WHICH branch wins depends on what is importable
+# AT THAT MOMENT, so 2 modules in 1 process can resolve differently.
+#
+# IT HAPPENED. Running
+# `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py` as a script
+# on 2026-10-29, `reference_runner_v3` bound the TOP-LEVEL module (id ...555520)
+# while the script bound `bench.routing` (id ...652032). `describe_model`
+# recorded its miss in one ledger and the reader asked the other, which reported
+# 0 and classified an ANNOUNCED default as SILENT. The announcement was made and
+# nobody could hear it -- which is worse than not making it, because the
+# instrument then reports the code as defective.
+#
+# THE FIX IS AN ALIAS, NOT A CONVENTION. Asking every caller to import it the
+# same way is the arrangement that just failed; a convention nothing enforces is
+# not a mechanism. Registering this one object under BOTH names makes the
+# question unaskable: whichever name an importer uses, it gets this object and
+# this ledger. It is idempotent, it never overwrites a DIFFERENT module already
+# registered under the other name, and it fails open -- an aliasing error must
+# not stop a run.
+def _register_under_both_names() -> None:
+    import sys as _sys
+    me = _sys.modules.get(__name__)
+    if me is None:                                                 # pragma: no cover
+        return
+    other = "routing" if __name__ == "bench.routing" else "bench.routing"
+    existing = _sys.modules.get(other)
+    if existing is me:
+        return
+    if existing is not None:
+        # A DIFFERENT object is already registered under the other name. Do NOT
+        # overwrite it: that would hide a real conflict and could swap a module
+        # under code already holding a reference to it. The condition is
+        # reported by `ledger_is_shared()` instead, so a split is visible rather
+        # than silently patched over.
+        return
+    try:
+        _sys.modules[other] = me
+    except Exception:                                              # pragma: no cover
+        pass
+
+
+def ledger_is_shared() -> tuple:
+    """(shared, detail). Is this file registered as ONE object under both names?
+
+    Returned rather than asserted, so a caller can report the condition without
+    a module import deciding whether a run proceeds.
+    """
+    import sys as _sys
+    a = _sys.modules.get("routing")
+    b = _sys.modules.get("bench.routing")
+    if a is None or b is None:
+        return (True, f"only 1 name is imported: routing={a is not None}, "
+                      f"bench.routing={b is not None}")
+    if a is b:
+        return (True, "both names resolve to 1 module object")
+    return (False,
+            f"SPLIT LEDGER: routing (id {id(a)}) and bench.routing (id {id(b)}) "
+            f"are different objects, so a miss recorded by one is invisible to "
+            f"the other")
+
+
+_register_under_both_names()

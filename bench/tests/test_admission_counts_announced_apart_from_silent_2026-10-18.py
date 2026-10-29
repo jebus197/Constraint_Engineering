@@ -74,9 +74,32 @@ def test_the_producer_distinguishes_announced_from_silent():
     assert "ANNOUNCED DEFAULT" in outcomes, (
         "no step reports ANNOUNCED DEFAULT, so entry C18's 3 loud lookups are "
         "still being counted as silent and the instrument cannot see the repair")
-    assert "SILENT DEFAULT" in outcomes, (
-        "every step reports as announced, which would mean the distinction has "
-        "collapsed the other way and the instrument has stopped discriminating")
+    #: ★ THIS ASSERTION REQUIRED A LIVE DEFECT, AND IS REPLACED, 2026-10-29.
+    #: It read `assert "SILENT DEFAULT" in outcomes`, whose stated purpose was to
+    #: catch the distinction collapsing the other way. But it can only hold while
+    #: a silent lookup still EXISTS in the tree, so it conflates "the instrument
+    #: stopped discriminating" with "the defect was fixed" -- and this file's own
+    #: docstring says the opposite: *"Not the number -- the number may move
+    #: again, and should, as more lookups are made loud."*
+    #:
+    #: IT FIRED ON SUCCESS. On 2026-10-29 the last silent TABLE lookup was routed
+    #: through the recording resolver and the admission count fell from 5 of 10
+    #: to 1 of 10, leaving only a SILENT DEGRADE, which is not a table lookup at
+    #: all. The commit was refused by a guard celebrating its own obsolescence.
+    #:
+    #: THE DISTINCTION IS NOW TESTED DIRECTLY, by
+    #: `test_the_discriminator_still_tells_a_recorded_miss_from_an_unrecorded_one`
+    #: below: a synthetic absent-key lookup through `resolve_or_alarm` records,
+    #: and a bare `.get` on the same synthetic table does not. That is the exact
+    #: predicate `record()` uses -- `announced = bool(_rt.lookup_misses())` -- so
+    #: it tests the discriminator rather than the tree's current contents, and
+    #: it keeps working however many lookups are made loud.
+    assert "SILENT DEGRADE" in outcomes or "SILENT DEFAULT" in outcomes, (
+        "no step reports ANY silent outcome. That may be correct -- every "
+        "lookup may now be loud -- but the vocabulary must still be reachable, "
+        "so check "
+        "test_the_discriminator_still_tells_a_recorded_miss_from_an_unrecorded_one "
+        "has not been weakened before accepting it")
     # An announced default must NOT be inside the silent tally.
     silent = res["silent"]
     announced = sum(1 for o in outcomes if o == "ANNOUNCED DEFAULT")
@@ -118,3 +141,44 @@ def test_the_producer_calls_the_live_resolver_and_does_not_reimplement_it():
     assert bare == [], (
         f"the producer still reads {bare} with a bare get and a default, so it "
         f"would report an announced default as silent")
+
+def test_the_discriminator_still_tells_a_recorded_miss_from_an_unrecorded_one():
+    """THE DISTINCTION ITSELF, independent of what the live tree contains.
+
+    `record()` classifies a step by exactly one predicate:
+    `announced = bool(_rt.lookup_misses())`. So the question "can the instrument
+    still tell an announced default from a silent one?" reduces to "does the
+    ledger record a resolved miss and not record a bare one?", on a SYNTHETIC
+    table that no repair can remove.
+
+    This replaces an assertion that required a live silent lookup to exist. That
+    one answered the same question only while the defect it measured survived,
+    and it refused a commit on 2026-10-29 for the sole reason that the defect
+    had been fixed.
+    """
+    table = {"present": 1}
+    absent = "AbsentKeyForDiscriminationTest"
+
+    # the ANNOUNCED path: an absent key through the resolver RECORDS
+    R.reset_lookup_misses()
+    got_resolved = R.resolve_or_alarm(table, absent, "a synthetic table", default=0)
+    recorded = list(R.lookup_misses())
+    assert got_resolved == 0, "the resolver stopped returning the default"
+    assert len(recorded) == 1, (
+        "an absent key through the resolver recorded nothing, so every step "
+        "would now classify as SILENT and the instrument has stopped "
+        "discriminating")
+
+    # the SILENT path: the same absent key by a bare get RECORDS NOTHING
+    R.reset_lookup_misses()
+    got_bare = table.get(absent, 0)
+    assert got_bare == 0
+    assert R.lookup_misses() == [], (
+        "a bare dict get recorded a miss, which would make every step classify "
+        "as ANNOUNCED and the distinction would be vacuous")
+
+    # and a PRESENT key records nothing either way, so a hit is never a miss
+    R.reset_lookup_misses()
+    assert R.resolve_or_alarm(table, "present", "a synthetic table", default=0) == 1
+    assert R.lookup_misses() == []
+

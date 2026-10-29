@@ -75,16 +75,28 @@ class TestTheSameModuleObjectIsUsedThroughout:
             "so a miss it records would be invisible here and to any reader that "
             "imports it the other way")
 
-    def test_the_two_import_paths_really_are_distinct(self):
-        """The hazard itself, pinned, so nobody concludes it is theoretical."""
-        import importlib
-        top = importlib.import_module("routing")
-        pkg = importlib.import_module("bench.routing")
-        assert top is not pkg, (
-            "the 2 import paths now resolve to 1 object; if that is a deliberate "
-            "change, this test should be removed with the measurement that "
-            "justified it")
-        assert top._LOOKUP_MISSES is not pkg._LOOKUP_MISSES
+    #: ★ A TEST WAS REMOVED HERE, AND THIS IS THE JUSTIFICATION IT DEMANDED.
+    #: `test_the_two_import_paths_really_are_distinct` pinned the hazard as
+    #: EXISTING: that `routing` and `bench.routing` were 2 objects with 2
+    #: ledgers. Its own failure message said *"the 2 import paths now resolve to
+    #: 1 object; if that is a deliberate change, this test should be removed
+    #: with the measurement that justified it"*.
+    #:
+    #: IT IS A DELIBERATE CHANGE AND HERE IS THE MEASUREMENT. The split was not
+    #: theoretical: running the admission producer AS A SCRIPT on 2026-10-29,
+    #: `reference_runner_v3` bound the top-level module while the script bound
+    #: `bench.routing`, so `describe_model` recorded its miss in one ledger and
+    #: the reader asked the other -- reporting 0 and classifying an ANNOUNCED
+    #: default as SILENT. `bench/routing.py` now registers itself under both
+    #: names, and the same script reports 1 silent step of 10 instead of 5.
+    #:
+    #: The property is not lost, it is INVERTED and held elsewhere:
+    #: `bench/tests/test_the_miss_ledger_is_not_split_2026-10-29.py`, 7 tests,
+    #: 3 of 3 mutants caught, asserts that both names resolve to 1 object, that
+    #: they share 1 ledger LIST by identity, that a miss recorded under one name
+    #: is visible under the other, and that the alias refuses to overwrite a
+    #: genuinely different module. Keeping a 2nd copy here would be 2
+    #: descriptions of 1 rule, which is the drift this project keeps finding.
 
 
 class TestARegisteredSeatIsUnaffected:
