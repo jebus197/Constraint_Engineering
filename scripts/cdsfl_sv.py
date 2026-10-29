@@ -38,6 +38,7 @@ import argparse
 import difflib
 import json
 import os
+import importlib.util
 import re
 import statistics
 import subprocess
@@ -2725,6 +2726,138 @@ def _print_save_alert(
     err.flush()
 
 
+def _recovery_guard_module(root: Path):
+    """The A23 guard, imported BY PATH so its parser and ceiling are not copied.
+
+    THE DEPENDENCY DIRECTION IS DELIBERATE AND IS THE LESSER OF 2 EVILS. Reaching
+    into a test module from production code is ordinarily backwards. The
+    alternative here is a SECOND parser for the SESSION STATE block and a SECOND
+    copy of `MAX_COMMITS_BEHIND`, and this project's record is explicit about
+    which of those 2 costs more: a producer and a consumer that each describe
+    themselves correctly and disagree with each other is the shape
+    `execute-do-not-grep` was written for, and 4 defects have been found that way.
+    `sv_postconditions` already treats this exact file as a known path, so this
+    adds no new coupling -- it uses the coupling that is already there.
+
+    Returns None if the file is absent, which is a real case: a `git archive`
+    export carries no `bench/tests`.
+    """
+    path = root / "bench" / "tests" / "test_recovery_session_state_is_current_2026-09-11.py"
+    if not path.is_file():
+        return None
+    spec = importlib.util.spec_from_file_location("_a23_guard", path)
+    mod = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(mod)
+    except Exception:                                      # noqa: BLE001
+        return None
+    return mod
+
+
+def _check_recovery_currency(root: Path, *, commits_this_save_will_add: int = 1,
+                             recovery: Optional[Path] = None) -> _Check:
+    """(e) The newest SESSION STATE block will still be current AFTER this save.
+
+    HIS RULING, 2026-10-19, on entry B29: *"Verdict: Option 3."* Option 3 as he
+    was given it reads *"Run the staleness check BEFORE invoking the save rather
+    than after it refuses. Costs under a third of a second and turns 2 saves
+    into 1."*
+
+    WHAT IT PREVENTS, MEASURED. The A23 currency condition is checked AFTER the
+    commit, by `sv_postconditions.recovery_block_passes_its_own_guard`. When it
+    fails, the commit is already in the object store, so the remedy is to write
+    the block and save again -- and `memory-updated` then refuses that second
+    save, because its baseline is the save whose memory it is being asked to
+    produce again. 7 of the 14 sub-15-minute follow-up saves in this repository's
+    history name exactly this condition. Producer:
+    `scripts/do_options_three_and_one_compose_2026-10-29.py`.
+
+    THE MARGIN IS THE WHOLE POINT AND IS WHY THIS IS NOT JUST THE POSTCONDITION
+    MOVED EARLIER. Pre-commit, HEAD is `commits_this_save_will_add` commits
+    behind where it will be when the postcondition runs. A block sitting at
+    exactly the ceiling therefore PASSES here and FAILS there -- which is the
+    defect B29 describes, displaced by 1 commit rather than repaired. So the
+    predicate is `behind + commits_this_save_will_add <= ceiling`, not
+    `behind <= ceiling`.
+
+    IT REPORTS RATHER THAN REFUSES WHERE IT CANNOT ANSWER. No guard file, no
+    git, no resolvable sha: each is stated as not-performed, which is not the
+    same as passing, and matches how `_check_memory_updated` treats the same
+    situation.
+
+    `recovery` POINTS THE BORROWED PARSER AT A DIFFERENT FILE, which is what
+    makes this testable. The guard reads a module-global path derived from its
+    own location, so without this the check could only ever be exercised against
+    the live `resources/RECOVERY.md` -- and a check that can only be run against
+    live state is a check whose branches no test reaches. `importlib` hands back
+    a FRESH module object per call, so setting the global here cannot leak into
+    the guard's own run under pytest.
+    """
+    name = "recovery-currency"
+    why = (
+        "the A23 currency condition is verified AFTER the commit, so a stale "
+        "block costs a second save -- and the memory baseline then refuses that "
+        "second save for lacking memory that already exists. Checking it here "
+        "turns 2 saves into 1, which is his ruling of 2026-10-19 on entry B29."
+    )
+    guard = _recovery_guard_module(root)
+    if guard is None or not hasattr(guard, "_newest_block"):
+        return _Check(
+            name, True, why=why,
+            expected="the A23 guard file, to borrow its parser and its ceiling",
+            observed="not importable in this clone — not performed, and not "
+                     "treated as a refusal, because a git-archive export "
+                     "legitimately carries no bench/tests",
+            look_at="bench/tests/test_recovery_session_state_is_current_2026-09-11.py",
+        )
+    if recovery is not None:
+        guard.RECOVERY = recovery
+    ceiling = int(getattr(guard, "MAX_COMMITS_BEHIND", 60))
+    try:
+        _when, body = guard._newest_block()
+    except (AssertionError, OSError) as err:
+        return _Check(
+            name, False, why=why,
+            expected="a SESSION STATE block in resources/RECOVERY.md",
+            observed=f"could not read one — {type(err).__name__}: {err}",
+            look_at="resources/RECOVERY.md",
+        )
+    shas = re.findall(r"`([0-9a-f]{7,40})`", body)
+    best = None
+    for sha in shas[:4]:
+        r = subprocess.run(["git", "rev-list", "--count", f"{sha}..HEAD"],
+                           cwd=root, capture_output=True, text=True, timeout=30)
+        if r.returncode == 0 and r.stdout.strip().isdigit():
+            n = int(r.stdout.strip())
+            best = n if best is None else min(best, n)
+    if best is None:
+        return _Check(
+            name, True, why=why,
+            expected="at least 1 commit named in the newest block to resolve here",
+            observed=(f"the newest block names no commit at all — not "
+                      f"performed, so not a refusal"
+                      if not shas else
+                      f"none of the commits it names ({shas[:4]}) resolves in "
+                      f"this clone — not performed, so not a refusal"),
+            look_at="resources/RECOVERY.md",
+        )
+    after = best + commits_this_save_will_add
+    ok = after <= ceiling
+    return _Check(
+        name, ok, why=why,
+        expected=f"the newest SESSION STATE at most {ceiling} commits behind HEAD "
+                 f"AFTER this save adds {commits_this_save_will_add}, i.e. at most "
+                 f"{ceiling - commits_this_save_will_add} behind now",
+        observed=f"{best} behind now, {after} after this save"
+                 + ("" if ok else
+                    f" — over the ceiling of {ceiling}. Write a new SESSION STATE "
+                    f"block in resources/RECOVERY.md FIRST, then run sv once. "
+                    f"That is his Option 3 and it is why this check is here "
+                    f"rather than after the commit."),
+        look_at="resources/RECOVERY.md",
+    )
+
+
 def _preflight_completeness(
     root: Path,
     *,
@@ -2784,6 +2917,7 @@ def _preflight_completeness(
             allow_overwrite=allow_overwrite_desktop,
         ),
         _check_memory_index_size(audit),
+        _check_recovery_currency(root),
     ]
 
     _print_memory_index_report(audit)

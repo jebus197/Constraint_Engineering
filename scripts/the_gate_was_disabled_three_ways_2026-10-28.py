@@ -49,7 +49,6 @@ import sys
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "scripts"))
-from _cli_help import answer_help  # noqa: E402
 
 HOOKS = pathlib.Path.home() / ".claude" / "hooks"
 HOOK = REPO / "hooks" / "work_not_narrate.py"
@@ -228,13 +227,18 @@ def measure(last_n: int = 12) -> dict:
 
 
 def main() -> int:
-    # `takes_no_arguments=False` IS REQUIRED HERE, and its absence made every
-    # flag below unreachable. `answer_help` defaults to refusing ANY argument
-    # before the caller's own parser runs, so `--json` and `--trials` exited 2
-    # with "this script takes no arguments" -- an unwired addition of exactly
-    # the kind the additive standard forbids, and invisible to the guards
-    # because they call `measure()` directly rather than the command line.
-    answer_help(__doc__, __file__, takes_no_arguments=False)
+    # THE HELP-HELPER CALL WAS REMOVED HERE, 2026-10-29. It sat above the parser
+    # and passed `takes_no_arguments=False`. `test_no_script_uses_both` refuses
+    # that combination and is right: the helper answers the help flag FIRST, so
+    # argparse's own flag list never reaches the reader and the script advertises
+    # nothing. argparse already answers help and already rejects an unknown flag
+    # with exit 2, so the call bought nothing and cost the usage text.
+    #
+    # IT WAS ADDED ON 2026-10-28 TO FIX THE OPPOSITE FAULT: without that keyword
+    # the helper refused EVERY argument before the parser ran, so the json flag
+    # exited 2 saying the script takes no arguments. That repair was right about
+    # the symptom and wrong about the remedy -- the helper is for scripts with NO
+    # parser, and this one has a parser.
     ap = argparse.ArgumentParser(
         description="Measure why the continuation gate never fired.")
     ap.add_argument("--window", type=int, default=12,

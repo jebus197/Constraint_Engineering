@@ -267,10 +267,38 @@ def test_the_severity_gate_provenance_question_is_struck_permanently():
             f"{d['key']} carries a ruling of {d.get('ruled')} yet is still a "
             f"live decision"
         )
-    assert not live, (
-        f"{len(live)} live decision(s) remain though he ruled on all of them "
-        f"on 2026-10-16: {[d['key'] for d in live]}"
-    )
+    # ★ A NEW, UNRULED DECISION IS THE SYSTEM WORKING, NOT A REGRESSION.
+    # Corrected 2026-10-29. This read `assert not live`, with the message "though
+    # he ruled on all of them on 2026-10-16" -- a SNAPSHOT of the morning he
+    # cleared the queue, asserting it would stay empty for good. It cannot: new
+    # decisions arise, and one did. B47 was raised on 2026-10-29 as Option 1 of
+    # B29, which his own composition question invites and which he has not ruled
+    # on, and the snapshot refused the commit for recording it.
+    #
+    # THIS FILE ALREADY CARRIES THE INVERSE CORRECTION, which is why the pattern
+    # should have been recognised sooner: a sibling guard asserted the decisions
+    # list was NON-empty until he cleared it on 2026-10-16, and its comment notes
+    # that "AN EMPTY QUEUE IS NOW A REACHABLE AND DESIRABLE STATE". A NON-empty
+    # queue is equally reachable, for the same reason in reverse.
+    #
+    # THE PROTECTION IS UNCHANGED AND IS NOT IN THIS ASSERTION. What this file
+    # exists to stop is a SETTLED item being re-presented to him: the 2 loops
+    # above already refuse any live decision that is STRUCK or that carries a
+    # `ruled` date, and those are the failures that actually happened -- the
+    # severity-gate question reaching him a 5th time. Neither is relaxed.
+    #
+    # WHAT REPLACES THE SNAPSHOT IS A STRONGER DEMAND ON EACH LIVE DECISION:
+    # that it is ACTIONABLE. A decision with no options is one he cannot answer,
+    # and a queue of those is worse than an empty one.
+    for d in live:
+        opts = d.get("options") or []
+        assert len(opts) >= 2, (
+            f"{d['key']} is a live decision offering {len(opts)} option(s); he "
+            f"cannot rule on a question that does not state what the choices "
+            f"are. Add them to experimental_notes/data/morning_report_decisions.json")
+        assert d.get("what") and d.get("why"), (
+            f"{d['key']} is a live decision with no `what` or `why`; it would "
+            f"reach him as a title and nothing else")
 
 
 def test_the_severity_gate_itself_still_functions():

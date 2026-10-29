@@ -205,10 +205,30 @@ def test_the_archive_is_not_rewritten():
 
         walk(doc)
     assert total >= 20, total
-    assert gated == 0, (
-        f"{gated} of {total} archived blocks carry the estimability gate, so a "
-        f"run under the repaired reporter has landed. Re-measure the figures in "
-        f"this file's docstring."
+    # ★ A RATCHET ON THE PRE-REPAIR BLOCKS, NOT A PIN ON THE REPAIRED ONES.
+    # Corrected 2026-10-29. This read `gated == 0`, and its own message said a
+    # non-zero meant "a run under the repaired reporter has landed. Re-measure".
+    # That duly happened: 1 of 27 blocks is now gated, so the pin failed on the
+    # repair WORKING, which is the count-pin defect this project has now met
+    # several times -- `len(defects) == 3` in the morning-report guard and the
+    # decisions-share pin in the same file both failed the same way.
+    #
+    # THE PROPERTY THIS TEST NAMES is in its own docstring: "The pre-repair
+    # blocks stay as recorded; only new runs are gated." That is a statement
+    # about the UNGATED population not shrinking, and it says nothing about how
+    # many gated blocks may arrive. So the floor is on the pre-repair count and
+    # the gated count is free to grow.
+    #
+    # MEASURED 2026-10-29: 27 blocks, 1 gated, 26 UNGATED, 10 false-robust. The
+    # 26 is the floor: if a pre-repair block ever acquires the gate, it has been
+    # REWRITTEN, which is what his standing ruling on history forbids and what
+    # this test is really for.
+    ungated = total - gated
+    assert ungated >= 26, (
+        f"only {ungated} of {total} archived blocks are ungated, down from the "
+        f"26 recorded on 2026-10-29. A pre-repair block has acquired the "
+        f"estimability gate, which means the archive was REWRITTEN rather than "
+        f"added to -- the one thing this test exists to catch."
     )
     assert false_robust == 10, (
         f"the archive now shows {false_robust} false-robust blocks, not the 10 "

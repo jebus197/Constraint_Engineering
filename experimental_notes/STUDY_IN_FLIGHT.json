@@ -15,10 +15,10 @@
     "",
     "Full scope: experimental_notes/CDSFL_Programme_of_Study_Full_Scope_2026-09-21.md"
   ],
-  "status": "OPEN",
+  "status": "CLOSED",
   "opened": "2026-10-03T06:50:54+01:00",
   "rationale": "To measure whether the fixes of the last 15+ days actually WORK. Clean convergence is the success CRITERION of the runs, NOT their purpose.",
-  "closes_when": "every measurement below has result != null AND headline != null; then set status to CLOSED and the hook falls silent",
+  "closes_when": "every measurement below either has result != null AND headline != null, or carries a `retired` block naming his ruling, a reason and producers that exist on disk; then set status to CLOSED and the hook falls silent. A RETIREMENT IS NOT A RESULT: `result` and `headline` stay null for a retired measurement, because none was made, and the guard in bench/tests/test_the_serialisation_measurement_is_scheduled_2026-10-17.py still refuses a fabricated outcome.",
   "measurements": [
     {
       "id": "arm5",
@@ -885,7 +885,18 @@
       "result": null,
       "headline": null,
       "blocked_on": "FOUNDER RULING NEEDED ON COST, measured 2026-10-18T02:04:05+01:00. The design as written -- one brief, 2 arms -- cannot distinguish a cure from chance. On the COMMITTED decomposition (scripts/the_contention_evidence_is_cap_confounded_2026-10-07.py), 2 of the 3 co-failures are both seats hitting ONE DEADLINE and only 1 is genuine simultaneity, so the rate the parallel arm must reproduce is 1 of 68 rounds, 1.4706%, Wilson [0.2601%, 7.8710%]. That needs 47 rounds for 50% power and 109 for 80%, which is 18.8 to 45.4 and 43.6 to 105.4 hours of Max quota respectively. At n = 1 per arm, P(0 events | serialisation cures nothing) = 0.9559, so a clean serialised arm is the likely outcome either way; and the best possible 2x2 at n = 1 gives Fisher one-sided p = 0.5000. Figures cross-verified across scipy, statsmodels, an independent NumPy closed form, mpmath and wolframscript. Producer: scripts/can_the_serialisation_measurement_settle_it_2026-10-18.py. His 3 options are recorded in that producer's output and as task B34. NOT RUN, and deliberately not marked with a result.",
-      "blocked_on_added": "2026-10-18T02:04:05+01:00"
+      "blocked_on_added": "2026-10-18T02:04:05+01:00",
+      "retired": {
+        "retired_at": "2026-10-29T03:14:55+00:00",
+        "on_his_ruling": "2026-10-19, verbatim: \"This has already been ruled in the previously supplied tts response files. We tested it previously too. It cannot work. I told you my preference was for staggered dispatch (for models from the same vendor), not serialised dispatch!\"",
+        "reason": "THE DESIGN CANNOT ANSWER THE QUESTION AT ANY AFFORDABLE SIZE, and that is a property of its power rather than of its price. On the committed decomposition, 2 of the 3 co-failures that justified serialising are both seats hitting ONE DEADLINE (1956.2 against 1956.0 at +8.68% and +8.67% of the 1800 second cap; 902.0 against 902.0 at +0.22% of the 900 second cap), leaving only 18.8 against 18.7 as genuine simultaneity. Recomputed honestly that is 1 of 5, Wilson [0.0362, 0.6245], one-sided exact p = 0.107550, NOT SIGNIFICANT -- so the justifying p = 1.6e-7 is already superseded in the committed record. The rate the parallel arm must reproduce is therefore 1 of 68 rounds, 1.4706%, Wilson [0.2601%, 7.8710%], which needs 47 rounds for 50% power and 109 for 80%: 18.8 to 45.4 and 43.6 to 105.4 hours of his Max quota. At 1 round per arm, P(0 events | serialisation cures nothing) = 0.9559, so a clean serialised arm is the LIKELY outcome whether or not anything was cured, and the best possible 2 by 2 gives Fisher one-sided p = 0.5000. An instrument whose most probable reading is the same under both hypotheses measures nothing. HIS PREFERENCE IS THE STAGGER, which the 2026-10-07 producer concludes is at least as well supported as the full lock and strictly cheaper, and which is recorded with its value and mechanics under task B45.",
+        "producers": [
+          "scripts/the_contention_evidence_is_cap_confounded_2026-10-07.py",
+          "scripts/can_the_serialisation_measurement_settle_it_2026-10-18.py"
+        ],
+        "result_stays_null_deliberately": "No measurement was made, so no result is recorded. A retirement is a DECISION NOT TO RUN and never an outcome; recording one here would be the fabrication this measurement's own guard was written to forbid.",
+        "what_is_lost_by_retiring_it": "The named loss stands and is not argued away: the live scheduling constraint rests on a correlation rather than a demonstrated cure. What changes is the claim that THIS design could have settled it. The standing alternative, recorded in the entry as his option (b), is to consume the command-line tool's streaming output incrementally so the call count is observable mid-flight -- which addresses the shared-deadline mechanism 2 of the 3 co-failures are attributed to, and produces a lasting capability rather than a single p-value."
+      }
     }
   ],
   "run_conditions": {
@@ -1226,7 +1237,7 @@
       "evidence": "experimental_notes/evidence/run1_converged_and_a19_is_by_design_2026-10-15.json"
     }
   ],
-  "last_updated": "2026-10-17T12:06:11+01:00",
+  "last_updated": "2026-10-29T03:14:55+00:00",
   "programme_design_notes": [
     {
       "added": "2026-10-15T08:40:32+01:00",

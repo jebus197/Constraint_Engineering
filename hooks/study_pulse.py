@@ -53,8 +53,14 @@ def main():
         if str(d.get("status", "")).upper() != "OPEN":
             return                      # expired: say nothing, for good
         ms = d.get("measurements") or []
+        # A RETIRED measurement is not outstanding (task B34, 2026-10-29). His
+        # ruling of 2026-10-19 retired `serialisation_cures_matched_failures`
+        # unrun: "It cannot work." A retirement keeps `result` and `headline`
+        # null, because none was made, so without this clause the hook would
+        # announce a measurement nobody intends to run, every turn, for good.
         outstanding = [m for m in ms
-                       if m.get("result") is None or m.get("headline") is None]
+                       if not m.get("retired")
+                       and (m.get("result") is None or m.get("headline") is None)]
         if not outstanding:
             print(json.dumps({"suppressOutput": False, "hookSpecificOutput": {
                 "hookEventName": "UserPromptSubmit",

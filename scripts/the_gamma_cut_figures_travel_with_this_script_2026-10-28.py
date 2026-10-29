@@ -29,6 +29,7 @@ than re-implemented, so the two scripts cannot drift apart silently.
 """
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import json
 import pathlib
@@ -76,9 +77,25 @@ def sweep_best(prem, sound):
 
 
 def main() -> int:
-    if "--help" in sys.argv or "-h" in sys.argv:
-        print(__doc__)
-        return 0
+    # ★ THE HAND-ROLLED HELP CHECK IS REPLACED BY A REAL PARSER, 2026-10-29.
+    # It read `if "--help" in sys.argv or "-h" in sys.argv: print(__doc__)`,
+    # which answered help and let EVERY OTHER argument through silently -- so a
+    # mistyped flag ran the script's ordinary work, and this script WRITES a
+    # file. Measured before the change: `--no-such-flag` exited 0 and did the
+    # work. 2 guards caught it: `test_every_script_that_writes_answers_help`,
+    # because a writer must not act on an unrecognised flag, and
+    # `test_an_unknown_flag_is_rejected_loudly`, because a silently ignored flag
+    # is how a retired option becomes a no-op nobody notices.
+    #
+    # A PARSER RATHER THAN THE `answer_help` HELPER, and that is deliberate:
+    # this file has no `sys.path` bootstrap, so the helper is not importable by
+    # name without adding one, and `test_no_script_uses_both` forbids carrying
+    # both mechanisms anyway. argparse answers help, prints the usage text and
+    # exits 2 on anything it does not recognise, which is the whole requirement.
+    # The parser takes no arguments because the script takes none.
+    argparse.ArgumentParser(
+        description="The gamma-cut figures, re-derived so they travel with "
+                    "this script rather than as prose.").parse_args()
     reps = _sig.collect()
     rows = _sig.fire_points(reps, 3)
     out = {"fire_points": len(rows)}

@@ -14,7 +14,12 @@ rate reaches zero, and that is why 7 was chosen rather than a round number.
 
 THE DEFAULT WAS REPAIRED AND EVERY CALLER OVERRODE IT.
 `RunnerConfig.gamma_alt_consecutive_zero_crit` derives from
-`REQUIRED_QUIET_RUN = 7`, but on 2026-10-17 **32 of 47 shipped configs set the
+`REQUIRED_QUIET_RUN`, which was 7 when this file was written and **is 3 today**
+-- restored by his ruling of 2026-10-27 after the measurement behind 7 was shown
+to rest on a condition that never fires. The paragraphs below are kept in the
+tense of 2026-10-17 because they record why 7 was chosen at the time; the live
+assertion in `test_the_default_derives_from_the_measurement` is the current
+value, and it reads 3. On 2026-10-17 **32 of 47 shipped configs set the
 value to 3 explicitly**, so the repair was inert for every experiment that
 matters -- the shape the additive standard calls an addition nothing reaches.
 

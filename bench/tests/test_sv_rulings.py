@@ -845,7 +845,22 @@ class TestPreflightAssembly:
             ),
         }
 
-    def test_a_complete_save_passes_all_four_checks(
+    #: ★ A SET, NOT A COUNT -- his guidance of 2026-10-16, in his terms: a
+    #: count cannot say what moved, and a set catches a swap. This test asserted
+    #: the literal string "All 4 completeness checks passed." and broke on
+    #: 2026-10-29 when `recovery-currency` became the 5th check (task B29, his
+    #: ruling of 2026-10-19 choosing Option 3). The count is now DERIVED from the
+    #: set below, so adding a 6th check fails on the SET -- which names what
+    #: changed -- rather than on a bare number that says only that something did.
+    #:
+    #: The sibling `_print_save_alert` test is deliberately left alone: it passes
+    #: `total=4` explicitly, so its "1 of 4" is the formatter's own argument and
+    #: not a claim about how many checks the pre-flight runs.
+    EXPECTED_CHECKS = ("memory-updated", "open-brain-reachable",
+                       "tracker-copies-agree", "memory-index-headroom",
+                       "recovery-currency")
+
+    def test_a_complete_save_passes_every_completeness_check(
         self, tmp_path: Path, git_repo: Path, monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture,
     ) -> None:
@@ -853,10 +868,13 @@ class TestPreflightAssembly:
         monkeypatch.setattr(sv, "_OPEN_BRAIN_ROOT", tmp_path / "OpenBrain")
         assert sv._preflight_completeness(git_repo, **world) is True
         out = capsys.readouterr().out
-        assert "All 4 completeness checks passed." in out
-        for name in ("memory-updated", "open-brain-reachable",
-                     "tracker-copies-agree", "memory-index-headroom"):
-            assert f"[PASS] {name}" in out
+        assert (f"All {len(self.EXPECTED_CHECKS)} completeness checks passed."
+                in out), (
+            f"the pre-flight reported a different number of checks than the "
+            f"{len(self.EXPECTED_CHECKS)} named in EXPECTED_CHECKS:\n{out}")
+        for name in self.EXPECTED_CHECKS:
+            assert f"[PASS] {name}" in out, (
+                f"{name} is named in EXPECTED_CHECKS and did not report PASS")
 
     def test_one_failure_fails_the_pre_flight_and_raises_the_alert(
         self, tmp_path: Path, git_repo: Path, monkeypatch: pytest.MonkeyPatch,

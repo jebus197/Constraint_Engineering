@@ -35,7 +35,7 @@ for p in (str(REPO), str(REPO / "scripts")):
         sys.path.insert(0, p)
 
 from bench.ticket_store import (  # noqa: E402
-    TicketStore, tid_of, nid_of, norm_title, TERMINAL)
+    TicketStore, tid_of, nid_of, norm_title, TERMINAL, KINDS)
 
 
 def _harvester():
@@ -45,6 +45,74 @@ def _harvester():
     sys.modules["harvest_tickets_guard"] = mod
     spec.loader.exec_module(mod)
     return mod
+
+#: The statuses that mean a record is LIVE WORK rather than history. A record
+#: stranded off-identity in one of these is the hazard the sweep of 2026-10-17
+#: found 17 of: work nothing looks up.
+LIVE_STATUSES = ("OPEN", "REOPENED", "WITHHELD", "CONTESTED")
+
+#: The 2 statuses that make an off-identity record a legitimate REDIRECT: it
+#: exists so that following a superseded identifier reaches the live ticket.
+REDIRECT_STATUSES = ("MERGED", "DUPLICATE")
+
+
+def _canonical_slots(rows) -> set[str]:
+    """Every identity a task-referenced record may legitimately occupy.
+
+    ★ EVERY KIND, NOT ONLY THE KIND THE TASK LIST DECLARES. Corrected
+    2026-10-29, and the 2 call sites below now share this one derivation rather
+    than each carrying its own copy. `tid_of` makes a task reference THE WHOLE
+    IDENTITY alongside the kind -- the text is deliberately excluded so an
+    identifier survives a reword -- and the task-list harvester emits only `fr`
+    and `pf`. So a record at any OTHER kind carrying a real reference could
+    never appear in this set, however correctly it was formed, and was reported
+    as a non-canonical stray BY CONSTRUCTION.
+
+    WHAT IT ACCUSED, AND WHY THAT WAS CORRECT CODE: `qs:cea0bd553f52`, the
+    question owed against task C1. The `qs` kind was added on 2026-10-19, 2 days
+    AFTER this guard was written, and its directive states that one sentence
+    recorded as a question and as a proposed fix takes 2 distinct identities BY
+    DESIGN, because answering the question does not build the fix. The record is
+    self-consistent: `tid_of("qs", its verbatim, "C1")` returns cea0bd553f52
+    exactly. The guard was accusing the newer kind of not being the older one --
+    the 10th time in this project's record that a red guard was the wrong half.
+
+    THE TEETH ARE UNCHANGED, mutation-tested rather than argued in
+    `test_the_widened_slots_still_catch_a_stray`. A stray is still a record whose
+    reference is absent from the list, or whose digest matches NO kind at that
+    reference: a hand-written identifier, or one minted by the superseded
+    text-digesting form. This admits exactly len(KINDS) slots per reference.
+    """
+    return {ref: {tid_of(k, r["verbatim"], ref) for k in KINDS}
+            for ref, r in rows.items()}
+
+
+def _off_identity(records, slots, keep=None, drop=None):
+    """Task-referenced records sitting outside their OWN reference's slots.
+
+    ONE IMPLEMENTATION, 2 CALLERS, so the live guards and the mutation test
+    below exercise the same code. Exactly one of `keep` or `drop` is given.
+
+    PER REFERENCE, NOT A FLAT UNION, and that is a real strengthening rather
+    than a tidy-up. A single flat set of every legitimate identity -- which is
+    what both call sites built before 2026-10-29 -- admits a record that claims
+    reference C1 while sitting at the identity belonging to C2, because that
+    identity is in the set. Keying by the record's OWN reference closes that,
+    and a reference absent from the list yields an empty slot set, so such a
+    record is still reported. Mutation-tested below in all 3 directions.
+    """
+    assert (keep is None) != (drop is None), "give exactly one of keep/drop"
+    out = []
+    for t in records:
+        if not t.task_ref or t.tid in slots.get(t.task_ref, ()):
+            continue
+        if keep is not None and t.status not in keep:
+            continue
+        if drop is not None and t.status in drop:
+            continue
+        out.append((t.task_ref, t.tid, t.status))
+    return out
+
 
 
 # ------------------------------------------------------------------ identity
@@ -263,10 +331,8 @@ def test_no_reference_has_live_work_at_a_superseded_identity():
     H = _harvester()
     store = TicketStore()
     rows = {r["task_ref"]: r for r in H.from_task_list() if r.get("task_ref")}
-    canonical = {tid_of(r["kind"], r["verbatim"], ref) for ref, r in rows.items()}
-    stranded = [(t.task_ref, t.tid, t.status) for t in store.all()
-                if t.task_ref and t.tid not in canonical
-                and t.status in ("OPEN", "REOPENED", "WITHHELD", "CONTESTED")]
+    canonical = _canonical_slots(rows)
+    stranded = _off_identity(store.all(), canonical, keep=LIVE_STATUSES)
     assert not stranded, (f"{len(stranded)} live record(s) at a superseded "
                           f"identity: {stranded[:6]}")
 
@@ -332,10 +398,8 @@ def test_every_non_canonical_record_is_a_redirect():
     H = _harvester()
     store = TicketStore()
     rows = {r["task_ref"]: r for r in H.from_task_list() if r.get("task_ref")}
-    canonical = {tid_of(r["kind"], r["verbatim"], ref) for ref, r in rows.items()}
-    rogue = [(t.task_ref, t.tid, t.status) for t in store.all()
-             if t.task_ref and t.tid not in canonical
-             and t.status not in ("MERGED", "DUPLICATE")]
+    canonical = _canonical_slots(rows)
+    rogue = _off_identity(store.all(), canonical, drop=REDIRECT_STATUSES)
     assert not rogue, (f"{len(rogue)} non-canonical record(s) are not redirects: "
                        f"{rogue[:6]}")
 
@@ -397,3 +461,60 @@ def test_closing_on_a_transition_is_one_directional(tmp_path):
         store.reopen(t.tid, "a marker moved backwards", by="tool")
     assert store.get(t.tid).status == "CLOSED", (
         "a settled ticket was reopened by something other than the founder")
+
+
+def test_the_widened_slots_still_catch_a_stray():
+    """MUTATION TEST for the 2026-10-29 widening, cited by `_canonical_slots`.
+
+    The widening admits len(KINDS) identities per reference instead of 1. The
+    question it must answer is whether it admits anything ELSE. This injects
+    synthetic records against the REAL harvested references and checks all 4
+    directions, so the claim in that docstring is executed rather than asserted.
+    """
+    import types
+    rows = {r["task_ref"]: r
+            for r in _harvester().from_task_list() if r.get("task_ref")}
+    assert len(rows) >= 2, "need 2 references to test the cross-reference case"
+    slots = _canonical_slots(rows)
+    refs = sorted(rows)
+    a, b = refs[0], refs[1]
+
+    def rec(ref, tid, status="OPEN"):
+        return types.SimpleNamespace(task_ref=ref, tid=tid, status=status)
+
+    # 1. EVERY kind at a real reference is admitted. This is the whole point of
+    #    the widening, and before it only `fr` and `pf` passed.
+    legit = [rec(a, tid_of(k, rows[a]["verbatim"], a)) for k in KINDS]
+    assert _off_identity(legit, slots, keep=LIVE_STATUSES) == [], (
+        f"the widening rejects a legitimately-formed record at one of {KINDS}")
+    assert len(slots[a]) == len(KINDS), (
+        f"{len(slots[a])} slots for {a}, expected {len(KINDS)}; a kind collides")
+
+    # 2. A HAND-WRITTEN identifier is still caught.
+    assert _off_identity([rec(a, "deadbeefcafe")], slots, keep=LIVE_STATUSES), (
+        "a hand-written identifier is no longer reported")
+
+    # 3. A reference ABSENT from the list is still caught, even at a real digest.
+    ghost = "ZZ99"
+    assert ghost not in rows
+    assert _off_identity([rec(ghost, tid_of("pf", "x", ghost))], slots,
+                         keep=LIVE_STATUSES), (
+        "a record against a reference the list does not carry is not reported")
+
+    # 4. THE CROSS-REFERENCE CASE, which a flat union admitted. A record that
+    #    claims reference `a` while sitting at `b`'s identity must be reported.
+    crossed = rec(a, tid_of("pf", rows[b]["verbatim"], b))
+    assert crossed.tid in slots[b] and crossed.tid not in slots[a]
+    assert _off_identity([crossed], slots, keep=LIVE_STATUSES), (
+        "a record at another reference's identity is admitted; the slots are "
+        "being treated as a flat union again")
+
+    # 5. The status filters still do their job in both directions.
+    hand = rec(a, "deadbeefcafe", status="MERGED")
+    assert _off_identity([hand], slots, keep=LIVE_STATUSES) == [], (
+        "MERGED is not live work and must not be reported as stranded")
+    assert _off_identity([hand], slots, drop=REDIRECT_STATUSES) == [], (
+        "MERGED is a legitimate redirect and must not be reported as rogue")
+    assert _off_identity([rec(a, "deadbeefcafe", status="CLOSED")], slots,
+                         drop=REDIRECT_STATUSES), (
+        "a CLOSED record off-identity is not a redirect and must be reported")

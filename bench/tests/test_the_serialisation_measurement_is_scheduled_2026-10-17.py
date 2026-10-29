@@ -64,15 +64,35 @@ def test_it_carries_his_ruling_and_a_design():
         "the design does not record that free seats keep the cost at zero")
 
 
-def test_it_is_outstanding_rather_than_quietly_closed():
-    """A scheduled measurement with a result invented would be worse than none."""
-    m = next(x for x in _study()["measurements"] if x.get("id") == MEASUREMENT_ID)
+def test_it_carries_no_invented_result_whether_outstanding_or_retired():
+    """A scheduled measurement with a result invented would be worse than none.
+
+    ★ WIDENED 2026-10-29, AND THE PART THAT MATTERS IS UNCHANGED. This test read
+    that the measurement must be outstanding AND the programme OPEN. His ruling
+    of 2026-10-19 retired the measurement unrun -- "It cannot work. I told you my
+    preference was for staggered dispatch (for models from the same vendor), not
+    serialised dispatch!" -- so the programme is now legitimately CLOSED with
+    this measurement never having run.
+
+    THE PROHIBITION ON A FABRICATED RESULT IS KEPT EXACTLY AS IT WAS. What is
+    relaxed is only the demand that the programme stay OPEN, and that is replaced
+    by a demand that the closure be JUSTIFIED: if the programme is CLOSED while
+    this measurement has no result, it must carry a retirement, and
+    `test_a_retirement_is_more_demanding_than_a_result` in
+    test_the_study_announces_itself_2026-10-03.py holds that retirement to his
+    ruling, a reason and producers that exist on disk.
+    """
+    study = _study()
+    m = next(x for x in study["measurements"] if x.get("id") == MEASUREMENT_ID)
     assert not m.get("result"), (
         "this measurement has a result but has not been run; a fabricated "
         "outcome is the one thing worse than an unscheduled measurement")
     assert not m.get("headline")
-    assert _study().get("status") == "OPEN", (
-        "the programme is closed while a measurement is outstanding")
+    if study.get("status") != "OPEN":
+        assert m.get("retired"), (
+            "the programme is CLOSED while this measurement has neither a result "
+            "nor a retirement, so it went quiet without either measuring or "
+            "deciding not to")
 
 
 def test_the_hypothesis_is_labelled_as_one():

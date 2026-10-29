@@ -68,7 +68,11 @@ def test_the_closing_condition_is_the_one_the_register_states():
     finished and nothing noticed -- which is the failure this guards.
     """
     d = _register()
-    done = all(m.get("result") is not None and m.get("headline") is not None
+    # A RETIRED measurement counts as settled (task B34, 2026-10-29), and the
+    # separate guard `test_a_retirement_is_more_demanding_than_a_result` below
+    # is what stops that being a loophole.
+    done = all(m.get("retired")
+               or (m.get("result") is not None and m.get("headline") is not None)
                for m in d["measurements"])
     if done:
         assert d["status"] == "CLOSED", (
@@ -146,3 +150,41 @@ def test_the_hook_cannot_break_a_turn(tmp_path):
         assert p.returncode == 0, (
             f"the hook exited {p.returncode} on a {why} register, which would "
             f"break the turn: {p.stderr[:300]}")
+
+
+def test_a_retirement_is_more_demanding_than_a_result():
+    """THE LOOPHOLE THIS CLOSES, deliberately, in the same change that opens it.
+
+    Allowing a `retired` block to settle a measurement makes the programme
+    closable without measuring. That is correct when the founder has ruled a
+    design unable to answer its question -- as he did on 2026-10-19 for
+    `serialisation_cures_matched_failures`, in his words "It cannot work" -- and
+    a disaster if "retired" can be written as a bare flag.
+
+    So a retirement must cost MORE than a result: his ruling quoted, a
+    substantive reason, and producers that EXIST ON DISK. A retired measurement
+    must also still carry no result, because a retirement is a decision not to
+    run and never an outcome.
+    """
+    d = _register()
+    for m in d["measurements"]:
+        r = m.get("retired")
+        if not r:
+            continue
+        mid = m.get("id")
+        assert isinstance(r, dict), f"{mid}: `retired` is not a block"
+        for field in ("retired_at", "on_his_ruling", "reason", "producers"):
+            assert r.get(field), f"{mid}: retirement lacks {field}"
+        assert len(r["reason"]) > 200, (
+            f"{mid}: the retirement reason is {len(r['reason'])} characters; a "
+            f"measurement is not retired by a sentence")
+        assert isinstance(r["producers"], list) and r["producers"], (
+            f"{mid}: a retirement cites no producer, so its reasoning cannot be "
+            f"re-run")
+        for prod in r["producers"]:
+            assert (REPO / prod).is_file(), (
+                f"{mid}: retirement cites {prod}, which is not in this clone -- "
+                f"a measured rate must travel with the script that produced it")
+        assert m.get("result") is None and m.get("headline") is None, (
+            f"{mid} is retired AND carries a result; a retirement is a decision "
+            f"not to run, so an outcome here would be a fabrication")

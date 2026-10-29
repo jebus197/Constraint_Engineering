@@ -318,10 +318,30 @@ def test_the_archive_still_shows_the_defect_this_fix_addresses():
                 if pl == 203:
                     modal_203 += 1
     assert seen > 1000, seen
-    assert with_fields == 0, (
-        f"{with_fields} of {seen} archived dispatch entries now carry composer "
-        f"fields, so a run under the repaired dispatch has landed. Re-measure "
-        f"and update this file's recorded figures."
+    # ★ A RATCHET ON THE PRE-REPAIR ENTRIES, NOT A PIN ON THE REPAIRED ONES.
+    # Corrected 2026-10-29, the same correction and for the same reason as the
+    # one in test_the_band_verdict_is_gated_on_estimability_2026-10-16.py.
+    #
+    # This read `with_fields == 0`, and its own message said a non-zero meant "a
+    # run under the repaired dispatch has landed. Re-measure". That duly
+    # happened: 30 of 5,992 entries now carry composer fields, so the pin failed
+    # on the repair WORKING. A count that must stay at 0 for a fix to look
+    # correct is a count that goes red the moment the fix takes effect.
+    #
+    # WHAT THIS TEST IS ACTUALLY FOR is that the ARCHIVE STILL SHOWS THE DEFECT
+    # the fix addresses -- the pre-repair entries must remain as recorded, so the
+    # evidence that the defect existed is not quietly erased. That is a statement
+    # about the entries WITHOUT the fields not shrinking, and it is silent on how
+    # many repaired entries arrive later.
+    #
+    # MEASURED 2026-10-29: 5,992 entries seen, 30 carrying composer fields, so
+    # 5,962 WITHOUT them. The floor is on those 5,962.
+    without_fields = seen - with_fields
+    assert without_fields >= 5962, (
+        f"only {without_fields} of {seen} archived dispatch entries lack "
+        f"composer fields, down from the 5,962 recorded on 2026-10-29. A "
+        f"pre-repair entry has acquired them, which means the archive was "
+        f"REWRITTEN and the evidence that this defect existed is being erased."
     )
     assert with_pl > 0 and modal_203 / with_pl > 0.9, (
         f"prompt_length = 203 now covers {modal_203}/{with_pl} entries; the "

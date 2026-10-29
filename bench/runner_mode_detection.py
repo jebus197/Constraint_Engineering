@@ -202,6 +202,35 @@ def _location_operating(report: dict) -> Optional[bool]:
     return bool(sub)
 
 
+def _hierarchical_operating(report: dict) -> Optional[bool]:
+    """Did the hierarchical series actually feed the gate? (tasks B33, B32)
+
+    WIRED ON HIS RULING OF 2026-10-19: *"Verdict option 1"* -- make the mode do
+    what its report field claims. Until then this mode was the 1 INERT entry in
+    `MODES`, and its detector read `hierarchical_crit_series_is_gating`, which is
+    `bool(getattr(cfg, <the flag>, False))` -- the switch compared with itself,
+    so it could never disagree and witnessed nothing.
+
+    IT NOW READS THE EFFECT, exactly as `_location_operating` does: the runner
+    appends to `mode_effects` AT THE POINT OF SUBSTITUTION. `substituted` lists
+    the rounds where the hierarchical count really overwrote
+    `novel_critical_history`; `fell_back` lists the rounds where it was asked for
+    and could not be computed, which is the silent downgrade worth catching.
+
+    A mode asked for that substituted in NO round is NOT operating, even when it
+    failed in none either -- the series was computed and never fed the gate.
+    That is the same rule the location detector applies, and it is what made the
+    old circular artefact useless.
+    """
+    rec = _effects(report).get("hierarchical_novelty_convergence")
+    if not isinstance(rec, dict):
+        return None
+    sub, fell = rec.get("substituted"), rec.get("fell_back")
+    if sub is None and fell is None:
+        return None
+    return bool(sub)
+
+
 def _severity_operating(report: dict) -> Optional[bool]:
     """Did a disproved finding actually score zero? (entry B32)
 
@@ -267,17 +296,21 @@ MODES: tuple[Mode, ...] = (
          "copy of the flag, and `gamma_gate_series`, a hardcoded literal that "
          "cannot show the substitution at all",
          artefact="mode_effects", soundness=SOUND),
-    Mode("hierarchical_novelty_convergence",
-         lambda r: _gating_flag(r, "hierarchical_crit_series_is_gating"),
-         "THE MODE HAS NO CONSUMER. Measured 2026-10-18 on the syntax tree: the "
-         "flag is read exactly ONCE in the whole runner, at the line that writes "
-         "`hierarchical_crit_series_is_gating` as a copy of it, and the series "
-         "`hierarchical_novelty_series` computes reaches one report key and "
-         "nothing else. No gate, counter or status reads either. So the mode "
-         "cannot operate however it is set, and the report has been publishing a "
-         "field named `..._is_gating` that a reader would take as evidence it "
-         "gates. There is no effect to record: wire it or retire it",
-         artefact="hierarchical_crit_series_is_gating", soundness=INERT),
+    Mode("hierarchical_novelty_convergence", _hierarchical_operating,
+         "`mode_effects.hierarchical_novelty_convergence`, which the runner "
+         "writes AT THE POINT OF SUBSTITUTION. WIRED 2026-10-29 on his ruling of "
+         "2026-10-19, *\"Verdict option 1\"*, which chose wiring over retiring "
+         "the mode or renaming the field. Until then this was the 1 INERT entry "
+         "here and the annotation was literal: the flag was read exactly ONCE in "
+         "the whole runner, at the line writing `hierarchical_crit_series_is_gating` "
+         "as a copy of it, so the mode could not operate however it was set while "
+         "the report published a field a reader would take as evidence it gates. "
+         "`..._is_gating` is deliberately UNCHANGED and still carries the "
+         "DECLARED value: B32 keeps the declaration and the observed effect "
+         "apart, and B28 reconciles the 2, so collapsing them would destroy the "
+         "comparison. What was missing was never the declaration but the effect, "
+         "which was permanently empty",
+         artefact="mode_effects", soundness=SOUND),
     Mode("severity_spec_enabled", _severity_operating,
          "`mode_effects.severity_spec_enabled`, counting refuted findings and "
          "how many were ANNIHILATED, computed by calling `effective_severity` "

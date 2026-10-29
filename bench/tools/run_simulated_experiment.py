@@ -484,6 +484,65 @@ def _run_post(seats, args) -> int:
     return mod.main(argv)
 
 
+
+#: Field-name substrings whose VALUE is never written to a report. Unchanged by
+#: task B31: the allow-list below exempts named fields, it does not shrink this.
+CREDENTIAL_NAME_PARTS = ("key", "token", "secret", "password", "passwd",
+                         "credential", "api", "env_file", "scoring_env")
+
+#: EXACT field names that contain one of those substrings and hold no secret.
+#: EXACT, NEVER A SUBSTRING, and that is the safety property: a future field
+#: named `location_keyed_convergence_api_key` is not in this set and stays
+#: withheld.
+#:
+#: MEASURED BEFORE THE CHANGE, which is what sizes this at 1 rather than
+#: guessing. Of `RunnerConfig`'s 100 fields exactly 1 collides with
+#: `CREDENTIAL_NAME_PARTS`, and it is not a secret: `location_keyed_convergence`
+#: is withheld because the substring "key" appears in "keyed". So the mechanism's
+#: precision on this config was 0 true positives against 1 false one, and 5 of 5
+#: archived reports carrying a declared config withhold exactly that field.
+#: Producer: `scripts/does_the_redactor_withhold_config_2026-10-18.py`.
+NEVER_SECRET_FIELDS = frozenset({"location_keyed_convergence"})
+
+
+def _scalar(v):
+    """A report-safe rendering of one config value."""
+    if isinstance(v, (str, int, float, bool, type(None))):
+        return v
+    if isinstance(v, (list, tuple)):
+        return [x if isinstance(x, (str, int, float, bool, type(None)))
+                else type(x).__name__ for x in v]
+    return f"<{type(v).__name__}>"
+
+
+def redacted_declared_config(cfg) -> dict:
+    """The config a run was ACTUALLY constructed with, credentials withheld.
+
+    EXTRACTED FROM `main` ON 2026-10-29 SO IT CAN BE EXECUTED BY A TEST. It was
+    20 lines inline inside a several-hundred-line function, so the only guard
+    available was a source-text scan -- the shape `execute-do-not-grep` names.
+
+    A withheld value is REPLACED BY A MARKER rather than omitted, so a reader can
+    tell a withheld field from an absent one.
+
+    AND THE MARKER IS WHY B31 MATTERED MORE THAN A COSMETIC MISFIRE:
+    `bool("<withheld: ...>")` is True, so a reader checking a declared mode got a
+    WRONG answer rather than no answer. Entry B28 compares each declared mode
+    against whether it actually operated, and for `location_keyed_convergence`
+    that comparison could not be made at all -- in leg 3 the report records the
+    mode as gating while its declared value is unreadable.
+    """
+    out = {}
+    for f in dataclasses.fields(cfg):
+        v = getattr(cfg, f.name, None)
+        if f.name in NEVER_SECRET_FIELDS:
+            out[f.name] = _scalar(v)
+        elif any(h in f.name.lower() for h in CREDENTIAL_NAME_PARTS):
+            out[f.name] = "<withheld: name matches a credential pattern>"
+        else:
+            out[f.name] = _scalar(v)
+    return out
+
 def main() -> int:
     args = build_parser().parse_args()
 
@@ -1044,22 +1103,7 @@ def main() -> int:
     # environment file is replaced with a marker rather than omitted, so a
     # reader can tell a withheld field from an absent one.
     try:
-        _hide = ("key", "token", "secret", "password", "passwd", "credential",
-                 "api", "env_file", "scoring_env")
-        _declared_cfg = {}
-        for _f in dataclasses.fields(cfg):
-            _v = getattr(cfg, _f.name, None)
-            if any(h in _f.name.lower() for h in _hide):
-                _declared_cfg[_f.name] = "<withheld: name matches a credential pattern>"
-            elif isinstance(_v, (str, int, float, bool, type(None))):
-                _declared_cfg[_f.name] = _v
-            elif isinstance(_v, (list, tuple)):
-                _declared_cfg[_f.name] = [x if isinstance(
-                    x, (str, int, float, bool, type(None))) else type(x).__name__
-                    for x in _v]
-            else:
-                _declared_cfg[_f.name] = f"<{type(_v).__name__}>"
-        result["_declared_config"] = _declared_cfg
+        result["_declared_config"] = redacted_declared_config(cfg)
         result["_declared_argv"] = list(sys.argv[1:])
     except Exception as _dc:                                   # noqa: BLE001
         result["_declared_config_error"] = f"{type(_dc).__name__}: {_dc}"

@@ -1,0 +1,76 @@
+# PANEL BRIEF — Is the harness yet a general-purpose STEM calculator, and what would "a fix" mean outside code?
+
+## REQUIRED SECTION 1 — The question
+
+**Is this harness as useful against a wide range of STEM topics as it currently is for code, and if not, what specific modifications would bring it meaningfully closer?**
+
+The founder's words, which this brief exists to answer: *"there is also a separate question of what 'fixes' should mean in a setting that is not coding related, but is specific to any other given STEM topic?... CDSFL has been envisaged from the outset as a general purpose STEM calculator, operating on strict Popperian falsification principles. But in order for that to be true the entire harness has to be as equally useful against a wide range of STEM related topics, as it currently is for code."* He directs it to a free panel *"not only asking if we are there already or not, but if any improvements or modifications may be required in order to bring us meaningfully closer to that goal?"*
+
+The artefacts under review, by path:
+
+- `bench/cdsfl_registry/registry.py` — the layered policy merge, with its monotonicity enforcement
+- `bench/cdsfl_registry/composer.py` — where the merge is actually called
+- `bench/reference_runner_v3.py` — the canonical runner
+- `bench/tests/fixtures/stem/stem_fixtures.py` — the ground-truth corpus
+- `scripts/stem_generality_brief_figures_2026-10-29.py` — the producer for every figure below
+
+**A CLAIM IN THE EARLIER FRAMING OF THIS QUESTION WAS FALSE AND IS WITHDRAWN HERE RATHER THAN SENT TO YOU.** Task B22 asserted that the canonical runner makes no calls to the policy merge engine, and concluded that nothing domain-adaptive reaches a live run. That was true of the symbol and false of the behaviour: the runner contains **0** textual references to `load_effective_policy`, which is what the claim read, but the call sits inside `compose()`, which the runner invokes once per seat per round and passes the domain to. Had this brief gone out carrying that, you would have been asked to reason from a false premise, and from the strongest-sounding item in its own case against.
+
+## REQUIRED SECTION 2 — Use the harness
+
+**Form your answer by RUNNING the machinery, not by describing it.** Execute the producer and report what it printed:
+
+    python3 scripts/stem_generality_brief_figures_2026-10-29.py
+
+It reports, for domain-generality: a domain layer of **10** policy files reached by **18** mapping keys, of which **7** are non-code STEM and **3** are the code case; a model layer of **6** files; and a ground-truth corpus of **5** independently written documents carrying **29** tagged claims, every one of which has a runnable falsifier template and a harmful fix with a named harm class. For the live path: `composer.py` calls the merge **2** times, the runner calls `compose(task_domain=...)`, and the merged policy for mathematics has **9** keys. Against: **0** live-path modules read the corpus, and there is no role layer and no task layer in the merge.
+
+**Name the instruments and say what they tell you.** The `severity` model and the two-sided gate are the ones that bear hardest on this question, because both are defined over an *executable* notion of resolution: a refuted falsifier scores zero regardless of what the model claimed, and the gate's count side reads novel critical findings per round. `S_k` scores a proposed fix's admissibility. State what each of those three does when a defective claim can be repaired only by narrowing it, and whether `sigma` as currently specified can represent "correctly identified, not repairable by edit" at all.
+
+
+<!-- figure: domain policy files | scripts/stem_generality_brief_figures_2026-10-29.py | 10 domain policy files -->
+<!-- figure: domain map keys | scripts/stem_generality_brief_figures_2026-10-29.py | 18 DOMAIN_MAP keys -->
+<!-- figure: non-code STEM domains | scripts/stem_generality_brief_figures_2026-10-29.py | 7 are NON-CODE STEM -->
+<!-- figure: code-case domains | scripts/stem_generality_brief_figures_2026-10-29.py | 3 are the code case -->
+<!-- figure: per-model policy files | scripts/stem_generality_brief_figures_2026-10-29.py | 6 per-model files -->
+<!-- figure: ground-truth documents | scripts/stem_generality_brief_figures_2026-10-29.py | 5 independently written documents -->
+<!-- figure: tagged claims | scripts/stem_generality_brief_figures_2026-10-29.py | 29 tagged claims -->
+<!-- figure: merged policy keys | scripts/stem_generality_brief_figures_2026-10-29.py | 9 keys -->
+<!-- figure: no live-path reader | scripts/stem_generality_brief_figures_2026-10-29.py | 0 live-path module -->
+
+**If any figure above does not reproduce, say so with the number you got.** A figure that does not reproduce is the most important thing this brief could receive back.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+**A finding without a fix is incomplete, and a fix without a runnable falsifier that you have EXECUTED is a hypothesis.** Report the command you ran and the output you saw.
+
+**Write your fix INTO the sandbox repository tree at its real path, as a file.** A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down.
+
+The substantive question to fix, rather than the count: **in code and mathematics a fix is an edit whose falsifier can be re-run, so admissibility is decidable by execution.** In an experimental domain a defective claim may be repairable only by narrowing it, by restating its boundary conditions, or by declaring it unfalsifiable on available evidence — none of which a falsifier can execute against. So the open question is not whether the harness can REVIEW non-code STEM, which it demonstrably can, but **whether its notion of a RESOLVED finding survives when no executable repair exists.**
+
+Note before you answer that the corpus already encodes a case close to this: among its harm classes is a genuine metric improvement that carries a correctness regression, where the listing gets faster and stops de-duplicating. That is a repair which passes the obvious test and is still wrong.
+
+## REQUIRED SECTION 4 — What would refute you
+
+**State, before you conclude, what evidence would overturn your own answer.** If you judge the harness already general, name the measurement that would show it is not. If you judge it not general, name the measurement that would show it is — and say whether that measurement can be taken from the existing corpus or needs a new one.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return these fields, so replies can be compared without a parser guessing:
+
+- `verdict` — is the harness yet general-purpose across STEM, and on what evidence
+- `reasoning` — the derivation, naming which instruments you ran
+- `falsifier` — the runnable falsifier you wrote, its path in the sandbox tree, the command, and its EXECUTED output
+- `resolved_without_an_edit` — your answer on whether a finding can be RESOLVED where no executable repair exists, and what verdict value the specification would need
+- `strongest_disagreement` — your strongest disagreement with this brief's own framing, including with the withdrawal in Section 1 if you think it is wrong
+- `refutation_condition` — from Section 4
+- `passes_run` — how many passes, and why you stopped
+
+## REQUIRED SECTION 6 — Termination
+
+**Stop at diminishing returns**, which is this project's own criterion: stop when a further pass produces no new above-threshold findings, and say how many passes you ran. A finding is above threshold if missing it could cause real-world failure.
+
+**NO COMPELLED CONVERGENCE.** Return your own independent verdict and your strongest falsification of the framing above. Disagreement is information and will be preserved, not smoothed. If you think the premise is wrong — that a general-purpose STEM calculator is not a coherent target, or that the code case is not the right baseline to generalise from — say so and show the measurement that makes the case.
+
+---
+
+Written under CDSFL note standard v1.8.

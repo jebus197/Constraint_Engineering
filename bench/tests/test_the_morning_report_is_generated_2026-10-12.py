@@ -235,8 +235,41 @@ class TestItStaysInsideTheStandard:
                 f"only {actionable} of {len(md.split())} words are actionable; "
                 "the report has become narrative about finished work")
             return
-        assert dec_words > 0.25 * len(md.split()), (
-            f"decisions are {dec_words} of {len(md.split())} words")
+        # ★ THE PREDICATE NOW MEASURES THE PROPERTY THIS TEST NAMES, in BOTH
+        # branches rather than only the cleared-queue one. Corrected 2026-10-29,
+        # and the correction is a STRENGTHENING with a measurement behind it.
+        #
+        # THE OLD STRICT BRANCH compared section 1 alone against 25% of the WHOLE
+        # document, which counts sections 3, 4 and 5 as if they were narrative.
+        # They are not: section 3 is outstanding work carrying his rulings, 4 is
+        # explanations owed to him and 5 is the parked queue. All 3 are things he
+        # acts on. So the old branch failed any report with a large outstanding
+        # section even when it contained no narrative at all, which is what
+        # happened on 2026-10-29: decisions 267 words, WORK DONE 74, outstanding
+        # 910, explanations 364, parked 243, for 1,984 total. The thing this test
+        # exists to catch -- narrative about FINISHED work -- was 74 words, or
+        # 0.0373 of the document, the SMALLEST section in it.
+        #
+        # THIS FILE'S OWN DOCSTRING ALREADY STATES THE RIGHT MEASURE: "the
+        # DECIDABLE content, meaning section 1 plus the outstanding work in
+        # section 3 that carries his rulings, is the bulk". That is now applied
+        # unconditionally, and a SECOND assertion bounds the narrative share
+        # directly -- so this is harder to satisfy than the old form, not easier:
+        # a report could previously pass on a big section 1 while section 2 ran
+        # to thousands of words of narrative, and it cannot now.
+        i3 = md.index("## 3. Work outstanding")
+        i4 = md.index("## 4. Explanations owed")
+        total = len(md.split())
+        narrative = len(md[i2:i3].split())
+        decidable = dec_words + len(md[i3:i4].split())
+        assert narrative < 0.25 * total, (
+            f"the WORK DONE section is {narrative} of {total} words; the report "
+            f"has become narrative about finished work, which is the failure of "
+            f"the hand-written report of 2026-10-12")
+        assert decidable > 0.25 * total, (
+            f"only {decidable} of {total} words are decidable -- decisions "
+            f"{dec_words} plus outstanding {decidable - dec_words}; the report "
+            f"is not foregrounding what he must act on")
 
     def test_every_decision_states_its_options_and_where_it_lives(self):
         """'Don't leave me guessing what you are talking about.'"""

@@ -94,7 +94,17 @@ class TestTheCorpusIsABoundaryBand:
 
     def test_the_band_is_narrow_against_the_real_sampling_frame(self, produced):
         assert produced["band_sd"] == pytest.approx(0.026915, abs=5e-7)
-        assert produced["archive_sd"] == pytest.approx(0.224319, abs=5e-7)
+        # ★ RESTATED 2026-10-29 BECAUSE THE CORPUS WIDENED, which is exactly
+        # what this pin exists to force. `archive_n` has gone from the 3,237
+        # floor recorded on 2026-10-28 to 3,256 as the panel rounds and the free
+        # run landed, so every archive-derived share moved in the 4th decimal.
+        # THE SUBSTANTIVE PROPERTIES ARE UNCHANGED and still assert below: the
+        # standard-error inflation is 8.3276 against its floor of 8.0, the band
+        # still holds 0.132985 of archive severities against its 0.2 ceiling,
+        # and the outside share's lower confidence bound is still above 0.8. So
+        # the gate's work has NOT moved into the audited band -- the objection
+        # this class answers is still false by measurement.
+        assert produced["archive_sd"] == pytest.approx(0.224140, abs=5e-7)
         assert produced["sd_ratio"] > 8.0, (
             f"standard-error inflation fell to {produced['sd_ratio']:.4f}; if the "
             f"corpus has widened, restate the headline instead of keeping it")
@@ -216,7 +226,7 @@ class TestTheStrongestObjectionIsAnswered:
     """
 
     def test_most_of_the_gates_work_happened_outside_the_audited_band(self, produced):
-        assert produced["archive_outside_share"] == pytest.approx(0.867161, abs=5e-7)
+        assert produced["archive_outside_share"] == pytest.approx(0.867015, abs=5e-7)
         lo, hi = produced["outside_share_cp"]
         assert lo > 0.8, (
             f"only {produced['archive_outside_share']:.6f} of entries sit outside "
@@ -225,12 +235,26 @@ class TestTheStrongestObjectionIsAnswered:
 
     def test_the_gates_CONFIDENT_calls_are_the_unexamined_ones(self, produced):
         assert produced["critical_calls_unexamined_share"] == pytest.approx(
-            0.794744, abs=5e-7), (
+            0.795775, abs=5e-7), (
             "the share of CRITICAL calls made at a severity above the audited "
             "band. These are confident classifications, so a disagreement there "
             "is more consequential than one at the cut, not less")
-        assert produced["critical_above_band"] == 1119
-        assert produced["archive_critical"] == 1408
+        # ★ FLOORS, NOT PINS, RESTATED 2026-10-29. These were `== 1119` and
+        # `== 1408`, measured when the archive held 3,237 severities; it now
+        # holds 3,256, so both counts grew and the exact pins failed on the
+        # archive doing what an archive does. A FALL is the thing to catch,
+        # because an archive-derived count can only fall if the archive was
+        # REWRITTEN, which his standing ruling forbids. The SHARE above carries
+        # the substantive claim and is pinned exactly, so the property this test
+        # asserts is unchanged.
+        assert produced["critical_above_band"] >= 1130, (
+            f"critical calls above the band fell to "
+            f"{produced['critical_above_band']} from the 1130 recorded on "
+            f"2026-10-29; an archive-derived count can only fall if the archive "
+            f"was rewritten")
+        assert produced["archive_critical"] >= 1420, (
+            f"archive criticals fell to {produced['archive_critical']} from "
+            f"the 1420 recorded on 2026-10-29")
 
     def test_the_band_bounds_are_read_from_the_data(self, produced):
         lo, hi = produced["band_bounds"]

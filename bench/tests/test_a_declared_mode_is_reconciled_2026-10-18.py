@@ -19,13 +19,21 @@ is upgraded, and if someone adds a detector reading a copy of a flag, it fails
 too. That is the whole mechanism -- the project's recurring defect is an addition
 that decides nothing, and an annotation nothing checks would be exactly that.
 
-WHY 4 OF 5 MODES ARE UNSOUND, measured 2026-10-18. `*_is_gating` is written as
-`bool(getattr(cfg, <flag>, False))`, a copy of the switch under a name that reads
-like a statement about behaviour. `severity_admissibility` is stamped into every
-report regardless. No sk artefact exists. And `gamma_gate_series`, the field whose
-comment says it "says which one decided", is a hardcoded string literal, so when
-`location_keyed_convergence` substitutes the gate's input it still names the
-original series.
+WHY 4 OF 5 MODES WERE UNSOUND WHEN MEASURED ON 2026-10-18, AND WHY 0 ARE TODAY.
+`*_is_gating` is written as `bool(getattr(cfg, <flag>, False))`, a copy of the
+switch under a name that reads like a statement about behaviour.
+`severity_admissibility` is stamped into every report regardless. No sk artefact
+existed. And `gamma_gate_series`, the field whose comment says it "says which one
+decided", is a hardcoded string literal, so when `location_keyed_convergence`
+substitutes the gate's input it still names the original series.
+
+3 were repaired the same day under entry B32 by recording each mode's EFFECT
+instead of restating its flag. The 4th, `hierarchical_novelty_convergence`, was
+worse than a circular artefact -- it was a mode with NO CONSUMER AT ALL -- and it
+was WIRED on 2026-10-29 on his ruling of 2026-10-19, *"Verdict option 1"*. The
+unsound set is therefore empty, which `test_the_unsound_set_is_named_and_not_silently_empty`
+now asserts, and the comment there records why an empty set is a stronger claim
+than the list it replaced rather than a weaker one.
 """
 from __future__ import annotations
 
@@ -308,9 +316,39 @@ def test_a_real_disagreement_is_still_detected_and_named():
 
 # ── Against the archive, and the classification behind it ────────────────────
 
+#: Disagreements the archive REALLY CONTAINS, each with the reason it is not a
+#: live defect. Keyed on the exact run directory, which makes the exemption
+#: SELF-BOUNDING: a future run has a different directory name, so it cannot
+#: inherit an exemption and a recurrence FAILS.
+#:
+#: WHY THERE IS NOW 1. Wiring `hierarchical_novelty_convergence` on 2026-10-29
+#: (task B33, his ruling of 2026-10-19) replaced a CIRCULAR detector -- it read
+#: `hierarchical_crit_series_is_gating`, which is `bool(getattr(cfg, <flag>))`,
+#: the switch compared with itself -- with one that reads the effect record. The
+#: new detector immediately found a TRUE historical disagreement the old one
+#: could not express. That is the detector working, not a regression.
+#:
+#: THE SET IS CLOSED AT 1, MEASURED. 5 archived reports carry a declared config
+#: and all 5 declare this mode TRUE, but 4 predate the `mode_effects` slot
+#: itself (added 2026-10-18 under entry B32), so their detector returns None --
+#: UNDECIDABLE, which is not a disagreement. Only this run falls in the window
+#: where the slot existed and the wiring did not: after 2026-10-18 and before
+#: 2026-10-29. 1 of 5 = 0.200000, Wilson [0.036224, 0.624465],
+#: Clopper-Pearson [0.005051, 0.716418].
+#:
+#: THE REPORT IS NOT EDITED. His ruling that history is not rewritten applies:
+#: the run genuinely declared a mode that genuinely did not operate, and that is
+#: what the archive should go on saying.
+KNOWN_ARCHIVE_DISAGREEMENTS = {
+    "free_run3_no_spec_20261028T235529Z_20261028T235530Z":
+        "hierarchical_novelty_convergence DECLARED_NOT_OPERATING",
+}
+
+
 def test_no_archived_report_yields_a_disagreement():
-    """Every comparison that CAN be made agrees. A failure here is either a real
-    defect in a run or a detector of mine that is wrong; both need looking at."""
+    """Every comparison that CAN be made agrees, except those recorded above
+    with their reason. A failure here is either a real defect in a run or a
+    detector of mine that is wrong; both need looking at."""
     found = []
     for p in sorted((REPO / "bench" / "logs").rglob("*_report.json")):
         if "sandbox_harvest" in str(p):
@@ -322,7 +360,18 @@ def test_no_archived_report_yields_a_disagreement():
         if isinstance(d, dict):
             for f in disagreements(reconcile(d)):
                 found.append(f"{p.parent.name}: {f.mode} {f.verdict}")
-    assert found == [], f"unexplained mode disagreements in the archive: {found}"
+    unexplained = [x for x in found
+                   if KNOWN_ARCHIVE_DISAGREEMENTS.get(x.split(":")[0].strip())
+                   != x.split(":", 1)[1].strip()]
+    assert unexplained == [], (
+        f"unexplained mode disagreements in the archive: {unexplained}")
+    # ANTI-ROT: an exemption for a run that no longer disagrees is an exemption
+    # that has outlived its cause, and leaving it would silently widen the test.
+    seen = {x.split(":")[0].strip() for x in found}
+    idle = sorted(set(KNOWN_ARCHIVE_DISAGREEMENTS) - seen)
+    assert idle == [], (
+        f"{idle} are recorded as known disagreements and no longer disagree; "
+        f"remove them rather than leaving the exemption standing")
 
 
 def test_the_classification_covers_every_boolean_config_field():
@@ -347,14 +396,24 @@ def test_the_unsound_set_is_named_and_not_silently_empty():
     """B28's substance, callable rather than only written down."""
     unsound = {m.name: m.soundness for m in unsound_modes()}
     assert unsound == {
-        # ★ 3 MODES CAME OFF THIS LIST ON 2026-10-18 (entry B32), because the
-        # runner now records their EFFECT: the rounds where the location-keyed
-        # series actually overwrote the gate's input, whether a refuted finding
-        # was actually annihilated, and whether the sk pipeline ran or was
-        # overridden by the target. The 1 that remains is worse than it looked:
-        # not a circular artefact beside a working mode, but a mode with NO
-        # CONSUMER AT ALL.
-        "hierarchical_novelty_convergence": INERT,
+        # ★ THE LAST ONE CAME OFF THIS LIST ON 2026-10-29, SO IT IS NOW EMPTY --
+        # AND THIS TEST'S OWN INSTRUCTION IS WHAT SAID TO DO THAT. Its message
+        # reads "If an effect record was wired, this is the test to update",
+        # and `hierarchical_novelty_convergence` was wired on his ruling of
+        # 2026-10-19, *"Verdict option 1"*. 3 came off on 2026-10-18 under entry
+        # B32; this was the 4th and last.
+        #
+        # AN EMPTY SET IS NOT A SILENT EMPTYING, AND THAT DISTINCTION IS HELD BY
+        # OTHER TESTS RATHER THAN ASSERTED HERE. The hazard this test was built
+        # for is someone clearing the classification instead of the defect. 2
+        # independent checks make that impossible:
+        # `test_each_soundness_annotation_matches_the_runner_source` verifies
+        # every mode's annotation AGAINST THE RUNNER'S SYNTAX TREE, so a mode
+        # cannot be called SOUND without an effect record the runner really
+        # writes; and `test_the_classification_covers_every_boolean_config_field`
+        # stops a mode being dropped from `MODES` to escape scrutiny. So this
+        # assertion is now a statement that every classified mode is witnessable,
+        # which is a stronger claim than the list it replaces, not a weaker one.
     }, (
         "the set of modes whose effect no report can witness has changed. If an "
         "effect record was wired, this is the test to update -- and the "

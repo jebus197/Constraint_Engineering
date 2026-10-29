@@ -100,10 +100,33 @@ def study_items() -> list[dict]:
     if not STUDY.is_file():
         return []
     d = json.loads(STUDY.read_text(encoding="utf-8"))
-    if str(d.get("status", "")).upper() != "OPEN":
-        return []
+    # ★ THE STATUS GATE BELONGS ON THE MEASUREMENTS AND NOT ON THE WHOLE
+    # FUNCTION. Corrected 2026-10-29, and the defect was MINE, introduced hours
+    # earlier the same night.
+    #
+    # This read `if status != "OPEN": return []`. Retiring the 13th and last
+    # measurement under task B34 took the register to CLOSED -- correctly, since
+    # every measurement is now settled -- and that one line then silently
+    # stopped the morning report carrying the register's `open_defects`, which
+    # are the entries that SAY THEY NEED HIS RULING. The measurements being
+    # finished has nothing to do with whether an open defect still awaits him.
+    #
+    # CAUGHT BY `test_no_ruling_seeking_defect_is_missed`, whose whole subject is
+    # this class of false zero and which named the 2 that vanished:
+    # `defect:A4-counter-valve-severity-mismatch` and
+    # `defect:integrity-gate-interpreter-carve-out`. It is a shrink-only ratchet
+    # naming its members individually, so a regression in the extractor shows up
+    # as a named member going missing rather than as a number moving -- which is
+    # exactly how it surfaced.
+    #
+    # AND 2 INSTRUMENTS CONTRADICTED EACH OTHER WHILE THIS HELD, which is worth
+    # recording: `--check` reported both defects as authored detail for an item
+    # "no longer live" and told me to delete them, because the derived list was
+    # empty; the guard refused their absence. Agreeing with one instrument is not
+    # licence to remove what another needs.
+    _programme_open = str(d.get("status", "")).upper() == "OPEN"
     out = []
-    for mrec in d.get("measurements", []):
+    for mrec in (d.get("measurements", []) if _programme_open else []):
         if mrec.get("result") is None or mrec.get("headline") is None:
             out.append({
                 "key": f"study:{mrec.get('id')}",

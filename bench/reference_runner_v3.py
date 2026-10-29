@@ -20241,13 +20241,20 @@ def run_experiment(
         # handler below must say so rather than report a skipped shadow computation.
         # _gates is read BEFORE the try so the handler can reach it.
         _gates = getattr(cfg, "location_keyed_convergence", False)
+        # B33: hierarchical novelty REFINES the location rule, so when both are
+        # declared the finer one is in force and the location substitution is
+        # skipped rather than overwritten. Read BEFORE the try, like `_gates`,
+        # so the handler below can reach it.
+        _hier_gates = bool(getattr(cfg, "hierarchical_novelty_convergence", False))
         try:
             if getattr(cfg, "location_shadow_enabled", True) and _loc_symbols:
                 location_crit_history = _location_keyed_critical_series(
                     registry, round_idx, _loc_symbols)
                 _loc_tail = location_crit_history[-cfg.gamma_alt_consecutive_zero_crit:]
                 _idprox = _settled_crit[round_idx] if round_idx < len(_settled_crit) else "NA"
-                if _gates and round_idx < len(location_crit_history) and novel_critical_history:
+                if (_gates and not _hier_gates
+                        and round_idx < len(location_crit_history)
+                        and novel_critical_history):
                     # PROMOTED: the location-keyed count is the convergence trigger.
                     #
                     # WHOLE-SERIES CORRECTION, 2026-08-19. This wrote
@@ -20294,6 +20301,58 @@ def run_experiment(
             else:
                 _log(f"  [shadow] location-keyed novelty skipped: "
                      f"{type(_loc_exc).__name__}: {_loc_exc} (telemetry only this run)")
+
+        # ── B33: HIERARCHICAL NOVELTY, PROMOTED TO THE GATE ──────────────────
+        # His ruling of 2026-10-19 was "Verdict option 1" -- wire the mode so it
+        # does what its report field claims. Until then the mode had a config
+        # field, a `mode_effects` slot, a published series and an `_is_gating`
+        # report field, and NO effect path: nothing in this file ever appended to
+        # its slot, so it could not operate however it was set.
+        #
+        # THE WHOLE SERIES IS SUBSTITUTED, NOT THE LAST ELEMENT. The 2026-08-19
+        # correction on the sibling above applies identically and is not repeated
+        # here: the gate reads `novel_critical_history[-window:]`, and
+        # recomputing only the current round leaves every earlier element frozen
+        # at the vintage it was written with, so a finding opened in round 3 and
+        # later merged keeps crediting round 3 for the rest of the run.
+        #
+        # DEFAULT-OFF, SO AN UNSET RUN IS BYTE-IDENTICAL. The end-of-run shadow
+        # block near `hierarchical_crit_series` is unchanged and still costs
+        # nothing; what is new is this PER-ROUND computation, which exists only
+        # when the mode is declared.
+        if _hier_gates:
+            try:
+                from bench.convergence_location import hierarchical_novelty_series
+                _hier_round = hierarchical_novelty_series(
+                    registry.entries, round_idx, _loc_symbols or [],
+                    within_threshold=float(
+                        getattr(cfg, "hierarchical_within_threshold", 0.20)))
+                if novel_critical_history and _hier_round:
+                    _hn = min(len(novel_critical_history), len(_hier_round))
+                    for _hr in range(_hn):
+                        novel_critical_history[_hr] = _hier_round[_hr]
+                    if _hn:
+                        mode_effects["hierarchical_novelty_convergence"][
+                            "substituted"].append(round_idx)
+                    _hier_tail = _hier_round[-cfg.gamma_alt_consecutive_zero_crit:]
+                    _log(f"  [GATE] hierarchical novel-crit this round="
+                         f"{_hier_round[round_idx] if round_idx < len(_hier_round) else 'NA'} "
+                         f"(series tail={_hier_tail}; FEEDS the COUNT side of the "
+                         f"two-sided gate, superseding the location-keyed rule "
+                         f"which it refines)")
+                else:
+                    mode_effects["hierarchical_novelty_convergence"][
+                        "fell_back"].append(round_idx)
+                    _log(f"  [GATE] hierarchical novelty produced no usable series "
+                         f"for round {round_idx}; the COUNT side falls back to "
+                         f"whatever was set above. REVIEW THIS ROUND.")
+            except Exception as _hier_exc:  # a gate feed must never kill a run
+                mode_effects["hierarchical_novelty_convergence"][
+                    "fell_back"].append(round_idx)
+                _log(f"  [GATE] hierarchical novelty FAILED: "
+                     f"{type(_hier_exc).__name__}: {_hier_exc} — the run continues, "
+                     f"but the COUNT side of the two-sided gate falls back for "
+                     f"round {round_idx}. REVIEW THIS ROUND.")
 
         # ★ CORRECTED 2026-08-27. This comment previously read "Gamma —
         # REPORTED, NEVER a trigger or blocker (panel redesign 2026-05-23) …
