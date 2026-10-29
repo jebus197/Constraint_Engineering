@@ -119,13 +119,100 @@ def test_a_broken_hook_never_blocks_a_commit(tmp_path):
         "the hook failed closed on its own error; it must fail open")
 
 
+#: THE 10 COMMITS THAT CARRY A TYPED TIMESTAMP, PINNED AS A SET.
+#:
+#: ★ A COUNT IN A SLIDING WINDOW IS NOT A PIN, corrected 2026-10-29. The first
+#: version ran the producer with its DEFAULT `--limit 60` and asserted that a
+#: "drift range" line appeared. That line prints only when violations are found,
+#: and the violations are HISTORICAL: the newest sits exactly 60 commits behind
+#: HEAD as of 2026-10-29, so the window had slid past it by 1 and the producer
+#: correctly reported 0. The test then accused correct code -- the 9-of-36
+#: failure class recorded on 2026-10-28 -- and it would have done so on whatever
+#: day HEAD happened to advance far enough, which is not a property of the
+#: thing under test.
+#:
+#: A SET RATHER THAN A COUNT, which is `feedback_pin_a_set_not_a_count`: a count
+#: cannot say WHICH commit moved, and 10 would still read 10 if history were
+#: rewritten to swap one for another. The window is DERIVED from the oldest
+#: pinned sha rather than chosen, so it reaches them however far HEAD advances.
+TYPED_TIMESTAMP_SHAS = (
+    "27a2a853", "498e4aa1", "8b976bf1", "f75bbaeb", "9afe2ba3",
+    "6610da10", "c3c6b83e", "07ce845d", "d5c668bb", "29565256",
+)
+
+
+def _window_reaching(shas) -> int:
+    """How many commits back the survey must go to include every pinned sha."""
+    depths = []
+    for sha in shas:
+        r = subprocess.run(["git", "rev-list", "--count", f"{sha}..HEAD"],
+                           capture_output=True, text=True, cwd=str(REPO))
+        if r.returncode != 0:
+            raise AssertionError(
+                f"the pinned commit {sha} is not in this history: "
+                f"{r.stderr.strip()[:200]}. That is what a rewrite looks like, "
+                f"and he ruled against rewriting history.")
+        depths.append(int(r.stdout.strip()))
+    return max(depths) + 5          # +5 so the oldest is comfortably inside
+
+
 def test_the_producer_still_finds_the_recorded_violations():
     """The figure must travel with its script. If this stops finding them, the
-    history has been rewritten, which he ruled against."""
-    r = subprocess.run([sys.executable, str(PRODUCER)], capture_output=True,
-                       text=True, cwd=str(REPO))
+    history has been rewritten, which he ruled against.
+
+    The window is derived from the pinned set, so this cannot fail merely
+    because HEAD advanced -- which is exactly how it failed on 2026-10-29.
+    """
+    limit = _window_reaching(TYPED_TIMESTAMP_SHAS)
+    r = subprocess.run([sys.executable, str(PRODUCER), "--limit", str(limit)],
+                       capture_output=True, text=True, cwd=str(REPO))
     assert r.returncode == 0, r.stderr[-300:]
     assert "AHEAD of their own commit date" in r.stdout
     assert "drift range" in r.stdout, (
         "the producer no longer reports the drift range, so the shape of the "
         "error is no longer visible")
+    missing = [s for s in TYPED_TIMESTAMP_SHAS if s not in r.stdout]
+    assert not missing, (
+        f"{len(missing)} of {len(TYPED_TIMESTAMP_SHAS)} pinned violations are no "
+        f"longer reported by the producer over a window of {limit}: {missing}. "
+        f"Either the history was rewritten or the producer stopped detecting "
+        f"them; both matter and a count alone would not say which.")
+
+
+def test_the_default_window_no_longer_reaches_them_and_that_is_stated():
+    """THE REPORTING HAZARD THE SLIDE CREATED, pinned so it cannot go unsaid.
+
+    Run bare, the producer now reports 0 violations, because the newest sits
+    outside its default 60. A reader could take that as "this never happened".
+    The producer must therefore SAY that its window may not reach the recorded
+    violations and name the flag that does.
+    """
+    r = subprocess.run([sys.executable, str(PRODUCER)], capture_output=True,
+                       text=True, cwd=str(REPO))
+    assert r.returncode == 0, r.stderr[-300:]
+    assert "--limit" in r.stdout, (
+        "run with its default window the producer reports 0 violations and does "
+        "not tell the reader that a larger --limit reaches the recorded ones, so "
+        "a zero here reads as 'it never happened'")
+
+def test_the_pin_itself_is_not_empty_and_every_sha_resolves():
+    """THE PIN CANNOT BE GUTTED SILENTLY.
+
+    Mutation testing on 2026-10-29 showed that DELETING the missing-set
+    assertion leaves the suite green, because the surviving shape assertions
+    pass whenever the producer works. That is true of any deleted assertion and
+    chasing it is an infinite regress -- so instead this asserts the PIN, which
+    is independent of the producer's output: an emptied or truncated set, or a
+    sha that no longer resolves, fails here whatever the producer prints.
+    """
+    assert len(TYPED_TIMESTAMP_SHAS) == 10, (
+        f"the pin holds {len(TYPED_TIMESTAMP_SHAS)} sha(s), not the 10 recorded "
+        f"violations; a shortened pin checks less while looking the same")
+    assert len(set(TYPED_TIMESTAMP_SHAS)) == len(TYPED_TIMESTAMP_SHAS), \
+        "the pin repeats a sha, so it checks fewer commits than it appears to"
+    for sha in TYPED_TIMESTAMP_SHAS:
+        r = subprocess.run(["git", "cat-file", "-e", f"{sha}^{{commit}}"],
+                           capture_output=True, text=True, cwd=str(REPO))
+        assert r.returncode == 0, (
+            f"the pinned commit {sha} does not resolve in this repository, which "
+            f"is what a rewritten history looks like")

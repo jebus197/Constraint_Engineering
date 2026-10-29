@@ -97,7 +97,20 @@ def main(argv=None) -> int:
 
     res = survey(args.limit)
     stamped, ahead = res["stamped"], res["ahead"]
-    print(f"  commits surveyed with a Timestamp line : {len(stamped)}")
+    print(f"  commits surveyed with a Timestamp line : {len(stamped)} "
+          f"(window: the last {args.limit} commits)")
+    #: ★ SAY WHEN THE WINDOW MAY HAVE SLID PAST THE RECORDED VIOLATIONS, added
+    #: 2026-10-29. The 10 known violations are HISTORICAL, and on 2026-10-29 the
+    #: newest sat exactly 60 commits behind HEAD -- 1 outside this default. Run
+    #: bare, the producer therefore reported 0, and a reader could take that as
+    #: "this never happened". A 0 that means "outside my window" must not look
+    #: like a 0 that means "it does not occur".
+    if not ahead:
+        print(f"  0 violations INSIDE this window. The recorded violations are "
+              f"historical, so if the window has slid past them this 0 means "
+              f"'none in the last {args.limit}' and NOT 'none ever'. Re-run with "
+              f"a larger --limit to reach them; the set is pinned in "
+              f"bench/tests/test_a_typed_timestamp_is_refused_2026-10-17.py.")
     if not stamped:
         print("  none carry one; nothing to measure.")
         return 0
