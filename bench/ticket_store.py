@@ -444,6 +444,16 @@ class TicketStore:
         self._by_tid: dict[str, Ticket] = {}
         self._by_nid: dict[str, list[str]] = {}
         self._by_subject: dict[str, list[str]] = {}
+        #: THE IDENTITY A TICKET'S OWN FIELDS IMPLY -> the tid it is STORED at.
+        #: Empty for every ticket raised normally, because `tid_of` over its own
+        #: fields reproduces its tid exactly. It carries exactly one entry per
+        #: ticket repaired by `adopt_identity`, which fills in a missing
+        #: `task_ref` or `anchor` WITHOUT re-keying the record. Without this
+        #: bridge, `exact()` would compute the newly-implied digest and miss the
+        #: ticket -- a producer and a consumer that each describe themselves
+        #: correctly and disagree with each other, which is the defect shape
+        #: `execute-do-not-grep` names and the one this project has measured most.
+        self._by_identity: dict[str, str] = {}
         #: token -> tids, built lazily, dropped on any mutation.
         self._word_index: tuple | None = None
         self.load()
@@ -451,6 +461,7 @@ class TicketStore:
     # ---------------------------------------------------------------- loading
     def load(self) -> None:
         self._by_tid.clear(); self._by_nid.clear(); self._by_subject.clear()
+        self._by_identity.clear()
         if not self.path.exists():
             return
         for line in self.path.read_text(encoding="utf-8").splitlines():
@@ -470,6 +481,7 @@ class TicketStore:
                 self._by_subject.setdefault(sub, [])
                 if t.tid not in self._by_subject[sub]:
                     self._by_subject[sub].append(t.tid)
+            self._index_identity(t)
         #: A RELOAD INVALIDATES THE INDEX AS SURELY AS AN APPEND. Placed after
         #: the loop, at method level: the first attempt put it inside the loop
         #: body at the wrong indent and would have rebuilt the index once per
@@ -495,6 +507,15 @@ class TicketStore:
             self._by_subject.setdefault(sub, [])
             if t.tid not in self._by_subject[sub]:
                 self._by_subject[sub].append(t.tid)
+        self._index_identity(t)
+
+    def _index_identity(self, t: Ticket) -> None:
+        """Register an alias ONLY where a ticket's fields imply a digest that is
+        not the one it is stored at. For every ticket raised normally the 2 agree,
+        so this adds nothing and the index stays the size of the repair set."""
+        implied = tid_of(t.kind, t.verbatim, t.task_ref, t.anchor)
+        if implied != t.tid:
+            self._by_identity[implied] = t.tid
 
     # ----------------------------------------------------------------- search
     def get(self, tid: str) -> Optional[Ticket]:
@@ -502,7 +523,21 @@ class TicketStore:
 
     def exact(self, kind: str, verbatim: str, task_ref: str = "",
               anchor: str = "") -> Optional[Ticket]:
-        return self._by_tid.get(tid_of(kind, verbatim, task_ref, anchor))
+        """The ticket at this exact identity, following an adoption alias.
+
+        THE STORED TID IS TRIED FIRST and the alias only as a fallback, so a
+        ticket raised normally is reached by exactly the path it always was.
+        The fallback exists because `adopt_identity` fills in a missing
+        `task_ref` or `anchor` without re-keying the record: after it runs, the
+        digest the ticket's own fields imply is no longer the key it sits under,
+        and a caller supplying that reference would otherwise raise a duplicate.
+        """
+        digest = tid_of(kind, verbatim, task_ref, anchor)
+        hit = self._by_tid.get(digest)
+        if hit is not None:
+            return hit
+        aliased = self._by_identity.get(digest)
+        return self._by_tid.get(aliased) if aliased else None
 
     def similar(self, verbatim: str) -> list[Ticket]:
         """Tickets whose NORMALISED digest matches. Catches a rewording."""
@@ -803,7 +838,21 @@ class TicketStore:
             if task_ref and hit.task_ref != task_ref:
                 return True
             return bool(anchor) and hit.anchor != anchor
+        #: ★ THE ALIAS IS FOLLOWED HERE TOO, AND IT WAS NOT AT FIRST.
+        #: `exact()` was given the adoption bridge on 2026-10-29 and `propose`
+        #: computes `want` itself rather than calling it, so the bridge did not
+        #: reach the one path where a miss MATTERS: a proposal naming an adopted
+        #: anchor would have found nothing at this tier and created a second
+        #: ticket. FOUND BY TRACING THE CALLERS of `exact()` after the change --
+        #: it has exactly 1 production caller, `candidates()`, which decides
+        #: nothing. The guard test appeared to cover it and did not: it passed
+        #: on the REWORDED tier, because the 2 proposals shared their normalised
+        #: text, so it was green for a reason unrelated to the bridge.
         hit = self._by_tid.get(want)
+        if hit is None:
+            _aliased = self._by_identity.get(want)
+            if _aliased:
+                hit = self._by_tid.get(_aliased)
         if hit is not None and not _distinct(hit):
             self._note_alias(hit, task_ref, subjects)
             if hit.status in TERMINAL or hit.status == REJECTED:
@@ -1119,6 +1168,107 @@ class TicketStore:
         self._append(retired)
         return moved, retired
 
+    def adopt_identity(self, tid: str, verification: str, *,
+                       task_ref: str = "", anchor: str = "") -> Ticket:
+        """Give an identityless ticket the identity it should have carried.
+
+        WHY THIS EXISTS, AND WHAT IT CORRECTS IN MY OWN REPORT TO HIM. Entry B49
+        told the founder that the count of tickets carrying neither a `task_ref`
+        nor an `anchor` *"cannot be brought back down"*, and the measurement
+        offered for that was `migrate_identity`: raising a bare ticket takes the
+        count from 320 to 321, migrating it to 322, because the migration leaves
+        the old record behind as a MERGED marker and that marker is itself
+        without an identity. **That measurement is sound and the conclusion drawn
+        from it was not.** It establishes that MIGRATION cannot walk the count
+        back; it says nothing about whether any operation can, and no operation
+        that filled in the missing field existed to be measured. His ruling of
+        2026-10-29 -- *"Do the re-baseline and implement your fix as you
+        suggest."* -- was given on the premise of irreversibility, so building
+        this first is what tests that premise rather than ratcheting a guard
+        looser on the strength of it.
+
+        WHY IT DOES NOT RE-KEY THE RECORD, which is the whole difference from
+        `migrate_identity`. Re-keying is what forces a marker to be left behind,
+        because an identifier already cited in a note or a commit message must
+        keep resolving. So the record stays at the identity it was created
+        under, the missing field is filled in, and `_by_identity` bridges the
+        digest the new fields imply back to that stored key. The count of
+        identityless tickets therefore FALLS by exactly 1 per adoption, where a
+        migration raised it by 1.
+
+        WHAT IT REFUSES, so it cannot be used as a way round the identity rule:
+        a ticket that already carries an identity (that is a migration, not an
+        adoption); a call naming neither field; a call with no verification; and
+        any adoption whose implied digest is already taken by a different
+        ticket, which would make 2 tickets answer to 1 identity -- the exact
+        collapse that destroyed a ticket of mine on 2026-10-29.
+
+        THE STATUS IS NOT TOUCHED. An adoption is a provenance repair, and a
+        terminal ticket is the common case for one: the 3 tickets this was built
+        for are all DUPLICATE, having been superseded by correctly-identified
+        re-raises. Repairing the provenance of a settled record is precisely
+        what an append-only log is for.
+        """
+        t = self._by_tid.get(tid)
+        if t is None:
+            raise KeyError(f"no ticket {tid}")
+        if not str(verification).strip():
+            raise ValueError("an identity adoption must name what authorised it")
+        task_ref = str(task_ref).strip()
+        anchor = str(anchor).strip()
+        if not (task_ref or anchor):
+            raise ValueError(
+                "adopt_identity must supply a task_ref or an anchor; "
+                "an adoption that supplies neither changes nothing")
+        if t.task_ref or t.anchor:
+            raise ValueError(
+                f"{tid} already carries an identity "
+                f"(task_ref={t.task_ref!r}, anchor={t.anchor!r}); "
+                f"use migrate_identity to move it")
+        implied = tid_of(t.kind, t.verbatim, task_ref, anchor)
+        clash = self._by_tid.get(implied)
+        if clash is not None and clash.tid != tid:
+            raise ValueError(
+                f"the identity implied by that reference is {implied}, which "
+                f"already holds {clash.kind}:{clash.tid}; merge into it rather "
+                f"than adopting")
+        held = self._by_identity.get(implied)
+        if held is not None and held != tid:
+            raise ValueError(
+                f"the identity implied by that reference is already an alias of "
+                f"{held}; 2 tickets may not answer to 1 identity")
+        #: ★ THE GUARD ITS OWN P-PASS FOUND MISSING, 2026-10-29. The 3 checks
+        #: above all reason about the IMPLIED DIGEST, and a digest is blind to an
+        #: anchor already in use on a ticket whose identity came from a
+        #: `task_ref` instead -- because `tid_of` takes the reference in
+        #: preference and never reads the anchor at all. `pf:b0d8ca44a450` was
+        #: therefore adopted onto an anchor `pf:2835f264ae18` already carried,
+        #: and only the fact that the 2 are records of ONE item kept the result
+        #: truthful. An anchor is meant to be a unique stable identity, so a
+        #: second holder is refused outright rather than left to luck.
+        #: ONLY THE ANCHOR IS CHECKED HERE, and the first draft also checked the
+        #: `task_ref`. That branch was UNREACHABLE and its own test proved it: a
+        #: same-kind, same-reference adoption always collides on the implied
+        #: digest first, because `tid_of` digests the reference alone, so either
+        #: the `clash` check or the alias check fires before this loop is
+        #: reached. An addition nothing can reach is what the additive standard
+        #: forbids in the same breath as a removal, so it was taken out rather
+        #: than left in as apparent thoroughness.
+        if anchor:
+            for other in self._by_tid.values():
+                if other.tid != tid and other.anchor == anchor:
+                    raise ValueError(
+                        f"{other.kind}:{other.tid} already carries anchor "
+                        f"{anchor!r}; an anchor identifies 1 ticket")
+        note = (f"identity adopted {task_ref or anchor} -> implies {implied}, "
+                f"stored key unchanged at {tid}; authorised by: "
+                f"{' '.join(str(verification).split())}")
+        adopted = Ticket(**{**asdict(t), "task_ref": task_ref or t.task_ref,
+                            "anchor": anchor or t.anchor,
+                            "notes": list(t.notes) + [note]})
+        self._append(adopted)
+        return adopted
+
     def retitle(self, tid: str, title: str) -> Ticket:
         """Correct a ticket's SEARCH LABEL. Substance and identity are untouched.
 
@@ -1219,6 +1369,45 @@ class TicketStore:
         nt = Ticket(**{**asdict(t),
                        "deferred": str(when).strip(),
                        "deferred_reason": reason})
+        self._append(nt)
+        return nt
+
+    def undefer(self, tid: str, reason: str, when: str) -> Ticket:
+        """Clear a deferral, naming WHAT DISCHARGED IT. The symmetric operation.
+
+        WHY IT WAS OWED. `defer` existed and nothing could reverse it, so the
+        field was one-way: an item deferred because it waited on his decision
+        stayed deferred after he decided. Found 2026-10-29 while building his
+        ruling that the register is the single source for deferral -- 3 of the
+        register's 7 deferrals were discharged by rulings he gave that same day,
+        and there was no operation that could say so. A single source of truth
+        that cannot be corrected is worse than 2 that can, because every
+        consumer now reads the stale answer with no second opinion to contradict
+        it.
+
+        THE REASON IS REQUIRED, exactly as it is for `defer`, and for the same
+        stated purpose: an undeferral with no reason is how an item re-enters the
+        list without anyone having decided that it should.
+        """
+        t = self._by_tid.get(tid)
+        if t is None:
+            raise KeyError(f"no ticket {tid}")
+        reason = " ".join(str(reason).split())
+        if len(reason) < 12:
+            raise ValueError(
+                "an undeferral must say WHAT DISCHARGED the deferral, in a "
+                "sentence a reader can check. Clearing it silently is how an "
+                "item re-enters the list without anyone deciding it should.")
+        if not str(when).strip():
+            raise ValueError(
+                "undefer() needs the timestamp from `date -Iseconds`; this "
+                "module never reads a clock, so it cannot supply one")
+        if not t.deferred:
+            raise ValueError(f"{tid} is not deferred; there is nothing to clear")
+        note = (f"undeferred {str(when).strip()} (was deferred {t.deferred}): "
+                f"{reason}")
+        nt = Ticket(**{**asdict(t), "deferred": "", "deferred_reason": "",
+                       "notes": list(t.notes) + [note]})
         self._append(nt)
         return nt
 

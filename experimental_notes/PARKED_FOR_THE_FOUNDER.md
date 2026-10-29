@@ -101,6 +101,12 @@ Your options are to delete it, to rename it out of the `CDSFL_*` glob, or to lea
 
 **The recommendation is 2.** Option 3 was being done without asking, which is the same work-spawns-work dynamic you raised, with the assistant as the source rather than the codebase.
 
+## R1: restart Exp 53 — paid run awaiting the authorisation raised in Decisions_Awaiting_You_2026-10-29
+
+*Parked 2026-10-29T12:16:16+00:00.*
+
+**Needs your decision — IRREVERSIBLE: one of his 3 standing categories: a git ref, money, or the sealed key store.** Not blocking; nothing on the list waits on it.
+
 ---
 
 # Settled — kept for the record, not for his attention (14)

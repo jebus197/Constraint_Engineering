@@ -47,7 +47,7 @@ import textwrap
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Iterable, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -1107,7 +1107,21 @@ def _run_postcondition_gate(root, *, push: bool) -> int:
     print()
     results = sv_postconditions.check_all(root, pushed=push)
     print(sv_postconditions.report(results))
-    return 1 if any(r.failed for r in results) else 0
+    failed = [getattr(r, "name", repr(r)) for r in results if r.failed]
+    #: ★ OPTION 1 OF B29, on his ruling of 2026-10-29. The outcome is RECORDED
+    #: here rather than inferred later by `_check_memory_updated`, which is the
+    #: whole substance of the option: it replaces an inference with a committed
+    #: fact. Recorded on success as well as on failure, because a record that
+    #: only ever says "failed" cannot distinguish a clean save from an
+    #: unrecorded one.
+    sha = _git("rev-parse", "HEAD", root=root, check=False).strip()
+    if sha:
+        where = record_sv_completion(root, sha, clean=not failed, failed=failed)
+        if where is not None:
+            print(f"  sv completion recorded: {sha[:7]} "
+                  f"{'clean' if not failed else 'FAILED ' + ', '.join(failed)}"
+                  f" -> {where.relative_to(root)}")
+    return 1 if failed else 0
 
 
 def _print_final_state(root, push: bool) -> None:
@@ -1741,6 +1755,146 @@ def group_dated_index_entries(mem_dir: Path, dry_run: bool = False) -> dict:
     return report
 
 
+#: The section whose bullets are merged under their own bold sub-headings.
+#: Chosen because `Feedback` is the block the trim can never reach -- standing
+#: guidance ages by design never -- and it was 78 of the 149 entry-lines.
+_MEMORY_HEADED_SECTION = "Feedback (applies to all work)"
+
+#: A bold sub-heading on its own line: `**EVIDENCE DISCIPLINE — ...**`. This is
+#: the SEMANTIC KEY the grouping follows, which is the whole reason this is not
+#: the merge-by-position that `group_dated_index_entries` refuses to do for this
+#: section. The headings are already in the file and already express the
+#: composition; nothing is invented.
+_MEMORY_BOLD_HEADING = re.compile(r"^\*\*(.+?)\*\*\s*$")
+
+#: The separator the index ALREADY uses between pointers on a shared line, e.g.
+#: `[Read the clock](...) never TYPE a timestamp · [Proactive QC](...)`. Reusing
+#: it rather than introducing a second convention.
+_MEMORY_POINTER_JOIN = " · "
+
+
+def group_feedback_index_entries(mem_dir: Path, dry_run: bool = False) -> dict:
+    """Merge the `Feedback` bullets under the bold sub-headings they already sit beneath.
+
+    HIS RULING, 2026-10-29, annotation 7 of
+    `Responses/Decisions_Awaiting_You_2026-10-29.txt`: *"Group them as you
+    suggest. fr"*, against the recommendation to *"Group the Feedback entries
+    under the bold sub headings the index already carries in places, joined by
+    the middle dot separator it already applies elsewhere."*
+
+    WHY THIS IS NOT THE MERGE-BY-POSITION THAT `group_dated_index_entries`
+    REFUSES. That function's own docstring states the reason it leaves `Feedback`
+    alone: grouping must follow a semantic key, and 0 of the section's 78 lines
+    carry a date. **The key it does carry is the bold sub-heading**, and there
+    are 8 of them plus an unheaded leading block. A heading is a composition the
+    founder's own index already asserts, so merging the bullets beneath one does
+    not invent a grouping -- it collapses a grouping that is already written
+    down. Position is used only WITHIN a heading, where the order is the index's
+    own and is preserved exactly.
+
+    WHAT IT BUYS. On the 2026-10-29 index, 78 bullets under 9 groups become 9
+    lines, freeing 69 and taking the refuse headroom from 25 lines to 94.
+
+    NOTHING IS DELETED, nothing is reworded, and no pointer may be lost: the
+    pointer set is compared with the audit's own parser BEFORE the write, and a
+    merge that would change it is refused with the index untouched. A timestamped
+    backup is written first, exactly as the trim and the dated grouper do.
+
+    Returns a report dict; ``dry_run=True`` computes it and writes nothing.
+    """
+    index = mem_dir / _MEMORY_INDEX_NAME
+    report = {"ok": False, "merged": 0, "freed_lines": 0, "freed_chars": 0,
+              "backup": None, "reason": "", "groups": []}
+    if not index.is_file():
+        report["reason"] = f"no index at {index}"
+        return report
+    try:
+        text = index.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as err:
+        report["reason"] = f"index unreadable — {type(err).__name__}: {err}"
+        return report
+
+    out: list[str] = []
+    section: str | None = None
+    heading: str = ""
+    first_line_of: dict[str, int] = {}
+    merged = 0
+    for line in text.split("\n"):
+        if line.startswith("## "):
+            section = line[3:].strip()
+            # A HEADING DOES NOT CROSS A SECTION BOUNDARY. Unlike the dated
+            # grouper's equivalent reset this one is reachable: the bold-heading
+            # convention appears in more than one section of the index, so
+            # without this a `Feedback` heading could claim a bullet from the
+            # section that follows it.
+            heading = ""
+            first_line_of = {}
+            out.append(line)
+            continue
+        if section != _MEMORY_HEADED_SECTION:
+            out.append(line)
+            continue
+        head_match = _MEMORY_BOLD_HEADING.match(line.strip())
+        if head_match is not None:
+            heading = head_match.group(1).strip()
+            out.append(line)
+            continue
+        if not _MEMORY_BULLET_RE.match(line):
+            out.append(line)
+            continue
+        key = heading or "(unheaded leading block)"
+        if key in first_line_of:
+            rest = line.lstrip()[2:].strip()
+            if not rest:
+                out.append(line)
+                continue
+            out[first_line_of[key]] = (
+                out[first_line_of[key]].rstrip() + _MEMORY_POINTER_JOIN + rest)
+            merged += 1
+            report["groups"].append(key)
+        else:
+            first_line_of[key] = len(out)
+            out.append(line)
+
+    if merged == 0:
+        report["ok"] = True
+        report["reason"] = (
+            f"no two {_MEMORY_HEADED_SECTION} bullets share a bold sub-heading")
+        return report
+
+    new_text = "\n".join(out)
+    report["merged"] = merged
+    report["freed_lines"] = text.strip().count("\n") - new_text.strip().count("\n")
+    report["freed_chars"] = len(text) - len(new_text)
+
+    def _pointers(t: str) -> list[str]:
+        return sorted(tgt for ln in t.splitlines()
+                      for _ti, tgt, _n in _memory_index_pointers(ln))
+    before, after = _pointers(text), _pointers(new_text)
+    if before != after:
+        lost = sorted(set(before) - set(after))
+        report["reason"] = (
+            f"REFUSED: grouping would change the pointer set "
+            f"({len(before)} -> {len(after)}); the index is unchanged. "
+            f"missing: {lost[:5]}")
+        return report
+
+    if dry_run:
+        report["ok"] = True
+        return report
+    try:
+        stamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+        backup = mem_dir / f"{_MEMORY_BACKUP_PREFIX}{stamp}.md"
+        backup.write_text(text, encoding="utf-8")
+        index.write_text(new_text, encoding="utf-8")
+    except OSError as err:
+        report["reason"] = f"write failed — {type(err).__name__}: {err}"
+        return report
+    report["ok"] = True
+    report["backup"] = backup.name
+    return report
+
+
 def _audit_memory_index(mem_dir: Path) -> _MemoryIndexAudit:
     """Audit the memory index. READS ONLY — never writes under mem_dir."""
     index = mem_dir / _MEMORY_INDEX_NAME
@@ -2293,12 +2447,105 @@ def _check_memory_index_size(audit: _MemoryIndexAudit) -> _Check:
     )
 
 
-def _previous_sv_commit(root: Path) -> Optional[tuple[str, str, datetime]]:
+#: WHERE sv RECORDS WHETHER ITS OWN POSTCONDITIONS PASSED. Append-only, one
+#: JSON object per line, written AFTER the commit it describes -- so it is
+#: necessarily not inside that commit and is carried by the next save.
+_SV_COMPLETIONS_REL = "bench/tickets/sv_completions.jsonl"
+
+
+def _sv_completions_path(root: Path) -> Path:
+    return root / _SV_COMPLETIONS_REL
+
+
+def record_sv_completion(root: Path, sha: str, clean: bool,
+                         failed: Iterable[str] = ()) -> Path | None:
+    """Record, as a committed FACT, whether this save finished cleanly.
+
+    HIS RULING, 2026-10-29, annotation 4 of
+    `Responses/Decisions_Awaiting_You_2026-10-29.txt`: *"Build and implement
+    option 1. fr"*. Option 1 as he was given it, from
+    `experimental_notes/data/morning_report_decisions.json` key `task:B29`:
+    *"Have the save record whether its own conditions passed, and have the
+    memory check skip back to the last save that finished cleanly"*.
+
+    WHY A RECORD AND NOT AN INFERENCE. `_check_memory_updated` asks whether this
+    session's memory is newer than the previous save. For the FIRST save of a
+    session that is sound. For a FOLLOW-UP it is wrong, because the save it
+    measures against is the very save whose memory it is asking to see again --
+    so the gate refuses a save for lacking memory that exists. Measured: 14 of
+    89 consecutive sv pairs are follow-ups inside 15 minutes, 15.7303%, Wilson
+    [9.6078%, 24.6888%], and 7 of those 14 name a postcondition in their own
+    subject. Producers: `scripts/how_often_is_a_second_sv_refused_2026-10-17.py`
+    and `scripts/do_options_three_and_one_compose_2026-10-29.py`.
+
+    NEVER RAISES. A save that has already committed must not be turned into a
+    failure by its own bookkeeping, so every error path returns None.
+    """
+    try:
+        path = _sv_completions_path(root)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        row = {
+            "sha": str(sha)[:40],
+            "clean": bool(clean),
+            "failed": sorted(str(f) for f in failed),
+            "recorded": datetime.now(timezone.utc).astimezone().isoformat(),
+        }
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row, sort_keys=True) + "\n")
+        return path
+    except (OSError, TypeError, ValueError):
+        return None
+
+
+def unclean_sv_commits(root: Path) -> set[str]:
+    """Short shas of saves RECORDED as having failed their own postconditions.
+
+    ABSENCE IS NOT UNCLEANLINESS, and that asymmetry is deliberate. The record
+    began on 2026-10-29, so every save before it has none; treating a missing
+    record as unclean would walk the baseline back over the whole history on the
+    first run. Only an explicit ``clean: false`` causes a skip, which means the
+    check can never become WEAKER than it was before this existed -- it can only
+    become better informed.
+
+    A later record for the same sha supersedes an earlier one, so a save that
+    failed and was then verified clean stops being skipped.
+    """
+    path = _sv_completions_path(root)
+    if not path.is_file():
+        return set()
+    state: dict[str, bool] = {}
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return set()
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        sha = str(row.get("sha", ""))[:7]
+        if sha:
+            state[sha] = bool(row.get("clean", True))
+    return {sha for sha, clean in state.items() if not clean}
+
+
+def _previous_sv_commit(root: Path,
+                        require_clean: bool = False
+                        ) -> Optional[tuple[str, str, datetime]]:
     """Return (short sha, subject, commit time) of the most recent sv commit.
 
     ``--grep`` matches anywhere in the message, so the subject is re-checked
     here: a body line beginning "sv:" must not be mistaken for an sv commit.
+
+    ``require_clean`` skips any save RECORDED as having failed its own
+    postconditions, which is option 1 of entry B29 on his ruling of 2026-10-29.
+    A save with no record at all is NOT skipped, so the resolved baseline is
+    identical to the pre-2026-10-29 behaviour wherever no failure was recorded.
     """
+    skip = unclean_sv_commits(root) if require_clean else set()
     out = _git(
         "log", "--grep=^sv:", "--format=%H%x1f%cI%x1f%s", "-n", "50",
         root=root, check=False,
@@ -2309,6 +2556,8 @@ def _previous_sv_commit(root: Path) -> Optional[tuple[str, str, datetime]]:
             continue
         sha, iso, subject = parts
         if not subject.startswith("sv:"):
+            continue
+        if sha[:7] in skip:
             continue
         try:
             when = datetime.fromisoformat(iso)
@@ -2342,7 +2591,7 @@ def _check_memory_updated(root: Path, mem_dir: Optional[Path] = None) -> _Check:
         )
 
     try:
-        prev = _previous_sv_commit(root)
+        prev = _previous_sv_commit(root, require_clean=True)
     except (RuntimeError, OSError, subprocess.SubprocessError) as err:
         return _Check(
             name, False, why=why,
@@ -2373,6 +2622,26 @@ def _check_memory_updated(root: Path, mem_dir: Optional[Path] = None) -> _Check:
 
     ref = f"{sha} \"{subject[:60]}\" at {when:%Y-%m-%d %H:%M:%S %z}"
     expected = f"at least one *.md under {mem} modified after {ref}"
+    #: ★ REPORT THE RESOLUTION, NOT THE RECORD SET. The first version of these
+    #: 4 lines read the unclean set and announced a skip whenever it was
+    #: non-empty -- so it would have claimed a skip that had not happened, and
+    #: mutation 4 of 6 proved it: disabling `require_clean` in the resolver left
+    #: this message asserting the skip and all 10 tests green. A producer and a
+    #: consumer that each describe themselves correctly and disagree with each
+    #: other is the defect shape this project has measured most often, and it
+    #: had reproduced inside the repair for it.
+    try:
+        _unconstrained = _previous_sv_commit(root)
+    except (RuntimeError, OSError, subprocess.SubprocessError):
+        _unconstrained = None
+    if _unconstrained is not None and _unconstrained[0] != sha:
+        _passed_over = unclean_sv_commits(root)
+        expected += (
+            f" — the baseline SKIPPED BACK from {_unconstrained[0]}, which is "
+            f"recorded as having failed its own postconditions "
+            f"({', '.join(sorted(_passed_over))}), because the memory a "
+            f"follow-up save is asked to produce again is the memory written "
+            f"for the save it is repairing")
 
     if newest is None:
         return _Check(
@@ -3083,6 +3352,24 @@ def _preflight_completeness(
             print(f"                backup: {_arch['backup']}")
     elif not _arch.get("ok"):
         print(f"  memory index: archive step did not run — {_arch.get('reason')}")
+
+    # THE THIRD RELIEF, ON HIS RULING OF 2026-10-29: *"Group them as you
+    # suggest. fr"*. The 2 above cannot reach `Feedback`, which was 78 of the
+    # 149 entry-lines and ages by design never, so the line budget would have
+    # gone on binding however often the other 2 ran. This keys on the bold
+    # sub-headings the index already carries, so it collapses a grouping the
+    # founder's own index asserts rather than inventing one. Ordered LAST
+    # because it touches a section neither of the other 2 reads, so no ordering
+    # dependency exists between them -- stated rather than assumed.
+    _fgrp = group_feedback_index_entries(_mem_dir, dry_run=not apply)
+    if _fgrp.get("merged"):
+        _fverb = "would merge" if not apply else "merged"
+        print(f"  memory index: {_fverb} {_fgrp['merged']} {_MEMORY_HEADED_SECTION} "
+              f"bullet(s) under their own bold sub-headings, freeing "
+              f"{_fgrp['freed_lines']} line(s) and {_fgrp['freed_chars']:,} chars "
+              f"— 0 pointers moved")
+    elif not _fgrp.get("ok"):
+        print(f"  memory index: Feedback grouping did not run — {_fgrp['reason']}")
 
     audit = _audit_memory_index(_mem_dir)
 

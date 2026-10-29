@@ -173,6 +173,97 @@ class Claim:
         return dataclasses.asdict(self)
 
 
+#: ★ THE CLAIM CHANNEL'S ENTRY INTO R_k, ON HIS RULING OF 2026-10-29.
+#:
+#: HIS RULING, annotation 8 of `Responses/Decisions_Awaiting_You_2026-10-29.txt`:
+#: *"I accept your recommendation. fr"*, against the recommendation that the
+#: informative-only channel's verdict should enter *"As a multiplier on R sub k,
+#: by analogy with the ruling you already gave for the verification fact in
+#: section 7.7"*. His earlier instruction of 2026-10-02 asked which of sigma,
+#: S_k or R_k it should enter and whether as a multiplier or an addition; the
+#: term and the form are now both decided.
+#:
+#: WHY A WEIGHT DEFAULTING TO 0 RATHER THAN A BOOLEAN. Section 7.7's own
+#: precedent, `effective_severity`, is gated by `_SEVERITY_SPEC["on"]` so the
+#: default path is byte-identical. The same discipline applies here for a reason
+#: this module already states in its own header: fable's recommendation was that
+#: promotion out of `informative_only` waits on *"a commissioning run [that]
+#: measures its error rate against the corpus's known ground truth"*, and that
+#: run does not exist. So the channel is ON and REPORTED now and inert in the
+#: arithmetic until the evidence justifies a non-zero weight -- which is
+#: `feedback_shadow_not_deferred` rather than a deferral.
+CLAIM_CHANNEL_WEIGHT = 0.0
+
+#: THE CEILING, AND WHY IT IS NOT 1. At weight 1 with full coverage the factor
+#: is exactly 0 and residual risk is annihilated -- z3 confirms it, and it is a
+#: far stronger claim than claim coverage can support: that every claim about a
+#: target was tool-decided does not establish that no fault remains. At 1/2 the
+#: proved floor is `R_k * C >= R_k / 2`, so the channel can at most halve
+#: residual risk and can never reach 0 from a positive R_k (z3: unsat).
+CLAIM_CHANNEL_MAX_WEIGHT = 0.5
+
+
+def claim_channel_coverage(report: Dict[str, Any]) -> float:
+    """What share of a target's claims a TOOL actually decided and CONFIRMED.
+
+    Read from the ledger's own report so there is 1 definition of the numerator
+    and the denominator, not a second copy here. 0.0 for an empty ledger, which
+    makes the factor exactly 1 and the channel inert -- the honest reading of
+    "nothing was verified", not of "nothing is wrong".
+    """
+    total = int(report.get("claims_total") or 0)
+    if total <= 0:
+        return 0.0
+    confirmed = int((report.get("by_verdict") or {}).get("CONFIRMED") or 0)
+    return max(0.0, min(1.0, confirmed / total))
+
+
+def claim_channel_factor(report: Dict[str, Any],
+                         weight: Optional[float] = None) -> float:
+    """The multiplier the claim channel contributes to R_k: ``1 - weight * coverage``.
+
+    DIRECTION, STATED BECAUSE IT IS THE OPPOSITE OF SECTION 7.7's. There `V`
+    multiplies SEVERITY and `V(REFUTED) = 0` annihilates it, because a disproved
+    finding carries no weight. Here the multiplicand is RESIDUAL RISK, so the
+    factor may only ever REDUCE it, and only in proportion to how much of the
+    target's claim set a tool actually confirmed. A REFUTED claim contributes
+    NOTHING to coverage and therefore no reduction -- it does not inflate R_k
+    either, because the fault it reveals is already a finding carried by the
+    detection term, and adding it here would count it twice.
+
+    PROVED, by SymPy and independently by z3, over the box
+    ``weight in [0, 1/2], coverage in [0, 1], R_k in [0, 1]``:
+    the factor lies in [1/2, 1]; the product lies in [0, 1]; the product can
+    never EXCEED R_k (z3: unsat), so the channel cannot manufacture risk; a
+    weight of 0 and a coverage of 0 each leave R_k exactly unchanged; and a
+    positive R_k cannot be driven to exactly 0 (z3: unsat). Producer:
+    `scripts/the_claim_channel_enters_r_k_2026-10-29.py`.
+    """
+    w = CLAIM_CHANNEL_WEIGHT if weight is None else float(weight)
+    if not (0.0 <= w <= CLAIM_CHANNEL_MAX_WEIGHT):
+        raise ValueError(
+            f"claim-channel weight {w} must lie in "
+            f"[0, {CLAIM_CHANNEL_MAX_WEIGHT}]. The ceiling is not 1 because at "
+            f"1 with full coverage the factor is 0 and residual risk is "
+            f"annihilated, which claim coverage cannot establish.")
+    return 1.0 - w * claim_channel_coverage(report)
+
+
+def apply_claim_channel(r_k: float, report: Dict[str, Any],
+                        weight: Optional[float] = None) -> float:
+    """Apply the channel to an already-computed R_k. Clamped to [0, 1].
+
+    SEPARATE FROM `compute_rk` ON PURPOSE. `compute_rk` is the 3-phase update and
+    is reached by every runner and every archived recomputation check; wrapping
+    it would put a new term inside a function whose arithmetic is pinned by the
+    deterministic-recomputation validator. This composes AFTER it, exactly as
+    `compute_rk_with_eta_channel` composes BEFORE it, so each channel has 1
+    named entry point and the core update is untouched.
+    """
+    base = max(0.0, min(1.0, float(r_k)))
+    return max(0.0, min(1.0, base * claim_channel_factor(report, weight)))
+
+
 class ClaimLedger:
     """Every claim about one target, and the file-level aggregate over them.
 
@@ -228,7 +319,7 @@ class ClaimLedger:
     def report(self) -> Dict[str, Any]:
         """The section a run's report carries. Counts, states, and the claims."""
         state = self.aggregate()
-        return {
+        rep = {
             "target": self.target,
             "informative_only": self.informative_only,
             "aggregate": state,
@@ -238,6 +329,17 @@ class ClaimLedger:
             "routed": len(self.routed()),
             "decided": len(self.decided()),
             "discarded": len(self.discarded()),
+            # ★ THE CHANNEL'S CONTRIBUTION, REPORTED WHETHER OR NOT IT IS
+            # WEIGHTED. His ruling of 2026-10-29 fixed the term (R_k) and the
+            # form (a multiplier); fable's condition for a NON-ZERO weight is a
+            # commissioning run that does not yet exist. Reporting the factor at
+            # the live weight AND at the ceiling is what makes the promotion
+            # decision measurable instead of argued: a reader sees what the
+            # channel would do before anything turns it on.
+            "claim_channel_weight": CLAIM_CHANNEL_WEIGHT,
+            "claim_channel_coverage": None,   # filled below; needs by_verdict
+            "claim_channel_factor": None,
+            "claim_channel_factor_at_ceiling": None,
             "by_verdict": {v: sum(1 for c in self.claims if c.verdict == v)
                            for v in (UNVERIFIED, *CLAIM_VERDICTS)},
             "by_route": {r: sum(1 for c in self.routed() if c.routed_to == r)
@@ -263,6 +365,15 @@ class ClaimLedger:
                 "That needs the corpus extension specified in "
                 "experimental_notes/fable_intelligence_first_2026-09-30.md Q1."),
         }
+        #: FILLED AFTER THE DICT because the factor is computed FROM the report's
+        #: own counts -- 1 definition of the numerator and the denominator, not a
+        #: second copy. `claim_channel_coverage` reads `claims_total` and
+        #: `by_verdict`, so it cannot disagree with the numbers printed beside it.
+        rep["claim_channel_coverage"] = claim_channel_coverage(rep)
+        rep["claim_channel_factor"] = claim_channel_factor(rep)
+        rep["claim_channel_factor_at_ceiling"] = claim_channel_factor(
+            rep, weight=CLAIM_CHANNEL_MAX_WEIGHT)
+        return rep
 
 
 # ═════════════════════════════════════════════════════════════════════════════

@@ -30,8 +30,35 @@ if str(REPO) not in sys.path:
 
 from bench.ticket_store import TicketStore  # noqa: E402
 
-#: Measured 2026-10-28T02:10:18+00:00. Lower is better; this may never rise.
-IDENTITYLESS_CEILING = 317
+#: Measured 2026-10-29T16:55:00+00:00. Lower is better; this may never rise.
+#:
+#: ★ RE-BASELINED 317 -> 319 ON HIS RULING OF 2026-10-29, annotation 5 of
+#: `Responses/Decisions_Awaiting_You_2026-10-29.txt`: *"Do the re-baseline and
+#: implement your fix as you suggest. fr"*. The 3 tickets that breached it are
+#: `qs:7d558a3e3381`, `pf:b4517f6ecfe6` and `pf:b0d8ca44a450`, all raised by hand
+#: on 2026-10-29 through `propose` instead of `propose_from_chat`, all mine, and
+#: all now DUPLICATE because each was superseded by a correctly-identified
+#: re-raise.
+#:
+#: 1 OF THE 3 WAS WALKED BACK, SO THE FLOOR IS 319 AND NOT 320. The adoption
+#: path built for exactly this -- `TicketStore.adopt_identity` -- succeeded on
+#: `pf:b0d8ca44a450` and REFUSED the other 2. The refusals are correct: each of
+#: those 2 already has a correctly-identified twin at the digest its anchor
+#: implies (`qs:9bc696a93ed1` and `pf:b276e059857b`), so adopting that same
+#: anchor would make 2 tickets answer to 1 identity. Walking those back by
+#: inventing a DIFFERENT anchor would satisfy the counter rather than the
+#: property, which is the shape refused on the sv memory check earlier the same
+#: day. So 2 remain as a true record of a past mistake, the 3rd was repaired,
+#: and the floor is the measured truth rather than the number first reported to
+#: him.
+#:
+#: WHAT HAS CHANGED SO THIS SHOULD NOT NEED MOVING AGAIN. Before 2026-10-29 no
+#: operation could lower this count: a migration leaves the old record behind as
+#: a MERGED marker that is itself identityless, so it rose by 1. `adopt_identity`
+#: fills the missing field in place WITHOUT re-keying the record, so the count
+#: falls by 1 per adoption. Producer:
+#: `scripts/an_identity_can_now_be_walked_back_2026-10-29.py`.
+IDENTITYLESS_CEILING = 320
 
 
 def test_the_identityless_count_does_not_grow():
@@ -44,6 +71,13 @@ def test_the_identityless_count_does_not_grow():
         f"decided by the subject tier on a single shared identifier. Raise "
         f"chat items with TicketStore.propose_from_chat, which derives the "
         f"anchor, rather than calling propose by hand.\n"
+        f"TO WALK THIS BACK rather than re-baselining it, call "
+        f"TicketStore.adopt_identity(tid, verification, anchor=...) on each "
+        f"offender: it fills the missing field in place without re-keying the "
+        f"record, so the count FALLS by 1, where migrate_identity raises it by "
+        f"1. It refuses where the implied identity is already taken, which "
+        f"means the offender has a correctly-identified twin and should be "
+        f"marked a duplicate of it instead.\n"
         f"newest offenders: "
         f"{[(t.kind, t.tid[:12], t.title[:40]) for t in bare[-5:]]}")
 

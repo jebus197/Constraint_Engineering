@@ -253,12 +253,133 @@ def infer(text: str) -> tuple[str, str]:
     return state, status
 
 
+def register_deferrals(store=None) -> dict[str, tuple[str, str]]:
+    """Deferral as the REGISTER records it: {task_ref: (when, reason)}.
+
+    HIS RULING, 2026-10-29, annotation 11 of
+    `Responses/Decisions_Awaiting_You_2026-10-29.txt`: *"I accept your
+    recommendation. fr"*, against the recommendation to *"Make the register the
+    single source and have the marker derived from it, rather than the reverse"*.
+
+    WHY THE REGISTER AND NOT THE MARKER. The register is the stricter of the 2:
+    `defer` REFUSES without a stated reason and without a caller-supplied
+    timestamp, and `close` refuses a terminal status without a verification. A
+    marker is a hand-written word in a markdown comment and can say DEFERRED with
+    no reason at all. A derived marker cannot drift from the register; the reverse
+    arrangement lets it.
+
+    IMPORTED LAZILY so this module stays usable where the register is not
+    importable -- a `git archive` export, or a consumer that only wants to count
+    entries. A missing register yields an EMPTY mapping, which makes
+    `effective_state` fall back to the marker exactly as before this existed.
+    """
+    if store is None:
+        try:
+            if str(REPO) not in sys.path:
+                sys.path.insert(0, str(REPO))
+            from bench.ticket_store import TicketStore
+            store = TicketStore()
+            store.load()
+        except Exception:                                    # pragma: no cover
+            return {}
+    out: dict[str, tuple[str, str]] = {}
+    try:
+        tickets = store.deferred_tickets()
+    except Exception:                                        # pragma: no cover
+        return {}
+    for t in tickets:
+        if getattr(t, "task_ref", ""):
+            out[t.task_ref] = (t.deferred, t.deferred_reason)
+    return out
+
+
+def effective_state(entry: "Entry", deferrals: dict[str, tuple[str, str]]) -> str | None:
+    """The entry's state WITH THE REGISTER AUTHORITATIVE over the marker.
+
+    A TERMINAL MARKER WINS OVER A DEFERRAL, and that is not an exception to his
+    ruling -- it is what the ruling means. DONE and WITHDRAWN are outcomes; a
+    deferral is a statement about WHEN live work will happen. An entry that is
+    finished is not "deferred to the end of the list", and reporting it so would
+    put closed work back in front of him. Only a live state is overridden.
+    """
+    if entry.state in ("DONE", "WITHDRAWN"):
+        return entry.state
+    if entry.ident in deferrals:
+        return "DEFERRED"
+    return entry.state
+
+
+def deferral_disagreements(path: Path = LIST, store=None) -> dict[str, list[str]]:
+    """Where the marker and the register disagree about deferral, in both directions."""
+    deferrals = register_deferrals(store)
+    entries = parse_entries(path)
+    marker_says = {e.ident for e in entries if e.state == "DEFERRED"}
+    live = {e.ident for e in entries if e.state not in ("DONE", "WITHDRAWN")}
+    known = {e.ident for e in entries}
+    return {
+        "marker_only": sorted(marker_says - set(deferrals)),
+        "register_only": sorted((set(deferrals) & live) - marker_says),
+        "register_defers_a_closed_entry": sorted(set(deferrals) & (known - live)),
+        "register_defers_an_unknown_entry": sorted(set(deferrals) - known),
+    }
+
+
+def derive_deferred_markers(path: Path = LIST, apply: bool = False,
+                            store=None) -> tuple[int, list[str]]:
+    """Rewrite each disagreeing marker to the state the register implies.
+
+    Returns (number changed or changeable, lines describing each). With
+    ``apply=False`` nothing is written, which is how it is reported inside
+    `--check`.
+
+    ONLY `register_only` IS REWRITTEN. A marker saying DEFERRED where the
+    register is silent is NOT quietly cleared, because the register being silent
+    may mean the item has no ticket at all rather than that it is due -- and
+    erasing a deferral the founder wrote by hand would be destroying a statement
+    of his, not deriving from a source. Those are REPORTED for a decision.
+    """
+    dis = deferral_disagreements(path, store)
+    changes: list[str] = []
+    for ident in dis["register_only"]:
+        changes.append(f"{ident}: marker -> state: DEFERRED (the register defers it)")
+        if apply:
+            set_marker(ident, state="DEFERRED", path=path)
+    for ident in dis["marker_only"]:
+        changes.append(
+            f"{ident}: marker says DEFERRED and the register does not — "
+            f"REPORTED, never auto-cleared, because the register may simply "
+            f"hold no ticket for it")
+    return len(dis["register_only"]), changes
+
+
 def check(path: Path = LIST) -> tuple[int, list[str]]:
     """Return (exit code, problems). 0 problems means the list is coherent."""
     entries = parse_entries(path)
     problems: list[str] = []
     if not entries:
         return 1, [f"{path}: no entries parsed at all, which cannot be right"]
+
+    # ★ DEFERRAL IS THE REGISTER'S TO STATE, on his ruling of 2026-10-29. The 2
+    # representations were independent and disagreed in both directions on the
+    # day the ruling was given: the register deferred 5 live entries the markers
+    # called OPEN. Reported here rather than silently reconciled, because a
+    # checker that repairs without reporting hides the drift it exists to find.
+    _dis = deferral_disagreements(path)
+    for _ident in _dis["register_only"]:
+        problems.append(
+            f"{path.name}: {_ident} is deferred in the register and its marker "
+            f"does not say so. The register is the single source; run "
+            f"`python3 scripts/task_list_markers.py --derive-deferrals --apply` "
+            f"to derive the marker from it.")
+    for _ident in _dis["marker_only"]:
+        problems.append(
+            f"{path.name}: {_ident} has marker state DEFERRED and the register "
+            f"does not defer it. Either the register is missing a ticket for it "
+            f"or the deferral is discharged — decide, do not auto-clear.")
+    for _ident in _dis["register_defers_an_unknown_entry"]:
+        problems.append(
+            f"{path.name}: the register defers {_ident}, which is not an entry "
+            f"this parser recognises, so the deferral is invisible on the list.")
 
     # AN ORPHANED MARKER IS AN INVISIBLE ENTRY, and this reported nothing.
     #
@@ -509,8 +630,19 @@ def main() -> int:
     ap.add_argument("--apply", action="store_true", help="insert missing markers")
     ap.add_argument("--check", action="store_true", help="report incoherence, exit 1 if any")
     ap.add_argument("--summary", action="store_true", help="one line, for the pulse hook")
+    ap.add_argument("--derive-deferrals", action="store_true",
+                    help="derive each DEFERRED marker from the register, which is "
+                         "the single source for deferral (his ruling 2026-10-29); "
+                         "combine with --apply to write them")
     ap.add_argument("--path", type=Path, default=LIST)
     a = ap.parse_args()
+    if a.derive_deferrals:
+        n, changes = derive_deferred_markers(a.path, apply=a.apply)
+        verb = "derived" if a.apply else "would derive"
+        print(f"deferral markers {verb}: {n}")
+        for line in changes:
+            print(f"  {line}")
+        return 0
     if a.apply:
         n = apply_markers(a.path)
         print(f"markers added: {n}")
