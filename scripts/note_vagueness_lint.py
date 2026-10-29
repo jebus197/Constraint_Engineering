@@ -1176,7 +1176,17 @@ def lint(path: pathlib.Path) -> list:
     _tts = _is_tts(path)
     # ★ RULE 27 IN FULL ONLY FOR NOTES DATED FROM HIS RULING. Entry B24, his
     # verdict of 2026-10-19: "Enforce going forward only."
-    _full_27 = rule_27_in_full(path)
+    #
+    # THE LOGICAL PATH, NOT THE PATH ON DISK, and the difference is a real
+    # defect caught by FOLLOW rather than by reading. `hooks/pre-commit` lints a
+    # STAGED COPY at a temporary location and passes `--as` to name the real
+    # file -- which is why `_LOGICAL_PATH` exists and why 2 other rules already
+    # read it. Dating the temp copy instead would ask git about a file that has
+    # no history, fall back to the temp name, and hold an ARCHIVED note to a
+    # rule he confined to new ones the moment that name carried no date. 2
+    # declarations of one fact must not disagree, so this reads the same
+    # `_LOGICAL_PATH or path` the rest of the module does.
+    _full_27 = rule_27_in_full(pathlib.Path(_LOGICAL_PATH or path))
     for para_no, s in sentences(path.read_text()):
         # Quote-stripping applies to EVERY rule, not only 27 and 28. A note that
         # quotes someone else's vagueness in order to name it is not being vague.

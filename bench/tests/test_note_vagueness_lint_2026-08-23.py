@@ -35,13 +35,24 @@ def _lint(text, tmp_path, name="n.txt"):
 
 
 class TestTheMotivatingSentence:
+    """★ THE "COMPLIANT REWRITE" FIXTURE WAS NOT COMPLIANT, corrected 2026-10-29.
+
+    It read "All eleven defects lowered ..." and asserted that sentence PASSES.
+    Under his ruling of 2026-09-04 -- "Digits only, in every context without
+    exception" -- a bare spelled number is a violation, so the fixture was
+    holding up a violation as the model of compliance. It went unnoticed because
+    `WORD_NUMBER` only caught MULTI-WORD numbers, which is exactly the
+    under-enforcement entry B24 exists to close; his verdict of 2026-10-19 was
+    "Enforce going forward only". The quantity is now written as a digit, which
+    is what the fixture was always meant to demonstrate.
+    """
     def test_it_is_caught(self, tmp_path):
         hits = _lint(MOTIVATING, tmp_path)
         assert any(k == "QUANTITY WITHOUT A VALUE" for _, k, _, _ in hits), (
             "the linter no longer catches the sentence it was built for")
 
     def test_the_compliant_rewrite_is_NOT_caught(self, tmp_path):
-        ok = ("All eleven defects lowered a model's falsifier-confirm rate below its "
+        ok = ("All 11 defects lowered a model's falsifier-confirm rate below its "
               "true value. On Exp 55 that rate is what bench/routing.py uses to pick "
               "which model resolves the hardest findings: Gemini scored 2 of 2 and "
               "DeepSeek 0 of 2.")

@@ -74,6 +74,42 @@ def sandboxed(tmp_path, monkeypatch, request):
     return mod, state, archive
 
 
+@pytest.fixture
+def sandboxed_reset(sandboxed):
+    """A sandbox whose store is EMPTY, which is this mechanism's actual subject.
+
+    ★ DECOUPLED FROM THE LIVE STORE, 2026-10-29. `sandboxed` copies the live
+    file in, so the 2 tests below could only pass while the live store happened
+    to be empty -- and they went RED the moment a legitimate simulated run
+    repopulated it. That is a point-in-time state asserted as an invariant, and
+    it is in direct tension with the OTHER half of his 2026-10-16 ruling:
+    *"probably the best strategy is to leave the default in this case set to
+    on, so that it can persist between experiments"*. Persistence is the ruled
+    default, so a populated store is correct behaviour and must not fail a
+    guard.
+
+    The RESET recognition machinery still has to work, so it is now tested
+    against a store that IS reset, constructed here. That is strictly stronger:
+    the mechanism is exercised whatever the live store holds.
+    """
+    mod, state, archive = sandboxed
+    import json as _json
+    fresh = {"version": 1, "experiment_count": 0, "decay_rate": 0.0,
+             "drift_threshold": 0.0, "source_hash": "", "experiment_ids": [],
+             "records": {}}
+    if state.is_file():
+        try:
+            held = _json.loads(state.read_text(encoding="utf-8"))
+            # keep whatever shape the real file carries, emptied
+            for k in ("version", "decay_rate", "drift_threshold", "source_hash"):
+                if k in held:
+                    fresh[k] = held[k]
+        except (OSError, ValueError):
+            pass
+    state.write_text(_json.dumps(fresh, indent=2), encoding="utf-8")
+    return mod, state, archive
+
+
 def test_the_live_store_is_never_written_by_this_guard():
     """Stated first because it is the precondition for everything below."""
     before = LIVE.read_bytes() if LIVE.is_file() else None
@@ -82,8 +118,8 @@ def test_the_live_store_is_never_written_by_this_guard():
     assert before == after
 
 
-def test_a_reset_store_is_recognised_as_reset(sandboxed):
-    mod, state, archive = sandboxed
+def test_a_reset_store_is_recognised_as_reset(sandboxed_reset):
+    mod, state, archive = sandboxed_reset
     if not any(archive.glob("*.why.json")):
         pytest.skip("no archived reset record to read")
     record = mod.reset_record()
@@ -97,8 +133,8 @@ def test_a_reset_store_is_recognised_as_reset(sandboxed):
         "tell a reader nothing about what was reset")
 
 
-def test_the_skip_reason_names_his_ruling_and_what_was_reset(sandboxed):
-    mod, _, archive = sandboxed
+def test_the_skip_reason_names_his_ruling_and_what_was_reset(sandboxed_reset):
+    mod, _, archive = sandboxed_reset
     if not any(archive.glob("*.why.json")):
         pytest.skip("no archived reset record to read")
     with pytest.raises(BaseException) as caught:
@@ -126,10 +162,10 @@ def test_it_re_arms_the_moment_a_record_exists(sandboxed):
     mod._require_populated_memory()
 
 
-def test_a_renamed_records_attribute_raises_rather_than_exempting(sandboxed,
+def test_a_renamed_records_attribute_raises_rather_than_exempting(sandboxed_reset,
                                                                   monkeypatch):
     """Defaulting on a rename would silently restore the exemption."""
-    mod, _, archive = sandboxed
+    mod, _, archive = sandboxed_reset
     if not any(archive.glob("*.why.json")):
         pytest.skip("no archived reset record to read")
 

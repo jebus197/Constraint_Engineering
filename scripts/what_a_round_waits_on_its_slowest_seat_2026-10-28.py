@@ -130,6 +130,63 @@ def _seat_records(round_dir: pathlib.Path) -> list[tuple[str, float, float, bool
     return out
 
 
+def simulated_round_barriers(run_dir: pathlib.Path) -> list[dict]:
+    """★ THE BARRIER FOR A SIMULATED RUN, per ROUND. His ruling of 2026-10-28:
+    *"Verdict. Do it and study it in the upcoming simulated run."*
+
+    WHY THIS IS A SEPARATE READER AND NOT THE ONE ABOVE. 2 facts that look like
+    an oversight and are not. First, `confer_maths_panel` writes
+    `completion_barrier.json` at the end of its round; `reference_runner_v3` has
+    its OWN dispatch path and calls nothing of the kind, so a simulated run
+    stamps its seats and derives nothing. Second, the reader above DELIBERATELY
+    rejects `r<digit>_` files -- that rejection is the fix for a loose detector
+    that credited one "round" with 144 seats and reported the seat-count effect
+    BACKWARDS. So the files that now carry the stamps are exactly the files that
+    reader must keep ignoring.
+
+    AND THE UNIT IS BETTER HERE. A simulated run writes one file per seat PER
+    ROUND, so each round is its own barrier rather than one barrier for a whole
+    directory. That is a finer measurement than the panel's, and it is the one
+    his ruling asked for: the idle a round spends waiting on its slowest seat,
+    round by round, from EXACT stamps with no reconstruction and no exclusion
+    bound.
+    """
+    import re as _re
+    import importlib.util as _il
+    spec = _il.spec_from_file_location(
+        "cdsfl_star_for_barrier", REPO / "bench" / "star_topology_2026-10-06.py")
+    star = _il.module_from_spec(spec)
+    spec.loader.exec_module(star)
+
+    by_round: dict[str, list[dict]] = {}
+    for f in sorted(run_dir.glob("r*_*.json")):
+        m = _re.match(r"^(r\d+)_", f.name)
+        if not m:
+            continue
+        try:
+            o = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        meta = o.get("metadata") if isinstance(o.get("metadata"), dict) else o
+        if not (isinstance(meta.get("t_start_epoch"), (int, float))
+                and isinstance(meta.get("t_end_epoch"), (int, float))):
+            continue
+        # `completion_barrier` reads `model`, `ok`, and both stamps.
+        by_round.setdefault(m.group(1), []).append({
+            "model": o.get("model") or f.name.split("_", 1)[1].split("_")[0],
+            "ok": True,
+            "elapsed_s": float(meta.get("elapsed", 0.0) or 0.0),
+            "t_start_epoch": float(meta["t_start_epoch"]),
+            "t_end_epoch": float(meta["t_end_epoch"]),
+        })
+    out = []
+    for rnd in sorted(by_round, key=lambda r: int(r[1:])):
+        rec = star.completion_barrier(by_round[rnd], 0.0)
+        rec["round"] = rnd
+        out.append(rec)
+    return out
+
+
 def reconstruct() -> tuple[list[dict], list[dict]]:
     """Every plausible round, and every round the bound excludes, with reasons."""
     kept, dropped = [], []

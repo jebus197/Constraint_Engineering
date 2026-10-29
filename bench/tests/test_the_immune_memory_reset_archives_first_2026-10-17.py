@@ -172,17 +172,63 @@ def test_the_round_trip_is_byte_exact(tmp_path, monkeypatch):
         "the restore is not byte-exact, so the reset is not reversible")
 
 
-def test_the_live_store_is_reset_and_its_provenance_is_complete():
-    """The state his ruling asked for, read off the real file."""
+#: The 3 experiments the live store held before his 2026-10-16 reset. They are
+#: the thing the reset REMOVED, so their absence is what makes the reset
+#: verifiable after the store legitimately fills again.
+PRE_RESET_EXPERIMENTS = frozenset({
+    "free_run1_directive_whole", "free_run2_severity_spec",
+    "leg3_final_shakedown",
+})
+
+
+def test_the_reset_still_holds_and_provenance_is_complete():
+    """★ REWRITTEN 2026-10-29. It asserted `_experiment_count == 0`, which is a
+    POINT-IN-TIME state, and it went red the moment a legitimate simulated run
+    repopulated the store.
+
+    THAT ASSERTION CONTRADICTED THE OTHER HALF OF HIS OWN RULING. On 2026-10-16
+    he said both things in one breath: reset it *"for the upcoming live
+    experiments"*, and *"probably the best strategy is to leave the default in
+    this case set to on, so that it can persist between experiments"*. A
+    permanently-empty store cannot satisfy the second. The reset was a ONE-OFF,
+    timed by his follow-up -- *"isn't the best time to do this now, immediately
+    before the transition back to main is made?"* -- and persistence is the
+    ruled default afterwards.
+
+    SO WHAT IS ASSERTED NOW IS WHAT THE RESET ACTUALLY PROTECTS, and it is
+    strictly stronger in the direction that matters. (a) The 3 pre-reset
+    experiments must NOT be back: their return would mean the archived priors
+    had been re-ingested, which is the failure the reset exists to prevent and
+    which `== 0` could not distinguish from a fresh run. (b) Provenance must be
+    complete, because the duplicate-ingestion guard refuses an identifier it has
+    SEEN and therefore cannot refuse an unnamed one -- the second reason C17
+    gave for the reset. A re-ingest of any of the 3 would DOUBLE its counts
+    silently.
+
+    Measured when this was rewritten: the store named exactly
+    `['free_run3_no_spec_20261028T235529Z']` with complete provenance, so the
+    protective property held while the old assertion did not.
+    """
     sys.path.insert(0, str(REPO))
     from bench.dm._memory import ImmuneMemory
-    mem = ImmuneMemory.load(str(REPO / "bench" / "state" / "immune_memory.json"))
-    assert mem._experiment_count == 0, (
-        f"the live immune memory still carries {mem._experiment_count} "
-        f"experiment(s) of priors; his ruling of 2026-10-16 was to reset it "
-        f"for the upcoming live experiments")
+    live = REPO / "bench" / "state" / "immune_memory.json"
+    mem = ImmuneMemory.load(str(live))
+    import json as _json
+    named = set(_json.loads(live.read_text(encoding="utf-8")).get(
+        "experiment_ids", []))
+    returned = {n for n in named
+                if any(n.startswith(p) for p in PRE_RESET_EXPERIMENTS)}
+    assert not returned, (
+        f"the live immune memory names {sorted(returned)}, which his "
+        f"2026-10-16 reset removed. Their return means the archived priors have "
+        f"been re-ingested, and the duplicate guard cannot refuse what it has "
+        f"not seen -- every count of theirs would be DOUBLED")
     assert mem.provenance_complete, (
-        "a fresh store must name every experiment it counts, which is 0 of 0")
+        f"the store counts {mem._experiment_count} experiment(s) and does not "
+        f"name them all. An unnamed experiment cannot be refused on re-ingest, "
+        f"which is the second reason the reset was ordered")
+    assert len(named) == mem._experiment_count, (
+        f"{len(named)} named against a count of {mem._experiment_count}")
 
 
 def test_the_archived_priors_are_still_there():

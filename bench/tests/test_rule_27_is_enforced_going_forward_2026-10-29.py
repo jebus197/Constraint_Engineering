@@ -86,6 +86,67 @@ class TestTheBareFormIsCaughtNow:
         assert not hits, f"an ordinal date was read as data: {hits}"
 
 
+class TestTheGateReadsTheLOGICALPathNotTheTempCopy:
+    """`hooks/pre-commit` lints a STAGED COPY and names the real file with --as.
+
+    FOUND BY FOLLOW, NOT BY READING, 2026-10-29. The pre-commit hook writes the
+    staged content to a temporary path and invokes the linter as
+    `note_vagueness_lint.py --as <real path> <temp copy>`. A date gate reading
+    the path ON DISK asks git about a file with no history, falls back to the
+    TEMP name, and -- the moment that name carries no date -- holds an ARCHIVED
+    note to a rule he confined to new ones. `_LOGICAL_PATH` exists for exactly
+    this and 2 other rules in the module already read it.
+    """
+
+    def test_the_hook_still_passes_as_to_the_linter(self):
+        """If the hook stops using --as, this coupling is gone and the comment
+        above is stale -- which is worth failing on."""
+        hook = REPO / "hooks" / "pre-commit"
+        if not hook.is_file():
+            pytest.skip("no pre-commit hook in this checkout")
+        assert "note_vagueness_lint.py --as" in hook.read_text(
+            encoding="utf-8", errors="replace"), (
+            "the hook no longer lints a staged copy with --as, so the logical "
+            "path indirection may no longer be needed")
+
+    def test_an_archived_note_linted_through_a_temp_copy_is_still_ARCHIVED(
+            self, L, tmp_path):
+        """The defect itself: temp name with no date, logical name old."""
+        archived = REPO / "experimental_notes" / "Morning_Roundup_2026-09-03.md"
+        if not archived.is_file():
+            pytest.skip("that archived note is not in this checkout")
+        copy = tmp_path / "after_staged_blob.md"          # NO date in the name
+        copy.write_text(archived.read_text(encoding="utf-8"), encoding="utf-8")
+        assert L.rule_27_in_full(copy) is True, (
+            "fixture is wrong: an undated temp copy must look NEW on its own")
+        prev = L._LOGICAL_PATH
+        try:
+            L._LOGICAL_PATH = str(archived)
+            kinds = [k for _p, k, _t, _s in L.lint(copy)]
+        finally:
+            L._LOGICAL_PATH = prev
+        assert not any("Rule 27 in full" in k for k in kinds), (
+            "an ARCHIVED note linted through an undated temp copy was held to "
+            "the full rule, because the gate dated the copy instead of the note")
+
+    def test_a_new_note_through_a_temp_copy_is_still_NEW(self, L, tmp_path):
+        """The gate must not become permissive in the other direction."""
+        real = tmp_path / "Brand_New_2026-10-29.md"
+        real.write_text("The run took three separate attempts to finish.\n\n"
+                        "Written under CDSFL note standard v1.8\n",
+                        encoding="utf-8")
+        copy = tmp_path / "after_blob.md"
+        copy.write_text(real.read_text(encoding="utf-8"), encoding="utf-8")
+        prev = L._LOGICAL_PATH
+        try:
+            L._LOGICAL_PATH = str(real)
+            kinds = [k for _p, k, _t, _s in L.lint(copy)]
+        finally:
+            L._LOGICAL_PATH = prev
+        assert any("Rule 27 in full" in k for k in kinds), (
+            "a NEW note linted through a temp copy escaped the full rule")
+
+
 class TestTheGateIsDatedAndFailsOpenForNewFiles:
 
     def test_the_cutoff_is_his_ruling_date(self, L):
