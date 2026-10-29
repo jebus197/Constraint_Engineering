@@ -258,6 +258,24 @@ def park(title: str, detail: str, stamp: str | None = None) -> pathlib.Path:
     # have put each newly parked item inside that archive, buried on arrival,
     # which is the defect task B3 exists to fix reproduced by a different route.
     # Found by tracing what else writes to this file rather than by a failure.
+    #: ★ AN EMPTY BODY IS REFUSED, added 2026-10-29. `detail` is the `--detail`
+    #: argument and it DEFAULTS TO EMPTY, so a PARK that matched no permission
+    #: rule and named no decision wrote a heading, a timestamp and nothing else.
+    #: It happened: the panel-dispatch item parked at 17:53 that day. 2 separate
+    #: harms. It tells the founder NOTHING, which defeats the file's own stated
+    #: purpose that parked is queued rather than dropped; and the regenerator
+    #: cannot round-trip it, so
+    #: `test_the_parked_file_regenerates_without_losing_him_2026-10-17` went red
+    #: with "body lost" -- the body it extracted ran past the blank lines into
+    #: the section divider. `defer()` in the ticket store already refuses a
+    #: deferral with no stated reason, for the same reason, so this is the
+    #: existing rule applied to the other queue rather than a new one.
+    if not detail.strip():
+        raise ValueError(
+            "park() needs a detail saying WHAT the item is and why it can wait. "
+            "An entry with a heading and no body tells him nothing and cannot be "
+            "regenerated. Pass --detail, or let main() seed it from the "
+            "verdict's own reason.")
     entry = f"\n## {title}\n\n*Parked {stamp}.*\n\n{detail.strip()}\n"
     marker = "\n---\n\n# Settled — kept for the record"
     cut = existing.find(marker)
@@ -316,6 +334,14 @@ def main() -> int:
         print("  -> would be appended to " + str(PARKED.relative_to(REPO)))
         return 0
     detail = a.detail
+    #: SEED FROM THE VERDICT'S OWN REASON when no --detail was given, so the
+    #: entry always says why it was parked. `why` is what `classify` returned
+    #: and is the most accurate 1-line account available without the caller.
+    if not detail.strip():
+        detail = (f"**Parked by `scripts/blocker_triage.py`, which classified it "
+                  f"NOT BLOCKING: {why}.** No fuller description was supplied at "
+                  f"triage time, so this body is the classifier's own reason. "
+                  f"Pass `--detail` to say more.")
     if decision:
         detail += (f"\n\n**This is YOUR DECISION, by the entry's own words — "
                    f"\"{decision}\".** Not blocking, and not work to be done "

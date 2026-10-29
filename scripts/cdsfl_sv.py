@@ -2084,7 +2084,18 @@ def _update_memory_exclusions_ledger(
     if _MEMORY_INDEX_NAME not in on_disk:
         return False
 
-    individual = [name for name in on_disk if name != _MEMORY_INDEX_NAME]
+    #: ★ AN INDEX BACKUP IS NOT A MEMORY ENTRY, excluded 2026-10-29. Both the
+    #: trim and `group_feedback_index_entries` write a timestamped snapshot of
+    #: the index before changing it, so counting those as individual memory
+    #: files made the accounting drift upward by 1 per run and
+    #: `test_the_accounting_matches_the_directory` fail on every future save.
+    #: It DID fail, caused by this session's own grouping run, and the FOLLOW
+    #: trace for that edit is what found it. The orphan scan in
+    #: `_audit_memory_index` already excludes the same prefix for the same
+    #: reason, so this is 1 rule applied in both places rather than a new one.
+    individual = [name for name in on_disk
+                  if name != _MEMORY_INDEX_NAME
+                  and not name.startswith(_MEMORY_BACKUP_PREFIX)]
     handoffs = {name for name in individual if name.startswith("handoff_")}
     mirrored = set(individual) - excluded - unclassified - handoffs
 
@@ -2107,7 +2118,7 @@ def _update_memory_exclusions_ledger(
         r"The directory holds \*\*\d+ files\*\*, of which one is `MEMORY\.md` itself\s*\n"
         r"\(the index\), leaving \*\*\d+ individual memory files\*\*\.",
         (
-            f"The directory holds **{len(on_disk)} files**, of which one is `MEMORY.md` itself\n"
+            f"The directory holds **{len(on_disk) - len([n for n in on_disk if n.startswith(_MEMORY_BACKUP_PREFIX)])} files**, of which one is `MEMORY.md` itself\n"
             f"(the index), leaving **{len(individual)} individual memory files**."
         ),
         updated,

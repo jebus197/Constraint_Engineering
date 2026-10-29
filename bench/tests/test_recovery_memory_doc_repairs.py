@@ -290,7 +290,14 @@ class TestMemoryExclusionsAccounting:
             # it returned True while iterdir() raised PermissionError.
             pytest.skip(_why)
         on_disk = sorted(p.name for p in PRIVATE_MEMORY.iterdir() if p.is_file())
-        individual = [n for n in on_disk if n != "MEMORY.md"]
+        #: ★ AN INDEX BACKUP IS NOT A MEMORY ENTRY, excluded 2026-10-29. The trim
+        #: and the Feedback grouper each write a timestamped snapshot of the
+        #: index before changing it, so counting them here made this test fail
+        #: once per save for a reason that is not a missing classification. It
+        #: DID fail, on this session's own grouping run. The same prefix is
+        #: excluded in `_update_memory_exclusions_ledger` and in the index
+        #: audit's orphan scan, so all 3 count the same population.
+        individual = [p.name for p in _private_memory.individual(PRIVATE_MEMORY)]
         assert len(individual) == self._stated("total"), (
             f"{len(individual)} individual memory files on disk, ledger states "
             f"{self._stated('total')}"

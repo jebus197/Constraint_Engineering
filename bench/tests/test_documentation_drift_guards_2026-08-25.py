@@ -234,7 +234,11 @@ def test_memory_ledger_total_matches_the_directory():
     m = re.search(r"\|\s*total\s*\|\s*(\d+)\s*\|", ledger)
     assert m, "MEMORY_EXCLUSIONS.md states no total"
     stated = int(m.group(1))
-    on_disk = len([p for p in _private_memory.files(MEMORY) if p.name != "MEMORY.md"])
+    #: ONE POPULATION RULE, CALLED. See _private_memory.individual: the index
+    #: and its timestamped backups are not memory entries, and 3 places had
+    #: to agree about that. This one was the third and the pre-commit board
+    #: is what found it.
+    on_disk = len(_private_memory.individual(MEMORY))
     assert stated == on_disk, (
         f"memory ledger drift: {on_disk} individual files on disk, ledger says "
         f"{stated}. Seven consecutive manual corrections say this wants deriving "

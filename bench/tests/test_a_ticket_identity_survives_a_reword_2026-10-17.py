@@ -405,16 +405,32 @@ def test_every_non_canonical_record_is_a_redirect():
 
 
 def test_the_closed_count_equals_the_task_lists_own():
-    """A count that disagrees with the list it describes is not evidence."""
+    """A count that disagrees with the list it describes is not evidence.
+
+    ★ IT COUNTS ENTRIES, NOT TICKETS, corrected 2026-10-29. The first version
+    counted CLOSED TICKETS carrying a reference and compared that to closed
+    ENTRIES, which assumes 1 ticket per entry. The `qs` kind broke that
+    assumption BY DESIGN on his instruction of 2026-10-19: `tid_of` digests the
+    kind, so a question and a proposed fix about the same entry take 2 distinct
+    identities, because answering the question does not build the fix. The
+    moment both were settled the counts had to diverge, and they did: closing
+    `qs:3684bacc44bd` with his B46 answer made the register report 171 against
+    170 entries, with `B46` the only reference carrying 2 closed tickets. The
+    product was right and the predicate was wrong -- the 9-of-36 failure class
+    recorded on 2026-10-28 -- and the test's own message already said "closed
+    task entries", which is what it now measures.
+    """
     import task_list_markers as T
     store = TicketStore()
     entries = T.parse_entries(REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md")
-    expect = sum(1 for e in entries
-                 if getattr(e, "state", "") in ("DONE", "WITHDRAWN"))
-    closed = sum(1 for t in store.all() if t.status == "CLOSED" and t.task_ref)
+    expect = {e.ident for e in entries
+              if getattr(e, "state", "") in ("DONE", "WITHDRAWN")}
+    closed = {t.task_ref for t in store.all() if t.status == "CLOSED" and t.task_ref}
     assert closed == expect, (
-        f"the register reports {closed} closed task entries, the list records "
-        f"{expect}")
+        f"the register reports {len(closed)} closed task entries, the list "
+        f"records {len(expect)}. "
+        f"closed in the register and not on the list: {sorted(closed - expect)[:8]}; "
+        f"closed on the list and not in the register: {sorted(expect - closed)[:8]}")
 
 
 def test_a_marker_moving_to_done_closes_an_already_filed_ticket(tmp_path):

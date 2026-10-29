@@ -1,0 +1,77 @@
+# PANEL BRIEF — What a "fix" means outside code, and whether a RESOLVED finding survives there
+
+Round: `stem_generality_b22_2026-10-29`. Entry B22 of `experimental_notes/CDSFL_MASTER_TASK_LIST.md`, ruled 2026-10-17. Free seats only.
+
+## REQUIRED SECTION 1 — The question
+
+**Does the harness's notion of a RESOLVED finding survive in a domain where no executable repair exists, and if not, what verdict is missing from the specification?**
+
+The founder's question, verbatim: *"there is also a separate question of what 'fixes' should mean in a setting that is not code"*, asked alongside whether this is yet a general-purpose STEM calculator.
+
+In code and in mathematics a fix is an edit whose falsifier can be re-run, so admissibility is decidable by execution: `bench/falsifier_verify.py` executes the falsifier and `FindingRegistry.resolve` records the outcome. In an experimental domain a defective claim may be repairable only by **narrowing** it, by **restating its boundary conditions**, or by declaring it **unfalsifiable on the available evidence** — none of which a falsifier can execute against.
+
+So the question under review is NOT whether the harness can review non-code STEM. It demonstrably can: the domain layer is live and domain-adaptive. The question is whether `RESOLVED` means anything when the correct outcome is *"correctly identified, not repairable by edit"*, and the specification has no verdict for that case.
+
+Artefacts under review, by path:
+
+- `bench/cdsfl_registry/domains/` — the domain policy layer
+- `bench/cdsfl_registry/composer.py` — `compose(task_domain=...)`, which calls `load_effective_policy`
+- `bench/tests/fixtures/stem/` — the 5-document ground-truth corpus
+- `bench/ticket_store.py` — `TERMINAL`, `LIVE`, `UNDECIDED`, `INVALID`, and `resolve`'s vocabulary
+- `bench/falsifier_verify.py` — the execution path that decides admissibility today
+
+<!-- figure: domain layer | scripts/stem_generality_brief_figures_2026-10-29.py | 10 domain policy files, reached by 18 DOMAIN_MAP keys -->
+<!-- figure: non-code STEM domains | scripts/stem_generality_brief_figures_2026-10-29.py | 7 are NON-CODE STEM -->
+<!-- figure: corpus size | scripts/stem_generality_brief_figures_2026-10-29.py | 5 independently written documents carrying 29 tagged claims -->
+<!-- figure: model layer | scripts/stem_generality_brief_figures_2026-10-29.py | 6 per-model files -->
+
+**A claim of CC1's was already withdrawn here and is stated so no seat rediscovers it.** Entry B22 originally said the runner makes 0 calls to the policy merge, concluding nothing domain-adaptive reaches a live run. The runner contains 0 *textual* references to `load_effective_policy` — which is what that claim read — but the call sits inside `compose()`, which the runner invokes once per seat per round. The 0-calls claim is true of the symbol and false of the behaviour.
+
+**What the evidence says AGAINST generality, and it is the sharper half:** no live-path module reads the STEM corpus. It is reached by 2 tooling files, 8 tests and 16 measurement scripts, and by 0 live-path modules. There is no role layer and no task layer in the policy merge.
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form your answer by USING the machinery, not by describing it. A seat that returns prose about a fix without having run anything has not answered.
+
+**The instrument that bears directly on this question is `S_k`**, the admissibility measure. `compute_sk` is veto-only on fenced listings, and `NO_SCORE` means, per `docs/GLOSSARY.md:237`, that *"S_k has no opinion"*. The expectation this brief puts to you, and which you should try to refute: **`S_k` returns `NO_SCORE` for a non-code artefact, so the measure that decides admissibility is silent exactly where this question bites.** Run it on a document from `bench/tests/fixtures/stem/` and report what it returns.
+
+**The second instrument is `severity`.** `effective_severity` multiplies the asserted number by `spec_verification_factor`, which reads `falsifier_verdict` and returns 1.0 for CONFIRMED, 0.0 for REFUTED and 0.5 otherwise. The expectation to test: **a finding that is correct but not repairable by edit can never leave 0.5**, because no falsifier will ever resolve it, so it is permanently half-weighted rather than either admitted or rejected. Establish by execution whether that is so.
+
+**Third, `gamma`.** Convergence requires `gamma_critical >= 0.30` AND K consecutive zero-new-critical rounds. The expectation to test: **a finding stuck at an unresolvable state is counted as neither resolved nor novel, so it neither closes the gate nor keeps it open** — and if that is true, state what it does to `gamma` over rounds.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. A fix without a runnable falsifier that has been EXECUTED is a hypothesis, not a fix.
+
+Write your fix INTO the sandbox repository tree at its real path, as a file. A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down. Report the exact command you ran and the output you saw.
+
+If your fix adds a verdict to the vocabulary, it must be reached by a caller and executed by a test — an addition nothing reaches is not additive. If your fix instead shows that an EXISTING member of the vocabulary already covers the case, demonstrate that by execution and say which, because that would refute this brief's framing and is the cheaper answer.
+
+## REQUIRED SECTION 4 — What would refute you
+
+State, before you conclude, what evidence would overturn your own answer.
+
+This brief's own framing is refuted if either holds, and you should test both:
+
+1. **An existing status already covers it.** `UNDECIDED`, `INVALID`, or the routing of a non-decidable claim to HIL or `[VERIFY:current]` in `bench/claim_ledger.py` may already be the right home for *"correctly identified, not repairable by edit"*, in which case nothing is missing and the gap is in the documentation rather than the specification.
+2. **A falsifier CAN be written for a narrowing.** If restating a claim's boundary conditions produces something executable — a check that the narrowed claim holds and that the original did not — then admissibility stays decidable by execution and the premise of the question fails.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return exactly these fields, so replies can be compared without a parser guessing:
+
+- `verdict` — one of: GAP CONFIRMED / NO GAP (an existing status covers it) / GAP ELSEWHERE (state where)
+- `reasoning` — the derivation, naming each instrument you ran
+- `instrument_results` — for each of `S_k`, `severity` and `gamma`: the command, the output, and whether it matched this brief's stated expectation
+- `fix` — the path written in the sandbox tree, and what it changes
+- `falsifier` — the falsifier you wrote, the command you ran, and its executed output
+- `refutation_condition` — what would overturn your answer
+- `strongest_disagreement` — your strongest disagreement with this brief's own framing, stated even if your verdict agrees with it
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new above-threshold findings; a finding is above threshold if missing it could cause a real-world failure, a violation or an unsafe condition. Report how many passes you ran and what the last one added.
+
+There is no compelled convergence in this round. Disagreement with the other seat, and with this brief, is preserved as information rather than smoothed to consensus. Do not attempt to reconcile your answer with anyone else's.
+
+Written under CDSFL note standard v1.8 (17 October 2026).

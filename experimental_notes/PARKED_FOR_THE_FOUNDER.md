@@ -107,6 +107,16 @@ Your options are to delete it, to rename it out of the `CDSFL_*` glob, or to lea
 
 **Needs your decision — IRREVERSIBLE: one of his 3 standing categories: a git ref, money, or the sealed key store.** Not blocking; nothing on the list waits on it.
 
+## Dispatch the free panel on B22: the brief validates at 0 problems but the local resource budget is 2 heavy processes and the full test board is using one
+
+*Parked 2026-10-29T17:53:35+00:00.*
+
+**Nothing waits on your decision here and nothing is wrong with the work.** The brief at `bench/logs/stem_generality_b22_2026-10-29/BRIEF.md`, mirrored to `experimental_notes/evidence/panel_records_2026-10-29/`, passes all 7 shape checks and all 4 of its declared figures re-execute. The free seats are reachable: `scripts/route_auth_probe_2026-10-28.py` reports `claude_cli: logged in` at exit 0.
+
+**What holds it is your machine, not a missing ruling.** `scripts/local_resource_budget_2026-10-11.py` returns a safe ceiling of **2 heavy concurrent processes**, derived from memory rather than cores because a pytest process tree peaks at 364.7 MiB against about 1.9 GiB of live headroom. The full test board is 1 of those 2, and a 2-seat panel would make 3. Dispatching anyway would be the 48-agent overload of 2026-10-11 in miniature, which is the over-commitment his ruling on his machine being a fixed resource exists to prevent.
+
+**It clears itself.** When the board exits, the panel dispatches with `PANEL_ONLY=cc2,fable python3 bench/confer_maths_panel_2026-09-05.py stem_generality_b22_2026-10-29`. No action of yours is required.
+
 ---
 
 # Settled — kept for the record, not for his attention (14)

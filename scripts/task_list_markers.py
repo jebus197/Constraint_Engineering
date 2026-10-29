@@ -364,7 +364,19 @@ def check(path: Path = LIST) -> tuple[int, list[str]]:
     # day the ruling was given: the register deferred 5 live entries the markers
     # called OPEN. Reported here rather than silently reconciled, because a
     # checker that repairs without reporting hides the drift it exists to find.
-    _dis = deferral_disagreements(path)
+    #: ★ ONLY FOR THE CANONICAL LIST, and the first version omitted this guard.
+    #: `deferral_disagreements` reads the LIVE register, whose `task_ref` values
+    #: name entries of the canonical list and nothing else. Run against a
+    #: temporary LIST.md -- which 20 tests do -- every real deferral became
+    #: "the register defers B13, which is not an entry this parser recognises",
+    #: so a path-parameterised check was mixing in a global data source. The
+    #: pre-commit board caught it and refused the commit, which is the gate
+    #: doing exactly its job.
+    _dis = (deferral_disagreements(path)
+            if Path(path).resolve() == LIST.resolve()
+            else {"marker_only": [], "register_only": [],
+                  "register_defers_a_closed_entry": [],
+                  "register_defers_an_unknown_entry": []})
     for _ident in _dis["register_only"]:
         problems.append(
             f"{path.name}: {_ident} is deferred in the register and its marker "

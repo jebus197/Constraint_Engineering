@@ -77,3 +77,20 @@ def files(directory: pathlib.Path = MEMORY_DIR) -> list[pathlib.Path]:
     """Every readable file. Raises if the directory cannot be enumerated, so a
     caller cannot mistake a denial for an empty directory."""
     return [p for p in directory.iterdir() if p.is_file()]
+
+#: ★ THE INDEX AND ITS BACKUPS ARE NOT MEMORY ENTRIES, added 2026-10-29.
+#: `MEMORY.backup-<stamp>.md` is a timestamped snapshot written before the trim
+#: or the Feedback grouper changes the index, so the set grows by 1 per run. 3
+#: separate places counted this population and all 3 had to agree; the first
+#: repair fixed 2 of them and the pre-commit board caught the third, which is
+#: why the rule now lives HERE and is called rather than restated. The ledger
+#: generator `_update_memory_exclusions_ledger` applies the same prefix, and so
+#: does the orphan scan in `_audit_memory_index`.
+INDEX_NAME = "MEMORY.md"
+BACKUP_PREFIX = "MEMORY.backup-"
+
+
+def individual(directory: pathlib.Path = MEMORY_DIR) -> list[pathlib.Path]:
+    """The memory ENTRIES: every file that is neither the index nor a backup of it."""
+    return [p for p in files(directory)
+            if p.name != INDEX_NAME and not p.name.startswith(BACKUP_PREFIX)]
