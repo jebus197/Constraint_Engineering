@@ -2,6 +2,24 @@
 
 Covering roughly 01:30 to 03:10. Written for a reader who was not present: every file path, figure and interval is kept, and each term is glossed where it first appears.
 
+## The list now provably terminates — the one thing you asked to be told about
+
+On 2026-10-28 `bench/tests/test_task_list_burndown_2026-09-11.py` failed with **R = 0.835714** and a 95% interval of **[0.6602, 1.0694]**, and its own message said *"The upper bound has reached 1: the list can no longer be said to terminate, and the founder asked to be told if that happened."*
+
+**It has flipped.** With tonight's 12 closures committed — the branching ratio is computed from git history, so it could not move until the commit landed:
+
+| | 2026-10-28 | after this commit |
+|---|---|---|
+| R, new entries per entry closed | 0.835714 | **0.782051** |
+| 95% interval on R | [0.6602, **1.0694**] | [0.617445, **0.990540**] |
+| Subcritical, i.e. terminates | **False** | **True** |
+
+The underlying proportion is **122 additions against 156 closures, 122 of 278 = 0.438849**, Wilson **[0.381741, 0.497624]** with statsmodels and an independent NumPy closed form agreeing to all printed digits. R < 1 is equivalent to p < 0.5, and the Wilson **upper** bound is 0.497624, below 0.5. One-sided exact binomial against 0.5: **p = 2.379866e-02**.
+
+`bench/tests/test_task_list_burndown_2026-09-11.py` returns **15 passed**, green for the first time.
+
+**The honest limits, which the producer states itself.** R is partly a policy variable, because what becomes an entry is my decision and a lower bar would raise it. The remaining entries may not be like the closed ones. And the figure describes this body of work: opening a genuinely new area could restart discovery fast enough to push R back above 1, and this window says nothing about that.
+
 ## Read this first — and a correction to an earlier version of this note
 
 An earlier version of this note, sent roughly 30 minutes before this one, described the `wr` ("work remaining") ticket kind as a **parked and invisible backlog** that the Stop gate does not hold the session open for. **That was wrong on 2 of its 3 claims.**

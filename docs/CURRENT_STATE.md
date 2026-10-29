@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 29 October 2026 06:14 GMT (2026-10-29T06:14:32+00:00)
+Generated: 29 October 2026 06:27 GMT (2026-10-29T06:27:37+00:00)
 
 ---
 
@@ -18,34 +18,19 @@ Generated: 29 October 2026 06:14 GMT (2026-10-29T06:14:32+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `4ad786ff` C1 deferred with its reason, its real question registered, and the chat-half question closed
-- **Committed:** 2026-10-29 01:40:38 +0000
+- **Last commit (the PARENT of the commit containing this file):** `2ee91196` sv: 12 entries closed, the programme of study closed, and 3 claims of mine withdrawn
+- **Committed:** 2026-10-29 06:14:33 +0000
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M  bench/reference_runner_v3.py`
-- `M  bench/runner_mode_detection.py`
-- `M  bench/tests/test_a_declared_mode_is_reconciled_2026-10-18.py`
-- `M  bench/tests/test_a_ruled_item_is_not_a_decision_2026-10-16.py`
-- `M  bench/tests/test_a_ticket_identity_survives_a_reword_2026-10-17.py`
-- `M  bench/tests/test_sv_rulings.py`
-- `M  bench/tests/test_the_band_verdict_is_gated_on_estimability_2026-10-16.py`
-- `M  bench/tests/test_the_dispatch_record_carries_composer_provenance_2026-10-16.py`
-- `A  bench/tests/test_the_hierarchical_mode_has_an_effect_path_2026-10-29.py`
-- `A  bench/tests/test_the_kept_severity_is_not_an_aggregate_2026-10-29.py`
-- `M  bench/tests/test_the_morning_report_is_generated_2026-10-12.py`
-- `M  bench/tests/test_the_quiet_run_is_seven_where_it_can_be_2026-10-17.py`
-- `A  bench/tests/test_the_ranking_is_deterministic_and_exchangeable_2026-10-29.py`
-- `A  bench/tests/test_the_redactor_does_not_withhold_a_run_setting_2026-10-29.py`
-- `M  bench/tests/test_the_serialisation_measurement_is_scheduled_2026-10-17.py`
-- … and 29 more, not shown (list capped at 15 of 44 — run `git status --porcelain` for the full set)
+- `M experimental_notes/Overnight_Progress_2026-10-29.md`
 
 ---
 
 ## Tests
 
-**13298 tests collected** at 29 October 2026 06:14 GMT, HEAD `4ad786ff` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**13298 tests collected** at 29 October 2026 06:27 GMT, HEAD `2ee91196` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -75,6 +60,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `2ee91196 sv: 12 entries closed, the programme of study closed, and 3 claims of mine withdrawn`
 - `4ad786ff C1 deferred with its reason, its real question registered, and the chat-half question closed`
 - `60ac54dd sv: T1 to T3 done; the panel refused tonight's severity promotion, the joint round found any-of-empty-is-False, and one seat is the critical path in 5 of 5 rounds`
 - `14e1a5c5 T3 closed and marked DONE; 2 questions left for his ruling rather than decided`
@@ -84,4 +70,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `31ba2157 The previous commit message was eaten by the shell: the corrected text, and the lesson generalised`
 - `c6930ab5 T4: the chat source is RETIRED on his ruling, with the condition tested rather than assumed`
 - `481aaa03 T3 entry corrected to record the panel's refusal of --severity-spec, and the task list gains its foot-line`
-- `52ab58a0 T2 DONE: the joint round found what neither blind seat saw, and 3 of my own claims are withdrawn`
