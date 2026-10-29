@@ -397,9 +397,9 @@
         "proposed_fix": "",
         "falsifier_code": "",
         "falsifier_verdict": "",
-        "status": "CONFIRMED",
+        "status": "CONTESTED",
         "open_since_round": 0,
-        "last_status_change_round": 2,
+        "last_status_change_round": 3,
         "verdicts": [
           {
             "model": "Fable-SIM",
@@ -459,9 +459,9 @@
         "latent": false,
         "latent_source": "default_reachable",
         "latent_evidence": "",
-        "status_adjudicator": "tool",
-        "status_evidence": "",
-        "status_mechanism": "",
+        "status_adjudicator": "model",
+        "status_evidence": "Fable-SIM:CHALLENGE@r1; DeepSeek-SIM:CHALLENGE@r1; Gemini-SIM:CHALLENGE@r1; Fable-SIM:CHALLENGE@r2; DeepSeek-SIM:CHALLENGE@r2",
+        "status_mechanism": "unresolved_challenge",
         "status_log": [
           {
             "from": "OPEN",
@@ -471,8 +471,21 @@
             "evidence": "",
             "mechanism": "",
             "refused": null
+          },
+          {
+            "from": "CONFIRMED",
+            "to": "CONTESTED",
+            "round": 3,
+            "adjudicator": "model",
+            "evidence": "Fable-SIM:CHALLENGE@r1; DeepSeek-SIM:CHALLENGE@r1; Gemini-SIM:CHALLENGE@r1; Fable-SIM:CHALLENGE@r2; DeepSeek-SIM:CHALLENGE@r2",
+            "mechanism": "unresolved_challenge",
+            "refused": null
           }
-        ]
+        ],
+        "pre_contest_status": "CONFIRMED",
+        "pre_contest_adjudicator": "tool",
+        "merge_candidate_of": "C0018",
+        "merge_blocked_reason": "model-declared DUPLICATE action; no tool verdict"
       },
       "C0004": {
         "canonical_id": "C0004",
@@ -1872,11 +1885,20 @@
             "from_canonical": "C0017",
             "via": "codiscovery",
             "similarity": 0.6276
+          },
+          {
+            "model": "CC2-SIM",
+            "round": 3,
+            "alias": "CC2-SIM_CC_CONVERGED",
+            "from_canonical": "C0018",
+            "via": "codiscovery",
+            "similarity": 0.7037
           }
         ],
         "source_aliases": [
           "Codex-SIM_CODEXSIM_CONVERGENCE",
-          "Codex-SIM:Codex-SIM_C0014"
+          "Codex-SIM:Codex-SIM_C0014",
+          "CC2-SIM:CC2-SIM_CC_CONVERGED"
         ],
         "severity": 0.5,
         "description": "CONVERGED. Justification: the artefact's two computable claims (PL-01, PL-02) each carry one material defect; both are already CONFIRMED in the registry and re-demonstrated this round by executing the real listings \u2014 \u00f7n vs \u00f7(n\u22121) for the variance, and z\u00b2/n vs z\u00b2/(2n) for the Wilson centre (the latter also breaching the HARD constraint that a proportion interval lie in [0,1], upper bound 1.139 at k=n=10). No novel material defect remains under any of \u00a710's five categories: PL-03 is a non-computable presentation claim the document itself scopes out of execution, and the listings contain no further discrepancy. Evidence: hard assumptions tested = {round_dispersion estimator identity, wilson_interval formula identity}, both found false exactly where the confirmed findings say; every residual observation is below the real-world threshold. This declaration is refutable by any next-round finding of a distinct material defect.",
@@ -1898,6 +1920,18 @@
             "verdict": "CHALLENGE",
             "round": 2,
             "evidence": "CHALLENGE C0014 | Inadmissible as a registry finding, though its substance is correct. (a) Form: a \u00a710 convergence declaration is not a defect and cannot carry sev 0.50 in the OPEN pool; a declaration"
+          },
+          {
+            "model": "DeepSeek-SIM",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Independent mechanical corroboration of the convergence declaration, executed this round against the target by path. (1) Extracted both fenced listings from the target file and exec'd them. (2) round_"
+          },
+          {
+            "model": "Fable-SIM",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Independent re-verification executed this round against the target opened by path (tool run, output pasted in-round). (1) PL-01: round_dispersion([1,2,3,4]) = 1.25 = SS/n exactly, \u2260 SS/(n-1) \u2014 the bia"
           }
         ],
         "verified": false,
@@ -1932,6 +1966,11 @@
             "model": "Codex-SIM",
             "finding_id": "Codex-SIM_C0014",
             "similarity": 0.6276
+          },
+          {
+            "model": "CC2-SIM",
+            "finding_id": "CC2-SIM_CC_CONVERGED",
+            "similarity": 0.7037
           }
         ],
         "status_adjudicator": "tool",
@@ -1972,7 +2011,14 @@
         "status": "CLOSED",
         "open_since_round": 1,
         "last_status_change_round": 2,
-        "verdicts": [],
+        "verdicts": [
+          {
+            "model": "Gemini-SIM",
+            "verdict": "EXTEND",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
         "verified": true,
         "escalated": false,
         "flaw_class": 6,
@@ -1996,10 +2042,10 @@
           "delta": 0.022885703393061424,
           "round": 1
         },
-        "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / n\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)\n    if not 0 <= k <= n:\n        raise ValueError(f\"k must satisfy 0 <= k <= n; got k={k}, n={n}\")\n    p = k / n\n    centre = p + z ** 2 / n\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n",
+        "corrected_copy": "# Estimator Note: Dispersion and Interval Reporting in Run Summaries\n\nA short technical note for review. It describes how a run summary reports the\nspread of a per-round measurement and the interval on a proportion, and it\ncarries the two small listings that implement them.\n\n## 1. Setup\n\nA run produces one scalar per round. A summary reports the dispersion of those\nscalars and, separately, a 95% interval on a proportion derived from counts of\nfindings. Both are quoted to a reader who will not re-derive them.\n\n## 2. The claims under test\n\n**Claim PL-01.** The dispersion helper below reports an **unbiased** estimate of\nthe population variance from a sample of rounds, so the figure it prints may be\nquoted directly as the variance of the underlying process.\n\n```python\ndef round_dispersion(values):\n    \"\"\"Unbiased sample variance of the per-round scalars.\"\"\"\n    n = len(values)\n    if n < 2:\n        return 0.0\n    mean = sum(values) / n\n    return sum((v - mean) ** 2 for v in values) / n\n```\n\n**Claim PL-02.** The interval helper below computes the Wilson score interval at\n95%, and agrees with the standard implementation to within floating-point error,\nso a proportion quoted with it needs no second tool.\n\n```python\ndef wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n <= 0 or not (0 <= k <= n):\n        raise ValueError(\"require n > 0 and 0 <= k <= n\")\n    p = k / n\n    centre = p + z ** 2 / n\n    half = z * ((p * (1 - p) / n + z ** 2 / (4 * n ** 2)) ** 0.5)\n    denominator = 1 + z ** 2 / n\n    return ((centre - half) / denominator, (centre + half) / denominator)\n```\n\n**Claim PL-03.** Reporting dispersion alongside an interval is the right\npresentation for this audience, because a reader who sees both is less likely to\nover-read a single round's movement than one who sees only a central value.\n\n## 3. What a reviewer is asked to do\n\nEach claim is either computationally reducible or it is not, and the two kinds\nshould not be answered the same way. PL-01 and PL-02 are statements about the\nlistings beneath them and can be settled by executing those listings against a\nreference. PL-03 is a statement about presentation and a reader's likely\ninference; it carries no listing and no reference implementation, so it is not\nsettled by execution.\n",
         "corrected_copy_anchor": {
-          "original": "def wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)\n    p = k / n",
-          "corrected": "def wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)\n    if not 0 <= k <= n:\n        raise ValueError(f\"k must satisfy 0 <= k <= n; got k={k}, n={n}\")\n    p = k / n"
+          "original": "def wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n == 0:\n        return (0.0, 0.0)",
+          "corrected": "def wilson_interval(k, n, z=1.959963984540054):\n    \"\"\"Wilson score interval for k successes in n trials.\"\"\"\n    if n <= 0 or not (0 <= k <= n):\n        raise ValueError(\"require n > 0 and 0 <= k <= n\")"
         },
         "corrected_copy_source": "Gemini-SIM",
         "corrected_copy_target_sha": "890f9ae6795d55ad",
@@ -2261,13 +2307,31 @@
         "falsifier_verdict": "CONFIRMED",
         "status": "CONFIRMED",
         "open_since_round": 2,
-        "last_status_change_round": 2,
+        "last_status_change_round": 3,
         "verdicts": [
           {
             "model": "Codex-SIM",
             "verdict": "MERGE",
             "round": 2,
             "evidence": "merged_into=C0003"
+          },
+          {
+            "model": "DeepSeek-SIM",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "WITHDRAWN by originator. C0017 is a parse artifact: its recorded body is the opening lines of the C0014 convergence declaration (it literally begins \"FINDING_ID: C0014\"), re-filed as if it were a dist"
+          },
+          {
+            "model": "Fable-SIM",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "Withdrawal by originator, as invited by the severity-proof mandate. New evidence not already adjudicated: (1) C0017's registry body begins \"FINDING_ID: C0014\" and reproduces C0014's convergence-declar"
+          },
+          {
+            "model": "Gemini-SIM",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "WITHDRAWN by its originator. C0017 is a convergence declaration that was mis-filed\nas a severity-0.50 finding (its own body opens \"FINDING_ID: C0014 ... FIND /\nJustification\"). It asserts no defect in"
           }
         ],
         "verified": true,
@@ -2302,9 +2366,18 @@
             "evidence": "merge requires a tool verdict; 1 model(s) proposed it, which is not sufficient authority",
             "mechanism": "model_merge_vote",
             "reason": "MERGED is TOOL-ONLY; its evidence requirement is 'adjudicate_by_repair verdict SAME in BOTH directions' and a model attestation is not that"
+          },
+          {
+            "requested": "MERGED",
+            "substituted": "WITHHELD",
+            "round": 3,
+            "adjudicator": "model",
+            "evidence": "merge requires a tool verdict; 1 model(s) proposed it, which is not sufficient authority",
+            "mechanism": "model_merge_vote",
+            "reason": "MERGED is TOOL-ONLY; its evidence requirement is 'adjudicate_by_repair verdict SAME in BOTH directions' and a model attestation is not that"
           }
         ],
-        "attestation_count": 1,
+        "attestation_count": 2,
         "merge_candidate_of": "C0003",
         "merge_blocked_reason": "merge requires a tool verdict; 1 model(s) proposed it, which is not sufficient authority",
         "status_adjudicator": "tool",
@@ -2328,6 +2401,24 @@
             "evidence": "",
             "mechanism": "",
             "refused": null
+          },
+          {
+            "from": "CONFIRMED",
+            "to": "WITHHELD",
+            "round": 3,
+            "adjudicator": "runner",
+            "evidence": "merge requires a tool verdict; 1 model(s) proposed it, which is not sufficient authority",
+            "mechanism": "model_merge_vote",
+            "refused": "MERGED"
+          },
+          {
+            "from": "WITHHELD",
+            "to": "CONFIRMED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
           }
         ],
         "fix_efficacy_attempted": true,
@@ -2343,9 +2434,75 @@
         "latent": false,
         "latent_source": "default_reachable",
         "latent_evidence": ""
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "CC2-SIM",
+        "occasions": [
+          {
+            "model": "CC2-SIM",
+            "round": 3,
+            "alias": "CC2-SIM_CC_CONVERGED",
+            "from_canonical": "C0018",
+            "via": "register"
+          }
+        ],
+        "source_aliases": [
+          "CC2-SIM_CC_CONVERGED"
+        ],
+        "severity": 0.5,
+        "description": "CONVERGED.\n\nJustification \u2014 what was assessed and why no material defect remains under the five \u00a710 categories:\nThe artefact makes three claims. PL-01 and PL-02 are computationally reducible and were each executed against a reference; each carries exactly one material (HARD, mathematics) defect, both already CONFIRMED in the registry \u2014 PL-01's biased-for-unbiased divisor (n not n-1), and PL-02's miscentred Wilson numerator (z\u00b2/n not z\u00b2/2n, whose consequence is an upper bound > 1). No execution path reveals a second independent defect in either listing: in particular PL-02's `half` term and final-denominator division are correct, so the interval defect is one-term, not two. PL-03 is a non-computable presentation claim; the target itself states (\u00a73) it \"is not settled by execution\", and it asserts nothing false \u2014 it is not a material defect and must not be inflated into one. Edge-case behaviours (n<2 \u2192 0.0; n==0 \u2192 (0,0); unvalidated k>n / n<0) are already CONFIRMED (C0010, C0013, C0015) and are below the real-world threshold for this proof-of-concept.\n\nEvidence \u2014 hard assumptions tested:\n  (1) \"PL-01 is unbiased\" \u2014 tested by execution, FALSE (returns biased). Covered.\n  (2) \"PL-02 is Wilson to float error\" \u2014 tested by execution, FALSE (14-point error, bound>1). Covered.\n  (3) \"PL-02 has only the centre defect\" \u2014 tested the half term independently, TRUE (half is correct). No new finding.\n  (4) \"PL-03 is a defect\" \u2014 tested against \u00a73 of the target, REJECTED (it is a scoped presentation claim, not a falsifiable computable assertion).\n\nResidual findings and their consequence class: all remaining registry entries are duplicates or edge-cases below threshold; no OPEN CRIT/HIGH (registry confirms Open CRIT/HIGH = 0).\n\n\u00a76 termination criteria met: all HARD assumptions tested and sound-or-already-recorded; no residual finding meets the real-world threshold that is not already CONFIRMED; the prior round (Round 2) yielded 0 novel findings, this round yields 0 novel. \u03b3=0.750 (str",
+        "proposed_fix": "",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "severity_proof_history": [
+          {
+            "from": "ABSENT",
+            "to": "SKIP",
+            "round": 3
+          }
+        ],
+        "severity_proof": {
+          "status": "SKIP",
+          "model_rk": null,
+          "recomputed_rk": null,
+          "delta": null,
+          "round": 3
+        },
+        "status_adjudicator": "tool",
+        "status_evidence": "",
+        "status_mechanism": "",
+        "status_log": [
+          {
+            "from": "OPEN",
+            "to": "CONFIRMED",
+            "round": 3,
+            "adjudicator": "tool",
+            "evidence": "",
+            "mechanism": "",
+            "refused": null
+          }
+        ],
+        "finding_category": "",
+        "latent": false,
+        "latent_source": "default_reachable",
+        "latent_evidence": ""
       }
     },
-    "next_id": 18,
+    "next_id": 19,
     "alias_map": {
       "CC2-SIM:CC2-SIM_F001": "C0001",
       "CC2-SIM:CC2-SIM_F002": "C0002",
@@ -2363,48 +2520,57 @@
       "Codex-SIM:Codex-SIM_CODEXSIM_CONVERGENCE": "C0014",
       "Gemini-SIM:Gemini-SIM_F004": "C0015",
       "Gemini-SIM:Gemini-SIM_F005": "C0016",
-      "Codex-SIM:Codex-SIM_C0014": "C0017"
+      "Codex-SIM:Codex-SIM_C0014": "C0017",
+      "CC2-SIM:CC2-SIM_CC_CONVERGED": "C0018"
     }
   },
   "novelty_counts": [
     2,
     1,
+    0,
     0
   ],
   "raw_counts": [
     13,
     3,
+    1,
     1
   ],
   "novelty_counts_per_model": {
     "Codex-SIM": [
       1,
       1,
-      1
+      1,
+      0
     ],
     "DeepSeek-SIM": [
       2,
+      0,
       0,
       0
     ],
     "Fable-SIM": [
       3,
       0,
+      0,
       0
     ],
     "CC2-SIM": [
       2,
       0,
-      0
+      0,
+      1
     ],
     "ChatGPT-SIM": [
       2,
+      0,
       0,
       0
     ],
     "Gemini-SIM": [
       3,
       2,
+      0,
       0
     ]
   },
@@ -2412,50 +2578,67 @@
     "Codex-SIM": [
       1,
       1,
-      1
+      1,
+      0
     ],
     "DeepSeek-SIM": [
       2,
+      0,
       0,
       0
     ],
     "Fable-SIM": [
       3,
       0,
+      0,
       0
     ],
     "CC2-SIM": [
       2,
       0,
-      0
+      0,
+      1
     ],
     "ChatGPT-SIM": [
       2,
+      0,
       0,
       0
     ],
     "Gemini-SIM": [
       3,
       2,
+      0,
       0
     ]
   },
   "rho_history": [
     0.153846,
     0.333333,
+    0.0,
     0.0
   ],
   "gamma_history": [
     0.0,
     0.0,
-    0.749853
+    0.749853,
+    0.766548
   ],
   "gamma_critical_history": [
     0.0,
     0.0,
-    0.82359
+    0.82359,
+    0.866394
   ],
   "round_withdrawals": [
+    {
+      "recorded": 0,
+      "seen": 0,
+      "skipped_terminal": 0,
+      "skipped_unknown": 0,
+      "by_model": {},
+      "ids": []
+    },
     {
       "recorded": 0,
       "seen": 0,
@@ -2523,14 +2706,31 @@
       "by_model": {},
       "ids": [],
       "cleared_ids": []
+    },
+    {
+      "seen": 0,
+      "executed": 0,
+      "cleared": 0,
+      "withdrawn": 0,
+      "critical_refuted_recorded": 0,
+      "no_verdict": 0,
+      "skipped_terminal": 0,
+      "skipped_unknown": 0,
+      "skipped_not_unresolved": 0,
+      "by_model": {},
+      "ids": [],
+      "cleared_ids": []
     }
   ],
   "gate_history": [
     false,
     false,
+    false,
     false
   ],
-  "open_ch_history": [],
+  "open_ch_history": [
+    0
+  ],
   "stall_history": [
     {
       "open_ch": 0,
@@ -2543,14 +2743,19 @@
     {
       "open_ch": 0,
       "contested": 0
+    },
+    {
+      "open_ch": 0,
+      "contested": 1
     }
   ],
   "novel_critical_history": [
     2,
     1,
+    0,
     0
   ],
-  "cumulative_context_chars": 237658,
+  "cumulative_context_chars": 281829,
   "consecutive_churn_rounds": 0,
   "itc_model_state": {
     "DeepSeek-SIM": {
@@ -2559,6 +2764,7 @@
       "retry_count": 0,
       "escalation_level": 0,
       "parse_yield_history": [
+        1.0,
         1.0
       ],
       "last_adaptive_threshold": 0.5
@@ -2569,7 +2775,8 @@
       "retry_count": 0,
       "escalation_level": 0,
       "parse_yield_history": [
-        1.0
+        1.0,
+        0.6666666666666666
       ],
       "last_adaptive_threshold": 0.5
     },
@@ -2588,8 +2795,8 @@
           "findings": 0
         }
       ],
-      "adaptation": "strip_context",
-      "retry_count": 1,
+      "adaptation": null,
+      "retry_count": 0,
       "escalation_level": 0,
       "parse_yield_history": [
         1.0
@@ -2603,9 +2810,15 @@
           "classification": "TRANSIENT_FAILURE",
           "suppressed": null,
           "findings": 0
+        },
+        {
+          "round": 3,
+          "classification": "CAPABILITY_MISMATCH",
+          "suppressed": null,
+          "findings": 0
         }
       ],
-      "adaptation": "retry",
+      "adaptation": "strip_context",
       "retry_count": 1,
       "escalation_level": 0,
       "parse_yield_history": [
@@ -2622,13 +2835,26 @@
           "findings": 0
         }
       ],
-      "adaptation": "retry",
-      "retry_count": 1,
+      "adaptation": null,
+      "retry_count": 0,
       "escalation_level": 0,
       "parse_yield_history": [
         1.0
       ],
       "last_adaptive_threshold": 0.5
+    },
+    "Codex-SIM": {
+      "history": [
+        {
+          "round": 3,
+          "classification": "TRANSIENT_FAILURE",
+          "suppressed": null,
+          "findings": 0
+        }
+      ],
+      "adaptation": "retry",
+      "retry_count": 1,
+      "escalation_level": 0
     }
   },
   "itc_hil_flags": [],
