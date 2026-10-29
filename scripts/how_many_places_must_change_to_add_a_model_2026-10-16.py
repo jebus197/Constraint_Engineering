@@ -151,7 +151,22 @@ def method_a(models: list[str]) -> dict:
 def method_b(models: list[str]) -> dict:
     """Executed: put a non-existent model through the real resolution chain."""
     sys.path.insert(0, str(REPO / "bench"))
-    import routing as _rt  # the LIVE lookup path, NOT a re-implementation
+    #: ★ THE SAME DUAL-PATH IMPORT THE LIVE CALLERS USE, corrected 2026-10-29.
+    #: `routing` and `bench.routing` are 2 DISTINCT module objects with SEPARATE
+    #: `_LOOKUP_MISSES` lists -- verified by identity: `top is pkg` is False and
+    #: `top._LOOKUP_MISSES is pkg._LOOKUP_MISSES` is False. All 3 live callers
+    #: (`reference_runner_v3:179`, `composer:70`, `runner_core:68`) try
+    #: `from bench import routing` FIRST, so in a normal process they bind
+    #: `bench.routing` and the reader at `reference_runner_v3:21359` reads what
+    #: they wrote. This script bound the TOP-LEVEL module, so it read an EMPTY
+    #: ledger and reported SILENT for 2 steps that the live call site had just
+    #: been taught to announce. The instrument, not the mechanism, was wrong --
+    #: and it is the second time this script has measured a re-implementation
+    #: instead of the live path.
+    try:                                                           # noqa: PLC0415
+        from bench import routing as _rt
+    except ImportError:                                            # noqa: PLC0415
+        import routing as _rt
     import reference_runner_v3 as runner  # noqa: PLC0415
     from cdsfl_registry import composer as C  # noqa: PLC0415
     import runner_core as rc  # noqa: PLC0415
@@ -213,6 +228,55 @@ def method_b(models: list[str]) -> dict:
             steps.append({"step": name, "outcome": "PASS",
                           "detail": f"{NEW_MODEL!r} -> {got!r}"})
 
+
+    def record_live(name, call, ledger_names):
+        """Classify a step by calling the LIVE function and reading the ledger.
+
+        ★ WHY THIS EXISTS, 2026-10-29. The 2 steps below were measured by a BARE
+        DICT GET re-implemented in this script -- `rc.MODEL_SPECS.get(m)` and
+        `rc.INITIAL_FINGERPRINTS.get(m)` -- so the instrument measured the
+        TABLE's shape and not what the live code does with it. That is the exact
+        defect this script's own docstring says it fixed, and the fix had reached
+        only the 4 steps that already had a resolver. When those 2 call sites
+        were routed through `routing.resolve_or_alarm` on 2026-10-29, this script
+        went on reporting them SILENT, because it was not looking at them.
+
+        So this calls the live function and asks the LEDGER whether the miss was
+        announced, which is the actual question. `ledger_names` is what the live
+        call site passes as `what`, so a row is matched on the live wording
+        rather than on a second description of it.
+        """
+        _rt.reset_lookup_misses()
+        try:
+            call(NEW_MODEL)
+        except Exception as exc:  # noqa: BLE001
+            steps.append({"step": name, "outcome": "RAISE",
+                          "detail": f"{type(exc).__name__}: {str(exc)[:110]}"})
+            return
+        rows = [r for r in _rt.lookup_misses()
+                if any(n in str(r.get("what", "")) for n in ledger_names)
+                and str(r.get("key")) == NEW_MODEL]
+        if rows:
+            steps.append({
+                "step": name, "outcome": "ANNOUNCED DEFAULT",
+                "detail": f"{NEW_MODEL!r} defaulted and the LIVE call site "
+                          f"recorded it: what={rows[0]['what']!r} "
+                          f"identity={rows[0]['identity']}"})
+        else:
+            steps.append({
+                "step": name, "outcome": "SILENT DEFAULT",
+                "detail": f"{NEW_MODEL!r} defaulted and the live call site "
+                          f"recorded nothing"})
+
+    def _one_model_config(label):
+        """The smallest ExperimentConfig that reaches `build_model_specs`."""
+        from experiment_11_orchestrator import ModelConfig
+        return rc.ExperimentConfig(
+            models=[ModelConfig(label=label, model_id=label, api="none",
+                                role="reviewer", system_prompt_path="")],
+            logs_dir=str(REPO / "bench" / "logs" / "_producer_probe"),
+            budget_limit=0.0, cdsfl_system_prompt="")
+
     record("roster description (describe_model)",
            lambda m: runner.describe_model(m),
            silent_default_when=lambda g: NEW_MODEL in str(g) and "(" not in str(g))
@@ -228,12 +292,16 @@ def method_b(models: list[str]) -> dict:
                                     "composer directive-set mapping", default=m),
                "coherence budget", default=C.DEFAULT_COHERENCE_BUDGET),
            silent_default_when=lambda g: g == C.DEFAULT_COHERENCE_BUDGET)
-    record("model spec (runner_core.MODEL_SPECS)",
-           lambda m: rc.MODEL_SPECS.get(m),
-           silent_default_when=lambda g: g is None)
-    record("initial fingerprint (runner_core.INITIAL_FINGERPRINTS)",
-           lambda m: rc.INITIAL_FINGERPRINTS.get(m),
-           silent_default_when=lambda g: g is None)
+    #: THESE 2 NOW CALL THE LIVE FUNCTION, `build_model_specs`, which is where
+    #: both lookups actually happen -- 16 production call sites. The previous
+    #: bare dict gets could not see the 2026-10-29 change that routed them
+    #: through the recording resolver.
+    record_live("model spec (runner_core.MODEL_SPECS)",
+                lambda m: rc.build_model_specs(_one_model_config(m)),
+                ["model spec"])
+    record_live("initial fingerprint (runner_core.INITIAL_FINGERPRINTS)",
+                lambda m: rc.build_model_specs(_one_model_config(m)),
+                ["initial capability fingerprint"])
     # ★ CORRECTED 2026-10-16 ON CC2'S FINDING. This step used to be classified
     # as a loud RAISE, because `compose` does raise in isolation. In the LIVE
     # chain it is CAUGHT: `_dispatch_single_model_inner` wraps the call and its
@@ -283,11 +351,20 @@ def method_b(models: list[str]) -> dict:
     # next line gates on `estimated_tokens > model_L`. A missing entry therefore
     # sets L to INFINITY and the gate can NEVER fire -- a capability gate that
     # silently becomes a no-op. `_spec_key`'s own docstring names this hazard.
-    def _context_budget(m):
-        return rc.MODEL_SPECS.get(rc._spec_key(m), {}).get("L", float("inf"))
-    record("context-budget ceiling L (runner_core.MODEL_SPECS)",
-           _context_budget,
-           silent_default_when=lambda g: g == float("inf"))
+    #: ★ NOW CALLS THE LIVE FUNCTION, 2026-10-29. This was a bare dict get
+    #: re-implemented here, because the live lookup sat inline inside
+    #: `dispatch_to_model` -- 48 production call sites, and not callable by an
+    #: instrument without dispatching. It was extracted as
+    #: `runner_core.model_context_ceiling`, so 1 function now has 2 callers and
+    #: the second form is gone rather than kept in step by hand.
+    record_live("context-budget ceiling L (runner_core.MODEL_SPECS)",
+                #: `.models[0]` because this takes a ModelConfig while
+                #: `build_model_specs` above takes the whole ExperimentConfig.
+                #: Passing the wrong one made the step read RAISE, which looked
+                #: like a finding and was my error -- caught because a RAISE
+                #: where a default was expected is itself suspicious.
+                lambda m: rc.model_context_ceiling(_one_model_config(m).models[0]),
+                ["context-budget ceiling"])
 
     # A per-model registry file is a FILE, not a dict entry, so it is checked
     # as one. Its absence is what makes `compose` raise above.

@@ -54,6 +54,21 @@ from dynamic_management import (
     CapabilityFingerprint,
     Finding,
 )
+#: ★ C18's SECOND CLAUSE, APPLIED TO THE TABLES IT MISSED, 2026-10-29.
+#: `routing.resolve_or_alarm` RECORDS a capability lookup answered by a default
+#: and still returns the default, so behaviour is unchanged and only the silence
+#: is removed -- C18's own deliberate trade, on the ground that raising would
+#: turn a degradation into a dead run. It reached 4 live sites
+#: (`reference_runner_v3:12369`, `composer:765`, `composer:1833`,
+#: `composer:1899`) and NOT the 3 in this file, which is why `Fable` runs on a
+#: hardcoded fingerprint with nothing recording it. The dual-path import is the
+#: shape `reference_runner_v3:179` already uses; `routing` imports only the
+#: standard library, so there is no cycle.
+try:                                                               # pragma: no cover
+    from bench import routing as _cap_identity
+except ImportError:                                                # pragma: no cover
+    import routing as _cap_identity
+
 from field_envelope import (
     FIELD_BEGIN_PREFIX,
     fields_by_owner,
@@ -271,6 +286,33 @@ def _compose_finding_id(finding_id: str, model_id: str) -> str:
     return fid if fid.startswith(f"{model_id}_") else f"{model_id}_{fid}"
 
 
+def model_context_ceiling(model_config) -> float:
+    """The STATIC context ceiling `L` for a model, announcing an absent spec.
+
+    ★ EXTRACTED AS A NAMED FUNCTION 2026-10-29, and the reason is the measuring
+    script rather than this one. The lookup lived inline inside
+    `dispatch_to_model`, which has 48 production call sites and cannot be
+    invoked by an instrument without dispatching. So
+    `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py`
+    RE-IMPLEMENTED it as a bare dict get, and went on reporting this step SILENT
+    after the live site had been taught to announce. 1 function with 2 callers
+    removes the second form rather than keeping them in step by hand, which is
+    `execute-do-not-grep` applied to the thing being measured.
+
+    THE WORST OF THE SILENT DEFAULTS, which is why it is routed through the
+    recording resolver: an unregistered model took `L -> inf`, an INFINITE
+    ceiling, so no truncation bound applied and a prompt could be assembled with
+    nothing stopping it. A registered model takes 168000.0. Behaviour is
+    UNCHANGED -- the default is still returned, as C18 deliberately chose, and
+    only the silence is removed.
+    """
+    spec = _cap_identity.resolve_or_alarm(
+        MODEL_SPECS, _spec_key(model_config.label),
+        "context-budget ceiling (model spec)", default={},
+    )
+    return spec.get("L", float("inf"))
+
+
 def get_effective_context_budget(
     model_label: str,
     fingerprints: Optional[Dict[str, Dict]] = None,
@@ -339,10 +381,21 @@ def build_model_specs(exp_config: ExperimentConfig) -> List[ModelSpec]:
     for mc in exp_config.models:
         if mc.role == "collator":
             continue
-        fp = INITIAL_FINGERPRINTS.get(
-            mc.label, CapabilityFingerprint(0.2, 0.7, 0.7, 0.5)
+        #: MEASURED 2026-10-29: `Fable` has a MODEL_SPECS entry and no
+        #: INITIAL_FINGERPRINTS entry, so this substituted silently -- and the
+        #: substitute is worse than EVERY measured seat on all 3 capability
+        #: axes (v_bar 0.7 against a measured floor of 0.75, A 0.7 against
+        #: 0.75, C 0.5 against 0.65). Its sibling table records a borrowed
+        #: value: MODEL_SPECS['Fable'] carries
+        #: `_provenance: inherited from CC2 2026-08-30; not measured`. The
+        #: discipline reached 1 of the 2 tables; this is the other.
+        fp = _cap_identity.resolve_or_alarm(
+            INITIAL_FINGERPRINTS, mc.label,
+            "initial capability fingerprint",
+            default=CapabilityFingerprint(0.2, 0.7, 0.7, 0.5),
         )
-        params = MODEL_SPECS.get(_spec_key(mc.label), {})
+        params = _cap_identity.resolve_or_alarm(
+            MODEL_SPECS, _spec_key(mc.label), "model spec", default={})
         # Underscore-prefixed keys are METADATA, not ModelSpec fields. Added
         # 2026-08-31 after `_provenance` on the Fable entry -- a note recording
         # that its values are inherited rather than measured -- was splatted
@@ -1885,7 +1938,7 @@ def dispatch_to_model(
     # Pre-dispatch context validation — hard gate against model L budget
     estimated_chars = len(prompt) + len(cdsfl_text)
     estimated_tokens = estimated_chars / 3.5  # conservative chars-per-token
-    model_L = MODEL_SPECS.get(_spec_key(model_config.label), {}).get("L", float("inf"))
+    model_L = model_context_ceiling(model_config)
     if estimated_tokens > model_L:
         raise ValueError(
             f"{model_config.label}: estimated {estimated_tokens:,.0f} tokens "
