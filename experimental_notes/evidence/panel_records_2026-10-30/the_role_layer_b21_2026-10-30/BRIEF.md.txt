@@ -1,0 +1,82 @@
+# PANEL BRIEF — Is a model's ROLE 1 dimension or 2, and may policy layers overlap at all?
+
+Round: `the_role_layer_b21_2026-10-30`. Entry B21 of `experimental_notes/CDSFL_MASTER_TASK_LIST.md`, ruled 2026-10-17. Free seats only.
+
+## REQUIRED SECTION 1 — The question
+
+**Are the harness's STRUCTURAL roles and the founder's FUNCTIONAL roles 1 dimension to be reconciled, or 2 orthogonal dimensions needing 2 layers — and where, if anywhere, can a role layer change an outcome?**
+
+The founder's design intent, verbatim: *"role management, such as 'worker'... 'classifier'... and 'orchestrator'"*, individually selectable, alongside model selection. His argument for it: the project claims substrate, model and vendor agnosticism, and *"We clearly cannot make such claims, and then say 'Oh, btw, that isn't really true. Here is a list of the only models you can use.'"*
+
+**A ROLE DIMENSION ALREADY EXISTS AND IT IS NOT HIS.** `bench/experiment_11_orchestrator.py:59` declares `Role = Literal["collator", "player_manager", "participant"]`; `:77` makes `role: Role` a required field with no default; `:96` provides `get_by_role`. The runner reads it live at `bench/reference_runner_v3.py:13189` and `:13269` as `mc.role != "collator"` — verified 2026-10-30; entry B21 cites `:13171` and `:13251`, which have drifted 18 lines each, the same drift as its `ImmuneMemory.load` citation. So a caller for a role layer already exists, which the additive standard requires and which would otherwise have to be invented.
+
+**BUT THE 2 VOCABULARIES ARE DIFFERENT CONCEPTS.** The existing 3 are STRUCTURAL — who collates, who manages the roster, who participates — and describe a seat's place in the topology. His 3 are FUNCTIONAL, describing what a model DOES. They overlap partially rather than cleanly: `player_manager` is close to his *orchestrator* and `participant` to his *worker*, while **`classifier` has no counterpart in the enum and `collator` has none in his list**.
+
+Artefacts under review, by path:
+
+- `bench/cdsfl_registry/registry.py` — `load_effective_policy`, `_deep_merge`, `_check_monotonicity`, and the constants `HARD_CONSTRAINTS`, `HARD_THRESHOLDS`, `HARD_STRINGS`
+- `bench/experiment_11_orchestrator.py` — `Role`, `ModelConfig.role`, `get_by_role`
+- `bench/reference_runner_v3.py:13189` and `:13269` — the 2 live reads of `mc.role`
+- `bench/cdsfl_registry/domains/` and `models/` — layers 2 and 4, the only 2 that exist as directories
+
+<!-- figure: role vocabulary | scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py | 63 of 67 quoted role values across 24 files are STRUCTURAL; collator 37, participant 18, player_manager 8 against orchestrator 3, classifier 1, worker 0 -->
+<!-- figure: layer order | scripts/what_does_layer_order_actually_decide_2026-10-30.py | 0 of 60 (domain, model) pairs differ under order reversal; 0 of 60 share ANY leaf key -->
+<!-- figure: protected set | scripts/what_does_layer_order_actually_decide_2026-10-30.py | 17 HARD dotpaths, 0 of which move under order reversal -->
+<!-- figure: absence behaviour | scripts/what_does_layer_order_actually_decide_2026-10-30.py | 3 distinct precedents: model RAISES, task is SILENT, unknown domain WARNS -->
+<!-- figure: missing directories | scripts/what_does_layer_order_actually_decide_2026-10-30.py | roles/ absent and tasks/ absent, so layer 3 of the 4 has no directory either -->
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form your answer by RUNNING the producers and the registry functions named below, not by describing them. A seat that returns prose without having run anything has not answered.
+
+**QUESTION 2 AS THE ENTRY POSED IT IS VACUOUS ON THE CURRENT CONFIGURATION, AND THAT IS THIS BRIEF'S MOST FALSIFIABLE CLAIM.** The entry asked where a role layer should sit in the precedence, introducing it with the words *"monotonicity protects the HARD keys either way but the SOFT keys go to whichever layer merges last"*. Measured 2026-10-30: the first half holds and **the second half asserts something that does not exist**. Merging all 60 (domain, model) pairs canonically and reversed moves **0 of 60 pairs**, Wilson 95% [0.000000, 0.060172], one-sided exact upper bound 0.048703 with scipy and mpmath agreeing — because the domain files write `constraints.*`, `convergence.*` and `verification.*` while the model files write `model.*` and `protocol.*`, and **0 of 60 pairs share even one leaf key**.
+
+Run `scripts/what_does_layer_order_actually_decide_2026-10-30.py` and try to refute that. If you can construct a pair of EXISTING layer files whose merge is order-sensitive, this brief's framing of question 2 fails and the precedence question is live after all.
+
+**SO THE LIVE QUESTION IS THE ONE UNDERNEATH: may layers write into each other's namespace at all?** Nothing in `_deep_merge` forbids it. The disjointness is a convention that no mechanism enforces. Establish by execution what happens when 2 layers DO set the same leaf, and say whether that should be permitted, refused or merely reported.
+
+**QUESTION 3 HAS 3 PRECEDENTS, NOT 2.** Established by calling `load_effective_policy`: a missing MODEL file raises `FileNotFoundError`; a missing TASK file is skipped in silence; an UNKNOWN domain emits `warnings.warn` and continues. A known domain whose file is missing is also silent, so the domain layer alone holds 2 of the 3 behaviours. Run it and confirm, then say which precedent a role layer should follow and why.
+
+**MONOTONICITY IS ORDER-INDEPENDENT BY CONSTRUCTION, NOT BY LUCK.** `_check_monotonicity` receives the merged policy and a layer NAME — never the previous policy — so it compares against module constants and cannot be sensitive to order. Verify that by reading its signature and then by calling it with an empty dict, which must raise. If a role layer could weaken a HARD constraint from any position, question 2 becomes a safety question rather than a preference, and that is worth establishing either way.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. A fix without a runnable falsifier that has been EXECUTED is a hypothesis.
+
+Write your fix INTO the sandbox repository tree at its real path, as a file. A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down. Report the exact command you ran and the output you saw.
+
+**WHAT IS DELIBERATELY NOT BUILT, AND WHY YOU SHOULD NOT BUILD IT EITHER WITHOUT ANSWERING QUESTION 1 FIRST.** The role layer's CONTENT. Deciding what a `classifier` role constrains is policy, not plumbing, and inventing it would be the flattering-design failure this project's record names. The layer itself is a handful of lines once questions 1, 2 and 3 are answered, since it is a TOML load, a `_deep_merge` and a `_check_monotonicity` exactly like the 4 beside it.
+
+If your fix reconciles the 2 vocabularies into 1 dimension, note that this touches **63 quoted values across 24 files** and say how you would do it without a flag day. If your fix adds a second orthogonal layer, it touches none of them — state what that costs in comprehensibility instead, because a 5-layer merge carrying 2 role dimensions is harder to reason about than the present 4-layer merge.
+
+## REQUIRED SECTION 4 — What would refute you
+
+State, before you conclude, what evidence would overturn your own answer.
+
+This brief's framing is refuted if any of these holds, and you should test all 3:
+
+1. **The vocabularies are reconcilable without loss.** If `classifier` can be expressed as a structural position, or `collator` as a function, then they are 1 dimension and the 63-to-4 asymmetry is irrelevant.
+2. **Order already decides something.** If 2 existing layer files can be shown to collide on a leaf, question 2 is live and this brief has mis-stated it.
+3. **THE 63-TO-4 TALLY SHOULD DECIDE IT.** This brief asserts the opposite: 63 against 4 is what any months-old vocabulary shows against 1 proposed 11 days earlier, so choosing the incumbent BECAUSE it is the incumbent is the reasoning this project exists to refuse. If you think the incumbency is nonetheless decisive, say why on grounds other than those 2 figures.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return exactly these fields, so replies can be compared without a parser guessing:
+
+- `verdict` — exactly 1 of: UNIFIED (reconcile into a single dimension) / ORTHOGONAL (2 separate layers) / NEITHER (state what instead)
+- `reasoning` — the derivation, naming each instrument you ran
+- `precedence` — where a role layer sits, and whether your answer depends on layers being permitted to overlap
+- `absence_behaviour` — which of RAISE, WARN or SILENT an unregistered role should take, and why that precedent and not the other 2
+- `instrument_results` — for each producer named above: the command, the output, and whether it matched this brief's stated expectation
+- `fix` — the path written in the sandbox tree, and what it changes
+- `falsifier` — the falsifier you wrote, the command you ran, and its executed output
+- `refutation_condition` — what would overturn your answer
+- `strongest_disagreement` — your strongest disagreement with this brief's own framing, stated even if your verdict agrees with it
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new above-threshold findings; a finding is above threshold if missing it could cause a real-world failure, a violation or an unsafe condition. Report how many passes you ran and what the last pass added.
+
+There is no compelled convergence in this round. Disagreement with the other seat, and with this brief, is preserved as information rather than smoothed to consensus. Do not attempt to reconcile your answer with anyone else's.
+
+Written under CDSFL note standard v1.8 (17 October 2026).

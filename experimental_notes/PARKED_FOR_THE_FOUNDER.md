@@ -153,6 +153,14 @@ Your options are to delete it, to rename it out of the `CDSFL_*` glob, or to lea
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## 2 heavy pytest processes were already running against the 2-process ceiling that `scripts/local_resource_budget_2026-10-11.py` returns for this 8 GiB machine
+
+*Parked 2026-10-30T04:35:03+00:00. **RESOLVED 2026-10-30 — NEEDS NOTHING FROM HIM.***
+
+**★ THIS SHOULD NEVER HAVE BEEN PARKED FOR HIM, AND THE LESSON WAS ALREADY WRITTEN DOWN 2 HOURS EARLIER IN MY OWN COMMIT.** `22bc65f6` of 02:30 this morning annotated an identical mistake and recorded the rule: *"`scripts/blocker_triage.py` answers 'does this block the task list', and a momentary condition is not what that question is for. A transient obstacle is waited out, not parked. It is also a WRITE — it appends here."* I read that, and then did it again when the Stop gate next suggested classifying an obstacle. Both heavy processes finished within 4 minutes of this being written; nothing here was ever his to decide. **AND THE WRITE HAD A SECOND-ORDER COST, WHICH IS THE PART WORTH KEEPING.** The `--title` I typed for a diagnostic call became a NOTE, and the note lint then refused the commit because that title named a budget without naming the script that derives it, which is Rule 19. So a throwaway string for a classifier became linted prose in a file whose purpose is items awaiting HIM. The heading above now names the producer that derives the ceiling. **Annotated rather than deleted, following the same precedent.**
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** That verdict is itself informative: a resource state has no distinctive term BECAUSE it is not an entry dependency, which is the only thing that classifier is built to answer.
+
 ---
 
 # Settled — kept for the record, not for his attention (14)
