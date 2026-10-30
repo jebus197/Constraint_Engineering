@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 30 October 2026 01:41 GMT (2026-10-30T01:41:17+00:00)
+Generated: 30 October 2026 04:20 GMT (2026-10-30T04:20:23+00:00)
 
 ---
 
@@ -18,21 +18,20 @@ Generated: 30 October 2026 01:41 GMT (2026-10-30T01:41:17+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `5d22540b` I typed a future timestamp again, and this linter could not see the shape I write
-- **Committed:** 2026-10-30 01:22:01 +0000
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 6
+- **Last commit (the PARENT of the commit containing this file):** `eb2730e3` A cited path that never existed, and the obvious guard for it would have been wrong
+- **Committed:** 2026-10-30 04:11:44 +0000
+- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M experimental_notes/CDSFL_MASTER_TASK_LIST.md`
-- `M experimental_notes/Morning_Report_2026-10-30.txt`
+- `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**13535 tests collected** at 30 October 2026 01:41 GMT, HEAD `5d22540b` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**13642 tests collected** at 30 October 2026 04:20 GMT, HEAD `eb2730e3` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -62,13 +61,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `5d22540b I typed a future timestamp again, and this linter could not see the shape I write`
-- `0a5b971e His 7 questions are answered AND RECORDED, and their answers were in a sandbox`
-- `39b6b9ac A test refused my commit and it was right: I typed a timestamp 2.1 minutes ahead`
-- `27063184 4 entries closed on executed evidence, and 2 attributions of mine corrected`
-- `cacd22d4 The board's own report, and the producer for the figure it rests on`
-- `589f7bc6 THE ONE board found a 9th failure and it was my own repair removing a capability`
-- `5180b471 3 register checks still assumed 1 ticket per entry, and his `qs` ruling broke that by design`
-- `22528777 the miss ledger was split across 2 module objects, and the guard that refused the fix was celebrating its own obsolescence`
-- `ec03aa25 3 silent capability lookups now announce, and the instrument that measured them was reading the wrong ledger`
-- `553df767 B21 has a design for his yes-or-no, and writing it found a live seat routed as the weakest of all`
+- `eb2730e3 A cited path that never existed, and the obvious guard for it would have been wrong`
+- `73333e0a 2 of the 3 entries asking him to rule already carried his ruling`
+- `8cdcc0a6 The report he reads now carries B50 and the guard that was red beneath it`
+- `57bd99fb B21 and C1 both argued from claims they never executed, and 3 of the 4 are false`
+- `b59446dd The Stop gate's defect is a ticket now, not prose in a log`
+- `498002bb A completeness check on his report found 1 gap, and it was the gate that prodded all night`
+- `22bc65f6 I put a transient obstacle of mine into his parked file, and a guard caught the repair`
+- `8d240655 His report carries B21's price as well as its question`
+- `d595b945 B21's cost side measured, and the producer I wrote for it had 2 defects in 2 minutes`
+- `207faed2 B41 reduced in the canonical place, and the marker lesson applied rather than relearnt`
