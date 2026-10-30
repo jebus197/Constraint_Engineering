@@ -44,6 +44,14 @@ FUNCTIONAL = ("worker", "classifier", "orchestrator")
 #: Directories whose contents are not live code: seat sandboxes and run logs.
 _SKIP = ("logs", "seat_evidence", "__pycache__", ".git")
 
+#: THIS CENSUS'S OWN FILES. Both quote every role word in order to search for
+#: or to pin them, so both measure the instrument rather than the subject.
+_INSTRUMENT_FILES = frozenset({
+    pathlib.Path(__file__).resolve(),
+    (REPO / "bench" / "tests"
+     / "test_which_role_vocabulary_2026-10-30.py").resolve(),
+})
+
 
 def quoted_uses(roots=("bench", "scripts")) -> dict:
     """{word: [(path, count)]} for each role word used as a quoted value."""
@@ -60,7 +68,23 @@ def quoted_uses(roots=("bench", "scripts")) -> dict:
             #: instrument that measures its own text inflates whatever it
             #: measures -- the same defect the kappa census had to be repaired
             #: for on 2026-10-17, where it counted its own prose.
-            if p.resolve() == pathlib.Path(__file__).resolve():
+            #: ★ EXCLUDING ONLY THIS FILE WAS NOT ENOUGH, AND ITS OWN GUARD
+            #: RESTORED THE DEFECT WITHIN HOURS. Measured 2026-10-30: with just
+            #: `__file__` excluded the census reads **66 of 73** -- the exact
+            #: figure this self-exclusion was written to repair -- because
+            #: `bench/tests/test_which_role_vocabulary_2026-10-30.py` pins all 6
+            #: role words in its expectations, contributing 1 occurrence of each.
+            #: It even made `worker` read 1 where the live code has 0.
+            #: Excluding the guard as well restores **63 of 67**.
+            #:
+            #: THE LESSON IS WIDER THAN THE FIX: a self-exclusion keyed to 1 path
+            #: is defeated by any second file carrying the same content, and the
+            #: guard for an instrument is exactly such a file by construction.
+            #: An instrument's own test suite is part of the instrument, not part
+            #: of the subject, so both are excluded -- and a 3rd file about this
+            #: census would need adding here too, which is the honest limit of
+            #: naming paths rather than detecting purpose.
+            if p.resolve() in _INSTRUMENT_FILES:
                 continue
             try:
                 txt = p.read_text(errors="ignore")

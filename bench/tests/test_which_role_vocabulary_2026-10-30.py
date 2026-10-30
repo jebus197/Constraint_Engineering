@@ -24,6 +24,8 @@ from __future__ import annotations
 import importlib.util
 import json
 import pathlib
+
+import pytest
 import subprocess
 import sys
 
@@ -103,3 +105,56 @@ def test_both_vocabularies_are_named_so_the_question_stays_visible():
     m = _mod()
     assert set(m.STRUCTURAL) == {"collator", "player_manager", "participant"}
     assert set(m.FUNCTIONAL) == {"worker", "classifier", "orchestrator"}
+
+def test_the_instrument_excludes_its_own_guard_as_well_as_itself():
+    """A SELF-EXCLUSION KEYED TO 1 PATH IS DEFEATED BY A SECOND FILE.
+
+    ★ ADDED 2026-10-30, because the original fix regressed within hours and
+    nothing caught it. The producer excluded `__file__` to stop counting its own
+    search patterns, which took the census from 66 of 73 to 63 of 67. Then THIS
+    FILE was written, pinning all 6 role words in its expectations, and the
+    census read **66 of 73 again** -- the same numbers, for a different reason.
+    It even reported `worker` as 1 where the live code has 0, which would have
+    contradicted the figure in
+    `bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md` for any seat who re-ran
+    the producer.
+
+    The first fix was unguarded, which is why it regressed. This is the guard.
+
+    WHAT IS PINNED: the PROPERTY, not the figure. The census's own files must be
+    excluded, and that exclusion must be LOAD-BEARING -- including the guard
+    again must change the answer, or the exclusion is decorative and this test
+    proves nothing.
+    """
+    mod = _mod()
+    files = getattr(mod, "_INSTRUMENT_FILES", None)
+    assert files is not None, (
+        "the producer no longer declares `_INSTRUMENT_FILES`; a self-exclusion "
+        "keyed to `__file__` alone is defeated by this very file")
+    assert pathlib.Path(mod.__file__).resolve() in files or any(
+        p.name == "which_role_vocabulary_does_the_code_speak_2026-10-30.py"
+        for p in files), "the producer does not exclude itself"
+    assert any(p.name == "test_which_role_vocabulary_2026-10-30.py"
+               for p in files), (
+        "the producer does not exclude THIS guard, which pins all 6 role words "
+        "and therefore inflates every count by 1")
+
+    #: THE CONTROL: putting the guard back must move the answer. A SKIP WOULD
+    #: ASSERT NOTHING, which is the defect this whole file is about, so the
+    #: real entry points are used -- `quoted_uses()` and `totals()`.
+    before = mod.totals(mod.quoted_uses())
+    kept = set(mod._INSTRUMENT_FILES)
+    try:
+        mod._INSTRUMENT_FILES = frozenset(
+            q for q in kept
+            if q.name != "test_which_role_vocabulary_2026-10-30.py")
+        after = mod.totals(mod.quoted_uses())
+    finally:
+        mod._INSTRUMENT_FILES = frozenset(kept)
+    assert after != before, (
+        f"including this guard in the census left the answer at {before}, so "
+        f"the exclusion is decorative and the regression it prevents could "
+        f"recur unnoticed")
+    assert after[1] > before[1], (
+        f"including this guard did not INFLATE the total ({before} -> {after}); "
+        f"it pins all 6 role words, so it can only add occurrences")

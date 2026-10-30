@@ -66,6 +66,44 @@ def gate_files() -> list[str]:
     return files
 
 
+def repository_reach() -> dict:
+    """How much of the suite the gate's explicit GUARDS list actually reaches.
+
+    * ADDED 2026-10-30, because this figure had NO PRODUCER and was computed by
+    hand 3 times in one night -- and went stale all 3 times, each time because
+    a guard was added and the prose about the count could not follow. It was
+    written as 71 of 668, then 73 of 723, then 73 of 726, and was 73 of 727
+    within the hour. `measured-rate-travels-with-its-script` is the rule it
+    was breaking, and this function is the fix: cite the producer, never retype
+    the number.
+
+    WHY IT MATTERS RATHER THAN BEING TRIVIA. The gate runs an EXPLICIT list, so
+    a guard not on that list is reached only by a full board, which takes about
+    99 minutes and cannot gate a commit. Measured on 2026-10-30 that produced 4
+    separate instances of something red sitting unseen: 15 of 22 tests in the
+    morning-report guard, the gate-cost declaration itself, and B47's authored
+    detail twice. The reach figure is the size of that blind spot.
+    """
+    files = gate_files()
+    #: ★ REPO-RELATIVE, AND THE FIRST VERSION WAS NOT. `gate_files()` returns
+    #: paths relative to the repository root, so comparing them against absolute
+    #: paths made every membership test false and the function reported
+    #: "727 of 727 unreached (1.0000 of the suite)" -- plainly wrong, and caught
+    #: by reading the output rather than trusting it. A path-form mismatch is the
+    #: predicate-error class this project's record names repeatedly.
+    all_tests = sorted(
+        p.relative_to(REPO).as_posix()
+        for p in (REPO / "bench" / "tests").glob("test_*.py"))
+    on_list = [f for f in files if f in all_tests]
+    unreached = [t for t in all_tests if t not in files]
+    return {"gate_files": len(files),
+            "gate_files_that_exist": len(on_list),
+            "repository_test_files": len(all_tests),
+            "unreached": len(unreached),
+            "unreached_share": (len(unreached) / len(all_tests)
+                                if all_tests else 0.0)}
+
+
 def collected(files: list[str]) -> int:
     r = subprocess.run([sys.executable, "-m", "pytest", *files, "--co", "-q",
                         "-p", "no:cacheprovider"],
@@ -118,6 +156,19 @@ def main() -> int:
 
     n = collected(files)
     print(f"\ntests collected: {n}   (exact -- a count, not a timing)")
+
+    r = repository_reach()
+    print(f"\nREPOSITORY REACH -- the size of the gate's blind spot:")
+    print(f"    the gate's explicit list : {r['gate_files']} file(s)")
+    print(f"    test files in the repo   : {r['repository_test_files']}")
+    print(f"    NOT reached by the gate  : {r['unreached']}"
+          f"  ({r['unreached_share']:.4f} of the suite)")
+    print(f"    A guard off that list is reached only by a full board,")
+    print(f"    which takes about 99 minutes and cannot gate a commit.")
+    print(f"    NO interval is given for that share: it is a CENSUS of every")
+    print(f"    test file, not a sample, so there is no sampling uncertainty")
+    print(f"    to quantify. Attaching one would be the denominator error")
+    print(f"    recorded on 2026-10-30 in a new costume.")
 
     if a.write:
         # THE DOCUMENTED REFRESH COMMAND DID NOT REFRESH ANYTHING. Until

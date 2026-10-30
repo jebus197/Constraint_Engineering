@@ -164,3 +164,62 @@ class TestItRuns:
             "a wall-clock figure must be reported with its spread, not as one number")
         assert "property of this machine" in r.stdout, (
             "the conditions caveat must travel with the figure")
+
+class TestTheGateSBlindSpotIsMeasured:
+    """`repository_reach()` gives the board-reach figure a producer.
+
+    ★ ADDED 2026-10-30 WITH THE FUNCTION, because the same omission had just been
+    made an hour earlier: `scripts/rebuild_morning_report_markdown_2026-10-30.py`
+    was committed with 0 test files naming it, which is the addition-nothing-
+    reaches defect this project has confirmed 11 times. This time the check was
+    made before the commit rather than after.
+
+    WHY THE FUNCTION EXISTS. The reach figure had NO producer and was written by
+    hand 4 times in one night -- 71 of 668, 73 of 723, 73 of 726, and 73 of 727
+    within the hour -- going stale every time, because adding a guard increments
+    the count and prose cannot follow it. `measured-rate-travels-with-its-script`
+    is the rule that was being broken.
+    """
+
+    def test_the_three_counts_are_consistent(self, mod):
+        r = mod.repository_reach()
+        assert r["gate_files_that_exist"] + r["unreached"] == \
+            r["repository_test_files"], (
+            f"the counts do not partition the suite: "
+            f"{r['gate_files_that_exist']} on the list + {r['unreached']} "
+            f"unreached != {r['repository_test_files']} files")
+
+    def test_the_share_matches_its_own_numerator_and_denominator(self, mod):
+        r = mod.repository_reach()
+        expected = r["unreached"] / r["repository_test_files"]
+        assert abs(r["unreached_share"] - expected) < 1e-12, (
+            f"the reported share {r['unreached_share']} is not "
+            f"{r['unreached']}/{r['repository_test_files']} = {expected}")
+
+    def test_the_path_forms_match_so_membership_can_succeed(self, mod):
+        """THE REGRESSION GUARD FOR THE BUG THIS FUNCTION SHIPPED WITH.
+
+        Its first version built the comparison set from ABSOLUTE paths while
+        `gate_files()` returns repository-relative ones, so no membership test
+        could ever succeed and it reported "727 of 727 unreached (1.0000 of the
+        suite)" -- plainly false, and caught by reading the output rather than
+        trusting it. A path-form mismatch is the predicate-error class this
+        project's record names repeatedly.
+
+        So: the unreached count must be STRICTLY less than the total, and the
+        share strictly below 1. Under the mismatch both equal the whole suite.
+        """
+        r = mod.repository_reach()
+        assert r["repository_test_files"] > 0, "no test files were found at all"
+        assert r["unreached"] < r["repository_test_files"], (
+            f"every one of {r['repository_test_files']} test files reads as "
+            f"unreached, which is what a path-form mismatch produces; the gate "
+            f"names {r['gate_files']} of them")
+        assert r["unreached_share"] < 1.0
+
+    def test_the_gate_list_agrees_with_the_other_reader(self, mod):
+        """2 forms of the same count must agree, which is execute-do-not-grep."""
+        r = mod.repository_reach()
+        assert r["gate_files"] == len(mod.gate_files()), (
+            "repository_reach() and gate_files() disagree on how many files the "
+            "gate names, so one of them is reading the hook differently")
