@@ -299,6 +299,46 @@ def file_shape(path: Path) -> dict:
 _MARKER_LINE = re.compile(r"^\s*(fr|pf|qs|wr)(?:\s*,\s*(?:fr|pf|qs|wr))*\s*$", re.I)
 
 
+#: ★ A TRAILING MARKER, WRITTEN AT THE END OF THE ANNOTATION ITSELF. Added
+#: 2026-10-30, because his style changed and the own-line rule above stopped
+#: covering it. The comment above records its own basis honestly -- 30 of 30
+#: own-line, 0 inline, measured 2026-10-19 -- and that was true of the files
+#: that existed then. MEASURED 2026-10-30 over all 752 annotations: 59 carry an
+#: own-line marker, 693 carry none, and 13 of those 693 END in a marker token,
+#: 0.018759 with a 95% Wilson interval [0.010995, 0.031829] and an exact
+#: interval [0.010025, 0.031865]. Every one of the 13 is dated 2026-10-29.
+#:
+#: WHY IT MATTERS MORE THAN 13 SOUNDS. The 13 include the 2 rulings this project
+#: has leaned on hardest -- "Build and implement option 1. fr" and "I accept
+#: your recommendation. fr" -- which closed entries B47 and C1. Their markers
+#: were invisible here and survived only because the harvester re-derives the
+#: kind from the text. He has since said he will rely on marking questions `qs`
+#: in his replies, so a marker field that cannot see his current style is a
+#: silent loss of his instructions.
+#:
+#: THE MARKER MUST TRAIL, and that requirement is not a preference. Measured in
+#: `scripts/which_open_entries_already_have_his_ruling_2026-10-30.py`: matching
+#: an MC marker ANYWHERE in a quotation gave 4 of 19 hits and 3 were the bare
+#: English article "a" matching mid-prose; requiring it to trail gave exactly
+#: the 1 true positive. The 4 ticket kinds here are not English words, so the
+#: risk is smaller, but the shape is the one that was measured to work.
+#:
+#: THE TEXT IS NOT ALTERED. Only this field is filled. `tid_of` digests a
+#: ticket's verbatim, so stripping the marker out of the annotation would move
+#: every identity derived from it -- a far larger change than the defect.
+_MARKER_TRAILING = re.compile(
+    r"(?:^|[\s.,;:!?)\]\"'’”])((?:fr|pf|qs|wr)(?:\s*,\s*(?:fr|pf|qs|wr))*)"
+    r"[\s.!?]*$", re.I)
+
+
+def _marker_of(body: str) -> str:
+    """His marker read from the END of the annotation, or "" if there is none."""
+    m = _MARKER_TRAILING.search((body or "").strip())
+    if not m:
+        return ""
+    return ",".join(x.strip().lower() for x in m.group(1).split(",") if x.strip())
+
+
 #: 2 DATES, NAMED FOR WHAT THEY ARE -- repair 2026-10-28, and the first attempt
 #: at it was WRONG in an instructive way.
 #:
@@ -474,6 +514,11 @@ def _annotations_in(p: Path, d: _dt.date | None = None,
                     _marker = ",".join(
                         x.strip().lower() for x in _cand.split(",") if x.strip())
                 break
+            #: FALL BACK TO A TRAILING MARKER inside the annotation's own text.
+            #: The own-line form is tried FIRST and wins, because it is the form
+            #: 59 of his markers use and it is unambiguous.
+            if not _marker:
+                _marker = _marker_of(body)
             out.append({"file": p.name, "ext": p.suffix.lower(), "date": d.isoformat(),
                         "report_date": rd.isoformat(),
                         "line_index": i, "text": body, "marker": _marker})

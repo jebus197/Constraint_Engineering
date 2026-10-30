@@ -13,10 +13,23 @@ marker, found none, and reported "explicitly marked: 0" while his files carried
 30. The `qs` kind he asked for on 2026-10-19 would have been INERT against his
 real annotations on the day it was built.
 
-MEASURED ACROSS EVERY REPLY FILE: 30 markers, 30 of them own-line following an
-annotation, 0 inline. So there is exactly one form to support and the rule is
-unambiguous: skip blank lines, and the FIRST non-blank line after an annotation
-either is the marker or there is none. Stopping at the first non-blank is what
+MEASURED ACROSS EVERY REPLY FILE on 2026-10-19: 30 markers, 30 of them own-line
+following an annotation, 0 inline. The rule for that form is unambiguous: skip
+blank lines, and the FIRST non-blank line after an annotation either is the
+marker or there is none.
+
+★ "THERE IS EXACTLY ONE FORM TO SUPPORT" WAS TRUE WHEN WRITTEN AND IS NOT
+TRUE NOW. Corrected 2026-10-30. His style changed: re-measured over all 752
+annotations, 59 carry an own-line marker, 693 carry none, and 13 of those 693
+END in a marker token -- 0.018759, Wilson [0.010995, 0.031829], exact
+[0.010025, 0.031865] -- every one dated 2026-10-29. The 13 include the 2
+rulings that closed entries B47 and C1, whose markers were therefore invisible
+to this reader and survived only because the harvester re-derives a kind from
+the text. The reader now falls back to a TRAILING marker, the own-line form
+still being tried first and still winning. The trailing requirement is not a
+preference: matching a marker anywhere in a quotation was measured at 4 of 19
+hits with 3 of them the bare English article, against exactly 1 true positive
+when the marker must trail. Stopping at the first non-blank is what
 stops a marker belonging to a LATER annotation being claimed by an earlier one.
 
 A SECOND, SMALLER FAULT IN THE SAME AREA: his files are carriage-return-only in
@@ -62,6 +75,96 @@ class TestTheMarkerPatternItself:
         for line in ("frequently", "the qsort routine", "# qs is a question",
                      "pf: and then some prose", "a qs b"):
             assert not reader._MARKER_LINE.match(line), line
+
+
+
+def test_a_trailing_marker_is_read_too(reader):
+    """★ ADDED 2026-10-30, with the own-line form still winning.
+
+    His 2 rulings of 2026-10-29 end their own sentence with the marker rather
+    than putting it on the next line, and both are rulings this project acted
+    on. A reader that cannot see them records his instruction as unmarked.
+    """
+    assert reader._marker_of("Build and implement option 1. fr") == "fr"
+    assert reader._marker_of("answer this one please qs") == "qs"
+    assert reader._marker_of("do both. fr, pf") == "fr,pf"
+
+
+def test_the_fallback_is_WIRED_into_the_real_extraction(reader):
+    """★ THE WIRING, NOT THE FUNCTION. Added 2026-10-30 after a mutation ran.
+
+    The 3 tests beside this one called `_marker_of` directly, so deleting the
+    `if not _marker: _marker = _marker_of(body)` line in `annotations()` left
+    every one of them GREEN. A helper with a caller, tested without its caller,
+    is the addition-nothing-reaches defect this project has confirmed 11 times,
+    and it appeared in a guard written to close a reading defect.
+
+    So this asserts on the OUTPUT OF THE READER over his real files: the 2
+    rulings that closed entries B47 and C1 end their own sentence with `fr`,
+    and the reader must report that. Removing the wiring turns this red.
+    """
+    rows = reader.annotations()
+    trailing = [r for r in rows
+                if (r.get("text") or "").strip().endswith("option 1. fr")
+                or (r.get("text") or "").strip() == "I accept your recommendation. fr"]
+    assert trailing, (
+        "neither ruling was found in his files at all, so this test can no "
+        "longer speak to the wiring; re-derive it from the current corpus")
+    for r in trailing:
+        assert r["marker"] == "fr", (
+            f"the reader reported marker={r['marker']!r} for a ruling that ends "
+            f"in a trailing fr, so the trailing fallback is not reached: "
+            f"{r['text'][-70:]!r}")
+
+
+def test_ordinary_prose_endings_are_not_markers(reader):
+    """THE CONTROL. Without it, returning a marker for everything would pass.
+
+    `a` is the recorded trap: as a bare MC command it matches the commonest word
+    in English, which is why the ticket-kind set here excludes it entirely.
+    """
+    for text in ["Just do it.", "This is fine for now",
+                 "What about the other half?", "a",
+                 "Approved, but check the ladder first.",
+                 #: MID-PROSE, which is the property that makes "trailing" mean
+                 #: something. Without these the pattern could match anywhere
+                 #: and every control above would still pass.
+                 "the pf ticket was closed yesterday",
+                 "raise it as a qs and move on to the next entry",
+                 "fr is the marker for a feature request"]:
+        assert reader._marker_of(text) == "", text
+
+
+def test_the_own_line_form_wins_over_a_trailing_one(reader, tmp_path):
+    """★ PRECEDENCE, ON A CONSTRUCTED FILE. Rewritten 2026-10-30.
+
+    The first version of this test asserted `_marker_of("something ending fr")
+    == "fr"`, which says nothing about precedence: it exercises the fallback
+    alone and passes whichever branch the extraction prefers. A mutation that
+    made the trailing form OVERRIDE the own-line form left it green.
+
+    The 2 forms cannot be told apart from the reader's output either, because
+    the field records a marker's VALUE and not which branch set it, and on his
+    real files the 2 forms agree wherever both appear. So the only way to test
+    the ordering is a file where they DISAGREE, which is constructed here.
+    """
+    d = tmp_path / "Responses"
+    d.mkdir()
+    (d / "Morning_Report_2026-01-03.txt").write_text(
+        "report line\r\r# his ruling ends in a trailing marker fr\r\rpf\r\r"
+        "# a second ruling with only a trailing marker qs\r\r",
+        encoding="utf-8")
+    old_dir = reader.RESPONSES
+    try:
+        reader.RESPONSES = d
+        got = {r["text"]: r["marker"] for r in reader.annotations()}
+    finally:
+        reader.RESPONSES = old_dir
+    assert got["his ruling ends in a trailing marker fr"] == "pf", (
+        f"the trailing `fr` overrode the own-line `pf`: {got}. The own-line form "
+        f"is the one 59 of his markers use and it is unambiguous, so it must win")
+    assert got["a second ruling with only a trailing marker qs"] == "qs", (
+        f"an annotation with ONLY a trailing marker lost it: {got}")
 
 
 class TestTheReaderAssociatesIt:
