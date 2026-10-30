@@ -30,7 +30,8 @@
       "them, a convention already held by",
       "test_the_morning_report_is_generated_2026-10-12.py::test_underscore_keys_are_not_treated_as_items.",
       "2026-10-15 23:25: study:arm5 archived because the measurement now carries a result and is no longer a decision item; the immune-memory ledger gap archived because it needs no ruling (it is a mechanical backfill) and the generator correctly refuses authored detail for a non-decision. A `last_updated` key was also removed: the generator treats every top-level key as an item, so a timestamp there reads as an undecidable decision.",
-      "2026-10-30 03:21: B44, B48, B49, B51, B52 archived because all 5 CLOSED overnight on 2026-10-29/30, each verified by execution. The generator's refusal names them and says to REMOVE them; this file says POINT, NEVER PRUNE, so they are moved here instead. Following the message literally would have pruned a record this file exists to keep."
+      "2026-10-30 03:21: B44, B48, B49, B51, B52 archived because all 5 CLOSED overnight on 2026-10-29/30, each verified by execution. The generator's refusal names them and says to REMOVE them; this file says POINT, NEVER PRUNE, so they are moved here instead. Following the message literally would have pruned a record this file exists to keep.",
+      "2026-10-30 04:29: B47 archived because the entry CLOSED on his ruling of 2026-10-29, verified by execution. THE SAME OMISSION AS THE 5 EARLIER TODAY: closing an entry makes its authored detail stale and the generator refuses it by design, so archiving it belongs in the SAME change as the closure. It was missed again here, and caught by running the generator's own --check rather than by the pre-commit board, which does not reach that guard."
     ],
     "task:B1": {
       "no_ruling_needed": true,
@@ -378,6 +379,17 @@
         "**A pre-flight that alerts but proceeds.** Report the failure prominently and carry on with whatever does not need that route, which preserves free work when only a paid route is down.",
         "**Leave it as an instrument I am expected to run.** Cheapest, and it is exactly the arrangement that failed on 28 October, so it is listed for completeness rather than recommended."
       ]
+    },
+    "task:B47": {
+      "title": "B47 — base the memory check on the last save that FINISHED CLEANLY (Option 1 of B29)",
+      "what": "The save command refuses a follow-up save by measuring memory against the PREVIOUS save. For the first save of a session that inference is right; for a follow-up it is wrong, because the follow-up's predecessor is the very save whose memory it is being asked to produce again.",
+      "why": "You asked on 19 October whether Options 3 and 1 compose. They do, and neither is redundant: Option 3, now built, pre-checks the condition that causes 7 of the 14 follow-up saves in the repository's history. The other 7 are caused by something else a staleness pre-check cannot see, and only Option 1 helps there.",
+      "evidence_line": "7 of 14 follow-ups are preventable by Option 3 and 7 are not, 0.500000 each, Wilson [0.267992, 0.732008]; redundancy would need 0 in the not-prevented column and its lower bound is 0.2680.",
+      "options": [
+        "**Build it**: have the save RECORD whether its own postconditions passed, and have the memory check skip its baseline back to the last save that finished cleanly. Additive, replaces an inference with a committed fact, and leaves the guarantee unchanged in strength for a first save. Recommended.",
+        "**Leave it**, accepting that about 1 follow-up save in 2 will still be refused for lacking memory that already exists, and reaching for the override when it happens.",
+        "**Something narrower**: name a different rule for when the memory baseline should skip."
+      ]
     }
   },
   "task:B13": {
@@ -453,17 +465,6 @@
     "what": "Your instruction that questions also appear in a discussions section of the coming interface build, through a facility such as Discourse, recorded at the foot of the list as a discussion.",
     "why": "The qs kind built on 2026-10-19 is the BACKEND. What is undecided is the front: a threaded forum, which brings categories, replies, search and notification for free but adds a large external dependency, or a native view over the register, which has no dependency and reuses an index already measured at 5.8033 milliseconds a query against 480.4354 for a linear search.",
     "evidence_line": "27 questions now carry hashed identities, and 0 of them yet carry a recorded reply, so the measurement that should decide the form cannot be taken."
-  },
-  "task:B47": {
-    "title": "B47 — base the memory check on the last save that FINISHED CLEANLY (Option 1 of B29)",
-    "what": "The save command refuses a follow-up save by measuring memory against the PREVIOUS save. For the first save of a session that inference is right; for a follow-up it is wrong, because the follow-up's predecessor is the very save whose memory it is being asked to produce again.",
-    "why": "You asked on 19 October whether Options 3 and 1 compose. They do, and neither is redundant: Option 3, now built, pre-checks the condition that causes 7 of the 14 follow-up saves in the repository's history. The other 7 are caused by something else a staleness pre-check cannot see, and only Option 1 helps there.",
-    "evidence_line": "7 of 14 follow-ups are preventable by Option 3 and 7 are not, 0.500000 each, Wilson [0.267992, 0.732008]; redundancy would need 0 in the not-prevented column and its lower bound is 0.2680.",
-    "options": [
-      "**Build it**: have the save RECORD whether its own postconditions passed, and have the memory check skip its baseline back to the last save that finished cleanly. Additive, replaces an inference with a committed fact, and leaves the guarantee unchanged in strength for a first save. Recommended.",
-      "**Leave it**, accepting that about 1 follow-up save in 2 will still be refused for lacking memory that already exists, and reaching for the override when it happens.",
-      "**Something narrower**: name a different rule for when the memory baseline should skip."
-    ]
   },
   "defect:A4-counter-valve-severity-mismatch": {
     "title": "The blocker counter and its release valve disagree about severity, and a run cannot converge because of it",

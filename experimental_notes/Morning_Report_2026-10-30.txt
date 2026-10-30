@@ -172,4 +172,30 @@ And the guard for that detector contained an assertion that could never fail, wh
 
 The list still provably terminates. New entries per entry closed stands at 0.7791 with a 95 per cent interval from 0.6181 to 0.9821 and an exact test against 1 at p equals 0.0198, so it remains subcritical.
 
+SECTION 11. 1 DECISION FOR YOU WITH A NUMBER ATTACHED, AND 2 DEFECTS I MADE AFTER SECTION 10 WAS WRITTEN
+
+THE DECISION, AND IT IS 1 LINE. The pre commit board that gates every commit runs an explicit list of 73 test files. There are 726 in the repository. So it never reaches 653 of them, and every guard written tonight is among those 653.
+
+The case for adding them is demonstrated rather than argued. The guard on this very report sat red through 3 consecutive commits, with 15 of its 22 tests failing, for exactly that reason. A green cheap board is not evidence that the suite is green, and tonight is the second time that distinction has cost something.
+
+The cost is measured. Tonight's 6 guards run 75 tests in 18.88 seconds. The board currently runs 1,582 to 1,588 tests in 312 to 325 seconds across the 6 boards it ran tonight. So adding them is about a 6 per cent addition to every commit, in exchange for 75 assertions that at present run only when I invoke them or when a full board does, and a full board takes about 98 minutes and cannot gate a commit. No confidence interval is given for that 6 per cent, because it is a ratio of 2 timings rather than a sample proportion, and attaching an interval to it would be the denominator error of earlier tonight in a new costume.
+
+I have not done it. Editing that hook changes the gate on every commit you or I make. Adding a guard makes the gate stricter rather than looser, which is the safe direction and the opposite of the loosening I refused earlier tonight, but it spends your machine's time on every commit and the list is yours.
+
+NOW THE 2 DEFECTS, BOTH MINE, BOTH IN WORK COMMITTED AFTER SECTION 10.
+
+THE FIRST IS A CITATION CHECK THAT ALMOST DESTROYED A RECORD. B41 cited a guard by a path with 0 commits in this history and nothing caught it, because the existing citation guard checks file and line number citations and says so in its own docstring. The obvious response is to check every cited path in every document. Measuring first showed that would be wrong: there are hundreds of dead citations across the tracked markdown, and the 4 largest concentrations, at 27, 24, 23 and 21, are all full record panel transcripts. Those are verbatim seat output. A seat citing a path that does not exist is a record of what that seat said.
+
+So the check is scoped to the master task list, where there are 5. 3 are deliberate illustrative placeholders, 1 of which names its own non existence. The other 2 must not be repaired, and my first reading of them said they should be. One of them sits inside a recorded lesson whose words are that I searched for a module path I guessed and found it absent. Correcting that path to the module where the work really landed would have edited away the entire point of the sentence. It is allowlisted with that reasoning written beside it, and the allowlist is keyed by exact name rather than by pattern, because a pattern would quietly exempt a real file that happened to share a name.
+
+THE SECOND IS THE DEFECT CLASS THIS PROJECT HAS CONFIRMED 11 TIMES, AND I COMMITTED IT AN HOUR AFTER WRITING ABOUT IT. The markdown companion to this report is generated. Earlier tonight I fixed a lint finding in it by hand and the next rebuild put the finding straight back, so I committed the generator to make the fix survive. I committed it with no test at all. A search of the test directory returns 0 files naming it. That is an addition nothing reaches.
+
+Worse and less visible: its source was the plain text file on your Desktop, which is not in the repository. A generated file whose source is unversioned cannot be rebuilt from a fresh clone, which is the whole subject of the entry about making the suite pass in a clean checkout, and an unversioned file on a single machine's Desktop is the single point of failure that made the repository copy of the task list canonical in the first place. Both copies were byte identical at 37,058 bytes, so preferring the versioned copy costs nothing.
+
+Both are now fixed. The generator reads the repository copy, brings the Desktop copy back into agreement, and has a check mode that renders in memory and compares without writing. Its guard pins 6 properties, and the one that matters most is the control: a deliberately corrupted markdown file must be detected, because otherwise a check that returns success proves only that the generator agrees with itself.
+
+WHAT I WOULD SAY ABOUT TONIGHT AS A WHOLE. The useful discipline was not more falsification after the fact. It was executing the premises of a question before putting the question to you. That found 3 false premises in B21 and C1, a wrong partition in B50, a cleared blocker in R1, and 2 entries asking you to rule on things you had already ruled on. In every single case the correction made what you are owed smaller rather than larger, which was not what I expected when the night started.
+
+And the recurring shape in my own errors is narrower than carelessness. The measurements were right. The sentences were wrong: a right figure under a wrong denominator, a wrong unit, or a search predicate that could not see what it claimed was absent. A wrong number usually looks wrong. A right number in the wrong frame reads perfectly, which is why 2 of them survived for weeks and why the mechanisms caught 4 of them tonight and I caught none of those 4 by reading.
+
 Written under CDSFL note standard v1.8.
