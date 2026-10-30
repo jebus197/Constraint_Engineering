@@ -112,4 +112,42 @@ The second: I almost reported that refused commit to you as landed. The command 
 
 My own producer also repeated the exact error it was written to correct. Its first version counted 6 sites and reported 4 awaiting your decision, because the error path of an already ruled channel and a method that merely serialises a class flag were each counted as separate obligations. The unit is the channel, not the site. That is now how it counts, and the guard checks the grouping on a synthetic case so no change to the real tree can make it vacuous.
 
+SECTION 9. AND MORE AFTER THAT. B50's PRICE LIST IS WRONG, AND A GUARD ON THIS REPORT WAS RED THROUGH 3 COMMITS
+
+This section changes recommendation 2 the way section 8 changed recommendation 4. B50 is the immune memory item recommendation 2 asks you to rule on, and the ruling is still yours. What was wrong is the price list it gave you.
+
+B50 says 2 of its 6 permanently failing assertions are a stale constant and mechanically fixable, and that the other 4 are empirical claims about data the reset destroyed which no filter can repair. It names the repair: filter the recording runs constant to runs that wrote after the newest reset. Every run in that constant is pre reset, so the filter yields an empty list.
+
+Applied, the filter repairs 1 of the 6, leaves 5 unchanged, and breaks 1 assertion that passes today. So the split is 1 and 5, not 2 and 4, and the mechanical half is a trade rather than a free repair.
+
+The one it breaks asserts that some flaw class rests on a single observation. With no pre reset runs in the derivable set there is no such class at all, and the assertion then reports that the memory has grown past the state this evaluation describes. That is false. The memory did not grow. The constant was emptied. A repair whose diagnosis misleads is worse than the failure it replaces.
+
+And a totals comparison could not have seen any of this. The failing count reads 6 on both sides of the filter. The same integer. Any instrument comparing totals reports no change at all. Only comparing the sets of failing test names shows the trade. That is the second time in these few hours that the pin a set, not a count rule has earned its place, and the first time that figure has read the same 6 on both sides rather than merely being uninformative.
+
+So for your 3 options: option 1, widening the skip condition, still stands, but its mechanical half buys 1 assertion and costs 1. Option 2, re measuring against the post reset memory as it fills, now covers 5 assertions rather than 4. Option 3 is unchanged and still undoes the reset you ordered. 1 stale citation in that entry is corrected: the accumulating load sits at line 21620, not 21602, and the ordering claim itself is confirmed.
+
+The measurement touches nothing. The constant is patched at run time by a small plugin written to a temporary directory, never by editing the test file, so it is safe to run while a board is running and leaves nothing behind if it is interrupted. An earlier manual version of the same experiment did edit the file, which is how that requirement was found.
+
+NOW THE PART THAT IS ABOUT THIS DOCUMENT. A trace of what reads the report files, which the stop gate had been asking me for and which I had been doing by listing directories rather than by searching for what reads those paths, turned up a generator and a guard I did not know applied to this work.
+
+15 of the 22 tests in that guard were red. The cause: the 5 entries closed overnight still carried authored detail, and the generator refuses authored detail for an item that is no longer live. That refusal is deliberate and it is the entire reason the generator exists, because the hand written report it replaced listed an item as awaiting you when its own marker said it was already built.
+
+Why 3 consecutive boards did not see it. The pre commit board names 73 test files explicitly. There are 723 on disk. So it never reaches 650 of them, and this guard is 1 of the 650. That is the cheap board working as designed, because a full board takes about 66 minutes and cannot gate every commit. But the consequence was concrete: a guard on the document you read in the morning was red across 3 commits and nothing said so.
+
+And the generator's own instruction would have destroyed a record. Its refusal says to remove the stale entries from the decisions file. That file's own note says point, never prune, and it already holds 22 entries moved there for exactly this reason. So the 5 were moved, not deleted, with a dated line recording why. Following the error message literally would have pruned a record the file exists to keep. There are 19 live items now, every one with authored detail.
+
+The 15th failure was my own commit subject, and the guard was right about it. The commit at 01:41 carries a subject of 226 characters where the ledger pins a line under 220. That is 193 characters of prose in a field meant for a summary. History is not rewritten here, on your ruling, so the generator now cuts an over long subject to the measured remaining budget, and the label on that region changes with it, because the region declares the subjects are given as committed and a silent truncation would make that declaration false.
+
+That fix then exposed a gap in the guard that had just caught it. Replacing that derived subject length, which is the limit minus the length of the actual rendered prefix, with a hardcoded reserve of 33 leaves the existing guard green, because today's prefix happens to be exactly 33 characters long. That is the same reserve defect as the 960 against 900 overflow of 28 October, surviving undetected. A property guard was added over prefix lengths the live data never produces. It fails 8 ways on that mutation while the data driven guard passes, and z3 additionally proves the budget formula is maximal rather than merely safe, so nothing is cut that need not be. The 220 limit is deliberately not imported from the generator anywhere, because a pin that imported the constant it checks would rise with it and stop being a pin.
+
+THE BOARD REFUSED 3 COMMITS TONIGHT AND WAS RIGHT 3 TIMES, EACH FOR A DIFFERENT DEFECT OF MINE
+
+First, the Wilson checker. I wrote a result as 0 of 17 protected keys carrying the interval that belongs to 0 of 60 pairs. It recomputed the interval for 0 of 17, got 0 to 0.1843, and refused on the grounds that a count and its interval disagree.
+
+Second, the note lint. All 1584 tests passed and the lint refused it, because my own sentence said the swap was caught by a mechanism without saying which one. That is rule 19, in force across 4 versions of the note standard. It was the Wilson checker, and it is now named as such.
+
+Third, the memory ledger. 262 files on disk against 260 stated, because 2 memory entries were written without deriving the ledger. I had run the guards that pin the memory index before writing those files, and afterwards ran a subset that does not include the 2 which pin the ledger total.
+
+In the first 2 the measurement was right and only the sentence was wrong, which is the harder case to catch by reading, because a wrong number usually looks wrong and a right number under a wrong denominator reads perfectly. And the hook's hedged hint about the ledger, which was wrong the first time I saw it tonight, was right the second time. That is what hedged means, and it is a reason to check it rather than to discount it.
+
 Written under CDSFL note standard v1.8.

@@ -112,6 +112,44 @@ The second: I almost reported that refused commit to you as landed. The command 
 
 My own producer also repeated the exact error it was written to correct. Its first version counted 6 sites and reported 4 awaiting your decision, because the error path of an already ruled channel and a method that merely serialises a class flag were each counted as separate obligations. The unit is the channel, not the site. That is now how it counts, and the guard checks the grouping on a synthetic case so no change to the real tree can make it vacuous.
 
+## 9. And more after that. b50's price list is wrong, and a guard on this report was red through 3 commits
+
+This section changes recommendation 2 the way section 8 changed recommendation 4. B50 is the immune memory item recommendation 2 asks you to rule on, and the ruling is still yours. What was wrong is the price list it gave you.
+
+B50 says 2 of its 6 permanently failing assertions are a stale constant and mechanically fixable, and that the other 4 are empirical claims about data the reset destroyed which no filter can repair. It names the repair: filter the recording runs constant to runs that wrote after the newest reset. Every run in that constant is pre reset, so the filter yields an empty list.
+
+Applied, the filter repairs 1 of the 6, leaves 5 unchanged, and breaks 1 assertion that passes today. So the split is 1 and 5, not 2 and 4, and the mechanical half is a trade rather than a free repair.
+
+The one it breaks asserts that some flaw class rests on a single observation. With no pre reset runs in the derivable set there is no such class at all, and the assertion then reports that the memory has grown past the state this evaluation describes. That is false. The memory did not grow. The constant was emptied. A repair whose diagnosis misleads is worse than the failure it replaces.
+
+And a totals comparison could not have seen any of this. The failing count reads 6 on both sides of the filter. The same integer. Any instrument comparing totals reports no change at all. Only comparing the sets of failing test names shows the trade. That is the second time in these few hours that the pin a set, not a count rule has earned its place, and the first time that figure has read the same 6 on both sides rather than merely being uninformative.
+
+So for your 3 options: option 1, widening the skip condition, still stands, but its mechanical half buys 1 assertion and costs 1. Option 2, re measuring against the post reset memory as it fills, now covers 5 assertions rather than 4. Option 3 is unchanged and still undoes the reset you ordered. 1 stale citation in that entry is corrected: the accumulating load sits at line 21620, not 21602, and the ordering claim itself is confirmed.
+
+The measurement touches nothing. The constant is patched at run time by a small plugin written to a temporary directory, never by editing the test file, so it is safe to run while a board is running and leaves nothing behind if it is interrupted. An earlier manual version of the same experiment did edit the file, which is how that requirement was found.
+
+NOW THE PART THAT IS ABOUT THIS DOCUMENT. A trace of what reads the report files, which the stop gate had been asking me for and which I had been doing by listing directories rather than by searching for what reads those paths, turned up a generator and a guard I did not know applied to this work.
+
+15 of the 22 tests in that guard were red. The cause: the 5 entries closed overnight still carried authored detail, and the generator refuses authored detail for an item that is no longer live. That refusal is deliberate and it is the entire reason the generator exists, because the hand written report it replaced listed an item as awaiting you when its own marker said it was already built.
+
+Why 3 consecutive boards did not see it. The pre commit board names 73 test files explicitly. There are 723 on disk. So it never reaches 650 of them, and this guard is 1 of the 650. That is the cheap board working as designed, because a full board takes about 66 minutes and cannot gate every commit. But the consequence was concrete: a guard on the document you read in the morning was red across 3 commits and nothing said so.
+
+And the generator's own instruction would have destroyed a record. Its refusal says to remove the stale entries from the decisions file. That file's own note says point, never prune, and it already holds 22 entries moved there for exactly this reason. So the 5 were moved, not deleted, with a dated line recording why. Following the error message literally would have pruned a record the file exists to keep. There are 19 live items now, every one with authored detail.
+
+The 15th failure was my own commit subject, and the guard was right about it. The commit at 01:41 carries a subject of 226 characters where the ledger pins a line under 220. That is 193 characters of prose in a field meant for a summary. History is not rewritten here, on your ruling, so the generator now cuts an over long subject to the measured remaining budget, and the label on that region changes with it, because the region declares the subjects are given as committed and a silent truncation would make that declaration false.
+
+That fix then exposed a gap in the guard that had just caught it. Replacing that derived subject length, which is the limit minus the length of the actual rendered prefix, with a hardcoded reserve of 33 leaves the existing guard green, because today's prefix happens to be exactly 33 characters long. That is the same reserve defect as the 960 against 900 overflow of 28 October, surviving undetected. A property guard was added over prefix lengths the live data never produces. It fails 8 ways on that mutation while the data driven guard passes, and z3 additionally proves the budget formula is maximal rather than merely safe, so nothing is cut that need not be. The 220 limit is deliberately not imported from the generator anywhere, because a pin that imported the constant it checks would rise with it and stop being a pin.
+
+### The board refused 3 commits tonight and was right 3 times, each for a different defect of mine
+
+First, the Wilson checker. I wrote a result as 0 of 17 protected keys carrying the interval that belongs to 0 of 60 pairs. It recomputed the interval for 0 of 17, got 0 to 0.1843, and refused on the grounds that a count and its interval disagree.
+
+Second, the note lint. All 1584 tests passed and the lint refused it, because my own sentence said the swap was caught by a mechanism without saying which one. That is rule 19, in force across 4 versions of the note standard. It was the Wilson checker, and it is now named as such.
+
+Third, the memory ledger. 262 files on disk against 260 stated, because 2 memory entries were written without deriving the ledger. I had run the guards that pin the memory index before writing those files, and afterwards ran a subset that does not include the 2 which pin the ledger total.
+
+In the first 2 the measurement was right and only the sentence was wrong, which is the harder case to catch by reading, because a wrong number usually looks wrong and a right number under a wrong denominator reads perfectly. And the hook's hedged hint about the ledger, which was wrong the first time I saw it tonight, was right the second time. That is what hedged means, and it is a reason to check it rather than to discount it.
+
 
 ## Technical appendix
 
@@ -126,6 +164,8 @@ same figure.
 |---|---|
 | Layer order decides 0 keys; 0 of 60 pairs collide | `scripts/what_does_layer_order_actually_decide_2026-10-30.py` |
 | 4 channels, 2 already ruled, 1 awaiting | `scripts/how_many_channels_actually_await_his_ruling_2026-10-30.py` |
+| B50's filter repairs 1 and breaks 1 | `scripts/does_filtering_the_stale_constant_repair_two_2026-10-30.py` |
+| The reset re-armed 6 stale pins | `scripts/the_reset_rearmed_six_stale_pins_2026-10-29.py` |
 | Which role vocabulary the code speaks, 63 of 67 | `scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py` |
 | Questions owed, by direction | `scripts/what_questions_are_owed_2026-10-30.py` |
 | Memory index line and character budget | `scripts/the_line_budget_is_the_binding_one_2026-10-29.py` |
@@ -133,45 +173,51 @@ same figure.
 
 ### Guards
 
-| Guard | Tests | Mutations |
+| Guard | Tests | Notes |
 |---|---|---|
-| `bench/tests/test_what_layer_order_decides_2026-10-30.py` | 12 | 4 of 4 red |
+| `bench/tests/test_what_layer_order_decides_2026-10-30.py` | 12 | 4 of 4 mutations red |
 | `bench/tests/test_how_many_channels_await_his_ruling_2026-10-30.py` | 10 | properties, not counts |
-| `bench/tests/test_which_role_vocabulary_2026-10-30.py` | 6 | 2 of 2 red |
-| `bench/tests/test_what_questions_are_owed_2026-10-30.py` | 10 | — |
+| `bench/tests/test_does_filtering_the_stale_constant_repair_two_2026-10-30.py` | 7 | pins sets; proves the runtime patch takes effect |
+| `bench/tests/test_the_ledger_budget_is_derived_not_reserved_2026-10-30.py` | 19 | catches the reserve mutation `test_it_lists_commits_not_narrative` passes; z3 maximality |
+| `bench/tests/test_the_morning_report_is_generated_2026-10-12.py` | 22 | 15 failed before the archive fix, 22 pass after |
+| `bench/tests/test_which_role_vocabulary_2026-10-30.py` | 6 | 2 of 2 mutations red |
 
-### Subjects named in Section 8
+### Subjects named in sections 8 and 9
 
-- The 4-layer policy merge, its monotonicity check and its layer loading:
-  `bench/cdsfl_registry/registry.py` — `load_effective_policy`,
-  `_deep_merge`, `_check_monotonicity`, and the constants `HARD_CONSTRAINTS`,
-  `HARD_THRESHOLDS`, `HARD_STRINGS` (17 protected dotpaths in total).
-- The role dimension that already exists and is structural rather than
-  functional: `bench/experiment_11_orchestrator.py:59` declares
-  `Role = Literal["collator", "player_manager", "participant"]`, read live by
-  `bench/reference_runner_v3.py` as `mc.role != "collator"`.
-- The claim channel awaiting the ruling: `bench/claim_ledger.py`, class
+- The 4-layer policy merge: `bench/cdsfl_registry/registry.py` —
+  `load_effective_policy`, `_deep_merge`, `_check_monotonicity`, and the
+  constants `HARD_CONSTRAINTS`, `HARD_THRESHOLDS`, `HARD_STRINGS`
+  (17 protected dotpaths).
+- The structural role enum: `bench/experiment_11_orchestrator.py:59`,
+  `Role = Literal["collator", "player_manager", "participant"]`.
+- The claim channel awaiting a ruling: `bench/claim_ledger.py`, class
   `ClaimLedger`, `informative_only = True`.
-- The 2 channels already ruled informative-only by design:
-  `collect_non_cure_ledger` (founder ruling 2026-09-30) and the
-  `target_complexity` block inside `run_experiment` (founder ruling
-  2026-09-09), both in `bench/reference_runner_v3.py`.
-- The default-off facility that is a different question:
-  `RunnerConfig.sev_f_enabled`, default `False`, from the 2026-10-13 free panel.
-- The 2 `target_complexity` sites that refute C1's argument (a): written
-  2026-09-10 in commit `22fd393a0`, 38 days before the 2026-10-18 search.
+- The 2 channels already ruled informative-only: `collect_non_cure_ledger`
+  (2026-09-30) and the `target_complexity` block in `run_experiment`
+  (2026-09-09), both in `bench/reference_runner_v3.py`.
+- The default-off facility: `RunnerConfig.sev_f_enabled`, default `False`.
+- B50's stale constant: `_RECORDING_RUNS` in
+  `bench/tests/test_immune_memory_evaluation.py`.
+- The accumulating write path: `ImmuneMemory.load` at
+  `bench/reference_runner_v3.py:21620`, `record_experiment` at `:21630`.
+- The archived reset:
+  `bench/state/immune_memory_archive/immune_memory_20261017T095236Z.why.json`.
+- The report generator and its authored half:
+  `scripts/morning_report_build_2026-10-12.py`, with
+  `experimental_notes/data/morning_report_decisions.json` and its
+  `_archived_authored_detail` bucket.
 - Absent directories, so neither layer exists: `bench/cdsfl_registry/roles/`
   and `bench/cdsfl_registry/tasks/`.
 
 ### Entry and ticket identifiers
 
-- Task entries carrying this work: **B21** (role layer, 3 questions) and
-  **C1** (claim channel). Both remain OPEN and both now carry the correction
-  on their own marker line in `experimental_notes/CDSFL_MASTER_TASK_LIST.md`.
-- The Stop-gate finding raised as a ticket: `pf:c15b3dbe595a`, anchor derived
-  through `TicketStore.propose_from_chat` as
+- Entries carrying this work: **B21** (role layer), **C1** (claim channel),
+  **B50** (immune-memory assertions). All 3 remain OPEN and all 3 now carry the
+  correction on their own marker line in
+  `experimental_notes/CDSFL_MASTER_TASK_LIST.md`.
+- The Stop-gate finding: `pf:c15b3dbe595a`, anchor derived as
   `chat#2026-10-30T02:44:26+00:00#97afe049`.
-- 7 entries remain OPEN in total: B21, B22, C1, B41, B47, B50, R1.
+- 7 entries remain OPEN: B21, B22, C1, B41, B47, B50, R1.
 
 ### Intervals, with the denominator each belongs to
 
@@ -188,5 +234,17 @@ dotpaths within 1 pair share a merge mechanism and are not independent
 observations. The first draft of this result paired the 60-pair interval with
 the 17-dotpath count, and the pre-commit Wilson checker refused the commit,
 recomputing [0.0000, 0.1843] for 0 of 17.
+
+B50's before-and-after failure counts are stated as sets rather than as
+proportions, because both sides are the same integer (6 of 34) and a proportion
+over an unchanged denominator would say nothing about which assertion moved.
+
+### Board reach
+
+The pre-commit board names 73 test files explicitly; 723 exist under
+`bench/tests/`, so it does not reach 650 of them. That is deliberate — a full
+board is roughly 66 minutes — and
+`bench/tests/test_the_morning_report_is_generated_2026-10-12.py` is one of the
+650, which is why 15 failing assertions about this document survived 3 commits.
 
 Written under CDSFL note standard v1.8.
