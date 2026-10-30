@@ -86,7 +86,7 @@ The 0.05 → 0.02 step reduces wrong demotions by 0.019333, 95% CI [0.011396, 0.
 
 ## The reach of the pre-commit board
 
-The pre-commit board runs 73 of 729 test files on every commit, so 656 are never reached — 0.8999, a census of every test file and not a sample. Adding the 6 newest guards costs 18.88 seconds against 312.45, which is 0.060426 — about 19 seconds, cross-checked in SymPy as the exact rational 1888/31245 and in mpmath.
+The pre-commit board runs 73 of 730 test files on every commit, so 657 are never reached — 0.9000, a census of every test file and not a sample. Adding the 6 newest guards costs 18.88 seconds against 312.45, which is 0.060426 — about 19 seconds, cross-checked in SymPy as the exact rational 1888/31245 and in mpmath.
 
 ## Open with the founder
 
