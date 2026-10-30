@@ -2313,8 +2313,18 @@ def dispatch(
             Used by the runner's in-round fallback path
             (2026-05-22, founder-directed: "every model has a
             secondary; no model misses a round").
-        enable_tools: GATED, default OFF (2026-06-03 "tools decide"
-            integration). When True, the OpenAI-compatible routes
+        enable_tools: DEFAULT ON. ★ This line said "GATED, default OFF
+            (2026-06-03 'tools decide' integration)" until 2026-10-30, when the
+            signature had read `= True` for 2 months. HIS INSTRUCTION of
+            2026-08-30, verbatim: *"all models under all conditions (including
+            agents in simulated runs) ... should always have tool use enabled
+            and enforced without exception"*. The default was changed that day
+            to honour it and this docstring was never updated, so the prose
+            contradicted the code it describes -- stale documentation being a
+            defect of equal standing to stale code. The property is pinned by
+            `bench/tests/test_tools_are_enabled_without_exception_2026-08-30.py`,
+            which asserts the DEFAULT is True rather than merely the behaviour,
+            and that no dispatch path hardcodes it off. When True, the OpenAI-compatible routes
             (openrouter, deepseek) are given the execute_python tool +
             sandboxed default_tool_executor so a reviewing model can run
             Python during analysis and attach runnable falsifiers. The
