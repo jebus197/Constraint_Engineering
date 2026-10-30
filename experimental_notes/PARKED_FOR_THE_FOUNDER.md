@@ -123,6 +123,12 @@ Your options are to delete it, to rename it out of the `CDSFL_*` glob, or to lea
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## The 4 verified closures and the remaining queue need ticket-store and task-list writes, and a pre-commit board is mid-run against the working tree
+
+*Parked 2026-10-30T00:03:53+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (14)
