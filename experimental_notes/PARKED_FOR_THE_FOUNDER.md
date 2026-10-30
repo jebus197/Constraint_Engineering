@@ -147,6 +147,12 @@ Your options are to delete it, to rename it out of the `CDSFL_*` glob, or to lea
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## all 6 open entries require the founder: 1 ruling, 3 panel questions, 1 panel dispatch, 1 go-ahead, 1 authorisation with spend
+
+*Parked 2026-10-30T04:03:57+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (14)
