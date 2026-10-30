@@ -139,6 +139,12 @@ Your options are to delete it, to rename it out of the `CDSFL_*` glob, or to lea
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## B21 needs a free-seat panel dispatched on the role layer brief
+
+*Parked 2026-10-30T11:01:05+00:00.*
+
+The brief at bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md validates at exit 0 with 7 declared figures that re-execute, its versioned mirror is refreshed, and the preflight reports claude_cli logged in with 8 of 8 checks passing. The only remaining step is dispatching the free panel, which spends the founder's token allowance and occupies his 8 cores for about 60 minutes. Whether a free dispatch needs his permission is raised as qs:9be924df11ed. Parked rather than done because All_Verdicts_Consolidated_2026-10-30.txt already presented the dispatch to him as his to authorise.
+
 ---
 
 # Settled — kept for the record, not for his attention (16)
