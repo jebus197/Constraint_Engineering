@@ -125,9 +125,21 @@ Your options are to delete it, to rename it out of the `CDSFL_*` glob, or to lea
 
 ## The 4 verified closures and the remaining queue need ticket-store and task-list writes, and a pre-commit board is mid-run against the working tree
 
-*Parked 2026-10-30T00:03:53+00:00.*
+*Parked 2026-10-30T00:03:53+00:00. **RESOLVED 2026-10-30 — NEEDS NOTHING FROM HIM.***
 
-**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+**★ THIS SHOULD NEVER HAVE BEEN PARKED FOR HIM AND IS ANNOTATED RATHER THAN DELETED.** It described a TRANSIENT condition — a pre-commit board reading the working tree — and not a decision of his. The board exited, all 4 closures landed, and the whole queue it refers to is committed and pushed. Parking it put a passing obstacle of mine into a file whose purpose is items awaiting HIM, which makes his queue read longer than it is: exactly the defect measured tonight in the feature-request register, where 7 of 14 were complete and still recorded open.
+
+**The lesson, for the next time the Stop gate suggests classifying an obstacle.** `scripts/blocker_triage.py` answers "does this block the task list", and a momentary condition is not what that question is for. A transient obstacle is waited out, not parked. It is also a WRITE — it appends here — so running it while a board reads the tree can itself break a test, which happened at 00:42 tonight.
+
+## B21 role layer: no roles/ or tasks/ directory exists, the merged policy returns 0 role keys, and the 2 vocabularies answer different questions so the choice is his
+
+*Parked 2026-10-30T02:26:48+00:00. **DUPLICATE of the B21 entry above — needs nothing separately.***
+
+**★ THE SAME SUBJECT AS THE B21 ENTRY ABOVE, and kept rather than deleted because its heading carries the EVIDENCE the earlier one lacks.** Read the pair together: the earlier heading names the decision, this one names what was measured about it.
+
+**AND ITS CLASSIFIER REASON IS WEAKER THAN THE EARLIER ONE'S, which is worth noticing.** The earlier run returned *"no entry declares a dependency on it; it is mentioned but nothing is waiting"* — a statement about the task list. This run returned *"no distinctive term to match against the entries"* — a statement about MY PHRASING. The VERDICT was PARK both times and is stable; the REASON varied with how the obstacle was worded, so the earlier reason is the authoritative one. A tool whose verdict holds while its stated reason depends on the caller's wording is still sound, but only the stronger reason may be quoted.
+
+**Where the evidence actually lives:** entry B21 in `experimental_notes/CDSFL_MASTER_TASK_LIST.md`, with its producer at `scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py` and its guard at `bench/tests/test_which_role_vocabulary_2026-10-30.py`.
 
 ---
 
