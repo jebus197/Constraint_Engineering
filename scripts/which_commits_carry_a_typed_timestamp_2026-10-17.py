@@ -28,6 +28,10 @@ Usage: python3 scripts/which_commits_carry_a_typed_timestamp_2026-10-17.py
 """
 from __future__ import annotations
 
+#: The default survey depth. Named so the window hint can tell a default run
+#: from a deliberately widened one rather than guessing at the number.
+_DEFAULT_LIMIT = 60
+
 import argparse
 import datetime
 import pathlib
@@ -91,7 +95,7 @@ def main(argv=None) -> int:
         description=__doc__.splitlines()[0],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__)
-    parser.add_argument("--limit", type=int, default=60,
+    parser.add_argument("--limit", type=int, default=_DEFAULT_LIMIT,
                         help="how many commits back to survey (default 60)")
     args = parser.parse_args(argv)
 
@@ -105,11 +109,26 @@ def main(argv=None) -> int:
     #: bare, the producer therefore reported 0, and a reader could take that as
     #: "this never happened". A 0 that means "outside my window" must not look
     #: like a 0 that means "it does not occur".
-    if not ahead:
-        print(f"  0 violations INSIDE this window. The recorded violations are "
-              f"historical, so if the window has slid past them this 0 means "
-              f"'none in the last {args.limit}' and NOT 'none ever'. Re-run with "
-              f"a larger --limit to reach them; the set is pinned in "
+    #: ★ THE CONDITION WAS WRONG AND MY OWN VIOLATION EXPOSED IT, 2026-10-30.
+    #: It printed the hint only when the window held 0 violations, conflating 2
+    #: different questions: "did this window find any" and "did this window
+    #: REACH the pinned historical set". On 2026-10-30 a commit of mine carrying
+    #: a stamp 2.1 minutes ahead of its own commit date entered the window, so
+    #: `ahead` became non-empty, the hint vanished, and
+    #: `test_the_default_window_no_longer_reaches_them_and_that_is_stated` went
+    #: red -- correctly, because the producer had stopped saying the thing that
+    #: test exists to require. A reader seeing "1 of 3" would have no way to know
+    #: the 10 recorded violations lie outside the window entirely.
+    #:
+    #: SO THE HINT IS ABOUT THE WINDOW, NOT ABOUT THE FINDINGS, and it is printed
+    #: whenever the default window is in use. It names what a count inside this
+    #: window does and does not mean, which is true whether that count is 0 or 3.
+    if args.limit <= _DEFAULT_LIMIT:
+        _none = "0 violations INSIDE" if not ahead else f"{len(ahead)} violation(s) INSIDE"
+        print(f"  {_none} this window. The 10 RECORDED violations are historical "
+              f"and the newest sat 60 commits behind HEAD on 2026-10-29, so a "
+              f"count here means 'in the last {args.limit}' and NOT 'ever'. "
+              f"Re-run with a larger --limit to reach them; the set is pinned in "
               f"bench/tests/test_a_typed_timestamp_is_refused_2026-10-17.py.")
     if not stamped:
         print("  none carry one; nothing to measure.")

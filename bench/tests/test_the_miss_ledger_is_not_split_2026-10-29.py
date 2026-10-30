@@ -118,3 +118,64 @@ class TestTheCaseThatFailedNowPasses:
         assert not silent, (
             f"{len(silent)} step(s) still report SILENT DEFAULT: "
             f"{[s['step'] for s in silent]}")
+
+
+def test_the_alias_also_sets_the_attribute_on_the_parent_package():
+    """A DOTTED NAME RESOLVES BY ATTRIBUTE TRAVERSAL, NOT BY `sys.modules`.
+
+    ★ ADDED 2026-10-30, after the aliasing fix in this file's subject was found
+    to have broken a test it had nothing to do with.
+
+    THE DEFECT. `_register_under_both_names` put the one module object into
+    `sys.modules` under both names and stopped there. A real import also sets the
+    submodule as an ATTRIBUTE of its parent package, and `monkeypatch.setattr`
+    with a dotted string target resolves by that attribute, not by reading
+    `sys.modules`. So `monkeypatch.setattr("bench.routing.route", ...)` raised
+    `AttributeError: 'module' object at bench.routing has no attribute 'routing'`
+    and `test_the_ladder_order_is_measured_not_a_vendor_tuple_2026-10-17.py` went
+    red -- whenever the aliasing path happened to be the FIRST importer.
+
+    WHY A 13,465-TEST BOARD PASSED IT ANYWAY, which is the lesson worth keeping:
+    ORDER DEPENDENCE. Somewhere in a full board an earlier test imports
+    `bench.routing` conventionally and the import machinery sets the attribute
+    itself, so the ladder test passed on luck of ordering. Run on its own it
+    failed in 1.02 s. A board's green is not evidence that a test passes, and
+    this project already records that a flaky guard is worse than a red one.
+
+    THE PROPERTY, asserted rather than the implementation: whichever name reached
+    this module first, `bench.routing` must be reachable by attribute traversal
+    and must be the SAME object as the top-level name. That is exactly what a
+    dotted monkeypatch target needs, so a future change that satisfies
+    `sys.modules` alone fails here.
+    """
+    import bench
+    top = sys.modules.get("routing")
+    pkg = sys.modules.get("bench.routing")
+    assert top is not None or pkg is not None, "neither name is imported at all"
+
+    attr = getattr(bench, "routing", None)
+    assert attr is not None, (
+        "`bench` has no `routing` attribute, so a dotted target like "
+        "\"bench.routing.route\" cannot be resolved by attribute traversal and "
+        "every monkeypatch using one raises AttributeError")
+    for name, mod in (("routing", top), ("bench.routing", pkg)):
+        if mod is not None:
+            assert attr is mod, (
+                f"`bench.routing` as an ATTRIBUTE is a different object from "
+                f"sys.modules[{name!r}]; a patch applied through one would be "
+                f"invisible to code holding the other")
+
+    #: AND THE DOTTED PATCH ITSELF, exercised rather than reasoned about, because
+    #: the attribute being present is the means and the patch working is the end.
+    import bench.routing as _br
+    sentinel = object()
+    saved = getattr(_br, "route", None)
+    try:
+        setattr(sys.modules["bench.routing"], "route", sentinel)
+        resolved = getattr(getattr(bench, "routing"), "route")
+        assert resolved is sentinel, (
+            "a value set on sys.modules['bench.routing'] is not visible through "
+            "attribute traversal from `bench`, so the 2 paths disagree")
+    finally:
+        if saved is not None:
+            setattr(sys.modules["bench.routing"], "route", saved)

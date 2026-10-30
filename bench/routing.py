@@ -922,6 +922,45 @@ def _register_under_both_names() -> None:
         return
     try:
         _sys.modules[other] = me
+        #: ★ AND SET THE ATTRIBUTE ON THE PARENT PACKAGE, which a real import
+        #: does and the first version of this function did not. Added 2026-10-30.
+        #:
+        #: THE DEFECT, OBSERVED. `monkeypatch.setattr("bench.routing.route", ...)`
+        #: resolves a dotted target by ATTRIBUTE TRAVERSAL from `bench`, not by
+        #: reading `sys.modules`. Registering the object in `sys.modules` alone
+        #: left `bench` without a `routing` attribute, so that patch raised
+        #: `AttributeError: 'module' object at bench.routing has no attribute
+        #: 'routing'` -- and `bench/tests/test_the_ladder_order_is_measured_not_a
+        #: _vendor_tuple_2026-10-17.py` went red whenever this aliasing path was
+        #: the FIRST importer.
+        #:
+        #: WHY THE FULL BOARD DID NOT CATCH IT, which is the part worth keeping:
+        #: ORDER DEPENDENCE. In a 13,465-test board some earlier test imports
+        #: `bench.routing` conventionally and the import machinery sets the
+        #: attribute, so the test passed on luck of ordering. Run on its own it
+        #: failed in 1.02 s. A board's green is not evidence that a test passes.
+        #: THE PARENT MAY NOT BE IMPORTED YET, and the first attempt at this
+        #: repair missed that and did nothing. Importing `routing` top-level runs
+        #: this aliasing BEFORE anything has imported `bench`, so
+        #: `sys.modules.get("bench")` was None and the branch was skipped --
+        #: measured: `hasattr(bench, "routing")` still False afterwards.
+        #:
+        #: IMPORTING THE PARENT IS SAFE HERE AND THAT IS CHECKED, not assumed:
+        #: `bench` has no `__init__.py`, so it is a NAMESPACE package whose
+        #: `__file__` is None and whose import adds exactly 1 entry to
+        #: `sys.modules` and executes no module body. There is therefore no
+        #: re-entrancy risk: a namespace package cannot import this module back.
+        if "." in other:
+            _parent, _leaf = other.rsplit(".", 1)
+            _pkg = _sys.modules.get(_parent)
+            if _pkg is None:
+                try:
+                    import importlib as _il
+                    _pkg = _il.import_module(_parent)
+                except Exception:                                  # pragma: no cover
+                    _pkg = None
+            if _pkg is not None and getattr(_pkg, _leaf, None) is not me:
+                setattr(_pkg, _leaf, me)
     except Exception:                                              # pragma: no cover
         pass
 
