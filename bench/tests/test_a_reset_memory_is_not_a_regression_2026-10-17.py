@@ -140,26 +140,83 @@ def test_the_skip_reason_names_his_ruling_and_what_was_reset(sandboxed_reset):
     with pytest.raises(BaseException) as caught:
         mod._require_populated_memory()
     message = str(getattr(caught.value, "msg", caught.value))
-    assert "DELIBERATELY RESET" in message, message
+    # ★ UPDATED 2026-10-30 FOR HIS OPTION 1. The skip no longer says the memory
+    # was RESET, because under his ruling it fires whenever the memory does not
+    # hold the 3 runs these claims were measured on -- which includes a memory
+    # populated by other runs, where "DELIBERATELY RESET" would be false. The
+    # 2 properties that matter are unchanged and are asserted below: the reason
+    # is HIS, and the skip says it is temporary.
+    assert "does not hold the runs these claims were measured on" in message, message
     assert "his ruling" in message.lower(), message
     assert "re-arms itself" in message, (
         "the skip must say it is temporary, or the next reader takes it for a "
         "permanent exemption")
+    assert "reset immune memory" in message.lower(), (
+        "the archived reset reason must still be carried, or a reader cannot "
+        "tell why the memory is in this state")
 
 
-def test_it_re_arms_the_moment_a_record_exists(sandboxed):
-    """THE PROPERTY THE FIRST VERSION FAILED, and the reason this guard exists."""
+def test_it_re_arms_the_moment_the_MEASURED_runs_exist(sandboxed):
+    """THE PROPERTY THE FIRST VERSION FAILED, and the reason this guard exists.
+
+    ★ NARROWED TO THE MEASURED RUNS 2026-10-30, ON HIS RULING, AND THIS GUARD
+    IS WHAT CAUGHT THE CHANGE. It asserted that ANY record re-arms the suite,
+    which is the rule his option 1 replaced: the free run of 2026-10-28 wrote 1
+    unrelated record and all 6 assertions re-armed against a memory that does
+    not hold `exp47_divergence_locationkey_live`,
+    `exp48_chemistry_exam_live` or `exp49_engineering_exam_live`, then failed
+    as regressions they are not.
+
+    The TEETH ARE KEPT and the property is now the right one: a memory holding
+    the 3 measured runs MUST arm, so the suite cannot be exempted while the
+    evidence for its claims is present. The converse -- that a memory holding
+    OTHER runs skips, and says which runs are missing -- is asserted in the
+    test below, so neither half can be dropped silently.
+    """
     mod, state, _ = sandboxed
     data = json.loads(state.read_text())
     data["records"] = {"1": {"flaw_class": 1, "confirmed": 1.0, "rejected": 0.0}}
-    data["experiment_count"] = 1
-    data["experiment_ids"] = ["probe_run"]
+    data["experiment_count"] = len(mod._RECORDING_RUNS)
+    data["experiment_ids"] = list(mod._RECORDING_RUNS)
     state.write_text(json.dumps(data))
     assert mod.reset_record() is None, (
-        "a populated memory is still being read as reset, so the 6 "
-        "populated-memory assertions would stay skipped for ever")
+        "the memory holds every run these claims were measured on and is "
+        "still being read as reset, so the 6 populated-memory assertions "
+        "would stay skipped for ever")
     # AND THE SKIP HELPER THEN LETS THE TEST RUN.
     mod._require_populated_memory()
+
+
+def test_a_memory_of_OTHER_runs_skips_and_names_what_is_missing(sandboxed_reset):
+    """The other half of his option 1, so the widening cannot go unnoticed.
+
+    A memory populated by runs these claims were NOT measured from must skip
+    rather than fail -- that is the defect B50 recorded -- and the skip must
+    name the runs it is missing, or it is indistinguishable from a blanket
+    exemption.
+    """
+    mod, state, archive = sandboxed_reset
+    if not any(archive.glob("*.why.json")):
+        pytest.skip("no archived reset record to read")
+    data = json.loads(state.read_text())
+    data["records"] = {"1": {"flaw_class": 1, "confirmed": 1.0, "rejected": 0.0}}
+    data["experiment_count"] = 1
+    data["experiment_ids"] = ["some_unrelated_run"]
+    state.write_text(json.dumps(data))
+
+    record = mod.reset_record()
+    assert record is not None, (
+        "a memory holding only unrelated runs was read as sufficient, so the "
+        "6 assertions will re-arm against evidence that cannot support them "
+        "and fail as regressions -- the exact defect B50 recorded")
+    reason = str(record.get("reason", ""))
+    for run in mod._RECORDING_RUNS:
+        assert run in reason, f"the skip reason does not name {run}"
+    assert "some_unrelated_run" in reason, (
+        "the skip reason does not say what the memory DOES hold, so a reader "
+        "cannot tell a reset from a mismatch")
+    with pytest.raises(BaseException):
+        mod._require_populated_memory()
 
 
 def test_a_renamed_records_attribute_raises_rather_than_exempting(sandboxed_reset,

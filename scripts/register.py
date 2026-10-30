@@ -73,6 +73,12 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
+#: The kind vocabulary, imported rather than restated. `--kind` listed
+#: ("fr", "pf", "qs", "wr") by hand until 2026-10-30, so `ds` -- added to
+#: KINDS on his ruling that day -- would have been unsearchable from the
+#: command line while existing in the store.
+from bench.ticket_store import KINDS  # noqa: E402
+
 
 def _build_parser() -> argparse.ArgumentParser:
     """Separate from `main` so a guard can parse without running anything."""
@@ -98,7 +104,7 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="narrow to one derived area of functionality")
     p.add_argument("--status", metavar="STATUS", action="append", default=[],
                    help="keep only these statuses (repeatable)")
-    p.add_argument("--kind", choices=("fr", "pf", "qs", "wr"),
+    p.add_argument("--kind", choices=KINDS,  # the vocabulary, never a copy
                    help="feature request or problem found")
     p.add_argument("--areas", action="store_true",
                    help="print the area distribution and exit")

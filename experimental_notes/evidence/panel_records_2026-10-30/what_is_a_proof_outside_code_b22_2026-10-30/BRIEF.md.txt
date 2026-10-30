@@ -1,0 +1,178 @@
+# PANEL BRIEF — What a PROOF is outside code, and how the harness verifies one
+
+**This brief supersedes 3 earlier briefs on the same question and its framing is
+the founder's, not this project's.** The superseded briefs are
+`general_purpose_stem_calculator_2026-10-18`,
+`is_this_yet_a_general_purpose_stem_calculator_2026-10-29` and
+`stem_generality_b22_2026-10-29`. All 3 were written, none was ever dispatched,
+and all 3 asked the question the wrong way round. They are retired by name and
+kept in the archive.
+
+## WHAT WAS WRONG WITH THE EARLIER FRAMING, IN HIS WORDS
+
+The earlier briefs asked what a "fix" means when a faulty claim has "no
+runnable repair" — when the only available remedies are narrowing the claim,
+restating its conditions, or declaring it undecidable. The founder rejected
+that framing on 2026-10-30, verbatim:
+
+    This framing does not seem ideal. ‘No runnable repair’ clearly
+    pertains to code. But this strikes at the question of what a ‘repair’
+    in a non-code STEM context should be? In this sense, I suspect that a
+    better definition would be a ‘solution’, or more accurately for
+    science in general a ‘proof’. So the panel is in this sense being
+    asked to decide what a ‘proof’ in chemistry, or biology, or physics,
+    or statistical mechanics, or astrophysics, or any one of any number of
+    other STEM topics (and their sub-branches should be). So the premise,
+    given that CDSFL was build from the outset to be a general purpose
+    STEM calculator), that these topics cannot have a ‘proof’ seems
+    questionable at best. What they can have is a written proof, supplied
+    by the models themselves, calculated using the available open source
+    STEM tools we have discussed expensively in the past (the majority of
+    which should be contained within your global, or local [or both?]
+    CLAUDE.md files, which should then be verified again by the machinery
+    of the harness using the same and STEM tools where available. This way
+    models can use their intelligence to suggest solutions, test them with
+    tools, then print proofs, which are then verified, or refuted by the
+    harness, before the system as a whoe decides if the claim survives. pf
+
+(His "build" is "built", "expensively" is "extensively", and "whoe" is
+"whole".)
+
+THE CLAUSE THAT CARRIES THE OBLIGATION is "test them with tools": a model
+does not merely reason and then write; it computes, and the written proof
+reports what it computed. Step 2 of the pipeline below is that clause.
+
+## REQUIRED SECTION 1 — The question, as he frames it
+
+**The premise that a non-code STEM field cannot have a proof is WITHDRAWN. Do
+not argue it and do not assume it.** The question is not whether a proof
+exists; it is what one IS, field by field, and what the harness must do to
+verify or refute it.
+
+His architecture, stated as a 4-step pipeline, is what you are asked to
+evaluate and to make concrete:
+
+  1. A model uses its reasoning to propose a SOLUTION.
+  2. The model TESTS that solution with the open-source STEM tools available to
+     it — the ones named in the project's CLAUDE.md files: SymPy, z3, SciPy,
+     NumPy, statsmodels, mpmath, uncertainties, pint, astropy, PuLP, pandas,
+     rdkit, biopython, scikit-learn, networkx, with Wolfram as a secondary
+     falsifier where available and never as the primary route.
+  3. The model PRINTS a proof: a written artefact carrying the derivation and
+     the tool output that supports it.
+  4. The HARNESS re-verifies or refutes that proof, using the same tools where
+     available, before the system as a whole decides whether the claim
+     survives.
+
+**THE PANEL IS ASKED TO ANSWER 4 THINGS.**
+
+  **Q1. What constitutes a proof, per field?** Take at least 3 of: chemistry,
+  biology, physics, statistical mechanics, astrophysics, and name for each what
+  an acceptable proof artefact is and which installed tool verifies it. A
+  stoichiometric balance, a sequence validity claim, a dimensional consistency
+  claim and a distributional claim are not the same kind of object and probably
+  do not share a verifier. Be specific: name the tool and the call.
+
+  **Q2. What is the harness's verification step, mechanically?** Step 4 is the
+  one that does not exist yet. Say what it reads, what it runs, and what it
+  returns. A proof the harness cannot re-run is a claim, not a proof — so state
+  what makes a printed proof RE-RUNNABLE, and whether that requirement excludes
+  any field in Q1.
+
+  **Q3. What happens when the tools cannot decide?** This is where the earlier
+  framing had something right even though it asked it wrongly. If step 4 can
+  return neither verified nor refuted, say what it returns and what the gate
+  does with that. Note the project's own rule: if the tools cannot verify a
+  claim, the claim is UNVERIFIABLE and escalates — it is not guessed at. Say
+  whether escalation is sufficient here or whether a distinct outcome is
+  needed, and if so whether an EXISTING member of the vocabulary already
+  carries it.
+
+  **Q4. Does a proof-centred step 4 change severity?** A proof verified by tool
+  execution is a different evidential object from a code fix that passes its
+  test. Say whether `effective_severity` and `spec_verification_factor` can
+  take a verified proof as input unchanged, or whether a verified proof needs
+  its own path. This question is live: the founder separately ruled on
+  2026-10-30 that severity is a measure of residual uncertainty that varies
+  with the difficulty of the question, and a panel review of severity itself is
+  queued behind this one.
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form your answer by USING the machinery, not by describing it. A seat that
+returns prose without having run anything has not answered.
+
+**Instrument 1, `S_k`, the admissibility measure.** `compute_sk` is veto-only
+on fenced listings and `NO_SCORE` means, per `docs/GLOSSARY.md:237`, that *"S_k
+has no opinion"*. Run it on a document from `bench/tests/fixtures/stem/` and
+report what it returns. The expectation to TEST, not to assume: `S_k` is silent
+on a non-code artefact, so the measure that decides admissibility says nothing
+exactly where a printed proof would arrive. If that is so, Q2's mechanism has
+to supply the opinion `S_k` does not.
+
+**Instrument 2, `severity`.** `effective_severity` multiplies the asserted
+number by `spec_verification_factor`, which reads `falsifier_verdict` and
+returns 1.0 for CONFIRMED, 0.0 for REFUTED and 0.5 otherwise. Establish by
+execution what it does with a finding whose falsifier is a TOOL VERIFICATION
+of a proof rather than a test of an edit. This bears directly on Q4.
+
+**Instrument 3, `gamma`.** Convergence requires `gamma_critical >= 0.30` AND K
+consecutive zero-new-critical rounds. Establish what a proof-bearing finding
+does to `gamma` across rounds under your proposed step 4.
+
+**Instrument 4, the tools themselves.** Pick 1 field from Q1 and actually run
+the verification you propose: a real SymPy, z3, rdkit, biopython or pint call
+against a real claim, with the command and its output reported. An answer to
+Q1 that names a tool without calling it has described a pipeline rather than
+demonstrated one.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. A fix without a runnable falsifier that has been EXECUTED is a hypothesis, not a fix.
+
+Write your fix INTO the sandbox repository tree at its real path, as a file. A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down. Report the exact command you ran and the output you saw.
+
+If your fix adds a verdict to the vocabulary, it must be reached by a caller and executed by a test — an addition nothing reaches is not additive. If your fix instead shows that an EXISTING member of the vocabulary already covers the case, demonstrate that by execution and say which, because that would refute this brief's framing and is the cheaper answer.
+
+## REQUIRED SECTION 4 — What would refute you
+
+State, before you conclude, what evidence would overturn your own answer.
+
+This brief's framing is the founder's, and it is refuted — not merely
+disagreed with — if any of these holds. Test them:
+
+1. **Step 4 already exists.** If `bench/falsifier_verify.py`, the claim ledger
+   or the B-cell specialist dispatch already re-runs a model's tool output
+   against the same tools, then nothing is missing and the gap is in the
+   documentation. Demonstrate it by execution and name the entry point.
+2. **A field in Q1 has no re-runnable proof object.** If for some field the
+   only available proof is an argument no installed tool can check, then step
+   4 cannot cover that field and his pipeline has a named boundary rather than
+   general applicability. Say which field and why, and do not generalise from
+   it to the fields where it does work.
+3. **The tools verify the ARITHMETIC and not the CLAIM.** A SymPy call that
+   confirms an identity has not confirmed that the identity answers the
+   question asked. If step 4 as you specify it can pass a proof that is
+   internally correct and substantively wrong, say so and give the concrete
+   case — this is the most consequential refutation available and the one most
+   likely to be missed.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return exactly these fields, so replies can be compared without a parser guessing:
+
+- `verdict` — one of: GAP CONFIRMED / NO GAP (an existing status covers it) / GAP ELSEWHERE (state where)
+- `reasoning` — the derivation, naming each instrument you ran
+- `instrument_results` — for each of `S_k`, `severity` and `gamma`: the command, the output, and whether it matched this brief's stated expectation
+- `fix` — the path written in the sandbox tree, and what it changes
+- `falsifier` — the falsifier you wrote, the command you ran, and its executed output
+- `refutation_condition` — what would overturn your answer
+- `strongest_disagreement` — your strongest disagreement with this brief's own framing, stated even if your verdict agrees with it
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new above-threshold findings; a finding is above threshold if missing it could cause a real-world failure, a violation or an unsafe condition. Report how many passes you ran and what the last one added.
+
+There is no compelled convergence in this round. Disagreement with the other seat, and with this brief, is preserved as information rather than smoothed to consensus. Do not attempt to reconcile your answer with anyone else's.
+
+Written under CDSFL note standard v1.8 (17 October 2026).

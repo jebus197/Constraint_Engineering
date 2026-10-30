@@ -126,6 +126,11 @@ def test_every_one_of_his_sections_exists_and_separates(store):
     # as the paragraph above prescribes.
     store.propose("wr", "deferred work", "run Exp 53 after the list clears", "chat",
                   subjects=["m.w"], ruled="2026-08-07")
+    # EXTENDED AGAIN 2026-10-30 when `ds` became the 5th kind, on his ruling:
+    # "If a comment I make has no marker, and does not end with a question
+    # mark, then treat it as a ds." Grown, not relaxed, for the third time.
+    store.propose("ds", "a discussion", "perhaps we need a new label", "chat",
+                  subjects=["m.d"], ruled="2026-10-30")
     assert {t.kind for t in store.all()} == set(KINDS)
     for k in KINDS:
         assert len(store.by_kind(k)) == 1, (

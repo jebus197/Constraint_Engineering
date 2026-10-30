@@ -174,7 +174,40 @@ def reset_record() -> "dict | None":
                 "letting it default, or the 6 populated-memory assertions in "
                 "this suite become permanently skipped.")
         if live._records:
-            return None
+            # ★ OPTION 1, HIS RULING OF 2026-10-30: the skip is keyed on
+            # WHICH runs the memory holds, not on whether it holds anything.
+            # Verbatim: *"I chose option 1. fr"*
+            #
+            # WHY THE OLD CONDITION BROKE. It read "0 records -> skip", so the
+            # 6 assertions in this suite skipped while the memory was empty
+            # and RE-ARMED the moment any run wrote any record. The free run
+            # of 2026-10-28 wrote the first new record and all 6 re-armed
+            # against a memory that does not and will not hold
+            # `_RECORDING_RUNS` -- the 3 runs every figure in this suite was
+            # measured from. They then failed as regressions, which they are
+            # not: the product is correct and the archive proves it.
+            #
+            # THE PROTECTION AGAINST A PERMANENT EXEMPTION IS KEPT, and it is
+            # now stronger rather than weaker: the condition names the 3 runs
+            # explicitly, so restoring the archive (the restore command is
+            # recorded in the reset record) re-arms all 6 immediately, and a
+            # future run recording under those ids does the same. What it will
+            # NOT do is re-arm against unrelated runs and call the mismatch a
+            # regression.
+            held = set(getattr(live, "experiment_ids", ()) or ())
+            if set(_RECORDING_RUNS) <= held:
+                return None
+            record = dict(record or {})
+            record["reason"] = (
+                "the immune memory holds "
+                + str(len(live._records))
+                + " record(s), but not the "
+                + str(len(_RECORDING_RUNS))
+                + " runs every figure in this suite was measured from ("
+                + ", ".join(_RECORDING_RUNS) + "). Held instead: "
+                + (", ".join(sorted(held)) or "none named") + ". "
+                + str(record.get("reason", ""))
+            )
     return record
 
 
@@ -185,12 +218,15 @@ def _require_populated_memory() -> None:
         return
     held = (record.get("state_when_archived") or {})
     pytest.skip(
-        "the immune memory was DELIBERATELY RESET and holds 0 records: "
+        "the immune memory does not hold the runs these claims were measured "
+        "on: "
         + str(record.get("reason", "no reason recorded"))[:160]
         + f" (archived {record.get('archived_utc', '?')}, holding "
         + f"{held.get('experiment_count', '?')} experiment(s)). This suite "
-        + "describes a POPULATED memory and re-arms itself as soon as a run "
-        + "writes a record."
+        + "describes a memory populated by 3 named runs and re-arms itself as "
+        + "soon as those runs are present again -- by restoring the archive, "
+        + "whose restore command is in the reset record, or by a run "
+        + "recording under those ids. His ruling of 2026-10-30, option 1."
     )
 
 

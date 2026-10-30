@@ -1,0 +1,196 @@
+# PANEL BRIEF — What severity IS, and whether it should gate convergence
+
+**The founder ordered this review added to the outstanding set on 2026-10-30,
+and the question is his.** It is NOT a request to confirm a position of this
+project's. The previous report told him that no recommendation could be offered
+because "whether severity is a confidence inside a range is a question about
+what severity means, and no archive can answer it". He rejected that as an
+answer and supplied the definition himself.
+
+## HIS QUESTION AND HIS DEFINITION, VERBATIM
+
+    This goes back to a fundamental question of what severity should be
+    and how it should be calculated. You make it sound as though there is
+    no reliable way it can be calculated? But sever5ity is a fundamental
+    property of our maths model. Without it, our maths model makes
+    considerably less sense. What I asked about severity ‘being within a
+    range’ was probably poorly expressed on my part. But given what
+    severity is, which as I understand it is what are the chances that a
+    particular flaw, or class of flaws might remain after a given number
+    of passes under severe scrutiny in any given test, this seems to me
+    like a fundamental measure of uncertainty and/or of confidence that
+    can be assigned to any given outcome in any STEM focused experiment?
+    But this also seems like a good candidate for a panel review. So you
+    should add it to the panel reviews that remain outstanding. Should
+    severity be a purely recorded statistic, or should it feed into the
+    convergence mechanics of the schema, so that convergence only triggers
+    when there is high confidence in any outcome and uncertainty (and
+    therefore severity) is low and what should realistic boundaries for
+    these be? Clearly just stating that severity should be set at 0.7 in
+    all circumstances may ultimately tell us very little about the
+    validity, or applicability of a result one way or another. For example
+    (and the example I gave previously in another context) if you were to
+    ask all the models on the harness to calculate the sum of 4 + 4 and
+    call this an experiment, the severity/residual risk of the final
+    calculation being wrong would be likely to be very low. But if the
+    models on the harness were asked to resolve the Riemann hypothesis,
+    the residual risk/severity that the resulting outcome (after a given
+    number of passes through the harness) would remain uncertain, or could
+    not fully be resolved could potentially be significantly higher.
+    Therefore ‘severity’ by this definition, is unlikely to be a fixed
+    number, and would depend on the complexity of the topic under
+    consideration, and the confidence once can derive in the accuracy of a
+    given answer. Hence ‘it might exist within a range’, rather than as a
+    fixed number. That much I thought should be obvious?
+
+("sever5ity" is "severity".)
+
+## WHAT HIS WORDS ESTABLISH BEFORE THE PANEL STARTS
+
+**Do not re-argue these. They are his, and they are the premises.**
+
+  1. **Severity is a fundamental property of the mathematical model**, not a
+     reporting convenience. Without it the model makes considerably less sense.
+     The standing directive on gamma applies by analogy: treat the model as the
+     fixed point and hunt the mechanics first.
+  2. **His definition:** the chance that a particular flaw, or class of flaws,
+     remains after a given number of passes under severe scrutiny in a given
+     test. That is a residual-risk quantity, so it is a measure of uncertainty
+     and therefore of confidence in an outcome.
+  3. **It is therefore NOT a fixed number.** It depends on the difficulty of the
+     question and on the confidence derivable in the answer. His worked
+     contrast: ask every seat to compute 4 + 4 and the residual risk that the
+     result is wrong is very low; ask them to resolve the Riemann hypothesis
+     and the residual risk that the outcome stays uncertain, or cannot be
+     resolved at all, is potentially far higher.
+  4. **So "set severity at 0.7 in all circumstances" may tell us very little**
+     about the validity or applicability of a result. That is his charge against
+     the current convention, and the panel is asked to answer it rather than
+     defend it.
+  5. **His earlier phrase "being within a range" is clarified by him**: he means
+     severity varies with the problem, not that a single finding carries an
+     interval. The previous report treated the phrase as the former and he has
+     said that reading was his own wording being poorly expressed, so the
+     clarified reading is the one to work from.
+
+## THE 2 QUESTIONS HE ASKS, AND A THIRD THEY IMPLY
+
+**Q1. Should severity be a purely recorded statistic, or should it feed the
+convergence mechanics?** His proposal is explicit: convergence triggers only
+when confidence in the outcome is high and uncertainty — and therefore
+severity — is low. Answer with reference to what the two-sided gate does today:
+`gamma_critical >= gamma_alt_threshold` (default 0.30) AND K consecutive
+zero-new-critical rounds, in `_check_gamma_alt_convergence`
+(`bench/reference_runner_v3.py`). Severity enters that gate today only through
+what counts as CRITICAL, by way of the 0.7 cut. State precisely where a
+severity term would enter, and whether it is a third condition, a modifier on
+an existing one, or a replacement for the CRITICAL count.
+
+**★ HARD CONSTRAINT ON ANY ANSWER TO Q1: GAMMA IS LOAD-BEARING AND MAY NOT BE
+DEMOTED.** The decay curve and diminishing returns are the foundation of the
+model. An answer that makes gamma reported-only, or that replaces the two-sided
+gate with a severity gate, is refused by standing directive. A severity
+condition ADDED to the gate is in scope; a severity condition SUBSTITUTED for
+part of it is not.
+
+**Q2. What are realistic boundaries?** If severity varies with difficulty, then
+0.7 as a universal CRITICAL cut is at best a default. Say what the bounds
+should be and what sets them. Name the observable: his definition is a
+probability of a flaw surviving N passes under scrutiny, so a bound must be
+expressible in those terms and estimable from a run rather than chosen.
+
+**Q3, implied by Q1 and Q2 together and the one most likely to be skipped.**
+If severity varies with the difficulty of the question, then severity values
+from different experiments are not on a common scale, and a fixed cut applied
+across them compares unlike quantities. Say whether severity needs
+normalisation against question difficulty before it can gate anything, and if
+so what difficulty measure is available in this harness. An answer that sets
+boundaries without addressing comparability has answered Q2 for one experiment
+only.
+
+## REQUIRED SECTION — Use the harness, and the evidence that already exists
+
+Form your answer by running things. 3 measurements already exist and bear
+directly on this; verify them rather than trusting this brief.
+
+**1. The spread between independent judgements of the same defect.** Measured
+over 147 archived cases: 0.12 at the midpoint, 0.18 on average. This is the
+quantity he first called the wobble. Reproduce it and say whether it is
+consistent with his definition — a residual-risk estimate SHOULD vary between
+judges if the question is hard, so a spread is not automatically a defect.
+
+**2. Nothing combines those independent judgements.** The merge keeps whichever
+record happened to be the target and discards the rest, so the kept figure
+falls outside the range of the judgements it came from in 35 of 147 cases,
+between 18 and 31 per cent. Establish this by execution. It bears on Q1: a
+severity that gates convergence cannot be whichever of several estimates
+happened to survive a merge.
+
+**3. The 0.7 cut's provenance and its untested proxy.** 0.7 is pre-registered
+in `bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md` as the cut
+above which a finding counts as critical. A separate measurement
+(`scripts/the_severity_proxy_was_never_tested_2026-10-28.py`) establishes that
+the 2026-09-02 blind audit is UNINFORMATIVE about whether severity predicts the
+CRITICAL judgement — kappa = -0.022688, Fisher p = 0.778818, but over a
+severity window only 0.09 wide, with power 0.144250 against a strong
+relationship. **Do not cite that pair as evidence against the proxy.** 2,807 of
+3,237 archive entries were classified at a severity the audit never examined,
+and 1,119 of the 1,408 CRITICAL calls ever made sit ABOVE the band. Say what
+measurement WOULD settle it, and whether your answer to Q1 depends on it.
+
+**4. Run the instruments.** `effective_severity` and
+`spec_verification_factor` are where severity is consumed. Report what they
+return, and what a severity expressed as a residual-risk distribution rather
+than a scalar would break.
+
+## REQUIRED SECTION — Produce a fix, and test it
+
+A finding without a fix is incomplete, and a fix without an executed falsifier
+is a hypothesis. Write the fix into the sandbox tree at its real path and
+report the command and output. If your answer is that severity should stay
+recorded-only, that is a legitimate verdict and still needs a fix: the fix is
+then whatever makes the recorded figure trustworthy — a combination rule for
+independent judgements, at minimum.
+
+## REQUIRED SECTION — What would refute you
+
+State it before concluding. At least these:
+
+  1. **A severity term in the gate is inert.** If adding it changes 0 archived
+     outcomes, it is an addition nothing reaches and fails the additive
+     standard. Test it against the archive.
+  2. **Difficulty is not measurable here.** If no available quantity tracks the
+     difficulty of a question, then his 4 + 4 against the Riemann hypothesis
+     distinction cannot be computed, and a difficulty-normalised severity is
+     not implementable today. Say so plainly if so, and say what would be
+     needed.
+  3. **The spread is measurement error, not uncertainty.** If the 0.18 average
+     spread is judges disagreeing about the same thing rather than genuine
+     residual risk, then it argues for a combination rule and against treating
+     severity as confidence. Distinguish these by execution if you can.
+
+## REQUIRED SECTION — Output shape
+
+- `verdict` — one of: RECORDED ONLY / GATES CONVERGENCE (added condition) /
+  GATES CONVERGENCE (modifier on an existing condition) / NOT IMPLEMENTABLE YET
+- `definition` — severity as you would implement it, in his terms
+- `boundaries` — the bounds, and what sets them
+- `comparability` — your answer to Q3
+- `instrument_results` — for each of the 4 items above: command, output, and
+  whether it matched this brief's statement
+- `fix` — the sandbox path written and what it changes
+- `falsifier` — the falsifier written, the command run, its output
+- `refutation_condition` — what would overturn your answer
+- `strongest_disagreement` — your strongest disagreement with this brief,
+  stated even if your verdict agrees with it
+
+## REQUIRED SECTION — Termination
+
+Stop when a further pass produces no new above-threshold findings. Report how
+many passes you ran and what the last one added.
+
+There is no compelled convergence in this round. Disagreement with the other
+seat, and with this brief, is preserved as information rather than smoothed to
+consensus.
+
+Written under CDSFL note standard v1.8 (17 October 2026).

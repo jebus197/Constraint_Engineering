@@ -89,12 +89,39 @@ def test_the_prefilter_is_the_decision_itself(hv, tmp_path, monkeypatch):
         "so the test proves nothing")
 
 
-def test_all_four_kinds_can_be_raised(hv):
-    """`qs` and `wr` were unreachable from chat entirely."""
-    for kind in hv.KINDS:
+def test_every_chat_raisable_kind_can_be_raised(hv):
+    """`qs` and `wr` were unreachable from chat entirely.
+
+    ★ NARROWED 2026-10-30, AND THE NARROWING IS THE POINT RATHER THAN A
+    RELAXATION. `ds` became the 5th kind on his ruling of that day, and it is
+    DELIBERATELY not raisable from chat: `ds` is also the DeepSeek seat in the
+    dispatch table, and 46 of 53 user-role transcript entries carrying the
+    token use it as a seat name, Wilson [0.751597, 0.934521], against 0 of his
+    794 annotations, Wilson [0.000000, 0.004815]. Raising on chat would file
+    dispatch prompts as discussion requests. Measured by
+    `scripts/the_ds_label_and_the_kind_allowlist_2026-10-30.py`.
+
+    So the property is no longer "every declared kind" but "every
+    CHAT-RAISABLE kind", and the exclusion is asserted below rather than
+    assumed, so a kind cannot quietly leave the raisable set.
+    """
+    raisable = [k for k in hv.KINDS if k not in hv.CHAT_EXCLUDED_KINDS]
+    assert len(raisable) == 4, (
+        f"{len(raisable)} chat-raisable kinds; the exclusion set has changed "
+        "and this test's own figure is stale")
+    for kind in raisable:
         assert hv.raises_a_marker(kind) == kind, (
             f"kind {kind!r} cannot be raised from chat, and 2 of the 4 could "
             f"not before 2026-10-28")
+
+
+def test_the_excluded_kinds_are_refused_from_chat(hv):
+    """The other half, so the exclusion is a property and not an absence."""
+    assert hv.CHAT_EXCLUDED_KINDS, "nothing is excluded; the pair above is vacuous"
+    for kind in hv.CHAT_EXCLUDED_KINDS:
+        assert kind in hv.KINDS, f"{kind!r} is excluded but is not a kind"
+        assert hv.raises_a_marker(kind) is None, (
+            f"kind {kind!r} is in CHAT_EXCLUDED_KINDS yet chat raised it")
 
 
 # ------------------------------------------------------------------ 4, 5, 6

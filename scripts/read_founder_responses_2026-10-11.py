@@ -296,7 +296,8 @@ def file_shape(path: Path) -> dict:
 #: is exactly what was happening: the harvester reported "explicitly marked: 0"
 #: while his files carried 30, because a marker line has no leading hash and was
 #: therefore never part of any annotation's text.
-_MARKER_LINE = re.compile(r"^\s*(fr|pf|qs|wr)(?:\s*,\s*(?:fr|pf|qs|wr))*\s*$", re.I)
+_MARKER_LINE = re.compile(
+    r"^\s*(fr|pf|qs|wr|ds)(?:\s*,\s*(?:fr|pf|qs|wr|ds))*\s*$", re.I)
 
 
 #: ★ A TRAILING MARKER, WRITTEN AT THE END OF THE ANNOTATION ITSELF. Added
@@ -327,16 +328,33 @@ _MARKER_LINE = re.compile(r"^\s*(fr|pf|qs|wr)(?:\s*,\s*(?:fr|pf|qs|wr))*\s*$", r
 #: ticket's verbatim, so stripping the marker out of the annotation would move
 #: every identity derived from it -- a far larger change than the defect.
 _MARKER_TRAILING = re.compile(
-    r"(?:^|[\s.,;:!?)\]\"'’”])((?:fr|pf|qs|wr)(?:\s*,\s*(?:fr|pf|qs|wr))*)"
+    r"(?:^|[\s.,;:!?)\]\"'’”])((?:fr|pf|qs|wr|ds)(?:\s*,\s*(?:fr|pf|qs|wr|ds))*)"
     r"[\s.!?]*$", re.I)
+
+
+#: ★ THE OTHER 5 SEATS, so a trailing `ds` that is the DeepSeek seat is not
+#: read as his discussion marker. `ds` is BOTH a ticket kind (founder ruling
+#: 2026-10-30) and the DeepSeek V4 Pro seat in the dispatch table, and the
+#: collision is realised in exactly 1 shape: a dispatch instruction naming
+#: several seats where `ds` lands last. Measured in
+#: `scripts/the_ds_label_and_the_kind_allowlist_2026-10-30.py`: 0 of his 794
+#: annotations do this today, Wilson [0.000000, 0.004815], so this guard is
+#: PRECAUTIONARY and says so -- but 46 of 53 user-role transcript entries
+#: carrying the token use it as a seat, Wilson [0.751597, 0.934521], so the
+#: shape is not hypothetical, only absent from this source.
+_SEAT_BEFORE = re.compile(r"\b(cc2|cx|ge|cgpt|fable)\s*[, ]\s*$", re.I)
 
 
 def _marker_of(body: str) -> str:
     """His marker read from the END of the annotation, or "" if there is none."""
-    m = _MARKER_TRAILING.search((body or "").strip())
+    body = (body or "").strip()
+    m = _MARKER_TRAILING.search(body)
     if not m:
         return ""
-    return ",".join(x.strip().lower() for x in m.group(1).split(",") if x.strip())
+    found = [x.strip().lower() for x in m.group(1).split(",") if x.strip()]
+    if found == ["ds"] and _SEAT_BEFORE.search(body[:m.start(1)]):
+        return ""
+    return ",".join(found)
 
 
 #: 2 DATES, NAMED FOR WHAT THEY ARE -- repair 2026-10-28, and the first attempt

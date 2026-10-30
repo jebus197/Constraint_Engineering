@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 30 October 2026 12:53 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 30 October 2026 23:37 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,30 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-30 23:13 GMT (READ THIS FIRST)
+
+**HIS 16 RULINGS OF THE 30TH ARE RECORDED AND 13 ARE BUILT.** He annotated `Decisions_Awaiting_You_2026-10-30.txt`; 15 annotations carried a `#` and the 16th, his B41 acceptance, did not, so the mandated reader read 15 of 16. All 15 now carry a verdict row — 537 rows, guard green at 16 tests.
+
+**`ds` IS THE 5TH TICKET KIND, AND IT COLLIDES WITH THE DeepSeek SEAT, SO IT IS CONFINED BY SOURCE.** Measured by `scripts/the_ds_label_and_the_kind_allowlist_2026-10-30.py`: **0 of his 794 annotations** use `ds` as a seat name, Wilson [0.000000, 0.004815]; **46 of 53 user-role transcript entries** carrying the token do, Wilson [0.751597, 0.934521], predominantly harness dispatch prompts. So `ds` is admitted on annotations and REFUSED in chat, with a seat-adjacency guard that drops a trailing `ds` preceded by another seat. **THE QUESTION-MARK RULE WAS NEVER ACTUALLY BUILT BEFORE THIS** despite being recorded as settled: of **703 unmarked annotations, 188 become `qs`** (0.267425, Wilson [0.236035, 0.301344]) and **515 become `ds`**, with **0 left `pf` by default**. **A SEPARATE LATENT DEFECT FELL OUT OF THE SAME CHANGE:** the harvester tested his marker against a hand-written `("fr","pf","qs")` tuple while the vocabulary carried `wr`, so 1 of his 91 marked annotations was refiled as a proposed fix; the allow-list is now `KINDS`. `STORE_EPOCH = "2026-10-17"` is his ruling and is a **FLOOR**, enforced at the call site, not an argparse default.
+
+**MY OWN CHANGE CREATED 95 DUPLICATE PAIRS AND THEY ARE REPAIRED.** `tid_of` digests the kind, so re-harvesting under the new rules minted a second ticket per reclassified annotation: 95 of 2,308 anchors carrying 2 kinds, 190 open rows. All resolved by `deprecate` with evidence; a re-run plans 0. **1 OF THE 95 WAS DECIDED THE WRONG WAY** — the first version recomputed the kind from the annotation's own text, which cannot see an own-line marker of his, so a row carrying his explicit `pf` was superseded in favour of a guessed `ds`. `TicketStore.undeprecate` was built to correct it, refuses anything CLOSED or REJECTED, and the correction is on the record.
+
+**B50 IS DONE ON HIS OPTION 1 AND THE FIX IS FALSIFIED.** The skip now depends on whether the live memory holds `_RECORDING_RUNS` rather than on whether it holds anything: **6 failed, 73 passed becomes 73 passed, 6 skipped**. Naming the held run (`free_run3_no_spec_20261028T235529Z`) as a measured one makes all 6 **arm** — 6 failed, 28 passed — and restoring returns them to skipping, so it is not a blanket exemption. **1 CORRECTION:** he was told the mechanical half breaks a 7th assertion; it breaks none.
+
+**R1 IS DEFERRED UNTIL THE LIST CLEARS AND MUST NOT BE PUT TO HIM AGAIN.** His 4th statement of the same ruling. Its entry says so in terms. It is also independently last by date added, so deferral and order agree.
+
+**THE RUN ORDER IS PRODUCED, NOT GUESSED:** `scripts/the_outstanding_work_in_his_order_2026-10-30.py` — 12 outstanding entries, all 12 dated, 0 sorted by guesswork: **B13, B20, B21, B22, C1, C21, C33, B41, B50, R1, B53, B54**, with B13/B20/C21/C33/R1 deferred. **B21 IS FIRST AMONG THE LIVE ENTRIES.** That script corrected 2 errors of its own making before it was trusted: it read a marker QUOTED inside C16's prose as live and reported a phantom BLOCKED R1, and it reimplemented the did-a-seat-reply predicate and disagreed with the existing census (7 against 8 unrun briefs — the census was right; a 675-byte `console.log` is not a seat reply). It now imports that predicate.
+
+**BRIEFS READY AND UNDISPATCHED.** B21's carries his caveat that the football framing was only ever an analogy, stated as his position and not a verdict. B22's is REWRITTEN to his framing — a non-code repair is a PROOF, computed with the open-source STEM tools and re-verified by the harness — and the 3 earlier briefs are retired by name (`general_purpose_stem_calculator_2026-10-18`, `is_this_yet_a_general_purpose_stem_calculator_2026-10-29`, `stem_generality_b22_2026-10-29`). A severity brief is added on his instruction (B53) with his definition as the premise and the gamma constraint explicit. **Both briefs' quotations are byte-exact lifts verified by execution against the reader**, after 2 quoting slips in this session were caught and corrected.
+
+**WHAT IS LEFT, IN HIS ORDER.** The **658 unreached test files** cannot join the commit gate until the board is clean: 6 of the last board's 9 failures were B50's and are fixed, **3 remain unidentified**, and adding them while anything is red refuses every commit. Then C1's 2 prerequisites, the 16 non-curing closures as a named population, and the 1-in-50 demotion constant. **NOTHING DISPATCHED** — a free panel runs when he says so.
+
+**1 QUESTION OWED HIM, raised as `qs:8629ab6e03e8`:** the B50 recommendation said the suite re-arms "once comparable runs exist" and what is built re-arms on the IDENTICAL runs, because comparable-run re-arming is option 2, which he declined.
+
+**GUARD:** `bench/tests/test_the_ds_kind_is_confined_to_his_annotations_2026-10-30.py`, **47 tests**, and **10 of 10 reversions turn it red** per `scripts/the_ds_vocabulary_mutations_2026-10-30.py`. That harness found **2 hollow assertions of mine** on its first pass: one asserted `MARKER`'s accidental silence rather than the chat exclusion, the other restated the allow-list instead of calling `from_responses`. Both replaced with executing tests. Affected set: **246 passed, 6 skipped**.
+
+**DELIVERABLES:** `experimental_notes/Your_Rulings_Built_2026-10-30.txt` + `.md`, both 0 lint findings, mirrored byte-identically to `~/Desktop/CDSFL_tts/`. **HE ENDORSED THIS FORMAT:** *"Btw this format of tts is easier for me to deal with. Please lean and use it going forward."*
 
 ## SESSION STATE — 2026-10-30 19:41 GMT (READ THIS FIRST)
 

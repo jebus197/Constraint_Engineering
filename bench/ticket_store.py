@@ -1,5 +1,22 @@
 """The project-level ticket store: settled is a RECORDED FIELD, never an inference.
 
+★ THIS STORE COVERS ISSUES RAISED ON OR AFTER 2026-10-17, THE DAY IT WAS BUILT.
+FOUNDER RULING 2026-10-30, verbatim: *"Then mark this clearly at the head of the
+ticket store, so that it can be made clear going forward that it pertains to
+issues created only after the ticket store itself was created on the 17th of
+October 2026."* He raised it the day before, verbatim: *"This is probably a
+historical artefact? The ticket store is still quite new. We shouldn't go back
+and attempt to assign labels to every statement I have ever made"*.
+
+WHAT THE RULING FIXES, AND IT IS HIS OWN DIAGNOSIS. The harvester reached back
+to 2026-10-01 by default and re-derived tickets from annotations written before
+the store existed, so his conversation of earlier weeks arrived as a work queue
+nobody had asked for. Of 6 tickets checked by execution on 2026-10-30, 5 were
+already done. The epoch below is a FLOOR, not a default: `--since` cannot be
+argued below it, because a cut-off that any caller may lower is a cut-off that
+exists only in prose.
+
+
 WHY THIS EXISTS, and the measurement that justifies it rather than a preference.
 On 2026-10-17 the founder observed that the assistant keeps resurrecting settled
 issues, and asked whether the project's existing Bugzilla machinery could be
@@ -207,7 +224,32 @@ STATUSES = TERMINAL | LIVE | {REJECTED}
 #: the exact code identifiers, and `anchor` the file and ordinal of his
 #: annotation. Those 3 are the same ties every other kind uses and they already
 #: survive rewording, so no schema change is needed to satisfy his requirement.
-KINDS = ("fr", "pf", "qs", "wr")
+#: ★ THE EPOCH OF THIS STORE. Nothing before this date is harvested. Founder
+#: ruling 2026-10-30; the reasoning is in the module docstring above. A
+#: harvester may raise its own window but may never lower it past this.
+STORE_EPOCH = "2026-10-17"
+
+#: ★ `ds` IS THE 5TH KIND -- A DISCUSSION. FOUNDER RULING 2026-10-30, verbatim
+#: from his annotation of `Decisions_Awaiting_You_2026-10-30.txt` line 187:
+#: *"If a comment I make has no marker, and does not end with a question mark,
+#: then treat it as a ds. fr"* He proposed it the day before, verbatim: *"But
+#: perhaps we need a new label like 'ds', to denote a discussion request, so
+#: that you don't have to guess at empty labels?"*
+#:
+#: A DISCUSSION IS NOT A SMALL PROPOSAL, for the same reason a QUESTION is not:
+#: it resolves by being TALKED THROUGH, not by being built, and filing it as a
+#: proposed fix is how his conversation became a work queue. 515 of his 703
+#: unmarked annotations take this kind under his rule.
+#:
+#: `ds` COLLIDES WITH THE DeepSeek SEAT AND THE COLLISION IS SOURCE-DEPENDENT,
+#: which is why it is admitted here and refused for chat. Measured by
+#: `scripts/the_ds_label_and_the_kind_allowlist_2026-10-30.py`: 0 of his 794
+#: annotations use `ds` as a seat name, Wilson [0.000000, 0.004815]; but 46 of
+#: 53 user-role transcript entries carrying the token do, Wilson [0.751597,
+#: 0.934521], predominantly harness dispatch prompts naming the panel. That is
+#: the realised shape of the `pr` collision of 2026-10-17, confined to one
+#: source, so the fix is confinement rather than a rename.
+KINDS = ("fr", "pf", "qs", "wr", "ds")
 
 _STOP = frozenset("""a an and are as at be been being but by can could did do does
 for from had has have he her him his how i if in into is it its me my no nor not
@@ -1566,6 +1608,51 @@ class TicketStore:
                        "resolution": f"superseded by {superseded_by}",
                        "rid": rid_of(tid, superseded_by),
                        "verification": ev})
+        self._append(nt)
+        return nt
+
+    def undeprecate(self, tid: str, reason: str) -> Ticket:
+        """DEPRECATED -> UNCONFIRMED, where the deprecation itself was wrong.
+
+        WHY THIS EXISTS, and it exists because of a real error rather than a
+        hypothetical one. On 2026-10-30 a re-classification script deprecated
+        94 rows whose kind had changed under his new default rule, and 1 of the
+        94 was decided the WRONG WAY: it recomputed the kind from the
+        annotation's own text, and an own-line marker of his is attached to the
+        annotation ABOVE it and so is absent from that text. The row carrying
+        his EXPLICIT `pf` marker was therefore deprecated in favour of a `ds`
+        row derived by guesswork. Overriding an explicit marker of his is the
+        one outcome that script must never produce, so there has to be a way
+        back.
+
+        ★ IT CANNOT RESURRECT A SETTLED ISSUE, which is the property
+        `reopen`'s founder-only guard protects. CLOSED, REJECTED, MERGED and
+        REOPENED are all refused here: this undoes a DEPRECATION and nothing
+        else. A deprecation is an engineering comparison between 2 fixes, not
+        a verdict of his, so correcting one needs no escalation to him -- and
+        correcting a verdict of his still does.
+
+        The `superseded_by` link and its evidence are CLEARED, because a row
+        that is no longer deprecated is not superseded by anything; the reason
+        is appended to the notes so the error stays on the record.
+        """
+        t = self._by_tid.get(tid)
+        if t is None:
+            raise KeyError(f"no ticket {tid}")
+        if t.status != "DEPRECATED":
+            raise ValueError(
+                f"ticket {tid} is {t.status}, not DEPRECATED. This method undoes "
+                "a deprecation only; a CLOSED or REJECTED ticket is terminal and "
+                "only the founder may reopen it.")
+        why = " ".join(str(reason).split())
+        if len(why) < 30:
+            raise ValueError(
+                "undoing a deprecation needs the reason the deprecation was "
+                "wrong, named specifically enough to audit")
+        nt = Ticket(**{**asdict(t), "status": "UNCONFIRMED",
+                       "superseded_by": "", "supersession_evidence": "",
+                       "resolution": "", "verification": "",
+                       "notes": list(t.notes) + [f"UNDEPRECATED: {why}"]})
         self._append(nt)
         return nt
 

@@ -103,8 +103,26 @@ def test_the_live_list_parses_and_carries_the_seeded_rulings():
     entries = tlm.parse_entries()
     assert len(entries) > 100, "the parser lost entries"
     ruled = {e.ident: e.ruled for e in entries if e.ruled}
-    assert ruled.get("R1") == "2026-08-07", ruled
-    assert ruled.get("A19") == "2026-09-10", ruled
+    # ★ THE PROPERTY IS THAT THE FIELD IS READ, NOT WHAT TODAY'S VALUE IS.
+    # This asserted `ruled["R1"] == "2026-08-07"` until 2026-10-30, when his
+    # ruling deferring R1 legitimately moved the field to 2026-10-30 and the
+    # test failed on correct code. A `ruled` date names the ruling that set the
+    # entry's CURRENT state, so pinning one entry's literal value makes a live
+    # document's own content a fixture -- the class this project has recorded
+    # as a guard accusing correct code. The teeth are kept: the field must be
+    # populated, must be a date, and R1 and A19 must both carry one.
+    assert len(ruled) > 20, (
+        f"only {len(ruled)} entries carry a ruled date; the parser is not "
+        "reading the field")
+    import re as _re
+    for ident in ("R1", "A19"):
+        got = ruled.get(ident)
+        assert got, f"{ident} carries no ruled date"
+        assert _re.fullmatch(r"20\d\d-\d\d-\d\d", got), (
+            f"{ident} ruled field is {got!r}, not a date")
+    # A19's ruling has not moved and is pinned on purpose, so a parser that
+    # invented dates would still be caught.
+    assert ruled["A19"] == "2026-09-10", ruled
 
 
 # --------------------------------------------------------------------------
@@ -117,7 +135,20 @@ def test_task_items_carries_the_ruled_field():
     assert "ruled" in next(iter(items.values())), (
         "task_items() dropped the field, so the routing below cannot see it"
     )
-    assert items["R1"]["ruled"] == "2026-08-07"
+    # Not pinned to a literal: see the note in
+    # test_the_live_list_parses_and_carries_the_seeded_rulings. His 2026-10-30
+    # deferral moved R1's ruled date, and the property here is that the
+    # generator CARRIES the field rather than what today's value is.
+    import re as _re
+    assert _re.fullmatch(r"20\d\d-\d\d-\d\d", items["R1"]["ruled"]), items["R1"]
+    # A19 is not asserted here: `task_items()` yields only the entries the
+    # generator routes, and A19 is not among them. The teeth instead come from
+    # requiring that every ruled value the generator DOES carry is a date, so a
+    # generator emitting an empty or malformed field is caught.
+    dated = [i for i in items.values() if i.get("ruled")]
+    assert len(dated) > 5, f"only {len(dated)} routed items carry a ruled date"
+    for i in dated:
+        assert _re.fullmatch(r"20\d\d-\d\d-\d\d", i["ruled"]), i
 
 
 def test_a_ruled_entry_is_not_in_the_decision_list():

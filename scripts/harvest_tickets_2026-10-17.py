@@ -73,7 +73,8 @@ except Exception:  # noqa: BLE001
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
-from bench.ticket_store import TicketStore, norm_title, LIVE, KINDS  # noqa: E402
+from bench.ticket_store import (  # noqa: E402
+    TicketStore, norm_title, LIVE, KINDS, STORE_EPOCH)
 
 READER = REPO / "scripts" / "read_founder_responses_2026-10-11.py"
 TASKLIST = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
@@ -220,6 +221,45 @@ HARNESS_ECHO = re.compile(
 CODE_SPAN = re.compile(r"`[^`]*`")
 
 
+#: ★ `ds` IS ADMITTED FOR HIS ANNOTATIONS AND REFUSED FOR CHAT, because the
+#: collision with the DeepSeek seat is realised in only one of the two sources.
+#: Measured by `scripts/the_ds_label_and_the_kind_allowlist_2026-10-30.py`:
+#: 0 of his 794 annotations use `ds` as a seat name, Wilson
+#: [0.000000, 0.004815]; 46 of 53 user-role transcript entries carrying the
+#: token do, Wilson [0.751597, 0.934521], predominantly harness dispatch
+#: prompts that name the panel. Raising on those would file 46 dispatch
+#: prompts as discussion requests, which is the realised `pr` failure of
+#: 2026-10-17 in a new costume.
+#:
+#: `MARKER` does not currently carry `ds` in its alternation, so this is
+#: BELT AND BRACES -- and deliberately so, because the safety is otherwise
+#: ACCIDENTAL: anyone deriving `MARKER` from `KINDS` to remove the duplicate
+#: vocabulary (exactly the repair made 30 lines below) would silently
+#: reintroduce the collision. Held by
+#: `bench/tests/test_the_ds_kind_is_confined_to_his_annotations_2026-10-30.py`.
+CHAT_EXCLUDED_KINDS = ("ds",)
+
+
+def _unmarked_kind(text: str) -> str:
+    """The kind for an annotation he left unmarked. HIS RULING, 2026-10-30.
+
+    Verbatim, from `Decisions_Awaiting_You_2026-10-30.txt` line 187: *"If a
+    comment I make has no marker, and does not end with a question mark, then
+    treat it as a ds. fr"* The question-mark half he ruled the day before:
+    *"I think its safe to say that if a statement of mine ends with a question
+    mark (?) then it is probably a question. So yes you should probably do
+    this. fr"*
+
+    The default WAS `pf`, unconditionally, which is why 72 of his annotations
+    became proposed fixes the Stop gate then reported as outstanding WORK.
+    Reach, measured: of 703 unmarked annotations, 188 end in a question mark
+    and become `qs` (0.267425, Wilson [0.236035, 0.301344]), and 515 become
+    `ds`. 0 remain `pf` by default, which is the point -- a default that
+    asserts he proposed a repair is a default that invents work.
+    """
+    return "qs" if str(text).rstrip().endswith("?") else "ds"
+
+
 def raises_a_marker(text: str) -> str | None:
     """The kind this text RAISES, or None. A citation or a quotation is None."""
     t = str(text)
@@ -227,7 +267,8 @@ def raises_a_marker(text: str) -> str | None:
         return None
     stripped = CODE_SPAN.sub(" ", t)
     stripped = CITATION.sub(" ", stripped)
-    return marked_kind(stripped)
+    k = marked_kind(stripped)
+    return None if k in CHAT_EXCLUDED_KINDS else k
 
 
 def from_responses(since: str) -> list[dict]:
@@ -289,9 +330,19 @@ def from_responses(since: str) -> list[dict]:
         # "explicitly marked: 0" while his files carried 30. The default
         # stays `pf` for an unmarked annotation, which is what it was.
         _mk = str(v.get("marker", "") or "").split(",")[0].strip().lower()
-        _mk = _mk if _mk in ("fr", "pf", "qs") else (marked_kind(txt) or "")
+        # THE ALLOW-LIST IS THE VOCABULARY, NOT A COPY OF IT -- 2026-10-30.
+        # This tuple was hand-written as ("fr", "pf", "qs") while the
+        # vocabulary has carried `wr` since 2026-10-19, so a `wr` marker on an
+        # annotation was silently refiled as `pf`. Measured by
+        # `scripts/the_ds_label_and_the_kind_allowlist_2026-10-30.py`: 1 of his
+        # 91 marked annotations was misfiled this way, at
+        # `Morning_Report_2026-10-19_GENERATED.txt` line 153. B44's own
+        # verification said `wr` was reached and it was RIGHT ABOUT THE TASK
+        # LIST and wrong about this source, which is why a duplicate of a
+        # vocabulary is a defect even when both copies look correct.
+        _mk = _mk if _mk in KINDS else (marked_kind(txt) or "")
         out.append({"verbatim": txt,
-                    "kind": _mk or "pf",
+                    "kind": _mk or _unmarked_kind(txt),
                     "marked": bool(_mk),
                     "source": "responses",
                     "source_ref": f"{pathlib.Path(v['file']).name}:{v['line_index']}",
@@ -571,7 +622,10 @@ def from_task_list() -> list[dict]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--since", default="2026-10-01")
+    # THE FLOOR IS THE STORE'S OWN EPOCH, not this default -- his ruling of
+    # 2026-10-30. A window argued below `STORE_EPOCH` is raised back to it
+    # below, so the cut-off cannot be lowered by a caller.
+    ap.add_argument("--since", default=STORE_EPOCH)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--store", default=None)
     #: ★ `chat` IS OUT OF THE DEFAULT ON HIS RULING OF 2026-10-28, and it is
@@ -608,6 +662,14 @@ def main() -> int:
     a = ap.parse_args()
 
     want = {s.strip() for s in a.sources.split(",") if s.strip()}
+    # ★ THE FLOOR BINDS HERE, so it is not merely the default. His ruling of
+    # 2026-10-30 is that this store covers issues raised on or after the day it
+    # was built, and a floor enforced only by an argparse default is a floor any
+    # caller removes by passing `--since`.
+    if a.since < STORE_EPOCH:
+        print(f"  --since {a.since} is before the store's epoch "
+              f"{STORE_EPOCH}; raised to the epoch (founder ruling 2026-10-30)")
+        a.since = STORE_EPOCH
     rows: list[dict] = []
     if "task_list" in want:
         rows += from_task_list()
