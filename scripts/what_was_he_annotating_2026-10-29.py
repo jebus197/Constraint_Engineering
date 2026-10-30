@@ -37,8 +37,19 @@ def _reader():
 
 
 def context_for(filename: str, needle: str, before: int = 14,
-                after: int = 2) -> list[str]:
-    """The lines around the annotation whose text contains `needle`."""
+                after: int = 2, ordinal: int = 0) -> list[str]:
+    """The lines around the annotation whose text contains `needle`.
+
+    ★ `ordinal` SELECTS WHICH OCCURRENCE, and ignoring it was a defect, found
+    2026-10-29. He writes the same sentence more than once: "I accept your
+    recommendation. fr" appears TWICE in `Decisions_Awaiting_You_2026-10-29.txt`,
+    approving 2 DIFFERENT recommendations. The 2 annotations are distinguished
+    only by the trailing ordinal of their anchor (`...#0`, `...#1`), and this
+    tool read `anchor.split("#")[0]` -- the filename -- and threw the ordinal
+    away, so it returned the FIRST occurrence's context for both and reported
+    one approval's subject as the other's. That produced a wrong classification
+    of what work was outstanding before it was caught.
+    """
     r = _reader()
     path = r.RESPONSES / filename
     if not path.is_file():
@@ -54,8 +65,14 @@ def context_for(filename: str, needle: str, before: int = 14,
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     lines = text.split("\n")
     key = " ".join(needle.split())[:60].lower()
-    for i, ln in enumerate(lines):
-        if key and key in " ".join(ln.split()).lower():
+    hits = [i for i, ln in enumerate(lines)
+            if key and key in " ".join(ln.split()).lower()]
+    if hits:
+        if ordinal >= len(hits):
+            return [f"(anchor names occurrence {ordinal} but only {len(hits)} "
+                    f"match(es) of {key!r} exist in {filename}; the anchor and "
+                    f"the file disagree, which is itself a finding)"]
+        for i in [hits[ordinal]]:
             lo = max(0, i - before)
             hi = min(len(lines), i + after + 1)
             out = []
@@ -88,11 +105,19 @@ def main() -> int:
         if t is None:
             print(f"=== {tid}: no such ticket")
             continue
-        fname = (t.anchor or "").split("#")[0]
+        _parts = (t.anchor or "").split("#")
+        fname = _parts[0]
+        #: the anchor is file#contenthash#ordinal; the ordinal is what tells 2
+        #: identical annotations apart, so it is read rather than discarded.
+        try:
+            _ord = int(_parts[2]) if len(_parts) > 2 else 0
+        except ValueError:
+            _ord = 0
         print(f"=== {t.kind}:{t.tid}  file={fname or '(none)'}")
         print(f"    HIS WORDS: {' '.join((t.verbatim or '').split())[:300]}")
         print("    --- what he was annotating ---")
-        for ln in context_for(fname, t.verbatim or "", args.before, args.after):
+        for ln in context_for(fname, t.verbatim or "", args.before, args.after,
+                              ordinal=_ord):
             print("   ", ln)
         print()
     return 0

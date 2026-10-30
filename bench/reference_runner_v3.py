@@ -331,7 +331,6 @@ from runner_core import (
     format_findings_for_context,
     INITIAL_FINGERPRINTS,
     MODEL_SPECS,
-    CONVERGENCE_EXCLUDED_MODELS,
     CONTEXT_CHAR_BUDGET,
     get_effective_context_budget,
 )

@@ -240,7 +240,15 @@ def main(argv=None) -> int:
         return 0
     print(f"  {len(rows)} match(es), showing {len(shown)}")
     for r in shown:
-        ruled = f" ruled:{r['ruled']}" if r["ruled"] else ""
+        #: ★ A QUESTION'S DATE IS WHEN HE ASKED IT, NOT WHEN IT WAS RULED.
+        #: `scripts/harvest_tickets_2026-10-17.py:405` sets `ruled` to the date of
+        #: HIS MESSAGE when the role is user, so for a harvested `qs` the field
+        #: holds the date he wrote the question. Printing that as "ruled" made 7
+        #: unanswered questions of his look decided for 12 days, which is how they
+        #: came to sit untracked. His 2026-10-19 ruling is that a question's
+        #: resolution is an ANSWER, not a build; the label now matches the kind.
+        _dlabel = "asked" if r["kind"] == "qs" else "ruled"
+        ruled = f" {_dlabel}:{r['ruled']}" if r["ruled"] else ""
         ref = f" [{r['task_ref']}]" if r["task_ref"] else ""
         print(f"  {r['tid']}  {r['kind']}  {r['status']:<12} "
               f"{r['area'][:34]:<34}{ref}{ruled}")

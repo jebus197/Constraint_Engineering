@@ -270,6 +270,30 @@ class ClaimLedger:
     It decides nothing about admissibility by itself -- `aggregate()` reports a
     state, and `informative_only` records that the state is not wired into
     sigma, S_k or R_k in v1.
+
+    ★ IT IS STILL TRUE, AND `apply_claim_channel` DOES NOT CHANGE THAT, recorded
+    here 2026-10-30 because a reader should learn it from this module rather than
+    from a report about it. `apply_claim_channel` was built 2026-10-29 and has NO
+    caller in the harness: its only caller outside this module is its own producer,
+    `scripts/the_claim_channel_enters_r_k_2026-10-29.py`. The live computation is
+    `R_k = R_base * (1 - nu_eff) + nu_eff` at `bench/reference_runner_v3.py:15774`
+    and `:15848`, and neither reaches it. So the PATHWAY exists and is unreached,
+    which is the addition-that-does-nothing shape the additive standard names 11
+    prior instances of.
+
+    WHY IT IS NOT WIRED TONIGHT, having been described as a 1-line change and not
+    being one. Both `R_k` sites are pure arithmetic over `sk`, `R_det`, `R_old`,
+    `nu_b` and `nu_f`; neither has access to a ledger, and `apply_claim_channel`
+    needs this ledger's COVERAGE. Wiring therefore means threading a new input
+    through the scoring functions and their callers, which is a design change and
+    not plumbing.
+
+    AND WHY THIS FLAG IS NOT DERIVED FROM THE WEIGHT, which was proposed and is
+    refused. `CLAIM_CHANNEL_WEIGHT == 0.0` would read as the same fact and is not:
+    this flag records WIRING. A weight raised above 0 while the wiring still did
+    not exist would make a weight-derived flag report False and so claim the
+    channel was in use when nothing calls it -- strictly less honest than the
+    hand-set constant it would replace.
     """
 
     informative_only = True
