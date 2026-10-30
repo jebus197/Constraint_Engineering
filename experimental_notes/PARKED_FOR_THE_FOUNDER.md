@@ -141,6 +141,12 @@ Your options are to delete it, to rename it out of the `CDSFL_*` glob, or to lea
 
 **Where the evidence actually lives:** entry B21 in `experimental_notes/CDSFL_MASTER_TASK_LIST.md`, with its producer at `scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py` and its guard at `bench/tests/test_which_role_vocabulary_2026-10-30.py`.
 
+## B21 three role-layer questions
+
+*Parked 2026-10-30T02:50:03+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (14)

@@ -318,6 +318,42 @@ def work_done(since: str) -> list[tuple[str, str, str]]:
     return out
 
 
+#: A LEDGER LINE IS ONE LINE, AND ITS BUDGET IS DERIVED FROM THE PREFIX.
+#:
+#: * ADDED 2026-10-30. `test_it_lists_commits_not_narrative` pins a ledger line
+#: below 220 characters, and commit `018e1b01` carries a 226-character subject
+#: written the same night -- 193 characters of prose where a subject belongs.
+#: The guard is right: that subject IS narrative. History is not rewritten here,
+#: on his ruling, so the generator must tolerate an over-long subject rather
+#: than break on one.
+#:
+#: THE BUDGET IS MEASURED, NEVER RESERVED. It is the limit minus the length of
+#: the ACTUAL rendered prefix minus the marker, because a hardcoded reserve
+#: cannot bound a string whose prefix grows -- the 960-against-900 defect of
+#: 2026-10-28, where a truncation path reserved 200 characters for a notice
+#: whose length grew with the open count.
+#:
+#: AND THE LABEL CHANGES WITH IT. The surrounding region is declared verbatim as
+#: "git commit subjects, as committed". A silent truncation would make that
+#: declaration false, so the declaration now names the truncation. 220 stays
+#: hardcoded in the guard ON PURPOSE: a pin that imported this constant would
+#: follow it upward and stop being a pin.
+_LEDGER_LINE_MAX = 200
+_LEDGER_TRUNCATION_MARK = " [...]"
+
+
+def ledger_line(prefix: str, subject: str,
+                limit: int = _LEDGER_LINE_MAX) -> str:
+    """One ledger line, with the subject cut to the measured remaining budget."""
+    line = prefix + subject
+    if len(line) <= limit:
+        return line
+    budget = limit - len(prefix) - len(_LEDGER_TRUNCATION_MARK)
+    if budget <= 0:                 # prefix alone already over: nothing to cut
+        return line
+    return prefix + subject[:budget].rstrip() + _LEDGER_TRUNCATION_MARK
+
+
 def _first_sentence(text: str) -> str:
     t = re.sub(r"\s+", " ", (text or "").replace("**", "")).strip()
     m = re.search(r"^(.{20,200}?[.!?])(\s|$)", t)
@@ -435,10 +471,11 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
     A("")
     A(f"One line per commit since {since}. Detail is in the commit and the notes it names.")
     A("")
-    A(_VB.format("git commit subjects, as committed"))
+    A(_VB.format("git commit subjects, as committed, each cut to one line "
+              "at " + str(_LEDGER_LINE_MAX) + " characters where over-long"))
     A("")
     for h, when, subj in done:
-        A(f"- `{h}` {when} — {subj}")
+        A(ledger_line(f"- `{h}` {when} — ", subj))
     A("")
     A(_VE)
     A("")
