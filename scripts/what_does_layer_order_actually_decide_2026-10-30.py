@@ -255,6 +255,25 @@ def main() -> int:
     print(f"    Wilson 95% (closed form) : [{lo:.6f}, {hi:.6f}]")
     print(f"    Wilson 95% (statsmodels) : [{slo:.6f}, {shi:.6f}]"
           f"   agree={agree}")
+
+    #: ★ THE ONE-SIDED EXACT UPPER BOUND, PRINTED HERE FROM 2026-10-30.
+    #: It was quoted in entry B21's panel brief and this producer did not emit
+    #: it, so the brief validator refused the brief: a number typed into a
+    #: brief is a claim about evidence rather than evidence. With 0 of 60
+    #: differing, the one-sided exact (Clopper-Pearson) upper limit solves
+    #: (1 - p)**n = alpha, so p = 1 - alpha**(1/n). scipy's beta quantile and
+    #: an mpmath evaluation of the closed form are asserted equal, because a
+    #: cross-check that is only printed is not a cross-check.
+    from scipy import stats as _sst
+    import mpmath as _mp
+    if n_hard_diff == 0:
+        _exact_hi = float(_sst.beta.ppf(0.95, n_hard_diff + 1,
+                                        n_pairs - n_hard_diff))
+        _closed = float(1 - _mp.power(_mp.mpf("0.05"), _mp.mpf(1) / n_pairs))
+        assert abs(_exact_hi - _closed) < 1e-9, (
+            f"one-sided bound unverified: scipy {_exact_hi} vs mpmath {_closed}")
+        print(f"    one-sided exact 95% upper bound : {_exact_hi:.6f}"
+              f"   (scipy and mpmath agree to 1e-9)")
     #: ★ THE DENOMINATOR IS THE PAIR, NOT THE DOTPATH. A first write of this
     #: result in entry B21 put the 60-pair interval beside the 17-dotpath count,
     #: and the pre-commit Wilson checker refused the commit, recomputing

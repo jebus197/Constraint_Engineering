@@ -19,11 +19,14 @@ Artefacts under review, by path:
 - `bench/reference_runner_v3.py:13189` and `:13269` — the 2 live reads of `mc.role`
 - `bench/cdsfl_registry/domains/` and `models/` — layers 2 and 4, the only 2 that exist as directories
 
-<!-- figure: role vocabulary | scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py | 63 of 67 quoted role values across 24 files are STRUCTURAL; collator 37, participant 18, player_manager 8 against orchestrator 3, classifier 1, worker 0 -->
-<!-- figure: layer order | scripts/what_does_layer_order_actually_decide_2026-10-30.py | 0 of 60 (domain, model) pairs differ under order reversal; 0 of 60 share ANY leaf key -->
-<!-- figure: protected set | scripts/what_does_layer_order_actually_decide_2026-10-30.py | 17 HARD dotpaths, 0 of which move under order reversal -->
-<!-- figure: absence behaviour | scripts/what_does_layer_order_actually_decide_2026-10-30.py | 3 distinct precedents: model RAISES, task is SILENT, unknown domain WARNS -->
-<!-- figure: missing directories | scripts/what_does_layer_order_actually_decide_2026-10-30.py | roles/ absent and tasks/ absent, so layer 3 of the 4 has no directory either -->
+
+<!-- figure: role vocabulary | scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py | 63/67 = 0.940299 -->
+<!-- figure: layer order | scripts/what_does_layer_order_actually_decide_2026-10-30.py | 0 of 60 pair(s) -->
+<!-- figure: order interval | scripts/what_does_layer_order_actually_decide_2026-10-30.py | [0.000000, 0.060172] -->
+<!-- figure: one-sided bound | scripts/what_does_layer_order_actually_decide_2026-10-30.py | one-sided exact 95% upper bound : 0.048703 -->
+<!-- figure: protected set | scripts/what_does_layer_order_actually_decide_2026-10-30.py | HARD dotpaths protected by the live check: 17 -->
+<!-- figure: absence behaviour | scripts/what_does_layer_order_actually_decide_2026-10-30.py | RAISE, WARN, SILENT -->
+<!-- figure: missing directories | scripts/what_does_layer_order_actually_decide_2026-10-30.py | roles_dir_exists       False -->
 
 ## REQUIRED SECTION 2 — Use the harness
 
