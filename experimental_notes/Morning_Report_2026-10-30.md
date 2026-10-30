@@ -150,6 +150,28 @@ Third, the memory ledger. 262 files on disk against 260 stated, because 2 memory
 
 In the first 2 the measurement was right and only the sentence was wrong, which is the harder case to catch by reading, because a wrong number usually looks wrong and a right number under a wrong denominator reads perfectly. And the hook's hedged hint about the ledger, which was wrong the first time I saw it tonight, was right the second time. That is what hedged means, and it is a reason to check it rather than to discount it.
 
+## 10. This supersedes section 1. you have fewer decisions than that section says, because 2 of them you already made
+
+Section 1 was written before this was found, and it overstates what you owe. Read this section instead: it names 6 open entries of which 1 is a ruling in the sense section 1 meant.
+
+Of the 3 open entries that ask in their own words for a ruling, 2 already carry your ruling, given on 29 October and built the same day. Both quotations are in the message of a single commit, and both are yours verbatim.
+
+B47 is the one that matters most, because its entry carried no ruling date at all and closed with the words needs his ruling. Your words, quoted in that commit: build and implement option 1, followed by the feature request marker. All 4 of the things that entry says must happen before it is done have happened, and I verified each by running it rather than by reading it. The completion field exists. The baseline change is not merely wired but live: the function that lists saves recorded as unclean returns a result today, naming the save made at 01:41 tonight that failed its own postconditions, and the baseline the memory check resolves genuinely differs depending on whether that flag is set. And the guard has 14 tests, all passing, which name the first save path and the follow up save path separately and make 22 live calls to the code rather than reading its text. B47 is now recorded as done, dated to your ruling of the 29th rather than to tonight.
+
+C1 is the same shape. Your words in the same commit: I accept your recommendation, followed by the same marker. The design question that entry asks, which of the 3 scoring terms a claim level verdict enters and whether as a multiplier or as a channel of its own, was answered and shipped. It enters the recursive reliability term as a multiplier, 1 minus weight times coverage, with 16 passing tests and agreement from SymPy, z3 and Wolfram Language on 6 properties.
+
+And this corrects something I wrote earlier tonight, in section 8 above. That section ends by telling you C1 still needs your ruling on 1 channel. That is wrong. The ruling it names was given 1 day earlier. What genuinely remains on C1 is a single number: the channel's weight reads 0, so the multiplier is exactly 1 and no score changes. Promotion means choosing a weight above 0, and the commissioning evidence that gates it already exists. So C1 stays open on 1 scalar, not on an architecture question, and I wrote 2 paragraphs about checking premises before putting them to you and then failed to check this one.
+
+The honest arithmetic of your morning, then. B50 is a genuine new ruling, on the corrected price list in section 9. B21 carries 3 panel questions that are yours because they are not reducible to a measurement. B22 needs a panel dispatched. B41 needs your go ahead, with 2 corrections to its own failure list recorded today: it cites a guard by a path that has never existed in this history, and the ladder failures it lists no longer fail, all 33 of those tests passing. R1 needs authorisation and costs money. C1 needs a weight. That is 6 open entries, of which 1 is a ruling in the sense section 1 meant.
+
+How this was found, and the detector was blind on its first run. The entry's own ruled field is the field that is wrong, so it cannot be the detector. The independent record is the commit message, because when a ruling of yours is built the commit names the entry and quotes you. The first version of that search reported 0 suspects while B47 sat in the history, read by hand minutes earlier, for 2 reasons that were both mine: it split the output of the log command on line breaks while requiring field separators on every line, so only the first line of each commit body was ever examined and the quotation sits further down; and it used a word boundary escape that the log command's regular expression dialect does not honour. A 0 from a blind detector is indistinguishable from a real 0, so its guard now asserts that the 2 known cases are found rather than asserting a count.
+
+Its first attempt to tell your voice from mine also failed, and the failure is almost funny. Most quotations beside an entry identifier turn out to be my own prose quoted back in my own commit messages, 18 of the 19 harvested. Looking for a metacognitive marker anywhere in the quotation gave 4 hits and 3 were the English article a matching the analyse command in the middle of ordinary prose. Requiring the marker to come last gives exactly 1 hit, and it is the true positive, because your verdicts put the marker at the end. The article is now deliberately excluded from the marker set, and the cost of that choice, that a verdict of yours reading only a would be missed, is recorded in the guard rather than hidden.
+
+And the guard for that detector contained an assertion that could never fail, which I caught and replaced. It read as a conditional expression that always evaluates to true. An assertion that cannot fail is the addition nothing reaches, which this project has confirmed 11 times, and it had appeared in a file written to guard against exactly that.
+
+The list still provably terminates. New entries per entry closed stands at 0.7791 with a 95 per cent interval from 0.6181 to 0.9821 and an exact test against 1 at p equals 0.0198, so it remains subcritical.
+
 
 ## Technical appendix
 
@@ -166,6 +188,9 @@ same figure.
 | 4 channels, 2 already ruled, 1 awaiting | `scripts/how_many_channels_actually_await_his_ruling_2026-10-30.py` |
 | B50's filter repairs 1 and breaks 1 | `scripts/does_filtering_the_stale_constant_repair_two_2026-10-30.py` |
 | The reset re-armed 6 stale pins | `scripts/the_reset_rearmed_six_stale_pins_2026-10-29.py` |
+| 2 of 3 ruling-askers already have his ruling | `scripts/which_open_entries_already_have_his_ruling_2026-10-30.py` |
+| Options 3 and 1 compose: 7 of 15 prevented | `scripts/do_options_three_and_one_compose_2026-10-29.py` |
+| New entries per entry closed, R = 0.7791 | `scripts/task_list_burndown_2026-09-11.py` |
 | Which role vocabulary the code speaks, 63 of 67 | `scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py` |
 | Questions owed, by direction | `scripts/what_questions_are_owed_2026-10-30.py` |
 | Memory index line and character budget | `scripts/the_line_budget_is_the_binding_one_2026-10-29.py` |
@@ -181,6 +206,9 @@ same figure.
 | `bench/tests/test_the_ledger_budget_is_derived_not_reserved_2026-10-30.py` | 19 | catches the reserve mutation `test_it_lists_commits_not_narrative` passes; z3 maximality |
 | `bench/tests/test_the_morning_report_is_generated_2026-10-12.py` | 22 | 15 failed before the archive fix, 22 pass after |
 | `bench/tests/test_which_role_vocabulary_2026-10-30.py` | 6 | 2 of 2 mutations red |
+| `bench/tests/test_which_open_entries_already_have_his_ruling_2026-10-30.py` | 15 | positive control on 2 known rulings; negative control on 5 of my own quotes |
+| `bench/tests/test_the_memory_baseline_skips_an_unclean_save_2026-10-29.py` | 14 | B47's evidence; both save paths, 22 live calls |
+| `bench/tests/test_the_claim_channel_enters_r_k_2026-10-29.py` | 16 | C1's evidence; SymPy, z3 and Wolfram on 6 properties |
 
 ### Subjects named in sections 8 and 9
 
@@ -217,7 +245,14 @@ same figure.
   `experimental_notes/CDSFL_MASTER_TASK_LIST.md`.
 - The Stop-gate finding: `pf:c15b3dbe595a`, anchor derived as
   `chat#2026-10-30T02:44:26+00:00#97afe049`.
-- 7 entries remain OPEN: B21, B22, C1, B41, B47, B50, R1.
+- **B47 is now DONE**, dated to his ruling of 2026-10-29 rather than to the
+  day it was recorded, with
+  `bench/tests/test_the_memory_baseline_skips_an_unclean_save_2026-10-29.py`
+  as its evidence.
+- 6 entries remain OPEN: B21, B22, C1, B41, B50, R1 — of which 1 (B50) is a
+  ruling in the sense section 1 meant. C1 awaits a single scalar
+  (`CLAIM_CHANNEL_WEIGHT`, currently 0.0), B21 3 panel questions, B22 a panel
+  dispatch, B41 a go-ahead, R1 authorisation and money.
 
 ### Intervals, with the denominator each belongs to
 
@@ -227,6 +262,9 @@ same figure.
 | Pairs sharing any leaf key between layers | 0 of 60 | [0.000000, 0.060172] | closed form and statsmodels agree to 1e-12 |
 | Channels already ruled informative-only by design | 2 of 4 | [0.150039, 0.849961] | closed form and statsmodels agree |
 | Open entries that ask in their own words for a ruling | 4 of 7 | [0.250458, 0.841780] | — |
+| Ruling-askers that already carry his ruling | 2 of 3 | [0.207660, 0.938508] | closed form and statsmodels agree |
+| Follow-up saves NOT prevented by option 3 | 8 of 15 | [0.301170, 0.751905] | Clopper-Pearson [0.265861, 0.787333] |
+| New entries per entry closed (R, subcritical) | — | [0.618100, 0.982100] | exact test against R = 1: p = 1.983431e-02 |
 
 The 1,020 individual pair-by-dotpath comparisons (60 pairs by 17 dotpaths, 0
 differing) are stated as a count and deliberately given **no** interval: the 17
