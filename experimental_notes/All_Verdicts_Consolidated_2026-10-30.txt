@@ -1,0 +1,103 @@
+EVERYTHING AWAITING YOUR VERDICT, CONSOLIDATED, 30 October 2026
+
+Prepared at 10:05 GMT. Branch sim shakedown dated the 29th of September. Commit 8a05a1e3.
+
+This single file replaces 5 separate spoken files written since 17:42 yesterday: the answers file of 17:42, the explanations file of 19:15, the consolidated file of 22:52, the board result file of 23:51, and the morning report of 05:23. Where those files disagree, this one is current. A section near the end names what they said that is now superseded, so nothing there needs re-reading.
+
+Every count here comes from the issue register or from a named producer script, not from the earlier files. That matters because the earlier files carried figures that have since moved.
+
+
+SECTION 1. YOUR 4 OPEN QUESTIONS
+
+These are the only items in the register recorded as questions and still open. 54 questions have been recorded in total and 48 are closed.
+
+1. B39. Is severity inherently a confidence within a range, and should merged assessments be combined at all? You have already said no archive can settle this, so it is a design judgement rather than a measurement. No recommendation is offered, because supplying a preference here would be the flattering answer rather than an honest assessment.
+
+2. Should the 16 findings closed with a non curing fix be reopened? In 1 archived run, 16 findings are recorded as closed with the defect demonstrated, while the fix that closed them was measured as not curing its own falsifier. 16 of 69 entries, 0.231884, with a 95 per cent interval from 0.148079 to 0.343968. The recommendation is to reopen none and leave the archive as it stands, for the reason you gave about duplicate pairs, but to record the 16 as a known population so the next commissioning arm can compare rather than rediscover.
+
+3. What false alarm proportion for demotion, where 0.05 is the recommended value? The recommendation is 0.05, meaning a 1 in 20 chance of demoting a model that is in fact stable. Every other threshold in the demotion rule follows arithmetically once this 1 number is fixed. It needs your number, not a yes.
+
+4. Should both baseline arms run after the third convergence rather than before it? The measurement names a run from the 3rd of October as the fixed side of the pair. The branch has moved 341 commits since, 51 touching the runner and 10 touching the composer, so running it as designed would evaluate software you are not going to keep. This is a question of timing, not of caution.
+
+
+SECTION 2. THE 6 OPEN TASK ENTRIES
+
+B50, and this is the only genuinely new ruling. The 6 immune memory assertions are stale rather than broken: they describe a memory populated by runs whose priors you archived on the 17th of October, against a live store holding 1 run. Your 3 options stand. What changed overnight is the price list, twice. The partition is 1 and 5, not 2 and 4: filtering the stale constant repairs 1 assertion, leaves 5 unchanged, and breaks 1 that passes today, whose failure message would then be false. And option 2 now has the number it was missing. It costs about 17 live runs before those assertions can be measured again. The binding constraint is not the thresholds but flaw class 8 having to appear at all, which it did in 1 experiment of 6, so 17 runs buys 95 per cent confidence of seeing it. Flaw class 1 needs 12.5 runs with a 95 per cent range from 4.9 to 45.9, and class 5 needs 5.6 with a range from 2.9 to 12.1. Set against R1 being a single paid run, 17 is a programme rather than a step.
+
+2 smaller things found in B50's own evidence while checking it. The reset archived the same state twice, 61 seconds apart, with identical checksums, so the restore command has 2 equivalent forms. And the archive records an experiment count of 6 while retaining only 3 identifiers, so the probability of a rare class is not single valued: it gives 17 runs against 1 denominator and 8 against the other.
+
+B21 carries 3 panel questions that are yours because they are not reducible to a measurement. The brief is written and the free seats are ready.
+
+B22 needs a panel dispatched. Free seats, so no money. The brief is verified.
+
+B41 needs your go ahead. Its own failure list carried 2 corrections, both recorded in place: it cited a guard by a path that has never existed in this history, and the ladder failures it lists no longer fail, all 33 of those tests passing.
+
+C1 needs a single number. The claim channel's weight reads 0.0, so the multiplier is exactly 1 and no score changes anywhere. The architecture question that entry asks was answered and shipped on your ruling of the 29th. What remains is choosing a weight above 0, and the commissioning evidence that gates it does not yet exist. The ledger now says in its own text that the pathway exists and is unreached, naming the 2 line numbers of the computation that does not reach it.
+
+R1 needs authorisation and costs money. The 10 build items it was blocked on, A1 through A10, are all resolved, so that obstacle is gone. Its own entry still carries the superseded sentence saying it is blocked on engineering, with the correction written beneath it.
+
+
+SECTION 3. THE DECISION WITH A NUMBER ATTACHED
+
+The pre commit board that gates every commit runs an explicit list of 73 test files. There are 727 in the repository, so it never reaches 654 of them, which is 0.8996 of the suite. No interval is attached, because that is a census of every test file and not a sample. Every guard written in the last 2 days is among the 654 it does not reach.
+
+The case for adding them is demonstrated rather than argued: a guard on one of these reports sat red through 3 consecutive commits because nothing cheap ran it. The cost is measured. The newest 6 guards run 75 tests in 18.88 seconds against a gate that runs 1,588 tests in 312 to 325 seconds, so about a 6 per cent addition to every commit. No interval is given for that 6 per cent either, because it is a ratio of 2 timings rather than a sample proportion.
+
+It has not been done. Editing that hook changes the gate on every commit, and the list is yours.
+
+
+SECTION 4. ITEMS THAT ARE NOT YOURS TO DECIDE, RECORDED SO YOU CAN SEE THEM AND SKIP THEM
+
+The largest single block of open work is 30 tickets carrying a panel requested label, spanning 60 days, the oldest 63 days old. This is almost certainly stale recording and not undone work. Read by your actual words rather than by the label, 19 are unconditional requests, 6 are conditional, and 5 are not panel requests at all. Of the 11 whose subject traces to a task entry, 10 have every referenced entry closed, 0.909091 with an interval from 0.622642 to 0.983768. And 94 panel records exist against those 30 requests, with records exceeding requests in every single month. So the ask is not to authorise 30 panels. It is reading work, and it is mine.
+
+104 of your annotations since the 1st of October have no verdict row, which blocks sv on my work rather than on yours.
+
+27 annotations are tracked by an entry that is not done while their own tickets are recorded as settled.
+
+The identity collapse is the exception in this section, because its fix changes the identity scheme and so does need you. It is confirmed live by execution today, not by reading: 2 distinct faults filed against entry B50 produce the identical identity, so the second silently overwrites the first.
+
+Your paid dispatch decline is enforced soundly in 1 module of 155 that name a paid route, 0.006452 with a 95 per cent interval from 0.001140 to 0.035636, re measured today and unchanged. Of the 34 live entry points, 10 can issue an outbound request and none consults the ledger. Lifting the gate into a single chokepoint touches the live runner path, which is why it is raised rather than done.
+
+
+SECTION 5. THE FULL TEST SUITE, AND A PREDICTION I WRONGLY REPORTED AS FAILED
+
+The board completed on a frozen tree: 7 failed, 13,625 passed, 20 skipped, 2 deselected, in 5,634.07 seconds, which is 1 hour 33 minutes 54 seconds.
+
+6 of the 7 are B50's immune memory assertions, red by design and waiting on you. The 7th was a silent truncation in the generator that builds the written companion to these reports: it printed 40 diff lines and never said what it withheld, which its own operational guard correctly calls a silent falsehood. That is fixed, the remainder is now named, and the generator's guard gained a test pinning the arithmetic rather than the pattern.
+
+The prediction recorded before the run was 7 to 9 failures. It was correct. Twice during the run it was reported as having failed, and both reports were wrong. The cause was an instrument of mine: it counted failure characters in the progress stream, and the output file also contains the banner line naming the prediction, whose own letters were counted as failures. The sentence announcing the prediction corrupted the measurement that judged it.
+
+2 tests were deliberately deselected and both are named. They are the 2 nodes that request a fixture which blocks while scanning the sealed key store. That fixture carries its own 900 second diagnostic with a written instruction not to raise the cap, and the constraint solver returns unsatisfiable for that message being reachable under the suite's 300 second cap: reachability would need the fixture's own timeout below 150 seconds. So a diagnostic written for exactly this condition can never fire. That is a finding for your ruling, because raising the global cap and lowering the fixture's own timeout are different decisions with different costs.
+
+A related case found in the same run and not yet repaired: a different test spends about 293 seconds against its own 180 second budget and carries no per test timeout, while its sibling in the same file carries a cap of 1,200 seconds. It was designed to be fast, by removing the interpreter from the search path so the commit hook refuses immediately, so the isolation it asserts is not biting.
+
+
+SECTION 6. WHAT THE 5 EARLIER FILES SAID THAT IS NOW SUPERSEDED
+
+You can skip all of this.
+
+The number of open entries. The earliest of the 5 files says 12 are open. It is 6.
+
+B47. It closed on your ruling of the 29th, with all 4 of its stated conditions verified by running them rather than by reading. It is recorded as done and dated to your ruling.
+
+C1. 2 of the files ask you to rule on which scoring term a claim level verdict enters. You ruled that on the 29th and it is built and guarded. Only the weight remains.
+
+B50's partition. 3 of the files say 2 assertions are mechanically fixable and 4 are not. It is 1 and 5, and the mechanical repair is a trade rather than a gain.
+
+The panel backlog. 2 of the files present 30 panel requests as outstanding work. The measurement says stale recording.
+
+The claim channel wiring. 1 file calls it a 1 line change at 2 sites. It is not: both computation sites are pure arithmetic with no access to the ledger, so wiring it threads a new input through the scoring path. That is a design change and was left alone.
+
+
+SECTION 7. WHAT WAS BUILT THIS MORNING, NEEDING NOTHING FROM YOU
+
+The blocker triage could not see 72 of the 186 task entries, nor any of the 6 that are open. 1 function was answering 2 questions: it correctly finds where the canonical section's last body ends, and it was also being used to decide which entries exist to be scanned. So the blocker triage you commissioned to stop me interrupting you was answering no entry declares a dependency on it about entries it had never read. The repair is a single parameter, which preserves the earlier property exactly, plus 1 shared definition of an entry's extent now used by all 6 call sites rather than copied into each. Fixing it unmasked a second defect: the term extractor treats any hyphenated word as a code identifier, and 1,028 of 2,686 distinct terms across the entries are ordinary hyphenated English, 0.382725 with a 95 per cent interval from 0.364524 to 0.401262. A third change was measured and rejected, recorded so it is not proposed again: requiring the term and the dependency phrase on the same line moved nothing in either arm. The guard holds 20 tests and 5 of 5 deliberate mutations turn it red.
+
+A side effect worth naming: before the repair, the final entry on the list had a body of 0 characters in 5 separate instruments, because the boundary they used lies before that entry begins. Its true body is 5,967 characters.
+
+
+SECTION 8. THE ONE RECOMMENDATION
+
+Rule on B50 and on the identity collapse, and leave the rest. Both are small, both unblock mechanical work, and the identity collapse is actively corrupting the register while it waits. Everything else in this file can sit, including the 30 panel tickets, which are mine to verify rather than yours to authorise.
+
+Written under CDSFL note standard v1.8.
