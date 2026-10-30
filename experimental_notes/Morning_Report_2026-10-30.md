@@ -6,6 +6,8 @@ Every proportion carries a 95 percent confidence interval computed twice by inde
 
 ## 1. What needs you, shortest first
 
+READ SECTION 10 BEFORE ACTING ON THIS SECTION'S COUNT. Section 1 was written before it was found that 2 of the 3 entries asking you to rule already carried your ruling from the 29th, so the number of decisions here is too high. Section 10 gives the corrected arithmetic and section 11 adds the 1 decision that is genuinely new. Nothing in section 1 is a wrong measurement; it is simply earlier than the finding that reduced it.
+
 There are fewer decisions than last night's report claimed, and 1 of them has changed shape completely.
 
 THE PANEL BACKLOG IS LARGELY NOT A BACKLOG, AND THIS WAS MEASURED RATHER THAN GUESSED AFTER THE FIRST DRAFT OF THIS REPORT. 30 of 36 live work remaining tickets carry a panel requested label, spanning 60 days, the oldest 63 days old. Reading all 30 by your actual words rather than by the label: 19 are unconditional requests, 6 are conditional on something such as whether I was unsure or whether a fix was already done, and 5 are not panel requests at all, mentioning panels while instructing something else. The classifying rule was checked against 3 I had read by hand and agreed on all 3. Then the subject of each request was traced: anchor, to the passage you were annotating, to the task entry that passage names, to that entry's state. 11 of the 30 resolve to a task entry, 18 locate your annotation but name no entry, and none failed to locate. Of those 11, 10 have every referenced entry closed, 0.909091 with an interval from 0.622642 to 0.983768 and an exact test at 0.005859. The single exception is a request whose entry is C1, the claim channel, which is the one item I deliberately left undone tonight and is already at the top of your decision list. The limit, so this is not over read: an entry being done does not prove a panel ran. It proves the work the panel was asked about is complete, which is a different fact and arguably the more useful of the 2, because a panel asked to review a fix that is now finished and guarded is moot. Whether you still want those reviews is yours to say and not a measurement. 94 panel records exist against those 30 requests, and records exceed requests in every single month: 14 against 5 in August, 47 against 20 in September, 30 against 11 in October. Each of the 5 oldest requests has 78 panel records and over 90 log directories dated after it. Panels ran in volume throughout. So the tickets are almost certainly stale recording rather than undone work, which is the same pattern as the feature requests where 7 of 14 had their work complete and were still open. What this does not do is match each record to the request it answers; that needs reading both sides and I did not attempt it at 01:36, because doing it tired is how a discharged request gets re-dispatched, or a live request wrongly closed. So the ask is not to authorise 30 panels. It is to let me verify which are already discharged, which is reading work rather than a resource decision.
@@ -201,8 +203,7 @@ And the recurring shape in my own errors is narrower than carelessness. The meas
 
 ## Technical appendix
 
-The spoken companion names files as nouns under Rule 6, because a path read
-aloud is noise. This restores exactly that, and adds no new figures.
+Rule 6 keeps paths out of the spoken copy; this restores them, adding no new figures.
 
 ### Producers committed with these figures
 
@@ -291,10 +292,9 @@ because both sides are the same integer (6 of 34).
 
 ### Board reach
 
-The pre-commit board names 73 test files explicitly; 723 exist under
-`bench/tests/`, so it does not reach 650 of them. That is deliberate — a full
-board is roughly 66 minutes — and
-`bench/tests/test_the_morning_report_is_generated_2026-10-12.py` is one of the
-650, which is why 15 failing assertions about this document survived 3 commits.
+73 of 727 files are on the gate's list, leaving **654** unreached (0.8996 — a
+census, so no interval), per `scripts/precommit_gate_cost_2026-09-10.py`. A full
+board is ~99 minutes and cannot gate a commit, which is why 15 failing assertions
+in `test_the_morning_report_is_generated_2026-10-12.py` survived 3 commits.
 
 Written under CDSFL note standard v1.8.

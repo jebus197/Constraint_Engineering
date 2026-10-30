@@ -42,8 +42,7 @@ FOOT = "Written under CDSFL note standard v1.8.\n"
 APPENDIX = """
 ## Technical appendix
 
-The spoken companion names files as nouns under Rule 6, because a path read
-aloud is noise. This restores exactly that, and adds no new figures.
+Rule 6 keeps paths out of the spoken copy; this restores them, adding no new figures.
 
 ### Producers committed with these figures
 
@@ -132,11 +131,10 @@ because both sides are the same integer (6 of 34).
 
 ### Board reach
 
-The pre-commit board names 73 test files explicitly; 723 exist under
-`bench/tests/`, so it does not reach 650 of them. That is deliberate — a full
-board is roughly 66 minutes — and
-`bench/tests/test_the_morning_report_is_generated_2026-10-12.py` is one of the
-650, which is why 15 failing assertions about this document survived 3 commits.
+73 of 727 files are on the gate's list, leaving **654** unreached (0.8996 — a
+census, so no interval), per `scripts/precommit_gate_cost_2026-09-10.py`. A full
+board is ~99 minutes and cannot gate a commit, which is why 15 failing assertions
+in `test_the_morning_report_is_generated_2026-10-12.py` survived 3 commits.
 
 """
 
