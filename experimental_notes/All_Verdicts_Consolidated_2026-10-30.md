@@ -152,6 +152,36 @@ P-passed: mutating `63/67 = 0.940299` to `63/67 = 0.999999` makes it refuse; res
 
 **Not dispatched**, because this file had already named the dispatch as yours.
 
+## 7b. Your marker question, answered from the record
+
+**You did not mis-mark it.** The annotation — *"So there is an unresolved discrepancy, that neither you, or the other panel models can resolve? Is it significant to our deliberations on this topic? If so how?"* — sits in `Responses/The_Quiet_Run_Is_Not_The_Lever_2026-10-25.txt` at line index **159**, annotated 2026-10-27, and the reader reports `marker: ''`. You wrote no marker.
+
+**The `pf` came from a default of mine.** [scripts/harvest_tickets_2026-10-17.py:294](scripts/harvest_tickets_2026-10-17.py:294) reads `"kind": _mk or "pf"`, and the comment above it states it plainly: *"The default stays `pf` for an unmarked annotation."*
+
+**Scale, measured 2026-10-30**: of 752 annotations, **680 carry no marker**, and **180 of those 680 end in `?`** — 0.264706, Wilson [0.232935, 0.299120], Clopper-Pearson [0.231893, 0.299576]. The same shape as the already-recorded 72 of 318.
+
+**Confusion: latent, with 1 near-miss.** `pf:d0472a2c3a05` is OPEN with empty `resolution`, `verification` and `notes`, so nothing acted on it. But this morning I nearly called it a duplicate of `pf:798cb50b9126`, my own proposal on the same subject; reading both stopped it, and `mark_duplicate` enforces your condition (b) — identical repair — which a question cannot meet.
+
+**Fixed, and what is not.** The instance is recorded as `qs:0c183ae8a864`, raised 11:12 today before you asked. 3 gaps remain, none touched because you asked to discuss:
+
+| gap | whose | note |
+|---|---|---|
+| `qs:0c183ae8a864` is anchored `chat#2026-10-30T11:12:19+00:00#8f1182f6`, not to your file | mine | provenance points at my message, not your annotation at `#159` |
+| `pf:d0472a2c3a05` carries **no anchor at all** | mine | the 317-of-2,858 identity gap |
+| default an unmarked annotation ending in `?` to `qs` rather than `pf` | **yours** | reaches ~180 annotations; `tid_of` digests the kind, so re-filing moves identities |
+
+## 7c. New since this file was last sent
+
+**Your inline markers were invisible to the reader.** `_MARKER_LINE` required an own-line marker — correct on its 2026-10-19 basis of 30 of 30 own-line, 0 inline. Re-measured over 752 annotations: 59 own-line, and **13 of the remainder end in a marker**, all dated 2026-10-29, including *"Build and implement option 1. fr"* and *"I accept your recommendation. fr"* — the rulings that closed B47 and C1. Fixed by a trailing fallback in `scripts/read_founder_responses_2026-10-11.py`; own-line still wins; your text untouched so no identity moves. Markers populated 59 → 72. Commit `671b9133`.
+
+**A mutation caught my guard committing the addition-nothing-reaches defect.** The first 3 tests called `_marker_of` directly, so deleting the call site left all 12 green. A second mutation showed the precedence test was equally hollow. Now tested against the reader's real output and a constructed file where the 2 forms disagree. Mutations: 2 of 3 → **4 of 4**.
+
+**Your paid-dispatch decline was not fully enforced.** `classify("Dispatch the paid panel to 4 seats for this round.")` returned no permission flag; the same act as "paid dispatch" was caught. The pattern required `paid` followed by `seat|dispatch|model|run` only. Now also `panel|review|arm|experiment`; 5 paid phrasings flagged, 3 unpaid not; reverting turns 3 of 35 tests red. Commit `8643fbd3`. The 4th-category question is `qs:9be924df11ed`.
+
+**5 tickets checked by execution, all 5 already done**: `3adecb80188f`, `bc80040e3b48`, `b2bdba24632d`, `c451e900a40f`, `d809d60e08a8`. Selection, not a sample. Open `pf` 23 → 19, open `qs` 4 → 6.
+
+**State saved and pushed**: `686e08a8`, 6 of 6 postconditions green, 9 held commits now on the remote. The save reports **public `main` is 455 commits behind this branch**.
+
 ## 8. The one recommendation
 
 Rule on B50 and the identity collapse. Both are small, both unblock mechanical work, and the identity collapse is corrupting the register while it waits. Everything else here can sit.

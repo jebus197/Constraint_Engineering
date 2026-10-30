@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 30 October 2026 11:24 GMT (2026-10-30T11:24:23+00:00)
+Generated: 30 October 2026 12:53 GMT (2026-10-30T12:53:20+00:00)
 
 ---
 
@@ -18,19 +18,22 @@ Generated: 30 October 2026 11:24 GMT (2026-10-30T11:24:23+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `9f8003dd` 2 more tickets discharged, and 1 of his questions was filed as a proposed fix
-- **Committed:** 2026-10-30 11:14:20 +0000
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 8
+- **Last commit (the PARENT of the commit containing this file):** `671b9133` His inline markers were invisible to the reader, including 2 rulings I acted on
+- **Committed:** 2026-10-30 11:45:43 +0000
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 1
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
+- `M experimental_notes/All_Verdicts_Consolidated_2026-10-30.md`
+- `M experimental_notes/All_Verdicts_Consolidated_2026-10-30.txt`
+- `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**13701 tests collected** at 30 October 2026 11:24 GMT, HEAD `9f8003dd` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**13705 tests collected** at 30 October 2026 12:53 GMT, HEAD `671b9133` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -60,6 +63,8 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `671b9133 His inline markers were invisible to the reader, including 2 rulings I acted on`
+- `686e08a8 sv: the board held the prediction, the triage could not see 72 of 186 entries, and 5 of 6 tickets checked were already done`
 - `9f8003dd 2 more tickets discharged, and 1 of his questions was filed as a proposed fix`
 - `2f98fcfa 3 gate tickets were stale recording, not undone work, and are closed`
 - `8643fbd3 The paid-dispatch gate missed the plainest phrasing of a paid dispatch`
@@ -68,5 +73,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `1477c7bf B21's panel brief was refused by the validator, and I had called it ready`
 - `9014f98f Every outstanding verdict in 1 file, built from the register not from 5 reports`
 - `8a05a1e3 The blocker triage could not see 72 of 186 entries, nor any that were open`
-- `80f4dfcd 2 of my own parked entries sat in his live queue, marked resolved where nothing reads`
-- `e53a597a The report contradicted itself on the one figure I had just given a producer`

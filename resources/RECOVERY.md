@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 30 October 2026 11:24 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 30 October 2026 12:53 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,24 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-30 12:55 GMT (READ THIS FIRST)
+
+**Branch `sim/shakedown-2026-09-29`, HEAD `671b9133` before this save.** Recorded at 2026-10-30T12:55:00+00:00. Continues the 11:22 block; everything there still stands.
+
+**HE ASKED WHETHER HE HAD MIS-MARKED A QUESTION AS A FEATURE REQUEST. HE HAD NOT, AND THE DEFAULT IS MINE.** His annotation — *"So there is an unresolved discrepancy, that neither you, or the other panel models can resolve? Is it significant to our deliberations on this topic? If so how?"* — sits in `Responses/The_Quiet_Run_Is_Not_The_Lever_2026-10-25.txt` at line index 159, annotated 2026-10-27, and the reader reports its marker field as EMPTY. He wrote no marker at all. `scripts/harvest_tickets_2026-10-17.py:294` reads `"kind": _mk or "pf"`, and the comment above it says so plainly: *"The default stays `pf` for an unmarked annotation."* So an unmarked question becomes a proposed fix by construction, and it was neither an `fr` nor his error.
+
+**THE SCALE: 180 OF HIS 680 UNMARKED ANNOTATIONS END IN A QUESTION MARK** — 0.264706, Wilson [0.232935, 0.299120], Clopper-Pearson [0.231893, 0.299576], over 752 annotations read through `scripts/read_founder_responses_2026-10-11.py`. The same shape already recorded at 72 of 318: a question filed as a proposed fix sits in the queue the Stop gate reports as outstanding WORK. **THE CONFUSION WAS LATENT, NOT REALISED, and those are 2 separate facts**: `pf:d0472a2c3a05` is OPEN with empty `resolution`, `verification` and `notes`, so nothing acted on it — but it was nearly marked a DUPLICATE of `pf:798cb50b9126`, which is the assistant's own proposal on the same subject. Reading both stopped it, and his own condition (b) for a duplicate, an identical proposed repair, would have stopped it too, because a question proposes no repair.
+
+**3 GAPS REMAIN AND 1 IS HIS.** Mine: `qs:0c183ae8a864`, raised at 11:12, is anchored to a CHAT message rather than to his annotation, so its provenance points at the wrong place; and `pf:d0472a2c3a05` carries NO anchor at all, which is the identity gap recorded across 317 of 2,858 tickets. His: whether an unmarked annotation ending in a question mark should default to `qs` instead of `pf`. It reaches about 180 annotations and `tid_of` digests the kind, so re-filing moves identities — a change to the register's scheme rather than a repair inside it. **All 3 left untouched under his `d`.**
+
+**HIS INLINE MARKERS WERE INVISIBLE TO THE READER, INCLUDING 2 RULINGS ACTED ON THIS MORNING.** `_MARKER_LINE` required an own-line marker, correct on its 2026-10-19 basis of 30 of 30 own-line and 0 inline. His style changed. Re-measured over all 752: 59 own-line, 693 unmarked, and 13 of those 693 END in a marker token, all dated 2026-10-29 — including *"Build and implement option 1. fr"* and *"I accept your recommendation. fr"*, the rulings that closed B47 and C1. They survived only because the harvester re-derives a kind from the text. Repaired with a TRAILING fallback in `scripts/read_founder_responses_2026-10-11.py`; the own-line form is tried first and still wins; **his text is NOT altered**, because `tid_of` digests a verbatim and stripping the marker would move every identity derived from it. Markers populated 59 to 72. Commit `671b9133`.
+
+**★ A MUTATION CAUGHT THE GUARD FOR THAT FIX COMMITTING THE ADDITION-NOTHING-REACHES DEFECT.** The first 3 tests called `_marker_of` DIRECTLY, so deleting the line that CALLS it from `annotations()` left all 12 green: a helper with a caller, tested without its caller. A second mutation then showed the precedence test was equally hollow — it exercised the fallback alone and passed whichever branch won. **The 2 forms cannot be told apart from the reader's output**, because the field records a marker's VALUE and not which branch set it, and on his real files they agree wherever both appear; so precedence is now tested on a CONSTRUCTED file where they disagree. Mutations caught went 2 of 3, then 4 of 4. `python3 -m pytest bench/tests/test_his_marker_is_read_from_its_own_line_2026-10-19.py -q` gives **13 passed**, and that guard's own premise — *"there is exactly one form to support"* — was corrected rather than left to read as it did.
+
+**ONBOARDING SWEPT: 2 FIGURES WERE A MONTH OUT OF DATE.** It said the last complete suite figure was 8,878 passed at `1cfc30e` on 2026-09-29, obtained by `python3 -m pytest bench/tests/ -q`; a full suite has now completed under `python3 -m pytest bench/tests/ -q -p no:randomly`, giving 7 failed and 13,625 passed in 5634.07 s on a frozen tree, logged at `~/Desktop/CDSFL_full_board_2026-10-30_rerun.txt`. And the gate reach is re-derived from its producer rather than retyped: 73 of **729** test files, 656 unreached, 0.8999, a census so no interval.
+
+**WHAT IS OWED HIM IS UNCHANGED FROM THE 11:22 BLOCK, PLUS 1.** 6 open entries, now 6 open questions, and the gate-reach decision. The new one is the `pf` default above. Everything is in `experimental_notes/All_Verdicts_Consolidated_2026-10-30.txt` and its markdown companion, both lint-clean at 0 findings, spoken copy mirrored to `~/Desktop/CDSFL_tts/` and sent to him 4 times today as it changed.
 
 ## SESSION STATE — 2026-10-30 11:22 GMT (READ THIS FIRST)
 

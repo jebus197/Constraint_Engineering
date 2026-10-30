@@ -106,6 +106,36 @@ The blocker triage could not see 72 of the 186 task entries, nor any of the 6 th
 A side effect worth naming: before the repair, the final entry on the list had a body of 0 characters in 5 separate instruments, because the boundary they used lies before that entry begins. Its true body is 5,967 characters.
 
 
+SECTION 7b. YOUR MARKER QUESTION, ANSWERED FROM THE RECORD
+
+You asked whether you mistakenly marked your question about the unresolved discrepancy as a feature request. YOU DID NOT. You wrote no marker on it at all. The annotation sits in your file of the 25th of October, annotated on the 27th, at line 159, and the reader reports its marker field as empty.
+
+WHAT MADE IT A PROPOSED FIX WAS A DEFAULT OF MINE, NOT AN ERROR OF YOURS. The harvester assigns the kind from your marker where you wrote a marker, and otherwise falls back: its own line reads kind equals the marker or else pf, and the comment beside it says the default stays pf for an unmarked annotation. So an unmarked question becomes a proposed fix by construction.
+
+THE SCALE, MEASURED TODAY RATHER THAN GUESSED. Of your 752 annotations, 680 carry no marker, and 180 of those 680 end in a question mark: 0.264706, with a 95 per cent interval from 0.232935 to 0.299120 and an exact interval from 0.231893 to 0.299576. So roughly a quarter of your unmarked annotations read as questions and are filed as proposed fixes. This is the same shape already recorded when 72 of 318 annotations were found to be questions sitting in the proposed-fix queue, which is how a question gets read as a task and then dropped when no task turns out to exist.
+
+DID IT CAUSE CONFUSION? Latently, and once nearly in fact. The ticket has sat OPEN with no resolution, no verification and no notes, so nothing acted on it as though it were a build. But this morning, seeing 2 tickets with near-identical titles about the same discrepancy, I came close to marking yours a duplicate of my own proposal. Reading both stopped it, and your own rule would have stopped it too: a duplicate requires the proposed repair to be identical, and yours proposes no repair at all because it is a question.
+
+IS IT FIXABLE, AND DID I FIX IT? The instance, yes, and it was done before you asked: your question is now recorded as a question in its own right, raised at 11:52. 2 things are NOT fixed and 1 of them needs you.
+
+First, and this is mine to correct: the question I raised is anchored to my own chat message rather than to your annotation, so its provenance points at the wrong place. The ticket holding the original carries no anchor at all, which is the identity gap already recorded across 317 of 2,858 tickets. Both are repairable and I have not touched them, because you asked to discuss.
+
+Second, and this is yours: changing the default so that an unmarked annotation ending in a question mark is filed as a question rather than a proposed fix. It would reach about 180 of your annotations. The identity of a ticket digests its kind, so re-filing moves identities, and that is a change to the register's own scheme rather than a repair inside it.
+
+
+SECTION 7c. WHAT ELSE IS NEW SINCE THIS FILE WAS LAST SENT
+
+YOUR INLINE MARKERS WERE INVISIBLE TO THE READER, AND THAT INCLUDED 2 RULINGS I ACTED ON. The reader required a marker on its own line, which was correct when measured: 30 of 30 own-line, 0 inline, on the 19th of October. Your style changed. Re-measured over all 752 annotations, 59 carry an own-line marker and 13 of the remainder end in one, every one of those dated the 29th of October. The 13 include "Build and implement option 1. fr" and "I accept your recommendation. fr", the rulings that closed 2 entries this morning. Their markers were invisible and survived only because the harvester re-derives a kind from the text. Fixed, with the own-line form still tried first and your text left untouched so no ticket identity moves. Markers populated rose from 59 to 72.
+
+A MUTATION CAUGHT MY OWN GUARD COMMITTING THE DEFECT THIS PROJECT HAS CONFIRMED 11 TIMES. My first 3 tests for that fix called the new helper directly, so deleting the line that calls it from the reader left every test passing: a helper with a caller, tested without its caller. A second mutation then showed the precedence test was equally hollow. Both are now tested against the reader's real output and against a constructed file where the 2 marker forms disagree. Mutations caught went from 2 of 3 to 4 of 4.
+
+YOUR PAID-DISPATCH DECLINE WAS NOT FULLY ENFORCED. Your ruling is that no paid dispatch can happen without your express authorisation. The check returned no permission flag for "dispatch the paid panel", while the same act written as "paid dispatch" was caught, because the pattern required the word paid to be followed by 4 permitted nouns and panel was not among them. Whether your decline was enforced depended on which noun the sentence used. A paid panel is a paid dispatch, so the noun set now also covers panel, review, arm and experiment. Whether a FREE dispatch should also need permission is a 4th category and therefore yours, raised as a question.
+
+5 TICKETS WERE CHECKED BY EXECUTION AND ALL 5 WERE ALREADY DONE. The logged-out command line interface, 2 gate defects whose repairs were already built and already guarded, the undemonstrated full suite, and the termination measure. The denominator is a selection rather than a sample, since these were picked as likely stale, so it says nothing about the register as a whole. Open proposed fixes fell from 23 to 19 and open questions rose from 4 to 6.
+
+THE STATE WAS SAVED AND PUSHED. The save completed clean on its first attempt with all 6 postconditions green, and the 9 commits that had been held locally are now on the remote. The save also reported that the public main branch is 455 commits behind this one, so none of this work is visible publicly yet.
+
+
 SECTION 8. THE ONE RECOMMENDATION
 
 Rule on B50 and on the identity collapse, and leave the rest. Both are small, both unblock mechanical work, and the identity collapse is actively corrupting the register while it waits. Everything else in this file can sit, including the 30 panel tickets, which are mine to verify rather than yours to authorise.
