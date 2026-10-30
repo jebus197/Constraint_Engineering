@@ -83,7 +83,7 @@ def _a12_block() -> tuple[str, str]:
     es = sorted(tlm.parse_entries(LIST), key=lambda e: e.line_no)
     for k, e in enumerate(es):
         if e.ident == "A12":
-            end = es[k + 1].line_no - 1 if k + 1 < len(es) else tlm.end_of_entries(lines)
+            end = tlm.body_bounds(lines, [e.line_no - 1 for e in es], k)[1]
             return ("\n".join(lines[e.line_no - 1:end]),
                     "\n".join(lines[:e.line_no - 1] + lines[end:]))
     raise SystemExit("entry A12 is gone from the task list")

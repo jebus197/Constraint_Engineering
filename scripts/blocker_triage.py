@@ -66,6 +66,46 @@ NEEDS_PERMISSION: list[tuple[str, re.Pattern, str]] = [
 ]
 
 
+def _looks_like_an_identifier(token: str, text: str) -> bool:
+    """Is `token` a code identifier, or ordinary hyphenated English?
+
+    ★ ADDED 2026-10-30, AND IT IS FORCED BY THE WINDOW REPAIR RATHER THAN
+    CHOSEN. While `blocks_progress` truncated the entry list at the
+    supplementary heading it never reached an OPEN entry, so this defect could
+    not fire. With the window corrected it fired immediately: the extractor's
+    second alternative, `[A-Za-z][A-Za-z0-9]*-[A-Za-z0-9-]+`, matches ANY
+    hyphenated word, and this project's prose is full of them. Measured over
+    the 186 entry bodies that day: 1,028 of 2,686 distinct terms were
+    hyphenated English with no digit and no underscore -- 0.382725, Wilson 95%
+    [0.364524, 0.401262], Clopper-Pearson [0.364294, 0.401413] -- including
+    `AI-powered`, `Agresti-Coull`, `BYTE-IDENTICAL` and `cross-verified`. On
+    those, every one of the 6 OPEN entries was reported as blocking progress.
+
+    THIS IS THE FUNCTION'S OWN STATED INTENT, NOT A NEW POLICY. The comment
+    above the extractor already reads "IDENTIFIERS AND PATHS ONLY. A
+    capitalised ordinary word is not a subject." A hyphenated ordinary word is
+    the same thing with a hyphen in it.
+
+    WHAT IS DELIBERATELY KEPT. A CLI flag is the one kebab-case form that is a
+    real symbol, so `--check-only` and `--record-restore` still count, matched
+    by their own `--` in the text rather than by shape. A concept such as
+    `B-cell` is dropped, which is correct under the stated intent: it names what
+    work is ABOUT, not a symbol an entry can wait on.
+
+    REJECTED ON MEASUREMENT, recorded so it is not proposed again: requiring the
+    term and the dependency phrase to sit on the SAME LINE changed nothing, 6 of
+    6 before the restriction and 3 of 3 after it, because this project writes one
+    paragraph per line and those lines run to about 1,100 characters.
+    """
+    if "/" in token or token.endswith((".py", ".json", ".md", ".sh", ".txt")):
+        return True                       # a path
+    if "_" in token:
+        return True                       # snake_case
+    if any(c.isdigit() for c in token):
+        return True                       # exp53_control..., free-run1
+    return f"--{token}" in text           # a CLI flag
+
+
 def blocks_progress(text: str, tasks: pathlib.Path | None = None) -> tuple[bool, str]:
     """Does an OPEN entry on the task list depend on this item?
 
@@ -77,7 +117,7 @@ def blocks_progress(text: str, tasks: pathlib.Path | None = None) -> tuple[bool,
     try:
         sys.path.insert(0, str(REPO / "scripts"))
         from task_list_markers import (parse_entries, ENTRY, _is_entry,  # type: ignore
-                                end_of_entries)
+                                end_of_entries, body_bounds)
     except Exception as exc:
         return False, f"cannot read the task list ({exc}); parking rather than guessing"
     lines = tasks.read_text(encoding="utf-8").splitlines()
@@ -96,7 +136,13 @@ def blocks_progress(text: str, tasks: pathlib.Path | None = None) -> tuple[bool,
     # different document sharing a file: its rows are a table ABOUT entries,
     # not entry bodies. Measured before the fix: W1's body was 10,725 chars;
     # after, it is its own text alone.
-    lines = lines[:end_of_entries(lines)]
+    # ★ THE TRUNCATION IS GONE, 2026-10-30. It read
+    # `lines = lines[:end_of_entries(lines)]`, which dropped every entry after
+    # the supplementary heading -- 72 of 186 on the day it was measured, and ALL
+    # 6 that were OPEN. The scan then reported "no entry declares a dependency
+    # on it" for items it had never read, which is the triage answering a
+    # question it could not see. Bodies are now bounded per entry by
+    # `body_bounds`, so the 2026-09-17 property is kept without the amputation.
     starts = [i for i, l in enumerate(lines) if _is_entry(l)]
     states = {e.ident: e.state for e in parse_entries(tasks)}
 
@@ -107,7 +153,7 @@ def blocks_progress(text: str, tasks: pathlib.Path | None = None) -> tuple[bool,
                                    r"|[A-Za-z][A-Za-z0-9]*-[A-Za-z0-9-]+"
                                    r"|[\w./-]+\.(?:py|json|md|sh|txt)"
                                    r"|[\w-]+/[\w./-]+", text)
-             if len(t) >= 6}
+             if len(t) >= 6 and _looks_like_an_identifier(t, text)}
     if not terms:
         return False, "no distinctive term to match against the entries"
 
@@ -119,7 +165,7 @@ def blocks_progress(text: str, tasks: pathlib.Path | None = None) -> tuple[bool,
     # is not a dependency, it is a subject everyone shares.
     bodies = []
     for n, i in enumerate(starts):
-        end = starts[n + 1] if n + 1 < len(starts) else len(lines)
+        _, end = body_bounds(lines, starts, n)
         bodies.append((ENTRY.match(lines[i]).group(1), "\n".join(lines[i:end])))
     cap = max(2, len(bodies) // 4)
     selective = {t for t in terms if sum(1 for _, b in bodies if t in b) <= cap}
@@ -140,7 +186,7 @@ def blocks_progress(text: str, tasks: pathlib.Path | None = None) -> tuple[bool,
         r"BLOCKED ON|blocked on|NEEDS THE FOUNDER|NEEDS YOUR RULING|awaits? (?:his|the founder)"
         r"|cannot proceed|precondition|is the founder's(?: call| to)?|reserved to him", re.I)
     for n, i in enumerate(starts):
-        end = starts[n + 1] if n + 1 < len(starts) else len(lines)
+        _, end = body_bounds(lines, starts, n)
         ident = ENTRY.match(lines[i]).group(1)
         state = states.get(ident)
         if state not in ("OPEN", "BLOCKED"):

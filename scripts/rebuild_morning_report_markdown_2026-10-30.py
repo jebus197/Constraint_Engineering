@@ -174,6 +174,14 @@ def render() -> str:
     return "\n".join(out) + APPENDIX + foot
 
 
+#: How many diff lines `--check` prints before it stops. A cap is right -- a
+#: 2,000-line diff in a terminal is unreadable -- but a cap that does not say
+#: what it withheld is a silent falsehood, which is the defect
+#: `test_no_script_prints_a_capped_listing_in_silence` caught in this very file
+#: on 2026-10-30, the 3rd defect found in it in a day.
+_DIFF_LINES_SHOWN = 40
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true",
@@ -193,8 +201,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"MISMATCH - {DST.relative_to(REPO)} differs from a rebuild; "
               f"{len(diff)} diff line(s). Fix the GENERATOR, not the markdown: "
               f"a hand edit here is undone by the next rebuild.")
-        for line in diff[:40]:
+        for line in diff[:_DIFF_LINES_SHOWN]:
             print(f"  {line}")
+        if len(diff) > _DIFF_LINES_SHOWN:
+            print(f"  ... and {len(diff) - _DIFF_LINES_SHOWN} further diff "
+                  f"line(s) not shown")
         return 1
 
     DST.write_text(built)

@@ -146,7 +146,12 @@ SUPPLEMENTARY = "# SUPPLEMENTARY LIST"
 
 
 def end_of_entries(lines: list[str]) -> int:
-    """Index of the first line past the last task entry.
+    """Index of the first line past the last entry of the CANONICAL section.
+
+    NOT "past the last task entry" -- the wording this docstring carried until
+    2026-10-30, when 72 of 186 entries were measured to lie beyond the index it
+    returns. Behaviour is unchanged and 6 callers rely on it; only the claim is
+    corrected, and `next_section_start` below is the form that takes an origin.
 
     THE LAST ENTRY ABSORBS EVERYTHING AFTER IT. Every consumer slices a body as
     "this entry's heading to the next heading, or to end of file for the last
@@ -162,8 +167,49 @@ def end_of_entries(lines: list[str]) -> int:
     ONE DEFINITION, 6 CALLERS, because repairing 1 of 6 copies is precisely how
     this class of defect survives being found.
     """
-    return next((i for i, l in enumerate(lines) if l.startswith(SUPPLEMENTARY)),
-                len(lines))
+    return next_section_start(lines, 0)
+
+
+def next_section_start(lines: list[str], after: int = 0) -> int:
+    """First line index at or after `after` that opens a non-entry section.
+
+    ★ THE `after` PARAMETER IS THE 2026-10-30 REPAIR, AND THE DEFECT IT CLOSES
+    WAS MEASURED, NOT PREDICTED. `end_of_entries` searched from the START of the
+    file, so once real entries were appended BEYOND the supplementary heading it
+    returned a boundary that lies BEFORE them. Measured on the live list that
+    day: the sentinel sits at index 865 while 72 of the 186 entries begin after
+    it, every one of them carrying a real task marker -- including all 6 then
+    OPEN (B21, B22, C1, B41, B50, R1). z3 returns `unsat` for "an entry at or
+    beyond the cut is scanned", so the loss was structural rather than flaky.
+
+    2 CONSEQUENCES, BOTH OBSERVED. `blocker_triage.blocks_progress` truncated
+    its universe to the 114 entries before the sentinel and so could not see a
+    single OPEN entry; it answered "nothing is waiting" for all 6 because it had
+    not read any of them. And the idiom shared by 5 other callers -- next
+    entry's line, else `end_of_entries` -- INVERTED for the final entry, since
+    1403 > 865, giving R1 a body of 0 characters where its true body is 5,981.
+
+    WHY A PARAMETER AND NOT A NEW SENTINEL. The 2026-09-17 property must
+    survive: the last CANONICAL entry's body must still stop at the
+    supplementary heading rather than absorbing it. Searching from the entry's
+    own start preserves that exactly -- for an entry before the sentinel the
+    answer is unchanged -- while giving the right answer for one after it.
+    """
+    return next((i for i, l in enumerate(lines)
+                 if i >= after and l.startswith(SUPPLEMENTARY)), len(lines))
+
+
+def body_bounds(lines: list[str], starts: list[int], n: int) -> tuple[int, int]:
+    """(start, end) line indices of entry `n`'s body. THE one definition.
+
+    The idiom this replaces was copied into 6 call sites, which is how
+    `end_of_entries` could be repaired in 2026-09 and still be wrong in 5 of
+    them. The body runs to whichever comes first: the next entry's heading, or
+    the start of the next non-entry section.
+    """
+    start = starts[n]
+    nxt = starts[n + 1] if n + 1 < len(starts) else len(lines)
+    return start, min(nxt, next_section_start(lines, start))
 
 
 def parse_entries(path: Path = LIST) -> list[Entry]:

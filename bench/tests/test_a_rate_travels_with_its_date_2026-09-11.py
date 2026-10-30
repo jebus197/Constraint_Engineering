@@ -46,7 +46,7 @@ def _blocks():
     lines = LIST.read_text(encoding="utf-8").splitlines()
     es = sorted(tlm.parse_entries(LIST), key=lambda e: e.line_no)
     for k, e in enumerate(es):
-        end = es[k + 1].line_no - 1 if k + 1 < len(es) else tlm.end_of_entries(lines)
+        end = tlm.body_bounds(lines, [e.line_no - 1 for e in es], k)[1]
         yield e.ident, "\n".join(lines[e.line_no - 1:end])
 
 

@@ -110,6 +110,51 @@ class TestTheCommittedMarkdownMatchesARebuild:
             DST.write_bytes(original)
         assert DST.read_bytes() == original, "the control failed to restore"
 
+    def test_a_truncated_diff_states_what_it_withheld(self, gen, capsys):
+        """★ ADDED 2026-10-30, after the full board caught the 3rd defect in
+        this generator in a single day.
+
+        `test_no_script_prints_a_capped_listing_in_silence` in
+        `bench/tests/test_operational_scripts.py` reported
+        *"main() prints diff[:40] and never says what it withheld"*. A cap is
+        right -- a 2,000-line diff in a terminal is unreadable -- but a cap that
+        does not name its remainder reads as a complete list, which is the
+        silent falsehood that test exists to refuse.
+
+        THAT DETECTOR ALREADY GUARDS THE PATTERN. This guards the ARITHMETIC,
+        because the detector is satisfied by the presence of a disclosure and
+        cannot tell `len(diff) - 40` from any other expression. Measured by
+        execution with 60 appended lines: 64 diff lines, 40 shown, 24 named.
+        """
+        original = DST.read_bytes()
+        try:
+            extra = "\n".join(f"synthetic line {i}" for i in range(60))
+            DST.write_text(DST.read_text() + "\n" + extra)
+            capsys.readouterr()
+            assert gen.main(["--check"]) == 1
+            out = capsys.readouterr().out
+        finally:
+            DST.write_bytes(original)
+        assert DST.read_bytes() == original, "the control failed to restore"
+
+        shown = gen._DIFF_LINES_SHOWN
+        printed = [l for l in out.split("\n") if l.startswith("  ")
+                   and "further diff line(s) not shown" not in l]
+        assert len(printed) == shown, (
+            f"{len(printed)} diff line(s) were printed, not the capped {shown}")
+        tail = [l for l in out.split("\n") if "further diff line(s) not shown" in l]
+        assert tail, (
+            "a diff longer than the cap printed no remainder line, so the "
+            "listing reads as complete when it is not")
+        import re as _re
+        m = _re.search(r"and (\d+) further diff line\(s\)", tail[0])
+        assert m, f"the remainder line names no count: {tail[0]!r}"
+        total = int(_re.search(r"(\d+) diff line\(s\)", out).group(1))
+        assert int(m.group(1)) == total - shown, (
+            f"the remainder says {m.group(1)} but {total} - {shown} = "
+            f"{total - shown}; a disclosed cap with wrong arithmetic is worse "
+            f"than none, because it looks checked")
+
     def test_render_is_deterministic(self, gen):
         """2 renders of the same source must agree, or the match above is luck."""
         assert gen.render() == gen.render()
