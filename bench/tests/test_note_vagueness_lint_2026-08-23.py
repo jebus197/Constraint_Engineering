@@ -198,3 +198,72 @@ class TestAQuotationSpanningSentencesStaysExempt:
         assert not vague, (
             f"the quotation names the subject; masking it made the sentence "
             f"look vague: {vague}")
+
+
+class TestABareHeaderClockTimeIsAFutureStamp:
+    """A HEADER TIME WITH NO DATE BESIDE IT STILL CLAIMS WHEN THE NOTE WAS WRITTEN.
+
+    ★ ADDED 2026-10-30, after the author typed a future time twice in one night
+    and this linter caught 1 of the 2.
+
+    THE BLIND SPOT, MEASURED. `STAMP_LINE` requires a date AND a time on one
+    line. A header reading "Written overnight, finished at 01:45 GMT" matched
+    nothing, so `future_stamp` returned None and the check never ran. A note
+    written at 01:18 claiming 01:45 -- 27 minutes ahead -- passed this linter
+    clean, 2 hours after the same author had recorded a commit carrying a stamp
+    2.1 minutes ahead as a defect worth a commit message of its own. The rule
+    existed and the checker existed; the checker was blind to the shape the
+    author actually writes.
+
+    WHY THE SCOPE IS 3 LINES AND NOT THE WHOLE NOTE. A bare time further down a
+    note is almost always a measurement being reported -- "the board finished at
+    23:43 GMT" is a fact about the board, not a claim about the note -- and
+    flagging those would accuse every note that mentions a clock. Only the
+    header makes a claim about the note itself, which is what Rule 1 governs.
+    """
+
+    def _stamp(self, tmp_path, header_time, body="Some body text long enough to be a "
+                                                 "paragraph of prose for the linter."):
+        """(claimed, actual) or None, straight from the predicate under test."""
+        f = tmp_path / "note.txt"
+        f.write_text(f"A NOTE TITLE, 30 October 2026\n\n"
+                     f"Written overnight, finished at {header_time}. Branch test.\n\n"
+                     f"{body}\n", encoding="utf-8")
+        return LINT.future_stamp(f)
+
+    def test_a_header_time_in_the_future_is_reported(self, tmp_path):
+        got = self._stamp(tmp_path, "23:59 GMT")
+        assert got is not None, (
+            "a header claiming 23:59 on a file written just now was not reported, "
+            "so the shape the author actually writes is invisible to this check")
+        assert got[0].endswith("23:59"), got
+
+    def test_a_header_time_already_past_is_left_alone(self, tmp_path):
+        """THE DIRECTION THAT MUST NOT BE REFUSED.
+
+        A note written at 01:18 whose header says 00:01 is honest but stale, and
+        refusing that would refuse ordinary work -- the same asymmetry the
+        commit-msg hook applies.
+        """
+        assert self._stamp(tmp_path, "00:01 GMT") is None, (
+            "an honest past header time was reported as a future stamp")
+
+    def test_a_clock_time_in_the_BODY_is_not_a_header_claim(self, tmp_path):
+        """ANTI-OVER-REACH. A measurement is not a claim about the note."""
+        assert self._stamp(
+            tmp_path, "00:01 GMT",
+            body="The board finished at 23:43 GMT and the run began at 22:04 GMT, "
+                 "which are facts about the board rather than about this note."
+        ) is None, "a time reported in the body was read as the note's own stamp"
+
+    def test_the_dated_form_still_works_and_takes_precedence(self, tmp_path):
+        """The original check is unchanged; the new one is a FALLBACK only."""
+        import datetime
+        ahead = datetime.datetime.now() + datetime.timedelta(hours=3)
+        f = tmp_path / "dated.txt"
+        f.write_text(f"A NOTE TITLE\n\n{ahead.strftime('%Y-%m-%d %H:%M')} GMT\n\n"
+                     f"Some body text long enough to be a paragraph of prose.\n",
+                     encoding="utf-8")
+        got = LINT.future_stamp(f)
+        assert got is not None, "the original dated form stopped being detected"
+        assert got[0] == ahead.strftime("%Y-%m-%d %H:%M"), got

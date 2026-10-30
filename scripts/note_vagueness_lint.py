@@ -242,6 +242,24 @@ CATEGORY_NOUN = {
 # itself can.
 STAMP_LINE = re.compile(r"^\s*(\d{4}-\d{2}-\d{2})[,]?\s+(\d{2}):(\d{2})\s+([A-Z]{2,5})", re.M)
 
+#: ★ A BARE CLOCK TIME IN THE HEADER, WITH NO DATE BESIDE IT, added 2026-10-30.
+#:
+#: WHY. `STAMP_LINE` requires a date AND a time, so a header reading
+#: "Written overnight, finished at 01:45 GMT" matched nothing and the
+#: future-stamp check never ran. MEASURED: a note written at 01:18 claimed
+#: 01:45, 27 minutes ahead, and this linter passed it -- 2 hours after the same
+#: author had recorded a commit carrying a stamp 2.1 minutes ahead as a defect.
+#: The rule existed, the checker existed, and the checker had a blind spot in the
+#: shape the author actually writes.
+#:
+#: SCOPED TO THE FIRST 3 LINES, deliberately. A bare time anywhere in a note is
+#: usually a measurement being reported or a source being quoted -- "the run
+#: finished at 23:43 GMT" is a fact about the run, not a claim about the note.
+#: Only the HEADER makes a claim about when the note itself was written, which is
+#: what Rule 1 governs, so only the header is read. A wider scan would accuse
+#: every note that mentions a time.
+_BARE_CLOCK_IN_HEADER = re.compile(r"\b(\d{1,2}):(\d{2})\s*(?:GMT|BST|UTC)\b")
+
 
 def future_stamp(path: pathlib.Path):
     """Return (claimed, actual) when the note's own stamp is ahead of its mtime."""
@@ -252,13 +270,26 @@ def future_stamp(path: pathlib.Path):
     except OSError:
         return None
     m = STAMP_LINE.search(text[:800])
-    if not m:
-        return None
-    try:
-        claimed = _dt.datetime.strptime(f"{m.group(1)} {m.group(2)}:{m.group(3)}",
-                                        "%Y-%m-%d %H:%M")
-    except ValueError:
-        return None
+    if m:
+        try:
+            claimed = _dt.datetime.strptime(f"{m.group(1)} {m.group(2)}:{m.group(3)}",
+                                            "%Y-%m-%d %H:%M")
+        except ValueError:
+            return None
+    else:
+        #: FALL BACK TO A BARE CLOCK TIME IN THE HEADER, dated from the file's own
+        #: mtime, because a header time with no date still claims when the note was
+        #: written and was previously invisible to this check. Only the first 3
+        #: lines are read, for the reason given at `_BARE_CLOCK_IN_HEADER`.
+        header = "\n".join(text.splitlines()[:3])
+        b = _BARE_CLOCK_IN_HEADER.search(header)
+        if not b:
+            return None
+        try:
+            claimed = mtime.replace(hour=int(b.group(1)), minute=int(b.group(2)),
+                                    second=0, microsecond=0)
+        except ValueError:
+            return None
     # 2 minutes of slack: writing a file takes a moment, and rounding to the
     # minute can legitimately land one minute ahead.
     if claimed > mtime + _dt.timedelta(minutes=2):
