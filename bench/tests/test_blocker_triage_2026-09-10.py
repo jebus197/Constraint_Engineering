@@ -133,6 +133,50 @@ class TestPermissionIsSeparateFromBlocking:
         assert len(out) == 3, "classify must return (verdict, why, permission)"
 
 
+class TestThePaidGateMatchesTheWordsItIntends:
+    """★ ADDED 2026-10-30. The gate missed the plainest phrasing of the act.
+
+    HIS RULING: *"This is declined. No paid dispatch can happen without my
+    express authorisation."* Measured by calling `classify` rather than by
+    reading the pattern: `"Dispatch the paid panel to 4 seats for this round."`
+    returned NO permission flag, while the same sentence with "paid dispatch"
+    was caught. The IRREVERSIBLE pattern required `paid` to be followed by one
+    of exactly 4 nouns -- seat, dispatch, model, run -- so whether the gate
+    fired depended on which noun the sentence used for the same act.
+
+    A paid panel IS a paid dispatch, so this widens an existing category rather
+    than inventing one. The negative cases are load-bearing: a FREE panel and an
+    ordinary mention of a panel must still pass, or the gate becomes the
+    interruption it was built to prevent.
+    """
+
+    @pytest.mark.parametrize("text", [
+        "Dispatch the paid panel to 4 seats for this round.",
+        "Run a paid review of the maths model.",
+        "A paid dispatch to the Gemini seat.",
+        "Start the paid experiment arm.",
+        "Authorise the paid seat for round 3.",
+    ])
+    def test_a_paid_act_needs_permission_however_it_is_worded(self, B, text):
+        _, _, reason = B.classify(text)
+        assert reason, (
+            f"no permission flag for {text!r}. His decline covers the ACT, not "
+            f"a particular noun for it")
+
+    @pytest.mark.parametrize("text", [
+        "Dispatch the free panel on his brief.",
+        "The panel reviewed the brief and returned 3 verdicts.",
+        "Rewrite the paragraph about convergence.",
+    ])
+    def test_an_unpaid_act_is_not_flagged(self, B, text):
+        """THE CONTROL. Without it, flagging everything would pass the above."""
+        _, _, reason = B.classify(text)
+        assert not reason, (
+            f"{text!r} was flagged as needing permission. Whether a FREE "
+            f"dispatch should need it is a 4th category and the founder's to "
+            f"rule on; it must not arrive by a widened pattern")
+
+
 class TestItCannotBeTrickedByACommonTerm:
     def test_a_file_named_by_many_entries_is_not_a_dependency(self, B):
         """`reference_runner_v3.py` is central to the project. Naming it says

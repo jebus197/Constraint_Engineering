@@ -52,10 +52,27 @@ PARKED = REPO / "experimental_notes" / "PARKED_FOR_THE_FOUNDER.md"
 #: Actions the assistant must NOT take unilaterally. This is a PERMISSION gate,
 #: not a blocker: it stops the action, never the work, and it is reported at the
 #: end rather than as an interruption -- unless the item ALSO blocks progress.
+#: ★ `panel`, `review`, `arm` AND `experiment` WERE ADDED TO THE PAID NOUN SET
+#: ON 2026-10-30, BECAUSE THE GATE DID NOT CATCH THE MOST NATURAL PHRASING OF
+#: THE THING IT EXISTS TO STOP. Measured by calling `classify`: his ruling is
+#: *"This is declined. No paid dispatch can happen without my express
+#: authorisation."*, and `classify("Dispatch the paid panel to 4 seats for this
+#: round.")` returned NO permission flag, because the pattern required `paid` to
+#: be followed by one of exactly 4 nouns and `panel` was not among them. The
+#: same text with "paid dispatch" was caught. So the gate's coverage depended on
+#: which noun the sentence happened to use for the same act.
+#:
+#: THIS IS NOT A NEW CATEGORY. It is the existing IRREVERSIBLE category matching
+#: the words it already intends; a paid panel IS a paid dispatch. Whether a FREE
+#: dispatch or a simulated run should also require permission -- both spend his
+#: token allowance and occupy his 8 cores, which his 2026-10-11 ruling makes a
+#: fixed resource -- is a 4th category and therefore his to rule on, so it is
+#: raised as a ticket rather than added here in his name.
 NEEDS_PERMISSION: list[tuple[str, re.Pattern, str]] = [
     ("IRREVERSIBLE", re.compile(
         r"delete\s+(a\s+)?(git\s+)?(ref|branch|tag)|git\s+(branch\s+-D|push\s+--force|reflog\s+expire)"
-        r"|\bpaid\s+(seat|dispatch|model|run)\b|spend(ing)?\s+money"
+        r"|\bpaid\s+(seat|dispatch|model|run|panel|review|arm|experiment)\b"
+        r"|spend(ing)?\s+money"
         r"|answer[- ]key|sealed\s+(store|archive)|passphrase|vault", re.I),
      "one of his 3 standing categories: a git ref, money, or the sealed key store"),
     ("HIS_MACHINE", re.compile(

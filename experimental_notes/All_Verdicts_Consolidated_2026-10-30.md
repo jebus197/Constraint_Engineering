@@ -6,9 +6,9 @@ Technical companion to the spoken version, `All_Verdicts_Consolidated_2026-10-30
 
 **This file replaces 5 spoken files** written from 17:42 on 2026-10-29 to 05:23 on 2026-10-30. Where they disagree with this one, this one is current. Section 6 names what is superseded.
 
-## 1. Your 4 open questions
+## 1. Your 5 open questions
 
-Every question recorded in the register and still OPEN. 54 recorded in total, 48 CLOSED, 1 DEPRECATED, 1 DUPLICATE. Source: `python3 scripts/register.py --kind qs --limit 0 --json`.
+Every question recorded in the register and still OPEN. 55 recorded in total, 48 CLOSED, 1 DEPRECATED, 1 DUPLICATE. The 5th was raised at 10:52 today. Source: `python3 scripts/register.py --kind qs --limit 0 --json`.
 
 | id | reference | question |
 |---|---|---|
@@ -16,10 +16,13 @@ Every question recorded in the register and still OPEN. 54 recorded in total, 48
 | `8755c675e3a9` | — | Should the 16 findings closed with a non-curing fix be reopened? |
 | `4af75486305a` | — | What false-alarm proportion for demotion? 0.05 recommended |
 | `b4fc0c6c0278` | — | Run both baseline arms after the 3rd convergence rather than before it? |
+| `9be924df11ed` | — | Should a FREE dispatch or a simulated run also need permission, since both spend his allowance and cores? |
 
 The 16-findings figure: 16 of 69 entries in the first commissioning arm of 2026-09-21, **0.231884**, Wilson 95% [0.148079, 0.343968]. The 3 categories (cured 25, not cured 16, instrument could not look 28) sum to 69 exactly, asserted rather than assumed.
 
 The baseline-arm figure: the design names a run of 2026-10-03 as the fixed side. The branch has moved **341 commits** since, 51 touching the runner and 10 the composer.
+
+**The permission check had a wording defect, fixed rather than asked.** `scripts/blocker_triage.py`'s IRREVERSIBLE pattern required `paid` to be followed by exactly 4 permitted nouns (`seat|dispatch|model|run`), so `classify("Dispatch the paid panel to 4 seats for this round.")` returned **no permission flag** while the same act written as "paid dispatch" was caught. A paid panel is a paid dispatch, so the noun set now also covers `panel|review|arm|experiment`. 5 paid phrasings flagged, 3 unpaid ones not; reverting the widening turns 3 tests red. Guard: `bench/tests/test_blocker_triage_2026-09-10.py`, 35 tests.
 
 ## 2. The 6 open task entries
 
