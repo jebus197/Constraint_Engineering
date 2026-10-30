@@ -27,8 +27,8 @@ Markers in `experimental_notes/CDSFL_MASTER_TASK_LIST.md`, verified against `scr
 
 | entry | marker line | what it needs |
 |---|---|---|
-| B21 | 1098 | 3 panel questions; brief at `bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md` |
-| B22 | 1113 | a free-seat panel dispatched |
+| B21 | 1098 | 3 panel questions; brief at `bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md`, **refused by `scripts/panel_brief_validate.py` at 10:30 and repaired in `1477c7bf`** |
+| B22 | 1113 | a free-seat panel dispatched; brief passes, but carries a currency warning (3 files changed up to 666 min after it was written) and **3 briefs exist on this question** with none marked canonical |
 | C1 | 1130 | one scalar: `CLAIM_CHANNEL_WEIGHT`, `bench/claim_ledger.py:195`, currently `0.0` |
 | B41 | 1345 | your go-ahead |
 | B50 | 1369 | a ruling on the corrected price list |
@@ -125,6 +125,20 @@ Unmasked defect: the term extractor's kebab branch matches any hyphenated word, 
 Guard: `bench/tests/test_the_triage_can_see_the_whole_list_2026-10-30.py`, **20 tests, 5 of 5 mutations red**. 136 tests across the 11 dependent files pass.
 
 Side effect: before the repair the final entry had a body of **0 characters** in 5 instruments, because the boundary lies before it begins. Its true body is **5,967 characters**.
+
+## 7a. Correction to this file, made after it was first delivered
+
+**B21's brief was refused by its own validator**, and sections 2 and 7 of the first version of this file called it ready. `scripts/panel_brief_validate.py` returned exit 1 on 5 required checks. All 5 declared figures were prose summaries no producer prints, and the validator requires a declared value to appear verbatim as a whole token in producer output. The currency check named the cause: `scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py` changed **10.5 minutes after the brief was written**, which was this session's own `_INSTRUMENT_FILES` widening.
+
+Worse in the same brief: the prose cited a one-sided exact upper bound of **0.048703** that its named producer never emitted. The producer now prints it, derived as `1 - alpha**(1/n)`, with `scipy.stats.beta.ppf` and an mpmath evaluation **asserted** equal to 1e-9. Declared values are now extracted from real output by regex and asserted to be substrings of it, so the defect cannot recur by mistyping. 7 declarations replace 5; the validator returns exit 0.
+
+P-passed: mutating `63/67 = 0.940299` to `63/67 = 0.999999` makes it refuse; restoring makes it accept.
+
+**The versioned mirror was stale.** `bench/logs/**` is gitignored (`.gitignore:48`); the convention mirrors each brief to `experimental_notes/evidence/panel_records_<date>/`, and coverage is **134 of 134 rounds**, Wilson [0.972131, 1.000000]. But B21's mirror was written at 04:57 and held the refused figures, so the broken version was the only 1 that git tracked. Refreshed, byte-identical, and it validates standalone.
+
+**Preconditions, on your 2026-10-28 ruling.** `scripts/preflight_health_check_2026-10-06.py`: exit 0, 8 of 8, `claude_cli: logged in`, tree unchanged, probe free of inference cost. That discharged register ticket `3adecb80188f` (CLI logged out, blocking every free seat), now CLOSED with that run as its verification. Weekly allowance read before deciding anything: 25% all models, extra usage disabled at 0.00 GBP.
+
+**Not dispatched**, because this file had already named the dispatch as yours.
 
 ## 8. The one recommendation
 
