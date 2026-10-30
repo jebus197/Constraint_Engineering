@@ -62,7 +62,16 @@ Cost of adding the newest 6 guards: **75 tests in 18.88 s** against a gate measu
 
 ## 4. Not yours to decide
 
-**The 30 panel-labelled tickets are stale recording, not a backlog.** Read by your words rather than the label: 19 unconditional, 6 conditional, 5 not panel requests. Of the 11 whose subject traces to a task entry, 10 have every referenced entry closed — **0.909091**, [0.622642, 0.983768], exact test p = 0.005859; the exception is C1. **94 panel records exist against those 30 requests**, exceeding requests in every month (14 against 5 in August, 47 against 20 in September, 30 against 11 in October). The owed work is matching records to requests, which is reading, and it is mine.
+**The 30 panel-labelled tickets are stale recording, not a backlog**, with rulings from 2026-08-28 to 2026-10-19. The owed work is matching records to requests, which is reading, and it is mine.
+
+**6 figures in the first version of this section are RETRACTED.** It said 19 unconditional / 6 conditional / 5 not-requests, 11 traceable of which 10 closed at 0.909091 [0.622642, 0.983768] p = 0.005859, and 94 panel records. No script in the tree computes any of them; they came from the morning report's prose and were re-quoted here twice. Producer now committed: `scripts/what_do_the_panel_requests_actually_ask_2026-10-30.py`.
+
+It disagrees with the split (21 / 7 / 2) and with the record count (150 mirrored rounds, not 94) — and then disagreed with a hand reading on **2 of the 2** cases checked, so it **withholds the split**. Both misfires are scope errors, so widening the patterns does not fix them:
+
+- `fd6bd113d263`: `IMPERATIVE` matched `verdict` inside *"I can't offer a verdict"* — a match inside a negation, the shape that made a reader treat `NOT FALSIFIED` as `FALSIFIED`.
+- `5b46f40b7ddb`: *"Fix as necessary"* gates the fix; the panel discussion in the next sentence is unconditional, so the scope came from the wrong clause.
+
+**What does have a producer**: 30 tickets; **0** carry a `task_ref`, so tracing needs `scripts/read_founder_responses_2026-10-11.py` rather than a search; **150** rounds mirrored under `experimental_notes/evidence/panel_records_*`; fewest after any single request **8**. Guard: `bench/tests/test_the_panel_request_split_is_withheld_2026-10-30.py`, 11 tests, 4 of 4 mutations red, including that emptying the hand-read control makes the split publishable again so the withholding is not unconditional.
 
 Open-ticket totals, from the listing rather than `--summary`, which **ignores `--kind` and returns the same global figure for every kind** — a defect worth fixing:
 
