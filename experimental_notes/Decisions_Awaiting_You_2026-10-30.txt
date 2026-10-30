@@ -1,0 +1,173 @@
+DECISIONS AWAITING YOU, 30 October 2026
+
+Written 2026-10-30 19:05 GMT. Branch sim shakedown dated 29 September. Commit 37b14e5a.
+
+This replaces the consolidated file of 10:05 today, which named every item by its identifier and never said what any of them was. 4 of the 6 open entries shared no phrase at all with their own canonical description, 0 of the 6 carried a recommendation, and the words additive, composability and simplest sufficient appeared 0 times in the whole file. Each item below instead says what that item is, what it affects, what you decide, and what is recommended against those 3 standards.
+
+Where this file disagrees with the earlier one, this one is current.
+
+
+PART 1. WHAT YOU ALREADY SETTLED IN THE LAST FILE
+
+Free panels and simulated runs need no extra permission. Your words: No. a free panel, or simulated experiment has never previously needed any additional permissions, beyond that that I issue when I tell you to run them. The question is closed. Nothing will ask you again, and no free dispatch will be launched without your instruction to run it.
+
+The paid dispatch wording is approved. The gate that catches a paid dispatch now also catches the words panel, review, arm and experiment after the word paid, because it previously missed the plainest phrasing of your own rule. You accepted this on the condition that it matches the rule as you stated it, and it does.
+
+An unmarked statement ending in a question mark becomes a question, not a proposed fix. You ruled this as a feature request. It reaches about 180 of your 752 annotations. Because a ticket's identity is derived partly from its category, re-filing moves identities, so this is built once and not repeatedly.
+
+A panel brief gets updated before it is dispatched. Your words: if a panel dispatch needs updating before dispatching it, then clearly you should do so. B21's brief was refused by its own validator this morning and now passes every required check.
+
+
+PART 2. WHERE YOU WERE RIGHT AND THE EARLIER FILE WAS WRONG
+
+You said several panel requests on the master task list had simply not been done. The earlier file called the backlog almost certainly stale recording rather than undone work. That was measured from ticket labels, which was the wrong instrument.
+
+Measured from the artefacts instead: of 134 directories holding a written panel brief, 8 contain a brief and no reply from any seat. Those reviews were prepared and never run. This counts all 134 brief directories in the project, so no margin of error attaches to it.
+
+5 of the 8 belong to questions still open. 3 of those 5 are 3 separate briefs on the same question, B22, written on 18 October and twice on 29 October, with nothing on disk recording which is the one to use. 1 is B21, written this morning. 1 is the claim channel, written on 20 October.
+
+The other 3 belong to entries that have since been completed, so their reviews are probably moot. That is your call rather than a measurement.
+
+
+PART 3. THE 6 OPEN ENTRIES
+
+B50. 6 TESTS NOW FAIL ON EVERY RUN BECAUSE OF A RESET YOU ORDERED
+
+What it is. The immune memory is the store of what previous experiments learned about which kinds of flaw matter. On 16 October you ordered it emptied before the live experiments, and it was emptied, with the old contents archived and a restore command recorded. 6 tests describe that memory as it was before the reset. While the store was empty those tests skipped themselves. The free run of 28 October wrote the first new record, the skip condition correctly stopped applying, and all 6 re-armed against a store that will never hold their old contents again.
+
+What it affects. 6 of the 7 failures in the full test suite of 13,652 tests. Nothing else. The product is correct and the archive proves it.
+
+What you decide. One of 3 options. Option 1 widens the skip condition from no records at all to the live memory no longer holding the runs this claim was measured on, so it re-arms once comparable runs exist. Option 2 re-measures all 6 against the new memory as it fills, which needs about 17 live runs before the rarest flaw class appears often enough to measure. Option 3 restores the archived contents, which would make all 6 pass today and would also undo the reset you ordered.
+
+Recommendation: option 1. Additive, because it keeps every assertion and keeps the protection against a permanent exemption, where option 2 leaves 6 tests asserting nothing for 17 runs and option 3 reverses your own instruction. Composable, because it changes a condition inside 1 function and touches no test and no stored data. Simplest sufficient at the cost of a more complicated condition, which is the only price. 1 correction to the earlier file: the mechanical half of the repair fixes 1 assertion, not 2, and breaks a 7th that passes today, so it is a trade and not a gain.
+
+C1. A WORKING MEASUREMENT CONNECTED TO NOTHING
+
+What it is. When the harness reviews a document, a separate channel reads each individual claim in it and records whether a tool could decide that claim and whether it survived. The channel works. It ran in both free runs of 15 October and transcribed 58 of 58 verdicts exactly.
+
+What it affects today. Nothing, for 2 separate reasons, and the earlier file gave only the first. Its weight in the scoring equations is 0, so the multiplier is exactly 1. And the function that applies the channel to the risk score has no caller anywhere in the harness, so even a weight above 0 would change nothing.
+
+How much is at stake. Across the 6 archived runs that carry a claim ledger, the share of claims a tool actually confirmed averages 0.797 and ranges from 0.553 to 0.895. At the proved ceiling of 0.5 the channel would cut residual risk by about 41 per cent. So the weight is consequential, not cosmetic.
+
+What you decide. Not a number yet, and this corrects what was put to you this morning. The earlier recommendation was to set the largest weight that changes no archived outcome. That cannot be computed, because 0 of those 6 archived reports record the risk score the weight would act on. There is nothing to compare against.
+
+Recommendation: 2 prerequisites first, then the number. Record the residual risk figure, which 0 of the 6 archived reports currently carry, beside the claim ledger, and connect the channel to the risk calculation. Both are additive, since the pathway already exists and reaches nothing, which is the shape this project has confirmed 11 times. The connection is a design change rather than plumbing, because the 2 places the risk score is computed are pure arithmetic with no access to a ledger. The simplest sufficient version is to record the score first, which costs 1 field and makes the weight decidable on the next run.
+
+B21. CHOOSING THE WORD FOR WHAT A MODEL DOES IN A RUN
+
+What it is. You asked for model and role selection to be as free as the project's claims of model independence imply, with roles such as worker, classifier and orchestrator individually selectable. Most of what it needs exists: a 4 layer policy engine already merges universal rules, domain rules, task rules and per model rules, and refuses any lower layer that tries to weaken a hard rule.
+
+What it affects. A role vocabulary already exists in the code and it is not yours. It names collator, player manager and participant, which describe a seat's position in the topology. Yours describe what a model does. They overlap partly: classifier has no counterpart in the code and collator has none in your list. The same choice also removes the last football term from the ranking code, so 1 answer settles 2 items.
+
+What you decide. Whether these are 1 vocabulary to be reconciled or 2 independent ones needing 2 layers. Reconciling touches 63 quoted values across 24 files. Adding a second layer touches none of them but makes a 5 layer merge carrying 2 role dimensions harder to reason about.
+
+Recommendation: put it to the free panel, which is what you asked for on 17 October, and which needs only your word to start. The brief is ready and was never dispatched. Additive either way, since no role is removed. The second layer is the more composable of the 2, because it leaves the existing vocabulary untouched. The simplest sufficient answer depends on the verdict, which is why it goes to the panel rather than being chosen here.
+
+B22. WHAT A FIX MEANS WHEN THERE IS NOTHING TO RUN
+
+What it is. Your question of whether this is yet a general purpose calculator for science and mathematics rather than a code reviewer. In code and mathematics a fix is an edit whose test can be re-run, so whether it worked is decidable by execution. In an experimental field a faulty claim may only be repairable by narrowing it, restating its conditions, or declaring it undecidable on the evidence available, none of which a test can execute against.
+
+What it affects. The harness has already converged on non code material 3 times, all 3 shakedown runs of 15 October against prose with embedded calculations. So the question is not whether it can review such material. It is whether the idea of a resolved finding survives when no runnable repair exists.
+
+What you decide. Which of the 3 existing briefs is the one to dispatch, and then whether to dispatch it.
+
+Recommendation: take the newest, dated 29 October, and retire the other 2 by name so the record says which was used. Additive, because nothing is deleted and the superseded briefs stay in the archive. Composable, because a brief is a standalone document. Simplest sufficient, because writing a fourth brief would repeat work already done 3 times.
+
+B41. A LIST OF 8 JOBS FROM 19 OCTOBER, NOT A QUESTION
+
+What it is. On 19 October you observed that the previous sprint stayed alive because the task list was mechanised, and suggested doing the same with that day's jobs. This entry is that list of 8 items, written onto the task list so the Stop gate holds the work to it rather than relying on memory.
+
+What it affects. 6 of the 8 are now discharged with evidence: the full suite ran on a still tree, the report generator failures are gone, the task list mirror matches, the producers that had no caller now have 1, the named stragglers are green apart from B50's 6, and the ladder's membership is now separated from its order.
+
+What you decide. The remaining 2 items are a panel dispatch, so they need your go ahead and nothing else. 2 corrections to the entry's own list: it names a test file by a path that has never existed in this project's history, and the ladder failures it lists no longer fail, with all 33 of those tests passing.
+
+Recommendation: close the 6 discharged lines and keep the entry open on the dispatch alone, so the list stops reporting completed work as outstanding. Additive, because the evidence for each closure is recorded against it. Composable, because each line closes independently. Simplest sufficient, because the alternative is carrying a mostly finished list that makes the queue look longer than it is.
+
+R1. RESTART THE CONTROL EXPERIMENT THAT HAS NO PLANTED FAULTS
+
+What it is. Experiment 53 is the control arm: a run against material with no faults deliberately placed in it, which measures how often the harness reports a fault that is not there. Without it, how often the harness reports a fault that is not there is unmeasured, and every other experiment has nothing to be compared against.
+
+What it affects. Every claim about detection quality in the main experimental arc, because how often faults are caught means little without how often faults are invented.
+
+What you decide. Authorisation, and the cost, since this one spends money. The engineering that was blocking it is finished: all 10 items in that gate are resolved, 0 remain. You ruled it twice, on 7 August and again on 6 September, which is 84 and 54 days ago.
+
+Recommendation: authorise it as the next paid run, ahead of any other paid work. Additive, because it supplies a figure nothing else can. Composable, because it runs standalone against its own configuration and shares no state with the other arms. Simplest sufficient, because the only alternative, inferring the false positive figure from runs that did have planted faults, is not sound.
+
+
+PART 4. THE OPEN QUESTIONS
+
+HOW OFTEN A HEALTHY MODEL IS WRONGLY DEMOTED, AND YOU WERE RIGHT TO PUSH BACK
+
+Your words: Can we improve on this statistic? A 1 in 20 chance of demoting a model that is performing just fine seems unreasonably high?
+
+The 1 in 20 was never a live setting. It was the common false alarm level that 3 candidate rules were set to so their detection rates could be compared fairly, and nothing in the working code reads it.
+
+Measured over 3000 replications: at 1 in 20 the rule wrongly demotes a healthy model 3.50 per cent of the time and catches a real decline 93.53 per cent of the time. Tightening it to 1 in 50 cuts the wrong demotions to 1.57 per cent, a reduction of 2.23 times, and costs 4.63 points of detection. Both changes are real and neither is within measurement noise.
+
+Recommendation: 1 in 50. Additive, because it is a single number in a rule not yet connected to anything, so no behaviour changes until it is. Composable, because every other threshold in the rule follows arithmetically from it. Simplest sufficient, because the alternative is building an externally anchored difficulty model.
+
+1 caveat that bounds all of it: these figures come from a simulated model of how a model degrades, not from this project's own runs.
+
+
+WHAT NON CURING MEANS
+
+Your words: What do you mean non curing? The cures did not, or cannot fix the falsifiers?
+
+The first. In 1 archived run, 16 findings are recorded as closed with the defect demonstrated, while the repair that closed them was measured against the finding's own test and the test still failed. The fault was correctly identified and the fix did not work.
+
+The consequence of leaving them is that the archive records 16 defects as resolved on repairs that did not resolve them, so the next run's comparison baseline is wrong by 16 out of 69.
+
+The connection to duplicate pairs is that several of the 16 were closed by being merged into another finding rather than by a repair of their own, and reopening a merged pair reopens both halves.
+
+Recommendation: leave the archive as it stands and record the 16 as a named population, so the next commissioning run compares against them rather than rediscovering them. Additive, because nothing is deleted and the population becomes citable. Composable, because it changes no archived record. Simplest sufficient, because reopening 16 findings in a sealed archive rewrites history to fix a comparison that a recorded list fixes just as well.
+
+
+SEVERITY, AND WHETHER THE EARLIER WORK SETTLED IT
+
+You asked what was meant by severity wobbling, and by the setting of 0.7 being a cooked figure, and whether the later work settled what the setting should be. It did not settle the setting, and it was never going to, because the setting is the question.
+
+What it did settle is 3 things. The wobble is the spread between 2 independent judgements of the same single defect: 0.12 at the midpoint, 0.18 on average, across 147 archived cases.
+
+The 0.7 is something different. It is the cut above which a finding counts as critical, a convention in the code pre registered on 18 May.
+
+The reason the 2 are connected is that nothing combines the independent judgements at all. The merge keeps whichever record happened to be the target and discards the rest, so the kept figure falls outside the range of the judgements it came from in 35 of those 147 cases, between 18 and 31 per cent.
+
+Recommendation: none offered. Whether severity is a confidence inside a range is a question about what severity means, and no archive can answer it. Both halves are recorded as questions in the register and both are answered as far as measurement can take them.
+
+
+THE 2 BASELINE ARMS, AND WHAT FOLLOWS EITHER WAY
+
+You asked what the consequences would be, since the earlier file did not say.
+
+The measurement fixes a run from 3 October as the unchanging half of the pair. The branch has moved 341 commits since, 51 of them touching the runner and 10 touching the composer.
+
+So running the pair as designed would compare the new arm against software that no longer exists, and the comparison would measure the software change rather than the convergence behaviour under test. Running it after the third convergence instead compares 2 arms of the same build.
+
+Recommendation: after. Additive, because both arms still run and nothing is dropped. Composable, because the later ordering removes a dependency on an archived build. Simplest sufficient, because the alternative is reconstructing the 3 October build, which is more work for a worse comparison.
+
+
+PART 5. 1 DECISION WITH A NUMBER ATTACHED
+
+The test gate that guards every commit runs an explicit list of 73 test files out of 729 in the project, so it never reaches 656 of them, which is 90 per cent of the suite. Every guard written in the last 2 days is among the 656. The case for adding them is demonstrated rather than argued: a guard on one of these reports sat failing through 3 consecutive commits because nothing cheap ran it.
+
+You asked whether this means a very large increase in time per commit. No. The 6 newest guards run 75 tests in 18.88 seconds against a gate that currently takes 312 seconds, which is an addition of about 6 per cent, or roughly 19 seconds.
+
+Recommendation: add them. Additive, because the gate's reach grows and nothing is removed from it. Composable, because the list is a list and each entry is independent. Simplest sufficient at 19 seconds, against the alternative of discovering a broken guard 3 commits later. It has not been done because editing that gate changes every commit, and the list is yours.
+
+
+PART 6. 3 THINGS I NEED FROM YOU
+
+A label for a discussion. You proposed a new label to mark a comment that is part of an ongoing discussion rather than a question or a proposal, so that an unlabelled comment does not have to be guessed at. It is sound and it is cheap: 1 entry in the list of categories, 1 addition to the marker reader, 1 guard. The bigger gain is what it should become the default for. An unmarked comment is currently filed as a proposed fix, which is why your discussion comments became tickets. With your question mark rule already settled, the remaining question is whether an unmarked comment that is not a question should default to discussion instead of proposed fix.
+
+Whether the ticket store is earning its keep. Your worry is that it keeps rediscovering things from before it existed, which is its own source of confusion. The honest answer is that it earns its keep as a queue and not as a historian: it is the only thing that found the 72 questions of yours that had been filed as work, and this morning it caught 2 of your rulings that the marker reader had missed entirely. Its failure is exactly the one you named, over reporting: of 6 tickets checked by execution today, 5 were already done. Your own fix is the right repair, which is to stop harvesting annotations written before the store existed. That needs a date from you, or my suggestion, which is 17 October, the day the store was built.
+
+Which of the 3 B22 briefs is canonical, or my taking the newest and saying so.
+
+
+PART 7. WHAT THIS FILE DELIBERATELY DOES NOT REPEAT
+
+The earlier file said 12 entries were open when 6 were, described the claim channel decision as a single line change at 2 places when it is a design change, and presented the panel backlog as stale recording when 8 reviews had simply never been run. Those 3 statements are corrected above and are not restated.
+
+Producers for every figure in this file: the file diagnosis, the brief census, the demotion trade off, the claim coverage reading, and the severity spread measurement, all committed under scripts and all executed by a guard of 39 tests.
+
+Written under CDSFL note standard v1.8 (17 October 2026).

@@ -191,9 +191,18 @@ def test_every_item_survives_a_real_apply(tmp_path):
     after_text = out.read_text(encoding="utf-8")
     assert len(re.findall(r"^## ", after_text, flags=re.M)) == n_before
     # HIS WORDS, not a count: every original body appears verbatim.
-    parts = re.split(r"^## ", before, flags=re.M)[1:]
-    for p in parts:
-        body = "\n".join(p.splitlines()[1:]).strip()
+    #
+    # ★ THE BODY MUST STOP AT THE SECTION DIVIDER. Corrected 2026-10-30. A
+    # split on `^## ` runs to the NEXT `## `, so the last item of the live
+    # section swallowed the `---` divider, the `# Settled` header and that
+    # header's own ITEM COUNT. The assertion then failed whenever the settled
+    # count changed, reporting "body lost" for an item that was present in
+    # full -- a guard accusing correct content, and the same boundary defect
+    # repaired in `end_of_entries` earlier the same day. Verified by diffing
+    # the one failing body: the only difference was the swallowed header.
+    for p in re.split(r"^## ", before, flags=re.M)[1:]:
+        tail = "\n".join(p.splitlines()[1:])
+        body = re.split(r"^(?:---\s*$|# )", tail, flags=re.M)[0].strip()
         if body:
             assert body in after_text, f"body lost: {p.splitlines()[0][:70]}"
 
