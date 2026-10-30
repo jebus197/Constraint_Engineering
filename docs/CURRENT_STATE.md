@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 30 October 2026 04:20 GMT (2026-10-30T04:20:23+00:00)
+Generated: 30 October 2026 11:24 GMT (2026-10-30T11:24:23+00:00)
 
 ---
 
@@ -18,20 +18,19 @@ Generated: 30 October 2026 04:20 GMT (2026-10-30T04:20:23+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `eb2730e3` A cited path that never existed, and the obvious guard for it would have been wrong
-- **Committed:** 2026-10-30 04:11:44 +0000
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
+- **Last commit (the PARENT of the commit containing this file):** `9f8003dd` 2 more tickets discharged, and 1 of his questions was filed as a proposed fix
+- **Committed:** 2026-10-30 11:14:20 +0000
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 8
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**13642 tests collected** at 30 October 2026 04:20 GMT, HEAD `eb2730e3` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**13701 tests collected** at 30 October 2026 11:24 GMT, HEAD `9f8003dd` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -61,13 +60,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `eb2730e3 A cited path that never existed, and the obvious guard for it would have been wrong`
-- `73333e0a 2 of the 3 entries asking him to rule already carried his ruling`
-- `8cdcc0a6 The report he reads now carries B50 and the guard that was red beneath it`
-- `57bd99fb B21 and C1 both argued from claims they never executed, and 3 of the 4 are false`
-- `b59446dd The Stop gate's defect is a ticket now, not prose in a log`
-- `498002bb A completeness check on his report found 1 gap, and it was the gate that prodded all night`
-- `22bc65f6 I put a transient obstacle of mine into his parked file, and a guard caught the repair`
-- `8d240655 His report carries B21's price as well as its question`
-- `d595b945 B21's cost side measured, and the producer I wrote for it had 2 defects in 2 minutes`
-- `207faed2 B41 reduced in the canonical place, and the marker lesson applied rather than relearnt`
+- `9f8003dd 2 more tickets discharged, and 1 of his questions was filed as a proposed fix`
+- `2f98fcfa 3 gate tickets were stale recording, not undone work, and are closed`
+- `8643fbd3 The paid-dispatch gate missed the plainest phrasing of a paid dispatch`
+- `04a89609 6 figures about the panel backlog had no producer, and the split is withheld`
+- `044b2c75 Correct the consolidated file: it called a validator-refused brief ready`
+- `1477c7bf B21's panel brief was refused by the validator, and I had called it ready`
+- `9014f98f Every outstanding verdict in 1 file, built from the register not from 5 reports`
+- `8a05a1e3 The blocker triage could not see 72 of 186 entries, nor any that were open`
+- `80f4dfcd 2 of my own parked entries sat in his live queue, marked resolved where nothing reads`
+- `e53a597a The report contradicted itself on the one figure I had just given a producer`
