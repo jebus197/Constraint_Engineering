@@ -25,6 +25,20 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
+## SESSION STATE — 2026-10-31 00:07 GMT (READ THIS FIRST)
+
+**HE RENAMED THE DISCUSSION LABEL `ds` -> `dis` HOURS AFTER `ds` SHIPPED, AND THE MEASUREMENT DOES NOT SAY WHAT WOULD HAVE BEEN CONVENIENT.** His words: *"OK we need to fix the discussion label. I propose 'dis' for a clean separation."* `dis` is NOT measurably safer by collision rate — it is the stdlib bytecode disassembler named in this project's own tool constraint box, and **5 of 7 user-role transcript entries carrying it use it in that sense, Wilson [0.358934, 0.917781], against `ds` at 25 of 53, Wilson [0.343822, 0.603399], Fisher exact p = 0.423810**. The 2 rates are NOT distinguishable and that claim must not be made. **WHAT IS DECISIVE IS NAMESPACE:** `ds` collides with a SEAT IDENTIFIER, which is what a dispatch instruction is made of, and `dis` collides with a module name no one writes as a marker. In his annotations, where a marker lives, **`dis` appears 0 times in all 794** while `ds` needed a seat-adjacency guard. Producer: `scripts/the_ds_label_and_the_kind_allowlist_2026-10-30.py`.
+
+**`ds` IS A RETAINED LEGACY ALIAS, NOT A REMOVAL.** 3 annotations he had already written carry it and 93 rows were filed under it; dropping it would orphan them. The reader normalises it to `dis` on read, 93 `dis` rows were created, and the 93 legacy rows were superseded — 0 anchors now carry more than 1 live kind, and the repair is idempotent. Live queue by kind: **dis 92, pf 148, qs 53, wr 37, fr 24, ds 0**.
+
+**A DEFERRAL WAS INVISIBLE UNLESS THE TICKET WAS `OPEN`, AND THE MARKER CHECKER FOUND IT.** `deferred_tickets()` filtered `status == "OPEN"` exactly while its own docstring said LIVE, so R1's deferral — recorded on its row with his reason and the date — did not reach `register_deferrals()`, because R1's ticket is UNDECIDED. The Stop gate reported the disagreement rather than clearing it, which is the gate working. Repaired to read the whole live set. **WHY THAT DOES NOT REINTRODUCE OVERSTATING:** `open_tickets()` excludes UNCONFIRMED so a harvested row is not treated as work, and a deferral cannot arrive that way — `defer()` requires a reason and a caller-supplied timestamp. Measured: 5 rows carry a deferral, 4 OPEN and 1 UNDECIDED, and **0 UNCONFIRMED rows carry one**. All 4 disagreement sets are now empty.
+
+**THE LABEL WAS NEVER DOCUMENTED IN EITHER DIRECTIVE FILE** — built the same morning and the docs were not swept, which `docs-defect-parity` makes a defect of equal standing. `dis` is now in the global CLAUDE.md marker block and the project MC table, and the dispatch table's `ds` row is annotated **SEAT ONLY** so the collision cannot be made twice.
+
+**GUARD:** `bench/tests/test_the_ds_kind_is_confined_to_his_annotations_2026-10-30.py`, **58 tests**, and **16 of 16 reversions turn it red** per `scripts/the_ds_vocabulary_mutations_2026-10-30.py`, from `python3 scripts/the_ds_vocabulary_mutations_2026-10-30.py`. The new mutations include dropping the legacy alias, emptying the alias map, removing the normalisation, and BOTH directions of the deferral predicate. The store's own kind ratchet went red twice and was GROWN rather than relaxed, as its docstring prescribes — once for `ds` and once for `dis`.
+
+**UNCHANGED AND STILL OWED, in his ruled order:** B21's free panel dispatch, which he authorised and which has not run; the 658 unreached test files, blocked until the 3 remaining board failures are identified; C1's 2 prerequisites; the 16 non-curing closures as a named population; the 1-in-50 demotion constant.
+
 ## SESSION STATE — 2026-10-30 23:13 GMT (READ THIS FIRST)
 
 **COMMIT `a76f34b0` on `sim/shakedown-2026-09-29`, pushed.**

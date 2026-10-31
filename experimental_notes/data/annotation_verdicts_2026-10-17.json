@@ -5388,12 +5388,12 @@
     {
       "anchor": "Decisions_Awaiting_You_2026-10-30.txt#187",
       "audited": "2026-10-30",
-      "evidence": "bench/ticket_store.py KINDS; scripts/harvest_tickets_2026-10-17.py _unmarked_kind; guard bench/tests/test_the_ds_kind_is_confined_to_his_annotations_2026-10-30.py, 47 tests, 10 of 10 mutations red",
+      "evidence": "bench/ticket_store.py KINDS and LEGACY_KIND_ALIASES; scripts/harvest_tickets_2026-10-17.py _unmarked_kind and CHAT_EXCLUDED_KINDS; scripts/read_founder_responses_2026-10-11.py _LEGACY_MARKERS; guard bench/tests/test_the_ds_kind_is_confined_to_his_annotations_2026-10-30.py, 58 tests, 16 of 16 mutations red per scripts/the_ds_vocabulary_mutations_2026-10-30.py",
       "file": "Decisions_Awaiting_You_2026-10-30.txt",
       "line_index": 187,
       "text": "If a comment I make has no marker, and does not end with a question mark, then treat it as a ds. fr",
       "verdict": "RULING",
-      "why": "An annotation of his carrying no marker and not ending in a question mark is filed as `ds`, a discussion. The unconditional `pf` default is retired. Reach: of 703 unmarked annotations, 188 become `qs` and 515 become `ds`; 0 remain `pf` by default."
+      "why": "An annotation of his carrying no marker and not ending in a question mark is filed as a DISCUSSION. The unconditional `pf` default is retired. Reach: of 703 unmarked annotations, 188 become `qs` and 515 become a discussion; 0 remain `pf` by default. HE RENAMED THE LABEL THE SAME DAY, verbatim: \"OK we need to fix the discussion label. I propose 'dis' for a clean separation.\" `ds` collided with the DeepSeek seat in the dispatch table; `dis` is now the kind and `ds` is a legacy alias normalised on read, so the 3 annotations he had already marked `ds` keep working."
     },
     {
       "anchor": "Decisions_Awaiting_You_2026-10-30.txt#191",

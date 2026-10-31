@@ -131,6 +131,14 @@ def test_every_one_of_his_sections_exists_and_separates(store):
     # mark, then treat it as a ds." Grown, not relaxed, for the third time.
     store.propose("ds", "a discussion", "perhaps we need a new label", "chat",
                   subjects=["m.d"], ruled="2026-10-30")
+    # EXTENDED ONCE MORE the same day, when he renamed the discussion label:
+    # "OK we need to fix the discussion label. I propose 'dis' for a clean
+    # separation." `dis` is the live kind and `ds` is a retained legacy alias,
+    # so BOTH are storable and both are exercised here. Grown, not relaxed,
+    # for the fourth time.
+    store.propose("dis", "a discussion, current spelling",
+                  "the label needs a clean separation", "chat",
+                  subjects=["m.di"], ruled="2026-10-30")
     assert {t.kind for t in store.all()} == set(KINDS)
     for k in KINDS:
         assert len(store.by_kind(k)) == 1, (

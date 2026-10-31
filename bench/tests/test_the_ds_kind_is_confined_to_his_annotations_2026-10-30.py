@@ -55,9 +55,30 @@ def harv():
 
 
 class TestTheVocabulary:
-    def test_ds_is_a_kind(self):
+    """★ THE LABEL WAS RENAMED `ds` -> `dis` THE SAME DAY, on his ruling:
+    *"OK we need to fix the discussion label. I propose 'dis' for a clean
+    separation."* `dis` is the live kind; `ds` is retained as a legacy alias
+    because 3 annotations he had already written carry it and 93 rows were
+    filed under it. This file keeps its original name deliberately: the name
+    records which spelling came first."""
+
+    def test_dis_is_the_live_discussion_kind(self):
         from bench.ticket_store import KINDS
-        assert "ds" in KINDS
+        assert "dis" in KINDS
+
+    def test_ds_is_retained_as_a_legacy_alias_and_not_dropped(self):
+        from bench.ticket_store import KINDS, LEGACY_KIND_ALIASES
+        assert "ds" in KINDS, (
+            "`ds` was removed from the vocabulary; 93 rows were filed under it "
+            "and 3 of his annotations carry it, so they would be orphaned")
+        assert LEGACY_KIND_ALIASES["ds"] == "dis"
+
+    def test_the_alias_map_only_ever_points_at_live_kinds(self):
+        from bench.ticket_store import KINDS, LEGACY_KIND_ALIASES
+        for old, new in LEGACY_KIND_ALIASES.items():
+            assert new in KINDS, f"{old!r} aliases {new!r}, which is not a kind"
+            assert new not in LEGACY_KIND_ALIASES, (
+                f"{new!r} is both a target and an alias; the map chains")
 
     def test_the_four_older_kinds_survive(self):
         from bench.ticket_store import KINDS
@@ -87,7 +108,9 @@ class TestTheVocabulary:
 
 class TestHisMarkerIsRead:
     @pytest.mark.parametrize("text,expect", [
-        ("Please check anyway before proceeding. ds", "ds"),
+        ("Please check anyway before proceeding. dis", "dis"),
+        # his legacy spelling, normalised on read
+        ("Please check anyway before proceeding. ds", "dis"),
         ("I accept your recommendation. fr", "fr"),
         ("Is this a repeat of the question already asked above? qs", "qs"),
         ("Put it to the free panel. qs,pf", "qs,pf"),
@@ -106,9 +129,10 @@ class TestHisMarkerIsRead:
         anns = json.loads(out.stdout)["annotations"]
         mine = [a for a in anns if "Decisions_Awaiting_You" in a["file"]]
         assert mine, "his file is not being read at all"
-        ds = [a for a in mine if (a.get("marker") or "").startswith("ds")]
+        ds = [a for a in mine if (a.get("marker") or "").startswith("dis")]
         assert len(ds) >= 3, (
-            f"{len(ds)} of his `ds` annotations read; he wrote 3 in that file")
+            f"{len(ds)} of his discussion annotations read; he wrote 3 in that "
+            "file, marked `ds`, and they must normalise to `dis`")
 
     @pytest.mark.parametrize("text", [
         "Put it to the panel cx ge ds",
@@ -122,7 +146,16 @@ class TestHisMarkerIsRead:
 
     def test_the_seat_guard_does_not_swallow_a_real_marker(self, reader):
         """It must bite ONLY on an adjacent seat, not on any `ds` at all."""
-        assert reader._marker_of("We discussed the cx route at length. ds") == "ds"
+        assert reader._marker_of(
+            "We discussed the cx route at length. ds") == "dis"
+
+    def test_dis_needs_no_seat_guard_because_it_is_not_a_seat(self, reader):
+        """The whole point of his rename. `dis` appears 0 times in all 794 of
+        his annotations, so a seat list ending in it is not a real shape -- but
+        it must still read as a marker where he writes it after a seat name,
+        because unlike `ds` it cannot BE one."""
+        assert reader._marker_of("Put it to the panel cx ge. dis") == "dis"
+        assert reader._marker_of("Run it past cc2. dis") == "dis"
 
 
 class TestHisDefaultRule:
@@ -130,9 +163,9 @@ class TestHisDefaultRule:
         ("Is this a repeat of the question already asked above?", "qs"),
         ("How do we avoid it?", "qs"),
         ("But is it earning it's keep?", "qs"),
-        ("Please check anyway before proceeding.", "ds"),
-        ("Then mark this clearly at the head of the ticket store.", "ds"),
-        ("I chose option 1", "ds"),
+        ("Please check anyway before proceeding.", "dis"),
+        ("Then mark this clearly at the head of the ticket store.", "dis"),
+        ("I chose option 1", "dis"),
     ])
     def test_the_unmarked_default(self, harv, text, expect):
         assert harv._unmarked_kind(text) == expect
@@ -171,10 +204,16 @@ class TestTheAllowListIsTheVocabulary:
             f"filed as {rows[0]['kind']}; the hand-written allow-list dropped "
             "`wr` and refiled it as a proposed fix")
 
-    def test_his_ds_annotations_are_filed_as_ds(self, harvested):
-        rows = [r for r in harvested if r["kind"] == "ds" and r["marked"]]
+    def test_his_discussion_annotations_are_filed_as_dis(self, harvested):
+        rows = [r for r in harvested if r["kind"] == "dis" and r["marked"]]
         assert len(rows) >= 3, (
-            f"{len(rows)} explicitly-marked `ds` rows; he wrote 3 on 2026-10-30")
+            f"{len(rows)} explicitly-marked `dis` rows; he wrote 3 on "
+            "2026-10-30 spelled `ds`, and they must arrive as `dis`")
+
+    def test_nothing_new_is_filed_under_the_legacy_spelling(self, harvested):
+        assert not [r for r in harvested if r["kind"] == "ds"], (
+            "a row was filed under the legacy `ds` spelling; the reader must "
+            "normalise it to `dis` so the rename does not have to be redone")
 
     def test_no_row_is_filed_pf_by_default_any_more(self, harvested):
         """His complaint: an unmarked comment became a proposed repair."""
@@ -185,8 +224,9 @@ class TestTheAllowListIsTheVocabulary:
 
 
 class TestChatRefusesDs:
-    def test_chat_does_not_raise_on_a_bare_ds(self, harv):
-        assert harv.raises_a_marker("we should talk about this\nds") is None
+    @pytest.mark.parametrize("token", ["ds", "dis"])
+    def test_chat_does_not_raise_on_a_bare_discussion_token(self, harv, token):
+        assert harv.raises_a_marker(f"we should talk about this\n{token}") is None
 
     def test_the_exclusion_is_REACHED_and_not_merely_present(self, harv,
                                                              monkeypatch):
@@ -207,7 +247,7 @@ class TestChatRefusesDs:
         widened = re.compile(
             harv.MARKER.pattern.replace("(fr|pf|qs|wr)", "(fr|pf|qs|wr|ds)"),
             harv.MARKER.flags)
-        assert "ds" in widened.pattern
+        assert "|ds)" in widened.pattern
         monkeypatch.setattr(harv, "MARKER", widened)
         # The widening must really reach `ds`, or this test is hollow too.
         assert harv.marked_kind("we should talk about this\nds") == "ds"
@@ -220,8 +260,12 @@ class TestChatRefusesDs:
             assert harv.raises_a_marker(f"we should do this\n{k}") == k, (
                 f"chat stopped raising on {k}")
 
-    def test_ds_is_named_as_excluded_rather_than_merely_absent(self, harv):
-        assert "ds" in harv.CHAT_EXCLUDED_KINDS
+    def test_both_spellings_are_named_as_excluded_rather_than_merely_absent(
+            self, harv):
+        for token in ("ds", "dis"):
+            assert token in harv.CHAT_EXCLUDED_KINDS, (
+                f"{token!r} is not named in the exclusion set, so its refusal "
+                "is accidental rather than designed")
 
     def test_the_chat_marker_must_not_list_ds(self, harv):
         """A RATCHET, and deliberately a source assertion -- see the module
@@ -229,7 +273,7 @@ class TestChatRefusesDs:
         vocabulary would reintroduce a collision realised in 46 of 53
         transcript entries. The behavioural assertion above covers the
         present; this one covers the next edit."""
-        assert "ds" not in harv.MARKER.pattern, (
+        assert "|ds)" not in harv.MARKER.pattern and "|dis)" not in harv.MARKER.pattern, (
             "MARKER lists `ds`; the exclusion in raises_a_marker is now the "
             "only thing standing between a dispatch prompt and a ticket")
 
@@ -379,3 +423,73 @@ class TestUndeprecateUndoesOnlyADeprecation:
                if any("UNDEPRECATED" in n for n in getattr(t, "notes", []))]
         assert got, "the 2026-10-30 correction is no longer on the record"
         assert any("own-line marker" in n for t in got for n in t.notes)
+
+
+class TestADeferralIsVisibleInAnyLiveState:
+    """`deferred_tickets()` filtered `status == "OPEN"` exactly while its own
+    docstring said LIVE, so a ticket deferred in any other live state was
+    deferred on its own row and invisible to every reader. Found 2026-10-30 by
+    the marker checker: R1's marker read DEFERRED after his ruling and
+    `register_deferrals()` did not list it, because R1's ticket is UNDECIDED.
+
+    Measured when it was repaired: 5 rows carried a deferral, 4 OPEN and 1
+    UNDECIDED, and 0 UNCONFIRMED rows carried one -- so the widening added
+    exactly the row that was missing and swept in nothing else."""
+
+    REASON = ("Deferred for the test: it waits on every other outstanding item "
+              "and blocks nothing, which is his 2026-10-24 criterion.")
+
+    def test_an_undecided_deferral_is_reported(self, tmp_path):
+        from bench.ticket_store import TicketStore
+        st = TicketStore(str(tmp_path / "t.jsonl"))
+        t, _ = st.propose("pf", "Waits on the list", "run it after everything",
+                          "chat", subjects=["m.q"], status="UNDECIDED")
+        assert t.status == "UNDECIDED"
+        st.defer(t.tid, self.REASON, "2026-10-30")
+        got = {x.tid for x in st.deferred_tickets()}
+        assert t.tid in got, (
+            "a deferral recorded on an UNDECIDED ticket is invisible, so the "
+            "task list and the register will disagree and the Stop gate will "
+            "report drift that cannot be cleared")
+
+    def test_an_open_deferral_is_still_reported(self, tmp_path):
+        from bench.ticket_store import TicketStore
+        st = TicketStore(str(tmp_path / "t.jsonl"))
+        t, _ = st.propose("fr", "Also waits", "later please", "chat",
+                          subjects=["m.r"], status="OPEN")
+        st.defer(t.tid, self.REASON, "2026-10-30")
+        assert t.tid in {x.tid for x in st.deferred_tickets()}
+
+    def test_an_undeferred_ticket_is_not_reported(self, tmp_path):
+        """The converse, so the widening cannot become 'report everything'."""
+        from bench.ticket_store import TicketStore
+        st = TicketStore(str(tmp_path / "t.jsonl"))
+        t, _ = st.propose("pf", "Not deferred", "do it now", "chat",
+                          subjects=["m.s"], status="OPEN")
+        assert t.tid not in {x.tid for x in st.deferred_tickets()}
+
+    def test_a_settled_deferral_leaves_the_set(self, tmp_path):
+        """CLOSED is not live, so a closed ticket must not be presented as
+        deferred work however its field reads."""
+        from bench.ticket_store import TicketStore
+        st = TicketStore(str(tmp_path / "t.jsonl"))
+        t, _ = st.propose("pf", "Closed later", "do it", "chat",
+                          subjects=["m.t"], status="OPEN")
+        st.defer(t.tid, self.REASON, "2026-10-30")
+        st.close(t.tid, "done", "verified by execution on a temporary store")
+        assert t.tid not in {x.tid for x in st.deferred_tickets()}
+
+    def test_the_live_register_and_the_task_list_now_agree(self):
+        """The disagreement that found this, asserted end to end."""
+        import pathlib as _p
+        import sys as _s
+        _s.path.insert(0, str(REPO / "scripts"))
+        import task_list_markers as tlm
+        d = tlm.deferral_disagreements(
+            REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md")
+        assert not d["marker_only"], (
+            f"{d['marker_only']} carry a DEFERRED marker the register does not "
+            "defer")
+        assert not d["register_only"], (
+            f"{d['register_only']} are deferred in the register and their "
+            "markers do not say so")

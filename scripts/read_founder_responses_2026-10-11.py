@@ -297,7 +297,7 @@ def file_shape(path: Path) -> dict:
 #: while his files carried 30, because a marker line has no leading hash and was
 #: therefore never part of any annotation's text.
 _MARKER_LINE = re.compile(
-    r"^\s*(fr|pf|qs|wr|ds)(?:\s*,\s*(?:fr|pf|qs|wr|ds))*\s*$", re.I)
+    r"^\s*(fr|pf|qs|wr|dis|ds)(?:\s*,\s*(?:fr|pf|qs|wr|dis|ds))*\s*$", re.I)
 
 
 #: ★ A TRAILING MARKER, WRITTEN AT THE END OF THE ANNOTATION ITSELF. Added
@@ -328,7 +328,7 @@ _MARKER_LINE = re.compile(
 #: ticket's verbatim, so stripping the marker out of the annotation would move
 #: every identity derived from it -- a far larger change than the defect.
 _MARKER_TRAILING = re.compile(
-    r"(?:^|[\s.,;:!?)\]\"'’”])((?:fr|pf|qs|wr|ds)(?:\s*,\s*(?:fr|pf|qs|wr|ds))*)"
+    r"(?:^|[\s.,;:!?)\]\"'’”])((?:fr|pf|qs|wr|dis|ds)(?:\s*,\s*(?:fr|pf|qs|wr|dis|ds))*)"
     r"[\s.!?]*$", re.I)
 
 
@@ -342,6 +342,10 @@ _MARKER_TRAILING = re.compile(
 #: PRECAUTIONARY and says so -- but 46 of 53 user-role transcript entries
 #: carrying the token use it as a seat, Wilson [0.751597, 0.934521], so the
 #: shape is not hypothetical, only absent from this source.
+#: His rename of 2026-10-30: `ds` -> `dis`. Kept so his already-written
+#: annotations stay readable; see LEGACY_KIND_ALIASES in bench/ticket_store.py.
+_LEGACY_MARKERS = {"ds": "dis"}
+
 _SEAT_BEFORE = re.compile(r"\b(cc2|cx|ge|cgpt|fable)\s*[, ]\s*$", re.I)
 
 
@@ -354,6 +358,12 @@ def _marker_of(body: str) -> str:
     found = [x.strip().lower() for x in m.group(1).split(",") if x.strip()]
     if found == ["ds"] and _SEAT_BEFORE.search(body[:m.start(1)]):
         return ""
+    # ★ `ds` NORMALISES TO `dis`, his rename of 2026-10-30. His annotations
+    # written earlier that day carry `ds` and must keep working; nothing new is
+    # filed under it. The seat-adjacency guard above still applies to the
+    # legacy spelling and is NOT needed for `dis`, which appears 0 times in all
+    # 794 of his annotations.
+    found = [_LEGACY_MARKERS.get(x, x) for x in found]
     return ",".join(found)
 
 

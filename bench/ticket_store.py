@@ -232,7 +232,7 @@ STORE_EPOCH = "2026-10-17"
 #: ★ `ds` IS THE 5TH KIND -- A DISCUSSION. FOUNDER RULING 2026-10-30, verbatim
 #: from his annotation of `Decisions_Awaiting_You_2026-10-30.txt` line 187:
 #: *"If a comment I make has no marker, and does not end with a question mark,
-#: then treat it as a ds. fr"* He proposed it the day before, verbatim: *"But
+#: then treat it as a dis. fr"* (he wrote `ds` that morning and renamed it `dis` the same day for a clean separation from the DeepSeek seat.) He proposed it the day before, verbatim: *"But
 #: perhaps we need a new label like 'ds', to denote a discussion request, so
 #: that you don't have to guess at empty labels?"*
 #:
@@ -249,7 +249,34 @@ STORE_EPOCH = "2026-10-17"
 #: 0.934521], predominantly harness dispatch prompts naming the panel. That is
 #: the realised shape of the `pr` collision of 2026-10-17, confined to one
 #: source, so the fix is confinement rather than a rename.
-KINDS = ("fr", "pf", "qs", "wr", "ds")
+#: ★ `dis` REPLACED `ds` ON HIS RULING OF 2026-10-30, hours after `ds` was
+#: built, verbatim: *"OK we need to fix the discussion label. I propose 'dis'
+#: for a clean separation."*
+#:
+#: THE CASE FOR `dis` IS NAMESPACE, NOT COLLISION RATE, AND THE MEASUREMENT
+#: REFUSES THE FLATTERING VERSION. `dis` collides too -- it is the Python
+#: bytecode disassembler named in this project's own tool constraint box -- and
+#: 5 of 7 user-role transcript entries carrying it use it in that sense, Wilson
+#: [0.358934, 0.917781], against `ds` at 25 of 53, Wilson [0.343822, 0.603399].
+#: Fisher exact on the pair gives p = 0.423810, so the 2 rates are NOT
+#: distinguishable and no claim that `dis` is measurably safer in chat may be
+#: made. What IS decisive: `ds` collides with a SEAT IDENTIFIER in the same
+#: command vocabulary, which is the one place his markers and his dispatch
+#: instructions are written side by side ("cx ge ds"); `dis` collides with a
+#: module name that is never written as a marker. And in his annotations, where
+#: a marker actually lives, `dis` appears 0 times in all 794 while `ds` needed
+#: a seat-adjacency guard. Producer:
+#: `scripts/the_ds_label_and_the_kind_allowlist_2026-10-30.py`.
+#:
+#: `ds` IS RETAINED AS A LEGACY ALIAS AND NOT REMOVED. 3 annotations he had
+#: already written that day are marked `ds`, and 93 rows were filed under it
+#: before the rename. Dropping it from the vocabulary would orphan every one of
+#: them. The reader maps a legacy `ds` marker onto `dis`, so nothing new is
+#: filed under it, and `scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py`
+#: supersedes the old rows in favour of their `dis` equivalents.
+LEGACY_KIND_ALIASES = {"ds": "dis"}
+
+KINDS = ("fr", "pf", "qs", "wr", "dis", "ds")
 
 _STOP = frozenset("""a an and are as at be been being but by can could did do does
 for from had has have he her him his how i if in into is it its me my no nor not
@@ -1369,8 +1396,28 @@ class TicketStore:
         return [t for t in self.open_tickets() if not t.deferred and not t.blocker]
 
     def deferred_tickets(self) -> list["Ticket"]:
-        """Live work set aside to the END of the list, to be PRESENTED there."""
-        return [t for t in self.open_tickets() if t.deferred and not t.blocker]
+        """Live work set aside to the END of the list, to be PRESENTED there.
+
+        ★ IT READS THE WHOLE LIVE SET, NOT ONLY `OPEN` -- repaired 2026-10-30.
+        It filtered `open_tickets()`, which is `status == "OPEN"` exactly, while
+        this docstring said LIVE. So a ticket deferred in any other live state
+        was deferred on its own row and invisible to every reader of this
+        method. Found by the marker checker: R1's task-list marker read DEFERRED
+        after his ruling of 2026-10-30 and `register_deferrals()` did not list
+        it, because R1's ticket is UNDECIDED.
+
+        WHY WIDENING DOES NOT REINTRODUCE THE OVERSTATING `open_tickets`
+        EXISTS TO PREVENT. That guard is against treating a HARVESTED row as
+        work: a first harvest created 281 tickets and called them all OPEN. A
+        deferral cannot arrive that way -- `defer()` requires a reason of at
+        least 12 characters and a timestamp the caller supplies -- so the
+        `deferred` field is itself the evidence of a deliberate decision.
+        Measured on the live store the day this changed: 5 rows carry a
+        deferral, 4 OPEN and 1 UNDECIDED, and **0 UNCONFIRMED rows carry one**,
+        so the widening added exactly the 1 row that was missing.
+        """
+        return [t for t in self._by_tid.values()
+                if t.status in LIVE and t.deferred and not t.blocker]
 
     def blockers(self) -> list["Ticket"]:
         """Tickets declared to stop all other work. By his definition, rare."""
