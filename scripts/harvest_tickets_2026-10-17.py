@@ -237,7 +237,7 @@ CODE_SPAN = re.compile(r"`[^`]*`")
 #: vocabulary (exactly the repair made 30 lines below) would silently
 #: reintroduce the collision. Held by
 #: `bench/tests/test_the_ds_kind_is_confined_to_his_annotations_2026-10-30.py`.
-CHAT_EXCLUDED_KINDS = ("dis", "ds")   # `dis` live, `ds` his legacy spelling
+CHAT_EXCLUDED_KINDS = ("disc", "dis", "ds")   # `disc` live; 2 legacy spellings
 
 
 def _unmarked_kind(text: str) -> str:
@@ -257,7 +257,7 @@ def _unmarked_kind(text: str) -> str:
     `ds`. 0 remain `pf` by default, which is the point -- a default that
     asserts he proposed a repair is a default that invents work.
     """
-    return "qs" if str(text).rstrip().endswith("?") else "dis"
+    return "qs" if str(text).rstrip().endswith("?") else "disc"
 
 
 def raises_a_marker(text: str) -> str | None:

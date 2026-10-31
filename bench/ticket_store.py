@@ -232,7 +232,7 @@ STORE_EPOCH = "2026-10-17"
 #: ★ `ds` IS THE 5TH KIND -- A DISCUSSION. FOUNDER RULING 2026-10-30, verbatim
 #: from his annotation of `Decisions_Awaiting_You_2026-10-30.txt` line 187:
 #: *"If a comment I make has no marker, and does not end with a question mark,
-#: then treat it as a dis. fr"* (he wrote `ds` that morning and renamed it `dis` the same day for a clean separation from the DeepSeek seat.) He proposed it the day before, verbatim: *"But
+#: then treat it as a disc. fr"* (he wrote `ds` that morning and renamed it `dis` the same day for a clean separation from the DeepSeek seat.) He proposed it the day before, verbatim: *"But
 #: perhaps we need a new label like 'ds', to denote a discussion request, so
 #: that you don't have to guess at empty labels?"*
 #:
@@ -274,9 +274,32 @@ STORE_EPOCH = "2026-10-17"
 #: them. The reader maps a legacy `ds` marker onto `dis`, so nothing new is
 #: filed under it, and `scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py`
 #: supersedes the old rows in favour of their `dis` equivalents.
-LEGACY_KIND_ALIASES = {"ds": "dis"}
+#: ★ BOTH LEGACY SPELLINGS ALIAS STRAIGHT TO `disc`, NOT IN A CHAIN. He changed
+#: the discussion label twice on 2026-10-30, and the final form is his:
+#: *"Yes use disc"*, after *"I don't like it so much, as I prefer short
+#: convenient labels wherever possible, but if it helps avoid any confusion at
+#: all, we could use disc as a label instead."*
+#:
+#: WHY `disc` AND NOT `dis`, MEASURED. `dis` removed the DeepSeek-seat collision
+#: and introduced another: it is the stdlib bytecode disassembler named in this
+#: project's own tool constraint box, and 5 of 7 user-role transcript entries
+#: carrying it use it in that sense. `disc` is the first candidate clean on BOTH
+#: sides -- 0 of his 794 annotations, and of 2 transcript appearances 0 in a
+#: colliding sense -- and the word-boundary requirement means it never matches
+#: inside "discussion", "discuss", "discrimination", "discard" or "disclose",
+#: which was checked by execution rather than assumed. Producer:
+#: `scripts/the_ds_label_and_the_kind_allowlist_2026-10-30.py`.
+#:
+#: NOTHING IS REMOVED. `ds` carries 93 rows and 3 of his annotations; `dis`
+#: carries 93 rows created during the hour it was live. Both stay valid kinds so
+#: those rows remain addressable, and both map to `disc` on read so nothing new
+#: is filed under either. The map is deliberately FLAT: `ds -> disc` and
+#: `dis -> disc`, never `ds -> dis -> disc`, because a chain is a second place
+#: for the vocabulary to disagree with itself. Asserted by
+#: `test_the_alias_map_only_ever_points_at_live_kinds`.
+LEGACY_KIND_ALIASES = {"ds": "disc", "dis": "disc"}
 
-KINDS = ("fr", "pf", "qs", "wr", "dis", "ds")
+KINDS = ("fr", "pf", "qs", "wr", "disc", "dis", "ds")
 
 _STOP = frozenset("""a an and are as at be been being but by can could did do does
 for from had has have he her him his how i if in into is it its me my no nor not

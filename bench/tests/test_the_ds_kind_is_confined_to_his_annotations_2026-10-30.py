@@ -62,16 +62,19 @@ class TestTheVocabulary:
     filed under it. This file keeps its original name deliberately: the name
     records which spelling came first."""
 
-    def test_dis_is_the_live_discussion_kind(self):
+    def test_disc_is_the_live_discussion_kind(self):
         from bench.ticket_store import KINDS
-        assert "dis" in KINDS
+        assert "disc" in KINDS
 
-    def test_ds_is_retained_as_a_legacy_alias_and_not_dropped(self):
+    @pytest.mark.parametrize("legacy", ["ds", "dis"])
+    def test_both_legacy_spellings_are_retained_and_alias_to_disc(self, legacy):
+        """He renamed the label twice on 2026-10-30: `ds` -> `dis` -> `disc`.
+        Each spelling carries 93 rows, so dropping one orphans them."""
         from bench.ticket_store import KINDS, LEGACY_KIND_ALIASES
-        assert "ds" in KINDS, (
-            "`ds` was removed from the vocabulary; 93 rows were filed under it "
-            "and 3 of his annotations carry it, so they would be orphaned")
-        assert LEGACY_KIND_ALIASES["ds"] == "dis"
+        assert legacy in KINDS, (
+            f"`{legacy}` was removed from the vocabulary; 93 rows were filed "
+            "under it, so they would be orphaned")
+        assert LEGACY_KIND_ALIASES[legacy] == "disc"
 
     def test_the_alias_map_only_ever_points_at_live_kinds(self):
         from bench.ticket_store import KINDS, LEGACY_KIND_ALIASES
@@ -108,9 +111,10 @@ class TestTheVocabulary:
 
 class TestHisMarkerIsRead:
     @pytest.mark.parametrize("text,expect", [
-        ("Please check anyway before proceeding. dis", "dis"),
-        # his legacy spelling, normalised on read
-        ("Please check anyway before proceeding. ds", "dis"),
+        ("Please check anyway before proceeding. disc", "disc"),
+        # his 2 legacy spellings, both normalised on read
+        ("Please check anyway before proceeding. dis", "disc"),
+        ("Please check anyway before proceeding. ds", "disc"),
         ("I accept your recommendation. fr", "fr"),
         ("Is this a repeat of the question already asked above? qs", "qs"),
         ("Put it to the free panel. qs,pf", "qs,pf"),
@@ -129,7 +133,7 @@ class TestHisMarkerIsRead:
         anns = json.loads(out.stdout)["annotations"]
         mine = [a for a in anns if "Decisions_Awaiting_You" in a["file"]]
         assert mine, "his file is not being read at all"
-        ds = [a for a in mine if (a.get("marker") or "").startswith("dis")]
+        ds = [a for a in mine if (a.get("marker") or "").startswith("disc")]
         assert len(ds) >= 3, (
             f"{len(ds)} of his discussion annotations read; he wrote 3 in that "
             "file, marked `ds`, and they must normalise to `dis`")
@@ -147,15 +151,18 @@ class TestHisMarkerIsRead:
     def test_the_seat_guard_does_not_swallow_a_real_marker(self, reader):
         """It must bite ONLY on an adjacent seat, not on any `ds` at all."""
         assert reader._marker_of(
-            "We discussed the cx route at length. ds") == "dis"
+            "We discussed the cx route at length. ds") == "disc"
 
-    def test_dis_needs_no_seat_guard_because_it_is_not_a_seat(self, reader):
+    def test_disc_needs_no_seat_guard_because_it_is_not_a_seat(self, reader):
         """The whole point of his rename. `dis` appears 0 times in all 794 of
         his annotations, so a seat list ending in it is not a real shape -- but
         it must still read as a marker where he writes it after a seat name,
         because unlike `ds` it cannot BE one."""
-        assert reader._marker_of("Put it to the panel cx ge. dis") == "dis"
-        assert reader._marker_of("Run it past cc2. dis") == "dis"
+        assert reader._marker_of("Put it to the panel cx ge. disc") == "disc"
+        assert reader._marker_of("Run it past cc2. disc") == "disc"
+        # and the boundary requirement keeps it out of ordinary words
+        for word in ("discussion", "discuss", "discard", "disclose"):
+            assert reader._marker_of(f"We should {word}") == "", word
 
 
 class TestHisDefaultRule:
@@ -163,9 +170,9 @@ class TestHisDefaultRule:
         ("Is this a repeat of the question already asked above?", "qs"),
         ("How do we avoid it?", "qs"),
         ("But is it earning it's keep?", "qs"),
-        ("Please check anyway before proceeding.", "dis"),
-        ("Then mark this clearly at the head of the ticket store.", "dis"),
-        ("I chose option 1", "dis"),
+        ("Please check anyway before proceeding.", "disc"),
+        ("Then mark this clearly at the head of the ticket store.", "disc"),
+        ("I chose option 1", "disc"),
     ])
     def test_the_unmarked_default(self, harv, text, expect):
         assert harv._unmarked_kind(text) == expect
@@ -204,16 +211,18 @@ class TestTheAllowListIsTheVocabulary:
             f"filed as {rows[0]['kind']}; the hand-written allow-list dropped "
             "`wr` and refiled it as a proposed fix")
 
-    def test_his_discussion_annotations_are_filed_as_dis(self, harvested):
-        rows = [r for r in harvested if r["kind"] == "dis" and r["marked"]]
+    def test_his_discussion_annotations_are_filed_as_disc(self, harvested):
+        rows = [r for r in harvested if r["kind"] == "disc" and r["marked"]]
         assert len(rows) >= 3, (
-            f"{len(rows)} explicitly-marked `dis` rows; he wrote 3 on "
-            "2026-10-30 spelled `ds`, and they must arrive as `dis`")
+            f"{len(rows)} explicitly-marked `disc` rows; he wrote 3 on "
+            "2026-10-30 spelled `ds`, and they must arrive as `disc`")
 
-    def test_nothing_new_is_filed_under_the_legacy_spelling(self, harvested):
-        assert not [r for r in harvested if r["kind"] == "ds"], (
-            "a row was filed under the legacy `ds` spelling; the reader must "
-            "normalise it to `dis` so the rename does not have to be redone")
+    @pytest.mark.parametrize("legacy", ["ds", "dis"])
+    def test_nothing_new_is_filed_under_a_legacy_spelling(self, harvested,
+                                                          legacy):
+        assert not [r for r in harvested if r["kind"] == legacy], (
+            f"a row was filed under the legacy `{legacy}` spelling; the reader "
+            "must normalise it to `disc` so the rename is not redone again")
 
     def test_no_row_is_filed_pf_by_default_any_more(self, harvested):
         """His complaint: an unmarked comment became a proposed repair."""
@@ -224,7 +233,7 @@ class TestTheAllowListIsTheVocabulary:
 
 
 class TestChatRefusesDs:
-    @pytest.mark.parametrize("token", ["ds", "dis"])
+    @pytest.mark.parametrize("token", ["ds", "dis", "disc"])
     def test_chat_does_not_raise_on_a_bare_discussion_token(self, harv, token):
         assert harv.raises_a_marker(f"we should talk about this\n{token}") is None
 
@@ -262,7 +271,7 @@ class TestChatRefusesDs:
 
     def test_both_spellings_are_named_as_excluded_rather_than_merely_absent(
             self, harv):
-        for token in ("ds", "dis"):
+        for token in ("ds", "dis", "disc"):
             assert token in harv.CHAT_EXCLUDED_KINDS, (
                 f"{token!r} is not named in the exclusion set, so its refusal "
                 "is accidental rather than designed")
@@ -273,7 +282,8 @@ class TestChatRefusesDs:
         vocabulary would reintroduce a collision realised in 46 of 53
         transcript entries. The behavioural assertion above covers the
         present; this one covers the next edit."""
-        assert "|ds)" not in harv.MARKER.pattern and "|dis)" not in harv.MARKER.pattern, (
+        assert not any(t in harv.MARKER.pattern
+                       for t in ("|ds)", "|dis)", "|disc)")), (
             "MARKER lists `ds`; the exclusion in raises_a_marker is now the "
             "only thing standing between a dispatch prompt and a ticket")
 
@@ -493,3 +503,83 @@ class TestADeferralIsVisibleInAnyLiveState:
         assert not d["register_only"], (
             f"{d['register_only']} are deferred in the register and their "
             "markers do not say so")
+
+
+class TestTheOwnLineMarkerReaderSeesDiscToo:
+    """★ THE MUTATION THAT SURVIVED, AND WHY THIS CLASS EXISTS.
+
+    `scripts/the_ds_vocabulary_mutations_2026-10-30.py` M11b removes `disc` from
+    `_MARKER_LINE` -- the reader that attaches a marker written on its OWN LINE
+    beneath an annotation -- and this file stayed GREEN, because every other
+    test here exercises `_marker_of`, the TRAILING form. 2 readers, 1 covered.
+
+    THAT GAP IS NOT COSMETIC. Measured 2026-10-19 across every reply file: 30
+    markers, 30 of them own-line, 0 inline. The own-line form is how he wrote
+    markers for most of the corpus; the trailing form is his newer habit, 13 of
+    693 as of 2026-10-30. A guard that covers only the new habit cannot protect
+    the old corpus.
+
+    These tests drive `_annotations_in` over a real temporary file, so the
+    own-line path executes rather than being described.
+    """
+
+    @staticmethod
+    def _write(tmp_path, body: str):
+        p = tmp_path / "Synthetic_Report_2026-10-31.txt"
+        p.write_text(body, encoding="utf-8")
+        return p
+
+    @pytest.mark.parametrize("marker,expect", [
+        ("disc", "disc"),
+        ("dis", "disc"),     # legacy, normalised
+        ("ds", "disc"),      # legacy, normalised
+        ("fr", "fr"),
+        ("qs", "qs"),
+        ("wr", "wr"),
+    ])
+    def test_an_own_line_marker_is_attached_and_normalised(self, reader,
+                                                           tmp_path, marker,
+                                                           expect):
+        p = self._write(tmp_path,
+                        "Some report prose that he is annotating.\n"
+                        "# This is his annotation about it.\n"
+                        f"{marker}\n"
+                        "More report prose.\n")
+        got = reader._annotations_in(p)
+        assert got, "the reader found no annotation at all in the fixture"
+        assert got[0]["marker"] == expect, (
+            f"own-line `{marker}` read as {got[0]['marker']!r}, wanted "
+            f"{expect!r}; _MARKER_LINE cannot see it")
+
+    def test_an_own_line_marker_list_is_attached(self, reader, tmp_path):
+        p = self._write(tmp_path,
+                        "Report prose.\n"
+                        "# His annotation.\n"
+                        "qs, disc\n"
+                        "More prose.\n")
+        got = reader._annotations_in(p)
+        assert got and got[0]["marker"] == "qs,disc", got[0]["marker"]
+
+    def test_an_ordinary_line_is_not_mistaken_for_a_marker(self, reader,
+                                                           tmp_path):
+        """The converse. If any short line became a marker the field would be
+        noise, so a prose line beneath an annotation must leave it empty."""
+        p = self._write(tmp_path,
+                        "Report prose.\n"
+                        "# His annotation.\n"
+                        "We should discuss this further.\n"
+                        "More prose.\n")
+        got = reader._annotations_in(p)
+        assert got and got[0]["marker"] == "", got[0]["marker"]
+
+    def test_the_two_readers_agree_on_every_live_kind(self, reader, tmp_path):
+        """A kind readable by one reader and not the other is the defect this
+        class was written for, so it is asserted directly."""
+        from bench.ticket_store import KINDS, LEGACY_KIND_ALIASES
+        for k in KINDS:
+            want = LEGACY_KIND_ALIASES.get(k, k)
+            trailing = reader._marker_of(f"His annotation about it. {k}")
+            p = self._write(tmp_path, f"Prose.\n# His annotation.\n{k}\nProse.\n")
+            own_line = reader._annotations_in(p)[0]["marker"]
+            assert trailing == want, f"trailing reader lost {k!r}"
+            assert own_line == want, f"own-line reader lost {k!r}"

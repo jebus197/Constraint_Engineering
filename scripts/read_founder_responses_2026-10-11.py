@@ -297,7 +297,7 @@ def file_shape(path: Path) -> dict:
 #: while his files carried 30, because a marker line has no leading hash and was
 #: therefore never part of any annotation's text.
 _MARKER_LINE = re.compile(
-    r"^\s*(fr|pf|qs|wr|dis|ds)(?:\s*,\s*(?:fr|pf|qs|wr|dis|ds))*\s*$", re.I)
+    r"^\s*(fr|pf|qs|wr|disc|dis|ds)(?:\s*,\s*(?:fr|pf|qs|wr|disc|dis|ds))*\s*$", re.I)
 
 
 #: ★ A TRAILING MARKER, WRITTEN AT THE END OF THE ANNOTATION ITSELF. Added
@@ -328,7 +328,7 @@ _MARKER_LINE = re.compile(
 #: ticket's verbatim, so stripping the marker out of the annotation would move
 #: every identity derived from it -- a far larger change than the defect.
 _MARKER_TRAILING = re.compile(
-    r"(?:^|[\s.,;:!?)\]\"'’”])((?:fr|pf|qs|wr|dis|ds)(?:\s*,\s*(?:fr|pf|qs|wr|dis|ds))*)"
+    r"(?:^|[\s.,;:!?)\]\"'’”])((?:fr|pf|qs|wr|disc|dis|ds)(?:\s*,\s*(?:fr|pf|qs|wr|disc|dis|ds))*)"
     r"[\s.!?]*$", re.I)
 
 
@@ -344,7 +344,9 @@ _MARKER_TRAILING = re.compile(
 #: shape is not hypothetical, only absent from this source.
 #: His rename of 2026-10-30: `ds` -> `dis`. Kept so his already-written
 #: annotations stay readable; see LEGACY_KIND_ALIASES in bench/ticket_store.py.
-_LEGACY_MARKERS = {"ds": "dis"}
+#: His 2 renames of 2026-10-30, flat: `ds` and `dis` both became `disc`.
+#: See LEGACY_KIND_ALIASES in bench/ticket_store.py for the measurement.
+_LEGACY_MARKERS = {"ds": "disc", "dis": "disc"}
 
 _SEAT_BEFORE = re.compile(r"\b(cc2|cx|ge|cgpt|fable)\s*[, ]\s*$", re.I)
 
@@ -539,8 +541,19 @@ def _annotations_in(p: Path, d: _dt.date | None = None,
                 if not _cand:
                     continue
                 if _MARKER_LINE.match(_cand):
+                    # ★ NORMALISE HERE TOO. Until 2026-10-31 the legacy-spelling
+                    # map was applied ONLY in `_marker_of`, the trailing-marker
+                    # path, so an OWN-LINE `ds` or `dis` came back raw while the
+                    # same marker written inline came back as `disc`. 2 readers,
+                    # 1 normalised. Found by
+                    # `TestTheOwnLineMarkerReaderSeesDiscToo`, which exists
+                    # because a mutation removing `disc` from `_MARKER_LINE`
+                    # left the guard green -- the own-line path had no coverage
+                    # at all. It is the form 59 of his markers use, so the gap
+                    # covered most of the corpus.
                     _marker = ",".join(
-                        x.strip().lower() for x in _cand.split(",") if x.strip())
+                        _LEGACY_MARKERS.get(x.strip().lower(), x.strip().lower())
+                        for x in _cand.split(",") if x.strip())
                 break
             #: FALL BACK TO A TRAILING MARKER inside the annotation's own text.
             #: The own-line form is tried FIRST and wins, because it is the form

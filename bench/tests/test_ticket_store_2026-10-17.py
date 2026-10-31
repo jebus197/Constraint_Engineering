@@ -136,9 +136,15 @@ def test_every_one_of_his_sections_exists_and_separates(store):
     # separation." `dis` is the live kind and `ds` is a retained legacy alias,
     # so BOTH are storable and both are exercised here. Grown, not relaxed,
     # for the fourth time.
-    store.propose("dis", "a discussion, current spelling",
+    store.propose("dis", "a discussion, 2nd spelling",
                   "the label needs a clean separation", "chat",
                   subjects=["m.di"], ruled="2026-10-30")
+    # EXTENDED A FIFTH TIME, same night, on his final ruling "Yes use disc".
+    # 3 spellings now exist because he renamed it twice; all 3 carry rows,
+    # so all 3 must store and retrieve separately. Grown, not relaxed.
+    store.propose("disc", "a discussion, current spelling",
+                  "disc is clean on both sides", "chat",
+                  subjects=["m.dc"], ruled="2026-10-31")
     assert {t.kind for t in store.all()} == set(KINDS)
     for k in KINDS:
         assert len(store.by_kind(k)) == 1, (
