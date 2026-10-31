@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 31 October 2026 04:39 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 31 October 2026 06:16 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,26 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-31 06:16 GMT (READ THIS FIRST)
+
+**COMMIT `59e086f0` on `sim/shakedown-2026-09-29`, pushed.** Commit board at that commit: **2,037 passed, 0 failed in 377.20 s**, its GUARDS list produced by `scripts/precommit_gate_cost_2026-09-10.py`. Tonight's guard set together: **143 passed** from `python3 -m pytest bench/tests/test_the_ds_kind_is_confined_to_his_annotations_2026-10-30.py bench/tests/test_rk_carries_forward_across_rounds_2026-10-31.py bench/tests/test_the_residual_risk_never_compounds_2026-10-31.py bench/tests/test_the_non_curing_population_is_named_2026-10-31.py -q -p no:randomly` and the files beside them.
+
+**★ THE DISPATCH SEQUENCE HE ORDERED IS COMPLETE: 5 ROUNDS, 0 PAID SEATS THROUGHOUT.** B21 blind and joint, B22 blind and joint, and the severity review. Deliverable: `experimental_notes/Morning_Report_2026-10-31.txt` + `.md`, 0 lint findings on both, mirrored byte-identically to `~/Desktop/CDSFL_tts/`.
+
+**★★★ HIS SEVERITY QUESTION IS ANSWERED AND HIS DEFINITION IS THE MODEL'S OWN QUANTITY.** Both seats reached it independently by different routes — fable matching his words to appendix section 1 term for term, cc2 arriving through `compute_rk`. **2 load-bearing quantities share 1 word**: the `R_k` he defined, and the model-asserted `entry["severity"]` the 0.7 cut is applied to. **HIS DESIGN ANSWER IS JUDGED RIGHT** — residual risk should gate convergence as an ADDED condition. **THE BOUNDARIES ARE DERIVED, NOT CHOSEN:** SymPy gives exactly 2 fixed points, the non-trivial one at perfect fix reducing to **nu_b / q** with the floor at q = 1 being **nu_b**, and the local Wolfram Engine independently returned `nb/q` and `nb` (exit 0, real output, no `Name::tag`). *(Results obtained using Wolfram Language.)* **THE BLOCKER TONIGHT'S CARRY DOES NOT CLEAR: `entry["model_params"]` has 0 assignment sites**, so the per-finding `q` never arrives and `R_k` cannot yet distinguish 4 + 4 from the Riemann hypothesis. His argument is correct AND currently uncomputable. **WRITING `q` IS THE NEXT BUILD.** Also measured: **401 findings sit exactly on 0.70**, so there is no natural break there; the cut nonetheless STAYS on his own anti-cooking position.
+
+**★★ THE PROOF-POLARITY ROUND CONVERGED ON CONFIRMED BUT LATENT, WITH THE REACH DISPUTED.** `spec_verification_factor` gives V=0.0 for a held proof and 1.0 for a failed one. cc2 measures 18 of 65 archived registries live on REPORTED convergence and 0 on release safety; fable refutes the amplification at 0 archived rounds, the channel sitting behind a flag never armed. Both executed; no adjudication, because a model vote is not evidence. **AGREED:** the repair is to make the sense explicit, and `falsifier_verdict` has **2 deciding consumers** — `spec_verification_factor` and `apply_falsifier_verdicts` — of which only the first was guarded. **SO THE STATUS HALF MAY BE BUILDABLE WITHOUT TOUCHING THE RULER; THE SEVERITY HALF IS HIS.**
+
+**★ B21 CONVERGED ON 2 DIMENSIONS, 1 LAYER**, cc2 moving because fable reached a second declaration of the structural axis in `bench/dm/_types.Role` through the exact route cc2 named as its own weakest link. **His caveat is measured:** `bench/routing.py` has **0** occurrences of `role`.
+
+**★ 3 OF HIS OPEN QUESTIONS CLOSED ON MEASUREMENT, QUEUE 64 -> 60.** Verdict-row coverage **522 of 522**, Wilson [0.992695, 1.000000]. **0 of 90** TRACKED rows have an unfinished entry beside a settled ticket. And the feasibility discrepancy he asked about is **NOT significant**: 34 of 53 against 32 of 53, Fisher exact **p = 0.841344**, chi-square with Yates 0.841185, intervals overlapping across almost their whole length; the second pair p = 0.415250. The figures are also not reproducible as quoted — 63 archived reports then against 64 now — and the snapshot explanation is marked **[SPECULATIVE]** with what would settle it named.
+
+**★ 5 OF MY OWN GUARDS WENT GREEN WITH THEIR DEFECT RESTORED TONIGHT**, always the same shape: a test that RECOMPUTES a decision agrees with itself. Each was fixed by extracting the decision so the test could call it — `classify()` out of the census's `main`, `validate()` instead of a re-run regex, an empty-dict case for the NO_SCORE write-back, classes driven apart for the per-class carry, and a pre-populated dict for the flag's read path. **1 of my mutations was itself wrong**: argparse exits on `--help` before a line placed after `parse_args`, so the first attempt could not make `--help` expensive.
+
+**ALSO IN:** `disc` as the discussion label with `ds` and `dis` aliasing flat to it; `R_k` carrying across passes (round 1 byte-identical, the flag off reproducing every archived run); the non-curing closures as **85 named identities**; `CHOSEN_TARGET = 0.02`; 29 guards added to the commit gate after the **18.05x** correction; 3 `RETIRED.md` markers; and the brief validator's `\bdisagree` defect closed as `pf:6a18bd7974ce`.
+
+**OWED HIM:** the polarity ruling (severity half); whether to build the 1 role layer and what to do about the axis being declared twice; whether the narrowed gate scope stands; writing `q`; `qs:8629ab6e03e8` on comparable-against-identical runs; and the frozen-carry boundary on a rejected pass.
 
 ## SESSION STATE — 2026-10-31 04:38 GMT (READ THIS FIRST)
 
