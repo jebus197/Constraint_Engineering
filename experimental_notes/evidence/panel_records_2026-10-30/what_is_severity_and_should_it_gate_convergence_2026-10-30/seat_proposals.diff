@@ -1,0 +1,765 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-31 05:45:49
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__2a09j6p/repo/.cdsfl_deny_canonical_writes.sb	2026-10-31 05:33:57
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/tests/test_severity_cannot_separate_his_two_questions_2026-10-31.py
+--- /dev/null	2026-10-31 05:45:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__2a09j6p/repo/bench/tests/test_severity_cannot_separate_his_two_questions_2026-10-31.py	2026-10-31 05:43:17
+@@ -0,0 +1,345 @@
++"""Severity-as-residual-risk: pin the gap that stops it gating convergence.
++
++WHY THIS FILE EXISTS. The founder asked (2026-10-30) whether severity should
++feed the convergence mechanics rather than be recorded only, and gave the
++definition: *the chance that a particular flaw, or class of flaws, remains
++after a given number of passes under severe scrutiny*. That quantity already
++exists in this harness -- it is ``R_k(i)``, computed by
++``bench.reference_runner_v3.compute_rk`` and recorded as
++``sk_result["R_new"]``. It is NOT ``entry["severity"]``, which is a
++model-asserted consequence rating cut at ``CRITICAL_SEVERITY_THRESHOLD``.
++Measured over 1,252 archived entries carrying both, the two are near
++orthogonal: Spearman -0.1408, p = 5.7e-07
++(``scripts/his_severity_definition_is_the_models_own_quantity_2026-10-31.py``).
++
++The answer to his question is BLOCKED, not open, and this file makes the
++blockage executable rather than a paragraph in a panel report. Four facts,
++each asserted by running the real code:
++
++  1. ``model_params`` -- the sole source of ``q``, the per-pass detection
++     probability -- has ZERO writers in the live runner. The runner's own
++     comment at the ``R_old`` precedence block already says so. So ``q``
++     is ``0.5`` on every real run.
++  2. With ``q`` and ``pi`` both pinned, ``R_k`` is a function of ``S_k``
++     ALONE. It returns the same number for his 4+4 example and for his
++     Riemann example. A gate reading it would be gating on fix quality
++     wearing a residual-risk label.
++  3. The one measured channel that could move ``pi`` -- the appendix 1.5
++     blend ``pi = (1-rho)*pi_base + rho*pi_mem`` -- is confined by the
++     shipped ``rho`` to a window 0.2 wide centred on 0.5. His worked
++     example needs 0.02 .. 0.90. Neither endpoint is reachable.
++  4. The live two-sided gate CONVERGES on a run where ``R_k`` rises
++     monotonically toward its fixed point of 1.0 -- the ``q = 0`` case,
++     a question whose flaws this panel cannot see. That is the failure
++     his proposal would catch, and it is a real call of the real gate.
++
++And one POSITIVE result, which is the answer to his "what should realistic
++boundaries be": the boundaries are not chosen, they are derived from the
++model already in the code. Under a perfect fix the recursion's fixed point
++is ``R* = nu_b / q`` and its floor at perfect detection is ``nu_b``. So the
++bound on severity is set by the harness's detection power on THAT question,
++which is exactly why it cannot be a single constant. Derived with SymPy and
++independently confirmed with Wolfram Language (local Wolfram Engine); here it
++is asserted by ITERATING THE REAL ``compute_rk`` rather than by re-deriving.
++
++NOTHING IS DISABLED OR REMOVED BY THIS FILE. It adds checks only. Items 1-4
++are expected to stop holding once the writers land: each assertion is phrased
++so that fixing the gap turns the test red and forces a deliberate update,
++which is the point -- a measured gap that can be closed silently is not
++pinned.
++"""
++
++import ast
++import inspect
++import math
++import os
++import sys
++
++import pytest
++
++_HERE = os.path.dirname(os.path.abspath(__file__))
++_ROOT = os.path.dirname(os.path.dirname(_HERE))
++if _ROOT not in sys.path:
++    sys.path.insert(0, _ROOT)
++
++from bench.reference_runner_v3 import (  # noqa: E402  real target, not a copy
++    CRITICAL_SEVERITY_THRESHOLD,
++    RK0_PI_BASE,
++    RunnerConfig,
++    _check_gamma_alt_convergence,
++    compute_rk,
++)
++
++_RUNNER_SRC = os.path.join(_ROOT, "bench", "reference_runner_v3.py")
++
++#: The shipped re-injection parameters, as ``compute_rk``'s own signature
++#: defaults declare them. Read, not retyped, so a change to the signature
++#: cannot leave this file asserting a stale pair.
++_NU_B = compute_rk.__defaults__[0]
++_NU_F = compute_rk.__defaults__[1]
++
++#: His two worked questions, as (pi, q). pi is the prior flaw rate; q is the
++#: per-pass detection probability. 4+4 -- an easy question a competent panel
++#: sees through -- is a low prior and near-perfect detection. The Riemann
++#: hypothesis is a high prior and near-zero detection: the panel cannot see
++#: the flaw, so passes do not remove it.
++_FOUR_PLUS_FOUR = (0.02, 0.95)
++_RIEMANN = (0.90, 0.05)
++
++
++def _runner_tree():
++    with open(_RUNNER_SRC) as fh:
++        src = fh.read()
++    return src, ast.parse(src)
++
++
++def _enclosing_fn(tree, lineno):
++    best = None
++    for node in ast.walk(tree):
++        if isinstance(node, ast.FunctionDef) and \
++                node.lineno <= lineno <= (node.end_lineno or 0):
++            if best is None or node.lineno > best.lineno:
++                best = node
++    return best.name if best else "<module>"
++
++
++# -- 1. q has no writer, so it is 0.5 on every real run ---------------------
++
++def test_model_params_has_no_writer_so_q_is_pinned():
++    """``q`` enters ``R_k`` only via ``entry["model_params"]``, and nothing
++    assigns that key. Structural (AST), the same technique
++    ``test_immune_memory_consumption.py`` uses for the R_k guard -- a grep
++    would also match the runner's own prose about the gap.
++
++    A WRITE is ``entry["model_params"] = ...``, ``.setdefault("model_params")``
++    or ``.update({"model_params": ...})``. Reads are not writes.
++    """
++    _src, tree = _runner_tree()
++
++    writers = set()
++    for node in ast.walk(tree):
++        if isinstance(node, ast.Subscript) and \
++                isinstance(node.slice, ast.Constant) and \
++                node.slice.value == "model_params" and \
++                isinstance(node.ctx, ast.Store):
++            writers.add(_enclosing_fn(tree, node.lineno))
++        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
++                and node.func.attr in {"setdefault", "update"}:
++            for arg in node.args:
++                if isinstance(arg, ast.Constant) and arg.value == "model_params":
++                    writers.add(_enclosing_fn(tree, node.lineno))
++                if isinstance(arg, ast.Dict):
++                    for key in arg.keys:
++                        if isinstance(key, ast.Constant) and \
++                                key.value == "model_params":
++                            writers.add(_enclosing_fn(tree, node.lineno))
++
++    readers = set()
++    for node in ast.walk(tree):
++        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
++                and node.func.attr == "get" and node.args \
++                and isinstance(node.args[0], ast.Constant) \
++                and node.args[0].value == "model_params":
++            readers.add(_enclosing_fn(tree, node.lineno))
++
++    assert readers, "model_params lost its reader; the R_k parameter path moved"
++    assert writers == set(), (
++        f"model_params GAINED a writer: {sorted(writers)}. This is the "
++        f"precondition the 2026-10-31 severity panel named. Re-measure whether "
++        f"R_k now separates the founder's two worked questions and update the "
++        f"assertions below -- do NOT simply relax this one."
++    )
++
++
++# -- 2. R_k is blind to difficulty: 4+4 and Riemann score identically -------
++
++def test_r_k_returns_the_same_number_for_four_plus_four_and_riemann():
++    """The consequence of item 1, executed on the real function.
++
++    With ``model_params`` unwritten the pipeline passes ``q = 0.5`` and
++    ``R_old = RK0_PI_BASE`` for EVERY finding regardless of the question, so
++    ``R_k`` collapses to a function of ``S_k``. The two questions the founder
++    contrasted therefore receive the same residual risk, which is the precise
++    sense in which severity "tells us very little" today.
++    """
++    sk = 1.0  # a perfect fix, so only the question differs
++    as_run_4p4 = compute_rk(RK0_PI_BASE, 0.5, sk)
++    as_run_rh = compute_rk(RK0_PI_BASE, 0.5, sk)
++    assert as_run_4p4 == as_run_rh, "pipeline inputs are no longer pinned"
++    assert math.isclose(as_run_4p4, 0.366666666, abs_tol=1e-6), (
++        f"the pinned operating point moved: {as_run_4p4}. The archive's modal "
++        f"R_new (743 of 1252 entries) sits at this value precisely because the "
++        f"inputs are constant; re-measure the archive before editing."
++    )
++
++    # The formula itself is NOT the problem: fed the real questions it
++    # separates them by orders of magnitude. The defect is upstream wiring.
++    able_4p4 = compute_rk(_FOUR_PLUS_FOUR[0], _FOUR_PLUS_FOUR[1], sk)
++    able_rh = compute_rk(_RIEMANN[0], _RIEMANN[1], sk)
++    assert able_rh > 10 * able_4p4, (
++        f"compute_rk can no longer separate the two questions "
++        f"(4+4={able_4p4}, RH={able_rh}); the mathematical model, not the "
++        f"wiring, would then be the thing to repair."
++    )
++
++
++# -- 3. the measured pi channel is confined to a 0.2-wide window ------------
++
++def test_the_blended_prior_cannot_reach_either_of_his_endpoints():
++    """``pi = (1-rho)*pi_base + rho*pi_mem`` with the shipped ``rho`` and a
++    constant ``pi_base`` spans [0.4, 0.6] even when ``pi_mem`` is free over
++    its whole range. His example needs [0.02, 0.90].
++
++    This is a HARD arithmetic ceiling, not a missing writer: turning immune
++    memory consumption on does not lift it. ``pi_mem`` is additionally
++    Beta-Binomial smoothed with 0.5/0.5 pseudocounts, so in practice the
++    window is narrower still.
++    """
++    cfg = RunnerConfig()
++    rho = cfg.immune_memory_rho
++    lo = (1.0 - rho) * RK0_PI_BASE + rho * 0.0
++    hi = (1.0 - rho) * RK0_PI_BASE + rho * 1.0
++    width = hi - lo
++
++    assert math.isclose(width, rho, abs_tol=1e-12), "the blend form changed"
++    needed = _RIEMANN[0] - _FOUR_PLUS_FOUR[0]
++    assert width < needed, (
++        f"achievable pi window {width:.4f} now covers the {needed:.4f} his "
++        f"worked example requires -- re-measure before relaxing"
++    )
++    assert lo > _FOUR_PLUS_FOUR[0], (
++        f"pi can now reach down to his 4+4 prior ({lo:.4f} <= "
++        f"{_FOUR_PLUS_FOUR[0]}); the floor has been lifted"
++    )
++    assert hi < _RIEMANN[0], (
++        f"pi can now reach up to his Riemann prior ({hi:.4f} >= "
++        f"{_RIEMANN[0]}); the ceiling has been lifted"
++    )
++
++
++# -- 4. the live gate converges while residual risk rises ------------------
++
++def test_live_gate_converges_on_a_run_whose_residual_risk_is_rising():
++    """THE CASE HIS PROPOSAL TARGETS, against the REAL gate function.
++
++    A question with zero detection power yields an all-zero critical series,
++    because nothing was detectable. The settled novelty condition is then
++    satisfied for free and the vacuous-curve branch admits the run. Meanwhile
++    ``R_k`` rises every pass -- at ``q = 0`` the recursion's only fixed point
++    is 1.0, so more passes make residual risk WORSE, not better.
++
++    The gate's reason string does warn the reader ("a clean target and a
++    broken severity classifier look alike from here"), but it returns True
++    and the loop acts on the boolean.
++    """
++    cfg = RunnerConfig()
++
++    risk = _RIEMANN[0]
++    trajectory = [risk]
++    for _ in range(6):
++        risk = compute_rk(risk, 0.0, 1.0)  # q = 0: nothing is detected
++        trajectory.append(risk)
++
++    assert all(b > a for a, b in zip(trajectory, trajectory[1:])), (
++        f"residual risk no longer rises monotonically at q=0: {trajectory}"
++    )
++
++    converged, reason = _check_gamma_alt_convergence(
++        round_idx=6,
++        gamma=0.9,
++        novel_critical_history=[0, 0, 0, 0, 0, 0],
++        cfg=cfg,
++        unresolved_critical=0,
++        contested=0,
++        rho_churn=False,
++        irreducible_queue=0,
++        gamma_critical=0.0,
++        total_findings=12,
++    )
++
++    assert converged is True, (
++        f"the gate NO LONGER converges on the zero-detection run -- a severity "
++        f"or residual-risk condition may have landed. Reason: {reason}"
++    )
++    assert "CONVERGED" in reason
++    # And nothing in the gate's signature can see the risk figure: that is the
++    # structural guard in test_immune_memory_consumption.py, correct for
++    # R_k(0) and over-broad for R_k(i>=1). Stated here as the reason the
++    # condition cannot simply be added.
++    params = set(inspect.signature(_check_gamma_alt_convergence).parameters)
++    assert not (params & {"residual_risk", "R_k", "r_new", "severity"}), (
++        f"the gate gained a risk/severity parameter: {sorted(params)} -- the "
++        f"2026-10-31 panel's blocked recommendation may have been implemented; "
++        f"re-measure items 1-3 before trusting it"
++    )
++
++
++# -- 5. POSITIVE: the boundary is derived, not chosen ----------------------
++
++@pytest.mark.parametrize("q", [0.95, 0.60, 0.50, 0.30, 0.10])
++def test_the_recursion_attractor_is_nu_b_over_q(q):
++    """``R* = nu_b / q`` under a perfect fix, by ITERATING the real function.
++
++    This is the answer to "what should realistic boundaries be" and it is a
++    property of the shipped model rather than a number anyone picked: no
++    quantity of passes drives residual risk below ``nu_b / q``, and at
++    perfect detection the floor is ``nu_b`` itself. Because ``q`` is a
++    property of the question and the panel reviewing it, the boundary is
++    per-question -- which is precisely the founder's point that severity
++    cannot be one constant.
++
++    Derived symbolically with SymPy and confirmed independently in Wolfram
++    Language (local Wolfram Engine). Asserted here numerically so the claim
++    rests on the code that ships, not on either derivation.
++    """
++    predicted = min(1.0, _NU_B / q)
++
++    risk = 0.99  # start far above the attractor; it must fall to it
++    for _ in range(4000):
++        risk = compute_rk(risk, q, 1.0)
++    assert math.isclose(risk, predicted, rel_tol=1e-6), (
++        f"iterating compute_rk at q={q} settled at {risk:.9f}, not the "
++        f"derived attractor nu_b/q = {predicted:.9f}"
++    )
++
++    # Approached from below it is a floor, not merely a limit.
++    risk = 0.0
++    for _ in range(4000):
++        risk = compute_rk(risk, q, 1.0)
++    assert risk >= predicted - 1e-9, (
++        f"residual risk fell BELOW the derived floor at q={q}: "
++        f"{risk:.9f} < {predicted:.9f}"
++    )
++
++
++def test_the_floor_is_nu_b_at_perfect_detection():
++    """The special case q = 1: ``R_k = nu_b`` exactly, for any starting risk.
++
++    So the LOWEST residual risk this harness can ever report is ``nu_b``
++    (0.05 as shipped). A severity boundary set below that is unsatisfiable,
++    and any gate threshold must therefore be expressed as a multiple of
++    ``nu_b`` rather than as an absolute figure.
++    """
++    # STRICTLY below 1. The first version of this check included start=1.0 and
++    # FAILED, correctly: R = 1 is the OTHER fixed point SymPy returns, and it is
++    # absorbing for every (q, s) -- compute_rk(1.0, q, s) = 1.0 across the whole
++    # grid, because `1 - q*R_old` vanishes and the detection phase short-circuits
++    # to R_det = R_old. Certainty stays certainty, which is right: the runner
++    # already treats R == 1 as "a corruption signal, not an operating point"
++    # (`check_sk_threshold_corrected`). The claim is corrected and the absorbing
++    # case is asserted below rather than excluded silently.
++    for start in (0.0, 0.02, 0.5, 0.9, 0.999999):
++        assert math.isclose(compute_rk(start, 1.0, 1.0), _NU_B, abs_tol=1e-12), (
++            f"compute_rk({start}, 1.0, 1.0) != nu_b={_NU_B}"
++        )
++    for q in (0.0, 0.5, 1.0):
++        for sk in (0.0, 0.5, 1.0):
++            assert compute_rk(1.0, q, sk) == 1.0, (
++                f"R = 1 stopped being absorbing at q={q}, S_k={sk}: "
++                f"{compute_rk(1.0, q, sk)}. SymPy gives exactly 2 fixed points "
++                f"for this recursion, R* = 1 and R* = nu_b/q; this is the first."
++            )
++    assert _NU_B < CRITICAL_SEVERITY_THRESHOLD, (
++        "nu_b has risen above the CRITICAL cut; the two quantities would then "
++        "no longer be independently scaled and this file's premise needs review"
++    )
+
+### cc2:attempt-1:bench/tickets/tickets.jsonl
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tickets/tickets.jsonl	2026-10-31 05:41:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__2a09j6p/repo/bench/tickets/tickets.jsonl	2026-10-31 05:25:42
+@@ -6755,7 +6755,3 @@
+ {"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "66315da19ae4", "notes": ["also tracked as B55"], "repair_identity": "", "resolution": "recorded DONE in the master task list as B55", "rid": "e9a8047aec61", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B55 state=DONE status=COMMITTED", "status": "CLOSED", "subjects": ["fix_efficacy.outcome", "gate_details.e1_efficacy", "not_cured"], "superseded_by": "", "supersession_evidence": "", "task_ref": "B55", "tid": "5897bcf11d17", "title": "B55. THE NON-CURING CLOSURES ARE A NAMED SET, NOT A COUNT. Added 2026-10-31T02:43:32+00:00. HIS RULING, 2026-10-30: \"I accept your recommendation.\" against reco", "verbatim": "*\"I accept your recommendation.\"* against recording them as a named population rather than reopening findings in a sealed archive.", "verification": "task-list marker state=DONE status=COMMITTED"}
+ {"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "d038053e6102", "notes": ["also tracked as B56"], "repair_identity": "", "resolution": "", "rid": "", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B56 state=OPEN status=TESTED", "status": "OPEN", "subjects": [], "superseded_by": "", "supersession_evidence": "", "task_ref": "B56", "tid": "c75027a368e3", "title": "B56. THE DEMOTION RULE'S OPERATING POINT IS RECORDED AT 1 IN 50, AND IT CHANGES NOTHING TODAY. Added 2026-10-31T02:43:32+00:00. HIS RULING, 2026-10-30: \"I accep", "verbatim": "*\"I accept your recommendation.\"* against a recommendation of 1 in 50, given in answer to his challenge: *\"Can we improve on this statistic? A 1 in 20 chance of demoting a model that is performing just fine seems unreasonably high?\"*", "verification": ""}
+ {"anchor": "joint_the_role_layer_b21_2026-10-31#validator#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "cf34b20272fe", "notes": [], "repair_identity": "", "resolution": "The leading word boundary is removed from the disagreement predicate at scripts/panel_brief_validate.py, so the field name the template prescribes -- strongest_disagreement -- now satisfies it. The right-hand boundary is kept and the section scoping is untouched, so the check is repaired rather than weakened.", "rid": "a2c020bcd88c", "ruled": "", "source": "cc1", "source_ref": "", "status": "CLOSED", "subjects": ["_section", "panel_brief_validate.py", "strongest_disagreement"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "6a18bd7974ce", "title": "The panel brief validator's disagreement check cannot match the field name the template recommends", "verbatim": "scripts/panel_brief_validate.py:697 searches the output section for r'\\bdisagree'. The field name every compliant brief uses is `strongest_disagreement`, and `\\b` does NOT match between the underscore and the `d` because an underscore is a word character. So a brief that names the field EXACTLY as bench/directives/universal/panel_brief_template.md describes it is REFUSED unless the surrounding prose happens to repeat the word with a space before it. Observed 2026-10-31 on the B21 joint brief, which listed `strongest_disagreement` as a field and was refused. The check's own comment says the field must be named 'as a FIELD in the output section, not as prose elsewhere' -- and as written it can ONLY be satisfied by prose. Proposed fix: match r'disagree' without the leading boundary, or r'(?:^|[^A-Za-z])disagree', and add a fixture naming the field with an underscore and no prose repetition.", "verification": "Verified by execution, not by reading. bench/tests/test_the_disagreement_field_is_matchable_2026-10-31.py holds 11 tests calling validate() directly: a brief naming the field as a list item is no longer refused, a brief whose output section names no disagreement IS still refused, prose outside the output section still does not count, and both of tonight joint briefs pass. 3 of 3 mutations turn it red -- restoring the leading boundary, removing the branch, and making it fire on everything. The removal mutation SURVIVED the first version because a second branch emits text containing the same word, so the assertion now matches the exact message and a test proves the 2 checks are distinguishable."}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "wr", "nid": "427b5c0f54df", "notes": [], "repair_identity": "", "resolution": "Discharged. Every annotation of his since 2026-10-01 now carries a verdict row: 522 of 522, complete coverage. The 104 the ticket names were closed across the sessions of 2026-10-30 and 2026-10-31, including the 27 of the consolidated file and the 15 of Decisions_Awaiting_You. sv is no longer blocked on this.", "rid": "e892e8862251", "ruled": "2026-10-20", "source": "chat", "source_ref": "session 2026-10-20T01:27:07+01:00", "status": "CLOSED", "subjects": ["annotation_verdicts_2026-10-17.json", "audit_his_annotations_2026-10-17"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "9f7c6bf8661d", "title": "104 of his annotations since 2026-10-01 have no verdict row, so sv stays blocked on MY work", "verbatim": "test_coverage_is_a_set_intersection_and_not_a_count_ratio reports 104 annotations in the window with no row in annotation_verdicts_2026-10-17.json. Each row needs a verdict AND the evidence that establishes it, so this is judgement work and cannot be mechanically regenerated without fabricating verdicts. It is work owed by me, not a ruling owed by him.", "verification": "Verified by execution, not by reading the ledger. scripts/read_founder_responses_2026-10-11.py returns 522 annotations in the window and experimental_notes/data/annotation_verdicts_2026-10-17.json carries a row for every one of their anchors -- 0 missing, coverage 522/522 = 1.000000, Wilson [0.992695, 1.000000], Clopper-Pearson [0.992958, 1.000000]. bench/tests/test_every_annotation_verdict_names_its_evidence_2026-10-17.py passes 16 of 16, and its coverage check is a SET intersection rather than a count ratio, so an equal number of orphan rows could not hide a gap."}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "wr", "nid": "63447866e27e", "notes": [], "repair_identity": "", "resolution": "Discharged. 0 TRACKED rows now have an unfinished entry alongside a settled ticket, measured over all 90 TRACKED rows in the verdict record. The 27 the ticket names were reconciled by the entries themselves moving to DONE or DEFERRED across 2026-10-29 to 2026-10-31 -- B50 on his option 1, R1 on his deferral, B41 to the dispatch sequence alone -- rather than by any row being edited to fit.", "rid": "24bdac21dcc1", "ruled": "2026-10-20", "source": "chat", "source_ref": "session 2026-10-20T01:27:07+01:00", "status": "CLOSED", "subjects": ["task_list_markers", "ticket_store.close"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "beda00e77364", "title": "27 annotations are TRACKED by an entry that is not done while their tickets are settled", "verbatim": "test_a_tracked_row_whose_entry_is_open_has_not_settled_its_ticket reports 27 rows whose task entry is OPEN but whose ticket has been closed. Either the entry is further along than its marker says or the ticket was closed early. Each needs reconciling individually. Work owed by me, not a ruling owed by him.", "verification": "Verified by execution. The figure is recomputed from the live record with the same 3 inputs the guard uses: the 90 TRACKED rows of experimental_notes/data/annotation_verdicts_2026-10-17.json, the entry states parsed by scripts/task_list_markers.py, and the settled set from the live ticket store -- giving 0. bench/tests/test_every_annotation_verdict_names_its_evidence_2026-10-17.py::test_a_tracked_row_whose_entry_is_open_has_not_settled_its_ticket passes, and that guard's own 2026-10-17 mutation record shows 8 rows would settle wrongly if its condition were dropped, so it is not vacuous."}
+-{"anchor": "", "blocker": "", "created": "2026-10-27T21:24:16+00:00", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "5c2b46efbb49", "notes": [], "repair_identity": "", "resolution": "ANSWERED, not built, because his question asks whether a discrepancy matters. NO, it is not significant, and it is not close. 34 of 53 = 0.641509, Wilson [0.506911, 0.756980]; 32 of 53 = 0.603774, Wilson [0.469415, 0.724106]; Fisher exact p = 0.841344, odds 1.174342, chi-square with Yates p = 0.841185, intervals overlapping across almost their whole length. The second pair: 21 of 53 = 0.396226 against 16 of 53 = 0.301887, Fisher exact p = 0.415250, also overlapping. The 2 seats differ by LESS than the width of either seat's own interval, so a deliberation decided by 34 against 32 would be a deliberation decided by noise -- and the panel's own sentence already recorded that the DIRECTION agreed. No recommendation in that round turned on the difference. ON 'NEITHER YOU NOR THE PANEL CAN RESOLVE IT': the figures are not reproducible in the form quoted, because the population moved -- 63 archived reports then against 64 now, and first_fire_rate at K=3 over the current archive gives 8 of 31, a different denominator entirely. The 53 is DATED. A snapshot difference is the leading hypothesis for the 2 seats' gap and is marked SPECULATIVE rather than asserted, because both ran the same day within 1 round of each other. What would settle it is named: re-run each seat's own preserved producer against 1 pinned snapshot. THE ACTIONABLE CONSEQUENCE is neither number: a feasibility figure quoted without its archive snapshot cannot be reproduced or compared, and both seats quoted one. A snapshot is part of the measurement when the archive IS the population.", "rid": "20e8985efec8", "ruled": "", "source": "chat", "source_ref": "his annotations of 2026-10-27", "status": "CLOSED", "subjects": ["what_should_the_quiet_run_be_2026-10-25"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "d0472a2c3a05", "title": "Resolve the 34/53 against 32/53 feasibility disagreement between CC1 and the fable seat", "verbatim": "So there is an unresolved discrepancy, that neither you, or the other panel models can resolve? Is it significant to our deliberations on this topic? If so how?", "verification": "Verified by execution. Producer: scripts/is_the_feasibility_discrepancy_significant_2026-10-31.py, which answers --help without running the measurement, computes both comparisons with Fisher exact from scipy cross-checked against a chi-square with Yates correction, Wilson intervals from statsmodels cross-checked against Clopper-Pearson, and the p-value echoed in mpmath at 40 digits (agreement asserted in the output). It also IMPORTS bench/what_should_the_quiet_run_be_2026-10-25.py and calls its own collect() and first_fire_rate() rather than restating them, so the today-against-then denominators come from the panel's own instrument."}
+-{"anchor": "chat#2026-10-30T11:12:19+00:00#8f1182f6", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "qs", "nid": "887fecb9f24e", "notes": [], "repair_identity": "", "resolution": "ANSWERED, not built, because his question asks whether a discrepancy matters. NO, it is not significant, and it is not close. 34 of 53 = 0.641509, Wilson [0.506911, 0.756980]; 32 of 53 = 0.603774, Wilson [0.469415, 0.724106]; Fisher exact p = 0.841344, odds 1.174342, chi-square with Yates p = 0.841185, intervals overlapping across almost their whole length. The second pair: 21 of 53 = 0.396226 against 16 of 53 = 0.301887, Fisher exact p = 0.415250, also overlapping. The 2 seats differ by LESS than the width of either seat's own interval, so a deliberation decided by 34 against 32 would be a deliberation decided by noise -- and the panel's own sentence already recorded that the DIRECTION agreed. No recommendation in that round turned on the difference. ON 'NEITHER YOU NOR THE PANEL CAN RESOLVE IT': the figures are not reproducible in the form quoted, because the population moved -- 63 archived reports then against 64 now, and first_fire_rate at K=3 over the current archive gives 8 of 31, a different denominator entirely. The 53 is DATED. A snapshot difference is the leading hypothesis for the 2 seats' gap and is marked SPECULATIVE rather than asserted, because both ran the same day within 1 round of each other. What would settle it is named: re-run each seat's own preserved producer against 1 pinned snapshot. THE ACTIONABLE CONSEQUENCE is neither number: a feasibility figure quoted without its archive snapshot cannot be reproduced or compared, and both seats quoted one. A snapshot is part of the measurement when the archive IS the population.", "rid": "a01748535063", "ruled": "", "source": "founder-chat", "source_ref": "", "status": "CLOSED", "subjects": ["feasibility_disagreement_2026-10-27"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "0c183ae8a864", "title": "Is the 34-against-32 feasibility discrepancy significant to the deliberations, and if so how?", "verbatim": "So there is an unresolved discrepancy, that neither you, or the other panel models can resolve? Is it significant to our deliberations on this topic? If so how? -- recorded as a QUESTION because it is his words asking 3 things, and his ruling of 2026-10-19 is that a question carries its own kind since its resolution is an ANSWER, not a build. It currently sits in the register as pf:d0472a2c3a05, which is the wrong kind for it; the separate pf:798cb50b9126 holds the assistant's own proposal about the same discrepancy and is a legitimate proposed fix. Disposing of the mis-kinded pf is left to him rather than altered unilaterally.", "verification": "Verified by execution. Producer: scripts/is_the_feasibility_discrepancy_significant_2026-10-31.py, which answers --help without running the measurement, computes both comparisons with Fisher exact from scipy cross-checked against a chi-square with Yates correction, Wilson intervals from statsmodels cross-checked against Clopper-Pearson, and the p-value echoed in mpmath at 40 digits (agreement asserted in the output). It also IMPORTS bench/what_should_the_quiet_run_be_2026-10-25.py and calls its own collect() and first_fire_rate() rather than restating them, so the today-against-then denominators come from the panel's own instrument."}
+
+### cc2:attempt-1:experimental_notes/Morning_Report_2026-10-31.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-10-31.md	2026-10-31 05:34:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__2a09j6p/repo/experimental_notes/Morning_Report_2026-10-31.md	2026-10-31 04:29:25
+@@ -48,24 +48,6 @@
+ 
+ 1 boundary recorded rather than crossed. Residual risk only advances on a fix that passes the threshold, so a run of rejections leaves it frozen. The model's own form handles a poor fix by barely moving it, which suggests the skip is wrong, but changing it alters admissibility accounting across every archived comparison.
+ 
+-## PART 4A. 3 RESULTS THAT LANDED AFTER THE SECTIONS ABOVE WERE WRITTEN
+-
+-Appended 2026-10-31 05:33 GMT.
+-
+-**The proof polarity question went to a joint round and both seats moved.** Both now answer confirmed but latent. The inversion is established from both directions: a held proof scores 0.0 and a failed proof scores 1.0, which is the sign exactly backwards, and the second seat confirmed it by building 2 real proof artefacts and driving them through the real verification step, having entered the round saying there was no gap at all.
+-
+-**They now disagree about how far it reaches, and both of them executed, so the disagreement is kept rather than resolved.** The first seat measures the inversion as live in 18 of 65 archived registries for reported convergence and 0 for release safety, with the blocker count holding 3 of 3 under execution. The other refutes the amplification outright: 0 archived rounds would have converged earlier, because the severity channel sits behind a flag never armed in any archived run, and the pathway the first seat named does not exist in the code. I do not adjudicate between them, because a model vote is not evidence in this project.
+-
+-**What they agree on narrows your decision usefully.** The repair is to make the sense explicit rather than split the channel, and the second seat showed that the version the first seat shipped covers only half of it: the verdict field has 2 deciding consumers, 1 for severity and 1 for status, and only the severity consumer was guarded. Its sentence is the sharpest either wrote: a declaration is only a repair if every deciding consumer honours it. The first seat states plainly that its own fix touches the severity ruler you have defended 4 times, so that half is yours. The second states that its fix touches neither the decay curve nor the convergence gate and adds a single branch entered only when an entry declares proof polarity. So the status half may be buildable without touching the ruler, and the severity half needs you.
+-
+-**The first seat also corrected its own stated mechanism, which is worth more than the verdict.** Its original claim routed the hazard through the effective severity function. Driving the real gate end to end showed that the series the gate reads takes the asserted number and never calls that function at all. So the route it named was not the route, and it said so.
+-
+-**The 3 retired briefs no longer read as a backlog.** You were right that panel requests had simply not been done, and the census that proved it is unchanged. What it could not express was a brief you had retired, so 3 superseded briefs kept appearing as owed work. Each now carries a marker naming your ruling and its successor, nothing is deleted, and both instruments report 6 unrun and 3 retired where they reported 9 unrun. The guard against the obvious abuse is that a retirement must name a successor that really exists, or the marker becomes a way to make a backlog disappear by writing files.
+-
+-**A defect in the brief checker is fixed and closed.** It required the output section to name a disagreement, searching for the word with a leading word boundary. The field name the template itself prescribes joins the word to a preceding term with a connecting character, and a word boundary does not match at that join, so a brief naming the field exactly as prescribed was refused unless the surrounding prose happened to repeat the word. Its own message demanded a field and not prose, and as written it could only be satisfied by prose.
+-
+-2 of my own guards went green with their defect restored tonight, and both are now red. That keeps happening in one specific way: a test that recomputes a decision instead of calling it will always agree with itself. In both cases the fix was to extract the decision so the test could reach it.
+-
+ ## PART 5. WHAT IS LEFT, IN YOUR ORDER
+ 
+ **The joint round for the proof question is owed and is the next dispatch.** The severity review you ordered is written and waits behind it. After those, the 2 deferred clusters and the zero plant control, which stays last by your ruling.
+
+### cc2:attempt-1:experimental_notes/Morning_Report_2026-10-31.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-10-31.txt	2026-10-31 05:34:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__2a09j6p/repo/experimental_notes/Morning_Report_2026-10-31.txt	2026-10-31 04:29:25
+@@ -53,25 +53,6 @@
+ 1 boundary recorded rather than crossed. Residual risk only advances on a fix that passes the threshold, so a run of rejections leaves it frozen. The model's own form handles a poor fix by barely moving it, which suggests the skip is wrong, but changing it alters admissibility accounting across every archived comparison.
+ 
+ 
+-PART 4A. 3 RESULTS THAT LANDED AFTER THE SECTIONS ABOVE WERE WRITTEN
+-
+-Appended 2026-10-31 05:33 GMT.
+-
+-The proof polarity question went to a joint round and both seats moved. Both now answer confirmed but latent. The inversion is established from both directions: a held proof scores 0.0 and a failed proof scores 1.0, which is the sign exactly backwards, and the second seat confirmed it by building 2 real proof artefacts and driving them through the real verification step, having entered the round saying there was no gap at all.
+-
+-They now disagree about how far it reaches, and both of them executed, so the disagreement is kept rather than resolved. The first seat measures the inversion as live in 18 of 65 archived registries for reported convergence and 0 for release safety, with the blocker count holding 3 of 3 under execution. The other refutes the amplification outright: 0 archived rounds would have converged earlier, because the severity channel sits behind a flag never armed in any archived run, and the pathway the first seat named does not exist in the code. I do not adjudicate between them, because a model vote is not evidence in this project.
+-
+-What they agree on narrows your decision usefully. The repair is to make the sense explicit rather than split the channel, and the second seat showed that the version the first seat shipped covers only half of it: the verdict field has 2 deciding consumers, 1 for severity and 1 for status, and only the severity consumer was guarded. Its sentence is the sharpest either wrote: a declaration is only a repair if every deciding consumer honours it. The first seat states plainly that its own fix touches the severity ruler you have defended 4 times, so that half is yours. The second states that its fix touches neither the decay curve nor the convergence gate and adds a single branch entered only when an entry declares proof polarity. So the status half may be buildable without touching the ruler, and the severity half needs you.
+-
+-The first seat also corrected its own stated mechanism, which is worth more than the verdict. Its original claim routed the hazard through the effective severity function. Driving the real gate end to end showed that the series the gate reads takes the asserted number and never calls that function at all. So the route it named was not the route, and it said so.
+-
+-The 3 retired briefs no longer read as a backlog. You were right that panel requests had simply not been done, and the census that proved it is unchanged. What it could not express was a brief you had retired, so 3 superseded briefs kept appearing as owed work. Each now carries a marker naming your ruling and its successor, nothing is deleted, and both instruments report 6 unrun and 3 retired where they reported 9 unrun. The guard against the obvious abuse is that a retirement must name a successor that really exists, or the marker becomes a way to make a backlog disappear by writing files.
+-
+-A defect in the brief checker is fixed and closed. It required the output section to name a disagreement, searching for the word with a leading word boundary. The field name the template itself prescribes joins the word to a preceding term with a connecting character, and a word boundary does not match at that join, so a brief naming the field exactly as prescribed was refused unless the surrounding prose happened to repeat the word. Its own message demanded a field and not prose, and as written it could only be satisfied by prose.
+-
+-2 of my own guards went green with their defect restored tonight, and both are now red. That keeps happening in one specific way: a test that recomputes a decision instead of calling it will always agree with itself. In both cases the fix was to extract the decision so the test could reach it.
+-
+-
+ PART 5. WHAT IS LEFT, IN YOUR ORDER
+ 
+ The joint round for the proof question is owed and is the next dispatch. The severity review you ordered is written and waits behind it. After those, the 2 deferred clusters and the zero plant control, which stays last by your ruling.
+
+### cc2:attempt-1:resources/MEMORY_EXCLUSIONS.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/MEMORY_EXCLUSIONS.md	2026-10-31 05:44:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__2a09j6p/repo/resources/MEMORY_EXCLUSIONS.md	2026-10-31 05:25:42
+@@ -8,7 +8,7 @@
+ record is honest about the shape of what is withheld, not only what is
+ shown.
+ 
+-## Accounting (counted 2026-10-31 05:44 GMT)
++## Accounting (counted 2026-10-31 05:11 GMT)
+ 
+ The source index lives privately at
+ `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-31 05:45:55
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5gg4x743/repo/.cdsfl_deny_canonical_writes.sb	2026-10-31 05:34:17
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-31 02:13:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5gg4x743/repo/bench/reference_runner_v3.py	2026-10-31 05:41:58
+@@ -3386,8 +3386,38 @@
+         else:
+             deferred += 1
+     return locked, deferred
++
++
++def combine_independent_severities(values: List[float]) -> float:
++    """Median of the independent severity assessments of ONE defect.
++
++    THE DEFECT THIS CLOSES, measured 2026-10-19
++    (`scripts/is_severity_noise_or_disagreement_2026-10-19.py`) over the 152
++    registry entries with 2+ independent same-run assessments: no code anywhere
++    combined them. The merge kept whichever record happened to be the
++    registration target, so the kept severity equalled the median of its inputs
++    in 21.05% of cases and lay OUTSIDE [min, max] of the assessments it came
++    from in 35 of 152, 23.03%, Wilson [17.05%, 30.33%].
++
++    MEDIAN, not mean/min/max: it is always inside [min, max] of its inputs by
++    construction (the outside-the-range defect cannot recur), it is robust to a
++    single outlying assessment, and at n=2 it equals the mean. The pooled
++    2-assessor spread is median 0.10 / mean 0.145 and, controlled to
++    exactly-2-assessor entries, does not differ by run (Kruskal-Wallis p=0.717,
++    12 runs, 98 pairs) -- consistent with a shared assessment-noise floor, which
++    is precisely the case a combination rule addresses.
+ 
++    PURE and dependency-free so archive analysis scripts can import it and
++    recompute the combined figure from recorded inputs.
++    """
++    vals = sorted(float(v) for v in values)
++    if not vals:
++        raise ValueError("combine_independent_severities: no assessments")
++    n = len(vals)
++    mid = n // 2
++    return vals[mid] if n % 2 else (vals[mid - 1] + vals[mid]) / 2.0
+ 
++
+ class FindingRegistry:
+     """Canonical finding registry — runner-owned, models read/propose only.
+ 
+@@ -3422,7 +3452,8 @@
+ 
+     def record_codiscovery(self, canonical_id: str, model_id: str,
+                            finding_id: str, similarity: float = 0.0,
+-                           round_idx: int = 0) -> bool:
++                           round_idx: int = 0,
++                           severity: Optional[float] = None) -> bool:
+         """Record that ANOTHER model independently raised this same defect.
+ 
+         THE DEFECT THIS CLOSES, MEASURED 2026-08-23. `source_aliases` was written
+@@ -3492,11 +3523,30 @@
+                                     similarity, round_idx)
+             return False
+         aliases.append(alias)
+-        entry.setdefault("codiscovery", []).append({
++        _codisc_rec = {
+             "model": model_id,
+             "finding_id": finding_id,
+             "similarity": round(float(similarity), 4),
+-        })
++        }
++        # THE CO-DISCOVERER'S OWN SEVERITY, recorded at the one moment it is in
++        # hand (2026-10-31). Measured over 152 multi-assessed entries: the merge
++        # kept the registration target's number and the kept value lay outside
++        # [min, max] of its inputs in 35 of 152 (23.03%). `severity_combined`
++        # is the median of all recorded assessments -- inside their range by
++        # construction. `entry["severity"]`, the value every gate channel
++        # reads, is NOT touched: this is a recording change, not a behavioural
++        # one, same contract as `occasions` above. Optional and defaulting to
++        # None so every existing caller is byte-identical.
++        if isinstance(severity, (int, float)):
++            _codisc_rec["severity"] = round(float(severity), 6)
++        entry.setdefault("codiscovery", []).append(_codisc_rec)
++        _assessments = [entry.get("severity")] + [
++            c.get("severity") for c in entry.get("codiscovery", [])
++        ]
++        _assessments = [a for a in _assessments if isinstance(a, (int, float))]
++        if _assessments:
++            entry["severity_combined"] = combine_independent_severities(
++                _assessments)
+         # THE OVERLAP RECORD NOW GROWS ON CORROBORATION (founder ruling
+         # 2026-09-29, option 3). Before this, `occasions` grew only inside a
+         # merge path, and merges are withheld pending a tool verdict -- so the
+@@ -19994,7 +20044,8 @@
+                     registry.record_codiscovery(
+                         _cid, _model, _tr.finding.finding_id,
+                         float(getattr(_tr, "similarity", 0.0)),
+-                        round_idx=round_idx)
++                        round_idx=round_idx,
++                        severity=getattr(_tr.finding, "severity", None))
+         except Exception as _exc:                     # noqa: BLE001
+             # Loud, not silent. A recording failure must not kill a run, and it
+             # must not vanish either -- the first version of this vanished.
+
+### fable:attempt-1:bench/tests/test_codiscovery_records_severity_2026-10-31.py
+--- /dev/null	2026-10-31 05:45:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5gg4x743/repo/bench/tests/test_codiscovery_records_severity_2026-10-31.py	2026-10-31 05:41:20
+@@ -0,0 +1,99 @@
++"""Co-discovery must RECORD the second assessor's severity and combine it.
++
++THE DEFECT, measured by scripts/is_severity_noise_or_disagreement_2026-10-19.py
++over 152 registry entries with 2+ independent same-run assessments: the merge
++keeps whichever record happened to be the registration target and discards the
++rest, so the kept severity equals the median of its inputs in 21.05% of cases,
++and lies OUTSIDE [min, max] of the assessments it came from in 35 of 152,
++23.03%, Wilson [17.05%, 30.33%]. The number the CRITICAL cut reads is therefore
++not traceable to the assessments beneath it.
++
++THE FIX this test executes: `record_codiscovery` accepts the co-discovering
++finding's own severity, stores it in the codiscovery record, and writes
++`severity_combined` = `combine_independent_severities(...)` (the median) on the
++entry. `entry["severity"]` -- the value every gate channel reads -- is NOT
++touched, so gate behaviour is byte-identical; the combined figure is recorded
++beside it and reaches the archived report through the registry dump.
++
++Run directly as a falsifier: raises AssertionError and prints FALSIFIED iff the
++defect is present (no severity parameter, severity not recorded, combined value
++absent or not a function of its inputs). Exits cleanly when the fix holds.
++"""
++from __future__ import annotations
++
++import inspect
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO))
++
++from bench.reference_runner_v3 import (  # noqa: E402
++    Finding,
++    FindingRegistry,
++)
++
++
++def _mk(fid: str, model: str, sev: float) -> Finding:
++    return Finding(
++        finding_id=fid, model_id=model, round_idx=1, flaw_class=2,
++        severity=sev, abstraction_index=0.5, description="same defect",
++    )
++
++
++def test_codiscovery_records_and_combines_severity() -> None:
++    reg = FindingRegistry()
++    cid = reg.register(_mk("f1", "m1", 0.5), "m1")
++
++    sig = inspect.signature(reg.record_codiscovery)
++    assert "severity" in sig.parameters, (
++        "record_codiscovery takes no severity: the co-discovering model's "
++        "independent assessment is discarded at exactly the point it arrives"
++    )
++
++    added = reg.record_codiscovery(cid, "m2", "f9", 0.9, round_idx=2,
++                                   severity=0.8)
++    assert added is True
++    e = reg.entries[cid]
++
++    recs = [c for c in e.get("codiscovery", []) if c.get("finding_id") == "f9"]
++    assert recs and isinstance(recs[0].get("severity"), (int, float)), (
++        "codiscovery record carries no severity field"
++    )
++    assert abs(recs[0]["severity"] - 0.8) < 1e-9
++
++    inputs = [0.5, 0.8]
++    comb = e.get("severity_combined")
++    assert isinstance(comb, (int, float)), "severity_combined was not written"
++    assert min(inputs) <= comb <= max(inputs), (
++        f"combined severity {comb} lies outside the range of its inputs "
++        f"{inputs} -- the archived defect shape (35 of 152 kept values)"
++    )
++    assert abs(comb - 0.65) < 1e-9, f"median of {inputs} is 0.65, got {comb}"
++
++    # The gate input is untouched: byte-identical convergence behaviour.
++    assert abs(e["severity"] - 0.5) < 1e-12, (
++        "entry['severity'] moved -- the fix must be recording-only"
++    )
++
++    # A third assessor: combined stays the median of ALL assessments.
++    reg.record_codiscovery(cid, "m3", "f17", 0.9, round_idx=3, severity=0.9)
++    comb3 = reg.entries[cid]["severity_combined"]
++    assert abs(comb3 - 0.8) < 1e-9, (
++        f"median of [0.5, 0.8, 0.9] is 0.8, got {comb3}"
++    )
++
++    # A non-numeric / absent severity must not break the legacy call shape.
++    reg.record_codiscovery(cid, "m4", "f23", 0.9, round_idx=4)
++    assert abs(reg.entries[cid]["severity_combined"] - 0.8) < 1e-9
++
++
++if __name__ == "__main__":
++    try:
++        test_codiscovery_records_and_combines_severity()
++    except AssertionError as exc:
++        print("FALSIFIED:", exc)
++        raise
++    print("clean: co-discovery records the assessor's severity; "
++          "severity_combined is the median of its inputs; the gate input "
++          "entry['severity'] is untouched")
+
+### fable:attempt-1:bench/tickets/tickets.jsonl
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tickets/tickets.jsonl	2026-10-31 05:41:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5gg4x743/repo/bench/tickets/tickets.jsonl	2026-10-31 05:25:42
+@@ -6755,7 +6755,3 @@
+ {"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "66315da19ae4", "notes": ["also tracked as B55"], "repair_identity": "", "resolution": "recorded DONE in the master task list as B55", "rid": "e9a8047aec61", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B55 state=DONE status=COMMITTED", "status": "CLOSED", "subjects": ["fix_efficacy.outcome", "gate_details.e1_efficacy", "not_cured"], "superseded_by": "", "supersession_evidence": "", "task_ref": "B55", "tid": "5897bcf11d17", "title": "B55. THE NON-CURING CLOSURES ARE A NAMED SET, NOT A COUNT. Added 2026-10-31T02:43:32+00:00. HIS RULING, 2026-10-30: \"I accept your recommendation.\" against reco", "verbatim": "*\"I accept your recommendation.\"* against recording them as a named population rather than reopening findings in a sealed archive.", "verification": "task-list marker state=DONE status=COMMITTED"}
+ {"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "d038053e6102", "notes": ["also tracked as B56"], "repair_identity": "", "resolution": "", "rid": "", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B56 state=OPEN status=TESTED", "status": "OPEN", "subjects": [], "superseded_by": "", "supersession_evidence": "", "task_ref": "B56", "tid": "c75027a368e3", "title": "B56. THE DEMOTION RULE'S OPERATING POINT IS RECORDED AT 1 IN 50, AND IT CHANGES NOTHING TODAY. Added 2026-10-31T02:43:32+00:00. HIS RULING, 2026-10-30: \"I accep", "verbatim": "*\"I accept your recommendation.\"* against a recommendation of 1 in 50, given in answer to his challenge: *\"Can we improve on this statistic? A 1 in 20 chance of demoting a model that is performing just fine seems unreasonably high?\"*", "verification": ""}
+ {"anchor": "joint_the_role_layer_b21_2026-10-31#validator#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "cf34b20272fe", "notes": [], "repair_identity": "", "resolution": "The leading word boundary is removed from the disagreement predicate at scripts/panel_brief_validate.py, so the field name the template prescribes -- strongest_disagreement -- now satisfies it. The right-hand boundary is kept and the section scoping is untouched, so the check is repaired rather than weakened.", "rid": "a2c020bcd88c", "ruled": "", "source": "cc1", "source_ref": "", "status": "CLOSED", "subjects": ["_section", "panel_brief_validate.py", "strongest_disagreement"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "6a18bd7974ce", "title": "The panel brief validator's disagreement check cannot match the field name the template recommends", "verbatim": "scripts/panel_brief_validate.py:697 searches the output section for r'\\bdisagree'. The field name every compliant brief uses is `strongest_disagreement`, and `\\b` does NOT match between the underscore and the `d` because an underscore is a word character. So a brief that names the field EXACTLY as bench/directives/universal/panel_brief_template.md describes it is REFUSED unless the surrounding prose happens to repeat the word with a space before it. Observed 2026-10-31 on the B21 joint brief, which listed `strongest_disagreement` as a field and was refused. The check's own comment says the field must be named 'as a FIELD in the output section, not as prose elsewhere' -- and as written it can ONLY be satisfied by prose. Proposed fix: match r'disagree' without the leading boundary, or r'(?:^|[^A-Za-z])disagree', and add a fixture naming the field with an underscore and no prose repetition.", "verification": "Verified by execution, not by reading. bench/tests/test_the_disagreement_field_is_matchable_2026-10-31.py holds 11 tests calling validate() directly: a brief naming the field as a list item is no longer refused, a brief whose output section names no disagreement IS still refused, prose outside the output section still does not count, and both of tonight joint briefs pass. 3 of 3 mutations turn it red -- restoring the leading boundary, removing the branch, and making it fire on everything. The removal mutation SURVIVED the first version because a second branch emits text containing the same word, so the assertion now matches the exact message and a test proves the 2 checks are distinguishable."}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "wr", "nid": "427b5c0f54df", "notes": [], "repair_identity": "", "resolution": "Discharged. Every annotation of his since 2026-10-01 now carries a verdict row: 522 of 522, complete coverage. The 104 the ticket names were closed across the sessions of 2026-10-30 and 2026-10-31, including the 27 of the consolidated file and the 15 of Decisions_Awaiting_You. sv is no longer blocked on this.", "rid": "e892e8862251", "ruled": "2026-10-20", "source": "chat", "source_ref": "session 2026-10-20T01:27:07+01:00", "status": "CLOSED", "subjects": ["annotation_verdicts_2026-10-17.json", "audit_his_annotations_2026-10-17"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "9f7c6bf8661d", "title": "104 of his annotations since 2026-10-01 have no verdict row, so sv stays blocked on MY work", "verbatim": "test_coverage_is_a_set_intersection_and_not_a_count_ratio reports 104 annotations in the window with no row in annotation_verdicts_2026-10-17.json. Each row needs a verdict AND the evidence that establishes it, so this is judgement work and cannot be mechanically regenerated without fabricating verdicts. It is work owed by me, not a ruling owed by him.", "verification": "Verified by execution, not by reading the ledger. scripts/read_founder_responses_2026-10-11.py returns 522 annotations in the window and experimental_notes/data/annotation_verdicts_2026-10-17.json carries a row for every one of their anchors -- 0 missing, coverage 522/522 = 1.000000, Wilson [0.992695, 1.000000], Clopper-Pearson [0.992958, 1.000000]. bench/tests/test_every_annotation_verdict_names_its_evidence_2026-10-17.py passes 16 of 16, and its coverage check is a SET intersection rather than a count ratio, so an equal number of orphan rows could not hide a gap."}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "wr", "nid": "63447866e27e", "notes": [], "repair_identity": "", "resolution": "Discharged. 0 TRACKED rows now have an unfinished entry alongside a settled ticket, measured over all 90 TRACKED rows in the verdict record. The 27 the ticket names were reconciled by the entries themselves moving to DONE or DEFERRED across 2026-10-29 to 2026-10-31 -- B50 on his option 1, R1 on his deferral, B41 to the dispatch sequence alone -- rather than by any row being edited to fit.", "rid": "24bdac21dcc1", "ruled": "2026-10-20", "source": "chat", "source_ref": "session 2026-10-20T01:27:07+01:00", "status": "CLOSED", "subjects": ["task_list_markers", "ticket_store.close"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "beda00e77364", "title": "27 annotations are TRACKED by an entry that is not done while their tickets are settled", "verbatim": "test_a_tracked_row_whose_entry_is_open_has_not_settled_its_ticket reports 27 rows whose task entry is OPEN but whose ticket has been closed. Either the entry is further along than its marker says or the ticket was closed early. Each needs reconciling individually. Work owed by me, not a ruling owed by him.", "verification": "Verified by execution. The figure is recomputed from the live record with the same 3 inputs the guard uses: the 90 TRACKED rows of experimental_notes/data/annotation_verdicts_2026-10-17.json, the entry states parsed by scripts/task_list_markers.py, and the settled set from the live ticket store -- giving 0. bench/tests/test_every_annotation_verdict_names_its_evidence_2026-10-17.py::test_a_tracked_row_whose_entry_is_open_has_not_settled_its_ticket passes, and that guard's own 2026-10-17 mutation record shows 8 rows would settle wrongly if its condition were dropped, so it is not vacuous."}
+-{"anchor": "", "blocker": "", "created": "2026-10-27T21:24:16+00:00", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "5c2b46efbb49", "notes": [], "repair_identity": "", "resolution": "ANSWERED, not built, because his question asks whether a discrepancy matters. NO, it is not significant, and it is not close. 34 of 53 = 0.641509, Wilson [0.506911, 0.756980]; 32 of 53 = 0.603774, Wilson [0.469415, 0.724106]; Fisher exact p = 0.841344, odds 1.174342, chi-square with Yates p = 0.841185, intervals overlapping across almost their whole length. The second pair: 21 of 53 = 0.396226 against 16 of 53 = 0.301887, Fisher exact p = 0.415250, also overlapping. The 2 seats differ by LESS than the width of either seat's own interval, so a deliberation decided by 34 against 32 would be a deliberation decided by noise -- and the panel's own sentence already recorded that the DIRECTION agreed. No recommendation in that round turned on the difference. ON 'NEITHER YOU NOR THE PANEL CAN RESOLVE IT': the figures are not reproducible in the form quoted, because the population moved -- 63 archived reports then against 64 now, and first_fire_rate at K=3 over the current archive gives 8 of 31, a different denominator entirely. The 53 is DATED. A snapshot difference is the leading hypothesis for the 2 seats' gap and is marked SPECULATIVE rather than asserted, because both ran the same day within 1 round of each other. What would settle it is named: re-run each seat's own preserved producer against 1 pinned snapshot. THE ACTIONABLE CONSEQUENCE is neither number: a feasibility figure quoted without its archive snapshot cannot be reproduced or compared, and both seats quoted one. A snapshot is part of the measurement when the archive IS the population.", "rid": "20e8985efec8", "ruled": "", "source": "chat", "source_ref": "his annotations of 2026-10-27", "status": "CLOSED", "subjects": ["what_should_the_quiet_run_be_2026-10-25"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "d0472a2c3a05", "title": "Resolve the 34/53 against 32/53 feasibility disagreement between CC1 and the fable seat", "verbatim": "So there is an unresolved discrepancy, that neither you, or the other panel models can resolve? Is it significant to our deliberations on this topic? If so how?", "verification": "Verified by execution. Producer: scripts/is_the_feasibility_discrepancy_significant_2026-10-31.py, which answers --help without running the measurement, computes both comparisons with Fisher exact from scipy cross-checked against a chi-square with Yates correction, Wilson intervals from statsmodels cross-checked against Clopper-Pearson, and the p-value echoed in mpmath at 40 digits (agreement asserted in the output). It also IMPORTS bench/what_should_the_quiet_run_be_2026-10-25.py and calls its own collect() and first_fire_rate() rather than restating them, so the today-against-then denominators come from the panel's own instrument."}
+-{"anchor": "chat#2026-10-30T11:12:19+00:00#8f1182f6", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "qs", "nid": "887fecb9f24e", "notes": [], "repair_identity": "", "resolution": "ANSWERED, not built, because his question asks whether a discrepancy matters. NO, it is not significant, and it is not close. 34 of 53 = 0.641509, Wilson [0.506911, 0.756980]; 32 of 53 = 0.603774, Wilson [0.469415, 0.724106]; Fisher exact p = 0.841344, odds 1.174342, chi-square with Yates p = 0.841185, intervals overlapping across almost their whole length. The second pair: 21 of 53 = 0.396226 against 16 of 53 = 0.301887, Fisher exact p = 0.415250, also overlapping. The 2 seats differ by LESS than the width of either seat's own interval, so a deliberation decided by 34 against 32 would be a deliberation decided by noise -- and the panel's own sentence already recorded that the DIRECTION agreed. No recommendation in that round turned on the difference. ON 'NEITHER YOU NOR THE PANEL CAN RESOLVE IT': the figures are not reproducible in the form quoted, because the population moved -- 63 archived reports then against 64 now, and first_fire_rate at K=3 over the current archive gives 8 of 31, a different denominator entirely. The 53 is DATED. A snapshot difference is the leading hypothesis for the 2 seats' gap and is marked SPECULATIVE rather than asserted, because both ran the same day within 1 round of each other. What would settle it is named: re-run each seat's own preserved producer against 1 pinned snapshot. THE ACTIONABLE CONSEQUENCE is neither number: a feasibility figure quoted without its archive snapshot cannot be reproduced or compared, and both seats quoted one. A snapshot is part of the measurement when the archive IS the population.", "rid": "a01748535063", "ruled": "", "source": "founder-chat", "source_ref": "", "status": "CLOSED", "subjects": ["feasibility_disagreement_2026-10-27"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "0c183ae8a864", "title": "Is the 34-against-32 feasibility discrepancy significant to the deliberations, and if so how?", "verbatim": "So there is an unresolved discrepancy, that neither you, or the other panel models can resolve? Is it significant to our deliberations on this topic? If so how? -- recorded as a QUESTION because it is his words asking 3 things, and his ruling of 2026-10-19 is that a question carries its own kind since its resolution is an ANSWER, not a build. It currently sits in the register as pf:d0472a2c3a05, which is the wrong kind for it; the separate pf:798cb50b9126 holds the assistant's own proposal about the same discrepancy and is a legitimate proposed fix. Disposing of the mis-kinded pf is left to him rather than altered unilaterally.", "verification": "Verified by execution. Producer: scripts/is_the_feasibility_discrepancy_significant_2026-10-31.py, which answers --help without running the measurement, computes both comparisons with Fisher exact from scipy cross-checked against a chi-square with Yates correction, Wilson intervals from statsmodels cross-checked against Clopper-Pearson, and the p-value echoed in mpmath at 40 digits (agreement asserted in the output). It also IMPORTS bench/what_should_the_quiet_run_be_2026-10-25.py and calls its own collect() and first_fire_rate() rather than restating them, so the today-against-then denominators come from the panel's own instrument."}
+
+### fable:attempt-1:experimental_notes/Morning_Report_2026-10-31.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-10-31.md	2026-10-31 05:34:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5gg4x743/repo/experimental_notes/Morning_Report_2026-10-31.md	2026-10-31 04:29:25
+@@ -48,24 +48,6 @@
+ 
+ 1 boundary recorded rather than crossed. Residual risk only advances on a fix that passes the threshold, so a run of rejections leaves it frozen. The model's own form handles a poor fix by barely moving it, which suggests the skip is wrong, but changing it alters admissibility accounting across every archived comparison.
+ 
+-## PART 4A. 3 RESULTS THAT LANDED AFTER THE SECTIONS ABOVE WERE WRITTEN
+-
+-Appended 2026-10-31 05:33 GMT.
+-
+-**The proof polarity question went to a joint round and both seats moved.** Both now answer confirmed but latent. The inversion is established from both directions: a held proof scores 0.0 and a failed proof scores 1.0, which is the sign exactly backwards, and the second seat confirmed it by building 2 real proof artefacts and driving them through the real verification step, having entered the round saying there was no gap at all.
+-
+-**They now disagree about how far it reaches, and both of them executed, so the disagreement is kept rather than resolved.** The first seat measures the inversion as live in 18 of 65 archived registries for reported convergence and 0 for release safety, with the blocker count holding 3 of 3 under execution. The other refutes the amplification outright: 0 archived rounds would have converged earlier, because the severity channel sits behind a flag never armed in any archived run, and the pathway the first seat named does not exist in the code. I do not adjudicate between them, because a model vote is not evidence in this project.
+-
+-**What they agree on narrows your decision usefully.** The repair is to make the sense explicit rather than split the channel, and the second seat showed that the version the first seat shipped covers only half of it: the verdict field has 2 deciding consumers, 1 for severity and 1 for status, and only the severity consumer was guarded. Its sentence is the sharpest either wrote: a declaration is only a repair if every deciding consumer honours it. The first seat states plainly that its own fix touches the severity ruler you have defended 4 times, so that half is yours. The second states that its fix touches neither the decay curve nor the convergence gate and adds a single branch entered only when an entry declares proof polarity. So the status half may be buildable without touching the ruler, and the severity half needs you.
+-
+-**The first seat also corrected its own stated mechanism, which is worth more than the verdict.** Its original claim routed the hazard through the effective severity function. Driving the real gate end to end showed that the series the gate reads takes the asserted number and never calls that function at all. So the route it named was not the route, and it said so.
+-
+-**The 3 retired briefs no longer read as a backlog.** You were right that panel requests had simply not been done, and the census that proved it is unchanged. What it could not express was a brief you had retired, so 3 superseded briefs kept appearing as owed work. Each now carries a marker naming your ruling and its successor, nothing is deleted, and both instruments report 6 unrun and 3 retired where they reported 9 unrun. The guard against the obvious abuse is that a retirement must name a successor that really exists, or the marker becomes a way to make a backlog disappear by writing files.
+-
+-**A defect in the brief checker is fixed and closed.** It required the output section to name a disagreement, searching for the word with a leading word boundary. The field name the template itself prescribes joins the word to a preceding term with a connecting character, and a word boundary does not match at that join, so a brief naming the field exactly as prescribed was refused unless the surrounding prose happened to repeat the word. Its own message demanded a field and not prose, and as written it could only be satisfied by prose.
+-
+-2 of my own guards went green with their defect restored tonight, and both are now red. That keeps happening in one specific way: a test that recomputes a decision instead of calling it will always agree with itself. In both cases the fix was to extract the decision so the test could reach it.
+-
+ ## PART 5. WHAT IS LEFT, IN YOUR ORDER
+ 
+ **The joint round for the proof question is owed and is the next dispatch.** The severity review you ordered is written and waits behind it. After those, the 2 deferred clusters and the zero plant control, which stays last by your ruling.
+
+### fable:attempt-1:experimental_notes/Morning_Report_2026-10-31.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-10-31.txt	2026-10-31 05:34:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5gg4x743/repo/experimental_notes/Morning_Report_2026-10-31.txt	2026-10-31 04:29:25
+@@ -53,25 +53,6 @@
+ 1 boundary recorded rather than crossed. Residual risk only advances on a fix that passes the threshold, so a run of rejections leaves it frozen. The model's own form handles a poor fix by barely moving it, which suggests the skip is wrong, but changing it alters admissibility accounting across every archived comparison.
+ 
+ 
+-PART 4A. 3 RESULTS THAT LANDED AFTER THE SECTIONS ABOVE WERE WRITTEN
+-
+-Appended 2026-10-31 05:33 GMT.
+-
+-The proof polarity question went to a joint round and both seats moved. Both now answer confirmed but latent. The inversion is established from both directions: a held proof scores 0.0 and a failed proof scores 1.0, which is the sign exactly backwards, and the second seat confirmed it by building 2 real proof artefacts and driving them through the real verification step, having entered the round saying there was no gap at all.
+-
+-They now disagree about how far it reaches, and both of them executed, so the disagreement is kept rather than resolved. The first seat measures the inversion as live in 18 of 65 archived registries for reported convergence and 0 for release safety, with the blocker count holding 3 of 3 under execution. The other refutes the amplification outright: 0 archived rounds would have converged earlier, because the severity channel sits behind a flag never armed in any archived run, and the pathway the first seat named does not exist in the code. I do not adjudicate between them, because a model vote is not evidence in this project.
+-
+-What they agree on narrows your decision usefully. The repair is to make the sense explicit rather than split the channel, and the second seat showed that the version the first seat shipped covers only half of it: the verdict field has 2 deciding consumers, 1 for severity and 1 for status, and only the severity consumer was guarded. Its sentence is the sharpest either wrote: a declaration is only a repair if every deciding consumer honours it. The first seat states plainly that its own fix touches the severity ruler you have defended 4 times, so that half is yours. The second states that its fix touches neither the decay curve nor the convergence gate and adds a single branch entered only when an entry declares proof polarity. So the status half may be buildable without touching the ruler, and the severity half needs you.
+-
+-The first seat also corrected its own stated mechanism, which is worth more than the verdict. Its original claim routed the hazard through the effective severity function. Driving the real gate end to end showed that the series the gate reads takes the asserted number and never calls that function at all. So the route it named was not the route, and it said so.
+-
+-The 3 retired briefs no longer read as a backlog. You were right that panel requests had simply not been done, and the census that proved it is unchanged. What it could not express was a brief you had retired, so 3 superseded briefs kept appearing as owed work. Each now carries a marker naming your ruling and its successor, nothing is deleted, and both instruments report 6 unrun and 3 retired where they reported 9 unrun. The guard against the obvious abuse is that a retirement must name a successor that really exists, or the marker becomes a way to make a backlog disappear by writing files.
+-
+-A defect in the brief checker is fixed and closed. It required the output section to name a disagreement, searching for the word with a leading word boundary. The field name the template itself prescribes joins the word to a preceding term with a connecting character, and a word boundary does not match at that join, so a brief naming the field exactly as prescribed was refused unless the surrounding prose happened to repeat the word. Its own message demanded a field and not prose, and as written it could only be satisfied by prose.
+-
+-2 of my own guards went green with their defect restored tonight, and both are now red. That keeps happening in one specific way: a test that recomputes a decision instead of calling it will always agree with itself. In both cases the fix was to extract the decision so the test could reach it.
+-
+-
+ PART 5. WHAT IS LEFT, IN YOUR ORDER
+ 
+ The joint round for the proof question is owed and is the next dispatch. The severity review you ordered is written and waits behind it. After those, the 2 deferred clusters and the zero plant control, which stays last by your ruling.
+
+### fable:attempt-1:resources/MEMORY_EXCLUSIONS.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/MEMORY_EXCLUSIONS.md	2026-10-31 05:44:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5gg4x743/repo/resources/MEMORY_EXCLUSIONS.md	2026-10-31 05:25:42
+@@ -8,7 +8,7 @@
+ record is honest about the shape of what is withheld, not only what is
+ shown.
+ 
+-## Accounting (counted 2026-10-31 05:44 GMT)
++## Accounting (counted 2026-10-31 05:11 GMT)
+ 
+ The source index lives privately at
+ `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
