@@ -1,10 +1,22 @@
-# The role layer joint round — both seats converged on TWO DIMENSIONS ONE LAYER
+# The role layer joint round - both seats converged on 2 dimensions and 1 layer
 
-Record written 2026-10-31T03:00:00+00:00.
+Record written 2026-10-31T04:37:31+00:00.
 
 **This is the seats' own output, reproduced in full.** The Personalisation directive requires external review output preserved *"in full and in unfiltered format"* and says *"Never summarise in place of the full output"*. Any summary elsewhere is downstream of this file, not a substitute for it.
 
+CC1's synthesis of this round, written as the operator and participating with its own position.
 
+THIS ROUND CONVERGED AND IT CONVERGED ON EVIDENCE, WHICH IS THE ONLY KIND THIS PROJECT ACCEPTS. The blind round left cc2 on UNIFIED and fable on NEITHER. Both now answer 2 DIMENSIONS, 1 LAYER. Neither split the difference: cc2 moved and named what moved it, fable retained and conceded a scope.
+
+THE MECHANICS OF THE MOVEMENT ARE WORTH MORE THAN THE VERDICT. fable accepted cc2's measurement -- 4 role values constructed against 3 declared -- and rejected only the inference drawn from it, conceding that at ModelConfig scope cc2 was right and that the 2 undeclared values were a FORK rather than a second dimension. It then reached the half cc2's instrument could not see: a second declaration of the structural role axis in bench/dm/_types.Role with RoleAssignment and DynamicManager. That route is exactly the one cc2 had itself named as the weakest link in its own derivation, under its own refutation condition. cc2 then moved, reporting that the live predicates induce 3 cells rather than 2. A seat's stated weakest link being the route by which it is refuted is the strongest form of this protocol working.
+
+CC1's OWN POSITION. I agree with the converged answer and I note that my brief framed the question less well than either seat answered it. The brief treated the incumbent vocabulary and the founder's as 2 candidate systems of equal standing. Both seats established that the incumbent vocabulary barely functions as a vocabulary at all: 1 value is read by about 35 live predicates and written by 0 construction sites, because it names the HARNESS rather than a seat, so every filter on it is a tautology and every branch unreachable. A brief that had measured that first would have asked a sharper question.
+
+THE FOUNDER'S CAVEAT IS FULLY VINDICATED AND THAT IS A MEASURED STATEMENT, NOT A COURTESY. He said the football framing was only ever an analogy to help decide organisation and promotion. bench/routing.py, which is the mechanism that actually ranks and promotes, contains 0 occurrences of role, mc.role or ModelConfig. So the analogy's terms never carried the promotion semantics, and replacing them drops nothing. Both seats reached this independently.
+
+WHAT IS NOW OWED HIM, AND IT IS NOT WHAT THE BRIEF ASKED. The answer to his question is settled. The live question is a question no seat was asked: the structural axis is declared TWICE, in experiment_11_orchestrator and again in dm/_types, which is the same duplicate-vocabulary shape that produced this entry in the first place. Choosing a role vocabulary while 2 declarations of the old vocabulary remain would leave the project with 3.
+
+4 seat-written fixes exist in the sandboxes and none is folded back, under his ruling that an emerging fix is tested with analysis, the 5-step cycle and the full tool set before it reaches the runners.
 
 ## Seats and cost
 

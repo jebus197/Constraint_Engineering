@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 30 October 2026 23:37 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 31 October 2026 04:39 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -24,6 +24,26 @@ session loss, compaction event, or fresh start with a new model instance.
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
 
 ---
+
+## SESSION STATE — 2026-10-31 04:38 GMT (READ THIS FIRST)
+
+**COMMIT `39a26603` on `sim/shakedown-2026-09-29`, pushed.**
+
+**OVERNIGHT WORK ON HIS INSTRUCTION TO CARRY ON WHILE HE SLEPT.** Deliverable: `experimental_notes/Morning_Report_2026-10-31.txt` + `.md`, 0 lint findings on both, mirrored byte-identically to `~/Desktop/CDSFL_tts/`. It leads with 4 corrections because 4 of them change decisions he already made.
+
+**★ THE 4 CORRECTIONS, ALL MINE.** (1) **The gate cost was understated by a factor of about 300.** He approved adding the unreached test files after being told it was about 6 per cent. True of 6 guards; those 6 are **75 of 12,048 unreached tests, 0.623 per cent**. Adding everything takes the gate **312 s -> 5,634 s, a factor of 18.05**, because it makes the gate the full board; the unreached set is also **2.26x slower per test**. Scope narrowed to the 29 guards written since 2026-10-29: 440 tests in 71.13 s from `python3 -m pytest <the 29 files> -q -p no:randomly`, and the real enlarged gate then measured **2,037 passed in 379.64 s** against a 383 s prediction, from `sh hooks/pre-commit` whose GUARDS list and cost are produced by `scripts/precommit_gate_cost_2026-09-10.py`. Reach 73 of 731 -> **102 of 734**. **HIS TO ACCEPT OR REFUSE.** Producer: `scripts/what_adding_every_unreached_test_file_really_costs_2026-10-31.py`. (2) **C1: "0 of 6 reports record the risk score" was 6 of 6** — I searched for a report-level field where it is per-entry `sk_result.R_new`. The conclusion survives on a better reason: **all 106 values in those runs are exactly 0.500000**, no variance, so the prerequisite is a RUN not a field. (3) **The B50 repair breaks no 7th assertion**: 73 passed before, 73 after. (4) **1 board failure remained, not 3**, and it was accusing **3 of my own producers** for printing truncated listings without stating the remainder.
+
+**★ `disc` IS THE DISCUSSION LABEL (his 3rd spelling that night) AND THE RENAME FOUND A LIVE DEFECT.** `ds` and `dis` are kept as legacy aliases pointing FLAT at `disc`, each carrying 93 rows. 92 discussion tickets live, 0 anchors with 2 kinds. **The defect: the legacy normalisation ran only on the TRAILING marker path**, so an OWN-LINE marker came back raw — and own-line is what 59 of his markers use. Found because a mutation removing `disc` from the own-line reader left the guard GREEN: that reader had 0 tests. Guard 71 tests, **19 of 19 mutations red** per `scripts/the_ds_vocabulary_mutations_2026-10-30.py`.
+
+**★ `R_k` NOW ACCUMULATES ACROSS PASSES, which is his definition of severity.** A per-run, per-flaw-class carry as a 4th precedence tier, below a model estimate and above both priors. Round 1 byte-identical; `sk_carry_rk_across_rounds=False` reproduces every archived run. Guard 15 tests on the PRODUCTION function, **7 of 7 mutations red** — and 3 survived the first version, each exposing a hollow test of mine. It also broke a guard that was RIGHT (`test_off_path_is_the_uniform_prior`): `rk0_source` now follows the convention the memory path already used. Blast radius **768 passed, 6 skipped** across every suite naming `R_old` or `sk_result`, reproduced by `python3 -m pytest bench/tests/test_rk_carries_forward_across_rounds_2026-10-31.py bench/tests/test_immune_memory_consumption.py bench/tests/test_ouroboros_loop_close.py bench/tests/test_channel_boundary.py -q -p no:randomly` for the core of it.
+
+**★ 2 FREE PANELS RAN, 0 PAID SEATS.** **B21 converged on evidence**: blind round split UNIFIED against NEITHER, joint round both at **2 DIMENSIONS, 1 LAYER**, cc2 moving because fable reached the half cc2's own instrument could not — a second declaration of the structural axis in `bench/dm/_types.Role` — through the exact route cc2 had named as its weakest link. **His caveat is measured, not granted**: `bench/routing.py` has **0** occurrences of `role`. **B22 refuted my own brief's premise.** Both seats: the harness verification step EXISTS (`falsifier_verify.reverify_falsifier`). cc2's real finding is **POLARITY** — a proof and a falsifier are the same artefact under opposite terminal conventions sharing 1 field with implicit sense, so routing a proof through `spec_verification_factor` **inverts severity and manufactures apparent convergence**. **THAT AWAITS HIS RULING** because it touches the severity ruler he has defended 4 times.
+
+**ALSO BUILT:** the non-curing closures as a named set of **85 identities** (not a count: 2 runs can report 23 and share 0 findings), 2 instruments agreeing at 23 of 124; `CHOSEN_TARGET = 0.02` for demotion, with it stated plainly that this changes nothing today because the rule is wired to nothing.
+
+**★ A TOOLING DEFECT FOUND BY BEING BITTEN BY IT.** `make_panel_full_record` reads its context from **stdin**. With stdin open and empty it blocks for ever — 2 invocations hung 51 and 14 minutes — and the ones that appeared to succeed had stdin closed by a preceding heredoc, **so they wrote an EMPTY synthesis**. All 3 records are regenerated with real synthesis and 0 lint findings.
+
+**OWED HIM, in his order:** the polarity ruling; whether to build the 1 role layer AND what to do about the structural axis being declared twice (a question no seat was asked); whether the narrowed gate scope stands; whether severity should gate convergence now that it can (it reaches 0.137743 after 10 carried passes against a 0.366667 floor before); `qs:8629ab6e03e8` on comparable-against-identical runs; and the frozen-carry boundary on a rejected pass. **NEXT DISPATCH:** the B22 joint round, then the severity review (B53).
 
 ## SESSION STATE — 2026-10-31 00:07 GMT (READ THIS FIRST)
 

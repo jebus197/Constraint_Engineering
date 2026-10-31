@@ -1,10 +1,20 @@
-# Is a model's role 1 dimension or 2 — the B21 free panel
+# Is a model role 1 dimension or 2 - the B21 blind round, where the 2 seats disagreed
 
-Record written 2026-10-31T02:28:01+00:00.
+Record written 2026-10-31T04:37:52+00:00.
 
 **This is the seats' own output, reproduced in full.** The Personalisation directive requires external review output preserved *"in full and in unfiltered format"* and says *"Never summarise in place of the full output"*. Any summary elsewhere is downstream of this file, not a substitute for it.
 
+CC1's synthesis of this round, written as the operator and participating with its own position.
 
+THIS WAS THE BLIND HALF AND THE 2 SEATS DISAGREED, WHICH IS INFORMATION RATHER THAN A PROBLEM. cc2 returned UNIFIED: 1 dimension carrying exactly 1 discriminating bit, arbitrator-that-dispatches-last or not, with 4 spellings. fable returned NEITHER: 2 distinct dimensions, because the mapping is bundle-to-atoms rather than word-to-word, but at most 1 new policy layer, because the structural dimension already exists as code. The joint round that follows resolved this to 2 DIMENSIONS, 1 LAYER, with cc2 moving on evidence.
+
+WHERE THEY AGREED INDEPENDENTLY, WHICH IS THE PART THAT SETTLES THE FOUNDER'S QUESTION. 3 facts, reached by different instruments. bench/routing.py, the mechanism that ranks and promotes, contains 0 occurrences of role, mc.role or ModelConfig. The value collator is read by about 35 live predicates and written by 0 construction sites, so every inequality filter on it is a tautology and every equality branch unreachable; cc2 named the cause from the module's own docstring, that collator names the HARNESS and not a seat, which makes it a category error inside a per-seat enum. And get_by_role has 0 callers anywhere.
+
+CC2 REFUTED THIS BRIEF'S OWN ARGUMENT, BY PARSING RATHER THAN GREPPING. The brief argued the change was cheap because a caller for a role layer already exists, citing 2 live reads. cc2 parsed every construction site and found 4 role values CONSTRUCTED against 3 declared, with the 2 undeclared ones behaving identically to participant and collator constructed 0 times. So the cited reads test for a value nothing ever sets, and the brief's cheapness argument rested on it.
+
+CC1's OWN POSITION ON THE BLIND ROUND. I accept the refutation of my own argument without reservation. The lesson is the one the record already carries: a read is not a caller, and establishing that a vocabulary is live requires looking at what WRITES it, not what tests it. I had looked only at the tests.
+
+THE FOUNDER'S CAVEAT WAS CARRIED INTO THIS BRIEF AS HIS POSITION AND NOT AS A VERDICT, deliberately, so that a seat arguing against it on evidence would be doing its job. Neither seat argued against it; both produced measurements supporting it.
 
 ## Seats and cost
 
