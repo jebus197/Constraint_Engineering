@@ -145,6 +145,12 @@ The brief at bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md validates at exit
 
 **Needs your decision — IRREVERSIBLE: one of his 3 standing categories: a git ref, money, or the sealed key store.** Not blocking; nothing on the list waits on it.
 
+## B21 awaits his go-ahead to build the single role layer, and a decision on the structural axis being declared twice
+
+*Parked 2026-10-31T04:48:05+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (16)

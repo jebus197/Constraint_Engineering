@@ -94,6 +94,38 @@ def entry_states() -> dict[str, str]:
     return {e.ident: (e.state or "?") for e in tlm.parse_entries(TASK_LIST)}
 
 
+#: ★ ONE SPELLING OF THE CLASSIFICATION, extracted 2026-10-31. It lived inside
+#: `main`, so a test could not call it and had to RESTATE it -- and a
+#: reimplementation agrees with itself: mutating the census's own branch left
+#: the guard GREEN twice. A test that cannot call the decision is not testing
+#: the decision.
+def classify(dirs):
+    """Partition brief directories into (unrun, ran, retired).
+
+    A brief with no seat reply and no sandbox harvest never ran, which is the
+    measurement that corrected the record on 2026-10-30. A brief carrying a
+    `RETIRED.md` was superseded on his ruling and is not owed work. Nothing is
+    deleted and the retirement names its successor, so the 2 cases are
+    distinguishable without weakening the first.
+    """
+    unrun, ran, retired = [], [], []
+    for d in dirs:
+        seats = seat_replies(d)
+        nh = harvest_count(d)
+        primary, mentions = entries_for(d)
+        row = {"name": d.name, "seats": seats, "harvest": nh,
+               "entry": primary, "mentions": mentions,
+               "brief_mtime": (d / "BRIEF.md").stat().st_mtime,
+               "retired": (d / "RETIRED.md").is_file()}
+        if row["retired"] and not seats and nh == 0:
+            retired.append(row)
+        elif not seats and nh == 0:
+            unrun.append(row)
+        else:
+            ran.append(row)
+    return unrun, ran, retired
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="Census every prepared panel brief and say which never ran. "
@@ -104,15 +136,7 @@ def main(argv: list[str] | None = None) -> int:
 
     dirs = brief_dirs()
     states = entry_states()
-    unrun, ran = [], []
-    for d in dirs:
-        seats = seat_replies(d)
-        nh = harvest_count(d)
-        primary, mentions = entries_for(d)
-        row = {"name": d.name, "seats": seats, "harvest": nh,
-               "entry": primary, "mentions": mentions,
-               "brief_mtime": (d / "BRIEF.md").stat().st_mtime}
-        (unrun if (not seats and nh == 0) else ran).append(row)
+    unrun, ran, retired = classify(dirs)
 
     print("=" * 74)
     print("PREPARED PANEL REVIEWS THAT NEVER RAN")
@@ -120,6 +144,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"\ndirectories carrying a BRIEF.md            : {len(dirs)}")
     print(f"with no seat reply and no sandbox harvest  : {len(unrun)}")
     print(f"with at least one                          : {len(ran)}")
+    print(f"RETIRED on his ruling, so not owed work    : {len(retired)}")
+    for r in sorted(retired, key=lambda x: x["brief_mtime"]):
+        print(f"   {r['name']}")
     print("   Census of the whole tree, so no interval is attached.")
 
     print(f"\nTHE {len(unrun)} THAT NEVER RAN, newest first:")

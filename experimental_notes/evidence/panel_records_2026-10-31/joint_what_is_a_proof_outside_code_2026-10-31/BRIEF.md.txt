@@ -1,0 +1,454 @@
+# JOINT PANEL BRIEF — what a proof is outside code, round 2. YOU BOTH REFUTED THE BRIEF.
+
+**This is the JOINT half of `what_is_a_proof_outside_code_b22_2026-10-30`.** That
+round was BLIND. Both seats have answered, both refuted the brief's central
+premise, and both replies are reproduced in full below so this round is exposure
+rather than a pointer at a file.
+
+**NO COMPELLED CONVERGENCE.** A seat that reads the other and does not move has
+done its job, provided it names the specific claim it rejects. A seat that moves
+has also done its job, provided it names what moved it. Splitting the difference
+without engaging a claim is the one unacceptable answer.
+
+## THE BRIEF WAS WRONG AND THAT IS SETTLED — DO NOT SPEND THIS ROUND ON IT
+
+The brief asserted that step 4 of the founder's pipeline, the harness
+re-verifying a printed proof, *"is the one that does not exist yet"*. Both of you
+established by execution that it does. fable traced steps 1 to 3 onto the
+model's standing runnable-falsifier obligation and step 4 onto
+`bench/falsifier_verify.reverify_falsifier`, which decided every artefact it was
+given. cc2 agreed the machinery is present. **CC1 wrote that premise and
+withdraws it.** The reason it looked true is recorded so neither of you need
+re-derive it: I searched for a step that reads a PROOF, and `reverify_falsifier`
+is named for the FALSIFIER direction, so not finding the word I concluded the
+mechanism was absent.
+
+## WHERE YOU ACTUALLY DIFFER, WHICH IS NARROWER THAN YOUR LABELS
+
+fable answered the question AS ASKED — is step 4 missing — and returned NO GAP.
+cc2 answered the question the founder was reaching for — can the pipeline carry
+a proof SAFELY today — and returned GAP ELSEWHERE. No fact appears to be in
+dispute between you. **This round must establish whether that reading is right,
+or whether there is a real disagreement the labels are hiding.**
+
+## CC2's FINDING IS THE SUBJECT OF THIS ROUND
+
+Its claim, which fable has not yet seen: a proof and a falsifier are the same
+artefact under OPPOSITE TERMINAL CONVENTIONS — a falsifier succeeds by
+demonstrating a defect, a proof succeeds by failing to — they share one field,
+and the sense is implicit in the field rather than carried by it. So routing a
+proof through `spec_verification_factor` INVERTS severity, and cc2 reports that
+across rounds this MANUFACTURES APPARENT CONVERGENCE.
+
+**THE 4 THINGS THIS ROUND MUST ANSWER.**
+
+  **Q1. Is the polarity claim correct?** fable: attack it directly. Construct a
+  proof artefact, route it through `spec_verification_factor`, and report what
+  severity comes out and what the gate then does. If the inversion does not
+  occur, say so with the execution that shows it. cc2: state the single
+  strongest reason your own claim might be wrong, and test that reason.
+
+  **Q2. How far does it reach?** cc2 reports apparent convergence across
+  rounds. Quantify it: how many archived rounds would have converged earlier,
+  and by how many rounds. If the answer is 0 archived rounds, the hazard is
+  real but latent, and that distinction matters for how urgently it is repaired.
+
+  **Q3. Which repair?** 2 candidates. (a) Make the SENSE EXPLICIT — add a field
+  naming the convention, leaving the existing verdict field untouched. (b) SPLIT
+  the channel — separate proof verdicts from falsifier verdicts. CC1's position
+  is (a), because (b) changes every archived comparison while (a) changes none,
+  and because the additive standard prefers the form that removes nothing. Argue
+  for whichever you judge right and name what the other loses.
+
+  **Q4. Does any of this touch gamma or the convergence gate directly?** The
+  founder has defended the severity ruler against 4 separate proposals and gamma
+  is load-bearing by standing directive. State plainly whether your repair
+  touches either, because an answer that quietly does is unusable to him.
+
+## REQUIRED — use the harness
+
+Run things. An answer that re-reads round 1's figures without executing anything
+has not added a round. Both of you wrote fixes in round 1: say whether the other
+seat's fix composes with yours or conflicts with it, established by applying
+both.
+
+## REQUIRED OUTPUT SHAPE
+
+- `verdict` — one of: POLARITY CONFIRMED / POLARITY REFUTED / CONFIRMED BUT
+  LATENT (state the reach) / TERMINOLOGICAL ONLY
+- `moved` — did the other seat's reply change your position? yes or no, and
+  which specific claim did or did not move you
+- `reach` — your answer to Q2, with the archived count
+- `repair` — (a) or (b), and what the other loses
+- `touches_gamma_or_the_gate` — yes or no, stated plainly
+- `reasoning` — naming every instrument you ran
+- `fix` — the path written in the sandbox tree, and what it changes
+- `falsifier` — the falsifier you wrote, the command, and its executed output
+- `strongest_disagreement` — your strongest disagreement with this brief's own
+  framing, stated as a field even if your verdict agrees with it
+
+## REQUIRED — termination
+
+Stop when a further pass produces no new above-threshold findings. Report how
+many passes you ran and what the last one added. Disagreement with the other
+seat, and with this brief, is preserved as information.
+
+---
+
+# ROUND 1 REPLY — SEAT cc2, REPRODUCED IN FULL AND VERBATIM
+
+All instruments run, fix delivered and falsified bidirectionally.
+
+---
+
+## `verdict`
+
+**GAP ELSEWHERE.** Step 4 is not missing and the verdict vocabulary is not missing. The gap is in the **polarity of the verdict channel feeding `spec_verification_factor`**: a proof and a falsifier are the same artefact under opposite terminal conventions, they share one field, and the sense is implicit. Routing a proof through it inverts severity — and, measured across rounds, **manufactures apparent convergence**.
+
+## `reasoning`
+
+**Q1 — what a proof is, per field.** Three, with the tool and the call:
+
+| Field | Proof artefact | Verifier | Call |
+|---|---|---|---|
+| Chemistry / metrology | A quantity with its unit and combined standard uncertainty, derived from a declared budget | `pint` + `uncertainties` | `Q(ufloat(m,u),'g')/Q(ufloat(M,u),'g/mol')/Q(ufloat(V,u),'mL') → .to('mol/L')`, read `.magnitude.std_dev` |
+| Physics (dimensional) | A dimensional-consistency claim | `pint` | `.dimensionality` equality — ran it: `[substance]/[length]**3` |
+| Statistics | A distributional claim | `statsmodels`/`scipy` — already wired at `immune_agents.py:1339` |
+
+These are not one kind of object and they do not share a verifier, as the brief says. But they **do** share a *container*: a script that opens the artefact by path, computes, and terminates with a machine-readable outcome.
+
+**Q2 — the harness's verification step.** It already exists, twice, and refutation condition 1 substantially **holds**:
+
+- `falsifier_verify.reverify_falsifier` (`bench/falsifier_verify.py:1647`) re-runs a model-authored script in a confined sandbox and decides itself. Executed against all five prose fixtures: **CONFIRMED 5/5** (SM-08, ST-05, CM-06, AL-03, NA-05). Five fields, re-run, decided.
+- `immune_agents._specialist_b_cell_dispatch` already runs the real STEM tools — sympy, z3, pint, astropy, rdkit, `Bio.Seq` — in a tools-equipped child, live in the runner. But its input is `tf.extracted_claim`, a **regex-scraped substring of a finding's description**. It never reads the model's derivation and never reads the model's tool output. So it is a first-pass verification of a claim, not a re-verification of a proof.
+
+What makes a printed proof re-runnable is the container above. It excludes no field in Q1.
+
+**Q3 — when the tools cannot decide: NO new vocabulary.** `ERROR` is already defined as "the instrument could not be trusted to decide… never an auto-CONFIRM; the runner re-asks or escalates" (`falsifier_verify.py:1666`). `UNTOOLABLE` is "nothing to re-run". `SK_ESCALATE` is the repair-side equivalent. Escalation is sufficient; the brief's framing that a distinct outcome might be needed is **refuted by execution** — my fix adds zero verdict strings.
+
+**Q4 — yes, severity changes, and it inverts.** This is the finding. `spec_verification_factor` reads one field whose convention is implicit. A **correct** proof exits cleanly → `reverify_falsifier` returns `"REFUTED"` → V=0.0 → `effective_severity` 0.85 → **0.0**. A correct proof annihilates the finding. The inverse is worse: a proof whose own arithmetic slips raises `AssertionError` → `"CONFIRMED"` → V=1.0 → full severity awarded **on the strength of the model's own mistake**.
+
+The derivation that fixes it: re-runnability forces any verification script to (i) open the artefact, (ii) compute with tools, (iii) terminate on the comparison. A falsifier adopts *failure ⇒ defect real*; a proof adopts *clean exit ⇒ result holds*. **They differ in one bit.** So a proof needs no new runner — only a declared polarity and a landing place whose polarity matches. That place exists: a proof is a **repair-side** object, and the S_k tristate is already *clean ⇒ good*.
+
+## `instrument_results`
+
+**`S_k` — matched the brief's expectation.**
+```
+compute_sk(fix_text='PROOF: …', source=<MET-12-REF-01.md>, source_path=…)
+→ tristate=NO_SCORE  sk=0.0  A=0.0  E=0.0
+  kind=prose  reason='S_k is defined over Python source… Resolution for this
+  target runs through the falsifier path.'
+```
+Confirmed: the measure that decides admissibility is silent exactly where a printed proof arrives. The brief's inference from this is right, and it is the hole.
+
+**`severity` — matched, then exceeded.** Pre-fix, every non-`{CONFIRMED,REFUTED}` string collapses to 0.5 — `PROOF_VERIFIED`, `VERIFIED`, `UNTOOLABLE`, `HIL` and a missing verdict are all indistinguishable at V=0.5. That is the brief's expectation. The *collision* is worse than the collapse, and the brief did not anticipate it: proof outcomes don't land in the 0.5 bucket, they land in the recognised strings, inverted.
+
+**`gamma` — did not match; the result is more consequential than the brief expects.**
+```
+_estimate_gamma([2,1,1,0]) = 0.4652  gate(>=0.30)=True  "Strong depletion — confirms state-based closure"
+_estimate_gamma([4,3,2,1]) = 0.3247  gate(>=0.30)=True  "Moderate depletion — consistent with PoC convergence"
+```
+Four rounds, critical novelty `(4,3,2,1)` of which `(2,2,1,1)` are proof-bearing at asserted 0.85. Pre-fix those are annihilated to 0.0, drop below critical, and vanish from the series. **Annihilating them makes gamma look better** — 0.4652 and a "strong depletion" band versus 0.3247 and "moderate". The inversion does not merely mis-score one finding; it flatters the depletion estimate and reports closure it has not earned. That is §10 category 3, verification-integrity corruption, and it is what puts this above threshold.
+
+**Tools (Instrument 4) — chemistry, run for real.**
+```
+pint + uncertainties:  c = 0.10053+/-0.00013 mole/liter ; dimensionality [substance]/[length]**3
+combined rel u = 0.1269 per cent | RSS 0.1269 | LINEAR 0.1647 | document CM-06 quotes 0.165
+```
+CM-06 claims root-sum-of-squares and quotes the **linear sum**. Second falsifier, computed with Wolfram Language (local Wolfram Engine via `wolframscript`, exit 0, no `Name::tag`, no `$Failed`): `{0.12692191167544642, 0.16469354619907917}`. Two independent routes agree.
+
+## `fix`
+
+- **`bench/proof_verify.py`** (new) — `verify_proof()` delegates the run to `reverify_falsifier` **unmodified**, so every integrity control already built around it applies unchanged (pre-run key scan, audit-hook observer, Wolfram refusal, scratch confinement). It contributes polarity normalisation into the **pre-existing** S_k tristate: assertions held → `SK_ADMISSIBLE`; proof's own assertion fired → `SK_REJECTED`; nothing to run → `SK_NO_SCORE`; untrusted run → `SK_ESCALATE`. Four cases, four existing members, nothing coined.
+- **`bench/reference_runner_v3.py:10446`** — `spec_verification_factor` now consults `proof_polarity_collision(entry)` first and returns the no-opinion 0.5 for a declared proof polarity, never 0.0 and never 1.0. The addition is **reached by a real caller**, not just defined.
+
+Default path byte-identical in behaviour: entries declaring nothing — the whole existing archive — are untouched. Verified: `CONFIRMED→1.0`, `REFUTED→0.0`, `ERROR→0.5`, `{}→0.5`, and an explicit `"falsifier"` declaration still `→0.0`. **60 existing severity tests pass.**
+
+## `falsifier`
+
+`bench/tests/falsifier_proof_polarity_inversion_2026-10-31.py` — imports the **real** `spec_verification_factor`/`effective_severity`, no retyped copy. Run bidirectionally against the real file:
+
+```
+=== GUARD REMOVED (pre-fix state) ===
+FALSIFIED
+  a proof that HELD scored V=0.0 and annihilated the finding: effective_severity 0.85 -> 0.0
+  a proof that did NOT hold scored V=1.0 and took full severity: 0.85 -> 0.85
+  the ordering is inverted: V(proof held)=0.0 < V(proof failed)=1.0
+AssertionError  EXIT=1
+
+=== FIX IN PLACE ===
+NOT FALSIFIED: proof polarity is not read as a finding verdict (V held=0.5, V failed=0.5)  EXIT=0
+```
+
+Plus `bench/tests/test_proof_verify_polarity_2026-10-31.py` — `python3 -m pytest … -q` → **8 passed in 1.04s**. It executes `verify_proof` on the real pint+uncertainties chemistry proof (ADMISSIBLE, raw `REFUTED`), on a deliberately wrong one (REJECTED, raw `CONFIRMED`), on empty input, on a broken import, and on the guard. No source-text assertions.
+
+## `refutation_condition`
+
+My answer is overturned if: (a) some caller already writes a proof-polarity outcome into a *different* field, making the collision unreachable — then my guard is an addition nothing reaches and should be deleted; (b) `effective_severity`'s consumers already floor proof-bearing entries above the critical threshold, making the gamma flattery impossible; or (c) the S_k tristate turns out to be consumed somewhere whose polarity is *failure ⇒ good*, which would make `SK_ADMISSIBLE` the wrong landing place.
+
+**Refutation 3 holds against my own fix, and I ran the case.** CM-06 carries **two** figures from the same linear-sum error: `0.165 per cent` and `+/- 0.00017 mol/L`. A proof verifying only the per-cent figure is `ADMISSIBLE`:
+```
+verify_proof -> ADMISSIBLE / raw REFUTED
+  document states   : +/- 0.00017 mol/L
+  0.1269% x 0.10053 : +/- 0.00013 mol/L
+  0.1650% x 0.10053 : +/- 0.00017 mol/L
+```
+An admissible proof sits beside a claim that is still wrong. `verify_proof` cannot tell. That boundary is carried on every ADMISSIBLE result as `PROOF_VERIFIES_ARITHMETIC_NOT_RELEVANCE` and asserted on by the test, so the limitation travels with the measurement rather than living only in prose — which is why ADMISSIBLE from here is repair-side evidence and never on its own a finding verdict.
+
+## `strongest_disagreement`
+
+**Q4 asks the wrong instrument, and the brief's Instrument-1 note already contains the correction without drawing it.** The brief frames the severity question as whether `effective_severity` and `spec_verification_factor` "can take a verified proof as input". They cannot, but not because a verified proof needs its own severity path — because **a verified proof is not a finding-side object at all**. Severity scales a defect claim; a proof attests a repair. The brief's own Instrument-1 expectation names the right hole ("the measure that decides admissibility says nothing exactly where a printed proof would arrive") and then Q4 sends the answer to the severity multiplier instead of to `S_k`. Had I followed Q4's framing I would have added a proof-specific severity path — more surface, new vocabulary, and still inverted. The cheap answer was on the repair side the whole time.
+
+Second, smaller: the brief treats step 4 as "the one that does not exist yet". It exists twice. What does not exist is **polarity safety on the channel between them** — a one-bit omission, not a missing stage.
+
+Unrelated, flagged not pursued: `claim_ledger.apply_claim_channel` has no harness caller and `CLAIM_CHANNEL_WEIGHT = 0.0`. That is the additive standard's 12th instance of an addition nothing reaches, and it is outside this brief's scope.
+
+## Termination
+
+**Four passes.** Pass 1 located the instruments and found the V=0.5 collapse. Pass 2 found `reverify_falsifier` already works 5/5 on prose, relocated the gap, and found the inversion. Pass 3 built the fix, the falsifier and the tests, and ran gamma — which upgraded the finding from mis-scoring to manufactured convergence. **Pass 4 added the Refutation-3 case** (the ± figure in the same claim), which is a stated boundary of my own fix rather than a new harness defect. Pass 4 produced no new above-threshold finding about the harness, so I stop.
+
+---
+
+# ROUND 1 REPLY — SEAT fable, REPRODUCED IN FULL AND VERBATIM
+
+---
+
+## `verdict`
+
+**NO GAP (an existing status covers it)** — the brief's central factual premise, "Step 4 is the one that does not exist yet", is refuted by execution (refutation condition 1 of the brief holds). The harness's re-verification step exists, is wired, and decided every artefact I gave it today.
+
+## `reasoning`
+
+The founder's 4-step pipeline maps onto committed, executing machinery:
+
+- **Steps 1–3 (propose, test with tools, print proof)** are the model's falsifier obligation, already standing in `cdsfl_core.txt`'s runnable-falsifier section.
+- **Step 4 (harness re-verifies)** is `bench/falsifier_verify.reverify_falsifier` for the finding direction — static source scan → sandboxed subprocess with runtime observer → output scan → structural verdict reader `_read_verdict` — and `bench/fix_efficacy.probe` for the solution direction: apply the fix, re-run the finding's *own* falsifier against the patched artefact, report `FIX_CURES` / `FIX_INEFFECTIVE` / indeterminates. Both are wired into `reference_runner_v3` (falsifier re-runs at lines 7333, 7858, 9423; `fix_efficacy` probe at 6095; close path 6014–6020). `bench/claim_ledger.py` aggregates per-claim verdicts using the *same* vocabulary, explicitly refusing a second taxonomy. The five STEM fixtures (`bench/tests/fixtures/stem/`) plus `test_prose_acceptance_stem.py` are the commissioning evidence that this loop runs on structural mechanics, statistics, chemistry/metrology, algorithms and numerical analysis.
+
+**Q1 — what a proof is, per field.** A proof is a re-runnable script that opens the artefact by path, recomputes the claimed figure with the project tool box, and decides in defect polarity (raise/`FALSIFIED` when the claim fails; `NOT FALSIFIED` + exit 0 when it holds). Executed today, per field:
+- **Chemistry/metrology**: recompute the uncertainty combination from the document's own table — `math.sqrt(0.0392² + 0.0049² + 0.1206²)` = **0.1269 %** against the claimed 0.165 % (which is the arithmetic sum). Molecular claims: `rdkit.Chem.MolFromSmiles` + `Descriptors.MolWt` (named, not run — the metrology claim needed no structure).
+- **Physics (structural)**: `sympy` exact algebra — `I(8 mm)/I(6 mm) = π(D⁴−(D−2t)⁴)/64` ratio = **1.26390**, refuting the linear-scaling claim of 1.3333 — cross-checked with `pint`: N_cr carries dimension `[force]` → `True`, 1198.5 kN.
+- **Statistics**: `scipy.stats.t.ppf(0.975, 24)` = **2.0639** vs the claimed 1.96 → interval 5.0 % too narrow.
+- **Biology**: `Bio.Seq.Seq("ATGAAAACCGGCTTTTAA").translate()` = **`MKTGF*`** → sequence-validity claim decided `True`.
+Statistical mechanics and astrophysics take the same shape (`sympy` for partition-function identities, `astropy.units`/`constants` for observational arithmetic); the re-runnability requirement excludes **no field** — see `strongest_disagreement` for what it does exclude.
+
+**Q2 — the mechanism.** It reads the falsifier source string; it runs it in a confined subprocess (read-only staged target, observer-enforced read roots, Wolfram refused in-sandbox); it returns one of **CONFIRMED / REFUTED / UNTOOLABLE / ERROR / INTEGRITY_VIOLATION**. Re-runnable means: decides by its designed failure mechanism only, reads nothing outside the artefact and its declared inputs, imports/opens the real target. A proof that cannot meet this is a claim, and the vocabulary already names that (`UNTOOLABLE`).
+
+**Q3 — when tools cannot decide.** `UNTOOLABLE` and `ERROR` exist, map to factor 0.5, and under the founder's 2026-08-22 equipment-failure ruling resolve to `UNCONFIRMED` → HIL escalation with re-routing; `claim_ledger` adds `UNVERIFIED` and `ROUTED_ONLY` for the claim unit. **Escalation is sufficient; no new outcome is needed.** Demonstrated by execution (instrument 2).
+
+**Q4 — severity.** `spec_verification_factor` takes the harness verdict unchanged, and a verified proof needs **no own path** — but the two directions enter differently. A proof that a *defect is real* is the falsifier → CONFIRMED → factor 1.0. A proof that a *solution works* is the flip to REFUTED on the patched artefact → `FIX_CURES`, which enters residual risk through fix-efficacy/σ, **not** through `spec_verification_factor`; routing it into severity as well would double-count one measurement. The one live hazard, established by execution: any **undeclared** proof token (`"VERIFIED"` → 0.5) is silently read as *unresolved*, so minting a new verdict without extending the factor would halve effective severity unannounced. My fix pins that.
+
+## `instrument_results`
+
+| Instrument | Command | Output | Matched brief's expectation? |
+|---|---|---|---|
+| `S_k` | `compute_sk(correct_fix_text, MET-12-REF-01.md …)` | `tristate = NO_SCORE, sk = 0.0, kind: prose ("suffix .md")` | **Yes** — S_k is silent exactly where a printed proof arrives; the opinion is supplied by `reverify_falsifier`/`fix_efficacy`, which the brief's framing missed |
+| `severity` | `spec_verification_factor` / `effective_severity` over verdict tokens | CONFIRMED→1.0, REFUTED→0.0, None→0.5, **`"VERIFIED"`→0.5**, UNTOOLABLE→0.5; spec ON: 0.8→0.8 / 0.0 / **0.4** | **Yes on mechanism, with one addition**: a tool-verified proof is taken unchanged *iff* it arrives as CONFIRMED/REFUTED; any new token silently degrades to 0.5 |
+| `gamma` | `_estimate_gamma([5,3,1,0,0,0])` vs `[5,5,5,5,5,5]` | **0.6848** (≥ 0.30, converges) vs **0.0** (never converges) | **Yes** — a proof-bearing step 4 moves γ only by settling claims so criticals stop re-arriving as novel; proofs have no direct γ input |
+| tools (step 4 live) | `reverify_falsifier(metrology falsifier)` on pristine / corrected / evidence-corrupted copies; statistics pristine | **CONFIRMED / REFUTED / REFUTED / CONFIRMED** | Step 4 exists and decides. The third result (harmful fix → REFUTED) is the brief's refutation condition 3, executed |
+| Wolfram (second falsifier) | `bench/tools/wolfram_gate/serial/wolframscript -code 'N[{Sqrt[…], InverseCDF[StudentTDistribution[24],0.975]},6]'` | **Did not complete** — queued on the serial gate past 180 s, output empty. Per the standing rule it verified NOTHING and is no blocker; every claim above stands on SymPy/SciPy/NumPy/pint/biopython evidence | n/a |
+
+## `fix`
+
+`bench/tests/test_a_verified_proof_is_carried_by_the_existing_vocabulary_2026-10-31.py` — a regression test (reached by pytest collection; no new vocabulary, no new flag). It pins by execution: (1) step 4 exists and decides on a non-code STEM target (metrology fixture CONFIRMED→REFUTED across the correct fix); (2) a verified printed proof is carried by the existing vocabulary as REFUTED in defect polarity, and a failed proof as CONFIRMED; (3) **every verdict token `spec_verification_factor` does not know maps to 0.5** — so a future change minting `VERIFIED` without extending the factor fails this test instead of silently halving severity; (4) γ converges on tool-settled series and not otherwise. This is the brief's own "cheaper answer": existing statuses demonstrated sufficient, committed as evidence.
+
+## `falsifier`
+
+The test file *is* the executed falsifier (it imports the real `reverify_falsifier`, `spec_verification_factor`, `_estimate_gamma` and the real fixture — no retyped copies). Command: `python3 -m pytest bench/tests/test_a_verified_proof_is_carried_by_the_existing_vocabulary_2026-10-31.py -q` → **`7 passed in 0.70s`**. The pre-fix demonstration run (full instrument script, output quoted in the table) was executed first, as required.
+
+## `refutation_condition`
+
+My answer is overturned if any of these is demonstrated by execution: (1) a committed path by which a model's printed proof on a non-code target reaches a verdict *without* passing through `reverify_falsifier`/`fix_efficacy.probe` and is mishandled there; (2) an archived run where a critical whose falsifier returned UNTOOLABLE/ERROR closed without HIL — that would break my Q3 claim that escalation suffices; (3) a computationally reducible STEM claim that provably cannot be expressed as a re-runnable falsifier in defect polarity — that would restore the brief's missing-step framing; (4) my test file shown unreached by the suite's collection, which would void the fix under the additive standard.
+
+## `strongest_disagreement`
+
+Two, stated even though my verdict partly agrees with the founder's pipeline. **First**, the brief asserts step 4 "does not exist yet"; it exists, is commissioned against five STEM fields, and the brief's own named entry point (`bench/falsifier_verify.py`) is it — the gap is in the briefs' documentation chain, not the harness. **Second and more consequential**: the brief's refutation condition 3 — *tools verify the arithmetic, not the claim* — is **true, already demonstrated inside this repository, and no step-4 design can close it**. Executed today: the metrology harmful fix edits the burette's calibrated uncertainty (measured evidence), the document becomes internally consistent, and step 4 returns REFUTED — a proof that verifies while the document is substantively wrong. The boundary is not a *field* (so his generality claim survives); it is a *claim class*: claims whose truth rests on external empirical material. The project's existing treatment — evidence regions are not fix-mutable, route to HIL (`test_falsification_alone_is_not_sufficient` pins it) — is the correct response, and a proof-centred rhetoric that calls a tool-green artefact "proven" would weaken it. A verified proof is corroboration under §5, never certainty, and severity-as-residual-uncertainty must keep reading it that way.
+
+## Termination
+
+**3 passes.** Pass 1: instruments + step-4 execution. Pass 2: proof polarity, undeclared-token hazard, fix written and executed. Pass 3: re-examined the escalation path, claim ledger states, and `run_verification`'s prose branch (clean parse → `NO_APPLICABLE_CHECKS`, never PASS — the 2026-08-01 closure defect is repaired) — it added **no new above-threshold finding**. Converged; declared on the evidence above, refutable by the next round.
+
+---
+
+# ROUND 1 BRIEF, REPRODUCED SO THIS ROUND IS SELF-CONTAINED
+
+# PANEL BRIEF — What a PROOF is outside code, and how the harness verifies one
+
+**This brief supersedes 3 earlier briefs on the same question and its framing is
+the founder's, not this project's.** The superseded briefs are
+`general_purpose_stem_calculator_2026-10-18`,
+`is_this_yet_a_general_purpose_stem_calculator_2026-10-29` and
+`stem_generality_b22_2026-10-29`. All 3 were written, none was ever dispatched,
+and all 3 asked the question the wrong way round. They are retired by name and
+kept in the archive.
+
+## WHAT WAS WRONG WITH THE EARLIER FRAMING, IN HIS WORDS
+
+The earlier briefs asked what a "fix" means when a faulty claim has "no
+runnable repair" — when the only available remedies are narrowing the claim,
+restating its conditions, or declaring it undecidable. The founder rejected
+that framing on 2026-10-30, verbatim:
+
+    This framing does not seem ideal. ‘No runnable repair’ clearly
+    pertains to code. But this strikes at the question of what a ‘repair’
+    in a non-code STEM context should be? In this sense, I suspect that a
+    better definition would be a ‘solution’, or more accurately for
+    science in general a ‘proof’. So the panel is in this sense being
+    asked to decide what a ‘proof’ in chemistry, or biology, or physics,
+    or statistical mechanics, or astrophysics, or any one of any number of
+    other STEM topics (and their sub-branches should be). So the premise,
+    given that CDSFL was build from the outset to be a general purpose
+    STEM calculator), that these topics cannot have a ‘proof’ seems
+    questionable at best. What they can have is a written proof, supplied
+    by the models themselves, calculated using the available open source
+    STEM tools we have discussed expensively in the past (the majority of
+    which should be contained within your global, or local [or both?]
+    CLAUDE.md files, which should then be verified again by the machinery
+    of the harness using the same and STEM tools where available. This way
+    models can use their intelligence to suggest solutions, test them with
+    tools, then print proofs, which are then verified, or refuted by the
+    harness, before the system as a whoe decides if the claim survives. pf
+
+(His "build" is "built", "expensively" is "extensively", and "whoe" is
+"whole".)
+
+THE CLAUSE THAT CARRIES THE OBLIGATION is "test them with tools": a model
+does not merely reason and then write; it computes, and the written proof
+reports what it computed. Step 2 of the pipeline below is that clause.
+
+## REQUIRED SECTION 1 — The question, as he frames it
+
+**The premise that a non-code STEM field cannot have a proof is WITHDRAWN. Do
+not argue it and do not assume it.** The question is not whether a proof
+exists; it is what one IS, field by field, and what the harness must do to
+verify or refute it.
+
+His architecture, stated as a 4-step pipeline, is what you are asked to
+evaluate and to make concrete:
+
+  1. A model uses its reasoning to propose a SOLUTION.
+  2. The model TESTS that solution with the open-source STEM tools available to
+     it — the ones named in the project's CLAUDE.md files: SymPy, z3, SciPy,
+     NumPy, statsmodels, mpmath, uncertainties, pint, astropy, PuLP, pandas,
+     rdkit, biopython, scikit-learn, networkx, with Wolfram as a secondary
+     falsifier where available and never as the primary route.
+  3. The model PRINTS a proof: a written artefact carrying the derivation and
+     the tool output that supports it.
+  4. The HARNESS re-verifies or refutes that proof, using the same tools where
+     available, before the system as a whole decides whether the claim
+     survives.
+
+**THE PANEL IS ASKED TO ANSWER 4 THINGS.**
+
+  **Q1. What constitutes a proof, per field?** Take at least 3 of: chemistry,
+  biology, physics, statistical mechanics, astrophysics, and name for each what
+  an acceptable proof artefact is and which installed tool verifies it. A
+  stoichiometric balance, a sequence validity claim, a dimensional consistency
+  claim and a distributional claim are not the same kind of object and probably
+  do not share a verifier. Be specific: name the tool and the call.
+
+  **Q2. What is the harness's verification step, mechanically?** Step 4 is the
+  one that does not exist yet. Say what it reads, what it runs, and what it
+  returns. A proof the harness cannot re-run is a claim, not a proof — so state
+  what makes a printed proof RE-RUNNABLE, and whether that requirement excludes
+  any field in Q1.
+
+  **Q3. What happens when the tools cannot decide?** This is where the earlier
+  framing had something right even though it asked it wrongly. If step 4 can
+  return neither verified nor refuted, say what it returns and what the gate
+  does with that. Note the project's own rule: if the tools cannot verify a
+  claim, the claim is UNVERIFIABLE and escalates — it is not guessed at. Say
+  whether escalation is sufficient here or whether a distinct outcome is
+  needed, and if so whether an EXISTING member of the vocabulary already
+  carries it.
+
+  **Q4. Does a proof-centred step 4 change severity?** A proof verified by tool
+  execution is a different evidential object from a code fix that passes its
+  test. Say whether `effective_severity` and `spec_verification_factor` can
+  take a verified proof as input unchanged, or whether a verified proof needs
+  its own path. This question is live: the founder separately ruled on
+  2026-10-30 that severity is a measure of residual uncertainty that varies
+  with the difficulty of the question, and a panel review of severity itself is
+  queued behind this one.
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form your answer by USING the machinery, not by describing it. A seat that
+returns prose without having run anything has not answered.
+
+**Instrument 1, `S_k`, the admissibility measure.** `compute_sk` is veto-only
+on fenced listings and `NO_SCORE` means, per `docs/GLOSSARY.md:237`, that *"S_k
+has no opinion"*. Run it on a document from `bench/tests/fixtures/stem/` and
+report what it returns. The expectation to TEST, not to assume: `S_k` is silent
+on a non-code artefact, so the measure that decides admissibility says nothing
+exactly where a printed proof would arrive. If that is so, Q2's mechanism has
+to supply the opinion `S_k` does not.
+
+**Instrument 2, `severity`.** `effective_severity` multiplies the asserted
+number by `spec_verification_factor`, which reads `falsifier_verdict` and
+returns 1.0 for CONFIRMED, 0.0 for REFUTED and 0.5 otherwise. Establish by
+execution what it does with a finding whose falsifier is a TOOL VERIFICATION
+of a proof rather than a test of an edit. This bears directly on Q4.
+
+**Instrument 3, `gamma`.** Convergence requires `gamma_critical >= 0.30` AND K
+consecutive zero-new-critical rounds. Establish what a proof-bearing finding
+does to `gamma` across rounds under your proposed step 4.
+
+**Instrument 4, the tools themselves.** Pick 1 field from Q1 and actually run
+the verification you propose: a real SymPy, z3, rdkit, biopython or pint call
+against a real claim, with the command and its output reported. An answer to
+Q1 that names a tool without calling it has described a pipeline rather than
+demonstrated one.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. A fix without a runnable falsifier that has been EXECUTED is a hypothesis, not a fix.
+
+Write your fix INTO the sandbox repository tree at its real path, as a file. A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down. Report the exact command you ran and the output you saw.
+
+If your fix adds a verdict to the vocabulary, it must be reached by a caller and executed by a test — an addition nothing reaches is not additive. If your fix instead shows that an EXISTING member of the vocabulary already covers the case, demonstrate that by execution and say which, because that would refute this brief's framing and is the cheaper answer.
+
+## REQUIRED SECTION 4 — What would refute you
+
+State, before you conclude, what evidence would overturn your own answer.
+
+This brief's framing is the founder's, and it is refuted — not merely
+disagreed with — if any of these holds. Test them:
+
+1. **Step 4 already exists.** If `bench/falsifier_verify.py`, the claim ledger
+   or the B-cell specialist dispatch already re-runs a model's tool output
+   against the same tools, then nothing is missing and the gap is in the
+   documentation. Demonstrate it by execution and name the entry point.
+2. **A field in Q1 has no re-runnable proof object.** If for some field the
+   only available proof is an argument no installed tool can check, then step
+   4 cannot cover that field and his pipeline has a named boundary rather than
+   general applicability. Say which field and why, and do not generalise from
+   it to the fields where it does work.
+3. **The tools verify the ARITHMETIC and not the CLAIM.** A SymPy call that
+   confirms an identity has not confirmed that the identity answers the
+   question asked. If step 4 as you specify it can pass a proof that is
+   internally correct and substantively wrong, say so and give the concrete
+   case — this is the most consequential refutation available and the one most
+   likely to be missed.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return exactly these fields, so replies can be compared without a parser guessing:
+
+- `verdict` — one of: GAP CONFIRMED / NO GAP (an existing status covers it) / GAP ELSEWHERE (state where)
+- `reasoning` — the derivation, naming each instrument you ran
+- `instrument_results` — for each of `S_k`, `severity` and `gamma`: the command, the output, and whether it matched this brief's stated expectation
+- `fix` — the path written in the sandbox tree, and what it changes
+- `falsifier` — the falsifier you wrote, the command you ran, and its executed output
+- `refutation_condition` — what would overturn your answer
+- `strongest_disagreement` — your strongest disagreement with this brief's own framing, stated even if your verdict agrees with it
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new above-threshold findings; a finding is above threshold if missing it could cause a real-world failure, a violation or an unsafe condition. Report how many passes you ran and what the last one added.
+
+There is no compelled convergence in this round. Disagreement with the other seat, and with this brief, is preserved as information rather than smoothed to consensus. Do not attempt to reconcile your answer with anyone else's.
+
+Written under CDSFL note standard v1.8 (17 October 2026).
+
+
+Written under CDSFL note standard v1.8 (17 October 2026).

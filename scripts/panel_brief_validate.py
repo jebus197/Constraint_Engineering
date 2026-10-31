@@ -693,7 +693,19 @@ def validate(text: str) -> list[str]:
     # A STAR ROUND IS WHERE THIS MATTERS MOST. Its purpose is to reconcile, so it
     # is the round most able to produce agreement by deference -- which is not
     # evidence, and which this project does not accept as confirmation.
-    elif not re.search(r"\bdisagree", body, re.I):
+    # ★ NO LEADING \b, repaired 2026-10-31. `\b` does NOT match between an
+    # underscore and a letter, because an underscore is a word character -- so
+    # `strongest_disagreement`, which is the field name
+    # `bench/directives/universal/panel_brief_template.md` prescribes and which
+    # every compliant brief uses, did NOT satisfy this check. A brief naming the
+    # field EXACTLY as the template describes it was refused unless the
+    # surrounding prose happened to repeat the word with a space in front.
+    # Observed on the B21 joint brief, which listed `strongest_disagreement` as
+    # a field and was refused; the check's own message demands a FIELD and not
+    # prose, and as written it could only ever be satisfied BY prose. Raised as
+    # pf:6a18bd7974ce. The right-hand boundary is kept, so "disagreement" and
+    # "disagree" both match while an unrelated word cannot run on from it.
+    elif not re.search(r"disagree", body, re.I):
         problems.append(
             "requires the seat to state its DISAGREEMENT: NOT FOUND — name "
             "disagreement as a FIELD in the output section, not as prose "

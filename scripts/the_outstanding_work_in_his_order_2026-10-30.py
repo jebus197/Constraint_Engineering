@@ -128,12 +128,18 @@ def briefs() -> list[dict]:
                                          text)))
         seats = _CENSUS.seat_replies(d)
         nh = _CENSUS.harvest_count(d)
+        # ★ A RETIRED BRIEF IS NOT OWED WORK, 2026-10-31. A `RETIRED.md` beside
+        # the brief states his ruling and names the superseding round, so it is
+        # neither run nor outstanding. Reported separately rather than counted
+        # as a backlog, which is the over-reporting he named.
+        retired = (d / "RETIRED.md").is_file()
         out.append({"dir": d.name,
                     "entry": m.group(1) if m else "",
                     "mentions": mentions,
                     "mtime": bf.stat().st_mtime,
                     "seats": seats,
                     "harvest": nh,
+                    "retired": retired,
                     "ran": bool(seats) or nh > 0})
     return out
 
@@ -157,7 +163,8 @@ def main() -> int:
             by_entry[b["entry"]].append(b)
 
     state_by_task = {e["task"]: e["state"] for e in ents}
-    unrun = [b for b in bs if not b["ran"]]
+    unrun = [b for b in bs if not b["ran"] and not b.get("retired")]
+    retired_bs = [b for b in bs if not b["ran"] and b.get("retired")]
 
     print("=" * 74)
     print("THE OUTSTANDING WORK, IN THE ORDER HE RULED IT SHOULD RUN")
@@ -170,8 +177,12 @@ def main() -> int:
         bb = by_entry.get(e["task"], [])
         tag = ""
         if bb:
+            def _mark(x):
+                if x["ran"]:
+                    return "/run"
+                return "/RETIRED" if x.get("retired") else "/UNRUN"
             tag = (f"  [brief x{len(bb)}: "
-                   f"{', '.join(b['dir'] + ('/run' if b['ran'] else '/UNRUN') for b in bb)}]")
+                   f"{', '.join(b['dir'] + _mark(b) for b in bb)}]")
         print(f"{n:2}. {e['task']:5} {e['state']:9} added {e['added'][:19]}{tag}")
         if e["title"]:
             print(f"        {e['title']}")
@@ -184,7 +195,8 @@ def main() -> int:
     print("-" * 74)
     print("HIS LINE-32 CHECK: every brief with no seat reply, and its entry's state")
     print("-" * 74)
-    print(f"brief directories: {len(bs)}; with no seat output: {len(unrun)}")
+    print(f"brief directories: {len(bs)}; with no seat output: {len(unrun)}; "
+          f"retired on his ruling: {len(retired_bs)}")
     for b in sorted(unrun, key=lambda x: x["mtime"]):
         ent = b["entry"] or "(names no entry)"
         st = state_by_task.get(b["entry"], "UNKNOWN") if b["entry"] else "n/a"
