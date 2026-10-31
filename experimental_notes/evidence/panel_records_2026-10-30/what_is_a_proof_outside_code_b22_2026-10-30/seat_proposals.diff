@@ -1,0 +1,1261 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-31 03:19:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2a4zxvp2/repo/.cdsfl_deny_canonical_writes.sb	2026-10-31 03:06:58
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/proof_verify.py
+--- /dev/null	2026-10-31 03:19:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2a4zxvp2/repo/bench/proof_verify.py	2026-10-31 03:13:40
+@@ -0,0 +1,169 @@
++"""Step 4 for a PRINTED PROOF, and the polarity guard that keeps it out of severity.
++
++WHAT THIS ADDS, AND WHY IT ADDS NO NEW VERDICT VOCABULARY.
++
++The panel brief of 2026-10-30 asks for a harness step that re-verifies a model's
++printed proof with the same tools the model used. Measured by execution before
++anything was written here, four things were already true:
++
++  1. `falsifier_verify.reverify_falsifier` ALREADY re-runs a model-authored
++     script in a confined sandbox and decides the verdict itself. Executed
++     against all five prose fixtures in `bench/tests/fixtures/stem/`, it
++     returned CONFIRMED 5/5 on the pristine documents (structural SM-08,
++     statistics ST-05, metrology CM-06, algorithms AL-03, numerical NA-05). So
++     step 4 is not missing for the FINDING side, on prose, in five fields.
++
++  2. `immune_agents._specialist_b_cell_dispatch` ALREADY runs the real STEM
++     tools -- sympy, z3, pint, astropy, rdkit, Bio.Seq, statsmodels -- in a
++     tools-equipped child interpreter, and is live in the current runner. But
++     its input is `tf.extracted_claim`, a regex-scraped substring of a
++     finding's `description`. It never reads the model's derivation and never
++     reads the model's tool output, so it is a first-pass verification of a
++     claim rather than a re-verification of a proof.
++
++  3. `compute_sk` returns `NO_SCORE` on a prose target -- executed against
++     `bench/tests/fixtures/stem/docs/MET-12-REF-01.md`: tristate `NO_SCORE`,
++     sk 0.0, reason "S_k is defined over Python source". So the measure that
++     decides whether a proposed REPAIR is admissible is silent exactly where a
++     printed proof arrives. That is the hole.
++
++  4. Routing a proof through the finding-side channel INVERTS it. A correct
++     printed proof of MET-12's corrected CM-06 (0.1269 per cent, computed with
++     pint + uncertainties, cross-checked in Wolfram Language) exits cleanly, so
++     `reverify_falsifier` returns REFUTED, `spec_verification_factor` returns
++     0.0 and `effective_severity` returns 0.0 against an asserted 0.85. A
++     CORRECT proof annihilates the finding. The inverse is worse: a proof whose
++     own arithmetic slips raises AssertionError, reads CONFIRMED, and scores the
++     finding at FULL severity on the strength of the model's own mistake.
++
++THE DERIVATION. A falsifier and a proof are the same artefact under opposite
++terminal conventions. Re-runnability forces any such script to (i) open the
++artefact by path, (ii) compute with installed tools, (iii) terminate with a
++machine-readable outcome that depends on comparing (i) against (ii). A falsifier
++adopts `failure => the defect is real`; a proof adopts `clean exit => the
++asserted result holds`. They differ in one bit. So no new sandbox and no new
++runner is needed -- only a declared polarity, and a landing place whose polarity
++already matches.
++
++That landing place exists. A proof is a REPAIR-side object, so its outcome
++belongs in the S_k tristate, whose polarity is already `clean => good`:
++
++    the proof's assertions all held   -> SK_ADMISSIBLE
++    the proof's own assertions failed -> SK_REJECTED
++    nothing supplied to re-run        -> SK_NO_SCORE
++    untrusted run / integrity fault   -> SK_ESCALATE
++
++Four cases, four pre-existing members, correct polarity, nothing coined. The
++project's rule that an unverifiable claim escalates rather than being guessed at
++is carried by `SK_ESCALATE`, which already means exactly that.
++
++WHAT THIS DOES NOT DO, STATED PLAINLY. `verify_proof` decides whether the
++model's own computation holds. It does NOT decide that the computation answers
++the question the artefact asked. A proof can be internally correct and
++substantively irrelevant, and this module cannot tell the difference -- see
++`PROOF_VERIFIES_ARITHMETIC_NOT_RELEVANCE`, which is why `SK_ADMISSIBLE` from
++here is repair-side evidence only and never on its own a finding verdict.
++"""
++
++from __future__ import annotations
++
++from dataclasses import dataclass
++from typing import Optional
++
++from bench.falsifier_verify import reverify_falsifier
++from bench.reference_runner_v3 import (
++    SK_ADMISSIBLE,
++    SK_ESCALATE,
++    SK_NO_SCORE,
++    SK_REJECTED,
++)
++
++#: The terminal convention a re-runnable verification script was written under.
++#: `FALSIFIER_POLARITY` is the pre-existing default and the only one
++#: `reverify_falsifier`'s own verdict strings may be read under.
++FALSIFIER_POLARITY = "falsifier"
++PROOF_POLARITY = "proof"
++
++#: The boundary of what tool execution establishes. Carried on every ADMISSIBLE
++#: result rather than living only in this module's prose, so the limitation
++#: travels with the measurement.
++PROOF_VERIFIES_ARITHMETIC_NOT_RELEVANCE = (
++    "tool execution establishes that the proof's computation holds, not that "
++    "the computation answers the question the artefact asked"
++)
++
++
++@dataclass(frozen=True)
++class ProofResult:
++    """A step-4 outcome, in the S_k tristate, with the raw run it came from."""
++
++    tristate: str
++    raw_verdict: str
++    reason: str
++
++
++def verify_proof(
++    proof_code: str,
++    repo_root: Optional[str] = None,
++    timeout: int = 60,
++    cwd: Optional[str] = None,
++) -> ProofResult:
++    """Re-run a printed proof and return an S_k-side tristate.
++
++    The run itself is delegated to `reverify_falsifier`, deliberately and
++    without modification, so every integrity control already built around that
++    function applies here unchanged: the pre-run source scan for key material,
++    the runtime audit-hook observer, the Wolfram refusal and the
++    scratch-directory confinement. This function contributes the polarity
++    normalisation and nothing else.
++    """
++    if not proof_code or not proof_code.strip():
++        return ProofResult(
++            SK_NO_SCORE, "UNTOOLABLE",
++            "no proof was supplied, so there is nothing to re-run")
++
++    raw = reverify_falsifier(proof_code, repo_root=repo_root,
++                             timeout=timeout, cwd=cwd)
++
++    if raw == "REFUTED":
++        # Clean exit under proof polarity: every assertion the proof made held.
++        return ProofResult(
++            SK_ADMISSIBLE, raw,
++            "the proof ran to a clean exit, so its own assertions held; "
++            + PROOF_VERIFIES_ARITHMETIC_NOT_RELEVANCE)
++    if raw == "CONFIRMED":
++        # AssertionError / FALSIFIED under proof polarity: the model's OWN
++        # proposed result does not hold. That is a rejected repair, and it is
++        # NOT evidence that the artefact's claim is defective.
++        return ProofResult(
++            SK_REJECTED, raw,
++            "the proof's own assertions failed, so the proposed result does "
++            "not hold; this says nothing about the artefact's claim")
++    if raw == "UNTOOLABLE":
++        return ProofResult(
++            SK_NO_SCORE, raw,
++            "nothing was re-run, so no opinion was formed")
++    # "ERROR" and INTEGRITY_VIOLATION both mean the run cannot be trusted to
++    # decide. SK_ESCALATE already carries exactly that action.
++    return ProofResult(
++        SK_ESCALATE, raw,
++        f"the re-run returned {raw}, which cannot decide the proposed result")
++
++
++def proof_polarity_collision(entry: dict) -> Optional[str]:
++    """Why this entry's verdict must not be read as a finding verdict, or None.
++
++    Returns a reason string when the entry declares proof polarity, because a
++    proof-polarity outcome carries no finding-side information and the strings
++    `reverify_falsifier` returns under it collide with the finding vocabulary in
++    the INVERTING direction. Returns None otherwise, which is every entry
++    written before this module existed -- so the guard is silent on the whole
++    existing archive.
++    """
++    declared = str(entry.get("verification_polarity") or "").strip().lower()
++    if declared == PROOF_POLARITY:
++        return (
++            "this entry's verdict was produced under proof polarity, where a "
++            "clean exit means the proof HELD; read as a falsifier verdict it "
++            "would score 0.0 for a correct proof and 1.0 for a mistaken one")
++    return None
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-31 02:13:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2a4zxvp2/repo/bench/reference_runner_v3.py	2026-10-31 03:14:53
+@@ -10451,7 +10451,27 @@
+     product is annihilated rather than merely reduced. Using the harness's
+     verdict rather than the model's assertion is what makes this the opposite of
+     a vote, which is the founder's own point of 2026-10-12.
++
++    THE POLARITY GUARD, ADDED 2026-10-31. This function reads ONE field whose
++    terminal convention is implicit, and a proof-polarity outcome inverts it. A
++    correct printed proof exits cleanly, so `reverify_falsifier` returns REFUTED
++    and `V` becomes 0.0 -- a CORRECT proof annihilates the finding -- while a
++    proof whose own arithmetic slips raises AssertionError, reads CONFIRMED, and
++    scores the finding at 1.0 on the strength of the model's own mistake. Both
++    directions were executed against MET-12-REF-01's CM-06 before this guard was
++    written. So an entry that DECLARES proof polarity returns the no-opinion
++    value 0.5, never 0.0 and never 1.0: a proof is a repair-side object and
++    carries no finding-side information. Entries that declare nothing -- every
++    entry in the existing archive -- are untouched, so the default path is
++    unchanged in behaviour. Repair-side scoring for a proof is
++    `bench.proof_verify.verify_proof`, which returns the S_k tristate.
++
++    The import is deferred because `bench.proof_verify` imports the S_k tristate
++    constants from this module; at module level the two would form a cycle.
+     """
++    from bench.proof_verify import proof_polarity_collision
++    if proof_polarity_collision(entry) is not None:
++        return 0.5
+     verdict = str(entry.get("falsifier_verdict") or "").strip().upper()
+     if verdict == "CONFIRMED":
+         return 1.0
+
+### cc2:attempt-1:bench/tests/falsifier_proof_polarity_inversion_2026-10-31.py
+--- /dev/null	2026-10-31 03:19:45
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2a4zxvp2/repo/bench/tests/falsifier_proof_polarity_inversion_2026-10-31.py	2026-10-31 03:14:47
+@@ -0,0 +1,62 @@
++"""FALSIFIER: a proof-polarity verdict inverts `spec_verification_factor`.
++
++Imports the REAL target module. Raises AssertionError -- and prints FALSIFIED --
++if and only if the defect is present: a verdict produced under proof polarity is
++read as a finding verdict, so a clean exit (the proof HELD) scores V=0.0 and
++annihilates the finding, while a fired assertion (the proof did NOT hold) scores
++V=1.0 and awards full severity on the strength of the model's own mistake.
++
++Exits cleanly if the polarity guard is in place.
++"""
++import sys
++sys.path.insert(0, __file__.rsplit("/bench/", 1)[0])
++
++from bench.reference_runner_v3 import (  # the REAL target, not a copy
++    effective_severity,
++    spec_verification_factor,
++    wire_module_mirrors,
++)
++
++
++class _Cfg:
++    severity_spec_enabled = True
++
++
++wire_module_mirrors(_Cfg())
++
++ASSERTED = 0.85
++
++# A model printed a CORRECT proof. Under proof polarity a clean exit means the
++# proof HELD; `reverify_falsifier` returns the string "REFUTED" for a clean exit.
++held = {"severity": ASSERTED, "falsifier_verdict": "REFUTED",
++        "verification_polarity": "proof"}
++# A model printed a proof whose own assertion fired, i.e. its proposed result
++# does NOT hold. `reverify_falsifier` returns "CONFIRMED" for a fired assertion.
++failed = {"severity": ASSERTED, "falsifier_verdict": "CONFIRMED",
++          "verification_polarity": "proof"}
++
++v_held = spec_verification_factor(held)
++v_failed = spec_verification_factor(failed)
++s_held = effective_severity(held)
++s_failed = effective_severity(failed)
++
++bad = []
++if v_held == 0.0:
++    bad.append(f"a proof that HELD scored V={v_held} and annihilated the "
++               f"finding: effective_severity {ASSERTED} -> {s_held}")
++if v_failed == 1.0:
++    bad.append(f"a proof that did NOT hold scored V={v_failed} and took full "
++               f"severity: effective_severity {ASSERTED} -> {s_failed}")
++if v_held < v_failed:
++    bad.append(f"the ordering is inverted: V(proof held)={v_held} < "
++               f"V(proof failed)={v_failed}")
++
++if bad:
++    print("FALSIFIED")
++    for line in bad:
++        print("  " + line)
++    raise AssertionError("proof-polarity verdict inverts spec_verification_factor: "
++                         + "; ".join(bad))
++
++print("NOT FALSIFIED: proof polarity is not read as a finding verdict "
++      f"(V held={v_held}, V failed={v_failed}, both the no-opinion value)")
+
+### cc2:attempt-1:bench/tests/test_does_filtering_the_stale_constant_repair_two_2026-10-30.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_does_filtering_the_stale_constant_repair_two_2026-10-30.py	2026-10-31 03:17:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2a4zxvp2/repo/bench/tests/test_does_filtering_the_stale_constant_repair_two_2026-10-30.py	2026-10-30 03:16:56
+@@ -48,28 +48,10 @@
+ SUBJECT = REPO / "bench" / "tests" / "test_immune_memory_evaluation.py"
+ 
+ #: THE FINDING, PINNED AS A SET. A count would read 6 on both sides.
+-#:
+-#: ★ RE-DERIVED 2026-10-31 AFTER HIS RULING, exactly as this file's own
+-#: docstring and failure messages instructed: *"If he has ruled on B50 this is
+-#: expected -- re-derive the pin from the new state rather than restoring this
+-#: one."* He ruled option 1 on 2026-10-30 and it is built, so the 6 immune-memory
+-#: assertions now SKIP rather than fail.
+-#:
+-#: AND THE NEW FIGURES VINDICATE THAT RULING MORE STRONGLY THAN THE OLD ONES DID.
+-#: Before the ruling the mechanical filter repaired 1 assertion and broke 1 -- a
+-#: trade, which is what the entry reported. Measured after it: the filter
+-#: repairs **0** and newly breaks **6**, because the 6 are no longer failing and
+-#: the filter's only remaining effect is to un-skip them into failure. So the
+-#: alternative he declined is now strictly worse rather than merely not free.
+-#: The count is STILL the same integer on both sides -- 0 -> 6 reads as "no
+-#: change" to a count-based comparison -- which is why this file pins sets.
+-REPAIRED_BY_THE_FILTER: set[str] = set()
++REPAIRED_BY_THE_FILTER = {
++    "TestWhatTheMemoryHolds::test_disk_memory_reproduces_from_its_recorded_run_reports",
++}
+ BROKEN_BY_THE_FILTER = {
+-    "TestAdvisoryOnlyUnderAttack::test_but_memory_can_change_a_pipeline_outcome_and_here_is_the_case",
+-    "TestCounterfactual::test_only_flaw_class_8_can_bind_today_and_it_rests_on_one_observation",
+-    "TestIntegrityGuards::test_the_live_memory_file_still_loads",
+-    "TestIntegrityGuards::test_the_live_memory_predates_the_ledger_and_that_is_now_visible",
+-    "TestWhatTheMemoryHolds::test_confirmation_rates_are_a_terminal_decision_ratio_not_a_flaw_rate",
+     "TestWhatTheMemoryHolds::test_the_evidence_base_is_thin_and_here_is_how_thin",
+ }
+ 
+@@ -167,40 +149,11 @@
+             f"a change here changes what he is being asked to rule on.")
+ 
+     def test_the_count_alone_would_have_said_nothing(self, m):
+-        """THE REASON THE SET IS PINNED AND THE COUNT IS NOT.
+-
+-        ★ UPDATED 2026-10-31, AND ITS OWN PREVIOUS MESSAGE PRESCRIBED THE
+-        UPDATE: *"the totals now differ, so a count WOULD have detected this.
+-        That is a better situation, not a worse one -- but the set comparison
+-        stays, because it says WHICH assertion moved and a count cannot."*
+-
+-        When this file was written the totals were EQUAL -- 6 failing before the
+-        filter and 6 after, a different 6 -- so a count reported no change and
+-        only the set showed the trade. After his B50 ruling the totals are 0 and
+-        6, so a count WOULD now notice. The set assertions above are therefore
+-        the load-bearing ones and this test no longer pins equality; it pins
+-        that the comparison is still INFORMATIVE, which is the property that
+-        mattered all along.
+-        """
+-        before, after = set(m["before"]), set(m["after"])
+-        assert before != after, (
+-            "the filter changed nothing at all, so this measurement is "
+-            "vacuous whatever the counts say")
+-        assert set(m["repaired"]) == before - after, (
+-            "repaired is not exactly what left the failing set, so the "
+-            "partition is not a partition")
+-        assert set(m["broken"]) == after - before, (
+-            "broken is not exactly what entered the failing set, so the "
+-            "partition is not a partition")
+-        # ★ `or`, NOT `and` -- corrected 2026-10-31 after his B50 ruling. The
+-        # stated purpose of this assertion is in its own message: to catch a
+-        # filter that "changed nothing at all". That is `repaired or broken`.
+-        # `and` additionally required the filter to repair SOMETHING, which was
+-        # true before the ruling (it repaired 1 and broke 1) and is not true
+-        # after it: the filter now repairs 0 and breaks 6, because the 6 no
+-        # longer fail and its only remaining effect is to un-skip them. The
+-        # filter still changes plenty; it just no longer repairs anything, which
+-        # is the finding rather than a test failure.
+-        assert m["repaired"] or m["broken"], (
+-            "nothing repaired and nothing broken means the filter changed "
+-            "nothing at all, so the measurement is vacuous")
++        """THE REASON THE SET IS PINNED AND THE COUNT IS NOT."""
++        assert len(m["before"]) == len(m["after"]), (
++            "the totals now differ, so a count WOULD have detected this. That "
++            "is a better situation, not a worse one -- but the set comparison "
++            "stays, because it says WHICH assertion moved and a count cannot.")
++        assert m["repaired"] and m["broken"], (
++            "equal totals with nothing repaired and nothing broken would mean "
++            "the filter changed nothing at all")
+
+### cc2:attempt-1:bench/tests/test_proof_verify_polarity_2026-10-31.py
+--- /dev/null	2026-10-31 03:19:45
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2a4zxvp2/repo/bench/tests/test_proof_verify_polarity_2026-10-31.py	2026-10-31 03:15:22
+@@ -0,0 +1,106 @@
++"""Executes `bench.proof_verify` and the polarity guard it is reached by.
++
++Every assertion here runs the real functions. No source-text assertions.
++"""
++import pytest
++
++from bench.proof_verify import (
++    PROOF_POLARITY,
++    PROOF_VERIFIES_ARITHMETIC_NOT_RELEVANCE,
++    proof_polarity_collision,
++    verify_proof,
++)
++from bench.reference_runner_v3 import (
++    SK_ADMISSIBLE,
++    SK_ESCALATE,
++    SK_NO_SCORE,
++    SK_REJECTED,
++    effective_severity,
++    spec_verification_factor,
++    wire_module_mirrors,
++)
++
++# A real printed proof of MET-12-REF-01's CORRECTED CM-06, computed with pint
++# and uncertainties. The document quotes 0.165 per cent, which is the LINEAR sum
++# of the three relative components; the root sum of squares CM-06 says it is
++# using is 0.1269 per cent. Cross-checked in Wolfram Language: RSS 0.126922,
++# linear 0.164694.
++_CHEMISTRY_PROOF = '''
++import pint
++from uncertainties import ufloat
++ureg = pint.UnitRegistry(); Q = ureg.Quantity
++c = (Q(ufloat(0.5106, 0.0002), "g") / Q(ufloat(204.22, 0.01), "g/mol")
++     / Q(ufloat(24.87, 0.03), "mL")).to("mol/L")
++rel = c.magnitude.std_dev / c.magnitude.nominal_value
++assert str(c.units) == "mole / liter", c.units
++assert abs(rel * 100 - 0.1269) < 5e-4, rel * 100
++print("PROOF HOLDS: u_c(c)/c = %.4f per cent" % (rel * 100))
++'''
++
++# The same proof with a wrong proposed figure: the model's own assertion fires.
++_CHEMISTRY_PROOF_WRONG = _CHEMISTRY_PROOF.replace("0.1269", "0.1650")
++
++
++def test_a_correct_chemistry_proof_is_admissible():
++    r = verify_proof(_CHEMISTRY_PROOF, repo_root=".")
++    assert r.tristate == SK_ADMISSIBLE, (r.tristate, r.raw_verdict, r.reason)
++    # The raw run is kept, and it is the INVERTING string. This is the whole
++    # point of the module: REFUTED from the sandbox means the proof HELD.
++    assert r.raw_verdict == "REFUTED", r.raw_verdict
++    assert PROOF_VERIFIES_ARITHMETIC_NOT_RELEVANCE in r.reason
++
++
++def test_a_proof_whose_own_assertion_fires_is_rejected_not_confirmed():
++    r = verify_proof(_CHEMISTRY_PROOF_WRONG, repo_root=".")
++    assert r.tristate == SK_REJECTED, (r.tristate, r.raw_verdict, r.reason)
++    assert r.raw_verdict == "CONFIRMED", r.raw_verdict
++    assert "says nothing about the artefact" in r.reason
++
++
++@pytest.mark.parametrize("empty", ["", "   ", "\n\t"])
++def test_nothing_to_run_is_no_score_not_a_verdict(empty):
++    r = verify_proof(empty, repo_root=".")
++    assert r.tristate == SK_NO_SCORE, r
++
++
++def test_a_broken_proof_escalates():
++    r = verify_proof("import a_module_that_does_not_exist_anywhere\n",
++                     repo_root=".")
++    assert r.tristate == SK_ESCALATE, (r.tristate, r.raw_verdict)
++
++
++def test_the_guard_is_reached_by_spec_verification_factor():
++    class _Cfg:
++        severity_spec_enabled = True
++
++    wire_module_mirrors(_Cfg())
++    held = {"severity": 0.85, "falsifier_verdict": "REFUTED",
++            "verification_polarity": PROOF_POLARITY}
++    failed = {"severity": 0.85, "falsifier_verdict": "CONFIRMED",
++              "verification_polarity": PROOF_POLARITY}
++    # Neither direction may reach an opinion.
++    assert spec_verification_factor(held) == 0.5
++    assert spec_verification_factor(failed) == 0.5
++    # A correct proof no longer annihilates the finding.
++    assert effective_severity(held) == pytest.approx(0.425)
++    # And a mistaken proof no longer awards full severity.
++    assert effective_severity(failed) == pytest.approx(0.425)
++
++
++def test_the_default_path_is_unchanged_for_every_existing_entry():
++    class _Cfg:
++        severity_spec_enabled = True
++
++    wire_module_mirrors(_Cfg())
++    assert proof_polarity_collision({"falsifier_verdict": "CONFIRMED"}) is None
++    assert spec_verification_factor({"falsifier_verdict": "CONFIRMED"}) == 1.0
++    assert spec_verification_factor({"falsifier_verdict": "REFUTED"}) == 0.0
++    assert spec_verification_factor({"falsifier_verdict": "ERROR"}) == 0.5
++    assert spec_verification_factor({}) == 0.5
++    # An explicit falsifier declaration is also silent.
++    assert proof_polarity_collision(
++        {"falsifier_verdict": "REFUTED",
++         "verification_polarity": "falsifier"}) is None
++    assert spec_verification_factor(
++        {"falsifier_verdict": "REFUTED",
++         "verification_polarity": "falsifier"}) == 0.0
+
+### cc2:attempt-1:bench/tests/test_the_triage_can_see_the_whole_list_2026-10-30.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_the_triage_can_see_the_whole_list_2026-10-30.py	2026-10-31 03:15:25
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2a4zxvp2/repo/bench/tests/test_the_triage_can_see_the_whole_list_2026-10-30.py	2026-10-30 09:46:10
+@@ -99,109 +99,24 @@
+ 
+ 
+ class TestTheTriageReachesEntriesBeyondTheSentinel:
+-    """THE REGRESSION GUARD. Restoring the truncation must turn this red.
++    """THE REGRESSION GUARD. Restoring the truncation must turn this red."""
+ 
+-    ★ IT NOW USES A FIXTURE RATHER THAN THE LIVE LIST, repaired 2026-10-31, and
+-    the reason is the more interesting half.
+-
+-    These tests probed `_RECORDING_RUNS`, a symbol that lived only in B50's
+-    entry past the sentinel, and asserted the triage reported it as blocking.
+-    They went red tonight. The cause is NOT truncation and it is not a defect
+-    in the triage: the founder ruled on B50, the ruling was carried out, the
+-    entry is DONE, and a DONE entry correctly declares no dependency. Measured
+-    at that moment: **0 of 625 symbols anywhere in the live list are reported
+-    as blocking -- 0 of 414 before the sentinel and 0 of 211 past it -- and the
+-    list carries 0 entries in state BLOCKED.** So nothing is blocking, which is
+-    a true and welcome statement about the project and a fatal one about a test
+-    that needs a blocker to exist.
+-
+-    A REGRESSION GUARD MUST NOT DEPEND ON THE PROJECT HAVING A PROBLEM. The
+-    property under test is that the SCAN REACHES past the supplementary
+-    heading; whether the live list happens to contain a declared dependency is
+-    a separate and changing fact. The fixture below carries one on purpose, so
+-    the guard measures the scan. The live list is still exercised, by the
+-    symbol is still refused.
+-
+-    THE PROBE'S SHAPE MATTERS AND COST A PASS TO FIND. The first fixture used
+-    `PastSentinelSymbol`, and the predicate answered "no distinctive term to
+-    match against the entries" -- it extracts an IDENTIFIER-shaped term from the
+-    item text, and CamelCase without underscores does not qualify. The original
+-    probe was `_RECORDING_RUNS`, so the shape was carried by the old literal and
+-    not by any stated requirement. Using an underscored, upper-case name keeps
+-    the fixture honest about what the predicate actually accepts.
+-    """
+-
+-    #: ★ IMPORTED, NEVER TYPED. The first fixture hardcoded "# SUPPLEMENTARY"
+-    #: while the real sentinel is "# SUPPLEMENTARY LIST", so `next_section_start`
+-    #: never found it, the truncation did not bite on the fixture, and RESTORING
+-    #: THE DEFECT LEFT THIS FILE GREEN -- a guard that cannot catch the thing it
+-    #: was written for. Taking the string from its owner means a future change to
+-    #: the sentinel moves the fixture with it.
+-    SENTINEL = TLM.SUPPLEMENTARY
+-
+-    @staticmethod
+-    def _fixture(tmp_path):
+-        """A minimal list: 1 entry BEFORE the sentinel, 1 declared-dependency
+-        entry AFTER it. If the scan truncates at the sentinel it cannot see the
+-        second, and the probe comes back False."""
+-        body = "\n".join([
+-            "# TASKS",
+-            "",
+-            "**Z1. An ordinary entry before the sentinel.** It mentions "
+-            "`_BEFORE_SENTINEL_SYMBOL` in passing.",
+-            "<!-- task: Z1 | state: DONE | status: COMMITTED -->",
+-            "",
+-            TLM.SUPPLEMENTARY,
+-            "",
+-            "**Z2. An entry that DECLARES a dependency, past the sentinel.** "
+-            "This entry is BLOCKED and cannot proceed until "
+-            "`_PAST_SENTINEL_SYMBOL` is settled; it waits on it.",
+-            "<!-- task: Z2 | state: BLOCKED | status: PROPOSED -->",
+-            "",
+-        ])
+-        p = tmp_path / "FIXTURE_TASK_LIST.md"
+-        p.write_text(body, encoding="utf-8")
+-        return p
+-
+-    def test_the_fixture_itself_puts_the_entry_past_the_sentinel(self, tmp_path):
+-        """Or the 2 tests below prove nothing."""
+-        f = self._fixture(tmp_path)
+-        text = f.read_text(encoding="utf-8")
+-        i = text.index(self.SENTINEL)
+-        assert "_PAST_SENTINEL_SYMBOL" in text[i:]
+-        assert "_PAST_SENTINEL_SYMBOL" not in text[:i]
+-
+-    def test_a_term_living_only_past_the_sentinel_is_still_found(self, tmp_path):
+-        f = self._fixture(tmp_path)
+-        probe = "A question about _PAST_SENTINEL_SYMBOL that must be settled."
+-        blocks, why = BT.blocks_progress(probe, tasks=f)
++    def test_a_term_living_only_past_the_sentinel_is_still_found(self):
++        probe = "A question about _RECORDING_RUNS that must be settled."
++        blocks, why = BT.blocks_progress(probe, tasks=LIST)
+         assert blocks, (
+             "a symbol that appears only in an entry BEYOND the supplementary "
+-            "heading was not found, so the scan is truncating the list again: "
+-            + why)
++            "heading was not found, so the scan is truncating the list again: " + why)
+ 
+-    def test_the_predicate_can_return_true_at_all(self, tmp_path):
+-        """Six identical False answers are what hid the defect. Discrimination
+-        first -- and now the discrimination does not depend on the live list
+-        having a blocker in it."""
+-        f = self._fixture(tmp_path)
+-        probe = "A question about _PAST_SENTINEL_SYMBOL that must be settled."
+-        assert BT.blocks_progress(probe, tasks=f)[0] is True
++    def test_the_predicate_can_return_true_at_all(self):
++        """Six identical False answers are what hid the defect. Discrimination first."""
++        probe = "A question about _RECORDING_RUNS that must be settled."
++        assert BT.blocks_progress(probe, tasks=LIST)[0] is True
+ 
+-    def test_and_it_can_still_return_false(self, tmp_path):
+-        f = self._fixture(tmp_path)
++    def test_and_it_can_still_return_false(self):
+         blocks, _ = BT.blocks_progress(
+-            "Zzqqxx_wibble_frobnicate, a symbol appearing nowhere.", tasks=f)
+-        assert blocks is False
+-
+-    def test_the_live_list_is_still_exercised_and_refuses_an_absent_symbol(self):
+-        """The live list keeps a test, narrowed to what is true of it whatever
+-        the project's state: the predicate runs, and an absent symbol is
+-        refused."""
+-        blocks, why = BT.blocks_progress(
+             "Zzqqxx_wibble_frobnicate, a symbol appearing nowhere.", tasks=LIST)
+         assert blocks is False
+-        assert why, "the predicate gave no reason at all"
+ 
+ 
+ class TestHyphenatedEnglishIsNotAnIdentifier:
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-31 03:10:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2a4zxvp2/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-31 02:57:41
+@@ -1094,7 +1094,7 @@
+ 
+ ★ **B20's 3 QUESTIONS ANSWERED 2026-10-17T03:54:51+01:00, ON HIS 3RD ASKING.** He noted correctly that each prior turn mentioned the orchestrator and answered none of it. **(a) IS THE EXPERIMENT SOUND IN ITS OWN RIGHT? Yes, with 1 design correction: it is 2 arms, not 1, because the role he describes bundles 2 separable jobs.** The CLASSIFIER job — which candidate repair is better, which compose, which meet the simplest-sufficient and additive standards — has an executable criterion today, because `bench/fix_efficacy.py` already asks of a single repair whether it cures the defect its own falsifier demonstrates. So that arm can be scored against ground truth without a human in the loop. The MONITOR job — his `cy` protocol, noticing that something is *"screwy"*, pausing, analysing, fixing, resuming — has **no defined predicate at all**, so there is nothing to score it against. Running them as 1 experiment would confound a measurable arm with an unmeasurable one. **(b) WHAT CC1 PREDICTS, recorded before the run so it is falsifiable.** Across the 3 shakedown legs **77 of 79 adjudications were tool-made rather than assertion-made, 97.4684 per cent, Wilson [91.2314 per cent, 99.3030 per cent]**. A bound orchestrator therefore operates in a system where its own assertions mostly decide nothing, so the classifier arm should come close to parity. The monitor arm should degrade, because monitoring is the one judgement the harness does not instrument. **And this session is itself evidence for that prediction rather than an argument for it**: 6 of CC1's own monitoring judgements failed on 2026-10-17, each producing a clean-looking answer that was an artefact of search scope or a function signature. That failure set is a usable corpus for the monitor arm, because each case has a known correct answer. **(c) WHERE ON THE RUNWAY, and NOT last.** His instinct was that this is *"one of the last tests we run before final release"*. The argument against: the orchestrator role is where the measured failures are, so testing it last means discovering orchestration faults after everything else is frozen. The argument for waiting: a live bound arm needs a harness that is not still changing under it. **Both are satisfied by a SHADOW arm first** — the bound orchestrator observes a real run and records what it would have decided, while CC1 remains the acting orchestrator, and agreement is measured afterwards. That costs 1 run's observation, risks no decision, and needs no stable harness because it changes nothing. **Recommended placement: the shadow arm immediately after Stage 1's replay exit test, which is free and already the nearest actionable item; the live bound arm after the merge to the canonical branch and before Stage 3's capstone.** **NEEDS HIS RULING on that placement only.**
+ 
+-**B21. Making model and role selection trivial is NOT a large rewrite, because the 4-layer policy engine that does it already exists and the canonical runner does not call it.** Added 2026-10-17T01:25:30+01:00. **HIS QUESTION, verbatim:** *"can you build this and implement it in such a way that it doesn't require vast code rewrites and/or refactoring of large elements of the existing code base? If it is buildable, I would suggest building it, and then putting this work to the free panel to look at."* **HIS DESIGN INTENT, verbatim:** *"model selection should preferably be a simple box, containing a scrollable list of models available from OpenRouter and models available on a user's local machine... with available models on a user's local machine at the top of this list"*, with *"role management, such as 'worker'... 'classifier'... and 'orchestrator'"* individually selectable, plus a recommended list and a note that untested models in a given role carry unknown performance. His argument for it: the project claims substrate, model and vendor agnosticism, and *"We clearly cannot make such claims, and then say 'Oh, btw, that isn't really true. Here is a list of the only models you can use.'"* **THE ANSWER IS YES, AND MOST OF THE HARD PART IS BUILT.** `bench/cdsfl_registry/registry.py` is a 4-layer hierarchical policy merge engine with MONOTONICITY ENFORCEMENT: layer 1 `universal.toml` holds HARD constraints, layer 2 `domains/<domain>.toml`, layer 3 `tasks/<task_id>.toml`, layer 4 `models/<model>.toml`, and a lower layer that tries to weaken a universal HARD constraint raises `PolicyViolationError`. **That monotonicity is exactly the safety property arbitrary model selection requires**, because it means a researcher's choice of model cannot loosen a hard constraint. Measured by execution: layer 2 holds **10 domains** — biology, chemistry, code, cross_domain, cs_software, engineering, information_science, mathematics, physics, statistics — and layer 4 holds **6 model files**: Fable, chatgpt_5_4, codex_5_3, deepseek_v3, gemini_3_1_pro, opus_4_6. `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys; an unregistered model raises `FileNotFoundError`, which is a LOUD failure and the 1 of 10 admission steps that does fail loudly per B13. **THE GAP, AND IT IS WIRING RATHER THAN ARCHITECTURE.** `bench/reference_runner_v3.py` — the canonical runner — makes **0** calls to `load_effective_policy`. The engine is reached by `bench/run_round_robin.py:3631` and `:3647` and by `bench/cdsfl_registry/engine.py`, neither of which is the current runner. v3 passes `task_domain` to the composer at line 11909 and accepts `domain=args.domain` at 21194, so the domain reaches prompt composition but never the policy merge. Layer 3, `tasks/`, does not exist as a directory at all. And there is no role layer. **FOR DONE, in dependency order:** (1) wire `load_effective_policy` into v3, which is the single change that makes every later step declarative; (2) redirect B13's 12 live per-model tables to read the merged policy instead of their own dictionaries; (3) add a role dimension, either as a `roles/` layer or a `role` field in the model file, composing with the existing merge rule rather than beside it; (4) wire `validate_all_policies()` as the run-level preflight CC2 recommended, reporting every missing registration at once and refusing the run; (5) generate the selectable list from the registry plus an OpenRouter query plus a local-model probe, with local models first as he specified. **Steps 1 and 4 are each a handful of lines; step 2 is 12 small redirections; none is a refactor of large elements.** **THEN TO THE FREE PANEL**, as he directed, on design, implementation and integration with the coming interface build. **★ THE PREMISE IS WRONG, ESTABLISHED BY EXECUTION 2026-10-18T03:25:59+01:00.** The entry's headline says the 4-layer policy engine exists *"and the canonical runner does not call it"*. That is true of the SYMBOL and false of the BEHAVIOUR. `bench/reference_runner_v3.py` contains 0 textual references to `load_effective_policy` -- but the call sits inside `compose()` in `bench/cdsfl_registry/composer.py`, and `compose()` is exactly what the runner invokes through `_compose_for_model` once per seat per round. **Verified by running it:** `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys, and `compose(task_domain="mathematics", model="opus_4_6", ...)` returns a `ComposedDirectiveSet`. **SO THE RUNNER DOES CONSULT THE 4-LAYER MERGE, INCLUDING ITS MONOTONICITY ENFORCEMENT, ON EVERY COMPOSITION**, and wiring a second path into it would have duplicated working machinery -- the third time in one night I nearly rebuilt something that exists, and the first of the three caught BEFORE writing any code, by doing the FOLLOW step first. **WHAT IS GENUINELY MISSING IS NARROWER THAN THE ENTRY CLAIMS:** the engine has layers for universal constraints, domain, task and model, and NO LAYER FOR ROLE. His design asks for *"role management, such as 'worker' ... 'classifier' ... and 'orchestrator'"* to be individually selectable, and that is the part with no home in the 4 layers. **FOR DONE:** add the role layer, which is additive and does not disturb the merge, and put THAT to the panel rather than the wiring. **The brief is written and validated** at `bench/logs/what_breaks_the_capability_tie_2026-10-18/BRIEF.md`, which carries this correction. **★ A ROLE DIMENSION ALREADY EXISTS AND IT IS NOT HIS, ESTABLISHED BY EXECUTION 2026-10-29T03:38:04+00:00. THE PANEL QUESTION IS THEREFORE SHARPER THAN "ADD A ROLE LAYER".** Doing the FOLLOW step before writing code caught a 4th near-rebuild. **`ModelConfig.role` EXISTS, IS REQUIRED, AND IS TYPED.** `bench/experiment_11_orchestrator.py:59` declares `Role = Literal["collator", "player_manager", "participant"]`, `:77` makes `role: Role` a field with NO default, and `:96` provides `get_by_role(role: Role)`, a selector. The runner reads it live at `bench/reference_runner_v3.py:13171` and `:13251` as `mc.role != "collator"`, and the attribute resolves -- `dataclasses.fields(ModelConfig)` returns it among 12 fields, so those 2 lines are live code rather than a latent AttributeError. **SO THERE IS A CALLER FOR A ROLE LAYER ALREADY, which the additive standard requires and which I would otherwise have had to invent.** **BUT THE 2 VOCABULARIES ARE DIFFERENT CONCEPTS, AND THAT IS THE DECISION.** The existing 3 are STRUCTURAL -- who collates, who manages the roster, who participates -- and describe a seat's place in the topology. His 3 are FUNCTIONAL: *"role management, such as 'worker' ... 'classifier' ... and 'orchestrator'"*, describing what a model DOES. They overlap partially rather than cleanly: `player_manager` is close to his *orchestrator* and `participant` to his *worker*, while **`classifier` has no counterpart in the existing enum and `collator` has none in his list.** **WHAT THE PANEL SHOULD BE ASKED, which is not what the FOR DONE above says.** Not whether to add a layer -- that is mechanical and symmetric with the existing 4, each being a TOML load, a `_deep_merge` and a `_check_monotonicity`. The real questions are: (1) are the structural and functional roles ONE dimension to be reconciled, or 2 orthogonal dimensions needing 2 layers; (2) where does a role layer sit in the precedence, before or after the model layer, given that monotonicity protects the HARD keys either way but the SOFT keys go to whichever layer merges last; and (3) should an unregistered role fail LOUDLY like the model layer, which raises `FileNotFoundError` and is the 1 of 10 admission steps B13 credits with failing loudly, or silently skip like the task layer. **WHAT IS DELIBERATELY NOT BUILT TONIGHT:** the role files' CONTENT. Deciding what the `classifier` role constrains is policy, not plumbing, and inventing it would be exactly the flattering-design failure this project's record names. The role layer itself is a handful of lines once (1), (2) and (3) are answered, since it is a TOML load, a `_deep_merge` and a `_check_monotonicity` like the 4 layers beside it. **★ THE COST SIDE OF HIS 3 QUESTIONS IS NOW MEASURED, 2026-10-30, AND IT IS A COST RATHER THAN AN ARGUMENT.** Appended to this LINE because `parse_entries` reads the marker at `lines[i + 1]`, and this edit asserts that adjacency BEFORE writing rather than repairing it afterwards as 2 edits on 2026-10-29 had to. **WHAT IS ABSENT, established by execution:** there is no `roles/` directory in `bench/cdsfl_registry/` and no `tasks/` directory either, so layer 3 of the 4-layer engine does not exist as a directory; and `load_effective_policy(domain='mathematics', model='opus_4_6')` returns 9 keys of which **0 mention a role**. So the layer would be created from nothing and there is no existing role content to build on. **WHICH VOCABULARY THE CODE SPEAKS, measured as QUOTED VALUES in `bench/` and `scripts/`: 63 of 67, 0.940299, Wilson [0.856305, 0.976541], across 24 distinct files** — `collator` 37, `participant` 18, `player_manager` 8 against his `orchestrator` 3, `classifier` 1 and `worker` 0. **SO THE ASYMMETRY IN EFFORT IS REAL:** reconciling the 2 into 1 dimension touches those 63 values across 24 files, while treating them as 2 orthogonal layers touches none of them and adds a layer alongside. **AND THE COUNT MAY NOT DECIDE IT.** 63 to 4 is what any months-old vocabulary shows against one proposed 11 days earlier, so choosing on that basis would be choosing the incumbent BECAUSE it is the incumbent — the reasoning this project exists to refuse. His 3 words describe what a model DOES and the enum describes where a seat SITS in the topology; which is right about what a role IS remains his question, and the measurement is offered as its price and not as its answer. **Producer:** `scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py`, which states in its own docstring that the figure is an UPPER BOUND, since a quoted occurrence may be a fixture or a log message rather than a live comparison. **Guard:** `bench/tests/test_which_role_vocabulary_2026-10-30.py`, 6 tests, 2 of 2 mutations caught — and both pinned defects were in the producer's own first version, which COUNTED ITSELF (66 of 73 against a true 63 of 67) and printed a HARDCODED ratio 1 line below a computed one, in a script whose whole purpose is that a figure must travel with its producer. **★ 2 OF HIS 3 QUESTIONS RESTED ON CLAIMS THIS ENTRY NEVER EXECUTED, AND 1 OF THEM IS WRONG. Measured 2026-10-30.** Appended to this LINE so the marker at `lines[i + 1]` stays adjacent, asserted before writing. **QUESTION 2's PREMISE, PARTLY FALSE.** This entry introduced the precedence question with the words *"monotonicity protects the HARD keys either way but the SOFT keys go to whichever layer merges last"*. The first half HOLDS by execution: merging all **60** (domain, model) pairs in the canonical order and in the reversed order leaves every protected dotpath unchanged -- **0 of 60 pairs** shows a difference, Wilson 95% [0.000000, 0.060172], cross-verified between a closed form and `statsmodels.proportion_confint` to agreement within 1e-12, with a one-sided exact upper bound of 0.048703 on which scipy and mpmath agree. **17** dotpaths are protected, so the comparison count is 1,020 and 0 of them differ; that figure is deliberately given NO interval of its own, because the 17 dotpaths inside one pair share a mechanism and are not independent observations. **★ THE FIRST VERSION OF THIS SENTENCE PAIRED THE 60-PAIR INTERVAL WITH THE 17-DOTPATH COUNT, AND THE PRE-COMMIT WILSON CHECKER REFUSED THE COMMIT**, recomputing [0.0000, 0.1843] for 0 of 17 and reporting that a count and its interval disagree. The measurement was right and the sentence was wrong -- a denominator swap, caught by the pre-commit Wilson checker rather than by me, which is the whole argument for having that checker in the board at all. The reason is structural rather than lucky: `_check_monotonicity` takes the merged policy and a layer NAME, never the previous policy, so it compares against the module constants `HARD_CONSTRAINTS`, `HARD_THRESHOLDS` and `HARD_STRINGS` and cannot be order-sensitive. **THE SECOND HALF ASSERTS THAT SOFT KEYS OF THAT KIND EXIST, AND THERE ARE 0.** Order reversal moves **no leaf dotpath at all**, because **0 of 60 pairs share ANY leaf key**: domain files write `constraints.*`, `convergence.*` and `verification.*`; model files write `model.*` and `protocol.*`; top-level overlap is NONE. **SO QUESTION 2 IS ABOUT A CONFIGURATION THAT DOES NOT EXIST YET** -- precedence currently decides nothing, and the live question is the one underneath it: whether layers may write into each other's namespace at all, which nothing in the merge engine forbids and only convention currently prevents. **QUESTION 3's PREMISE, INCOMPLETE.** It offered 2 precedents, failing *"LOUDLY like the model layer"* or *"silently skip like the task layer"*. There are **3**, each established by calling it: a missing MODEL file raises `FileNotFoundError`; a missing TASK file is skipped in SILENCE; an UNKNOWN domain emits `warnings.warn` and continues. A known domain whose file is missing is also silent, so the domain layer alone holds 2 of the 3 behaviours. **QUESTION 1 IS UNTOUCHED BY THIS** and remains his: whether the structural enum (`collator`, `participant`, `player_manager`) and his functional words (`worker`, `classifier`, `orchestrator`) are 1 dimension or 2 is not reducible to a measurement, and its cost is already priced at 63 of 67 quoted values across 24 files. **STILL ABSENT:** no `roles/` directory and no `tasks/` directory, so layer 3 of the 4 has no directory either. **Producer:** `scripts/what_does_layer_order_actually_decide_2026-10-30.py`. **Guard:** `bench/tests/test_what_layer_order_decides_2026-10-30.py`, 12 tests, 4 of 4 mutations red -- blinding the leaf reader, silencing the model layer's raise, making all 3 missing-key blocks skip, and faking a collision count. **IT PINS A RELATIONSHIP, NOT THE 0:** if no pair collides then no key may be order-decided, and if any pair collides then at least 1 must be. Pinning `colliding == 0` would have forbidden a legitimate future layer and accused correct code, which is the 9-of-36 class measured on 2026-10-28. **★ THE BRIEF THIS ENTRY SAYS IS WRITTEN IS ABOUT A DIFFERENT QUESTION, AND B21's OWN BRIEF NOW EXISTS. Found and built 2026-10-30.** This entry states *"The brief is written and validated at `bench/logs/what_breaks_the_capability_tie_2026-10-18/BRIEF.md`, which carries this correction."* That document contains **0 occurrences of the word `role`**, and its own title is *"what breaks the capability tie, if not a model's name?"* — a different question. It does carry the policy-engine correction shared with B21's analysis, which is presumably why it was cited, but it does not POSE any of B21's 3 questions. **True of an adjacent document and false of B21's own 3 questions**, which is the same shape as this entry's own withdrawn claim that the runner makes 0 calls to the policy merge: true of the symbol, false of the behaviour. **B21's BRIEF IS NOW AT** `bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md`, 82 lines, 0 lint findings, written against the 6 required sections the existing briefs use and mirrored to `experimental_notes/evidence/panel_records_2026-10-30/` by `scripts/mirror_panel_records_2026-09-11.py`, which reports 149 of 149 rounds fully mirrored. It poses all 3 questions as tonight's measurement sharpened them: question 2 is stated as **vacuous on the current configuration** with the refutation named (construct 2 existing layer files whose merge is order-sensitive and the framing fails); question 3 is stated with **3 precedents rather than 2**; and question 1 carries the 63-against-4 tally with an explicit instruction that the tally may NOT decide it, because choosing the incumbent because it is the incumbent is the reasoning this project exists to refuse. 5 figures, each naming its producer inline. **AND 2 LINE CITATIONS IN THIS ENTRY HAVE DRIFTED 18 LINES EACH.** It cites `bench/reference_runner_v3.py:13171` and `:13251` for the 2 live reads of `mc.role`; measured 2026-10-30 they are at **`:13189`** and **`:13269`**. That is the identical 18-line drift as this entry's sibling citation of `ImmuneMemory.load` at `:21602`, now `:21620`, so 1 commit added 18 lines above both. The 3 citations into `bench/experiment_11_orchestrator.py` are EXACT: `Role` at `:59`, `role: Role` at `:77`, `get_by_role` at `:96`. A brief citing wrong lines wastes a seat's time, which is what `bench/tests/test_line_citations_resolve_2026-09-01.py` and `bench/tests/test_a_cited_path_must_exist_2026-10-30.py` exist to prevent, so the brief carries the corrected values and names the drift. **STILL NEEDS HIS GO-AHEAD** for the free-panel dispatch; nothing in the brief costs money. **★ THE FREE PANEL RAN 2026-10-31T02:15:54+00:00 ON HIS INSTRUCTION ("Put it to the free panel"), AND THE 2 SEATS DISAGREE — WHICH IS PRESERVED AS INFORMATION, NOT SMOOTHED.** 0 of 2 seats paid; round wall 667.7 s, cc2 667.7 s with 42 tool calls, fable 570.9 s with 44. **cc2: UNIFIED, one dimension.** **fable: NEITHER — 2 distinct dimensions but at most 1 new policy layer**, because the structural dimension already exists as code and duplicating it into TOML would be an addition nothing reaches. **BOTH SEATS INDEPENDENTLY MEASURED THE SAME 3 FACTS, AND ALL 3 VINDICATE HIS CAVEAT THAT THE FOOTBALL FRAMING WAS ONLY EVER AN ANALOGY.** (1) `bench/routing.py` — the ranking mechanism that actually promotes and demotes — contains **0** occurrences of `role`, `mc.role` or `ModelConfig`, so promotion and demotion were NEVER on the role axis and his vocabulary drops nothing by replacing it. (2) `collator` is read by about 35 live predicates and **written by zero**: `mc.role != "collator"` at `reference_runner_v3.py:13189` and `:13269` and 16 sibling runners, `== "collator"` at `runner_core.py:382` and 7 others, and no construction site anywhere sets it — so every `!=` filter is a tautology and every `==` branch is unreachable. cc2 names the cause from the module's own docstring: **`collator` names the HARNESS, not a seat**, a category error inside a per-seat enum. (3) `get_by_role` has **0 callers** anywhere (fable). **cc2 ALSO REFUTED THIS BRIEF'S OWN "A CALLER ALREADY EXISTS" ARGUMENT** by AST rather than grep: 4 role values are CONSTRUCTED against 3 declared — `participant` at 16 sites, the undeclared `player` at 9 and `reviewer` at 4 behaving identically to it, `player_manager` at 2, and `collator` at 0 — so the live role dimension carries exactly **1 discriminating bit**, arbitrator-that-dispatches-last or not. Its words: one bit with 4 spellings. **WHERE THEY GENUINELY DIVIDE:** whether his worker/classifier/orchestrator sits on that same axis at finer grain (cc2) or on a second axis that the bundling of `is_arbitrary=(is_last and role == "player_manager")` makes lossy to flatten (fable); fable adds that `classifier` names no seat POSITION, which is its reason for calling the mapping bundle-to-atoms rather than word-to-word. **BOTH SEATS WROTE FIXES INTO THEIR SANDBOXES AND NEITHER IS FOLDED BACK**, per his ruling that an emerging fix is tested under a, f and sy first. **WHAT REMAINS IS HIS CHOICE BETWEEN 2 MEASURED POSITIONS**, not a measurement. **★★ THE JOINT ROUND CONVERGED 2026-10-31T02:57:41+00:00, AND IT CONVERGED ON EVIDENCE RATHER THAN DEFERENCE — WHICH IS THE ONLY KIND THIS PROJECT ACCEPTS.** Round wall 917.6 s; cc2 917.6 s with 47 tool calls, fable 670.8 s with 31. 0 of 2 seats paid. The blind round left cc2 on UNIFIED and fable on NEITHER; **both now return TWO DIMENSIONS ONE LAYER**, and each names precisely what moved it, which is what distinguishes convergence from splitting the difference. **cc2 MOVED.** **fable RETAINED and conceded a scope.** **THE MECHANISM OF THE CONVERGENCE:** fable accepted cc2's 4-constructed-against-3-declared measurement and rejected only its INFERENCE, conceding that at `ModelConfig` scope cc2 is right and `player`/`reviewer` were a FORK rather than a second dimension — then found the half cc2's instrument could not reach, **a SECOND declaration of the structural role axis in `bench/dm/_types.Role` with `RoleAssignment` and `DynamicManager`**, through exactly the escape route cc2 had itself named as the weakest link in its own derivation. cc2 then moved: the live predicates induce **3 cells, not 2**. So the 1-bit reading was refuted by the route its own author flagged. **THE DECIDING CASE WAS CONSTRUCTED AND EXECUTED, not hypothesised:** `experimental_notes/seat_evidence/joint_the_role_layer_b21_2026-10-31/fable/scripts/falsifier_the_role_axis_is_one_bit_2026-10-31.py` with real imports — preserved under `seat_evidence` and NOT in the canonical tree, because a seat writes into its own sandbox and nothing is folded back until it is tested; the dead-citation guard caught this entry naming the sandbox path as though it were the tree, which is exactly its job, driving `RoleAssignment.assign` at `dm/_manager.py:106`, `.reassign` at `:600` and the `role_map` handed to `FailureHandler` at `:605`, from the exp20 and exp35 entry points. cc2's independent case is an independent adjudicator: a 4th seat that must render the round verdict having seen every other seat's findings and must be EXCLUDED from finding production so it does not adjudicate its own — which his `orchestrator` names exactly and which the incumbent vocabulary cannot express. **SO THE ANSWER TO HIS QUESTION IS: TWO DIMENSIONS, ONE LAYER.** The structural axis already exists as code and is declared TWICE, so duplicating it into TOML would be an addition nothing reaches; his worker/classifier/orchestrator is the FUNCTIONAL dimension and is the only candidate for a registry layer. **HIS CAVEAT IS FULLY VINDICATED:** the football framing never carried the promotion and demotion semantics, because `bench/routing.py` contains 0 occurrences of `role`, so renaming drops nothing. **WHAT REMAINS IS HIS GO-AHEAD TO BUILD THE 1 LAYER**, plus a decision on the 2 declarations of the structural axis, which no seat was asked about and which is now the live question. 4 seat-written fixes exist in the sandboxes and NONE is folded back, per his ruling that an emerging fix is tested under a, f and sy first.
++**B21. Making model and role selection trivial is NOT a large rewrite, because the 4-layer policy engine that does it already exists and the canonical runner does not call it.** Added 2026-10-17T01:25:30+01:00. **HIS QUESTION, verbatim:** *"can you build this and implement it in such a way that it doesn't require vast code rewrites and/or refactoring of large elements of the existing code base? If it is buildable, I would suggest building it, and then putting this work to the free panel to look at."* **HIS DESIGN INTENT, verbatim:** *"model selection should preferably be a simple box, containing a scrollable list of models available from OpenRouter and models available on a user's local machine... with available models on a user's local machine at the top of this list"*, with *"role management, such as 'worker'... 'classifier'... and 'orchestrator'"* individually selectable, plus a recommended list and a note that untested models in a given role carry unknown performance. His argument for it: the project claims substrate, model and vendor agnosticism, and *"We clearly cannot make such claims, and then say 'Oh, btw, that isn't really true. Here is a list of the only models you can use.'"* **THE ANSWER IS YES, AND MOST OF THE HARD PART IS BUILT.** `bench/cdsfl_registry/registry.py` is a 4-layer hierarchical policy merge engine with MONOTONICITY ENFORCEMENT: layer 1 `universal.toml` holds HARD constraints, layer 2 `domains/<domain>.toml`, layer 3 `tasks/<task_id>.toml`, layer 4 `models/<model>.toml`, and a lower layer that tries to weaken a universal HARD constraint raises `PolicyViolationError`. **That monotonicity is exactly the safety property arbitrary model selection requires**, because it means a researcher's choice of model cannot loosen a hard constraint. Measured by execution: layer 2 holds **10 domains** — biology, chemistry, code, cross_domain, cs_software, engineering, information_science, mathematics, physics, statistics — and layer 4 holds **6 model files**: Fable, chatgpt_5_4, codex_5_3, deepseek_v3, gemini_3_1_pro, opus_4_6. `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys; an unregistered model raises `FileNotFoundError`, which is a LOUD failure and the 1 of 10 admission steps that does fail loudly per B13. **THE GAP, AND IT IS WIRING RATHER THAN ARCHITECTURE.** `bench/reference_runner_v3.py` — the canonical runner — makes **0** calls to `load_effective_policy`. The engine is reached by `bench/run_round_robin.py:3631` and `:3647` and by `bench/cdsfl_registry/engine.py`, neither of which is the current runner. v3 passes `task_domain` to the composer at line 11909 and accepts `domain=args.domain` at 21194, so the domain reaches prompt composition but never the policy merge. Layer 3, `tasks/`, does not exist as a directory at all. And there is no role layer. **FOR DONE, in dependency order:** (1) wire `load_effective_policy` into v3, which is the single change that makes every later step declarative; (2) redirect B13's 12 live per-model tables to read the merged policy instead of their own dictionaries; (3) add a role dimension, either as a `roles/` layer or a `role` field in the model file, composing with the existing merge rule rather than beside it; (4) wire `validate_all_policies()` as the run-level preflight CC2 recommended, reporting every missing registration at once and refusing the run; (5) generate the selectable list from the registry plus an OpenRouter query plus a local-model probe, with local models first as he specified. **Steps 1 and 4 are each a handful of lines; step 2 is 12 small redirections; none is a refactor of large elements.** **THEN TO THE FREE PANEL**, as he directed, on design, implementation and integration with the coming interface build. **★ THE PREMISE IS WRONG, ESTABLISHED BY EXECUTION 2026-10-18T03:25:59+01:00.** The entry's headline says the 4-layer policy engine exists *"and the canonical runner does not call it"*. That is true of the SYMBOL and false of the BEHAVIOUR. `bench/reference_runner_v3.py` contains 0 textual references to `load_effective_policy` -- but the call sits inside `compose()` in `bench/cdsfl_registry/composer.py`, and `compose()` is exactly what the runner invokes through `_compose_for_model` once per seat per round. **Verified by running it:** `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys, and `compose(task_domain="mathematics", model="opus_4_6", ...)` returns a `ComposedDirectiveSet`. **SO THE RUNNER DOES CONSULT THE 4-LAYER MERGE, INCLUDING ITS MONOTONICITY ENFORCEMENT, ON EVERY COMPOSITION**, and wiring a second path into it would have duplicated working machinery -- the third time in one night I nearly rebuilt something that exists, and the first of the three caught BEFORE writing any code, by doing the FOLLOW step first. **WHAT IS GENUINELY MISSING IS NARROWER THAN THE ENTRY CLAIMS:** the engine has layers for universal constraints, domain, task and model, and NO LAYER FOR ROLE. His design asks for *"role management, such as 'worker' ... 'classifier' ... and 'orchestrator'"* to be individually selectable, and that is the part with no home in the 4 layers. **FOR DONE:** add the role layer, which is additive and does not disturb the merge, and put THAT to the panel rather than the wiring. **The brief is written and validated** at `bench/logs/what_breaks_the_capability_tie_2026-10-18/BRIEF.md`, which carries this correction. **★ A ROLE DIMENSION ALREADY EXISTS AND IT IS NOT HIS, ESTABLISHED BY EXECUTION 2026-10-29T03:38:04+00:00. THE PANEL QUESTION IS THEREFORE SHARPER THAN "ADD A ROLE LAYER".** Doing the FOLLOW step before writing code caught a 4th near-rebuild. **`ModelConfig.role` EXISTS, IS REQUIRED, AND IS TYPED.** `bench/experiment_11_orchestrator.py:59` declares `Role = Literal["collator", "player_manager", "participant"]`, `:77` makes `role: Role` a field with NO default, and `:96` provides `get_by_role(role: Role)`, a selector. The runner reads it live at `bench/reference_runner_v3.py:13171` and `:13251` as `mc.role != "collator"`, and the attribute resolves -- `dataclasses.fields(ModelConfig)` returns it among 12 fields, so those 2 lines are live code rather than a latent AttributeError. **SO THERE IS A CALLER FOR A ROLE LAYER ALREADY, which the additive standard requires and which I would otherwise have had to invent.** **BUT THE 2 VOCABULARIES ARE DIFFERENT CONCEPTS, AND THAT IS THE DECISION.** The existing 3 are STRUCTURAL -- who collates, who manages the roster, who participates -- and describe a seat's place in the topology. His 3 are FUNCTIONAL: *"role management, such as 'worker' ... 'classifier' ... and 'orchestrator'"*, describing what a model DOES. They overlap partially rather than cleanly: `player_manager` is close to his *orchestrator* and `participant` to his *worker*, while **`classifier` has no counterpart in the existing enum and `collator` has none in his list.** **WHAT THE PANEL SHOULD BE ASKED, which is not what the FOR DONE above says.** Not whether to add a layer -- that is mechanical and symmetric with the existing 4, each being a TOML load, a `_deep_merge` and a `_check_monotonicity`. The real questions are: (1) are the structural and functional roles ONE dimension to be reconciled, or 2 orthogonal dimensions needing 2 layers; (2) where does a role layer sit in the precedence, before or after the model layer, given that monotonicity protects the HARD keys either way but the SOFT keys go to whichever layer merges last; and (3) should an unregistered role fail LOUDLY like the model layer, which raises `FileNotFoundError` and is the 1 of 10 admission steps B13 credits with failing loudly, or silently skip like the task layer. **WHAT IS DELIBERATELY NOT BUILT TONIGHT:** the role files' CONTENT. Deciding what the `classifier` role constrains is policy, not plumbing, and inventing it would be exactly the flattering-design failure this project's record names. The role layer itself is a handful of lines once (1), (2) and (3) are answered, since it is a TOML load, a `_deep_merge` and a `_check_monotonicity` like the 4 layers beside it. **★ THE COST SIDE OF HIS 3 QUESTIONS IS NOW MEASURED, 2026-10-30, AND IT IS A COST RATHER THAN AN ARGUMENT.** Appended to this LINE because `parse_entries` reads the marker at `lines[i + 1]`, and this edit asserts that adjacency BEFORE writing rather than repairing it afterwards as 2 edits on 2026-10-29 had to. **WHAT IS ABSENT, established by execution:** there is no `roles/` directory in `bench/cdsfl_registry/` and no `tasks/` directory either, so layer 3 of the 4-layer engine does not exist as a directory; and `load_effective_policy(domain='mathematics', model='opus_4_6')` returns 9 keys of which **0 mention a role**. So the layer would be created from nothing and there is no existing role content to build on. **WHICH VOCABULARY THE CODE SPEAKS, measured as QUOTED VALUES in `bench/` and `scripts/`: 63 of 67, 0.940299, Wilson [0.856305, 0.976541], across 24 distinct files** — `collator` 37, `participant` 18, `player_manager` 8 against his `orchestrator` 3, `classifier` 1 and `worker` 0. **SO THE ASYMMETRY IN EFFORT IS REAL:** reconciling the 2 into 1 dimension touches those 63 values across 24 files, while treating them as 2 orthogonal layers touches none of them and adds a layer alongside. **AND THE COUNT MAY NOT DECIDE IT.** 63 to 4 is what any months-old vocabulary shows against one proposed 11 days earlier, so choosing on that basis would be choosing the incumbent BECAUSE it is the incumbent — the reasoning this project exists to refuse. His 3 words describe what a model DOES and the enum describes where a seat SITS in the topology; which is right about what a role IS remains his question, and the measurement is offered as its price and not as its answer. **Producer:** `scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py`, which states in its own docstring that the figure is an UPPER BOUND, since a quoted occurrence may be a fixture or a log message rather than a live comparison. **Guard:** `bench/tests/test_which_role_vocabulary_2026-10-30.py`, 6 tests, 2 of 2 mutations caught — and both pinned defects were in the producer's own first version, which COUNTED ITSELF (66 of 73 against a true 63 of 67) and printed a HARDCODED ratio 1 line below a computed one, in a script whose whole purpose is that a figure must travel with its producer. **★ 2 OF HIS 3 QUESTIONS RESTED ON CLAIMS THIS ENTRY NEVER EXECUTED, AND 1 OF THEM IS WRONG. Measured 2026-10-30.** Appended to this LINE so the marker at `lines[i + 1]` stays adjacent, asserted before writing. **QUESTION 2's PREMISE, PARTLY FALSE.** This entry introduced the precedence question with the words *"monotonicity protects the HARD keys either way but the SOFT keys go to whichever layer merges last"*. The first half HOLDS by execution: merging all **60** (domain, model) pairs in the canonical order and in the reversed order leaves every protected dotpath unchanged -- **0 of 60 pairs** shows a difference, Wilson 95% [0.000000, 0.060172], cross-verified between a closed form and `statsmodels.proportion_confint` to agreement within 1e-12, with a one-sided exact upper bound of 0.048703 on which scipy and mpmath agree. **17** dotpaths are protected, so the comparison count is 1,020 and 0 of them differ; that figure is deliberately given NO interval of its own, because the 17 dotpaths inside one pair share a mechanism and are not independent observations. **★ THE FIRST VERSION OF THIS SENTENCE PAIRED THE 60-PAIR INTERVAL WITH THE 17-DOTPATH COUNT, AND THE PRE-COMMIT WILSON CHECKER REFUSED THE COMMIT**, recomputing [0.0000, 0.1843] for 0 of 17 and reporting that a count and its interval disagree. The measurement was right and the sentence was wrong -- a denominator swap, caught by the pre-commit Wilson checker rather than by me, which is the whole argument for having that checker in the board at all. The reason is structural rather than lucky: `_check_monotonicity` takes the merged policy and a layer NAME, never the previous policy, so it compares against the module constants `HARD_CONSTRAINTS`, `HARD_THRESHOLDS` and `HARD_STRINGS` and cannot be order-sensitive. **THE SECOND HALF ASSERTS THAT SOFT KEYS OF THAT KIND EXIST, AND THERE ARE 0.** Order reversal moves **no leaf dotpath at all**, because **0 of 60 pairs share ANY leaf key**: domain files write `constraints.*`, `convergence.*` and `verification.*`; model files write `model.*` and `protocol.*`; top-level overlap is NONE. **SO QUESTION 2 IS ABOUT A CONFIGURATION THAT DOES NOT EXIST YET** -- precedence currently decides nothing, and the live question is the one underneath it: whether layers may write into each other's namespace at all, which nothing in the merge engine forbids and only convention currently prevents. **QUESTION 3's PREMISE, INCOMPLETE.** It offered 2 precedents, failing *"LOUDLY like the model layer"* or *"silently skip like the task layer"*. There are **3**, each established by calling it: a missing MODEL file raises `FileNotFoundError`; a missing TASK file is skipped in SILENCE; an UNKNOWN domain emits `warnings.warn` and continues. A known domain whose file is missing is also silent, so the domain layer alone holds 2 of the 3 behaviours. **QUESTION 1 IS UNTOUCHED BY THIS** and remains his: whether the structural enum (`collator`, `participant`, `player_manager`) and his functional words (`worker`, `classifier`, `orchestrator`) are 1 dimension or 2 is not reducible to a measurement, and its cost is already priced at 63 of 67 quoted values across 24 files. **STILL ABSENT:** no `roles/` directory and no `tasks/` directory, so layer 3 of the 4 has no directory either. **Producer:** `scripts/what_does_layer_order_actually_decide_2026-10-30.py`. **Guard:** `bench/tests/test_what_layer_order_decides_2026-10-30.py`, 12 tests, 4 of 4 mutations red -- blinding the leaf reader, silencing the model layer's raise, making all 3 missing-key blocks skip, and faking a collision count. **IT PINS A RELATIONSHIP, NOT THE 0:** if no pair collides then no key may be order-decided, and if any pair collides then at least 1 must be. Pinning `colliding == 0` would have forbidden a legitimate future layer and accused correct code, which is the 9-of-36 class measured on 2026-10-28. **★ THE BRIEF THIS ENTRY SAYS IS WRITTEN IS ABOUT A DIFFERENT QUESTION, AND B21's OWN BRIEF NOW EXISTS. Found and built 2026-10-30.** This entry states *"The brief is written and validated at `bench/logs/what_breaks_the_capability_tie_2026-10-18/BRIEF.md`, which carries this correction."* That document contains **0 occurrences of the word `role`**, and its own title is *"what breaks the capability tie, if not a model's name?"* — a different question. It does carry the policy-engine correction shared with B21's analysis, which is presumably why it was cited, but it does not POSE any of B21's 3 questions. **True of an adjacent document and false of B21's own 3 questions**, which is the same shape as this entry's own withdrawn claim that the runner makes 0 calls to the policy merge: true of the symbol, false of the behaviour. **B21's BRIEF IS NOW AT** `bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md`, 82 lines, 0 lint findings, written against the 6 required sections the existing briefs use and mirrored to `experimental_notes/evidence/panel_records_2026-10-30/` by `scripts/mirror_panel_records_2026-09-11.py`, which reports 149 of 149 rounds fully mirrored. It poses all 3 questions as tonight's measurement sharpened them: question 2 is stated as **vacuous on the current configuration** with the refutation named (construct 2 existing layer files whose merge is order-sensitive and the framing fails); question 3 is stated with **3 precedents rather than 2**; and question 1 carries the 63-against-4 tally with an explicit instruction that the tally may NOT decide it, because choosing the incumbent because it is the incumbent is the reasoning this project exists to refuse. 5 figures, each naming its producer inline. **AND 2 LINE CITATIONS IN THIS ENTRY HAVE DRIFTED 18 LINES EACH.** It cites `bench/reference_runner_v3.py:13171` and `:13251` for the 2 live reads of `mc.role`; measured 2026-10-30 they are at **`:13189`** and **`:13269`**. That is the identical 18-line drift as this entry's sibling citation of `ImmuneMemory.load` at `:21602`, now `:21620`, so 1 commit added 18 lines above both. The 3 citations into `bench/experiment_11_orchestrator.py` are EXACT: `Role` at `:59`, `role: Role` at `:77`, `get_by_role` at `:96`. A brief citing wrong lines wastes a seat's time, which is what `bench/tests/test_line_citations_resolve_2026-09-01.py` and `bench/tests/test_a_cited_path_must_exist_2026-10-30.py` exist to prevent, so the brief carries the corrected values and names the drift. **STILL NEEDS HIS GO-AHEAD** for the free-panel dispatch; nothing in the brief costs money. **★ THE FREE PANEL RAN 2026-10-31T02:15:54+00:00 ON HIS INSTRUCTION ("Put it to the free panel"), AND THE 2 SEATS DISAGREE — WHICH IS PRESERVED AS INFORMATION, NOT SMOOTHED.** 0 of 2 seats paid; round wall 667.7 s, cc2 667.7 s with 42 tool calls, fable 570.9 s with 44. **cc2: UNIFIED, one dimension.** **fable: NEITHER — 2 distinct dimensions but at most 1 new policy layer**, because the structural dimension already exists as code and duplicating it into TOML would be an addition nothing reaches. **BOTH SEATS INDEPENDENTLY MEASURED THE SAME 3 FACTS, AND ALL 3 VINDICATE HIS CAVEAT THAT THE FOOTBALL FRAMING WAS ONLY EVER AN ANALOGY.** (1) `bench/routing.py` — the ranking mechanism that actually promotes and demotes — contains **0** occurrences of `role`, `mc.role` or `ModelConfig`, so promotion and demotion were NEVER on the role axis and his vocabulary drops nothing by replacing it. (2) `collator` is read by about 35 live predicates and **written by zero**: `mc.role != "collator"` at `reference_runner_v3.py:13189` and `:13269` and 16 sibling runners, `== "collator"` at `runner_core.py:382` and 7 others, and no construction site anywhere sets it — so every `!=` filter is a tautology and every `==` branch is unreachable. cc2 names the cause from the module's own docstring: **`collator` names the HARNESS, not a seat**, a category error inside a per-seat enum. (3) `get_by_role` has **0 callers** anywhere (fable). **cc2 ALSO REFUTED THIS BRIEF'S OWN "A CALLER ALREADY EXISTS" ARGUMENT** by AST rather than grep: 4 role values are CONSTRUCTED against 3 declared — `participant` at 16 sites, the undeclared `player` at 9 and `reviewer` at 4 behaving identically to it, `player_manager` at 2, and `collator` at 0 — so the live role dimension carries exactly **1 discriminating bit**, arbitrator-that-dispatches-last or not. Its words: one bit with 4 spellings. **WHERE THEY GENUINELY DIVIDE:** whether his worker/classifier/orchestrator sits on that same axis at finer grain (cc2) or on a second axis that the bundling of `is_arbitrary=(is_last and role == "player_manager")` makes lossy to flatten (fable); fable adds that `classifier` names no seat POSITION, which is its reason for calling the mapping bundle-to-atoms rather than word-to-word. **BOTH SEATS WROTE FIXES INTO THEIR SANDBOXES AND NEITHER IS FOLDED BACK**, per his ruling that an emerging fix is tested under a, f and sy first. **WHAT REMAINS IS HIS CHOICE BETWEEN 2 MEASURED POSITIONS**, not a measurement. **★★ THE JOINT ROUND CONVERGED 2026-10-31T02:57:41+00:00, AND IT CONVERGED ON EVIDENCE RATHER THAN DEFERENCE — WHICH IS THE ONLY KIND THIS PROJECT ACCEPTS.** Round wall 917.6 s; cc2 917.6 s with 47 tool calls, fable 670.8 s with 31. 0 of 2 seats paid. The blind round left cc2 on UNIFIED and fable on NEITHER; **both now return TWO DIMENSIONS ONE LAYER**, and each names precisely what moved it, which is what distinguishes convergence from splitting the difference. **cc2 MOVED.** **fable RETAINED and conceded a scope.** **THE MECHANISM OF THE CONVERGENCE:** fable accepted cc2's 4-constructed-against-3-declared measurement and rejected only its INFERENCE, conceding that at `ModelConfig` scope cc2 is right and `player`/`reviewer` were a FORK rather than a second dimension — then found the half cc2's instrument could not reach, **a SECOND declaration of the structural role axis in `bench/dm/_types.Role` with `RoleAssignment` and `DynamicManager`**, through exactly the escape route cc2 had itself named as the weakest link in its own derivation. cc2 then moved: the live predicates induce **3 cells, not 2**. So the 1-bit reading was refuted by the route its own author flagged. **THE DECIDING CASE WAS CONSTRUCTED AND EXECUTED, not hypothesised:** `scripts/falsifier_the_role_axis_is_one_bit_2026-10-31.py` with real imports, driving `RoleAssignment.assign` at `dm/_manager.py:106`, `.reassign` at `:600` and the `role_map` handed to `FailureHandler` at `:605`, from the exp20 and exp35 entry points. cc2's independent case is an independent adjudicator: a 4th seat that must render the round verdict having seen every other seat's findings and must be EXCLUDED from finding production so it does not adjudicate its own — which his `orchestrator` names exactly and which the incumbent vocabulary cannot express. **SO THE ANSWER TO HIS QUESTION IS: TWO DIMENSIONS, ONE LAYER.** The structural axis already exists as code and is declared TWICE, so duplicating it into TOML would be an addition nothing reaches; his worker/classifier/orchestrator is the FUNCTIONAL dimension and is the only candidate for a registry layer. **HIS CAVEAT IS FULLY VINDICATED:** the football framing never carried the promotion and demotion semantics, because `bench/routing.py` contains 0 occurrences of `role`, so renaming drops nothing. **WHAT REMAINS IS HIS GO-AHEAD TO BUILD THE 1 LAYER**, plus a decision on the 2 declarations of the structural axis, which no seat was asked about and which is now the live question. 4 seat-written fixes exist in the sandboxes and NONE is folded back, per his ruling that an emerging fix is tested under a, f and sy first.
+ <!-- task: B21 | state: OPEN | status: TESTED | evidence: bench/logs/joint_the_role_layer_b21_2026-10-31/cc2.json, bench/logs/joint_the_role_layer_b21_2026-10-31/fable.json | ruled: 2026-10-17 -->
+ 
+ **THE PREREQUISITE IS BUILT 2026-10-17 16:13 BST: A MISS IS NOW NAMED RATHER THAN DEFAULTED.** `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py` measures what a new seat costs — **12 per-model tables across 6 live-harness files** plus 1 registry `.toml` — and its own conclusion is that *"the real problem is not the count, it is the failure mode"*: of the 10 steps a new seat passes through, **9 fail SILENTLY and 1 fails loudly — 90.0000%, Wilson [59.5850%, 98.2124%], Clopper-Pearson [55.4984%, 99.7471%]**. A researcher who misses a table gets a seat that RUNS while losing whatever that table gated, which `base_model_label`'s own docstring calls *"a capability lost with no error"*.
+
+### cc2:attempt-1:hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-10-31 03:19:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2a4zxvp2/repo/hooks/pre-commit	2026-10-29 08:44:43
+@@ -106,30 +106,6 @@
+ # commits earlier. The subset is deliberate -- these are the cheap guards -- but
+ # a red outside it accumulates unseen, which is what happened here.
+ #
+-# ★ 29 GUARDS ADDED 2026-10-31, AND THE SCOPE IS DELIBERATELY NOT "ALL OF THEM".
+-# He accepted a recommendation to add the unreached test files to this gate, on
+-# the strength of a figure that answered a different question. The figure given
+-# was "the 6 newest guards run 75 tests in 18.88 seconds against a gate that
+-# currently takes 312 seconds, about 6 per cent" -- true, and those 6 guards are
+-# 75 of the 12,048 tests in the unreached set, 0.623 per cent of it. Adding
+-# EVERY unreached file makes this gate the full board: +12,048 tests and
+-# +5,321.85 s, taking 312 s to 5,634 s, a factor of 18.05. A commit that takes
+-# an hour and a half is a commit nobody makes, and a gate nobody can afford to
+-# run protects nothing. The unreached set is also 2.26x slower PER TEST
+-# (441.72 ms against 195.50 ms), so this list's current membership is the cheap
+-# files and that is unlikely to be an accident. Producer:
+-# scripts/what_adding_every_unreached_test_file_really_costs_2026-10-31.py.
+-#
+-# SO THE SCOPE IS THE GUARDS WRITTEN SINCE 2026-10-29, which is what the
+-# original argument was actually about: a guard on one of these reports sat
+-# failing through 3 consecutive commits because nothing cheap ran it. Measured
+-# 2026-10-31: these 29 files run 440 tests in 71.13 s, which takes the gate from
+-# 312 s to about 383 s -- 22.8 per cent, not 1,705. All 440 pass; 6 did not when
+-# first run together, and each of those 6 was a stale pin rather than a defect
+-# in the product (a citation of mine naming a seat's sandbox path, the B50
+-# filter pin his ruling moved, and a regression guard that needed a blocker to
+-# exist in the live list).
+-#
+ # The 6 files below add 75 tests, about 5% on top of the 1,348 this list already
+ # holds, and each guards something a founder ruling turns on: the `ruled` field
+ # the morning report routes on, the severity gate he has defended 4 times, the
+@@ -137,35 +113,6 @@
+ # reach the record unedited, the model-admission failure mode, and the
+ # human-review stop's evidence condition.
+ GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
+-bench/tests/test_a_cited_path_must_exist_2026-10-30.py
+-bench/tests/test_an_identity_can_be_walked_back_2026-10-29.py
+-bench/tests/test_does_filtering_the_stale_constant_repair_two_2026-10-30.py
+-bench/tests/test_how_many_channels_await_his_ruling_2026-10-30.py
+-bench/tests/test_rk_carries_forward_across_rounds_2026-10-31.py
+-bench/tests/test_the_annotation_context_reader_sees_cr_only_files_2026-10-29.py
+-bench/tests/test_the_claim_channel_enters_r_k_2026-10-29.py
+-bench/tests/test_the_ds_kind_is_confined_to_his_annotations_2026-10-30.py
+-bench/tests/test_the_feedback_section_groups_under_its_headings_2026-10-29.py
+-bench/tests/test_the_file_diagnosis_producers_2026-10-30.py
+-bench/tests/test_the_hierarchical_mode_has_an_effect_path_2026-10-29.py
+-bench/tests/test_the_kept_severity_is_not_an_aggregate_2026-10-29.py
+-bench/tests/test_the_ledger_budget_is_derived_not_reserved_2026-10-30.py
+-bench/tests/test_the_markdown_companion_is_generated_2026-10-30.py
+-bench/tests/test_the_memory_baseline_skips_an_unclean_save_2026-10-29.py
+-bench/tests/test_the_miss_ledger_is_not_split_2026-10-29.py
+-bench/tests/test_the_non_curing_population_is_named_2026-10-31.py
+-bench/tests/test_the_panel_request_split_is_withheld_2026-10-30.py
+-bench/tests/test_the_ranking_is_deterministic_and_exchangeable_2026-10-29.py
+-bench/tests/test_the_redactor_does_not_withhold_a_run_setting_2026-10-29.py
+-bench/tests/test_the_register_is_the_single_source_for_deferral_2026-10-29.py
+-bench/tests/test_the_residual_risk_never_compounds_2026-10-31.py
+-bench/tests/test_the_runner_core_lookups_announce_2026-10-29.py
+-bench/tests/test_the_staleness_check_runs_before_the_save_2026-10-29.py
+-bench/tests/test_the_triage_can_see_the_whole_list_2026-10-30.py
+-bench/tests/test_what_layer_order_decides_2026-10-30.py
+-bench/tests/test_what_questions_are_owed_2026-10-30.py
+-bench/tests/test_which_open_entries_already_have_his_ruling_2026-10-30.py
+-bench/tests/test_which_role_vocabulary_2026-10-30.py
+ bench/tests/test_recovery_memory_doc_repairs.py
+ bench/tests/test_memory_index_limits_match_the_loader_2026-09-01.py
+ bench/tests/test_line_citations_resolve_2026-09-01.py
+
+### cc2:attempt-1:scripts/how_much_does_a_pass_lower_the_risk_2026-10-31.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/how_much_does_a_pass_lower_the_risk_2026-10-31.py	2026-10-31 03:07:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2a4zxvp2/repo/scripts/how_much_does_a_pass_lower_the_risk_2026-10-31.py	2026-10-31 00:59:19
+@@ -256,13 +256,8 @@
+               f"R(n*) = {w['R_at_n_star']:.6f}")
+     print(f"   {opt['note']}")
+     print()
+-    _shown = 12
+-    _all_fits = sorted(fits, key=lambda x: -x["findings"])
+-    print(f"PER-RUN DETAIL — the {min(_shown, len(_all_fits))} with the most "
+-          f"findings, of {len(_all_fits)} runs; "
+-          f"{max(0, len(_all_fits) - _shown)} not shown "
+-          f"(pass --json for every row):")
+-    for f in _all_fits[:_shown]:
++    print("PER-RUN DETAIL (the 12 with the most findings):")
++    for f in sorted(fits, key=lambda x: -x["findings"])[:12]:
+         q = f.get("q")
+         qs_ = f"{q:.6f}" if q is not None else "not identifiable"
+         print(f"   {f['run'][:52]:52} findings={f['findings']:4} "
+
+### cc2:attempt-1:scripts/the_non_curing_population_is_named_2026-10-31.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/the_non_curing_population_is_named_2026-10-31.py	2026-10-31 03:07:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2a4zxvp2/repo/scripts/the_non_curing_population_is_named_2026-10-31.py	2026-10-31 02:42:10
+@@ -198,12 +198,8 @@
+     # ★ THE SET, not the count. A later run matching the count proves nothing.
+     ids = sorted({(r["run"], r["canonical_id"]) for r in rows})
+     print(f"\ndistinct (run, finding) identities: {len(ids)}")
+-    _shown = 10
+-    print(f"the first {min(_shown, len(ids))} of {len(ids)}, so a reader can "
+-          f"spot-check the list against the archive; "
+-          f"{max(0, len(ids) - _shown)} not shown here and ALL of them are in "
+-          f"the written file:")
+-    for run, cid in ids[:_shown]:
++    print("the first 10, so a reader can spot-check the list against the archive:")
++    for run, cid in ids[:10]:
+         print(f"   {run[:52]:52} {cid}")
+ 
+     if a.write:
+
+### cc2:attempt-1:scripts/why_the_consolidated_file_was_unusable_2026-10-30.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/why_the_consolidated_file_was_unusable_2026-10-30.py	2026-10-31 03:07:15
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2a4zxvp2/repo/scripts/why_the_consolidated_file_was_unusable_2026-10-30.py	2026-10-30 19:12:18
+@@ -354,15 +354,8 @@
+                 by_ratio.add((i, j))
+     both = by_jaccard & by_ratio
+     pairs_possible = len(sents) * (len(sents) - 1) // 2
+-    # A TRUNCATED LIST STATES ITS REMAINDER. `examples` is a sample for a
+-    # reader, and `agreed_by_both` below is the full count, but a field named
+-    # `examples` beside a count is still a cap and must say so -- otherwise a
+-    # reader comparing the 2 cannot tell a sample from a complete list.
+-    _shown = 4
+-    examples = [(sents[i][:110], sents[j][:110]) for i, j in sorted(both)[:_shown]]
++    examples = [(sents[i][:110], sents[j][:110]) for i, j in sorted(both)[:4]]
+     return {"sentences": len(sents),
+-            "examples_shown": len(examples),
+-            "examples_withheld": max(0, len(both) - _shown),
+             "pairs_possible": pairs_possible,
+             "near_duplicate_by_jaccard": len(by_jaccard),
+             "near_duplicate_by_difflib": len(by_ratio),
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-31 03:19:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_swe7z4u4/repo/.cdsfl_deny_canonical_writes.sb	2026-10-31 03:07:18
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/tests/test_a_verified_proof_is_carried_by_the_existing_vocabulary_2026-10-31.py
+--- /dev/null	2026-10-31 03:19:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_swe7z4u4/repo/bench/tests/test_a_verified_proof_is_carried_by_the_existing_vocabulary_2026-10-31.py	2026-10-31 03:18:05
+@@ -0,0 +1,119 @@
++"""A verified STEM proof is carried by the EXISTING verdict vocabulary.
++
++WHAT THIS PINS (panel seat, brief `what_is_a_proof_outside_code`, 2026-10-31)
++-----------------------------------------------------------------------------
++The brief asserted "Step 4 [harness re-verification of a model's printed
++proof] is the one that does not exist yet" and asked whether a verified proof
++needs its own verdict. Both halves were decided by execution against this
++repository, and this file pins the answers so they cannot drift unremarked:
++
++  1. STEP 4 EXISTS. ``falsifier_verify.reverify_falsifier`` independently
++     re-runs a model-authored tool artefact against a non-code STEM target
++     and the RUNNER mints the verdict. Exercised here end to end on the
++     metrology fixture (import-free falsifier, chemistry/uncertainty content):
++     pristine document -> CONFIRMED; document carrying the correct fix ->
++     REFUTED. The solution-direction half is ``fix_efficacy.probe`` (applies
++     the fix, re-runs the finding's own falsifier, reports FIX_CURES /
++     FIX_INEFFECTIVE), wired at reference_runner_v3's close path.
++
++  2. A PRINTED PROOF ENTERS IN DEFECT POLARITY, NOT AS A NEW TOKEN. A proof
++     whose success is a clean exit ("NOT FALSIFIED" + returncode 0) is read
++     by ``_read_verdict`` as REFUTED -- "the defect was not demonstrated" --
++     which is exactly the verdict a sound solution's falsifier must produce
++     against the patched artefact. No ``VERIFIED`` token is needed, and none
++     may be minted casually: ``spec_verification_factor`` maps every token it
++     does not know to 0.5, so an UNDECLARED proof token would silently halve
++     effective severity instead of being honoured. That mapping is pinned
++     below; anyone extending the verdict vocabulary must extend the factor in
++     the same change or this file fails.
++
++  3. TOOL-UNDECIDABLE ALREADY HAS NAMES. UNTOOLABLE (nothing to run) and
++     ERROR (the instrument could not look) both map to factor 0.5, and the
++     runner's gate escalates them (equipment failure -> UNCONFIRMED -> HIL,
++     founder ruling 2026-08-22). No new outcome is required.
++
++Everything here is offline and fast: the metrology falsifier imports nothing
++and only reads text; the proof snippet is stdlib ``math``.
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++_root = Path(__file__).resolve().parents[2]
++if str(_root) not in sys.path:
++    sys.path.insert(0, str(_root))
++if str(_root / "bench") not in sys.path:
++    sys.path.insert(0, str(_root / "bench"))
++
++from bench.falsifier_verify import reverify_falsifier  # noqa: E402
++from bench.reference_runner_v3 import (  # noqa: E402
++    _estimate_gamma,
++    spec_verification_factor,
++)
++from bench.tests.fixtures.stem.stem_fixtures import load  # noqa: E402
++
++#: A printed proof in proof polarity: it computes the value with a tool,
++#: asserts its own claim, and exits cleanly on success. The claim is the
++#: metrology fixture's TRUE combined relative standard uncertainty (RSS of
++#: the three components in CM-04), so the proof verifies.
++_VERIFIED_PROOF = (
++    "import math\n"
++    "rss = math.sqrt(0.0392**2 + 0.0049**2 + 0.1206**2)\n"
++    "assert abs(rss - 0.1269) < 5e-5, f'proof fails: {rss}'\n"
++    "print('NOT FALSIFIED: combined u_r =', round(rss, 6))\n"
++)
++
++
++class TestStepFourExistsAndDecides:
++    """The harness independently re-runs a model's tool artefact on a
++    non-code STEM target. This is the brief's step 4, executing today."""
++
++    def test_the_false_claim_is_confirmed_on_the_pristine_document(self, tmp_path):
++        f = load("metrology")
++        copy = tmp_path / f.doc_name
++        copy.write_text(f.document, encoding="utf-8")
++        assert reverify_falsifier(f.falsifier(copy)) == "CONFIRMED"
++
++    def test_the_correct_fix_flips_the_verdict_to_refuted(self, tmp_path):
++        f = load("metrology")
++        copy = tmp_path / f.doc_name
++        copy.write_text(f.apply(f.correct_fix), encoding="utf-8")
++        assert reverify_falsifier(f.falsifier(copy)) == "REFUTED"
++
++
++class TestAVerifiedProofNeedsNoNewVerdict:
++    """A proof that verifies maps onto the existing vocabulary: REFUTED in
++    defect polarity. A new token is not only unnecessary -- minted without
++    extending ``spec_verification_factor`` it would be silently halved."""
++
++    def test_a_verified_proof_reads_as_refuted(self):
++        assert reverify_falsifier(_VERIFIED_PROOF) == "REFUTED"
++
++    def test_a_failed_proof_reads_as_confirmed(self):
++        broken = _VERIFIED_PROOF.replace("0.1269", "0.1650")  # the false claim
++        assert reverify_falsifier(broken) == "CONFIRMED"
++
++    def test_an_undeclared_proof_token_is_read_as_unresolved(self):
++        """Pin: every token the factor does not know -> 0.5. This is the
++        guard that makes 'no new verdict vocabulary' enforceable -- a change
++        that mints VERIFIED must extend the factor in the same change."""
++        e = {"severity": 0.8}
++        assert spec_verification_factor({**e, "falsifier_verdict": "CONFIRMED"}) == 1.0
++        assert spec_verification_factor({**e, "falsifier_verdict": "REFUTED"}) == 0.0
++        for undecided in ("VERIFIED", "PROOF_VERIFIED", "UNTOOLABLE",
++                          "ERROR", "INTEGRITY_VIOLATION", None):
++            assert spec_verification_factor(
++                {**e, "falsifier_verdict": undecided}) == 0.5, undecided
++
++
++class TestGammaMovesOnlyThroughSettledNovelty:
++    """A proof-bearing step 4 affects convergence by SETTLING claims, so
++    settled criticals stop re-arriving as novel. The decay fit sees that;
++    it does not see proofs directly."""
++
++    def test_tool_settled_rounds_flatten_the_curve(self):
++        assert _estimate_gamma([5, 3, 1, 0, 0, 0]) >= 0.30
++
++    def test_never_settled_rounds_do_not(self):
++        assert _estimate_gamma([5, 5, 5, 5, 5, 5]) < 0.30
+
+### fable:attempt-1:bench/tests/test_does_filtering_the_stale_constant_repair_two_2026-10-30.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_does_filtering_the_stale_constant_repair_two_2026-10-30.py	2026-10-31 03:17:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_swe7z4u4/repo/bench/tests/test_does_filtering_the_stale_constant_repair_two_2026-10-30.py	2026-10-30 03:16:56
+@@ -48,28 +48,10 @@
+ SUBJECT = REPO / "bench" / "tests" / "test_immune_memory_evaluation.py"
+ 
+ #: THE FINDING, PINNED AS A SET. A count would read 6 on both sides.
+-#:
+-#: ★ RE-DERIVED 2026-10-31 AFTER HIS RULING, exactly as this file's own
+-#: docstring and failure messages instructed: *"If he has ruled on B50 this is
+-#: expected -- re-derive the pin from the new state rather than restoring this
+-#: one."* He ruled option 1 on 2026-10-30 and it is built, so the 6 immune-memory
+-#: assertions now SKIP rather than fail.
+-#:
+-#: AND THE NEW FIGURES VINDICATE THAT RULING MORE STRONGLY THAN THE OLD ONES DID.
+-#: Before the ruling the mechanical filter repaired 1 assertion and broke 1 -- a
+-#: trade, which is what the entry reported. Measured after it: the filter
+-#: repairs **0** and newly breaks **6**, because the 6 are no longer failing and
+-#: the filter's only remaining effect is to un-skip them into failure. So the
+-#: alternative he declined is now strictly worse rather than merely not free.
+-#: The count is STILL the same integer on both sides -- 0 -> 6 reads as "no
+-#: change" to a count-based comparison -- which is why this file pins sets.
+-REPAIRED_BY_THE_FILTER: set[str] = set()
++REPAIRED_BY_THE_FILTER = {
++    "TestWhatTheMemoryHolds::test_disk_memory_reproduces_from_its_recorded_run_reports",
++}
+ BROKEN_BY_THE_FILTER = {
+-    "TestAdvisoryOnlyUnderAttack::test_but_memory_can_change_a_pipeline_outcome_and_here_is_the_case",
+-    "TestCounterfactual::test_only_flaw_class_8_can_bind_today_and_it_rests_on_one_observation",
+-    "TestIntegrityGuards::test_the_live_memory_file_still_loads",
+-    "TestIntegrityGuards::test_the_live_memory_predates_the_ledger_and_that_is_now_visible",
+-    "TestWhatTheMemoryHolds::test_confirmation_rates_are_a_terminal_decision_ratio_not_a_flaw_rate",
+     "TestWhatTheMemoryHolds::test_the_evidence_base_is_thin_and_here_is_how_thin",
+ }
+ 
+@@ -167,40 +149,11 @@
+             f"a change here changes what he is being asked to rule on.")
+ 
+     def test_the_count_alone_would_have_said_nothing(self, m):
+-        """THE REASON THE SET IS PINNED AND THE COUNT IS NOT.
+-
+-        ★ UPDATED 2026-10-31, AND ITS OWN PREVIOUS MESSAGE PRESCRIBED THE
+-        UPDATE: *"the totals now differ, so a count WOULD have detected this.
+-        That is a better situation, not a worse one -- but the set comparison
+-        stays, because it says WHICH assertion moved and a count cannot."*
+-
+-        When this file was written the totals were EQUAL -- 6 failing before the
+-        filter and 6 after, a different 6 -- so a count reported no change and
+-        only the set showed the trade. After his B50 ruling the totals are 0 and
+-        6, so a count WOULD now notice. The set assertions above are therefore
+-        the load-bearing ones and this test no longer pins equality; it pins
+-        that the comparison is still INFORMATIVE, which is the property that
+-        mattered all along.
+-        """
+-        before, after = set(m["before"]), set(m["after"])
+-        assert before != after, (
+-            "the filter changed nothing at all, so this measurement is "
+-            "vacuous whatever the counts say")
+-        assert set(m["repaired"]) == before - after, (
+-            "repaired is not exactly what left the failing set, so the "
+-            "partition is not a partition")
+-        assert set(m["broken"]) == after - before, (
+-            "broken is not exactly what entered the failing set, so the "
+-            "partition is not a partition")
+-        # ★ `or`, NOT `and` -- corrected 2026-10-31 after his B50 ruling. The
+-        # stated purpose of this assertion is in its own message: to catch a
+-        # filter that "changed nothing at all". That is `repaired or broken`.
+-        # `and` additionally required the filter to repair SOMETHING, which was
+-        # true before the ruling (it repaired 1 and broke 1) and is not true
+-        # after it: the filter now repairs 0 and breaks 6, because the 6 no
+-        # longer fail and its only remaining effect is to un-skip them. The
+-        # filter still changes plenty; it just no longer repairs anything, which
+-        # is the finding rather than a test failure.
+-        assert m["repaired"] or m["broken"], (
+-            "nothing repaired and nothing broken means the filter changed "
+-            "nothing at all, so the measurement is vacuous")
++        """THE REASON THE SET IS PINNED AND THE COUNT IS NOT."""
++        assert len(m["before"]) == len(m["after"]), (
++            "the totals now differ, so a count WOULD have detected this. That "
++            "is a better situation, not a worse one -- but the set comparison "
++            "stays, because it says WHICH assertion moved and a count cannot.")
++        assert m["repaired"] and m["broken"], (
++            "equal totals with nothing repaired and nothing broken would mean "
++            "the filter changed nothing at all")
+
+### fable:attempt-1:bench/tests/test_the_triage_can_see_the_whole_list_2026-10-30.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_the_triage_can_see_the_whole_list_2026-10-30.py	2026-10-31 03:15:25
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_swe7z4u4/repo/bench/tests/test_the_triage_can_see_the_whole_list_2026-10-30.py	2026-10-30 09:46:10
+@@ -99,109 +99,24 @@
+ 
+ 
+ class TestTheTriageReachesEntriesBeyondTheSentinel:
+-    """THE REGRESSION GUARD. Restoring the truncation must turn this red.
++    """THE REGRESSION GUARD. Restoring the truncation must turn this red."""
+ 
+-    ★ IT NOW USES A FIXTURE RATHER THAN THE LIVE LIST, repaired 2026-10-31, and
+-    the reason is the more interesting half.
+-
+-    These tests probed `_RECORDING_RUNS`, a symbol that lived only in B50's
+-    entry past the sentinel, and asserted the triage reported it as blocking.
+-    They went red tonight. The cause is NOT truncation and it is not a defect
+-    in the triage: the founder ruled on B50, the ruling was carried out, the
+-    entry is DONE, and a DONE entry correctly declares no dependency. Measured
+-    at that moment: **0 of 625 symbols anywhere in the live list are reported
+-    as blocking -- 0 of 414 before the sentinel and 0 of 211 past it -- and the
+-    list carries 0 entries in state BLOCKED.** So nothing is blocking, which is
+-    a true and welcome statement about the project and a fatal one about a test
+-    that needs a blocker to exist.
+-
+-    A REGRESSION GUARD MUST NOT DEPEND ON THE PROJECT HAVING A PROBLEM. The
+-    property under test is that the SCAN REACHES past the supplementary
+-    heading; whether the live list happens to contain a declared dependency is
+-    a separate and changing fact. The fixture below carries one on purpose, so
+-    the guard measures the scan. The live list is still exercised, by the
+-    symbol is still refused.
+-
+-    THE PROBE'S SHAPE MATTERS AND COST A PASS TO FIND. The first fixture used
+-    `PastSentinelSymbol`, and the predicate answered "no distinctive term to
+-    match against the entries" -- it extracts an IDENTIFIER-shaped term from the
+-    item text, and CamelCase without underscores does not qualify. The original
+-    probe was `_RECORDING_RUNS`, so the shape was carried by the old literal and
+-    not by any stated requirement. Using an underscored, upper-case name keeps
+-    the fixture honest about what the predicate actually accepts.
+-    """
+-
+-    #: ★ IMPORTED, NEVER TYPED. The first fixture hardcoded "# SUPPLEMENTARY"
+-    #: while the real sentinel is "# SUPPLEMENTARY LIST", so `next_section_start`
+-    #: never found it, the truncation did not bite on the fixture, and RESTORING
+-    #: THE DEFECT LEFT THIS FILE GREEN -- a guard that cannot catch the thing it
+-    #: was written for. Taking the string from its owner means a future change to
+-    #: the sentinel moves the fixture with it.
+-    SENTINEL = TLM.SUPPLEMENTARY
+-
+-    @staticmethod
+-    def _fixture(tmp_path):
+-        """A minimal list: 1 entry BEFORE the sentinel, 1 declared-dependency
+-        entry AFTER it. If the scan truncates at the sentinel it cannot see the
+-        second, and the probe comes back False."""
+-        body = "\n".join([
+-            "# TASKS",
+-            "",
+-            "**Z1. An ordinary entry before the sentinel.** It mentions "
+-            "`_BEFORE_SENTINEL_SYMBOL` in passing.",
+-            "<!-- task: Z1 | state: DONE | status: COMMITTED -->",
+-            "",
+-            TLM.SUPPLEMENTARY,
+-            "",
+-            "**Z2. An entry that DECLARES a dependency, past the sentinel.** "
+-            "This entry is BLOCKED and cannot proceed until "
+-            "`_PAST_SENTINEL_SYMBOL` is settled; it waits on it.",
+-            "<!-- task: Z2 | state: BLOCKED | status: PROPOSED -->",
+-            "",
+-        ])
+-        p = tmp_path / "FIXTURE_TASK_LIST.md"
+-        p.write_text(body, encoding="utf-8")
+-        return p
+-
+-    def test_the_fixture_itself_puts_the_entry_past_the_sentinel(self, tmp_path):
+-        """Or the 2 tests below prove nothing."""
+-        f = self._fixture(tmp_path)
+-        text = f.read_text(encoding="utf-8")
+-        i = text.index(self.SENTINEL)
+-        assert "_PAST_SENTINEL_SYMBOL" in text[i:]
+-        assert "_PAST_SENTINEL_SYMBOL" not in text[:i]
+-
+-    def test_a_term_living_only_past_the_sentinel_is_still_found(self, tmp_path):
+-        f = self._fixture(tmp_path)
+-        probe = "A question about _PAST_SENTINEL_SYMBOL that must be settled."
+-        blocks, why = BT.blocks_progress(probe, tasks=f)
++    def test_a_term_living_only_past_the_sentinel_is_still_found(self):
++        probe = "A question about _RECORDING_RUNS that must be settled."
++        blocks, why = BT.blocks_progress(probe, tasks=LIST)
+         assert blocks, (
+             "a symbol that appears only in an entry BEYOND the supplementary "
+-            "heading was not found, so the scan is truncating the list again: "
+-            + why)
++            "heading was not found, so the scan is truncating the list again: " + why)
+ 
+-    def test_the_predicate_can_return_true_at_all(self, tmp_path):
+-        """Six identical False answers are what hid the defect. Discrimination
+-        first -- and now the discrimination does not depend on the live list
+-        having a blocker in it."""
+-        f = self._fixture(tmp_path)
+-        probe = "A question about _PAST_SENTINEL_SYMBOL that must be settled."
+-        assert BT.blocks_progress(probe, tasks=f)[0] is True
++    def test_the_predicate_can_return_true_at_all(self):
++        """Six identical False answers are what hid the defect. Discrimination first."""
++        probe = "A question about _RECORDING_RUNS that must be settled."
++        assert BT.blocks_progress(probe, tasks=LIST)[0] is True
+ 
+-    def test_and_it_can_still_return_false(self, tmp_path):
+-        f = self._fixture(tmp_path)
++    def test_and_it_can_still_return_false(self):
+         blocks, _ = BT.blocks_progress(
+-            "Zzqqxx_wibble_frobnicate, a symbol appearing nowhere.", tasks=f)
+-        assert blocks is False
+-
+-    def test_the_live_list_is_still_exercised_and_refuses_an_absent_symbol(self):
+-        """The live list keeps a test, narrowed to what is true of it whatever
+-        the project's state: the predicate runs, and an absent symbol is
+-        refused."""
+-        blocks, why = BT.blocks_progress(
+             "Zzqqxx_wibble_frobnicate, a symbol appearing nowhere.", tasks=LIST)
+         assert blocks is False
+-        assert why, "the predicate gave no reason at all"
+ 
+ 
+ class TestHyphenatedEnglishIsNotAnIdentifier:
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-31 03:10:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_swe7z4u4/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-31 02:57:41
+@@ -1094,7 +1094,7 @@
+ 
+ ★ **B20's 3 QUESTIONS ANSWERED 2026-10-17T03:54:51+01:00, ON HIS 3RD ASKING.** He noted correctly that each prior turn mentioned the orchestrator and answered none of it. **(a) IS THE EXPERIMENT SOUND IN ITS OWN RIGHT? Yes, with 1 design correction: it is 2 arms, not 1, because the role he describes bundles 2 separable jobs.** The CLASSIFIER job — which candidate repair is better, which compose, which meet the simplest-sufficient and additive standards — has an executable criterion today, because `bench/fix_efficacy.py` already asks of a single repair whether it cures the defect its own falsifier demonstrates. So that arm can be scored against ground truth without a human in the loop. The MONITOR job — his `cy` protocol, noticing that something is *"screwy"*, pausing, analysing, fixing, resuming — has **no defined predicate at all**, so there is nothing to score it against. Running them as 1 experiment would confound a measurable arm with an unmeasurable one. **(b) WHAT CC1 PREDICTS, recorded before the run so it is falsifiable.** Across the 3 shakedown legs **77 of 79 adjudications were tool-made rather than assertion-made, 97.4684 per cent, Wilson [91.2314 per cent, 99.3030 per cent]**. A bound orchestrator therefore operates in a system where its own assertions mostly decide nothing, so the classifier arm should come close to parity. The monitor arm should degrade, because monitoring is the one judgement the harness does not instrument. **And this session is itself evidence for that prediction rather than an argument for it**: 6 of CC1's own monitoring judgements failed on 2026-10-17, each producing a clean-looking answer that was an artefact of search scope or a function signature. That failure set is a usable corpus for the monitor arm, because each case has a known correct answer. **(c) WHERE ON THE RUNWAY, and NOT last.** His instinct was that this is *"one of the last tests we run before final release"*. The argument against: the orchestrator role is where the measured failures are, so testing it last means discovering orchestration faults after everything else is frozen. The argument for waiting: a live bound arm needs a harness that is not still changing under it. **Both are satisfied by a SHADOW arm first** — the bound orchestrator observes a real run and records what it would have decided, while CC1 remains the acting orchestrator, and agreement is measured afterwards. That costs 1 run's observation, risks no decision, and needs no stable harness because it changes nothing. **Recommended placement: the shadow arm immediately after Stage 1's replay exit test, which is free and already the nearest actionable item; the live bound arm after the merge to the canonical branch and before Stage 3's capstone.** **NEEDS HIS RULING on that placement only.**
+ 
+-**B21. Making model and role selection trivial is NOT a large rewrite, because the 4-layer policy engine that does it already exists and the canonical runner does not call it.** Added 2026-10-17T01:25:30+01:00. **HIS QUESTION, verbatim:** *"can you build this and implement it in such a way that it doesn't require vast code rewrites and/or refactoring of large elements of the existing code base? If it is buildable, I would suggest building it, and then putting this work to the free panel to look at."* **HIS DESIGN INTENT, verbatim:** *"model selection should preferably be a simple box, containing a scrollable list of models available from OpenRouter and models available on a user's local machine... with available models on a user's local machine at the top of this list"*, with *"role management, such as 'worker'... 'classifier'... and 'orchestrator'"* individually selectable, plus a recommended list and a note that untested models in a given role carry unknown performance. His argument for it: the project claims substrate, model and vendor agnosticism, and *"We clearly cannot make such claims, and then say 'Oh, btw, that isn't really true. Here is a list of the only models you can use.'"* **THE ANSWER IS YES, AND MOST OF THE HARD PART IS BUILT.** `bench/cdsfl_registry/registry.py` is a 4-layer hierarchical policy merge engine with MONOTONICITY ENFORCEMENT: layer 1 `universal.toml` holds HARD constraints, layer 2 `domains/<domain>.toml`, layer 3 `tasks/<task_id>.toml`, layer 4 `models/<model>.toml`, and a lower layer that tries to weaken a universal HARD constraint raises `PolicyViolationError`. **That monotonicity is exactly the safety property arbitrary model selection requires**, because it means a researcher's choice of model cannot loosen a hard constraint. Measured by execution: layer 2 holds **10 domains** — biology, chemistry, code, cross_domain, cs_software, engineering, information_science, mathematics, physics, statistics — and layer 4 holds **6 model files**: Fable, chatgpt_5_4, codex_5_3, deepseek_v3, gemini_3_1_pro, opus_4_6. `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys; an unregistered model raises `FileNotFoundError`, which is a LOUD failure and the 1 of 10 admission steps that does fail loudly per B13. **THE GAP, AND IT IS WIRING RATHER THAN ARCHITECTURE.** `bench/reference_runner_v3.py` — the canonical runner — makes **0** calls to `load_effective_policy`. The engine is reached by `bench/run_round_robin.py:3631` and `:3647` and by `bench/cdsfl_registry/engine.py`, neither of which is the current runner. v3 passes `task_domain` to the composer at line 11909 and accepts `domain=args.domain` at 21194, so the domain reaches prompt composition but never the policy merge. Layer 3, `tasks/`, does not exist as a directory at all. And there is no role layer. **FOR DONE, in dependency order:** (1) wire `load_effective_policy` into v3, which is the single change that makes every later step declarative; (2) redirect B13's 12 live per-model tables to read the merged policy instead of their own dictionaries; (3) add a role dimension, either as a `roles/` layer or a `role` field in the model file, composing with the existing merge rule rather than beside it; (4) wire `validate_all_policies()` as the run-level preflight CC2 recommended, reporting every missing registration at once and refusing the run; (5) generate the selectable list from the registry plus an OpenRouter query plus a local-model probe, with local models first as he specified. **Steps 1 and 4 are each a handful of lines; step 2 is 12 small redirections; none is a refactor of large elements.** **THEN TO THE FREE PANEL**, as he directed, on design, implementation and integration with the coming interface build. **★ THE PREMISE IS WRONG, ESTABLISHED BY EXECUTION 2026-10-18T03:25:59+01:00.** The entry's headline says the 4-layer policy engine exists *"and the canonical runner does not call it"*. That is true of the SYMBOL and false of the BEHAVIOUR. `bench/reference_runner_v3.py` contains 0 textual references to `load_effective_policy` -- but the call sits inside `compose()` in `bench/cdsfl_registry/composer.py`, and `compose()` is exactly what the runner invokes through `_compose_for_model` once per seat per round. **Verified by running it:** `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys, and `compose(task_domain="mathematics", model="opus_4_6", ...)` returns a `ComposedDirectiveSet`. **SO THE RUNNER DOES CONSULT THE 4-LAYER MERGE, INCLUDING ITS MONOTONICITY ENFORCEMENT, ON EVERY COMPOSITION**, and wiring a second path into it would have duplicated working machinery -- the third time in one night I nearly rebuilt something that exists, and the first of the three caught BEFORE writing any code, by doing the FOLLOW step first. **WHAT IS GENUINELY MISSING IS NARROWER THAN THE ENTRY CLAIMS:** the engine has layers for universal constraints, domain, task and model, and NO LAYER FOR ROLE. His design asks for *"role management, such as 'worker' ... 'classifier' ... and 'orchestrator'"* to be individually selectable, and that is the part with no home in the 4 layers. **FOR DONE:** add the role layer, which is additive and does not disturb the merge, and put THAT to the panel rather than the wiring. **The brief is written and validated** at `bench/logs/what_breaks_the_capability_tie_2026-10-18/BRIEF.md`, which carries this correction. **★ A ROLE DIMENSION ALREADY EXISTS AND IT IS NOT HIS, ESTABLISHED BY EXECUTION 2026-10-29T03:38:04+00:00. THE PANEL QUESTION IS THEREFORE SHARPER THAN "ADD A ROLE LAYER".** Doing the FOLLOW step before writing code caught a 4th near-rebuild. **`ModelConfig.role` EXISTS, IS REQUIRED, AND IS TYPED.** `bench/experiment_11_orchestrator.py:59` declares `Role = Literal["collator", "player_manager", "participant"]`, `:77` makes `role: Role` a field with NO default, and `:96` provides `get_by_role(role: Role)`, a selector. The runner reads it live at `bench/reference_runner_v3.py:13171` and `:13251` as `mc.role != "collator"`, and the attribute resolves -- `dataclasses.fields(ModelConfig)` returns it among 12 fields, so those 2 lines are live code rather than a latent AttributeError. **SO THERE IS A CALLER FOR A ROLE LAYER ALREADY, which the additive standard requires and which I would otherwise have had to invent.** **BUT THE 2 VOCABULARIES ARE DIFFERENT CONCEPTS, AND THAT IS THE DECISION.** The existing 3 are STRUCTURAL -- who collates, who manages the roster, who participates -- and describe a seat's place in the topology. His 3 are FUNCTIONAL: *"role management, such as 'worker' ... 'classifier' ... and 'orchestrator'"*, describing what a model DOES. They overlap partially rather than cleanly: `player_manager` is close to his *orchestrator* and `participant` to his *worker*, while **`classifier` has no counterpart in the existing enum and `collator` has none in his list.** **WHAT THE PANEL SHOULD BE ASKED, which is not what the FOR DONE above says.** Not whether to add a layer -- that is mechanical and symmetric with the existing 4, each being a TOML load, a `_deep_merge` and a `_check_monotonicity`. The real questions are: (1) are the structural and functional roles ONE dimension to be reconciled, or 2 orthogonal dimensions needing 2 layers; (2) where does a role layer sit in the precedence, before or after the model layer, given that monotonicity protects the HARD keys either way but the SOFT keys go to whichever layer merges last; and (3) should an unregistered role fail LOUDLY like the model layer, which raises `FileNotFoundError` and is the 1 of 10 admission steps B13 credits with failing loudly, or silently skip like the task layer. **WHAT IS DELIBERATELY NOT BUILT TONIGHT:** the role files' CONTENT. Deciding what the `classifier` role constrains is policy, not plumbing, and inventing it would be exactly the flattering-design failure this project's record names. The role layer itself is a handful of lines once (1), (2) and (3) are answered, since it is a TOML load, a `_deep_merge` and a `_check_monotonicity` like the 4 layers beside it. **★ THE COST SIDE OF HIS 3 QUESTIONS IS NOW MEASURED, 2026-10-30, AND IT IS A COST RATHER THAN AN ARGUMENT.** Appended to this LINE because `parse_entries` reads the marker at `lines[i + 1]`, and this edit asserts that adjacency BEFORE writing rather than repairing it afterwards as 2 edits on 2026-10-29 had to. **WHAT IS ABSENT, established by execution:** there is no `roles/` directory in `bench/cdsfl_registry/` and no `tasks/` directory either, so layer 3 of the 4-layer engine does not exist as a directory; and `load_effective_policy(domain='mathematics', model='opus_4_6')` returns 9 keys of which **0 mention a role**. So the layer would be created from nothing and there is no existing role content to build on. **WHICH VOCABULARY THE CODE SPEAKS, measured as QUOTED VALUES in `bench/` and `scripts/`: 63 of 67, 0.940299, Wilson [0.856305, 0.976541], across 24 distinct files** — `collator` 37, `participant` 18, `player_manager` 8 against his `orchestrator` 3, `classifier` 1 and `worker` 0. **SO THE ASYMMETRY IN EFFORT IS REAL:** reconciling the 2 into 1 dimension touches those 63 values across 24 files, while treating them as 2 orthogonal layers touches none of them and adds a layer alongside. **AND THE COUNT MAY NOT DECIDE IT.** 63 to 4 is what any months-old vocabulary shows against one proposed 11 days earlier, so choosing on that basis would be choosing the incumbent BECAUSE it is the incumbent — the reasoning this project exists to refuse. His 3 words describe what a model DOES and the enum describes where a seat SITS in the topology; which is right about what a role IS remains his question, and the measurement is offered as its price and not as its answer. **Producer:** `scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py`, which states in its own docstring that the figure is an UPPER BOUND, since a quoted occurrence may be a fixture or a log message rather than a live comparison. **Guard:** `bench/tests/test_which_role_vocabulary_2026-10-30.py`, 6 tests, 2 of 2 mutations caught — and both pinned defects were in the producer's own first version, which COUNTED ITSELF (66 of 73 against a true 63 of 67) and printed a HARDCODED ratio 1 line below a computed one, in a script whose whole purpose is that a figure must travel with its producer. **★ 2 OF HIS 3 QUESTIONS RESTED ON CLAIMS THIS ENTRY NEVER EXECUTED, AND 1 OF THEM IS WRONG. Measured 2026-10-30.** Appended to this LINE so the marker at `lines[i + 1]` stays adjacent, asserted before writing. **QUESTION 2's PREMISE, PARTLY FALSE.** This entry introduced the precedence question with the words *"monotonicity protects the HARD keys either way but the SOFT keys go to whichever layer merges last"*. The first half HOLDS by execution: merging all **60** (domain, model) pairs in the canonical order and in the reversed order leaves every protected dotpath unchanged -- **0 of 60 pairs** shows a difference, Wilson 95% [0.000000, 0.060172], cross-verified between a closed form and `statsmodels.proportion_confint` to agreement within 1e-12, with a one-sided exact upper bound of 0.048703 on which scipy and mpmath agree. **17** dotpaths are protected, so the comparison count is 1,020 and 0 of them differ; that figure is deliberately given NO interval of its own, because the 17 dotpaths inside one pair share a mechanism and are not independent observations. **★ THE FIRST VERSION OF THIS SENTENCE PAIRED THE 60-PAIR INTERVAL WITH THE 17-DOTPATH COUNT, AND THE PRE-COMMIT WILSON CHECKER REFUSED THE COMMIT**, recomputing [0.0000, 0.1843] for 0 of 17 and reporting that a count and its interval disagree. The measurement was right and the sentence was wrong -- a denominator swap, caught by the pre-commit Wilson checker rather than by me, which is the whole argument for having that checker in the board at all. The reason is structural rather than lucky: `_check_monotonicity` takes the merged policy and a layer NAME, never the previous policy, so it compares against the module constants `HARD_CONSTRAINTS`, `HARD_THRESHOLDS` and `HARD_STRINGS` and cannot be order-sensitive. **THE SECOND HALF ASSERTS THAT SOFT KEYS OF THAT KIND EXIST, AND THERE ARE 0.** Order reversal moves **no leaf dotpath at all**, because **0 of 60 pairs share ANY leaf key**: domain files write `constraints.*`, `convergence.*` and `verification.*`; model files write `model.*` and `protocol.*`; top-level overlap is NONE. **SO QUESTION 2 IS ABOUT A CONFIGURATION THAT DOES NOT EXIST YET** -- precedence currently decides nothing, and the live question is the one underneath it: whether layers may write into each other's namespace at all, which nothing in the merge engine forbids and only convention currently prevents. **QUESTION 3's PREMISE, INCOMPLETE.** It offered 2 precedents, failing *"LOUDLY like the model layer"* or *"silently skip like the task layer"*. There are **3**, each established by calling it: a missing MODEL file raises `FileNotFoundError`; a missing TASK file is skipped in SILENCE; an UNKNOWN domain emits `warnings.warn` and continues. A known domain whose file is missing is also silent, so the domain layer alone holds 2 of the 3 behaviours. **QUESTION 1 IS UNTOUCHED BY THIS** and remains his: whether the structural enum (`collator`, `participant`, `player_manager`) and his functional words (`worker`, `classifier`, `orchestrator`) are 1 dimension or 2 is not reducible to a measurement, and its cost is already priced at 63 of 67 quoted values across 24 files. **STILL ABSENT:** no `roles/` directory and no `tasks/` directory, so layer 3 of the 4 has no directory either. **Producer:** `scripts/what_does_layer_order_actually_decide_2026-10-30.py`. **Guard:** `bench/tests/test_what_layer_order_decides_2026-10-30.py`, 12 tests, 4 of 4 mutations red -- blinding the leaf reader, silencing the model layer's raise, making all 3 missing-key blocks skip, and faking a collision count. **IT PINS A RELATIONSHIP, NOT THE 0:** if no pair collides then no key may be order-decided, and if any pair collides then at least 1 must be. Pinning `colliding == 0` would have forbidden a legitimate future layer and accused correct code, which is the 9-of-36 class measured on 2026-10-28. **★ THE BRIEF THIS ENTRY SAYS IS WRITTEN IS ABOUT A DIFFERENT QUESTION, AND B21's OWN BRIEF NOW EXISTS. Found and built 2026-10-30.** This entry states *"The brief is written and validated at `bench/logs/what_breaks_the_capability_tie_2026-10-18/BRIEF.md`, which carries this correction."* That document contains **0 occurrences of the word `role`**, and its own title is *"what breaks the capability tie, if not a model's name?"* — a different question. It does carry the policy-engine correction shared with B21's analysis, which is presumably why it was cited, but it does not POSE any of B21's 3 questions. **True of an adjacent document and false of B21's own 3 questions**, which is the same shape as this entry's own withdrawn claim that the runner makes 0 calls to the policy merge: true of the symbol, false of the behaviour. **B21's BRIEF IS NOW AT** `bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md`, 82 lines, 0 lint findings, written against the 6 required sections the existing briefs use and mirrored to `experimental_notes/evidence/panel_records_2026-10-30/` by `scripts/mirror_panel_records_2026-09-11.py`, which reports 149 of 149 rounds fully mirrored. It poses all 3 questions as tonight's measurement sharpened them: question 2 is stated as **vacuous on the current configuration** with the refutation named (construct 2 existing layer files whose merge is order-sensitive and the framing fails); question 3 is stated with **3 precedents rather than 2**; and question 1 carries the 63-against-4 tally with an explicit instruction that the tally may NOT decide it, because choosing the incumbent because it is the incumbent is the reasoning this project exists to refuse. 5 figures, each naming its producer inline. **AND 2 LINE CITATIONS IN THIS ENTRY HAVE DRIFTED 18 LINES EACH.** It cites `bench/reference_runner_v3.py:13171` and `:13251` for the 2 live reads of `mc.role`; measured 2026-10-30 they are at **`:13189`** and **`:13269`**. That is the identical 18-line drift as this entry's sibling citation of `ImmuneMemory.load` at `:21602`, now `:21620`, so 1 commit added 18 lines above both. The 3 citations into `bench/experiment_11_orchestrator.py` are EXACT: `Role` at `:59`, `role: Role` at `:77`, `get_by_role` at `:96`. A brief citing wrong lines wastes a seat's time, which is what `bench/tests/test_line_citations_resolve_2026-09-01.py` and `bench/tests/test_a_cited_path_must_exist_2026-10-30.py` exist to prevent, so the brief carries the corrected values and names the drift. **STILL NEEDS HIS GO-AHEAD** for the free-panel dispatch; nothing in the brief costs money. **★ THE FREE PANEL RAN 2026-10-31T02:15:54+00:00 ON HIS INSTRUCTION ("Put it to the free panel"), AND THE 2 SEATS DISAGREE — WHICH IS PRESERVED AS INFORMATION, NOT SMOOTHED.** 0 of 2 seats paid; round wall 667.7 s, cc2 667.7 s with 42 tool calls, fable 570.9 s with 44. **cc2: UNIFIED, one dimension.** **fable: NEITHER — 2 distinct dimensions but at most 1 new policy layer**, because the structural dimension already exists as code and duplicating it into TOML would be an addition nothing reaches. **BOTH SEATS INDEPENDENTLY MEASURED THE SAME 3 FACTS, AND ALL 3 VINDICATE HIS CAVEAT THAT THE FOOTBALL FRAMING WAS ONLY EVER AN ANALOGY.** (1) `bench/routing.py` — the ranking mechanism that actually promotes and demotes — contains **0** occurrences of `role`, `mc.role` or `ModelConfig`, so promotion and demotion were NEVER on the role axis and his vocabulary drops nothing by replacing it. (2) `collator` is read by about 35 live predicates and **written by zero**: `mc.role != "collator"` at `reference_runner_v3.py:13189` and `:13269` and 16 sibling runners, `== "collator"` at `runner_core.py:382` and 7 others, and no construction site anywhere sets it — so every `!=` filter is a tautology and every `==` branch is unreachable. cc2 names the cause from the module's own docstring: **`collator` names the HARNESS, not a seat**, a category error inside a per-seat enum. (3) `get_by_role` has **0 callers** anywhere (fable). **cc2 ALSO REFUTED THIS BRIEF'S OWN "A CALLER ALREADY EXISTS" ARGUMENT** by AST rather than grep: 4 role values are CONSTRUCTED against 3 declared — `participant` at 16 sites, the undeclared `player` at 9 and `reviewer` at 4 behaving identically to it, `player_manager` at 2, and `collator` at 0 — so the live role dimension carries exactly **1 discriminating bit**, arbitrator-that-dispatches-last or not. Its words: one bit with 4 spellings. **WHERE THEY GENUINELY DIVIDE:** whether his worker/classifier/orchestrator sits on that same axis at finer grain (cc2) or on a second axis that the bundling of `is_arbitrary=(is_last and role == "player_manager")` makes lossy to flatten (fable); fable adds that `classifier` names no seat POSITION, which is its reason for calling the mapping bundle-to-atoms rather than word-to-word. **BOTH SEATS WROTE FIXES INTO THEIR SANDBOXES AND NEITHER IS FOLDED BACK**, per his ruling that an emerging fix is tested under a, f and sy first. **WHAT REMAINS IS HIS CHOICE BETWEEN 2 MEASURED POSITIONS**, not a measurement. **★★ THE JOINT ROUND CONVERGED 2026-10-31T02:57:41+00:00, AND IT CONVERGED ON EVIDENCE RATHER THAN DEFERENCE — WHICH IS THE ONLY KIND THIS PROJECT ACCEPTS.** Round wall 917.6 s; cc2 917.6 s with 47 tool calls, fable 670.8 s with 31. 0 of 2 seats paid. The blind round left cc2 on UNIFIED and fable on NEITHER; **both now return TWO DIMENSIONS ONE LAYER**, and each names precisely what moved it, which is what distinguishes convergence from splitting the difference. **cc2 MOVED.** **fable RETAINED and conceded a scope.** **THE MECHANISM OF THE CONVERGENCE:** fable accepted cc2's 4-constructed-against-3-declared measurement and rejected only its INFERENCE, conceding that at `ModelConfig` scope cc2 is right and `player`/`reviewer` were a FORK rather than a second dimension — then found the half cc2's instrument could not reach, **a SECOND declaration of the structural role axis in `bench/dm/_types.Role` with `RoleAssignment` and `DynamicManager`**, through exactly the escape route cc2 had itself named as the weakest link in its own derivation. cc2 then moved: the live predicates induce **3 cells, not 2**. So the 1-bit reading was refuted by the route its own author flagged. **THE DECIDING CASE WAS CONSTRUCTED AND EXECUTED, not hypothesised:** `experimental_notes/seat_evidence/joint_the_role_layer_b21_2026-10-31/fable/scripts/falsifier_the_role_axis_is_one_bit_2026-10-31.py` with real imports — preserved under `seat_evidence` and NOT in the canonical tree, because a seat writes into its own sandbox and nothing is folded back until it is tested; the dead-citation guard caught this entry naming the sandbox path as though it were the tree, which is exactly its job, driving `RoleAssignment.assign` at `dm/_manager.py:106`, `.reassign` at `:600` and the `role_map` handed to `FailureHandler` at `:605`, from the exp20 and exp35 entry points. cc2's independent case is an independent adjudicator: a 4th seat that must render the round verdict having seen every other seat's findings and must be EXCLUDED from finding production so it does not adjudicate its own — which his `orchestrator` names exactly and which the incumbent vocabulary cannot express. **SO THE ANSWER TO HIS QUESTION IS: TWO DIMENSIONS, ONE LAYER.** The structural axis already exists as code and is declared TWICE, so duplicating it into TOML would be an addition nothing reaches; his worker/classifier/orchestrator is the FUNCTIONAL dimension and is the only candidate for a registry layer. **HIS CAVEAT IS FULLY VINDICATED:** the football framing never carried the promotion and demotion semantics, because `bench/routing.py` contains 0 occurrences of `role`, so renaming drops nothing. **WHAT REMAINS IS HIS GO-AHEAD TO BUILD THE 1 LAYER**, plus a decision on the 2 declarations of the structural axis, which no seat was asked about and which is now the live question. 4 seat-written fixes exist in the sandboxes and NONE is folded back, per his ruling that an emerging fix is tested under a, f and sy first.
++**B21. Making model and role selection trivial is NOT a large rewrite, because the 4-layer policy engine that does it already exists and the canonical runner does not call it.** Added 2026-10-17T01:25:30+01:00. **HIS QUESTION, verbatim:** *"can you build this and implement it in such a way that it doesn't require vast code rewrites and/or refactoring of large elements of the existing code base? If it is buildable, I would suggest building it, and then putting this work to the free panel to look at."* **HIS DESIGN INTENT, verbatim:** *"model selection should preferably be a simple box, containing a scrollable list of models available from OpenRouter and models available on a user's local machine... with available models on a user's local machine at the top of this list"*, with *"role management, such as 'worker'... 'classifier'... and 'orchestrator'"* individually selectable, plus a recommended list and a note that untested models in a given role carry unknown performance. His argument for it: the project claims substrate, model and vendor agnosticism, and *"We clearly cannot make such claims, and then say 'Oh, btw, that isn't really true. Here is a list of the only models you can use.'"* **THE ANSWER IS YES, AND MOST OF THE HARD PART IS BUILT.** `bench/cdsfl_registry/registry.py` is a 4-layer hierarchical policy merge engine with MONOTONICITY ENFORCEMENT: layer 1 `universal.toml` holds HARD constraints, layer 2 `domains/<domain>.toml`, layer 3 `tasks/<task_id>.toml`, layer 4 `models/<model>.toml`, and a lower layer that tries to weaken a universal HARD constraint raises `PolicyViolationError`. **That monotonicity is exactly the safety property arbitrary model selection requires**, because it means a researcher's choice of model cannot loosen a hard constraint. Measured by execution: layer 2 holds **10 domains** — biology, chemistry, code, cross_domain, cs_software, engineering, information_science, mathematics, physics, statistics — and layer 4 holds **6 model files**: Fable, chatgpt_5_4, codex_5_3, deepseek_v3, gemini_3_1_pro, opus_4_6. `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys; an unregistered model raises `FileNotFoundError`, which is a LOUD failure and the 1 of 10 admission steps that does fail loudly per B13. **THE GAP, AND IT IS WIRING RATHER THAN ARCHITECTURE.** `bench/reference_runner_v3.py` — the canonical runner — makes **0** calls to `load_effective_policy`. The engine is reached by `bench/run_round_robin.py:3631` and `:3647` and by `bench/cdsfl_registry/engine.py`, neither of which is the current runner. v3 passes `task_domain` to the composer at line 11909 and accepts `domain=args.domain` at 21194, so the domain reaches prompt composition but never the policy merge. Layer 3, `tasks/`, does not exist as a directory at all. And there is no role layer. **FOR DONE, in dependency order:** (1) wire `load_effective_policy` into v3, which is the single change that makes every later step declarative; (2) redirect B13's 12 live per-model tables to read the merged policy instead of their own dictionaries; (3) add a role dimension, either as a `roles/` layer or a `role` field in the model file, composing with the existing merge rule rather than beside it; (4) wire `validate_all_policies()` as the run-level preflight CC2 recommended, reporting every missing registration at once and refusing the run; (5) generate the selectable list from the registry plus an OpenRouter query plus a local-model probe, with local models first as he specified. **Steps 1 and 4 are each a handful of lines; step 2 is 12 small redirections; none is a refactor of large elements.** **THEN TO THE FREE PANEL**, as he directed, on design, implementation and integration with the coming interface build. **★ THE PREMISE IS WRONG, ESTABLISHED BY EXECUTION 2026-10-18T03:25:59+01:00.** The entry's headline says the 4-layer policy engine exists *"and the canonical runner does not call it"*. That is true of the SYMBOL and false of the BEHAVIOUR. `bench/reference_runner_v3.py` contains 0 textual references to `load_effective_policy` -- but the call sits inside `compose()` in `bench/cdsfl_registry/composer.py`, and `compose()` is exactly what the runner invokes through `_compose_for_model` once per seat per round. **Verified by running it:** `load_effective_policy(domain="mathematics", model="opus_4_6")` returns 9 keys, and `compose(task_domain="mathematics", model="opus_4_6", ...)` returns a `ComposedDirectiveSet`. **SO THE RUNNER DOES CONSULT THE 4-LAYER MERGE, INCLUDING ITS MONOTONICITY ENFORCEMENT, ON EVERY COMPOSITION**, and wiring a second path into it would have duplicated working machinery -- the third time in one night I nearly rebuilt something that exists, and the first of the three caught BEFORE writing any code, by doing the FOLLOW step first. **WHAT IS GENUINELY MISSING IS NARROWER THAN THE ENTRY CLAIMS:** the engine has layers for universal constraints, domain, task and model, and NO LAYER FOR ROLE. His design asks for *"role management, such as 'worker' ... 'classifier' ... and 'orchestrator'"* to be individually selectable, and that is the part with no home in the 4 layers. **FOR DONE:** add the role layer, which is additive and does not disturb the merge, and put THAT to the panel rather than the wiring. **The brief is written and validated** at `bench/logs/what_breaks_the_capability_tie_2026-10-18/BRIEF.md`, which carries this correction. **★ A ROLE DIMENSION ALREADY EXISTS AND IT IS NOT HIS, ESTABLISHED BY EXECUTION 2026-10-29T03:38:04+00:00. THE PANEL QUESTION IS THEREFORE SHARPER THAN "ADD A ROLE LAYER".** Doing the FOLLOW step before writing code caught a 4th near-rebuild. **`ModelConfig.role` EXISTS, IS REQUIRED, AND IS TYPED.** `bench/experiment_11_orchestrator.py:59` declares `Role = Literal["collator", "player_manager", "participant"]`, `:77` makes `role: Role` a field with NO default, and `:96` provides `get_by_role(role: Role)`, a selector. The runner reads it live at `bench/reference_runner_v3.py:13171` and `:13251` as `mc.role != "collator"`, and the attribute resolves -- `dataclasses.fields(ModelConfig)` returns it among 12 fields, so those 2 lines are live code rather than a latent AttributeError. **SO THERE IS A CALLER FOR A ROLE LAYER ALREADY, which the additive standard requires and which I would otherwise have had to invent.** **BUT THE 2 VOCABULARIES ARE DIFFERENT CONCEPTS, AND THAT IS THE DECISION.** The existing 3 are STRUCTURAL -- who collates, who manages the roster, who participates -- and describe a seat's place in the topology. His 3 are FUNCTIONAL: *"role management, such as 'worker' ... 'classifier' ... and 'orchestrator'"*, describing what a model DOES. They overlap partially rather than cleanly: `player_manager` is close to his *orchestrator* and `participant` to his *worker*, while **`classifier` has no counterpart in the existing enum and `collator` has none in his list.** **WHAT THE PANEL SHOULD BE ASKED, which is not what the FOR DONE above says.** Not whether to add a layer -- that is mechanical and symmetric with the existing 4, each being a TOML load, a `_deep_merge` and a `_check_monotonicity`. The real questions are: (1) are the structural and functional roles ONE dimension to be reconciled, or 2 orthogonal dimensions needing 2 layers; (2) where does a role layer sit in the precedence, before or after the model layer, given that monotonicity protects the HARD keys either way but the SOFT keys go to whichever layer merges last; and (3) should an unregistered role fail LOUDLY like the model layer, which raises `FileNotFoundError` and is the 1 of 10 admission steps B13 credits with failing loudly, or silently skip like the task layer. **WHAT IS DELIBERATELY NOT BUILT TONIGHT:** the role files' CONTENT. Deciding what the `classifier` role constrains is policy, not plumbing, and inventing it would be exactly the flattering-design failure this project's record names. The role layer itself is a handful of lines once (1), (2) and (3) are answered, since it is a TOML load, a `_deep_merge` and a `_check_monotonicity` like the 4 layers beside it. **★ THE COST SIDE OF HIS 3 QUESTIONS IS NOW MEASURED, 2026-10-30, AND IT IS A COST RATHER THAN AN ARGUMENT.** Appended to this LINE because `parse_entries` reads the marker at `lines[i + 1]`, and this edit asserts that adjacency BEFORE writing rather than repairing it afterwards as 2 edits on 2026-10-29 had to. **WHAT IS ABSENT, established by execution:** there is no `roles/` directory in `bench/cdsfl_registry/` and no `tasks/` directory either, so layer 3 of the 4-layer engine does not exist as a directory; and `load_effective_policy(domain='mathematics', model='opus_4_6')` returns 9 keys of which **0 mention a role**. So the layer would be created from nothing and there is no existing role content to build on. **WHICH VOCABULARY THE CODE SPEAKS, measured as QUOTED VALUES in `bench/` and `scripts/`: 63 of 67, 0.940299, Wilson [0.856305, 0.976541], across 24 distinct files** — `collator` 37, `participant` 18, `player_manager` 8 against his `orchestrator` 3, `classifier` 1 and `worker` 0. **SO THE ASYMMETRY IN EFFORT IS REAL:** reconciling the 2 into 1 dimension touches those 63 values across 24 files, while treating them as 2 orthogonal layers touches none of them and adds a layer alongside. **AND THE COUNT MAY NOT DECIDE IT.** 63 to 4 is what any months-old vocabulary shows against one proposed 11 days earlier, so choosing on that basis would be choosing the incumbent BECAUSE it is the incumbent — the reasoning this project exists to refuse. His 3 words describe what a model DOES and the enum describes where a seat SITS in the topology; which is right about what a role IS remains his question, and the measurement is offered as its price and not as its answer. **Producer:** `scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py`, which states in its own docstring that the figure is an UPPER BOUND, since a quoted occurrence may be a fixture or a log message rather than a live comparison. **Guard:** `bench/tests/test_which_role_vocabulary_2026-10-30.py`, 6 tests, 2 of 2 mutations caught — and both pinned defects were in the producer's own first version, which COUNTED ITSELF (66 of 73 against a true 63 of 67) and printed a HARDCODED ratio 1 line below a computed one, in a script whose whole purpose is that a figure must travel with its producer. **★ 2 OF HIS 3 QUESTIONS RESTED ON CLAIMS THIS ENTRY NEVER EXECUTED, AND 1 OF THEM IS WRONG. Measured 2026-10-30.** Appended to this LINE so the marker at `lines[i + 1]` stays adjacent, asserted before writing. **QUESTION 2's PREMISE, PARTLY FALSE.** This entry introduced the precedence question with the words *"monotonicity protects the HARD keys either way but the SOFT keys go to whichever layer merges last"*. The first half HOLDS by execution: merging all **60** (domain, model) pairs in the canonical order and in the reversed order leaves every protected dotpath unchanged -- **0 of 60 pairs** shows a difference, Wilson 95% [0.000000, 0.060172], cross-verified between a closed form and `statsmodels.proportion_confint` to agreement within 1e-12, with a one-sided exact upper bound of 0.048703 on which scipy and mpmath agree. **17** dotpaths are protected, so the comparison count is 1,020 and 0 of them differ; that figure is deliberately given NO interval of its own, because the 17 dotpaths inside one pair share a mechanism and are not independent observations. **★ THE FIRST VERSION OF THIS SENTENCE PAIRED THE 60-PAIR INTERVAL WITH THE 17-DOTPATH COUNT, AND THE PRE-COMMIT WILSON CHECKER REFUSED THE COMMIT**, recomputing [0.0000, 0.1843] for 0 of 17 and reporting that a count and its interval disagree. The measurement was right and the sentence was wrong -- a denominator swap, caught by the pre-commit Wilson checker rather than by me, which is the whole argument for having that checker in the board at all. The reason is structural rather than lucky: `_check_monotonicity` takes the merged policy and a layer NAME, never the previous policy, so it compares against the module constants `HARD_CONSTRAINTS`, `HARD_THRESHOLDS` and `HARD_STRINGS` and cannot be order-sensitive. **THE SECOND HALF ASSERTS THAT SOFT KEYS OF THAT KIND EXIST, AND THERE ARE 0.** Order reversal moves **no leaf dotpath at all**, because **0 of 60 pairs share ANY leaf key**: domain files write `constraints.*`, `convergence.*` and `verification.*`; model files write `model.*` and `protocol.*`; top-level overlap is NONE. **SO QUESTION 2 IS ABOUT A CONFIGURATION THAT DOES NOT EXIST YET** -- precedence currently decides nothing, and the live question is the one underneath it: whether layers may write into each other's namespace at all, which nothing in the merge engine forbids and only convention currently prevents. **QUESTION 3's PREMISE, INCOMPLETE.** It offered 2 precedents, failing *"LOUDLY like the model layer"* or *"silently skip like the task layer"*. There are **3**, each established by calling it: a missing MODEL file raises `FileNotFoundError`; a missing TASK file is skipped in SILENCE; an UNKNOWN domain emits `warnings.warn` and continues. A known domain whose file is missing is also silent, so the domain layer alone holds 2 of the 3 behaviours. **QUESTION 1 IS UNTOUCHED BY THIS** and remains his: whether the structural enum (`collator`, `participant`, `player_manager`) and his functional words (`worker`, `classifier`, `orchestrator`) are 1 dimension or 2 is not reducible to a measurement, and its cost is already priced at 63 of 67 quoted values across 24 files. **STILL ABSENT:** no `roles/` directory and no `tasks/` directory, so layer 3 of the 4 has no directory either. **Producer:** `scripts/what_does_layer_order_actually_decide_2026-10-30.py`. **Guard:** `bench/tests/test_what_layer_order_decides_2026-10-30.py`, 12 tests, 4 of 4 mutations red -- blinding the leaf reader, silencing the model layer's raise, making all 3 missing-key blocks skip, and faking a collision count. **IT PINS A RELATIONSHIP, NOT THE 0:** if no pair collides then no key may be order-decided, and if any pair collides then at least 1 must be. Pinning `colliding == 0` would have forbidden a legitimate future layer and accused correct code, which is the 9-of-36 class measured on 2026-10-28. **★ THE BRIEF THIS ENTRY SAYS IS WRITTEN IS ABOUT A DIFFERENT QUESTION, AND B21's OWN BRIEF NOW EXISTS. Found and built 2026-10-30.** This entry states *"The brief is written and validated at `bench/logs/what_breaks_the_capability_tie_2026-10-18/BRIEF.md`, which carries this correction."* That document contains **0 occurrences of the word `role`**, and its own title is *"what breaks the capability tie, if not a model's name?"* — a different question. It does carry the policy-engine correction shared with B21's analysis, which is presumably why it was cited, but it does not POSE any of B21's 3 questions. **True of an adjacent document and false of B21's own 3 questions**, which is the same shape as this entry's own withdrawn claim that the runner makes 0 calls to the policy merge: true of the symbol, false of the behaviour. **B21's BRIEF IS NOW AT** `bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md`, 82 lines, 0 lint findings, written against the 6 required sections the existing briefs use and mirrored to `experimental_notes/evidence/panel_records_2026-10-30/` by `scripts/mirror_panel_records_2026-09-11.py`, which reports 149 of 149 rounds fully mirrored. It poses all 3 questions as tonight's measurement sharpened them: question 2 is stated as **vacuous on the current configuration** with the refutation named (construct 2 existing layer files whose merge is order-sensitive and the framing fails); question 3 is stated with **3 precedents rather than 2**; and question 1 carries the 63-against-4 tally with an explicit instruction that the tally may NOT decide it, because choosing the incumbent because it is the incumbent is the reasoning this project exists to refuse. 5 figures, each naming its producer inline. **AND 2 LINE CITATIONS IN THIS ENTRY HAVE DRIFTED 18 LINES EACH.** It cites `bench/reference_runner_v3.py:13171` and `:13251` for the 2 live reads of `mc.role`; measured 2026-10-30 they are at **`:13189`** and **`:13269`**. That is the identical 18-line drift as this entry's sibling citation of `ImmuneMemory.load` at `:21602`, now `:21620`, so 1 commit added 18 lines above both. The 3 citations into `bench/experiment_11_orchestrator.py` are EXACT: `Role` at `:59`, `role: Role` at `:77`, `get_by_role` at `:96`. A brief citing wrong lines wastes a seat's time, which is what `bench/tests/test_line_citations_resolve_2026-09-01.py` and `bench/tests/test_a_cited_path_must_exist_2026-10-30.py` exist to prevent, so the brief carries the corrected values and names the drift. **STILL NEEDS HIS GO-AHEAD** for the free-panel dispatch; nothing in the brief costs money. **★ THE FREE PANEL RAN 2026-10-31T02:15:54+00:00 ON HIS INSTRUCTION ("Put it to the free panel"), AND THE 2 SEATS DISAGREE — WHICH IS PRESERVED AS INFORMATION, NOT SMOOTHED.** 0 of 2 seats paid; round wall 667.7 s, cc2 667.7 s with 42 tool calls, fable 570.9 s with 44. **cc2: UNIFIED, one dimension.** **fable: NEITHER — 2 distinct dimensions but at most 1 new policy layer**, because the structural dimension already exists as code and duplicating it into TOML would be an addition nothing reaches. **BOTH SEATS INDEPENDENTLY MEASURED THE SAME 3 FACTS, AND ALL 3 VINDICATE HIS CAVEAT THAT THE FOOTBALL FRAMING WAS ONLY EVER AN ANALOGY.** (1) `bench/routing.py` — the ranking mechanism that actually promotes and demotes — contains **0** occurrences of `role`, `mc.role` or `ModelConfig`, so promotion and demotion were NEVER on the role axis and his vocabulary drops nothing by replacing it. (2) `collator` is read by about 35 live predicates and **written by zero**: `mc.role != "collator"` at `reference_runner_v3.py:13189` and `:13269` and 16 sibling runners, `== "collator"` at `runner_core.py:382` and 7 others, and no construction site anywhere sets it — so every `!=` filter is a tautology and every `==` branch is unreachable. cc2 names the cause from the module's own docstring: **`collator` names the HARNESS, not a seat**, a category error inside a per-seat enum. (3) `get_by_role` has **0 callers** anywhere (fable). **cc2 ALSO REFUTED THIS BRIEF'S OWN "A CALLER ALREADY EXISTS" ARGUMENT** by AST rather than grep: 4 role values are CONSTRUCTED against 3 declared — `participant` at 16 sites, the undeclared `player` at 9 and `reviewer` at 4 behaving identically to it, `player_manager` at 2, and `collator` at 0 — so the live role dimension carries exactly **1 discriminating bit**, arbitrator-that-dispatches-last or not. Its words: one bit with 4 spellings. **WHERE THEY GENUINELY DIVIDE:** whether his worker/classifier/orchestrator sits on that same axis at finer grain (cc2) or on a second axis that the bundling of `is_arbitrary=(is_last and role == "player_manager")` makes lossy to flatten (fable); fable adds that `classifier` names no seat POSITION, which is its reason for calling the mapping bundle-to-atoms rather than word-to-word. **BOTH SEATS WROTE FIXES INTO THEIR SANDBOXES AND NEITHER IS FOLDED BACK**, per his ruling that an emerging fix is tested under a, f and sy first. **WHAT REMAINS IS HIS CHOICE BETWEEN 2 MEASURED POSITIONS**, not a measurement. **★★ THE JOINT ROUND CONVERGED 2026-10-31T02:57:41+00:00, AND IT CONVERGED ON EVIDENCE RATHER THAN DEFERENCE — WHICH IS THE ONLY KIND THIS PROJECT ACCEPTS.** Round wall 917.6 s; cc2 917.6 s with 47 tool calls, fable 670.8 s with 31. 0 of 2 seats paid. The blind round left cc2 on UNIFIED and fable on NEITHER; **both now return TWO DIMENSIONS ONE LAYER**, and each names precisely what moved it, which is what distinguishes convergence from splitting the difference. **cc2 MOVED.** **fable RETAINED and conceded a scope.** **THE MECHANISM OF THE CONVERGENCE:** fable accepted cc2's 4-constructed-against-3-declared measurement and rejected only its INFERENCE, conceding that at `ModelConfig` scope cc2 is right and `player`/`reviewer` were a FORK rather than a second dimension — then found the half cc2's instrument could not reach, **a SECOND declaration of the structural role axis in `bench/dm/_types.Role` with `RoleAssignment` and `DynamicManager`**, through exactly the escape route cc2 had itself named as the weakest link in its own derivation. cc2 then moved: the live predicates induce **3 cells, not 2**. So the 1-bit reading was refuted by the route its own author flagged. **THE DECIDING CASE WAS CONSTRUCTED AND EXECUTED, not hypothesised:** `scripts/falsifier_the_role_axis_is_one_bit_2026-10-31.py` with real imports, driving `RoleAssignment.assign` at `dm/_manager.py:106`, `.reassign` at `:600` and the `role_map` handed to `FailureHandler` at `:605`, from the exp20 and exp35 entry points. cc2's independent case is an independent adjudicator: a 4th seat that must render the round verdict having seen every other seat's findings and must be EXCLUDED from finding production so it does not adjudicate its own — which his `orchestrator` names exactly and which the incumbent vocabulary cannot express. **SO THE ANSWER TO HIS QUESTION IS: TWO DIMENSIONS, ONE LAYER.** The structural axis already exists as code and is declared TWICE, so duplicating it into TOML would be an addition nothing reaches; his worker/classifier/orchestrator is the FUNCTIONAL dimension and is the only candidate for a registry layer. **HIS CAVEAT IS FULLY VINDICATED:** the football framing never carried the promotion and demotion semantics, because `bench/routing.py` contains 0 occurrences of `role`, so renaming drops nothing. **WHAT REMAINS IS HIS GO-AHEAD TO BUILD THE 1 LAYER**, plus a decision on the 2 declarations of the structural axis, which no seat was asked about and which is now the live question. 4 seat-written fixes exist in the sandboxes and NONE is folded back, per his ruling that an emerging fix is tested under a, f and sy first.
+ <!-- task: B21 | state: OPEN | status: TESTED | evidence: bench/logs/joint_the_role_layer_b21_2026-10-31/cc2.json, bench/logs/joint_the_role_layer_b21_2026-10-31/fable.json | ruled: 2026-10-17 -->
+ 
+ **THE PREREQUISITE IS BUILT 2026-10-17 16:13 BST: A MISS IS NOW NAMED RATHER THAN DEFAULTED.** `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py` measures what a new seat costs — **12 per-model tables across 6 live-harness files** plus 1 registry `.toml` — and its own conclusion is that *"the real problem is not the count, it is the failure mode"*: of the 10 steps a new seat passes through, **9 fail SILENTLY and 1 fails loudly — 90.0000%, Wilson [59.5850%, 98.2124%], Clopper-Pearson [55.4984%, 99.7471%]**. A researcher who misses a table gets a seat that RUNS while losing whatever that table gated, which `base_model_label`'s own docstring calls *"a capability lost with no error"*.
+
+### fable:attempt-1:hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-10-31 03:19:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_swe7z4u4/repo/hooks/pre-commit	2026-10-29 08:44:43
+@@ -106,30 +106,6 @@
+ # commits earlier. The subset is deliberate -- these are the cheap guards -- but
+ # a red outside it accumulates unseen, which is what happened here.
+ #
+-# ★ 29 GUARDS ADDED 2026-10-31, AND THE SCOPE IS DELIBERATELY NOT "ALL OF THEM".
+-# He accepted a recommendation to add the unreached test files to this gate, on
+-# the strength of a figure that answered a different question. The figure given
+-# was "the 6 newest guards run 75 tests in 18.88 seconds against a gate that
+-# currently takes 312 seconds, about 6 per cent" -- true, and those 6 guards are
+-# 75 of the 12,048 tests in the unreached set, 0.623 per cent of it. Adding
+-# EVERY unreached file makes this gate the full board: +12,048 tests and
+-# +5,321.85 s, taking 312 s to 5,634 s, a factor of 18.05. A commit that takes
+-# an hour and a half is a commit nobody makes, and a gate nobody can afford to
+-# run protects nothing. The unreached set is also 2.26x slower PER TEST
+-# (441.72 ms against 195.50 ms), so this list's current membership is the cheap
+-# files and that is unlikely to be an accident. Producer:
+-# scripts/what_adding_every_unreached_test_file_really_costs_2026-10-31.py.
+-#
+-# SO THE SCOPE IS THE GUARDS WRITTEN SINCE 2026-10-29, which is what the
+-# original argument was actually about: a guard on one of these reports sat
+-# failing through 3 consecutive commits because nothing cheap ran it. Measured
+-# 2026-10-31: these 29 files run 440 tests in 71.13 s, which takes the gate from
+-# 312 s to about 383 s -- 22.8 per cent, not 1,705. All 440 pass; 6 did not when
+-# first run together, and each of those 6 was a stale pin rather than a defect
+-# in the product (a citation of mine naming a seat's sandbox path, the B50
+-# filter pin his ruling moved, and a regression guard that needed a blocker to
+-# exist in the live list).
+-#
+ # The 6 files below add 75 tests, about 5% on top of the 1,348 this list already
+ # holds, and each guards something a founder ruling turns on: the `ruled` field
+ # the morning report routes on, the severity gate he has defended 4 times, the
+@@ -137,35 +113,6 @@
+ # reach the record unedited, the model-admission failure mode, and the
+ # human-review stop's evidence condition.
+ GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
+-bench/tests/test_a_cited_path_must_exist_2026-10-30.py
+-bench/tests/test_an_identity_can_be_walked_back_2026-10-29.py
+-bench/tests/test_does_filtering_the_stale_constant_repair_two_2026-10-30.py
+-bench/tests/test_how_many_channels_await_his_ruling_2026-10-30.py
+-bench/tests/test_rk_carries_forward_across_rounds_2026-10-31.py
+-bench/tests/test_the_annotation_context_reader_sees_cr_only_files_2026-10-29.py
+-bench/tests/test_the_claim_channel_enters_r_k_2026-10-29.py
+-bench/tests/test_the_ds_kind_is_confined_to_his_annotations_2026-10-30.py
+-bench/tests/test_the_feedback_section_groups_under_its_headings_2026-10-29.py
+-bench/tests/test_the_file_diagnosis_producers_2026-10-30.py
+-bench/tests/test_the_hierarchical_mode_has_an_effect_path_2026-10-29.py
+-bench/tests/test_the_kept_severity_is_not_an_aggregate_2026-10-29.py
+-bench/tests/test_the_ledger_budget_is_derived_not_reserved_2026-10-30.py
+-bench/tests/test_the_markdown_companion_is_generated_2026-10-30.py
+-bench/tests/test_the_memory_baseline_skips_an_unclean_save_2026-10-29.py
+-bench/tests/test_the_miss_ledger_is_not_split_2026-10-29.py
+-bench/tests/test_the_non_curing_population_is_named_2026-10-31.py
+-bench/tests/test_the_panel_request_split_is_withheld_2026-10-30.py
+-bench/tests/test_the_ranking_is_deterministic_and_exchangeable_2026-10-29.py
+-bench/tests/test_the_redactor_does_not_withhold_a_run_setting_2026-10-29.py
+-bench/tests/test_the_register_is_the_single_source_for_deferral_2026-10-29.py
+-bench/tests/test_the_residual_risk_never_compounds_2026-10-31.py
+-bench/tests/test_the_runner_core_lookups_announce_2026-10-29.py
+-bench/tests/test_the_staleness_check_runs_before_the_save_2026-10-29.py
+-bench/tests/test_the_triage_can_see_the_whole_list_2026-10-30.py
+-bench/tests/test_what_layer_order_decides_2026-10-30.py
+-bench/tests/test_what_questions_are_owed_2026-10-30.py
+-bench/tests/test_which_open_entries_already_have_his_ruling_2026-10-30.py
+-bench/tests/test_which_role_vocabulary_2026-10-30.py
+ bench/tests/test_recovery_memory_doc_repairs.py
+ bench/tests/test_memory_index_limits_match_the_loader_2026-09-01.py
+ bench/tests/test_line_citations_resolve_2026-09-01.py
+
+### fable:attempt-1:scripts/how_much_does_a_pass_lower_the_risk_2026-10-31.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/how_much_does_a_pass_lower_the_risk_2026-10-31.py	2026-10-31 03:07:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_swe7z4u4/repo/scripts/how_much_does_a_pass_lower_the_risk_2026-10-31.py	2026-10-31 00:59:19
+@@ -256,13 +256,8 @@
+               f"R(n*) = {w['R_at_n_star']:.6f}")
+     print(f"   {opt['note']}")
+     print()
+-    _shown = 12
+-    _all_fits = sorted(fits, key=lambda x: -x["findings"])
+-    print(f"PER-RUN DETAIL — the {min(_shown, len(_all_fits))} with the most "
+-          f"findings, of {len(_all_fits)} runs; "
+-          f"{max(0, len(_all_fits) - _shown)} not shown "
+-          f"(pass --json for every row):")
+-    for f in _all_fits[:_shown]:
++    print("PER-RUN DETAIL (the 12 with the most findings):")
++    for f in sorted(fits, key=lambda x: -x["findings"])[:12]:
+         q = f.get("q")
+         qs_ = f"{q:.6f}" if q is not None else "not identifiable"
+         print(f"   {f['run'][:52]:52} findings={f['findings']:4} "
+
+### fable:attempt-1:scripts/the_non_curing_population_is_named_2026-10-31.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/the_non_curing_population_is_named_2026-10-31.py	2026-10-31 03:07:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_swe7z4u4/repo/scripts/the_non_curing_population_is_named_2026-10-31.py	2026-10-31 02:42:10
+@@ -198,12 +198,8 @@
+     # ★ THE SET, not the count. A later run matching the count proves nothing.
+     ids = sorted({(r["run"], r["canonical_id"]) for r in rows})
+     print(f"\ndistinct (run, finding) identities: {len(ids)}")
+-    _shown = 10
+-    print(f"the first {min(_shown, len(ids))} of {len(ids)}, so a reader can "
+-          f"spot-check the list against the archive; "
+-          f"{max(0, len(ids) - _shown)} not shown here and ALL of them are in "
+-          f"the written file:")
+-    for run, cid in ids[:_shown]:
++    print("the first 10, so a reader can spot-check the list against the archive:")
++    for run, cid in ids[:10]:
+         print(f"   {run[:52]:52} {cid}")
+ 
+     if a.write:
+
+### fable:attempt-1:scripts/why_the_consolidated_file_was_unusable_2026-10-30.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/why_the_consolidated_file_was_unusable_2026-10-30.py	2026-10-31 03:07:15
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_swe7z4u4/repo/scripts/why_the_consolidated_file_was_unusable_2026-10-30.py	2026-10-30 19:12:18
+@@ -354,15 +354,8 @@
+                 by_ratio.add((i, j))
+     both = by_jaccard & by_ratio
+     pairs_possible = len(sents) * (len(sents) - 1) // 2
+-    # A TRUNCATED LIST STATES ITS REMAINDER. `examples` is a sample for a
+-    # reader, and `agreed_by_both` below is the full count, but a field named
+-    # `examples` beside a count is still a cap and must say so -- otherwise a
+-    # reader comparing the 2 cannot tell a sample from a complete list.
+-    _shown = 4
+-    examples = [(sents[i][:110], sents[j][:110]) for i, j in sorted(both)[:_shown]]
++    examples = [(sents[i][:110], sents[j][:110]) for i, j in sorted(both)[:4]]
+     return {"sentences": len(sents),
+-            "examples_shown": len(examples),
+-            "examples_withheld": max(0, len(both) - _shown),
+             "pairs_possible": pairs_possible,
+             "near_duplicate_by_jaccard": len(by_jaccard),
+             "near_duplicate_by_difflib": len(by_ratio),

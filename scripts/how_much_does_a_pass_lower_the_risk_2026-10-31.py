@@ -256,8 +256,13 @@ def main() -> int:
               f"R(n*) = {w['R_at_n_star']:.6f}")
     print(f"   {opt['note']}")
     print()
-    print("PER-RUN DETAIL (the 12 with the most findings):")
-    for f in sorted(fits, key=lambda x: -x["findings"])[:12]:
+    _shown = 12
+    _all_fits = sorted(fits, key=lambda x: -x["findings"])
+    print(f"PER-RUN DETAIL — the {min(_shown, len(_all_fits))} with the most "
+          f"findings, of {len(_all_fits)} runs; "
+          f"{max(0, len(_all_fits) - _shown)} not shown "
+          f"(pass --json for every row):")
+    for f in _all_fits[:_shown]:
         q = f.get("q")
         qs_ = f"{q:.6f}" if q is not None else "not identifiable"
         print(f"   {f['run'][:52]:52} findings={f['findings']:4} "

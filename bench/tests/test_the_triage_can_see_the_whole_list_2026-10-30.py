@@ -99,24 +99,109 @@ class TestTheBoundaryIsNowRelative:
 
 
 class TestTheTriageReachesEntriesBeyondTheSentinel:
-    """THE REGRESSION GUARD. Restoring the truncation must turn this red."""
+    """THE REGRESSION GUARD. Restoring the truncation must turn this red.
 
-    def test_a_term_living_only_past_the_sentinel_is_still_found(self):
-        probe = "A question about _RECORDING_RUNS that must be settled."
-        blocks, why = BT.blocks_progress(probe, tasks=LIST)
+    ★ IT NOW USES A FIXTURE RATHER THAN THE LIVE LIST, repaired 2026-10-31, and
+    the reason is the more interesting half.
+
+    These tests probed `_RECORDING_RUNS`, a symbol that lived only in B50's
+    entry past the sentinel, and asserted the triage reported it as blocking.
+    They went red tonight. The cause is NOT truncation and it is not a defect
+    in the triage: the founder ruled on B50, the ruling was carried out, the
+    entry is DONE, and a DONE entry correctly declares no dependency. Measured
+    at that moment: **0 of 625 symbols anywhere in the live list are reported
+    as blocking -- 0 of 414 before the sentinel and 0 of 211 past it -- and the
+    list carries 0 entries in state BLOCKED.** So nothing is blocking, which is
+    a true and welcome statement about the project and a fatal one about a test
+    that needs a blocker to exist.
+
+    A REGRESSION GUARD MUST NOT DEPEND ON THE PROJECT HAVING A PROBLEM. The
+    property under test is that the SCAN REACHES past the supplementary
+    heading; whether the live list happens to contain a declared dependency is
+    a separate and changing fact. The fixture below carries one on purpose, so
+    the guard measures the scan. The live list is still exercised, by the
+    symbol is still refused.
+
+    THE PROBE'S SHAPE MATTERS AND COST A PASS TO FIND. The first fixture used
+    `PastSentinelSymbol`, and the predicate answered "no distinctive term to
+    match against the entries" -- it extracts an IDENTIFIER-shaped term from the
+    item text, and CamelCase without underscores does not qualify. The original
+    probe was `_RECORDING_RUNS`, so the shape was carried by the old literal and
+    not by any stated requirement. Using an underscored, upper-case name keeps
+    the fixture honest about what the predicate actually accepts.
+    """
+
+    #: ★ IMPORTED, NEVER TYPED. The first fixture hardcoded "# SUPPLEMENTARY"
+    #: while the real sentinel is "# SUPPLEMENTARY LIST", so `next_section_start`
+    #: never found it, the truncation did not bite on the fixture, and RESTORING
+    #: THE DEFECT LEFT THIS FILE GREEN -- a guard that cannot catch the thing it
+    #: was written for. Taking the string from its owner means a future change to
+    #: the sentinel moves the fixture with it.
+    SENTINEL = TLM.SUPPLEMENTARY
+
+    @staticmethod
+    def _fixture(tmp_path):
+        """A minimal list: 1 entry BEFORE the sentinel, 1 declared-dependency
+        entry AFTER it. If the scan truncates at the sentinel it cannot see the
+        second, and the probe comes back False."""
+        body = "\n".join([
+            "# TASKS",
+            "",
+            "**Z1. An ordinary entry before the sentinel.** It mentions "
+            "`_BEFORE_SENTINEL_SYMBOL` in passing.",
+            "<!-- task: Z1 | state: DONE | status: COMMITTED -->",
+            "",
+            TLM.SUPPLEMENTARY,
+            "",
+            "**Z2. An entry that DECLARES a dependency, past the sentinel.** "
+            "This entry is BLOCKED and cannot proceed until "
+            "`_PAST_SENTINEL_SYMBOL` is settled; it waits on it.",
+            "<!-- task: Z2 | state: BLOCKED | status: PROPOSED -->",
+            "",
+        ])
+        p = tmp_path / "FIXTURE_TASK_LIST.md"
+        p.write_text(body, encoding="utf-8")
+        return p
+
+    def test_the_fixture_itself_puts_the_entry_past_the_sentinel(self, tmp_path):
+        """Or the 2 tests below prove nothing."""
+        f = self._fixture(tmp_path)
+        text = f.read_text(encoding="utf-8")
+        i = text.index(self.SENTINEL)
+        assert "_PAST_SENTINEL_SYMBOL" in text[i:]
+        assert "_PAST_SENTINEL_SYMBOL" not in text[:i]
+
+    def test_a_term_living_only_past_the_sentinel_is_still_found(self, tmp_path):
+        f = self._fixture(tmp_path)
+        probe = "A question about _PAST_SENTINEL_SYMBOL that must be settled."
+        blocks, why = BT.blocks_progress(probe, tasks=f)
         assert blocks, (
             "a symbol that appears only in an entry BEYOND the supplementary "
-            "heading was not found, so the scan is truncating the list again: " + why)
+            "heading was not found, so the scan is truncating the list again: "
+            + why)
 
-    def test_the_predicate_can_return_true_at_all(self):
-        """Six identical False answers are what hid the defect. Discrimination first."""
-        probe = "A question about _RECORDING_RUNS that must be settled."
-        assert BT.blocks_progress(probe, tasks=LIST)[0] is True
+    def test_the_predicate_can_return_true_at_all(self, tmp_path):
+        """Six identical False answers are what hid the defect. Discrimination
+        first -- and now the discrimination does not depend on the live list
+        having a blocker in it."""
+        f = self._fixture(tmp_path)
+        probe = "A question about _PAST_SENTINEL_SYMBOL that must be settled."
+        assert BT.blocks_progress(probe, tasks=f)[0] is True
 
-    def test_and_it_can_still_return_false(self):
+    def test_and_it_can_still_return_false(self, tmp_path):
+        f = self._fixture(tmp_path)
         blocks, _ = BT.blocks_progress(
+            "Zzqqxx_wibble_frobnicate, a symbol appearing nowhere.", tasks=f)
+        assert blocks is False
+
+    def test_the_live_list_is_still_exercised_and_refuses_an_absent_symbol(self):
+        """The live list keeps a test, narrowed to what is true of it whatever
+        the project's state: the predicate runs, and an absent symbol is
+        refused."""
+        blocks, why = BT.blocks_progress(
             "Zzqqxx_wibble_frobnicate, a symbol appearing nowhere.", tasks=LIST)
         assert blocks is False
+        assert why, "the predicate gave no reason at all"
 
 
 class TestHyphenatedEnglishIsNotAnIdentifier:

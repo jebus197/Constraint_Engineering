@@ -106,6 +106,30 @@ cd "$REPO" || exit 1
 # commits earlier. The subset is deliberate -- these are the cheap guards -- but
 # a red outside it accumulates unseen, which is what happened here.
 #
+# ★ 29 GUARDS ADDED 2026-10-31, AND THE SCOPE IS DELIBERATELY NOT "ALL OF THEM".
+# He accepted a recommendation to add the unreached test files to this gate, on
+# the strength of a figure that answered a different question. The figure given
+# was "the 6 newest guards run 75 tests in 18.88 seconds against a gate that
+# currently takes 312 seconds, about 6 per cent" -- true, and those 6 guards are
+# 75 of the 12,048 tests in the unreached set, 0.623 per cent of it. Adding
+# EVERY unreached file makes this gate the full board: +12,048 tests and
+# +5,321.85 s, taking 312 s to 5,634 s, a factor of 18.05. A commit that takes
+# an hour and a half is a commit nobody makes, and a gate nobody can afford to
+# run protects nothing. The unreached set is also 2.26x slower PER TEST
+# (441.72 ms against 195.50 ms), so this list's current membership is the cheap
+# files and that is unlikely to be an accident. Producer:
+# scripts/what_adding_every_unreached_test_file_really_costs_2026-10-31.py.
+#
+# SO THE SCOPE IS THE GUARDS WRITTEN SINCE 2026-10-29, which is what the
+# original argument was actually about: a guard on one of these reports sat
+# failing through 3 consecutive commits because nothing cheap ran it. Measured
+# 2026-10-31: these 29 files run 440 tests in 71.13 s, which takes the gate from
+# 312 s to about 383 s -- 22.8 per cent, not 1,705. All 440 pass; 6 did not when
+# first run together, and each of those 6 was a stale pin rather than a defect
+# in the product (a citation of mine naming a seat's sandbox path, the B50
+# filter pin his ruling moved, and a regression guard that needed a blocker to
+# exist in the live list).
+#
 # The 6 files below add 75 tests, about 5% on top of the 1,348 this list already
 # holds, and each guards something a founder ruling turns on: the `ruled` field
 # the morning report routes on, the severity gate he has defended 4 times, the
@@ -113,6 +137,35 @@ cd "$REPO" || exit 1
 # reach the record unedited, the model-admission failure mode, and the
 # human-review stop's evidence condition.
 GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
+bench/tests/test_a_cited_path_must_exist_2026-10-30.py
+bench/tests/test_an_identity_can_be_walked_back_2026-10-29.py
+bench/tests/test_does_filtering_the_stale_constant_repair_two_2026-10-30.py
+bench/tests/test_how_many_channels_await_his_ruling_2026-10-30.py
+bench/tests/test_rk_carries_forward_across_rounds_2026-10-31.py
+bench/tests/test_the_annotation_context_reader_sees_cr_only_files_2026-10-29.py
+bench/tests/test_the_claim_channel_enters_r_k_2026-10-29.py
+bench/tests/test_the_ds_kind_is_confined_to_his_annotations_2026-10-30.py
+bench/tests/test_the_feedback_section_groups_under_its_headings_2026-10-29.py
+bench/tests/test_the_file_diagnosis_producers_2026-10-30.py
+bench/tests/test_the_hierarchical_mode_has_an_effect_path_2026-10-29.py
+bench/tests/test_the_kept_severity_is_not_an_aggregate_2026-10-29.py
+bench/tests/test_the_ledger_budget_is_derived_not_reserved_2026-10-30.py
+bench/tests/test_the_markdown_companion_is_generated_2026-10-30.py
+bench/tests/test_the_memory_baseline_skips_an_unclean_save_2026-10-29.py
+bench/tests/test_the_miss_ledger_is_not_split_2026-10-29.py
+bench/tests/test_the_non_curing_population_is_named_2026-10-31.py
+bench/tests/test_the_panel_request_split_is_withheld_2026-10-30.py
+bench/tests/test_the_ranking_is_deterministic_and_exchangeable_2026-10-29.py
+bench/tests/test_the_redactor_does_not_withhold_a_run_setting_2026-10-29.py
+bench/tests/test_the_register_is_the_single_source_for_deferral_2026-10-29.py
+bench/tests/test_the_residual_risk_never_compounds_2026-10-31.py
+bench/tests/test_the_runner_core_lookups_announce_2026-10-29.py
+bench/tests/test_the_staleness_check_runs_before_the_save_2026-10-29.py
+bench/tests/test_the_triage_can_see_the_whole_list_2026-10-30.py
+bench/tests/test_what_layer_order_decides_2026-10-30.py
+bench/tests/test_what_questions_are_owed_2026-10-30.py
+bench/tests/test_which_open_entries_already_have_his_ruling_2026-10-30.py
+bench/tests/test_which_role_vocabulary_2026-10-30.py
 bench/tests/test_recovery_memory_doc_repairs.py
 bench/tests/test_memory_index_limits_match_the_loader_2026-09-01.py
 bench/tests/test_line_citations_resolve_2026-09-01.py

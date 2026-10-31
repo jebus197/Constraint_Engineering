@@ -48,10 +48,28 @@ PRODUCER = (REPO / "scripts"
 SUBJECT = REPO / "bench" / "tests" / "test_immune_memory_evaluation.py"
 
 #: THE FINDING, PINNED AS A SET. A count would read 6 on both sides.
-REPAIRED_BY_THE_FILTER = {
-    "TestWhatTheMemoryHolds::test_disk_memory_reproduces_from_its_recorded_run_reports",
-}
+#:
+#: ★ RE-DERIVED 2026-10-31 AFTER HIS RULING, exactly as this file's own
+#: docstring and failure messages instructed: *"If he has ruled on B50 this is
+#: expected -- re-derive the pin from the new state rather than restoring this
+#: one."* He ruled option 1 on 2026-10-30 and it is built, so the 6 immune-memory
+#: assertions now SKIP rather than fail.
+#:
+#: AND THE NEW FIGURES VINDICATE THAT RULING MORE STRONGLY THAN THE OLD ONES DID.
+#: Before the ruling the mechanical filter repaired 1 assertion and broke 1 -- a
+#: trade, which is what the entry reported. Measured after it: the filter
+#: repairs **0** and newly breaks **6**, because the 6 are no longer failing and
+#: the filter's only remaining effect is to un-skip them into failure. So the
+#: alternative he declined is now strictly worse rather than merely not free.
+#: The count is STILL the same integer on both sides -- 0 -> 6 reads as "no
+#: change" to a count-based comparison -- which is why this file pins sets.
+REPAIRED_BY_THE_FILTER: set[str] = set()
 BROKEN_BY_THE_FILTER = {
+    "TestAdvisoryOnlyUnderAttack::test_but_memory_can_change_a_pipeline_outcome_and_here_is_the_case",
+    "TestCounterfactual::test_only_flaw_class_8_can_bind_today_and_it_rests_on_one_observation",
+    "TestIntegrityGuards::test_the_live_memory_file_still_loads",
+    "TestIntegrityGuards::test_the_live_memory_predates_the_ledger_and_that_is_now_visible",
+    "TestWhatTheMemoryHolds::test_confirmation_rates_are_a_terminal_decision_ratio_not_a_flaw_rate",
     "TestWhatTheMemoryHolds::test_the_evidence_base_is_thin_and_here_is_how_thin",
 }
 
@@ -149,11 +167,40 @@ class TestTheFindingItself:
             f"a change here changes what he is being asked to rule on.")
 
     def test_the_count_alone_would_have_said_nothing(self, m):
-        """THE REASON THE SET IS PINNED AND THE COUNT IS NOT."""
-        assert len(m["before"]) == len(m["after"]), (
-            "the totals now differ, so a count WOULD have detected this. That "
-            "is a better situation, not a worse one -- but the set comparison "
-            "stays, because it says WHICH assertion moved and a count cannot.")
-        assert m["repaired"] and m["broken"], (
-            "equal totals with nothing repaired and nothing broken would mean "
-            "the filter changed nothing at all")
+        """THE REASON THE SET IS PINNED AND THE COUNT IS NOT.
+
+        ★ UPDATED 2026-10-31, AND ITS OWN PREVIOUS MESSAGE PRESCRIBED THE
+        UPDATE: *"the totals now differ, so a count WOULD have detected this.
+        That is a better situation, not a worse one -- but the set comparison
+        stays, because it says WHICH assertion moved and a count cannot."*
+
+        When this file was written the totals were EQUAL -- 6 failing before the
+        filter and 6 after, a different 6 -- so a count reported no change and
+        only the set showed the trade. After his B50 ruling the totals are 0 and
+        6, so a count WOULD now notice. The set assertions above are therefore
+        the load-bearing ones and this test no longer pins equality; it pins
+        that the comparison is still INFORMATIVE, which is the property that
+        mattered all along.
+        """
+        before, after = set(m["before"]), set(m["after"])
+        assert before != after, (
+            "the filter changed nothing at all, so this measurement is "
+            "vacuous whatever the counts say")
+        assert set(m["repaired"]) == before - after, (
+            "repaired is not exactly what left the failing set, so the "
+            "partition is not a partition")
+        assert set(m["broken"]) == after - before, (
+            "broken is not exactly what entered the failing set, so the "
+            "partition is not a partition")
+        # ★ `or`, NOT `and` -- corrected 2026-10-31 after his B50 ruling. The
+        # stated purpose of this assertion is in its own message: to catch a
+        # filter that "changed nothing at all". That is `repaired or broken`.
+        # `and` additionally required the filter to repair SOMETHING, which was
+        # true before the ruling (it repaired 1 and broke 1) and is not true
+        # after it: the filter now repairs 0 and breaks 6, because the 6 no
+        # longer fail and its only remaining effect is to un-skip them. The
+        # filter still changes plenty; it just no longer repairs anything, which
+        # is the finding rather than a test failure.
+        assert m["repaired"] or m["broken"], (
+            "nothing repaired and nothing broken means the filter changed "
+            "nothing at all, so the measurement is vacuous")

@@ -198,8 +198,12 @@ def main() -> int:
     # ★ THE SET, not the count. A later run matching the count proves nothing.
     ids = sorted({(r["run"], r["canonical_id"]) for r in rows})
     print(f"\ndistinct (run, finding) identities: {len(ids)}")
-    print("the first 10, so a reader can spot-check the list against the archive:")
-    for run, cid in ids[:10]:
+    _shown = 10
+    print(f"the first {min(_shown, len(ids))} of {len(ids)}, so a reader can "
+          f"spot-check the list against the archive; "
+          f"{max(0, len(ids) - _shown)} not shown here and ALL of them are in "
+          f"the written file:")
+    for run, cid in ids[:_shown]:
         print(f"   {run[:52]:52} {cid}")
 
     if a.write:

@@ -354,8 +354,15 @@ def charge_repetition(delivered: str, jaccard_at: float = 0.60,
                 by_ratio.add((i, j))
     both = by_jaccard & by_ratio
     pairs_possible = len(sents) * (len(sents) - 1) // 2
-    examples = [(sents[i][:110], sents[j][:110]) for i, j in sorted(both)[:4]]
+    # A TRUNCATED LIST STATES ITS REMAINDER. `examples` is a sample for a
+    # reader, and `agreed_by_both` below is the full count, but a field named
+    # `examples` beside a count is still a cap and must say so -- otherwise a
+    # reader comparing the 2 cannot tell a sample from a complete list.
+    _shown = 4
+    examples = [(sents[i][:110], sents[j][:110]) for i, j in sorted(both)[:_shown]]
     return {"sentences": len(sents),
+            "examples_shown": len(examples),
+            "examples_withheld": max(0, len(both) - _shown),
             "pairs_possible": pairs_possible,
             "near_duplicate_by_jaccard": len(by_jaccard),
             "near_duplicate_by_difflib": len(by_ratio),

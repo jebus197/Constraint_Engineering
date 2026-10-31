@@ -1,0 +1,59 @@
+# MORNING REPORT, 31 October 2026
+
+**Written 2026-10-31 03:46 GMT.** Branch sim shakedown. Work done while you slept, from your instruction to carry on with whatever could be done and put the rest here.
+
+**This file keeps the shape you said was easier to deal with: what a thing is, what it affects, and what is recommended or what was done.** It leads with the corrections, because 4 of them change decisions you already made.
+
+## PART 1. 4 CORRECTIONS TO THINGS YOU WERE TOLD, AND 1 OF THEM REVERSES A DECISION YOU ACCEPTED
+
+**The cost of widening the test gate that guards every commit was understated by a factor of about 300, and you approved the change on that figure.** You asked whether adding the unreached test files meant a very large increase in time per commit. The answer given was no, supported by this: the 6 newest guards run 75 tests in 18.88 seconds against a gate that takes 312 seconds, about 6 per cent. That arithmetic is right and it answers a different question. Those 6 guards are 75 of the 12,048 tests in the unreached set, which is 0.623 per cent of it. Adding every unreached file makes the gate the full board: 5,321 seconds more, 88.7 minutes, taking 312 seconds to 5,634, a factor of 18.05. A commit that takes an hour and a half is a commit nobody makes. The unreached set is also 2.26 times slower per test, 441.72 milliseconds against 195.50, so the gate's current membership is the cheap files and that is unlikely to be an accident. What was done instead: the 29 guards written since the 29th were added, 440 tests in 71.13 seconds, and the real gate afterwards measured 2,033 tests in 378.76 seconds against a 383 second prediction. That is 22.8 per cent, and it is the scope the original argument was actually about, since the demonstrated defect was a guard sitting failing through 3 consecutive commits because nothing cheap ran it. Narrowing it was my decision and it is yours to accept or refuse.
+
+**The claim channel's weight was called undecidable for a reason that is false, and the true reason is more useful.** You were told 0 of the 6 archived reports carrying a claim ledger record the residual risk a weight would act on. 6 of 6 record it. The earlier claim came from searching for a report level field when residual risk is recorded per entry. So the weight is computable, and it was computed: under a hypothetical wiring at a 0.30 threshold the largest harmless weight is 0.447 of a 0.5 ceiling, and at 0.3666 it is 0.298. But the binding limit is different and it is real: every 1 of the 106 archived values in those runs is exactly 0.500000, the uniform prior, with no variance at all. A threshold analysis over a single repeated value is a 1-point analysis however many rows it has. So the conclusion survives and the prerequisite changes: it is now a RUN rather than a field, and 1 run with the carry switched on produces the variance the choice needs.
+
+**The immune memory repair breaks nothing, where you were told it breaks a seventh assertion.** 73 tests passed before and 73 pass after, with the 6 moving from failed to skipped, and the sibling suite is unaffected.
+
+1 board failure remained, not 3, and it was accusing my own work. The last full board had 7 failures, 6 of them the immune memory ones your ruling settled. The seventh was the guard that refuses a truncated list printed under a heading that reads as complete, and it was naming 3 of my own producers that printed cut down listings without saying what they withheld. All 3 now state the remainder.
+
+## PART 2. WHAT YOUR 4 INSTRUCTIONS PRODUCED
+
+**The discussion label is disc, and the rename found a live defect in the reader.** Your final choice is built: disc is the live kind, ds and dis are kept as legacy aliases pointing straight at it rather than in a chain, because each carries 93 rows and dropping either would orphan them. 92 discussion tickets are live and no annotation identity carries 2 kinds. The defect: the legacy normalisation was applied only on the trailing marker path, so a marker written on its own line came back raw while the same marker written inline came back converted. The own line form is what 59 of your markers use, so the gap covered most of the corpus. It was found because a mutation that removed disc from the own line reader left the guard green, which means that reader had 0 tests covering it. Both paths now convert, and the guard stands at 71 tests with 19 of 19 reversions turning it red.
+
+**Residual risk now accumulates across passes, which is what your definition of severity requires.** The recursion was applied 1 time per finding and then re seeded from the prior, so the recorded number was the risk after 1 pass rather than after n passes. The archive shows it: 1 value, 0.500000, in all 1,252 entries, with a floor at 0.366667. A per run, per flaw class carry is now a fourth precedence tier, below a model supplied estimate and above both priors, because a carried value is the run's own state rather than an initial condition. The first round is unchanged, so only later rounds differ. Switching it off reproduces every archived run exactly, which is what makes the change measurable rather than asserted. Guard: 15 tests driving the real pipeline, 7 of 7 mutations red, and 3 of those mutations survived the first version and each exposed a hollow test of mine.
+
+**The non curing closures are recorded as a named set of 85 identities, not a count.** 2 runs can both report 23 and share not 1 finding, so a count cannot be compared against. 2 independent instruments agree on the dated claim scope at 23 of 124, and the producer refuses to write if they disagree.
+
+**The demotion operating point is recorded at 1 in 50 as a named constant, and it changes nothing today because the rule is connected to nothing.** That is stated rather than implied. The wiring is the work that makes the number bite.
+
+## PART 3. THE PANEL REVIEWS YOU AUTHORISED
+
+**The role layer question converged, and it converged on evidence rather than deference.** The blind round left the 2 seats disagreeing: the first said a single dimension, the second said 2 dimensions needing at most 1 new layer. Both now answer 2 DIMENSIONS, 1 LAYER, and each named what moved it. How they got there is worth your attention: the second seat accepted the first seat's measurement and rejected only its inference, conceding that at one scope the first seat was right and the extra role values were a fork rather than a dimension, then found the half the first seat's instrument could not reach, a second declaration of the structural axis elsewhere in the tree, through exactly the escape route the first seat had itself named as its weakest link. The first seat then moved. The deciding case was constructed and executed with real imports, not argued.
+
+**Your caveat is fully vindicated.** The ranking mechanism that actually promotes and demotes contains 0 occurrences of role, so the football framing never carried those semantics and renaming drops nothing. 1 role value is read by about 35 live predicates and written by 0 construction sites, so every filter on it is a tautology and every branch unreachable, because that value names the harness rather than a seat.
+
+**The proof question refuted my own brief, and both seats did it by execution.** The brief claimed the harness verification step does not exist yet. It does. 1 seat traced the whole 4 step pipeline you specified onto committed, executing machinery and reported no gap. The other agreed the step exists and located the real problem somewhere more serious: a proof and a falsifier are the same artefact under opposite terminal conventions, they share 1 field, and the sense is implicit. So routing a proof through the severity factor inverts severity, and measured across rounds it manufactures apparent convergence. A verified proof and a refuted falsifier would be indistinguishable to the gate, and the error runs in the direction that makes the harness look like it has finished.
+
+**That is the most consequential finding of the night.** Your architecture is closer to built than either of us thought, and what remains is a sign bit rather than a pipeline.
+
+## PART 4. WHAT NEEDS YOU
+
+**The polarity repair on the severity factor.** What it is: the single field carrying both a proof verdict and a falsifier verdict, with the sense implicit. What it affects: severity, and therefore convergence, in the direction that fakes completion. What you decide: whether to separate the channels or make the sense explicit. Recommendation: make the sense explicit rather than splitting the field, because splitting changes every archived comparison while an explicit sense does not. Additive, since nothing is removed and a reader gains a fact the code currently assumes. Composable, because it is 1 field and 1 factor. Simplest sufficient, because the alternative rewrites history to fix a label. It is not done, because it touches the severity ruler you have defended 4 times and that is not something to change while you are asleep.
+
+**Whether to build the 1 role layer, and what to do about the structural axis being declared twice.** The second question was not put to either seat and is now the live question: 2 declarations of 1 axis is the same shape as the duplicate vocabularies that caused this entry.
+
+Whether the narrowed scope of that gate is acceptable, or whether you want more of the 632 still unreached files added at a stated cost per batch.
+
+**Whether severity should gate convergence, now that it can.** Before tonight the recorded number could not go below 0.366667, so a gate demanding low risk would never have fired. Carried forward at the median measured detection rate it reaches 0.137743 after 10 passes, so the gate is now possible. 2 riders: a fixed low threshold may be unreachable on genuinely hard problems, which you should want to see as a visible refusal rather than as budget exhaustion; and the conditional form of residual risk is the form to gate on, not the expectation form, because the expectation sits below it everywhere and would loosen every threshold silently.
+
+1 question in the register, which my own wording caused. The recommendation you accepted on the immune memory said the suite would re arm once comparable runs exist. What is built re arms on the identical runs, because re arming on merely comparable ones means re measuring all 6 claims, which is the option you declined.
+
+1 boundary recorded rather than crossed. Residual risk only advances on a fix that passes the threshold, so a run of rejections leaves it frozen. The model's own form handles a poor fix by barely moving it, which suggests the skip is wrong, but changing it alters admissibility accounting across every archived comparison.
+
+## PART 5. WHAT IS LEFT, IN YOUR ORDER
+
+**The joint round for the proof question is owed and is the next dispatch.** The severity review you ordered is written and waits behind it. After those, the 2 deferred clusters and the zero plant control, which stays last by your ruling.
+
+## PART 6. WHAT THIS FILE DOES NOT REPEAT
+
+**The zero plant control is not put to you again.** The severity derivation, the pass reduction measurement and the brief census stand in last night's files and nothing here changed them. Producers for every figure above are committed under scripts, and the guards for tonight's work hold 71, 15, 12, 9 and 22 tests across 5 files.
+
+Written under CDSFL note standard v1.8 (17 October 2026).
