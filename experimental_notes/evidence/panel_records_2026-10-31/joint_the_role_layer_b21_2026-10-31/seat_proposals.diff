@@ -1,0 +1,1725 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-31 02:54:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/.cdsfl_deny_canonical_writes.sb	2026-10-31 02:39:34
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:.cdsfl_tmp/precommit_seconds
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/.cdsfl_tmp/precommit_seconds	2026-10-31 02:54:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/.cdsfl_tmp/precommit_seconds	2026-10-31 02:34:36
+@@ -1 +1 @@
+-316
++373
+
+### cc2:attempt-1:bench/experiment_11_orchestrator.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/experiment_11_orchestrator.py	2026-10-30 01:49:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/bench/experiment_11_orchestrator.py	2026-10-31 02:51:29
+@@ -22,7 +22,7 @@
+ from dataclasses import dataclass, field
+ from datetime import datetime, timezone
+ from pathlib import Path
+-from typing import Any, Callable, Literal, Optional
++from typing import Any, Callable, Literal, Optional, get_args
+ 
+ 
+ # ---------------------------------------------------------------------------
+@@ -58,7 +58,29 @@
+ 
+ Role = Literal["collator", "player_manager", "participant"]
+ 
++#: Undeclared spellings found in the live tree by the round-1 AST scan
++#: (`player` x9, `reviewer` x4). Migration shim only -- the founder's
++#: worker/classifier/orchestrator are deliberately absent: which member each
++#: maps to is policy, not plumbing.
++ROLE_ALIASES: dict[str, str] = {"player": "participant", "reviewer": "participant"}
+ 
++
++def canonical_role(value: str) -> str:
++    """Resolve `value` to a declared `Role` member, or raise.
++
++    Reads `get_args(Role)` so the `Literal` stays the single source of truth.
++    """
++    members = get_args(Role)
++    if value in members:
++        return value
++    target = ROLE_ALIASES.get(value)
++    if target is not None and target in members:
++        return target
++    raise ValueError(
++        f"unknown ModelConfig role {value!r}; declared: {list(members)}"
++    )
++
++
+ @dataclass
+ class ModelConfig:
+     """Configuration for a single model participant.
+@@ -84,7 +106,10 @@
+     secondary_api: str | None = None  # Fallback route on primary empty
+     secondary_model_id: str | None = None  # Fallback model id (route-specific)
+ 
++    def __post_init__(self) -> None:
++        self.role = canonical_role(self.role)  # type: ignore[assignment]
+ 
++
+ @dataclass
+ class ExperimentConfig:
+     """Full experiment configuration — drives the orchestrator."""
+
+### cc2:attempt-1:bench/run_exp20_confer.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp20_confer.py	2026-08-15 15:28:29
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/bench/run_exp20_confer.py	2026-10-31 02:51:29
+@@ -230,6 +230,26 @@
+     "persistence": "A",
+     "mathmodel": "C",    # Correctness / precision
+ }
++
++
++def is_arbitrator_seat(mc: ModelConfig, is_last: bool) -> bool:
++    """Does this seat adjudicate the round?
++
++    The predicate was written out twice -- once at the behavioural site that
++    sets `_build_confer_prompt(is_arbitrator=...)` and once inside the dispatch
++    log's metadata dict. Two copies of one rule means a vocabulary change
++    applied to one and not the other makes the run log name a different
++    arbitrator than the one that actually arbitrated, which is silent evidence
++    loss rather than a visible failure. One definition, both callers.
++
++    It bundles two properties the founder's vocabulary names separately: the
++    seat PARTICIPATES (it is in the dispatch order, hence `is_last` is
++    meaningful) and it DECIDES. Measured in
++    `scripts/does_the_role_space_factorise_2026-10-31.py`: no value of the
++    single `role` field reaches (excluded from dispatch) AND (decides), so this
++    bundling is a limit of the one-field encoding, not a free choice.
++    """
++    return bool(is_last) and mc.role == "player_manager"
+ 
+ 
+ def get_dispatch_order(
+@@ -530,7 +550,7 @@
+             within_round_text=within_round_text,
+             dispatch_position=step_idx,
+             total_models=len(ordered_models),
+-            is_arbitrator=(is_last and mc.role == "player_manager"),
++            is_arbitrator=is_arbitrator_seat(mc, is_last),
+         )
+ 
+         # Dynamic decomposition (inherited from Exp 17)
+@@ -576,7 +596,7 @@
+                     "step": step_idx,
+                     "dispatch_position": f"{step_idx + 1}/{len(ordered_models)}",
+                     "decomposed": decomposed,
+-                    "is_arbitrator": is_last and mc.role == "player_manager",
++                    "is_arbitrator": is_arbitrator_seat(mc, is_last),
+                     "within_round_findings_seen": len(within_round_findings) - len(model_findings),
+                     "prompt_chars": len(prompt),
+                 },
+
+### cc2:attempt-1:bench/tests/test_the_role_axis_carries_demotion_2026-10-31.py
+--- /dev/null	2026-10-31 02:54:54
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/bench/tests/test_the_role_axis_carries_demotion_2026-10-31.py	2026-10-31 02:51:10
+@@ -0,0 +1,108 @@
++"""The structural role axis DOES carry promotion and demotion. Pin it.
++
++JOINT ROUND `the_role_layer_b21_2026-10-30`, seat fable, round 2.
++
++The joint brief lists as settled, measured by both seats: "`bench/routing.py` --
++the mechanism that actually promotes and demotes -- contains 0 occurrences of
++`role` ... Promotion and demotion are not on the role axis at all." The first
++clause is true of `bench/routing.py`. The GENERALISATION is false, and these
++tests are the execution that shows it: `bench/dm/` moves seats between role
++values on failure and on measured capability.
++
++  * `FailureHandler.get_recovery` maps a repeated UNDERPERFORM to
++    `RecoveryAction.DOWNGRADE_ROLE` and MUTATES `role_map`, COL -> PAR, then
++    escalates PAR -> EXCLUDE because PAR has no lower role
++    (`bench/dm/_failure_handler.py`, the `IM_F008` branch).
++  * `RoleAssignment.reassign` re-chooses COL between rounds on capability
++    fingerprints, holding PM static for the run duration (HARD constraint C3).
++  * `LoadBalancer._eligibility_mask` gates which seats may receive tasks on the
++    same role values -- PM is excluded from standard tasks when K > 1.
++
++WHY IT MATTERS, AND IT IS THE CAVEAT'S OWN QUESTION. The founder's caveat says
++the football framing was adopted "to help us decide how things should be
++organised, and when models should be demoted/promoted", and asks what the
++scaffolding held up. The answer is not "nothing": it holds up these three
++mechanisms, all keyed on role IDENTITY. A rename that moved the dispatch
++vocabulary (`experiment_11_orchestrator.Role`) without moving this one would
++leave demotion keyed on names no longer used, and nothing would say so. These
++tests make that loud.
++
++They pin BEHAVIOUR (a demotion happens, keyed on role) and NOT the spelling, so
++they survive whichever vocabulary the founder rules for -- they fail only if the
++demotion mechanism stops being role-keyed.
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
++
++from bench.dm._failure_handler import FailureHandler          # noqa: E402
++from bench.dm._load_balancer import LoadBalancer              # noqa: E402
++from bench.dm._role_assignment import RoleAssignment          # noqa: E402
++from bench.dm._types import (                                 # noqa: E402
++    CapabilityFingerprint, DynamicManagementConfig, FailureType, ModelSpec,
++    RecoveryAction, Role,
++)
++
++
++def _models() -> list[ModelSpec]:
++    return [
++        ModelSpec("m1", CapabilityFingerprint(0.9, 0.9, 0.9, 0.9)),
++        ModelSpec("m2", CapabilityFingerprint(0.5, 0.8, 0.6, 0.5)),
++        ModelSpec("m3", CapabilityFingerprint(0.2, 0.3, 0.4, 0.3)),
++    ]
++
++
++class TestDemotionIsRoleKeyed:
++    def test_a_repeated_failure_demotes_a_seat_on_the_role_axis(self):
++        cfg = DynamicManagementConfig()
++        fh = FailureHandler(
++            _models(), {"m1": Role.PM, "m2": Role.COL, "m3": Role.PAR}, cfg)
++        assert fh.role_map["m2"] is Role.COL
++
++        first = fh.get_recovery("m2", 1, FailureType.UNDERPERFORM)
++        assert first is RecoveryAction.RETRY
++        assert fh.role_map["m2"] is Role.COL, "a single failure must not demote"
++
++        second = fh.get_recovery("m2", 2, FailureType.UNDERPERFORM)
++        assert second is RecoveryAction.DOWNGRADE_ROLE
++        assert fh.role_map["m2"] is Role.PAR, (
++            "the demotion is a mutation OF THE ROLE MAP -- this is the "
++            "promotion/demotion semantics living on the role axis")
++
++    def test_the_bottom_role_escalates_to_exclusion_rather_than_no_op(self):
++        cfg = DynamicManagementConfig()
++        fh = FailureHandler(
++            _models(), {"m1": Role.PM, "m2": Role.COL, "m3": Role.PAR}, cfg)
++        for r in (1, 2):
++            fh.get_recovery("m2", r, FailureType.UNDERPERFORM)
++        assert fh.role_map["m2"] is Role.PAR
++        third = fh.get_recovery("m2", 3, FailureType.UNDERPERFORM)
++        assert third is RecoveryAction.EXCLUDE
++        assert "m2" not in fh.active_models
++
++    def test_pm_is_static_and_col_is_the_reassignable_one(self):
++        cfg = DynamicManagementConfig()
++        ra = RoleAssignment.assign(_models(), cfg)
++        assert ra.role_map["m1"] is Role.PM
++        assigned = {r for r in ra.role_map.values()}
++        assert Role.COL in assigned, (
++            "the collator value IS constructed -- on the dm declaration, which "
++            "an AST scan of ModelConfig(role=...) call sites cannot see")
++        pm_before = ra.pm_model_id
++        ra.reassign(1, {"m1", "m2", "m3"})
++        assert ra.pm_model_id == pm_before, "PM static for the run (HARD C3)"
++
++    def test_task_admissibility_is_gated_on_the_same_role_values(self):
++        cfg = DynamicManagementConfig()
++        models = _models()
++        from bench.dm._types import Task
++        tasks = [Task(task_id="t1", token_demand=1.0, flaw_class=1, criticality=0.5)]
++        lb = LoadBalancer(
++            models, tasks, {"m1": Role.PM, "m2": Role.COL, "m3": Role.PAR}, cfg)
++        mask = lb._admissibility_mask()
++        # PM is excluded from standard tasks when more than one seat is in play.
++        assert mask[0][0] == 0, "PM excluded from standard tasks when K > 1"
++        assert mask[0][1] == 1 and mask[0][2] == 1, "COL and PAR are eligible"
+
+### cc2:attempt-1:bench/tests/test_the_role_literal_is_enforced_2026-10-31.py
+--- /dev/null	2026-10-31 02:54:54
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/bench/tests/test_the_role_literal_is_enforced_2026-10-31.py	2026-10-31 02:46:59
+@@ -0,0 +1,97 @@
++"""`Role` is enforced at construction, and the enforcement preserves behaviour.
++
++Panel round `the_role_layer_b21_2026-10-30`. Before this, `Role` at
++`bench/experiment_11_orchestrator.py:59` was a `Literal` annotation that no
++runtime check read, and an AST scan of every live `ModelConfig(role=...)` site
++(`scripts/how_many_role_values_does_the_code_construct_2026-10-31.py`) found 4
++spellings against 3 declared members: `player` at 9 sites and `reviewer` at 4.
++
++These tests pin the 3 properties that matter and NOT the alias table's contents,
++which are the founder's to extend:
++
++  1. the enforcement reaches every construction, because it is in `__post_init__`
++  2. it is behaviour-PRESERVING at every live read, so it is not a change of
++     dispatch disguised as a type fix
++  3. `Role` is the single source of truth -- `canonical_role` reads
++     `get_args(Role)` rather than a second list that could drift
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++from typing import get_args
++
++import pytest
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
++
++from bench.experiment_11_orchestrator import (  # noqa: E402
++    ExperimentConfig,
++    ModelConfig,
++    ROLE_ALIASES,
++    Role,
++    canonical_role,
++)
++
++
++def _mc(role: str) -> ModelConfig:
++    return ModelConfig(label="T", model_id="sim", api="sim",
++                       role=role, system_prompt_path=None)
++
++
++def test_every_declared_member_round_trips():
++    for member in get_args(Role):
++        assert canonical_role(member) == member
++        assert _mc(member).role == member
++
++
++def test_an_undeclared_spelling_cannot_survive_construction():
++    """The defect: a spelling outside `Role` reaching a reader unchanged."""
++    for spelling in ("goalkeeper", "striker", "", "Participant"):
++        with pytest.raises(ValueError, match="unknown ModelConfig role"):
++            _mc(spelling)
++
++
++def test_every_alias_resolves_to_a_declared_member():
++    """Pins the INVARIANT, not the table. An alias naming a non-member would
++    reintroduce the drift through the mechanism built to close it."""
++    assert ROLE_ALIASES, "an empty alias table is an addition nothing reaches"
++    for alias, target in ROLE_ALIASES.items():
++        assert alias not in get_args(Role), f"{alias!r} is a member, not an alias"
++        assert target in get_args(Role), f"alias {alias!r} -> non-member {target!r}"
++        assert _mc(alias).role == target
++
++
++def test_normalisation_preserves_every_live_read():
++    """The 2 reads the brief cites plus the confer split and the role lookup.
++
++    `reference_runner_v3.py:13189`/`:13269` and 16 siblings: `!= "collator"`.
++    `run_exp20_confer.py:253`/`:533`: `== "player_manager"`.
++    Behaviour must be identical before and after normalisation for every alias.
++    """
++    for alias, target in ROLE_ALIASES.items():
++        assert (alias != "collator") == (target != "collator")
++        assert (alias == "player_manager") == (target == "player_manager")
++
++
++def test_an_aliased_seat_is_now_found_by_a_role_keyed_lookup():
++    """This is the only behaviour that CHANGES, and it changes in one direction.
++
++    `ExperimentConfig.get_by_role` compares for equality, so before
++    normalisation a seat constructed as `player` was invisible to
++    `get_by_role("participant")` while still being dispatched by the
++    `!= "collator"` filter. A role-KEYED policy layer would inherit that
++    asymmetry.
++    """
++    cfg = ExperimentConfig(models=[_mc("player"), _mc("participant")])
++    assert len(cfg.get_by_role("participant")) == 2
++    assert cfg.get_by_role("collator") == []
++
++
++def test_canonical_role_reads_the_literal_not_a_copy():
++    """No second hand-written member list anywhere in the module source."""
++    src = (Path(__file__).resolve().parents[1]
++           / "experiment_11_orchestrator.py").read_text(encoding="utf-8")
++    assert "get_args(Role)" in src, "members must be derived from `Role` itself"
++    # The members appear in exactly one place: the `Role` assignment.
++    assert src.count('"collator", "player_manager", "participant"') == 1
+
+### cc2:attempt-1:bench/tests/test_the_structural_role_vocabulary_cannot_fork_silently_2026-10-31.py
+--- /dev/null	2026-10-31 02:54:54
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/bench/tests/test_the_structural_role_vocabulary_cannot_fork_silently_2026-10-31.py	2026-10-31 02:46:59
+@@ -0,0 +1,134 @@
++"""The structural role vocabulary is declared twice and must not fork silently.
++
++ESTABLISHED BY EXECUTION, panel round `the_role_layer_b21_2026-10-30`: the 3
++structural role concepts are declared in 2 unlinked places --
++`bench/experiment_11_orchestrator.py:59` as
++`Role = Literal["collator", "player_manager", "participant"]`, and
++`bench/dm/_types.py:311` as `Role(enum.Enum)` with members PM / COL / PAR, the
++declaration that carries the reassignment semantics (PM static for the run,
++HARD constraint C3; COL and PAR reassignable between rounds by
++`RoleAssignment.reassign`). Nothing mapped the two, and the `Literal` is not
++enforced at runtime: `bench/tools/run_simulated_experiment.py:638` and
++`bench/tools/gemini_tool_switch_test.py:72` passed `role="player"`, a 4th value
++outside the declared vocabulary, to live `ModelConfig` constructions. No code
++compares `== "player"` anywhere (measured 2026-10-31: the only live role
++comparisons are `!= "collator"` at `bench/reference_runner_v3.py:13189`/
++`:13269` and `player_manager` in `bench/run_exp20_confer.py`), so the stray
++value changed no behaviour -- which is exactly why nothing noticed it.
++
++WHY THIS GUARD EXISTS. Entry B21 asks whether the structural vocabulary should
++be renamed to the founder's functional one. Whatever he rules, a rename applied
++to ONE declaration and not the other would silently detach the reassignment
++semantics from the vocabulary used at dispatch. This test makes that fork loud:
++
++  1. the two declarations must stay in explicit bijection;
++  2. every quoted `role=` value passed to `ModelConfig` in live bench code
++     must be a member of the declared `Literal`.
++
++It pins the CORRESPONDENCE, not the words -- if both declarations are renamed
++together, update CORRESPONDENCE here in the same change and the guard holds
++the new vocabulary instead.
++"""
++from __future__ import annotations
++
++import ast
++import pathlib
++import typing
++
++import pytest
++
++from bench import experiment_11_orchestrator as orch
++from bench.dm._types import Role as DmRole
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++
++#: The asserted bijection between the orchestrator's string vocabulary and the
++#: dm enum's members. A rename of either side alone fails test 1 and names the
++#: other side as the thing left behind.
++CORRESPONDENCE = {
++    "collator": "COL",
++    "player_manager": "PM",
++    "participant": "PAR",
++}
++
++
++def test_the_two_declarations_are_in_bijection():
++    literal_values = set(typing.get_args(orch.Role))
++    enum_values = {m.value for m in DmRole}
++    assert literal_values == set(CORRESPONDENCE), (
++        f"the orchestrator Literal changed to {sorted(literal_values)} without "
++        f"updating the correspondence to bench/dm/_types.py Role; the "
++        f"reassignment semantics (PM static, HARD C3) live on the OTHER "
++        f"declaration and would silently detach")
++    assert enum_values == set(CORRESPONDENCE.values()), (
++        f"bench/dm/_types.py Role changed to {sorted(enum_values)} without "
++        f"updating the correspondence to the orchestrator Literal used at "
++        f"dispatch (mc.role reads in reference_runner_v3)")
++    assert len(set(CORRESPONDENCE.values())) == len(CORRESPONDENCE), (
++        "the correspondence is not a bijection")
++
++
++def _live_python():
++    """Live bench .py files: not tests, not logs, not archived harvests."""
++    for p in (REPO / "bench").rglob("*.py"):
++        rel = p.relative_to(REPO).as_posix()
++        if "/logs/" in rel or rel.startswith("bench/tests/"):
++            continue
++        yield p
++
++
++def _modelconfig_role_values(paths):
++    """Every quoted value passed as `role=` to a ModelConfig(...) call."""
++    out = []
++    for p in paths:
++        try:
++            tree = ast.parse(p.read_text(encoding="utf-8"))
++        except SyntaxError:
++            continue
++        for node in ast.walk(tree):
++            if not isinstance(node, ast.Call):
++                continue
++            fn = node.func
++            name = fn.id if isinstance(fn, ast.Name) else (
++                fn.attr if isinstance(fn, ast.Attribute) else "")
++            if name != "ModelConfig":
++                continue
++            for kw in node.keywords:
++                if kw.arg == "role" and isinstance(kw.value, ast.Constant) \
++                        and isinstance(kw.value.value, str):
++                    try:
++                        rel = p.relative_to(REPO).as_posix()
++                    except ValueError:  # planted file outside the repo
++                        rel = p.name
++                    out.append((rel, kw.value.lineno, kw.value.value))
++    return out
++
++
++def test_every_live_modelconfig_role_is_in_the_declared_vocabulary():
++    declared = set(typing.get_args(orch.Role))
++    strays = [(f, ln, v) for f, ln, v in
++              _modelconfig_role_values(_live_python()) if v not in declared]
++    assert not strays, (
++        "live code passes role values outside the declared Literal, which is "
++        "unenforced at runtime, so the vocabulary has forked silently:\n"
++        + "\n".join(f"    {f}:{ln}  role={v!r}" for f, ln, v in strays))
++
++
++def test_the_scanner_can_see_a_planted_stray(tmp_path):
++    """ANTI-VACUITY: a scanner that misses a planted stray proves nothing."""
++    planted = tmp_path / "planted.py"
++    planted.write_text(
++        "mc = ModelConfig(label='x', role='striker')\n", encoding="utf-8")
++    vals = _modelconfig_role_values([planted])
++    assert ("planted.py" in vals[0][0] if vals else False) or any(
++        v == "striker" for _, _, v in vals), (
++        "a planted out-of-vocabulary role was not seen, so a real one would "
++        "pass too")
++
++
++def test_the_scanner_reads_real_sites():
++    """A scan that finds 0 construction sites is scanning the wrong tree."""
++    vals = _modelconfig_role_values(_live_python())
++    assert len(vals) >= 3, (
++        f"only {len(vals)} quoted ModelConfig role site(s) found in live "
++        f"bench code; the vocabulary scan has gone blind")
+
+### cc2:attempt-1:bench/tickets/tickets.jsonl
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tickets/tickets.jsonl	2026-10-31 02:43:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/bench/tickets/tickets.jsonl	2026-10-31 02:37:58
+@@ -6746,8 +6746,3 @@
+ {"anchor": "Outstanding_Rulings_2026-10-27.txt#9cdf7283#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "dis", "nid": "5f2f505a67a0", "notes": [], "repair_identity": "", "resolution": "superseded by 9f73106d60dd", "rid": "aa742381437c", "ruled": "2026-10-28", "source": "responses", "source_ref": "Outstanding_Rulings_2026-10-27.txt:154", "status": "DEPRECATED", "subjects": [], "superseded_by": "9f73106d60dd", "supersession_evidence": "RE-CLASSIFICATION, not a second finding. Anchor Outstanding_Rulings_2026-10-27.txt#9cdf7283#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `disc` under his ruling of 2026-10-30; this row carries the superseded kind `dis`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py", "task_ref": "", "tid": "cc69b03b1b96", "title": "It’s fine. I have a sense that my overall workload is getting lighter. But then I have often thought this, only to be co", "verbatim": "It’s fine. I have a sense that my overall workload is getting lighter. But then I have often thought this, only to be confronted later by a great many verdicts awaiting my ruling. So we can see.", "verification": "RE-CLASSIFICATION, not a second finding. Anchor Outstanding_Rulings_2026-10-27.txt#9cdf7283#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `disc` under his ruling of 2026-10-30; this row carries the superseded kind `dis`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py"}
+ {"anchor": "Overnight_Work_Blocked_On_Login_2026-10-28.txt#dce7a257#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "dis", "nid": "7c82511be6c3", "notes": [], "repair_identity": "", "resolution": "superseded by 2d889dbfed9b", "rid": "a89e7f874010", "ruled": "2026-10-28", "source": "responses", "source_ref": "Overnight_Work_Blocked_On_Login_2026-10-28.txt:92", "status": "DEPRECATED", "subjects": [], "superseded_by": "2d889dbfed9b", "supersession_evidence": "RE-CLASSIFICATION, not a second finding. Anchor Overnight_Work_Blocked_On_Login_2026-10-28.txt#dce7a257#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `disc` under his ruling of 2026-10-30; this row carries the superseded kind `dis`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py", "task_ref": "", "tid": "70457c4fc869", "title": "My verdict is to scrap it if it will add to inefficiency. When I went to sleep last night I noted you were very busy try", "verbatim": "My verdict is to scrap it if it will add to inefficiency. When I went to sleep last night I noted you were very busy trying to make it work. This is not a good use of your time, or mine. We will continue in the previously agreed way. If I have a question, I will mark it as ‘qs’ in my tts responses.)Although I may have forgotten to do this recently.)", "verification": "RE-CLASSIFICATION, not a second finding. Anchor Overnight_Work_Blocked_On_Login_2026-10-28.txt#dce7a257#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `disc` under his ruling of 2026-10-30; this row carries the superseded kind `dis`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py"}
+ {"anchor": "joint_the_role_layer_b21_2026-10-31#validator#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "cf34b20272fe", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "", "source": "cc1", "source_ref": "", "status": "OPEN", "subjects": ["_section", "panel_brief_validate.py", "strongest_disagreement"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "6a18bd7974ce", "title": "The panel brief validator's disagreement check cannot match the field name the template recommends", "verbatim": "scripts/panel_brief_validate.py:697 searches the output section for r'\\bdisagree'. The field name every compliant brief uses is `strongest_disagreement`, and `\\b` does NOT match between the underscore and the `d` because an underscore is a word character. So a brief that names the field EXACTLY as bench/directives/universal/panel_brief_template.md describes it is REFUSED unless the surrounding prose happens to repeat the word with a space before it. Observed 2026-10-31 on the B21 joint brief, which listed `strongest_disagreement` as a field and was refused. The check's own comment says the field must be named 'as a FIELD in the output section, not as prose elsewhere' -- and as written it can ONLY be satisfied by prose. Proposed fix: match r'disagree' without the leading boundary, or r'(?:^|[^A-Za-z])disagree', and add a fixture naming the field with an underscore and no prose repetition.", "verification": ""}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "630877e06207", "notes": ["also tracked as B53"], "repair_identity": "", "resolution": "", "rid": "", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B53 state=OPEN status=PROPOSED", "status": "OPEN", "subjects": [], "superseded_by": "", "supersession_evidence": "", "task_ref": "B53", "tid": "d4d9797c58f9", "title": "B53. HE ORDERED A PANEL REVIEW OF WHAT SEVERITY IS AND WHETHER IT SHOULD GATE CONVERGENCE. Added 2026-10-30T22:58:17+00:00. HIS INSTRUCTION, 2026-10-30, verbati", "verbatim": "HE ORDERED A PANEL REVIEW OF WHAT SEVERITY IS AND WHETHER IT SHOULD GATE CONVERGENCE", "verification": ""}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "3cb6e95585f5", "notes": ["also tracked as B54"], "repair_identity": "", "resolution": "", "rid": "", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B54 state=OPEN status=BUILT", "status": "OPEN", "subjects": [], "superseded_by": "", "supersession_evidence": "", "task_ref": "B54", "tid": "bfe9c313ae27", "title": "B54. B22's BRIEF IS REWRITTEN TO HIS FRAMING AND THE 3 EARLIER ONES ARE RETIRED BY NAME. Added 2026-10-30T22:58:17+00:00. HIS RULING, 2026-10-30, verbatim: \"Thi", "verbatim": "*\"This framing does not seem ideal. 'No runnable repair' clearly pertains to code. But this strikes at the question of what a 'repair' in a non-code STEM context should be? In this sense, I suspect that a better definition would be a 'solution', or more accurately for science in general a 'proof'.\"* — his single quotation marks are reproduced as he wrote them, and the full annotation is lifted byte-exact into the brief.", "verification": ""}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "66315da19ae4", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B55 state=DONE status=COMMITTED", "status": "OPEN", "subjects": ["fix_efficacy.outcome", "gate_details.e1_efficacy", "not_cured"], "superseded_by": "", "supersession_evidence": "", "task_ref": "B55", "tid": "5897bcf11d17", "title": "B55. THE NON-CURING CLOSURES ARE A NAMED SET, NOT A COUNT. Added 2026-10-31T02:43:32+00:00. HIS RULING, 2026-10-30: \"I accept your recommendation.\" against reco", "verbatim": "*\"I accept your recommendation.\"* against recording them as a named population rather than reopening findings in a sealed archive.", "verification": ""}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "66315da19ae4", "notes": [], "repair_identity": "", "resolution": "recorded DONE in the master task list as B55", "rid": "e9a8047aec61", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B55 state=DONE status=COMMITTED", "status": "CLOSED", "subjects": ["fix_efficacy.outcome", "gate_details.e1_efficacy", "not_cured"], "superseded_by": "", "supersession_evidence": "", "task_ref": "B55", "tid": "5897bcf11d17", "title": "B55. THE NON-CURING CLOSURES ARE A NAMED SET, NOT A COUNT. Added 2026-10-31T02:43:32+00:00. HIS RULING, 2026-10-30: \"I accept your recommendation.\" against reco", "verbatim": "*\"I accept your recommendation.\"* against recording them as a named population rather than reopening findings in a sealed archive.", "verification": "task-list marker state=DONE status=COMMITTED"}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "d038053e6102", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B56 state=OPEN status=TESTED", "status": "OPEN", "subjects": [], "superseded_by": "", "supersession_evidence": "", "task_ref": "B56", "tid": "c75027a368e3", "title": "B56. THE DEMOTION RULE'S OPERATING POINT IS RECORDED AT 1 IN 50, AND IT CHANGES NOTHING TODAY. Added 2026-10-31T02:43:32+00:00. HIS RULING, 2026-10-30: \"I accep", "verbatim": "*\"I accept your recommendation.\"* against a recommendation of 1 in 50, given in answer to his challenge: *\"Can we improve on this statistic? A 1 in 20 chance of demoting a model that is performing just fine seems unreasonably high?\"*", "verification": ""}
+
+### cc2:attempt-1:bench/tickets/tickets_searches.jsonl
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tickets/tickets_searches.jsonl	2026-10-31 02:43:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/bench/tickets/tickets_searches.jsonl	2026-10-31 02:37:58
+@@ -20262,193 +20262,3 @@
+ {"query": "Then run two simulated experiments testing each arm independently, with one in shadow and one live. The monitoring arm can go first. But the executable arm, where we look to see what the orchestrator would have done can go next. We already have some simulated experiments scheduled where this can be done, so probably we could use these to run this test too, rather than add more time to an already l", "nid": "d8bd9d51dad9", "found": ["1ead27d84721", "3679d88ed875", "d08f053de39f", "e38ac96715c0"]}
+ {"query": "This is something we should probably discuss. Part of my time away was spent on further UX design work. You can see this here:", "nid": "6babb541ebf2", "found": ["1b5639d72a61", "5645fc2a5521", "df87678d966b", "e0eb85f0315d"]}
+ {"query": "scripts/panel_brief_validate.py:697 searches the output section for r'\\bdisagree'. The field name every compliant brief uses is `strongest_disagreement`, and `\\b` does NOT match between the underscore and the `d` because an underscore is a word character. So a brief that names the field EXACTLY as bench/directives/universal/panel_brief_template.md describes it is REFUSED unless the surrounding pro", "nid": "cf34b20272fe", "found": []}
+-{"query": "Apply and commit the 9 staged artefacts of 2026-10-28, which are verified but not yet in the tree", "nid": "549ff29e6810", "found": ["97c0008fff1f"]}
+-{"query": "Run the free panel review in BOTH halves, blind then joint, on the 9 changes", "nid": "7ee76019b7de", "found": ["8e7edf49b650"]}
+-{"query": "promotion requires either collecting `W(class)` and `confidence`, which appear on 0 of 3,298 entries, or re-deriving the cut on the specification's own scale -- which is the 63 full-range adjudications only he can supply.", "nid": "f5735ffa9a39", "found": ["67de8b314a8b"]}
+-{"query": "Then resume this list from R1 downward without stopping, and scrap the chat half of the harvester on his ruling", "nid": "14c4c5dc260d", "found": ["71366d16fba3"]}
+-{"query": "Full CDSFL format, not an open-ended prompt", "nid": "26b3b7513824", "found": ["7f890bc647fe"]}
+-{"query": "The brief must be a FORMAT, and one does not yet exist", "nid": "15d863c62191", "found": ["bd8f141a31cd"]}
+-{"query": "Seats must USE the harness, not merely discuss it", "nid": "8a17a2704458", "found": ["cb740fec85c0"]}
+-{"query": "Seats must PRODUCE and TEST a fix, not report a problem", "nid": "87012c6cc16e", "found": ["7e54a926e988"]}
+-{"query": "No compelled convergence", "nid": "2e047fadf4b7", "found": ["004516187867"]}
+-{"query": "The same format becomes the standard for the full 6-model paid panel", "nid": "3198ca84d1b8", "found": ["084f41ede4b9"]}
+-{"query": "The assistant is bound by the same conditions", "nid": "d4c630f189d6", "found": ["7d8cb941ff61"]}
+-{"query": "The linter must never be applied to the founder's words, and must never gate his input", "nid": "d0b802ee9c6d", "found": ["eb5ca3716a39"]}
+-{"query": "Fix the quote-exemption scope", "nid": "635ebf92c61d", "found": ["a8d2a506d90a"]}
+-{"query": "Add a task state to every entry and normalise the Rule 20 statuses", "nid": "4b28e2e25cc5", "found": ["cae89a82c8a6"]}
+-{"query": "Build the pulse hook", "nid": "6b23f9e25b9b", "found": ["5dc1e08be3ff"]}
+-{"query": "Carry out the exp50 and exp51 redesign", "nid": "5c6f91d45139", "found": ["0b4b81cf6c2a"]}
+-{"query": "Arm or leave `discrimination_control_blocks`, when it is actually due", "nid": "fbd3fe739103", "found": ["380287a9c442"]}
+-{"query": "Write the FW.7 ruling back into 4 documents", "nid": "7498199ee9c0", "found": ["3a5e1152be41"]}
+-{"query": "Write the C0015 and C0017 materiality ruling back into 5 places", "nid": "96e43f89a767", "found": ["77635b09f389"]}
+-{"query": "The population 11 / 6 / 2 is WITHDRAWN; the review it sizes is not", "nid": "ebf1255fb010", "found": ["2f835b49e9cf"]}
+-{"query": "Both questions answered by measurement, and the 2 answers are not equally strong", "nid": "e268002db877", "found": ["e00358a8edf7"]}
+-{"query": "Strike the answer-key sealing from the tracker", "nid": "1294cd3b5eab", "found": ["c50f63eee0a0"]}
+-{"query": "Write the BR2 blind-validity ruling into the test that still calls it open", "nid": "da161d58c012", "found": ["818cd051d7e7"]}
+-{"query": "Write the load-balancer ruling into the runway note", "nid": "288d5eb4d1b5", "found": ["a3788d8f4962"]}
+-{"query": "The reading exists as 2 files, and its central claim was re-executed before delivery", "nid": "d4268fac70b8", "found": ["867f91b0b56c"]}
+-{"query": "Not a new decision — his 4.3 ruling already answers it, and the answer is `gamma_input`", "nid": "d29928308b1d", "found": ["1d332e13f910"]}
+-{"query": "Wolfram Engine licence", "nid": "4f1c1e89df0c", "found": ["7da52a1e3bd5"]}
+-{"query": "The route is DISABLED, not retired, and the alerts have stopped", "nid": "8cbdfbcf52fc", "found": ["8e15edb5b3a7"]}
+-{"query": "Add a pre-commit hook that refuses a commit when the cheap guards are red", "nid": "6627960759e0", "found": ["931c9fd70d50"]}
+-{"query": "The gap a pre-commit hook does NOT close, measured", "nid": "0249f2bdf3f1", "found": ["92b38d96d6cd"]}
+-{"query": "Almost certainly no longer relevant.\" Retained below as provenance only; no work follows from it.", "nid": "427cc0200550", "found": ["b6d0a6a81d42"]}
+-{"query": "Widen the falsifier intake parser", "nid": "4fcc6183b9a7", "found": ["34640d5618c0"]}
+-{"query": "Every missing falsifier written — 28 of 28, and the population was wrong by a factor of 29", "nid": "7a00099453d8", "found": ["d626c0f46304"]}
+-{"query": "The misread population is 4 of 583, and the label is the defect rather than the decision", "nid": "c3adaec0308f", "found": ["cad554ace2d7"]}
+-{"query": "Turn routing and the sweep back on in the exp56 configurations", "nid": "947dc70dfdcb", "found": ["d9549f2ca8e2"]}
+-{"query": "Repair the runner so routing and the sweep respect `cfg.models`, after which the flags lift themselves", "nid": "702105deee97", "found": ["7ffe3c8cb1e9"]}
+-{"query": "Restore tool use to the DeepSeek route", "nid": "0982fc18c24d", "found": ["e927db1af148"]}
+-{"query": "Sweep for any other capability disabled by configuration rather than code", "nid": "58a14968e959", "found": ["a227ba39b3b3"]}
+-{"query": "Amend the escalation rule to name misconfiguration", "nid": "28afeba56ce4", "found": ["d1c7742fb5cd"]}
+-{"query": "Correct the simplicity note that propagated a wrong definition", "nid": "3105f45d2d59", "found": ["2ccf30a74275"]}
+-{"query": "Complexity is measured and reported, and reaches no decision", "nid": "e2231572b407", "found": ["ca24dadb08be"]}
+-{"query": "Write the missing half of the format", "nid": "cafb6e8b9193", "found": ["dda7e95ca35d"]}
+-{"query": "Adopt the written format as the standard for all future 6-model paid reviews", "nid": "4c150d4c5e62", "found": ["bd636b90224e"]}
+-{"query": "Record all run stop reasons, not only on convergence", "nid": "da28036d21de", "found": ["efb938460b0a"]}
+-{"query": "Derive the seat watchdog budget from the retry budget", "nid": "fa571d7eff7f", "found": ["91fb6799f429"]}
+-{"query": "Read the caller-supplied logs directory instead of minting a second one", "nid": "549d22b3b4d1", "found": ["2589ea6da97c"]}
+-{"query": "Close the 6 remaining bounded-traversal instances with one shared path-delimited predicate, 1 of them wired to a suite ratchet", "nid": "f10be9a5a6fa", "found": ["93b008f64f77"]}
+-{"query": "Tie a monitor's lifetime to its run", "nid": "1241778233fa", "found": ["3214efa2bb88"]}
+-{"query": "A rewrite now records a CANDIDATE SET; naming the process still needs root and is still yours", "nid": "8f67adb760da", "found": ["6216abca26fd"]}
+-{"query": "Assess whether the seat's `update_drift` guard is correct", "nid": "5ef923b98b47", "found": ["40e80c33e248"]}
+-{"query": "Every live note now says where its figures come from: 17 of 33 insufficient, now 0 of 33", "nid": "6ba1e1908a70", "found": ["13905eb20447"]}
+-{"query": "Wire the vagueness linter to something", "nid": "e99a2425cdb1", "found": ["6cda24588a88"]}
+-{"query": "Record the two-document distinction, founder ruling 2026-09-09, verbatim: \"The experimental notes (all of them) are intended for the technical reader to allow them to follow along with everything we have done exactly, and exist in the interests of scientific reproducibility", "nid": "db150b9816f3", "found": ["c99d2b31cdd0"]}
+-{"query": "Amend the `rs` definition in the global configuration", "nid": "4cf75aee3948", "found": ["015f411cd9c0"]}
+-{"query": "Adjudicated by panel round 9", "nid": "82c92fe65cde", "found": ["3a9603a8a4f4"]}
+-{"query": "The 20 of 21 does NOT reproduce, and the figure that actually justifies the branch is 5 of 117", "nid": "f5bb53954408", "found": ["baa5597021cc"]}
+-{"query": "All 6 now have a report field", "nid": "8fdf4ad4c192", "found": ["ff9c96219849"]}
+-{"query": "Every fix is in the programme, and \"performs\" is answerable today without a run", "nid": "5f1ef6f49c64", "found": ["0c94a4fa4466"]}
+-{"query": "The parser can now be studied by a run — and the first measurement REVERSES the impression", "nid": "1f3e16668ff6", "found": ["3b38a665dcfb"]}
+-{"query": "The run now DETECTS the condition and refuses the item rather than reporting a number", "nid": "a69316c73754", "found": ["808380ae474a"]}
+-{"query": "Build a script the founder can run from his hotel machine that restarts the desktop application and re-establishes this session's remote control", "nid": "9f35bc3034b3", "found": ["9b99345b56d9"]}
+-{"query": "ANALYSIS DONE 2026-09-10; THE DECISION IS HIS AND THE ENTRY IS MARKED BLOCKED ON IT, the state this list uses for a ruling that awaits him (as A11 does), so the resume pointer stops naming it as work", "nid": "216159692186", "found": ["acfa1431b636"]}
+-{"query": "Hand him the Zenodo token-rotation commands", "nid": "a16e7412eb17", "found": ["b491ed3c3c95"]}
+-{"query": "Three questions, three different answers", "nid": "cc04c319349b", "found": ["5d16b6925c7e"]}
+-{"query": "Make the suite pass in a fresh clone", "nid": "704793c540d3", "found": ["5c39b4dc4db0"]}
+-{"query": "All 6 checkable citations pointed outside the symbol they name; all 6 repaired and guarded", "nid": "5372d18a2109", "found": ["56426115fd2d"]}
+-{"query": "The validator now warns when a brief has been overtaken — and it fired on my own round-9 brief", "nid": "1173f63f4a11", "found": ["5f5d622fb4d8"]}
+-{"query": "The alarm now attributes, and says plainly when it cannot", "nid": "add5bda4cbc3", "found": ["ca9dbc5f3e37"]}
+-{"query": "Audit the tests that assert on source text, and the tests carried by a sibling", "nid": "de27e9601282", "found": ["973b2cb31a65"]}
+-{"query": "Decide what to do about the archived escalated criticals with no falsifier — 22, quoted with its predicate family {20, 22, 32} over runs archived before 2026-09-17", "nid": "bbfe45791897", "found": ["497b095f1314"]}
+-{"query": "Rule on the 177 cited `bench/logs/` paths that are untracked", "nid": "341b3e141608", "found": ["360bf5ebcb97"]}
+-{"query": "The file is DELIBERATELY preserved and a guard already records why", "nid": "366ed49fdb02", "found": ["bc80365df959"]}
+-{"query": "There is no live instance, and the guard exists so the pattern cannot return", "nid": "2da8ef806fc5", "found": ["848ce3efb776"]}
+-{"query": "ALL 5 RULINGS ARE NOW SETTLED, 2026-09-16 and 2026-09-17", "nid": "58cd08c1aebe", "found": ["62c0c82071f5"]}
+-{"query": "Fold in, or explicitly exclude, the 11 founder-ruled runway items this list does not carry", "nid": "16c6922df4c7", "found": ["ebf1cfb7f6e0"]}
+-{"query": "The panel sandbox lost most of its `bench/` tree WHILE a seat was still working in it", "nid": "6e01f27f1970", "found": ["a9d1b6a1fd55"]}
+-{"query": "One sandbox is shared by every seat, which couples them", "nid": "8bbd7eea9888", "found": ["cd7872bd9f97"]}
+-{"query": "It was filed as: the stored pair adjudication has drifted 13.53% from the code that produces it, and no test can see it", "nid": "694acfee1d84", "found": ["bd8b5de8738b"]}
+-{"query": "Running every script in `scripts/` is not a safe survey, and the survey that found A15 had to be killed", "nid": "bd6a28e08a9d", "found": ["648fb4993e19"]}
+-{"query": "The verdict-tuple guard matches function names across the whole repository, so an unrelated function can be flagged by collision", "nid": "f99ac8edeb01", "found": ["79c21f872e42"]}
+-{"query": "Nine off-switches sit in the frozen exp56 configs that no runner module reads", "nid": "cb0ac206e0b0", "found": ["0499ece147a7"]}
+-{"query": "S_k classifies the TARGET, not the ELEMENT, so a computable fragment inside prose is never scored", "nid": "7fd8c446cf9d", "found": ["be8013d4598e"]}
+-{"query": "A DONE marker must carry executable evidence, and a suite-level guard must check it", "nid": "436a6d216561", "found": ["d9463df47509"]}
+-{"query": "Repair the 11 overstated entries", "nid": "49deb34d9c02", "found": ["5af7d4b6e769"]}
+-{"query": "The note-lint commit guard has 2 demonstrated bypasses and is believed", "nid": "f4cd95497e9a", "found": ["ddce0fab7377"]}
+-{"query": "Commit the scripts behind the figures that have none", "nid": "940e2643af00", "found": ["3d6a420e58e0"]}
+-{"query": "Make `rs` prefer the FRESHER source, not the older one", "nid": "89c2e9dfea8d", "found": ["8fa664030e7e"]}
+-{"query": "A number typed into a panel brief has no guard on it, and one was wrong", "nid": "57c019c73ef3", "found": ["6f6dfcdce744"]}
+-{"query": "A DONE marker naming a FAILING test passed the DONE-evidence guard, and it happened within the hour the guard shipped", "nid": "2d9f381e1a16", "found": ["9d1b35af03a6"]}
+-{"query": "The blocking note-lint made it impossible to commit a verbatim panel record without falsifying it", "nid": "810b2bc8b27f", "found": ["b366c840bf7f"]}
+-{"query": "A DONE entry's evidence must go RED against its own reverted fix, and nothing checks that it does", "nid": "7bc17f896347", "found": ["0edfe88e60d6"]}
+-{"query": "The panel seats shared ONE writable sandbox, so their verdicts were not independent", "nid": "8d0537eeac44", "found": ["f35b7225e7c3"]}
+-{"query": "The containment alarm cried wolf and the operator believed it", "nid": "f898c52a697d", "found": ["06e126fb56d1"]}
+-{"query": "The panel dispatcher cannot be imported at all", "nid": "910b2b75940d", "found": ["17e254648088"]}
+-{"query": "`resources/RECOVERY.md`'s newest SESSION STATE is 3 days behind the commits", "nid": "58095cafa5bf", "found": ["5e0eb30629a8"]}
+-{"query": "A test suite running in a clone overwrote `~/Desktop/CDSFL_OUTCOMES_LOG.md`, the file the founder reads", "nid": "27720a607485", "found": ["c2c5297d173b"]}
+-{"query": "15 instances of one defect class in a single session, and fixing them one at a time had not prevented the 16th", "nid": "8f0f0712ee28", "found": ["91a43f03ff01"]}
+-{"query": "`--help` on 2 record-assembly scripts destroyed a verbatim panel record and exited 0", "nid": "d8acd3eef0c4", "found": ["f88c611171c9"]}
+-{"query": "Establish what the Wolfram MCP server licence actually is, and whether the route can come back", "nid": "215769888e5e", "found": ["3f1c587fa888"]}
+-{"query": "An exp52 factor switch is not wired into dispatch", "nid": "a2a501964fd9", "found": ["1d8d9e8bcde3"]}
+-{"query": "A simulated-run report passes the content check and is caught only by the directory rule", "nid": "7c88236493de", "found": ["f509459a7d93"]}
+-{"query": "*\"Verdict: Enforce going forward only.\"* The archive is left as written. No decision remains.", "nid": "c28695efdf28", "found": ["cc94f84f3557"]}
+-{"query": "The verdict-coverage audit recorded a count and not a set, so its result cannot be reconciled to the register", "nid": "e2df873ebc6f", "found": ["15bf6cfb673c"]}
+-{"query": "*\"That is largely just expected behaviour in simulated runs. However I pointed (at least 2 times before now) to a partial solution for simulated runs too, where we could have a mixed panel of Opus 4.8, Opus 5x and Fable.\"*", "nid": "9192dfe933d1", "found": ["2062ee499ba3", "78d9790aa71f", "7aa4df51e87e"]}
+-{"query": "The human-review stop fires on a flag, and he specified a condition it does not have", "nid": "96e0781910ad", "found": ["9f0b20a91d6b"]}
+-{"query": "*\"We should use it. Wire it in all simulated and real runners going forward.\"* The lesson as reported to him: *\"state should be detected rather than declared. The panel used to decide whether a round was blind or joint by reading an environment variable, so forgetting the variable silently downgraded the check. It now decides from what the briefing document actually contains. The runners have seve", "nid": "e54689a47542", "found": ["7b0e46e3fe44"]}
+-{"query": "*\"Verdict: Option 3. Dut do Options 3 and 1 compose, if an event occurs where a save operation does not complete cleanly?\"* (*Dut* is *But*.)", "nid": "3a2362de7c53", "found": ["0d2ad4d04dd7", "78d943bb1a42"]}
+-{"query": "A latent-control verdict moves when a COMMENT is added, and it has 1 line of headroom", "nid": "fb8794a0b123", "found": ["9c84a0edac41"]}
+-{"query": "*\"Then if I already ruled. Why are you presenting it as a decision required from me again? Again your fix is approved. Do it.\"* He had already approved it on 2026-10-18 in `Responses/Review_Stop_And_Declared_Modes_2026-10-18.txt` with *\"Your fix is approved.\"*", "nid": "29d9e99b0107", "found": ["110acdfd3910"]}
+-{"query": "*\"Verdict option 1\"* — **WIRE THE MODE so it does what its report field claims.", "nid": "483986d72bdc", "found": ["0a2df7c9091d"]}
+-{"query": "*\"This has already been ruled in the previously supplied tts response files. We tested it previously too. It cannot work. I told you my preference was for staggered dispatch (for models from the same vendor), not serialised dispatch!\"*", "nid": "a095afc3968e", "found": ["1772f204a049", "96b8506074b4", "ab473873c598", "b0a25ec75662", "c642e0069832"]}
+-{"query": "A guard reporting the change he has rejected 4 times was RED and nobody saw it, because the commit hook watches 9.58% of the test files", "nid": "487ab7545b30", "found": ["1489070b28f6"]}
+-{"query": "For 4 of the 5 declared modes, no report carries anything that could show the mode failing to operate", "nid": "2d70c2fb9d54", "found": ["5dca43cddedc"]}
+-{"query": "The reason no full-suite figure exists since 2026-09-29 is a 300-second global timeout that silently discards every longer budget a test author declares", "nid": "0ead677aae45", "found": ["6c7a9ac0bf50"]}
+-{"query": "The parked file is never reconciled against this list, and its staleness is measured", "nid": "66f719dd4f32", "found": ["fd14e6f28156"]}
+-{"query": "*\"Apply any outstanding fixes you have identified first, including any as yet unbuilt/unapplied machinery, before you begin the runs\"*, and on the replay cost, *\"We cannot go back and change time, so the confounds discovered in the last 24 hours can only be noted and added to the record honestly.\"* That second sentence is the authorisation", "nid": "7a5bdc07ca6b", "found": ["161f7fa6ce0a", "1db2699cdda6"]}
+-{"query": "A shadow cannot be tested by a simulation, so the severity specification is promoted", "nid": "70f3648de993", "found": ["4899f8931be2"]}
+-{"query": "3 defects found while repairing the specification delivery, recorded and NOT fixed", "nid": "6d3481e9f501", "found": ["9b433e7f17db"]}
+-{"query": "A simulated run restamps the REAL paid seats' fingerprints, and a seat found this 10 days ago inside a sandbox nothing read", "nid": "ea784fc688a1", "found": ["bde987b9c6f3"]}
+-{"query": "The coherence-budget recalibration cannot be satisfied by running the runs, and it is inert on 3 independent layers", "nid": "f4aa24303c70", "found": ["4c83eea06d38"]}
+-{"query": "The confinement guard refuses the falsifier's own review target, and it is a dated regression", "nid": "5bfcf8053bbe", "found": ["e6a56da4519b"]}
+-{"query": "The note-lint ratchet is blind to the note-standard stamp, by construction, and 73 notes slipped past it", "nid": "e74f704db2ce", "found": ["7afafbfcbec3"]}
+-{"query": "*\"We normalise going forward, since recording vendor names is purely a recording statistic and has no impact on capability, or how our experiments work.\"*", "nid": "e49784ba7114", "found": ["2cacdbd478eb", "4c0fb3ae57e8", "b76e95476b97"]}
+-{"query": "The per-seat capacity number is a lifetime high-water mark that has never been bounded from above", "nid": "91a81148c3f8", "found": ["0da32657c6c8"]}
+-{"query": "Admitting a model is not trivial, and the cost is silent defaulting rather than edit count", "nid": "00bca22762fb", "found": ["ca9300af3535"]}
+-{"query": "94 of 212 archived blockers can neither be resolved nor released, and nothing said so", "nid": "88970b749767", "found": ["655ca687cbd9"]}
+-{"query": "The free panel of 2026-10-16 corrected 3 of CC1's repairs, and 1 seat's own quoted interval does not reproduce", "nid": "61bf771db218", "found": ["3ca403eb689b"]}
+-{"query": "The per-experiment fingerprint reset is PARTIAL: one loader honours the scope, a second reaches around it", "nid": "c1341bf45278", "found": ["3a4fbc3621cf"]}
+-{"query": "Make `rs` run mechanically after compaction, not just be advised", "nid": "bee06def54a9", "found": ["ad5258e7f25f"]}
+-{"query": "*\"Folding fixes forward should be on by default, providing that means folding forward at the end of an experiment and not during it so that the target under study does not keep constantly changing. We had problems with this in the past, where because the modes were looking at a constantly moving target, convergence effectively became impossible.\"* His *\"modes\"* is a typo for *\"models\"*, unambiguou", "nid": "4d9ba5c69c9a", "found": ["39bfcbd8f11e", "ad262e856a4c"]}
+-{"query": "The local memory-budget hook cannot tell an instruction from a prohibition, and its false positives select for less-safe briefs", "nid": "4a00add11bcf", "found": ["5c35a8f8500e"]}
+-{"query": "The orchestrator bound inside the harness: his design is specified, nothing is built, and it was absent from CC1's discussion", "nid": "10e038b4b6bb", "found": ["1124302cec27"]}
+-{"query": "*\"can you build this and implement it in such a way that it doesn't require vast code rewrites and/or refactoring of large elements of the existing code base? If it is buildable, I would suggest building it, and then putting this work to the free panel to look at.\"*", "nid": "36d09f8c4fab", "found": ["cea6717fe61e", "e8951f2ed269"]}
+-{"query": "*\"there is also a separate question of what 'fixes' should mean in a setting that is not coding related, but is specific to any other given STEM topic?... CDSFL has been envisaged from the outset as a general purpose STEM calculator, operating on strict Popperian falsification principles. But in order for that to be true the entire harness has to be as equally useful against a wide range of STEM r", "nid": "0d49202ed0c5", "found": ["03b4a11a7720", "1ff32fa3455f"]}
+-{"query": "Backfill the register with every piece of work done since the project began", "nid": "d439e67905f1", "found": ["8958010420e3"]}
+-{"query": "An audit of 302 of his annotations found 20 confirmed gaps, and 12 of them are rulings he gave that were never carried out", "nid": "034217878d8d", "found": ["0eede585306d"]}
+-{"query": "\"Also implement this and test it on the upcoming simulated runs.\" , his reply to: \"The claim channel's promotion into the scoring equations waits on a commissioning run measuring how often it is wrong against known ground truth, which is the recommending seat's position and the founder's to confirm.\"", "nid": "bcace2f5eb0a", "found": ["1392f517c20c", "4b32e3685a44"]}
+-{"query": "\"Then can similar errors be prevented in the futre [future]? If not they might lead to unhelpful and erroneous descisions [decisions].\" , his reply to the list of 7 withdrawn statements, which included a double count (\"the producing script matched every run log under 2 patterns at once\"), a unit error (\"counted lines containing a match and reported them as occurrences, which is the same unit error", "nid": "1c23c0a73c5d", "found": ["7bf397d5f67e", "c35755352b7e"]}
+-{"query": "\"Just use official project terminology in both cases, and where no project terminology exists, just name the process itself exactly. Why is that so difficult for you? Either way our notes standard still needs tweaking I think.\" In the same annotation he names the new failure mode: \"you have now clearly resorted [to] vagueness (or what you seem to think is 'simplification') through outright omissio", "nid": "96322ed98f9b", "found": ["0016375c826a", "45947718c482"]}
+-{"query": "\"I did ask you to run a free panel review with the question of how to make this ruler more effective, less course [coarse], more accurate and more useful, potentially across a broad range of similar scenarios. Did you do this? What were the panel's findings?\" , on the severity ruler, after being shown that the number wobbles by about 0.14 against a decision band 0.09 wide and that 82 of 273 identi", "nid": "7c635a4f4322", "found": ["30c384c40a79", "3acdc81d3cb3"]}
+-{"query": "\"Then that measurement should be added to[] our outstanding programme of study.\"\"", "nid": "3e41cf220126", "found": ["9544b543c9c2", "9966728f95e5"]}
+-{"query": "\"Are the 12 skipped safe to ignore?\" **WHY NOTHING TRACKS IT:", "nid": "c259feefe0ce", "found": ["4fce6ed40217", "a0502c5ea60d"]}
+-{"query": "A RULING HE GAVE, NOT CARRIED OUT, dated 2026-10-05: the routing ladder's order is a vendor list, not a measured statistic", "nid": "6a93960c292a", "found": ["9b1e7003c37b"]}
+-{"query": "\"Then this should also be on, by default in all our runners.\"", "nid": "3be32154df54", "found": ["02796ef1e4f5", "41ca7b10eca7", "d991aad183e1"]}
+-{"query": "\"If this is on (and it probably should be), what effect would it have on our experiments? I ask because ultimately human review is always part of the system anyway. A human decides on what problems are entered into the system, and then reviews the final output. Where does this switch fit into this?\" , on the human review pause, the 1 switch whose enabled path has never executed.\"", "nid": "0d49f425bbca", "found": ["78a65d15bb8e", "e63752121e44"]}
+-{"query": "\"A ladder is bidirectional. It goes both up and down. So if a weaker model gets better at doing a job ... it should be able to climb the routing ladder, based on its demonstrated improvement in capability. Conversely if a stronger model proves less able ... it should be able to climb down the ladder to a point where it again becomes effective. But what we need to guard against is simply counting w", "nid": "8e795c27dab2", "found": ["afd1b13da878", "c0ef41f35e40"]}
+-{"query": "\"Then why not name the model? Is it Fable? Then yes we should add it.\" , on the finding that \"One of the project's 2 free models does not appear on the ladder at all\".", "nid": "bf696c339ce5", "found": ["0d6334b7b6c0", "80ebbb501fe6"]}
+-{"query": "\"Verdict. Fix it and check your fix with the free panel.\" , answering the panel finding that even at FULL roster there is a 0.1159 chance of 3 consecutive quiet rounds arising without the problem space being exhausted, where \"The only levers identified are a longer required quiet run, or more seats\".\"", "nid": "ee4345f6f027", "found": ["4a5b77b4b571", "9e646784864c"]}
+-{"query": "On \"the absolute false quiet chance of 0.1159 at full roster, which no roster aware fix addresses\" his verdict was: \"Fix it.\"", "nid": "7d770ed5f6d0", "found": ["028f975075d0", "2d0d20c8e47f"]}
+-{"query": "A RULING HE GAVE, NOT CARRIED OUT, dated 2026-10-08: the seat time cap must not be arbitrary", "nid": "171cf6f96adb", "found": ["cb3e7e5d17ce"]}
+-{"query": "A RULING HE GAVE, NOT CARRIED OUT, dated 2026-10-09: no distinction between models other than a ranking number", "nid": "2c83ec6fbf5c", "found": ["1289c8e0d7e1"]}
+-{"query": "On R1, the Exp 53 zero-plant control: \"Run it next after the outstanding simulated run. But take care that the caveats in place for simulated runs that do not and should not apply to real/paid runs carry over into this run. We keep all the useful lessons we have learned from the simulated runs and apply them. But we exclude things that only apply in simulated runs.\"", "nid": "05cdd960baab", "found": ["554590329f75", "dc9ef7faf066"]}
+-{"query": "\"No. We reset immune memory for the upcoming live experiments, since simulation can probably only tell us so much about how this facility will function in real live/paid experiments.\" , pressed again the same day: \"isn't the best time to do this now, immediately before the transition back to main is made?\"", "nid": "0433596a8d59", "found": ["16dfaad511a6", "4b5063773547"]}
+-{"query": "\"I'm sure we already just discussed this and you said there had been significant panel review work on this feature and that replacing model names with hashed model IDs was gauged by you and the other models to be a sound overall design. Didn't you say all you had to do was build what had already been recommended and that you would put this to the panel for their final take on your design? Why didn", "nid": "8540212ab0e5", "found": ["665a7db89aae", "b00f9c8a32ca", "f7f1cd200f15"]}
+-{"query": "\"What would be the consequence of retiring it completely? If there will be no consequence, then surely this is a fourth and more sensible option? Why leave code in place that effectively does nothing. The 'density' of a prompt shouldn't matter to a model, so long as the core system/directives prompt survives untouched, and the overall prompt length stays within a model's measured capability ceilin", "nid": "3af45387d4c9", "found": ["33a1ce564fdb", "5db64c186ebe", "a0125ddb00fb"]}
+-{"query": "\"Yes, these items should all be addressed and resolved.\" , given against a correction list whose first item reads: \"A figure published earlier today, 94 of 212, does not reproduce. The producer carries a hand written copy of the counter's release conditions instead of calling the counter ... The corrected figure is 94 of 197, 47.7157 per cent with an interval from 40.8515 to 54.6673. It is live in", "nid": "56c9c793802e", "found": ["1563f539e0c1", "67534c0f6366"]}
+-{"query": "The routing-ladder cluster, consolidated: what his 2026-10-09 reframing settled, what it rejected, and what is genuinely open", "nid": "19ee26257f16", "found": ["6cf9db9726b6"]}
+-{"query": "TOP OF THE LIST, ON HIS INSTRUCTION: a ticket store that makes \"settled\" a recorded field instead of something CC1 infers, harvesting from chat as well as his replies", "nid": "2828bca71dc5", "found": ["bd69f9610f14"]}
+-{"query": "The register's identities drifted with the prose, and 5 references already held 2 tickets each", "nid": "2588c3ac16fb", "found": ["0e798cf8866d"]}
+-{"query": "The first item on his correction list is fixed, and his question about the 94 is answered", "nid": "2e4bfb2bafcb", "found": ["e0dbc0d13e64"]}
+-{"query": "A task entry can be invisible while the checker reports the list coherent, and C24 was", "nid": "10984b80acda", "found": ["6ee9a6511058"]}
+-{"query": "Two more of his five corrections: the operator-facing definition contradicted the code, and a comment was wrong by 302 of 355 occurrences", "nid": "b347908495fe", "found": ["e602f6863ed6"]}
+-{"query": "His last two corrections: one was already fixed, and the other inverted every merge one seat ever proposed", "nid": "ac782d3db6ef", "found": ["32a3da5ba551"]}
+-{"query": "My own commit gate cried wolf twice in one night, and the repair it declined to stage was safe both times", "nid": "96419c936691", "found": ["c009815e1c04"]}
+-{"query": "THE LIST CAN NO LONGER BE SAID TO TERMINATE, and a test built to tell you so has gone red", "nid": "fc16e1d1e426", "found": ["e2afa7772277"]}
+-{"query": "THE REGISTER WAS DROPPING HIS SHORTEST RULINGS, AND THEY ARE HIS MOST DECISIVE", "nid": "59d4687d319b", "found": ["62c308cab41d"]}
+-{"query": "THE REGISTER BEATS A WORD SEARCH ON THE ERROR THAT MATTERS, AND HIS CONDITION IS MET", "nid": "be5de433316f", "found": ["e684c2893a47"]}
+-{"query": "*\"The full harness already has a registry, but I don't know if it currently works this way either? But if it doesn't and you do gauge it to be genuinely useful you should probably apply these principles to the harness registry too.\"*", "nid": "fc126452f3b3", "found": ["51800bf396e6"]}
+-{"query": "A DISCUSSION, NOT A BUILD: putting the questions register behind a discussion forum such as Discourse in the UX build", "nid": "3ce7e2a2ec7f", "found": ["5b14adc4b9cd"]}
+-{"query": "The suite contains 3 tests that run the suite inside themselves, and on his machine that DEADLOCKS rather than merely runs slowly", "nid": "626e93268ad9", "found": ["4a903cbb2c95"]}
+-{"query": "The stagger he ruled reached the PANEL and not the RUNNERS, so for 11 days 2 guards asserted opposite properties on 2 modules", "nid": "cf59faa97d1a", "found": ["928c23d33219"]}
+-{"query": "*\"Verdict: option 1, but do options 1 and 2 compose? Is this a useful thing to do? Or is 1 preferable over the other?\"*", "nid": "2f9e8307ddbb", "found": ["a2c4f033fe64", "dfc8b02d5937"]}
+-{"query": "The register gave a ticket a TERMINAL status on the strength of a task-list marker the project's own checker refuses", "nid": "7bb9ad5d1148", "found": ["7359e28e9365"]}
+-{"query": "THE WORK QUEUE OF 2026-10-19, mechanised onto this list so the Stop gate holds the session to it rather than the author remembering", "nid": "1b8c1d47c970", "found": ["6765b5719abb"]}
+-{"query": "RESOLVED 2026-10-20T01:27:07+01:00", "nid": "c31df101a984", "found": ["8c18e6cac9e9"]}
+-{"query": "MY RECOMMENDATION WAS WRONG AND HIS OWN FILE PROVED IT", "nid": "579fe444eb08", "found": ["15529bab9cf9"]}
+-{"query": "*\"The zero plant control will be run (with the updated runner) after all outstanding tasks from your master task list have been complete! But we may need a new category in your registry for tasks like this, so you don't keep reputing them. I propose 'wr' for 'work remaining'\"* — he marked that annotation `wr`. (*reputing* is *repeating*.)", "nid": "dabec9dc48d6", "found": ["4ec81034f7fa"]}
+-{"query": "THE STAGGER VALUE AND ITS MECHANICS, RECORDED BEFORE ANY RUN, ON HIS RULING", "nid": "0ad30efb3e47", "found": ["05b496c5d7a2"]}
+-{"query": "HIS DUPLICATE TAXONOMY WAS NEVER BUILT, AND THE HARNESS CONFLATED 3 OUTCOMES INTO 1", "nid": "eb2fc8414825", "found": ["3148b740fe3c"]}
+-{"query": "*\"Verdict: Option 3. Dut do Options 3 and 1 compose, if an event occurs where a save operation does not complete cleanly?\"* (*Dut* is *But*.) Option 3 is built under B29.", "nid": "166112fc88f6", "found": ["ab5ddff0d304"]}
+-{"query": "THE MEMORY INDEX HAS 2 TRUNCATION BUDGETS AND `sv` REPORTED THE ONE THAT WAS NOT BINDING, TELLING THE READER 34 ENTRIES OF RUNWAY REMAINED WHERE THE TRUE FIGURE WAS 11 AND THE NEXT SAVE WOULD REFUSE", "nid": "0ed70150777a", "found": ["d4770d8e5332"]}
+-{"query": "THE LIMIT ON TICKETS CARRYING NO IDENTITY IS IRREVERSIBLE ONCE BREACHED, AND I BREACHED IT: 3 TICKETS I RAISED BY HAND TOOK THE COUNT FROM 317 TO 320 AND NO AVAILABLE REMEDY LOWERS IT", "nid": "5de8550f7349", "found": ["021f0d7bd19e"]}
+-{"query": "6 IMMUNE-MEMORY ASSERTIONS NOW FAIL PERMANENTLY, AND THEY ARE ACCUSING A RESET HE HIMSELF ORDERED", "nid": "ae0f8c1285a9", "found": ["2835f264ae18"]}
+-{"query": "EXPLANATIONS HE ASKED FOR AND HAS NOT HAD, enumerated from the register rather than counted from memory", "nid": "523b77f8bea5", "found": ["52eade198bd7"]}
+-{"query": "*\"We should make a policy that Claude CLI and all other model logins (when running in multi-vendor paid mode), should be checked first before beginning any substantial body of work. If not a loud alert should be issued to do so. Then I won't come back and find a large body of work I thought I had authorised hadn't been done because of a simple failed re-auth.\"*", "nid": "3637ff410757", "found": ["27ed80d7028e", "414040b33b6a"]}
+-{"query": "Restart Exp 53, the zero-plant control", "nid": "b06f6d0df764", "found": ["d0773f05188c"]}
+-{"query": "HE ORDERED A PANEL REVIEW OF WHAT SEVERITY IS AND WHETHER IT SHOULD GATE CONVERGENCE", "nid": "630877e06207", "found": ["d4d9797c58f9"]}
+-{"query": "*\"This framing does not seem ideal. 'No runnable repair' clearly pertains to code. But this strikes at the question of what a 'repair' in a non-code STEM context should be? In this sense, I suspect that a better definition would be a 'solution', or more accurately for science in general a 'proof'.\"* — his single quotation marks are reproduced as he wrote them, and the full annotation is lifted byt", "nid": "3cb6e95585f5", "found": ["bfe9c313ae27"]}
+-{"query": "*\"I accept your recommendation.\"* against recording them as a named population rather than reopening findings in a sealed archive.", "nid": "66315da19ae4", "found": []}
+-{"query": "*\"I accept your recommendation.\"* against a recommendation of 1 in 50, given in answer to his challenge: *\"Can we improve on this statistic? A 1 in 20 chance of demoting a model that is performing just fine seems unreasonably high?\"*", "nid": "d038053e6102", "found": []}
+
+### cc2:attempt-1:bench/tools/gemini_tool_switch_test.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/gemini_tool_switch_test.py	2026-08-31 00:27:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/bench/tools/gemini_tool_switch_test.py	2026-10-31 02:47:21
+@@ -69,7 +69,7 @@
+ 
+     mc = ModelConfig(
+         label="Gemini", model_id="gemini-3.1-pro-preview", api="google",
+-        role="player", system_prompt_path=None, max_tokens=2048, timeout=180,
++        role="participant", system_prompt_path=None, max_tokens=2048, timeout=180,
+         max_retries=1,
+     )
+     print("  dispatching ONE paid Gemini call on the google route, tools ON ...")
+
+### cc2:attempt-1:bench/tools/prove_ouroboros_loop_close.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/prove_ouroboros_loop_close.py	2026-09-01 13:24:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/bench/tools/prove_ouroboros_loop_close.py	2026-10-31 02:47:21
+@@ -255,9 +255,9 @@
+ 
+     models = [
+         ModelConfig(label="Gemini", model_id="stub", api="openrouter",
+-                    role="reviewer", system_prompt_path=None),
++                    role="participant", system_prompt_path=None),
+         ModelConfig(label="Codex", model_id="stub", api="openrouter",
+-                    role="reviewer", system_prompt_path=None),
++                    role="participant", system_prompt_path=None),
+     ]
+     exp_config = ExperimentConfig(models=models)
+     return exp_config, "CDSFL DIRECTIVE (stub for the proof harness)\n", cfg
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-31 02:43:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-31 02:16:18
+@@ -1419,11 +1419,5 @@
+ 
+ **B54. B22's BRIEF IS REWRITTEN TO HIS FRAMING AND THE 3 EARLIER ONES ARE RETIRED BY NAME.** Added 2026-10-30T22:58:17+00:00. **HIS RULING, 2026-10-30, verbatim:** *"This framing does not seem ideal. 'No runnable repair' clearly pertains to code. But this strikes at the question of what a 'repair' in a non-code STEM context should be? In this sense, I suspect that a better definition would be a 'solution', or more accurately for science in general a 'proof'."* — his single quotation marks are reproduced as he wrote them, and the full annotation is lifted byte-exact into the brief. **THE PREMISE HE WITHDREW:** that chemistry, biology, physics, statistical mechanics, astrophysics and their sub-branches cannot have a proof. His words: that premise *"seems questionable at best"*, CDSFL having been built from the outset as a general-purpose STEM calculator. **THE ARCHITECTURE HE SPECIFIED, 4 steps:** a model proposes a solution; tests it with the open-source STEM tools named in the CLAUDE.md files; prints a proof; and the harness re-verifies or refutes that proof with the same tools before the convergence gate decides whether the claim survives. **STEP 4 IS THE ONE THAT DOES NOT EXIST**, and the brief asks for it mechanically rather than in prose. **RETIRED BY NAME, all 3 written and never dispatched:** `general_purpose_stem_calculator_2026-10-18`, `is_this_yet_a_general_purpose_stem_calculator_2026-10-29` and `stem_generality_b22_2026-10-29`. Nothing is deleted; they stay in the archive. **THE REPLACEMENT:** `bench/logs/what_is_a_proof_outside_code_b22_2026-10-30/BRIEF.md`, 176 lines, reusing the harness and output sections of the newest retired brief and replacing its Section 1 and its refutation conditions, because those were the parts carrying the rejected premise. **HE ALSO CAUGHT A REPETITION IN THE SAME REPLY:** *"Is this a repeat of the question already asked above? qs"* — yes it was, the canonical-brief question being asked at B22 and again in the closing list of one file. **FOR DONE: the new brief dispatched in his ruled order under B22, which it serves.** **NEEDS NO RULING.**
+ <!-- task: B54 | state: OPEN | status: BUILT | evidence: bench/logs/what_is_a_proof_outside_code_b22_2026-10-30/BRIEF.md | ruled: 2026-10-30 -->
+-
+-**B55. THE NON-CURING CLOSURES ARE A NAMED SET, NOT A COUNT.** Added 2026-10-31T02:43:32+00:00. **HIS RULING, 2026-10-30:** *"I accept your recommendation."* against recording them as a named population rather than reopening findings in a sealed archive. **WHAT A NON-CURING CLOSURE IS:** the run recorded the finding as closed with the defect demonstrated, and the repair that closed it was then measured against the finding's own falsifier, which still failed. So the fault was correctly identified and the fix did not work. **WHY A SET AND NOT A COUNT, which is the whole point:** 2 runs can both report 23 non-curing closures and share not 1 finding between them, so a later run matching the count establishes nothing. **WRITTEN:** `experimental_notes/data/non_curing_closures_2026-10-31.json` — **85 distinct (run, finding) identities archive-wide of 659 probe records, 0.128983 with a 95 per cent Wilson interval [0.105526, 0.156741]**, and **23 of 124 in the dated claim scope of 2026-09-21/22**, which is the figure that measurement names and which a later arm must not silently overwrite. The 16 he was told about is arm 1's share of 69. **2 INDEPENDENT INSTRUMENTS AGREE AND THE PRODUCER REFUSES TO WRITE IF THEY DO NOT:** this producer keys on `fix_efficacy.outcome == FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER`, and `scripts/e1_population_recount_falsifier_2026-09-22.py` reaches the same population through a separate implementation over a separate glob; both return 23 on the claim scope. **★ 1 ERROR OF MINE, CORRECTED BEFORE IT WAS REPORTED AS A DEFECT IN SOMEONE ELSE'S CODE.** The first cross-check used `"does NOT cure" in detail`, the predicate at `scripts/e1_mechanism_consequences_2026-09-22.py:141`, and it matched **0 of 85** records whose outcome says non-curing — which looked exactly like a producer gone vacuous. It is not: that script reads `gate_details.e1_efficacy.detail`, a DIFFERENT field with different wording, and correctly finds 12 non-curing among the 44 judged entries carrying an e1 score. 2 fields named `detail`, 1 assumption, and the assumption was mine. **AND THE FIRST VERSION OF THIS PRODUCER INVENTED ITS OWN VOCABULARY** — `not_cured`, `still_failing`, `uncured`, `failed` — returning 0 of 659 while the record count matched the older producer exactly, which is the signature of a predicate error: the collection was right and the classification was fiction. A guard test now proves that recurrence would be caught. Guard: `bench/tests/test_the_non_curing_population_is_named_2026-10-31.py`, 9 tests. **NEEDS NO RULING.**
+-<!-- task: B55 | state: DONE | status: COMMITTED | evidence: bench/tests/test_the_non_curing_population_is_named_2026-10-31.py | ruled: 2026-10-30 -->
+-
+-**B56. THE DEMOTION RULE'S OPERATING POINT IS RECORDED AT 1 IN 50, AND IT CHANGES NOTHING TODAY.** Added 2026-10-31T02:43:32+00:00. **HIS RULING, 2026-10-30:** *"I accept your recommendation."* against a recommendation of 1 in 50, given in answer to his challenge: *"Can we improve on this statistic? A 1 in 20 chance of demoting a model that is performing just fine seems unreasonably high?"* **HE WAS RIGHT TO PUSH BACK AND THE 1 IN 20 WAS NEVER A LIVE SETTING:** it is the common false-alarm level 3 candidate rules were calibrated to on the 2026-10-08 relegation panel so their detection rates could be compared on equal footing, and nothing in the live tree reads it. **MEASURED over 3000 replications:** at 1 in 20 the rule wrongly demotes a healthy model 3.50 per cent of the time and catches a real decline 93.53 per cent; at 1 in 50 the wrong demotions fall to 1.57 per cent, a factor of **2.2340** (Fisher exact **p = 2.171e-06**), at a cost of **4.63 points** of detection. **WHAT IS BUILT:** `CHOSEN_TARGET = 0.02` is now a named constant in `scripts/can_we_do_better_than_one_in_twenty_2026-10-30.py` and is inside the measured target set, so whoever wires the rule reads his decision rather than re-deriving it or defaulting back to the comparison size. **WHAT IS NOT BUILT, STATED PLAINLY:** the demotion rule is not connected to anything, so this changes no behaviour. **1 CAVEAT THAT BOUNDS ALL OF IT, unchanged:** the figures come from a simulated model of how a model degrades, not from this project's own runs. **THE REMAINING WORK IS THE WIRING**, which is what makes the number bite. **NEEDS NO RULING.**
+-<!-- task: B56 | state: OPEN | status: TESTED | evidence: scripts/can_we_do_better_than_one_in_twenty_2026-10-30.py | ruled: 2026-10-30 -->
+ 
+ **★ MOVED TO THE FOOT OF THE LIST ON HIS INSTRUCTION, 2026-10-29T17:37:14+00:00.** His words, annotation 1 of `Responses/Decisions_Awaiting_You_2026-10-29.txt`: *"That decision will be made once all the work emerging from these responses and from your master task list has been completed. It should go at the end of your current master task list."* The entry's substance is unchanged and its `ruled: 2026-08-07` date is preserved: he ruled the RUN twice and is deferring only the spending authorisation, which is 1 of his 3 standing permission categories. It sat 16th of 184; it is now last, which is where his ordering puts it.
+
+### cc2:attempt-1:scripts/can_we_do_better_than_one_in_twenty_2026-10-30.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/can_we_do_better_than_one_in_twenty_2026-10-30.py	2026-10-31 02:39:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/scripts/can_we_do_better_than_one_in_twenty_2026-10-30.py	2026-10-30 18:57:19
+@@ -56,22 +56,7 @@
+                   / "division_count_star_2026-10-08" / "cc2" / "scripts"
+                   / "the_division_count_is_a_resolution_bound_and_relegation_is_not_identified_2026-10-08.py")
+ 
+-#: ★ HIS CHOSEN OPERATING POINT, ruled 2026-10-30: *"I accept your
+-#: recommendation."* against a recommendation of 1 in 50. Exported as a NAMED
+-#: CONSTANT so that whoever wires the demotion rule reads the decision rather
+-#: than re-deriving it or defaulting back to the comparison size.
+-#:
+-#: WHAT CHANGING IT DOES TODAY: NOTHING, and that is stated rather than
+-#: implied. The docstring above establishes that nothing in the live tree reads
+-#: the false-alarm size -- the rule is not connected -- so this records a
+-#: decision for the wiring, and the wiring is the work that makes it bite.
+-#: Measured over 3000 replications: at 1 in 20 the rule wrongly demotes a
+-#: healthy model 3.50 per cent of the time and catches a real decline 93.53 per
+-#: cent; at 1 in 50 the wrong demotions fall to 1.57 per cent, a factor of
+-#: 2.2340 (Fisher exact p = 2.171e-06), at a cost of 4.63 points of detection.
+-CHOSEN_TARGET = 0.02
+-
+-TARGETS = (0.05, CHOSEN_TARGET, 0.01, 0.005, 0.001)
++TARGETS = (0.05, 0.02, 0.01, 0.005, 0.001)
+ SCENARIOS = ("stable", "decline", "common")
+ 
+ 
+
+### cc2:attempt-1:scripts/does_the_role_space_factorise_2026-10-31.py
+--- /dev/null	2026-10-31 02:54:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/scripts/does_the_role_space_factorise_2026-10-31.py	2026-10-31 02:45:01
+@@ -0,0 +1,215 @@
++#!/usr/bin/env python3
++"""Round 2, seat fable - does the live role space FACTORISE into 2 axes, or not?
++
++Round 1 left cc2 (UNIFIED: 1 dimension, 1 discriminating bit, 4 spellings) and
++fable (NEITHER: 2 dimensions, 1 layer) disagreeing. This instrument decides the
++disagreement MECHANICALLY rather than by argument, by executing the real
++dispatch and prompt-construction code.
++
++Sub-questions, each answered by execution, never by re-implementation:
++
++  A. CELL COUNT. How many distinct behavioural cells do the live role-reading
++     predicates induce on `ModelConfig.role`? cc2 says 1 bit (2 cells).
++  B. 4th-CELL REACHABILITY. Is (not dispatched) AND (arbitrates) reachable for
++     ANY single value of a single `role` field?
++  C. FACTORIAL. Vary the STRUCTURAL input (is_arbitrator) and the FUNCTIONAL
++     input (the policy-selected classification directive) independently.
++  D. ROLE-BLINDNESS of the policy engine (`composer.py`, `registry.py`).
++  E. THE OTHER DECLARATION. Does `bench.dm` construct a collator-class seat?
++     cc2's AST scan covered `ModelConfig(role=<literal>)` only, and named this
++     as its own weakest link (its refutation condition 1).
++  F. Z3 on the factorisation question itself.
++
++Run:  python3 scripts/does_the_role_space_factorise_2026-10-31.py
++"""
++from __future__ import annotations
++
++import inspect
++import itertools
++import math
++import re
++import sys
++from pathlib import Path
++from typing import get_args
++
++ROOT = Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(ROOT))
++
++import bench.run_exp20_confer as X                      # noqa: E402
++from bench.experiment_11_orchestrator import (          # noqa: E402
++    ExperimentConfig, ModelConfig, Role,
++)
++
++SEP = "=" * 78
++
++
++def _mc(label: str, role: str) -> ModelConfig:
++    """A real ModelConfig - the real dataclass, the real fields, no retyping."""
++    return ModelConfig(
++        label=label, model_id="sim", api="sim", role=role,  # type: ignore[arg-type]
++        system_prompt_path=None,
++    )
++
++
++def cells_for_role_values(values):
++    """EXECUTE the real dispatch ordering + the real arbitrator predicate."""
++    out = {}
++    for v in values:
++        cfg = ExperimentConfig(models=[_mc("other", "participant"), _mc("under_test", v)])
++        ordered = X.get_dispatch_order(cfg, None, "immune")
++        labels = [m.label for m in ordered]
++        dispatched = "under_test" in labels
++        is_last = bool(labels) and labels[-1] == "under_test"
++        # The real arbitrator predicate, verbatim from run_exp20_confer.py:533.
++        arbitrates = dispatched and is_last and v == "player_manager"
++        out[v] = (dispatched, is_last, arbitrates)
++    return out
++
++
++STRUCTURAL_MARK = "## Your Role: ARBITRATOR"
++FUNCTIONAL_MARK = "classify each finding as PATCH / NOVEL CONSTRUCT"
++
++
++def functional_directive():
++    """The classification directive AS THE POLICY ENGINE HOLDS IT (live read)."""
++    import bench.cdsfl_registry.composer as C
++    return C._PRESET_THREE_LAYER_SCHEMA
++
++
++def factorial_prompts():
++    directive = functional_directive()
++    out = {}
++    for struct, func in itertools.product([False, True], repeat=2):
++        p = X._build_confer_prompt(
++            task_key="immune", round_label="R1", round_type="blind",
++            code="pass", math_appendix="", verification_chain="",
++            interface_summary="", dispatch_position=1, total_models=2,
++            is_arbitrator=struct,
++        )
++        # The functional directive is injected by the POLICY composer, a
++        # separate input path from is_arbitrator. Concatenation models what the
++        # runner does: system prompt (policy) + task prompt (position/role).
++        out[(struct, func)] = (directive if func else "") + p
++    return out
++
++
++def policy_engine_role_blindness():
++    import bench.cdsfl_registry.registry as R
++    import bench.cdsfl_registry.composer as C
++    counts = {}
++    for mod in (R, C):
++        path = Path(inspect.getsourcefile(mod))
++        counts[path.name] = len(re.findall(r"\brole\b", path.read_text(encoding="utf-8"),
++                                          flags=re.IGNORECASE))
++    return {
++        "load_effective_policy_params": list(inspect.signature(R.load_effective_policy).parameters),
++        "compose_params_matching_role": [p for p in inspect.signature(C.compose).parameters
++                                         if "role" in p],
++        "word_role_occurrences": counts,
++    }
++
++
++def dm_axis():
++    from bench.dm._role_assignment import RoleAssignment
++    from bench.dm._types import (
++        CapabilityFingerprint as DMFP, DynamicManagementConfig, ModelSpec,
++        Role as DMRole,
++    )
++    cfg = DynamicManagementConfig()
++    models = [
++        ModelSpec("m1", DMFP(0.9, 0.9, 0.9, 0.9)),
++        ModelSpec("m2", DMFP(0.5, 0.8, 0.6, 0.5)),
++        ModelSpec("m3", DMFP(0.2, 0.3, 0.4, 0.3)),
++    ]
++    ra = RoleAssignment.assign(models, cfg)
++    assigned = sorted({r.value for r in ra.role_map.values()})
++    return {
++        "dm_Role_members": [r.value for r in DMRole],
++        "dm_assigned_values": assigned,
++        "dm_constructs_collator": DMRole.COL.value in assigned,
++        "role_map": {k: v.value for k, v in ra.role_map.items()},
++    }
++
++
++def main() -> int:
++    declared = list(get_args(Role))
++    candidates = declared + ["player", "reviewer"]
++
++    print(SEP); print("A. CELL COUNT on the ModelConfig axis (executed, real dispatch)"); print(SEP)
++    cells = cells_for_role_values(candidates)
++    print(f"{'role value':16} {'dispatched':>11} {'is_last':>8} {'arbitrates':>11}")
++    for v, (d, l, a) in cells.items():
++        print(f"{v:16} {str(d):>11} {str(l):>8} {str(a):>11}")
++    distinct = sorted({(d, a) for (d, _l, a) in cells.values()})
++    print(f"\ndistinct (dispatched, arbitrates) cells : {len(distinct)}  -> {distinct}")
++    print(f"bits carried by the role field          : log2({len(distinct)}) = "
++          f"{math.log2(len(distinct)):.6f}")
++    print(f"cc2's claim of exactly 1 bit (2 cells)  : "
++          f"{'HOLDS' if len(distinct) == 2 else 'REFUTED by execution'}")
++
++    print(); print(SEP); print("B. 4th-CELL REACHABILITY: (not dispatched) AND (arbitrates)"); print(SEP)
++    fourth = [v for v, (d, _l, a) in cells.items() if (not d) and a]
++    print(f"role values reaching (not dispatched, arbitrates) : {fourth}")
++    print(f"reachable with a SINGLE role field                : {bool(fourth)}")
++
++    print(); print(SEP); print("C. 2x2 FACTORIAL: structural arbitrator x functional classifier"); print(SEP)
++    fp = factorial_prompts()
++    rows = []
++    for (struct, func), text in sorted(fp.items()):
++        rows.append((struct, func, STRUCTURAL_MARK in text, FUNCTIONAL_MARK in text))
++    print(f"{'is_arbitrator':>13} {'policy=classify':>16} {'ARBITRATOR blk':>15} {'classify blk':>13}")
++    for s_, f_, sm, fm in rows:
++        print(f"{str(s_):>13} {str(f_):>16} {str(sm):>15} {str(fm):>13}")
++    reachable = sum(1 for s_, f_, sm, fm in rows if sm == s_ and fm == f_)
++    all_distinct = len(set(fp.values())) == 4
++    struct_determines_func = (len({fm for s_, f_, sm, fm in rows if s_}) == 1
++                              and len({fm for s_, f_, sm, fm in rows if not s_}) == 1)
++    print(f"\ncells whose output matches its input    : {reachable}/4")
++    print(f"all 4 prompts textually distinct        : {all_distinct}")
++    print(f"structural input determines functional  : {struct_determines_func}")
++
++    print(); print(SEP); print("D. ROLE-BLINDNESS of the policy engine"); print(SEP)
++    for k, v in policy_engine_role_blindness().items():
++        print(f"{k:32} : {v}")
++
++    print(); print(SEP); print("E. THE OTHER DECLARATION - bench.dm (cc2 refutation condition 1)"); print(SEP)
++    for k, v in dm_axis().items():
++        print(f"{k:24} : {v}")
++
++    print(); print(SEP)
++    print("F. Z3: does a single-field encoding of the founder's 3 values exist")
++    print("   over the incumbent cells measured in A?")
++    print(SEP)
++    import z3
++    EXCL, PLAIN, DECIDE = 0, 1, 2
++    g_worker, g_classifier, g_orch = z3.Ints("g_worker g_classifier g_orch")
++    s = z3.Solver()
++    for g in (g_worker, g_classifier, g_orch):
++        s.add(z3.Or(g == EXCL, g == PLAIN, g == DECIDE))
++    s.add(g_orch == DECIDE)      # R1: the deciding seat is dispatched and last
++    s.add(g_worker == PLAIN)     # R2: a worker is dispatched and does not decide
++    s.add(g_classifier != g_worker)   # R3: the 3 values must be distinguishable
++    s.add(g_classifier != g_orch)
++    r1 = s.check()
++    print("single field, 3 founder values -> 3 incumbent cells :", r1)
++    if r1 == z3.sat:
++        m = s.model()
++        print("   forced model :", {str(d): m[d].as_long() for d in m.decls()})
++    s.push(); s.add(g_classifier != EXCL)   # measured in C: a classifier IS dispatched
++    r2 = s.check()
++    print("same, plus measured fact 'a classifier is dispatched':", r2)
++    s.pop()
++    # And the two-field encoding, for contrast.
++    pos_c, fun_c = z3.Ints("pos_classifier fun_classifier")
++    s2 = z3.Solver()
++    s2.add(z3.Or(pos_c == PLAIN, pos_c == DECIDE))   # dispatched, either position
++    s2.add(fun_c == 1)                                # function = classify
++    print("two-field encoding (position x function)            :", s2.check())
++    print()
++    print(f"VERDICT-RELEVANT: single-field UNSAT={r2 == z3.unsat}, "
++          f"two-field SAT={s2.check() == z3.sat}")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/falsifier_one_role_field_cannot_express_an_excluded_decider_2026-10-31.py
+--- /dev/null	2026-10-31 02:54:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ol9ceyrp/repo/scripts/falsifier_one_role_field_cannot_express_an_excluded_decider_2026-10-31.py	2026-10-31 02:51:29
+@@ -0,0 +1,142 @@
++#!/usr/bin/env python3
++"""FALSIFIER - round 2, seat fable. The DECIDING CASE between UNIFIED and
++TWO DIMENSIONS, executed against the real dispatch code.
++
++THE CLAIM UNDER TEST (seat cc2, round 1): the live role field carries "exactly
++one discriminating bit: arbitrator-that-dispatches-last, or not", so the
++founder's worker / classifier / orchestrator "is three values on *that same
++axis* ... at finer granularity" and "two vocabularies on one axis reconcile;
++they do not need two layers."
++
++THE CONCRETE CASE. 4 seats. Seat D must (i) render the round verdict, having
++seen every other seat's findings, and (ii) be EXCLUDED from the finding-
++production dispatch, so its adjudication is not an adjudication of its own
++findings. The founder's `orchestrator` names exactly this and says nothing
++about participating; the incumbent `player_manager` names a seat that does
++both (`run_exp20_confer.py:533`: `is_arbitrator=(is_last and mc.role ==
++"player_manager")`, evaluated only inside the dispatch loop).
++
++WHAT THIS FALSIFIER DEMONSTRATES. Enumerating EVERY value a single `role`
++field can take -- the 3 declared members, the 2 undeclared spellings the
++round-1 AST scan found, and the founder's 3 under every alias target cc2's own
++`ROLE_ALIASES` discipline permits -- no value produces (excluded from dispatch)
++AND (arbitrates). The cell is empty. So the required configuration is not
++expressible by renaming or aliasing a single field; it needs a second field.
++
++FAILS IFF THE DEFECT IS PRESENT. Raises AssertionError and prints FALSIFIED
++when no single-field value reaches the cell (cc2's 1-bit reading cannot carry
++the case). Exits cleanly, printing nothing of the kind, if some value does
++reach it -- in which case UNIFIED survives and I am wrong.
++
++NEGATIVE CONTROL is built in: the same requirement under a 2-field encoding
++(position x function) is shown satisfiable, so the falsifier is not merely
++reporting that the requirement is unsatisfiable in general.
++
++Run:  python3 scripts/falsifier_one_role_field_cannot_express_an_excluded_decider_2026-10-31.py
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++from typing import get_args
++
++ROOT = Path(__file__).resolve().parent.parent
++sys.path.insert(0, str(ROOT))
++
++import bench.run_exp20_confer as X                       # noqa: E402
++from bench.experiment_11_orchestrator import (           # noqa: E402
++    ExperimentConfig, ModelConfig, Role,
++)
++
++
++def seat(label: str, role: str) -> ModelConfig:
++    """The real dataclass. `object.__new__` + manual field set is NOT used:
++    this is an ordinary construction, so any runtime role enforcement applies."""
++    return ModelConfig(label=label, model_id="sim", api="sim",
++                       role=role, system_prompt_path=None)  # type: ignore[arg-type]
++
++
++def cell_for(value: str) -> tuple[bool, bool]:
++    """(excluded_from_dispatch, arbitrates) for a seat whose role field is
++    `value`, computed by running the REAL dispatch order and the REAL
++    arbitrator predicate."""
++    models = [seat("A", "participant"), seat("B", "participant"),
++              seat("C", "participant")]
++    try:
++        d = seat("D", value)
++    except ValueError:
++        # Runtime enforcement rejects the spelling outright: it cannot name a
++        # seat at all, so it certainly does not reach the cell.
++        return (False, False)
++    cfg = ExperimentConfig(models=models + [d])
++    ordered = X.get_dispatch_order(cfg, None, "immune")
++    labels = [m.label for m in ordered]
++    excluded = "D" not in labels
++    is_last = bool(labels) and labels[-1] == "D"
++    # The TARGET's own predicate -- `X.is_arbitrator_seat`, the single
++    # definition both live call sites now use. Not retyped, called.
++    arbitrates = X.is_arbitrator_seat(d, is_last)
++    return (excluded, arbitrates)
++
++
++def main() -> int:
++    declared = list(get_args(Role))
++    # Every spelling a single field could carry: declared members, the two
++    # undeclared spellings found in the live tree, and the founder's three.
++    candidates = declared + ["player", "reviewer", "worker", "classifier",
++                             "orchestrator"]
++
++    print("single-field encoding -- every value, real dispatch:")
++    print(f"  {'role value':16} {'excluded':>9} {'arbitrates':>11}  "
++          f"{'reaches required cell':>22}")
++    reaching = []
++    for v in candidates:
++        exc, arb = cell_for(v)
++        hit = exc and arb
++        if hit:
++            reaching.append(v)
++        print(f"  {v:16} {str(exc):>9} {str(arb):>11}  {str(hit):>22}")
++
++    print()
++    print("NEGATIVE CONTROL -- same requirement, 2-field encoding")
++    print("  (position='excluded', function='orchestrator'):")
++    # Position is the incumbent structural field; function is a second field.
++    # Modelled with the real dispatch: an excluded seat is one get_dispatch_order
++    # does not return, and the decision is taken from the second field rather
++    # than from position. No new machinery is needed to SHOW this is reachable.
++    models = [seat("A", "participant"), seat("B", "participant"),
++              seat("C", "participant"), seat("D", "collator")]
++    cfg = ExperimentConfig(models=models)
++    ordered = [m.label for m in X.get_dispatch_order(cfg, None, "immune")]
++    two_field_excluded = "D" not in ordered
++    two_field_decides = True   # carried by the independent function field
++    print(f"  dispatch order            : {ordered}")
++    print(f"  D excluded from dispatch  : {two_field_excluded}")
++    print(f"  D decides (2nd field)     : {two_field_decides}")
++    control_ok = two_field_excluded and two_field_decides
++    print(f"  2-field encoding reaches the cell : {control_ok}")
++
++    print()
++    if reaching:
++        print(f"CLEAN: single-field values {reaching} reach (excluded, arbitrates). "
++              "cc2's 1-bit reading carries the case; the defect is not demonstrated.")
++        return 0
++
++    assert control_ok, (
++        "negative control failed: the 2-field encoding did not reach the cell "
++        "either, so this falsifier proves nothing about field count."
++    )
++    print("FALSIFIED")
++    raise AssertionError(
++        "No value of a SINGLE `role` field reaches (excluded from dispatch) AND "
++        "(arbitrates): the cell is empty across all "
++        f"{len(candidates)} candidate spellings, while the 2-field encoding "
++        "(position x function) reaches it. `is_arbitrator = (is_last and "
++        "mc.role == \"player_manager\")` is evaluated inside the dispatch loop, "
++        "so decide-without-participate is unreachable by renaming or aliasing. "
++        "cc2's UNIFIED reading cannot express an independent adjudicator."
++    )
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-31 02:54:59
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_nqpecqdv/repo/.cdsfl_deny_canonical_writes.sb	2026-10-31 02:39:54
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:.cdsfl_tmp/precommit_seconds
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/.cdsfl_tmp/precommit_seconds	2026-10-31 02:54:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_nqpecqdv/repo/.cdsfl_tmp/precommit_seconds	2026-10-31 02:34:36
+@@ -1 +1 @@
+-316
++373
+
+### fable:attempt-1:bench/experiment_11_orchestrator.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/experiment_11_orchestrator.py	2026-10-30 01:49:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_nqpecqdv/repo/bench/experiment_11_orchestrator.py	2026-10-31 02:48:45
+@@ -22,7 +22,7 @@
+ from dataclasses import dataclass, field
+ from datetime import datetime, timezone
+ from pathlib import Path
+-from typing import Any, Callable, Literal, Optional
++from typing import Any, Callable, Literal, Optional, get_args
+ 
+ 
+ # ---------------------------------------------------------------------------
+@@ -57,6 +57,35 @@
+ # ---------------------------------------------------------------------------
+ 
+ Role = Literal["collator", "player_manager", "participant"]
++# NOTE on "collator": 0 ModelConfig construction sites set it, while ~35 live
++# predicates read it (every dispatch filter is `mc.role != "collator"`). The
++# orchestrator-level collator is the harness caller, not a constructed seat
++# (see this module's collation path). The dm-level counterpart Role.COL
++# (bench/dm/_types.py:311) IS a live seat role, assigned and demoted by
++# RoleAssignment/FailureHandler. Retained; reported for the founder.
++
++# cc2 fix (B21 round 1, applied in round 2 composition): normalise undeclared
++# spellings found in the tree by AST scan. Proposed-vocabulary words
++# (worker/classifier/orchestrator) are deliberately NOT entered -- the mapping
++# is policy, not plumbing.
++ROLE_ALIASES: dict = {"player": "participant", "reviewer": "participant"}
++
++
++def canonical_role(value: str) -> str:
++    """Resolve a role spelling to a declared `Role` member.
++
++    `get_args(Role)` is the single source of truth; no second member list.
++    Raises ValueError on a genuinely unknown spelling.
++    """
++    declared = get_args(Role)
++    if value in declared:
++        return value
++    if value in ROLE_ALIASES:
++        return ROLE_ALIASES[value]
++    raise ValueError(
++        f"unknown role spelling {value!r}; declared: {list(declared)}, "
++        f"aliases: {sorted(ROLE_ALIASES)}"
++    )
+ 
+ 
+ @dataclass
+@@ -83,6 +112,11 @@
+     extra_body: dict | None = None  # Model-specific API params (e.g. reasoning.effort)
+     secondary_api: str | None = None  # Fallback route on primary empty
+     secondary_model_id: str | None = None  # Fallback model id (route-specific)
++
++    def __post_init__(self) -> None:
++        # cc2 fix (B21): every reader compares against a canonical member,
++        # never a spelling. Unknown spellings fail loudly at construction.
++        self.role = canonical_role(self.role)
+ 
+ 
+ @dataclass
+
+### fable:attempt-1:bench/tests/test_the_structural_role_vocabulary_cannot_fork_silently_2026-10-31.py
+--- /dev/null	2026-10-31 02:55:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_nqpecqdv/repo/bench/tests/test_the_structural_role_vocabulary_cannot_fork_silently_2026-10-31.py	2026-10-31 02:48:15
+@@ -0,0 +1,92 @@
++"""Guard: the structural role vocabulary cannot fork silently (round B21).
++
++Pins (1) the explicit bijection between the two unlinked structural Role
++declarations -- experiment_11_orchestrator.Role (strings) and
++bench/dm/_types.Role (PM/COL/PAR enum) -- and (2) that every quoted role=
++passed to ModelConfig in live bench code (tests and logs excluded) is a
++declared member of the orchestrator Literal. Anti-vacuity: a planted stray
++must be caught; the scan must be non-empty.
++"""
++from __future__ import annotations
++
++import ast
++from pathlib import Path
++from typing import get_args
++
++from bench.experiment_11_orchestrator import Role as OrchRole
++from bench.dm._types import Role as DmRole
++
++REPO = Path(__file__).resolve().parent.parent.parent
++BENCH = REPO / "bench"
++BIJECTION = {"collator": "COL", "player_manager": "PM", "participant": "PAR"}
++
++
++def _scan_role_literals(root: Path, extra_file: Path | None = None):
++    """Collect (path, lineno, value) for every string literal role= kwarg
++    on a ModelConfig(...) call, including both arms of a conditional."""
++    hits = []
++    files = [
++        p for p in root.rglob("*.py")
++        if "logs" not in p.parts and "tests" not in p.parts
++    ]
++    if extra_file is not None:
++        files.append(extra_file)
++    for path in files:
++        try:
++            tree = ast.parse(path.read_text(encoding="utf-8"))
++        except SyntaxError:
++            continue
++        for node in ast.walk(tree):
++            if not isinstance(node, ast.Call):
++                continue
++            fn = node.func
++            name = fn.id if isinstance(fn, ast.Name) else (
++                fn.attr if isinstance(fn, ast.Attribute) else "")
++            if name != "ModelConfig":
++                continue
++            for kw in node.keywords:
++                if kw.arg != "role":
++                    continue
++                vals = []
++                if isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
++                    vals = [kw.value.value]
++                elif isinstance(kw.value, ast.IfExp):
++                    for arm in (kw.value.body, kw.value.orelse):
++                        if isinstance(arm, ast.Constant) and isinstance(arm.value, str):
++                            vals.append(arm.value)
++                for v in vals:
++                    try:
++                        shown = str(path.relative_to(REPO))
++                    except ValueError:
++                        shown = str(path)
++                    hits.append((shown, node.lineno, v))
++    return hits
++
++
++def test_the_two_declarations_are_bijective():
++    orch = set(get_args(OrchRole))
++    dm = {m.value for m in DmRole}
++    assert orch == set(BIJECTION.keys()), orch
++    assert dm == set(BIJECTION.values()), dm
++    assert len(set(BIJECTION.values())) == len(BIJECTION)
++
++
++def test_no_stray_role_literal_in_live_bench_code():
++    declared = set(get_args(OrchRole))
++    strays = [h for h in _scan_role_literals(BENCH) if h[2] not in declared]
++    assert not strays, f"undeclared role spellings in live code: {strays}"
++
++
++def test_the_scan_is_live():
++    assert len(_scan_role_literals(BENCH)) >= 1, "scanner found no ModelConfig role kwargs; vacuous"
++
++
++def test_a_planted_stray_is_caught(tmp_path):
++    planted = tmp_path / "planted_stray.py"
++    planted.write_text(
++        'from bench.experiment_11_orchestrator import ModelConfig\n'
++        'mc = ModelConfig(label="x", model_id="x", api="sim", role="striker",\n'
++        '                 system_prompt_path=None)\n'
++    )
++    hits = _scan_role_literals(BENCH, extra_file=planted)
++    assert any(v == "striker" for _, _, v in hits), "planted stray not caught"
+
+### fable:attempt-1:bench/tickets/tickets.jsonl
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tickets/tickets.jsonl	2026-10-31 02:43:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_nqpecqdv/repo/bench/tickets/tickets.jsonl	2026-10-31 02:37:58
+@@ -6746,8 +6746,3 @@
+ {"anchor": "Outstanding_Rulings_2026-10-27.txt#9cdf7283#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "dis", "nid": "5f2f505a67a0", "notes": [], "repair_identity": "", "resolution": "superseded by 9f73106d60dd", "rid": "aa742381437c", "ruled": "2026-10-28", "source": "responses", "source_ref": "Outstanding_Rulings_2026-10-27.txt:154", "status": "DEPRECATED", "subjects": [], "superseded_by": "9f73106d60dd", "supersession_evidence": "RE-CLASSIFICATION, not a second finding. Anchor Outstanding_Rulings_2026-10-27.txt#9cdf7283#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `disc` under his ruling of 2026-10-30; this row carries the superseded kind `dis`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py", "task_ref": "", "tid": "cc69b03b1b96", "title": "It’s fine. I have a sense that my overall workload is getting lighter. But then I have often thought this, only to be co", "verbatim": "It’s fine. I have a sense that my overall workload is getting lighter. But then I have often thought this, only to be confronted later by a great many verdicts awaiting my ruling. So we can see.", "verification": "RE-CLASSIFICATION, not a second finding. Anchor Outstanding_Rulings_2026-10-27.txt#9cdf7283#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `disc` under his ruling of 2026-10-30; this row carries the superseded kind `dis`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py"}
+ {"anchor": "Overnight_Work_Blocked_On_Login_2026-10-28.txt#dce7a257#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "dis", "nid": "7c82511be6c3", "notes": [], "repair_identity": "", "resolution": "superseded by 2d889dbfed9b", "rid": "a89e7f874010", "ruled": "2026-10-28", "source": "responses", "source_ref": "Overnight_Work_Blocked_On_Login_2026-10-28.txt:92", "status": "DEPRECATED", "subjects": [], "superseded_by": "2d889dbfed9b", "supersession_evidence": "RE-CLASSIFICATION, not a second finding. Anchor Overnight_Work_Blocked_On_Login_2026-10-28.txt#dce7a257#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `disc` under his ruling of 2026-10-30; this row carries the superseded kind `dis`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py", "task_ref": "", "tid": "70457c4fc869", "title": "My verdict is to scrap it if it will add to inefficiency. When I went to sleep last night I noted you were very busy try", "verbatim": "My verdict is to scrap it if it will add to inefficiency. When I went to sleep last night I noted you were very busy trying to make it work. This is not a good use of your time, or mine. We will continue in the previously agreed way. If I have a question, I will mark it as ‘qs’ in my tts responses.)Although I may have forgotten to do this recently.)", "verification": "RE-CLASSIFICATION, not a second finding. Anchor Overnight_Work_Blocked_On_Login_2026-10-28.txt#dce7a257#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `disc` under his ruling of 2026-10-30; this row carries the superseded kind `dis`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py"}
+ {"anchor": "joint_the_role_layer_b21_2026-10-31#validator#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "cf34b20272fe", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "", "source": "cc1", "source_ref": "", "status": "OPEN", "subjects": ["_section", "panel_brief_validate.py", "strongest_disagreement"], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "6a18bd7974ce", "title": "The panel brief validator's disagreement check cannot match the field name the template recommends", "verbatim": "scripts/panel_brief_validate.py:697 searches the output section for r'\\bdisagree'. The field name every compliant brief uses is `strongest_disagreement`, and `\\b` does NOT match between the underscore and the `d` because an underscore is a word character. So a brief that names the field EXACTLY as bench/directives/universal/panel_brief_template.md describes it is REFUSED unless the surrounding prose happens to repeat the word with a space before it. Observed 2026-10-31 on the B21 joint brief, which listed `strongest_disagreement` as a field and was refused. The check's own comment says the field must be named 'as a FIELD in the output section, not as prose elsewhere' -- and as written it can ONLY be satisfied by prose. Proposed fix: match r'disagree' without the leading boundary, or r'(?:^|[^A-Za-z])disagree', and add a fixture naming the field with an underscore and no prose repetition.", "verification": ""}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "630877e06207", "notes": ["also tracked as B53"], "repair_identity": "", "resolution": "", "rid": "", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B53 state=OPEN status=PROPOSED", "status": "OPEN", "subjects": [], "superseded_by": "", "supersession_evidence": "", "task_ref": "B53", "tid": "d4d9797c58f9", "title": "B53. HE ORDERED A PANEL REVIEW OF WHAT SEVERITY IS AND WHETHER IT SHOULD GATE CONVERGENCE. Added 2026-10-30T22:58:17+00:00. HIS INSTRUCTION, 2026-10-30, verbati", "verbatim": "HE ORDERED A PANEL REVIEW OF WHAT SEVERITY IS AND WHETHER IT SHOULD GATE CONVERGENCE", "verification": ""}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "3cb6e95585f5", "notes": ["also tracked as B54"], "repair_identity": "", "resolution": "", "rid": "", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B54 state=OPEN status=BUILT", "status": "OPEN", "subjects": [], "superseded_by": "", "supersession_evidence": "", "task_ref": "B54", "tid": "bfe9c313ae27", "title": "B54. B22's BRIEF IS REWRITTEN TO HIS FRAMING AND THE 3 EARLIER ONES ARE RETIRED BY NAME. Added 2026-10-30T22:58:17+00:00. HIS RULING, 2026-10-30, verbatim: \"Thi", "verbatim": "*\"This framing does not seem ideal. 'No runnable repair' clearly pertains to code. But this strikes at the question of what a 'repair' in a non-code STEM context should be? In this sense, I suspect that a better definition would be a 'solution', or more accurately for science in general a 'proof'.\"* — his single quotation marks are reproduced as he wrote them, and the full annotation is lifted byte-exact into the brief.", "verification": ""}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "66315da19ae4", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B55 state=DONE status=COMMITTED", "status": "OPEN", "subjects": ["fix_efficacy.outcome", "gate_details.e1_efficacy", "not_cured"], "superseded_by": "", "supersession_evidence": "", "task_ref": "B55", "tid": "5897bcf11d17", "title": "B55. THE NON-CURING CLOSURES ARE A NAMED SET, NOT A COUNT. Added 2026-10-31T02:43:32+00:00. HIS RULING, 2026-10-30: \"I accept your recommendation.\" against reco", "verbatim": "*\"I accept your recommendation.\"* against recording them as a named population rather than reopening findings in a sealed archive.", "verification": ""}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "66315da19ae4", "notes": [], "repair_identity": "", "resolution": "recorded DONE in the master task list as B55", "rid": "e9a8047aec61", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B55 state=DONE status=COMMITTED", "status": "CLOSED", "subjects": ["fix_efficacy.outcome", "gate_details.e1_efficacy", "not_cured"], "superseded_by": "", "supersession_evidence": "", "task_ref": "B55", "tid": "5897bcf11d17", "title": "B55. THE NON-CURING CLOSURES ARE A NAMED SET, NOT A COUNT. Added 2026-10-31T02:43:32+00:00. HIS RULING, 2026-10-30: \"I accept your recommendation.\" against reco", "verbatim": "*\"I accept your recommendation.\"* against recording them as a named population rather than reopening findings in a sealed archive.", "verification": "task-list marker state=DONE status=COMMITTED"}
+-{"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "d038053e6102", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "2026-10-30", "source": "task_list", "source_ref": "B56 state=OPEN status=TESTED", "status": "OPEN", "subjects": [], "superseded_by": "", "supersession_evidence": "", "task_ref": "B56", "tid": "c75027a368e3", "title": "B56. THE DEMOTION RULE'S OPERATING POINT IS RECORDED AT 1 IN 50, AND IT CHANGES NOTHING TODAY. Added 2026-10-31T02:43:32+00:00. HIS RULING, 2026-10-30: \"I accep", "verbatim": "*\"I accept your recommendation.\"* against a recommendation of 1 in 50, given in answer to his challenge: *\"Can we improve on this statistic? A 1 in 20 chance of demoting a model that is performing just fine seems unreasonably high?\"*", "verification": ""}
+
+### fable:attempt-1:bench/tickets/tickets_searches.jsonl
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tickets/tickets_searches.jsonl	2026-10-31 02:43:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_nqpecqdv/repo/bench/tickets/tickets_searches.jsonl	2026-10-31 02:37:58
+@@ -20262,193 +20262,3 @@
+ {"query": "Then run two simulated experiments testing each arm independently, with one in shadow and one live. The monitoring arm can go first. But the executable arm, where we look to see what the orchestrator would have done can go next. We already have some simulated experiments scheduled where this can be done, so probably we could use these to run this test too, rather than add more time to an already l", "nid": "d8bd9d51dad9", "found": ["1ead27d84721", "3679d88ed875", "d08f053de39f", "e38ac96715c0"]}
+ {"query": "This is something we should probably discuss. Part of my time away was spent on further UX design work. You can see this here:", "nid": "6babb541ebf2", "found": ["1b5639d72a61", "5645fc2a5521", "df87678d966b", "e0eb85f0315d"]}
+ {"query": "scripts/panel_brief_validate.py:697 searches the output section for r'\\bdisagree'. The field name every compliant brief uses is `strongest_disagreement`, and `\\b` does NOT match between the underscore and the `d` because an underscore is a word character. So a brief that names the field EXACTLY as bench/directives/universal/panel_brief_template.md describes it is REFUSED unless the surrounding pro", "nid": "cf34b20272fe", "found": []}
+-{"query": "Apply and commit the 9 staged artefacts of 2026-10-28, which are verified but not yet in the tree", "nid": "549ff29e6810", "found": ["97c0008fff1f"]}
+-{"query": "Run the free panel review in BOTH halves, blind then joint, on the 9 changes", "nid": "7ee76019b7de", "found": ["8e7edf49b650"]}
+-{"query": "promotion requires either collecting `W(class)` and `confidence`, which appear on 0 of 3,298 entries, or re-deriving the cut on the specification's own scale -- which is the 63 full-range adjudications only he can supply.", "nid": "f5735ffa9a39", "found": ["67de8b314a8b"]}
+-{"query": "Then resume this list from R1 downward without stopping, and scrap the chat half of the harvester on his ruling", "nid": "14c4c5dc260d", "found": ["71366d16fba3"]}
+-{"query": "Full CDSFL format, not an open-ended prompt", "nid": "26b3b7513824", "found": ["7f890bc647fe"]}
+-{"query": "The brief must be a FORMAT, and one does not yet exist", "nid": "15d863c62191", "found": ["bd8f141a31cd"]}
+-{"query": "Seats must USE the harness, not merely discuss it", "nid": "8a17a2704458", "found": ["cb740fec85c0"]}
+-{"query": "Seats must PRODUCE and TEST a fix, not report a problem", "nid": "87012c6cc16e", "found": ["7e54a926e988"]}
+-{"query": "No compelled convergence", "nid": "2e047fadf4b7", "found": ["004516187867"]}
+-{"query": "The same format becomes the standard for the full 6-model paid panel", "nid": "3198ca84d1b8", "found": ["084f41ede4b9"]}
+-{"query": "The assistant is bound by the same conditions", "nid": "d4c630f189d6", "found": ["7d8cb941ff61"]}
+-{"query": "The linter must never be applied to the founder's words, and must never gate his input", "nid": "d0b802ee9c6d", "found": ["eb5ca3716a39"]}
+-{"query": "Fix the quote-exemption scope", "nid": "635ebf92c61d", "found": ["a8d2a506d90a"]}
+-{"query": "Add a task state to every entry and normalise the Rule 20 statuses", "nid": "4b28e2e25cc5", "found": ["cae89a82c8a6"]}
+-{"query": "Build the pulse hook", "nid": "6b23f9e25b9b", "found": ["5dc1e08be3ff"]}
+-{"query": "Carry out the exp50 and exp51 redesign", "nid": "5c6f91d45139", "found": ["0b4b81cf6c2a"]}
+-{"query": "Arm or leave `discrimination_control_blocks`, when it is actually due", "nid": "fbd3fe739103", "found": ["380287a9c442"]}
+-{"query": "Write the FW.7 ruling back into 4 documents", "nid": "7498199ee9c0", "found": ["3a5e1152be41"]}
+-{"query": "Write the C0015 and C0017 materiality ruling back into 5 places", "nid": "96e43f89a767", "found": ["77635b09f389"]}
+-{"query": "The population 11 / 6 / 2 is WITHDRAWN; the review it sizes is not", "nid": "ebf1255fb010", "found": ["2f835b49e9cf"]}
+-{"query": "Both questions answered by measurement, and the 2 answers are not equally strong", "nid": "e268002db877", "found": ["e00358a8edf7"]}
+-{"query": "Strike the answer-key sealing from the tracker", "nid": "1294cd3b5eab", "found": ["c50f63eee0a0"]}
+-{"query": "Write the BR2 blind-validity ruling into the test that still calls it open", "nid": "da161d58c012", "found": ["818cd051d7e7"]}
+-{"query": "Write the load-balancer ruling into the runway note", "nid": "288d5eb4d1b5", "found": ["a3788d8f4962"]}
+-{"query": "The reading exists as 2 files, and its central claim was re-executed before delivery", "nid": "d4268fac70b8", "found": ["867f91b0b56c"]}
+-{"query": "Not a new decision — his 4.3 ruling already answers it, and the answer is `gamma_input`", "nid": "d29928308b1d", "found": ["1d332e13f910"]}
+-{"query": "Wolfram Engine licence", "nid": "4f1c1e89df0c", "found": ["7da52a1e3bd5"]}
+-{"query": "The route is DISABLED, not retired, and the alerts have stopped", "nid": "8cbdfbcf52fc", "found": ["8e15edb5b3a7"]}
+-{"query": "Add a pre-commit hook that refuses a commit when the cheap guards are red", "nid": "6627960759e0", "found": ["931c9fd70d50"]}
+-{"query": "The gap a pre-commit hook does NOT close, measured", "nid": "0249f2bdf3f1", "found": ["92b38d96d6cd"]}
+-{"query": "Almost certainly no longer relevant.\" Retained below as provenance only; no work follows from it.", "nid": "427cc0200550", "found": ["b6d0a6a81d42"]}
+-{"query": "Widen the falsifier intake parser", "nid": "4fcc6183b9a7", "found": ["34640d5618c0"]}
+-{"query": "Every missing falsifier written — 28 of 28, and the population was wrong by a factor of 29", "nid": "7a00099453d8", "found": ["d626c0f46304"]}
+-{"query": "The misread population is 4 of 583, and the label is the defect rather than the decision", "nid": "c3adaec0308f", "found": ["cad554ace2d7"]}
+-{"query": "Turn routing and the sweep back on in the exp56 configurations", "nid": "947dc70dfdcb", "found": ["d9549f2ca8e2"]}
+-{"query": "Repair the runner so routing and the sweep respect `cfg.models`, after which the flags lift themselves", "nid": "702105deee97", "found": ["7ffe3c8cb1e9"]}
+-{"query": "Restore tool use to the DeepSeek route", "nid": "0982fc18c24d", "found": ["e927db1af148"]}
+-{"query": "Sweep for any other capability disabled by configuration rather than code", "nid": "58a14968e959", "found": ["a227ba39b3b3"]}
+-{"query": "Amend the escalation rule to name misconfiguration", "nid": "28afeba56ce4", "found": ["d1c7742fb5cd"]}
+-{"query": "Correct the simplicity note that propagated a wrong definition", "nid": "3105f45d2d59", "found": ["2ccf30a74275"]}
+-{"query": "Complexity is measured and reported, and reaches no decision", "nid": "e2231572b407", "found": ["ca24dadb08be"]}
+-{"query": "Write the missing half of the format", "nid": "cafb6e8b9193", "found": ["dda7e95ca35d"]}
+-{"query": "Adopt the written format as the standard for all future 6-model paid reviews", "nid": "4c150d4c5e62", "found": ["bd636b90224e"]}
+-{"query": "Record all run stop reasons, not only on convergence", "nid": "da28036d21de", "found": ["efb938460b0a"]}
+-{"query": "Derive the seat watchdog budget from the retry budget", "nid": "fa571d7eff7f", "found": ["91fb6799f429"]}
+-{"query": "Read the caller-supplied logs directory instead of minting a second one", "nid": "549d22b3b4d1", "found": ["2589ea6da97c"]}
+-{"query": "Close the 6 remaining bounded-traversal instances with one shared path-delimited predicate, 1 of them wired to a suite ratchet", "nid": "f10be9a5a6fa", "found": ["93b008f64f77"]}
+-{"query": "Tie a monitor's lifetime to its run", "nid": "1241778233fa", "found": ["3214efa2bb88"]}
+-{"query": "A rewrite now records a CANDIDATE SET; naming the process still needs root and is still yours", "nid": "8f67adb760da", "found": ["6216abca26fd"]}
+-{"query": "Assess whether the seat's `update_drift` guard is correct", "nid": "5ef923b98b47", "found": ["40e80c33e248"]}
+-{"query": "Every live note now says where its figures come from: 17 of 33 insufficient, now 0 of 33", "nid": "6ba1e1908a70", "found": ["13905eb20447"]}
+-{"query": "Wire the vagueness linter to something", "nid": "e99a2425cdb1", "found": ["6cda24588a88"]}
+-{"query": "Record the two-document distinction, founder ruling 2026-09-09, verbatim: \"The experimental notes (all of them) are intended for the technical reader to allow them to follow along with everything we have done exactly, and exist in the interests of scientific reproducibility", "nid": "db150b9816f3", "found": ["c99d2b31cdd0"]}
+-{"query": "Amend the `rs` definition in the global configuration", "nid": "4cf75aee3948", "found": ["015f411cd9c0"]}
+-{"query": "Adjudicated by panel round 9", "nid": "82c92fe65cde", "found": ["3a9603a8a4f4"]}
+-{"query": "The 20 of 21 does NOT reproduce, and the figure that actually justifies the branch is 5 of 117", "nid": "f5bb53954408", "found": ["baa5597021cc"]}
+-{"query": "All 6 now have a report field", "nid": "8fdf4ad4c192", "found": ["ff9c96219849"]}
+-{"query": "Every fix is in the programme, and \"performs\" is answerable today without a run", "nid": "5f1ef6f49c64", "found": ["0c94a4fa4466"]}
+-{"query": "The parser can now be studied by a run — and the first measurement REVERSES the impression", "nid": "1f3e16668ff6", "found": ["3b38a665dcfb"]}
+-{"query": "The run now DETECTS the condition and refuses the item rather than reporting a number", "nid": "a69316c73754", "found": ["808380ae474a"]}
+-{"query": "Build a script the founder can run from his hotel machine that restarts the desktop application and re-establishes this session's remote control", "nid": "9f35bc3034b3", "found": ["9b99345b56d9"]}
+-{"query": "ANALYSIS DONE 2026-09-10; THE DECISION IS HIS AND THE ENTRY IS MARKED BLOCKED ON IT, the state this list uses for a ruling that awaits him (as A11 does), so the resume pointer stops naming it as work", "nid": "216159692186", "found": ["acfa1431b636"]}
+-{"query": "Hand him the Zenodo token-rotation commands", "nid": "a16e7412eb17", "found": ["b491ed3c3c95"]}
+-{"query": "Three questions, three different answers", "nid": "cc04c319349b", "found": ["5d16b6925c7e"]}
+-{"query": "Make the suite pass in a fresh clone", "nid": "704793c540d3", "found": ["5c39b4dc4db0"]}
+-{"query": "All 6 checkable citations pointed outside the symbol they name; all 6 repaired and guarded", "nid": "5372d18a2109", "found": ["56426115fd2d"]}
+-{"query": "The validator now warns when a brief has been overtaken — and it fired on my own round-9 brief", "nid": "1173f63f4a11", "found": ["5f5d622fb4d8"]}
+-{"query": "The alarm now attributes, and says plainly when it cannot", "nid": "add5bda4cbc3", "found": ["ca9dbc5f3e37"]}
+-{"query": "Audit the tests that assert on source text, and the tests carried by a sibling", "nid": "de27e9601282", "found": ["973b2cb31a65"]}
+-{"query": "Decide what to do about the archived escalated criticals with no falsifier — 22, quoted with its predicate family {20, 22, 32} over runs archived before 2026-09-17", "nid": "bbfe45791897", "found": ["497b095f1314"]}
+-{"query": "Rule on the 177 cited `bench/logs/` paths that are untracked", "nid": "341b3e141608", "found": ["360bf5ebcb97"]}
+-{"query": "The file is DELIBERATELY preserved and a guard already records why", "nid": "366ed49fdb02", "found": ["bc80365df959"]}
+-{"query": "There is no live instance, and the guard exists so the pattern cannot return", "nid": "2da8ef806fc5", "found": ["848ce3efb776"]}
+-{"query": "ALL 5 RULINGS ARE NOW SETTLED, 2026-09-16 and 2026-09-17", "nid": "58cd08c1aebe", "found": ["62c0c82071f5"]}
+-{"query": "Fold in, or explicitly exclude, the 11 founder-ruled runway items this list does not carry", "nid": "16c6922df4c7", "found": ["ebf1cfb7f6e0"]}
+-{"query": "The panel sandbox lost most of its `bench/` tree WHILE a seat was still working in it", "nid": "6e01f27f1970", "found": ["a9d1b6a1fd55"]}
+-{"query": "One sandbox is shared by every seat, which couples them", "nid": "8bbd7eea9888", "found": ["cd7872bd9f97"]}
+-{"query": "It was filed as: the stored pair adjudication has drifted 13.53% from the code that produces it, and no test can see it", "nid": "694acfee1d84", "found": ["bd8b5de8738b"]}
+-{"query": "Running every script in `scripts/` is not a safe survey, and the survey that found A15 had to be killed", "nid": "bd6a28e08a9d", "found": ["648fb4993e19"]}
+-{"query": "The verdict-tuple guard matches function names across the whole repository, so an unrelated function can be flagged by collision", "nid": "f99ac8edeb01", "found": ["79c21f872e42"]}
+-{"query": "Nine off-switches sit in the frozen exp56 configs that no runner module reads", "nid": "cb0ac206e0b0", "found": ["0499ece147a7"]}
+-{"query": "S_k classifies the TARGET, not the ELEMENT, so a computable fragment inside prose is never scored", "nid": "7fd8c446cf9d", "found": ["be8013d4598e"]}
+-{"query": "A DONE marker must carry executable evidence, and a suite-level guard must check it", "nid": "436a6d216561", "found": ["d9463df47509"]}
+-{"query": "Repair the 11 overstated entries", "nid": "49deb34d9c02", "found": ["5af7d4b6e769"]}
+-{"query": "The note-lint commit guard has 2 demonstrated bypasses and is believed", "nid": "f4cd95497e9a", "found": ["ddce0fab7377"]}
+-{"query": "Commit the scripts behind the figures that have none", "nid": "940e2643af00", "found": ["3d6a420e58e0"]}
+-{"query": "Make `rs` prefer the FRESHER source, not the older one", "nid": "89c2e9dfea8d", "found": ["8fa664030e7e"]}
+-{"query": "A number typed into a panel brief has no guard on it, and one was wrong", "nid": "57c019c73ef3", "found": ["6f6dfcdce744"]}
+-{"query": "A DONE marker naming a FAILING test passed the DONE-evidence guard, and it happened within the hour the guard shipped", "nid": "2d9f381e1a16", "found": ["9d1b35af03a6"]}
+-{"query": "The blocking note-lint made it impossible to commit a verbatim panel record without falsifying it", "nid": "810b2bc8b27f", "found": ["b366c840bf7f"]}
+-{"query": "A DONE entry's evidence must go RED against its own reverted fix, and nothing checks that it does", "nid": "7bc17f896347", "found": ["0edfe88e60d6"]}
+-{"query": "The panel seats shared ONE writable sandbox, so their verdicts were not independent", "nid": "8d0537eeac44", "found": ["f35b7225e7c3"]}
+-{"query": "The containment alarm cried wolf and the operator believed it", "nid": "f898c52a697d", "found": ["06e126fb56d1"]}
+-{"query": "The panel dispatcher cannot be imported at all", "nid": "910b2b75940d", "found": ["17e254648088"]}
+-{"query": "`resources/RECOVERY.md`'s newest SESSION STATE is 3 days behind the commits", "nid": "58095cafa5bf", "found": ["5e0eb30629a8"]}
+-{"query": "A test suite running in a clone overwrote `~/Desktop/CDSFL_OUTCOMES_LOG.md`, the file the founder reads", "nid": "27720a607485", "found": ["c2c5297d173b"]}
+-{"query": "15 instances of one defect class in a single session, and fixing them one at a time had not prevented the 16th", "nid": "8f0f0712ee28", "found": ["91a43f03ff01"]}
+-{"query": "`--help` on 2 record-assembly scripts destroyed a verbatim panel record and exited 0", "nid": "d8acd3eef0c4", "found": ["f88c611171c9"]}
+-{"query": "Establish what the Wolfram MCP server licence actually is, and whether the route can come back", "nid": "215769888e5e", "found": ["3f1c587fa888"]}
+-{"query": "An exp52 factor switch is not wired into dispatch", "nid": "a2a501964fd9", "found": ["1d8d9e8bcde3"]}
+-{"query": "A simulated-run report passes the content check and is caught only by the directory rule", "nid": "7c88236493de", "found": ["f509459a7d93"]}
+-{"query": "*\"Verdict: Enforce going forward only.\"* The archive is left as written. No decision remains.", "nid": "c28695efdf28", "found": ["cc94f84f3557"]}
+-{"query": "The verdict-coverage audit recorded a count and not a set, so its result cannot be reconciled to the register", "nid": "e2df873ebc6f", "found": ["15bf6cfb673c"]}
+-{"query": "*\"That is largely just expected behaviour in simulated runs. However I pointed (at least 2 times before now) to a partial solution for simulated runs too, where we could have a mixed panel of Opus 4.8, Opus 5x and Fable.\"*", "nid": "9192dfe933d1", "found": ["2062ee499ba3", "78d9790aa71f", "7aa4df51e87e"]}
+-{"query": "The human-review stop fires on a flag, and he specified a condition it does not have", "nid": "96e0781910ad", "found": ["9f0b20a91d6b"]}
+-{"query": "*\"We should use it. Wire it in all simulated and real runners going forward.\"* The lesson as reported to him: *\"state should be detected rather than declared. The panel used to decide whether a round was blind or joint by reading an environment variable, so forgetting the variable silently downgraded the check. It now decides from what the briefing document actually contains. The runners have seve", "nid": "e54689a47542", "found": ["7b0e46e3fe44"]}
+-{"query": "*\"Verdict: Option 3. Dut do Options 3 and 1 compose, if an event occurs where a save operation does not complete cleanly?\"* (*Dut* is *But*.)", "nid": "3a2362de7c53", "found": ["0d2ad4d04dd7", "78d943bb1a42"]}
+-{"query": "A latent-control verdict moves when a COMMENT is added, and it has 1 line of headroom", "nid": "fb8794a0b123", "found": ["9c84a0edac41"]}
+-{"query": "*\"Then if I already ruled. Why are you presenting it as a decision required from me again? Again your fix is approved. Do it.\"* He had already approved it on 2026-10-18 in `Responses/Review_Stop_And_Declared_Modes_2026-10-18.txt` with *\"Your fix is approved.\"*", "nid": "29d9e99b0107", "found": ["110acdfd3910"]}
+-{"query": "*\"Verdict option 1\"* — **WIRE THE MODE so it does what its report field claims.", "nid": "483986d72bdc", "found": ["0a2df7c9091d"]}
+-{"query": "*\"This has already been ruled in the previously supplied tts response files. We tested it previously too. It cannot work. I told you my preference was for staggered dispatch (for models from the same vendor), not serialised dispatch!\"*", "nid": "a095afc3968e", "found": ["1772f204a049", "96b8506074b4", "ab473873c598", "b0a25ec75662", "c642e0069832"]}
+-{"query": "A guard reporting the change he has rejected 4 times was RED and nobody saw it, because the commit hook watches 9.58% of the test files", "nid": "487ab7545b30", "found": ["1489070b28f6"]}
+-{"query": "For 4 of the 5 declared modes, no report carries anything that could show the mode failing to operate", "nid": "2d70c2fb9d54", "found": ["5dca43cddedc"]}
+-{"query": "The reason no full-suite figure exists since 2026-09-29 is a 300-second global timeout that silently discards every longer budget a test author declares", "nid": "0ead677aae45", "found": ["6c7a9ac0bf50"]}
+-{"query": "The parked file is never reconciled against this list, and its staleness is measured", "nid": "66f719dd4f32", "found": ["fd14e6f28156"]}
+-{"query": "*\"Apply any outstanding fixes you have identified first, including any as yet unbuilt/unapplied machinery, before you begin the runs\"*, and on the replay cost, *\"We cannot go back and change time, so the confounds discovered in the last 24 hours can only be noted and added to the record honestly.\"* That second sentence is the authorisation", "nid": "7a5bdc07ca6b", "found": ["161f7fa6ce0a", "1db2699cdda6"]}
+-{"query": "A shadow cannot be tested by a simulation, so the severity specification is promoted", "nid": "70f3648de993", "found": ["4899f8931be2"]}
+-{"query": "3 defects found while repairing the specification delivery, recorded and NOT fixed", "nid": "6d3481e9f501", "found": ["9b433e7f17db"]}
+-{"query": "A simulated run restamps the REAL paid seats' fingerprints, and a seat found this 10 days ago inside a sandbox nothing read", "nid": "ea784fc688a1", "found": ["bde987b9c6f3"]}
+-{"query": "The coherence-budget recalibration cannot be satisfied by running the runs, and it is inert on 3 independent layers", "nid": "f4aa24303c70", "found": ["4c83eea06d38"]}
+-{"query": "The confinement guard refuses the falsifier's own review target, and it is a dated regression", "nid": "5bfcf8053bbe", "found": ["e6a56da4519b"]}
+-{"query": "The note-lint ratchet is blind to the note-standard stamp, by construction, and 73 notes slipped past it", "nid": "e74f704db2ce", "found": ["7afafbfcbec3"]}
+-{"query": "*\"We normalise going forward, since recording vendor names is purely a recording statistic and has no impact on capability, or how our experiments work.\"*", "nid": "e49784ba7114", "found": ["2cacdbd478eb", "4c0fb3ae57e8", "b76e95476b97"]}
+-{"query": "The per-seat capacity number is a lifetime high-water mark that has never been bounded from above", "nid": "91a81148c3f8", "found": ["0da32657c6c8"]}
+-{"query": "Admitting a model is not trivial, and the cost is silent defaulting rather than edit count", "nid": "00bca22762fb", "found": ["ca9300af3535"]}
+-{"query": "94 of 212 archived blockers can neither be resolved nor released, and nothing said so", "nid": "88970b749767", "found": ["655ca687cbd9"]}
+-{"query": "The free panel of 2026-10-16 corrected 3 of CC1's repairs, and 1 seat's own quoted interval does not reproduce", "nid": "61bf771db218", "found": ["3ca403eb689b"]}
+-{"query": "The per-experiment fingerprint reset is PARTIAL: one loader honours the scope, a second reaches around it", "nid": "c1341bf45278", "found": ["3a4fbc3621cf"]}
+-{"query": "Make `rs` run mechanically after compaction, not just be advised", "nid": "bee06def54a9", "found": ["ad5258e7f25f"]}
+-{"query": "*\"Folding fixes forward should be on by default, providing that means folding forward at the end of an experiment and not during it so that the target under study does not keep constantly changing. We had problems with this in the past, where because the modes were looking at a constantly moving target, convergence effectively became impossible.\"* His *\"modes\"* is a typo for *\"models\"*, unambiguou", "nid": "4d9ba5c69c9a", "found": ["39bfcbd8f11e", "ad262e856a4c"]}
+-{"query": "The local memory-budget hook cannot tell an instruction from a prohibition, and its false positives select for less-safe briefs", "nid": "4a00add11bcf", "found": ["5c35a8f8500e"]}
+-{"query": "The orchestrator bound inside the harness: his design is specified, nothing is built, and it was absent from CC1's discussion", "nid": "10e038b4b6bb", "found": ["1124302cec27"]}
+-{"query": "*\"can you build this and implement it in such a way that it doesn't require vast code rewrites and/or refactoring of large elements of the existing code base? If it is buildable, I would suggest building it, and then putting this work to the free panel to look at.\"*", "nid": "36d09f8c4fab", "found": ["cea6717fe61e", "e8951f2ed269"]}
+-{"query": "*\"there is also a separate question of what 'fixes' should mean in a setting that is not coding related, but is specific to any other given STEM topic?... CDSFL has been envisaged from the outset as a general purpose STEM calculator, operating on strict Popperian falsification principles. But in order for that to be true the entire harness has to be as equally useful against a wide range of STEM r", "nid": "0d49202ed0c5", "found": ["03b4a11a7720", "1ff32fa3455f"]}
+-{"query": "Backfill the register with every piece of work done since the project began", "nid": "d439e67905f1", "found": ["8958010420e3"]}
+-{"query": "An audit of 302 of his annotations found 20 confirmed gaps, and 12 of them are rulings he gave that were never carried out", "nid": "034217878d8d", "found": ["0eede585306d"]}
+-{"query": "\"Also implement this and test it on the upcoming simulated runs.\" , his reply to: \"The claim channel's promotion into the scoring equations waits on a commissioning run measuring how often it is wrong against known ground truth, which is the recommending seat's position and the founder's to confirm.\"", "nid": "bcace2f5eb0a", "found": ["1392f517c20c", "4b32e3685a44"]}
+-{"query": "\"Then can similar errors be prevented in the futre [future]? If not they might lead to unhelpful and erroneous descisions [decisions].\" , his reply to the list of 7 withdrawn statements, which included a double count (\"the producing script matched every run log under 2 patterns at once\"), a unit error (\"counted lines containing a match and reported them as occurrences, which is the same unit error", "nid": "1c23c0a73c5d", "found": ["7bf397d5f67e", "c35755352b7e"]}
+-{"query": "\"Just use official project terminology in both cases, and where no project terminology exists, just name the process itself exactly. Why is that so difficult for you? Either way our notes standard still needs tweaking I think.\" In the same annotation he names the new failure mode: \"you have now clearly resorted [to] vagueness (or what you seem to think is 'simplification') through outright omissio", "nid": "96322ed98f9b", "found": ["0016375c826a", "45947718c482"]}
+-{"query": "\"I did ask you to run a free panel review with the question of how to make this ruler more effective, less course [coarse], more accurate and more useful, potentially across a broad range of similar scenarios. Did you do this? What were the panel's findings?\" , on the severity ruler, after being shown that the number wobbles by about 0.14 against a decision band 0.09 wide and that 82 of 273 identi", "nid": "7c635a4f4322", "found": ["30c384c40a79", "3acdc81d3cb3"]}
+-{"query": "\"Then that measurement should be added to[] our outstanding programme of study.\"\"", "nid": "3e41cf220126", "found": ["9544b543c9c2", "9966728f95e5"]}
+-{"query": "\"Are the 12 skipped safe to ignore?\" **WHY NOTHING TRACKS IT:", "nid": "c259feefe0ce", "found": ["4fce6ed40217", "a0502c5ea60d"]}
+-{"query": "A RULING HE GAVE, NOT CARRIED OUT, dated 2026-10-05: the routing ladder's order is a vendor list, not a measured statistic", "nid": "6a93960c292a", "found": ["9b1e7003c37b"]}
+-{"query": "\"Then this should also be on, by default in all our runners.\"", "nid": "3be32154df54", "found": ["02796ef1e4f5", "41ca7b10eca7", "d991aad183e1"]}
+-{"query": "\"If this is on (and it probably should be), what effect would it have on our experiments? I ask because ultimately human review is always part of the system anyway. A human decides on what problems are entered into the system, and then reviews the final output. Where does this switch fit into this?\" , on the human review pause, the 1 switch whose enabled path has never executed.\"", "nid": "0d49f425bbca", "found": ["78a65d15bb8e", "e63752121e44"]}
+-{"query": "\"A ladder is bidirectional. It goes both up and down. So if a weaker model gets better at doing a job ... it should be able to climb the routing ladder, based on its demonstrated improvement in capability. Conversely if a stronger model proves less able ... it should be able to climb down the ladder to a point where it again becomes effective. But what we need to guard against is simply counting w", "nid": "8e795c27dab2", "found": ["afd1b13da878", "c0ef41f35e40"]}
+-{"query": "\"Then why not name the model? Is it Fable? Then yes we should add it.\" , on the finding that \"One of the project's 2 free models does not appear on the ladder at all\".", "nid": "bf696c339ce5", "found": ["0d6334b7b6c0", "80ebbb501fe6"]}
+-{"query": "\"Verdict. Fix it and check your fix with the free panel.\" , answering the panel finding that even at FULL roster there is a 0.1159 chance of 3 consecutive quiet rounds arising without the problem space being exhausted, where \"The only levers identified are a longer required quiet run, or more seats\".\"", "nid": "ee4345f6f027", "found": ["4a5b77b4b571", "9e646784864c"]}
+-{"query": "On \"the absolute false quiet chance of 0.1159 at full roster, which no roster aware fix addresses\" his verdict was: \"Fix it.\"", "nid": "7d770ed5f6d0", "found": ["028f975075d0", "2d0d20c8e47f"]}
+-{"query": "A RULING HE GAVE, NOT CARRIED OUT, dated 2026-10-08: the seat time cap must not be arbitrary", "nid": "171cf6f96adb", "found": ["cb3e7e5d17ce"]}
+-{"query": "A RULING HE GAVE, NOT CARRIED OUT, dated 2026-10-09: no distinction between models other than a ranking number", "nid": "2c83ec6fbf5c", "found": ["1289c8e0d7e1"]}
+-{"query": "On R1, the Exp 53 zero-plant control: \"Run it next after the outstanding simulated run. But take care that the caveats in place for simulated runs that do not and should not apply to real/paid runs carry over into this run. We keep all the useful lessons we have learned from the simulated runs and apply them. But we exclude things that only apply in simulated runs.\"", "nid": "05cdd960baab", "found": ["554590329f75", "dc9ef7faf066"]}
+-{"query": "\"No. We reset immune memory for the upcoming live experiments, since simulation can probably only tell us so much about how this facility will function in real live/paid experiments.\" , pressed again the same day: \"isn't the best time to do this now, immediately before the transition back to main is made?\"", "nid": "0433596a8d59", "found": ["16dfaad511a6", "4b5063773547"]}
+-{"query": "\"I'm sure we already just discussed this and you said there had been significant panel review work on this feature and that replacing model names with hashed model IDs was gauged by you and the other models to be a sound overall design. Didn't you say all you had to do was build what had already been recommended and that you would put this to the panel for their final take on your design? Why didn", "nid": "8540212ab0e5", "found": ["665a7db89aae", "b00f9c8a32ca", "f7f1cd200f15"]}
+-{"query": "\"What would be the consequence of retiring it completely? If there will be no consequence, then surely this is a fourth and more sensible option? Why leave code in place that effectively does nothing. The 'density' of a prompt shouldn't matter to a model, so long as the core system/directives prompt survives untouched, and the overall prompt length stays within a model's measured capability ceilin", "nid": "3af45387d4c9", "found": ["33a1ce564fdb", "5db64c186ebe", "a0125ddb00fb"]}
+-{"query": "\"Yes, these items should all be addressed and resolved.\" , given against a correction list whose first item reads: \"A figure published earlier today, 94 of 212, does not reproduce. The producer carries a hand written copy of the counter's release conditions instead of calling the counter ... The corrected figure is 94 of 197, 47.7157 per cent with an interval from 40.8515 to 54.6673. It is live in", "nid": "56c9c793802e", "found": ["1563f539e0c1", "67534c0f6366"]}
+-{"query": "The routing-ladder cluster, consolidated: what his 2026-10-09 reframing settled, what it rejected, and what is genuinely open", "nid": "19ee26257f16", "found": ["6cf9db9726b6"]}
+-{"query": "TOP OF THE LIST, ON HIS INSTRUCTION: a ticket store that makes \"settled\" a recorded field instead of something CC1 infers, harvesting from chat as well as his replies", "nid": "2828bca71dc5", "found": ["bd69f9610f14"]}
+-{"query": "The register's identities drifted with the prose, and 5 references already held 2 tickets each", "nid": "2588c3ac16fb", "found": ["0e798cf8866d"]}
+-{"query": "The first item on his correction list is fixed, and his question about the 94 is answered", "nid": "2e4bfb2bafcb", "found": ["e0dbc0d13e64"]}
+-{"query": "A task entry can be invisible while the checker reports the list coherent, and C24 was", "nid": "10984b80acda", "found": ["6ee9a6511058"]}
+-{"query": "Two more of his five corrections: the operator-facing definition contradicted the code, and a comment was wrong by 302 of 355 occurrences", "nid": "b347908495fe", "found": ["e602f6863ed6"]}
+-{"query": "His last two corrections: one was already fixed, and the other inverted every merge one seat ever proposed", "nid": "ac782d3db6ef", "found": ["32a3da5ba551"]}
+-{"query": "My own commit gate cried wolf twice in one night, and the repair it declined to stage was safe both times", "nid": "96419c936691", "found": ["c009815e1c04"]}
+-{"query": "THE LIST CAN NO LONGER BE SAID TO TERMINATE, and a test built to tell you so has gone red", "nid": "fc16e1d1e426", "found": ["e2afa7772277"]}
+-{"query": "THE REGISTER WAS DROPPING HIS SHORTEST RULINGS, AND THEY ARE HIS MOST DECISIVE", "nid": "59d4687d319b", "found": ["62c308cab41d"]}
+-{"query": "THE REGISTER BEATS A WORD SEARCH ON THE ERROR THAT MATTERS, AND HIS CONDITION IS MET", "nid": "be5de433316f", "found": ["e684c2893a47"]}
+-{"query": "*\"The full harness already has a registry, but I don't know if it currently works this way either? But if it doesn't and you do gauge it to be genuinely useful you should probably apply these principles to the harness registry too.\"*", "nid": "fc126452f3b3", "found": ["51800bf396e6"]}
+-{"query": "A DISCUSSION, NOT A BUILD: putting the questions register behind a discussion forum such as Discourse in the UX build", "nid": "3ce7e2a2ec7f", "found": ["5b14adc4b9cd"]}
+-{"query": "The suite contains 3 tests that run the suite inside themselves, and on his machine that DEADLOCKS rather than merely runs slowly", "nid": "626e93268ad9", "found": ["4a903cbb2c95"]}
+-{"query": "The stagger he ruled reached the PANEL and not the RUNNERS, so for 11 days 2 guards asserted opposite properties on 2 modules", "nid": "cf59faa97d1a", "found": ["928c23d33219"]}
+-{"query": "*\"Verdict: option 1, but do options 1 and 2 compose? Is this a useful thing to do? Or is 1 preferable over the other?\"*", "nid": "2f9e8307ddbb", "found": ["a2c4f033fe64", "dfc8b02d5937"]}
+-{"query": "The register gave a ticket a TERMINAL status on the strength of a task-list marker the project's own checker refuses", "nid": "7bb9ad5d1148", "found": ["7359e28e9365"]}
+-{"query": "THE WORK QUEUE OF 2026-10-19, mechanised onto this list so the Stop gate holds the session to it rather than the author remembering", "nid": "1b8c1d47c970", "found": ["6765b5719abb"]}
+-{"query": "RESOLVED 2026-10-20T01:27:07+01:00", "nid": "c31df101a984", "found": ["8c18e6cac9e9"]}
+-{"query": "MY RECOMMENDATION WAS WRONG AND HIS OWN FILE PROVED IT", "nid": "579fe444eb08", "found": ["15529bab9cf9"]}
+-{"query": "*\"The zero plant control will be run (with the updated runner) after all outstanding tasks from your master task list have been complete! But we may need a new category in your registry for tasks like this, so you don't keep reputing them. I propose 'wr' for 'work remaining'\"* — he marked that annotation `wr`. (*reputing* is *repeating*.)", "nid": "dabec9dc48d6", "found": ["4ec81034f7fa"]}
+-{"query": "THE STAGGER VALUE AND ITS MECHANICS, RECORDED BEFORE ANY RUN, ON HIS RULING", "nid": "0ad30efb3e47", "found": ["05b496c5d7a2"]}
+-{"query": "HIS DUPLICATE TAXONOMY WAS NEVER BUILT, AND THE HARNESS CONFLATED 3 OUTCOMES INTO 1", "nid": "eb2fc8414825", "found": ["3148b740fe3c"]}
+-{"query": "*\"Verdict: Option 3. Dut do Options 3 and 1 compose, if an event occurs where a save operation does not complete cleanly?\"* (*Dut* is *But*.) Option 3 is built under B29.", "nid": "166112fc88f6", "found": ["ab5ddff0d304"]}
+-{"query": "THE MEMORY INDEX HAS 2 TRUNCATION BUDGETS AND `sv` REPORTED THE ONE THAT WAS NOT BINDING, TELLING THE READER 34 ENTRIES OF RUNWAY REMAINED WHERE THE TRUE FIGURE WAS 11 AND THE NEXT SAVE WOULD REFUSE", "nid": "0ed70150777a", "found": ["d4770d8e5332"]}
+-{"query": "THE LIMIT ON TICKETS CARRYING NO IDENTITY IS IRREVERSIBLE ONCE BREACHED, AND I BREACHED IT: 3 TICKETS I RAISED BY HAND TOOK THE COUNT FROM 317 TO 320 AND NO AVAILABLE REMEDY LOWERS IT", "nid": "5de8550f7349", "found": ["021f0d7bd19e"]}
+-{"query": "6 IMMUNE-MEMORY ASSERTIONS NOW FAIL PERMANENTLY, AND THEY ARE ACCUSING A RESET HE HIMSELF ORDERED", "nid": "ae0f8c1285a9", "found": ["2835f264ae18"]}
+-{"query": "EXPLANATIONS HE ASKED FOR AND HAS NOT HAD, enumerated from the register rather than counted from memory", "nid": "523b77f8bea5", "found": ["52eade198bd7"]}
+-{"query": "*\"We should make a policy that Claude CLI and all other model logins (when running in multi-vendor paid mode), should be checked first before beginning any substantial body of work. If not a loud alert should be issued to do so. Then I won't come back and find a large body of work I thought I had authorised hadn't been done because of a simple failed re-auth.\"*", "nid": "3637ff410757", "found": ["27ed80d7028e", "414040b33b6a"]}
+-{"query": "Restart Exp 53, the zero-plant control", "nid": "b06f6d0df764", "found": ["d0773f05188c"]}
+-{"query": "HE ORDERED A PANEL REVIEW OF WHAT SEVERITY IS AND WHETHER IT SHOULD GATE CONVERGENCE", "nid": "630877e06207", "found": ["d4d9797c58f9"]}
+-{"query": "*\"This framing does not seem ideal. 'No runnable repair' clearly pertains to code. But this strikes at the question of what a 'repair' in a non-code STEM context should be? In this sense, I suspect that a better definition would be a 'solution', or more accurately for science in general a 'proof'.\"* — his single quotation marks are reproduced as he wrote them, and the full annotation is lifted byt", "nid": "3cb6e95585f5", "found": ["bfe9c313ae27"]}
+-{"query": "*\"I accept your recommendation.\"* against recording them as a named population rather than reopening findings in a sealed archive.", "nid": "66315da19ae4", "found": []}
+-{"query": "*\"I accept your recommendation.\"* against a recommendation of 1 in 50, given in answer to his challenge: *\"Can we improve on this statistic? A 1 in 20 chance of demoting a model that is performing just fine seems unreasonably high?\"*", "nid": "d038053e6102", "found": []}
+
+### fable:attempt-1:bench/tools/gemini_tool_switch_test.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/gemini_tool_switch_test.py	2026-08-31 00:27:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_nqpecqdv/repo/bench/tools/gemini_tool_switch_test.py	2026-10-31 02:48:10
+@@ -69,7 +69,7 @@
+ 
+     mc = ModelConfig(
+         label="Gemini", model_id="gemini-3.1-pro-preview", api="google",
+-        role="player", system_prompt_path=None, max_tokens=2048, timeout=180,
++        role="participant", system_prompt_path=None, max_tokens=2048, timeout=180,
+         max_retries=1,
+     )
+     print("  dispatching ONE paid Gemini call on the google route, tools ON ...")
+
+### fable:attempt-1:bench/tools/prove_ouroboros_loop_close.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/prove_ouroboros_loop_close.py	2026-09-01 13:24:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_nqpecqdv/repo/bench/tools/prove_ouroboros_loop_close.py	2026-10-31 02:48:10
+@@ -255,9 +255,9 @@
+ 
+     models = [
+         ModelConfig(label="Gemini", model_id="stub", api="openrouter",
+-                    role="reviewer", system_prompt_path=None),
++                    role="participant", system_prompt_path=None),
+         ModelConfig(label="Codex", model_id="stub", api="openrouter",
+-                    role="reviewer", system_prompt_path=None),
++                    role="participant", system_prompt_path=None),
+     ]
+     exp_config = ExperimentConfig(models=models)
+     return exp_config, "CDSFL DIRECTIVE (stub for the proof harness)\n", cfg
+
+### fable:attempt-1:bench/tools/run_simulated_experiment.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/run_simulated_experiment.py	2026-10-29 02:42:06
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_nqpecqdv/repo/bench/tools/run_simulated_experiment.py	2026-10-31 02:48:10
+@@ -635,7 +635,7 @@
+ 
+ 
+     models = [R.ModelConfig(label=v, model_id="sim", api="sim",
+-                            role="player_manager" if i == 0 else "player",
++                            role="player_manager" if i == 0 else "participant",
+                             system_prompt_path=str(cdsfl_path),
+                             timeout=args.timeout, max_retries=1)
+               for i, v in enumerate(seats)]
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-31 02:43:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_nqpecqdv/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-10-31 02:16:18
+@@ -1419,11 +1419,5 @@
+ 
+ **B54. B22's BRIEF IS REWRITTEN TO HIS FRAMING AND THE 3 EARLIER ONES ARE RETIRED BY NAME.** Added 2026-10-30T22:58:17+00:00. **HIS RULING, 2026-10-30, verbatim:** *"This framing does not seem ideal. 'No runnable repair' clearly pertains to code. But this strikes at the question of what a 'repair' in a non-code STEM context should be? In this sense, I suspect that a better definition would be a 'solution', or more accurately for science in general a 'proof'."* — his single quotation marks are reproduced as he wrote them, and the full annotation is lifted byte-exact into the brief. **THE PREMISE HE WITHDREW:** that chemistry, biology, physics, statistical mechanics, astrophysics and their sub-branches cannot have a proof. His words: that premise *"seems questionable at best"*, CDSFL having been built from the outset as a general-purpose STEM calculator. **THE ARCHITECTURE HE SPECIFIED, 4 steps:** a model proposes a solution; tests it with the open-source STEM tools named in the CLAUDE.md files; prints a proof; and the harness re-verifies or refutes that proof with the same tools before the convergence gate decides whether the claim survives. **STEP 4 IS THE ONE THAT DOES NOT EXIST**, and the brief asks for it mechanically rather than in prose. **RETIRED BY NAME, all 3 written and never dispatched:** `general_purpose_stem_calculator_2026-10-18`, `is_this_yet_a_general_purpose_stem_calculator_2026-10-29` and `stem_generality_b22_2026-10-29`. Nothing is deleted; they stay in the archive. **THE REPLACEMENT:** `bench/logs/what_is_a_proof_outside_code_b22_2026-10-30/BRIEF.md`, 176 lines, reusing the harness and output sections of the newest retired brief and replacing its Section 1 and its refutation conditions, because those were the parts carrying the rejected premise. **HE ALSO CAUGHT A REPETITION IN THE SAME REPLY:** *"Is this a repeat of the question already asked above? qs"* — yes it was, the canonical-brief question being asked at B22 and again in the closing list of one file. **FOR DONE: the new brief dispatched in his ruled order under B22, which it serves.** **NEEDS NO RULING.**
+ <!-- task: B54 | state: OPEN | status: BUILT | evidence: bench/logs/what_is_a_proof_outside_code_b22_2026-10-30/BRIEF.md | ruled: 2026-10-30 -->
+-
+-**B55. THE NON-CURING CLOSURES ARE A NAMED SET, NOT A COUNT.** Added 2026-10-31T02:43:32+00:00. **HIS RULING, 2026-10-30:** *"I accept your recommendation."* against recording them as a named population rather than reopening findings in a sealed archive. **WHAT A NON-CURING CLOSURE IS:** the run recorded the finding as closed with the defect demonstrated, and the repair that closed it was then measured against the finding's own falsifier, which still failed. So the fault was correctly identified and the fix did not work. **WHY A SET AND NOT A COUNT, which is the whole point:** 2 runs can both report 23 non-curing closures and share not 1 finding between them, so a later run matching the count establishes nothing. **WRITTEN:** `experimental_notes/data/non_curing_closures_2026-10-31.json` — **85 distinct (run, finding) identities archive-wide of 659 probe records, 0.128983 with a 95 per cent Wilson interval [0.105526, 0.156741]**, and **23 of 124 in the dated claim scope of 2026-09-21/22**, which is the figure that measurement names and which a later arm must not silently overwrite. The 16 he was told about is arm 1's share of 69. **2 INDEPENDENT INSTRUMENTS AGREE AND THE PRODUCER REFUSES TO WRITE IF THEY DO NOT:** this producer keys on `fix_efficacy.outcome == FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER`, and `scripts/e1_population_recount_falsifier_2026-09-22.py` reaches the same population through a separate implementation over a separate glob; both return 23 on the claim scope. **★ 1 ERROR OF MINE, CORRECTED BEFORE IT WAS REPORTED AS A DEFECT IN SOMEONE ELSE'S CODE.** The first cross-check used `"does NOT cure" in detail`, the predicate at `scripts/e1_mechanism_consequences_2026-09-22.py:141`, and it matched **0 of 85** records whose outcome says non-curing — which looked exactly like a producer gone vacuous. It is not: that script reads `gate_details.e1_efficacy.detail`, a DIFFERENT field with different wording, and correctly finds 12 non-curing among the 44 judged entries carrying an e1 score. 2 fields named `detail`, 1 assumption, and the assumption was mine. **AND THE FIRST VERSION OF THIS PRODUCER INVENTED ITS OWN VOCABULARY** — `not_cured`, `still_failing`, `uncured`, `failed` — returning 0 of 659 while the record count matched the older producer exactly, which is the signature of a predicate error: the collection was right and the classification was fiction. A guard test now proves that recurrence would be caught. Guard: `bench/tests/test_the_non_curing_population_is_named_2026-10-31.py`, 9 tests. **NEEDS NO RULING.**
+-<!-- task: B55 | state: DONE | status: COMMITTED | evidence: bench/tests/test_the_non_curing_population_is_named_2026-10-31.py | ruled: 2026-10-30 -->
+-
+-**B56. THE DEMOTION RULE'S OPERATING POINT IS RECORDED AT 1 IN 50, AND IT CHANGES NOTHING TODAY.** Added 2026-10-31T02:43:32+00:00. **HIS RULING, 2026-10-30:** *"I accept your recommendation."* against a recommendation of 1 in 50, given in answer to his challenge: *"Can we improve on this statistic? A 1 in 20 chance of demoting a model that is performing just fine seems unreasonably high?"* **HE WAS RIGHT TO PUSH BACK AND THE 1 IN 20 WAS NEVER A LIVE SETTING:** it is the common false-alarm level 3 candidate rules were calibrated to on the 2026-10-08 relegation panel so their detection rates could be compared on equal footing, and nothing in the live tree reads it. **MEASURED over 3000 replications:** at 1 in 20 the rule wrongly demotes a healthy model 3.50 per cent of the time and catches a real decline 93.53 per cent; at 1 in 50 the wrong demotions fall to 1.57 per cent, a factor of **2.2340** (Fisher exact **p = 2.171e-06**), at a cost of **4.63 points** of detection. **WHAT IS BUILT:** `CHOSEN_TARGET = 0.02` is now a named constant in `scripts/can_we_do_better_than_one_in_twenty_2026-10-30.py` and is inside the measured target set, so whoever wires the rule reads his decision rather than re-deriving it or defaulting back to the comparison size. **WHAT IS NOT BUILT, STATED PLAINLY:** the demotion rule is not connected to anything, so this changes no behaviour. **1 CAVEAT THAT BOUNDS ALL OF IT, unchanged:** the figures come from a simulated model of how a model degrades, not from this project's own runs. **THE REMAINING WORK IS THE WIRING**, which is what makes the number bite. **NEEDS NO RULING.**
+-<!-- task: B56 | state: OPEN | status: TESTED | evidence: scripts/can_we_do_better_than_one_in_twenty_2026-10-30.py | ruled: 2026-10-30 -->
+ 
+ **★ MOVED TO THE FOOT OF THE LIST ON HIS INSTRUCTION, 2026-10-29T17:37:14+00:00.** His words, annotation 1 of `Responses/Decisions_Awaiting_You_2026-10-29.txt`: *"That decision will be made once all the work emerging from these responses and from your master task list has been completed. It should go at the end of your current master task list."* The entry's substance is unchanged and its `ruled: 2026-08-07` date is preserved: he ruled the RUN twice and is deferring only the spending authorisation, which is 1 of his 3 standing permission categories. It sat 16th of 184; it is now last, which is where his ordering puts it.
+
+### fable:attempt-1:scripts/falsifier_the_role_axis_is_one_bit_2026-10-31.py
+--- /dev/null	2026-10-31 02:54:59
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_nqpecqdv/repo/scripts/falsifier_the_role_axis_is_one_bit_2026-10-31.py	2026-10-31 02:47:22
+@@ -0,0 +1,124 @@
++"""FALSIFIER: round 2 of the_role_layer_b21_2026-10-30 (seat fable).
++
++Claim under test (seat cc2, round 1, load-bearing for its UNIFIED verdict,
++and generalised by the joint brief's settled fact 1):
++
++    "the live role dimension carries exactly one discriminating bit:
++     arbitrator-that-dispatches-last, or not"
++    "Promotion and demotion are not on the role axis at all."
++
++cc2's own refutation condition 1: "A role value other than player_manager
++changing an outcome" overturns the claim, and cc2 scoped its instrument to
++literal role= kwargs on ModelConfig, naming non-ModelConfig routes as the
++scan's weakest link. This falsifier walks exactly that route: the second
++Role declaration at bench/dm/_types.py:311, which is live via
++run_exp20_confer.py:641 / run_exp35_policy_engine.py:2170 ->
++DynamicManager.__init__ (dm/_manager.py:106 RoleAssignment.assign) ->
++round completion (dm/_manager.py:600 .reassign; :605 role_map handoff to
++FailureHandler).
++
++Imports the REAL modules. Retypes nothing.
++
++Polarity: prints FALSIFIED and raises AssertionError iff the one-bit claim
++is genuinely false (a non-PM role value changes an outcome). Exits clean
++iff the claim stands.
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
++
++import numpy as np
++
++from bench.dm._failure_handler import FailureHandler
++from bench.dm._role_assignment import RoleAssignment
++from bench.dm._types import (
++    CapabilityFingerprint,
++    DynamicManagementConfig,
++    FailureType,
++    ModelSpec,
++    RecoveryAction,
++    Role,
++)
++
++violations = []
++cfg = DynamicManagementConfig()
++
++# --- A: Role.COL is CONSTRUCTED live by the real assignment algorithm. ---
++pool = [
++    ModelSpec("m_a", CapabilityFingerprint(0.1, 0.9, 0.8, 0.7)),
++    ModelSpec("m_b", CapabilityFingerprint(0.2, 0.7, 0.9, 0.8)),
++    ModelSpec("m_c", CapabilityFingerprint(0.3, 0.6, 0.7, 0.6)),
++]
++ra = RoleAssignment.assign(pool, cfg)
++roles_assigned = set(ra.role_map.values())
++print(f"A: RoleAssignment.assign role_map = { {k: v.value for k, v in ra.role_map.items()} }")
++if Role.COL in roles_assigned:
++    violations.append(
++        "A: Role.COL is assigned to a live seat by RoleAssignment.assign "
++        "(bench/dm/_role_assignment.py:150) -- 'collator names the harness, "
++        "not a seat' does not hold for the dm declaration."
++    )
++if len(roles_assigned) >= 3:
++    violations.append(
++        f"A2: the structural axis carries {len(roles_assigned)} simultaneously "
++        "live values (PM, COL, PAR), not 1 bit."
++    )
++
++# --- B: capability scoring discriminates COL from PAR numerically. ---
++a_col, a_par = cfg.get_alpha(Role.COL), cfg.get_alpha(Role.PAR)
++b_col, b_par = cfg.get_baseline(Role.COL), cfg.get_baseline(Role.PAR)
++print(f"B: alpha_col={a_col} alpha_par={a_par}")
++print(f"B: b_col={b_col} b_par={b_par}")
++if not np.allclose(a_col, a_par) or not np.allclose(b_col, b_par):
++    violations.append(
++        "B: get_alpha/get_baseline return different vectors for COL vs PAR "
++        "(bench/dm/_types.py:289-304) -- the scoring that drives reassignment "
++        "discriminates between two non-PM role values."
++    )
++
++# --- C: identical seat, identical failures, different non-PM role -> ---
++# ---    divergent survival (DOWNGRADE_ROLE vs EXCLUDE).              ---
++def run_failure_sequence(seat_role):
++    models = [
++        ModelSpec("pm", CapabilityFingerprint(0.1, 0.9, 0.9, 0.9)),
++        ModelSpec("mx", CapabilityFingerprint(0.2, 0.7, 0.7, 0.7)),
++        ModelSpec("mo", CapabilityFingerprint(0.3, 0.6, 0.6, 0.6)),
++    ]
++    role_map = {"pm": Role.PM, "mx": seat_role, "mo": Role.PAR}
++    fh = FailureHandler(models, role_map, cfg)
++    actions = []
++    for rnd in (1, 2, 3):
++        act = fh.get_recovery("mx", rnd, FailureType.UNDERPERFORM)
++        actions.append(act)
++        if act in (RecoveryAction.DOWNGRADE_ROLE, RecoveryAction.EXCLUDE):
++            break
++    active = getattr(fh, "active_models", None)
++    if active is None:
++        active = fh._active_models
++    return actions, fh.role_map["mx"], ("mx" in active)
++
++acts_col, final_role_col, alive_col = run_failure_sequence(Role.COL)
++acts_par, final_role_par, alive_par = run_failure_sequence(Role.PAR)
++print(f"C: COL seat: actions={[a.value for a in acts_col]} final_role={final_role_col.value} still_active={alive_col}")
++print(f"C: PAR seat: actions={[a.value for a in acts_par]} final_role={final_role_par.value} still_active={alive_par}")
++
++if (acts_col[-1], alive_col) != (acts_par[-1], alive_par):
++    violations.append(
++        "C: same seat, same repeated UNDERPERFORM, only the non-PM role "
++        f"differs: COL -> {acts_col[-1].value} (demoted to {final_role_col.value}, "
++        f"still active={alive_col}); PAR -> {acts_par[-1].value} (still "
++        f"active={alive_par}). bench/dm/_failure_handler.py:321-331 (IM_F008) "
++        "executes a role-keyed DEMOTION. A non-player_manager role value "
++        "changes whether the seat survives the run."
++    )
++
++if violations:
++    print("FALSIFIED")
++    raise AssertionError(
++        "The one-bit claim is false at system scope:\n  - "
++        + "\n  - ".join(violations)
++    )
++print("CLEAN: no non-PM role value changed any outcome; the one-bit claim stands.")

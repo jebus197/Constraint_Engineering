@@ -56,7 +56,22 @@ PANEL_PRODUCER = (REPO / "experimental_notes" / "seat_evidence"
                   / "division_count_star_2026-10-08" / "cc2" / "scripts"
                   / "the_division_count_is_a_resolution_bound_and_relegation_is_not_identified_2026-10-08.py")
 
-TARGETS = (0.05, 0.02, 0.01, 0.005, 0.001)
+#: ★ HIS CHOSEN OPERATING POINT, ruled 2026-10-30: *"I accept your
+#: recommendation."* against a recommendation of 1 in 50. Exported as a NAMED
+#: CONSTANT so that whoever wires the demotion rule reads the decision rather
+#: than re-deriving it or defaulting back to the comparison size.
+#:
+#: WHAT CHANGING IT DOES TODAY: NOTHING, and that is stated rather than
+#: implied. The docstring above establishes that nothing in the live tree reads
+#: the false-alarm size -- the rule is not connected -- so this records a
+#: decision for the wiring, and the wiring is the work that makes it bite.
+#: Measured over 3000 replications: at 1 in 20 the rule wrongly demotes a
+#: healthy model 3.50 per cent of the time and catches a real decline 93.53 per
+#: cent; at 1 in 50 the wrong demotions fall to 1.57 per cent, a factor of
+#: 2.2340 (Fisher exact p = 2.171e-06), at a cost of 4.63 points of detection.
+CHOSEN_TARGET = 0.02
+
+TARGETS = (0.05, CHOSEN_TARGET, 0.01, 0.005, 0.001)
 SCENARIOS = ("stable", "decline", "common")
 
 
