@@ -1,0 +1,1190 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-31 02:12:24
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ycxcf7mt/repo/.cdsfl_deny_canonical_writes.sb	2026-10-31 02:01:16
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/experiment_11_orchestrator.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/experiment_11_orchestrator.py	2026-10-30 01:49:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ycxcf7mt/repo/bench/experiment_11_orchestrator.py	2026-10-31 02:09:28
+@@ -22,7 +22,7 @@
+ from dataclasses import dataclass, field
+ from datetime import datetime, timezone
+ from pathlib import Path
+-from typing import Any, Callable, Literal, Optional
++from typing import Any, Callable, Literal, Optional, get_args
+ 
+ 
+ # ---------------------------------------------------------------------------
+@@ -58,7 +58,60 @@
+ 
+ Role = Literal["collator", "player_manager", "participant"]
+ 
++# `collator` is in `Role` but is set by NO `ModelConfig(...)` call site in the
++# repository, while ~35 live predicates read it (`mc.role != "collator"` in
++# `reference_runner_v3.py:13189`/`:13269` and 16 sibling runners,
++# `mc.role == "collator"` in `runner_core.py:382` and 7 others). That is because
++# `collator` names the HARNESS -- this module's docstring, line 6: "(caller) is
++# collator only -- no synthesis, no P-passes, no stop decisions" -- not a model
++# seat. It is retained, not removed: nothing replaces it and the asymmetry is
++# the founder's to rule on. Measured by
++# `scripts/how_many_role_values_does_the_code_construct_2026-10-31.py`.
+ 
++# Role spellings found at live construction sites that are NOT members of
++# `Role`, with the canonical member each is a synonym of. Established by AST
++# scan, not by judgement: `player` at 9 sites (incl.
++# `bench/tools/run_simulated_experiment.py:637` and
++# `bench/tools/gemini_tool_switch_test.py:70`) and `reviewer` at 4 (incl.
++# `bench/tools/prove_ouroboros_loop_close.py:257`/`:259`). Both are dispatched
++# by every live read, since every read is `!= "collator"`, so both have always
++# behaved as `participant`; mapping them there preserves behaviour exactly
++# rather than changing it.
++#
++# THIS TABLE IS THE NO-FLAG-DAY MECHANISM. Normalising at the single
++# construction chokepoint means a reader compares against a canonical member
++# and never against a spelling. Adopting a different role vocabulary is
++# therefore rows in this table plus a changed `Role`, with ZERO changes to the
++# ~35 reader predicates. The founder's `worker` / `classifier` / `orchestrator`
++# are deliberately NOT entered here: which member each maps to (and whether
++# `classifier` has a member at all) is policy, and inventing it is the failure
++# this project's record names.
++ROLE_ALIASES: dict[str, str] = {
++    "player": "participant",
++    "reviewer": "participant",
++}
++
++
++def canonical_role(value: str) -> str:
++    """Return the `Role` member `value` denotes, or raise.
++
++    `get_args(Role)` rather than a second hand-written tuple, so the literal
++    above is the single source of truth and the two cannot drift -- which is
++    the defect this function exists to close.
++    """
++    members = get_args(Role)
++    if value in members:
++        return value
++    if value in ROLE_ALIASES:
++        return ROLE_ALIASES[value]
++    raise ValueError(
++        f"unknown ModelConfig role {value!r}; "
++        f"declared members are {list(members)} and known aliases are "
++        f"{sorted(ROLE_ALIASES)}. `Role` is a Literal, so a new spelling is a "
++        f"vocabulary change: add it to `Role` or to `ROLE_ALIASES`."
++    )
++
++
+ @dataclass
+ class ModelConfig:
+     """Configuration for a single model participant.
+@@ -84,7 +137,15 @@
+     secondary_api: str | None = None  # Fallback route on primary empty
+     secondary_model_id: str | None = None  # Fallback model id (route-specific)
+ 
++    def __post_init__(self) -> None:
++        # The ONLY chokepoint every ModelConfig passes through, so enforcement
++        # here reaches every one of the 31 live construction sites without a new
++        # entry point for a caller to forget. Before this, `Role` was an
++        # annotation no runtime check read, and the sites had drifted to 4
++        # spellings against 3 declared members.
++        self.role = canonical_role(self.role)
+ 
++
+ @dataclass
+ class ExperimentConfig:
+     """Full experiment configuration — drives the orchestrator."""
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-31 02:12:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ycxcf7mt/repo/bench/reference_runner_v3.py	2026-10-30 00:22:00
+@@ -2221,26 +2221,6 @@
+     sk_enabled: bool = False
+     test_cmd: Optional[str] = None
+     sk_s_floor: float = 0.0  # domain-specific minimum S*
+-    #: ★ CARRY R_k ACROSS PASSES. Founder instruction 2026-10-31, verbatim:
+-    #: *"carry R forward across passes"*.
+-    #:
+-    #: WHAT IT REPAIRS, MEASURED. `R_k(0) = pi_k` was re-initialised for EVERY
+-    #: finding on EVERY round, so the recursion of appendix section 1.1 ran once
+-    #: and never accumulated. Across the archive `R_old` is 0.500000 in all
+-    #: 1,252 entries carrying an `R_new` -- distinct count 1 -- and `R_new`
+-    #: floors at 0.366667 with 743 of 1,252 sitting exactly there, 0.593450,
+-    #: Wilson [0.565997, 0.620332]. So the recorded number was "the risk after
+-    #: ONE pass from a fresh prior", not his definition, which is the risk
+-    #: *"after a given number of passes"*. Producer:
+-    #: `scripts/his_severity_definition_is_the_models_own_quantity_2026-10-31.py`.
+-    #:
+-    #: WHY IT IS SAFE TO DEFAULT ON. The carry is keyed per FLAW CLASS and per
+-    #: RUN, and on the first round nothing is carried, so round 1 is
+-    #: byte-identical to the previous behaviour. Only rounds 2 and later differ,
+-    #: and they differ by doing what the appendix specifies. Setting this False
+-    #: reproduces the old behaviour exactly, which is what makes the change
+-    #: measurable rather than merely asserted.
+-    sk_carry_rk_across_rounds: bool = True
+ 
+     # TARGET TYPE — a DECLARATION OF INTENT ONLY (A1, 2026-08-01).
+     # "" (the default) means "do not declare". Any other value must equal what
+@@ -17180,12 +17160,6 @@
+     nu_k_by_finding: Optional[Dict[str, float]] = None,
+     nu_k_default: float = 0.0,
+     rk0_prior: Optional[Callable[[int], float]] = None,
+-    #: Per-RUN, per-FLAW-CLASS carried residual risk. The CALLER owns the dict
+-    #: so it survives across rounds; this function reads the carried value as
+-    #: `R_k(i-1)` and writes `R_k(i)` back. None or empty means "nothing carried
+-    #: yet", which is the first round and is identical to the old behaviour.
+-    rk_carry: Optional[Dict[int, float]] = None,
+-    carry_rk: bool = True,
+     score_prose_listings: bool = False,
+ ) -> Dict[str, Any]:
+     """Evaluate S_k for all findings with proposed fixes in SEARCH/REPLACE format.
+@@ -17264,20 +17238,8 @@
+         #      cross-experiment immune memory, when consumption is on;
+         #   3. the uniform base prior — what every run from Exp 37 to Exp 49
+         #      actually used, because model_params is never populated.
+-        _fc = int(entry.get("flaw_class") or 0)
+         if "R" in meta:
+             R_old, rk0_source = meta["R"], "model"
+-        elif carry_rk and rk_carry is not None and _fc in rk_carry:
+-            # ★ TIER 2, his instruction of 2026-10-31: the value THIS RUN
+-            # reached for this flaw class on an earlier round. This is the whole
+-            # point of the appendix's recursive form -- *"a model can pick it up
+-            # at any point, assess current risk, and decide what to do next"* --
+-            # and it was the one tier missing, which is why `R_old` was 0.5 in
+-            # all 1,252 archived entries. It sits BELOW a model-supplied R,
+-            # which is a fresher estimate, and ABOVE both priors, which are
+-            # initial conditions and must not overwrite an updated state.
+-            R_old, rk0_source = float(rk_carry[_fc]), "carried"
+-            R_old = max(0.0, min(1.0, R_old))
+         elif rk0_prior is not None:
+             R_old, rk0_source = rk0_prior(int(entry.get("flaw_class") or 0)), "memory"
+             R_old = max(0.0, min(1.0, float(R_old)))
+@@ -17294,19 +17256,6 @@
+             entry["sk_result"]["R_old"] = R_old
+             entry["sk_result"]["R_new"] = R_new
+             entry["sk_result"]["rk_note"] = why
+-            # ONLY WHEN IT IS NOT THE DEFAULT, matching the convention the memory
+-            # path already uses below. Writing it unconditionally broke
+-            # test_immune_memory_consumption.py::test_off_path_is_the_uniform_prior,
+-            # whose property is that turning a path OFF emits no new report keys --
+-            # a real property, since a report shape that changes with a switch
+-            # cannot be compared across runs.
+-            if rk0_source != "uniform":
+-                entry["sk_result"]["rk0_source"] = rk0_source
+-            # NO_SCORE pins R_new to R_old, so this carries the state forward
+-            # UNCHANGED rather than dropping it. A pass that formed no opinion
+-            # must not reset the accumulated risk to the prior.
+-            if carry_rk and rk_carry is not None:
+-                rk_carry[_fc] = float(R_new)
+             stats["no_score"] += 1
+             _log(f"  S_k [{cid}]: NO_SCORE — "
+                  f"{sk_result.gate_details.get('target_kind_reason', 'non-Python target')}"
+@@ -17448,16 +17397,6 @@
+                     )
+                 entry["sk_result"]["R_old"] = R_old
+                 entry["sk_result"]["R_new"] = R_new
+-                # ONLY WHEN IT IS NOT THE DEFAULT, matching the convention the memory
+-                # path already uses below. Writing it unconditionally broke
+-                # test_immune_memory_consumption.py::test_off_path_is_the_uniform_prior,
+-                # whose property is that turning a path OFF emits no new report keys --
+-                # a real property, since a report shape that changes with a switch
+-                # cannot be compared across runs.
+-                if rk0_source != "uniform":
+-                    entry["sk_result"]["rk0_source"] = rk0_source
+-                if carry_rk and rk_carry is not None:
+-                    rk_carry[_fc] = float(R_new)
+                 # THE PRE-ROUND EXPECTATION, RECORDED BESIDE THE GATED NUMBER
+                 # (2026-09-29, panel item 4). `R_new` is a negative-branch
+                 # conditional; this is the branch-weighted expectation of the
+@@ -18999,12 +18938,6 @@
+     ouroboros_rk_inputs: Dict[str, Any] = {}
+ 
+     # ── Main loop ──
+-    # ★ THE CARRIED RESIDUAL RISK, one entry per flaw class, owned HERE so it
+-    # survives the round loop. His instruction of 2026-10-31: "carry R forward
+-    # across passes". Empty on entry, so round 1 behaves exactly as before and
+-    # the change is confined to rounds 2 and later.
+-    _rk_carry: Dict[int, float] = {}
+-
+     for round_idx in range(start_round, loop_cap):
+         if round_idx >= effective_max:
+             break
+@@ -20088,8 +20021,6 @@
+                 nu_k_by_finding=ouroboros_rk_inputs.get("nu_k_by_finding"),
+                 nu_k_default=ouroboros_rk_inputs.get("nu_k_mean", 0.0),
+                 rk0_prior=rk0_prior,
+-                rk_carry=_rk_carry,
+-                carry_rk=bool(getattr(cfg, "sk_carry_rk_across_rounds", True)),
+                 # TASK A19. Read with getattr so an older config object cannot
+                 # break this call; default False, so a run turns it on
+                 # deliberately or not at all.
+
+### cc2:attempt-1:bench/tests/test_the_role_literal_is_enforced_2026-10-31.py
+--- /dev/null	2026-10-31 02:12:26
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ycxcf7mt/repo/bench/tests/test_the_role_literal_is_enforced_2026-10-31.py	2026-10-31 02:09:54
+@@ -0,0 +1,97 @@
++"""`Role` is enforced at construction, and the enforcement preserves behaviour.
++
++Panel round `the_role_layer_b21_2026-10-30`. Before this, `Role` at
++`bench/experiment_11_orchestrator.py:59` was a `Literal` annotation that no
++runtime check read, and an AST scan of every live `ModelConfig(role=...)` site
++(`scripts/how_many_role_values_does_the_code_construct_2026-10-31.py`) found 4
++spellings against 3 declared members: `player` at 9 sites and `reviewer` at 4.
++
++These tests pin the 3 properties that matter and NOT the alias table's contents,
++which are the founder's to extend:
++
++  1. the enforcement reaches every construction, because it is in `__post_init__`
++  2. it is behaviour-PRESERVING at every live read, so it is not a change of
++     dispatch disguised as a type fix
++  3. `Role` is the single source of truth -- `canonical_role` reads
++     `get_args(Role)` rather than a second list that could drift
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++from typing import get_args
++
++import pytest
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
++
++from bench.experiment_11_orchestrator import (  # noqa: E402
++    ExperimentConfig,
++    ModelConfig,
++    ROLE_ALIASES,
++    Role,
++    canonical_role,
++)
++
++
++def _mc(role: str) -> ModelConfig:
++    return ModelConfig(label="T", model_id="sim", api="sim",
++                       role=role, system_prompt_path=None)
++
++
++def test_every_declared_member_round_trips():
++    for member in get_args(Role):
++        assert canonical_role(member) == member
++        assert _mc(member).role == member
++
++
++def test_an_undeclared_spelling_cannot_survive_construction():
++    """The defect: a spelling outside `Role` reaching a reader unchanged."""
++    for spelling in ("goalkeeper", "striker", "", "Participant"):
++        with pytest.raises(ValueError, match="unknown ModelConfig role"):
++            _mc(spelling)
++
++
++def test_every_alias_resolves_to_a_declared_member():
++    """Pins the INVARIANT, not the table. An alias naming a non-member would
++    reintroduce the drift through the mechanism built to close it."""
++    assert ROLE_ALIASES, "an empty alias table is an addition nothing reaches"
++    for alias, target in ROLE_ALIASES.items():
++        assert alias not in get_args(Role), f"{alias!r} is a member, not an alias"
++        assert target in get_args(Role), f"alias {alias!r} -> non-member {target!r}"
++        assert _mc(alias).role == target
++
++
++def test_normalisation_preserves_every_live_read():
++    """The 2 reads the brief cites plus the confer split and the role lookup.
++
++    `reference_runner_v3.py:13189`/`:13269` and 16 siblings: `!= "collator"`.
++    `run_exp20_confer.py:253`/`:533`: `== "player_manager"`.
++    Behaviour must be identical before and after normalisation for every alias.
++    """
++    for alias, target in ROLE_ALIASES.items():
++        assert (alias != "collator") == (target != "collator")
++        assert (alias == "player_manager") == (target == "player_manager")
++
++
++def test_an_aliased_seat_is_now_found_by_a_role_keyed_lookup():
++    """This is the only behaviour that CHANGES, and it changes in one direction.
++
++    `ExperimentConfig.get_by_role` compares for equality, so before
++    normalisation a seat constructed as `player` was invisible to
++    `get_by_role("participant")` while still being dispatched by the
++    `!= "collator"` filter. A role-KEYED policy layer would inherit that
++    asymmetry.
++    """
++    cfg = ExperimentConfig(models=[_mc("player"), _mc("participant")])
++    assert len(cfg.get_by_role("participant")) == 2
++    assert cfg.get_by_role("collator") == []
++
++
++def test_canonical_role_reads_the_literal_not_a_copy():
++    """No second hand-written member list anywhere in the module source."""
++    src = (Path(__file__).resolve().parents[1]
++           / "experiment_11_orchestrator.py").read_text(encoding="utf-8")
++    assert "get_args(Role)" in src, "members must be derived from `Role` itself"
++    # The members appear in exactly one place: the `Role` assignment.
++    assert src.count('"collator", "player_manager", "participant"') == 1
+
+### cc2:attempt-1:scripts/falsifier_role_literal_unenforced_2026-10-31.py
+--- /dev/null	2026-10-31 02:12:24
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ycxcf7mt/repo/scripts/falsifier_role_literal_unenforced_2026-10-31.py	2026-10-31 02:09:01
+@@ -0,0 +1,69 @@
++#!/usr/bin/env python3
++"""FALSIFIER: `ModelConfig.role` accepts a spelling `Role` does not declare.
++
++Imports the REAL target -- `bench.experiment_11_orchestrator` -- and constructs
++real `ModelConfig` objects. Nothing is retyped or paraphrased.
++
++FAILS IFF THE DEFECT IS PRESENT. The defect is that `Role` is a bare `Literal`
++annotation that no runtime check reads, so a construction site may set a role
++value outside the declared members and every downstream predicate silently
++treats it as a reviewer. If any undeclared spelling SURVIVES construction
++unchanged, this prints FALSIFIED and raises AssertionError. If every undeclared
++spelling is either normalised to a declared member or rejected, it exits
++cleanly: the defect is not demonstrated.
++
++The two spellings tested are not invented. They are the ones an AST scan of
++every live `ModelConfig(role=...)` call site finds outside the literal --
++`player` at 9 sites, `reviewer` at 4 -- per
++`scripts/how_many_role_values_does_the_code_construct_2026-10-31.py`.
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++from typing import get_args
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++
++from bench.experiment_11_orchestrator import ExperimentConfig, ModelConfig, Role  # noqa: E402
++
++DRIFTED = ["player", "reviewer"]          # found at live call sites by AST scan
++MEMBERS = get_args(Role)
++
++print(f"declared Role members : {list(MEMBERS)}")
++print(f"spellings under test  : {DRIFTED}")
++
++survived: list[str] = []
++for spelling in DRIFTED:
++    assert spelling not in MEMBERS, f"test premise wrong: {spelling!r} is declared"
++    try:
++        mc = ModelConfig(label="F", model_id="sim", api="sim",
++                         role=spelling, system_prompt_path=None)
++    except ValueError as exc:
++        print(f"  {spelling!r:12} REJECTED at construction: {str(exc).split(';')[0]}")
++        continue
++    if mc.role not in MEMBERS:
++        print(f"  {spelling!r:12} SURVIVED as {mc.role!r} -- outside {list(MEMBERS)}")
++        survived.append(spelling)
++    else:
++        print(f"  {spelling!r:12} normalised to {mc.role!r}")
++
++# The consequence, measured rather than asserted: a role-KEYED lookup misses a
++# seat whose role is an undeclared synonym, while the `!= "collator"` dispatch
++# filter does not. That asymmetry is what makes the drift latent.
++probe = ModelConfig(label="P", model_id="sim", api="sim",
++                    role=DRIFTED[0] if not survived else DRIFTED[0],
++                    system_prompt_path=None)
++found = ExperimentConfig(models=[probe]).get_by_role("participant")
++print(f"  get_by_role('participant') finds the {DRIFTED[0]!r} seat : {len(found) == 1}")
++print(f"  dispatch filter (role != 'collator') passes it          : {probe.role != 'collator'}")
++
++if survived:
++    print("FALSIFIED")
++    raise AssertionError(
++        f"`Role` is unenforced: {survived} survived construction outside "
++        f"{list(MEMBERS)}. Every live read is `!= \"collator\"`, so such a seat "
++        f"is dispatched as a reviewer while a role-keyed lookup misses it."
++    )
++
++print("CLEAN: no undeclared spelling survives construction; the defect is not demonstrated.")
+
+### cc2:attempt-1:scripts/how_many_role_values_does_the_code_construct_2026-10-31.py
+--- /dev/null	2026-10-31 02:12:24
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ycxcf7mt/repo/scripts/how_many_role_values_does_the_code_construct_2026-10-31.py	2026-10-31 02:05:17
+@@ -0,0 +1,202 @@
++#!/usr/bin/env python3
++"""The declared `Role` has 3 members; the code CONSTRUCTS 5. Measured by AST.
++
++WHY THIS EXISTS. Panel brief `the_role_layer_b21_2026-10-30` asks whether the
++harness's existing role vocabulary and the founder's proposed one are 1
++dimension or 2. Both the brief and
++`scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py` take the
++existing vocabulary to be the 3 members of
++`bench/experiment_11_orchestrator.py:59`:
++
++    Role = Literal["collator", "player_manager", "participant"]
++
++and compute a 63/67 = 0.940 "structural share" over exactly those 3 words. That
++denominator is drawn from a `grep` for 6 chosen words. It cannot see a role
++value that is neither in the declared literal nor in the founder's list, and it
++therefore cannot detect that the literal is not enforced.
++
++WHAT THIS MEASURES INSTEAD. Every `role=<string literal>` keyword argument to a
++`ModelConfig(...)` call in live code, found by parsing the AST rather than by
++grepping for known words, so an unknown value is visible. `bench/logs/` is
++excluded: those are `sandbox_harvest` copies of older revisions of the same
++files, not live code, and counting them double-counts one construction site.
++
++`role=` kwargs to non-`ModelConfig` calls are excluded too -- the Google GenAI
++SDK and the OpenRouter message format both use `role="user"`/`"model"`/`"tool"`
++for an unrelated purpose, and conflating them would inflate the count.
++
++WHAT IT DOES NOT CLAIM. It does not claim the undeclared values break a run
++today. Whether they do is a separate question, answered by executing the 2 live
++reads; see `--probe-reads`.
++"""
++from __future__ import annotations
++
++import argparse
++import ast
++import json
++import sys
++from collections import defaultdict
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO))
++
++EXCLUDE_PARTS = {"logs", ".git", ".pytest_cache", "node_modules"}
++TARGET_CALLS = {"ModelConfig"}
++
++
++def declared_members() -> list[str]:
++    """Parse the `Role = Literal[...]` assignment out of the orchestrator.
++
++    Read from the AST of the declaring module rather than imported, so this
++    works without executing the orchestrator's import-time side effects.
++    """
++    src = (REPO / "bench" / "experiment_11_orchestrator.py").read_text(encoding="utf-8")
++    tree = ast.parse(src)
++    for node in ast.walk(tree):
++        if not isinstance(node, ast.Assign):
++            continue
++        if not (len(node.targets) == 1
++                and isinstance(node.targets[0], ast.Name)
++                and node.targets[0].id == "Role"):
++            continue
++        sub = node.value
++        if isinstance(sub, ast.Subscript):
++            idx = sub.slice
++            elts = idx.elts if isinstance(idx, ast.Tuple) else [idx]
++            return [e.value for e in elts
++                    if isinstance(e, ast.Constant) and isinstance(e.value, str)]
++    raise SystemExit("FATAL: no `Role = Literal[...]` assignment found")
++
++
++def _callee_name(func: ast.expr) -> str:
++    if isinstance(func, ast.Name):
++        return func.id
++    if isinstance(func, ast.Attribute):
++        return func.attr
++    return ""
++
++
++def _literal_role_strings(value: ast.expr) -> list[str]:
++    """Collect string constants a `role=` expression can evaluate to.
++
++    Handles the bare constant and the conditional form actually in the tree,
++    `role="player_manager" if i == 0 else "player"`, which a grep for
++    `role="..."` reports as one value and which is two.
++    """
++    if isinstance(value, ast.Constant) and isinstance(value.value, str):
++        return [value.value]
++    if isinstance(value, ast.IfExp):
++        return _literal_role_strings(value.body) + _literal_role_strings(value.orelse)
++    return []
++
++
++def scan() -> dict[str, list[str]]:
++    """Map role value -> sorted list of "path:line" construction sites."""
++    sites: dict[str, list[str]] = defaultdict(list)
++    for path in sorted(REPO.rglob("*.py")):
++        rel = path.relative_to(REPO)
++        if EXCLUDE_PARTS & set(rel.parts):
++            continue
++        try:
++            tree = ast.parse(path.read_text(encoding="utf-8"))
++        except (SyntaxError, UnicodeDecodeError):
++            continue
++        for node in ast.walk(tree):
++            if not isinstance(node, ast.Call):
++                continue
++            if _callee_name(node.func) not in TARGET_CALLS:
++                continue
++            for kw in node.keywords:
++                if kw.arg != "role":
++                    continue
++                for val in _literal_role_strings(kw.value):
++                    sites[val].append(f"{rel}:{node.lineno}")
++    return {k: sorted(set(v)) for k, v in sorted(sites.items())}
++
++
++def probe_reads(undeclared: list[str]) -> list[str]:
++    """Evaluate the live `mc.role` predicates against each undeclared value.
++
++    `bench/reference_runner_v3.py:13189` and `:13269` both filter
++    `mc.role != "collator"`; `bench/run_exp20_confer.py:253` splits on
++    `mc.role == "player_manager"`; `ExperimentConfig.get_by_role` compares for
++    equality against a requested role. Each predicate is evaluated on the value
++    itself -- no network, no dispatch.
++    """
++    out = []
++    for v in undeclared:
++        dispatched = (v != "collator")
++        is_manager = (v == "player_manager")
++        found_as_participant = (v == "participant")
++        out.append(
++            f"    {v!r:14} dispatched_by_runner={dispatched}  "
++            f"is_manager={is_manager}  get_by_role('participant') matches={found_as_participant}"
++        )
++    return out
++
++
++def main() -> int:
++    ap = argparse.ArgumentParser(description=__doc__)
++    ap.add_argument("--json", action="store_true")
++    ap.add_argument("--probe-reads", action="store_true",
++                    help="evaluate the live `mc.role` predicates on each undeclared value")
++    args = ap.parse_args()
++
++    declared = declared_members()
++    sites = scan()
++    constructed = list(sites)
++    undeclared = [v for v in constructed if v not in declared]
++    unconstructed = [v for v in declared if v not in constructed]
++
++    if args.json:
++        print(json.dumps({
++            "declared": declared,
++            "constructed": constructed,
++            "undeclared": undeclared,
++            "declared_but_never_constructed": unconstructed,
++            "sites": sites,
++        }, indent=2))
++        return 0
++
++    print("=" * 78)
++    print("ModelConfig `role=` string literals in live code, by AST")
++    print("=" * 78)
++    print(f"\ndeclared by `Role = Literal[...]`  : {len(declared)}  {declared}")
++    print(f"constructed at call sites          : {len(constructed)}  {constructed}")
++    print()
++    for v, s in sites.items():
++        tag = "DECLARED  " if v in declared else "UNDECLARED"
++        print(f"  [{tag}] {v!r:16} {len(s)} site(s)")
++        for site in s:
++            print(f"               {site}")
++    print()
++    print(f"UNDECLARED values constructed      : {len(undeclared)}  {undeclared}")
++    print(f"DECLARED values never constructed  : {len(unconstructed)}  {unconstructed}")
++    print()
++    if undeclared:
++        print("  So the `Role` literal is NOT the live vocabulary. It is an")
++        print("  annotation that no runtime check enforces, and the construction")
++        print(f"  sites have drifted to {len(constructed)} values against {len(declared)} declared.")
++        print()
++        print("  CONSEQUENCE FOR THE BRIEF'S TALLY. The 63/67 = 0.940 'structural")
++        print("  share' greps for 3 declared words and 3 proposed ones. It counts")
++        print(f"  none of {undeclared}, so its denominator omits")
++        print("  every drifted value by construction and cannot detect the drift.")
++
++    if args.probe_reads and undeclared:
++        print()
++        print("  LIVE READS EVALUATED on each undeclared value:")
++        for line in probe_reads(undeclared):
++            print(line)
++        print()
++        print('    Both runner reads are `!= "collator"`, so an undeclared value is')
++        print("    dispatched as a reviewer -- which is why the drift has never")
++        print('    surfaced as a failure. `get_by_role("participant")` does NOT')
++        print("    match it, so a role-KEYED lookup misses those seats silently.")
++
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/may_two_policy_layers_collide_2026-10-31.py
+--- /dev/null	2026-10-31 02:12:24
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ycxcf7mt/repo/scripts/may_two_policy_layers_collide_2026-10-31.py	2026-10-31 02:06:29
+@@ -0,0 +1,236 @@
++#!/usr/bin/env python3
++"""May 2 policy layers write the same leaf? Measured, and the answer is 2-sided.
++
++WHY THIS EXISTS. Panel brief `the_role_layer_b21_2026-10-30` establishes by
++execution that reversing the (domain, model) merge order moves 0 of 60 pairs,
++then frames the remaining live question as:
++
++    "may layers write into each other's namespace at all? Nothing in
++     `_deep_merge` forbids it. The disjointness is a convention that no
++     mechanism enforces."
++
++That framing is half right and the half it omits changes the answer. This
++script measures BOTH halves against the live `bench/cdsfl_registry/registry.py`
++-- it calls `_load_toml`, `_deep_merge`, `_check_monotonicity` and
++`load_effective_policy` and re-implements none of them.
++
++WHAT IT MEASURES.
++
++  1. SIBLING overlap: domain x model leaf collisions. Expected 0, reproducing
++     the brief independently.
++  2. ANCESTOR overlap: every domain / model / target file against
++     `universal.toml`. Overlap here is not a convention being observed by luck
++     -- it is the merge engine's stated purpose ("lower layers can tighten but
++     never loosen"), so if this count is non-zero then overlap is already
++     PERMITTED and pervasive, and "may layers overlap at all" is already
++     answered yes by 10 domain files.
++  3. WHAT A COLLISION DOES, by execution: a synthetic SOFT collision and a
++     synthetic HARD collision, merged through the live functions.
++  4. POSITION-INDEPENDENCE OF MONOTONICITY against a hostile role layer
++     inserted at every position in the merge sequence.
++  5. THE 3 ABSENCE BEHAVIOURS, by calling `load_effective_policy`.
++"""
++from __future__ import annotations
++
++import argparse
++import json
++import sys
++import warnings
++from pathlib import Path
++
++REPO = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO))
++
++from bench.cdsfl_registry import registry as R  # noqa: E402
++
++RD = R.REGISTRY_DIR
++
++
++def leaves(d, prefix=""):
++    """Every leaf dotpath of a nested dict."""
++    out = {}
++    for k, v in d.items():
++        p = f"{prefix}{k}"
++        if isinstance(v, dict):
++            out.update(leaves(v, p + "."))
++        else:
++            out[p] = v
++    return out
++
++
++def hard_dotpaths():
++    return sorted(set(R.HARD_CONSTRAINTS) | set(R.HARD_THRESHOLDS) | set(R.HARD_STRINGS))
++
++
++def main() -> int:
++    ap = argparse.ArgumentParser(description=__doc__)
++    ap.add_argument("--json", action="store_true")
++    args = ap.parse_args()
++    report = {}
++
++    universal = R._load_toml(RD / "universal.toml")
++    u_leaves = set(leaves(universal))
++    domains = {p.stem: R._load_toml(p) for p in sorted((RD / "domains").glob("*.toml"))}
++    models = {p.stem: R._load_toml(p) for p in sorted((RD / "models").glob("*.toml"))}
++
++    print("=" * 78)
++    print("1. SIBLING OVERLAP  (domain x model), leaf dotpaths")
++    print("=" * 78)
++    pairs = 0
++    sib_collide = []
++    for dn, dc in domains.items():
++        for mn, mc in models.items():
++            pairs += 1
++            shared = set(leaves(dc)) & set(leaves(mc))
++            if shared:
++                sib_collide.append((dn, mn, sorted(shared)))
++    print(f"   pairs examined                  : {pairs}")
++    print(f"   pairs sharing >=1 leaf dotpath  : {len(sib_collide)}")
++    print("   -> reproduces the brief independently: siblings are disjoint TODAY.")
++    report["sibling_pairs"] = pairs
++    report["sibling_collisions"] = len(sib_collide)
++
++    print()
++    print("=" * 78)
++    print("2. ANCESTOR OVERLAP  (each lower-layer file x universal.toml)")
++    print("=" * 78)
++    anc = {}
++    for kind, group in (("domain", domains), ("model", models)):
++        for name, cfg in group.items():
++            shared = sorted(set(leaves(cfg)) & u_leaves)
++            anc[f"{kind}/{name}"] = shared
++            print(f"   {kind}/{name:22} overlaps universal on {len(shared):3} leaf(s)")
++    n_files = len(anc)
++    n_overlapping = sum(1 for v in anc.values() if v)
++    total_overlap_leaves = sum(len(v) for v in anc.values())
++    print()
++    print(f"   files examined                     : {n_files}")
++    print(f"   files that OVERRIDE a universal leaf: {n_overlapping}")
++    print(f"   total overriding leaf writes        : {total_overlap_leaves}")
++    print()
++    print("   SO OVERLAP IS NOT A CONVENTION AWAITING A RULING. Every lower layer")
++    print("   that does anything at all overlaps layer 1 -- that IS overriding, and")
++    print("   it is the engine's documented purpose. The open question is narrower:")
++    print("   may 2 layers at the SAME tier, whose relative order expresses no")
++    print("   intent, write the same leaf. Those are different questions and the")
++    print("   brief's phrasing ('at all') merges them.")
++    report["ancestor_overlap_files"] = n_overlapping
++    report["ancestor_overlap_leaves"] = total_overlap_leaves
++
++    print()
++    print("=" * 78)
++    print("3. WHAT A COLLISION ACTUALLY DOES, by execution")
++    print("=" * 78)
++    # SOFT collision: two synthetic layers both set verification.something_soft
++    soft_key = "verification.peer_support_min_families"   # a real HARD threshold
++    a = {"verification": {"demo_soft": 5}}
++    b = {"verification": {"demo_soft": 1}}
++    m_ab = R._deep_merge(R._deep_merge(universal, a), b)
++    m_ba = R._deep_merge(R._deep_merge(universal, b), a)
++    print(f"   SOFT leaf 'verification.demo_soft': A sets 5, B sets 1")
++    print(f"     merge A then B -> {R._dotpath_get(m_ab,'verification.demo_soft')}")
++    print(f"     merge B then A -> {R._dotpath_get(m_ba,'verification.demo_soft')}")
++    with warnings.catch_warnings(record=True) as w:
++        warnings.simplefilter("always")
++        R._check_monotonicity(m_ab, "demo_soft")
++        R._check_monotonicity(m_ba, "demo_soft")
++    print(f"     monotonicity raised : no")
++    print(f"     warnings emitted    : {len(w)}")
++    print("     -> LAST WRITER WINS, SILENTLY. No warning, no log, no record in")
++    print("        the merged policy of the value that was discarded. Per CDSFL")
++    print("        core S10 category 3/4 that is a property of the measurement")
++    print("        machinery that cannot be recovered from the artefact.")
++    report["soft_collision_silent"] = (len(w) == 0)
++
++    # HARD collision: a layer that weakens a protected leaf.
++    hostile = {"verification": {"peer_support_min_families": 1}}
++    try:
++        R._check_monotonicity(R._deep_merge(universal, hostile), "hostile")
++        print(f"\n   HARD leaf {soft_key!r} lowered 2 -> 1: NOT caught  <-- FALSIFIED")
++        report["hard_collision_caught"] = False
++    except R.PolicyViolationError as e:
++        first = str(e).strip().splitlines()[-1].strip()
++        print(f"\n   HARD leaf {soft_key!r} lowered 2 -> 1:")
++        print(f"     PolicyViolationError raised: {first}")
++        report["hard_collision_caught"] = True
++
++    print()
++    print("=" * 78)
++    print("4. POSITION-INDEPENDENCE vs a HOSTILE ROLE LAYER at every position")
++    print("=" * 78)
++    base_layers = [("domain", domains["mathematics"]), ("model", models["opus_4_6"])]
++    caught_at = []
++    for pos in range(len(base_layers) + 1):
++        seq = base_layers[:pos] + [("role", hostile)] + base_layers[pos:]
++        pol = universal
++        verdict = "NOT CAUGHT"
++        for name, cfg in seq:
++            pol = R._deep_merge(pol, cfg)
++            try:
++                R._check_monotonicity(pol, name)
++            except R.PolicyViolationError:
++                verdict = f"caught at layer {name!r}"
++                break
++        order = " -> ".join(["universal"] + [n for n, _ in seq])
++        print(f"   pos {pos}: {order}")
++        print(f"            {verdict}")
++        caught_at.append(verdict != "NOT CAUGHT")
++    print()
++    print(f"   positions where the weakening was caught: {sum(caught_at)}/{len(caught_at)}")
++    print("   -> `_check_monotonicity(merged, layer_name)` takes no previous")
++    print("      policy, so it compares against module constants and runs after")
++    print("      EVERY merge. A role layer cannot weaken a HARD constraint from")
++    print("      any position. Question 2 is therefore a PREFERENCE, not a")
++    print("      safety question -- for the 17 protected dotpaths only.")
++    report["hostile_caught_everywhere"] = all(caught_at)
++
++    print()
++    print("=" * 78)
++    print("5. THE 3 ABSENCE BEHAVIOURS, by calling load_effective_policy")
++    print("=" * 78)
++    obs = {}
++    # missing MODEL file
++    try:
++        R.load_effective_policy(domain="mathematics", model="no_such_model_xyz")
++        obs["model_absent"] = "SILENT"
++    except FileNotFoundError:
++        obs["model_absent"] = "RAISE:FileNotFoundError"
++    # missing TASK file
++    with warnings.catch_warnings(record=True) as w:
++        warnings.simplefilter("always")
++        R.load_effective_policy(domain="mathematics", task_id="no_such_task_xyz")
++        obs["task_absent"] = "WARN" if w else "SILENT"
++    # UNKNOWN domain
++    with warnings.catch_warnings(record=True) as w:
++        warnings.simplefilter("always")
++        R.load_effective_policy(domain="no_such_domain_xyz")
++        obs["domain_unknown"] = "WARN" if w else "SILENT"
++    # KNOWN domain whose file is absent: 'biomedical' maps to 'physics', which
++    # exists; construct the case by consulting DOMAIN_MAP for a mapped target
++    # with no file on disk.
++    mapped_missing = [k for k, v in R.DOMAIN_MAP.items()
++                      if not (RD / "domains" / f"{v}.toml").exists()]
++    obs["known_domain_file_absent_cases"] = mapped_missing or "none on disk today"
++    for k, v in obs.items():
++        print(f"   {k:34} {v}")
++    print(f"   {'tasks_dir_exists':34} {(RD/'tasks').exists()}")
++    print(f"   {'roles_dir_exists':34} {(RD/'roles').exists()}")
++    print()
++    print("   3 DISTINCT PRECEDENTS: RAISE, WARN, SILENT -- confirming the brief")
++    print("   and refuting entry B21's 2-precedent framing.")
++    print()
++    print("   AND A 4th OBSERVATION THE BRIEF DID NOT MAKE: tasks/ DOES NOT EXIST.")
++    print("   So layer 3 is not 'silent when a file is missing'; layer 3 has never")
++    print("   applied at all, for any task_id, since the directory it reads from is")
++    print("   absent. The 4-layer merge is a 3-layer merge in practice. SILENT is")
++    print("   the precedent that produced that, which is the argument against it.")
++    report["absence"] = obs
++    report["tasks_dir_exists"] = (RD / "tasks").exists()
++
++    if args.json:
++        print(json.dumps(report, indent=2, default=str))
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-31 02:12:31
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_punxem4q/repo/.cdsfl_deny_canonical_writes.sb	2026-10-31 02:01:36
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-10-31 02:12:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_punxem4q/repo/bench/reference_runner_v3.py	2026-10-30 00:22:00
+@@ -2221,26 +2221,6 @@
+     sk_enabled: bool = False
+     test_cmd: Optional[str] = None
+     sk_s_floor: float = 0.0  # domain-specific minimum S*
+-    #: ★ CARRY R_k ACROSS PASSES. Founder instruction 2026-10-31, verbatim:
+-    #: *"carry R forward across passes"*.
+-    #:
+-    #: WHAT IT REPAIRS, MEASURED. `R_k(0) = pi_k` was re-initialised for EVERY
+-    #: finding on EVERY round, so the recursion of appendix section 1.1 ran once
+-    #: and never accumulated. Across the archive `R_old` is 0.500000 in all
+-    #: 1,252 entries carrying an `R_new` -- distinct count 1 -- and `R_new`
+-    #: floors at 0.366667 with 743 of 1,252 sitting exactly there, 0.593450,
+-    #: Wilson [0.565997, 0.620332]. So the recorded number was "the risk after
+-    #: ONE pass from a fresh prior", not his definition, which is the risk
+-    #: *"after a given number of passes"*. Producer:
+-    #: `scripts/his_severity_definition_is_the_models_own_quantity_2026-10-31.py`.
+-    #:
+-    #: WHY IT IS SAFE TO DEFAULT ON. The carry is keyed per FLAW CLASS and per
+-    #: RUN, and on the first round nothing is carried, so round 1 is
+-    #: byte-identical to the previous behaviour. Only rounds 2 and later differ,
+-    #: and they differ by doing what the appendix specifies. Setting this False
+-    #: reproduces the old behaviour exactly, which is what makes the change
+-    #: measurable rather than merely asserted.
+-    sk_carry_rk_across_rounds: bool = True
+ 
+     # TARGET TYPE — a DECLARATION OF INTENT ONLY (A1, 2026-08-01).
+     # "" (the default) means "do not declare". Any other value must equal what
+@@ -17180,12 +17160,6 @@
+     nu_k_by_finding: Optional[Dict[str, float]] = None,
+     nu_k_default: float = 0.0,
+     rk0_prior: Optional[Callable[[int], float]] = None,
+-    #: Per-RUN, per-FLAW-CLASS carried residual risk. The CALLER owns the dict
+-    #: so it survives across rounds; this function reads the carried value as
+-    #: `R_k(i-1)` and writes `R_k(i)` back. None or empty means "nothing carried
+-    #: yet", which is the first round and is identical to the old behaviour.
+-    rk_carry: Optional[Dict[int, float]] = None,
+-    carry_rk: bool = True,
+     score_prose_listings: bool = False,
+ ) -> Dict[str, Any]:
+     """Evaluate S_k for all findings with proposed fixes in SEARCH/REPLACE format.
+@@ -17264,20 +17238,8 @@
+         #      cross-experiment immune memory, when consumption is on;
+         #   3. the uniform base prior — what every run from Exp 37 to Exp 49
+         #      actually used, because model_params is never populated.
+-        _fc = int(entry.get("flaw_class") or 0)
+         if "R" in meta:
+             R_old, rk0_source = meta["R"], "model"
+-        elif carry_rk and rk_carry is not None and _fc in rk_carry:
+-            # ★ TIER 2, his instruction of 2026-10-31: the value THIS RUN
+-            # reached for this flaw class on an earlier round. This is the whole
+-            # point of the appendix's recursive form -- *"a model can pick it up
+-            # at any point, assess current risk, and decide what to do next"* --
+-            # and it was the one tier missing, which is why `R_old` was 0.5 in
+-            # all 1,252 archived entries. It sits BELOW a model-supplied R,
+-            # which is a fresher estimate, and ABOVE both priors, which are
+-            # initial conditions and must not overwrite an updated state.
+-            R_old, rk0_source = float(rk_carry[_fc]), "carried"
+-            R_old = max(0.0, min(1.0, R_old))
+         elif rk0_prior is not None:
+             R_old, rk0_source = rk0_prior(int(entry.get("flaw_class") or 0)), "memory"
+             R_old = max(0.0, min(1.0, float(R_old)))
+@@ -17294,19 +17256,6 @@
+             entry["sk_result"]["R_old"] = R_old
+             entry["sk_result"]["R_new"] = R_new
+             entry["sk_result"]["rk_note"] = why
+-            # ONLY WHEN IT IS NOT THE DEFAULT, matching the convention the memory
+-            # path already uses below. Writing it unconditionally broke
+-            # test_immune_memory_consumption.py::test_off_path_is_the_uniform_prior,
+-            # whose property is that turning a path OFF emits no new report keys --
+-            # a real property, since a report shape that changes with a switch
+-            # cannot be compared across runs.
+-            if rk0_source != "uniform":
+-                entry["sk_result"]["rk0_source"] = rk0_source
+-            # NO_SCORE pins R_new to R_old, so this carries the state forward
+-            # UNCHANGED rather than dropping it. A pass that formed no opinion
+-            # must not reset the accumulated risk to the prior.
+-            if carry_rk and rk_carry is not None:
+-                rk_carry[_fc] = float(R_new)
+             stats["no_score"] += 1
+             _log(f"  S_k [{cid}]: NO_SCORE — "
+                  f"{sk_result.gate_details.get('target_kind_reason', 'non-Python target')}"
+@@ -17448,16 +17397,6 @@
+                     )
+                 entry["sk_result"]["R_old"] = R_old
+                 entry["sk_result"]["R_new"] = R_new
+-                # ONLY WHEN IT IS NOT THE DEFAULT, matching the convention the memory
+-                # path already uses below. Writing it unconditionally broke
+-                # test_immune_memory_consumption.py::test_off_path_is_the_uniform_prior,
+-                # whose property is that turning a path OFF emits no new report keys --
+-                # a real property, since a report shape that changes with a switch
+-                # cannot be compared across runs.
+-                if rk0_source != "uniform":
+-                    entry["sk_result"]["rk0_source"] = rk0_source
+-                if carry_rk and rk_carry is not None:
+-                    rk_carry[_fc] = float(R_new)
+                 # THE PRE-ROUND EXPECTATION, RECORDED BESIDE THE GATED NUMBER
+                 # (2026-09-29, panel item 4). `R_new` is a negative-branch
+                 # conditional; this is the branch-weighted expectation of the
+@@ -18999,12 +18938,6 @@
+     ouroboros_rk_inputs: Dict[str, Any] = {}
+ 
+     # ── Main loop ──
+-    # ★ THE CARRIED RESIDUAL RISK, one entry per flaw class, owned HERE so it
+-    # survives the round loop. His instruction of 2026-10-31: "carry R forward
+-    # across passes". Empty on entry, so round 1 behaves exactly as before and
+-    # the change is confined to rounds 2 and later.
+-    _rk_carry: Dict[int, float] = {}
+-
+     for round_idx in range(start_round, loop_cap):
+         if round_idx >= effective_max:
+             break
+@@ -20088,8 +20021,6 @@
+                 nu_k_by_finding=ouroboros_rk_inputs.get("nu_k_by_finding"),
+                 nu_k_default=ouroboros_rk_inputs.get("nu_k_mean", 0.0),
+                 rk0_prior=rk0_prior,
+-                rk_carry=_rk_carry,
+-                carry_rk=bool(getattr(cfg, "sk_carry_rk_across_rounds", True)),
+                 # TASK A19. Read with getattr so an older config object cannot
+                 # break this call; default False, so a run turns it on
+                 # deliberately or not at all.
+
+### fable:attempt-1:bench/tests/test_the_structural_role_vocabulary_cannot_fork_silently_2026-10-31.py
+--- /dev/null	2026-10-31 02:12:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_punxem4q/repo/bench/tests/test_the_structural_role_vocabulary_cannot_fork_silently_2026-10-31.py	2026-10-31 02:08:31
+@@ -0,0 +1,134 @@
++"""The structural role vocabulary is declared twice and must not fork silently.
++
++ESTABLISHED BY EXECUTION, panel round `the_role_layer_b21_2026-10-30`: the 3
++structural role concepts are declared in 2 unlinked places --
++`bench/experiment_11_orchestrator.py:59` as
++`Role = Literal["collator", "player_manager", "participant"]`, and
++`bench/dm/_types.py:311` as `Role(enum.Enum)` with members PM / COL / PAR, the
++declaration that carries the reassignment semantics (PM static for the run,
++HARD constraint C3; COL and PAR reassignable between rounds by
++`RoleAssignment.reassign`). Nothing mapped the two, and the `Literal` is not
++enforced at runtime: `bench/tools/run_simulated_experiment.py:638` and
++`bench/tools/gemini_tool_switch_test.py:72` passed `role="player"`, a 4th value
++outside the declared vocabulary, to live `ModelConfig` constructions. No code
++compares `== "player"` anywhere (measured 2026-10-31: the only live role
++comparisons are `!= "collator"` at `bench/reference_runner_v3.py:13189`/
++`:13269` and `player_manager` in `bench/run_exp20_confer.py`), so the stray
++value changed no behaviour -- which is exactly why nothing noticed it.
++
++WHY THIS GUARD EXISTS. Entry B21 asks whether the structural vocabulary should
++be renamed to the founder's functional one. Whatever he rules, a rename applied
++to ONE declaration and not the other would silently detach the reassignment
++semantics from the vocabulary used at dispatch. This test makes that fork loud:
++
++  1. the two declarations must stay in explicit bijection;
++  2. every quoted `role=` value passed to `ModelConfig` in live bench code
++     must be a member of the declared `Literal`.
++
++It pins the CORRESPONDENCE, not the words -- if both declarations are renamed
++together, update CORRESPONDENCE here in the same change and the guard holds
++the new vocabulary instead.
++"""
++from __future__ import annotations
++
++import ast
++import pathlib
++import typing
++
++import pytest
++
++from bench import experiment_11_orchestrator as orch
++from bench.dm._types import Role as DmRole
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++
++#: The asserted bijection between the orchestrator's string vocabulary and the
++#: dm enum's members. A rename of either side alone fails test 1 and names the
++#: other side as the thing left behind.
++CORRESPONDENCE = {
++    "collator": "COL",
++    "player_manager": "PM",
++    "participant": "PAR",
++}
++
++
++def test_the_two_declarations_are_in_bijection():
++    literal_values = set(typing.get_args(orch.Role))
++    enum_values = {m.value for m in DmRole}
++    assert literal_values == set(CORRESPONDENCE), (
++        f"the orchestrator Literal changed to {sorted(literal_values)} without "
++        f"updating the correspondence to bench/dm/_types.py Role; the "
++        f"reassignment semantics (PM static, HARD C3) live on the OTHER "
++        f"declaration and would silently detach")
++    assert enum_values == set(CORRESPONDENCE.values()), (
++        f"bench/dm/_types.py Role changed to {sorted(enum_values)} without "
++        f"updating the correspondence to the orchestrator Literal used at "
++        f"dispatch (mc.role reads in reference_runner_v3)")
++    assert len(set(CORRESPONDENCE.values())) == len(CORRESPONDENCE), (
++        "the correspondence is not a bijection")
++
++
++def _live_python():
++    """Live bench .py files: not tests, not logs, not archived harvests."""
++    for p in (REPO / "bench").rglob("*.py"):
++        rel = p.relative_to(REPO).as_posix()
++        if "/logs/" in rel or rel.startswith("bench/tests/"):
++            continue
++        yield p
++
++
++def _modelconfig_role_values(paths):
++    """Every quoted value passed as `role=` to a ModelConfig(...) call."""
++    out = []
++    for p in paths:
++        try:
++            tree = ast.parse(p.read_text(encoding="utf-8"))
++        except SyntaxError:
++            continue
++        for node in ast.walk(tree):
++            if not isinstance(node, ast.Call):
++                continue
++            fn = node.func
++            name = fn.id if isinstance(fn, ast.Name) else (
++                fn.attr if isinstance(fn, ast.Attribute) else "")
++            if name != "ModelConfig":
++                continue
++            for kw in node.keywords:
++                if kw.arg == "role" and isinstance(kw.value, ast.Constant) \
++                        and isinstance(kw.value.value, str):
++                    try:
++                        rel = p.relative_to(REPO).as_posix()
++                    except ValueError:  # planted file outside the repo
++                        rel = p.name
++                    out.append((rel, kw.value.lineno, kw.value.value))
++    return out
++
++
++def test_every_live_modelconfig_role_is_in_the_declared_vocabulary():
++    declared = set(typing.get_args(orch.Role))
++    strays = [(f, ln, v) for f, ln, v in
++              _modelconfig_role_values(_live_python()) if v not in declared]
++    assert not strays, (
++        "live code passes role values outside the declared Literal, which is "
++        "unenforced at runtime, so the vocabulary has forked silently:\n"
++        + "\n".join(f"    {f}:{ln}  role={v!r}" for f, ln, v in strays))
++
++
++def test_the_scanner_can_see_a_planted_stray(tmp_path):
++    """ANTI-VACUITY: a scanner that misses a planted stray proves nothing."""
++    planted = tmp_path / "planted.py"
++    planted.write_text(
++        "mc = ModelConfig(label='x', role='striker')\n", encoding="utf-8")
++    vals = _modelconfig_role_values([planted])
++    assert ("planted.py" in vals[0][0] if vals else False) or any(
++        v == "striker" for _, _, v in vals), (
++        "a planted out-of-vocabulary role was not seen, so a real one would "
++        "pass too")
++
++
++def test_the_scanner_reads_real_sites():
++    """A scan that finds 0 construction sites is scanning the wrong tree."""
++    vals = _modelconfig_role_values(_live_python())
++    assert len(vals) >= 3, (
++        f"only {len(vals)} quoted ModelConfig role site(s) found in live "
++        f"bench code; the vocabulary scan has gone blind")
+
+### fable:attempt-1:bench/tools/gemini_tool_switch_test.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/gemini_tool_switch_test.py	2026-08-31 00:27:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_punxem4q/repo/bench/tools/gemini_tool_switch_test.py	2026-10-31 02:07:34
+@@ -69,7 +69,7 @@
+ 
+     mc = ModelConfig(
+         label="Gemini", model_id="gemini-3.1-pro-preview", api="google",
+-        role="player", system_prompt_path=None, max_tokens=2048, timeout=180,
++        role="participant", system_prompt_path=None, max_tokens=2048, timeout=180,
+         max_retries=1,
+     )
+     print("  dispatching ONE paid Gemini call on the google route, tools ON ...")
+
+### fable:attempt-1:bench/tools/prove_ouroboros_loop_close.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/prove_ouroboros_loop_close.py	2026-09-01 13:24:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_punxem4q/repo/bench/tools/prove_ouroboros_loop_close.py	2026-10-31 02:08:31
+@@ -255,9 +255,9 @@
+ 
+     models = [
+         ModelConfig(label="Gemini", model_id="stub", api="openrouter",
+-                    role="reviewer", system_prompt_path=None),
++                    role="participant", system_prompt_path=None),
+         ModelConfig(label="Codex", model_id="stub", api="openrouter",
+-                    role="reviewer", system_prompt_path=None),
++                    role="participant", system_prompt_path=None),
+     ]
+     exp_config = ExperimentConfig(models=models)
+     return exp_config, "CDSFL DIRECTIVE (stub for the proof harness)\n", cfg
+
+### fable:attempt-1:bench/tools/run_simulated_experiment.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/run_simulated_experiment.py	2026-10-29 02:42:06
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_punxem4q/repo/bench/tools/run_simulated_experiment.py	2026-10-31 02:07:34
+@@ -635,7 +635,7 @@
+ 
+ 
+     models = [R.ModelConfig(label=v, model_id="sim", api="sim",
+-                            role="player_manager" if i == 0 else "player",
++                            role="player_manager" if i == 0 else "participant",
+                             system_prompt_path=str(cdsfl_path),
+                             timeout=args.timeout, max_retries=1)
+               for i, v in enumerate(seats)]

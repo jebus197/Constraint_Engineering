@@ -1,0 +1,242 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 12496,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and contents\"}",
+      "t_offset_s": 7.627
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"scripts/what_does_layer_order_actually_decide_2026-10-30.py\"}",
+      "t_offset_s": 7.907
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_punxem4q/repo/bench/cdsfl_registry/registry.py\"}",
+      "t_offset_s": 12.491
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_punxem4q/repo/scripts/what_does_layer_order_actually_decide_2026-10-30.py\"}",
+      "t_offset_s": 13.347
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python scripts/what_does_layer_order_actually_decide_2026-10-30.py 2>&1 | tail -60\", \"description\": \"Run the layer-order producer script\"}",
+      "t_offset_s": 19.426
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py 2>&1 | tail -60\", \"description\": \"Run the role-vocabulary producer script\"}",
+      "t_offset_s": 20.673
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/what_does_layer_order_actually_decide_2026-10-30.py 2>&1 | tail -70\", \"description\": \"Run the layer-order producer script\"}",
+      "t_offset_s": 24.252
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py 2>&1 | tail -70\", \"description\": \"Run the role-vocabulary producer script\"}",
+      "t_offset_s": 24.927
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '40,110p' bench/experiment_11_orchestrator.py\", \"description\": \"Read Role declaration in orchestrator\"}",
+      "t_offset_s": 35.393
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '13175,13200p' bench/reference_runner_v3.py; echo ---; sed -n '13255,13285p' bench/reference_runner_v3.py\", \"description\": \"Read the two live mc.role reads in the runner\"}",
+      "t_offset_s": 36.756
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"promot|demot\", \"path\": \"bench\", \"output_mode\": \"files_with_matches\"}",
+      "t_offset_s": 37.288
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"player_manager\", \"path\": \"bench\", \"glob\": \"*.py\", \"output_mode\": \"content\", \"head_limit\": 30}",
+      "t_offset_s": 41.564
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"class DynamicManager\", \"path\": \"bench\", \"output_mode\": \"content\", \"-A\": 30}",
+      "t_offset_s": 42.499
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"class DynamicManager\\\" bench --include=\\\"*.py\\\" | grep -v logs\", \"description\": \"Locate DynamicManager class definition\"}",
+      "t_offset_s": 47.457
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_punxem4q/repo/bench/tests/test_the_ranking_mechanism_carries_no_football_2026-10-17.py\"}",
+      "t_offset_s": 48.403
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"strength_order\\\\|capability_identity\\\\|season_strength\\\" bench/routing.py | head -20; echo ===; sed -n '1,60p' bench/routing.py\", \"description\": \"Inspect ranking mechanism in routing.py\"}",
+      "t_offset_s": 60.629
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"role\\\" bench/routing.py | head; echo ===; grep -n \\\"role\\\" bench/dm/_manager.py | head; echo ===; sed -n '1,80p' bench/dm/_manager.py\", \"description\": \"Check whether ranking/manager code reads roles\"}",
+      "t_offset_s": 61.932
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -cn \\\"role\\\" bench/routing.py; grep -n \\\"role\\\" bench/dm/_manager.py | head -10\", \"description\": \"Check role usage in ranking and manager code\"}",
+      "t_offset_s": 65.241
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '340,420p' bench/routing.py\", \"description\": \"Read strength_order_from_evidence\"}",
+      "t_offset_s": 65.946
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,80p' bench/dm/_role_assignment.py; grep -n \\\"role\\\" bench/dm/_role_assignment.py | wc -l\", \"description\": \"Inspect RoleAssignment vocabulary\"}",
+      "t_offset_s": 72.694
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"class Role\\\" -A 15 bench/dm/_types.py; grep -n \\\"def reassign\\\" -B5 -A40 bench/dm/_role_assignment.py\", \"description\": \"Read dm Role enum and reassign logic\"}",
+      "t_offset_s": 79.274
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | grep -i \\\"layer_order\\\\|which_role\\\"; grep -rn \\\"13171\\\\|13251\\\\|13189\\\\|13269\\\" experimental_notes/CDSFL_MASTER_TASK_LIST.md | head\", \"description\": \"Find guard tests and B21 line citations\"}",
+      "t_offset_s": 157.104
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, warnings\\nsys.path.insert(0, \\\".\\\")\\nfrom bench.cdsfl_registry import registry as R\\n\\n# (1) Two synthetic layers that SET THE SAME SOFT LEAF, through the live merge.\\nbase = R._load_toml(R.REGISTRY_DIR / \\\"universal.toml\\\")\\nlayerA = {\\\"model\\\": {\\\"temperature\\\": 0.2}, \\\"verification\\\": {\\\"extra_passes\\\": 1}}\\nlayerB = {\\\"model\\\": {\\\"temperature\\\": 0.9}",
+      "t_offset_s": 167.882
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def test\\\" bench/tests/test_what_layer_order_decides_2026-10-30.py; wc -l bench/tests/test_what_layer_order_decides_2026-10-30.py\", \"description\": \"List tests in the existing layer-order guard\"}",
+      "t_offset_s": 186.759
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def compose\\\\|load_effective_policy\\\\|role\\\" bench/cdsfl_registry/composer.py | head -20\", \"description\": \"Check whether compose() carries a role parameter\"}",
+      "t_offset_s": 187.651
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '60,130p' bench/tests/test_what_layer_order_decides_2026-10-30.py; sed -n '165,179p' bench/tests/test_what_layer_order_decides_2026-10-30.py\", \"description\": \"Read existing guard tests in detail\"}",
+      "t_offset_s": 197.845
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"player_manager\\\\|\\\\\\\"PM\\\\\\\"\\\\|Role.PM\\\" bench/dm/*.py bench/reference_runner_v3.py | grep -v \\\"def \\\\|#\\\" | grep -i \\\"pm\\\\b\\\\|player\\\" | head -20\", \"description\": \"Find any mapping between orchestrator role strings and dm Role enum\"}",
+      "t_offset_s": 237.954
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"role\\\" bench/reference_runner_v3.py | grep -v \\\"^.*#\\\" | grep -n \\\"mc.role\\\\|role_map\\\\|Role\\\\.\\\" | head -25\", \"description\": \"Find all live role reads in the runner\"}",
+      "t_offset_s": 238.984
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '620,650p' bench/tools/run_simulated_experiment.py; grep -n \\\"from bench.experiment_11_orchestrator import\\\\|import experiment_11\\\" bench/tools/run_simulated_experiment.py\", \"description\": \"Check the simulator's role value against the Literal\"}",
+      "t_offset_s": 259.984
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"get_by_role\\\\|== \\\\\\\"participant\\\\\\\"\\\\|== 'participant'\\\" bench --include=\\\"*.py\\\" | grep -v logs/ | grep -v test_\", \"description\": \"Find consumers of participant role value\"}",
+      "t_offset_s": 267.483
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn '\\\"player\\\"' bench --include=\\\"*.py\\\" | grep -v logs/; grep -rn \\\"== .player.\\\\|!= .player.\\\" bench --include=\\\"*.py\\\" | grep -v logs/ | grep -v player_manager\", \"description\": \"Find every live read or write of the undeclared role value \\\"player\\\"\"}",
+      "t_offset_s": 301.006
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn '\\\\.role' bench/tests/test_the_study_arms_are_expressible_2026-09-21.py | head -5; grep -rln 'run_simulated_experiment' bench/tests/*.py | head; grep -rn '\\\\.role ==\\\\|\\\\.role !=' bench/tests/*.py | grep -v player_manager | grep -v collator | head\", \"description\": \"Check whether any test asserts the simulator role strings\"}",
+      "t_offset_s": 325.254
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_punxem4q/repo/bench/tools/run_simulated_experiment.py\", \"old_string\": \"                            role=\\\"player_manager\\\" if i == 0 else \\\"player\\\",\", \"new_string\": \"                            role=\\\"player_manager\\\" if i == 0 else \\\"participant\\\",\"}",
+      "t_offset_s": 344.938
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '65,80p' bench/tools/gemini_tool_switch_test.py\", \"description\": \"Read gemini tool role construction site\"}",
+      "t_offset_s": 345.763
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_punxem4q/repo/bench/tools/run_simulated_experiment.py\", \"old_string\": \"                            role=\\\"player_manager\\\" if i == 0 else \\\"player\\\",\", \"new_string\": \"                            role=\\\"player_manager\\\" if i == 0 else \\\"participant\\\",\"}",
+      "t_offset_s": 351.237
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tools/run_simulated_experiment.py\\\")\\ns = p.read_text()\\nold = 'role=\\\"player_manager\\\" if i == 0 else \\\"player\\\",'\\nassert s.count(old) == 1\\np.write_text(s.replace(old, 'role=\\\"player_manager\\\" if i == 0 else \\\"participant\\\",'))\\n\\nq = pathlib.Path(\\\"bench/tools/gemini_tool_switch_test.py\\\")\\nt = q.read_text()\\nold2 = 'role",
+      "t_offset_s": 358.126
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_structural_role_vocabulary_cannot_fork_silently_2026-10-31.py <<'EOF'\\n\\\"\\\"\\\"The structural role vocabulary is declared twice and must not fork silently.\\n\\nESTABLISHED BY EXECUTION, panel round `the_role_layer_b21_2026-10-30`: the 3\\nstructural role concepts are declared in 2 unlinked places --\\n`bench/experiment_11_orchestrator.py:59` as\\n`Role = Literal[\\",
+      "t_offset_s": 388.451
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_structural_role_vocabulary_cannot_fork_silently_2026-10-31.py::test_every_live_modelconfig_role_is_in_the_declared_vocabulary -q 2>&1 | grep \\\"role=\\\" | head\", \"description\": \"Show remaining stray role values\"}",
+      "t_offset_s": 396.305
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '250,266p' bench/tools/prove_ouroboros_loop_close.py; grep -rn '\\\"reviewer\\\"\\\\|== .reviewer.' bench --include=\\\"*.py\\\" | grep -v logs/ | grep -v prove_ouroboros\", \"description\": \"Inspect the reviewer stray and any readers of it\"}",
+      "t_offset_s": 402.37
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tools/prove_ouroboros_loop_close.py\\\")\\ns = p.read_text()\\nassert s.count('role=\\\"reviewer\\\"') == 2\\np.write_text(s.replace('role=\\\"reviewer\\\"', 'role=\\\"participant\\\"'))\\nprint(\\\"ouroboros proof corrected: 2 sites\\\")\\n\\nt = pathlib.Path(\\\"bench/tests/test_the_structural_role_vocabulary_cannot_fork_silently_2026-10-31.py\\\")\\ng",
+      "t_offset_s": 414.568
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_which_role_vocabulary_2026-10-30.py bench/tests/test_what_layer_order_decides_2026-10-30.py bench/tests/test_the_study_arms_are_expressible_2026-09-21.py bench/tests/test_the_ranking_mechanism_carries_no_football_2026-10-17.py -q 2>&1 | tail -4\", \"description\": \"Run neighbouring guards affected by role string edits\"}",
+      "t_offset_s": 429.401
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_ouroboros_loop_close.py -q 2>&1 | tail -3\", \"description\": \"Run ouroboros loop-close test after reviewer correction\"}",
+      "t_offset_s": 430.381
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py 2>&1 | grep -E \\\"share|occurrence\\\" ; grep -rn \\\"get_by_role\\\" bench scripts --include=\\\"*.py\\\" | grep -v logs/ | grep -v \\\"def get_by_role\\\"\", \"description\": \"Re-run vocabulary count after fix; confirm get_by_role caller count\"}",
+      "t_offset_s": 458.295
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'N[1 - 0.05^(1/60), 10]' 2>&1 | head -3\", \"description\": \"Wolfram second check of Clopper-Pearson upper bound\"}",
+      "t_offset_s": 459.286
+    }
+  ],
+  "n_tool_calls": 44,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 570.9,
+  "response": "All instruments run, fix delivered red\u2192green, neighbours green, Wolfram concurs. Final answer.\n\n---\n\n## `verdict`\n\n**NEITHER.** The structural and functional roles are **2 distinct dimensions** \u2014 reconciliation is lossy in both directions \u2014 but they do **not** need 2 policy layers. The structural dimension is topology, already implemented as code and never consulted by the policy engine (`load_effective_policy` returns 9 keys, 0 mentioning role; its only live effects are dispatch exclusion and ordering). The functional dimension is the only candidate for a registry layer, so at most **1 new layer** is ever warranted. UNIFIED fails because the mapping is bundle\u2192atoms, not word\u2192word: `run_exp20_confer.py:533` sets `is_arbitrator=(is_last and mc.role == \"player_manager\")` \u2014 one structural role bundling two of his functions (participates *and* decides) \u2014 and `classifier` names no seat position. ORTHOGONAL-as-glossed (\"2 separate layers\") fails because the structural dimension's layer already exists as code (`experiment_11_orchestrator.Role`, `dm/_types.Role` + `RoleAssignment`), and duplicating it into TOML would be an addition nothing reaches.\n\n## `reasoning`\n\nInstruments run, in order:\n\n1. **`scripts/what_does_layer_order_actually_decide_2026-10-30.py`** \u2014 reproduced every brief figure: 0 of 60 pairs order-sensitive, Wilson [0.000000, 0.060172] (closed form and statsmodels agree), one-sided exact 0.048703 (scipy = mpmath to 1e-9), 17 HARD dotpaths, absence = RAISE/SILENT/WARN, `roles_dir_exists False`, `tasks_dir_exists False`.\n2. **`scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py`** \u2014 63/67 = 0.940299 before my fix; **74/78 = 0.948718 after** (see `strongest_disagreement` on why that movement matters).\n3. **Live registry execution** (`_load_toml`/`_deep_merge`/`_check_monotonicity`, no re-implementation): synthetic SOFT collision \u2192 **last writer wins** (`temperature` 0.9 vs 0.2 under reversal; monotonicity passes both orders); HARD boolean weakened from **middle and last** position \u2192 `PolicyViolationError` both times; HARD threshold **raised** above floor \u2192 permitted; `_check_monotonicity({}, \u2026)` \u2192 raises; `inspect.signature` \u2192 `(merged, layer_name)`, no prior policy, so order-independence is by construction, confirmed by execution.\n4. **Role-consumer trace**: the runner's only live role reads are `mc.role != \"collator\"` at `reference_runner_v3.py:13189`/`:13269` (drift from `:13171`/`:13251` confirmed). `get_by_role` has **0 callers** anywhere. `bench/routing.py` \u2014 the ranking mechanism \u2014 uses the word \"role\" **0 times**; `strength_order_from_evidence` ranks seats by measured refutation outcomes (Fisher exact + Holm) and refuses to rank when no pair separates. The promotion/demotion semantics live in `bench/dm/_role_assignment.py::RoleAssignment.reassign`: **PM static for run duration (HARD constraint C3), COL/PAR reassigned between rounds** on capability fingerprints with failure penalty and hysteresis.\n5. **Wolfram second falsifier** (local Wolfram Engine via wolframscript): `N[1 - 0.05^(1/60)]` = 0.04870291331009746, agreeing with scipy/mpmath. *Computed with Wolfram Language.*\n\n**On the caveat's 3 questions:**\n\n1. **What his vocabulary drops:** (a) `collator` \u2014 the only role value live dispatch code reads; (b) the static/dynamic reassignment split, which is attached to the dm `Role` enum, not to the football words; (c) the bundle structure \u2014 `player_manager` is participate+decide, two of his atoms in one seat. What it does **not** drop: capability promotion/demotion, because that never lived in any role vocabulary \u2014 `routing.py` ranks seat labels by evidence, role-blind.\n2. **Is the dropped material needed?** Collator exclusion: yes \u2014 without it the collating seat is dispatched as a finder. PM-static (HARD C3): yes \u2014 a designed invariant with an Exp14 fix history, but expressible in his vocabulary (orchestrator static, others dynamic). The *football words* themselves carry nothing; the semantics are in code keyed on role identity, so they survive a rename **iff both declarations move together** \u2014 which nothing enforced until tonight's guard.\n3. **1 change or 2?** The premise is false by measurement: the ranking code (`routing.py`, `reference_runner_v3.py`, `runner_core.py`) carries **0 football terms already** \u2014 pinned by `test_the_ranking_mechanism_carries_no_football_2026-10-17.py` (AST; ran green). It names things `strength_order`, `capability_identity`, `season_strength_order`. There is nothing left to retire *from the ranking code*. What remains is **1 change confined to the role declarations** \u2014 and it is 2 declarations (`experiment_11_orchestrator.py:59` and `dm/_types.py:311`), which my guard now forces to move as 1 visible change.\n\n## `precedence`\n\nIf and when a functional role layer is added: **universal \u2192 domain \u2192 task \u2192 role \u2192 model** (role as layer 4 of 5, before model). Derivation: on current content the position is immaterial \u2014 0 of 60 pairs share any leaf, measured \u2014 so the choice only binds under overlap, where \"most specific merges last\" is the engine's documented logic and a named model's tuning is more specific than a generic role bundle. **Yes, my answer depends on overlap being permitted**, and it should be: override is the engine's stated purpose (registry.py docstring: \"additions/overrides\"), and the executed evidence shows the dangerous half is already position-proof \u2014 a HARD key weakened from *any* layer position raises, because `_check_monotonicity` compares against module constants after every merge. SOFT overlap is permitted-by-design; the namespace disjointness is an accident of current content, not an invariant worth a refusing gate (a gate would remove the documented override feature with no committed measurement showing disjointness dominates \u2014 the additive standard forbids that removal).\n\n## `absence_behaviour`\n\n**WARN \u2014 the domain precedent.** (1) Like domain and unlike model, a role would be resolved from internal configuration (the seat table), not from an explicit per-run user request; the model layer raises because the user *named* that model and silence would mean their choice silently unapplied. (2) Absence degrades safely: all 17 HARD dotpaths are enforced from constants regardless, by execution. (3) Decisive and empirical: the live role vocabulary **already contained undeclared values** \u2014 `role=\"player\"` and `role=\"reviewer\"` at 4 live sites \u2014 so RAISE would have retroactively broken every simulated run over a naming fork nothing read, and SILENT is exactly how that fork went unnoticed. WARN surfaces it and continues.\n\n## `instrument_results`\n\n| Instrument | Command | Output | Matches brief |\n|---|---|---|---|\n| Layer order producer | `python3 scripts/what_does_layer_order_actually_decide_2026-10-30.py` | 0/60, Wilson [0, 0.060172], one-sided 0.048703, 17 HARD dotpaths, RAISE/WARN/SILENT, roles_dir False | **Yes, all 7 figures** |\n| Vocabulary producer | `python3 scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py` | 63/67 = 0.940299 pre-fix; 74/78 post-fix | Yes pre-fix |\n| Live collision experiment | inline python3 via live `R._deep_merge`/`R._check_monotonicity` | last-writer-wins on SOFT; `PolicyViolationError` on HARD weaken from middle **and** last; tighten permitted; `{}` raises; signature `(merged, layer_name)` | Yes \u2014 establishes what the brief asked for |\n| Absence behaviours | `load_effective_policy` calls inside producer | model RAISE, task SILENT, unknown domain WARN | Yes, 3 precedents |\n| Football ratchet | `pytest test_the_ranking_mechanism_carries_no_football\u2026` | green \u2014 ranking code carries 0 terms | Not in brief; refutes caveat Q3's premise |\n| Wolfram | `wolframscript -code 'N[1 - 0.05^(1/60), 10]'` | 0.04870291331009746 (Out line present, exit 0) | Yes, agrees with scipy/mpmath |\n\n## `fix`\n\nWritten into the sandbox tree:\n\n- **`bench/tests/test_the_structural_role_vocabulary_cannot_fork_silently_2026-10-31.py`** (new, 4 tests): pins the explicit bijection {collator\u2194COL, player_manager\u2194PM, participant\u2194PAR} between the two unlinked structural declarations, and AST-scans every quoted `role=` passed to `ModelConfig` in live bench code against `typing.get_args(Role)`, with an anti-vacuity planted-stray test and a scan-liveness test. This is the mechanism that makes the caveat's feared failure \u2014 renaming one declaration and silently detaching the HARD-C3 reassignment semantics on the other \u2014 loud, whichever vocabulary he rules for.\n- **`bench/tools/run_simulated_experiment.py:638`**, **`bench/tools/gemini_tool_switch_test.py:72`**, **`bench/tools/prove_ouroboros_loop_close.py:258,:260`**: `role=\"player\"`/`role=\"reviewer\"` \u2192 `role=\"participant\"`. Behaviour-preserving, verified before editing: no live code compares either value (the only live role comparisons in the tree are `!= \"collator\"` \u00d72 and `player_manager` in exp20).\n\nDeliberately **not** built: the role layer, its TOML content, or any overlap gate \u2014 per the brief's own warning and the simplest-sufficient standard.\n\n## `falsifier`\n\nThe guard **is** the falsifier and it ran red before the fix: first execution reported `bench/tools/prove_ouroboros_loop_close.py:258/:260 role='reviewer'` as live strays (and the pre-edit run would equally have named `role='player'`), i.e. it demonstrated the defect against the real modules by import and AST, no retyped code. Commands and outputs:\n\n- `python3 -m pytest bench/tests/test_the_structural_role_vocabulary_cannot_fork_silently_2026-10-31.py -q` \u2192 **2 failed** (strays caught) \u2192 after fix \u2192 **4 passed in 2.71s**.\n- Neighbour guards: `pytest test_which_role_vocabulary\u2026 test_what_layer_order_decides\u2026 test_the_study_arms_are_expressible\u2026 test_the_ranking_mechanism\u2026` \u2192 **39 passed**; `pytest bench/tests/test_ouroboros_loop_close.py` \u2192 **42 passed**.\n\n## `refutation_condition`\n\nMy verdict is overturned if any of: (1) a live code path is shown that selects *policy* (not dispatch/ordering) on the structural role \u2014 then the structural dimension does belong in the registry and NEITHER collapses toward ORTHOGONAL-with-2-layers; (2) a caller is produced that passes a functional role into `compose()`/`load_effective_policy` keyed by `mc.role` \u2014 I claim the brief's \"caller already exists\" names the wrong caller (structural reads cannot key a functional layer; the real caller is `composer.py:1878`, which passes domain+model only); (3) somebody demonstrates `classifier` expressible as a seat position or exp20's arbitrator bundle expressible as a single functional atom \u2014 then UNIFIED is lossless and I am wrong. My WARN answer falls if a run is shown where a silently-degraded role policy caused a wrong result that a raise would have prevented \u2014 that committed measurement would justify RAISE.\n\n## `strongest_disagreement`\n\nThe brief says \"a role dimension already exists and it is not his\" \u2014 singular. **Execution shows two**, unlinked: the orchestrator `Literal` and `bench/dm/_types.py:311 Role` (PM/COL/PAR), and the brief's artefact list omits `bench/dm/` entirely, which is where the promotion/demotion semantics its own caveat asks about actually live (`RoleAssignment.reassign`, PM static HARD C3). Worse, the \"existing vocabulary\" was already forked in live code \u2014 4 construction sites carried values outside the declared `Literal`, unenforced and unread \u2014 so the 63-to-4 incumbency the brief prices is the incumbency of a vocabulary that could not even police its own membership. Related: the vocabulary tally is **unstable as an instrument** \u2014 it moved 63/67\u219274/78 partly because my conformance fix and my guard (which must quote the words it guards) feed the count. A figure that grows when you write the test for it prices nothing; the brief was right to rule it out as a decider, but for an additional, measured reason.\n\n## Termination\n\n**5 passes.** (1) producers reproduced; (2) registry collision/monotonicity semantics established by execution; (3) role-consumer trace \u2014 found the second declaration, the role-blind ranking code, 0-caller `get_by_role`, 4 stray sites; (4) fix + falsifier, red\u2192green; (5) neighbour guards, Wolfram cross-check, tally re-measurement \u2014 the last pass added the tally-instability observation and **no new above-threshold finding**. Converged. One immaterial note under \u00a78 marking, not blocking: `get_by_role` (`experiment_11_orchestrator.py:96`) has 0 callers \u2014 a selector nothing reaches, pre-existing; flagged, not fixed, since removing it is his call under the additive standard.",
+  "t_start_epoch": 1793412096.5865989,
+  "t_end_epoch": 1793412667.471586,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_punxem4q/repo",
+      "built": false
+    }
+  ]
+}

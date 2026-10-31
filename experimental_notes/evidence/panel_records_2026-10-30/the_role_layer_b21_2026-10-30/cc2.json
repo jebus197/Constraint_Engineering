@@ -1,0 +1,232 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 20372,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ai/cdsfl 2>/dev/null || cd ~/cdsfl 2>/dev/null || pwd; ls\", \"description\": \"Locate repo root\"}",
+      "t_offset_s": 5.618
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find / -maxdepth 4 -name \\\"cdsfl_registry\\\" -type d 2>/dev/null | head\", \"description\": \"Find registry dir\"}",
+      "t_offset_s": 6.513
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/cdsfl_registry/ && echo \\\"---DOMAINS---\\\" && ls bench/cdsfl_registry/domains/ && echo \\\"---MODELS---\\\" && ls bench/cdsfl_registry/models/ && echo \\\"---SCRIPTS---\\\" && ls scripts/ | grep -E \\\"role_vocab|layer_order\\\" \", \"description\": \"List registry layers and producer scripts\"}",
+      "t_offset_s": 11.946
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/cdsfl_registry/registry.py && cat bench/cdsfl_registry/registry.py\", \"description\": \"Read registry.py\"}",
+      "t_offset_s": 13.11
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py 2>&1 | tail -60\", \"description\": \"Run role vocabulary producer\"}",
+      "t_offset_s": 19.241
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/what_does_layer_order_actually_decide_2026-10-30.py 2>&1 | tail -80\", \"description\": \"Run layer order producer\"}",
+      "t_offset_s": 20.437
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '40,110p' bench/experiment_11_orchestrator.py && echo \\\"=== runner reads ===\\\" && sed -n '13180,13200p;13260,13280p' bench/reference_runner_v3.py\", \"description\": \"Read Role enum and runner reads\"}",
+      "t_offset_s": 22.13
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"player_manager\\\" bench/ scripts/ --include=*.py --include=*.toml --include=*.md | head -30\", \"description\": \"Find player_manager sites\"}",
+      "t_offset_s": 30.972
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"promot\\\\|demot\\\\|relegat\\\\|bench_model\\\\|substitut\\\" bench/ scripts/ docs/ --include=*.py --include=*.md | head -30\", \"description\": \"Find promotion/demotion code\"}",
+      "t_offset_s": 32.546
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"player_manager\", \"output_mode\": \"content\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ycxcf7mt/repo\", \"head_limit\": 40}",
+      "t_offset_s": 36.28
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"promot|demot|relegat\", \"output_mode\": \"files_with_matches\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ycxcf7mt/repo\", \"head_limit\": 40}",
+      "t_offset_s": 37.528
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '625,650p' bench/tools/run_simulated_experiment.py && echo \\\"=== grep 'player' as role value ===\\\" && grep -rn 'role=\\\"player\\\"\\\\|role='\\\"'\\\"'player'\\\"'\\\"'\\\\|== \\\"player\\\"\\\\|\\\"player\\\"' bench/*.py bench/tools/*.py | head -20\", \"description\": \"Check player role value\"}",
+      "t_offset_s": 44.704
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"promot\\\\|demot\\\\|relegat\\\\|role\\\" bench/routing.py | head -40 && echo \\\"=== wc ===\\\" && wc -l bench/routing.py\", \"description\": \"Inspect routing.py\"}",
+      "t_offset_s": 46.11
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"get_by_role\\\" . --include=\\\"*.py\\\" 2>/dev/null; echo \\\"=== routing ctx ===\\\"; sed -n '45,60p;540,560p' bench/routing.py\", \"description\": \"Check get_by_role callers and routing football terms\"}",
+      "t_offset_s": 54.552
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.cdsfl_registry.registry import _check_monotonicity, load_effective_policy, PolicyViolationError\\nimport inspect\\nprint('SIGNATURE:', inspect.signature(_check_monotonicity))\\nprint('params:', list(inspect.signature(_check_monotonicity).parameters))\\ntry:\\n    _check_monotonicity({}, 'empty')\\n    print('EMPTY DICT: did NOT r",
+      "t_offset_s": 58.065
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"touch bench/cdsfl_registry/.wtest 2>&1 && echo \\\"WRITABLE\\\" && rm bench/cdsfl_registry/.wtest; ls bench/cdsfl_registry/targets | head; echo \\\"--- universal top-level ---\\\"; python3 -c \\\"\\nimport tomllib\\nd=tomllib.load(open('bench/cdsfl_registry/universal.toml','rb'))\\nprint(sorted(d.keys()))\\n\\\"\", \"description\": \"Check writability and universal keys\"}",
+      "t_offset_s": 89.238
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,60p' scripts/what_does_layer_order_actually_decide_2026-10-30.py\", \"description\": \"Read producer header\"}",
+      "t_offset_s": 90.367
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn 'role=' --include=*.py . | grep -v 'test_' | head -40\", \"description\": \"Enumerate all role= constructions\"}",
+      "t_offset_s": 153.337
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '110,175p' bench/experiment_11_orchestrator.py\", \"description\": \"Read default config roles\"}",
+      "t_offset_s": 154.43
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"role=[\\\"'][a-z_]+[\\\"']\", \"output_mode\": \"content\", \"glob\": \"**/*.py\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ycxcf7mt/repo\", \"head_limit\": 60}",
+      "t_offset_s": 159.051
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ycxcf7mt/repo/scripts/how_many_role_values_does_the_code_construct_2026-10-31.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"The declared `Role` has 3 members; the code CONSTRUCTS 5. Measured by AST.\\n\\nWHY THIS EXISTS. Panel brief `the_role_layer_b21_2026-10-30` asks whether the\\nharness's existing role vocabulary",
+      "t_offset_s": 210.741
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/how_many_role_values_does_the_code_construct_2026-10-31.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The declared `Role` has 3 members; the code CONSTRUCTS 5. Measured by AST.\\n\\nWHY THIS EXISTS. Panel brief `the_role_layer_b21_2026-10-30` asks whether the\\nharness's existing role vocabulary and the founder's proposed one are 1\\ndimension or 2. Both the brief and\\n`script",
+      "t_offset_s": 240.902
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn '\\\"collator\\\"' bench/*.py bench/tools/*.py bench/tests/*.py scripts/*.py 2>/dev/null | grep -v \\\"^bench/logs\\\" | head -40\", \"description\": \"Find all collator string sites in live python\"}",
+      "t_offset_s": 253.289
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"collator\\\" bench/experiment_11_orchestrator.py bench/run_exp20_confer.py | head -20; echo \\\"=== role assigned non-literally? ===\\\"; grep -rn \\\"\\\\.role *=\\\" bench/*.py bench/tools/*.py 2>/dev/null | head\", \"description\": \"Check collator and dynamic role assignment\"}",
+      "t_offset_s": 254.707
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/may_two_policy_layers_collide_2026-10-31.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"May 2 policy layers write the same leaf? Measured, and the answer is 2-sided.\\n\\nWHY THIS EXISTS. Panel brief `the_role_layer_b21_2026-10-30` establishes by\\nexecution that reversing the (domain, model) merge order moves 0 of 60 pairs,\\nthen frames the remaining live question as:\\n\\n    ",
+      "t_offset_s": 313.353
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.cdsfl_registry import registry as R\\ndef leaves(d,p=''):\\n    o={}\\n    for k,v in d.items():\\n        q=f'{p}{k}'\\n        if isinstance(v,dict): o.update(leaves(v,q+'.'))\\n        else: o[q]=v\\n    return o\\nu=leaves(R._load_toml(R.REGISTRY_DIR/'universal.toml'))\\nc=leaves(R._load_toml(R.REGISTRY_DIR/'domains'/'cross_doma",
+      "t_offset_s": 328.257
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== does routing.py read mc.role? ===\\\"; grep -cn \\\"mc\\\\.role\\\\|\\\\.role\\\\b\\\\|ModelConfig\\\" bench/routing.py; grep -n \\\"role\\\" bench/routing.py | head; echo \\\"=== season_strength_order signature ===\\\"; grep -n \\\"def season_strength_order\\\" -A4 bench/routing.py; echo \\\"=== callers of season_strength_order ===\\\"; grep -rn \\\"season_strength_order\\\" --include=\\\"*.py\\\" bench scripts ",
+      "t_offset_s": 374.36
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nfrom scipy.stats import beta\\nimport statsmodels.stats.proportion as sp\\nimport mpmath as mp\\nn,k=98,1\\nlo,hi=sp.proportion_confint(k,n,alpha=0.05,method='wilson')\\nprint(f'override rate {k}/{n} = {k/n:.6f}  Wilson 95% [{lo:.6f}, {hi:.6f}]')\\n# Clopper-Pearson exact\\nclo,chi=sp.proportion_confint(k,n,alpha=0.05,method='beta')\\nprint(f'Clopper-Pearson 95% [{clo:.6f}, {ch",
+      "t_offset_s": 379.512
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport mpmath as mp, statsmodels.stats.proportion as sp\\nmp.mp.dps=40\\nn,k=98,1\\nf=lambda p: mp.betainc(k, n-k+1, 0, p, regularized=True)-mp.mpf('0.975')\\nhi=mp.findroot(f, (mp.mpf('0.001'), mp.mpf('0.2')), solver='bisect', tol=mp.mpf('1e-30'))\\nlo_f=lambda p: mp.betainc(k, n-k+1, 0, p, regularized=True)-mp.mpf('0.025')\\nprint(f'mpmath Clopper-Pearson upper (1/98) = {fl",
+      "t_offset_s": 388.483
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && timeout 240 wolframscript -code 'With[{n=98,k=1},{N[k/n,8], N[InverseBetaRegularized[0.975, k, n-k+1],8], N[InverseBetaRegularized[0.025, k, n-k+1],8]}]' 2>&1; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram second falsifier on Clopper-Pearson\"}",
+      "t_offset_s": 390.437
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport mpmath as mp, statsmodels.stats.proportion as sp\\nmp.mp.dps=40\\nn,k=98,1\\n# Clopper-Pearson UPPER = InvBeta(1-a/2, k+1, n-k);  LOWER = InvBeta(a/2, k, n-k+1)\\nup=lambda p: mp.betainc(k+1, n-k, 0, p, regularized=True)-mp.mpf('0.975')\\nlo=lambda p: mp.betainc(k,   n-k+1, 0, p, regularized=True)-mp.mpf('0.025')\\nhi=mp.findroot(up,(mp.mpf('1e-6'),mp.mpf('0.5')),solve",
+      "t_offset_s": 399.691
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/georgejackson/Developer_Projects/Constraint_Engineering 2>/dev/null; PATH=\\\"$PATH:/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/wolfram_gate/serial\\\" wolframscript -code 'With[{n=98,k=1},N[{k/n, InverseBetaRegularized[0.025,k,n-k+1], InverseBetaRegularized[0.975,k+1,n-k], 1-0.05^(1/60)},9]]' 2>&1; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram cross-",
+      "t_offset_s": 401.9
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"^from typing\\\\|^import typing\\\\|from typing import\\\" bench/experiment_11_orchestrator.py | head; echo \\\"---\\\"; sed -n '55,62p' bench/experiment_11_orchestrator.py; echo \\\"--- 86,100 ---\\\"; sed -n '86,100p' bench/experiment_11_orchestrator.py\", \"description\": \"Check typing imports and edit anchors\"}",
+      "t_offset_s": 417.607
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport io, re, pathlib\\np = pathlib.Path(\\\"bench/experiment_11_orchestrator.py\\\")\\nsrc = p.read_text(encoding=\\\"utf-8\\\")\\n\\nold_imp = \\\"from typing import Any, Callable, Literal, Optional\\\"\\nnew_imp = \\\"from typing import Any, Callable, Literal, Optional, get_args\\\"\\nassert src.count(old_imp) == 1, src.count(old_imp)\\nsrc = src.replace(old_imp, new_imp)\\n\\nold = '",
+      "t_offset_s": 443.25
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/falsifier_role_literal_unenforced_2026-10-31.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"FALSIFIER: `ModelConfig.role` accepts a spelling `Role` does not declare.\\n\\nImports the REAL target -- `bench.experiment_11_orchestrator` -- and constructs\\nreal `ModelConfig` objects. Nothing is retyped or paraphrased.\\n\\nFAILS IFF THE DEFECT IS PRESENT. The defect is that `Role` i",
+      "t_offset_s": 464.692
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"set -e\\ngit rev-parse --short HEAD 2>/dev/null || echo \\\"NO GIT\\\"\\ncp bench/experiment_11_orchestrator.py /tmp/fixed_orch.py\\ngit show HEAD:bench/experiment_11_orchestrator.py > bench/experiment_11_orchestrator.py\\necho \\\"=== RUN PRE-FIX (HEAD) ===\\\"\\nset +e\\npython3 scripts/falsifier_role_literal_unenforced_2026-10-31.py; echo \\\"EXIT=$?\\\"\\nset -e\\ncp /tmp/fixed_orch.py bench/experime",
+      "t_offset_s": 472.677
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/experiment_11_orchestrator.py; python3 -c \\\"\\nimport sys;sys.path.insert(0,'.')\\nfrom bench.experiment_11_orchestrator import canonical_role\\nprint('INTACT, canonical_role(\\\\\\\"player\\\\\\\") =', canonical_role('player'))\\n\\\"\", \"description\": \"Verify file intact after git mishap\"}",
+      "t_offset_s": 484.195
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"set -e\\ncp bench/experiment_11_orchestrator.py /tmp/fixed_orch.py\\n# Faithful revert of MY OWN patch: delete exactly the __post_init__ block I added.\\npython3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/experiment_11_orchestrator.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nblock = '''\\n    def __post_init__(self) -> None:\\n        # The ONLY chokepoint every ModelConfig pass",
+      "t_offset_s": 492.296
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_role_literal_is_enforced_2026-10-31.py <<'PYEOF'\\n\\\"\\\"\\\"`Role` is enforced at construction, and the enforcement preserves behaviour.\\n\\nPanel round `the_role_layer_b21_2026-10-30`. Before this, `Role` at\\n`bench/experiment_11_orchestrator.py:59` was a `Literal` annotation that no\\nruntime check read, and an AST scan of every live `ModelConfig(role=...)` site",
+      "t_offset_s": 518.216
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_secondary_route_fallback.py bench/tests/test_sim_label_does_not_disable_the_runner_2026-08-30.py bench/tests/test_spec_metadata_cannot_break_a_run_2026-08-31.py bench/tests/test_which_role_vocabulary_2026-10-30.py bench/tests/test_the_sim_seam_is_every_primitive_2026-09-01.py bench/tests/test_the_runner_core_lookups_announce_2026-10-29.py -q 2>&1 | t",
+      "t_offset_s": 522.378
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_panel_cwd_reaches_worker_threads_2026-09-08.py bench/tests/test_target_attribution_attaches_2026-09-17.py bench/tests/test_seats_must_answer_before_work_is_passed_2026-10-06.py bench/tests/test_the_ranking_is_deterministic_and_exchangeable_2026-10-29.py -q 2>&1 | tail -12; echo \\\"=== registry CLI still valid ===\\\"; python3 -m bench.cdsfl_registry.reg",
+      "t_offset_s": 534.854
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys;sys.path.insert(0,'.')\\nfrom bench.cdsfl_registry import registry as R\\nu=R._load_toml(R.REGISTRY_DIR/'universal.toml')\\n# HARD_CONSTRAINTS does a strict bool type check; HARD_THRESHOLDS does not exclude bool.\\nfor val in (True, False):\\n    m=R._deep_merge(u,{'convergence':{'hard_coverage_threshold':val}})\\n    try:\\n        R._check_monotonicity(m,'t'); pri",
+      "t_offset_s": 547.36
+    }
+  ],
+  "n_tool_calls": 42,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 667.7,
+  "response": "## `verdict`\n\n**UNIFIED** \u2014 one dimension. There is no second dimension for a role layer to be orthogonal to, because the incumbent \"structural\" vocabulary does not exist as a vocabulary when you measure it rather than read it.\n\n## `reasoning`\n\n**Instrument 1 \u2014 `scripts/how_many_role_values_does_the_code_construct_2026-10-31.py` (written this round, AST, not grep).** The brief and the existing producer both take the incumbent vocabulary to be the 3 members of `Role`. Parsing every `ModelConfig(role=<literal>)` call site in live code (excluding `bench/logs/`, which holds `sandbox_harvest` copies of older revisions of the same files) gives **4 constructed values against 3 declared**, and the distribution is the finding:\n\n| value | declared | construction sites | what it decides |\n|---|---|---|---|\n| `participant` | yes | 16 | nothing \u2014 it means \"not the manager\" |\n| `player` | **no** | 9 | nothing; behaves as `participant` |\n| `reviewer` | **no** | 4 | nothing; behaves as `participant` |\n| `player_manager` | yes | 2 | dispatch last + `is_arbitrator` (`run_exp20_confer.py:253`, `:533`) |\n| `collator` | yes | **0** | nothing \u2014 nothing ever sets it |\n\n`collator` is read by ~35 live predicates (`mc.role != \"collator\"` at `reference_runner_v3.py:13189`/`:13269` and 16 sibling runners; `mc.role == \"collator\"` at `runner_core.py:382`, `experiment_11_orchestrator.py:2511` and 6 others) and written by zero. The reason is in the module's own docstring, line 6: *\"(caller) is collator only \u2014 no synthesis, no P-passes, no stop decisions.\"* **`collator` names the harness, not a seat.** It is a category error in a per-seat enum, so every `!= \"collator\"` filter is a tautology and every `== \"collator\"` branch is unreachable.\n\n**So the live role dimension carries exactly one discriminating bit: arbitrator-that-dispatches-last, or not.** Three declared values of which one is the harness and one is a no-op, plus two undeclared synonyms of the no-op. That is not a second axis; it is one bit with four spellings.\n\nHis `worker` / `classifier` / `orchestrator` is three values on *that same axis* \u2014 what a seat is dispatched to do \u2014 at finer granularity, and it contains the one live distinction (`orchestrator` \u2287 the arbitrator bit; `worker` \u2287 everything `participant`/`player`/`reviewer` collapse to). Two vocabularies on one axis reconcile; they do not need two layers.\n\n**The caveat's three questions, answered from the ranking code rather than the words.**\n\n1. **Does his vocabulary drop the promotion/demotion semantics? No \u2014 and neither does the incumbent one, because the role enum never held them.** `bench/routing.py` is 988 lines and contains **0** occurrences of `.role`, `mc.role` or `ModelConfig` (`grep -c` \u2192 0). `season_strength_order(registry, labels, frozen=None, alpha=0.05)` ranks on `labels` and measured falsification outcomes. Promotion and demotion are **label-keyed and strength-keyed, on an axis disjoint from role**. Renaming the enum drops nothing, because the enum was never load-bearing for it.\n2. **Is anything dropped needed?** One thing, and it is nameable: `player_manager` encodes a *conjunction* \u2014 `run_exp20_confer.py:253-254` splits `active` into manager + participants and then dispatches **all** of them, with the manager also reviewing (`is_last and mc.role == \"player_manager\"`). If `orchestrator` is later read as \"dispatches others, does not itself review\", that dual membership is lost. That is a definition to write down, not a vocabulary to preserve.\n3. **One change or two? TWO.** Measured, not judged: the enum and `routing.py` are on different axes, in different files, and `routing.py` does not read `mc.role`. Renaming `player_manager` cannot touch `season_strength_order`; retiring \"season\" / \"players/teams should get demoted promoted\" from `routing.py:543-560` cannot touch the enum. Treating them as one change is how the enum rename would silently acquire a ranking-semantics argument it has no mechanism to affect.\n\n**Instrument 2 \u2014 `scripts/what_does_layer_order_actually_decide_2026-10-30.py` (the brief's producer).** Reproduced verbatim: 60 pairs, 17 HARD dotpaths, **0 of 60** differ on reversal, Wilson 95% [0.000000, 0.060172], one-sided exact upper 0.048703; absence `RAISE / SILENT / WARN`; `roles_dir_exists False`. Matched the brief exactly.\n\n**Instrument 3 \u2014 `_check_monotonicity` signature and empty-dict call.** `(merged: dict[str, Any], layer_name: str) -> None` \u2014 no previous-policy parameter, so it compares against module constants. `_check_monotonicity({}, 'empty')` raises `PolicyViolationError` with **17** violations, one per protected dotpath. Order-independent by construction, confirmed by execution.\n\n**Instrument 4 \u2014 `scripts/may_two_policy_layers_collide_2026-10-31.py` (written this round).** Four results, one of which refutes my own hypothesis:\n\n- Sibling collisions: **0 of 60**, reproduced independently.\n- **I predicted overlap with layer 1 would be pervasive, and I was wrong.** Of 98 leaf writes across 16 lower-layer files, exactly **1** overrides a `universal.toml` leaf: `convergence.advisory_d_after_round`, 3 \u2192 2, SOFT, in `cross_domain.toml`. Override rate 1/98 = 0.010204, Clopper-Pearson 95% [0.000258312, 0.055544972] \u2014 scipy, statsmodels, mpmath (bisection, 40 dps) and Wolfram Language (local Wolfram Engine, `InverseBetaRegularized`) agree to 1e-9. **The registry is used as a disjoint namespace union, not an override stack: 97 of 98 writes add a new key.** The whole `_deep_merge` + monotonicity apparatus guards one live override.\n- A collision, executed: two layers setting `verification.demo_soft` to 5 and 1 give `1` merged A\u2192B and `5` merged B\u2192A, with **0 warnings and no record of the discarded value anywhere in the merged policy**. Last writer wins, silently.\n- Hostile role layer lowering `verification.peer_support_min_families` 2 \u2192 1: caught at layer `'role'` in **3/3** insertion positions.\n\n## `precedence`\n\n**Layer 5, after model.** The role selects the seat actually doing the work, so it is the most specific selector; and the position is, by the measurement above, nearly arbitrary \u2014 it decides 0 keys today and the registry's own usage pattern (97/98 adds) says it will keep deciding ~0.\n\n**My answer does not depend on layers being permitted to overlap.** It depends on a collision being *reported*. Overlap must stay permitted \u2014 forbidding it would disable the one override in `cross_domain.toml` and disable overriding itself, which is the engine's documented purpose and a removal with no replacement. Refusal is also wrong for a different reason: it converts a configuration-authoring mistake into a run-time abort in a project whose motivation here is substrate agnosticism. **Permit, and report.** Silent last-writer-wins on the policy that configures the measurement machinery is CDSFL core \u00a710 category 3/4: a run is configured differently from how either file reads, and the artefact cannot distinguish the two.\n\n## `absence_behaviour`\n\n**WARN** \u2014 `warnings.warn` and continue, the unknown-domain precedent at `registry.py`, and the choice is evidenced rather than preferred.\n\n- **RAISE is wrong on the founder's own stated motivation.** The reason for role management is *\"We clearly cannot make such claims, and then say 'Oh, btw, that isn't really true.'\"* A layer that raises on a missing file is a layer every new substrate must satisfy before it can run at all. The model layer already does this and it is the harshest behaviour in the engine.\n- **SILENT is refuted by measurement, not by taste.** `tasks/` **does not exist** (`tasks_dir_exists False`). So layer 3 is not \"silent when a file is missing\" \u2014 layer 3 has **never applied, for any `task_id`, since the directory it reads from is absent**, and nothing announced it. The documented \"four-layer configuration hierarchy\" is a three-layer merge in practice. SILENT is the precedent that produced that, which is the whole argument against it.\n- **WARN is the only one of the three with evidence of working as intended**: it continues (so agnosticism holds) and it announces (so a run log distinguishes \"no role policy applied\" from \"role policy applied\"). `roles_dir_exists False` today, so WARN is also what the layer will do on day one \u2014 and will say so.\n\n## `instrument_results`\n\n| command | key output | matched brief? |\n|---|---|---|\n| `python3 scripts/which_role_vocabulary_does_the_code_speak_2026-10-30.py` | `63/67 = 0.940299  Wilson [0.856305, 0.976541]`, 24 files | **yes**, and the figure is not load-bearing \u2014 see disagreement |\n| `python3 scripts/what_does_layer_order_actually_decide_2026-10-30.py` | `0 of 60 pair(s)`; `[0.000000, 0.060172]`; `0.048703`; `17` HARD dotpaths; `RAISE/SILENT/WARN`; `roles_dir_exists False` | **yes, every figure** |\n| `python3 -c \"inspect.signature(_check_monotonicity)\"` \u2192 `(merged, layer_name)`; `_check_monotonicity({}, 'empty')` | raised `PolicyViolationError`, 17 violations | **yes** |\n| `python3 scripts/how_many_role_values_does_the_code_construct_2026-10-31.py --probe-reads` | declared 3, constructed 4; undeclared `['player','reviewer']`; **declared-but-never-constructed `['collator']`** | **no \u2014 refutes the brief's premise** |\n| `python3 scripts/may_two_policy_layers_collide_2026-10-31.py` | siblings 0/60; ancestor overrides **1/98**; collision silent, 0 warnings; hostile caught 3/3; `tasks_dir_exists False` | partly \u2014 collision/absence as stated; **1/98 refutes my own hypothesis** |\n| `wolframscript -code '\u2026InverseBetaRegularized\u2026'` | `{0.0102040816\u2026, 0.00025831161124090354, 0.05554497166331361, 0.04870291331009746}`, exit 0, `Out` present, no `Name::tag` | computed; agrees with scipy/statsmodels/mpmath to 1e-9 |\n\nWolfram-derived values above are attributed to **Wolfram Language (local Wolfram Engine, via `wolframscript`)**. It is the second falsifier only; the open-source stack computed every value first. `wolframscript` was not on `PATH` and `timeout` is absent on this host \u2014 both worked around, neither a blocker.\n\n## `fix`\n\nWritten into the sandbox tree at its real path: **`bench/experiment_11_orchestrator.py`** (+ two instrument scripts, one falsifier, one test file).\n\nEnforcement at the one chokepoint every `ModelConfig` passes through:\n\n- `ROLE_ALIASES = {\"player\": \"participant\", \"reviewer\": \"participant\"}` \u2014 only the two spellings the AST scan **found in the tree**. The founder's `worker`/`classifier`/`orchestrator` are deliberately **not** entered: which member each maps to, and whether `classifier` has a member at all, is policy.\n- `canonical_role(value)` \u2014 resolves via `get_args(Role)`, so the `Literal` is the single source of truth and no second member list can drift. This is the defect it closes, so it must not reintroduce it.\n- `ModelConfig.__post_init__` \u2192 `self.role = canonical_role(self.role)`. Raises `ValueError` on a genuinely unknown spelling.\n- `collator` **retained**, with its 0-writer/~35-reader asymmetry documented at the declaration. Nothing replaces it and I have no committed measurement that a replacement dominates, so removing it is not available to me. It is reported for the founder, not deleted.\n\n**This is the no-flag-day answer to the 63-values-across-24-files cost.** Normalising at construction means every reader compares against a canonical member and never against a spelling. Adopting a different role vocabulary is then **rows in `ROLE_ALIASES` plus a changed `Role`, with zero changes to the ~35 reader predicates**. Delivered and tested, not described.\n\n**Behaviour preservation, executed:** both aliases satisfy `(alias != \"collator\") == (target != \"collator\")` and `(alias == \"player_manager\") == (target == \"player_manager\")`, so every live read is bit-identical. Exactly one behaviour changes, in one direction: `get_by_role(\"participant\")` now finds a seat constructed as `player`, which it previously missed \u2014 and `get_by_role` has **0 callers today**, which is itself an instance of the project's named failure mode and the reason the drift was latent.\n\nI did **not** build the role layer, and I did not compose a second fix onto this one. The silent-collision reporter is a real above-threshold defect (below) but it is a *different* defect, and I have no measurement that composing it with this fix beats either alone.\n\n## `falsifier`\n\n`scripts/falsifier_role_literal_unenforced_2026-10-31.py` \u2014 imports the real `bench.experiment_11_orchestrator`, constructs real `ModelConfig` objects, retypes nothing.\n\n```\n$ python3 scripts/falsifier_role_literal_unenforced_2026-10-31.py     # WITH FIX\ndeclared Role members : ['collator', 'player_manager', 'participant']\n  'player'     normalised to 'participant'\n  'reviewer'   normalised to 'participant'\n  get_by_role('participant') finds the 'player' seat : True\nCLEAN: no undeclared spelling survives construction; the defect is not demonstrated.\nEXIT=0\n```\n\nNegative control \u2014 my own patch's 7-line `__post_init__` reverted programmatically (asserted single anchor match), file restored after:\n\n```\n$ python3 scripts/falsifier_role_literal_unenforced_2026-10-31.py     # DEFECT PRESENT\n  'player'     SURVIVED as 'player' -- outside ['collator', 'player_manager', 'participant']\n  'reviewer'   SURVIVED as 'reviewer' -- outside [...]\n  get_by_role('participant') finds the 'player' seat : False\n  dispatch filter (role != 'collator') passes it     : True\nFALSIFIED\nAssertionError: `Role` is unenforced: ['player', 'reviewer'] survived construction outside\n['collator', 'player_manager', 'participant']. Every live read is `!= \"collator\"`, so such a\nseat is dispatched as a reviewer while a role-keyed lookup misses it.\n```\n\nFails iff the defect is present, in both directions.\n\n```\n$ python3 -m pytest bench/tests/test_the_role_literal_is_enforced_2026-10-31.py -q\n6 passed in 0.19s\n$ python3 -m pytest <10 regression files that construct ModelConfig> -q\n58 passed in 8.15s   /   44 passed in 3.81s\n$ python3 -m bench.cdsfl_registry.registry\n17 \u00d7 PASS, All configs valid.\n```\n\n108 existing tests, 6 new, registry validation clean. The full suite was not run \u2014 it exceeds the dispatch budget.\n\n## `refutation_condition`\n\nMy answer is overturned by any of:\n\n1. **A role value other than `player_manager` changing an outcome.** If a `mc.role == \"collator\"` branch is reached by any live path \u2014 a construction site I missed, a dict/TOML/JSON config route, or a dynamic `.role =` assignment \u2014 then `collator` is live, the incumbent vocabulary has \u22652 discriminating values, and \"one bit with four spellings\" is wrong. My scan covers literal `role=` kwargs to `ModelConfig(...)` only; a non-literal or non-`ModelConfig` route would escape it. **This is the weakest link in my derivation and I name it as such.**\n2. **`classifier` turning out not to be on the dispatch axis.** If a classifier is a *function applied to content* rather than a thing a seat is dispatched to be \u2014 e.g. a per-finding adjudication step that any seat performs \u2014 then it is genuinely a second dimension and ORTHOGONAL is right. I could not settle this from the code because no seat classifies today; it rests on how the founder defines it, and I say so rather than assuming.\n3. **Promotion/demotion turning out to be role-keyed somewhere.** `bench/routing.py` has 0 role references, but if another ranking path reads `mc.role`, then the enum *is* load-bearing for the analogy's semantics and caveat answers 1 and 3 both flip.\n4. A sibling-collision-free merge being shown to be *enforced* rather than conventional \u2014 which would make the collision reporter unnecessary.\n\n## `strongest_disagreement`\n\n**The brief's load-bearing premise is a tautology, and it is the sentence the fix-is-cheap argument rests on:** *\"The runner reads it live at `bench/reference_runner_v3.py:13189` and `:13269` as `mc.role != \"collator\"` \u2026 So a caller for a role layer already exists, which the additive standard requires and which would otherwise have to be invented.\"*\n\nBoth cited reads test for a value **no construction site in the repository ever sets**. They are `True` for every seat that has ever existed. The brief verified that the reads exist and that the line numbers had drifted 18 lines \u2014 careful work \u2014 but did not verify that anything reaches the branch, which is the only thing the additive standard actually asks. A read nothing writes is the mirror image of the failure the standard names, and this instance has ~35 readers.\n\nTwo further disagreements, one of them with myself:\n\n- **The brief's own refutation condition 3 is right for a reason stronger than it gives.** It says 63-to-4 should not decide it because incumbency is not an argument. The measurement says worse: **37 of those 63 occurrences are `collator`**, a value with zero writers. The tally is largely counting readers of dead code, and its denominator \u2014 a grep for 3 declared words plus 3 proposed ones \u2014 cannot see `player` (9 sites) or `reviewer` (4) by construction, so it could not have detected that the literal is unenforced. The figure is sound as a *renaming cost* and misleading as evidence about what a role *is*.\n- **Against myself: I predicted ancestor overlap would be pervasive and that this would show overlap is already permitted-and-pervasive. The measurement refuted me \u2014 1 of 98 leaf writes.** Reported because it is information. It makes the brief's framing *more* right than I expected (the layers really are near-disjoint), and it sharpens the live question rather than dissolving it: a 5-layer merge whose layers overlap on 1 leaf in 98 has no exercised override behaviour at all, so the first real sibling collision will be the first time anyone finds out it is silent.\n\n**One above-threshold defect I report without fixing, so it is not mistaken for settled.** A leaf collision between any two layers resolves last-writer-wins with no warning, no log entry and no trace of the discarded value in the merged policy (executed: 5 vs 1 \u2192 `1` one way, `5` the other, 0 warnings). Today the exposure is 0 sibling pairs, so it is latent; adding any fifth layer is the point at which it becomes live, because a role policy plausibly wants `verification.*` or `convergence.*` \u2014 the namespaces domains already write. The fix is to record discarded values on the merged policy and `warnings.warn` once per collision \u2014 permit and report, never refuse. I did not build it: it is a second defect, not a composition with the role fix, and composing them on no measurement is the thing the composability directive forbids.\n\n**One below-threshold observation, stated so it is not mistaken for a finding.** `HARD_CONSTRAINTS` does a strict `isinstance(actual, bool)` check with an explicit comment that `1` is not `true`; the symmetric check is absent from `HARD_THRESHOLDS`, where `isinstance(True, int)` is `True`. Executed: `convergence.hard_coverage_threshold = true` is **accepted** (`False` correctly raises). But `int(True) == 1 == ` the floor, so the accepted value is numerically identical to the required one. Type-hygiene asymmetry, no behavioural consequence, below the \u00a76 threshold. Reported, not fixed.\n\n## `termination`\n\n**Four passes.**\n\n1. Ran both named producers; verified `_check_monotonicity`'s signature and empty-dict raise; found `get_by_role` has 0 callers.\n2. AST scan of construction sites \u2192 4 constructed vs 3 declared; `collator` 0 writers / ~35 readers. **The pass that decided the verdict.**\n3. Collision, ancestor-overlap, position-independence and absence instrument \u2192 refuted my own ancestor-overlap hypothesis (1/98); confirmed silent last-writer-wins; 3/3 hostile-layer catches; found `tasks/` has never existed.\n4. Fix, falsifier with negative control, 108 regression tests, registry validation, and the `bool`-in-`HARD_THRESHOLDS` check.\n\n**Pass 4 added nothing above threshold** \u2014 its one new observation (`hard_coverage_threshold = true` accepted) is numerically inert and is reported as below threshold. \u00a76's criteria are met for the question asked: the hard assumptions were tested by execution, the one residual above-threshold finding (silent collision) is named with its mechanism and exposure rather than left implicit, and no further pass is indicated by a specific mechanism I can name. I am **not** declaring the artefacts defect-free \u2014 I am declaring this question answered and naming the weakest link in my own derivation (refutation condition 1) rather than claiming it closed.",
+  "t_start_epoch": 1793412076.5824158,
+  "t_end_epoch": 1793412744.293088,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ycxcf7mt/repo",
+      "built": false
+    }
+  ]
+}

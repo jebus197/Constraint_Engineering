@@ -2221,6 +2221,26 @@ class RunnerConfig:
     sk_enabled: bool = False
     test_cmd: Optional[str] = None
     sk_s_floor: float = 0.0  # domain-specific minimum S*
+    #: ★ CARRY R_k ACROSS PASSES. Founder instruction 2026-10-31, verbatim:
+    #: *"carry R forward across passes"*.
+    #:
+    #: WHAT IT REPAIRS, MEASURED. `R_k(0) = pi_k` was re-initialised for EVERY
+    #: finding on EVERY round, so the recursion of appendix section 1.1 ran once
+    #: and never accumulated. Across the archive `R_old` is 0.500000 in all
+    #: 1,252 entries carrying an `R_new` -- distinct count 1 -- and `R_new`
+    #: floors at 0.366667 with 743 of 1,252 sitting exactly there, 0.593450,
+    #: Wilson [0.565997, 0.620332]. So the recorded number was "the risk after
+    #: ONE pass from a fresh prior", not his definition, which is the risk
+    #: *"after a given number of passes"*. Producer:
+    #: `scripts/his_severity_definition_is_the_models_own_quantity_2026-10-31.py`.
+    #:
+    #: WHY IT IS SAFE TO DEFAULT ON. The carry is keyed per FLAW CLASS and per
+    #: RUN, and on the first round nothing is carried, so round 1 is
+    #: byte-identical to the previous behaviour. Only rounds 2 and later differ,
+    #: and they differ by doing what the appendix specifies. Setting this False
+    #: reproduces the old behaviour exactly, which is what makes the change
+    #: measurable rather than merely asserted.
+    sk_carry_rk_across_rounds: bool = True
 
     # TARGET TYPE — a DECLARATION OF INTENT ONLY (A1, 2026-08-01).
     # "" (the default) means "do not declare". Any other value must equal what
@@ -17160,6 +17180,12 @@ def _evaluate_sk_for_findings(
     nu_k_by_finding: Optional[Dict[str, float]] = None,
     nu_k_default: float = 0.0,
     rk0_prior: Optional[Callable[[int], float]] = None,
+    #: Per-RUN, per-FLAW-CLASS carried residual risk. The CALLER owns the dict
+    #: so it survives across rounds; this function reads the carried value as
+    #: `R_k(i-1)` and writes `R_k(i)` back. None or empty means "nothing carried
+    #: yet", which is the first round and is identical to the old behaviour.
+    rk_carry: Optional[Dict[int, float]] = None,
+    carry_rk: bool = True,
     score_prose_listings: bool = False,
 ) -> Dict[str, Any]:
     """Evaluate S_k for all findings with proposed fixes in SEARCH/REPLACE format.
@@ -17238,8 +17264,20 @@ def _evaluate_sk_for_findings(
         #      cross-experiment immune memory, when consumption is on;
         #   3. the uniform base prior — what every run from Exp 37 to Exp 49
         #      actually used, because model_params is never populated.
+        _fc = int(entry.get("flaw_class") or 0)
         if "R" in meta:
             R_old, rk0_source = meta["R"], "model"
+        elif carry_rk and rk_carry is not None and _fc in rk_carry:
+            # ★ TIER 2, his instruction of 2026-10-31: the value THIS RUN
+            # reached for this flaw class on an earlier round. This is the whole
+            # point of the appendix's recursive form -- *"a model can pick it up
+            # at any point, assess current risk, and decide what to do next"* --
+            # and it was the one tier missing, which is why `R_old` was 0.5 in
+            # all 1,252 archived entries. It sits BELOW a model-supplied R,
+            # which is a fresher estimate, and ABOVE both priors, which are
+            # initial conditions and must not overwrite an updated state.
+            R_old, rk0_source = float(rk_carry[_fc]), "carried"
+            R_old = max(0.0, min(1.0, R_old))
         elif rk0_prior is not None:
             R_old, rk0_source = rk0_prior(int(entry.get("flaw_class") or 0)), "memory"
             R_old = max(0.0, min(1.0, float(R_old)))
@@ -17256,6 +17294,19 @@ def _evaluate_sk_for_findings(
             entry["sk_result"]["R_old"] = R_old
             entry["sk_result"]["R_new"] = R_new
             entry["sk_result"]["rk_note"] = why
+            # ONLY WHEN IT IS NOT THE DEFAULT, matching the convention the memory
+            # path already uses below. Writing it unconditionally broke
+            # test_immune_memory_consumption.py::test_off_path_is_the_uniform_prior,
+            # whose property is that turning a path OFF emits no new report keys --
+            # a real property, since a report shape that changes with a switch
+            # cannot be compared across runs.
+            if rk0_source != "uniform":
+                entry["sk_result"]["rk0_source"] = rk0_source
+            # NO_SCORE pins R_new to R_old, so this carries the state forward
+            # UNCHANGED rather than dropping it. A pass that formed no opinion
+            # must not reset the accumulated risk to the prior.
+            if carry_rk and rk_carry is not None:
+                rk_carry[_fc] = float(R_new)
             stats["no_score"] += 1
             _log(f"  S_k [{cid}]: NO_SCORE — "
                  f"{sk_result.gate_details.get('target_kind_reason', 'non-Python target')}"
@@ -17397,6 +17448,16 @@ def _evaluate_sk_for_findings(
                     )
                 entry["sk_result"]["R_old"] = R_old
                 entry["sk_result"]["R_new"] = R_new
+                # ONLY WHEN IT IS NOT THE DEFAULT, matching the convention the memory
+                # path already uses below. Writing it unconditionally broke
+                # test_immune_memory_consumption.py::test_off_path_is_the_uniform_prior,
+                # whose property is that turning a path OFF emits no new report keys --
+                # a real property, since a report shape that changes with a switch
+                # cannot be compared across runs.
+                if rk0_source != "uniform":
+                    entry["sk_result"]["rk0_source"] = rk0_source
+                if carry_rk and rk_carry is not None:
+                    rk_carry[_fc] = float(R_new)
                 # THE PRE-ROUND EXPECTATION, RECORDED BESIDE THE GATED NUMBER
                 # (2026-09-29, panel item 4). `R_new` is a negative-branch
                 # conditional; this is the branch-weighted expectation of the
@@ -18938,6 +18999,12 @@ def run_experiment(
     ouroboros_rk_inputs: Dict[str, Any] = {}
 
     # ── Main loop ──
+    # ★ THE CARRIED RESIDUAL RISK, one entry per flaw class, owned HERE so it
+    # survives the round loop. His instruction of 2026-10-31: "carry R forward
+    # across passes". Empty on entry, so round 1 behaves exactly as before and
+    # the change is confined to rounds 2 and later.
+    _rk_carry: Dict[int, float] = {}
+
     for round_idx in range(start_round, loop_cap):
         if round_idx >= effective_max:
             break
@@ -20021,6 +20088,8 @@ def run_experiment(
                 nu_k_by_finding=ouroboros_rk_inputs.get("nu_k_by_finding"),
                 nu_k_default=ouroboros_rk_inputs.get("nu_k_mean", 0.0),
                 rk0_prior=rk0_prior,
+                rk_carry=_rk_carry,
+                carry_rk=bool(getattr(cfg, "sk_carry_rk_across_rounds", True)),
                 # TASK A19. Read with getattr so an older config object cannot
                 # break this call; default False, so a run turns it on
                 # deliberately or not at all.

@@ -112,6 +112,16 @@ MODE_JUDGEMENTS: dict[str, tuple[str, str]] = {
     "immune_memory_consume_rk0": ("CHOICE", "how immune memory is consumed"),
     "alarm_on_empty_ladder": ("CHOICE", "whether an empty ladder raises an alarm"),
     "sk_enabled": ("CHOICE", "whether the sk score is computed"),
+    "sk_carry_rk_across_rounds": (
+        "CHOICE",
+        "whether R_k accumulates across passes or is re-seeded from the "
+        "prior every round. A CHOICE and not a MODE: it selects WHICH "
+        "quantity is computed -- the risk after n passes, which is the "
+        "appendix's definition and the founder's, against the risk after "
+        "one pass from a fresh prior -- rather than turning a facility on "
+        "or off. Default True on his instruction of 2026-10-31; False "
+        "reproduces every archived run exactly, which is what makes the "
+        "change measurable"),
     "hil_review": ("CHOICE", "whether the operator wants review stops at all; its "
                              "TRIGGER CONDITION is entry B27 and is now evidence-based"),
     "feedback_channel_enabled": ("CHOICE", "whether the feedback channel runs"),
