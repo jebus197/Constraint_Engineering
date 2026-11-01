@@ -1,0 +1,134 @@
+CLOSING REPORT, 1 November 2026
+
+
+PART 1. YOUR 4 QUESTIONS, ANSWERED FIRST
+
+Is the blocked run simulated or real. Simulated. Its own log says so on its first line, and all 6 of its seats are simulation seats. No money was spent and none would be spent re-running it. What it costs is machine time, and the figure is large: the original run took 342.1 minutes.
+
+Will the re-run use the old severity measure. Yes, the current gate, and that is the right choice for a reason stronger than caution. The run is simulated, and the run's own log records that in a simulated run the severity magnitudes are uncalibrated against a real panel and do not transfer. So a severity design cannot be validated on this run even in principle. Testing a new severity rule there would produce a number that means nothing outside the simulation.
+
+When will the new severity design first be used. There is no date, because what blocks it is a build and not a schedule. What severity IS has been settled: 2 independent panel seats both found that your definition is what the mathematical model already calls R sub k, its residual risk term, and both found it should gate convergence as an added 4th condition rather than replacing any part of the existing gate. What is missing is the difficulty term. I measured it again today rather than relying on the panel: the per finding parameter block is present on 0 of 3,256 archived entries, a 95 per cent interval of 0 to 0.001178, so the difficulty value never arrives and the code falls back to a fixed default every time. Until that term is written, R sub k carries no difficulty signal at all, which is exactly the 4 plus 4 against Riemann contrast you drew.
+
+What will its real world impact be. 4 things, each measured rather than asserted. To begin with, it can only ever make convergence harder. It is an added condition, so it can hold a run open longer but can never close a run sooner. Second, today it would decide almost nothing, because with the difficulty term defaulted that term has almost no spread: the panel measured the old form at exactly 0.5 for all 1,252 entries it examined, and the new form spanning only 0.3667 to 0.5 with 59.3 per cent of entries sitting on the floor. A condition that is nearly constant is not a decision. Third, once the difficulty term is written the impact is real and is about floors. The floor is derivable, and I rechecked it today on 3 tools: the composite update has exactly 2 fixed points, 1 and the re injection rate divided by the detection power, and the second is the one the recursion actually reaches. In plain terms, residual risk cannot be driven below the re injection figure divided by the detection figure, and a worked case makes it concrete: at a 5 per cent chance that a fix introduces a new flaw and a 20 per cent chance of catching a flaw that is there, the floor is 25 per cent and not 5 per cent. The appendix previously stated the floor as the re injection rate alone, and a solver confirms that form can never be the higher of the 2, so the old statement was always optimistic. Fourth, the boundary cannot be a universal constant, which both seats found independently, so each experiment will need its own derived bound and the reporting has to carry it.
+
+A separate mechanism is routinely confused with the above, and it is not the route. There is a separate flag that promotes an appendix section from shadow to deciding. It is not the new design and it should not be switched on. Measured: it is inert for convergence, because the series it feeds reads the raw severity and comes out byte identical with the flag on or off, and it is actively harmful at one fail safe, because it makes the severity half of a release condition constant true and so releases a proven unresolved critical finding from the one guard meant to hold it. Both panel seats refused it independently and by different arguments.
+
+
+PART 2. WHAT THE BLOCKED RUN ACTUALLY IS
+
+It is the study run of 3 October. 75 findings over 8 rounds, 6 simulated seats, 342.1 minutes of wall time, and a final set level agreement figure of 0.195.
+
+It did not converge, and the manner of its ending is worse than the word blocked suggests. Its completion record reads INCOMPLETE, and gives the reason as an unrecorded stop: the round loop exited by a path that names no reason. So there are 2 faults here and I had previously reported only the first. The first is that 2 findings hold the release gate shut and cannot themselves be worked, which is why the run ran to its round limit instead of releasing. The second is that when it did stop, nothing recorded why.
+
+The 2 findings that hold it are at severity 0.45 and 0.50. Both are below the critical cut, so the first half of the release condition is satisfied for both. Neither is proven, so the second half fails and neither is released. The reason neither is proven is that both carry a falsifier of 0 characters: there is no stated computation to reproduce. A proof requirement cannot rescue a finding that nothing ever examined, and that is correct behaviour rather than a bug.
+
+The repair for that needed no work, which I established before building anything. The serving fix landed on 12 October, and this run is from 3 October, so the run predates its own repair by 9 days. Calling the live decision functions on both findings today returns admit for both, and the function is wired at 4 places in the runner including the dispatch step itself, with its own test green. So the only thing left for that run is the re run, and it is yours to start because it occupies your machine for several hours.
+
+
+PART 3. WHAT WAS DONE SINCE YOUR LAST MESSAGE
+
+The decision list was wrong in a way that comparing 2 totals could not show, and that is the main repair. 2 separate documents told you what you had to decide. Each listed 4 items and they were not the same 4, so 1 decision reached you and another did not. There were 2 causes. A ruling date is compared by day, and 1 item was ruled on 1 November and then blocked the same day on a different question, so the comparison could not separate them. And the rule itself was written out at 2 places in the generator and repaired at only 1, so the fix I made to the first was silently undone by the second. Both are now a single function with 2 callers, and a new check compares the 2 documents as sets rather than counts, with a solver deciding the matching and a second tool checking the set equality. 3 of 3 deliberate mutations turn it red.
+
+The type checker is enabled as its own task, as you ruled. Its first measurement is 704 files, 1,050 findings about this project's own code across 276 files, and a further 1,205 errors that are missing descriptions for other people's libraries and are reported separately rather than counted against us. The work is smaller than 1,050 suggests: 44 of the 276 affected files hold half of all findings, and the worst 10 hold about a quarter. It has a per file ratchet, so a fix in one file cannot pay for a new error in another, and it stays out of the commit check until it is clear.
+
+A correction you should have on that task. My stated reason for it was wrong. I said the checker silently treated this project's own symbols as untyped. It does not. What it actually did was stop running after the second file, because 2 different module names resolve to the same file, so it had been reporting almost nothing. The task stands, the justification is replaced.
+
+A guard caught 2 real defects in my own work that had already survived 3 commits, and the reason it took 3 commits is worth your attention. The commit check runs 120 test files. The whole suite is 759 files and 14,391 cases. So the check that runs on every commit exercises about 1 test in 6, and the guard that found these 2 defects is not among them. Both defects were lists cut short under headings that read as complete, and both now state what they withheld.
+
+A figure was withdrawn before you read it. 2 numbers about transcript sizes, quoted in support of a diagnosis I had already withdrawn, have no producer and cannot be reproduced in principle because they measure 1 growing file at a single instant. They are gone from the spoken file, and the proof that replaced them reproduces on demand.
+
+A DEFECT I SHIPPED THIS MORNING WOULD HAVE BLOCKED THE NEXT PANEL DISPATCH, and the full suite is how it surfaced. Acting on your ruling about the brief template, I gave the brief validator a new required check: a brief must state composability as a demonstrated advantage. I did not put the requirement in the template. So the validator refused 134 of 139 archived briefs, a 95 per cent interval of 0.918560 to 0.984539, and it refused the template itself, which failed exactly 1 check and that check was mine. A brief written exactly as instructed would have been rejected at dispatch. 7 tests across 4 files were red because of it.
+
+The repair has 4 parts and each was shown to be load bearing rather than assumed. The template now carries the requirement, which is the half your ruling actually asked for. The positive statement is reported as an advisory rather than refused, following this project's own precedent for a check that would otherwise refuse the whole archive. The weak form stays a refusal, because stating it is a defect rather than an omission and it reaches only 1 of 139 briefs, the one that motivated it. And a mention that forbids the weak form no longer triggers the refusal, which is what had refused the template, since a sentence saying a thing is excluded does not instruct anyone to do it. Result: 0 briefs newly refused, 62 released, and the refusal rate falls to 72 of 139. The 72 that remain were already failing older checks and are not mine. 4 of 4 deliberate reversions turn the new guard red.
+
+Why the commit check did not catch it, which is the part worth your attention. None of the 4 brief guard files is among the 120 files the commit check runs, and the whole suite is 759 files. So the regression survived 3 commits in a check that exercises about 1 test in 6. A new guard now asserts the invariant this project had written down in prose and never enforced: the template must pass the validator.
+
+I stopped the suite 20 minutes in to make this fix and restarted it against the repaired tree. Measuring a tree that contains a known dispatch blocking defect would have cost 2 runs of your machine for 1 run of information.
+
+And a correction about the suite itself. I twice described a figure of 2,333 passing tests as the full suite being green. It is not the full suite, it is the 120 file commit check. The full suite is now running against the committed tree for the first time in 12 commits, and its result is the one piece of this report that is still open.
+
+
+PART 4. THE DECISIONS THAT ARE STILL YOURS
+
+There are 5. All 5 carry an explicit request to you in their own text, which I verified by printing the exact sentence rather than trusting a classifier.
+
+DECISION 1. WHETHER A CLASSIFIER NAMES A SEAT POSITION OR A FUNCTION
+
+What it is. You accepted the panel recommendation on role assignment and the structural half is built and folded back. What remains is 1 definition. The harness labels one of its seat roles classifier, meaning the step that sorts findings and proposed fixes rather than producing them, and the question is whether that label names a position a seat occupies or a job any seat can do. Both panel seats said independently that the code cannot settle this.
+
+What it affects. How every seat is configured, and whether the demotion work in decision 5 has anywhere to land.
+
+What you decide. Position, or function.
+
+Recommendation, and why. Function, because the other member of that axis is plainly a function and a vocabulary with 1 position and 1 function in the same dimension will be misread. This is the simplest sufficient reading, and it is additive because nothing already built has to be withdrawn to adopt it.
+
+DECISION 2. WHETHER THE UNADOPTED MODEL DESIGNS ARE WORTH HARVESTING
+
+What it is. 39 design files written by panel seats were never folded into the runners, plus 1 that diverged from what was adopted. They are proposals, not applied changes, and they are not new roles for models.
+
+What it affects. Whether a store of unapplied work is triaged for value or kept as history.
+
+What you decide. Triage them for value, or leave them as a record.
+
+Recommendation, and why. Triage, in 1 pass, recording a verdict against each rather than applying any. 2 of the 40 have already proved to contain real defects nobody was looking for when folded back today, which is evidence the store is not inert. Keeping them as history is not additive, because an addition nothing reaches is not an addition.
+
+DECISION 3. THE SHARED SCOPE QUESTION BEHIND THE 4 DIRECTIVE COMPOSITION DEFECTS
+
+What it is. 4 confirmed defects in how instructions are composed for a model all wait on 1 question, and they are given 1 entry so you are asked once rather than 4 times.
+
+What it affects. 4 findings become workable the moment you answer, and they stay frozen until you do.
+
+What you decide. Repair all of them, repair only the ones that change what a model is told, or record them and stop.
+
+Recommendation, and why. Repair the 2 that change what a model is told and record the other 2. The de duplicator and the conflict detector both silently alter a model's instructions, which is the fault class this project exists to catch. A third is proved unreachable on 2 tools and already switched off, so repairing it changes nothing today. That split is simplest sufficient, because it spends effort only where a model's input is actually corrupted.
+
+DECISION 4. PERMISSION TO MODIFY MY OWN STOP HOOK
+
+What it is. You ruled that the automatic save should refresh local resources without pushing while the manual form commits and pushes. The design exists and could not be installed: the automatic half lives in a file under your configuration directory, the harness refused the edit as self modification, and the copy in the repository is the same file by another name because both paths are hard links to 1 inode. I did not write it by the other path.
+
+What it affects. The automatic local save does not exist. Everything else about saving works.
+
+What you decide. Grant permission for that 1 file, apply the change yourself from the description, or leave it and accept that local resources refresh only on a full manual save.
+
+Recommendation, and why. Grant permission for that 1 file. The change only adds: it regenerates 3 local files and commits nothing, so nothing half finished can reach the permanent record, which was your own reason for splitting the 2 forms. It is simplest sufficient because the alternative is that the detailed memory you described refreshes only when a full save is remembered, and today shows that is exactly what gets missed.
+
+DECISION 5. WHETHER TO LOOSEN THE GATE THAT HOLDS ME TO MY OWN 5 STEP CYCLE
+
+What it is. A gate checks that the consequences of a change were traced before anything was touched, searching a window anchored at the first edit of the turn. On a long unattended turn every later cycle can never satisfy it, because the evidence for the second cycle necessarily sits after the first cycle's edit.
+
+What it affects. It refused 4 times in a row last night on turns that had each done the tracing it asked for. A gate that cannot be satisfied stops carrying information, because the only way past it is to ignore it, and then a real refusal is ignored too.
+
+What you decide. Anchor the window to each cycle, or leave it as it is.
+
+Recommendation, and why. Anchor it per cycle. It is proved rather than observed: a solver returns unsatisfiable for the condition after the first edit and satisfiable for the passing condition, and a second tool gives the witness. The fix moves 1 window boundary and the gate keeps every step it checks today, so it only adds. A caveat: that gate is the same kind of file as decision 4, so granting that grants this, and declining it makes this one yours to apply.
+
+
+PART 5. THE 2 ITEMS YOU ASKED ME TO EXPLAIN, STILL STANDING
+
+Admitting a model to the harness is not trivial, and the cost is silent defaulting. The number of edits is modest, 12 per model tables across 6 live files plus 1 registry. The failure mode is not: a model that does not exist was put through the real resolution chain and of 7 steps 5 default silently and only 2 fail loudly, so a researcher who misses 1 table gets a seat that runs while being quietly wrong. The prerequisite is built, a missing registration is now named rather than defaulted. What is still yours is whether a missing registration should raise, refuse that 1 seat, or fail at a pre flight check. You deferred it on 17 October.
+
+The orchestrator model bound inside the harness. Your specification is that its role inside the harness should be about what my role is outside it, running largely autonomously through an experiment and serving as the interface where researchers enter instructions, monitor runs and discuss findings. You also set its priority yourself, saying it should be built and tested when its turn comes but that many other issues come first. What is still yours is 1 placement question: a shadow arm immediately after the first stage replay exit test, which is free and the nearest actionable point, or a live bound arm after the merge to the main branch and before the third stage capstone.
+
+
+PART 6. WHAT IS STILL OPEN AND WHY IT IS NOT WORK I AM NEGLECTING
+
+The board holds 213 entries, 187 done, 11 open and 1 blocked. Classified from each entry's own text: 5 are the decisions above, 4 say in their own words that they wait on decision 3, and 2 are questions whose panel reviews have already run. That leaves 0 items of unstarted work with no dependency on you.
+
+The demotion rule is the one that looks like neglected work and is not. The operating point you approved, 1 wrong demotion in 50, is recorded and wired to nothing. I picked it up to wire today and found there is no model demotion mechanism in the live code to connect it to: every demotion in that part of the tree concerns alternatives within a finding, not models, and the only model level reference says the role is assigned and demoted by the same role assignment path that decision 1 settles. So it is a build, not a connection, and it lands exactly where decision 1 lands. The half that does not wait is a shadow report that would say which seats the rule would have demoted without demoting any, and I did not start it unattended for 1 stated reason: it needs a choice of what counts as a seat being right in a round, and a proxy chosen without measuring its alternatives is this project's single most recorded error class.
+
+
+PART 7. WHAT IS RUNNING
+
+The full test suite is running against the repaired tree. It is the first full run in 12 commits, and it was restarted after the brief validator fix above. The run of 31 October returned 22 failures of which 19 were cleared the same day, leaving 3 expected to still be red: 2 scripts whose help flag runs their whole measurement, and 1 ordering test disturbed by a file re sync. The record of that run was never refreshed afterwards, so it still reports 22.
+
+A gap found while checking this. The suite record stores counts and not identities. It says how many failed and never which, so a reader meeting 22 failed cannot tell whether today's failures are the same ones or new ones, which is the question I had to answer by searching a prose report. The fix is to store the failed test names beside the 7 figures it already keeps, and it will be made once the run finishes, because that file is itself under test and editing it mid run would manufacture a failure.
+
+Failures will be read, fixed and reported when the run completes. This report will be reissued with that result.
+
+
+PART 8. WHAT THIS FILE DELIBERATELY DOES NOT REPEAT
+
+It does not restate the work you have already ruled on and that is already built, which is in the task list under its own entries with its tests named. It does not quote the 2 withdrawn transcript figures. It does not restate the severity panel's full reasoning, which is recorded in the entry for that review with both seats' positions preserved separately.
+
+
+Written under CDSFL note standard v1.9.

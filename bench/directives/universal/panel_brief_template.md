@@ -26,6 +26,8 @@ State that a finding without a fix is incomplete, and a fix without a runnable f
 
 State where the fix must be delivered: written INTO the sandbox repository tree at its real path, as a file. A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down. Rounds 5 and 6 on 2026-09-10 returned 0 source files for exactly that reason, while both seats reported writing and running working code. Added 2026-09-17, when the validator began requiring it.
 
+
+Where more than one repair is in play, state composability as the founder defines it: compose ONLY on a DEMONSTRATED advantage over each fix alone, where the demonstration is a MEASUREMENT and not a judgement, and prefer the single fix wherever it performs as well. Asking only whether the repairs compose, conflict or are independent is the weak non-interference form his definition explicitly excludes. Added 2026-11-01 on his ruling *"I remember this. Yes do it as instructed."*, when the validator began reporting it.
 ## REQUIRED SECTION 4 — What would refute you
 
 Require each seat to state, before it concludes, what evidence would overturn its own answer. A verdict with no stated refutation condition is an opinion.

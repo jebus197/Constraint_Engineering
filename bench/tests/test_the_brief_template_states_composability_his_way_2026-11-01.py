@@ -47,11 +47,35 @@ def V():
 
 
 def _composability_check(V):
-    hits = [c for c in V.CHECKS if "composab" in c[0].lower()]
-    assert hits, ("the brief template carries no composability requirement, so "
-                  "a brief author is prompted for nothing and the weak form is "
-                  "what gets written")
-    return hits[0]
+    """The patterns that recognise his DEMONSTRATED form, wherever they live.
+
+    ★ AMENDED 2026-11-01, LATER THE SAME DAY, ON A MEASUREMENT. This looked the
+    check up in `V.CHECKS`, the REQUIRED set, and that is where it was first
+    shipped. As a REQUIRED check it refused **134 of 139** archived briefs,
+    0.964029, Wilson 95% [0.918560, 0.984539] -- and refused
+    `bench/directives/universal/panel_brief_template.md` ITSELF, which failed
+    exactly 1 check and that check was this one. A brief written exactly as
+    instructed would have been rejected at dispatch. The check is now REPORTED
+    through `composability_advisory`, following `check_declared_figures`, which
+    is advisory for the identical reason.
+
+    THE 3 PROPERTIES THESE TESTS DEFEND ARE UNCHANGED: a composability check
+    exists, his form satisfies it, and the weak form does NOT. Only the lookup
+    moved. What is no longer asserted -- deliberately, and with the figure above
+    as the reason -- is that it REFUSES.
+    """
+    pats = getattr(V, "_DEMONSTRATED_COMPOSABILITY", None)
+    if pats is None:
+        hits = [c for c in V.CHECKS if "composab" in c[0].lower()]
+        assert hits, (
+            "the validator carries no composability patterns at all, in CHECKS "
+            "or as _DEMONSTRATED_COMPOSABILITY, so a brief author is prompted "
+            "for nothing and the weak form is what gets written")
+        return hits[0]
+    assert callable(getattr(V, "composability_advisory", None)), (
+        "_DEMONSTRATED_COMPOSABILITY exists with no reader: an addition "
+        "nothing reaches is not an addition")
+    return ("states composability as a DEMONSTRATED advantage", pats, "")
 
 
 class TestTheStrongFormIsRequired:
@@ -70,6 +94,31 @@ class TestTheStrongFormIsRequired:
         assert not any(re.search(p, WEAK, re.M | re.I) for p in pats), (
             "the weak non-interference wording satisfies the check, so the "
             "check cannot tell his standard from the form he excludes")
+
+
+class TestItIsReportedRatherThanRefused:
+    """★ PINNED 2026-11-01 so the demotion cannot be silently reversed.
+
+    Shipping it as a REQUIRED check refused 134 of 139 archived briefs and the
+    template itself. Anyone restoring it to `CHECKS` must first show the archive
+    refusal rate is in the class the project accepts -- the disagreement check's
+    12 of 95 = 0.126316 -- rather than 0.964029.
+    """
+
+    def test_it_is_not_in_the_required_set(self, V):
+        labels = [c[0] for c in V.CHECKS]
+        assert not any("composab" in l.lower() for l in labels), (
+            "the composability check is REQUIRED again. As a refusal it rejects "
+            "134 of 139 archived briefs and the template itself; report it "
+            "instead. See scripts/the_brief_template_mutations_2026-11-01.py.")
+
+    def test_the_template_satisfies_it(self, V):
+        """The half his ruling actually asked for."""
+        tpl = (pathlib.Path(__file__).resolve().parents[2] / "bench"
+               / "directives" / "universal" / "panel_brief_template.md")
+        assert V.composability_advisory(tpl.read_text(encoding="utf-8")) == [], (
+            "the TEMPLATE does not state composability his way, so an author is "
+            "never prompted and the advisory points at nothing")
 
 
 class TestTheWeakFormIsRefused:

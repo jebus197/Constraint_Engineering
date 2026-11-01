@@ -85,15 +85,6 @@ CHECKS = (
     # definition explicitly excludes. Measured 2026-10-31: 10 of 10 uses of the
     # word across the decisions file and the morning report took that weak
     # sense, Wilson [0.722467, 1.000000].
-    ("states composability as a DEMONSTRATED advantage, not mere coexistence",
-     (r"demonstrabl\w*\s+(?:provide|better)", r"better than either",
-      r"dominates? either", r"advantage over each", r"advantage over either",
-      r"measurement\b[^.]{0,80}\bcomposab", r"composab[^.]{0,120}\bmeasurement"),
-     "state composability as he defines it: compose ONLY on a demonstrated "
-     "advantage over each fix alone, where the demonstration is a MEASUREMENT "
-     "and not a judgement, and prefer the single fix where it performs as well. "
-     "Asking only whether the repairs compose, conflict or are independent is "
-     "the weak form he explicitly excludes"),
     ("requires the fix to be TESTED",
      (r"falsifier", r"\btest\b\w*\s+(?:the|your|that)\s+fix", r"\bexecuted?\b.*\bfalsifier\b"),
      "require a runnable falsifier that the seat has EXECUTED, and its output"),
@@ -643,6 +634,58 @@ def named_paths_that_do_not_exist(text: str) -> list:
     return out
 
 
+#: ★ THE POSITIVE COMPOSABILITY STATEMENT IS REPORTED, NEVER REFUSED, and the
+#: reason is a measurement taken 2026-11-01 after it had been shipped as a
+#: REQUIRED check earlier the same day. As a refusal it rejected **134 of 139
+#: archived briefs = 0.964029**, Wilson 95% [0.918560, 0.984539],
+#: Clopper-Pearson [0.918053, 0.988219] -- and it rejected
+#: `bench/directives/universal/panel_brief_template.md` ITSELF, which failed
+#: exactly 1 check and that check was this one. A validator that refuses the
+#: document defining a valid brief would have blocked the next dispatch outright.
+#:
+#: IT ALSO FAILED THIS MODULE'S OWN STANDARD FOR ADDING A CHECK. The
+#: disagreement check of 2026-10-02 records what justifies one: *"THE TEMPLATE
+#: ALREADY REQUIRED THIS ... and the template passes this check unchanged."* The
+#: template said nothing about composability, so an author following it produced
+#: a brief the validator refused -- a guard accusing correct work. The template
+#: now carries the requirement, which is the half his ruling actually asked for.
+#:
+#: AND THE PRECEDENT FOR ADVISORY IS IN THIS FILE. `check_declared_figures` is
+#: reported rather than refused because refusing "would refuse every brief in
+#: the archive", and the module's own words are that a guard which refuses a
+#: correct brief teaches people to ignore it. The accepted rate for a REQUIRED
+#: check is the disagreement check's 12 of 95 = 0.126316 under section scope;
+#: 0.964029 is not in that class.
+#:
+#: THE WEAK FORM STAYS A REFUSAL, because it is a different act. Stating the
+#: non-interference form is a defect rather than an omission, and it reaches
+#: **1 of 139** archived briefs -- the one that motivated it.
+_DEMONSTRATED_COMPOSABILITY = (
+    r"demonstrabl\w*\s+(?:provide|better)", r"better than either",
+    r"dominates? either", r"advantage over each", r"advantage over either",
+    r"measurement\b[^.]{0,80}\bcomposab", r"composab[^.]{0,120}\bmeasurement")
+
+
+def composability_advisory(text: str) -> list[str]:
+    """Report a brief that asks for a fix without stating composability his way.
+
+    Reported, never refused -- see the measurement above. An empty list means
+    either that the brief states it, or that the brief asks for no fix at all,
+    in which case composability cannot arise.
+    """
+    low = text.lower()
+    if not re.search(r"\bfix\b|\brepair\b|\bremedy\b", low, re.I):
+        return []
+    if any(re.search(pat, low, re.M | re.I)
+           for pat in _DEMONSTRATED_COMPOSABILITY):
+        return []
+    return ["states no composability standard, and asks for a fix: compose ONLY "
+            "on a demonstrated advantage over each fix alone, where the "
+            "demonstration is a MEASUREMENT and not a judgement, and prefer the "
+            "single fix where it performs as well "
+            "(bench/directives/universal/panel_brief_template.md, section 3)"]
+
+
 def validate(text: str) -> list[str]:
     """Return a list of failures. Empty means the brief is dispatchable."""
     low = text.lower()
@@ -665,7 +708,25 @@ def validate(text: str) -> list[str]:
     # can satisfy the positive check above and ALSO carry the weak sentence, and
     # the weak one is the one a seat acts on. His definition excludes it by
     # name, so it is a defect rather than an omission.
+    # ★ A NEGATED MENTION IS NOT AN INSTRUCTION, found 2026-11-01 when the
+    # TEMPLATE was refused by this check for quoting the weak form in order to
+    # FORBID it. The check's own justification is that "the weak one is the one
+    # a seat acts on" -- and a seat does not act on a sentence saying the weak
+    # form is excluded. Any brief that explains the standard by naming what it
+    # rules out was being refused, which is a guard accusing correct text.
+    # The exclusion markers are matched in the SAME SENTENCE as the phrase, not
+    # document-wide, for the reason the disagreement check records: a
+    # document-wide test is defeated by a brief that embeds other text.
+    _EXCLUDES = re.compile(
+        r"\bexclude[sd]?\b|\bforbid(?:s|den)?\b|\bis not\b|\bnot\s+composab"
+        r"|\bweak(?:er)?\s+(?:form|sense|reading)|\brather than\b|\brefus\w+",
+        re.I)
     for _m in _WEAK_COMPOSABILITY.finditer(text):
+        _lo = text.rfind(".", 0, _m.start()) + 1
+        _hi = text.find(".", _m.end())
+        _sentence = text[_lo: _hi if _hi != -1 else len(text)]
+        if _EXCLUDES.search(_sentence):
+            continue
         problems.append(
             f"states composability in the weak form he excludes: "
             f"{_m.group(0).strip()!r} — his definition of 2026-10-02 is that a "
@@ -861,6 +922,18 @@ def main() -> int:
         print("  It compares MODIFICATION TIMES only: it cannot see a change to "
               "something the\n  brief describes without naming.", file=sys.stderr)
     text = a.brief.read_text(encoding="utf-8", errors="replace")
+
+    # ★ COMPOSABILITY, REPORTED BESIDE THE CURRENCY WARNING AND FOR THE SAME
+    # REASON. It is wired HERE rather than left as a function nobody calls: an
+    # addition nothing reaches is not an addition, which this project has
+    # confirmed 11 times. The 0.964029 archive refusal rate that forced the
+    # demotion is recorded at `composability_advisory`.
+    _comp = composability_advisory(text)
+    if _comp and not a.quiet:
+        print("panel-brief: COMPOSABILITY ADVISORY —", file=sys.stderr)
+        for _c in _comp:
+            print(f"  {_c}", file=sys.stderr)
+
     # TASK V6, SECOND HALF: numeric claims in the PROSE that nothing re-executes.
     # Reported, never refused -- see `undeclared_figures`.
     _bare = undeclared_figures(text)
