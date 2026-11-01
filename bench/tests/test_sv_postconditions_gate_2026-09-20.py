@@ -269,3 +269,75 @@ class TestTheGateIsWiredIntoTheSave:
         assert cdsfl_sv.sv_postconditions is pc, (
             "sv holds a different module object than the one under test here, "
             "so these tests would not describe what sv runs")
+
+
+class TestAPostconditionNamesPathsThatExist:
+    """★ ADDED 2026-11-01, after the save of `df76ebe0` reported an uncommitted
+    path as `cripts/how_many_decisions_actually_need_him_2026-11-01.py`.
+
+    `_git` applied `.strip()` to the whole of `git status --porcelain`, which
+    removed the LEADING SPACE OF THE FIRST LINE -- and porcelain puts a space in
+    column 0 for anything modified but not staged. `line[3:]` then cut 1
+    character too many. It damaged ONLY the first path and ONLY when that path
+    was unstaged-modified, so it fired or hid according to the alphabetical
+    order and staging state of the dirty paths.
+
+    THIS GUARD DOES NOT NEED THE LIVE TREE TO BE DIRTY IN ANY PARTICULAR WAY.
+    It constructs the exact ordering that triggers it: a file whose name sorts
+    FIRST and is modified-but-unstaged, so porcelain's first line begins with a
+    space, plus an untracked file after it whose own line begins with `??` and
+    was therefore never damaged. A guard that could only fire while the real
+    repository happened to be in that state would be worth nothing a day later.
+    """
+
+    def _dirty(self, repo):
+        # sorts first, modified but NOT staged -> porcelain line is " M aaa.md"
+        (repo / "aaa.md").write_text("one\n", encoding="utf-8")
+        _run("git", "add", "aaa.md", cwd=repo)
+        _run("git", "commit", "-m", "aaa", cwd=repo)
+        (repo / "aaa.md").write_text("two\n", encoding="utf-8")
+        # sorts second, untracked -> porcelain line is "?? zzz.md"
+        (repo / "zzz.md").write_text("new\n", encoding="utf-8")
+
+    def test_the_first_line_is_a_space_so_the_defect_is_reachable(self, repo):
+        """ANTI-VACUITY. If porcelain's first line did not start with a space,
+        the test below would pass against the defective code too."""
+        self._dirty(repo)
+        out = subprocess.run(["git", "status", "--porcelain"], cwd=repo,
+                             capture_output=True, text=True).stdout
+        first = out.splitlines()[0]
+        assert first.startswith(" M "), (
+            f"the arrangement no longer produces an unstaged-modified first "
+            f"line, so this class tests nothing; first line was {first!r}")
+
+    def test_every_path_named_is_a_path_that_exists(self, repo):
+        self._dirty(repo)
+        ok, msg = pc.working_tree_is_clean(repo, True)
+        assert ok is False
+        named = msg.split(": ", 1)[1].split(", ")
+        missing = [p for p in named if not (repo / p).exists()]
+        assert not missing, (
+            f"the postcondition named {missing}, which do not exist. A check "
+            f"whose failure message names a file that is not there sends a "
+            f"reader looking for a deletion that never happened.")
+
+    def test_the_named_set_equals_what_git_reports(self, repo):
+        """A set, not a count: a count cannot tell a mangled path from a right
+        one, and both arrive as 2 paths."""
+        self._dirty(repo)
+        ok, msg = pc.working_tree_is_clean(repo, True)
+        named = set(msg.split(": ", 1)[1].split(", "))
+        out = subprocess.run(["git", "status", "--porcelain"], cwd=repo,
+                             capture_output=True, text=True).stdout
+        real = {ln[3:] for ln in out.splitlines()}
+        assert named == real, f"named={sorted(named)} real={sorted(real)}"
+
+    def test_git_does_not_strip_leading_whitespace_from_stdout(self, repo):
+        """The root cause, pinned where it lives rather than at the slice."""
+        self._dirty(repo)
+        rc, out, _ = pc._git("status", "--porcelain", root=repo)
+        assert rc == 0
+        assert out.splitlines()[0].startswith(" M "), (
+            "_git has gone back to stripping stdout, so the first porcelain "
+            "line has lost its status column and every column-offset parse "
+            "built on it is off by one")

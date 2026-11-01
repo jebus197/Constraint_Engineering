@@ -143,6 +143,46 @@ def bodies() -> dict[str, str]:
     return out
 
 
+def classify_text(state: str, ruled: str | None, txt: str) -> dict:
+    """The whole decision, as a PURE function of one entry's own text.
+
+    ★ EXTRACTED SO IT CAN BE CALLED RATHER THAN DESCRIBED, 2026-11-01, after
+    `scripts/the_decision_classifier_mutations_2026-11-01.py` showed the
+    DEPENDENT branch deciding NOTHING on live data: all 4 entries that declare
+    they await B61 also carry no asking sentence, so they fall to MINE whether
+    the branch exists or not. The branch is a forward guard for an entry that
+    BOTH asks and depends -- a shape the list does not hold today and will the
+    moment a dependant restates its parent's question. A guard whose only
+    evidence is live data that does not exercise it is indistinguishable from
+    a guard that does nothing, which is why the harness now drives this
+    function with a CONSTRUCTED case instead.
+    """
+    state = (state or "").upper()
+    dep = DEPENDS.search(txt)
+    parent = (dep.group(1) or dep.group(2)) if dep else None
+    retired = bool(STALE.search(txt))
+    asks, live_asks = [], []
+    for sent in _SENT.split(txt):
+        if not ASKS.search(sent):
+            continue
+        one = re.sub(r"\s+", " ", sent).strip()
+        free = bool(FREE.search(sent))
+        asks.append({"sentence": one, "free": free, "retired": retired})
+        if not free and not retired:
+            live_asks.append(one)
+    if state == "DEFERRED" and ruled:
+        kind = "HIS_DEFERRAL"
+    elif dep:
+        kind = "DEPENDENT"
+    elif live_asks:
+        kind = "OWED"
+    elif asks:
+        kind = "GRANTED"
+    else:
+        kind = "MINE"
+    return {"kind": kind, "parent": parent, "asks": asks, "live_asks": live_asks}
+
+
 def classify() -> list[dict]:
     body = bodies()
     rows = []
@@ -150,34 +190,9 @@ def classify() -> list[dict]:
         state = (e.state or "").upper()
         if state in ("DONE", "WITHDRAWN"):
             continue
-        txt = body.get(e.ident, "")
-        dep = DEPENDS.search(txt)
-        parent = None
-        if dep:
-            parent = dep.group(1) or dep.group(2)
-        retired = bool(STALE.search(txt))
-        asks, live_asks = [], []
-        for sent in _SENT.split(txt):
-            if not ASKS.search(sent):
-                continue
-            one = re.sub(r"\s+", " ", sent).strip()
-            free = bool(FREE.search(sent))
-            asks.append({"sentence": one, "free": free, "retired": retired})
-            if not free and not retired:
-                live_asks.append(one)
-        if state == "DEFERRED" and e.ruled:
-            kind = "HIS_DEFERRAL"
-        elif dep:
-            kind = "DEPENDENT"
-        elif live_asks:
-            kind = "OWED"
-        elif asks:
-            kind = "GRANTED"
-        else:
-            kind = "MINE"
+        d = classify_text(state, e.ruled, body.get(e.ident, ""))
         rows.append({"ident": e.ident, "state": state, "status": e.status,
-                     "ruled": e.ruled, "kind": kind, "parent": parent,
-                     "line": e.line_no, "asks": asks, "live_asks": live_asks})
+                     "ruled": e.ruled, "line": e.line_no, **d})
     return rows
 
 

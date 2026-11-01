@@ -99,9 +99,31 @@ class Result:
 
 
 def _git(*args: str, root: Path, timeout: int = 30) -> tuple[int, str, str]:
+    """★ STDOUT IS RSTRIPPED OF NEWLINES ONLY, NOT STRIPPED. Measured 2026-11-01.
+
+    `.strip()` removed the LEADING SPACE OF THE FIRST LINE, and `git status
+    --porcelain` puts a space in column 0 for anything modified but not staged.
+    `working_tree_is_clean` then slices `line[3:]` and cut 1 character too many,
+    so the save of `df76ebe0` reported an uncommitted path as
+    `cripts/how_many_decisions_actually_need_him_2026-11-01.py` -- a file that
+    does not exist. It damaged ONLY the first path and ONLY when that path was
+    unstaged-modified, so whether it fired depended on the alphabetical order
+    and staging state of the dirty paths, which is why it survived every save
+    until one happened to begin with a ` M` line.
+
+    A postcondition's whole job is to be believed when it fails. One that names
+    a path which is not there sends a reader looking for a deletion that never
+    happened.
+
+    Only this 1 caller parses by column offset; the others read a single token
+    (`rev-parse`, `branch --show-current`, `rev-list --count`) or test
+    truthiness (`diff`), where leading whitespace never occurs. So the repair
+    belongs here rather than at the slice: it fixes the defect and removes the
+    trap for the next caller that parses columns.
+    """
     p = subprocess.run(["git", *args], cwd=root, capture_output=True,
                        text=True, timeout=timeout)
-    return p.returncode, p.stdout.strip(), p.stderr.strip()
+    return p.returncode, p.stdout.rstrip("\n"), p.stderr.strip()
 
 
 # ── the checks ───────────────────────────────────────────────────────────
