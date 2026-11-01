@@ -39,7 +39,27 @@ never the problem: it is 1214 lines, it was added on 2026-04-08, and a probe tha
 `subprocess.run` with a recorder caught it dispatching real `pip install` and `brew install`
 commands. The documents simply never routed anyone to it.
 
-## CURRENT STATE — 2026-10-18 12:38 BST
+## CURRENT STATE — 2026-11-01 02:12 GMT
+
+**THE BOARD.** `sim/shakedown-2026-09-29`, commit `ea799770`. **200 entries: 171 DONE, 15 OPEN, 9 WITHDRAWN, 5 DEFERRED**, from `scripts/task_list_markers.py` `parse_entries()` with `effective_state()` against the deferral register, which is the canonical counter. **The OPEN count ROSE from 9 to 15 overnight, and that is the honest direction:** 9 entries were added and 0 closed. 5 of the 9 are directive-composition defects that previously had no position in the register at all, and giving them a position was the founder's own instruction.
+
+**A READING NOTE ON THE BLOCK BELOW.** Its heading says 2026-10-18 but its text carries sweeps made as late as 2026-10-31, because corrections were folded into it in place rather than into a new block. Its figures are the later ones; its date is not. Nothing in it is withdrawn.
+
+**THE FULL BOARD IS GREEN AND THE PRE-COMMIT GATE PASSES AT 2,155 TESTS.** The pre-commit gate is the subset of the test suite that `sh hooks/pre-commit` runs before any commit is allowed through. It refused **4 times** before accepting, and every refusal was a real fault, which is the strongest available argument for keeping it. Known board failures are 0.
+
+**EVERY FALSIFIER NOW HAS A SECOND ROUTE WHERE AN INDEPENDENT ROUTE EXISTS.** `bench/falsifier_pairing.py` implements the founder's primary-and-secondary rule: a claim's primary falsifier is never displaced, a secondary is chosen only when it is INDEPENDENT of the primary by route rather than merely different by name, and the pairing falls back to the primary alone when no independent candidate is available, installable from the curated list, or free. Independence is declared per tool as an `independence_class` in `bench/cdsfl_registry/tool_manifest.toml` — symbolic, numeric, search, artefact, execute, reference or model — and 2 tools sharing a verifier function are never independent whatever their classes say. Coverage went from **15 of 30 claim types to 27 of 30**, Wilson 95% [0.743789, 0.965400], with **0 primaries changed**. Guard: `bench/tests/test_the_secondary_falsifier_rule_2026-10-31.py`, 54 checks offline and 60 with a live kernel, 14 of 14 mutations red.
+
+**WOLFRAM IS NOW REACHABLE BY EVERY SEAT, INCLUDING THE REMOTE ONES, WITHOUT ANY REMOTE INSTALL.** Host-side function calling does it: a remote seat emits a tool call, this machine evaluates it against the local Wolfram kernel, and the host returns the result. The panel's tool surface went from 10 to 11. Wolfram is marked `secondary_only` in the manifest, so it can corroborate a falsifier but can never be the primary route — the founder's 2026-09-28 ruling, now enforced in code rather than remembered.
+
+**ON THE WOLFRAM LICENCE: IT RENEWS AUTOMATICALLY AND NEEDS NO ATTENTION.** `bench/wolfram_standard.py` now reads the live kernel expiry first and treats its compiled-in date purely as a fallback, and its near-expiry text says plainly that no action is expected. This is recorded here because the licence was re-surfaced to the founder as an open issue after he had already automated it, and the note exists to stop that recurring.
+
+**THE 3 FORMAL STANDARDS ARE STATED IN ONE PLACE FOR THE FIRST TIME.** ADDITIVE, SIMPLEST SUFFICIENT and COMPOSABILITY now appear with the founder's verbatim definition in both instruction files. Composability is a claim requiring a MEASUREMENT that a composed fix dominates either part alone on a named property; where a single fix performs as well or better, the single fix is preferred. Measured when he asked: the word appeared **0 times** in either file, so every prior recommendation citing it cited a standard no instruction file stated.
+
+**WHAT A NEW READER SHOULD DISTRUST FIRST.** 3 live entries were asking the founder for rulings he had already given, and the queue — not the code — was the stale artefact. 6 of 7 entries that ask him for a decision also record a ruling of his, Wilson 95% [0.486872, 0.974320]. Check `experimental_notes/Decisions_Awaiting_You_*.txt` for an answer before treating any entry's question as live. Producer: `scripts/which_entries_ask_for_a_ruling_he_has_given_2026-11-01.py`.
+
+**THE UNAPPLIED-FIX STORE IS REAL BUT NARROWER THAN IT LOOKS.** 313 preserved seat artefacts, 246 absent from the tree, Wilson 95% [0.737179, 0.827772]. Guards lost nothing: across 42 diverged guards the live copy carries the same test count or more in every case. Of 45 live-module paths, 44 are new files a seat created and exactly 1 is a divergent edit to a module that already exists. Producer: `scripts/how_big_is_the_unapplied_fix_store_2026-11-01.py`.
+
+## CURRENT STATE — 2026-10-18 12:38 BST (SUPERSEDED by the block above)
 
 **THE BOARD.** `sim/shakedown-2026-09-29`, parent `cfb7c970`. **186 entries: 167 DONE, 6 OPEN, 9 WITHDRAWN, 4 DEFERRED.** (swept 2026-10-30; it read `165 entries: 141 DONE, 15 OPEN, 8 WITHDRAWN, 1 DEFERRED.` and was 21 entries behind.) Every open entry waits on a ruling of the founder or on an experimental run.
 

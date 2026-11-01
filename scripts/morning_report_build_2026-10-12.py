@@ -120,9 +120,22 @@ def task_items() -> list[dict]:
 #: 0.378763], and reached him anyway, because `parked_items()` drops a heading
 #: only when it NAMES a task-list entry recorded DONE or WITHDRAWN and has no
 #: rule for a heading whose own text says RESOLVED.
+#: ★ CASE-SENSITIVE ON PURPOSE, AND THE FIRST VERSION WAS NOT.
+#: With `re.I` this matched the LIVE heading "A superseded copy from
+#: August is sitting visible on your Desktop", which is a warning that a
+#: stale file is on his Desktop -- not a declaration that anything is
+#: closed. The fix therefore SUPPRESSED a live item, which is strictly
+#: worse than the noise it was built to remove: his `pf` asked for less
+#: repetition, not for live work to be hidden. Caught 2026-11-01 by
+#: `bench/tests/test_the_parked_presentation_is_described_not_coded_2026-11-01.py`.
+#: Every genuine declaration in this corpus is written in CAPITALS --
+#: "RESOLVED --", "SUPERSEDED, THE QUESTION GOT SMALLER", "0.1 IS CLOSED",
+#: "NOT A BLOCKER" -- so case is the discriminator the corpus already
+#: supplies, and it needs no new vocabulary. A mention is lowercase; a
+#: declaration shouts.
 _PARKED_SELF_CLOSED = re.compile(
     r"\b(RESOLVED|SUPERSEDED|IS CLOSED|NOTHING LEFT TO RULE ON|"
-    r"NOT A BLOCKER|ALREADY (?:DONE|BUILT|FIXED))\b", re.I)
+    r"NOT A BLOCKER|ALREADY (?:DONE|BUILT|FIXED))\b")
 
 _PARKED_CODE = re.compile(r"\b([A-Z]{1,2}\d{1,4}[a-z]?)\b")
 
@@ -132,8 +145,11 @@ _PARKED_CODE = re.compile(r"\b([A-Z]{1,2}\d{1,4}[a-z]?)\b")
 #: pattern above does not catch it because it is not closed, it is the SAME
 #: question written twice -- which is the repetition he objected to, in the
 #: clearest possible form, since the note says so itself.
+#: Case-sensitive for the same reason as above: "the reason is the same as
+#: C0040" is prose about a reason, not a declaration that this item
+#: restates another.
 _PARKED_SAME_AS = re.compile(
-    r"\bSAME (?:DECISION|QUESTION|ITEM) AS\b|\bNOT A SECOND ONE\b", re.I)
+    r"\bSAME (?:DECISION|QUESTION|ITEM) AS\b|\bNOT A SECOND ONE\b")
 
 #: `CODE: the actual description` -- the shape his complaint names. The code is
 #: pulled OUT so the description leads and the code becomes a reference, which
@@ -764,9 +780,26 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=()) -> s
       f"is built from is, and running the generator again at the same commit rebuilds it "
       f"exactly.")
     A("")
+    # ★ BOTH NUMBERS, NEVER JUST ONE. The summary said "25 parked items" while
+    # section 5 was headed "PARKED, 14 ITEMS", so the report disagreed with
+    # itself and the reduction -- which is the whole of his 2026-11-01 `pf` --
+    # was never stated. Saying only 14 would hide that 25 headings exist; saying
+    # only 25 misdescribes what follows. Both, with the reason.
+    _pp = parked_presentation(parked, outstanding)
+    _live_n, _settled_n = len(_pp["live"]), _pp["settled_count"]
+    _dupe_n = len(parked) - _live_n - _settled_n
+    _parked_clause = (
+      f"{len(parked)} parked headings, presented below as {_live_n} items")
+    if _settled_n or _dupe_n > 0:
+        _parts = []
+        if _settled_n:
+            _parts.append(f"{_settled_n} that say in their own text they are settled")
+        if _dupe_n > 0:
+            _parts.append(f"{_dupe_n} that restate another heading or share a subject")
+        _parked_clause += " after counting rather than listing " + " and ".join(_parts)
     A(f"There are {len(decs)} decisions needing an answer, {len(outstanding)} pieces of "
       f"outstanding work already ruled on, {len(done)} commits this session, "
-      f"{len(owed)} explanations owed, and {len(parked)} parked items.")
+      f"{len(owed)} explanations owed, and {_parked_clause}.")
     A("")
     A("SECTION 1. DECISIONS THAT NEED AN ANSWER")
     A("")

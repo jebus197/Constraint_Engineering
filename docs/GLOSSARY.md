@@ -591,6 +591,20 @@ round. Under `experiment` no seat observations are inherited from an earlier run
 under `persist` they are. Declared once per run and honoured by both the main
 observation path and the `decomposition guard`.
 
+### Pre-commit gate
+
+The subset of the repository's test files that `sh hooks/pre-commit` executes
+before a commit is allowed through, named in that script's `GUARDS` list. It is
+deliberately NOT the full board: the full suite takes 5,634 s against the gate's
+312 s to 325 s, a factor of 18.05, so a gate that ran everything would stop
+being run. Its reach is therefore a measured quantity rather than an assumption
+— `scripts/precommit_gate_cost_2026-09-10.py` `repository_reach()` is the
+producer, and the denominator moves whenever a test file is added, so any figure
+quoted for it is correct only for the commit that produced it. A refusal from
+this gate is evidence, not an obstacle: it has caught real faults on every
+occasion it has fired. Distinct from the `pre-commit ratchet`, which is a single rule
+inside the same hook, and from the full board.
+
 ### Pre-commit ratchet
 
 The rule in `hooks/pre-commit` that a commit may not make any single note worse
@@ -869,3 +883,44 @@ uses the term when asking whether a mechanism built for one part of the system
 also applies to the apparatus as a whole, as in his question of 2026-10-17 about
 whether the harness's own `FindingRegistry` should adopt the ticket register's
 hashed-identity principles.
+
+### Independence class
+
+A declared label on each tool in `bench/cdsfl_registry/tool_manifest.toml`
+saying WHAT KIND OF ROUTE that tool takes to a verdict: `symbolic`, `numeric`,
+`search`, `artefact`, `execute`, `reference` or `model`. It exists because
+2 falsifiers can be different programs and still be the same evidence — if both
+reduce to the same computation, agreement between them is not corroboration.
+2 tools sharing a verifier function are never independent whatever their
+declared classes say, and that override is enforced in code rather than left to
+the manifest author.
+
+### Secondary falsifier
+
+A second, independent route attached to a claim alongside its primary
+falsifier, selected by `bench/falsifier_pairing.py`. The rule, which is the
+founder's: the primary is never displaced; a secondary is added only when a
+candidate is INDEPENDENT of the primary by `independence class` rather than
+merely different by name; and where no independent candidate is available,
+installable from the curated list, or free, the claim runs on its primary alone
+rather than acquiring a decorative second opinion. The outcome of the selection
+is recorded as a reason code — `SELECTED`, `NO_CANDIDATES`,
+`NO_INDEPENDENT_CANDIDATE`, `INDEPENDENT_CANDIDATE_IS_PAID` or
+`INDEPENDENT_CANDIDATE_NOT_INSTALLED` — so a claim verified by a single route says
+WHY rather than appearing under-verified.
+
+### secondary_only
+
+A manifest flag marking a tool that may corroborate a falsifier but may never be
+the primary route to a verdict. Wolfram carries it, implementing the founder's
+ruling of 2026-09-28 that no result may depend on a proprietary kernel. The flag is enforced by `bench/falsifier_pairing.py`, so the ruling
+is executed rather than remembered.
+
+### Host-side function calling
+
+How a remote model seat uses a tool installed only on this
+machine: the seat emits a tool call, the host evaluates it against the local
+installation, and the host returns the result into the seat's context. Nothing is
+installed remotely and no credential leaves the machine. It is how the Wolfram
+kernel became reachable by all 6 seats rather than by the single seat running
+locally.

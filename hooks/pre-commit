@@ -165,6 +165,19 @@ cd "$REPO" || exit 1
 #   - test_the_role_vocabulary_has_forked_2026-10-31.py guards the undeclared
 #     role SET as a relationship, and the finding that `mypy_check` reports OK
 #     on files whose project types it never resolved.
+#   - test_r1_has_a_position_on_the_runway_2026-11-01.py guards that R1 keeps a
+#     named position in the RUN ORDER, and that the citation prefix of the
+#     runway stays byte-stable -- 5 line citations point into it from a
+#     VERBATIM transcript, and the existing citation test checks only that a
+#     cited line is in range, so a shift there fails silently.
+#   - test_the_parked_presentation_is_described_not_coded_2026-11-01.py CALLS
+#     parked_presentation, which 0 tests reached when it was written. It also
+#     pins the defect that guard found: re.I made a lowercase MENTION of a
+#     closure word read as a DECLARATION, which hid live work from him.
+#   - test_his_demotion_operating_point_is_pinned_2026-11-01.py pins his ruled
+#     1-in-50 false-alarm rate so it cannot drift back to the 2026-10-08
+#     panel's 1-in-20 COMPARISON SIZE, and fails loudly if the demotion rule is
+#     ever wired without his authorisation.
 GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
 bench/tests/test_a_cited_path_must_exist_2026-10-30.py
 bench/tests/test_an_identity_can_be_walked_back_2026-10-29.py
@@ -271,7 +284,10 @@ bench/tests/test_the_reported_runway_respects_both_budgets_2026-10-29.py
 bench/tests/test_the_chat_source_is_retired_not_deleted_2026-10-29.py
 bench/tests/test_the_durations_mode_sums_the_phases_2026-10-29.py
 bench/tests/test_the_secondary_falsifier_rule_2026-10-31.py
-bench/tests/test_the_role_vocabulary_has_forked_2026-10-31.py"
+bench/tests/test_the_role_vocabulary_has_forked_2026-10-31.py
+bench/tests/test_r1_has_a_position_on_the_runway_2026-11-01.py
+bench/tests/test_the_parked_presentation_is_described_not_coded_2026-11-01.py
+bench/tests/test_his_demotion_operating_point_is_pinned_2026-11-01.py"
 
 # THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
 # recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite

@@ -1,6 +1,6 @@
 MORNING REPORT, 1 November 2026
 
-2026-11-01 00:48 GMT. Commit 8b1f50d7, branch sim shakedown dated 29 September, 76 files uncommitted at the time of writing.
+2026-11-01 00:48 GMT. Commit ea799770, branch sim shakedown dated 29 September. The night's work is committed: 91 files, and the check that runs before every commit passed at 2155 tests after refusing 4 times for faults of mine, each named in part 6.
 
 This is the hand written half. The generated half is the file named Morning Report 1 November GENERATED, which is built from the project's own markers and now presents each item in the agreed format rather than by its code, because that was your proposed fix of tonight and it is done.
 
@@ -13,7 +13,30 @@ Your 12 annotations are all read, all recorded in the register with their kinds,
 
 The headline is not any single fix. It is that 3 separate open entries were asking you for rulings you had already given, and 1 of them nearly cost you 2 panel seats tonight. That is the same failure your proposed fix describes, and it is now measured rather than apologised for.
 
-Nothing was committed and nothing was pushed. No paid dispatch occurred. No panel was dispatched at all, and part 3 explains why that is the correct answer rather than an omission.
+The work is committed at ea799770 and nothing was pushed, since pushing is yours to authorise. No paid dispatch occurred. No panel was dispatched at all, and part 3 explains why that is the correct answer rather than an omission.
+
+
+PART 0B. WHAT CHANGED AFTER YOU WENT TO BED
+
+You asked me to carry on with anything that could be finished without you. This is what that produced. The board went from 15 open entries to 10, and 5 closed with a collected test behind each one and their register tickets closed alongside, because closing only the task list makes the 2 surfaces disagree and the commit check refuses.
+
+The zero plant control finally has a position in the run order, and the honest version of that is uncomfortable. You asked for it to have its own position so it would stop being raised with you. An entry was created saying exactly that, and the runway document was never touched. The runway carried stages 1, 2, 3, 4, 4B, 5, 6, 7 and 0C, and the control appeared nowhere among them. Recording an instruction is not carrying it out, and for several hours the record read as though it had been. There is now a stage 4C carrying your words from last night and your ruling of 30 October verbatim, and stating the gate as something checkable rather than remembered: it runs next, once the master task list reaches 0 open entries by the script that counts them. It was added at the end of the file rather than beside stage 4B on purpose. 5 live line references point into that document from a panel transcript that is a verbatim record and may not be edited, and the existing check on those references only confirms that a cited line number exists, never that the line still says what the citation claims. Inserting higher up would have moved all 5 onto the wrong content and nothing would have failed. The file already works this way: stage 0C is the earliest stage and sits near the end.
+
+The fix you asked for last night was hiding live work, and its own new test caught it. The rule that decides whether a parked heading has already settled itself was matching without regard to case, so the heading reading a superseded copy from August is sitting visible on your Desktop matched on the lowercase word superseded and was filed as settled business. That heading is live work. It is a warning that a stale file is sitting on your Desktop, and the fix removed it from what reaches you. That is worse than the repetition it was built to remove, because repetition is visible and suppression is not. Every real declaration in that file is written in capitals, so case was the discriminator the material already supplied. Settled went from 5 to 4, live from 13 to 14, and the Desktop warning is back.
+
+A second inconsistency in the same report: the summary line said 25 parked items while its own section 5 was headed parked, 14 items. It now says 25 headings presented as 14, naming the 4 that declare themselves settled and the 7 that restate another heading, so the reduction is stated rather than silent. That reduction is the substance of what you asked for.
+
+One of my own measurements from earlier in the night turned out to be narrower than I wrote it. The inventory of seat written fixes reported that the fold back discipline has lost no coverage. That result stands for the files that exist in both places, where test counts can be compared. It cannot speak for a file that is absent, because there is nothing to compare it against. Over the proposed test files preserved in the round records, 137 have a live counterpart and 115 do not, and 13 of those 115 assert against real runner functions, which is 11.3 per cent with a 95 per cent interval of 0.067264 to 0.183839. For those the reason they are absent is how they are classified rather than how many there are: a falsifier written against a defect the tree does not have is evidence about a proposal. That is a sound reason, but it is a different reason from the one my sentence implied.
+
+Your question about what a fix means outside code has already been to a panel. The first 2 briefs on it are retired, superseded by your own reframing, and the replacement round ran on 30 October with 7 replies, with its joint half on 31 October. So no panel is owed there. What came out of it is 1 decision, and it is in part 7.
+
+There is 1 thing I deliberately did not do. The demotion rule's remaining work is wiring it, and I left it unwired. Its calibration comes from a simulated model of how a model degrades rather than from this project's own runs, and connecting it changes which models the harness uses. That is not a tidy up to do while you are asleep. What I did instead is additive and changes nothing: your ruled 1 in 50 false alarm rate was reached by no test at all, so it could have drifted back to the 1 in 20 figure that was only ever a comparison size for the October panel. It is now pinned, and the same test fails loudly if the rule is ever wired without you.
+
+A note on the stop gates you asked me to run. All 3 stop gates are armed and fire on every stop event, so there was nothing to start. The honest caveat is that the gate on the ticket register refuses at most once per commit, keyed on the current commit. That limit is deliberate, because a gate that can trap a session is worse than no gate, but it means those gates prod rather than compelling indefinitely. It should not be relied on as a guarantee that nothing stops early.
+
+Errors of mine in this half, 3 of them. The test harness I wrote to check the new runway test restored the file between mutations using git, and the section it was testing had been written minutes earlier and so was not in git yet. Restore therefore meant delete. It printed caught 8 of 8 and then destroyed the subject, which is the worst possible order for those 2 events. A mutation harness is always pointed at work that was just written, so git holds the wrong starting point every time rather than occasionally. Both harnesses now replay the bytes they found and refuse to run when the subject is missing. Second, I marked 5 entries done without closing their register tickets, and the commit check refused with 5 separate failures. Third, I cited a decisions file under the wrong directory, which the citation check caught.
+
+The commit check refused once in this half and every failure was mine and real.
 
 
 PART 1. YOUR 12 ANNOTATIONS, AND WHAT HAPPENED TO EACH
@@ -123,10 +146,19 @@ PART 6. 5 ERRORS OF MINE TONIGHT, ALL RECORDED
 
 4. On the next attempt I set a dictionary key where the code calls a function of the same name, which changes nothing. 3 predicate errors of the same class in 1 night, which is the pattern the instructions already record at 8 of 10.
 
-5. My first count of files importing by bare module name gave 135 with an interval I quoted to you. The denominator was wrong because it excluded nested module imports. The corrected figure is 110 of 155.
+5. THE CHECK THAT RUNS BEFORE EVERY COMMIT REFUSED 4 TIMES, EACH TIME FOR A REAL FAULT OF MINE, AND THAT IS THE MOST USEFUL THING THAT HAPPENED TONIGHT. It caught a figure of 19 of 21 paired with an interval belonging to 0 of 19, which is a failure the project's own record already names. It caught 8 of my measurement scripts running the whole measurement when asked for help, against your rule that asking for help must never cost anything. It caught a citation of mine naming a file that has never existed, and then caught a SECOND invented citation I created while fixing a lint finding. And it caught my new entries taking this list from 24 vagueness findings to 32. None of those would have been found by me.
+
+6. I raised 5 register records pointing at audit codes that are not task-list entries, then tried to repair it with 2 migrations that left live work at a non-canonical identity while the canonical identity was marked settled. The register's own guards refused every step. The correct order was to add the entries first and harvest once, which is what was finally done after restoring the register to its committed state.
+
+7. My first count of files importing by bare module name gave 135 with an interval I quoted to you. The denominator was wrong because it excluded nested module imports. The corrected figure is 110 of 155.
 
 
 PART 7. WHAT NEEDS YOUR VERDICT
+
+UPDATED AFTER THE SECOND HALF OF THE NIGHT, AND CORRECTED ONCE WITHIN IT. 5 of the items below closed while you slept. Of the 10 entries still open, 4 are decisions for you: the unadopted seat designs, the shared scope decision on the directive composition defects, the proof checking module, and whether you still want the outstanding review requests where the work is already finished and guarded. A further 4 entries are blocked behind the scope decision alone, so answering that single question releases 4 of them. Only 2 are genuinely mine, and 1 of those is half yours: the model and role selection work, whose role layer is itself waiting on your ruling, and wiring the demotion rule.
+
+The correction is worth naming because I made it about myself. A script I wrote at around 2 in the morning classified the October work queue as my own unfinished work, on the strength of a needs no ruling phrase appearing somewhere in its text. Reading the entry to its end shows its own closing sentence says the opposite: what remains is your call and not a measurement. A pattern search over an entry found a phrase and did not find the entry's conclusion. The first figure I had written here, 3 of 10, was wrong for that reason, so no interval is quoted for the corrected count.
+
 
 1. THE ROLE LAYER. Build your functional vocabulary as a single new policy layer? The joint panel converged on 2 dimensions and 1 layer. Riding on your answer rather than beside it: the 2 declarations of the structural axis, and whether the 4 undeclared role spellings are fixed now or after you rule. My recommendation on the second is to wait, because under either answer the values change.
 
