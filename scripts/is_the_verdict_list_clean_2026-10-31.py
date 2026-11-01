@@ -125,10 +125,19 @@ def main(argv=None) -> int:
             j = jaccard(toks[na], toks[nb])
             pairs.append((j, na, nb))
     pairs.sort(reverse=True)
-    print("the 5 most similar pairs, by shared distinctive words:")
-    for j, na, nb in pairs[:5]:
+    # ★ A CAP MUST STATE ITS REMAINDER. A list cut to N under a heading that
+    # reads as complete is a silent falsehood, and the shared-token line below
+    # is capped too. Both now say what they withheld.
+    _SHOWN, _TOKCAP = 5, 12
+    print(f"the {min(_SHOWN, len(pairs))} most similar pairs of {len(pairs)}, "
+          f"by shared distinctive words"
+          + (f" ({len(pairs) - _SHOWN} further pair(s) not shown)"
+             if len(pairs) > _SHOWN else "") + ":")
+    for j, na, nb in pairs[:_SHOWN]:
         print(f"   items {na} and {nb}: Jaccard {j:.4f}")
-        print(f"      shared: {sorted(toks[na] & toks[nb])[:12]}")
+        _sh = sorted(toks[na] & toks[nb])
+        print(f"      shared ({len(_sh)}): {_sh[:_TOKCAP]}"
+              + (f" + {len(_sh) - _TOKCAP} more" if len(_sh) > _TOKCAP else ""))
     THRESH = 0.30
     near = [(j, na, nb) for j, na, nb in pairs if j >= THRESH]
     lo, hi = wilson(len(near), len(pairs))

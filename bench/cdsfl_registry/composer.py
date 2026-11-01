@@ -1878,8 +1878,19 @@ def compose(
     policy = load_effective_policy(domain=task_domain, model=model)
 
     # --- Coherence enforcement (with intra-packet pruning) ---
-    # ABLATION SWITCH (2026-10-13 free panel, Item 5; default True preserves
-    # behaviour byte-for-byte). `_prune_for_coherence` provably worsens the
+    # ABLATION SWITCH (2026-10-13 free panel, Item 5).
+    # ★ THIS COMMENT SAID "default True preserves behaviour byte-for-byte" AND
+    # THE CODE SAYS OTHERWISE. Corrected 2026-11-01. `compose()` declares
+    # `coherence_pruning: bool = False` at :1794, and
+    # `RunnerConfig.composer_coherence_pruning` is False too, so pruning is OFF
+    # by default on BOTH paths and a caller that omits the argument gets the
+    # SAFE behaviour, not the byte-for-byte-preserving one. The stale sentence
+    # inverted a safety-relevant default 87 lines from the signature that
+    # contradicts it, and on 2026-11-01 it caused a task-list entry to report
+    # 16 of 18 live call sites as exposed when all 16 inherit False. Read the
+    # signature, not this comment -- which is the whole of `execute-do-not-grep`
+    # arriving by the back door, in a comment rather than in a test.
+    # `_prune_for_coherence` provably worsens the
     # density it enforces: `_count_constraints` reads only the merged TOML
     # policy, so the numerator is independent of the text, and a shorter text
     # strictly raises constraints-per-token (SymPy: d(L2)-d(L1) =

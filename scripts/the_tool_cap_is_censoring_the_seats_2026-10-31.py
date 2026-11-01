@@ -78,6 +78,7 @@ def _as_float(v) -> float:
 
 
 def _replies():
+    skipped: list[str] = []
     import re
     out = []
     for d in sorted(LOGS.iterdir()):
@@ -97,15 +98,24 @@ def _replies():
                 if isinstance(o, dict):
                     obj = o
                     calls += int(o.get("n_tool_calls") or 0)
-            except Exception:  # noqa: BLE001
-                pass
+            except Exception as exc:  # noqa: BLE001
+                # ★ A SWALLOWED FAILURE LEAVES NO TRACE, which is how a run with
+                # unreadable seat files reports 0 tool calls and looks like a
+                # seat that was simply quiet. The cause is now carried on the
+                # row, so a 0 can be told apart from a 0 nobody could read.
+                skipped.append(f"{p.name}: {type(exc).__name__}: {exc}")
             out.append({"run": d.name, "seat": s,
                         "route": "local" if s in LOCAL else "remote",
                         "calls": calls,
                         "iters": obj.get("tool_iterations"),
                         "stop": obj.get("stopped_reason"),
                         "elapsed": _as_float(obj.get("elapsed_s"))})
-    return out
+    # ★ RETURNED, NOT JUST COLLECTED. An accumulator nothing reads is the
+    # addition-reaching-nothing failure this project has confirmed 11 times,
+    # and it would be especially sharp here: the whole point of recording a
+    # swallowed read error is that a 0 tool-call row can be told apart from a
+    # row nobody could parse.
+    return out, skipped
 
 
 def main() -> int:
@@ -113,7 +123,15 @@ def main() -> int:
     import sympy as sp
     from statsmodels.duration.survfunc import SurvfuncRight
 
-    rows = _replies()
+    rows, unreadable = _replies()
+    if unreadable:
+        print(f"UNREADABLE SEAT FILES: {len(unreadable)} — a 0 below from one of")
+        print("  these runs is a 0 nobody could read, not a quiet seat:")
+        for line in unreadable[:10]:
+            print(f"    {line}")
+        if len(unreadable) > 10:
+            print(f"    + {len(unreadable) - 10} more")
+        print()
     print("=" * 78)
     print("THE TOOL CAP IS CENSORING THE PAID SEATS")
     print("=" * 78)

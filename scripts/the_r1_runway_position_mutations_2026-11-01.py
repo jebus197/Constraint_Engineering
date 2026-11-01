@@ -142,6 +142,22 @@ def main() -> int:
     else:
         print("At least one mutation passes unnoticed. Name it rather than")
         print("rounding the figure up: an unpinned property is not pinned.")
+
+    # ★ A FAILABLE CHECK AFTER THE FINAL RESTORE, 2026-11-01. The restore above
+    # WRITES THE SUBJECT, so it is itself the turn's last mutation -- and the
+    # Stop gate keys P-PASS on `any(i > last)`. A harness that ends by restoring
+    # therefore leaves P-PASS unsatisfied no matter how many times it ran pytest
+    # inside the sweep, which happened twice on the night this was added. One
+    # run here puts the trace on the right side of `last`, and it doubles as the
+    # proof that the restore really did put the subject back.
+    _after = subprocess.run([sys.executable, "-m", "pytest", GUARD, "-q",
+                             "-p", "no:randomly"],
+                            capture_output=True, text=True, cwd=str(REPO))
+    _line = [l for l in _after.stdout.splitlines() if l.strip()]
+    print(f"post-restore check: {_line[-1] if _line else '(no output)'}")
+    if _after.returncode != 0:
+        print("  ** THE RESTORE DID NOT PUT THE SUBJECT BACK -- investigate **")
+        return 1
     return 0
 
 
