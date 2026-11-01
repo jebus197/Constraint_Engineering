@@ -133,15 +133,128 @@ def test_a_deferral_demands_a_reason_and_a_timestamp():
         s.defer(w[0].tid, "a perfectly good reason that is long enough", "")
 
 
-def test_the_store_separates_the_three_sets():
-    """workable + deferred + blocked must partition the open set, or the gate's
-    decision reads an incomplete picture."""
-    sys.path.insert(0, str(ROOT))
-    from bench.ticket_store import TicketStore
-    s = TicketStore()
+def _partition_faults(s, LIVE) -> list[str]:
+    """The 4 properties the gate depends on, as a list of faults (empty = sound).
+
+    Extracted so the LIVE store and a CONSTRUCTED store are judged by the SAME
+    predicate. Two copies of a check are how a producer and a consumer come to
+    describe themselves correctly and disagree with each other.
+    """
     o = {t.tid for t in s.open_tickets()}
     w = {t.tid for t in s.workable()}
     d = {t.tid for t in s.deferred_tickets()}
     b = {t.tid for t in s.blockers()}
-    assert w | d | b == o, "the 3 sets do not cover the open tickets"
-    assert not (w & d) and not (w & b) and not (d & b), "the 3 sets overlap"
+    faults = []
+    if w | b != o - d:
+        faults.append(
+            "workable + blocked must be exactly the open set minus the "
+            f"deferrals; unclassified open={sorted(o - d - w - b)}, "
+            f"claimed but not open={sorted((w | b) - o)}")
+    if (w & d) or (w & b) or (d & b):
+        faults.append("the 3 sets overlap")
+    if not (w | b) <= o:
+        faults.append(f"workable/blocking but not open: {sorted((w | b) - o)}")
+    #: ★ NO 4TH CHECK HERE, AND THE ABSENCE IS DELIBERATE. A first version of
+    #: this helper also asserted that no row in `d` was in a dead state. That
+    #: is a TAUTOLOGY: `deferred_tickets()` filters `status in LIVE` itself, so
+    #: a dead row can never reach `d` and the check could never fail. A
+    #: mutation removing the LIVE filter left it green, and building a
+    #: constructed case made it green too -- which is how a check that decides
+    #: nothing gets mistaken for a guard. The real property is tested from the
+    #: other side, against the whole store, in
+    #: `test_a_deferral_in_a_dead_state_is_not_presented_as_work`.
+    return faults
+
+
+def test_the_store_separates_the_three_sets():
+    """workable + blocked must be exactly the open set MINUS the deferrals, and
+    the deferrals must all be live.
+
+    ★ THE SINGLE ASSERTION THIS REPLACES WAS ACCUSING CORRECT CODE, 2026-10-31.
+    It read `w | d | b == o` and failed with ONE extra item on the left,
+    `d0773f05188c` -- R1's ticket, status UNDECIDED and deferred. That is not a
+    defect: `deferred_tickets()` was DELIBERATELY widened on 2026-10-30 from
+    `status == "OPEN"` to the whole LIVE set, because R1's task-list marker read
+    DEFERRED while `register_deferrals()` could not see it. Its docstring
+    records the measurement that justified the widening -- 5 rows carry a
+    deferral, 4 OPEN and 1 UNDECIDED -- and the live store reproduces exactly
+    that split today. So the union is LARGER than the open set by construction,
+    and an equality against `o` can never hold again.
+
+    REPAIRED TOWARDS THE PROPERTY, NOT TOWARDS THE LITERAL. The thing worth
+    guarding is that the gate sees a COMPLETE picture of open work with no row
+    counted twice, and that the widening stays bounded to deferrals. That is 4
+    checks rather than 1, so this is stronger than what it replaces: a ticket
+    that fell out of all 3 sets, a row in 2 sets at once, a blocker or workable
+    row that is not open, or a deferral in a dead state would each fail it.
+    """
+    sys.path.insert(0, str(ROOT))
+    from bench.ticket_store import TicketStore, LIVE
+    assert not _partition_faults(TicketStore(), LIVE)
+
+
+def test_a_deferral_in_a_dead_state_is_not_presented_as_work():
+    """A deferred row that has since settled must not be presented as deferred.
+
+    Tested against a CONSTRUCTED store, because the live store has 0 such rows
+    and a guard that needs a live defect in order to work is not a guard.
+    Tested from the WHOLE-STORE side rather than from `deferred_tickets()`'s
+    own output, because the output is already filtered and asking it about its
+    own filter can only ever agree. Presenting a settled row to the founder as
+    outstanding work is the ghost entry the register exists to prevent.
+    """
+    import pathlib as _pl
+    import tempfile
+    sys.path.insert(0, str(ROOT))
+    from bench.ticket_store import TicketStore, LIVE, TERMINAL
+    s = TicketStore(_pl.Path(tempfile.mkdtemp()) / "t.jsonl")
+    t, _ = s.propose("pf", "a constructed ticket for the dead-deferral case",
+                     "Built by this test so the dead-state check has a case.",
+                     "test", task_ref="SYNTH-1")
+    s.defer(t.tid, "constructed so the dead-state check has a case to catch",
+            "2026-10-31T09:50:00+00:00")
+    assert not _partition_faults(s, LIVE), "the constructed store starts sound"
+    assert t.tid in {x.tid for x in s.deferred_tickets()}, "deferral not visible"
+
+    dead = sorted(TERMINAL)[0]
+    s._by_tid[t.tid].status = dead
+    # The row STILL carries its deferral -- that field is the evidence of a
+    # deliberate decision and is never cleared -- so the only thing keeping a
+    # settled row out of the presented set is the live-state filter.
+    assert s._by_tid[t.tid].deferred, "the deferral field must survive settling"
+    assert t.tid not in {x.tid for x in s.deferred_tickets()}, (
+        f"a ticket in state {dead} still carries a deferral AND is still "
+        "presented as deferred work")
+    assert not _partition_faults(s, LIVE), "the partition stays sound after it settles"
+
+
+def test_a_deferral_is_presented_from_any_live_state_not_only_OPEN():
+    """The 2026-10-30 widening, guarded so it cannot be silently undone.
+
+    `deferred_tickets()` reads the whole LIVE set rather than `status == "OPEN"`
+    because R1's task-list marker read DEFERRED while `register_deferrals()`
+    could not see it: R1's ticket is UNDECIDED. Narrowing it back to OPEN is a
+    1-token edit that every other assertion in this file survives, which is how
+    a repair with a measurement behind it gets reverted by accident.
+
+    CONSTRUCTED rather than read off the live store, so it keeps working when
+    R1 is eventually settled and the live case disappears.
+    """
+    import pathlib as _pl
+    import tempfile
+    sys.path.insert(0, str(ROOT))
+    from bench.ticket_store import TicketStore, LIVE
+    s = TicketStore(_pl.Path(tempfile.mkdtemp()) / "t.jsonl")
+    assert "UNDECIDED" in LIVE and "UNDECIDED" != "OPEN"
+    t, _ = s.propose("pf", "an undecided ticket, deferred",
+                     "Built by this test to hold the widening of 2026-10-30.",
+                     "test", task_ref="SYNTH-2", status="UNDECIDED")
+    s.defer(t.tid, "deferred while still undecided, which is R1's own shape",
+            "2026-10-31T09:55:00+00:00")
+    assert s._by_tid[t.tid].status == "UNDECIDED", "the status must not be coerced"
+    assert t.tid not in {x.tid for x in s.open_tickets()}, (
+        "an UNDECIDED ticket is not OPEN -- that is the whole point of the case")
+    assert t.tid in {x.tid for x in s.deferred_tickets()}, (
+        "a deferral in a live-but-not-OPEN state must still be presented; "
+        "narrowing deferred_tickets() back to OPEN loses R1")
+    assert not _partition_faults(s, LIVE)

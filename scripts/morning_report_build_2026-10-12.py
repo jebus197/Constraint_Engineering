@@ -54,6 +54,14 @@ import sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 DETAIL = REPO / "experimental_notes" / "data" / "morning_report_decisions.json"
+#: READ, NOT RESTATED. These reports carried "v1.7" in both foot-lines while the
+#: standard had been v1.8 since 2026-10-17, so every report this generator wrote
+#: stamped itself with an ARCHIVAL standard. The version now comes from the
+#: linter's own named constant, which is the thing that decides what is current,
+#: so the next bump cannot leave the generator behind.
+sys.path.insert(0, str(REPO / "scripts"))
+from note_vagueness_lint import CURRENT_NOTE_STANDARD  # noqa: E402
+
 TASKLIST = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
 STUDY = REPO / "experimental_notes" / "STUDY_IN_FLIGHT.json"
 PARKED = REPO / "experimental_notes" / "PARKED_FOR_THE_FOUNDER.md"
@@ -102,6 +110,126 @@ def task_items() -> list[dict]:
             "headline": _first_sentence(r.text),
         })
     return out
+
+
+#: A parked heading that says, IN ITS OWN WORDS, that it is finished. His `pf`
+#: of 2026-11-01: *"The vast majority of these have already been discussed and
+#: ruled on."* Measured the same night by
+#: `scripts/the_parked_file_represents_settled_business_2026-11-01.py`: **5 of
+#: 26 live headings declare their own closure**, Wilson 95% [0.085071,
+#: 0.378763], and reached him anyway, because `parked_items()` drops a heading
+#: only when it NAMES a task-list entry recorded DONE or WITHDRAWN and has no
+#: rule for a heading whose own text says RESOLVED.
+_PARKED_SELF_CLOSED = re.compile(
+    r"\b(RESOLVED|SUPERSEDED|IS CLOSED|NOTHING LEFT TO RULE ON|"
+    r"NOT A BLOCKER|ALREADY (?:DONE|BUILT|FIXED))\b", re.I)
+
+_PARKED_CODE = re.compile(r"\b([A-Z]{1,2}\d{1,4}[a-z]?)\b")
+
+#: A heading that declares itself a DUPLICATE of another, in its own words.
+#: Found 2026-11-01 in the live set: `Enable Tailscale SSH on the private
+#: network -- SAME DECISION AS 10.2 ABOVE, NOT A SECOND ONE`. The closure
+#: pattern above does not catch it because it is not closed, it is the SAME
+#: question written twice -- which is the repetition he objected to, in the
+#: clearest possible form, since the note says so itself.
+_PARKED_SAME_AS = re.compile(
+    r"\bSAME (?:DECISION|QUESTION|ITEM) AS\b|\bNOT A SECOND ONE\b", re.I)
+
+#: `CODE: the actual description` -- the shape his complaint names. The code is
+#: pulled OUT so the description leads and the code becomes a reference, which
+#: is Rule 19 of the note standard (name the subject) applied to this report.
+_PARKED_LEADING_CODE = re.compile(
+    r"^\s*((?:[A-Z]{1,2}\d{1,4}[a-z]?)(?:\s*(?:and|/|,)\s*"
+    r"[A-Z]{1,2}\d{1,4}[a-z]?)*)\s*[:\u2014-]\s*(.+)$")
+
+
+def parked_presentation(parked, items) -> dict:
+    """Turn live parked HEADINGS into described, de-duplicated items.
+
+    HIS `pf`, 2026-11-01, verbatim: *"But you are again presenting me just with
+    ticket labels like B21, C0037, C0036, without giving any meaningful
+    indication what these are? This does not match the recently agreed tts
+    presentation standard for issues of this type. Please fix."*
+
+    3 FAULTS, 3 TREATMENTS, each measured before it was written:
+
+      * SETTLED BUSINESS. 5 of 26 live headings declared their own closure and
+        still reached him. Those are moved to a `settled` list which the report
+        COUNTS and does not enumerate -- nothing is hidden and nothing is
+        deleted from `PARKED_FOR_THE_FOUNDER.md`, which keeps every heading.
+      * REPETITION. `B21` alone owned **7** of the 26 live headings, so 1
+        subject was presented 7 times; collapsing to 1 per subject removes 6 of
+        26, Wilson 95% [0.110338, 0.420516]. The collapsed item carries the
+        count, so the fact that 7 notes accumulated is still visible.
+      * BARE CODES. The description comes from the task list's OWN first
+        sentence for that entry, which `task_items()` already returns as
+        `headline`. No new data source and no new parser: the generator was
+        holding the description all along and rendering the code instead.
+
+    `parked_items()` IS NOT TOUCHED. Its return type is consumed by 4 other
+    scripts and 2 guards, and a SECOND function of the same name in
+    `has_he_already_ruled_on_the_parked_2026-10-13.py` returns pairs rather
+    than strings -- so changing the contract would have reached further than the
+    fault. This takes its output as given.
+
+    Returns `{"live": [...], "settled_count": int, "settled_words": [...]}`
+    where each live item is a dict with `subject`, `detail`, `codes` and
+    `seen_in`.
+    """
+    by_code = {}
+    for it in items or []:
+        by_code[it.get("ident")] = it
+
+    settled, dupes, keep = [], [], []
+    for h in parked:
+        if _PARKED_SELF_CLOSED.search(h):
+            settled.append(_PARKED_SELF_CLOSED.search(h).group(0).upper())
+        elif _PARKED_SAME_AS.search(h):
+            # Its own text says it is another item restated. Counted, not
+            # enumerated, for the same reason as a closed one.
+            dupes.append(h)
+        else:
+            keep.append(h)
+
+    grouped, loose = {}, []
+    for h in keep:
+        codes = sorted(set(_PARKED_CODE.findall(h)) & set(by_code))
+        if codes:
+            grouped.setdefault(codes[0], []).append(h)
+        else:
+            loose.append(h)
+
+    live = []
+    for code, heads in sorted(grouped.items()):
+        entry = by_code.get(code) or {}
+        # The LONGEST heading is the most informative one, and it is kept as
+        # the live question rather than the first or last arbitrarily.
+        longest = max(heads, key=len)
+        live.append({
+            "subject": entry.get("headline") or longest,
+            "detail": longest,
+            "codes": [code],
+            "seen_in": len(heads),
+            "ruled": entry.get("ruled"),
+            "state": entry.get("state"),
+        })
+    for h in loose:
+        m2 = _PARKED_LEADING_CODE.match(h)
+        if m2:
+            # DESCRIPTION FIRST, CODE SECOND. This is the whole of his
+            # complaint: the heading already held a description and the report
+            # was leading with the identifier instead.
+            codes = _PARKED_CODE.findall(m2.group(1))
+            live.append({"subject": m2.group(2).strip(), "detail": h,
+                         "codes": codes, "seen_in": 1,
+                         "ruled": None, "state": None})
+        else:
+            live.append({"subject": h, "detail": "", "codes": [],
+                         "seen_in": 1, "ruled": None, "state": None})
+
+    return {"live": live, "settled_count": len(settled),
+            "settled_words": sorted(set(settled)),
+            "duplicate_count": len(dupes)}
 
 
 def study_items() -> list[dict]:
@@ -532,21 +660,41 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
         A("")
         A(_VE)
         A("")
-    A(f"## 5. Parked — {len(parked)}")
+    # ★ HIS `pf`, 2026-11-01. The raw headings used to be printed verbatim,
+    # which re-presented settled business and led with identifiers. Now routed
+    # through `parked_presentation`, which counts what is closed, folds what is
+    # restated, collapses 1 subject to 1 line, and puts the DESCRIPTION first.
+    _pres = parked_presentation(parked, outstanding)
+    _plive = _pres["live"]
+    A(f"## 5. Parked — {len(_plive)}")
     A("")
     A("Judged non-blocking and appended rather than raised at the time. Queued, not "
       "dropped. Full list: `experimental_notes/PARKED_FOR_THE_FOUNDER.md`.")
+    if _pres["settled_count"] or _pres["duplicate_count"]:
+        A("")
+        A(f"**{len(parked)} notes reduce to {len(_plive)} items.** "
+          f"{_pres['settled_count']} say in their own words that they are "
+          f"finished ({', '.join(_pres['settled_words'])}) and "
+          f"{_pres['duplicate_count']} say they restate another item, so both "
+          f"are counted here rather than listed again. Nothing is removed from "
+          f"the parked file itself.")
     A("")
-    A(_VB.format("PARKED_FOR_THE_FOUNDER.md, verbatim"))
-    A("")
-    for p in parked:
-        A(f"- {p}")
+    for it in _plive:
+        ref = f" `{', '.join(it['codes'])}`" if it["codes"] else ""
+        seen = (f" *(accumulated over {it['seen_in']} notes)*"
+                if it["seen_in"] > 1 else "")
+        _subj = it["subject"].strip()
+        if _subj:
+            _subj = _subj[0].upper() + _subj[1:]
+        A(f"- {_subj}{ref}{seen}")
+        if it.get("ruled"):
+            A(f"  You ruled on this on {it['ruled']}; what is left is work.")
     A("")
     A(_VE)
     A("")
     A("---")
     A("")
-    A("*Written under CDSFL note standard v1.7.*")
+    A(f"*Written under CDSFL note standard {CURRENT_NOTE_STANDARD}.*")
     return "\n".join(L) + "\n"
 
 
@@ -685,16 +833,42 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=()) -> s
             A("")
             A("What remains. " + _spoken(r["what_remains"]))
             A("")
-    A(f"SECTION 5. PARKED, {len(parked)} ITEMS")
+    # ★ HIS `pf`, 2026-11-01, same routing as the markdown above so the 2
+    # renderings cannot disagree about what is outstanding.
+    _pres = parked_presentation(parked, outstanding)
+    _plive = _pres["live"]
+    A(f"SECTION 5. PARKED, {len(_plive)} ITEMS")
     A("")
     A("These were judged not to block progress and appended rather than raised at the "
       "time. They are queued, not dropped.")
+    if _pres["settled_count"] or _pres["duplicate_count"]:
+        A("")
+        _n_c, _n_d = _pres["settled_count"], _pres["duplicate_count"]
+        _say_c = ("1 of them says" if _n_c == 1 else f"{_n_c} of them say")
+        _say_d = ("1 says" if _n_d == 1 else f"{_n_d} say")
+        A(f"{len(parked)} notes reduce to {len(_plive)} items. "
+          f"{_say_c} in their own words that they are finished, and "
+          f"{_say_d} they restate another item, so both are counted here rather "
+          f"than read out again. Nothing has been removed from the parked file "
+          f"itself.")
     A("")
-    for pk in parked:
-        A(_spoken(pk) + ".")
+    for it in _plive:
+        # SENTENCES, NOT A RUN-ON. He reads these aloud, so the subject gets its
+        # own sentence and each qualifier gets another, rather than being
+        # comma-spliced onto a heading that is already a full sentence.
+        subj = _spoken(it["subject"]).rstrip(".").strip()
+        if subj:
+            subj = subj[0].upper() + subj[1:]
+        A(subj + ".")
+        if it["seen_in"] > 1:
+            A(f"This has accumulated over {it['seen_in']} separate notes, which is "
+              f"why it kept reappearing.")
+        if it.get("ruled"):
+            A(f"You ruled on this on {it['ruled']}, so what is left is work rather "
+              f"than a decision.")
     A("")
     A("")
-    A("Written under CDSFL note standard v1.7.")
+    A(f"Written under CDSFL note standard {CURRENT_NOTE_STANDARD}.")
     return "\n".join(L) + "\n"
 
 

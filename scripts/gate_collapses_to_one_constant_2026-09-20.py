@@ -7,10 +7,29 @@ It exits 0 iff every part holds and raises AssertionError naming the part that f
 
 PART 1 -- THE PARAMETERS ARE FROZEN.
   `check_sk_threshold_corrected` reads q, R_old, nu_b, nu_f from
-  `entry["model_params"]` (reference_runner_v3.py:11921). `model_params` has NO
-  WRITER anywhere in the repository -- the only two occurrences are `.get()`
-  reads in reference_runner.py:3156 and reference_runner_v3.py:11921. So on every
-  real run the gate is called at exactly
+  `entry["model_params"]` (reference_runner_v3.py:17287). `model_params` has NO
+  PRODUCTION WRITER: the live reads are `reference_runner.py:3155` and
+  `reference_runner_v3.py:17287`.
+
+  ★ CORRECTED 2026-10-31, and the correction came from a panel seat rather than
+  from this file. The sentence used to read "NO WRITER anywhere in the
+  repository -- the only two occurrences are `.get()` reads", and 3 parts of it
+  were wrong or had gone stale:
+    * "anywhere in the repository" is FALSE. `bench/tests/test_ouroboros_loop_close.py:391`
+      writes `"model_params": {"q": 0.5, "R": 0.5, "nu_b": 0.05, "nu_f": 0.20}`
+      in its `_entry()` fixture -- at exactly the fallback values. The scan
+      below SKIPS `/tests/` by design, so `0 writes` has always meant 0
+      PRODUCTION writes; the docstring claimed more than the scan checks.
+      The distinction matters and sharpens the finding rather than weakening it:
+      the plumbing `model_params -> q -> compute_rk` is live AND test-covered,
+      so what is missing is not wiring but an ESTIMATOR for q.
+    * "the only two occurrences" is FALSE: the read census also matched
+      harvested copies of the runner under `bench/logs/**/sandbox_harvest/`.
+      Those are seat sandboxes, not live code, and counting them makes a census
+      meaningless. They are now excluded, which is why the read count drops.
+    * the line numbers 3156 and 11921 had drifted to 3155 and 17287.
+
+  So on every real run the gate is called at exactly
       q = 0.5, R_old = RK0_PI_BASE = 0.5, nu_b = 0.05, nu_f = 0.20
   and the ONLY varying argument is `sk`.
 
@@ -76,7 +95,20 @@ def part1_parameters_are_frozen():
     writes, reads = [], []
     for f in sorted(pathlib.Path(".").rglob("*.py")):
         s = str(f)
-        if "/tests/" in s or s.startswith("scripts/gate_collapses"):
+        # EXCLUDED, and each exclusion for its own reason:
+        #   /tests/              -- the scan measures PRODUCTION code, which is
+        #                           what "no writer" is a claim about.
+        #   this file            -- it names the key in its own source.
+        #   sandbox_harvest/     -- harvested COPIES of the runner from panel
+        #   seat_evidence/          seat sandboxes. A census that counts a copy
+        #   /logs/                  of the subject alongside the subject is not
+        #                           a census. Added 2026-10-31 on a seat's
+        #                           finding; it changes the reported read count
+        #                           and no assertion, because the assertion is
+        #                           `len(reads) >= 1`.
+        if ("/tests/" in s or s.startswith("scripts/gate_collapses")
+                or "sandbox_harvest" in s or "seat_evidence" in s
+                or "/logs/" in s):
             continue
         try:
             tree = ast.parse(f.read_text())

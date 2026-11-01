@@ -27,6 +27,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -301,12 +302,54 @@ class TestTheEpochIsAFloorNotADefault:
         assert STORE_EPOCH in out.stdout
         assert "raised to the epoch" in out.stdout
 
-    def test_the_default_window_is_the_epoch(self):
+    def test_the_default_window_is_the_epoch(self, tmp_path):
+        """EXECUTED, not matched in the source -- converted 2026-10-31.
+
+        This asserted `'default=STORE_EPOCH' in src`, which made it the 106th
+        source-text assertion in the suite and tripped the ratchet that counts
+        them. That ratchet's own docstring records 4 occasions where a guard of
+        this class broke on a CORRECT change, so the right move was to convert
+        it rather than raise the number.
+
+        THE SPELLING IS NOT THE OBSERVABLE, AND WORKING THAT OUT CHANGED THE
+        TEST. Any `--since` below the epoch is RAISED to it, so `default=
+        STORE_EPOCH` and `default="2026-08-01"` behave identically and no test
+        can tell them apart. What IS observable is a default NARROWER than the
+        epoch, which silently drops his older annotations from every harvest.
+        Measured 2026-10-31 over the live `Responses/`: the no-argument run and
+        an explicit `--since 2026-10-17` both see 220 candidates, while
+        `--since 2026-10-25` sees 104 and `--since 2026-10-30` sees 42. So the
+        default is pinned by comparing counts, and the narrower window is run as
+        a control so an equality between two broken runs cannot pass for a
+        match.
+        """
         from bench.ticket_store import STORE_EPOCH
-        src = (REPO / "scripts" / "harvest_tickets_2026-10-17.py").read_text()
-        assert 'default=STORE_EPOCH' in src
-        assert '"2026-10-01"' not in src.split("def main")[-1]
         assert STORE_EPOCH == "2026-10-17"
+
+        def candidates(*extra):
+            out = subprocess.run(
+                [sys.executable,
+                 str(REPO / "scripts" / "harvest_tickets_2026-10-17.py"),
+                 *extra, "--sources", "responses",
+                 "--store", str(tmp_path / f"t{len(extra)}{extra}.jsonl")],
+                capture_output=True, text=True, cwd=str(REPO))
+            assert out.returncode == 0, out.stderr[-600:]
+            m = re.search(r"'responses': (\d+)", out.stdout)
+            assert m, f"no candidate count in output: {out.stdout[:400]}"
+            return int(m.group(1))
+
+        default_run = candidates()
+        at_epoch = candidates("--since", STORE_EPOCH)
+        assert default_run == at_epoch, (
+            f"the default window sees {default_run} candidates but an explicit "
+            f"--since {STORE_EPOCH} sees {at_epoch}: the default has moved off "
+            "the epoch")
+        # CONTROL: a later window must see strictly fewer, or the comparison
+        # above is satisfied by a harvester that ignores --since altogether.
+        later = candidates("--since", "2026-10-25")
+        assert later < at_epoch, (
+            f"--since 2026-10-25 sees {later} and the epoch sees {at_epoch}; a "
+            "window argument that changes nothing makes the pin vacuous")
 
 
 class TestRegisterReachesTheNewKind:

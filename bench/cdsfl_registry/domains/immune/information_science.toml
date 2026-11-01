@@ -28,12 +28,21 @@ statistical = [
 ]
 
 [immune.verification_tools]
+# WOLFRAM, added 2026-10-31. SECONDARY ONLY -- the manifest marks it
+# `secondary_only = true`, so it can never become the primary for any
+# claim here, per the founder's ruling of 2026-09-28 that Wolfram
+# "should never be considered the primary falsifier route". It is listed
+# because the claim types patched below had NO independent secondary:
+# the open-source candidates all share an independence class, and for a
+# statistical claim `statsmodels` and `scipy` share the identical
+# verifier `_verify_statistical`. A missing or busy kernel is reported,
+# never a blocker.
 
 # Information science verification uses statistical tools for metric
 # claims and z3 for logical consistency of retrieval/classification claims.
-mathematical = ["sympy"]
-logical = ["z3"]
-statistical = ["statsmodels", "scipy"]
+mathematical = ["sympy", "wolfram"]
+logical = ["z3", "wolfram"]
+statistical = ["statsmodels", "scipy", "wolfram"]
 
 [immune.ct_prompt_template]
 template = """You are investigating information science claims. Your output will be mechanically verified.

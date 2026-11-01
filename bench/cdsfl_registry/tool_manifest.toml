@@ -26,8 +26,44 @@
 #   install_check   : Python expression that returns truthy when the tool is
 #                     installed. Evaluated in the tools-Python interpreter.
 #   package_hint    : PEP 508 style hint for future auto-install suggestions.
+#   independence_class : WHICH ROUTE the tool takes to the answer. Added
+#                     2026-10-31 for the primary/secondary falsifier rule.
+#                     Two tools in the SAME class are NOT independent
+#                     falsifiers of each other, because they share the
+#                     formulation, and the formulation is where the errors
+#                     live. The vocabulary, 6 values:
+#                       symbolic  - manipulates the expression algebraically
+#                       numeric   - evaluates the author's expression numerically
+#                       search    - searches for a counterexample / proves unsat
+#                       artefact  - statically analyses the REAL artefact
+#                       execute   - RUNS the real artefact and observes
+#                       reference - reads an independent curated source
+#                                   (a unit registry, a constants table, a
+#                                   chemistry or sequence model) rather than
+#                                   recomputing from the claim
+#                       model     - an LLM reasons about it. NEVER selected as
+#                                   a secondary without the founder's
+#                                   authorisation, because the route is PAID.
+#                     THE CLASS IS A PROXY AND IT IS DELIBERATELY
+#                     CONSERVATIVE. It will sometimes refuse a pair that is
+#                     in fact independent (networkx against z3 on a graph
+#                     claim is the clearest case, both being "search"). It
+#                     errs toward reporting PRIMARY ONLY rather than toward
+#                     claiming corroboration the pair has not earned, which
+#                     is the safe direction for a falsification harness.
 #   delegate        : If set, this tool is handled by a different cell. Value
 #                     is a short label of the owning cell.
+#   secondary_only  : If true, this tool is NEVER chosen as the PRIMARY
+#                     falsifier -- only as a secondary, by
+#                     `bench/falsifier_pairing.select_secondary`. Added
+#                     2026-10-31 to implement the founder's ruling of
+#                     2026-09-28 verbatim: Wolfram "should never be considered
+#                     the primary falsifier route". Without this field,
+#                     appending Wolfram to a claim type would have made it
+#                     reachable as position 13 of the `mathematical` dispatch
+#                     order -- a primary route whenever the 12 before it
+#                     returned UNCERTAIN, which is exactly what the ruling
+#                     forbids.
 #
 # Adding a new tool:
 #   1. Write _verify_<name>(claim[, file_path]) in bench/immune_agents.py,
@@ -43,6 +79,7 @@ description = "Symbolic mathematics: algebraic identities, limits, equation solv
 verifier = "_verify_sympy"
 needs_file = false
 claim_types = ["mathematical", "logical"]
+independence_class = "symbolic"
 domain_hints = ["mathematics", "physics", "chemistry", "engineering"]
 cost_class = "fast"
 install_check = "import sympy"
@@ -53,6 +90,7 @@ description = "SMT constraint satisfaction and formal verification."
 verifier = "_verify_z3"
 needs_file = false
 claim_types = ["logical", "mathematical"]
+independence_class = "search"
 domain_hints = ["mathematics", "cs_software", "engineering"]
 cost_class = "medium"
 install_check = "import z3"
@@ -63,6 +101,7 @@ description = "Regression, ADF, ARIMA, t-tests, hypothesis testing."
 verifier = "_verify_statistical"
 needs_file = false
 claim_types = ["statistical"]
+independence_class = "numeric"
 domain_hints = ["statistics", "biology", "social_science"]
 cost_class = "medium"
 install_check = "import statsmodels"
@@ -76,6 +115,7 @@ description = "scipy.stats tests, optimisation, integration (shared with statsmo
 verifier = "_verify_statistical"
 needs_file = false
 claim_types = ["statistical"]
+independence_class = "numeric"
 domain_hints = ["statistics", "physics", "engineering"]
 cost_class = "medium"
 install_check = "import scipy"
@@ -86,6 +126,7 @@ description = "Dimensional / unit consistency via pint."
 verifier = "_verify_dimensional_analysis"
 needs_file = false
 claim_types = ["mathematical"]
+independence_class = "reference"
 domain_hints = ["physics", "engineering", "chemistry"]
 cost_class = "fast"
 install_check = "import pint"
@@ -96,6 +137,7 @@ description = "Error propagation via the uncertainties package."
 verifier = "_verify_uncertainty_propagation"
 needs_file = false
 claim_types = ["statistical", "mathematical"]
+independence_class = "numeric"
 domain_hints = ["physics", "engineering", "statistics"]
 cost_class = "fast"
 install_check = "import uncertainties"
@@ -106,6 +148,7 @@ description = "Atom conservation check on chemical equations (regex + Counter)."
 verifier = "_verify_stoichiometric_balance"
 needs_file = false
 claim_types = ["mathematical"]
+independence_class = "symbolic"
 domain_hints = ["chemistry"]
 cost_class = "fast"
 install_check = "import re"
@@ -116,6 +159,7 @@ description = "LP / integer programming feasibility and bound checks (PuLP)."
 verifier = "_verify_linear_programming"
 needs_file = false
 claim_types = ["mathematical"]
+independence_class = "search"
 domain_hints = ["operations_research", "engineering", "economics"]
 cost_class = "medium"
 install_check = "import pulp"
@@ -126,6 +170,7 @@ description = "Astronomical constants and unit conversion (astropy)."
 verifier = "_verify_astronomical"
 needs_file = false
 claim_types = ["mathematical"]
+independence_class = "reference"
 domain_hints = ["astronomy", "physics"]
 cost_class = "medium"
 install_check = "import astropy"
@@ -136,6 +181,7 @@ description = "SMILES validity, molecular formula, molecular weight (RDKit)."
 verifier = "_verify_chemistry_structure"
 needs_file = false
 claim_types = ["mathematical"]
+independence_class = "reference"
 domain_hints = ["chemistry", "biology"]
 cost_class = "medium"
 install_check = "from rdkit import Chem"
@@ -146,6 +192,7 @@ description = "DNA/RNA/protein length, GC content, translation, reverse compleme
 verifier = "_verify_biological_sequence"
 needs_file = false
 claim_types = ["mathematical"]
+independence_class = "reference"
 domain_hints = ["biology", "genomics"]
 cost_class = "fast"
 install_check = "import Bio"
@@ -156,6 +203,7 @@ description = "ML metric bounds, estimator existence, confusion-matrix dims (sci
 verifier = "_verify_ml_claim"
 needs_file = false
 claim_types = ["mathematical", "statistical"]
+independence_class = "numeric"
 domain_hints = ["machine_learning", "data_science"]
 cost_class = "fast"
 install_check = "import sklearn"
@@ -166,6 +214,7 @@ description = "Graph node/edge counts, connectivity, tree, cycle, diameter (Netw
 verifier = "_verify_graph_property"
 needs_file = false
 claim_types = ["mathematical", "logical"]
+independence_class = "search"
 domain_hints = ["cs_software", "mathematics", "network_science"]
 cost_class = "fast"
 install_check = "import networkx"
@@ -178,6 +227,7 @@ description = "mypy --strict subset for signature / type consistency."
 verifier = "_verify_type_check"
 needs_file = true
 claim_types = ["code_structural"]
+independence_class = "artefact"
 domain_hints = ["cs_software"]
 cost_class = "slow"
 install_check = "import mypy"
@@ -188,6 +238,7 @@ description = "ruff linting for code quality issues."
 verifier = "_verify_lint_check"
 needs_file = true
 claim_types = ["code_structural", "code_behavioral"]
+independence_class = "artefact"
 domain_hints = ["cs_software"]
 cost_class = "fast"
 install_check = "import ruff"
@@ -198,6 +249,7 @@ description = "bandit static security scan."
 verifier = "_verify_security_scan"
 needs_file = true
 claim_types = ["code_behavioral"]
+independence_class = "artefact"
 domain_hints = ["cs_software", "security"]
 cost_class = "medium"
 install_check = "import bandit"
@@ -208,6 +260,7 @@ description = "dis-module bytecode inspection for dead code after RETURN_VALUE."
 verifier = "_verify_bytecode_analysis"
 needs_file = true
 claim_types = ["logical", "code_behavioral"]
+independence_class = "artefact"
 domain_hints = ["cs_software"]
 cost_class = "fast"
 install_check = "import dis"
@@ -218,6 +271,7 @@ description = "crosshair z3-backed symbolic execution of Python contracts."
 verifier = "_verify_symbolic_execution"
 needs_file = true
 claim_types = ["code_behavioral"]
+independence_class = "search"
 domain_hints = ["cs_software"]
 cost_class = "slow"
 install_check = "import crosshair"
@@ -230,6 +284,7 @@ description = "DeepSeek R1 reasoner as formal-verification specialist — LLM fa
 verifier = "_verify_deepseek_formal"
 needs_file = false
 claim_types = ["logical", "mathematical"]
+independence_class = "model"
 domain_hints = ["mathematics", "information_science", "cs_software"]
 cost_class = "slow"
 install_check = "import openai"
@@ -241,10 +296,29 @@ package_hint = "openai>=1.0"
 description = "Structural AST walk. Delegated to B-Cell v2, not run here."
 delegate = "b_cell_v2"
 claim_types = ["code_structural", "code_behavioral"]
+independence_class = "artefact"
 domain_hints = ["cs_software"]
 
 [tools.test_runner]
 description = "pytest runner. Delegated to CT cell, not run here."
 delegate = "ct_cell"
 claim_types = ["code_behavioral"]
+independence_class = "execute"
 domain_hints = ["cs_software"]
+
+# ── Secondary-only falsifiers ────────────────────────────────────────────
+#
+# A tool here is a SECOND opinion and never a first. See `secondary_only`
+# above for why the field exists and what it prevents.
+
+[tools.wolfram]
+description = "Wolfram Language on the local Engine, through the serial gate. SECONDARY falsifier only, per the founder's ruling of 2026-09-28."
+verifier = "_verify_wolfram"
+needs_file = false
+claim_types = ["mathematical", "logical", "statistical"]
+independence_class = "reference"
+secondary_only = true
+domain_hints = ["mathematics", "physics", "statistics", "engineering"]
+cost_class = "slow"
+install_check = "import shutil; assert shutil.which('wolframscript')"
+package_hint = "Wolfram Engine (free) + wolframscript; NOT pip-installable, see resources/ONBOARDING.md"

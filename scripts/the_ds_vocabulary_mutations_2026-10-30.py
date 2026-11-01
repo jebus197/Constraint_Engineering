@@ -132,4 +132,12 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # A `--help` MUST NOT ACT, and this script is the worst case of that
+    # rule: `main()` WRITES to a live source file to plant each mutation
+    # and writes again to restore it. Asked what it does, it was running
+    # the whole mutation suite against the tree. Found 2026-10-31 by
+    # `test_every_script_that_writes_answers_help`, which names the
+    # writing scripts specifically for this reason.
+    from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
+    answer_help(__doc__, __file__)
     raise SystemExit(main())

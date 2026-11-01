@@ -136,6 +136,35 @@ cd "$REPO" || exit 1
 # capability-identity loudness, the verbatim exemption that lets a seat's words
 # reach the record unedited, the model-admission failure mode, and the
 # human-review stop's evidence condition.
+# THE 28th FILE, added 2026-10-31, and it guards an INSTRUMENT rather than the
+# product. 10 tests, 2.22 s (median of 3 runs: 2.81, 2.22, 2.14), so about 0.6%
+# on top of this list's 383 s.
+#
+# WHY AN INSTRUMENT EARNS A SLOT. The producer it guards,
+# scripts/is_the_polarity_hazard_reachable_2026-10-31.py, shipped with 3 defects
+# that each changed a printed figure, and 2 of them printed a CONFIDENT ZERO:
+# a grep that counted the producer's own text as 5 live references, and an entry
+# predicate requiring `finding_id` where the resolved registry is keyed by
+# `canonical_id`, which collected 29,755 dicts whose status was None in all
+# 29,755 cases and reported the exposure census as "0 and 0". A zero that is a
+# zero of nothing is the failure mode this project has recorded most often.
+# The guard's own first run then found a 4th: the exclusion covered only the
+# producer's file, so the apparatus simply moved into the guard's docstring and
+# the count went back to 5.
+#
+# All 3 restored defects are verified RED across 5 distinct assertions.
+#
+# ★ 2 MORE ADDED 2026-10-31, UNDER THE SCOPE RULE STATED ABOVE RATHER THAN AS
+# AN EXCEPTION TO IT: both were written on 2026-10-31 and the scope is "the
+# guards written since 2026-10-29". Measured together before adding: 65 tests
+# in 12.49 s, so about 3.3 per cent on top of the 383 s this list had reached.
+#   - test_the_secondary_falsifier_rule_2026-10-31.py guards the founder's
+#     primary/secondary rule, including that Wolfram can never become a
+#     PRIMARY falsifier in any of the 10 domain configs (his 2026-09-28
+#     ruling) and that a paid route is never auto-selected as a secondary.
+#   - test_the_role_vocabulary_has_forked_2026-10-31.py guards the undeclared
+#     role SET as a relationship, and the finding that `mypy_check` reports OK
+#     on files whose project types it never resolved.
 GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
 bench/tests/test_a_cited_path_must_exist_2026-10-30.py
 bench/tests/test_an_identity_can_be_walked_back_2026-10-29.py
@@ -143,8 +172,10 @@ bench/tests/test_does_filtering_the_stale_constant_repair_two_2026-10-30.py
 bench/tests/test_how_many_channels_await_his_ruling_2026-10-30.py
 bench/tests/test_rk_carries_forward_across_rounds_2026-10-31.py
 bench/tests/test_the_annotation_context_reader_sees_cr_only_files_2026-10-29.py
+bench/tests/test_the_carry_cannot_latch_the_gate_2026-10-31.py
 bench/tests/test_the_claim_channel_enters_r_k_2026-10-29.py
 bench/tests/test_the_ds_kind_is_confined_to_his_annotations_2026-10-30.py
+bench/tests/test_the_floor_is_nu_eff_not_nu_b_2026-10-31.py
 bench/tests/test_the_feedback_section_groups_under_its_headings_2026-10-29.py
 bench/tests/test_the_file_diagnosis_producers_2026-10-30.py
 bench/tests/test_the_hierarchical_mode_has_an_effect_path_2026-10-29.py
@@ -155,6 +186,7 @@ bench/tests/test_the_memory_baseline_skips_an_unclean_save_2026-10-29.py
 bench/tests/test_the_miss_ledger_is_not_split_2026-10-29.py
 bench/tests/test_the_non_curing_population_is_named_2026-10-31.py
 bench/tests/test_the_panel_request_split_is_withheld_2026-10-30.py
+bench/tests/test_the_polarity_hazard_reachability_2026-10-31.py
 bench/tests/test_the_ranking_is_deterministic_and_exchangeable_2026-10-29.py
 bench/tests/test_the_redactor_does_not_withhold_a_run_setting_2026-10-29.py
 bench/tests/test_the_register_is_the_single_source_for_deferral_2026-10-29.py
@@ -237,7 +269,9 @@ bench/tests/test_a_declared_mode_is_reconciled_2026-10-18.py
 bench/tests/test_the_review_stop_fires_on_evidence_2026-10-17.py
 bench/tests/test_the_reported_runway_respects_both_budgets_2026-10-29.py
 bench/tests/test_the_chat_source_is_retired_not_deleted_2026-10-29.py
-bench/tests/test_the_durations_mode_sums_the_phases_2026-10-29.py"
+bench/tests/test_the_durations_mode_sums_the_phases_2026-10-29.py
+bench/tests/test_the_secondary_falsifier_rule_2026-10-31.py
+bench/tests/test_the_role_vocabulary_has_forked_2026-10-31.py"
 
 # THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
 # recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite

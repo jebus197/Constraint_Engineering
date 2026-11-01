@@ -313,6 +313,28 @@
           "defect:immune-memory-names-2-of-its-5-experiments"
         ],
         "why": "MY OWN OVER-CORRECTION, PUT BACK. Restoring the defect keys I had wrongly archived, I used a blanket rule over every key with a defect: prefix, which swept back in 1 that had been archived legitimately BEFORE tonight and is genuinely closed. So the sequence was: archived 7 in error on a reading produced by a bug, then restored 8 by a rule too broad to tell them apart. The extractor is the arbiter either way -- it yields the live set, and a key it does not yield belongs in the archive."
+      },
+      {
+        "when": "2026-10-31T06:56:26+00:00",
+        "moved": [
+          "task:B41",
+          "task:B50"
+        ],
+        "why": "B41 closed DONE/COMMITTED on the dispatch sequence having run in his order with 0 paid seats; B50 closed DONE/COMMITTED after his ruling on the immune-memory assertions. Both still had authored detail, so the generator refused (exit 3) rather than print a stale decision."
+      },
+      {
+        "when": "2026-10-31T07:22:21+00:00",
+        "moved_back": [
+          "task:B41"
+        ],
+        "why": "the 2026-10-31 closure of B41 was withdrawn as premature on both procedure and substance, so the entry is live again and the report generator requires its authored detail to be live with it."
+      },
+      {
+        "when": "2026-10-31T07:38:33+00:00",
+        "moved": [
+          "task:B53"
+        ],
+        "why": "B53 closed DONE/COMMITTED after the severity joint round ran and answered both of his questions plus comparability; its authored detail would otherwise describe a settled item."
       }
     ],
     "defect:immune-memory-names-2-of-its-5-experiments": {
@@ -390,6 +412,27 @@
         "**Leave it**, accepting that about 1 follow-up save in 2 will still be refused for lacking memory that already exists, and reaching for the override when it happens.",
         "**Something narrower**: name a different rule for when the memory baseline should skip."
       ]
+    },
+    "task:B50": {
+      "title": "B50 — what should 4 immune-memory assertions do after a reset you ordered?",
+      "what": "6 assertions in the immune-memory evaluation fail on every run. The live memory holds 1 experiment where they describe 3 to 5, because it was reset on 17 October and the archive records your ruling of 16 October as the reason, with the previous state, its 6 experiments and a restore command all preserved. The write path loads before recording, so a count of 1 is correct accumulation onto a store that was deliberately emptied. The product is right and the guards contradict a ruling.",
+      "why": "A skip was added on 17 October for exactly this false alarm, and its condition is 0 records on disk plus an archive, with the stated intent that it re-arms as soon as a run writes. A free run wrote the first post-reset records on 29 October, so the skip correctly lapsed and the assertions correctly re-armed against a population that can never return. 2 of the 6 are a stale constant and are mechanically fixable. The other 4 assert facts measured on data the reset destroyed, and no filter repairs those.",
+      "evidence_line": "Live memory 1 experiment, archived state 6; the 3 runs the assertions prepend ran on 28 and 29 July, about 3 months before the reset of 17 October; the derivable set is 4 against a live count of 1 and the gap is exactly those 3. Producer: scripts/the_reset_rearmed_six_stale_pins_2026-10-29.py",
+      "options": [
+        "**Widen the skip** from 0 records plus an archive to the live memory no longer containing the runs the claim was measured on. Keeps the anti-exemption intent, because it re-arms once comparable runs exist, and costs a more complex condition.",
+        "**Re-measure all 4 against the post-reset memory as it fills**, accepting that they assert nothing until enough live runs have accumulated.",
+        "**Restore the archived priors** with the recorded command, which makes the 4 pass at once and also undoes the reset you ordered. Listed for completeness and not recommended."
+      ]
+    },
+    "task:B53": {
+      "title": "B53 — your severity question is answered, and what is left is a build",
+      "what": "The panel you ordered has run, and both seats independently reach the same answer: the quantity you described IS the model's own residual risk, which has been in the mathematical model since March 2026, and the number the code currently calls severity is a different object. The residual risk now accumulates across passes, which your definition requires and the code did not do.",
+      "why": "You rejected the earlier report's claim that no archive could answer what severity means, on the ground that severity is a fundamental property of the mathematical model and the model makes considerably less sense without it. You were right, and you then supplied the definition the report said could not be supplied.",
+      "evidence_line": "The recursion was applied once per finding and then re-seeded from the prior, so all 1,252 archived entries hold a single value, 0.500000, and it never compounded. The remaining blocker is that the difficulty term never arrives: entry[\"model_params\"] has 0 assignment sites, so the recursion carries no difficulty signal.",
+      "ruled": "2026-10-30",
+      "his_words": "But this also seems like a good candidate for a panel review. So you should add it to the panel reviews that remain outstanding.",
+      "what_the_ruling_means": "RULED. The panel ran 2026-10-30 with 0 paid seats. What is left is work, not a decision: write the difficulty term into the entry so the recursion has something to compound.",
+      "no_ruling_needed": true
     }
   },
   "task:B13": {
@@ -431,13 +474,6 @@
     "his_words": "We also have the remaining B-Cell cellular builds/exams on our runway. You should probably alert the models to these too, and mention that this is work that has still to be done.",
     "what_the_ruling_means": "RULED to go to the panel, with the B-cell builds named in the brief. Brief queued as general_purpose_stem_calculator_2026-10-18.",
     "no_ruling_needed": true
-  },
-  "task:B41": {
-    "no_ruling_needed": true,
-    "title": "B41 — the work queue of 2026-10-19, mechanised onto this list",
-    "what": "Your instruction that the task list be adapted so it holds the session to its work. The queue covers the first complete suite in 384 commits, the 50 failures that survive re-running, the ladder membership and order separation, and the 4 panel briefs.",
-    "why": "The 20-hour sprint stayed alive because every item was a ticket the Stop gate refused to let go. Today's work was carried in conversation instead and the session stopped repeatedly.",
-    "evidence_line": "61 failed and 12,610 passed in 4,198.29 seconds, against 8,878 passed 384 commits earlier. 50 of 61 survive re-running."
   },
   "task:C1": {
     "title": "C1 — the claim channel's promotion was never implemented or measured",
@@ -615,15 +651,145 @@
       "THE HALF THAT IS NOT STRUCK, stated so a real defect is not buried with a settled question": "The provenance question is struck. The MECHANICAL half is NOT: in study_run1b, C0066 at severity 0.45 and C0073 at 0.50 reached the blocker count with zero verdicts, no routing history and no falsifier code. That is a live defect and it falls under his 'Fix it all' of 2026-10-16, not under the strike."
     }
   },
-  "task:B50": {
-    "title": "B50 — what should 4 immune-memory assertions do after a reset you ordered?",
-    "what": "6 assertions in the immune-memory evaluation fail on every run. The live memory holds 1 experiment where they describe 3 to 5, because it was reset on 17 October and the archive records your ruling of 16 October as the reason, with the previous state, its 6 experiments and a restore command all preserved. The write path loads before recording, so a count of 1 is correct accumulation onto a store that was deliberately emptied. The product is right and the guards contradict a ruling.",
-    "why": "A skip was added on 17 October for exactly this false alarm, and its condition is 0 records on disk plus an archive, with the stated intent that it re-arms as soon as a run writes. A free run wrote the first post-reset records on 29 October, so the skip correctly lapsed and the assertions correctly re-armed against a population that can never return. 2 of the 6 are a stale constant and are mechanically fixable. The other 4 assert facts measured on data the reset destroyed, and no filter repairs those.",
-    "evidence_line": "Live memory 1 experiment, archived state 6; the 3 runs the assertions prepend ran on 28 and 29 July, about 3 months before the reset of 17 October; the derivable set is 4 against a live count of 1 and the gap is exactly those 3. Producer: scripts/the_reset_rearmed_six_stale_pins_2026-10-29.py",
+  "task:B56": {
+    "title": "B56 — the demotion operating point is recorded, and it is wired to nothing",
+    "what": "Your accepted recommendation of 1 in 50 is now a named constant that whoever wires the demotion rule will read, instead of re-deriving it or defaulting back to the size of the comparison it came from.",
+    "why": "You challenged a 1 in 20 false-alarm level as unreasonably high for demoting a model that is performing fine. You were right to push back, and the 1 in 20 was never a live setting: it was the common level 3 candidate rules were calibrated to on the 2026-10-08 panel so their detection rates could be compared on equal footing.",
+    "evidence_line": "Over 3000 replications, 1 in 20 wrongly demotes a healthy model 3.50 per cent of the time against 1.57 per cent at 1 in 50, a factor of 2.2340, Fisher exact p = 2.171e-06, at a cost of 4.63 points of detection. The rule itself is connected to nothing, so this changes no behaviour today.",
+    "ruled": "2026-10-30",
+    "his_words": "I accept your recommendation.",
+    "what_the_ruling_means": "RULED. Work, not a decision: the number is settled and the wiring is what makes it bite.",
+    "no_ruling_needed": true
+  },
+  "task:B41": {
+    "no_ruling_needed": true,
+    "title": "B41 — the work queue of 2026-10-19, mechanised onto this list",
+    "what": "The work queue of 2026-10-19 mechanised onto the task list so the Stop gate holds the session to it. Marked finished earlier on 2026-10-31 and WITHDRAWN the same night: a blind panel round still owes its joint half, so the dispatch sequence had not completed in your order, and the evidence named documents rather than tests.",
+    "why": "The 20-hour sprint stayed alive because every item was a ticket the Stop gate refused to let go. Today's work was carried in conversation instead and the session stopped repeatedly.",
+    "evidence_line": "The dispatcher's debt check names the outstanding round: what_is_severity_and_should_it_gate_convergence_2026-10-30, whose blind half ran on 2026-10-30. Its joint half was dispatched 2026-10-31 at 07:19 GMT with 0 of 2 seats paid. The board stands at 2,058 passing and 6 failing in 386.65 seconds, all 6 traced to that premature closure and all 6 fixed."
+  },
+  "task:B57": {
+    "title": "B57 — the primary and secondary falsifier rule, built, and the harness had no secondary falsifier at all",
+    "what": "Your rule is built. A claim gets a primary tool; a secondary is consulted only where a candidate takes a genuinely different route to the answer, and where none does the primary stands alone AND THE RECORD SAYS SO. The saying-so is the operative half, because an unmarked single-tool verdict reads exactly like a corroborated one. Wolfram is now reachable by the 4 seats that have no shell, through a host-side tool: the remote model asks, this machine evaluates, this machine returns the answer, and no remote model installs anything or touches the licence.",
+    "why": "The rule was already yours and nothing enforced it for 44 days. You ruled on 2026-09-28 that Wolfram is the secondary falsifier run against open-source output and never the primary route. Meanwhile the tool dispatch ended its loop at the first definitive verdict, so it was single-tool by construction and no secondary existed anywhere, for any claim, in any of the 10 subject configurations. Counting tools would not have been enough either: for a statistical claim the 2 candidates both resolved to the identical checking function, so the canonical pair was 1 function called twice.",
     "options": [
-      "**Widen the skip** from 0 records plus an archive to the live memory no longer containing the runs the claim was measured on. Keeps the anti-exemption intent, because it re-arms once comparable runs exist, and costs a more complex condition.",
-      "**Re-measure all 4 against the post-reset memory as it fills**, accepting that they assert nothing until enough live runs have accumulated.",
-      "**Restore the archived priors** with the recorded command, which makes the 4 pass at once and also undoes the reset you ordered. Listed for completeness and not recommended."
+      "**Leave the secondary pass on by default**, which is my recommendation. An addition nothing reaches is not additive, and a switch exists to turn it off. The cost is 1 extra tool call per definitive verdict, and the Wolfram secondary measures 4.656 seconds against the primary's 0.991, a ratio of 4.700. A record written with the pass switched off still says so, so a skipped pairing can never read as corroborated.",
+      "**Allow a disagreeing secondary to change a verdict.** Today it cannot: the disagreement is recorded and the primary stands. My recommendation is to leave it that way until there is a run with disagreements in it to look at, because the alternative changes what the apparatus concludes and I have no measurement to offer yet.",
+      "**Leave the 2 software configurations without a secondary.** They are the 3 remaining uncovered pairs. Wolfram cannot decide a control-flow claim and the attempt would cost 4.656 seconds to return nothing, so my recommendation is to leave them and revisit only if a code claim ever needs a second opinion the existing tools cannot give."
+    ],
+    "evidence_line": "Coverage across the live subject configurations rose from 15 of 30 pairs to 27 of 30, Wilson 95 per cent 0.743789 to 0.965400, with 0 primaries changed. The curated tool list already existed and was read by 0 lines of product code, Wilson 0.000000 to 0.168179. The guard holds 54 tests offline and 60 with the kernel allowed, and all 14 reversions of the work turn it red. Producer: the secondary falsifier rule script dated 31 October.",
+    "ruled": null,
+    "his_words": "Isn't a better rule to use an equivalent secondary falsifier/tool when such tools are available, and if not to default exclusively to using the primary only?",
+    "what_the_ruling_means": "BUILT ON YOUR INSTRUCTION of 2026-10-31. 3 points remain yours, listed above."
+  },
+  "task:B58": {
+    "title": "B58 — this report re-presented settled business and named items by bare code, which is your proposed fix of 1 November",
+    "what": "The parked section printed its source headings verbatim. 5 of the 26 live headings said in their own words that they were finished, and reached you anyway, because the filter drops a heading only when it names a task-list entry recorded done or withdrawn and had no rule for a heading saying resolved. One subject, the role layer, owned 7 of the 26. And a heading leading with an identifier told you nothing about what the item was. All 3 are now treated: what is closed or restated is counted rather than listed, 1 subject renders as 1 line carrying the number of notes it accumulated, and the description leads with the identifier as a reference after it.",
+    "why": "Your diagnosis was that these items predate the ticket store and so carry no position and no issue type, and that is measurably correct: of the 8 entry codes named by live headings, 5 carry no kind label in the store, Wilson 95 per cent 0.305742 to 0.863156, and all 5 are the audit-finding codes rather than task-list entries. The repetition is also real rather than an impression, and the report now states the reduction instead of performing it silently.",
+    "evidence_line": "33 headings in the parked file, 26 surviving the previous filter, reducing to 14 items after counting the 5 self-declared closures and the 1 self-declared duplicate and collapsing the role layer's 7 notes into 1. The parked file itself is unchanged and still holds every heading. Producer: the parked file represents settled business script dated 1 November.",
+    "ruled": null,
+    "his_words": "But you are again presenting me just with ticket labels like B21, C0037, C0036, without giving any meaningful indication what these are? This does not match the recently agreed tts presentation standard for issues of this type. Please fix.",
+    "what_the_ruling_means": "YOUR INSTRUCTION, not a decision. The work is mine.",
+    "no_ruling_needed": true
+  },
+  "task:B59": {
+    "title": "B59 — the zero-plant control gets its own position on the runway so it stops being re-presented as a decision",
+    "what": "The zero-plant control experiment is scheduled rather than repeatedly raised. It keeps appearing as though a decision were owed, when you have ruled it twice, on 2026-08-07 and again on 2026-09-06. What it needs is a named position on the runway after the outstanding work, which is what you asked for.",
+    "why": "Re-presenting a ruling of yours as an open question is the failure the project's own feedback record measures at 11 of 45 items, with a recurrence on 2026-10-17. Scheduling it is the mechanical cure: an item with a position is not a question. The release of the money the run costs is separately yours and is reported rather than asked again.",
+    "evidence_line": "Ruled twice with 0 post-ruling run directories against 2 pre-ruling ones, and carried 66 days as of 31 October.",
+    "ruled": null,
+    "his_words": "It should probably be the next task on our runway however, and it should probably have it's own position there so you don't keep repeating it.",
+    "what_the_ruling_means": "YOUR INSTRUCTION, not a decision. The scheduling is mine; the spend authorisation stays with you and is already recorded against the zero-plant control's own entry.",
+    "no_ruling_needed": true
+  },
+  "task:B60": {
+    "title": "B60 — the store of seat-written fixes that never reached the runners, measured for the first time",
+    "what": "313 preserved seat-written Python artefacts exist, and 246 of them are absent from the live tree. The bare number is alarming and tells you nothing, so the taxonomy is the answer. Guards and tests account for 118 and lost no coverage at all: across the 42 that differ from their live counterparts, the live copy carries the same number of test functions or more in every single case. Falsifiers account for 36 and are evidence by design rather than repairs. Producers and scripts account for 114 and are measurements. That leaves 45 files written to live module paths, none applied, and 44 of those are new files a seat created that the tree never adopted. So exactly 1 is a divergent edit to a module that really exists.",
+    "why": "You raised this as a worry and it had never been measured. The rule that a seat's fix is tested before folding protects the tree, and it says nothing about what happens to a fix that is never tested: the answer was that it sat in the preserved evidence folder counted by no instrument. The shape of your worry is right. Its current size is 1 file, plus a large store of designs nobody adopted, which is a different question and one only you can settle.",
+    "options": [
+      "**Triage the 44 unadopted seat designs for value**, which is the thorough answer and the expensive one. Each would need reading against what the tree now does, and several are alternatives that were correctly passed over rather than losses.",
+      "**Leave them as history and keep the inventory running**, which is my recommendation. The measurement now exists and can be re-run, so a growing store becomes visible rather than invisible, and the 1 genuine divergence plus the proof verifier are named individually and can be decided on their own merits.",
+      "**Fold back the proof verifier specifically**, which is the clearest case of real value sitting unapplied. It answers the question you asked about what a repair means outside code, it tested at 7 of 8 tonight, and the 1 failure has a named fix. It is still wired to no caller, so folding it as it stands would add a module nothing reaches."
+    ],
+    "evidence_line": "313 artefacts, 246 absent with a 95 per cent interval of 0.737179 to 0.827772. Guard coverage lost: 0 of 42 diverged guards carry a test the live tree lacks, interval 0.000000 to 0.083799. Live module files 45, new files 44, divergent edits to an existing module 1. The proof verifier passed 7 of 8 checks, interval 0.529112 to 0.977583. Producers: the unapplied fix store script and the proof verifier test script, both dated 1 November.",
+    "ruled": null,
+    "his_words": "I worry that we might build up a large store of fixes that are never applied to any of our runners in practice. This is a problem we have encountered several times in the past and that we need to stay on top of.",
+    "what_the_ruling_means": "MEASURED on his worry. 1 point needs him: whether the 44 unadopted designs are triaged or left as history."
+  },
+  "task:C0040": {
+    "title": "C0040 — every model received a reduced rendering of the universal directive, and it was a dump of configuration flags",
+    "what": "The full directive is 27,803 characters and the most generous cap in the roster was 12,000, so the reduced form went to all 5 models. The docstring promised full text for large-context models and no such model existed, and the reduced form was configuration key-value lines rather than prose.",
+    "why": "THIS ONE IS ALREADY FIXED AND YOU ASKED WHETHER IT EVER WAS. Your ruling of 14 October separated the work bound from the specification bound. All 5 declared phenotypes now carry the specification bound unset, so the specification is delivered whole and the reduced path is not taken at all, and where a model is given an explicit cap the minimal form now carries every 1 of the 22 hard blocks it used to drop.",
+    "evidence_line": "5 of 5 models were below the cap before the repair, 95 per cent interval 0.565518 to 1.000000. The minimal form carries 22 of 22 hard blocks after the repair against 0 of 22 before. Verified by execution on 1 November through the spec-is-not-work script of 15 October.",
+    "ruled": null,
+    "his_words": "",
+    "what_the_ruling_means": "ALREADY FIXED; no decision outstanding.",
+    "no_ruling_needed": true
+  },
+  "task:C0037": {
+    "title": "C0037 — the directive de-duplicator deleted a formula and kept its special case",
+    "what": "A short line is treated as a duplicate of a longer one whenever their overlap reaches 0.95 of the shorter, and the de-duplicator keeps whichever came first, so which line survives is decided by position rather than by content. It runs for 4 of the 5 models.",
+    "why": "These 4 defects were raised by seats in June, recorded unconfirmed and untoolable, never checked, and then confirmed with measurements in September. They predate the ticket register, which is why they carried no position in it and no issue type, and that is the confusion you diagnosed. They now carry identities and the proposed-fix label. They await 1 shared decision rather than 4, and that decision is held on its own entry so you are asked once.",
+    "evidence_line": "14 of 1,677 lines dropped, 0.8348 per cent, 95 per cent interval 0.004979 to 0.013964, of which 11 are dropped by containment alone, 78.5714 per cent, interval 0.524108 to 0.924286.",
+    "ruled": null,
+    "his_words": "",
+    "what_the_ruling_means": "Awaits the shared scope decision held on its own entry.",
+    "options": [
+      "**Fix all 4 now**, which is the thorough answer. All 4 are confirmed with measurements and the 4th is proved unreachable on 2 tools, so none of them is speculative.",
+      "**Fix only the ones that mislead a reader of the record**, which is the narrower answer and my recommendation if the composition work is not otherwise being touched. The flag-dump defect is already fixed; the de-duplicator and the conflict detector change what a model is told, so they mislead; the coherence pruner is inert in effect because its exits are unreachable.",
+      "**Record them and stop**, which is a complete answer and not a failure to give one. All 4 are measured and written down, and nothing depends on repairing them today."
     ]
+  },
+  "task:C0036": {
+    "title": "C0036 — the conflict detector is blind to most of the directives it is meant to arbitrate",
+    "what": "The resolver decides which contradictory directives survive composition by asking a helper what each directive is about. That helper recognises exactly 4 topics and returns nothing for everything else, so both sides of a contradiction are retained. Its own worked examples all return nothing.",
+    "why": "These 4 defects were raised by seats in June, recorded unconfirmed and untoolable, never checked, and then confirmed with measurements in September. They predate the ticket register, which is why they carried no position in it and no issue type, and that is the confusion you diagnosed. They now carry identities and the proposed-fix label. They await 1 shared decision rather than 4, and that decision is held on its own entry so you are asked once.",
+    "evidence_line": "Blind to 95.6120 per cent of the directive blocks, measured over the real corpus. Raised twice in 1 run under 2 codes.",
+    "ruled": null,
+    "his_words": "",
+    "what_the_ruling_means": "Awaits the shared scope decision held on its own entry.",
+    "options": [
+      "**Fix all 4 now**, which is the thorough answer. All 4 are confirmed with measurements and the 4th is proved unreachable on 2 tools, so none of them is speculative.",
+      "**Fix only the ones that mislead a reader of the record**, which is the narrower answer and my recommendation if the composition work is not otherwise being touched. The flag-dump defect is already fixed; the de-duplicator and the conflict detector change what a model is told, so they mislead; the coherence pruner is inert in effect because its exits are unreachable.",
+      "**Record them and stop**, which is a complete answer and not a failure to give one. All 4 are measured and written down, and nothing depends on repairing them today."
+    ]
+  },
+  "task:C0054": {
+    "title": "C0054 — the second code for the conflict detector finding, kept so the duplicate raising stays visible",
+    "what": "The same defect as the conflict detector finding above, raised a second time in the same run at a lower severity.",
+    "why": "It is kept as its own record rather than merged, because the double raising is itself evidence about how findings were de-duplicated at the time and collapsing it would delete that evidence. It carries no separate decision.",
+    "evidence_line": "Same measurement as the conflict detector finding: blind to 95.6120 per cent of the directive blocks.",
+    "ruled": null,
+    "his_words": "",
+    "what_the_ruling_means": "ALREADY FIXED; no decision outstanding.",
+    "no_ruling_needed": true
+  },
+  "task:C0001": {
+    "title": "C0001 — the coherence pruner makes the quantity it optimises worse, and its exit conditions cannot be reached",
+    "what": "The pruner deletes soft directive text to bring a density figure under a budget. Density is a count taken from a structure that pruning cannot touch, divided by a token estimate that it can. So removing text shrinks the denominator and density rises with every prune.",
+    "why": "These 4 defects were raised by seats in June, recorded unconfirmed and untoolable, never checked, and then confirmed with measurements in September. They predate the ticket register, which is why they carried no position in it and no issue type, and that is the confusion you diagnosed. They now carry identities and the proposed-fix label. They await 1 shared decision rather than 4, and that decision is held on its own entry so you are asked once. This one was the highest severity of the 28 raised, and it is proved rather than observed.",
+    "evidence_line": "Proved on 2 tools: SymPy gives the derivative of count over tokens as negative for positive quantities, and z3 returns unsatisfiable on the question of whether any prune can bring density under budget.",
+    "ruled": null,
+    "his_words": "",
+    "what_the_ruling_means": "Awaits the shared scope decision held on its own entry.",
+    "options": [
+      "**Fix all 4 now**, which is the thorough answer. All 4 are confirmed with measurements and the 4th is proved unreachable on 2 tools, so none of them is speculative.",
+      "**Fix only the ones that mislead a reader of the record**, which is the narrower answer and my recommendation if the composition work is not otherwise being touched. The flag-dump defect is already fixed; the de-duplicator and the conflict detector change what a model is told, so they mislead; the coherence pruner is inert in effect because its exits are unreachable.",
+      "**Record them and stop**, which is a complete answer and not a failure to give one. All 4 are measured and written down, and nothing depends on repairing them today."
+    ]
+  },
+  "task:B61": {
+    "title": "B61 — the one scope decision the 4 directive-composition defects all wait on",
+    "what": "4 confirmed defects in how directives are composed for a model all wait on the same question: repair them, repair only the ones that mislead, or record them and stop. Each defect now has its own entry describing its own fault, and this entry holds the decision so you are asked once rather than 4 times.",
+    "why": "They predate the ticket register, which is why they carried no position in it and no issue type, and that is the confusion you diagnosed on 1 November. Of the 8 entry codes named by the live parked headings, 5 carried no label at all, 95 per cent interval 0.305742 to 0.863156, and all 5 were these. They now carry identities and the proposed-fix label. One of the 4 is already fixed on your ruling of 14 October, which leaves 3 genuinely open.",
+    "options": [
+      "**Repair all 3 that remain open.** All are confirmed with measurements and the coherence pruner is proved unreachable on 2 tools, so none is speculative.",
+      "**Repair only the 2 that change what a model is told**, which is my recommendation. The de-duplicator can delete a general statement and keep its special case, and the conflict detector lets both sides of a contradiction through; both mislead a model at composition time. The coherence pruner is inert in effect, because its exit conditions cannot be reached at all.",
+      "**Record them and stop.** This is a complete answer rather than a failure to give one: all 4 are measured and written down, and nothing currently depends on repairing them."
+    ],
+    "evidence_line": "4 defects, 5 codes, 1 raised twice. 5 of 8 entry codes named by live parked headings carried no register label before 1 November, interval 0.305742 to 0.863156, and 0 do now. Producer: the parked-file script dated 1 November.",
+    "ruled": null,
+    "his_words": "add those I have already genuinely ruled on to your master task list and to an appropriate section in your Bugzilla section of the registry",
+    "what_the_ruling_means": "1 decision, not 4. The individual entries carry the defects; this one carries the question."
   }
 }

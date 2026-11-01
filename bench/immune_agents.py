@@ -40,6 +40,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from bench.dm._types import Finding
 from bench.dm._convergence import _finding_similarity
 from bench.live_dispatch_policy import live_dispatch_allowed
+from bench import falsifier_pairing as _fpair
 
 try:  # pragma: no cover - the fallback only fires on a bare-path import
     from bench.bugzilla_loop import is_python_target
@@ -169,7 +170,8 @@ def _load_tool_manifest() -> Dict[str, Dict[str, Any]]:
     Returns the ``tools`` sub-dict of tool_manifest.toml, keyed by tool name.
     Each value is a dict with fields described in the manifest header:
     description, verifier, needs_file, claim_types, domain_hints, cost_class,
-    install_check, package_hint, delegate (optional).
+    install_check, package_hint, independence_class, delegate (optional),
+    secondary_only (optional).
 
     Entries whose ``verifier`` name does not resolve to a module-level
     function in this file are dropped with a stderr warning on first load.
@@ -1084,6 +1086,214 @@ else:
             confidence=0.3, evidence=f"SymPy: {output}", tool_used="sympy",
             elapsed_s=elapsed,
         )
+
+
+#: Wolfram Language functions a model-supplied claim may NOT reach. The claim
+#: text originates in a model's finding, so it is untrusted input to a kernel
+#: that can read, write, fetch and spawn. `_verify_sympy` has carried an
+#: equivalent blocklist since MF-40 and this is the same posture, not a new one.
+#: A blocked claim returns UNCERTAIN, which is the safe direction: it costs a
+#: corroboration rather than granting a capability.
+_WOLFRAM_BLOCKLIST = re.compile(
+    r"\b("
+    r"Run|RunProcess|StartProcess|ProcessObject|SystemOpen|Install|LinkLaunch"
+    r"|Import|Export|Put|PutAppend|Get|Needs|BeginPackage"
+    r"|OpenRead|OpenWrite|OpenAppend|Close|ReadString|WriteString|ReadList"
+    r"|DeleteFile|CopyFile|RenameFile|CreateFile|CreateDirectory"
+    r"|DeleteDirectory|SetDirectory|ResetDirectory|FileNames|FindFile"
+    r"|URLFetch|URLRead|URLExecute|URLDownload|URLSubmit|CloudDeploy|CloudPut"
+    r"|SendMail|DatabaseLink|JavaNew|ExternalEvaluate|ExternalFunction"
+    r"|LibraryFunctionLoad|ToExpression|MakeExpression|Symbol|Names"
+    r"|Environment|SetEnvironment|Encode|Uncompress"
+    r")\b"
+)
+
+#: `=` means assignment in Wolfram Language and equality in the claim strings
+#: this harness carries ("2 + 2 = 4"). Rewriting it to `==` is therefore
+#: REQUIRED for correctness and not a convenience: `FullSimplify[2 + 2 = 4]`
+#: would attempt to assign to a number and return an error, which classify()
+#: would then correctly call NOT EVIDENCE -- a silent loss of every claim.
+_WOLFRAM_BARE_EQ = re.compile(r"(?<![=<>!~])=(?!=)")
+
+
+#: A CALL WOLFRAM WOULD MISREAD IS REFUSED, NOT GUESSED.
+#: Wolfram Language applies functions with SQUARE brackets, so `sin(x)` parses
+#: as `sin*x` -- a symbol times x, not the sine of x. That usually leaves the
+#: expression unevaluated and therefore UNCERTAIN, which is safe, but "usually"
+#: is not a property to rest a falsifier on: a mistranslation that happened to
+#: reduce to True or False would hand back a WRONG corroboration, which is
+#: strictly worse than none.
+#:
+#: SO THE GUARD IS AN ALLOW-LIST, NOT A LOWERCASE TEST. The first version
+#: refused only lowercase calls, which let `Eq(Integral(x, (x,0,1)), 1)`
+#: through -- `Integral` is capitalised and is NOT a Wolfram function (it is
+#: `Integrate`), so it would have been read as a product. Every call must now
+#: name a function in `_SYMPY_TO_WOLFRAM` or the translation is abandoned.
+_ANY_CALL = re.compile(r"\b([A-Za-z][A-Za-z0-9_]*)\s*\(")
+
+#: SymPy name -> Wolfram name, each pair verifiable by hand and by the guard
+#: file. Deliberately short: a name not here costs a corroboration, which is
+#: the safe direction. `log` is natural in both. Multi-argument forms such as
+#: `atan2` are omitted because their argument ORDER differs between the 2
+#: systems, which is exactly the silent-wrong-answer class.
+_SYMPY_TO_WOLFRAM = {
+    "sin": "Sin", "cos": "Cos", "tan": "Tan",
+    "asin": "ArcSin", "acos": "ArcCos", "atan": "ArcTan",
+    "sinh": "Sinh", "cosh": "Cosh", "tanh": "Tanh",
+    "exp": "Exp", "log": "Log", "sqrt": "Sqrt",
+    "factorial": "Factorial", "binomial": "Binomial",
+    "floor": "Floor", "ceiling": "Ceiling",
+    "Abs": "Abs", "Max": "Max", "Min": "Min",
+}
+
+#: Constants, which are not calls and so need their own pass.
+_SYMPY_CONST_TO_WOLFRAM = {"pi": "Pi", "oo": "Infinity"}
+
+
+def _sympy_claim_to_wolfram(claim: str) -> "str | None":
+    """Translate a SymPy-form claim to Wolfram Language, or None if unsafe.
+
+    FOUND BY A FAILING TEST, 2026-10-31, and it would have made the whole
+    secondary pass inert. `_specialist_b_cell_dispatch` hands the SAME
+    `extracted_claim` to the primary and the secondary. A claim SymPy can
+    actually decide is in `Eq(...)` form -- measured the same day, all 3
+    examples in the seat-facing `sympy_verify` description (`x + 0 = x`,
+    `2 + 2 = 4`, `sin(x)^2 + cos(x)^2 = 1`) return UNVERIFIABLE because
+    `parse_expr` rejects a bare `=`. Handing `Eq(2+2, 4)` to the kernel
+    returned `ToExpression::sntx`, so every Wolfram secondary on a
+    SymPy-decidable claim would have reported NOT EVIDENCE: wired, and useless.
+
+    Only unambiguous rewrites are made:
+      * `Eq(a, b)` -> `(a) == (b)`, split on the comma at depth 1
+      * `**` -> `^`
+      * a bare `=` -> `==` (assignment in WL, equality in these claims)
+    Anything still carrying a Python-style call is refused.
+    """
+    text = claim.strip()
+    if text.startswith("Eq(") and text.endswith(")"):
+        inner = text[3:-1]
+        depth = 0
+        split_at = -1
+        for i, ch in enumerate(inner):
+            if ch in "([{":
+                depth += 1
+            elif ch in ")]}":
+                depth -= 1
+            elif ch == "," and depth == 0:
+                split_at = i
+                break
+        if split_at == -1:
+            return None
+        lhs, rhs = inner[:split_at].strip(), inner[split_at + 1:].strip()
+        if not lhs or not rhs:
+            return None
+        text = f"({lhs}) == ({rhs})"
+    text = text.replace("**", "^")
+    text = _WOLFRAM_BARE_EQ.sub("==", text)
+    # Translate every allow-listed call to Wolfram's bracket form. Done before
+    # the refusal check so a translated call is no longer a bare `name(`.
+    for py, wl in _SYMPY_TO_WOLFRAM.items():
+        text = re.sub(rf"\b{re.escape(py)}\s*\(", f"{wl}[", text)
+    for py, wl in _SYMPY_CONST_TO_WOLFRAM.items():
+        text = re.sub(rf"\b{re.escape(py)}\b", wl, text)
+    if _ANY_CALL.search(text):
+        return None
+    # Close the brackets the translation opened: every `Name[` consumed a `(`,
+    # so the matching `)` must become `]`. Walked rather than replaced, because
+    # a blind swap would corrupt grouping parentheses.
+    out, stack = [], []
+    for ch in text:
+        if ch == "[":
+            stack.append("[")
+            out.append(ch)
+        elif ch == "(":
+            stack.append("(")
+            out.append(ch)
+        elif ch == ")":
+            if not stack:
+                return None
+            out.append("]" if stack.pop() == "[" else ")")
+        else:
+            out.append(ch)
+    if stack:
+        return None
+    return "".join(out)
+
+
+def _verify_wolfram(claim: str) -> CellVerdict:
+    """SECONDARY falsifier: evaluate `claim` on the local Wolfram Engine.
+
+    FOUNDER'S RULING, 2026-09-28, which this function implements rather than
+    interprets: *"Wolfram (when available) however should remain the secondary
+    falsifier ran against any output produced from the installed Open Source
+    tools and should never be considered the primary falsifier route."* The
+    manifest entry therefore carries `secondary_only = true`, and the primary
+    dispatch loop skips it; only `falsifier_pairing.select_secondary` may pick
+    it.
+
+    WHY IT EXISTS AT ALL. Measured 2026-10-31
+    (`scripts/the_secondary_falsifier_rule_2026-10-31.py`): a `statistical`
+    claim had NO independent secondary anywhere in the manifest, because
+    `statsmodels`, `scipy`, `uncertainty_propagation` and `ml_claim` are all
+    class `numeric` and the first 2 share the identical verifier
+    `_verify_statistical`. Wolfram is class `reference` -- an independent
+    curated source rather than another evaluation of the author's own
+    expression -- so it is the route that closes that gap.
+
+    EVERY FAILURE PATH RETURNS UNCERTAIN, NEVER A BLOCKER, which is property 2
+    of the Wolfram standard: a missing or busy kernel is reported and worked
+    around. A failed call is NOT a result (2026-08-02), so `classify`'s own
+    evidence flag decides, and a non-evidence result can never confirm or
+    reject. Attribution travels with any value that reaches a record, as
+    Wolfram's terms require.
+    """
+    from bench import wolfram_standard as _ws
+
+    t0 = time.monotonic()
+
+    def _unc(msg: str, conf: float = 0.0) -> CellVerdict:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=conf, evidence=f"Wolfram: {msg}", tool_used="wolfram",
+            elapsed_s=time.monotonic() - t0,
+        )
+
+    if _ws.policy() == "deny":
+        return _unc("excluded by the `deny` policy; the open-source tools stand")
+    if not _ws.real_wolframscript():
+        return _unc("wolframscript is not installed; nobody is compelled to "
+                    "install it, so the primary tools stand alone")
+    if _WOLFRAM_BLOCKLIST.search(claim):
+        return _unc("BLOCKED: claim reaches a disallowed Wolfram function")
+
+    expr = _sympy_claim_to_wolfram(claim)
+    if expr is None:
+        return _unc("claim carries Python-style syntax with no SAFE Wolfram "
+                    "translation; refused rather than guessed, because a "
+                    "mistranslation could return a wrong boolean")
+    # One call, whole computation: the kernel is stateless between calls under
+    # the serial gate and definitions do not survive.
+    code = f"FullSimplify[{expr}]"
+    r = _ws.run_local(code, timeout=60, lock_wait=90.0)
+
+    if not r.get("evidence"):
+        return _unc(f"NOT EVIDENCE ({r.get('reason')}); the open-source tools stand")
+
+    out = (r.get("stdout") or "").strip()
+    attrib = r.get("attribution") or ""
+    if out == "True":
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.95, evidence=f"Wolfram: FullSimplify -> True. {attrib}",
+            tool_used="wolfram", elapsed_s=time.monotonic() - t0,
+        )
+    if out == "False":
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.95, evidence=f"Wolfram: FullSimplify -> False. {attrib}",
+            tool_used="wolfram", elapsed_s=time.monotonic() - t0,
+        )
+    return _unc(f"did not reduce to a boolean: {out[:200]}. {attrib}", conf=0.3)
 
 
 def _verify_z3(claim: str) -> CellVerdict:
@@ -2946,13 +3156,23 @@ def _specialist_b_cell_dispatch(
     ``test_runner``) are skipped here because other cells handle them.
 
     Semantics:
-      * first definitive verdict wins (break on non-UNCERTAIN)
+      * PRIMARY: first definitive verdict wins (break on non-UNCERTAIN)
       * UNCERTAIN verdicts fall through to the next tool
       * unknown / delegated / missing-verifier tools are skipped silently
+      * a tool the manifest marks ``secondary_only`` is NEVER the primary --
+        the founder's ruling of 2026-09-28 for Wolfram, generalised
       * if all tools return UNCERTAIN, the last UNCERTAIN verdict is kept
       * a Python-only file tool aimed at a non-Python target is BYPASSED and
         reported as a NOT_APPLICABLE verdict (A6); it never runs, never
         breaks the loop, and contributes no weight to any consensus
+      * SECONDARY (added 2026-10-31): after a DEFINITIVE primary, one
+        INDEPENDENT tool is consulted where the manifest offers it, and the
+        verdict's evidence records either the agreement or the reason the
+        primary stands alone. The secondary NEVER overrides the primary; a
+        disagreement is recorded as a disagreement. A paid route is never
+        selected without ``allow_paid``. ``CDSFL_FALSIFIER_SECONDARY=0``
+        skips the run and still writes the note, so a skipped pairing can
+        never read as a corroborated one. See ``bench/falsifier_pairing.py``.
 
     Phase B4: runs in shadow mode — specialist verdicts are returned to the
     caller but the reference runner does not fold them into ``all_verdicts``.
@@ -3000,17 +3220,43 @@ def _specialist_b_cell_dispatch(
         # A6: bypassed Python-only tools, reported rather than swallowed.
         not_applicable: List[CellVerdict] = []
 
-        for tool_name in specialist_tools:
+        def _invoke(tool_name: str):
+            """Run one manifest tool, or say why it was not run.
+
+            Extracted 2026-10-31 so the PRIMARY loop and the SECONDARY pass
+            share one invocation path. Duplicating the `needs_file` branch
+            would have been 2 code paths that can disagree about whether a
+            prose target is dispatchable, which is the A6 defect again.
+
+            Returns `(status, verdict)` with status one of:
+              * `"skipped"`  -- unknown, delegated, or no resolvable verifier.
+                The caller must leave its running verdict ALONE.
+              * `"bypassed"` -- A6: a Python-only file tool aimed at a
+                non-Python target. `verdict` is the NOT_APPLICABLE record.
+              * `"ran"`      -- the verifier was called; `verdict` is whatever
+                it returned, which may be None.
+
+            THE 3 STATES ARE LOAD-BEARING AND THE FIRST VERSION HAD 2.
+            Returning a bare `(None, None)` for a skip let the caller write
+            `v = None` and so DISCARD the verdict of the tool that had already
+            looked. Caught by `test_a_substantive_verdict_still_comes_first`
+            in `bench/tests/test_prose_target_tool_bypass.py`: with tools
+            `["sympy", "type_checker"]` on a prose target, SymPy's UNCERTAIN
+            verdict was destroyed when `type_checker` was bypassed, so
+            `verdicts[0]` became the bypass record -- exactly the displacement
+            that test exists to forbid. The original loop never assigned to
+            `v` on a skip or a bypass, and this restores that.
+            """
             entry = manifest.get(tool_name)
             if entry is None or entry.get("delegate"):
                 # Unknown tool, or delegated to another cell (ast_analysis →
                 # B-Cell v2, test_runner → CT cell). Skip silently.
-                continue
+                return "skipped", None
             verifier_fn = getattr(module, entry["verifier"], None)
             if verifier_fn is None:
                 # Validator should have dropped this at load time; belt and
                 # braces in case the manifest is hot-reloaded in future.
-                continue
+                return "skipped", None
 
             if entry.get("needs_file"):
                 # A6 (panel-converged, 2026-08-01). mypy/ruff/bandit/dis/
@@ -3025,21 +3271,85 @@ def _specialist_b_cell_dispatch(
                 # which is the truthful reading of "no target was supplied".
                 # Only a real target of the wrong type is bypassed here.
                 if target_file and not is_python_target(target_file):
-                    not_applicable.append(
-                        _not_applicable_verdict(
-                            _PYTHON_ONLY_FILE_TOOLS.get(tool_name, tool_name),
-                            target_file,
-                            finding_id=fid,
-                        )
+                    return "bypassed", _not_applicable_verdict(
+                        _PYTHON_ONLY_FILE_TOOLS.get(tool_name, tool_name),
+                        target_file,
+                        finding_id=fid,
                     )
-                    continue
-                v = verifier_fn(tf.extracted_claim, target_file)
-            else:
-                v = verifier_fn(tf.extracted_claim)
+                return "ran", verifier_fn(tf.extracted_claim, target_file)
+            return "ran", verifier_fn(tf.extracted_claim)
 
+        # ── PRIMARY ──────────────────────────────────────────────────────
+        # `primary_candidates` drops the tools the manifest marks
+        # `secondary_only`, implementing the founder's ruling of 2026-09-28
+        # that Wolfram "should never be considered the primary falsifier
+        # route". Order is preserved, so which tool decides a claim is
+        # unchanged for every claim type -- verified by execution, not
+        # assumed: the primary is still sympy / sympy / statsmodels /
+        # type_checker / lint_check across the 5 claim types.
+        primary_name: Optional[str] = None
+        for tool_name in _fpair.primary_candidates(specialist_tools, manifest):
+            status, got = _invoke(tool_name)
+            if status == "bypassed":
+                not_applicable.append(got)
+                continue
+            if status == "skipped":
+                continue
+            v = got
             if v is not None and v.verdict != "UNCERTAIN":
                 v.evidence += f" [specialist:{tool_name}]"
+                primary_name = tool_name
                 break  # First definitive result wins
+
+        # ── SECONDARY ────────────────────────────────────────────────────
+        # THE FOUNDER'S RULE, 2026-10-31: use an independent secondary where
+        # one is available, and where none is, use the primary alone AND SAY
+        # SO. The saying-so is the operative half: an unmarked single-tool
+        # verdict is indistinguishable from a corroborated one.
+        #
+        # IT NEVER OVERRIDES THE PRIMARY. A disagreeing secondary is recorded
+        # as a disagreement and the verdict is left as the primary gave it.
+        # Changing a verdict is a behavioural change to a live experimental
+        # apparatus and is the founder's call, not a side effect of wiring a
+        # rule.
+        #
+        # MEASURED COST, 2026-10-31, so a future reader does not rediscover
+        # it: `_verify_wolfram` runs 4.656 s mean over 5 calls against
+        # `_verify_sympy` at 0.991 s, a ratio of 4.70. The pass therefore
+        # adds roughly 1 primary-call-equivalent per DEFINITIVE verdict, and
+        # nothing at all on an UNCERTAIN one. `CDSFL_FALSIFIER_SECONDARY=0`
+        # switches the run off; the note is still written when it does, so
+        # the record never silently reads as corroborated.
+        if v is not None and primary_name is not None:
+            sec, reason, detail = _fpair.select_secondary(
+                primary_name, specialist_tools, manifest,
+                allow_paid=False,  # a paid route needs his express authorisation
+            )
+            if sec is None:
+                v.evidence += " " + _fpair.pairing_note(
+                    primary_name, None, reason, detail)
+            elif os.environ.get("CDSFL_FALSIFIER_SECONDARY", "1") == "0":
+                v.evidence += " " + _fpair.pairing_note(
+                    primary_name, sec, reason, detail + "; skipped by "
+                    "CDSFL_FALSIFIER_SECONDARY=0", agrees=None)
+            else:
+                try:
+                    _st, sv = _invoke(sec)
+                    if _st != "ran":
+                        sv = None
+                except Exception as exc:  # noqa: BLE001
+                    # A failed call is NOT a result (2026-08-02). Equipment
+                    # failure is recorded as such and never as agreement.
+                    sv = None
+                    detail += f"; secondary raised {type(exc).__name__}"
+                if sv is None or sv.verdict == "UNCERTAIN":
+                    v.evidence += " " + _fpair.pairing_note(
+                        primary_name, sec, reason, detail, agrees=None)
+                else:
+                    agrees = sv.verdict == v.verdict
+                    v.evidence += " " + _fpair.pairing_note(
+                        primary_name, sec, reason,
+                        f"{detail}; secondary said {sv.verdict}", agrees=agrees)
 
         if v is not None:
             v.finding_id = fid

@@ -415,10 +415,74 @@ class TestTheGuardCoversTheWholeManifest:
             f"{unguarded}. The router guard alone is not enough — these are "
             "called directly elsewhere.")
 
-    def test_the_router_guards_before_it_dispatches(self):
-        src = inspect.getsource(_specialist_b_cell_dispatch)
-        i = src.index('if entry.get("needs_file"):')
-        j = src.index("v = verifier_fn(tf.extracted_claim, target_file)", i)
-        assert "is_python_target" in src[i:j], (
-            "the target-type check must sit between the needs_file branch and "
-            "the call, so the tool is never invoked on a target it cannot read")
+    def test_the_router_guards_before_it_dispatches(self, prose, monkeypatch):
+        """The file-based verifier is NEVER CALLED on a prose target.
+
+        CONVERTED FROM A SOURCE-TEXT ASSERTION, 2026-10-31. It used to locate
+        `if entry.get("needs_file"):` and `v = verifier_fn(tf.extracted_claim,
+        target_file)` in the router's own source and assert `is_python_target`
+        sat between them. That is a positional check over text, and when the
+        invocation was extracted into a helper on 2026-10-31 the literal
+        vanished and the test raised `ValueError: substring not found` -- it
+        punished a refactor without the guarded property having changed at all.
+
+        The INTENT is preserved verbatim from the original assertion message:
+        "the tool is never invoked on a target it cannot read". That is a
+        behavioural claim, so it is now measured behaviourally -- the verifier
+        is replaced by a recorder and the dispatch is run. This is strictly
+        stronger than the text check: it would also catch a guard that sat in
+        the right place and did not work.
+        """
+        calls = []
+
+        def _recording_type_check(claim, file_path=""):
+            calls.append((claim, file_path))
+            raise AssertionError(
+                "mypy's verifier was invoked on a prose target: the router "
+                "guard did not bypass it")
+
+        monkeypatch.setattr(ia, "_verify_type_check", _recording_type_check)
+        cfg = {"immune": {"verification_tools": {
+            "mathematical": ["type_checker"]}}}
+        tf = TriagedFinding(
+            finding=_finding(fid="G1", target_file=prose, desc="2 + 2 = 4"),
+            claim_type=ClaimType.MATHEMATICAL,
+            extracted_claim="2 + 2 = 4",
+        )
+        verdicts = _specialist_b_cell_dispatch([tf], cfg)
+        assert calls == [], f"the verifier was called {len(calls)} time(s)"
+        assert any(v.verdict == NOT_APPLICABLE_VERDICT for v in verdicts), (
+            "the bypass must be RECORDED, not silently skipped: "
+            f"{[v.verdict for v in verdicts]}")
+
+    def test_a_python_target_still_reaches_the_verifier(self, tmp_path,
+                                                        monkeypatch):
+        """ANTI-VACUITY CONTROL for the test above.
+
+        A router that bypassed EVERYTHING would pass that test trivially. This
+        asserts the guard is selective: on a real Python target the verifier is
+        reached.
+        """
+        calls = []
+
+        def _recording_type_check(claim, file_path=""):
+            calls.append((claim, file_path))
+            return ia.CellVerdict(
+                cell_type=ia.CellType.B_CELL, finding_id="",
+                verdict="UNCERTAIN", confidence=0.0, evidence="recorded",
+                tool_used="mypy", elapsed_s=0.0)
+
+        py = tmp_path / "SW-21-REF-04.py"
+        py.write_text("x = 1\n", encoding="utf-8")
+        monkeypatch.setattr(ia, "_verify_type_check", _recording_type_check)
+        cfg = {"immune": {"verification_tools": {
+            "mathematical": ["type_checker"]}}}
+        tf = TriagedFinding(
+            finding=_finding(fid="G2", target_file=str(py), desc="2 + 2 = 4"),
+            claim_type=ClaimType.MATHEMATICAL,
+            extracted_claim="2 + 2 = 4",
+        )
+        _specialist_b_cell_dispatch([tf], cfg)
+        assert len(calls) == 1, (
+            "the verifier was NOT reached on a Python target, so the bypass "
+            "test above could pass vacuously")

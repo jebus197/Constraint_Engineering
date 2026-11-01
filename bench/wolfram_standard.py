@@ -113,7 +113,22 @@ DEFAULT_CALL_LOG = Path.home() / "Library" / "Logs" / "cdsfl_wolfram_calls.log"
 #: Exit code when the queue never came free. 75 is EX_TEMPFAIL: try again later.
 BUSY_EXIT = 75
 
-#: `$LicenseExpirationDate` as read on 2026-09-15, after the manual activation.
+#: FALLBACK ONLY. THE KERNEL IS AUTHORITATIVE -- ASK IT, DO NOT TRUST THIS.
+#:
+#: FOUNDER, 2026-10-31: *"Wolfram licence renewal is automated. You automated
+#: it. You need to stop redicovering this 'issue'!"* He is right, and the cause
+#: is this constant. Renewal runs itself under the LaunchAgent
+#: `com.cdsfl.wolfram-licence-renew` (`scripts/wolfram_licence_renew_2026-09-17.py`),
+#: so a FROZEN date here is stale by design within weeks, and every session
+#: that calls `licence_warning()` on its default after that date is told
+#: "EXPIRED" about a licence that is fine -- then investigates. That false
+#: alarm reached him twice in one evening on 2026-09-27 and was surfaced again
+#: on 2026-10-31. UPDATING THE DATE DOES NOT FIX IT; it re-arms the same trap a
+#: few weeks later. So the date is kept only as a last resort for a machine
+#: with no kernel to ask, and every caller reads `live_expiry()` first.
+#:
+#: `$LicenseExpirationDate` read from the kernel on 2026-10-31: 2026-11-04,
+#: which is the automation working.
 RECORDED_LICENCE_EXPIRY = "2026-10-08"
 
 #: How the hosted connector reports a failure while calling it a success.
@@ -171,8 +186,16 @@ SERIAL_CLAUSE = (
     "TOOLS, AND WOLFRAM AMONG THEM (founder, standing, 2026-09-17). You are not exempt from using "
     "tools: use them wherever they can decide a claim. SymPy, z3, mpmath, SciPy, statsmodels, NumPy "
     "and the rest of the open-source set are PRIMARY and are used in every case. Wolfram is the "
-    "SECOND falsifier: where it can check a result you have already obtained, use it as well, via "
-    "`wolframscript -code '...'` in Bash. It is never the only source for a claim and never a "
+    "SECOND falsifier: where it can check a result you have already obtained, use it as well. "
+    # ROUTE PER SEAT, CORRECTED 2026-10-31. This clause named `wolframscript` in Bash as the only
+    # route, and a REMOTE seat (OpenRouter or a direct API) has no shell -- so 4 of the 6 seats were
+    # being told to do something structurally impossible, which is the 2026-09-20 defect exactly:
+    # a brief asking for what the seat cannot do, with the seat spending its budget discovering so.
+    # The `wolfram_verify` host-side tool added the same day gives those seats a real route, and
+    # these words now name both so no seat is told to use a facility it does not have.
+    "If you have a shell, call `wolframscript -code '...'` in Bash. If you have tools but no shell, "
+    "call the `wolfram_verify` tool, which evaluates on the host's kernel and returns its output. "
+    "It is never the only source for a claim and never a "
     "dependency. Calls are queued against 1 licensed kernel, so yours may wait, and a call that "
     "cannot run -- Wolfram absent, kernel busy, licence lapsed -- is NOT a blocker: say so in your "
     "reply and carry on with the open-source tools, which is the whole answer on any machine where "
@@ -181,7 +204,8 @@ SERIAL_CLAUSE = (
 
 #: What a seat is told under `deny`, which the test suite runs under.
 DENY_CLAUSE = (
-    "WOLFRAM (founder, standing, 2026-09-17). Do not run `wolframscript`, `WolframKernel` or any "
+    "WOLFRAM (founder, standing, 2026-09-17). Do not run `wolframscript`, `WolframKernel`, the "
+    "`wolfram_verify` tool, or any "
     "Wolfram service in this dispatch: Wolfram's published terms bar its use inside automated AI "
     "pipelines, and the local Engine is licensed for a single kernel. Cross-check with SymPy, "
     "mpmath, SciPy, statsmodels or z3 instead. A Wolfram result that reaches you from anywhere else "
@@ -368,6 +392,15 @@ def run_local(code: str, timeout: int = 120, runner=subprocess.run,
             out, err, rc = r.stdout or "", r.stderr or "", r.returncode
         except subprocess.TimeoutExpired:
             out, err, rc = "", f"[Timeout after {timeout}s]", None
+        except OSError as exc:
+            # THE BINARY COULD NOT BE LAUNCHED AT ALL. Added 2026-10-31: the
+            # test suite's netguard denies a `wolframscript` subprocess by
+            # raising FileNotFoundError, and so does a machine where the path
+            # exists but is not executable. Either way it is a FAILED
+            # MEASUREMENT, not a statement about the mathematics, so it takes
+            # the same not-evidence path as a timeout rather than escaping as
+            # an exception a caller has to guess the meaning of.
+            out, err, rc = "", f"[Error] could not start {script}: {exc}", None
         ok, why = classify("local", (out + "\n" + err).strip(), rc if rc is not None else 124)
         last = {"evidence": ok, "reason": why, "attempts": attempt, "stdout": out,
                 "stderr": err, "returncode": rc, "attribution": attribution("local") if ok else None}
@@ -384,15 +417,55 @@ def parse_licence_expiry(text: str) -> str | None:
 
 def licence_warning(expiry: str = RECORDED_LICENCE_EXPIRY, today: _dt.date | None = None,
                     horizon_days: int = 14) -> str | None:
-    """A warning when the Engine licence has lapsed or lapses within `horizon_days`."""
+    """A warning when the Engine licence has lapsed or lapses within `horizon_days`.
+
+    CALL IT WITH `live_expiry()`, NOT WITH THE DEFAULT. The default is a frozen
+    constant and is stale by design -- see RECORDED_LICENCE_EXPIRY.
+
+    THE NEAR-EXPIRY WORDING WAS THE NUISANCE, CORRECTED 2026-10-31 on the
+    founder's instruction to stop rediscovering a solved problem. Renewal is
+    automated, so the licence sits a few weeks out by design and therefore
+    lands INSIDE a 14-day horizon routinely. The old text told the reader it
+    "did not auto-renew last time" and to renew by hand -- advice that was true
+    once, in September 2026, and has been false and self-perpetuating since.
+    A lapse is still a real alarm, because a lapse means the automation failed.
+    """
     today = today or _dt.date.today()
     left = (_dt.date.fromisoformat(expiry) - today).days
     if left < 0:
-        return f"the Wolfram Engine licence EXPIRED on {expiry}; run `wolframscript -activate`"
+        return (f"the Wolfram Engine licence EXPIRED on {expiry}. Renewal is automated under the "
+                f"LaunchAgent `com.cdsfl.wolfram-licence-renew`, so an actual lapse means the "
+                f"AUTOMATION failed: check `launchctl list | grep wolfram` and its log before "
+                f"activating anything by hand")
     if left <= horizon_days:
-        return (f"the Wolfram Engine licence expires on {expiry}, in {left} day(s), and did not "
-                f"auto-renew last time; renew it by hand with `wolframscript -activate`")
+        return (f"the Wolfram Engine licence expires on {expiry}, in {left} day(s). NO ACTION IS "
+                f"EXPECTED: renewal is automated under the LaunchAgent "
+                f"`com.cdsfl.wolfram-licence-renew`, which runs at login and twice daily and "
+                f"activates inside the window. This is a status line, not a task")
     return None
+
+
+def live_expiry(timeout: int = 60, runner=subprocess.run,
+                script: str | None = None) -> str | None:
+    """`$LicenseExpirationDate` read from the kernel, or None if it cannot be.
+
+    THE ONE CODE PATH for "when does the licence actually expire".
+    `scripts/cdsfl_onboard.py` has done this correctly since 2026-09-17 --
+    kernel first, constant only as a fallback -- while this module's own
+    `main()` read the frozen constant and printed EXPIRED about a healthy
+    licence. 2 ways of answering 1 question, and the wrong one was the one a
+    fresh session reached first. Extracted here so both callers share it.
+
+    Returns None rather than raising: a missing or busy kernel is not a
+    statement about the licence, and it is never a blocker.
+    """
+    if not real_wolframscript() and script is None:
+        return None
+    r = run_local("$LicenseExpirationDate", timeout=timeout, runner=runner,
+                  script=script)
+    if not r.get("evidence"):
+        return None
+    return parse_licence_expiry(r.get("stdout") or "")
 
 
 def gated_path(env: dict[str, str], pol: str | None = None) -> dict[str, str]:
@@ -481,7 +554,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "policy":
         print(policy())
         return 0
-    print(licence_warning() or f"licence recorded as valid until {RECORDED_LICENCE_EXPIRY}")
+    # ASK THE KERNEL, THEN FALL BACK. Printing `licence_warning()` on its
+    # default made this command announce EXPIRED about a licence the automation
+    # had already renewed -- see RECORDED_LICENCE_EXPIRY for why updating the
+    # date is not the fix.
+    live = live_expiry()
+    expiry = live or RECORDED_LICENCE_EXPIRY
+    source = "read from the kernel" if live else (
+        "from the recorded fallback -- THE KERNEL COULD NOT BE ASKED")
+    warning = licence_warning(expiry)
+    print(warning or f"licence valid until {expiry} ({source})")
     return 0
 
 

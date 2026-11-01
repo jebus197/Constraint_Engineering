@@ -536,6 +536,16 @@ def _annotations_in(p: Path, d: _dt.date | None = None,
             # there is none. Stopping at the first non-blank is what keeps a
             # marker belonging to a LATER annotation from being stolen here.
             _marker = ""
+            #: ★ WHICH FORM THE MARKER CAME FROM, added 2026-10-31. Without it a
+            #: consumer cannot compare like with like:
+            #: `can_i_parse_his_responses_in_full_2026-10-19.py` counted own-line
+            #: marker LINES on the raw side against own-line PLUS trailing
+            #: markers on this side, so the moment a file carried a trailing
+            #: marker and no own-line one the measurement reported the reader as
+            #: inventing markers it had correctly read. 4 files did, carrying 38
+            #: markers between them. The field is the association rule's own
+            #: output, so it is the only place that knows the answer.
+            _marker_form = ""
             for _k in range(_last + 1, len(_lines)):
                 _cand = _lines[_k].strip()
                 if not _cand:
@@ -554,15 +564,20 @@ def _annotations_in(p: Path, d: _dt.date | None = None,
                     _marker = ",".join(
                         _LEGACY_MARKERS.get(x.strip().lower(), x.strip().lower())
                         for x in _cand.split(",") if x.strip())
+                    if _marker:
+                        _marker_form = "own_line"
                 break
             #: FALL BACK TO A TRAILING MARKER inside the annotation's own text.
             #: The own-line form is tried FIRST and wins, because it is the form
             #: 59 of his markers use and it is unambiguous.
             if not _marker:
                 _marker = _marker_of(body)
+                if _marker:
+                    _marker_form = "trailing"
             out.append({"file": p.name, "ext": p.suffix.lower(), "date": d.isoformat(),
                         "report_date": rd.isoformat(),
-                        "line_index": i, "text": body, "marker": _marker})
+                        "line_index": i, "text": body, "marker": _marker,
+                        "marker_form": _marker_form})
     return out
 
 

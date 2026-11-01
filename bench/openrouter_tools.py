@@ -70,9 +70,20 @@ SYMPY_TOOL_SPEC: Dict[str, Any] = {
     "function": {
         "name": "sympy_verify",
         "description": (
+            # EXAMPLES CORRECTED 2026-10-31. The 3 previously documented here
+            # -- 'x + 0 = x', '2 + 2 = 4', 'sin(x)^2 + cos(x)^2 = 1' -- were
+            # measured against the live verifier and ALL 3 return UNCERTAIN
+            # with "UNVERIFIABLE: invalid syntax": `parse_expr` rejects a bare
+            # `=`. So every remote seat reading this description was being
+            # taught a claim format the tool cannot parse, which is the
+            # 2026-09-20 defect again (a seat told to do what it cannot).
+            # The forms below are the ones that actually decide.
             "Verify a symbolic or algebraic equality/inequality claim "
-            "using SymPy. Examples: 'x + 0 = x', '2 + 2 = 4', "
-            "'sin(x)^2 + cos(x)^2 = 1'. Returns CONFIRMED, REJECTED, or "
+            "using SymPy. Write the claim as a SymPy expression, using "
+            "Eq(lhs, rhs) for an equality -- a bare `=` is a syntax error "
+            "and returns UNCERTAIN. Examples: 'Eq(x + 0, x)', "
+            "'Eq(2 + 2, 4)', 'Eq(sin(x)**2 + cos(x)**2, 1)', "
+            "'Gt(2, 1)'. Returns CONFIRMED, REJECTED, or "
             "UNCERTAIN along with structured evidence."
         ),
         "parameters": {
@@ -187,12 +198,68 @@ MYPY_TOOL_SPEC: Dict[str, Any] = {
 }
 
 
+#: THE WOLFRAM GAP, CLOSED 2026-10-31. Measured the same day: the panel exposed
+#: 10 host-side tools and NOT ONE of them reached Wolfram, so the 4 remote seats
+#: (cx, ge, cgpt, ds) had no route to it at all. The 2 CLI seats (cc2, fable)
+#: reach it through their shell, because `bench/tools/wolfram_gate/serial` is
+#: first on their PATH. That asymmetry made the founder's ruling of 2026-09-28
+#: -- that Wolfram is the SECONDARY falsifier wherever available -- unreachable
+#: for 4 of 6 seats BY CONSTRUCTION, whatever any system prompt told them.
+#:
+#: WHY A BRIDGE IS THE RIGHT SHAPE AND NOT A DEPENDENCY. The remote model never
+#: installs anything and never touches the kernel: it emits a tool call, the
+#: HOST evaluates it through `wolfram_standard.run_local`, and the host returns
+#: the result. So the licence, the single-kernel queue and the failure
+#: classification all stay on this machine, where they already work.
+#:
+#: THIS IS NOT THE STORED-FALSIFIER CASE. `bench/falsifier_verify.py` refuses a
+#: SCORED FALSIFIER the kernel, on 2 technical grounds recorded in
+#: `.claude/CLAUDE.md`: a falsifier is re-run by whoever reproduces the
+#: experiment and must not need a licensed kernel, and falsifiers run in
+#: parallel against 1 kernel. Neither applies here. A panel tool call is not a
+#: stored artefact that has to be re-runnable by a third party, and the serial
+#: gate takes a machine-wide exclusive lock, so contention is queued rather
+#: than raced. That refusal is untouched by this tool.
+WOLFRAM_TOOL_SPEC: Dict[str, Any] = {
+    "type": "function",
+    "function": {
+        "name": "wolfram_verify",
+        "description": (
+            "SECONDARY falsifier only. Evaluate a Wolfram Language expression "
+            "on the host's local Wolfram Engine and return its output. Use "
+            "this to CHECK a result you have already obtained from an "
+            "open-source tool (SymPy, z3, SciPy, statsmodels, mpmath, NumPy) "
+            "by a different route -- never as your first or only tool, and "
+            "never as the primary route for any claim. Pass a complete "
+            "expression: the kernel is stateless between calls, so "
+            "definitions do not survive. If the kernel is missing, busy or "
+            "errors, the reply says `evidence: false` and that is NOT a "
+            "result about the mathematics -- carry on with the open-source "
+            "tools, which remain primary in every case. Example code: "
+            "'FullSimplify[Sin[x]^2 + Cos[x]^2 == 1]'."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": "Wolfram Language expression to evaluate, "
+                                   "complete and self-contained.",
+                },
+            },
+            "required": ["code"],
+        },
+    },
+}
+
+
 TOOL_SPECS: List[Dict[str, Any]] = [
     SYMPY_TOOL_SPEC,
     Z3_TOOL_SPEC,
     PYTEST_TOOL_SPEC,
     RUFF_TOOL_SPEC,
     MYPY_TOOL_SPEC,
+    WOLFRAM_TOOL_SPEC,
 ]
 
 
@@ -249,6 +316,56 @@ def _run_z3_verify(claim: str) -> Dict[str, Any]:
         "tool": v.tool_used,
         "elapsed_s": round(time.monotonic() - t0, 3),
     }
+
+
+def _run_wolfram_verify(code: str) -> Dict[str, Any]:
+    """Host-side Wolfram evaluation for a seat that has no shell.
+
+    EVERY FAILURE PATH RETURNS A RESULT THE MODEL CANNOT MISTAKE FOR AN ANSWER.
+    The hazard is specific and this project has already lost a convergence to
+    its shape: a failure that looks like a result. `wolfram_standard.classify`
+    decides evidence per route, and its verdict is passed through UNCHANGED in
+    the `evidence` field, with `reason` beside it. A caller that reads only
+    `stdout` would still see the error text, so `verdict` is pre-computed here
+    and says NOT_EVIDENCE outright.
+
+    The `deny` policy is honoured rather than bypassed: under it the kernel is
+    never started and the reply says so. Attribution travels with any value,
+    as Wolfram's terms require.
+    """
+    from bench import wolfram_standard as ws
+
+    t0 = time.monotonic()
+
+    def _out(verdict: str, **kw: Any) -> Dict[str, Any]:
+        d = {"verdict": verdict, "tool": "wolfram",
+             "elapsed_s": round(time.monotonic() - t0, 3)}
+        d.update(kw)
+        return d
+
+    if ws.policy() == "deny":
+        return _out("NOT_EVIDENCE", evidence=False,
+                    reason="Wolfram is excluded from automated runs under the "
+                           "`deny` policy; the open-source tools remain primary",
+                    stdout="")
+    if not ws.real_wolframscript():
+        return _out("NOT_EVIDENCE", evidence=False,
+                    reason="wolframscript is not installed on the host; nobody "
+                           "is compelled to install Wolfram, so carry on with "
+                           "the open-source tools",
+                    stdout="")
+
+    # `lock_wait` is bounded well below the module default of 600 s: a seat
+    # waiting 10 minutes on a contended kernel would stall the whole panel,
+    # and a busy kernel is explicitly NOT a blocker.
+    r = ws.run_local(code, timeout=60, lock_wait=90.0)
+    if not r.get("evidence"):
+        return _out("NOT_EVIDENCE", evidence=False,
+                    reason=str(r.get("reason")),
+                    stdout=(r.get("stdout") or "")[:2000])
+    return _out("EVIDENCE", evidence=True, reason=str(r.get("reason")),
+                stdout=(r.get("stdout") or "")[:4000],
+                attribution=r.get("attribution"))
 
 
 def _run_pytest(test_path: str) -> Dict[str, Any]:
@@ -328,6 +445,7 @@ _TOOL_DISPATCH: Dict[str, Callable[..., Dict[str, Any]]] = {
     "pytest_run": lambda args: _run_pytest(args["test_path"]),
     "ruff_check": lambda args: _run_ruff(args["file_path"]),
     "mypy_check": lambda args: _run_mypy(args["file_path"]),
+    "wolfram_verify": lambda args: _run_wolfram_verify(args["code"]),
 }
 
 

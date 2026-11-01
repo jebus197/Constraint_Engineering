@@ -152,6 +152,24 @@ Both instances have unrestricted access to all tools for STEM research, source i
 - **Stoichiometry claim** → regex + collections (no external dep), or pint for unit-bearing balances
 - **Any claim** → if tools can verify it, tools MUST verify it before verdict
 
+### The primary/secondary falsifier rule (built 2026-10-31, and it was already his)
+
+**HIS INSTRUCTION, 2026-10-31:** *"Isn't a better rule to use an equivalent secondary falsifier/tool when such tools are available, and if not to default exclusively to using the primary only?"*, qualified in the same message to cover a secondary that *"cannot be installed from the curated list"*.
+
+**IT WAS ALREADY HIS RULING AND NOTHING ENFORCED IT FOR 44 DAYS.** 2026-09-28: *"Wolfram (when available) however should remain the secondary falsifier ran against any output produced from the installed Open Source tools and should never be considered the primary falsifier route."* And 2026-09-17, on unavailability: *"The only exception is when a tool may be literally physically unavailable to a model/agent, in which case it should also fall back exclusively to the Open Source tools it does have access to."*
+
+**THE RULE, as code in `bench/falsifier_pairing.py`.** A claim gets a PRIMARY. A SECONDARY is consulted only where a candidate is INDEPENDENT of it — a different `independence_class` AND not the same verifier function. A paid route is never selected without `allow_paid`, which nothing sets. An independent candidate that is in the curated list but NOT installed is reported with its `package_hint` rather than silently skipped. Where no secondary survives, the primary stands ALONE **and the record says so** — the saying-so is the operative half, because an unmarked single-tool verdict is indistinguishable from a corroborated one. It NEVER overrides the primary: a disagreement is recorded as a disagreement.
+
+**WHY INDEPENDENCE AND NOT COUNT.** `statsmodels` and `scipy` both resolve to the identical verifier `_verify_statistical`, so the canonical 2-tool pair for a statistical claim was **1 function called twice**. Every same-formulation cross-check run on 2026-10-31 agreed to machine precision and caught nothing; all 3 errors actually caught came from a different ROUTE to the quantity. **That evidence is WEAK and labelled so:** n = 7, post-hoc classification, selection risk running toward the flattering conclusion. Consistent with the rule, not a test of it.
+
+**WHAT WAS MEASURED** (`scripts/the_secondary_falsifier_rule_2026-10-31.py`, exit 0, every figure on 2 tools). The B-Cell dispatch ended its loop with `break  # First definitive result wins`, so it was **SINGLE-TOOL BY CONSTRUCTION** and no secondary existed anywhere. `install_check` and `package_hint` sat on 19 of 21 manifest entries and were read by **0 lines of product code — 0 of those 19, Wilson [0.000000, 0.168179]** — the curated list already existed as data nothing reached, which is the answer to the curated-list question. Coverage across the live domain configs rose **15 of 30 → 27 of 30**, Wilson [0.743789, 0.965400].
+
+**THE WOLFRAM GAP, CLOSED.** `wolfram_verify` is a host-side tool in `bench/openrouter_tools.py`: the remote model asks, THIS MACHINE evaluates through the serial gate, this machine returns the answer. No remote model installs anything or touches the licence. Before it, the panel offered 10 host-side tools and none reached Wolfram, so the 4 seats without a shell could not obey the 2026-09-28 ruling **by construction**. `secondary_only = true` keeps Wolfram out of every primary pool — without it the manifest entry would have made it position 13 of the `mathematical` order and therefore a primary route. **The stored-falsifier refusal in `bench/falsifier_verify.py` is untouched** and its 2 technical reasons do not apply to a host-executed panel tool.
+
+**GUARD:** `bench/tests/test_the_secondary_falsifier_rule_2026-10-31.py`, 54 tests offline and 60 with the kernel allowed, **14 of 14 mutations red** (`scripts/the_secondary_falsifier_mutations_2026-10-31.py`).
+
+**AND A STANDING ANNOYANCE REMOVED AT ROOT.** `RECORDED_LICENCE_EXPIRY` is a FROZEN date and renewal is AUTOMATED, so every session reading `licence_warning()` on its default after that date was told the licence had expired, and investigated. His words, 2026-10-31: *"Wolfram licence renewal is automated. You automated it. You need to stop redicovering this 'issue'!"* Updating the date re-arms the trap weeks later, so the kernel is now asked first (`live_expiry()`), the frozen date is a last resort for a machine with no kernel, and the near-expiry text says NO ACTION IS EXPECTED and names the LaunchAgent. **Do not rediscover this.**
+
 ### Additional Tools Installed (Tranche B, 14 April 2026)
 
 Wired into B-Cell specialist dispatch via `bench/cdsfl_registry/tool_manifest.toml`:
@@ -578,6 +596,24 @@ An item can be either, both or neither. `scripts/blocker_triage.py` now tests th
 It refuses a stop only when **all 5** hold: the work list has OPEN items, the turn closed no task, the turn made no commit, it made fewer than 6 tool calls, and it emitted more than 1,200 characters of prose — **and the founder's message did not carry `d`.** His command overrides absolutely; a hook that overrode it would be worse than the defect it treats. It cannot loop: `stop_hook_active` exits 0 immediately, so it interrupts at most 1 stop per turn.
 
 Guarded by `bench/tests/test_work_not_narrate_hook_2026-09-10.py`, 14 tests, including that it CAN block, that `d` overrides, that it stays silent on 4 ordinary cases, that it cannot trap a session, and that the versioned copy matches the one that actually runs — because 3 of the 4 earlier hooks existed in no repository at all.
+
+## ★ THE 3 FORMAL STANDARDS, IN ONE PLACE — his instruction, 2026-10-31
+
+**HIS WORDS:** *"make recommendations for a fix based on our 3 formal project standards of, additive simplest sufficient fix, and composability. These are non-accidental/non casual terms. They have very clear and definite meanings. Make sure you use them correctly, as defined previously in the project's rules. (If you haven't defined them clearly in any one single place previously, probably you should do this in your local project and global CLAUDE.md files.)"*
+
+**THEY WERE NOT DEFINED IN ONE PLACE AND COMPOSABILITY WAS NOT DEFINED AT ALL HERE.** Measured 2026-10-31: the word `composability` appeared **0 times** in this file and 0 times in the global one, which is the gap he suspected when he wrote the parenthesis above. Every recommendation made to him carrying the word therefore cited a standard neither instruction file stated.
+
+**1. ADDITIVE.** Stated in full under *The additive standard* below, which is the canonical text and is not restated here so the 2 cannot drift. In short: work adds to reliability, functionality, accuracy, robustness and the project's stated aims; a feature is never disabled or removed, and removal only when something better renders it redundant, where *better* means a COMMITTED MEASUREMENT showing the replacement dominates on a named property. Symmetrically, an addition that nothing reaches is not additive either.
+
+**2. SIMPLEST SUFFICIENT.** The smallest change that addresses the ROOT CAUSE and the downstream consequences traced in FOLLOW. Justified complexity is complexity that cannot be done without. See `simplicity-default` in the global file.
+
+**3. COMPOSABILITY — HIS OWN WORDS, 2026-10-02, VERBATIM, because every prior use of the term here was a paraphrase that inverted it:**
+
+> *"Composability doesn't mean composing two solutions just because they can be composed. It means this principle should be applied where two composed solutions demonstrably provide a better, more robust and/or more efficient solution than either fix in isolation. Where a single fix out performs a composed one, that fix should continue to be preferred. In all cases any fix should also take the first two conditions fully into consideration also."*
+
+**SO COMPOSABILITY IS A CLAIM THAT REQUIRES A MEASUREMENT.** It is NOT the claim that 2 fixes can sit side by side without conflicting. **Measured 2026-10-31: 10 of 10 uses of the word across the decisions file and the morning report used the weak non-interference sense his definition explicitly excludes**, Wilson 95% [0.722467, 1.000000]. A composed fix may be recommended only with a measurement showing it dominates either part alone on a named property; where a single fix performs as well or better, the single fix is preferred.
+
+**AND THE MECHANICAL CAUSE OF THE DRIFT, WHICH IS STILL OPEN.** His definition DOES reach every panel seat: it is in the dispatcher's SYSTEM prompt with the demonstration requirement intact, held by a guard of 6 tests. But the BRIEF TEMPLATE states the same standard as, in full, *say whether the repairs compose, conflict, or are independent* — the weak form, and the form a brief author reads. **2 declarations of 1 standard exist and they disagree.** Replacing the template's wording changes what every future seat is told, so it is his ruling and is an open item of the 2026-10-31 morning report.
 
 ## The additive standard
 

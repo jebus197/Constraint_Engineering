@@ -28,6 +28,15 @@ statistical = [
 ]
 
 [immune.verification_tools]
+# WOLFRAM, added 2026-10-31. SECONDARY ONLY -- the manifest marks it
+# `secondary_only = true`, so it can never become the primary for any
+# claim here, per the founder's ruling of 2026-09-28 that Wolfram
+# "should never be considered the primary falsifier route". It is listed
+# because the claim types patched below had NO independent secondary:
+# the open-source candidates all share an independence class, and for a
+# statistical claim `statsmodels` and `scipy` share the identical
+# verifier `_verify_statistical`. A missing or busy kernel is reported,
+# never a blocker.
 
 # Biology verification relies on logical consistency and statistical
 # rigour rather than symbolic computation.  SymPy for kinetics equations,
@@ -35,8 +44,8 @@ statistical = [
 # biological_sequence (Biopython) handles DNA/RNA/protein sequence claims
 # (length, GC content, translation, reverse complement).
 mathematical = ["sympy", "biological_sequence", "dimensional_analysis"]
-logical = ["z3"]
-statistical = ["statsmodels", "scipy", "uncertainty_propagation"]
+logical = ["z3", "wolfram"]
+statistical = ["statsmodels", "scipy", "uncertainty_propagation", "wolfram"]
 
 [immune.ct_prompt_template]
 template = """You are investigating biological claims. Your output will be mechanically verified.

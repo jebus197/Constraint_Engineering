@@ -38,7 +38,9 @@ region is a record, not a claim this project is making.
 
 PLACEHOLDERS ARE ALLOWLISTED BY NAME, NOT BY PATTERN. A pattern matching `x.json`
 or `thing.py` would quietly exempt a real file that happened to be named that
-way. The allowlist is 3 entries long and each is listed with its reason.
+way. The allowlist is 6 entries long and each is listed with its reason. The
+count in this sentence was stale at 3 while the list held 5, and was corrected
+on 2026-10-31 when the 6th was added.
 """
 from __future__ import annotations
 
@@ -77,12 +79,45 @@ PLACEHOLDERS = {
         "this is not lost work -- but correcting the path would destroy the "
         "lesson, which is the whole point of the sentence. Allowlisted rather "
         "than repaired, on that reasoning and not for convenience.",
+    "bench/proof_verify.py":
+        "DELIBERATELY ABSENT, added 2026-10-31. B54 cites it in order to state "
+        "that it does NOT exist: it is a module seat 'fable' PROPOSED during "
+        "the proof-polarity joint round, and it lives only inside the unapplied "
+        "bench/logs/joint_what_is_a_proof_outside_code_2026-10-31/"
+        "seat_proposals.diff. Its absence is the EVIDENCE for that entry's "
+        "conclusion, which is that the polarity hazard is prospective rather "
+        "than live, so correcting the citation would delete the finding. "
+        "Verified absent by scripts/is_the_polarity_hazard_reachable_2026-10-31.py, "
+        "which reports 0 live references to the 3 names the proposal adds.",
+    "bench/__init__.py":
+        "DELIBERATELY ABSENT, and its absence IS the finding, recorded "
+        "2026-11-01. `bench` is a namespace package with no marker file, and "
+        "that is precisely why mypy cannot resolve a bare project import: with "
+        "`--ignore-missing-imports`, which is how the project invokes it, the "
+        "symbol becomes Any and the constructor is never checked while mypy "
+        "prints `Success: no issues found`. 110 of 155 live bench files import "
+        "that way. Both citations -- in "
+        "scripts/the_role_vocabulary_has_forked_2026-10-31.py and its guard -- "
+        "name the path in order to say it is not there, so correcting the "
+        "citation away would delete the explanation. If a marker file is ever "
+        "added, remove this entry so the path is checked again.",
     "bench/tests/test_ladder_transport_2026-10-11.py":
         "DELIBERATELY ABSENT after 2026-10-30. B41's failure list named this "
         "path in error and is now annotated in place, naming the real guard "
         "beside it; the correction paragraph also names the path in order to "
         "say it never existed. Both remaining mentions are records of an "
         "absence, not claims that the file is there.",
+    "bench/tests/test_severity_cannot_separate_his_two_questions_2026-10-31.py":
+        "A DELIVERY FAILURE, recorded rather than hidden. The severity blind "
+        "round of 2026-10-30 reported this file as shipped at 330 lines with 10 "
+        "passing checks; it lived only in a seat sandbox destroyed at teardown "
+        "and has never existed in this tree. The single citation in the task "
+        "list says exactly that -- it names the path in order to state that the "
+        "path is empty -- so the citation is a record of the loss and not a "
+        "claim that the test is there. Correcting the citation away would "
+        "delete the evidence of the failure mode the brief exists to warn "
+        "about. If the demonstration is ever re-delivered under this name, "
+        "remove this entry so the path is checked again.",
 }
 
 #: THE COST OF ALLOWLISTING, STATED. An allowlisted path is no longer checked,

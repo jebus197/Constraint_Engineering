@@ -30,12 +30,21 @@ statistical = [
 ]
 
 [immune.verification_tools]
+# WOLFRAM, added 2026-10-31. SECONDARY ONLY -- the manifest marks it
+# `secondary_only = true`, so it can never become the primary for any
+# claim here, per the founder's ruling of 2026-09-28 that Wolfram
+# "should never be considered the primary falsifier route". It is listed
+# because the claim types patched below had NO independent secondary:
+# the open-source candidates all share an independence class, and for a
+# statistical claim `statsmodels` and `scipy` share the identical
+# verifier `_verify_statistical`. A missing or busy kernel is reported,
+# never a blocker.
 
 # Primary: SymPy for symbolic chemistry. Fallback: stoichiometric checker.
 # chemistry_structure (RDKit) handles SMILES / molecular formula / MW claims.
 mathematical = ["sympy", "chemistry_structure", "stoichiometric_balance", "dimensional_analysis"]
 logical = ["z3", "sympy"]
-statistical = ["statsmodels", "scipy", "uncertainty_propagation"]
+statistical = ["statsmodels", "scipy", "uncertainty_propagation", "wolfram"]
 
 [immune.ct_prompt_template]
 template = """You are investigating chemistry claims. Your output will be mechanically verified.

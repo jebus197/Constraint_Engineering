@@ -24,7 +24,8 @@ reader's own idea of what it read:
   2. COUNT         every `#`-opened annotation line in the raw text is returned.
   3. CHARACTERS    no annotation loses characters against its own raw line(s),
                    which is the 2026-10-13 truncation class.
-  4. MARKERS       every own-line marker token is attached to an annotation.
+  4. MARKERS       every marker he wrote is attached, compared BY FORM --
+                   own-line against own-line, trailing against trailing.
 
 Exit 0 when all 4 hold for every file, 2 otherwise, naming each file and gap.
 """
@@ -48,7 +49,17 @@ def _reader():
     return m
 
 
-MARKER_LINE = re.compile(r"^\s*(fr|pf|qs|wr)(?:\s*,\s*(?:fr|pf|qs))*\s*$", re.I)
+#: ★ THE VOCABULARY IS BORROWED, NOT COPIED -- corrected 2026-10-31. This line
+#: used to hold its own `(fr|pf|qs|wr)`, which never learned `disc` (his
+#: discussion kind, ruled 2026-10-30) nor its legacy spellings `ds` and `dis`.
+#: So the raw side of the marker check was blind to the newest kind while the
+#: reader read it correctly, and 2 declarations of 1 fact disagreed -- the exact
+#: shape the reader's own `claim_a_naive_grep_is_blind_to_some_of_them` comment
+#: records from an earlier drift. The DECODING and the VOCABULARY are primitives
+#: and are borrowed; the ASSOCIATION RULE -- which line's marker belongs to which
+#: annotation, and in which form -- stays computed here and independently.
+def _marker_patterns(rd):
+    return rd._MARKER_LINE, rd._MARKER_TRAILING
 
 
 #: DECODING IS NOT WHAT THIS MEASURES, so it reuses the reader's own `read_any`.
@@ -155,16 +166,36 @@ def main() -> int:
                 gaps.append((p.name, "CHARACTERS",
                              f"line {i}: {squashed[:60]!r} appears in no returned text"))
 
-        # 4. MARKERS -- every own-line marker must reach some annotation.
-        raw_marks = [i for i, l in enumerate(lines)
-                     if l.strip() and MARKER_LINE.match(l.strip())]
-        got_marks = [g for g in got if g.get("marker")]
-        tot_marks_raw += len(raw_marks)
-        tot_marks_got += len(got_marks)
-        if len(got_marks) != len(raw_marks):
+        # 4. MARKERS -- COMPARED BY FORM, AND AS SETS RATHER THAN COUNTS.
+        #    An equality on totals was wrong in 2 ways at once: it put own-line
+        #    marker LINES on the raw side against own-line PLUS trailing markers
+        #    on the reader's side, and a count cannot say WHICH marker moved, so
+        #    a marker read under the wrong form would cancel out.
+        marker_line, marker_trailing = _marker_patterns(rd)
+        raw_own = {i for i, l in enumerate(lines)
+                   if l.strip() and marker_line.match(l.strip())}
+        got_own = {g["line_index"] for g in got
+                   if g.get("marker") and g.get("marker_form") == "own_line"}
+        # The TRAILING side is recomputed from each returned text, so the field
+        # is checked against the characters rather than taken on trust. Only
+        # rows with no own-line marker can carry one: own-line wins in the reader.
+        no_own = [g for g in got if g.get("marker_form") != "own_line"]
+        raw_trail = {g["line_index"] for g in no_own
+                     if marker_trailing.search(" ".join(g["text"].split()))}
+        got_trail = {g["line_index"] for g in no_own
+                     if g.get("marker_form") == "trailing"}
+        tot_marks_raw += len(raw_own) + len(raw_trail)
+        tot_marks_got += len(got_own) + len(got_trail)
+        if len(got_own) != len(raw_own):
             gaps.append((p.name, "MARKERS",
-                         f"raw has {len(raw_marks)} marker line(s), "
-                         f"reader attached {len(got_marks)}"))
+                         f"own-line: raw has {len(raw_own)} marker line(s), "
+                         f"reader attached {len(got_own)}"))
+        if got_trail != raw_trail:
+            lost = sorted(raw_trail - got_trail)
+            made = sorted(got_trail - raw_trail)
+            gaps.append((p.name, "MARKERS",
+                         f"trailing: {len(lost)} not attached {lost[:4]}, "
+                         f"{len(made)} attached with no trailing token {made[:4]}"))
 
         if args.verbose:
             print(f"  {p.name}  [{enc}]  ann {len(got)}/{len(raw_ann)}  "
@@ -206,7 +237,7 @@ def main() -> int:
     print("=" * 76)
     print("COMPLETE on all 4 properties: every annotated file decodes, every")
     print("annotation line is returned, no annotation loses its own characters,")
-    print("and every own-line marker is attached. This is a MEASUREMENT, so it")
+    print("and every marker is attached in the form he wrote it. This is a MEASUREMENT, so it")
     print("goes red the moment it stops being true.")
     print("=" * 76)
     return 0

@@ -32,6 +32,15 @@ statistical = [
 ]
 
 [immune.verification_tools]
+# WOLFRAM, added 2026-10-31. SECONDARY ONLY -- the manifest marks it
+# `secondary_only = true`, so it can never become the primary for any
+# claim here, per the founder's ruling of 2026-09-28 that Wolfram
+# "should never be considered the primary falsifier route". It is listed
+# because the claim types patched below had NO independent secondary:
+# the open-source candidates all share an independence class, and for a
+# statistical claim `statsmodels` and `scipy` share the identical
+# verifier `_verify_statistical`. A missing or busy kernel is reported,
+# never a blocker.
 
 mathematical = ["sympy", "z3"]
 # Exp 40 1E.12 (2026-04-17): DeepSeek R1 specialist appended AFTER z3/sympy.
@@ -39,7 +48,7 @@ mathematical = ["sympy", "z3"]
 # wins, so DeepSeek is only invoked when the cheaper mechanical tools both
 # return UNCERTAIN — keeping API cost bounded.
 logical = ["z3", "sympy", "deepseek_formal"]
-statistical = ["statsmodels", "scipy"]
+statistical = ["statsmodels", "scipy", "wolfram"]
 
 [immune.ct_prompt_template]
 template = """You are investigating mathematical claims. Your output will be mechanically verified.

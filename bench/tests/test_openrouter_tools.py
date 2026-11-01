@@ -49,8 +49,22 @@ class TestToolSpecsStructure:
     malformed spec makes every tool call fail with a 4xx before we see a
     model response — catching that at test time is cheap."""
 
-    def test_five_tools_registered(self):
-        assert len(ort.TOOL_SPECS) == 5
+    def test_no_tool_name_is_registered_twice(self):
+        """WAS `test_five_tools_registered`, a bare `len(...) == 5`, until
+        2026-10-31 when a 6th tool (`wolfram_verify`) was added and this
+        failed without anything being wrong.
+
+        A count cannot say WHAT moved: swapping 2 tools keeps it at 5 and the
+        test stays green, while a legitimate addition turns it red. The
+        membership claim is made by `test_expected_tool_names_present` below,
+        which is the set pin. What is left for this test is the property a set
+        comparison cannot express -- that no name is registered twice, which
+        would make `_TOOL_DISPATCH` lookup silently prefer one of two specs.
+        """
+        names = [s["function"]["name"] for s in ort.TOOL_SPECS]
+        dupes = {n for n in names if names.count(n) > 1}
+        assert dupes == set(), f"tool names registered more than once: {dupes}"
+        assert len(ort.TOOL_SPECS) == len(set(names))
 
     def test_every_spec_is_function_type(self):
         for spec in ort.TOOL_SPECS:
@@ -104,6 +118,11 @@ class TestToolSpecsStructure:
             "pytest_run",
             "ruff_check",
             "mypy_check",
+            # ADDED 2026-10-31. A remote seat has no shell, so without a
+            # host-side Wolfram tool the founder's ruling of 2026-09-28 --
+            # that Wolfram is the SECONDARY falsifier wherever available --
+            # was unreachable for 4 of the 6 seats by construction.
+            "wolfram_verify",
         }
 
 

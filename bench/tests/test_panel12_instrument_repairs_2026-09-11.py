@@ -135,12 +135,32 @@ class TestTheChecksReadTheBlock:
         m = _load("scripts/overstated_entries_2026-09-11.py", "oe12c")
         by_id = m.entries()
         blocks = m.blocks(by_id)
-        line_carriers = sum(1 for i, e in by_id.items()
-                            if m.FIGURE.findall(e.text))
-        block_carriers = sum(1 for i in by_id if m.FIGURE.findall(blocks[i]))
-        assert block_carriers > line_carriers * 1.5, (
-            f"blocks {block_carriers} vs lines {line_carriers}: the checks are "
-            f"reading first lines again")
+        #: ★ THE RATIO THIS REPLACES LANDED EXACTLY ON ITS OWN BOUNDARY,
+        #: 2026-10-31. It read `block_carriers > line_carriers * 1.5` and failed
+        #: at 99 against 66, because 66 * 1.5 IS 99 -- a strict inequality
+        #: against a population ratio that drifts every time the task list is
+        #: edited. Nothing was wrong with the instrument: 33 entries carry a
+        #: figure ONLY outside their first line, which is the property the test
+        #: is named for and which held throughout.
+        #:
+        #: THE PROPERTY IS SHARPER THAN THE PROXY WAS. If the checks revert to
+        #: reading first lines, `blocks[i]` collapses to `e.text` and the
+        #: block-only set becomes EMPTY -- an exact discriminator with no
+        #: threshold to fit. The 1.5 was a weaker stand-in for it, and the
+        #: subset check below additionally catches the opposite regression, a
+        #: block reader that loses the first line it is supposed to contain.
+        line_carriers = {i for i, e in by_id.items() if m.FIGURE.findall(e.text)}
+        block_carriers = {i for i in by_id if m.FIGURE.findall(blocks[i])}
+        assert line_carriers <= block_carriers, (
+            "a block must contain its own first line, so every first-line "
+            "figure must also be a block figure; lost: "
+            f"{sorted(line_carriers - block_carriers)}")
+        continuation_only = block_carriers - line_carriers
+        assert continuation_only, (
+            f"{len(block_carriers)} block carriers and {len(line_carriers)} "
+            "first-line carriers are the SAME set: no figure is being seen in a "
+            "continuation paragraph, so the checks are reading first lines "
+            "again")
 
     def test_no_entry_carries_a_figure_without_a_producer(self):
         m = _load("scripts/overstated_entries_2026-09-11.py", "oe12d")

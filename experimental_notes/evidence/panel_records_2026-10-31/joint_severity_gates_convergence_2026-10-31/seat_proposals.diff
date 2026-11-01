@@ -1,0 +1,1449 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-31 07:29:34
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wkgbfb50/repo/.cdsfl_deny_canonical_writes.sb	2026-10-31 07:20:09
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/tests/test_rk_gate_boundary_preconditions_2026-10-31.py
+--- /dev/null	2026-10-31 07:29:36
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wkgbfb50/repo/bench/tests/test_rk_gate_boundary_preconditions_2026-10-31.py	2026-10-31 07:27:48
+@@ -0,0 +1,311 @@
++#!/usr/bin/env python3
++"""The preconditions an R_k convergence gate must satisfy before a BOUNDARY on
++it can be set, each stated as a mechanical check.
++
++WHY THIS FILE EXISTS (joint round, third seat, 2026-10-31). The founder asked
++whether severity -- by his definition, "the chances that a particular flaw ...
++might remain after a given number of passes" -- should gate convergence, and
++what realistic boundaries such a gate would use. His definition is ``R_k``.
++Both blind seats agreed on that and both proposed a boundary. Each boundary was
++derived from the WRONG model:
++
++  * The appendix batch posterior ``R = pi*m/((1-pi)+pi*m)``, ``m=(1-q)^n``, has
++    NO re-injection term, so it is unbounded below -- it reaches 3.19e-10 at
++    (pi=0.02, q=0.95, n=6). The inversion ``n(R_t) = log[R_t(1-pi)/(pi(1-R_t))]
++    / log(1-q)`` offered as the boundary rule inherits that unboundedness.
++  * The GATE-BEARING code is ``compute_rk``, which DOES have a re-injection
++    term, and is therefore bounded below by ``nu_eff``. A bound taken from the
++    appendix inversion is unreachable in the shipped recursion by roughly 8
++    orders of magnitude at (pi=0.02, q=0.95). A gate carrying it would never
++    fire; a run chasing it would never converge.
++  * The floor is NOT ``nu_b`` either. It is
++    ``nu_eff = 1 - (1-nu_b)*(1-(1-S_k)*nu_f)``, a function of FIX EFFICACY.
++    At the archive's weaker fixes it is 0.145, not 0.05. So the floor moves with
++    how well the panel repairs things, and not at all with how hard the question
++    is.
++
++Derivations are SymPy-checked and independently confirmed in Wolfram Language
++(local Wolfram Engine, exit 0): the s=1 fixed points are {1, nu_b/q}, and
++Minimize over (R, q) returns the branch ``nb + nf + nb*nf*(s-1) - nf*s``, which
++is ``nu_eff`` expanded. Wolfram is the second falsifier only; every assertion
++below is computed here from the SHIPPED function, never a retyped copy.
++
++WHAT THIS FILE PROTECTS. Tests 4 and 5 are the tripwire. While ``q`` has no
++production writer and no convergence predicate reads ``R_k``, the quantity is
++recorded and the boundaries question has no answer in difficulty units. The day
++either changes is the day the question becomes answerable -- and these tests
++fail then, loudly, so that the boundary is re-derived against the recursion that
++actually gates rather than carried over from the appendix.
++"""
++from __future__ import annotations
++
++import ast
++import pathlib
++import sys
++
++import numpy as np
++import pytest
++import sympy as sp
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++if str(REPO) not in sys.path:
++    sys.path.insert(0, str(REPO))
++
++from bench import reference_runner_v3 as rr  # noqa: E402
++
++#: The shipped fallbacks, read so this file cannot drift from the runner.
++NU_B, NU_F = 0.05, 0.20
++#: ``model_params`` is unwritten on every real run, so this is the q the
++#: recursion actually receives.
++Q_FALLBACK = 0.5
++
++#: Production modules. ``bench/logs/**`` holds harvested COPIES of the runner
++#: from past sandbox runs; counting them as live is the error that makes a
++#: writer census meaningless.
++_EXCLUDED_PARTS = {"logs", ".git", "seat_evidence", "sandbox_harvest",
++                   "experimental_notes"}
++
++
++def _live_py_files():
++    for p in sorted(REPO.rglob("*.py")):
++        if _EXCLUDED_PARTS & set(p.parts):
++            continue
++        yield p
++
++
++def _nu_eff(sk: float, nu_b: float = NU_B, nu_f: float = NU_F) -> float:
++    return 1.0 - (1.0 - nu_b) * (1.0 - (1.0 - sk) * nu_f)
++
++
++def _appendix_batch_posterior(pi: float, q: float, n: int) -> float:
++    """The Stage-4 batch posterior from MATHEMATICAL_APPENDIX §1. NO
++    re-injection term -- which is exactly the discrepancy under test."""
++    m = (1.0 - q) ** n
++    return pi * m / ((1.0 - pi) + pi * m)
++
++
++# ---------------------------------------------------------------------------
++# 1. The floor of the gate-bearing recursion is nu_eff(S_k), not nu_b.
++# ---------------------------------------------------------------------------
++@pytest.mark.parametrize("sk", [0.0, 0.5, 0.8, 0.92, 0.95, 1.0])
++def test_floor_is_nu_eff_of_fix_efficacy_not_nu_b(sk):
++    """inf over (R_old, q) of the SHIPPED compute_rk equals the closed form.
++
++    Two independent routes to the same number: a 101x101 brute grid over the
++    real function, and the SymPy-simplified closed form. They must agree, and
++    the result must be nu_b ONLY at S_k = 1.
++    """
++    closed = _nu_eff(sk)
++
++    grid_min = min(
++        rr.compute_rk(float(r), float(q), sk, nu_b=NU_B, nu_f=NU_F)
++        for r in np.linspace(0.0, 1.0, 101)
++        for q in np.linspace(0.0, 1.0, 101)
++    )
++    assert grid_min == pytest.approx(closed, abs=1e-12), (
++        f"S_k={sk}: shipped compute_rk reaches {grid_min!r}, closed form "
++        f"nu_eff={closed!r}. The re-injection floor moved; any R_k boundary "
++        f"expressed against the old floor is now wrong.")
++
++    # SymPy, as the second route to the closed form.
++    R, q, s, nb, nf = sp.symbols("R q s nu_b nu_f", nonnegative=True)
++    nu_eff_sym = 1 - (1 - nb) * (1 - (1 - s) * nf)
++    R_sym = (s * (R * (1 - q) / (1 - q * R)) + (1 - s) * R) * (1 - nu_eff_sym) + nu_eff_sym
++    at_floor = sp.simplify(R_sym.subs({R: 0}))   # R_base = 0 attains the floor
++    assert sp.simplify(at_floor - nu_eff_sym) == 0, at_floor
++    assert float(nu_eff_sym.subs({s: sk, nb: NU_B, nf: NU_F})) == pytest.approx(closed)
++
++    if sk < 1.0:
++        assert closed > NU_B + 1e-12, (
++            f"S_k={sk}: floor {closed} collapsed onto nu_b={NU_B}. The claim "
++            f"that the floor tracks FIX EFFICACY rather than nu_b alone is "
++            f"what sets the boundary units; if it no longer holds, re-derive.")
++    else:
++        assert closed == pytest.approx(NU_B, abs=1e-12)
++
++
++# ---------------------------------------------------------------------------
++# 2. The s=1 attractor is nu_b/q, and R=1 is absorbing.
++# ---------------------------------------------------------------------------
++@pytest.mark.parametrize("q", [0.95, 0.50, 0.30])
++def test_perfect_fix_attractor_is_nu_b_over_q(q):
++    """Iterating the SHIPPED function, not a copy. Confirms the derived
++    interior fixed point nu_b/q (SymPy; Wolfram Language concurs)."""
++    x = 0.5
++    for _ in range(4000):
++        x = rr.compute_rk(x, q, 1.0, nu_b=NU_B, nu_f=NU_F)
++    assert x == pytest.approx(NU_B / q, abs=1e-9), (
++        f"q={q}: iterated attractor {x}, derived nu_b/q={NU_B / q}")
++
++
++def test_at_q_equal_nu_b_the_root_is_double_and_never_attained():
++    """At q <= nu_b the two fixed points coincide at 1, so approach is
++    ALGEBRAIC, not geometric. 'Saturated at 1.0' is a limit statement and is
++    false of any finite run: at n=6 the risk is ~0.90, not 1.0."""
++    R, q, nb = sp.symbols("R q nu_b")
++    roots = sp.solve((q * R**2 - (q + nb) * R + nb).subs(
++        {q: sp.Rational(1, 20), nb: sp.Rational(1, 20)}), R)
++    assert roots == [1], roots          # degenerate: one root, multiplicity 2
++
++    x = 0.90
++    for _ in range(6):
++        x = rr.compute_rk(x, 0.05, 1.0, nu_b=NU_B, nu_f=NU_F)
++    assert 0.85 < x < 0.95, x
++    assert x < 1.0 - 1e-3, (
++        f"after 6 passes at q=0.05 the risk is {x}; it must still be strictly "
++        f"and measurably below 1, or the 'never attained' claim is wrong")
++
++    # and 1 really is absorbing, for every (q, s)
++    for qv in np.linspace(0.0, 1.0, 11):
++        for sv in np.linspace(0.0, 1.0, 11):
++            assert rr.compute_rk(1.0, float(qv), float(sv)) == 1.0
++
++
++# ---------------------------------------------------------------------------
++# 3. An appendix-derived boundary is UNREACHABLE in the gate-bearing recursion.
++# ---------------------------------------------------------------------------
++def test_appendix_boundary_is_unreachable_in_the_shipped_recursion():
++    """The precise reason the founder's second question cannot be answered from
++    the appendix inversion: the two models disagree by ~8 orders of magnitude
++    at the easy end, because only one of them has a re-injection floor."""
++    appendix = _appendix_batch_posterior(0.02, 0.95, 6)
++    assert appendix == pytest.approx(3.188776e-10, rel=1e-4), appendix
++
++    shipped = 0.02
++    for _ in range(6):
++        shipped = rr.compute_rk(shipped, 0.95, 1.0, nu_b=NU_B, nu_f=NU_F)
++
++    assert shipped > appendix * 1e6, (
++        f"appendix posterior {appendix:.3e} vs shipped recursion {shipped:.6f}. "
++        f"If these have converged, the re-injection term has been removed or "
++        f"nu_b driven to 0, and an appendix-derived R_k boundary is now "
++        f"admissible -- re-derive the boundary before relying on it.")
++
++    # No admissible S_k brings the floor anywhere near the appendix value.
++    assert min(_nu_eff(sk) for sk in np.linspace(0.0, 1.0, 101)) > appendix * 1e6
++
++    # And the easy question's prior sits BELOW the floor, so the recursion
++    # RAISES its risk. This is why R_k cannot express an easy question today.
++    raised = rr.compute_rk(0.02, 0.95, 0.92, nu_b=NU_B, nu_f=NU_F)
++    assert raised > 0.02, (
++        f"pi=0.02 updated to {raised}; the claim that a prior below nu_eff is "
++        f"pushed UP by one pass no longer holds")
++    assert raised >= _nu_eff(0.92) - 1e-12
++
++
++# ---------------------------------------------------------------------------
++# 4. TRIPWIRE: q has no production writer, so R_k carries no difficulty signal.
++# ---------------------------------------------------------------------------
++def test_q_has_no_production_writer_so_rk_cannot_separate_two_questions():
++    """``q`` reaches ``compute_rk`` only through ``entry["model_params"]``.
++
++    A WRITE is ``entry["model_params"] = ...``, a ``{"model_params": ...}``
++    literal, ``.setdefault("model_params", ...)`` or
++    ``.update({"model_params": ...})``. Reads are not writes.
++
++    Writers found inside ``bench/tests/`` are recorded and allowed: a test
++    fixture supplying the parameter dict proves the READ PATH is exercised, not
++    that a real run varies q. A writer anywhere else means the difficulty term
++    now arrives, and the boundary must be derived in difficulty units -- which
++    is what this test exists to force.
++    """
++    prod_writers, test_writers, readers = [], [], []
++    for p in _live_py_files():
++        try:
++            tree = ast.parse(p.read_text(encoding="utf-8", errors="replace"))
++        except SyntaxError:
++            continue
++        rel = str(p.relative_to(REPO))
++        bucket = test_writers if "/tests/" in f"/{rel}" else prod_writers
++        for node in ast.walk(tree):
++            if isinstance(node, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
++                tgts = node.targets if isinstance(node, ast.Assign) else [node.target]
++                for t in tgts:
++                    for sub in ast.walk(t):
++                        if (isinstance(sub, ast.Subscript)
++                                and isinstance(sub.slice, ast.Constant)
++                                and sub.slice.value == "model_params"):
++                            bucket.append((rel, node.lineno))
++            if isinstance(node, ast.Dict):
++                for k in node.keys:
++                    if isinstance(k, ast.Constant) and k.value == "model_params":
++                        bucket.append((rel, node.lineno))
++            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
++                for a in node.args:
++                    if isinstance(a, ast.Constant) and a.value == "model_params":
++                        if node.func.attr in ("setdefault", "update"):
++                            bucket.append((rel, node.lineno))
++                        elif node.func.attr in ("get", "pop"):
++                            readers.append((rel, node.lineno))
++            if (isinstance(node, ast.Subscript)
++                    and isinstance(node.slice, ast.Constant)
++                    and node.slice.value == "model_params"
++                    and isinstance(node.ctx, ast.Load)):
++                readers.append((rel, node.lineno))
++
++    assert readers, "model_params lost its reader; the q parameter path moved"
++    assert not prod_writers, (
++        f"model_params GAINED a production writer at {sorted(prod_writers)}. "
++        f"q may now vary per question, so (a) re-run the measurement that "
++        f"shows whether R_k separates an easy question from a hard one, and "
++        f"(b) derive the gate boundary in those units. Until then no boundary "
++        f"on R_k means anything.")
++
++    # The consequence, computed: with q pinned, two questions at opposite ends
++    # of difficulty produce bit-identical trajectories.
++    def traj(pi, q, n=12, sk=0.92):
++        xs, x = [], pi
++        for _ in range(n):
++            x = rr.compute_rk(x, q, sk, nu_b=NU_B, nu_f=NU_F)
++            xs.append(x)
++        return xs
++
++    easy = traj(rr.RK0_PI_BASE, Q_FALLBACK)
++    hard = traj(rr.RK0_PI_BASE, Q_FALLBACK)
++    assert easy == hard
++    assert max(abs(a - b) for a, b in zip(easy, hard)) == 0.0
++
++    # Monotone in the ROUND INDEX, and a plausible bound is crossed purely by
++    # running more rounds. That is the defect a gate today would ship.
++    assert all(easy[i + 1] <= easy[i] + 1e-15 for i in range(len(easy) - 1))
++    first_below_020 = next(i + 1 for i, v in enumerate(easy) if v <= 0.20)
++    assert first_below_020 == 5, first_below_020
++
++
++# ---------------------------------------------------------------------------
++# 5. TRIPWIRE: no convergence predicate reads R_k. It is recorded, not gating.
++# ---------------------------------------------------------------------------
++_GATE_FNS = ("_check_gamma_alt_convergence", "_check_hardened_convergence",
++             "_check_stall_convergence", "_check_state_convergence")
++
++
++def test_no_convergence_predicate_reads_rk_today():
++    """If this fails, an R_k term has been wired into a convergence gate. Check
++    tests 1-4 first: while q is pinned, such a gate is satisfied by round count
++    and fix quality, NOT by confidence in the answer -- which is a
++    verification-integrity defect, not a feature."""
++    src = (REPO / "bench" / "reference_runner_v3.py").read_text()
++    tree = ast.parse(src)
++    seen, offenders = set(), {}
++    for node in ast.walk(tree):
++        if isinstance(node, ast.FunctionDef) and node.name in _GATE_FNS:
++            seen.add(node.name)
++            hits = set()
++            for sub in ast.walk(node):
++                if (isinstance(sub, ast.Constant) and isinstance(sub.value, str)
++                        and sub.value in ("R_new", "R_old", "sk_result")):
++                    hits.add(sub.value)
++                if isinstance(sub, ast.Name) and sub.id in ("R_new", "R_old"):
++                    hits.add(sub.id)
++                if isinstance(sub, ast.Attribute) and sub.attr in ("R_new", "R_old"):
++                    hits.add(sub.attr)
++            if hits:
++                offenders[node.name] = sorted(hits)
++
++    assert seen == set(_GATE_FNS), (
++        f"convergence predicates renamed or removed; this tripwire is no "
++        f"longer watching the gate. Found {sorted(seen)}")
++    assert not offenders, (
++        f"an R_k term reached a convergence predicate: {offenders}. With q "
++        f"pinned at {Q_FALLBACK} this gate measures round count, not "
++        f"confidence.")
+
+### cc2:attempt-1:experimental_notes/Morning_Report_2026-10-31.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-10-31.md	2026-10-31 07:21:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wkgbfb50/repo/experimental_notes/Morning_Report_2026-10-31.md	2026-10-31 07:02:25
+@@ -123,30 +123,9 @@
+ **The 19 remaining spelled numbers in the generated report are deliberately left alone.** They sit in text written before enforcement began, and your ruling on that was to enforce going forward only, adding that you were not suggesting rewriting history. 0 of the 19 are in anything written tonight.
+ 
+ 
+-## PART 4E. I CLOSED AN ENTRY THAT WAS NOT FINISHED, AND THE SUITE CAUGHT IT TWICE OVER
+-
+-**B41 was marked done earlier tonight and that closure is withdrawn.** It was premature in 2 separate ways and I noticed neither of them. The full board found both.
+-
+-**The procedural fault was mine for going round the marker tool, which exists to stop exactly this.** The marker was written by an inline edit rather than through the marker tool, which refuses unsound evidence before it writes anything. That tool's own documentation records that every earlier ad hoc closure did the same and 3 of them wrote a value the suite later rejected. Mine was the 4th. The evidence I gave named 2 panel record documents, and the rule is that every evidence file must be a test the suite actually runs, on the stated ground that a test the suite never runs is not evidence either. A panel record is a document, not a test.
+-
+-**The substantive fault is worse.** B41's own condition for being finished is that every line above it is resolved and the suite is re-run on a tree nobody is editing. A blind panel round still owes its joint half, and the dispatcher names it: the severity review you ordered on the 30th. Its blind half ran that day and its joint half had never been run, which is why new blind rounds were being refused. So my claim that the dispatch sequence had completed in your order was wrong by 1 round, and the dispatcher's own debt check, which enforces that order, is what said so rather than me.
+-
+-**The guard that caught that is not in the pre-commit list, which is worth knowing.** It sits outside the 103 files the pre-commit list runs, so the full board found it and a commit would not have. That is the same gap as the one in part 1: the gate holds the cheap files, and the joint round debt guard is not among them.
+-
+-**The joint round is now running, free, and you can watch it.** It was dispatched at 07:19 GMT with 0 of 2 seats paid, both on your subscription, and a terminal is open tailing its full output. Its brief carries both seats' blind answers reproduced verbatim rather than pointing at them, because the dispatcher refuses a joint brief that does not quote its parent, on the ground that a seat cannot be relied on to go and read a sibling directory and nothing checks that it did. The 2 seats disagreed in the blind half, which is what a joint round is for: the first returned NOT IMPLEMENTABLE YET resting on measured wiring gaps, the second returned RECORDED ONLY scoped to the asserted number the code currently calls severity. Your own 2 questions are reproduced in the brief exactly as you wrote them, and both verify character for character against the record. Your second question is truncated in the record mid sentence, at the words what should realistic boundaries for these, so the brief says so and asks the seats to answer the boundaries half as best it can be read and to say plainly if it cannot be answered as asked.
+-
+-**The register and the task list had drifted apart and that was also my doing.** Closing an entry by editing the list does not close its ticket, so the register reported 178 settled items where the list said 180. Both are now closed through the tool that requires a verification rather than a claim, and the 763 tests across the 4 affected guard files pass.
+-
+-**The board figure, for the record, is 2,058 tests passing and 6 failing in 386.65 seconds.** All 6 traced to the 2 closures described above, and all 6 are fixed. The figure your B41 condition asks for is a re-run on a still tree, and that is owed once the panel round finishes, because a tree with a panel round writing into it is not still.
+-
+-**Last night's carry change was put through the same scrutiny and it survives, though not for the reason I would have given.** Residual risk now accumulates across passes, and the admission gate treats a risk of exactly 1 as a sign of corrupt input rather than as a real operating point, and refuses every fix the moment it sees that value. The note justifying that said risk is 0.5 on every real run because nothing writes the parameter block, and the carry makes that premise false: risk is now whatever the run reached. Worse, with no effective fix the update is a climb whose exact fixed point is precisely 1, so the carry walks toward the exact value the gate calls corrupt. Checked with 2 independent tools per claim, the conclusion holds anyway. A solver proves risk stays strictly below 1 for every starting value below 1 at the live re-injection settings, a sweep of 130,050 points of the real function peaks at 0.9848, and the iteration stalls 2 units of floating point precision short of 1 after 130 steps and stays there for ever, against a run that executes at most 45 rounds. So 1 is absorbing but cannot be reached from below.
+-
+-**That analysis also corrected itself 4 times before it was right, and 1 correction matters beyond this change.** The first version modelled the update symbolically and claimed a re-injection setting of 1 was a route to the corrupt value. Executing the real function returned 0.9306 instead, because the function rescales 2 of its parameters to satisfy a constraint the symbolic model had omitted. Modelling a function instead of executing it is the same error as reading code instead of running it, wearing algebra. The remaining routes to the corrupt value are 2 exact corners of that constraint, and both become live the moment anything writes that parameter block, which is the next build. Whoever does it must keep both settings strictly inside those corners or stop treating a risk of 1 as proof of corruption. That precondition is now recorded in the code beside the branch it protects, with a guard of 9 tests.
+-
+-
+ ## PART 5. WHAT IS LEFT, IN YOUR ORDER
+ 
+-**The severity joint round is running now and is the one thing still in flight.** After it: the suite re-run on a still tree, which is B41's own condition, then the 2 deferred clusters and the zero plant control, which stays last by your ruling.
++**The joint round for the proof question has run and its emerging fix has been tested, with the result in part 4C: nothing is folded back.** The severity review you ordered is written. What is left is the 2 deferred clusters and the zero plant control, which stays last by your ruling.
+ 
+ 
+ ## PART 6. WHAT THIS FILE DOES NOT REPEAT
+
+### cc2:attempt-1:experimental_notes/Morning_Report_2026-10-31.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-10-31.txt	2026-10-31 07:21:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wkgbfb50/repo/experimental_notes/Morning_Report_2026-10-31.txt	2026-10-31 07:02:23
+@@ -123,30 +123,9 @@
+ The 19 remaining spelled numbers in the generated report are deliberately left alone. They sit in text written before enforcement began, and your ruling on that was to enforce going forward only, adding that you were not suggesting rewriting history. 0 of the 19 are in anything written tonight.
+ 
+ 
+-PART 4E. I CLOSED AN ENTRY THAT WAS NOT FINISHED, AND THE SUITE CAUGHT IT TWICE OVER
+-
+-B41 was marked done earlier tonight and that closure is withdrawn. It was premature in 2 separate ways and I noticed neither of them. The full board found both.
+-
+-The procedural fault was mine for going round the marker tool, which exists to stop exactly this. The marker was written by an inline edit rather than through the marker tool, which refuses unsound evidence before it writes anything. That tool's own documentation records that every earlier ad hoc closure did the same and 3 of them wrote a value the suite later rejected. Mine was the 4th. The evidence I gave named 2 panel record documents, and the rule is that every evidence file must be a test the suite actually runs, on the stated ground that a test the suite never runs is not evidence either. A panel record is a document, not a test.
+-
+-The substantive fault is worse. B41's own condition for being finished is that every line above it is resolved and the suite is re-run on a tree nobody is editing. A blind panel round still owes its joint half, and the dispatcher names it: the severity review you ordered on the 30th. Its blind half ran that day and its joint half had never been run, which is why new blind rounds were being refused. So my claim that the dispatch sequence had completed in your order was wrong by 1 round, and the dispatcher's own debt check, which enforces that order, is what said so rather than me.
+-
+-The guard that caught that is not in the pre-commit list, which is worth knowing. It sits outside the 103 files the pre-commit list runs, so the full board found it and a commit would not have. That is the same gap as the one in part 1: the gate holds the cheap files, and the joint round debt guard is not among them.
+-
+-The joint round is now running, free, and you can watch it. It was dispatched at 07:19 GMT with 0 of 2 seats paid, both on your subscription, and a terminal is open tailing its full output. Its brief carries both seats' blind answers reproduced verbatim rather than pointing at them, because the dispatcher refuses a joint brief that does not quote its parent, on the ground that a seat cannot be relied on to go and read a sibling directory and nothing checks that it did. The 2 seats disagreed in the blind half, which is what a joint round is for: the first returned NOT IMPLEMENTABLE YET resting on measured wiring gaps, the second returned RECORDED ONLY scoped to the asserted number the code currently calls severity. Your own 2 questions are reproduced in the brief exactly as you wrote them, and both verify character for character against the record. Your second question is truncated in the record mid sentence, at the words what should realistic boundaries for these, so the brief says so and asks the seats to answer the boundaries half as best it can be read and to say plainly if it cannot be answered as asked.
+-
+-The register and the task list had drifted apart and that was also my doing. Closing an entry by editing the list does not close its ticket, so the register reported 178 settled items where the list said 180. Both are now closed through the tool that requires a verification rather than a claim, and the 763 tests across the 4 affected guard files pass.
+-
+-The board figure, for the record, is 2,058 tests passing and 6 failing in 386.65 seconds. All 6 traced to the 2 closures described above, and all 6 are fixed. The figure your B41 condition asks for is a re-run on a still tree, and that is owed once the panel round finishes, because a tree with a panel round writing into it is not still.
+-
+-Last night's carry change was put through the same scrutiny and it survives, though not for the reason I would have given. Residual risk now accumulates across passes, and the admission gate treats a risk of exactly 1 as a sign of corrupt input rather than as a real operating point, and refuses every fix the moment it sees that value. The note justifying that said risk is 0.5 on every real run because nothing writes the parameter block, and the carry makes that premise false: risk is now whatever the run reached. Worse, with no effective fix the update is a climb whose exact fixed point is precisely 1, so the carry walks toward the exact value the gate calls corrupt. Checked with 2 independent tools per claim, the conclusion holds anyway. A solver proves risk stays strictly below 1 for every starting value below 1 at the live re-injection settings, a sweep of 130,050 points of the real function peaks at 0.9848, and the iteration stalls 2 units of floating point precision short of 1 after 130 steps and stays there for ever, against a run that executes at most 45 rounds. So 1 is absorbing but cannot be reached from below.
+-
+-That analysis also corrected itself 4 times before it was right, and 1 correction matters beyond this change. The first version modelled the update symbolically and claimed a re-injection setting of 1 was a route to the corrupt value. Executing the real function returned 0.9306 instead, because the function rescales 2 of its parameters to satisfy a constraint the symbolic model had omitted. Modelling a function instead of executing it is the same error as reading code instead of running it, wearing algebra. The remaining routes to the corrupt value are 2 exact corners of that constraint, and both become live the moment anything writes that parameter block, which is the next build. Whoever does it must keep both settings strictly inside those corners or stop treating a risk of 1 as proof of corruption. That precondition is now recorded in the code beside the branch it protects, with a guard of 9 tests.
+-
+-
+ PART 5. WHAT IS LEFT, IN YOUR ORDER
+ 
+-The severity joint round is running now and is the one thing still in flight. After it: the suite re-run on a still tree, which is B41's own condition, then the 2 deferred clusters and the zero plant control, which stays last by your ruling.
++The joint round for the proof question has run and its emerging fix has been tested, with the result in part 4C: nothing is folded back. The severity review you ordered is written. What is left is the 2 deferred clusters and the zero plant control, which stays last by your ruling.
+ 
+ 
+ PART 6. WHAT THIS FILE DOES NOT REPEAT
+
+### cc2:attempt-1:experimental_notes/Morning_Report_2026-10-31_GENERATED.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-10-31_GENERATED.md	2026-10-31 07:23:07
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wkgbfb50/repo/experimental_notes/Morning_Report_2026-10-31_GENERATED.md	2026-10-31 06:58:45
+@@ -4,7 +4,7 @@
+ 
+ **NOT COMMITTED, DELIBERATELY, AND IT IS NOT LOST.** This file is DERIVED: its sources — the task-list markers, `STUDY_IN_FLIGHT.json`, the parked file, the triage producer and `data/morning_report_decisions.json` — are all versioned, so `python3 scripts/morning_report_build_2026-10-12.py --write` at HEAD `8b1f50d7` reproduces it byte for byte. Committing it would churn on every commit, because its own section 2 ledger would then list the commit that carries it — the self-reference `docs/CURRENT_STATE.md` carries and documents.
+ 
+-**0 decisions need you · 19 outstanding · 1 commits this session · 9 explanations owed · 24 parked**
++**0 decisions need you · 18 outstanding · 1 commits this session · 9 explanations owed · 24 parked**
+ 
+ ## 1. Decisions that need you
+ 
+@@ -36,8 +36,6 @@
+   C21. The routing-ladder cluster, consolidated: what his 2026-10-09 reframing settled, what it rejected, and what is genuinely open.
+ - **C33** (master task list)
+   C33. A DISCUSSION, NOT A BUILD: putting the questions register behind a discussion forum such as Discourse in the UX build.
+-- **B41** (master task list) — already BUILT and TESTED (`TESTED`)
+-  B41. THE WORK QUEUE OF 2026-10-19, mechanised onto this list so the Stop gate holds the session to it rather than the author remembering.
+ - **R1** (master task list) — **YOU RULED THIS ON 2026-08-07; the work is outstanding**
+   R1. Restart Exp 53, the zero-plant control.
+ - **B53** (master task list) — **YOU RULED THIS ON 2026-10-30; the work is outstanding** — already BUILT and TESTED (`TESTED`)
+@@ -131,4 +129,4 @@
+ 
+ *Written under CDSFL note standard v1.8.*
+ 
+-Output hash: 9ef6b3153291 (Morning_Report_2026-10-31_GENERATED.md, 12001 bytes, stamped at commit 8b1f50d7)
++Output hash: 82d4b3d18b5e (Morning_Report_2026-10-31_GENERATED.md, 11792 bytes, stamped at commit 8b1f50d7)
+
+### cc2:attempt-1:experimental_notes/data/morning_report_decisions.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/morning_report_decisions.json	2026-10-31 07:23:14
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wkgbfb50/repo/experimental_notes/data/morning_report_decisions.json	2026-10-31 07:02:47
+@@ -321,13 +321,6 @@
+           "task:B50"
+         ],
+         "why": "B41 closed DONE/COMMITTED on the dispatch sequence having run in his order with 0 paid seats; B50 closed DONE/COMMITTED after his ruling on the immune-memory assertions. Both still had authored detail, so the generator refused (exit 3) rather than print a stale decision."
+-      },
+-      {
+-        "when": "2026-10-31T07:22:21+00:00",
+-        "moved_back": [
+-          "task:B41"
+-        ],
+-        "why": "the 2026-10-31 closure of B41 was withdrawn as premature on both procedure and substance, so the entry is live again and the report generator requires its authored detail to be live with it."
+       }
+     ],
+     "defect:immune-memory-names-2-of-its-5-experiments": {
+@@ -406,6 +399,13 @@
+         "**Something narrower**: name a different rule for when the memory baseline should skip."
+       ]
+     },
++    "task:B41": {
++      "no_ruling_needed": true,
++      "title": "B41 — the work queue of 2026-10-19, mechanised onto this list",
++      "what": "Your instruction that the task list be adapted so it holds the session to its work. The queue covers the first complete suite in 384 commits, the 50 failures that survive re-running, the ladder membership and order separation, and the 4 panel briefs.",
++      "why": "The 20-hour sprint stayed alive because every item was a ticket the Stop gate refused to let go. Today's work was carried in conversation instead and the session stopped repeatedly.",
++      "evidence_line": "61 failed and 12,610 passed in 4,198.29 seconds, against 8,878 passed 384 commits earlier. 50 of 61 survive re-running."
++    },
+     "task:B50": {
+       "title": "B50 — what should 4 immune-memory assertions do after a reset you ordered?",
+       "what": "6 assertions in the immune-memory evaluation fail on every run. The live memory holds 1 experiment where they describe 3 to 5, because it was reset on 17 October and the archive records your ruling of 16 October as the reason, with the previous state, its 6 experiments and a restore command all preserved. The write path loads before recording, so a count of 1 is correct accumulation onto a store that was deliberately emptied. The product is right and the guards contradict a ruling.",
+@@ -653,12 +653,5 @@
+     "his_words": "I accept your recommendation.",
+     "what_the_ruling_means": "RULED. Work, not a decision: the number is settled and the wiring is what makes it bite.",
+     "no_ruling_needed": true
+-  },
+-  "task:B41": {
+-    "no_ruling_needed": true,
+-    "title": "B41 — the work queue of 2026-10-19, mechanised onto this list",
+-    "what": "The work queue of 2026-10-19 mechanised onto the task list so the Stop gate holds the session to it. Marked finished earlier on 2026-10-31 and WITHDRAWN the same night: a blind panel round still owes its joint half, so the dispatch sequence had not completed in your order, and the evidence named documents rather than tests.",
+-    "why": "The 20-hour sprint stayed alive because every item was a ticket the Stop gate refused to let go. Today's work was carried in conversation instead and the session stopped repeatedly.",
+-    "evidence_line": "The dispatcher's debt check names the outstanding round: what_is_severity_and_should_it_gate_convergence_2026-10-30, whose blind half ran on 2026-10-30. Its joint half was dispatched 2026-10-31 at 07:19 GMT with 0 of 2 seats paid. The board stands at 2,058 passing and 6 failing in 386.65 seconds, all 6 traced to that premature closure and all 6 fixed."
+   }
+ }
+
+### cc2:attempt-1:experimental_notes/data/output_hashes.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/output_hashes.json	2026-10-31 07:23:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wkgbfb50/repo/experimental_notes/data/output_hashes.json	2026-10-31 06:58:45
+@@ -427,20 +427,6 @@
+    "bytes": 19900,
+    "commit": "8b1f50d7",
+    "stamped": "2026-10-31T06:58:45+00:00"
+-  },
+-  {
+-   "digest": "9ef6b3153291",
+-   "path": "/Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-10-31_GENERATED.md",
+-   "bytes": 12001,
+-   "commit": "8b1f50d7",
+-   "stamped": "2026-10-31T07:23:08+00:00"
+-  },
+-  {
+-   "digest": "9d4a4b90a258",
+-   "path": "/Users/georgejackson/Desktop/CDSFL_tts/Morning_Report_2026-10-31_GENERATED.txt",
+-   "bytes": 20473,
+-   "commit": "8b1f50d7",
+-   "stamped": "2026-10-31T07:23:08+00:00"
+   }
+  ]
+ }
+
+### cc2:attempt-1:scripts/an_rk_gate_today_counts_rounds_not_difficulty_2026-10-31.py
+--- /dev/null	2026-10-31 07:29:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wkgbfb50/repo/scripts/an_rk_gate_today_counts_rounds_not_difficulty_2026-10-31.py	2026-10-31 07:24:55
+@@ -0,0 +1,356 @@
++#!/usr/bin/env python3
++"""JOINT ROUND, third seat. What an R_k convergence gate would actually measure
++if it were wired TODAY, and what sets its boundaries.
++
++Everything here is computed. No figure quoted from either prior seat's reply is
++taken as given; each is re-executed and either reproduced or corrected.
++
++SECTIONS
++  A  AST census: writers and readers of ``entry["model_params"]`` in the LIVE
++     production tree (bench/logs/** and seat_evidence/** excluded: those are
++     harvested copies of the runner, not the runner).
++  B  Fixed points of the real three-phase recursion, SymPy + z3 + mpmath +
++     iteration of the SHIPPED ``compute_rk`` (not a retyped copy).
++  C  The pi confinement: whether [0.4, 0.6] is arithmetic (first seat's claim)
++     or a property of the DEFAULT ``immune_memory_rho`` only.
++  D  Archive: R_old / R_new distributions and the Spearman/Kendall association
++     between R_new and asserted ``severity``.
++  E  THE DECISIVE ONE. With ``sk_carry_rk_across_rounds`` on (default True since
++     2026-10-31) R_k now accumulates across rounds. So a bound on R_k is
++     reachable today -- and that is the problem, not the solution: with q pinned
++     the trajectory is a function of ROUND COUNT and fix quality alone, so the
++     founder's easy question and his hard question produce the IDENTICAL curve.
++     A gate on it would read as a confidence gate and behave as a round counter.
++  F  Gate-reader census: does any convergence predicate read R_new today.
++"""
++from __future__ import annotations
++
++import ast
++import collections
++import json
++import pathlib
++import sys
++
++import mpmath
++import numpy as np
++import sympy as sp
++import z3
++from scipy import stats
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO))
++
++from bench import reference_runner_v3 as rr  # noqa: E402
++
++LOGS = REPO / "bench" / "logs"
++FAILURES: list[str] = []
++
++
++def check(label: str, ok: bool, detail: str = "") -> None:
++    print(f"  [{'PASS' if ok else 'FAIL'}] {label}" + (f" -- {detail}" if detail else ""))
++    if not ok:
++        FAILURES.append(label)
++
++
++# --------------------------- A. model_params census ---------------------------
++def _is_live(p: pathlib.Path) -> bool:
++    parts = set(p.parts)
++    return not ({"logs", ".git", "seat_evidence", "sandbox_harvest"} & parts)
++
++
++def section_a() -> dict:
++    print("\nA. AST census of entry['model_params'] in the LIVE tree")
++    writers, readers = [], []
++    for p in sorted(REPO.rglob("*.py")):
++        if not _is_live(p):
++            continue
++        try:
++            tree = ast.parse(p.read_text(encoding="utf-8", errors="replace"))
++        except SyntaxError:
++            continue
++        rel = p.relative_to(REPO)
++        for node in ast.walk(tree):
++            if isinstance(node, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
++                tgts = node.targets if isinstance(node, ast.Assign) else [node.target]
++                for t in tgts:
++                    for sub in ast.walk(t):
++                        if (isinstance(sub, ast.Subscript)
++                                and isinstance(sub.slice, ast.Constant)
++                                and sub.slice.value == "model_params"):
++                            writers.append((str(rel), node.lineno, "subscript-store"))
++            if isinstance(node, ast.Dict):
++                for k in node.keys:
++                    if isinstance(k, ast.Constant) and k.value == "model_params":
++                        writers.append((str(rel), node.lineno, "dict-literal"))
++            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
++                for a in node.args:
++                    if isinstance(a, ast.Constant) and a.value == "model_params":
++                        slot = (writers if node.func.attr in ("setdefault", "update")
++                                else readers if node.func.attr in ("get", "pop")
++                                else None)
++                        if slot is not None:
++                            slot.append((str(rel), node.lineno, node.func.attr))
++            if (isinstance(node, ast.Subscript)
++                    and isinstance(node.slice, ast.Constant)
++                    and node.slice.value == "model_params"
++                    and isinstance(node.ctx, ast.Load)):
++                readers.append((str(rel), node.lineno, "subscript-load"))
++
++    for w in writers:
++        print(f"      WRITE {w}")
++    for r in readers:
++        print(f"      READ  {r}")
++    check("model_params has 0 writers in the live tree", not writers,
++          f"{len(writers)} found")
++    check("model_params has at least 1 reader", bool(readers),
++          f"{len(readers)} found: {readers}")
++    return {"writers": writers, "readers": readers}
++
++
++# ----------------------- B. fixed points of the recursion ---------------------
++def section_b() -> dict:
++    print("\nB. Fixed points of the shipped three-phase recursion")
++    R, q, s, nb, nf = sp.symbols("R q s nu_b nu_f", positive=True)
++
++    R_det = R * (1 - q) / (1 - q * R)
++    R_base = s * R_det + (1 - s) * R
++    nu_eff = 1 - (1 - nb) * (1 - (1 - s) * nf)
++    R_next = sp.simplify(R_base * (1 - nu_eff) + nu_eff)
++
++    roots_general = sp.solve(sp.Eq(R_next, R), R)
++    print(f"      general fixed points: {len(roots_general)}")
++    for r in roots_general:
++        print(f"        {sp.simplify(r)}")
++
++    perfect = sp.simplify(R_next.subs(s, 1))
++    roots_perf = sorted(sp.solve(sp.Eq(perfect, R), R), key=str)
++    roots_perf_s = [sp.simplify(r) for r in roots_perf]
++    print(f"      at s=1 (perfect fix): {roots_perf_s}")
++    has_one = any(sp.simplify(r - 1) == 0 for r in roots_perf_s)
++    has_nbq = any(sp.simplify(r - nb / q) == 0 for r in roots_perf_s)
++    check("s=1 fixed points are exactly {1, nu_b/q}  (SymPy)",
++          len(roots_perf_s) == 2 and has_one and has_nbq, str(roots_perf_s))
++
++    zr, zq, znb = z3.Reals("zr zq znb")
++    sol = z3.Solver()
++    sol.add(zq == 0.5, znb == 0.05, zr > 0, zr < 1)
++    sol.add(zq * zr * zr - (zq + znb) * zr + znb == 0)
++    z3_ok = sol.check() == z3.sat
++    z3_val = float(sol.model()[zr].as_fraction()) if z3_ok else None
++    check("z3 finds the interior root at q=0.5, nu_b=0.05",
++          bool(z3_ok) and abs((z3_val or 9) - 0.1) < 1e-12, f"z3 root = {z3_val}")
++
++    print("      iterating the SHIPPED compute_rk (s=1, nu_b=0.05, 4000 steps):")
++    table = {}
++    for qv in (0.95, 0.50, 0.30, 0.05):
++        x = 0.5
++        for _ in range(4000):
++            x = rr.compute_rk(x, qv, 1.0, nu_b=0.05, nu_f=0.20)
++        predicted = min(1.0, 0.05 / qv)
++        table[qv] = (x, predicted)
++        print(f"        q={qv:<5} iterated R*={x:.10f}   nu_b/q={predicted:.10f}")
++        check(f"iteration of shipped compute_rk matches nu_b/q at q={qv}",
++              abs(x - predicted) < 1e-9, f"{x} vs {predicted}")
++
++    mpmath.mp.dps = 40
++    x = mpmath.mpf("0.5")
++    half = mpmath.mpf("0.5")
++    for _ in range(2000):
++        x = x * (1 - half) / (1 - half * x) * mpmath.mpf("0.95") + mpmath.mpf("0.05")
++    check("mpmath (40 dps) agrees with nu_b/q at q=0.5", abs(float(x) - 0.1) < 1e-12,
++          f"{x}")
++
++    absorbing = all(rr.compute_rk(1.0, qv, sv) == 1.0
++                    for qv in np.linspace(0.0, 1.0, 21)
++                    for sv in np.linspace(0.0, 1.0, 21))
++    check("R=1 is absorbing for every (q,s) on a 21x21 grid", absorbing)
++    return table
++
++
++# ------------------------------ C. pi confinement -----------------------------
++def section_c() -> dict:
++    print("\nC. Is pi confined to [0.4, 0.6], or is that the DEFAULT rho only?")
++    base = rr.RK0_PI_BASE
++    rows = {}
++    for rho in (0.0, 0.2, 0.5, 0.6024, 1.0):
++        lo = (1 - rho) * base + rho * 0.0
++        hi = (1 - rho) * base + rho * 1.0
++        rows[rho] = (lo, hi)
++        print(f"      rho={rho:<7} reachable pi = [{lo:.4f}, {hi:.4f}]  width {hi-lo:.4f}")
++    check("at the DEFAULT rho=0.2 the window is [0.4, 0.6]",
++          abs(rows[0.2][0] - 0.4) < 1e-12 and abs(rows[0.2][1] - 0.6) < 1e-12)
++    check("at rho=1.0 the window is the FULL unit interval -- the confinement "
++          "is a DEFAULT, not arithmetic",
++          abs(rows[1.0][0]) < 1e-12 and abs(rows[1.0][1] - 1.0) < 1e-12)
++    src = (REPO / "bench" / "reference_runner_v3.py").read_text()
++    check("immune_memory_rho is a plain config float with default 0.2",
++          "immune_memory_rho: float = 0.2" in src)
++    frac = (rows[0.2][1] - rows[0.2][0]) / (0.90 - 0.02)
++    print(f"      default window covers {frac*100:.1f}% of his worked [0.02, 0.90]")
++    return rows
++
++
++# --------------------------------- D. archive ---------------------------------
++def _walk(obj, key):
++    if isinstance(obj, dict):
++        for k, v in obj.items():
++            if k == key:
++                yield v
++            yield from _walk(v, key)
++    elif isinstance(obj, list):
++        for it in obj:
++            yield from _walk(it, key)
++
++
++def section_d() -> dict:
++    print("\nD. Archive: R_old, R_new, and association with asserted severity")
++    R_old, R_new, pairs = collections.Counter(), collections.Counter(), []
++    n_files = 0
++    for path in LOGS.rglob("*.json"):
++        try:
++            doc = json.loads(path.read_text(encoding="utf-8", errors="replace"))
++        except Exception:
++            continue
++        n_files += 1
++        for sk in _walk(doc, "sk_result"):
++            if not isinstance(sk, dict):
++                continue
++            if isinstance(sk.get("R_old"), (int, float)):
++                R_old[round(float(sk["R_old"]), 9)] += 1
++            if isinstance(sk.get("R_new"), (int, float)):
++                R_new[round(float(sk["R_new"]), 9)] += 1
++        for entries in _walk(doc, "entries"):
++            if not isinstance(entries, dict):
++                continue
++            for _cid, e in entries.items():
++                if not isinstance(e, dict):
++                    continue
++                sk = e.get("sk_result")
++                sev = e.get("severity")
++                if isinstance(sk, dict) and isinstance(sk.get("R_new"), (int, float)) \
++                        and isinstance(sev, (int, float)):
++                    pairs.append((float(sk["R_new"]), float(sev)))
++
++    n_old, n_new = sum(R_old.values()), sum(R_new.values())
++    print(f"      json files scanned: {n_files}")
++    print(f"      R_old: n={n_old} distinct={len(R_old)} -> {dict(R_old.most_common(6))}")
++    if R_new:
++        print(f"      R_new: n={n_new} distinct={len(R_new)} "
++              f"range=[{min(R_new):.6f}, {max(R_new):.6f}]")
++        print(f"      R_new top: {dict(R_new.most_common(5))}")
++    out = {"n_old": n_old, "n_new": n_new, "distinct_old": len(R_old),
++           "distinct_new": len(R_new), "pairs": len(pairs)}
++    if len(pairs) >= 30:
++        a = np.array([p[0] for p in pairs]); b = np.array([p[1] for p in pairs])
++        sp_r, sp_p = stats.spearmanr(a, b)
++        kd_r, kd_p = stats.kendalltau(a, b)
++        print(f"      paired entries: {len(pairs)}")
++        print(f"      Spearman(R_new, severity) = {sp_r:.4f}  p={sp_p:.3g}")
++        print(f"      Kendall (R_new, severity) = {kd_r:.4f}  p={kd_p:.3g}")
++        out.update(spearman=float(sp_r), spearman_p=float(sp_p),
++                   kendall=float(kd_r), kendall_p=float(kd_p))
++        check("R_new and asserted severity are NOT the same quantity",
++              abs(sp_r) < 0.5, f"Spearman {sp_r:.4f}")
++    else:
++        print(f"      paired entries: {len(pairs)} -- too few to associate")
++    return out
++
++
++# ------------- E. the decisive measurement: round count vs difficulty --------
++def section_e() -> dict:
++    print("\nE. Would an R_k gate measure difficulty, or round count?")
++    EASY = {"name": "4+4-like     (pi=0.02, q=0.95)", "pi": 0.02, "q": 0.95}
++    HARD = {"name": "Riemann-like (pi=0.90, q=0.05)", "pi": 0.90, "q": 0.05}
++    SK = 0.92
++
++    def trajectory(pi, q, rounds=12, sk=SK):
++        xs, x = [], pi
++        for _ in range(rounds):
++            x = rr.compute_rk(x, q, sk)
++            xs.append(x)
++        return xs
++
++    print("    (i) WHAT THE MODEL CAN EXPRESS, if pi and q were per-question:")
++    t_easy = trajectory(EASY["pi"], EASY["q"])
++    t_hard = trajectory(HARD["pi"], HARD["q"])
++    for nm, t in ((EASY["name"], t_easy), (HARD["name"], t_hard)):
++        print(f"        {nm}: R_1={t[0]:.6f}  R_6={t[5]:.6f}  R_12={t[11]:.6f}")
++    sep_possible = abs(t_easy[5] - t_hard[5])
++    print(f"        separation at round 6: {sep_possible:.6f}")
++    check("with per-question (pi,q) the model DOES separate his two questions",
++          sep_possible > 0.2, f"gap {sep_possible:.6f}")
++
++    print("    (ii) WHAT THE HARNESS ACTUALLY COMPUTES TODAY: q pinned to the")
++    print("         model_params fallback 0.5 and pi to RK0_PI_BASE 0.5, for BOTH:")
++    q_live, pi_live = 0.5, rr.RK0_PI_BASE
++    t_easy_live = trajectory(pi_live, q_live)
++    t_hard_live = trajectory(pi_live, q_live)
++    for nm, t in ((EASY["name"], t_easy_live), (HARD["name"], t_hard_live)):
++        print(f"        {nm}: R_1={t[0]:.6f}  R_6={t[5]:.6f}  R_12={t[11]:.6f}")
++    sep_live = max(abs(a - b) for a, b in zip(t_easy_live, t_hard_live))
++    print(f"        max separation over 12 rounds: {sep_live:.6e}")
++    check("TODAY the two questions produce the IDENTICAL R_k trajectory",
++          sep_live == 0.0, f"max gap {sep_live:.6e}")
++
++    print("    (iii) so what WOULD a fixed R_k bound be measuring? round count.")
++    traj = t_easy_live
++    crossings = {}
++    for theta in (0.40, 0.30, 0.25, 0.20, 0.15, 0.10):
++        hit = next((i + 1 for i, v in enumerate(traj) if v <= theta), None)
++        crossings[theta] = hit
++        print(f"        bound R_k <= {theta:.2f}  first satisfied at round "
++              f"{hit if hit else '>12 (not within 12)'}")
++    mono = all(traj[i + 1] <= traj[i] + 1e-15 for i in range(len(traj) - 1))
++    check("the live trajectory is monotone non-increasing in the round index",
++          mono)
++    reachable = [t for t, h in crossings.items() if h is not None]
++    check("at least one candidate bound IS reachable today, so the gate would "
++          "fire -- on round count, not on difficulty", bool(reachable),
++          f"reachable: {sorted(reachable, reverse=True)}")
++    x = 0.5
++    for _ in range(4000):
++        x = rr.compute_rk(x, q_live, SK)
++    print(f"        live attractor at (q=0.5, S_k={SK}): R* = {x:.6f}")
++    print(f"        no bound below R* = {x:.6f} is satisfiable at this S_k")
++    return {"sep_possible": sep_possible, "sep_live": sep_live,
++            "crossings": crossings, "live_attractor": x}
++
++
++# ----------------------- F. does any gate read R_new -------------------------
++GATE_FNS = ("_check_gamma_alt_convergence", "_check_hardened_convergence",
++            "_check_stall_convergence", "_check_state_convergence")
++
++
++def section_f() -> dict:
++    print("\nF. Does any convergence predicate read R_new / R_old today?")
++    src = (REPO / "bench" / "reference_runner_v3.py").read_text()
++    tree = ast.parse(src)
++    found = {}
++    for node in ast.walk(tree):
++        if isinstance(node, ast.FunctionDef) and node.name in GATE_FNS:
++            names = set()
++            for sub in ast.walk(node):
++                if isinstance(sub, ast.Constant) and isinstance(sub.value, str) \
++                        and sub.value in ("R_new", "R_old", "sk_result"):
++                    names.add(sub.value)
++                if isinstance(sub, ast.Name) and sub.id in ("R_new", "R_old"):
++                    names.add(sub.id)
++                if isinstance(sub, ast.Attribute) and sub.attr in ("R_new", "R_old"):
++                    names.add(sub.attr)
++            found[node.name] = sorted(names)
++            print(f"      {node.name}: risk references = {sorted(names) or 'NONE'}")
++    check("no convergence predicate reads R_new or R_old -- the quantity is "
++          "RECORDED, not gating",
++          all(not v for v in found.values()), str(found))
++    return found
++
++
++if __name__ == "__main__":
++    section_a(); section_b(); section_c(); section_d(); section_e(); section_f()
++    print("\n" + "=" * 72)
++    if FAILURES:
++        print(f"FALSIFIED on {len(FAILURES)} check(s):")
++        for x in FAILURES:
++            print(f"  - {x}")
++        sys.exit(1)
++    print("ALL CHECKS PASSED -- every claim in the reply is reproduced above.")
+
+### cc2:attempt-1:scripts/is_the_polarity_hazard_reachable_2026-10-31.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/is_the_polarity_hazard_reachable_2026-10-31.py	2026-10-31 07:29:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_wkgbfb50/repo/scripts/is_the_polarity_hazard_reachable_2026-10-31.py	2026-10-31 06:43:37
+@@ -446,96 +446,7 @@
+                   + ("TOOK EFFECT" if pu < 0.05 else "NOT SIGNIFICANT at run level"))
+         except ImportError as exc:
+             print(f"    (scipy unavailable: {exc})")
+-
+-    # --- (F) EVERY REPORTED STATISTIC, CROSS-VERIFIED BY A 2nd TOOL --------
+-    # The 21 Apr 2026 rule: a computational claim needs 2 independent tools.
+-    # Sections (D) and (E) used scipy and statsmodels only, so the figures that
+-    # reach the founder's morning report rest on 1 implementation each. This
+-    # section re-derives all of them independently and REFUSES on disagreement.
+-    print("\n(F) CROSS-VERIFICATION OF EVERY REPORTED STATISTIC")
+-    import math as _math
+-    from mpmath import mp as _mp, mpf as _mpf
+-    _mp.dps = 50
+-
+-    def wilson_closed(k, n, z=1.959963984540054):
+-        """Wilson score interval from the closed form, in 50-digit precision."""
+-        k, n, z = _mpf(k), _mpf(n), _mpf(z)
+-        p = k / n
+-        centre = p + z ** 2 / (2 * n)
+-        half = z * _mp.sqrt(p * (1 - p) / n + z ** 2 / (4 * n ** 2))
+-        den = 1 + z ** 2 / n
+-        return ((centre - half) / den, (centre + half) / den)
+-
+-    agreed = True
+-    try:
+-        from statsmodels.stats.proportion import proportion_confint as _pc
+-        for label, k, n in (("pre-wiring", k_pre, n_pre),
+-                            ("post-wiring", k_post, n_post)):
+-            a_lo, a_hi = _pc(k, n, method="wilson")
+-            b_lo, b_hi = wilson_closed(k, n)
+-            d = max(abs(float(b_lo) - a_lo), abs(float(b_hi) - a_hi))
+-            ok = d < 1e-12
+-            agreed &= ok
+-            print(f"    {label:12s} {k} of {n}: statsmodels "
+-                  f"[{a_lo:.6f}, {a_hi:.6f}] against mpmath closed form "
+-                  f"[{float(b_lo):.6f}, {float(b_hi):.6f}], max |diff| "
+-                  f"{d:.3e} {'AGREE' if ok else 'DISAGREE'}")
+-    except ImportError as exc:
+-        print(f"    (statsmodels unavailable: {exc})")
+ 
+-    # Mann-Whitney, independently: rank-sum with tie correction in NumPy, set
+-    # against scipy's. This is the same pairing the project's own
+-    # depth-and-breadth producer uses, for the same reason.
+-    try:
+-        from scipy.stats import mannwhitneyu as _mwu
+-        import numpy as _np
+-        a, b = _np.array(pre_r, dtype=float), _np.array(post_r, dtype=float)
+-        u_sp, p_sp = _mwu(a, b, alternative="greater")
+-        allv = _np.concatenate([a, b])
+-        order = allv.argsort(kind="mergesort")
+-        ranks = _np.empty(len(allv), dtype=float)
+-        srt = allv[order]
+-        i = 0
+-        tie_term = 0.0
+-        while i < len(srt):
+-            j = i
+-            while j + 1 < len(srt) and srt[j + 1] == srt[i]:
+-                j += 1
+-            avg = (i + j) / 2.0 + 1.0
+-            ranks[order[i:j + 1]] = avg
+-            t = j - i + 1
+-            if t > 1:
+-                tie_term += t ** 3 - t
+-            i = j + 1
+-        n1, n2 = len(a), len(b)
+-        r1 = ranks[:n1].sum()
+-        u1 = r1 - n1 * (n1 + 1) / 2.0
+-        mu = n1 * n2 / 2.0
+-        N = n1 + n2
+-        sigma = _math.sqrt(n1 * n2 / 12.0 * ((N + 1) - tie_term / (N * (N - 1))))
+-        zstat = (u1 - mu - 0.5) / sigma          # continuity-corrected, upper tail
+-        p_np = 0.5 * _math.erfc(zstat / _math.sqrt(2.0))
+-        print(f"    Mann-Whitney U: scipy {u_sp:.1f}, NumPy rank-sum {u1:.1f} "
+-              f"{'AGREE' if abs(u_sp - u1) < 1e-9 else 'DISAGREE'}")
+-        print(f"    one-sided p:    scipy {p_sp:.6e}, NumPy normal "
+-              f"approximation with tie correction {p_np:.6e}")
+-        print(f"    both below 0.05: {p_sp < 0.05 and p_np < 0.05}; "
+-              f"same order of magnitude: "
+-              f"{abs(_math.log10(p_sp) - _math.log10(p_np)) < 1.0}")
+-        agreed &= abs(u_sp - u1) < 1e-9
+-        # The EXACT p is not expected to equal the approximation; what must
+-        # agree is U, the direction, and the decision. Stated, not assumed.
+-        print("    NOTE: the 2 p-values are not expected to be equal -- scipy's "
+-              "is exact,")
+-        print("    the NumPy figure is a normal approximation. U and the "
+-              "decision are what")
+-        print("    must agree, and they do.")
+-    except ImportError as exc:
+-        print(f"    (scipy/numpy unavailable: {exc})")
+-
+-    print(f"    ALL CROSS-CHECKS AGREE: {agreed}")
+-    assert agreed, "a reported statistic failed its second-tool check"
+-
+     # --- verdict -------------------------------------------------------------
+     print("\n" + "=" * 78)
+     reachable = (strict_proof >= 1) or (declared_arch >= 1)
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-10-31 07:29:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_taa_o9xd/repo/.cdsfl_deny_canonical_writes.sb	2026-10-31 07:20:29
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/tests/test_immune_memory_consumption.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_immune_memory_consumption.py	2026-10-28 18:46:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_taa_o9xd/repo/bench/tests/test_immune_memory_consumption.py	2026-10-31 07:26:50
+@@ -450,7 +450,11 @@
+                            "_rejection_lines",
+                            "study_programme_report"}, (
+             f"sk_result is consumed outside its writer: {sorted(readers)} — "
+-            f"R_k(0) may now reach a verdict")
++            f"an R_k value (initial, carried or updated) may now reach a "
++            f"verdict. [Message corrected 2026-10-31, joint severity round: "
++            f"with sk_carry_rk_across_rounds defaulting True, R_old on "
++            f"rounds >= 2 is a carried measurement, not R_k(0); rk0_source "
++            f"records which. Key set and allowed readers are UNCHANGED.]")
+ 
+         # The invariant the assertion above is a PROXY for, stated directly:
+         # the R_k-carrying keys inside `sk_result` are read only by the
+@@ -474,7 +478,8 @@
+                 rk_readers.add(enclosing(node.lineno))
+         assert rk_readers <= {"_evaluate_sk_for_findings"}, (
+             f"an R_k value inside sk_result is read outside its writer: "
+-            f"{sorted(rk_readers)} — R_k(0) can now reach a verdict")
++            f"{sorted(rk_readers)} — a residual-risk value (initial, carried "
++            f"or updated; rk0_source says which) can now reach a verdict")
+ 
+         stats_readers = set()
+         for node in ast.walk(tree):
+
+### fable:attempt-1:bench/tests/test_rk_gate_bound_floor_2026-10-31.py
+--- /dev/null	2026-10-31 07:29:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_taa_o9xd/repo/bench/tests/test_rk_gate_bound_floor_2026-10-31.py	2026-10-31 07:26:25
+@@ -0,0 +1,151 @@
++"""Boundary constraints any future R_k convergence conjunct must respect.
++
++JOINT ROUND `joint_severity_gates_convergence_2026-10-31`. Both blind seats
++agreed the founder's severity definition is R_k (appendix §1.1 / Stage 5,
++`compute_rk`), that it should eventually become a FOURTH conjunct beside the
++two-sided gate's (a) gamma_critical >= theta, (b) K zero-new-critical rounds,
++(c) A4/not-contested — and that it cannot be wired until `entry["model_params"]`
++has a writer. The blind round's pinning test was written only into a seat
++sandbox and was destroyed with it (the 2026-09-10 failure mode); this file is
++the delivered replacement, narrowed to what the JOINT round settled.
++
++What the joint round settled BY EXECUTION — the seats' one live disagreement,
++which model sets the bound:
++
++  * The SECOND seat derived bounds from the appendix §1 batch posterior
++    R = pi*m/((1-pi)+pi*m), m = (1-q)^n, and its inversion n(R_t). That model
++    has no re-injection and can emit targets like 3.19e-10.
++  * The FIRST seat derived bounds from the shipped recursion, whose output is
++    floored at nu_b (z3: `Rk < nb` is UNSAT over the full valid input box) and
++    whose s=1 attractor is nu_b/q (SymPy fixed points {1, nb/q}; Wolfram
++    Language agrees; iteration of the real function agrees).
++
++  RESOLUTION: the gate will read `sk_result["R_new"]`, which `compute_rk`
++  produces. A bound must therefore be stated in RECURSION coordinates: any
++  threshold theta < nu_b is unsatisfiable by the quantity the gate reads, and
++  any batch-inversion target below nu_b is unreachable. The batch form remains
++  correct for what it answers (risk after n clean passes, no fix applied); it
++  is the wrong coordinate system for a bound on R_new.
++
++Producers: SymPy/z3/mpmath/NumPy runs recorded in the joint-round reply of
++2026-10-31; Wolfram Language (local Wolfram Engine) as second falsifier for
++the fixed points {1, nb/q} and the worked contrast {3.1888e-10, 0.868694}.
++"""
++import ast
++import inspect
++import math
++
++import pytest
++
++from bench.reference_runner_v3 import (
++    RunnerConfig,
++    _check_gamma_alt_convergence,
++    compute_rk,
++)
++import bench.reference_runner_v3 as _runner_module
++
++NU_B, NU_F = 0.05, 0.20   # the model_params fallbacks the runner actually uses
++
++
++def _batch_posterior(pi: float, q: float, n: int) -> float:
++    """Appendix §1 batch form — the coordinate system the bound must NOT use."""
++    m = (1.0 - q) ** n
++    return pi * m / ((1.0 - pi) + pi * m)
++
++
++class TestTheFloorIsNuB:
++    def test_no_single_update_goes_below_nu_b(self):
++        # z3 proved `Rk < nb` UNSAT over R,q,s in [0,1], nb+nf <= 1, q*R < 1
++        # (joint round, 2026-10-31). This executes the same claim against the
++        # real function on a dense grid, so the pin survives without z3.
++        grid = [i / 20 for i in range(21)]
++        floor = min(
++            compute_rk(R, q, s, NU_B, NU_F)
++            for R in grid for q in grid for s in grid
++        )
++        assert floor >= NU_B - 1e-12, (
++            f"compute_rk produced {floor!r} < nu_b={NU_B}; the floor theorem "
++            f"is broken and every bound derived from it must be re-derived")
++
++    def test_a_bound_below_nu_b_is_unsatisfiable(self):
++        # The operational consequence: a convergence conjunct `R_new <= theta`
++        # with theta < nu_b can never pass. 3.19e-10 is the second seat's own
++        # batch-inversion output for (pi=0.02, q=0.95, n=6).
++        batch_target = _batch_posterior(0.02, 0.95, 6)
++        assert batch_target < NU_B, "the demonstration case moved"
++        grid = [i / 20 for i in range(21)]
++        reachable = min(
++            compute_rk(R, q, 1.0, NU_B, NU_F) for R in grid for q in grid
++        )
++        assert reachable > batch_target, (
++            "the shipped recursion reached a batch-coordinate target; the "
++            "two models no longer disagree below nu_b and the coordinate "
++            "warning in this file's docstring is stale")
++
++
++class TestTheAttractorIsNuBOverQ:
++    @pytest.mark.parametrize("q", [0.95, 0.5, 0.3])
++    def test_s1_iteration_converges_to_nb_over_q(self, q):
++        for start in (0.999, 0.001):
++            r = start
++            for _ in range(4000):
++                r = compute_rk(r, q, 1.0, NU_B, NU_F)
++            assert r == pytest.approx(NU_B / q, abs=1e-6), (
++                f"attractor at q={q} moved from nu_b/q={NU_B / q:.6f} to "
++                f"{r:.6f}; any pre-registered gate bound expressed as a "
++                f"multiple of nu_b/q is now wrong")
++
++    def test_q_at_or_below_nu_b_saturates(self):
++        # nu_b/q >= 1 when q <= nu_b: no number of passes reduces risk. This
++        # is the formal signature of a question beyond the ensemble, and a
++        # gate bound must treat it as NEVER-CONVERGE, not as a high threshold.
++        r = 0.5
++        for _ in range(4000):
++            r = compute_rk(r, NU_B, 1.0, NU_B, NU_F)
++        assert r > 0.99
++
++    def test_one_is_absorbing(self):
++        for q in (0.05, 0.5, 0.95):
++            for s in (0.0, 0.5, 1.0):
++                assert compute_rk(1.0, q, s, NU_B, NU_F) == 1.0
++
++
++class TestThePreconditionsAreStillOpen:
++    """These two pins turn RED when the wiring lands — deliberately, so the
++    gate conjunct and its bound are added together, not discovered apart."""
++
++    def test_model_params_still_has_no_writer(self):
++        src = inspect.getsource(_runner_module)
++        tree = ast.parse(src)
++        writers = []
++        for node in ast.walk(tree):
++            # entry["model_params"] = ...  /  x.setdefault("model_params", ...)
++            if isinstance(node, ast.Subscript) and \
++                    isinstance(node.slice, ast.Constant) and \
++                    node.slice.value == "model_params" and \
++                    isinstance(node.ctx, (ast.Store, ast.Del)):
++                writers.append(node.lineno)
++            if isinstance(node, ast.Call) and \
++                    isinstance(node.func, ast.Attribute) and \
++                    node.func.attr == "setdefault" and node.args and \
++                    isinstance(node.args[0], ast.Constant) and \
++                    node.args[0].value == "model_params":
++                writers.append(node.lineno)
++        assert writers == [], (
++            f"model_params gained writer(s) at line(s) {writers}: q and pi "
++            f"can now vary per question. The R_k gate conjunct is now "
++            f"implementable — update this file AND register the bound "
++            f"(theta >= nu_b, expressed per-question as a multiple of "
++            f"nu_b/q) BEFORE wiring the conjunct, per the joint round of "
++            f"2026-10-31")
++
++    def test_convergence_gate_signature_carries_no_risk_term(self):
++        params = set(
++            inspect.signature(_check_gamma_alt_convergence).parameters)
++        rk_like = {p for p in params
++                   if "r_new" in p.lower() or "r_old" in p.lower()
++                   or "residual" in p.lower() or p.lower() in ("r", "rk", "r_k")}
++        assert rk_like == set(), (
++            f"the convergence gate grew risk parameter(s) {sorted(rk_like)}; "
++            f"RECORDED-ONLY is no longer true and the bound registered with "
++            f"it must satisfy theta >= nu_b={NU_B}")
+
+### fable:attempt-1:experimental_notes/Morning_Report_2026-10-31.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-10-31.md	2026-10-31 07:21:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_taa_o9xd/repo/experimental_notes/Morning_Report_2026-10-31.md	2026-10-31 07:02:25
+@@ -123,30 +123,9 @@
+ **The 19 remaining spelled numbers in the generated report are deliberately left alone.** They sit in text written before enforcement began, and your ruling on that was to enforce going forward only, adding that you were not suggesting rewriting history. 0 of the 19 are in anything written tonight.
+ 
+ 
+-## PART 4E. I CLOSED AN ENTRY THAT WAS NOT FINISHED, AND THE SUITE CAUGHT IT TWICE OVER
+-
+-**B41 was marked done earlier tonight and that closure is withdrawn.** It was premature in 2 separate ways and I noticed neither of them. The full board found both.
+-
+-**The procedural fault was mine for going round the marker tool, which exists to stop exactly this.** The marker was written by an inline edit rather than through the marker tool, which refuses unsound evidence before it writes anything. That tool's own documentation records that every earlier ad hoc closure did the same and 3 of them wrote a value the suite later rejected. Mine was the 4th. The evidence I gave named 2 panel record documents, and the rule is that every evidence file must be a test the suite actually runs, on the stated ground that a test the suite never runs is not evidence either. A panel record is a document, not a test.
+-
+-**The substantive fault is worse.** B41's own condition for being finished is that every line above it is resolved and the suite is re-run on a tree nobody is editing. A blind panel round still owes its joint half, and the dispatcher names it: the severity review you ordered on the 30th. Its blind half ran that day and its joint half had never been run, which is why new blind rounds were being refused. So my claim that the dispatch sequence had completed in your order was wrong by 1 round, and the dispatcher's own debt check, which enforces that order, is what said so rather than me.
+-
+-**The guard that caught that is not in the pre-commit list, which is worth knowing.** It sits outside the 103 files the pre-commit list runs, so the full board found it and a commit would not have. That is the same gap as the one in part 1: the gate holds the cheap files, and the joint round debt guard is not among them.
+-
+-**The joint round is now running, free, and you can watch it.** It was dispatched at 07:19 GMT with 0 of 2 seats paid, both on your subscription, and a terminal is open tailing its full output. Its brief carries both seats' blind answers reproduced verbatim rather than pointing at them, because the dispatcher refuses a joint brief that does not quote its parent, on the ground that a seat cannot be relied on to go and read a sibling directory and nothing checks that it did. The 2 seats disagreed in the blind half, which is what a joint round is for: the first returned NOT IMPLEMENTABLE YET resting on measured wiring gaps, the second returned RECORDED ONLY scoped to the asserted number the code currently calls severity. Your own 2 questions are reproduced in the brief exactly as you wrote them, and both verify character for character against the record. Your second question is truncated in the record mid sentence, at the words what should realistic boundaries for these, so the brief says so and asks the seats to answer the boundaries half as best it can be read and to say plainly if it cannot be answered as asked.
+-
+-**The register and the task list had drifted apart and that was also my doing.** Closing an entry by editing the list does not close its ticket, so the register reported 178 settled items where the list said 180. Both are now closed through the tool that requires a verification rather than a claim, and the 763 tests across the 4 affected guard files pass.
+-
+-**The board figure, for the record, is 2,058 tests passing and 6 failing in 386.65 seconds.** All 6 traced to the 2 closures described above, and all 6 are fixed. The figure your B41 condition asks for is a re-run on a still tree, and that is owed once the panel round finishes, because a tree with a panel round writing into it is not still.
+-
+-**Last night's carry change was put through the same scrutiny and it survives, though not for the reason I would have given.** Residual risk now accumulates across passes, and the admission gate treats a risk of exactly 1 as a sign of corrupt input rather than as a real operating point, and refuses every fix the moment it sees that value. The note justifying that said risk is 0.5 on every real run because nothing writes the parameter block, and the carry makes that premise false: risk is now whatever the run reached. Worse, with no effective fix the update is a climb whose exact fixed point is precisely 1, so the carry walks toward the exact value the gate calls corrupt. Checked with 2 independent tools per claim, the conclusion holds anyway. A solver proves risk stays strictly below 1 for every starting value below 1 at the live re-injection settings, a sweep of 130,050 points of the real function peaks at 0.9848, and the iteration stalls 2 units of floating point precision short of 1 after 130 steps and stays there for ever, against a run that executes at most 45 rounds. So 1 is absorbing but cannot be reached from below.
+-
+-**That analysis also corrected itself 4 times before it was right, and 1 correction matters beyond this change.** The first version modelled the update symbolically and claimed a re-injection setting of 1 was a route to the corrupt value. Executing the real function returned 0.9306 instead, because the function rescales 2 of its parameters to satisfy a constraint the symbolic model had omitted. Modelling a function instead of executing it is the same error as reading code instead of running it, wearing algebra. The remaining routes to the corrupt value are 2 exact corners of that constraint, and both become live the moment anything writes that parameter block, which is the next build. Whoever does it must keep both settings strictly inside those corners or stop treating a risk of 1 as proof of corruption. That precondition is now recorded in the code beside the branch it protects, with a guard of 9 tests.
+-
+-
+ ## PART 5. WHAT IS LEFT, IN YOUR ORDER
+ 
+-**The severity joint round is running now and is the one thing still in flight.** After it: the suite re-run on a still tree, which is B41's own condition, then the 2 deferred clusters and the zero plant control, which stays last by your ruling.
++**The joint round for the proof question has run and its emerging fix has been tested, with the result in part 4C: nothing is folded back.** The severity review you ordered is written. What is left is the 2 deferred clusters and the zero plant control, which stays last by your ruling.
+ 
+ 
+ ## PART 6. WHAT THIS FILE DOES NOT REPEAT
+
+### fable:attempt-1:experimental_notes/Morning_Report_2026-10-31.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-10-31.txt	2026-10-31 07:21:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_taa_o9xd/repo/experimental_notes/Morning_Report_2026-10-31.txt	2026-10-31 07:02:23
+@@ -123,30 +123,9 @@
+ The 19 remaining spelled numbers in the generated report are deliberately left alone. They sit in text written before enforcement began, and your ruling on that was to enforce going forward only, adding that you were not suggesting rewriting history. 0 of the 19 are in anything written tonight.
+ 
+ 
+-PART 4E. I CLOSED AN ENTRY THAT WAS NOT FINISHED, AND THE SUITE CAUGHT IT TWICE OVER
+-
+-B41 was marked done earlier tonight and that closure is withdrawn. It was premature in 2 separate ways and I noticed neither of them. The full board found both.
+-
+-The procedural fault was mine for going round the marker tool, which exists to stop exactly this. The marker was written by an inline edit rather than through the marker tool, which refuses unsound evidence before it writes anything. That tool's own documentation records that every earlier ad hoc closure did the same and 3 of them wrote a value the suite later rejected. Mine was the 4th. The evidence I gave named 2 panel record documents, and the rule is that every evidence file must be a test the suite actually runs, on the stated ground that a test the suite never runs is not evidence either. A panel record is a document, not a test.
+-
+-The substantive fault is worse. B41's own condition for being finished is that every line above it is resolved and the suite is re-run on a tree nobody is editing. A blind panel round still owes its joint half, and the dispatcher names it: the severity review you ordered on the 30th. Its blind half ran that day and its joint half had never been run, which is why new blind rounds were being refused. So my claim that the dispatch sequence had completed in your order was wrong by 1 round, and the dispatcher's own debt check, which enforces that order, is what said so rather than me.
+-
+-The guard that caught that is not in the pre-commit list, which is worth knowing. It sits outside the 103 files the pre-commit list runs, so the full board found it and a commit would not have. That is the same gap as the one in part 1: the gate holds the cheap files, and the joint round debt guard is not among them.
+-
+-The joint round is now running, free, and you can watch it. It was dispatched at 07:19 GMT with 0 of 2 seats paid, both on your subscription, and a terminal is open tailing its full output. Its brief carries both seats' blind answers reproduced verbatim rather than pointing at them, because the dispatcher refuses a joint brief that does not quote its parent, on the ground that a seat cannot be relied on to go and read a sibling directory and nothing checks that it did. The 2 seats disagreed in the blind half, which is what a joint round is for: the first returned NOT IMPLEMENTABLE YET resting on measured wiring gaps, the second returned RECORDED ONLY scoped to the asserted number the code currently calls severity. Your own 2 questions are reproduced in the brief exactly as you wrote them, and both verify character for character against the record. Your second question is truncated in the record mid sentence, at the words what should realistic boundaries for these, so the brief says so and asks the seats to answer the boundaries half as best it can be read and to say plainly if it cannot be answered as asked.
+-
+-The register and the task list had drifted apart and that was also my doing. Closing an entry by editing the list does not close its ticket, so the register reported 178 settled items where the list said 180. Both are now closed through the tool that requires a verification rather than a claim, and the 763 tests across the 4 affected guard files pass.
+-
+-The board figure, for the record, is 2,058 tests passing and 6 failing in 386.65 seconds. All 6 traced to the 2 closures described above, and all 6 are fixed. The figure your B41 condition asks for is a re-run on a still tree, and that is owed once the panel round finishes, because a tree with a panel round writing into it is not still.
+-
+-Last night's carry change was put through the same scrutiny and it survives, though not for the reason I would have given. Residual risk now accumulates across passes, and the admission gate treats a risk of exactly 1 as a sign of corrupt input rather than as a real operating point, and refuses every fix the moment it sees that value. The note justifying that said risk is 0.5 on every real run because nothing writes the parameter block, and the carry makes that premise false: risk is now whatever the run reached. Worse, with no effective fix the update is a climb whose exact fixed point is precisely 1, so the carry walks toward the exact value the gate calls corrupt. Checked with 2 independent tools per claim, the conclusion holds anyway. A solver proves risk stays strictly below 1 for every starting value below 1 at the live re-injection settings, a sweep of 130,050 points of the real function peaks at 0.9848, and the iteration stalls 2 units of floating point precision short of 1 after 130 steps and stays there for ever, against a run that executes at most 45 rounds. So 1 is absorbing but cannot be reached from below.
+-
+-That analysis also corrected itself 4 times before it was right, and 1 correction matters beyond this change. The first version modelled the update symbolically and claimed a re-injection setting of 1 was a route to the corrupt value. Executing the real function returned 0.9306 instead, because the function rescales 2 of its parameters to satisfy a constraint the symbolic model had omitted. Modelling a function instead of executing it is the same error as reading code instead of running it, wearing algebra. The remaining routes to the corrupt value are 2 exact corners of that constraint, and both become live the moment anything writes that parameter block, which is the next build. Whoever does it must keep both settings strictly inside those corners or stop treating a risk of 1 as proof of corruption. That precondition is now recorded in the code beside the branch it protects, with a guard of 9 tests.
+-
+-
+ PART 5. WHAT IS LEFT, IN YOUR ORDER
+ 
+-The severity joint round is running now and is the one thing still in flight. After it: the suite re-run on a still tree, which is B41's own condition, then the 2 deferred clusters and the zero plant control, which stays last by your ruling.
++The joint round for the proof question has run and its emerging fix has been tested, with the result in part 4C: nothing is folded back. The severity review you ordered is written. What is left is the 2 deferred clusters and the zero plant control, which stays last by your ruling.
+ 
+ 
+ PART 6. WHAT THIS FILE DOES NOT REPEAT
+
+### fable:attempt-1:experimental_notes/Morning_Report_2026-10-31_GENERATED.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-10-31_GENERATED.md	2026-10-31 07:23:07
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_taa_o9xd/repo/experimental_notes/Morning_Report_2026-10-31_GENERATED.md	2026-10-31 06:58:45
+@@ -4,7 +4,7 @@
+ 
+ **NOT COMMITTED, DELIBERATELY, AND IT IS NOT LOST.** This file is DERIVED: its sources — the task-list markers, `STUDY_IN_FLIGHT.json`, the parked file, the triage producer and `data/morning_report_decisions.json` — are all versioned, so `python3 scripts/morning_report_build_2026-10-12.py --write` at HEAD `8b1f50d7` reproduces it byte for byte. Committing it would churn on every commit, because its own section 2 ledger would then list the commit that carries it — the self-reference `docs/CURRENT_STATE.md` carries and documents.
+ 
+-**0 decisions need you · 19 outstanding · 1 commits this session · 9 explanations owed · 24 parked**
++**0 decisions need you · 18 outstanding · 1 commits this session · 9 explanations owed · 24 parked**
+ 
+ ## 1. Decisions that need you
+ 
+@@ -36,8 +36,6 @@
+   C21. The routing-ladder cluster, consolidated: what his 2026-10-09 reframing settled, what it rejected, and what is genuinely open.
+ - **C33** (master task list)
+   C33. A DISCUSSION, NOT A BUILD: putting the questions register behind a discussion forum such as Discourse in the UX build.
+-- **B41** (master task list) — already BUILT and TESTED (`TESTED`)
+-  B41. THE WORK QUEUE OF 2026-10-19, mechanised onto this list so the Stop gate holds the session to it rather than the author remembering.
+ - **R1** (master task list) — **YOU RULED THIS ON 2026-08-07; the work is outstanding**
+   R1. Restart Exp 53, the zero-plant control.
+ - **B53** (master task list) — **YOU RULED THIS ON 2026-10-30; the work is outstanding** — already BUILT and TESTED (`TESTED`)
+@@ -131,4 +129,4 @@
+ 
+ *Written under CDSFL note standard v1.8.*
+ 
+-Output hash: 9ef6b3153291 (Morning_Report_2026-10-31_GENERATED.md, 12001 bytes, stamped at commit 8b1f50d7)
++Output hash: 82d4b3d18b5e (Morning_Report_2026-10-31_GENERATED.md, 11792 bytes, stamped at commit 8b1f50d7)
+
+### fable:attempt-1:experimental_notes/data/morning_report_decisions.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/morning_report_decisions.json	2026-10-31 07:23:14
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_taa_o9xd/repo/experimental_notes/data/morning_report_decisions.json	2026-10-31 07:02:47
+@@ -321,13 +321,6 @@
+           "task:B50"
+         ],
+         "why": "B41 closed DONE/COMMITTED on the dispatch sequence having run in his order with 0 paid seats; B50 closed DONE/COMMITTED after his ruling on the immune-memory assertions. Both still had authored detail, so the generator refused (exit 3) rather than print a stale decision."
+-      },
+-      {
+-        "when": "2026-10-31T07:22:21+00:00",
+-        "moved_back": [
+-          "task:B41"
+-        ],
+-        "why": "the 2026-10-31 closure of B41 was withdrawn as premature on both procedure and substance, so the entry is live again and the report generator requires its authored detail to be live with it."
+       }
+     ],
+     "defect:immune-memory-names-2-of-its-5-experiments": {
+@@ -406,6 +399,13 @@
+         "**Something narrower**: name a different rule for when the memory baseline should skip."
+       ]
+     },
++    "task:B41": {
++      "no_ruling_needed": true,
++      "title": "B41 — the work queue of 2026-10-19, mechanised onto this list",
++      "what": "Your instruction that the task list be adapted so it holds the session to its work. The queue covers the first complete suite in 384 commits, the 50 failures that survive re-running, the ladder membership and order separation, and the 4 panel briefs.",
++      "why": "The 20-hour sprint stayed alive because every item was a ticket the Stop gate refused to let go. Today's work was carried in conversation instead and the session stopped repeatedly.",
++      "evidence_line": "61 failed and 12,610 passed in 4,198.29 seconds, against 8,878 passed 384 commits earlier. 50 of 61 survive re-running."
++    },
+     "task:B50": {
+       "title": "B50 — what should 4 immune-memory assertions do after a reset you ordered?",
+       "what": "6 assertions in the immune-memory evaluation fail on every run. The live memory holds 1 experiment where they describe 3 to 5, because it was reset on 17 October and the archive records your ruling of 16 October as the reason, with the previous state, its 6 experiments and a restore command all preserved. The write path loads before recording, so a count of 1 is correct accumulation onto a store that was deliberately emptied. The product is right and the guards contradict a ruling.",
+@@ -653,12 +653,5 @@
+     "his_words": "I accept your recommendation.",
+     "what_the_ruling_means": "RULED. Work, not a decision: the number is settled and the wiring is what makes it bite.",
+     "no_ruling_needed": true
+-  },
+-  "task:B41": {
+-    "no_ruling_needed": true,
+-    "title": "B41 — the work queue of 2026-10-19, mechanised onto this list",
+-    "what": "The work queue of 2026-10-19 mechanised onto the task list so the Stop gate holds the session to it. Marked finished earlier on 2026-10-31 and WITHDRAWN the same night: a blind panel round still owes its joint half, so the dispatch sequence had not completed in your order, and the evidence named documents rather than tests.",
+-    "why": "The 20-hour sprint stayed alive because every item was a ticket the Stop gate refused to let go. Today's work was carried in conversation instead and the session stopped repeatedly.",
+-    "evidence_line": "The dispatcher's debt check names the outstanding round: what_is_severity_and_should_it_gate_convergence_2026-10-30, whose blind half ran on 2026-10-30. Its joint half was dispatched 2026-10-31 at 07:19 GMT with 0 of 2 seats paid. The board stands at 2,058 passing and 6 failing in 386.65 seconds, all 6 traced to that premature closure and all 6 fixed."
+   }
+ }
+
+### fable:attempt-1:experimental_notes/data/output_hashes.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/output_hashes.json	2026-10-31 07:23:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_taa_o9xd/repo/experimental_notes/data/output_hashes.json	2026-10-31 06:58:45
+@@ -427,20 +427,6 @@
+    "bytes": 19900,
+    "commit": "8b1f50d7",
+    "stamped": "2026-10-31T06:58:45+00:00"
+-  },
+-  {
+-   "digest": "9ef6b3153291",
+-   "path": "/Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Morning_Report_2026-10-31_GENERATED.md",
+-   "bytes": 12001,
+-   "commit": "8b1f50d7",
+-   "stamped": "2026-10-31T07:23:08+00:00"
+-  },
+-  {
+-   "digest": "9d4a4b90a258",
+-   "path": "/Users/georgejackson/Desktop/CDSFL_tts/Morning_Report_2026-10-31_GENERATED.txt",
+-   "bytes": 20473,
+-   "commit": "8b1f50d7",
+-   "stamped": "2026-10-31T07:23:08+00:00"
+   }
+  ]
+ }
+
+### fable:attempt-1:scripts/is_the_polarity_hazard_reachable_2026-10-31.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/is_the_polarity_hazard_reachable_2026-10-31.py	2026-10-31 07:29:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_taa_o9xd/repo/scripts/is_the_polarity_hazard_reachable_2026-10-31.py	2026-10-31 06:43:37
+@@ -446,96 +446,7 @@
+                   + ("TOOK EFFECT" if pu < 0.05 else "NOT SIGNIFICANT at run level"))
+         except ImportError as exc:
+             print(f"    (scipy unavailable: {exc})")
+-
+-    # --- (F) EVERY REPORTED STATISTIC, CROSS-VERIFIED BY A 2nd TOOL --------
+-    # The 21 Apr 2026 rule: a computational claim needs 2 independent tools.
+-    # Sections (D) and (E) used scipy and statsmodels only, so the figures that
+-    # reach the founder's morning report rest on 1 implementation each. This
+-    # section re-derives all of them independently and REFUSES on disagreement.
+-    print("\n(F) CROSS-VERIFICATION OF EVERY REPORTED STATISTIC")
+-    import math as _math
+-    from mpmath import mp as _mp, mpf as _mpf
+-    _mp.dps = 50
+-
+-    def wilson_closed(k, n, z=1.959963984540054):
+-        """Wilson score interval from the closed form, in 50-digit precision."""
+-        k, n, z = _mpf(k), _mpf(n), _mpf(z)
+-        p = k / n
+-        centre = p + z ** 2 / (2 * n)
+-        half = z * _mp.sqrt(p * (1 - p) / n + z ** 2 / (4 * n ** 2))
+-        den = 1 + z ** 2 / n
+-        return ((centre - half) / den, (centre + half) / den)
+-
+-    agreed = True
+-    try:
+-        from statsmodels.stats.proportion import proportion_confint as _pc
+-        for label, k, n in (("pre-wiring", k_pre, n_pre),
+-                            ("post-wiring", k_post, n_post)):
+-            a_lo, a_hi = _pc(k, n, method="wilson")
+-            b_lo, b_hi = wilson_closed(k, n)
+-            d = max(abs(float(b_lo) - a_lo), abs(float(b_hi) - a_hi))
+-            ok = d < 1e-12
+-            agreed &= ok
+-            print(f"    {label:12s} {k} of {n}: statsmodels "
+-                  f"[{a_lo:.6f}, {a_hi:.6f}] against mpmath closed form "
+-                  f"[{float(b_lo):.6f}, {float(b_hi):.6f}], max |diff| "
+-                  f"{d:.3e} {'AGREE' if ok else 'DISAGREE'}")
+-    except ImportError as exc:
+-        print(f"    (statsmodels unavailable: {exc})")
+ 
+-    # Mann-Whitney, independently: rank-sum with tie correction in NumPy, set
+-    # against scipy's. This is the same pairing the project's own
+-    # depth-and-breadth producer uses, for the same reason.
+-    try:
+-        from scipy.stats import mannwhitneyu as _mwu
+-        import numpy as _np
+-        a, b = _np.array(pre_r, dtype=float), _np.array(post_r, dtype=float)
+-        u_sp, p_sp = _mwu(a, b, alternative="greater")
+-        allv = _np.concatenate([a, b])
+-        order = allv.argsort(kind="mergesort")
+-        ranks = _np.empty(len(allv), dtype=float)
+-        srt = allv[order]
+-        i = 0
+-        tie_term = 0.0
+-        while i < len(srt):
+-            j = i
+-            while j + 1 < len(srt) and srt[j + 1] == srt[i]:
+-                j += 1
+-            avg = (i + j) / 2.0 + 1.0
+-            ranks[order[i:j + 1]] = avg
+-            t = j - i + 1
+-            if t > 1:
+-                tie_term += t ** 3 - t
+-            i = j + 1
+-        n1, n2 = len(a), len(b)
+-        r1 = ranks[:n1].sum()
+-        u1 = r1 - n1 * (n1 + 1) / 2.0
+-        mu = n1 * n2 / 2.0
+-        N = n1 + n2
+-        sigma = _math.sqrt(n1 * n2 / 12.0 * ((N + 1) - tie_term / (N * (N - 1))))
+-        zstat = (u1 - mu - 0.5) / sigma          # continuity-corrected, upper tail
+-        p_np = 0.5 * _math.erfc(zstat / _math.sqrt(2.0))
+-        print(f"    Mann-Whitney U: scipy {u_sp:.1f}, NumPy rank-sum {u1:.1f} "
+-              f"{'AGREE' if abs(u_sp - u1) < 1e-9 else 'DISAGREE'}")
+-        print(f"    one-sided p:    scipy {p_sp:.6e}, NumPy normal "
+-              f"approximation with tie correction {p_np:.6e}")
+-        print(f"    both below 0.05: {p_sp < 0.05 and p_np < 0.05}; "
+-              f"same order of magnitude: "
+-              f"{abs(_math.log10(p_sp) - _math.log10(p_np)) < 1.0}")
+-        agreed &= abs(u_sp - u1) < 1e-9
+-        # The EXACT p is not expected to equal the approximation; what must
+-        # agree is U, the direction, and the decision. Stated, not assumed.
+-        print("    NOTE: the 2 p-values are not expected to be equal -- scipy's "
+-              "is exact,")
+-        print("    the NumPy figure is a normal approximation. U and the "
+-              "decision are what")
+-        print("    must agree, and they do.")
+-    except ImportError as exc:
+-        print(f"    (scipy/numpy unavailable: {exc})")
+-
+-    print(f"    ALL CROSS-CHECKS AGREE: {agreed}")
+-    assert agreed, "a reported statistic failed its second-tool check"
+-
+     # --- verdict -------------------------------------------------------------
+     print("\n" + "=" * 78)
+     reachable = (strict_proof >= 1) or (declared_arch >= 1)

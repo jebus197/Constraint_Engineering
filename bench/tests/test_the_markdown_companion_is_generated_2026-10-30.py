@@ -61,10 +61,15 @@ class TestItIsReproducibleFromTheRepository:
     def test_the_source_is_versioned(self, gen):
         """A generated file whose source is not tracked cannot be rebuilt from
         a clone, which is entry A2's subject."""
+        # ASKS the generator for its paths rather than restating them. They
+        # were module constants until 2026-10-31, when `--date` made them a
+        # function of the report date; a test that hardcoded the filenames would
+        # have gone on passing against the wrong day's file.
+        repo_txt, _desktop_txt, _dst = gen.paths(gen.DEFAULT_DATE)
         src = gen.source()
-        assert src == gen.REPO_TXT, (
+        assert src == repo_txt, (
             f"the generator is reading {src}, not the repository copy "
-            f"{gen.REPO_TXT}. If the repo copy has gone, restore it rather "
+            f"{repo_txt}. If the repo copy has gone, restore it rather "
             f"than letting the Desktop fallback become the source of truth.")
         r = subprocess.run(["git", "ls-files", "--error-unmatch",
                             str(src.relative_to(REPO))],
@@ -74,9 +79,10 @@ class TestItIsReproducibleFromTheRepository:
 
     def test_the_two_spoken_copies_agree(self, gen):
         """They diverged once already, 85 lines against 115."""
-        if not gen.DESKTOP_TXT.is_file():
+        repo_txt, desktop_txt, _dst = gen.paths(gen.DEFAULT_DATE)
+        if not desktop_txt.is_file():
             pytest.skip("no Desktop copy on this machine; nothing to compare")
-        assert gen.REPO_TXT.read_text() == gen.DESKTOP_TXT.read_text(), (
+        assert repo_txt.read_text() == desktop_txt.read_text(), (
             "the repository and Desktop spoken copies have diverged; run the "
             "generator to bring them back into agreement")
 
@@ -158,3 +164,122 @@ class TestTheCommittedMarkdownMatchesARebuild:
     def test_render_is_deterministic(self, gen):
         """2 renders of the same source must agree, or the match above is luck."""
         assert gen.render() == gen.render()
+
+
+class TestThePartStyleReportAndTheDateArgument:
+    """Added 2026-10-31, when `--date` and the PART renderer were added.
+
+    Without these the new code path is an addition nothing reaches, which is the
+    shape this project has confirmed 11 times. Every assertion CALLS the
+    generator.
+
+    VERIFIED RED, 1 mutation per assertion, because a test that cannot be made
+    to fail proves nothing:
+
+      * drop the `(?=[A-Z0-9])` lookahead  -> the lower-case-continuation test
+      * relax `\s+` to `\s*`               -> the decimal test
+      * `.capitalize()` the PART heading   -> the heading-case test
+      * move DEFAULT_DATE                  -> the default-date test
+      * skip `_emphasise_lead`             -> the emphasis test
+
+    The first draft of the decimal test was HOLLOW and the mutation run is what
+    exposed it: it passed with and against the lookahead mutation, because a
+    decimal has no whitespace after its full stop and so was never a candidate
+    boundary either way. It guards the whitespace requirement, not the
+    lookahead, and it is only after swapping the mutation that it has teeth.
+    """
+
+    def test_the_date_argument_selects_that_days_files(self, gen):
+        repo_txt, desktop_txt, dst = gen.paths("2026-10-31")
+        assert repo_txt.name == "Morning_Report_2026-10-31.txt"
+        assert dst.name == "Morning_Report_2026-10-31.md"
+        assert desktop_txt.parent.name == "CDSFL_tts"
+
+    def test_the_default_date_is_unchanged(self, gen):
+        # The generalisation must not move the default, or every existing
+        # caller silently retargets.
+        assert gen.DEFAULT_DATE == "2026-10-30"
+
+    def test_a_part_report_keeps_its_heading_case(self, gen):
+        """Every PART heading in the source must reach the markdown with its
+        case intact.
+
+        ★ THIS PINNED A LITERAL FROM ONE EDITION AND BROKE ON A LEGITIMATE
+        REWRITE, 2026-10-31. It asserted `"## PART 1. 4 CORRECTIONS" in out`,
+        which is a sentence from the first edition of that day's report. The
+        founder then asked for the report to be rewritten in the agreed format,
+        PART 1 was renamed, and the test went red on a document that is more
+        correct than the one it was written against -- punishing the repair,
+        which is the failure mode `execute-do-not-grep`'s converse names and
+        which this project has now recorded 10 times.
+
+        THE PROPERTY IS DOCUMENT-INDEPENDENT AND STRICTLY STRONGER. It reads the
+        PART headings out of the SOURCE and requires every one of them to appear
+        in the output unchanged, so it holds for any edition, catches a heading
+        dropped as well as a heading restyled, and cannot be satisfied by a
+        report that happens to contain one remembered string. The anti-vacuity
+        control matters here: a source with 0 PART headings would make the
+        all() trivially true, so the count is asserted first.
+        """
+        import re
+        src = gen.paths("2026-10-31")[0].read_text()
+        heads = [ln.strip() for ln in src.splitlines()
+                 if re.match(r"^PART [0-9A-Z]+\.", ln.strip())]
+        assert len(heads) >= 5, (
+            f"only {len(heads)} PART heading(s) in the source: the check would "
+            "be vacuous")
+        out = gen.render("2026-10-31")
+        # WHOLE LINES, NOT SUBSTRINGS. `"## X"` is a substring of `"### X"`, so a
+        # substring test passes on a demoted heading -- found by mutation on
+        # 2026-10-31, where changing the emitted level left this green. Matching
+        # the line exactly closes that without widening what the test claims.
+        lines = set(out.splitlines())
+        missing = [h for h in heads if f"## {h}" not in lines]
+        assert not missing, (
+            "PART heading(s) did not survive into the markdown as a level-2 "
+            f"heading with their case intact: {missing[:3]}")
+        # The SECTION path lowercases via capitalize(); it must not reach these.
+        restyled = [h for h in heads if f"## {h.capitalize()}" in lines]
+        assert not restyled, f"PART heading(s) were restyled: {restyled[:3]}"
+
+    def test_a_part_report_emphasises_lead_sentences(self, gen):
+        out = gen.render("2026-10-31")
+        assert out.count("**") >= 20, "lead sentences are not being emphasised"
+        assert out.count("**") % 2 == 0, (
+            "unbalanced emphasis markers would corrupt the rendering")
+
+    def test_a_decimal_is_not_read_as_a_sentence_end(self, gen):
+        # THE FAILURE MODE THIS PINS. These reports are full of figures like
+        # 0.992424, and a full stop inside a number is not a sentence boundary.
+        # Treating it as one would bold a fragment and leave the rest of the
+        # sentence outside the emphasis.
+        line = ("The share was 0.992424 with a 95 per cent interval of "
+                "0.980685 to 0.997050. After the wire it was 0.016492.")
+        got = gen._emphasise_lead(line)
+        assert got.startswith("**The share was 0.992424 with a 95 per cent "
+                              "interval of 0.980685 to 0.997050.**"), got
+        assert "**The share was 0.992424.**" not in got
+
+    def test_a_lower_case_continuation_is_not_a_boundary(self, gen):
+        line = ("The result is in part 4C: nothing is folded back and the "
+                "tree is left alone. That is the recommendation.")
+        got = gen._emphasise_lead(line)
+        assert got.startswith("**The result is in part 4C: nothing is folded "
+                              "back and the tree is left alone.**"), got
+
+    def test_a_heading_or_table_row_is_never_emphasised(self, gen):
+        for line in ("## PART 5. WHAT IS LEFT", "| a | b |", "- a point",
+                     "", "    indented"):
+            assert gen._emphasise_lead(line) == line, line
+
+    def test_the_part_report_rebuild_is_stable(self, gen):
+        # Rendering twice must give the same bytes, or the committed companion
+        # can never match a rebuild.
+        assert gen.render("2026-10-31") == gen.render("2026-10-31")
+
+    def test_the_committed_part_companion_matches_a_rebuild(self, gen):
+        _r, _d, dst = gen.paths("2026-10-31")
+        assert dst.is_file(), f"{dst} missing"
+        assert dst.read_text() == gen.render("2026-10-31"), (
+            "the 2026-10-31 companion differs from a rebuild; regenerate it "
+            "with --date 2026-10-31 rather than editing it by hand")

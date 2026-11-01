@@ -208,7 +208,70 @@ def test_the_split_recovers_exactly_what_the_general_form_recovers():
     pre, gen, nar = replay("pre"), replay("general"), replay("split")
     rec_gen = {k for k in pre if pre[k] and not gen[k]}
     rec_nar = {k for k in pre if pre[k] and not nar[k]}
-    assert rec_gen == rec_nar, (
-        "the question/work split and `b.kind == kind` no longer recover the "
-        f"same items: only-general={sorted(rec_gen - rec_nar)}, "
+
+    #: ★ THE EQUALITY THIS REPLACES IS WITHDRAWN, 2026-10-31, BY THE TRIGGER IT
+    #: WAS WRITTEN TO FIRE. It asserted `rec_gen == rec_nar` -- that the
+    #: question/work split recovers exactly what `b.kind == kind` recovers --
+    #: and its own docstring said that if the store ever grew a realised
+    #: cross-kind suppression that is not qs<-pf, it should fail and the
+    #: narrowing be re-argued. The store grew one.
+    #:
+    #: WHAT REFUTED IT, EXACTLY. `037210d23ef0`, kind `wr`, OPEN: his ruling of
+    #: 2026-10-27, titled "repair the gamma arm", carrying the subjects
+    #: `_check_gamma_alt_convergence` and `gamma_critical`. One settled ticket
+    #: shares the first of those -- `bfe9c313ae27`, kind `pf`, CLOSED. Under
+    #: `b.kind == kind` a closed `pf` does not touch a `wr`, so the ruling
+    #: stays visible. Under the split, every non-`qs` kind counts as the same
+    #: "work" class, so the closed `pf` SUPPRESSES the ruling as a duplicate.
+    #:
+    #: WHAT THE NEW EVIDENCE IMPLIES, AND IT DOES NOT CHANGE PRODUCTION. The
+    #: live rule is the general form (`ticket_store.py`, the subject tier), so
+    #: no ruling is being suppressed today -- verified by execution in
+    #: `test_a_settled_fix_does_not_suppress_his_ruling` below rather than by
+    #: reading the line. What is dead is the EQUIVALENCE claim, not the live
+    #: behaviour. The split's rationale was that a question is not a small
+    #: proposal; by the same reasoning a RULING is not a proposal either, and
+    #: `disc` is not one, so a binary qs/not-qs split was always too coarse for
+    #: a 7-name kind vocabulary. The general form is retained and the split is
+    #: not adopted.
+    #:
+    #: THE PROPERTY ASSERTED INSTEAD IS DOMINANCE IN THE DIRECTION THAT
+    #: MATTERS: the general form must recover everything the split recovers, so
+    #: it can never suppress more than the split would. An equality cannot be
+    #: restored without deciding that a closed fix may swallow his ruling.
+    assert rec_nar <= rec_gen, (
+        "the split now recovers items the live general form suppresses, which "
+        "reverses the safe direction: "
         f"only-split={sorted(rec_nar - rec_gen)}")
+    divergent = sorted(rec_gen - rec_nar)
+    for tid in divergent:
+        k = store._by_tid[tid].kind
+        assert k != "qs", (
+            f"{tid} is a `qs` recovered only by the general form; the qs<-pf "
+            "case is the one the split was ruled for and both must agree on it")
+
+
+def test_a_settled_fix_does_not_suppress_his_ruling():
+    """EXECUTED against the live rule, because reading the line cannot show it.
+
+    The divergence above is only consequential if production adopts the split.
+    It does not: a `wr` proposal sharing a subject with a settled `pf` is
+    CREATED. Constructed rather than read off the live store, so it still holds
+    when `037210d23ef0` is eventually settled and the live case disappears.
+    """
+    ts = _fresh()
+    st = ts.TicketStore(pathlib.Path(tempfile.mkdtemp()) / "t.jsonl")
+    subs = ["_check_gamma_alt_convergence"]
+    fix, _ = st.propose("pf", "a proposed fix touching the gamma arm",
+                        "The gamma arm needs _check_gamma_alt_convergence repaired.",
+                        "chat", subjects=subs)
+    st.close(fix.tid, "done", "verified by this test")
+    ruling, reason = st.propose("wr", "RULING: repair the gamma arm",
+                                "His ruling names _check_gamma_alt_convergence.",
+                                "chat", subjects=subs)
+    assert ruling.tid != fix.tid, (
+        "his ruling was folded into a closed proposed fix that merely shares a "
+        "function name")
+    assert reason == "created", f"the ruling was not created: {reason!r}"
+    assert {t.kind for t in st.open_tickets()} == {"wr"}, (
+        "the ruling must be the open work, and the closed fix must stay closed")

@@ -139,6 +139,11 @@ BARE_WORD_NUMBER_OK = re.compile(
     #: was that only `one-` compounds had been enumerated. A hyphenated
     #: number word qualifying a noun is English, not data, which is the same
     #: ground on which his ruling exempts ordinals.
+    #: ★ `leave-one-out` added 2026-10-31, same ground as `two-sided` above: it
+    #: is the standard name of a resampling procedure, not a count of anything,
+    #: and it fired on this project's own phrase "Leave-one-out on the live
+    #: registry". A term is not data.
+    r"leave[- ]one[- ]out|"
     r"two[- ]sided|two[- ]tier|two[- ]way|two[- ]fold|two[- ]part|"
     r"three[- ]fold|three[- ]way|three[- ]part|four[- ]fold|five[- ]fold|"
     r"(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)[ -]"

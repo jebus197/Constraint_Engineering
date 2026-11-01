@@ -16976,8 +16976,39 @@ def check_sk_threshold_corrected(
     # At R == 1 residual risk is already certain, so no fix RAISES it and the
     # sign test below admits everything -- including sk = 0.0. And R == 1 is
     # exactly what compute_rk's non-finite guard coerces a corrupt R_old to
-    # (verified: compute_rk(nan, 0.5, 1.0) -> 1.0). `model_params` has 0 writers,
-    # so R_old is 0.5 on every real run and R == 1 is not otherwise reachable.
+    # (verified: compute_rk(nan, 0.5, 1.0) -> 1.0).
+    #
+    # ★ THE PREMISE OF THIS NOTE CHANGED ON 2026-10-31 AND THE CONCLUSION
+    # SURVIVED. It used to read "`model_params` has 0 writers, so R_old is 0.5
+    # on every real run and R == 1 is not otherwise reachable". The R_k carry
+    # added that day makes R_old the value THIS RUN reached, so "0.5 on every
+    # real run" is no longer true and the reachability argument had to be
+    # re-established rather than assumed -- the more so because at sk = 0 the
+    # update is R <- 19R/25 + 6/25, whose EXACT fixed point is 1 (SymPy), so the
+    # carry climbs toward precisely the value this branch calls corrupt.
+    #
+    # RE-ESTABLISHED, 2 tools per claim, by
+    # `scripts/can_the_carry_latch_the_gate_at_one_2026-10-31.py`:
+    #   * R_k == 1 has exactly 3 routes -- R_old = 1, (nu_b, nu_f) = (1, 0), and
+    #     (nu_b, nu_f) = (0, 1) with sk = 0. z3 returns unsat for a 4th, and
+    #     execution agrees on all 6 probed cases. The nu_b + nu_f <= 1 RESCALE
+    #     is what closes the others: nu_b = 1 beside the default nu_f = 0.20
+    #     returns 0.9305555555555556, not 1.0.
+    #   * at the live fallbacks nu_b = 0.05 and nu_f = 0.20, z3 proves R_k < 1
+    #     strictly for every R_old < 1, and a 130,050-point sweep of the real
+    #     function peaks at 0.98480000000000001.
+    #   * the sk = 0 iteration STALLS 2 ulp below 1.0 after 130 rounds and never
+    #     arrives: 1.0 is absorbing but unreachable from below. A run executes
+    #     at most 45 rounds (max_rounds 21 + extension_cap 24) in any case.
+    # So R == 1 is still not reachable, and `_rk_carry` is per-run, created
+    # immediately before the round loop.
+    #
+    # ★ PRECONDITION ON POPULATING `model_params`, WHICH IS THE NEXT BUILD:
+    # the 2 parameter routes above become live the moment a writer can set
+    # nu_b = 1 (with nu_f = 0) or nu_f = 1 (with nu_b = 0, sk = 0). Whoever
+    # populates it must keep both strictly inside those corners, or stop
+    # treating R == 1 as proof of corruption. Guard:
+    # `bench/tests/test_the_carry_cannot_latch_the_gate_2026-10-31.py`.
     # Refusing is the only reading a corrupt input cannot manufacture, and it
     # matches the direction compute_rk's own guard already established: stricter
     # only, so it can never fabricate a convergence.

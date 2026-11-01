@@ -544,7 +544,56 @@ QUARANTINED_SEATS = {"kimi"}
 #: history is re-sent each turn: measured against live OpenRouter pricing, the
 #: worst case across the 4 paid seats is 1.64 pounds at 10, 3.56 at 16 and 5.23
 #: at 20. 16 buys the work; 20 buys 4 spare turns for 1.67 pounds.
-PANEL_TOOL_ITERATIONS = 16
+#: ★ RAISED 16 -> 24 ON HIS AUTHORISATION, 2026-10-31, AND THE DATA COULD NOT
+#: NAME THE TARGET. Measured over the 30 archived remote-seat replies that
+#: record an iteration count: 23 stopped with `max_iterations_harvested` and
+#: only 7 finished naturally, so 0.766667 were CUT OFF, Wilson [0.590717,
+#: 0.882076]. The demand is RIGHT-CENSORED at whatever the cap was at the time
+#: -- 3 observations pile up at the old 10 and 20 at 16, and even 1 of the 7
+#: "natural" finishes used all 16 -- so a mean or a max over these numbers
+#: measures the CAP and not the demand. A Kaplan-Meier over the same data,
+#: treating a natural finish as the event, gives S(16) = 0.750000 and never
+#: reaches 0: three quarters of seats would still be working when the cap
+#: fires, and the upper tail is unresolved. THEREFORE 24 IS NOT DERIVED FROM
+#: THE DATA, and saying otherwise would be the flattering-measure failure this
+#: project has recorded repeatedly. It is chosen to buy UNCENSORED
+#: OBSERVATIONS at a cost inside his standing approval.
+#:
+#: WHY THE CLOCK DOES NOT BOUND THIS. `timeout=300` is per HTTP REQUEST, not
+#: per dispatch: 1 capped reply elapsed 496.4 s across its 16 round trips, so
+#: the total is unbounded by that timeout. The binding constraint is COST, at a
+#: median 9.76 s per iteration and 17 of 23 capped replies finishing well
+#: inside the per-request clock.
+#:
+#: COST, AND MY FIRST FIGURE FOR IT WAS WRONG. I initially fitted a straight
+#: line through 2 SUPERSEDED anchors (0.99 GBP at 6, about 2.00 at 10) and got
+#: 5.54 at 24. This file already carried better ones, measured against live
+#: OpenRouter pricing: 1.64 at 10, 3.56 at 16, 5.23 at 20, and it states why
+#: the curve bends -- the whole history is re-sent each turn. A quadratic
+#: through those 3 points fits them EXACTLY in both NumPy and SymPy, agreeing
+#: to 6.4e-15, and is a clean through-origin form:
+#:     cost(n) = 0.00975 n^2 + 0.0665 n
+#: so the worst case across the 4 paid seats is 3.5600 at 16, 5.2300 at 20,
+#: 7.2120 at 24 and 12.1120 at 32. His spend approval of 2026-09-20 was "up to
+#: 10 pounds, cheaper better". 24 costs 7.2120, which is inside it. 32 costs
+#: 12.1120 and is therefore EXCLUDED BY THE APPROVAL ITSELF rather than by any
+#: judgement of mine -- which is the opposite of what my linear fit implied.
+#:
+#: CONFIRMED BY THE SECONDARY FALSIFIER. NumPy and SymPy are the PRIMARY route
+#: here and agree to 6.4e-15. Checked independently in Wolfram Language --
+#: `f[n_] := 39/4000 n^2 + 133/2000 n` evaluated over {10, 16, 20, 24, 32} --
+#: which returns {1.64, 3.56, 5.23, 7.212, 12.112}: it reproduces all 3
+#: committed anchors and agrees with the projections at 24 and 32. Computed with
+#: Wolfram Language (attribution required by its terms, and by
+#: `bench/wolfram_standard.py`). This is the first Wolfram cross-check in 40
+#: work turns, which the FFAFP gate had been reporting as a standing omission.
+#:
+#: FREE SEATS ARE UNAFFECTED. cc2 and fable dispatch through `call_claude_cli`
+#: and never reach the OpenRouter tool loop, so this constant changes nothing
+#: until a PAID dispatch is authorised, which is separately gated.
+#:
+#: Producer: scripts/the_tool_cap_is_censoring_the_seats_2026-10-31.py
+PANEL_TOOL_ITERATIONS = 24
 # PANEL_ONLY re-dispatches a SUBSET, so a briefing defect that broke 2 seats does
 # not cost a second full paid round for the 3 that worked.
 

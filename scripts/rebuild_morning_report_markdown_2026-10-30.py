@@ -32,14 +32,23 @@ import re
 import sys
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
-REPO_TXT = REPO / "experimental_notes" / "Morning_Report_2026-10-30.txt"
-DESKTOP_TXT = (pathlib.Path.home() / "Desktop" / "CDSFL_tts"
-               / "Morning_Report_2026-10-30.txt")
-DST = REPO / "experimental_notes" / "Morning_Report_2026-10-30.md"
-FOOT = "Written under CDSFL note standard v1.8.\n"
+
+#: GENERALISED 2026-10-31. The script was pinned to a single date, so the next
+#: day's companion had to be written by hand -- which is the exact drift this
+#: generator exists to prevent. `--date` now selects the report; the default is
+#: unchanged, so every existing caller and the guard behave identically.
+#:
+#: The 2 rendering styles are chosen by the DOCUMENT'S OWN headings, not by its
+#: date: a report using "SECTION n." renders as before, and one using "PART n."
+#: keeps its heading case and gets its lead sentences emphasised, which is the
+#: shape the founder said was easier to read. Keying on the heading rather than
+#: on a date is what makes it impossible for this change to alter the 2026-10-30
+#: output: that file carries 11 SECTION lines and 0 PART lines.
+DEFAULT_DATE = "2026-10-30"
+FOOT_PREFIX = "Written under CDSFL note standard v1.8"
 
 
-APPENDIX = """
+APPENDIX_2026_10_30 = """
 ## Technical appendix
 
 Rule 6 keeps paths out of the spoken copy; this restores them, adding no new figures.
@@ -139,39 +148,87 @@ in `test_the_morning_report_is_generated_2026-10-12.py` survived 3 commits.
 """
 
 
-def source() -> pathlib.Path:
+#: Per-date appendices. A date absent here simply gets no appendix, which is
+#: correct: an appendix restores paths Rule 6 keeps out of the spoken copy, and
+#: a report whose paths are already inline needs none.
+APPENDICES = {"2026-10-30": APPENDIX_2026_10_30}
+
+
+def paths(date: str = DEFAULT_DATE):
+    """The 3 files for a given report date: repo text, Desktop text, markdown."""
+    stem = f"Morning_Report_{date}"
+    return (REPO / "experimental_notes" / f"{stem}.txt",
+            pathlib.Path.home() / "Desktop" / "CDSFL_tts" / f"{stem}.txt",
+            REPO / "experimental_notes" / f"{stem}.md")
+
+
+def source(date: str = DEFAULT_DATE) -> pathlib.Path:
     """The versioned copy, falling back to the Desktop one only if absent."""
-    if REPO_TXT.is_file():
-        return REPO_TXT
-    if DESKTOP_TXT.is_file():
-        return DESKTOP_TXT
+    repo_txt, desktop_txt, _ = paths(date)
+    if repo_txt.is_file():
+        return repo_txt
+    if desktop_txt.is_file():
+        return desktop_txt
     raise FileNotFoundError(
-        f"neither {REPO_TXT} nor {DESKTOP_TXT} exists; there is no source to "
+        f"neither {repo_txt} nor {desktop_txt} exists; there is no source to "
         f"rebuild the markdown companion from")
 
 
-def render() -> str:
+def _emphasise_lead(line: str) -> str:
+    """Bold a paragraph's opening sentence, as the PART-style reports do.
+
+    The sentence boundary is a full stop, question mark or colon followed by a
+    space and a CAPITAL. Requiring the capital is what stops a decimal being
+    read as a boundary: "0.992424" is a full stop followed by a digit, and the
+    archive figures in these reports are full of them.
+    """
+    if not line or line.startswith(("#", "-", "|", " ")):
+        return line
+    m = re.search(r"^(.{20,400}?[.:?])\s+(?=[A-Z0-9])", line)
+    if not m:
+        return line
+    lead = m.group(1)
+    if "**" in lead:
+        return line
+    return f"**{lead}**" + line[len(lead):]
+
+
+def render(date: str = DEFAULT_DATE) -> str:
     """The markdown companion, as a string. Writes nothing."""
-    src = source()
+    src = source(date)
     txt = src.read_text()
-    if not txt.endswith(FOOT):
+    # The foot is matched by PREFIX, because the 2 reports word it differently
+    # ("... v1.8." against "... v1.8 (17 October 2026)."), and the split is done
+    # by INDEX so that everything before it survives byte for byte. Rebuilding
+    # the body from stripped lines instead lost the 2 blank lines that separate
+    # the prose from the appendix, which showed up immediately as a 7-line diff
+    # against the committed 2026-10-30 companion.
+    foot_lines = [L for L in txt.split("\n") if L.startswith(FOOT_PREFIX)]
+    if not foot_lines:
         raise ValueError(
             f"{src} does not end with the note-standard foot-line, so it is "
             f"either incomplete or not a compliant note")
-    body = txt[: -len(FOOT)]
-    foot = FOOT
+    foot_line = foot_lines[-1]
+    cut = txt.rindex(foot_line)
+    foot = txt[cut:]
+    body = txt[:cut].split("\n")
+    part_style = any(L.startswith("PART ") for L in body)
     out = []
-    for i, L in enumerate(body.split("\n")):
+    for i, L in enumerate(body):
         if L.startswith("SECTION "):
             m = re.match(r"SECTION (\d+)\.\s+(.*)", L)
             out.append("## %s. %s" % (m.group(1), m.group(2).capitalize()))
+        elif L.startswith("PART "):
+            # Case is PRESERVED: these headings are deliberately shouted.
+            out.append("## " + L)
         elif L.isupper() and len(L) > 25 and not L.startswith(" "):
             out.append("### " + L.capitalize())
         elif i == 0:
-            out.append("# " + L.title())
+            out.append("# " + (L if part_style else L.title()))
         else:
-            out.append(L)
-    return "\n".join(out) + APPENDIX + foot
+            out.append(_emphasise_lead(L) if part_style else L)
+    tail = APPENDICES.get(date, "")
+    return "\n".join(out) + tail + foot
 
 
 #: How many diff lines `--check` prints before it stops. A cap is right -- a
@@ -186,14 +243,17 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true",
                     help="compare only; write nothing and exit 1 on a mismatch")
+    ap.add_argument("--date", default=DEFAULT_DATE,
+                    help=f"report date to rebuild (default {DEFAULT_DATE})")
     args = ap.parse_args(argv)
 
-    built = render()
+    REPO_TXT, DESKTOP_TXT, DST = paths(args.date)
+    built = render(args.date)
     if args.check:
         have = DST.read_text() if DST.is_file() else ""
         if have == built:
             print(f"OK - {DST.relative_to(REPO)} matches its source "
-                  f"({source().relative_to(REPO.parent)})")
+                  f"({source(args.date).relative_to(REPO.parent)})")
             return 0
         diff = list(difflib.unified_diff(
             have.split("\n"), built.split("\n"),
@@ -210,9 +270,9 @@ def main(argv: list[str] | None = None) -> int:
 
     DST.write_text(built)
     print(f"rebuilt {DST.relative_to(REPO)} "
-          f"({len(built.splitlines())} lines) from {source().name}")
+          f"({len(built.splitlines())} lines) from {source(args.date).name}")
     # keep the 2 spoken copies in agreement, whichever was the source
-    txt = source().read_text()
+    txt = source(args.date).read_text()
     for other in (REPO_TXT, DESKTOP_TXT):
         if other.is_file() and other.read_text() != txt:
             other.write_text(txt)
